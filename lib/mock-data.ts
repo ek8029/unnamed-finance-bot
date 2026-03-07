@@ -156,22 +156,70 @@ export const mockHoldings: Holding[] = [
   },
 ];
 
-// Mock insights
+// Mock insights with enhanced AI intelligence
 export const mockInsights: Insight[] = [
   {
     id: '1',
     user_id: 'user1',
-    type: 'portfolio',
-    title: 'High Technology Sector Concentration',
+    type: 'market',
+    title: 'SEC Filing Alert: NVDA Competitor Reports 340% Revenue Growth',
     description:
-      'You are currently 58% exposed to technology companies. This concentration may increase portfolio volatility.',
+      'AMD filed 10-Q showing massive Q4 data center revenue increase ($3.5B, up 340% YoY), directly competing with NVIDIA\'s AI chip business. This represents your largest portfolio holding (27.5%).',
     recommended_action:
-      'Consider diversifying into other sectors such as healthcare, financials, or consumer staples to reduce risk.',
+      'Review NVIDIA\'s competitive position. Consider partial profit-taking or rebalancing to reduce concentration risk.',
     timestamp: new Date('2024-03-07T10:30:00'),
     is_dismissed: false,
   },
   {
     id: '2',
+    user_id: 'user1',
+    type: 'market',
+    title: 'Insider Trading Signal: AAPL Executive Stock Sales',
+    description:
+      'Apple CFO and 3 SVPs filed Form 4s showing combined stock sales of $12.3M over the past 2 weeks. This is 2.8x higher than their typical quarterly selling activity.',
+    recommended_action:
+      'Monitor for negative news or earnings guidance. Insider selling often precedes stock weakness. Position represents 8.6% of portfolio.',
+    timestamp: new Date('2024-03-07T08:15:00'),
+    is_dismissed: false,
+  },
+  {
+    id: '3',
+    user_id: 'user1',
+    type: 'portfolio',
+    title: 'High Technology Sector Concentration',
+    description:
+      'You are currently 58% exposed to technology companies. This concentration may increase portfolio volatility during sector rotations or tech selloffs.',
+    recommended_action:
+      'Consider diversifying into other sectors such as healthcare, financials, or consumer staples to reduce risk.',
+    timestamp: new Date('2024-03-06T14:20:00'),
+    is_dismissed: false,
+  },
+  {
+    id: '4',
+    user_id: 'user1',
+    type: 'tax',
+    title: 'Tax-Loss Harvesting Opportunity Detected',
+    description:
+      'You could reduce your tax liability by $2,400 by harvesting capital losses from underperforming positions while maintaining market exposure.',
+    recommended_action:
+      'Consider selling positions with losses to offset capital gains. Consult with a tax professional before executing.',
+    timestamp: new Date('2024-03-05T09:15:00'),
+    is_dismissed: false,
+  },
+  {
+    id: '5',
+    user_id: 'user1',
+    type: 'market',
+    title: 'Options Flow Alert: Large MSFT Put Activity',
+    description:
+      'Unusual options activity detected: $8.2M in near-term MSFT puts purchased, suggesting institutional investors may be hedging downside. MSFT represents 9.8% of your portfolio.',
+    recommended_action:
+      'Monitor MSFT price action and consider protective measures if position drops below $410 support.',
+    timestamp: new Date('2024-03-04T16:45:00'),
+    is_dismissed: false,
+  },
+  {
+    id: '6',
     user_id: 'user1',
     type: 'spending',
     title: 'Subscription Spending Increased 23%',
@@ -179,55 +227,31 @@ export const mockInsights: Insight[] = [
       'Your spending on subscriptions increased from $340 to $418 this month. Notable increases in streaming services and software subscriptions.',
     recommended_action:
       'Review active subscriptions and cancel unused services. Potential savings: $78/month.',
-    timestamp: new Date('2024-03-06T14:20:00'),
-    is_dismissed: false,
-  },
-  {
-    id: '3',
-    user_id: 'user1',
-    type: 'tax',
-    title: 'Tax-Loss Harvesting Opportunity',
-    description:
-      'You could reduce your tax liability by $2,400 by harvesting capital losses from underperforming positions.',
-    recommended_action:
-      'Consider selling positions with losses to offset capital gains. Consult with a tax professional before executing.',
-    timestamp: new Date('2024-03-05T09:15:00'),
-    is_dismissed: false,
-  },
-  {
-    id: '4',
-    user_id: 'user1',
-    type: 'market',
-    title: 'Semiconductor Patent Filing Alert',
-    description:
-      'A competitor of NVIDIA (your largest holding) filed a patent for next-generation AI chip architecture that could impact the market.',
-    recommended_action:
-      'Monitor news and analyst reports over the next 30 days. Consider rebalancing if competitive pressure increases.',
-    timestamp: new Date('2024-03-04T16:45:00'),
-    is_dismissed: false,
-  },
-  {
-    id: '5',
-    user_id: 'user1',
-    type: 'credit',
-    title: 'Balance Transfer Opportunity',
-    description:
-      'Your Amex Platinum card has a balance of $3,210 at 18.5% APR. A balance transfer to a 0% intro APR card could save $340 in interest.',
-    recommended_action:
-      'Apply for a balance transfer card with 0% intro APR for 15-18 months and transfer your existing balance.',
     timestamp: new Date('2024-03-03T11:00:00'),
     is_dismissed: false,
   },
   {
-    id: '6',
+    id: '7',
     user_id: 'user1',
-    type: 'portfolio',
-    title: 'Cryptocurrency Volatility Warning',
+    type: 'credit',
+    title: 'Balance Transfer Opportunity',
     description:
-      'Your cryptocurrency holdings (BTC and ETH) represent 13.9% of your portfolio and have experienced 18% volatility over the past 30 days.',
+      'Your Amex card has a balance of $3,210 at 18.5% APR. A balance transfer to a 0% intro APR card could save $340 in interest.',
     recommended_action:
-      'Ensure this allocation aligns with your risk tolerance. Consider reducing exposure if volatility is concerning.',
+      'Apply for a balance transfer card with 0% intro APR for 15-18 months and transfer your existing balance.',
     timestamp: new Date('2024-03-02T08:30:00'),
+    is_dismissed: false,
+  },
+  {
+    id: '8',
+    user_id: 'user1',
+    type: 'market',
+    title: 'Federal Reserve Minutes Released',
+    description:
+      'FOMC minutes suggest higher-for-longer interest rates. This could pressure tech valuations (58% of your portfolio) and crypto holdings (13.9%).',
+    recommended_action:
+      'Consider shifting some allocation to dividend-paying value stocks or bonds that benefit from higher rates.',
+    timestamp: new Date('2024-03-01T14:00:00'),
     is_dismissed: false,
   },
 ];
