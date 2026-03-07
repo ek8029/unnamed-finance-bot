@@ -10,7 +10,15 @@ interface PortfolioAllocationProps {
   allocation: Allocation[];
 }
 
-const COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444', '#06b6d4'];
+// Helm-branded color palette for portfolio allocation
+const HELM_CHART_COLORS = [
+  '#B8914A', // helm-gold
+  '#CBAA68', // helm-gold-hi
+  '#9EC4A8', // helm-positive
+  '#6B7A90', // helm-neutral
+  '#C4A45A', // helm-warning
+  '#8A96AA', // helm-secondary
+];
 
 export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
   return (
@@ -40,15 +48,21 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
                   dataKey="value"
                 >
                   {allocation.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={HELM_CHART_COLORS[index % HELM_CHART_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip
                   formatter={(value) => formatCurrency(Number(value))}
                   contentStyle={{
-                    backgroundColor: '#fff',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '6px',
+                    backgroundColor: 'var(--color-bg-elevated)',
+                    border: '1px solid var(--color-border-base)',
+                    borderRadius: '4px',
+                    color: 'var(--color-text-primary)',
+                  }}
+                  labelStyle={{
+                    color: 'var(--color-text-secondary)',
+                    fontSize: '11px',
+                    fontFamily: 'var(--font-dm-mono)',
                   }}
                 />
               </PieChart>
@@ -59,18 +73,18 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
             {allocation.map((item, index) => (
               <div
                 key={item.name}
-                className="flex items-center justify-between p-3 rounded-lg border border-gray-200"
+                className="flex items-center justify-between p-3 rounded-md border border-helm-border-base bg-helm-elevated hover:border-helm-border-strong transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-4 h-4 rounded"
-                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                    className="w-3 h-3 rounded-sm"
+                    style={{ backgroundColor: HELM_CHART_COLORS[index % HELM_CHART_COLORS.length] }}
                   />
-                  <span className="font-medium text-gray-900">{item.name}</span>
+                  <span className="type-h3">{item.name}</span>
                 </div>
                 <div className="text-right">
-                  <div className="font-semibold text-gray-900">{formatCurrency(item.value)}</div>
-                  <div className="text-sm text-gray-500">{item.percentage.toFixed(1)}%</div>
+                  <div className="type-data text-sm">{formatCurrency(item.value)}</div>
+                  <div className="text-helm-secondary text-xs">{item.percentage.toFixed(1)}%</div>
                 </div>
               </div>
             ))}

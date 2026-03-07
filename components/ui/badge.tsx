@@ -3,21 +3,23 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-gray-950 focus:ring-offset-2",
+  "inline-flex items-center rounded-sm border px-2 py-0.5 type-caption font-medium transition-colors",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-gray-900 text-gray-50 hover:bg-gray-900/80",
+          "border-helm-border-base bg-helm-elevated text-helm-platinum",
         secondary:
-          "border-transparent bg-gray-100 text-gray-900 hover:bg-gray-100/80",
+          "border-helm-border-subtle bg-helm-surface text-helm-secondary",
         destructive:
-          "border-transparent bg-red-500 text-gray-50 hover:bg-red-500/80",
-        outline: "text-gray-950",
+          "border-transparent bg-helm-negative/10 text-helm-negative border-helm-negative/20",
+        outline: "border-helm-border-strong bg-transparent text-helm-platinum",
         success:
-          "border-transparent bg-green-500 text-white hover:bg-green-500/80",
+          "border-transparent bg-helm-positive/10 text-helm-positive border-helm-positive/20",
         warning:
-          "border-transparent bg-yellow-500 text-white hover:bg-yellow-500/80",
+          "border-transparent bg-helm-warning/10 text-helm-warning border-helm-warning/20",
+        gold:
+          "border-helm-gold-border bg-helm-gold-surface text-helm-gold",
       },
     },
     defaultVariants: {

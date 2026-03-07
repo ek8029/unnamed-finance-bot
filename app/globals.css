@@ -3,7 +3,9 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  /* ── DARK THEME (Default) ── */
+  :root,
+  :root.dark {
     /* ── Backgrounds ── */
     --color-bg-base:       #070C17;   /* page background, app shell */
     --color-bg-surface:    #0C1525;   /* cards, panels, nav */
@@ -15,10 +17,10 @@
     --color-border-base:   rgba(255, 255, 255, 0.08);
     --color-border-strong: rgba(255, 255, 255, 0.13);
 
-    /* ── Text ── */
+    /* ── Text (Improved Contrast) ── */
     --color-text-primary:  #E8ECF1;   /* headings, key values */
-    --color-text-secondary:#8A96AA;   /* labels, descriptions */
-    --color-text-muted:    #3A4857;   /* timestamps, disabled, placeholders */
+    --color-text-secondary:#B4BFCE;   /* labels, descriptions - LIGHTER for better contrast */
+    --color-text-muted:    #6B7A90;   /* timestamps, disabled, placeholders - LIGHTER */
     --color-text-inverse:  #070C17;   /* text on light/gold backgrounds */
 
     /* ── Brand Accent — Gold (use sparingly: 4% of total UI surface) ── */
@@ -52,11 +54,83 @@
     --radius-md:  4px;   /* cards, panels */
     --radius-lg:  6px;   /* modals, sheets */
     --radius-app: 16px;  /* app icons only */
+
+    /* ── Density Multiplier (controlled by data-density) ── */
+    --density-multiplier: 1;
+  }
+
+  /* ── LIGHT THEME ── */
+  :root.light {
+    /* ── Backgrounds (inverted, but still dark-adjacent for premium feel) ── */
+    --color-bg-base:       #F7F8FA;   /* page background */
+    --color-bg-surface:    #FFFFFF;   /* cards, panels, nav */
+    --color-bg-elevated:   #FFFFFF;   /* dropdowns, tooltips, modals */
+    --color-bg-overlay:    #F0F2F5;   /* hover states, selected rows */
+
+    /* ── Borders ── */
+    --color-border-subtle: rgba(17, 30, 52, 0.06);
+    --color-border-base:   rgba(17, 30, 52, 0.10);
+    --color-border-strong: rgba(17, 30, 52, 0.18);
+
+    /* ── Text ── */
+    --color-text-primary:  #0C1525;   /* headings, key values */
+    --color-text-secondary:#3A4857;   /* labels, descriptions */
+    --color-text-muted:    #8A96AA;   /* timestamps, disabled, placeholders */
+    --color-text-inverse:  #FFFFFF;   /* text on dark/gold backgrounds */
+
+    /* ── Brand Accent — Gold ── */
+    --color-gold:          #8A6A35;   /* primary gold in light mode */
+    --color-gold-hi:       #6B5328;   /* hover state */
+    --color-gold-lo:       #B8914A;   /* lighter gold variant */
+    --color-gold-surface:  rgba(138, 106, 53, 0.08);
+    --color-gold-border:   rgba(138, 106, 53, 0.20);
+
+    /* ── Semantic Data Colors ── */
+    --color-positive:      #5A9F6E;   /* slightly darker in light mode */
+    --color-negative:      #B85C5C;   /* slightly darker in light mode */
+    --color-neutral:       #556A80;   /* slightly darker in light mode */
+    --color-warning:       #A98840;   /* slightly darker in light mode */
+  }
+
+  /* ── DENSITY VARIANTS ── */
+  :root[data-density="compact"] {
+    --density-multiplier: 0.75;
+  }
+
+  :root[data-density="comfortable"] {
+    --density-multiplier: 1;
+  }
+
+  :root[data-density="spacious"] {
+    --density-multiplier: 1.25;
   }
 
   body {
     @apply bg-helm-base text-helm-platinum antialiased;
     font-family: var(--font-manrope), system-ui, sans-serif;
+  }
+
+  /* ── ACCESSIBILITY ── */
+  .reduce-motion * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .high-contrast {
+    --color-border-subtle: rgba(255, 255, 255, 0.12);
+    --color-border-base:   rgba(255, 255, 255, 0.18);
+    --color-border-strong: rgba(255, 255, 255, 0.28);
+  }
+
+  .high-contrast.light {
+    --color-border-subtle: rgba(17, 30, 52, 0.12);
+    --color-border-base:   rgba(17, 30, 52, 0.18);
+    --color-border-strong: rgba(17, 30, 52, 0.28);
+  }
+
+  .large-text {
+    font-size: 115%;
   }
 }
 
@@ -104,7 +178,7 @@
     font-weight: 400;
     letter-spacing: 0;
     line-height: 1.7;
-    color: var(--color-text-secondary);
+    color: var(--color-text-primary);
   }
 
   .type-label {
@@ -123,7 +197,7 @@
     letter-spacing: 0.08em;
     line-height: 1.5;
     text-transform: uppercase;
-    color: var(--color-text-muted);
+    color: var(--color-text-secondary);
   }
 
   .type-data {
@@ -141,7 +215,7 @@
     font-weight: 400;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--color-text-muted);
+    color: var(--color-text-secondary);
   }
 
   .type-mono {
@@ -158,10 +232,26 @@
     font-weight: 400;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--color-text-muted);
+    color: var(--color-text-secondary);
   }
 
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes slide-in-bottom {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-in-bottom {
+    animation: slide-in-bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 }

@@ -21,9 +21,9 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Net Worth</span>
-          <div className="flex items-center gap-2 text-sm font-normal">
-            <TrendingUp className="h-4 w-4 text-green-600" />
-            <span className="text-green-600">
+          <div className="flex items-center gap-2 type-body font-normal">
+            <TrendingUp className="h-4 w-4 text-helm-positive" />
+            <span className="text-helm-positive">
               +{changePercentage.toFixed(1)}% from last month
             </span>
           </div>
@@ -31,36 +31,44 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="text-4xl font-bold">{formatCurrency(currentNetWorth)}</div>
+          <div className="type-data text-4xl">{formatCurrency(currentNetWorth)}</div>
           <div className="h-[200px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={netWorthHistory}>
                 <XAxis
                   dataKey="month"
-                  stroke="#888888"
-                  fontSize={12}
+                  stroke="var(--color-text-secondary)"
+                  fontSize={11}
                   tickLine={false}
                   axisLine={false}
+                  fontFamily="var(--font-dm-mono)"
                 />
                 <YAxis
-                  stroke="#888888"
-                  fontSize={12}
+                  stroke="var(--color-text-secondary)"
+                  fontSize={11}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                  fontFamily="var(--font-dm-mono)"
                 />
                 <Tooltip
                   formatter={(value) => formatCurrency(Number(value))}
                   contentStyle={{
-                    backgroundColor: '#fff',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '6px',
+                    backgroundColor: 'var(--color-bg-elevated)',
+                    border: '1px solid var(--color-border-base)',
+                    borderRadius: '4px',
+                    color: 'var(--color-text-primary)',
+                  }}
+                  labelStyle={{
+                    color: 'var(--color-text-secondary)',
+                    fontSize: '11px',
+                    fontFamily: 'var(--font-dm-mono)',
                   }}
                 />
                 <Line
                   type="monotone"
                   dataKey="value"
-                  stroke="#2563eb"
+                  stroke="var(--color-gold)"
                   strokeWidth={2}
                   dot={false}
                 />

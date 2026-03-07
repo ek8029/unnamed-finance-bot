@@ -13,11 +13,11 @@ export default function PortfolioPage() {
   const dayChangePercentage = (totalDayChange / totalValue) * 100;
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6 max-w-7xl">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900">Portfolio</h1>
-        <p className="text-gray-600">
+        <h1 className="type-h1">Portfolio</h1>
+        <p className="type-body">
           Track your investments, allocation, and performance
         </p>
       </div>
@@ -27,15 +27,15 @@ export default function PortfolioPage() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center space-x-2">
-              <DollarSign className="w-4 h-4 text-gray-600" />
+              <DollarSign className="w-4 h-4 text-helm-muted" />
               <CardDescription>Total Portfolio Value</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
-            <CardTitle className="text-3xl">
+            <CardTitle className="type-data text-3xl">
               ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">{mockHoldings.length} holdings</p>
+            <p className="text-sm text-helm-secondary mt-1">{mockHoldings.length} holdings</p>
           </CardContent>
         </Card>
 
@@ -43,19 +43,19 @@ export default function PortfolioPage() {
           <CardHeader className="pb-3">
             <div className="flex items-center space-x-2">
               {dayChangePercentage >= 0 ? (
-                <TrendingUp className="w-4 h-4 text-green-600" />
+                <TrendingUp className="w-4 h-4 text-helm-positive" />
               ) : (
-                <TrendingDown className="w-4 h-4 text-red-600" />
+                <TrendingDown className="w-4 h-4 text-helm-negative" />
               )}
               <CardDescription>Today's Change</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
-            <CardTitle className={`text-3xl ${dayChangePercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <CardTitle className={`type-data text-3xl ${dayChangePercentage >= 0 ? 'text-helm-positive' : 'text-helm-negative'}`}>
               {dayChangePercentage >= 0 ? '+' : ''}
               {dayChangePercentage.toFixed(2)}%
             </CardTitle>
-            <p className={`text-sm mt-1 ${dayChangePercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <p className={`text-sm mt-1 ${dayChangePercentage >= 0 ? 'text-helm-positive' : 'text-helm-negative'}`}>
               {dayChangePercentage >= 0 ? '+' : ''}
               ${totalDayChange.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
@@ -65,7 +65,7 @@ export default function PortfolioPage() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center space-x-2">
-              <PieChart className="w-4 h-4 text-gray-600" />
+              <PieChart className="w-4 h-4 text-helm-muted" />
               <CardDescription>Largest Position</CardDescription>
             </div>
           </CardHeader>
@@ -73,7 +73,7 @@ export default function PortfolioPage() {
             <CardTitle className="text-xl">
               {mockHoldings.sort((a, b) => b.portfolio_allocation - a.portfolio_allocation)[0]?.ticker}
             </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-helm-secondary mt-1">
               {mockHoldings.sort((a, b) => b.portfolio_allocation - a.portfolio_allocation)[0]?.portfolio_allocation}% of portfolio
             </p>
           </CardContent>
@@ -82,15 +82,15 @@ export default function PortfolioPage() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center space-x-2">
-              <TrendingUp className="w-4 h-4 text-gray-600" />
+              <TrendingUp className="w-4 h-4 text-helm-muted" />
               <CardDescription>Best Performer Today</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
-            <CardTitle className="text-xl text-green-600">
+            <CardTitle className="text-xl text-helm-positive">
               {mockHoldings.sort((a, b) => b.day_change_percentage - a.day_change_percentage)[0]?.ticker}
             </CardTitle>
-            <p className="text-sm text-green-600 mt-1">
+            <p className="text-sm text-helm-positive mt-1">
               +{mockHoldings.sort((a, b) => b.day_change_percentage - a.day_change_percentage)[0]?.day_change_percentage}%
             </p>
           </CardContent>
@@ -111,7 +111,7 @@ export default function PortfolioPage() {
           {/* Asset Class Breakdown */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Asset Class Breakdown</CardTitle>
+              <CardTitle>Asset Class Breakdown</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {[
@@ -121,16 +121,16 @@ export default function PortfolioPage() {
               ].map((asset) => (
                 <div key={asset.name} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">{asset.name}</span>
-                    <span className="font-medium text-gray-900">{asset.percentage}%</span>
+                    <span className="text-helm-secondary">{asset.name}</span>
+                    <span className="type-label text-helm-platinum">{asset.percentage}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-helm-elevated border border-helm-border-subtle rounded-full h-2">
                     <div
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full"
+                      className="bg-helm-gold h-2 rounded-full"
                       style={{ width: `${asset.percentage}%` }}
                     />
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-helm-muted">
                     ${asset.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
@@ -141,28 +141,28 @@ export default function PortfolioPage() {
           {/* Performance Metrics */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Performance Metrics</CardTitle>
+              <CardTitle>Performance Metrics</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">1 Month Return</span>
-                <span className="text-sm font-medium text-green-600">+5.2%</span>
+                <span className="text-sm text-helm-secondary">1 Month Return</span>
+                <span className="type-label text-helm-positive">+5.2%</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">3 Month Return</span>
-                <span className="text-sm font-medium text-green-600">+12.8%</span>
+                <span className="text-sm text-helm-secondary">3 Month Return</span>
+                <span className="type-label text-helm-positive">+12.8%</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">YTD Return</span>
-                <span className="text-sm font-medium text-green-600">+18.3%</span>
+                <span className="text-sm text-helm-secondary">YTD Return</span>
+                <span className="type-label text-helm-positive">+18.3%</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Sharpe Ratio</span>
-                <span className="text-sm font-medium text-gray-900">1.42</span>
+                <span className="text-sm text-helm-secondary">Sharpe Ratio</span>
+                <span className="type-label text-helm-platinum">1.42</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Beta</span>
-                <span className="text-sm font-medium text-gray-900">1.15</span>
+                <span className="text-sm text-helm-secondary">Beta</span>
+                <span className="type-label text-helm-platinum">1.15</span>
               </div>
             </CardContent>
           </Card>

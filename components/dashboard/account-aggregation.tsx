@@ -40,29 +40,29 @@ export function AccountAggregation({ accounts }: AccountAggregationProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {accounts.map((account) => (
             <div
               key={account.id}
-              className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-between p-3 rounded-md border border-helm-border-base bg-helm-elevated hover:border-helm-border-strong transition-colors"
             >
               <div className="flex items-center gap-3">
-                <div className="rounded-full bg-gray-100 p-2">
-                  <Building2 className="h-4 w-4 text-gray-600" />
+                <div className="rounded-md bg-helm-overlay p-2 border border-helm-border-subtle">
+                  <Building2 className="h-4 w-4 text-helm-secondary" />
                 </div>
                 <div>
-                  <div className="font-medium">{account.institution}</div>
+                  <div className="type-h3">{account.institution}</div>
                   <Badge variant={accountTypeColors[account.account_type]} className="mt-1">
                     {accountTypeLabels[account.account_type]}
                   </Badge>
                 </div>
               </div>
               <div className="text-right">
-                <div className={`font-semibold ${account.balance < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                <div className={`type-data text-sm ${account.balance < 0 ? 'text-helm-negative' : 'text-helm-platinum'}`}>
                   {formatCurrency(Math.abs(account.balance))}
                 </div>
                 {account.balance < 0 && (
-                  <div className="text-xs text-gray-500 mt-1">Balance Due</div>
+                  <div className="text-xs text-helm-muted mt-1">Balance Due</div>
                 )}
               </div>
             </div>

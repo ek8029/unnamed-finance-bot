@@ -20,8 +20,8 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
             <TrendingUp className="h-5 w-5" />
             Investment Portfolio
           </CardTitle>
-          <div className="text-sm text-gray-500">
-            Total: <span className="font-semibold text-gray-900">{formatCurrency(totalValue)}</span>
+          <div className="text-sm text-helm-secondary">
+            Total: <span className="type-label text-helm-platinum">{formatCurrency(totalValue)}</span>
           </div>
         </div>
       </CardHeader>
@@ -29,14 +29,14 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Asset</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Ticker</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Shares</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Price</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Total Value</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Day Change</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Allocation</th>
+              <tr className="border-b border-helm-border-base">
+                <th className="text-left py-3 px-4 type-label text-helm-secondary">Asset</th>
+                <th className="text-left py-3 px-4 type-label text-helm-secondary">Ticker</th>
+                <th className="text-right py-3 px-4 type-label text-helm-secondary">Shares</th>
+                <th className="text-right py-3 px-4 type-label text-helm-secondary">Price</th>
+                <th className="text-right py-3 px-4 type-label text-helm-secondary">Total Value</th>
+                <th className="text-right py-3 px-4 type-label text-helm-secondary">Day Change</th>
+                <th className="text-right py-3 px-4 type-label text-helm-secondary">Allocation</th>
               </tr>
             </thead>
             <tbody>
@@ -46,34 +46,34 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                 return (
                   <tr
                     key={holding.id}
-                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                    className="border-b border-helm-border-subtle hover:bg-helm-overlay transition-colors"
                   >
                     <td className="py-3 px-4">
                       <div>
-                        <div className="font-medium text-gray-900">{holding.asset_name}</div>
+                        <div className="type-h3">{holding.asset_name}</div>
                         {holding.sector && (
-                          <div className="text-xs text-gray-500 mt-0.5">{holding.sector}</div>
+                          <div className="text-xs text-helm-muted mt-0.5">{holding.sector}</div>
                         )}
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="font-mono text-sm font-semibold text-gray-700">
+                      <span className="font-mono text-sm font-semibold text-helm-platinum">
                         {holding.ticker}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right text-sm text-gray-600">
+                    <td className="py-3 px-4 text-right text-sm text-helm-secondary">
                       {formatNumber(holding.shares)}
                     </td>
-                    <td className="py-3 px-4 text-right text-sm text-gray-900">
+                    <td className="py-3 px-4 text-right text-sm text-helm-platinum">
                       {formatCurrency(holding.current_price)}
                     </td>
-                    <td className="py-3 px-4 text-right font-semibold text-gray-900">
+                    <td className="py-3 px-4 text-right type-label text-helm-platinum">
                       {formatCurrency(holding.total_value)}
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div
                         className={`flex items-center justify-end gap-1 ${
-                          isPositiveChange ? 'text-green-600' : 'text-red-600'
+                          isPositiveChange ? 'text-helm-positive' : 'text-helm-negative'
                         }`}
                       >
                         {isPositiveChange ? (
@@ -88,13 +88,13 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="w-16 h-2 bg-helm-elevated border border-helm-border-subtle rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-blue-600"
+                            className="h-full bg-helm-gold"
                             style={{ width: `${holding.portfolio_allocation}%` }}
                           />
                         </div>
-                        <span className="text-sm font-medium text-gray-700 w-12">
+                        <span className="type-label text-helm-platinum w-12">
                           {holding.portfolio_allocation.toFixed(1)}%
                         </span>
                       </div>
@@ -106,9 +106,9 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
           </table>
         </div>
 
-        <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <div className="mt-4 p-4 bg-helm-overlay rounded-md border border-helm-border-base">
           <div className="flex items-start gap-2">
-            <div className="text-blue-600 mt-0.5">
+            <div className="text-helm-gold mt-0.5">
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
@@ -118,8 +118,8 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
               </svg>
             </div>
             <div className="flex-1">
-              <h4 className="text-sm font-semibold text-blue-900 mb-1">Market Intelligence</h4>
-              <p className="text-sm text-blue-800">
+              <h4 className="type-h3 mb-1">Market Intelligence</h4>
+              <p className="text-sm text-helm-secondary">
                 Monitoring news and filings for your holdings. You'll be notified of any significant events.
               </p>
             </div>

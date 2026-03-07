@@ -29,12 +29,12 @@ const insightIcons: Record<InsightType, React.ElementType> = {
   credit: CreditCard,
 };
 
-const insightColors: Record<InsightType, { bg: string; text: string; badge: 'default' | 'secondary' | 'success' | 'warning' }> = {
-  spending: { bg: 'bg-blue-50', text: 'text-blue-600', badge: 'default' },
-  portfolio: { bg: 'bg-purple-50', text: 'text-purple-600', badge: 'secondary' },
-  market: { bg: 'bg-yellow-50', text: 'text-yellow-600', badge: 'warning' },
-  tax: { bg: 'bg-green-50', text: 'text-green-600', badge: 'success' },
-  credit: { bg: 'bg-red-50', text: 'text-red-600', badge: 'warning' },
+const insightColors: Record<InsightType, { bg: string; text: string; badge: 'default' | 'secondary' | 'success' | 'warning' | 'gold' }> = {
+  spending: { bg: 'bg-helm-elevated', text: 'text-helm-platinum', badge: 'default' },
+  portfolio: { bg: 'bg-helm-gold-surface', text: 'text-helm-gold', badge: 'gold' },
+  market: { bg: 'bg-helm-elevated', text: 'text-helm-warning', badge: 'warning' },
+  tax: { bg: 'bg-helm-elevated', text: 'text-helm-positive', badge: 'success' },
+  credit: { bg: 'bg-helm-elevated', text: 'text-helm-negative', badge: 'warning' },
 };
 
 export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProps) {
@@ -81,27 +81,27 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
             return (
               <div
                 key={insight.id}
-                className="rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                className="rounded-md border border-helm-border-base bg-helm-elevated p-4 hover:border-helm-border-strong transition-all"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 flex-1">
-                    <div className={`rounded-full p-2 ${colors.bg}`}>
+                    <div className={`rounded-md p-2 ${colors.bg} border border-helm-border-subtle`}>
                       <Icon className={`h-4 w-4 ${colors.text}`} />
                     </div>
                     <div className="flex-1 space-y-2">
                       <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-semibold text-gray-900">{insight.title}</h4>
+                        <h4 className="type-h3">{insight.title}</h4>
                         <Badge variant={colors.badge} className="capitalize">
                           {insight.type}
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-600">{insight.description}</p>
+                      <p className="text-sm text-helm-secondary">{insight.description}</p>
                       {isExpanded && insight.recommended_action && (
-                        <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
-                          <div className="text-xs font-semibold text-gray-700 mb-1">
+                        <div className="mt-3 p-3 bg-helm-overlay rounded-md border border-helm-border-base">
+                          <div className="type-label text-helm-platinum mb-1">
                             Recommended Action
                           </div>
-                          <p className="text-sm text-gray-600">{insight.recommended_action}</p>
+                          <p className="text-sm text-helm-secondary">{insight.recommended_action}</p>
                         </div>
                       )}
                       <div className="flex items-center gap-2 mt-3">
@@ -133,7 +133,7 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
                           </Button>
                         )}
                         {insight.is_useful && (
-                          <span className="text-xs text-green-600 flex items-center gap-1">
+                          <span className="text-xs text-helm-positive flex items-center gap-1">
                             <ThumbsUp className="h-3 w-3" />
                             Marked as useful
                           </span>
@@ -154,8 +154,8 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
             );
           })}
           {insights.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              <Lightbulb className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+            <div className="text-center py-8 text-helm-secondary">
+              <Lightbulb className="h-12 w-12 mx-auto mb-3 text-helm-muted" />
               <p>No insights available at the moment.</p>
             </div>
           )}

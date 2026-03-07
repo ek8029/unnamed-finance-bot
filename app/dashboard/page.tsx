@@ -11,11 +11,11 @@ import {
 
 export default function DashboardOverview() {
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6 max-w-7xl">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900">Overview</h1>
-        <p className="text-gray-600">
+        <h1 className="type-h1">Overview</h1>
+        <p className="type-body">
           Your complete financial picture and AI-powered insights
         </p>
       </div>

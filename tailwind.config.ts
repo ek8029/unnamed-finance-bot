@@ -15,8 +15,8 @@ const config: Config = {
           elevated:  '#111E34',
           overlay:   '#162035',
           platinum:  '#E8ECF1',
-          secondary: '#8A96AA',
-          muted:     '#3A4857',
+          secondary: '#B4BFCE',  // Lighter for better contrast
+          muted:     '#6B7A90',  // Lighter for better contrast
           gold:      '#B8914A',
           'gold-hi': '#CBAA68',
           'gold-lo': '#8A6A35',
