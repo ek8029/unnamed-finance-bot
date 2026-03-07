@@ -10,7 +10,11 @@
       "Bash(npm run dev:*)",
       "Bash(npm uninstall:*)",
       "Bash(taskkill:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(git push:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }

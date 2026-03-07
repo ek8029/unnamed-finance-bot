@@ -31,7 +31,10 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percentage }) => `${name} ${percentage.toFixed(1)}%`}
+                  label={(entry) => {
+                    const item = entry.payload;
+                    return `${item.name} ${item.percentage.toFixed(1)}%`;
+                  }}
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
@@ -41,7 +44,7 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value) => formatCurrency(Number(value))}
                   contentStyle={{
                     backgroundColor: '#fff',
                     border: '1px solid #e5e7eb',
