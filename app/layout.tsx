@@ -1,9 +1,22 @@
 import type { Metadata } from "next";
+import { Manrope, DM_Mono } from 'next/font/google';
 import "./globals.css";
 
+const manrope = Manrope({
+  subsets: ['latin'],
+  variable: '--font-manrope',
+  weight: ['300', '400', '500', '600', '700'],
+});
+
+const dmMono = DM_Mono({
+  subsets: ['latin'],
+  variable: '--font-dm-mono',
+  weight: ['300', '400', '500'],
+});
+
 export const metadata: Metadata = {
-  title: "AI Personal CFO",
-  description: "AI-powered personal financial intelligence platform",
+  title: "Helm — Financial Intelligence",
+  description: "AI-powered personal financial intelligence platform. Institutional-grade financial intelligence built for individuals.",
 };
 
 export default function RootLayout({
@@ -13,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={`${manrope.variable} ${dmMono.variable} font-sans`}>{children}</body>
     </html>
   );
 }

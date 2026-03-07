@@ -8,10 +8,10 @@ import {
   TrendingUp,
   FileText,
   Settings,
-  Brain,
   LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { HelmMark } from '@/components/helm-mark';
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -29,19 +29,22 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-helm-base">
       {/* Top Navigation Bar */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <nav className="bg-helm-surface border-b border-[rgba(255,255,255,0.06)] sticky top-0 z-50">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Brain className="w-5 h-5 text-white" />
+            <Link href="/" className="flex items-center space-x-3">
+              <HelmMark size={24} />
+              <div>
+                <span className="text-sm font-semibold tracking-tight text-helm-platinum">
+                  Helm
+                </span>
+                <div className="font-mono text-[8px] tracking-[0.2em] uppercase text-helm-muted">
+                  Intelligence
+                </div>
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                AI CFO
-              </span>
             </Link>
 
             {/* Navigation Links */}
@@ -53,10 +56,10 @@ export default function DashboardLayout({
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      'flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      'flex items-center space-x-2 px-4 py-2 text-sm font-medium transition-all duration-150',
                       isActive
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        ? 'text-helm-gold border-b-2 border-helm-gold'
+                        : 'text-helm-muted hover:text-helm-secondary'
                     )}
                   >
                     <item.icon className="w-4 h-4" />
@@ -69,10 +72,13 @@ export default function DashboardLayout({
             {/* User Menu */}
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">John Doe</p>
-                <p className="text-xs text-gray-500">Premium Member</p>
+                <p className="text-sm font-medium text-helm-platinum">John Doe</p>
+                <p className="font-mono text-[9px] tracking-wider uppercase text-helm-muted">Premium</p>
               </div>
-              <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+              <div className="w-8 h-8 rounded-full bg-[rgba(184,145,74,0.08)] border border-[rgba(184,145,74,0.18)] flex items-center justify-center">
+                <span className="text-xs font-semibold text-helm-gold">JD</span>
+              </div>
+              <button className="p-2 text-helm-muted hover:text-helm-platinum transition-colors">
                 <LogOut className="w-5 h-5" />
               </button>
             </div>
@@ -81,7 +87,7 @@ export default function DashboardLayout({
       </nav>
 
       {/* Main Content */}
-      <main>{children}</main>
+      <main className="bg-helm-base">{children}</main>
     </div>
   );
 }

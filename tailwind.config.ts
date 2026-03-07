@@ -9,9 +9,31 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        helm: {
+          base:      '#070C17',
+          surface:   '#0C1525',
+          elevated:  '#111E34',
+          overlay:   '#162035',
+          platinum:  '#E8ECF1',
+          secondary: '#8A96AA',
+          muted:     '#3A4857',
+          gold:      '#B8914A',
+          'gold-hi': '#CBAA68',
+          'gold-lo': '#8A6A35',
+          positive:  '#9EC4A8',
+          negative:  '#C47A7A',
+          neutral:   '#6B7A90',
+        }
       },
+      fontFamily: {
+        sans:  ['var(--font-manrope)', 'system-ui', 'sans-serif'],
+        mono:  ['var(--font-dm-mono)', 'ui-monospace', 'monospace'],
+      },
+      borderColor: {
+        subtle:  'rgba(255,255,255,0.05)',
+        base:    'rgba(255,255,255,0.08)',
+        strong:  'rgba(255,255,255,0.13)',
+      }
     },
   },
   plugins: [],

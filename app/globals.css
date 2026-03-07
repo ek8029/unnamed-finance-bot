@@ -4,21 +4,163 @@
 
 @layer base {
   :root {
-    --background: #f9fafb;
-    --foreground: #0a0a0a;
-  }
+    /* ── Backgrounds ── */
+    --color-bg-base:       #070C17;   /* page background, app shell */
+    --color-bg-surface:    #0C1525;   /* cards, panels, nav */
+    --color-bg-elevated:   #111E34;   /* dropdowns, tooltips, modals */
+    --color-bg-overlay:    #162035;   /* hover states, selected rows */
 
-  * {
-    @apply border-gray-200;
+    /* ── Borders ── */
+    --color-border-subtle: rgba(255, 255, 255, 0.05);
+    --color-border-base:   rgba(255, 255, 255, 0.08);
+    --color-border-strong: rgba(255, 255, 255, 0.13);
+
+    /* ── Text ── */
+    --color-text-primary:  #E8ECF1;   /* headings, key values */
+    --color-text-secondary:#8A96AA;   /* labels, descriptions */
+    --color-text-muted:    #3A4857;   /* timestamps, disabled, placeholders */
+    --color-text-inverse:  #070C17;   /* text on light/gold backgrounds */
+
+    /* ── Brand Accent — Gold (use sparingly: 4% of total UI surface) ── */
+    --color-gold:          #B8914A;   /* arc stroke, north node, active indicator */
+    --color-gold-hi:       #CBAA68;   /* hover state of gold elements */
+    --color-gold-lo:       #8A6A35;   /* light mode gold, subtle gold borders */
+    --color-gold-surface:  rgba(184, 145, 74, 0.06);  /* gold-tinted bg */
+    --color-gold-border:   rgba(184, 145, 74, 0.18);  /* gold-tinted border */
+
+    /* ── Semantic Data Colors (desaturated — never alarming) ── */
+    --color-positive:      #9EC4A8;   /* gains, up arrows, success states */
+    --color-negative:      #C47A7A;   /* losses, down arrows, error states */
+    --color-neutral:       #6B7A90;   /* unchanged, loading states */
+    --color-warning:       #C4A45A;   /* alerts, warnings (near-gold) */
+
+    /* ── Spacing Scale ── */
+    --space-1:  4px;
+    --space-2:  8px;
+    --space-3:  12px;
+    --space-4:  16px;
+    --space-5:  20px;
+    --space-6:  24px;
+    --space-8:  32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-16: 64px;
+    --space-20: 80px;
+
+    /* ── Border Radius ── */
+    --radius-sm:  2px;   /* tags, badges, pills */
+    --radius-md:  4px;   /* cards, panels */
+    --radius-lg:  6px;   /* modals, sheets */
+    --radius-app: 16px;  /* app icons only */
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    @apply bg-helm-base text-helm-platinum antialiased;
+    font-family: var(--font-manrope), system-ui, sans-serif;
   }
 }
 
+/* ── Typography Classes ── */
 @layer utilities {
+  .type-display {
+    font-family: var(--font-manrope), sans-serif;
+    font-size: 48px;
+    font-weight: 200;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    color: var(--color-text-primary);
+  }
+
+  .type-h1 {
+    font-family: var(--font-manrope), sans-serif;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--color-text-primary);
+  }
+
+  .type-h2 {
+    font-family: var(--font-manrope), sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    color: var(--color-text-primary);
+  }
+
+  .type-h3 {
+    font-family: var(--font-manrope), sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.4;
+    color: var(--color-text-primary);
+  }
+
+  .type-body {
+    font-family: var(--font-manrope), sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+  }
+
+  .type-label {
+    font-family: var(--font-manrope), sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1;
+    color: var(--color-text-secondary);
+  }
+
+  .type-caption {
+    font-family: var(--font-dm-mono), monospace;
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  .type-data {
+    font-family: var(--font-manrope), sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--color-text-primary);
+  }
+
+  .type-data-label {
+    font-family: var(--font-dm-mono), monospace;
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  .type-mono {
+    font-family: var(--font-dm-mono), monospace;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    color: var(--color-text-secondary);
+  }
+
+  .type-eyebrow {
+    font-family: var(--font-dm-mono), monospace;
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
   .text-balance {
     text-wrap: balance;
   }
