@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Manrope, DM_Mono } from 'next/font/google';
+import { Inter_Tight, JetBrains_Mono } from 'next/font/google';
 import "./globals.css";
 import { Providers } from '@/components/providers';
 
-const manrope = Manrope({
+const interTight = Inter_Tight({
   subsets: ['latin'],
-  variable: '--font-manrope',
+  variable: '--font-inter-tight',
   weight: ['300', '400', '500', '600', '700'],
 });
 
-const dmMono = DM_Mono({
+const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  variable: '--font-dm-mono',
-  weight: ['300', '400', '500'],
+  variable: '--font-jetbrains-mono',
+  weight: ['300', '400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
@@ -27,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${manrope.variable} ${dmMono.variable} font-sans`}>
+      <body className={`${interTight.variable} ${jetbrainsMono.variable} font-sans`}>
         <Providers>{children}</Providers>
       </body>
     </html>

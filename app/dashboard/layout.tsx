@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
+import { useSettings } from '@/contexts/settings-context';
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -27,6 +28,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { settings } = useSettings();
+  const reduceMotion = settings.accessibility.reduceMotion;
 
   return (
     <div className="min-h-screen bg-helm-base">
@@ -36,14 +39,12 @@ export default function DashboardLayout({
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-4 group">
-              <HelmMark size={32} className="transition-transform group-hover:scale-105" />
+              <HelmMark size={40} className="transition-transform group-hover:scale-110" />
               <div>
-                <span className="text-base font-semibold tracking-tight text-helm-platinum">
+                <span className="type-h2 text-sm tracking-tight text-helm-platinum">
                   Helm
                 </span>
-                <div className="font-mono text-[9px] tracking-[0.2em] uppercase text-helm-secondary">
-                  Intelligence
-                </div>
+                <div className="type-caption text-helm-secondary">Intelligence</div>
               </div>
             </Link>
 
@@ -56,10 +57,10 @@ export default function DashboardLayout({
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      'flex items-center space-x-2 px-4 py-2 text-sm font-medium transition-all duration-150',
+                      'flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-150',
                       isActive
-                        ? 'text-helm-gold border-b-2 border-helm-gold'
-                        : 'text-helm-secondary hover:text-helm-platinum'
+                        ? 'text-helm-gold bg-helm-overlay border border-helm-gold-border shadow-sm'
+                        : 'text-helm-secondary hover:text-helm-platinum hover:bg-helm-overlay border border-transparent hover:border-helm-border-base'
                     )}
                   >
                     <item.icon className="w-4 h-4" />
@@ -73,7 +74,7 @@ export default function DashboardLayout({
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-sm font-medium text-helm-platinum">John Doe</p>
-                <p className="font-mono text-[9px] tracking-wider uppercase text-helm-secondary">Premium</p>
+                <p className="type-caption text-helm-secondary">Premium</p>
               </div>
               <div className="w-8 h-8 rounded-full bg-[rgba(184,145,74,0.08)] border border-[rgba(184,145,74,0.18)] flex items-center justify-center">
                 <span className="text-xs font-semibold text-helm-gold">JD</span>
@@ -87,7 +88,14 @@ export default function DashboardLayout({
       </nav>
 
       {/* Main Content */}
-      <main className="bg-helm-base">{children}</main>
+      <main className="bg-helm-base">
+        <div
+          key={pathname}
+          className={cn(!reduceMotion && 'page-transition')}
+        >
+          {children}
+        </div>
+      </main>
     </div>
   );
 }

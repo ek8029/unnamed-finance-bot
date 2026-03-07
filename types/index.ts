@@ -37,6 +37,8 @@ export interface Holding {
   portfolio_allocation: number;
   sector?: string;
   asset_class?: string;
+   cost_basis?: number;
+   unrealised_gain?: number;
 }
 
 // Insight types

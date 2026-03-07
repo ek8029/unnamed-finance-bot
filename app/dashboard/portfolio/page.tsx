@@ -1,8 +1,10 @@
 import { PortfolioMonitor } from '@/components/dashboard/portfolio-monitor';
 import { PortfolioAllocation } from '@/components/dashboard/portfolio-allocation';
-import { mockHoldings, mockPortfolioAllocation, mockFinancialSummary } from '@/lib/mock-data';
+import { mockHoldings, mockPortfolioAllocation } from '@/lib/mock-data';
 import { TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { formatCurrency } from '@/lib/utils';
 
 export default function PortfolioPage() {
   const totalValue = mockHoldings.reduce((sum, holding) => sum + holding.total_value, 0);
@@ -11,6 +13,40 @@ export default function PortfolioPage() {
     0
   );
   const dayChangePercentage = (totalDayChange / totalValue) * 100;
+
+  const performanceSeries = {
+    '1M': [
+      { label: '4w ago', value: totalValue * 0.95 },
+      { label: '3w ago', value: totalValue * 0.97 },
+      { label: '2w ago', value: totalValue * 0.99 },
+      { label: '1w ago', value: totalValue * 1.01 },
+      { label: 'Today', value: totalValue },
+    ],
+    '3M': [
+      { label: '3m ago', value: totalValue * 0.9 },
+      { label: '2m ago', value: totalValue * 0.94 },
+      { label: '1m ago', value: totalValue * 0.97 },
+      { label: '2w ago', value: totalValue * 0.99 },
+      { label: 'Today', value: totalValue },
+    ],
+    '6M': [
+      { label: '6m ago', value: totalValue * 0.82 },
+      { label: '4m ago', value: totalValue * 0.88 },
+      { label: '3m ago', value: totalValue * 0.92 },
+      { label: '2m ago', value: totalValue * 0.96 },
+      { label: 'Today', value: totalValue },
+    ],
+    YTD: [
+      { label: 'Jan', value: totalValue * 0.84 },
+      { label: 'Mar', value: totalValue * 0.9 },
+      { label: 'May', value: totalValue * 0.96 },
+      { label: 'Jul', value: totalValue * 1.02 },
+      { label: 'Today', value: totalValue },
+    ],
+  } as const;
+
+  type RangeKey = keyof typeof performanceSeries;
+  const [range, setRange] = React.useState<RangeKey>('3M');
 
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-7xl">
@@ -96,6 +132,81 @@ export default function PortfolioPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Performance over time */}
+      <Card>
+        <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle className="type-h2 flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-helm-muted" />
+              Performance over time
+            </CardTitle>
+            <CardDescription>
+              Mock performance curve to illustrate how your portfolio evolves.
+            </CardDescription>
+          </div>
+          <div className="flex gap-1">
+            {(Object.keys(performanceSeries) as RangeKey[]).map((key) => (
+              <button
+                key={key}
+                onClick={() => setRange(key)}
+                className={`px-2 py-1 rounded-md type-caption ${
+                  range === key
+                    ? 'bg-helm-gold-surface text-helm-gold border border-helm-gold-border'
+                    : 'bg-helm-elevated text-helm-secondary border border-helm-border-subtle hover:border-helm-border-base'
+                }`}
+              >
+                {key}
+              </button>
+            ))}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={performanceSeries[range]}>
+                <XAxis
+                  dataKey="label"
+                  stroke="var(--color-text-secondary)"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  stroke="var(--color-text-secondary)"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) =>
+                    `$${(Number(value) / 1000).toFixed(0)}k`
+                  }
+                />
+                <Tooltip
+                  formatter={(value) => formatCurrency(Number(value))}
+                  contentStyle={{
+                    backgroundColor: 'var(--color-bg-elevated)',
+                    border: '1px solid var(--color-border-base)',
+                    borderRadius: '4px',
+                    color: 'var(--color-text-primary)',
+                  }}
+                  labelStyle={{
+                    color: 'var(--color-text-secondary)',
+                    fontSize: '11px',
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="var(--color-gold)"
+                  fill="var(--color-gold)"
+                  fillOpacity={0.16}
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

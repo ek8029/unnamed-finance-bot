@@ -1,9 +1,10 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PortfolioAllocation as Allocation } from '@/types';
 import { formatCurrency } from '@/lib/utils';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { PieChartIcon } from 'lucide-react';
 
 interface PortfolioAllocationProps {
@@ -21,6 +22,26 @@ const HELM_CHART_COLORS = [
 ];
 
 export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [hiddenNames, setHiddenNames] = useState<Set<string>>(new Set());
+
+  const visibleData = useMemo(
+    () => allocation.filter((item) => !hiddenNames.has(item.name)),
+    [allocation, hiddenNames]
+  );
+
+  const toggleName = (name: string) => {
+    setHiddenNames((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
+      return next;
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -35,21 +56,35 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={allocation}
+                  data={visibleData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
                   label={(entry) => {
-                    const item = entry.payload;
+                    const item = entry.payload as Allocation;
                     return `${item.name} ${item.percentage.toFixed(1)}%`;
                   }}
-                  outerRadius={100}
-                  fill="#8884d8"
+                  outerRadius={110}
+                  innerRadius={40}
+                  paddingAngle={2}
                   dataKey="value"
+                  onMouseEnter={(_, idx) => setActiveIndex(idx)}
+                  onMouseLeave={() => setActiveIndex(null)}
                 >
-                  {allocation.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={HELM_CHART_COLORS[index % HELM_CHART_COLORS.length]} />
-                  ))}
+                  {visibleData.map((entry, index) => {
+                    const baseColor =
+                      HELM_CHART_COLORS[index % HELM_CHART_COLORS.length];
+                    const isActive = activeIndex === index;
+                    return (
+                      <Cell
+                        key={`cell-${entry.name}`}
+                        fill={baseColor}
+                        fillOpacity={isActive ? 1 : 0.75}
+                        stroke={isActive ? '#ffffff' : 'transparent'}
+                        strokeWidth={isActive ? 1.5 : 0}
+                      />
+                    );
+                  })}
                 </Pie>
                 <Tooltip
                   formatter={(value) => formatCurrency(Number(value))}
@@ -62,7 +97,7 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
                   labelStyle={{
                     color: 'var(--color-text-secondary)',
                     fontSize: '11px',
-                    fontFamily: 'var(--font-dm-mono)',
+                    fontFamily: 'var(--font-jetbrains-mono)',
                   }}
                 />
               </PieChart>
@@ -70,24 +105,41 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
           </div>
 
           <div className="space-y-2">
-            {allocation.map((item, index) => (
-              <div
-                key={item.name}
-                className="flex items-center justify-between p-3 rounded-md border border-helm-border-base bg-helm-elevated hover:border-helm-border-strong transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-3 h-3 rounded-sm"
-                    style={{ backgroundColor: HELM_CHART_COLORS[index % HELM_CHART_COLORS.length] }}
-                  />
-                  <span className="type-h3">{item.name}</span>
-                </div>
-                <div className="text-right">
-                  <div className="type-data text-sm">{formatCurrency(item.value)}</div>
-                  <div className="text-helm-secondary text-xs">{item.percentage.toFixed(1)}%</div>
-                </div>
-              </div>
-            ))}
+            {allocation.map((item, index) => {
+              const color = HELM_CHART_COLORS[index % HELM_CHART_COLORS.length];
+              const isHidden = hiddenNames.has(item.name);
+              return (
+                <button
+                  key={item.name}
+                  type="button"
+                  onClick={() => toggleName(item.name)}
+                  className={`w-full flex items-center justify-between p-3 rounded-md border text-left transition-colors ${
+                    isHidden
+                      ? 'border-helm-border-subtle bg-helm-surface/40 opacity-60'
+                      : 'border-helm-border-base bg-helm-elevated hover:border-helm-border-strong'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-3 h-3 rounded-sm"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span className="type-h3">{item.name}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="type-data text-sm">
+                      {formatCurrency(item.value)}
+                    </div>
+                    <div className="text-helm-secondary text-xs">
+                      {item.percentage.toFixed(1)}%
+                      {isHidden && (
+                        <span className="ml-1 text-helm-muted">(hidden)</span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </CardContent>

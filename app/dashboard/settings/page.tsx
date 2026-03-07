@@ -77,11 +77,18 @@ export default function SettingsPage() {
   return (
     <div className="container mx-auto p-6 section-spacing max-w-7xl">
       {/* Header */}
-      <div className="space-y-2">
-        <h1 className="type-h1">Settings</h1>
-        <p className="type-body">
-          Manage your account preferences and application settings
-        </p>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center w-10 h-10 rounded-md bg-helm-gold-surface border border-helm-gold-border">
+            <span className="type-caption text-helm-gold">Helm</span>
+          </div>
+          <div>
+            <h1 className="type-h1">Settings</h1>
+            <p className="type-body text-helm-secondary">
+              Manage your account preferences and application settings
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Live Settings Preview */}

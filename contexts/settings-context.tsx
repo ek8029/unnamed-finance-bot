@@ -36,6 +36,8 @@ export interface DashboardPreferences {
   showInsights: boolean
   autoRefresh: boolean
   refreshInterval: number // minutes
+  modulesOrder?: DashboardModuleId[]
+  hiddenModules?: DashboardModuleId[]
 }
 
 export interface Settings {
@@ -61,6 +63,8 @@ export interface Settings {
   analyticsEnabled: boolean
   crashReportingEnabled: boolean
 }
+
+export type DashboardModuleId = 'netWorth' | 'summary' | 'aiInsights' | 'healthScore'
 
 interface SettingsContextType {
   settings: Settings
@@ -116,6 +120,8 @@ const DEFAULT_SETTINGS: Settings = {
     showInsights: true,
     autoRefresh: false,
     refreshInterval: 5,
+    modulesOrder: ['netWorth', 'summary', 'aiInsights', 'healthScore'],
+    hiddenModules: [],
   },
 
   // Privacy
@@ -144,9 +150,28 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
-        const parsed = JSON.parse(stored)
-        // Merge with defaults to handle new settings added in updates
-        setSettings({ ...DEFAULT_SETTINGS, ...parsed })
+        const parsed = JSON.parse(stored) as Partial<Settings>
+
+        const merged: Settings = {
+          ...DEFAULT_SETTINGS,
+          ...parsed,
+          notifications: {
+            ...DEFAULT_SETTINGS.notifications,
+            ...(parsed.notifications || {}),
+          },
+          accessibility: {
+            ...DEFAULT_SETTINGS.accessibility,
+            ...(parsed.accessibility || {}),
+          },
+          dashboard: {
+            ...DEFAULT_SETTINGS.dashboard,
+            ...(parsed.dashboard || {}),
+          },
+        }
+
+        setSettings(merged)
+      } else {
+        setSettings(DEFAULT_SETTINGS)
       }
     } catch (error) {
       console.error('Failed to load settings:', error)

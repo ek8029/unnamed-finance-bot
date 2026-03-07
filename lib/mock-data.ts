@@ -7,6 +7,7 @@ import {
   TaxIntelligence,
   NetWorthDataPoint,
   PortfolioAllocation,
+  Transaction,
 } from '@/types';
 
 // Mock accounts
@@ -62,6 +63,8 @@ export const mockHoldings: Holding[] = [
     portfolio_allocation: 8.6,
     sector: 'Technology',
     asset_class: 'Equity',
+    cost_basis: 158.4,
+    unrealised_gain: 3586.5,
   },
   {
     id: '2',
@@ -75,6 +78,8 @@ export const mockHoldings: Holding[] = [
     portfolio_allocation: 27.5,
     sector: 'Technology',
     asset_class: 'Equity',
+    cost_basis: 642.1,
+    unrealised_gain: 23318,
   },
   {
     id: '3',
@@ -88,6 +93,8 @@ export const mockHoldings: Holding[] = [
     portfolio_allocation: 31.7,
     sector: 'Diversified',
     asset_class: 'ETF',
+    cost_basis: 468.5,
+    unrealised_gain: 6984,
   },
   {
     id: '4',
@@ -101,6 +108,8 @@ export const mockHoldings: Holding[] = [
     portfolio_allocation: 9.8,
     sector: 'Technology',
     asset_class: 'Equity',
+    cost_basis: 398.2,
+    unrealised_gain: 1351.5,
   },
   {
     id: '5',
@@ -114,6 +123,8 @@ export const mockHoldings: Holding[] = [
     portfolio_allocation: 5.4,
     sector: 'Technology',
     asset_class: 'Equity',
+    cost_basis: 128.7,
+    unrealised_gain: 1796,
   },
   {
     id: '6',
@@ -127,6 +138,8 @@ export const mockHoldings: Holding[] = [
     portfolio_allocation: 5.0,
     sector: 'Technology',
     asset_class: 'Equity',
+    cost_basis: 142.3,
+    unrealised_gain: 3227.5,
   },
   {
     id: '7',
@@ -140,6 +153,8 @@ export const mockHoldings: Holding[] = [
     portfolio_allocation: 6.9,
     sector: 'Cryptocurrency',
     asset_class: 'Crypto',
+    cost_basis: 48200,
+    unrealised_gain: -4987.5,
   },
   {
     id: '8',
@@ -153,8 +168,12 @@ export const mockHoldings: Holding[] = [
     portfolio_allocation: 7.0,
     sector: 'Cryptocurrency',
     asset_class: 'Crypto',
+    cost_basis: 2860,
+    unrealised_gain: -4165,
   },
 ];
+
+// Mock financial summary
 
 // Mock insights with enhanced AI intelligence
 export const mockInsights: Insight[] = [
@@ -311,3 +330,55 @@ export const mockTaxIntelligence: TaxIntelligence = {
     'Consider traditional IRA contribution ($7,000 limit) - potential tax savings: $1,680',
   ],
 };
+
+// Mock recent transactions for accounts (for account drawer)
+export const mockTransactions: Transaction[] = [
+  {
+    id: 't1',
+    account_id: '1',
+    amount: -54.23,
+    category: 'Dining',
+    date: new Date('2024-03-04'),
+    description: 'Dinner at Bistro Maris',
+  },
+  {
+    id: 't2',
+    account_id: '1',
+    amount: -120.5,
+    category: 'Groceries',
+    date: new Date('2024-03-03'),
+    description: 'Whole Foods Market',
+  },
+  {
+    id: 't3',
+    account_id: '2',
+    amount: 2500,
+    category: 'Transfer',
+    date: new Date('2024-03-01'),
+    description: 'Monthly savings sweep',
+  },
+  {
+    id: 't4',
+    account_id: '3',
+    amount: -320.1,
+    category: 'Payment',
+    date: new Date('2024-03-02'),
+    description: 'Credit card payment',
+  },
+  {
+    id: 't5',
+    account_id: '4',
+    amount: -1500,
+    category: 'Trade',
+    date: new Date('2024-02-28'),
+    description: 'Equity purchase',
+  },
+  {
+    id: 't6',
+    account_id: '5',
+    amount: -600,
+    category: 'Crypto',
+    date: new Date('2024-02-27'),
+    description: 'ETH spot purchase',
+  },
+];
