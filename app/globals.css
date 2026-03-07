@@ -95,19 +95,27 @@
   /* ── DENSITY VARIANTS ── */
   :root[data-density="compact"] {
     --density-multiplier: 0.75;
+    --card-padding: 16px;
+    --section-spacing: 16px;
   }
 
   :root[data-density="comfortable"] {
     --density-multiplier: 1;
+    --card-padding: 24px;
+    --section-spacing: 24px;
   }
 
   :root[data-density="spacious"] {
     --density-multiplier: 1.25;
+    --card-padding: 32px;
+    --section-spacing: 32px;
   }
 
   body {
-    @apply bg-helm-base text-helm-platinum antialiased;
+    background-color: var(--color-bg-base);
+    color: var(--color-text-primary);
     font-family: var(--font-manrope), system-ui, sans-serif;
+    @apply antialiased;
   }
 
   /* ── ACCESSIBILITY ── */
@@ -253,5 +261,14 @@
 
   .animate-slide-in-bottom {
     animation: slide-in-bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* ── DENSITY-AWARE UTILITIES ── */
+  .section-spacing {
+    gap: var(--section-spacing);
+  }
+
+  .card-padding {
+    padding: var(--card-padding);
   }
 }

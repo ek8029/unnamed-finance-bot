@@ -67,6 +67,12 @@ interface SettingsContextType {
   updateSettings: (updates: Partial<Settings>) => void
   resetSettings: () => void
   isLoading: boolean
+  // Formatting functions that respect localization settings
+  formatCurrency: (amount: number) => string
+  formatCurrencyDetailed: (amount: number) => string
+  formatNumber: (value: number) => string
+  formatDate: (date: Date | string) => string
+  formatPercentage: (value: number, decimals?: number) => string
 }
 
 // ============================================================================
@@ -233,8 +239,75 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setSettings(DEFAULT_SETTINGS)
   }
 
+  // Formatting functions that respect localization settings
+  const getLocale = (numberFormat: NumberFormat): string => {
+    switch (numberFormat) {
+      case 'US':
+        return 'en-US'
+      case 'EU':
+        return 'de-DE'
+      case 'UK':
+        return 'en-GB'
+      default:
+        return 'en-US'
+    }
+  }
+
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat(getLocale(settings.numberFormat), {
+      style: 'currency',
+      currency: settings.currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  const formatCurrencyDetailed = (amount: number): string => {
+    return new Intl.NumberFormat(getLocale(settings.numberFormat), {
+      style: 'currency',
+      currency: settings.currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount)
+  }
+
+  const formatNumber = (value: number): string => {
+    return new Intl.NumberFormat(getLocale(settings.numberFormat)).format(value)
+  }
+
+  const formatDate = (date: Date | string): string => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date
+
+    switch (settings.dateFormat) {
+      case 'MM/DD/YYYY':
+        return new Intl.DateTimeFormat('en-US').format(dateObj)
+      case 'DD/MM/YYYY':
+        return new Intl.DateTimeFormat('en-GB').format(dateObj)
+      case 'YYYY-MM-DD':
+        return dateObj.toISOString().split('T')[0]
+      default:
+        return new Intl.DateTimeFormat('en-US').format(dateObj)
+    }
+  }
+
+  const formatPercentage = (value: number, decimals: number = 1): string => {
+    return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`
+  }
+
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings, resetSettings, isLoading }}>
+    <SettingsContext.Provider
+      value={{
+        settings,
+        updateSettings,
+        resetSettings,
+        isLoading,
+        formatCurrency,
+        formatCurrencyDetailed,
+        formatNumber,
+        formatDate,
+        formatPercentage,
+      }}
+    >
       {children}
     </SettingsContext.Provider>
   )

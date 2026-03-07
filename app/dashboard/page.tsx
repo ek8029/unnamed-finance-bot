@@ -1,3 +1,5 @@
+'use client'
+
 import { NetWorthCard } from '@/components/dashboard/net-worth-card';
 import { FinancialSummaryCards } from '@/components/dashboard/financial-summary-cards';
 import { FinancialHealthScore } from '@/components/dashboard/financial-health-score';

@@ -27,7 +27,7 @@ import {
 } from 'lucide-react'
 
 export default function SettingsPage() {
-  const { settings, updateSettings, resetSettings } = useSettings()
+  const { settings, updateSettings, resetSettings, formatCurrency, formatCurrencyDetailed, formatDate } = useSettings()
   const { success, info } = useToast()
 
   // Profile state
@@ -75,7 +75,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6 max-w-7xl">
+    <div className="container mx-auto p-6 section-spacing max-w-7xl">
       {/* Header */}
       <div className="space-y-2">
         <h1 className="type-h1">Settings</h1>
@@ -83,6 +83,35 @@ export default function SettingsPage() {
           Manage your account preferences and application settings
         </p>
       </div>
+
+      {/* Live Settings Preview */}
+      <Card variant="outline" className="border-helm-gold-border bg-helm-gold-surface/30">
+        <CardHeader>
+          <CardTitle>Live Preview</CardTitle>
+          <CardDescription>See your localization settings in action</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div>
+              <div className="type-label text-helm-muted mb-1">Theme Mode</div>
+              <div className="type-h3 capitalize">{settings.theme}</div>
+            </div>
+            <div>
+              <div className="type-label text-helm-muted mb-1">Density</div>
+              <div className="type-h3 capitalize">{settings.density}</div>
+            </div>
+            <div>
+              <div className="type-label text-helm-muted mb-1">Sample Amount</div>
+              <div className="type-h3">{formatCurrency(1234567)}</div>
+              <div className="text-xs text-helm-secondary mt-1">{formatCurrencyDetailed(1234.56)}</div>
+            </div>
+            <div>
+              <div className="type-label text-helm-muted mb-1">Sample Date</div>
+              <div className="type-h3">{formatDate(new Date())}</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Settings Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -358,17 +387,26 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {[
-              { key: 'reduceMotion', label: 'Reduce Motion', description: 'Minimize animations and transitions' },
-              { key: 'highContrast', label: 'High Contrast', description: 'Increase border and text contrast' },
-              { key: 'largeText', label: 'Large Text', description: 'Increase base font size by 15%' },
-              { key: 'screenReaderOptimized', label: 'Screen Reader', description: 'Optimize for screen readers' },
+              { key: 'reduceMotion', label: 'Reduce Motion', description: 'Minimize animations and transitions', activeMessage: 'Animations disabled' },
+              { key: 'highContrast', label: 'High Contrast', description: 'Increase border and text contrast', activeMessage: 'Enhanced contrast active' },
+              { key: 'largeText', label: 'Large Text', description: 'Increase base font size by 15%', activeMessage: 'Text size increased' },
+              { key: 'screenReaderOptimized', label: 'Screen Reader', description: 'Optimize for screen readers', activeMessage: 'SR optimizations active' },
             ].map((option) => (
               <div
                 key={option.key}
-                className="flex items-center justify-between p-3 bg-helm-elevated rounded-md border border-helm-border-subtle hover:border-helm-border-base transition-colors"
+                className={`flex items-center justify-between p-3 rounded-md border transition-colors ${
+                  settings.accessibility[option.key as keyof typeof settings.accessibility]
+                    ? 'bg-helm-gold-surface border-helm-gold-border'
+                    : 'bg-helm-elevated border-helm-border-subtle hover:border-helm-border-base'
+                }`}
               >
                 <div className="flex-1 mr-4">
-                  <p className="type-h3 mb-0.5">{option.label}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="type-h3 mb-0.5">{option.label}</p>
+                    {settings.accessibility[option.key as keyof typeof settings.accessibility] && (
+                      <Badge variant="gold" className="text-xs">{option.activeMessage}</Badge>
+                    )}
+                  </div>
                   <p className="text-helm-secondary text-xs">{option.description}</p>
                 </div>
                 <Switch
