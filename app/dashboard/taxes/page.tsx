@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useMemo, useState } from 'react';
 import { TaxIntelligence } from '@/components/dashboard/tax-intelligence';
 import { mockTaxIntelligence } from '@/lib/mock-data';

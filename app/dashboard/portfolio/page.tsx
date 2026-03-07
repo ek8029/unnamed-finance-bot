@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { PortfolioMonitor } from '@/components/dashboard/portfolio-monitor';
 import { PortfolioAllocation } from '@/components/dashboard/portfolio-allocation';
 import { mockHoldings, mockPortfolioAllocation } from '@/lib/mock-data';
@@ -14,7 +17,10 @@ export default function PortfolioPage() {
   );
   const dayChangePercentage = (totalDayChange / totalValue) * 100;
 
-  const performanceSeries = {
+  type RangeKey = '1M' | '3M' | '6M' | 'YTD';
+  type PerformancePoint = { label: string; value: number };
+
+  const performanceSeries: Record<RangeKey, PerformancePoint[]> = {
     '1M': [
       { label: '4w ago', value: totalValue * 0.95 },
       { label: '3w ago', value: totalValue * 0.97 },
@@ -43,10 +49,8 @@ export default function PortfolioPage() {
       { label: 'Jul', value: totalValue * 1.02 },
       { label: 'Today', value: totalValue },
     ],
-  } as const;
-
-  type RangeKey = keyof typeof performanceSeries;
-  const [range, setRange] = React.useState<RangeKey>('3M');
+  };
+  const [range, setRange] = useState<RangeKey>('3M');
 
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-7xl">

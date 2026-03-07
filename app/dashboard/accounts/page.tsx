@@ -1,4 +1,6 @@
-import { useState, useMemo } from 'react';
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
 import { mockAccounts, mockTransactions } from '@/lib/mock-data';
 import { Plus, RefreshCcw, Building2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -35,10 +37,10 @@ export default function AccountsPage() {
   );
 
   // Simulate initial loading for skeletons
-  useState(() => {
+  useEffect(() => {
     const timeout = setTimeout(() => setLoading(false), 500);
     return () => clearTimeout(timeout);
-  });
+  }, []);
 
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-7xl">
