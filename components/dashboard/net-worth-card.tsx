@@ -8,6 +8,8 @@ import {
   DataPanelTitle,
 } from '@/components/ui/data-panel';
 import { useFormat } from '@/hooks/use-format';
+import { useCountUp } from '@/hooks/use-count-up';
+import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 import { NetWorthDataPoint } from '@/types';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown } from 'lucide-react';
@@ -20,6 +22,7 @@ interface NetWorthCardProps {
 
 export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardProps) {
   const { formatCurrency } = useFormat();
+  const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
 
   const previousNetWorth = netWorthHistory[netWorthHistory.length - 2]?.value || 0;
   const change = currentNetWorth - previousNetWorth;
@@ -27,6 +30,8 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
   const isPositiveChange = change >= 0;
 
   const [isLoading, setIsLoading] = useState(true);
+  const animatedNetWorth = useCountUp(currentNetWorth, 1400, 0, 200);
+  const animatedChange = useCountUp(Math.abs(change), 1400, 0, 300);
 
   useEffect(() => {
     const timeout = setTimeout(() => setIsLoading(false), 600);
@@ -42,24 +47,32 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
   const yMax = Math.ceil((maxVal + padding) / 10000) * 10000;
 
   return (
-    <DataPanel variant="chart" elevation="hover" className="h-full">
-      <DataPanelHeader>
-        <div className="flex items-center justify-between">
-          <DataPanelTitle>Net Worth</DataPanelTitle>
-          <div className="flex items-center gap-1.5 type-label text-xs">
-            {isPositiveChange ? (
-              <TrendingUp className="h-3.5 w-3.5 text-[var(--color-positive)]" />
-            ) : (
-              <TrendingDown className="h-3.5 w-3.5 text-[var(--color-negative)]" />
-            )}
-            <span className={`font-tabular ${isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
-              {isPositiveChange ? '+' : ''}{changePercentage.toFixed(1)}%
-            </span>
-            <span className="text-[var(--color-text-muted)]">from last month</span>
+    <div
+      ref={ref}
+      className="transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] h-full"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
+      }}
+    >
+      <DataPanel variant="chart" elevation="hover" className="h-full">
+        <DataPanelHeader>
+          <div className="flex items-center justify-between">
+            <DataPanelTitle>Net Worth</DataPanelTitle>
+            <div className="flex items-center gap-1.5 type-label text-xs">
+              {isPositiveChange ? (
+                <TrendingUp className="h-3.5 w-3.5 text-[var(--color-positive)]" />
+              ) : (
+                <TrendingDown className="h-3.5 w-3.5 text-[var(--color-negative)]" />
+              )}
+              <span className={`font-tabular ${isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+                {isPositiveChange ? '+' : ''}{changePercentage.toFixed(1)}%
+              </span>
+              <span className="text-[var(--color-text-muted)]">from last month</span>
+            </div>
           </div>
-        </div>
-      </DataPanelHeader>
-      <DataPanelContent>
+        </DataPanelHeader>
+        <DataPanelContent>
         {isLoading ? (
           <div className="space-y-4">
             <Skeleton className="h-[240px] w-full" />
@@ -86,7 +99,7 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
                     fontSize={10}
                     tickLine={false}
                     axisLine={false}
-                    fontFamily="var(--font-jetbrains-mono)"
+                    fontFamily="var(--font-inter)"
                     interval={2}
                     tick={{ dy: 6 }}
                   />
@@ -96,7 +109,7 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                    fontFamily="var(--font-jetbrains-mono)"
+                    fontFamily="var(--font-inter)"
                     domain={[yMin, yMax]}
                     width={52}
                   />
@@ -112,7 +125,7 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
                     labelStyle={{
                       color: 'var(--color-text-secondary)',
                       fontSize: '10px',
-                      fontFamily: 'var(--font-jetbrains-mono)',
+                      fontFamily: 'var(--font-inter)',
                     }}
                   />
                   <Area
@@ -134,20 +147,21 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
             <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border-subtle)]">
               <div>
                 <div className="type-data text-3xl font-tabular text-[var(--color-text-primary)]">
-                  {formatCurrency(currentNetWorth)}
+                  {formatCurrency(isVisible ? animatedNetWorth : currentNetWorth)}
                 </div>
                 <div className="type-label text-[var(--color-text-secondary)] mt-1">Total Net Worth</div>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`font-tabular text-sm font-medium ${isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`} style={{ fontFamily: 'var(--font-jetbrains-mono), monospace' }}>
-                  {isPositiveChange ? '+' : ''}{formatCurrency(change)}
+                <span className={`font-tabular text-sm font-medium ${isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+                  {isPositiveChange ? '+' : '-'}{formatCurrency(isVisible ? animatedChange : Math.abs(change))}
                 </span>
                 <span className="type-mono text-[var(--color-text-muted)]">this month</span>
               </div>
             </div>
           </div>
         )}
-      </DataPanelContent>
-    </DataPanel>
+        </DataPanelContent>
+      </DataPanel>
+    </div>
   );
 }

@@ -102,7 +102,7 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
                 fontSize={9}
                 tickLine={false}
                 axisLine={false}
-                fontFamily="var(--font-jetbrains-mono)"
+                fontFamily="var(--font-inter)"
               />
               <YAxis
                 stroke="var(--color-text-secondary)"
@@ -110,7 +110,7 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(value) => `${value}%`}
-                fontFamily="var(--font-jetbrains-mono)"
+                fontFamily="var(--font-inter)"
                 domain={[0, 50]}
               />
               <Tooltip
@@ -130,7 +130,7 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
                 labelStyle={{
                   color: 'var(--color-text-secondary)',
                   fontSize: '10px',
-                  fontFamily: 'var(--font-jetbrains-mono)',
+                  fontFamily: 'var(--font-inter)',
                 }}
               />
               {targetRate && (
@@ -144,7 +144,7 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
                     position: 'insideTopRight',
                     fontSize: 9,
                     fill: 'var(--color-gold)',
-                    fontFamily: 'var(--font-jetbrains-mono)',
+                    fontFamily: 'var(--font-inter)',
                   }}
                 />
               )}

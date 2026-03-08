@@ -236,6 +236,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     } else {
       root.classList.remove('large-text')
     }
+
+    if (settings.accessibility.screenReaderOptimized) {
+      root.classList.add('screen-reader-optimized')
+    } else {
+      root.classList.remove('screen-reader-optimized')
+    }
   }, [settings.accessibility])
 
   // Listen for system theme changes when in auto mode

@@ -100,7 +100,7 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
                   labelStyle={{
                     color: 'var(--color-text-secondary)',
                     fontSize: '10px',
-                    fontFamily: 'var(--font-jetbrains-mono)',
+                    fontFamily: 'var(--font-inter)',
                   }}
                 />
               </PieChart>

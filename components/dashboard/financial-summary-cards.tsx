@@ -7,6 +7,8 @@ import {
   DataPanelTitle,
 } from '@/components/ui/data-panel';
 import { useFormat } from '@/hooks/use-format';
+import { useCountUp } from '@/hooks/use-count-up';
+import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 import { ArrowUpRight, ArrowDownRight, DollarSign, Wallet, CreditCard, TrendingUp } from 'lucide-react';
 
 interface FinancialSummaryCardsProps {
@@ -61,39 +63,53 @@ export function FinancialSummaryCards({
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {summaryData.map((item) => {
+      {summaryData.map((item, index) => {
         const Icon = item.icon;
         const isPositive = item.change > 0;
+        const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
+        const animatedValue = useCountUp(item.value, 1200, 0, index * 100);
+        const displayValue = isVisible ? animatedValue : item.value;
 
         return (
-          <DataPanel key={item.title} variant="metric" elevation="hover">
-            <DataPanelHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3">
-              <DataPanelTitle className="text-xs">{item.title}</DataPanelTitle>
-              <div className={`rounded-md p-1.5 ${item.iconBg}`}>
-                <Icon className={`h-3.5 w-3.5 ${item.iconColor}`} />
-              </div>
-            </DataPanelHeader>
-            <DataPanelContent className="p-3 pt-0">
-              <div className="type-data text-2xl font-tabular text-[var(--color-text-primary)]">
-                {formatCurrency(item.value)}
-              </div>
-              <div className="flex items-center gap-1 mt-0.5">
-                {isPositive ? (
-                  <ArrowUpRight className="h-3 w-3 text-[var(--color-positive)]" />
-                ) : (
-                  <ArrowDownRight className="h-3 w-3 text-[var(--color-negative)]" />
-                )}
-                <span
-                  className={`type-label text-xs font-tabular ${
-                    isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-                  }`}
-                >
-                  {formatPercentage(item.change)}
-                </span>
-                <span className="type-label text-xs text-[var(--color-text-muted)]">from last month</span>
-              </div>
-            </DataPanelContent>
-          </DataPanel>
+          <div
+            key={item.title}
+            ref={ref}
+            className="transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+            style={{
+              opacity: isVisible ? 1 : 0,
+              transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
+              transitionDelay: `${index * 80}ms`,
+            }}
+          >
+            <DataPanel variant="metric" elevation="hover">
+              <DataPanelHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3">
+                <DataPanelTitle className="text-xs">{item.title}</DataPanelTitle>
+                <div className={`rounded-md p-1.5 ${item.iconBg}`}>
+                  <Icon className={`h-3.5 w-3.5 ${item.iconColor}`} />
+                </div>
+              </DataPanelHeader>
+              <DataPanelContent className="p-3 pt-0">
+                <div className="type-data text-2xl font-tabular text-[var(--color-text-primary)]">
+                  {formatCurrency(displayValue)}
+                </div>
+                <div className="flex items-center gap-1 mt-0.5">
+                  {isPositive ? (
+                    <ArrowUpRight className="h-3 w-3 text-[var(--color-positive)]" />
+                  ) : (
+                    <ArrowDownRight className="h-3 w-3 text-[var(--color-negative)]" />
+                  )}
+                  <span
+                    className={`type-label text-xs font-tabular ${
+                      isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                    }`}
+                  >
+                    {formatPercentage(item.change)}
+                  </span>
+                  <span className="type-label text-xs text-[var(--color-text-muted)]">from last month</span>
+                </div>
+              </DataPanelContent>
+            </DataPanel>
+          </div>
         );
       })}
     </div>

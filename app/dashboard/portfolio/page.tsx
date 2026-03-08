@@ -187,7 +187,7 @@ export default function PortfolioPage() {
                   fontSize={10}
                   tickLine={false}
                   axisLine={false}
-                  fontFamily="var(--font-jetbrains-mono)"
+                  fontFamily="var(--font-inter)"
                 />
                 <YAxis
                   stroke="var(--color-text-muted)"
@@ -195,7 +195,7 @@ export default function PortfolioPage() {
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => `$${(Number(value) / 1000).toFixed(0)}k`}
-                  fontFamily="var(--font-jetbrains-mono)"
+                  fontFamily="var(--font-inter)"
                   width={52}
                 />
                 <Tooltip
@@ -210,7 +210,7 @@ export default function PortfolioPage() {
                   labelStyle={{
                     color: 'var(--color-text-secondary)',
                     fontSize: '10px',
-                    fontFamily: 'var(--font-jetbrains-mono)',
+                    fontFamily: 'var(--font-inter)',
                   }}
                 />
                 <Area

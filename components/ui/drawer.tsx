@@ -49,7 +49,11 @@ export function Drawer({ isOpen, onClose, title, children, size = 'md' }: Drawer
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+        className={cn(
+          'fixed inset-0 bg-black/60 backdrop-blur-sm z-40',
+          'transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          isOpen ? 'opacity-100' : 'opacity-0'
+        )}
         onClick={onClose}
         aria-hidden="true"
       />
@@ -58,8 +62,8 @@ export function Drawer({ isOpen, onClose, title, children, size = 'md' }: Drawer
       <div
         className={cn(
           'fixed top-0 right-0 h-full w-full bg-[var(--color-bg-surface)] border-l border-[var(--color-border-base)] shadow-2xl z-50',
-          'transform transition-transform duration-300 ease-out',
-          isOpen ? 'translate-x-0' : 'translate-x-full',
+          'transform transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          isOpen ? 'translate-x-0 opacity-100' : 'translate-x-12 opacity-0',
           drawerSizes[size]
         )}
         role="dialog"
@@ -67,13 +71,17 @@ export function Drawer({ isOpen, onClose, title, children, size = 'md' }: Drawer
         aria-labelledby="drawer-title"
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-[var(--color-border-base)] bg-[var(--color-bg-surface)]">
+        <div className={cn(
+          'sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-[var(--color-border-base)] bg-[var(--color-bg-surface)]',
+          'transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] delay-100',
+          isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
+        )}>
           <h2 id="drawer-title" className="type-h2 text-[var(--color-text-primary)]">
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 rounded hover:bg-[var(--color-bg-overlay)] transition-colors text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+            className="p-2 rounded hover:bg-[var(--color-bg-overlay)] transition-all duration-200 ease-out text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:scale-110 active:scale-95"
             aria-label="Close drawer"
           >
             <X className="h-5 w-5" />
@@ -81,7 +89,11 @@ export function Drawer({ isOpen, onClose, title, children, size = 'md' }: Drawer
         </div>
 
         {/* Content */}
-        <div className="h-[calc(100%-73px)] overflow-y-auto custom-scrollbar">
+        <div className={cn(
+          'h-[calc(100%-73px)] overflow-y-auto custom-scrollbar',
+          'transition-all duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] delay-150',
+          isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
+        )}>
           {children}
         </div>
       </div>
