@@ -8,14 +8,6 @@ import { CashFlowTrend } from '@/components/dashboard/cash-flow-trend';
 import { AssetsLiabilitiesComposition } from '@/components/dashboard/assets-liabilities-composition';
 import { SavingsRateTimeline } from '@/components/dashboard/savings-rate-timeline';
 import { useFinancialSummary } from '@/hooks/use-financial-data';
-import {
-  // Keep mock data as fallback for charts that need historical data
-  mockNetWorthHistory,
-  mockCashFlowTrend,
-  mockAssetsComposition,
-  mockLiabilitiesComposition,
-  mockSavingsRateTimeline,
-} from '@/lib/mock-data';
 
 function LoadingSkeleton() {
   return (
@@ -36,7 +28,18 @@ function LoadingSkeleton() {
 }
 
 export default function DashboardOverview() {
-  const { financialSummary, healthScore, insights, loading, error } = useFinancialSummary();
+  const {
+    financialSummary,
+    healthScore,
+    insights,
+    netWorthHistory,
+    cashFlowHistory,
+    assetsComposition,
+    liabilitiesComposition,
+    savingsRateTimeline,
+    loading,
+    error
+  } = useFinancialSummary();
 
   if (loading) {
     return (
@@ -107,7 +110,7 @@ export default function DashboardOverview() {
             <div className="lg:col-span-3">
               <NetWorthCard
                 currentNetWorth={financialSummary?.net_worth || 0}
-                netWorthHistory={mockNetWorthHistory}
+                netWorthHistory={netWorthHistory}
               />
             </div>
             <div className="lg:col-span-2">
@@ -121,15 +124,15 @@ export default function DashboardOverview() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-density">
             {/* Left Column: Stacked Metrics */}
             <div className="space-y-density">
-              <CashFlowTrend data={mockCashFlowTrend} />
-              <SavingsRateTimeline data={mockSavingsRateTimeline} targetRate={30} />
+              <CashFlowTrend data={cashFlowHistory} />
+              <SavingsRateTimeline data={savingsRateTimeline} targetRate={30} />
             </div>
 
             {/* Right Column: Financial Composition */}
             <div>
               <AssetsLiabilitiesComposition
-                assets={mockAssetsComposition}
-                liabilities={mockLiabilitiesComposition}
+                assets={assetsComposition}
+                liabilities={liabilitiesComposition}
               />
             </div>
           </div>

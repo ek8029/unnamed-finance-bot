@@ -34,6 +34,7 @@ interface Insight {
 interface Account {
   id: string;
   institution: string;
+  institution_logo?: string;
   account_type: string;
   balance: number;
   account_name: string;
@@ -56,12 +57,44 @@ interface Holding {
   unrealised_gain?: number;
 }
 
+interface NetWorthDataPoint {
+  month: string;
+  value: number;
+  assets: number;
+  liabilities: number;
+}
+
+interface CashFlowDataPoint {
+  month: string;
+  income: number;
+  expenses: number;
+  netFlow: number;
+}
+
+interface CompositionItem {
+  name: string;
+  value: number;
+  percentage: number;
+  items?: string[];
+}
+
+interface SavingsRatePoint {
+  month: string;
+  rate: number;
+  saved: number;
+}
+
 interface FinancialDataState {
   financialSummary: FinancialSummary | null;
   healthScore: HealthScore | null;
   insights: Insight[];
   accounts: Account[];
   holdings: Holding[];
+  netWorthHistory: NetWorthDataPoint[];
+  cashFlowHistory: CashFlowDataPoint[];
+  assetsComposition: CompositionItem[];
+  liabilitiesComposition: CompositionItem[];
+  savingsRateTimeline: SavingsRatePoint[];
   loading: boolean;
   error: string | null;
 }
@@ -73,6 +106,11 @@ export function useFinancialSummary() {
     insights: [],
     accounts: [],
     holdings: [],
+    netWorthHistory: [],
+    cashFlowHistory: [],
+    assetsComposition: [],
+    liabilitiesComposition: [],
+    savingsRateTimeline: [],
     loading: true,
     error: null,
   });
@@ -90,6 +128,11 @@ export function useFinancialSummary() {
           insights: data.insights || [],
           accounts: data.accounts || [],
           holdings: data.holdings || [],
+          netWorthHistory: data.netWorthHistory || [],
+          cashFlowHistory: data.cashFlowHistory || [],
+          assetsComposition: data.assetsComposition || [],
+          liabilitiesComposition: data.liabilitiesComposition || [],
+          savingsRateTimeline: data.savingsRateTimeline || [],
           loading: false,
           error: null,
         });
@@ -108,8 +151,16 @@ export function useFinancialSummary() {
   return state;
 }
 
+interface BalanceHistoryPoint {
+  month: string;
+  balance: number;
+  inflows: number;
+  outflows: number;
+}
+
 export function useAccounts() {
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [balanceHistory, setBalanceHistory] = useState<BalanceHistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -120,6 +171,7 @@ export function useAccounts() {
         if (!res.ok) throw new Error('Failed to fetch accounts');
         const data = await res.json();
         setAccounts(data.accounts || []);
+        setBalanceHistory(data.balanceHistory || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
@@ -130,7 +182,7 @@ export function useAccounts() {
     fetchData();
   }, []);
 
-  return { accounts, loading, error };
+  return { accounts, balanceHistory, loading, error };
 }
 
 export function useHoldings() {

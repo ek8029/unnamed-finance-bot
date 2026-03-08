@@ -2,34 +2,39 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { TaxIntelligence } from '@/components/dashboard/tax-intelligence';
-import { mockTaxIntelligence } from '@/lib/mock-data';
-import { FileText, TrendingDown, Calendar, Lightbulb, DollarSign, X } from 'lucide-react';
+import { FileText, TrendingDown, Calendar, Lightbulb, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useFormat } from '@/hooks/use-format';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/contexts/toast-context';
+import { useTaxData } from '@/hooks/use-financial-data';
 
 export default function TaxesPage() {
   const { formatCurrency } = useFormat();
-
-  const totalTaxLiability =
-    mockTaxIntelligence.estimated_income_tax +
-    mockTaxIntelligence.short_term_capital_gains +
-    mockTaxIntelligence.long_term_capital_gains -
-    mockTaxIntelligence.deductions_identified;
-
-  const potentialSavings = mockTaxIntelligence.optimization_suggestions.reduce((sum, suggestion) => {
-    const match = suggestion.match(/\$([0-9,]+)/);
-    return match ? sum + parseInt(match[1].replace(',', '')) : sum;
-  }, 0);
+  const { taxEstimate, optimizationTasks, loading: apiLoading, error } = useTaxData();
 
   const { success } = useToast();
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [completedTasks, setCompletedTasks] = useState<Record<number, boolean>>({});
-  const [loading, setLoading] = useState(true);
+
+  // Build tax data for components
+  const taxData = useMemo(() => ({
+    estimated_income_tax: taxEstimate?.estimatedIncomeTax || 0,
+    short_term_capital_gains: taxEstimate?.shortTermCapitalGains || 0,
+    long_term_capital_gains: taxEstimate?.longTermCapitalGains || 0,
+    deductions_identified: taxEstimate?.deductionsIdentified || 0,
+    estimated_quarterly_payment: taxEstimate?.estimatedQuarterlyPayment || 0,
+    optimization_suggestions: optimizationTasks?.map(t => t.title) || [],
+  }), [taxEstimate, optimizationTasks]);
+
+  const totalTaxLiability = taxEstimate?.totalEstimatedTax || 0;
+
+  const potentialSavings = optimizationTasks?.reduce((sum, task) => {
+    return sum + (task.potentialSavings || 0);
+  }, 0) || 0;
 
   useEffect(() => {
     const raw = localStorage.getItem('helm-tax-tasks');
@@ -40,9 +45,9 @@ export default function TaxesPage() {
         setCompletedTasks({});
       }
     }
-    const timeout = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(timeout);
   }, []);
+
+  const loading = apiLoading;
 
   const saveTasks = (next: Record<number, boolean>) => {
     setCompletedTasks(next);
@@ -131,7 +136,7 @@ export default function TaxesPage() {
             ) : (
               <>
                 <CardTitle className="type-data text-3xl">
-                  {formatCurrency(mockTaxIntelligence.estimated_quarterly_payment)}
+                  {formatCurrency(taxData.estimated_quarterly_payment)}
                 </CardTitle>
                 <p className="text-sm text-[var(--color-text-secondary)] mt-1">Due April 15, 2024</p>
               </>
@@ -152,7 +157,7 @@ export default function TaxesPage() {
             ) : (
               <>
                 <CardTitle className="type-data text-3xl">
-                  {mockTaxIntelligence.optimization_suggestions.length}
+                  {optimizationTasks?.length || 0}
                 </CardTitle>
                 <p className="text-sm text-[var(--color-text-secondary)] mt-1">Available strategies</p>
               </>
@@ -179,7 +184,7 @@ export default function TaxesPage() {
                     <p className="text-sm text-[var(--color-text-secondary)]">Federal and state income tax</p>
                   </div>
                   <span className="type-data text-lg">
-                    {formatCurrency(mockTaxIntelligence.estimated_income_tax)}
+                    {formatCurrency(taxData.estimated_income_tax)}
                   </span>
                 </div>
 
@@ -189,7 +194,7 @@ export default function TaxesPage() {
                     <p className="text-sm text-[var(--color-text-secondary)]">Taxed as ordinary income</p>
                   </div>
                   <span className="type-data text-lg">
-                    {formatCurrency(mockTaxIntelligence.short_term_capital_gains)}
+                    {formatCurrency(taxData.short_term_capital_gains)}
                   </span>
                 </div>
 
@@ -199,7 +204,7 @@ export default function TaxesPage() {
                     <p className="text-sm text-[var(--color-text-secondary)]">Preferential tax rate applies</p>
                   </div>
                   <span className="type-data text-lg">
-                    {formatCurrency(mockTaxIntelligence.long_term_capital_gains)}
+                    {formatCurrency(taxData.long_term_capital_gains)}
                   </span>
                 </div>
 
@@ -209,7 +214,7 @@ export default function TaxesPage() {
                     <p className="text-sm text-[var(--color-text-secondary)]">Reduces taxable income</p>
                   </div>
                   <span className="type-data text-lg text-[var(--color-positive)]">
-                    -{formatCurrency(mockTaxIntelligence.deductions_identified)}
+                    -{formatCurrency(taxData.deductions_identified)}
                   </span>
                 </div>
               </div>
@@ -289,14 +294,12 @@ export default function TaxesPage() {
               <CardDescription>Turn Helm’s ideas into concrete next steps.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {mockTaxIntelligence.optimization_suggestions.map((suggestion, index) => {
-                const savingsMatch = suggestion.match(/\$([0-9,]+)/);
-                const savings = savingsMatch ? parseInt(savingsMatch[1].replace(/,/g, ''), 10) : 0;
+              {(optimizationTasks || []).map((task, index) => {
                 const completed = completedTasks[index];
 
                 return (
                   <button
-                    key={index}
+                    key={task.id || index}
                     type="button"
                     onClick={() => toggleTask(index)}
                     className={`w-full p-4 rounded-lg border text-left transition-colors ${
@@ -310,17 +313,20 @@ export default function TaxesPage() {
                         <div className="flex items-center gap-2 mb-1">
                           <Lightbulb className="w-4 h-4 text-[var(--color-gold)]" />
                           <Badge variant="gold" className="text-[10px]">
-                            Task {index + 1}
+                            {task.priority || 'Task'}
                           </Badge>
                         </div>
-                        <p className="text-sm">
-                          {suggestion.split(' - ')[0]}
-                        </p>
+                        <p className="text-sm font-medium">{task.title}</p>
+                        {task.description && (
+                          <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+                            {task.description}
+                          </p>
+                        )}
                       </div>
-                      {savings > 0 && (
+                      {task.potentialSavings && task.potentialSavings > 0 && (
                         <div className="text-right">
                           <p className="type-data text-sm text-[var(--color-positive)]">
-                            {formatCurrency(savings)}
+                            {formatCurrency(task.potentialSavings)}
                           </p>
                           <p className="text-[10px] text-[var(--color-text-secondary)]">
                             potential savings
@@ -331,6 +337,11 @@ export default function TaxesPage() {
                   </button>
                 );
               })}
+              {(!optimizationTasks || optimizationTasks.length === 0) && (
+                <p className="text-sm text-[var(--color-text-secondary)] text-center py-4">
+                  No optimization tasks available yet.
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -338,7 +349,7 @@ export default function TaxesPage() {
         {/* Right Column - Tax Intelligence Widget */}
         <div className="space-y-6">
           <TaxIntelligence
-            taxData={mockTaxIntelligence}
+            taxData={taxData}
             onCategorySelect={setSelectedCategory}
           />
 

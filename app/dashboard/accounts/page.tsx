@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { mockAccountBalanceHistory } from '@/lib/mock-data';
+import { useMemo, useState } from 'react';
 import { Plus, RefreshCcw, Building2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +21,7 @@ interface Account {
 
 export default function AccountsPage() {
   const { formatCurrency } = useFormat();
-  const { accounts, loading: apiLoading, error } = useAccounts();
+  const { accounts, balanceHistory, loading: apiLoading, error } = useAccounts();
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
   const assetAccounts = accounts.filter((account) => account.balance > 0);
@@ -100,7 +99,9 @@ export default function AccountsPage() {
       </div>
 
       {/* Accounts Overview */}
-      <AccountsOverview balanceHistory={mockAccountBalanceHistory} />
+      {balanceHistory.length > 0 && (
+        <AccountsOverview balanceHistory={balanceHistory} />
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

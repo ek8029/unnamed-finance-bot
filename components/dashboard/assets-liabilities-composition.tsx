@@ -10,9 +10,10 @@ import { useFormat } from '@/hooks/use-format';
 import { Progress } from '@/components/ui/progress';
 
 interface CompositionItem {
-  category: string;
+  name: string;
   value: number;
   percentage: number;
+  items?: string[];
 }
 
 interface AssetsLiabilitiesCompositionProps {
@@ -73,9 +74,9 @@ export function AssetsLiabilitiesComposition({
           <div className="type-label text-xs text-[var(--color-text-primary)] mb-2">Assets Breakdown</div>
           <div className="space-y-2">
             {assets.map((item) => (
-              <div key={item.category}>
+              <div key={item.name}>
                 <div className="flex justify-between type-label text-xs mb-1">
-                  <span className="text-[var(--color-text-secondary)]">{item.category}</span>
+                  <span className="text-[var(--color-text-secondary)]">{item.name}</span>
                   <span className="text-[var(--color-text-primary)] font-tabular">
                     {formatCurrency(item.value)} ({item.percentage.toFixed(1)}%)
                   </span>
@@ -96,9 +97,9 @@ export function AssetsLiabilitiesComposition({
           <div className="type-label text-xs text-[var(--color-text-primary)] mb-2">Liabilities Breakdown</div>
           <div className="space-y-2">
             {liabilities.map((item) => (
-              <div key={item.category}>
+              <div key={item.name}>
                 <div className="flex justify-between type-label text-xs mb-1">
-                  <span className="text-[var(--color-text-secondary)]">{item.category}</span>
+                  <span className="text-[var(--color-text-secondary)]">{item.name}</span>
                   <span className="text-[var(--color-text-primary)] font-tabular">
                     {formatCurrency(item.value)} ({item.percentage.toFixed(1)}%)
                   </span>
