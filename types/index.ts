@@ -27,7 +27,7 @@ export interface Transaction {
 // Investment holdings
 export interface Holding {
   id: string;
-  user_id: string;
+  user_id?: string;
   ticker: string;
   asset_name: string;
   shares: number;
@@ -51,13 +51,14 @@ export type InsightType =
 
 export interface Insight {
   id: string;
-  user_id: string;
+  user_id?: string;
   type: InsightType;
   title: string;
   description: string;
   recommended_action?: string;
+  estimated_impact?: number;
   timestamp: Date;
-  is_dismissed: boolean;
+  is_dismissed?: boolean;
   is_useful?: boolean;
 }
 

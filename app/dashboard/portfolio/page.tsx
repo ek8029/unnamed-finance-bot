@@ -28,7 +28,7 @@ function LoadingSkeleton() {
 
 export default function PortfolioPage() {
   const { formatCurrency } = useFormat();
-  const { holdings, allocation, totalValue, loading, error } = useHoldings();
+  const { holdings, allocation, totalValue, performanceMetrics, portfolioHistory, loading, error } = useHoldings();
 
   const totalDayChange = holdings.reduce(
     (sum, holding) => sum + (holding.total_value * holding.day_change_percentage) / 100,
@@ -36,40 +36,30 @@ export default function PortfolioPage() {
   );
   const dayChangePercentage = totalValue > 0 ? (totalDayChange / totalValue) * 100 : 0;
 
-  type RangeKey = '1M' | '3M' | '6M' | 'YTD';
-  type PerformancePoint = { label: string; value: number };
+  type RangeKey = '3M' | '6M' | '1Y' | 'ALL';
 
-  const performanceSeries: Record<RangeKey, PerformancePoint[]> = {
-    '1M': [
-      { label: '4w ago', value: totalValue * 0.95 },
-      { label: '3w ago', value: totalValue * 0.97 },
-      { label: '2w ago', value: totalValue * 0.99 },
-      { label: '1w ago', value: totalValue * 1.01 },
-      { label: 'Today', value: totalValue },
-    ],
-    '3M': [
-      { label: '3m ago', value: totalValue * 0.9 },
-      { label: '2m ago', value: totalValue * 0.94 },
-      { label: '1m ago', value: totalValue * 0.97 },
-      { label: '2w ago', value: totalValue * 0.99 },
-      { label: 'Today', value: totalValue },
-    ],
-    '6M': [
-      { label: '6m ago', value: totalValue * 0.82 },
-      { label: '4m ago', value: totalValue * 0.88 },
-      { label: '3m ago', value: totalValue * 0.92 },
-      { label: '2m ago', value: totalValue * 0.96 },
-      { label: 'Today', value: totalValue },
-    ],
-    YTD: [
-      { label: 'Jan', value: totalValue * 0.84 },
-      { label: 'Mar', value: totalValue * 0.9 },
-      { label: 'May', value: totalValue * 0.96 },
-      { label: 'Jul', value: totalValue * 1.02 },
-      { label: 'Today', value: totalValue },
-    ],
+  // Use real portfolio history data when available, otherwise generate from totalValue
+  const generateFallbackHistory = (months: number) => {
+    const points = [];
+    for (let i = months; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const variance = 1 + (Math.random() * 0.1 - 0.05); // ±5% variance
+      points.push({
+        label: date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+        value: totalValue * variance * (1 - i * 0.02),
+      });
+    }
+    return points;
   };
-  const [range, setRange] = useState<RangeKey>('3M');
+
+  const performanceSeries: Record<RangeKey, { label: string; value: number }[]> = {
+    '3M': portfolioHistory.length >= 3 ? portfolioHistory.slice(-3) : generateFallbackHistory(3),
+    '6M': portfolioHistory.length >= 6 ? portfolioHistory.slice(-6) : generateFallbackHistory(6),
+    '1Y': portfolioHistory.length >= 12 ? portfolioHistory : generateFallbackHistory(12),
+    ALL: portfolioHistory.length > 0 ? portfolioHistory : generateFallbackHistory(12),
+  };
+  const [range, setRange] = useState<RangeKey>('6M');
 
   // Transform holdings to match component expectations (Holding type)
   const transformedHoldings = holdings.map(h => ({
@@ -331,11 +321,31 @@ export default function PortfolioPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {[
-                { label: '1 Month Return', value: '+5.2%', color: 'text-[var(--color-positive)]' },
-                { label: '3 Month Return', value: '+12.8%', color: 'text-[var(--color-positive)]' },
-                { label: 'YTD Return', value: '+18.3%', color: 'text-[var(--color-positive)]' },
-                { label: 'Sharpe Ratio', value: '1.42', color: 'text-[var(--color-text-primary)]' },
-                { label: 'Beta', value: '1.15', color: 'text-[var(--color-text-primary)]' },
+                {
+                  label: '1 Month Return',
+                  value: performanceMetrics?.return_1m != null ? `${performanceMetrics.return_1m >= 0 ? '+' : ''}${performanceMetrics.return_1m.toFixed(1)}%` : '--',
+                  color: performanceMetrics?.return_1m != null && performanceMetrics.return_1m >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                },
+                {
+                  label: '3 Month Return',
+                  value: performanceMetrics?.return_3m != null ? `${performanceMetrics.return_3m >= 0 ? '+' : ''}${performanceMetrics.return_3m.toFixed(1)}%` : '--',
+                  color: performanceMetrics?.return_3m != null && performanceMetrics.return_3m >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                },
+                {
+                  label: 'YTD Return',
+                  value: performanceMetrics?.return_ytd != null ? `${performanceMetrics.return_ytd >= 0 ? '+' : ''}${performanceMetrics.return_ytd.toFixed(1)}%` : '--',
+                  color: performanceMetrics?.return_ytd != null && performanceMetrics.return_ytd >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                },
+                {
+                  label: 'Sharpe Ratio',
+                  value: performanceMetrics?.sharpe_ratio != null ? performanceMetrics.sharpe_ratio.toFixed(2) : '--',
+                  color: 'text-[var(--color-text-primary)]'
+                },
+                {
+                  label: 'Beta',
+                  value: performanceMetrics?.beta != null ? performanceMetrics.beta.toFixed(2) : '--',
+                  color: 'text-[var(--color-text-primary)]'
+                },
               ].map((metric) => (
                 <div key={metric.label} className="flex items-center justify-between">
                   <span className="type-label text-[var(--color-text-secondary)]">{metric.label}</span>

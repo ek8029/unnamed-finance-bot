@@ -673,6 +673,70 @@ async function seedTestUser() {
       console.log(`✅ Created ${capitalGains.length} capital gains records\n`);
     }
 
+    // 15. Create portfolio performance metrics
+    console.log('1️⃣5️⃣ Creating portfolio performance...');
+    const { error: perfError } = await supabase.from('portfolio_performance').insert({
+      user_id: TEST_USER_ID,
+      return_1d_pct: 0.0124,
+      return_1w_pct: 0.0287,
+      return_1m_pct: 0.0518,
+      return_3m_pct: 0.1284,
+      return_6m_pct: 0.1856,
+      return_ytd_pct: 0.2142,
+      return_1y_pct: 0.2876,
+      sharpe_ratio: 1.42,
+      beta: 1.15,
+      volatility: 0.1823,
+      diversification_score: 0.68,
+      sector_concentration: JSON.stringify({
+        'Technology': 42.5,
+        'Financial Services': 11.8,
+        'Healthcare': 8.6,
+        'Consumer Cyclical': 7.2,
+        'Energy': 5.1,
+        'Other': 24.8,
+      }),
+      asset_class_allocation: JSON.stringify({
+        'Equity': 72.4,
+        'ETF': 18.2,
+        'Crypto': 6.2,
+        'Fixed Income': 3.2,
+      }),
+    });
+
+    if (perfError) {
+      console.error('❌ Error creating portfolio performance:', perfError);
+    } else {
+      console.log('✅ Created portfolio performance metrics\n');
+    }
+
+    // 16. Create portfolio snapshots (historical)
+    console.log('1️⃣6️⃣ Creating portfolio snapshots...');
+    const portfolioSnapshots = [];
+    let basePortfolioValue = 820000;
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(today);
+      date.setMonth(date.getMonth() - i);
+      const monthlyReturn = 1 + (Math.random() * 0.06 - 0.02); // -2% to +4%
+      basePortfolioValue *= monthlyReturn;
+
+      portfolioSnapshots.push({
+        user_id: TEST_USER_ID,
+        snapshot_date: date.toISOString().split('T')[0],
+        total_value: basePortfolioValue,
+        total_cost_basis: 680000,
+        total_gain_loss: basePortfolioValue - 680000,
+        total_gain_loss_pct: (basePortfolioValue - 680000) / 680000,
+      });
+    }
+
+    const { error: snapshotsError } = await supabase.from('portfolio_snapshots').insert(portfolioSnapshots);
+    if (snapshotsError) {
+      console.error('❌ Error creating portfolio snapshots:', snapshotsError);
+    } else {
+      console.log(`✅ Created ${portfolioSnapshots.length} portfolio snapshots\n`);
+    }
+
     console.log('🎉 Comprehensive test user data seeded successfully!');
     console.log('\n📊 Summary:');
     console.log('   - 10 linked accounts (banking, credit, brokerage, crypto)');
@@ -683,6 +747,7 @@ async function seedTestUser() {
     console.log('   - 12 months net worth history');
     console.log('   - 6 months cash flow history');
     console.log('   - Tax estimates and capital gains');
+    console.log('   - Portfolio performance and snapshots');
     console.log('\n✅ Ready to test!');
 
   } catch (err) {

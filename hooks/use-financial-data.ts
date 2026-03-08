@@ -191,10 +191,31 @@ export function useAccounts() {
   return { accounts, balanceHistory, loading, error, refetch };
 }
 
+interface PerformanceMetrics {
+  return_1d: number | null;
+  return_1w: number | null;
+  return_1m: number | null;
+  return_3m: number | null;
+  return_6m: number | null;
+  return_ytd: number | null;
+  return_1y: number | null;
+  sharpe_ratio: number | null;
+  beta: number | null;
+  volatility: number | null;
+}
+
+interface PortfolioHistoryPoint {
+  label: string;
+  value: number;
+  gain_loss: number;
+}
+
 export function useHoldings() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [allocation, setAllocation] = useState<{ name: string; value: number; percentage: number }[]>([]);
   const [totalValue, setTotalValue] = useState(0);
+  const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics | null>(null);
+  const [portfolioHistory, setPortfolioHistory] = useState<PortfolioHistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -207,6 +228,8 @@ export function useHoldings() {
         setHoldings(data.holdings || []);
         setAllocation(data.allocation || []);
         setTotalValue(data.totalValue || 0);
+        setPerformanceMetrics(data.performanceMetrics || null);
+        setPortfolioHistory(data.portfolioHistory || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
@@ -217,7 +240,7 @@ export function useHoldings() {
     fetchData();
   }, []);
 
-  return { holdings, allocation, totalValue, loading, error };
+  return { holdings, allocation, totalValue, performanceMetrics, portfolioHistory, loading, error };
 }
 
 export function useInsights() {

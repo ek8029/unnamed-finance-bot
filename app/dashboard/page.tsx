@@ -32,6 +32,7 @@ export default function DashboardOverview() {
     financialSummary,
     healthScore,
     insights,
+    holdings,
     netWorthHistory,
     cashFlowHistory,
     assetsComposition,
@@ -140,7 +141,7 @@ export default function DashboardOverview() {
 
         {/* Right Sidebar - Persistent Intelligence Feed */}
         <aside className="hidden lg:block w-[380px] sticky top-4 self-start h-[calc(100vh-104px)]">
-          <AIInsightsFeed insights={transformedInsights} />
+          <AIInsightsFeed insights={transformedInsights} holdings={holdings} />
         </aside>
       </div>
     </div>

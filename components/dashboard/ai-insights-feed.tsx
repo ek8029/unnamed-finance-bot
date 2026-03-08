@@ -3,7 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Drawer } from '@/components/ui/drawer';
-import { Insight, InsightType } from '@/types';
+import { Insight, InsightType, Holding } from '@/types';
 import { useState } from 'react';
 import {
   Lightbulb,
@@ -14,15 +14,16 @@ import {
   X,
   ArrowRight,
   Zap,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { mockHoldings } from '@/lib/mock-data';
 import { PortfolioInsightDrawer } from '@/components/drawers/portfolio-insight-drawer';
 import { MarketInsightDrawer } from '@/components/drawers/market-insight-drawer';
 import { TaxInsightDrawer } from '@/components/drawers/tax-insight-drawer';
 
 interface AIInsightsFeedProps {
   insights: Insight[];
+  holdings?: Holding[];
 }
 
 const insightIcons: Record<InsightType, React.ElementType> = {
@@ -41,17 +42,32 @@ const insightColors: Record<InsightType, { bg: string; text: string; badge: 'def
   credit: { bg: 'bg-[var(--color-bg-elevated)]', text: 'text-[var(--color-negative)]', badge: 'warning' },
 };
 
-export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProps) {
+export function AIInsightsFeed({ insights: initialInsights, holdings = [] }: AIInsightsFeedProps) {
   const [insights, setInsights] = useState(initialInsights);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [drawerInsight, setDrawerInsight] = useState<Insight | null>(null);
+  const [dismissingId, setDismissingId] = useState<string | null>(null);
 
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
   };
 
-  const dismissInsight = (id: string) => {
-    setInsights(insights.filter((insight) => insight.id !== id));
+  const dismissInsight = async (id: string) => {
+    setDismissingId(id);
+    try {
+      const res = await fetch('/api/insights', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'dismiss' }),
+      });
+      if (res.ok) {
+        setInsights(insights.filter((insight) => insight.id !== id));
+      }
+    } catch (error) {
+      console.error('Failed to dismiss insight:', error);
+    } finally {
+      setDismissingId(null);
+    }
   };
 
   const openDrawer = (insight: Insight) => {
@@ -60,6 +76,12 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
 
   const closeDrawer = () => {
     setDrawerInsight(null);
+  };
+
+  // Get timestamp from insight (handle both timestamp and created_at)
+  const getTimestamp = (insight: Insight) => {
+    const ts = insight.timestamp || (insight as unknown as { created_at?: string }).created_at;
+    return ts ? new Date(ts) : new Date();
   };
 
   return (
@@ -109,9 +131,14 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
                             e.stopPropagation();
                             dismissInsight(insight.id);
                           }}
-                          className="flex-shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+                          disabled={dismissingId === insight.id}
+                          className="flex-shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors disabled:opacity-50"
                         >
-                          <X className="h-3 w-3" />
+                          {dismissingId === insight.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <X className="h-3 w-3" />
+                          )}
                         </button>
                       </div>
                       <Badge variant={colors.badge} className="capitalize text-[9px] px-1.5 py-0">
@@ -156,7 +183,7 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
 
                   {/* Timestamp */}
                   <div className="mt-2 type-eyebrow text-[var(--color-text-muted)]">
-                    {new Date(insight.timestamp).toLocaleDateString('en-US', {
+                    {getTimestamp(insight).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
                       hour: '2-digit',
@@ -187,7 +214,7 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
         >
           {drawerInsight.type === 'portfolio' && (
             <PortfolioInsightDrawer
-              holdings={mockHoldings}
+              holdings={holdings}
               insightDescription={drawerInsight.description}
             />
           )}
@@ -197,7 +224,7 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
               insightTitle={drawerInsight.title}
               insightDescription={drawerInsight.description}
               recommendedAction={drawerInsight.recommended_action || ''}
-              affectedHoldings={mockHoldings.filter((h) =>
+              affectedHoldings={holdings.filter((h) =>
                 drawerInsight.description.toLowerCase().includes(h.ticker.toLowerCase())
               )}
             />
@@ -207,8 +234,8 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
             <TaxInsightDrawer
               insightDescription={drawerInsight.description}
               recommendedAction={drawerInsight.recommended_action || ''}
-              potentialSavings={2400}
-              holdings={mockHoldings}
+              potentialSavings={drawerInsight.estimated_impact || 0}
+              holdings={holdings}
             />
           )}
 
