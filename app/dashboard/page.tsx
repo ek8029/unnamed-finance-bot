@@ -23,58 +23,51 @@ export default function DashboardOverview() {
     <div className="container mx-auto p-4 max-w-[1600px]">
       <div className="flex gap-4">
         {/* Main Content Area */}
-        <div className="flex-1 min-w-0 space-y-4">
+        <div className="flex-1 min-w-0 space-y-4 stagger-fade-in">
           {/* Header */}
           <div className="space-y-1">
             <h1 className="type-h1">Financial Command Center</h1>
-            <p className="type-body text-helm-secondary">
+            <p className="type-body text-[var(--color-text-secondary)]">
               Real-time intelligence across your complete financial system
             </p>
           </div>
 
-          {/* Command Center Grid - High-Density Professional Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 auto-rows-min">
-            {/* Row 1: Hero Monitor + Health */}
-            {/* Net Worth - Hero Monitor (2 columns) */}
+          {/* Row 1: Financial Summary Cards (Full Width) */}
+          <div>
+            <FinancialSummaryCards
+              totalAssets={mockFinancialSummary.total_assets}
+              totalLiabilities={mockFinancialSummary.total_liabilities}
+              monthlyCashFlow={mockFinancialSummary.monthly_cash_flow}
+              portfolioValue={mockFinancialSummary.portfolio_value}
+            />
+          </div>
+
+          {/* Row 2: Net Worth (2/3) + Health Score (1/3) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2">
               <NetWorthCard
                 currentNetWorth={mockFinancialSummary.net_worth}
                 netWorthHistory={mockNetWorthHistory}
               />
             </div>
-
-            {/* Financial Health Score (1 column) */}
             <div className="lg:col-span-1">
               <FinancialHealthScore healthScore={mockFinancialHealthScore} />
             </div>
+          </div>
 
-            {/* Row 2: System Monitors - Cash Flow, Composition, Savings Rate */}
-            {/* Cash Flow Trend (1 column) */}
+          {/* Row 3: Cash Flow + Composition + Savings — equal columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-1">
               <CashFlowTrend data={mockCashFlowTrend} />
             </div>
-
-            {/* Assets vs Liabilities Composition (1 column) */}
             <div className="lg:col-span-1">
               <AssetsLiabilitiesComposition
                 assets={mockAssetsComposition}
                 liabilities={mockLiabilitiesComposition}
               />
             </div>
-
-            {/* Savings Rate Timeline (1 column) */}
             <div className="lg:col-span-1">
               <SavingsRateTimeline data={mockSavingsRateTimeline} targetRate={30} />
-            </div>
-
-            {/* Row 3: Financial Summary - 4 Metric Cards (Full Width) */}
-            <div className="lg:col-span-3">
-              <FinancialSummaryCards
-                totalAssets={mockFinancialSummary.total_assets}
-                totalLiabilities={mockFinancialSummary.total_liabilities}
-                monthlyCashFlow={mockFinancialSummary.monthly_cash_flow}
-                portfolioValue={mockFinancialSummary.portfolio_value}
-              />
             </div>
           </div>
         </div>

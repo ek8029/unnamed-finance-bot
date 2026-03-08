@@ -44,11 +44,11 @@ export function AccountAggregation({ accounts }: AccountAggregationProps) {
           {accounts.map((account) => (
             <div
               key={account.id}
-              className="flex items-center justify-between p-3 rounded-md border border-helm-border-base bg-helm-elevated hover:border-helm-border-strong transition-colors"
+              className="flex items-center justify-between p-3 rounded-md border border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] hover:border-[var(--color-border-strong)] transition-colors"
             >
               <div className="flex items-center gap-3">
-                <div className="rounded-md bg-helm-overlay p-2 border border-helm-border-subtle">
-                  <Building2 className="h-4 w-4 text-helm-secondary" />
+                <div className="rounded-md bg-[var(--color-bg-overlay)] p-2 border border-[var(--color-border-subtle)]">
+                  <Building2 className="h-4 w-4 text-[var(--color-text-secondary)]" />
                 </div>
                 <div>
                   <div className="type-h3">{account.institution}</div>
@@ -58,11 +58,11 @@ export function AccountAggregation({ accounts }: AccountAggregationProps) {
                 </div>
               </div>
               <div className="text-right">
-                <div className={`type-data text-sm ${account.balance < 0 ? 'text-helm-negative' : 'text-helm-platinum'}`}>
+                <div className={`type-data text-sm ${account.balance < 0 ? 'text-[var(--color-negative)]' : 'text-[var(--color-text-primary)]'}`}>
                   {formatCurrency(Math.abs(account.balance))}
                 </div>
                 {account.balance < 0 && (
-                  <div className="text-xs text-helm-muted mt-1">Balance Due</div>
+                  <div className="text-xs text-[var(--color-text-muted)] mt-1">Balance Due</div>
                 )}
               </div>
             </div>

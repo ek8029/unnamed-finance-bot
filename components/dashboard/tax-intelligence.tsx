@@ -44,13 +44,13 @@ export function TaxIntelligence({ taxData, onCategorySelect }: TaxIntelligencePr
               onClick={() => handleSelect(item.key, item.label)}
               className={`flex items-center justify-between rounded-md border px-3 py-2 text-left transition-colors ${
                 activeLabel === item.label
-                  ? 'border-helm-gold-border bg-helm-gold-surface/30'
-                  : 'border-helm-border-base bg-helm-elevated hover:border-helm-border-strong'
+                  ? 'border-[var(--color-gold-border)] bg-[var(--color-gold-surface)]/30'
+                  : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] hover:border-[var(--color-border-strong)]'
               }`}
             >
               <div className="flex items-center gap-2">
-                <Info className="h-3 w-3 text-helm-muted" />
-                <span className="type-label text-helm-secondary">{item.label}</span>
+                <Info className="h-3 w-3 text-[var(--color-text-muted)]" />
+                <span className="type-label text-[var(--color-text-secondary)]">{item.label}</span>
               </div>
               <span className="type-data text-sm">
                 {formatCurrency(item.value)}
@@ -59,9 +59,9 @@ export function TaxIntelligence({ taxData, onCategorySelect }: TaxIntelligencePr
           ))}
         </div>
 
-        <div className="p-3 rounded-md border border-helm-warning/30 bg-helm-overlay">
-          <p className="type-caption text-helm-warning mb-1">Disclaimer</p>
-          <p className="text-[11px] text-helm-secondary">
+        <div className="p-3 rounded-md border border-[var(--color-warning)]/30 bg-[var(--color-bg-overlay)]">
+          <p className="type-caption text-[var(--color-warning)] mb-1">Disclaimer</p>
+          <p className="text-[11px] text-[var(--color-text-secondary)]">
             These views are informational only and are not tax advice. Always consult with a qualified professional
             before taking action.
           </p>

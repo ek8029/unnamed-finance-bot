@@ -7,14 +7,14 @@ import { cva, type VariantProps } from "class-variance-authority";
 // ============================================================================
 
 const cardVariants = cva(
-  "rounded-md transition-colors",
+  "rounded-md transition-all duration-200",
   {
     variants: {
       variant: {
-        default: "bg-helm-surface border border-helm-border-base",
-        elevated: "bg-helm-elevated border border-helm-border-base shadow-sm",
-        glass: "bg-helm-surface/50 border border-helm-border-subtle backdrop-blur-sm",
-        outline: "border border-helm-border-strong bg-transparent",
+        default: "bg-[var(--color-bg-surface)] border border-[var(--color-border-base)]",
+        elevated: "bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] shadow-sm",
+        glass: "glass border border-[var(--color-border-subtle)]",
+        outline: "border border-[var(--color-border-strong)] bg-transparent",
       },
     },
     defaultVariants: {
@@ -84,7 +84,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("type-body text-helm-secondary", className)}
+    className={cn("type-body text-[var(--color-text-secondary)]", className)}
     {...props}
   />
 ));

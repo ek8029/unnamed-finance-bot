@@ -28,32 +28,32 @@ export function FinancialSummaryCards({
       value: totalAssets,
       change: 3.2,
       icon: Wallet,
-      iconColor: 'text-helm-gold',
-      iconBg: 'bg-helm-gold-surface border border-helm-gold-border',
+      iconColor: 'text-[var(--color-gold)]',
+      iconBg: 'bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)]',
     },
     {
       title: 'Total Liabilities',
       value: totalLiabilities,
       change: -2.1,
       icon: CreditCard,
-      iconColor: 'text-helm-negative',
-      iconBg: 'bg-helm-elevated border border-helm-border-subtle',
+      iconColor: 'text-[var(--color-negative)]',
+      iconBg: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)]',
     },
     {
       title: 'Monthly Cash Flow',
       value: monthlyCashFlow,
       change: 5.4,
       icon: TrendingUp,
-      iconColor: 'text-helm-positive',
-      iconBg: 'bg-helm-elevated border border-helm-border-subtle',
+      iconColor: 'text-[var(--color-positive)]',
+      iconBg: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)]',
     },
     {
       title: 'Portfolio Value',
       value: portfolioValue,
       change: 4.8,
       icon: DollarSign,
-      iconColor: 'text-helm-platinum',
-      iconBg: 'bg-helm-elevated border border-helm-border-subtle',
+      iconColor: 'text-[var(--color-text-primary)]',
+      iconBg: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)]',
     },
   ];
 
@@ -72,23 +72,23 @@ export function FinancialSummaryCards({
               </div>
             </DataPanelHeader>
             <DataPanelContent className="p-3 pt-0">
-              <div className="type-data text-2xl font-tabular text-helm-platinum">
+              <div className="type-data text-2xl font-tabular text-[var(--color-text-primary)]">
                 {formatCurrency(item.value)}
               </div>
               <div className="flex items-center gap-1 mt-0.5">
                 {isPositive ? (
-                  <ArrowUpRight className="h-3 w-3 text-helm-positive" />
+                  <ArrowUpRight className="h-3 w-3 text-[var(--color-positive)]" />
                 ) : (
-                  <ArrowDownRight className="h-3 w-3 text-helm-negative" />
+                  <ArrowDownRight className="h-3 w-3 text-[var(--color-negative)]" />
                 )}
                 <span
                   className={`type-label text-xs font-tabular ${
-                    isPositive ? 'text-helm-positive' : 'text-helm-negative'
+                    isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                   }`}
                 >
                   {formatPercentage(item.change)}
                 </span>
-                <span className="type-label text-xs text-helm-muted">from last month</span>
+                <span className="type-label text-xs text-[var(--color-text-muted)]">from last month</span>
               </div>
             </DataPanelContent>
           </DataPanel>

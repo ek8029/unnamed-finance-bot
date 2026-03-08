@@ -109,7 +109,7 @@ export default function AccountsPage() {
             )}
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-helm-secondary">{mockAccounts.length} accounts connected</p>
+            <p className="text-sm text-[var(--color-text-secondary)]">{mockAccounts.length} accounts connected</p>
           </CardContent>
         </Card>
 
@@ -119,13 +119,13 @@ export default function AccountsPage() {
             {loading ? (
               <Skeleton className="h-8 w-32 mt-2" />
             ) : (
-              <CardTitle className="type-data text-3xl text-helm-positive">
+              <CardTitle className="type-data text-3xl text-[var(--color-positive)]">
                 {formatCurrency(assetAccounts.reduce((sum, acc) => sum + acc.balance, 0))}
               </CardTitle>
             )}
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-helm-secondary">{assetAccounts.length} asset accounts</p>
+            <p className="text-sm text-[var(--color-text-secondary)]">{assetAccounts.length} asset accounts</p>
           </CardContent>
         </Card>
 
@@ -135,13 +135,13 @@ export default function AccountsPage() {
             {loading ? (
               <Skeleton className="h-8 w-32 mt-2" />
             ) : (
-              <CardTitle className="type-data text-3xl text-helm-negative">
+              <CardTitle className="type-data text-3xl text-[var(--color-negative)]">
                 {formatCurrency(Math.abs(liabilityAccounts.reduce((sum, acc) => sum + acc.balance, 0)))}
               </CardTitle>
             )}
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-helm-secondary">{liabilityAccounts.length} liability accounts</p>
+            <p className="text-sm text-[var(--color-text-secondary)]">{liabilityAccounts.length} liability accounts</p>
           </CardContent>
         </Card>
       </div>
@@ -156,13 +156,13 @@ export default function AccountsPage() {
             </div>
             <div className="flex items-center gap-2">
               {/* Filter Controls */}
-              <div className="flex gap-1 p-1 bg-helm-elevated rounded border border-helm-border-subtle">
+              <div className="flex gap-1 p-1 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
                 <button
                   onClick={() => setFilterType('all')}
                   className={`px-3 py-1.5 rounded type-label text-xs transition-colors ${
                     filterType === 'all'
-                      ? 'bg-helm-gold text-helm-base'
-                      : 'text-helm-secondary hover:text-helm-platinum'
+                      ? 'bg-[var(--color-gold)] text-[var(--color-text-inverse)]'
+                      : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
                   }`}
                 >
                   All
@@ -171,8 +171,8 @@ export default function AccountsPage() {
                   onClick={() => setFilterType('assets')}
                   className={`px-3 py-1.5 rounded type-label text-xs transition-colors ${
                     filterType === 'assets'
-                      ? 'bg-helm-positive text-helm-base'
-                      : 'text-helm-secondary hover:text-helm-platinum'
+                      ? 'bg-[var(--color-positive)] text-[var(--color-text-inverse)]'
+                      : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
                   }`}
                 >
                   Assets
@@ -181,8 +181,8 @@ export default function AccountsPage() {
                   onClick={() => setFilterType('liabilities')}
                   className={`px-3 py-1.5 rounded type-label text-xs transition-colors ${
                     filterType === 'liabilities'
-                      ? 'bg-helm-negative text-helm-base'
-                      : 'text-helm-secondary hover:text-helm-platinum'
+                      ? 'bg-[var(--color-negative)] text-[var(--color-text-inverse)]'
+                      : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
                   }`}
                 >
                   Liabilities
@@ -193,7 +193,7 @@ export default function AccountsPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'balance-high' | 'balance-low' | 'name')}
-                className="px-3 py-1.5 bg-helm-elevated border border-helm-border-subtle rounded type-label text-xs text-helm-platinum cursor-pointer hover:border-helm-border-strong transition-colors"
+                className="px-3 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded type-label text-xs text-[var(--color-text-primary)] cursor-pointer hover:border-[var(--color-border-strong)] transition-colors"
               >
                 <option value="balance-high">Balance: High to Low</option>
                 <option value="balance-low">Balance: Low to High</option>
@@ -210,7 +210,7 @@ export default function AccountsPage() {
               <Skeleton className="h-16 w-full" />
             </div>
           ) : filteredAndSortedAccounts.length === 0 ? (
-            <div className="text-center py-8 text-helm-secondary">
+            <div className="text-center py-8 text-[var(--color-text-secondary)]">
               <p className="text-sm">No accounts match the current filter.</p>
             </div>
           ) : (
@@ -225,22 +225,22 @@ export default function AccountsPage() {
                   onClick={() => setSelectedAccountId(account.id)}
                   className={`w-full text-left rounded-md border px-4 py-3 flex items-center justify-between gap-4 transition-all ${
                     isPrimary
-                      ? 'border-helm-gold-border bg-helm-gold-surface/20'
-                      : 'border-helm-border-base bg-helm-elevated hover:border-helm-border-strong'
-                  } ${isSelected ? 'ring-1 ring-helm-gold' : ''}`}
+                      ? 'border-[var(--color-gold-border)] bg-[var(--color-gold-surface)]'
+                      : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] hover:border-[var(--color-border-strong)]'
+                  } ${isSelected ? 'ring-1 ring-[var(--color-gold)]' : ''}`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-helm-overlay border border-helm-border-subtle rounded-md flex items-center justify-center">
-                      <Building2 className="w-5 h-5 text-helm-secondary" />
+                    <div className="w-10 h-10 bg-[var(--color-bg-overlay)] border border-[var(--color-border-subtle)] rounded-md flex items-center justify-center">
+                      <Building2 className="w-5 h-5 text-[var(--color-text-secondary)]" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="type-h3">{account.institution}</h3>
                         {isPrimary && (
-                          <span className="type-caption text-helm-gold">Primary</span>
+                          <span className="type-caption text-[var(--color-gold)]">Primary</span>
                         )}
                       </div>
-                      <p className="text-xs text-helm-secondary capitalize">
+                      <p className="text-xs text-[var(--color-text-secondary)] capitalize">
                         {account.account_type.replace('_', ' ')}
                       </p>
                     </div>
@@ -248,13 +248,13 @@ export default function AccountsPage() {
                   <div className="text-right">
                     <p
                       className={`type-data text-xl ${
-                        account.balance >= 0 ? 'text-helm-platinum' : 'text-helm-negative'
+                        account.balance >= 0 ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-negative)]'
                       }`}
                     >
                       {formatCurrency(Math.abs(account.balance))}{' '}
                       {account.balance < 0 && <span className="type-caption">due</span>}
                     </p>
-                    <p className="text-xs text-helm-muted">Last synced: 2 hours ago</p>
+                    <p className="text-xs text-[var(--color-text-muted)]">Last synced: 2 hours ago</p>
                   </div>
                 </button>
               );
@@ -271,16 +271,16 @@ export default function AccountsPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-helm-secondary">Last full sync</span>
-            <span className="type-label text-helm-platinum">2 hours ago</span>
+            <span className="text-sm text-[var(--color-text-secondary)]">Last full sync</span>
+            <span className="type-label text-[var(--color-text-primary)]">2 hours ago</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-helm-secondary">Next scheduled sync</span>
-            <span className="type-label text-helm-platinum">In 4 hours</span>
+            <span className="text-sm text-[var(--color-text-secondary)]">Next scheduled sync</span>
+            <span className="type-label text-[var(--color-text-primary)]">In 4 hours</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-helm-secondary">Connection health</span>
-            <span className="type-label text-helm-positive">All systems operational</span>
+            <span className="text-sm text-[var(--color-text-secondary)]">Connection health</span>
+            <span className="type-label text-[var(--color-positive)]">All systems operational</span>
           </div>
         </CardContent>
       </Card>
@@ -292,17 +292,17 @@ export default function AccountsPage() {
             className="flex-1 bg-black/40"
             onClick={() => setSelectedAccountId(null)}
           />
-          <div className="w-full max-w-md bg-helm-surface border-l border-helm-border-base shadow-2xl animate-slide-in-bottom">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-helm-border-base">
+          <div className="w-full max-w-md bg-[var(--color-bg-surface)] border-l border-[var(--color-border-base)] shadow-2xl animate-slide-in-bottom">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border-base)]">
               <div>
-                <p className="type-caption text-helm-secondary mb-1">Account details</p>
+                <p className="type-caption text-[var(--color-text-secondary)] mb-1">Account details</p>
                 <h2 className="type-h2">{selectedAccount.institution}</h2>
-                <p className="text-xs text-helm-secondary capitalize">
+                <p className="text-xs text-[var(--color-text-secondary)] capitalize">
                   {selectedAccount.account_type.replace('_', ' ')}
                 </p>
               </div>
               <button
-                className="p-2 text-helm-secondary hover:text-helm-platinum"
+                className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                 onClick={() => setSelectedAccountId(null)}
                 aria-label="Close account details"
               >
@@ -311,39 +311,39 @@ export default function AccountsPage() {
             </div>
             <div className="px-6 py-4 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="type-label text-helm-secondary">Current balance</span>
+                <span className="type-label text-[var(--color-text-secondary)]">Current balance</span>
                 <span
                   className={`type-data text-xl ${
-                    selectedAccount.balance >= 0 ? 'text-helm-platinum' : 'text-helm-negative'
+                    selectedAccount.balance >= 0 ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-negative)]'
                   }`}
                 >
                   {formatCurrency(Math.abs(selectedAccount.balance))}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="type-label text-helm-secondary">Institution</span>
-                <span className="type-label text-helm-platinum">{selectedAccount.institution}</span>
+                <span className="type-label text-[var(--color-text-secondary)]">Institution</span>
+                <span className="type-label text-[var(--color-text-primary)]">{selectedAccount.institution}</span>
               </div>
-              <div className="pt-2 border-t border-helm-border-subtle">
-                <p className="type-label text-helm-secondary mb-2">Recent transactions</p>
+              <div className="pt-2 border-t border-[var(--color-border-subtle)]">
+                <p className="type-label text-[var(--color-text-secondary)] mb-2">Recent transactions</p>
                 {recentTransactions.length === 0 ? (
-                  <p className="text-xs text-helm-muted">No recent activity for this account.</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">No recent activity for this account.</p>
                 ) : (
                   <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                     {recentTransactions.map((tx) => (
                       <div
                         key={tx.id}
-                        className="flex items-center justify-between rounded-md border border-helm-border-subtle bg-helm-elevated px-3 py-2"
+                        className="flex items-center justify-between rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] px-3 py-2"
                       >
                         <div>
-                          <p className="text-xs text-helm-platinum">{tx.description}</p>
-                          <p className="text-[10px] text-helm-muted">
+                          <p className="text-xs text-[var(--color-text-primary)]">{tx.description}</p>
+                          <p className="text-[10px] text-[var(--color-text-muted)]">
                             {tx.category} · {tx.date.toLocaleDateString()}
                           </p>
                         </div>
                         <div
                           className={`type-data text-sm ${
-                            tx.amount >= 0 ? 'text-helm-positive' : 'text-helm-negative'
+                            tx.amount >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                           }`}
                         >
                           {tx.amount >= 0 ? '+' : '-'}

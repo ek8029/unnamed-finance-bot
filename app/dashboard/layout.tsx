@@ -32,19 +32,19 @@ export default function DashboardLayout({
   const reduceMotion = settings.accessibility.reduceMotion;
 
   return (
-    <div className="min-h-screen bg-helm-base">
+    <div className="min-h-screen bg-[var(--color-bg-base)]">
       {/* Top Navigation Bar */}
-      <nav className="bg-helm-surface border-b border-[rgba(255,255,255,0.06)] sticky top-0 z-50">
+      <nav className="bg-[var(--color-bg-surface)] border-b border-[var(--color-border-base)] sticky top-0 z-50">
         <div className="px-6 py-3">
           <div className="flex items-center justify-between">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-4 group">
-              <HelmMark size={48} className="transition-transform group-hover:scale-110" />
+            {/* Logo — bigger and more prominent */}
+            <Link href="/" className="flex items-center gap-3 group">
+              <HelmMark size={40} className="transition-transform duration-200 group-hover:scale-105" />
               <div>
-                <span className="type-h2 text-sm tracking-tight text-helm-platinum">
+                <span className="text-[17px] font-semibold tracking-tight text-[var(--color-text-primary)]">
                   Helm
                 </span>
-                <div className="type-caption text-helm-secondary">Intelligence</div>
+                <div className="type-eyebrow text-[var(--color-text-muted)]">Intelligence</div>
               </div>
             </Link>
 
@@ -57,10 +57,10 @@ export default function DashboardLayout({
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      'flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-150',
+                      'flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200',
                       isActive
-                        ? 'text-helm-gold bg-helm-overlay border border-helm-gold-border shadow-sm'
-                        : 'text-helm-secondary hover:text-helm-platinum hover:bg-helm-overlay border border-transparent hover:border-helm-border-base'
+                        ? 'text-[var(--color-gold)] bg-[var(--color-bg-overlay)] border border-[var(--color-gold-border)]'
+                        : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] border border-transparent hover:border-[var(--color-border-base)]'
                     )}
                   >
                     <item.icon className="w-4 h-4" />
@@ -73,14 +73,14 @@ export default function DashboardLayout({
             {/* User Menu */}
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <p className="text-sm font-medium text-helm-platinum">John Doe</p>
-                <p className="type-caption text-helm-secondary">Premium</p>
+                <p className="text-sm font-medium text-[var(--color-text-primary)]">John Doe</p>
+                <p className="type-eyebrow text-[var(--color-text-muted)]">Premium</p>
               </div>
-              <div className="w-8 h-8 rounded-full bg-[rgba(184,145,74,0.08)] border border-[rgba(184,145,74,0.18)] flex items-center justify-center">
-                <span className="text-xs font-semibold text-helm-gold">JD</span>
+              <div className="w-8 h-8 rounded-full bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center">
+                <span className="text-xs font-semibold text-[var(--color-gold)]">JD</span>
               </div>
-              <button className="p-2 text-helm-secondary hover:text-helm-platinum transition-colors">
-                <LogOut className="w-5 h-5" />
+              <button className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors duration-200">
+                <LogOut className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -88,7 +88,7 @@ export default function DashboardLayout({
       </nav>
 
       {/* Main Content */}
-      <main className="bg-helm-base">
+      <main className="bg-[var(--color-bg-base)]">
         <div
           key={pathname}
           className={cn(!reduceMotion && 'page-transition')}

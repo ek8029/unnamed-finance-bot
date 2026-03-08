@@ -39,14 +39,14 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
           <DataPanelTitle>Cash Flow</DataPanelTitle>
           <div className="flex items-center gap-1.5 type-label text-xs">
             {isPositive ? (
-              <TrendingUp className="h-3.5 w-3.5 text-helm-positive" />
+              <TrendingUp className="h-3.5 w-3.5 text-[var(--color-positive)]" />
             ) : (
-              <TrendingDown className="h-3.5 w-3.5 text-helm-negative" />
+              <TrendingDown className="h-3.5 w-3.5 text-[var(--color-negative)]" />
             )}
-            <span className={isPositive ? 'text-helm-positive' : 'text-helm-negative'}>
+            <span className={isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}>
               {isPositive ? '+' : ''}{flowChangePercent.toFixed(1)}%
             </span>
-            <span className="text-helm-muted">vs last month</span>
+            <span className="text-[var(--color-text-muted)]">vs last month</span>
           </div>
         </div>
       </DataPanelHeader>
@@ -55,34 +55,34 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
         <div className="grid grid-cols-3 gap-4 mb-4">
           {/* Net Flow */}
           <div>
-            <div className="type-caption text-helm-secondary mb-1">Net Flow</div>
-            <div className="type-data text-xl font-tabular text-helm-platinum">
+            <div className="type-caption text-[var(--color-text-secondary)] mb-1">Net Flow</div>
+            <div className="type-data text-xl font-tabular text-[var(--color-text-primary)]">
               {formatCurrency(currentMonth.netFlow)}
             </div>
           </div>
 
           {/* Income */}
           <div>
-            <div className="type-caption text-helm-secondary mb-1">Income</div>
-            <div className="type-data text-xl font-tabular text-helm-positive">
+            <div className="type-caption text-[var(--color-text-secondary)] mb-1">Income</div>
+            <div className="type-data text-xl font-tabular text-[var(--color-positive)]">
               {formatCurrency(currentMonth.income)}
             </div>
           </div>
 
           {/* Expenses */}
           <div>
-            <div className="type-caption text-helm-secondary mb-1">Expenses</div>
-            <div className="type-data text-xl font-tabular text-helm-negative">
+            <div className="type-caption text-[var(--color-text-secondary)] mb-1">Expenses</div>
+            <div className="type-data text-xl font-tabular text-[var(--color-negative)]">
               {formatCurrency(currentMonth.expenses)}
             </div>
           </div>
         </div>
 
         {/* 3-Month Average */}
-        <div className="flex items-center gap-2 mb-3 p-2 bg-helm-elevated rounded border border-helm-border-subtle">
-          <div className="type-caption text-helm-secondary">3-Mo Avg</div>
-          <ArrowRight className="h-3 w-3 text-helm-muted" />
-          <div className="type-label font-tabular text-helm-platinum">
+        <div className="flex items-center gap-2 mb-3 p-2 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
+          <div className="type-caption text-[var(--color-text-secondary)]">3-Mo Avg</div>
+          <ArrowRight className="h-3 w-3 text-[var(--color-text-muted)]" />
+          <div className="type-label font-tabular text-[var(--color-text-primary)]">
             {formatCurrency(avgNetFlow)}
           </div>
         </div>

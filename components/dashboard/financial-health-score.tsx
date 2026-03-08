@@ -15,9 +15,9 @@ interface FinancialHealthScoreProps {
 
 export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps) {
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-helm-positive';
-    if (score >= 60) return 'text-helm-warning';
-    return 'text-helm-negative';
+    if (score >= 80) return 'text-[var(--color-positive)]';
+    if (score >= 60) return 'text-[var(--color-warning)]';
+    return 'text-[var(--color-negative)]';
   };
 
   const getScoreVariant = (score: number): 'positive' | 'warning' | 'negative' => {
@@ -67,7 +67,7 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
               <span className={`type-data text-3xl font-tabular ${getScoreColor(healthScore.score)}`}>
                 {healthScore.score}
               </span>
-              <span className="type-caption text-helm-secondary">{getScoreLabel(healthScore.score)}</span>
+              <span className="type-caption text-[var(--color-text-secondary)]">{getScoreLabel(healthScore.score)}</span>
             </div>
           </div>
         </div>
@@ -76,8 +76,8 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
         <div className="space-y-3">
           <div>
             <div className="flex justify-between type-label text-xs mb-1.5">
-              <span className="text-helm-secondary">Debt-to-Asset</span>
-              <span className="text-helm-platinum font-tabular">{(healthScore.debt_to_asset_ratio * 100).toFixed(1)}%</span>
+              <span className="text-[var(--color-text-secondary)]">Debt-to-Asset</span>
+              <span className="text-[var(--color-text-primary)] font-tabular">{(healthScore.debt_to_asset_ratio * 100).toFixed(1)}%</span>
             </div>
             <Progress
               value={healthScore.debt_to_asset_ratio * 100}
@@ -88,8 +88,8 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
 
           <div>
             <div className="flex justify-between type-label text-xs mb-1.5">
-              <span className="text-helm-secondary">Savings Rate</span>
-              <span className="text-helm-platinum font-tabular">{(healthScore.savings_rate * 100).toFixed(1)}%</span>
+              <span className="text-[var(--color-text-secondary)]">Savings Rate</span>
+              <span className="text-[var(--color-text-primary)] font-tabular">{(healthScore.savings_rate * 100).toFixed(1)}%</span>
             </div>
             <Progress
               value={healthScore.savings_rate * 100}
@@ -100,8 +100,8 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
 
           <div>
             <div className="flex justify-between type-label text-xs mb-1.5">
-              <span className="text-helm-secondary">Emergency Fund</span>
-              <span className="text-helm-platinum font-tabular">{healthScore.emergency_fund_months.toFixed(1)} mo</span>
+              <span className="text-[var(--color-text-secondary)]">Emergency Fund</span>
+              <span className="text-[var(--color-text-primary)] font-tabular">{healthScore.emergency_fund_months.toFixed(1)} mo</span>
             </div>
             <Progress
               value={(healthScore.emergency_fund_months / 12) * 100}
@@ -112,8 +112,8 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
 
           <div>
             <div className="flex justify-between type-label text-xs mb-1.5">
-              <span className="text-helm-secondary">Diversification</span>
-              <span className="text-helm-platinum font-tabular">{(healthScore.portfolio_diversification * 100).toFixed(1)}%</span>
+              <span className="text-[var(--color-text-secondary)]">Diversification</span>
+              <span className="text-[var(--color-text-primary)] font-tabular">{(healthScore.portfolio_diversification * 100).toFixed(1)}%</span>
             </div>
             <Progress
               value={healthScore.portfolio_diversification * 100}

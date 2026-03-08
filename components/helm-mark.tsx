@@ -1,5 +1,5 @@
 // Helm Meridian Mark — Single source of truth
-// Based on Helm Design System v2.0
+// Based on Helm Design System v3.0 — Dark Grayscale + Gold
 
 interface HelmMarkProps {
   size?: number;      // rendered px size
@@ -10,17 +10,17 @@ interface HelmMarkProps {
 export const HelmMark = ({ size = 24, variant = 'default', className }: HelmMarkProps) => {
   const colors = {
     default: {
-      arc:       '#B8914A',
-      crosshair: '#E8ECF1',
-      node:      '#B8914A',
-      hubOuter:  '#E8ECF1',
-      hubInner:  '#B8914A',
+      arc:       '#C8A95B',   // gold
+      crosshair: '#EAEAEA',   // platinum
+      node:      '#C8A95B',   // gold
+      hubOuter:  '#EAEAEA',   // platinum
+      hubInner:  '#C8A95B',   // gold
     },
     light: {
       arc:       '#8A6A35',
-      crosshair: '#111E34',
+      crosshair: '#1A1A1A',
       node:      '#8A6A35',
-      hubOuter:  '#111E34',
+      hubOuter:  '#1A1A1A',
       hubInner:  '#8A6A35',
     },
     mono: {
@@ -66,7 +66,7 @@ export const HelmMark = ({ size = 24, variant = 'default', className }: HelmMark
     );
   }
 
-  // 33px+: full mark
+  // 33px+: full mark with all details
   return (
     <svg width={size} height={size} viewBox="0 0 56 56" fill="none" className={className}>
       <path d="M 10.06 39.94 A 22 22 0 1 1 45.94 39.94"
@@ -76,6 +76,8 @@ export const HelmMark = ({ size = 24, variant = 'default', className }: HelmMark
       <line x1="7" y1="28" x2="49" y2="28"
             stroke={c.crosshair} strokeWidth="1.4" strokeLinecap="round"/>
       <circle cx="28" cy="7" r="3" fill={c.node}/>
+      <circle cx="49" cy="28" r="2.5" fill={c.node}/>
+      <circle cx="7" cy="28" r="2.5" fill={c.node}/>
       <circle cx="28" cy="28" r="4.2" fill={c.hubOuter}/>
       <circle cx="28" cy="28" r="2" fill={c.hubInner}/>
     </svg>

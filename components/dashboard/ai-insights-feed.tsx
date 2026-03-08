@@ -13,6 +13,7 @@ import {
   CreditCard,
   X,
   ArrowRight,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { mockHoldings } from '@/lib/mock-data';
@@ -33,11 +34,11 @@ const insightIcons: Record<InsightType, React.ElementType> = {
 };
 
 const insightColors: Record<InsightType, { bg: string; text: string; badge: 'default' | 'secondary' | 'success' | 'warning' | 'gold' }> = {
-  spending: { bg: 'bg-helm-elevated', text: 'text-helm-platinum', badge: 'default' },
-  portfolio: { bg: 'bg-helm-gold-surface', text: 'text-helm-gold', badge: 'gold' },
-  market: { bg: 'bg-helm-elevated', text: 'text-helm-warning', badge: 'warning' },
-  tax: { bg: 'bg-helm-elevated', text: 'text-helm-positive', badge: 'success' },
-  credit: { bg: 'bg-helm-elevated', text: 'text-helm-negative', badge: 'warning' },
+  spending: { bg: 'bg-[var(--color-bg-elevated)]', text: 'text-[var(--color-text-primary)]', badge: 'default' },
+  portfolio: { bg: 'bg-[var(--color-gold-surface)]', text: 'text-[var(--color-gold)]', badge: 'gold' },
+  market: { bg: 'bg-[var(--color-bg-elevated)]', text: 'text-[var(--color-warning)]', badge: 'warning' },
+  tax: { bg: 'bg-[var(--color-bg-elevated)]', text: 'text-[var(--color-positive)]', badge: 'success' },
+  credit: { bg: 'bg-[var(--color-bg-elevated)]', text: 'text-[var(--color-negative)]', badge: 'warning' },
 };
 
 export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProps) {
@@ -62,20 +63,20 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
   };
 
   return (
-    <div className="h-full flex flex-col bg-helm-surface border-l border-helm-border-base">
-      {/* Sidebar Header */}
-      <div className="flex-shrink-0 px-4 py-3 border-b border-helm-border-base">
+    <div className="h-full flex flex-col bg-[var(--color-bg-surface)] border-l border-[var(--color-border-base)]">
+      {/* Sidebar Header — aligned with dashboard content */}
+      <div className="flex-shrink-0 px-4 py-3 border-b border-[var(--color-border-base)]">
         <div className="flex items-center gap-2">
-          <Lightbulb className="h-4 w-4 text-helm-gold" />
-          <h2 className="type-h3 text-helm-platinum">Intelligence Feed</h2>
+          <Zap className="h-4 w-4 text-[var(--color-gold)]" />
+          <h2 className="type-h3 text-[var(--color-text-primary)]">Intelligence Feed</h2>
         </div>
-        <p className="type-caption text-helm-secondary mt-0.5">AI-powered insights</p>
+        <p className="type-eyebrow text-[var(--color-text-muted)] mt-1">{insights.length} active insights</p>
       </div>
 
       {/* Scrollable Insights List */}
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="p-3 space-y-2">
-          {insights.map((insight) => {
+          {insights.map((insight, index) => {
             const Icon = insightIcons[insight.type];
             const colors = insightColors[insight.type];
             const isExpanded = expandedId === insight.id;
@@ -84,22 +85,23 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
               <div
                 key={insight.id}
                 className={cn(
-                  "rounded-md border transition-all cursor-pointer",
+                  "rounded-md border transition-all duration-200 cursor-pointer",
                   isExpanded
-                    ? "border-helm-border-strong bg-helm-elevated"
-                    : "border-helm-border-base bg-helm-surface hover:bg-helm-overlay hover:border-helm-border-strong"
+                    ? "border-[var(--color-border-strong)] bg-[var(--color-bg-elevated)]"
+                    : "border-[var(--color-border-base)] bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-overlay)] hover:border-[var(--color-border-strong)]"
                 )}
+                style={{ animationDelay: `${index * 60}ms` }}
                 onClick={() => toggleExpand(insight.id)}
               >
                 <div className="p-3">
                   {/* Header */}
-                  <div className="flex items-start gap-2 mb-2">
-                    <div className={`rounded p-1 ${colors.bg} border border-helm-border-subtle flex-shrink-0`}>
+                  <div className="flex items-start gap-2.5 mb-2">
+                    <div className={`rounded-md p-1.5 ${colors.bg} border border-[var(--color-border-base)] flex-shrink-0`}>
                       <Icon className={`h-3 w-3 ${colors.text}`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-1 mb-1">
-                        <h4 className="type-label text-xs text-helm-platinum leading-tight truncate">
+                        <h4 className="type-label text-[var(--color-text-primary)] leading-tight">
                           {insight.title}
                         </h4>
                         <button
@@ -107,7 +109,7 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
                             e.stopPropagation();
                             dismissInsight(insight.id);
                           }}
-                          className="flex-shrink-0 text-helm-muted hover:text-helm-platinum transition-colors"
+                          className="flex-shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -120,7 +122,7 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
 
                   {/* Description */}
                   <p className={cn(
-                    "text-xs text-helm-secondary leading-relaxed",
+                    "type-body text-xs text-[var(--color-text-secondary)] leading-relaxed",
                     !isExpanded && "line-clamp-2"
                   )}>
                     {insight.description}
@@ -129,11 +131,11 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
                   {/* Expanded Content */}
                   {isExpanded && insight.recommended_action && (
                     <>
-                      <div className="mt-2 p-2 bg-helm-overlay rounded border border-helm-border-subtle">
-                        <div className="type-caption text-helm-gold mb-1">
+                      <div className="mt-2.5 p-2.5 bg-[var(--color-bg-overlay)] rounded-md border border-[var(--color-border-base)]">
+                        <div className="type-eyebrow text-[var(--color-gold)] mb-1">
                           Recommended Action
                         </div>
-                        <p className="text-xs text-helm-secondary leading-relaxed">
+                        <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
                           {insight.recommended_action}
                         </p>
                       </div>
@@ -153,7 +155,7 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
                   )}
 
                   {/* Timestamp */}
-                  <div className="mt-2 type-caption text-helm-muted">
+                  <div className="mt-2 type-eyebrow text-[var(--color-text-muted)]">
                     {new Date(insight.timestamp).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
@@ -167,9 +169,9 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
           })}
 
           {insights.length === 0 && (
-            <div className="text-center py-12 text-helm-secondary">
-              <Lightbulb className="h-8 w-8 mx-auto mb-2 text-helm-muted" />
-              <p className="text-xs">No insights available</p>
+            <div className="text-center py-12 text-[var(--color-text-secondary)]">
+              <Lightbulb className="h-8 w-8 mx-auto mb-2 text-[var(--color-text-muted)]" />
+              <p className="type-body text-xs">No insights available</p>
             </div>
           )}
         </div>
@@ -212,14 +214,14 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
 
           {(drawerInsight.type === 'spending' || drawerInsight.type === 'credit') && (
             <div className="p-6">
-              <div className="p-4 bg-helm-elevated rounded border border-helm-border-subtle">
-                <p className="text-sm text-helm-secondary">
+              <div className="p-4 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-base)]">
+                <p className="type-body text-[var(--color-text-secondary)]">
                   {drawerInsight.description}
                 </p>
                 {drawerInsight.recommended_action && (
-                  <div className="mt-3 pt-3 border-t border-helm-border-subtle">
-                    <div className="type-caption text-helm-gold mb-1">Recommended Action</div>
-                    <p className="text-sm text-helm-gold">{drawerInsight.recommended_action}</p>
+                  <div className="mt-3 pt-3 border-t border-[var(--color-border-base)]">
+                    <div className="type-eyebrow text-[var(--color-gold)] mb-1">Recommended Action</div>
+                    <p className="type-body text-[var(--color-gold)]">{drawerInsight.recommended_action}</p>
                   </div>
                 )}
               </div>

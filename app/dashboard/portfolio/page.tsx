@@ -55,82 +55,82 @@ export default function PortfolioPage() {
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-7xl">
       {/* Header */}
-      <div className="space-y-2">
+      <div className="space-y-1">
         <h1 className="type-h1">Portfolio</h1>
-        <p className="type-body">
+        <p className="type-body text-[var(--color-text-secondary)]">
           Track your investments, allocation, and performance
         </p>
       </div>
 
       {/* Portfolio Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <div className="flex items-center space-x-2">
-              <DollarSign className="w-4 h-4 text-helm-muted" />
+              <DollarSign className="w-4 h-4 text-[var(--color-text-muted)]" />
               <CardDescription>Total Portfolio Value</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
-            <CardTitle className="type-data text-3xl">
-              ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <CardTitle className="type-data text-2xl">
+              {formatCurrency(totalValue)}
             </CardTitle>
-            <p className="text-sm text-helm-secondary mt-1">{mockHoldings.length} holdings</p>
+            <p className="type-mono text-[var(--color-text-secondary)] mt-1">{mockHoldings.length} holdings</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <div className="flex items-center space-x-2">
               {dayChangePercentage >= 0 ? (
-                <TrendingUp className="w-4 h-4 text-helm-positive" />
+                <TrendingUp className="w-4 h-4 text-[var(--color-positive)]" />
               ) : (
-                <TrendingDown className="w-4 h-4 text-helm-negative" />
+                <TrendingDown className="w-4 h-4 text-[var(--color-negative)]" />
               )}
-              <CardDescription>Today's Change</CardDescription>
+              <CardDescription>Today&apos;s Change</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
-            <CardTitle className={`type-data text-3xl ${dayChangePercentage >= 0 ? 'text-helm-positive' : 'text-helm-negative'}`}>
+            <CardTitle className={`type-data text-2xl ${dayChangePercentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
               {dayChangePercentage >= 0 ? '+' : ''}
               {dayChangePercentage.toFixed(2)}%
             </CardTitle>
-            <p className={`text-sm mt-1 ${dayChangePercentage >= 0 ? 'text-helm-positive' : 'text-helm-negative'}`}>
+            <p className={`type-mono mt-1 ${dayChangePercentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
               {dayChangePercentage >= 0 ? '+' : ''}
-              ${totalDayChange.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatCurrency(totalDayChange)}
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <div className="flex items-center space-x-2">
-              <PieChart className="w-4 h-4 text-helm-muted" />
+              <PieChart className="w-4 h-4 text-[var(--color-text-muted)]" />
               <CardDescription>Largest Position</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
-            <CardTitle className="text-xl">
+            <CardTitle className="type-data text-xl">
               {mockHoldings.sort((a, b) => b.portfolio_allocation - a.portfolio_allocation)[0]?.ticker}
             </CardTitle>
-            <p className="text-sm text-helm-secondary mt-1">
+            <p className="type-mono text-[var(--color-text-secondary)] mt-1">
               {mockHoldings.sort((a, b) => b.portfolio_allocation - a.portfolio_allocation)[0]?.portfolio_allocation}% of portfolio
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <div className="flex items-center space-x-2">
-              <TrendingUp className="w-4 h-4 text-helm-muted" />
+              <TrendingUp className="w-4 h-4 text-[var(--color-text-muted)]" />
               <CardDescription>Best Performer Today</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
-            <CardTitle className="text-xl text-helm-positive">
+            <CardTitle className="type-data text-xl text-[var(--color-positive)]">
               {mockHoldings.sort((a, b) => b.day_change_percentage - a.day_change_percentage)[0]?.ticker}
             </CardTitle>
-            <p className="text-sm text-helm-positive mt-1">
+            <p className="type-mono text-[var(--color-positive)] mt-1">
               +{mockHoldings.sort((a, b) => b.day_change_percentage - a.day_change_percentage)[0]?.day_change_percentage}%
             </p>
           </CardContent>
@@ -142,11 +142,11 @@ export default function PortfolioPage() {
         <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
           <div>
             <CardTitle className="type-h2 flex items-center gap-2">
-              <PieChart className="w-4 h-4 text-helm-muted" />
+              <PieChart className="w-4 h-4 text-[var(--color-text-muted)]" />
               Performance over time
             </CardTitle>
             <CardDescription>
-              Mock performance curve to illustrate how your portfolio evolves.
+              Portfolio value evolution across selected time range
             </CardDescription>
           </div>
           <div className="flex gap-1">
@@ -154,10 +154,10 @@ export default function PortfolioPage() {
               <button
                 key={key}
                 onClick={() => setRange(key)}
-                className={`px-2 py-1 rounded-md type-caption ${
+                className={`px-2.5 py-1 rounded-md type-caption transition-all duration-200 ${
                   range === key
-                    ? 'bg-helm-gold-surface text-helm-gold border border-helm-gold-border'
-                    : 'bg-helm-elevated text-helm-secondary border border-helm-border-subtle hover:border-helm-border-base'
+                    ? 'bg-[var(--color-gold-surface)] text-[var(--color-gold)] border border-[var(--color-gold-border)]'
+                    : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] hover:border-[var(--color-border-base)]'
                 }`}
               >
                 {key}
@@ -168,43 +168,53 @@ export default function PortfolioPage() {
         <CardContent>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={performanceSeries[range]}>
+              <AreaChart data={performanceSeries[range]} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
+                <defs>
+                  <linearGradient id="perfGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--color-gold)" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="var(--color-gold)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
                 <XAxis
                   dataKey="label"
-                  stroke="var(--color-text-secondary)"
-                  fontSize={11}
+                  stroke="var(--color-text-muted)"
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
+                  fontFamily="var(--font-jetbrains-mono)"
                 />
                 <YAxis
-                  stroke="var(--color-text-secondary)"
-                  fontSize={11}
+                  stroke="var(--color-text-muted)"
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(value) =>
-                    `$${(Number(value) / 1000).toFixed(0)}k`
-                  }
+                  tickFormatter={(value) => `$${(Number(value) / 1000).toFixed(0)}k`}
+                  fontFamily="var(--font-jetbrains-mono)"
+                  width={52}
                 />
                 <Tooltip
-                  formatter={(value) => formatCurrency(Number(value))}
+                  formatter={(value) => [formatCurrency(Number(value)), 'Portfolio']}
                   contentStyle={{
                     backgroundColor: 'var(--color-bg-elevated)',
                     border: '1px solid var(--color-border-base)',
                     borderRadius: '4px',
                     color: 'var(--color-text-primary)',
+                    fontSize: '12px',
                   }}
                   labelStyle={{
                     color: 'var(--color-text-secondary)',
-                    fontSize: '11px',
+                    fontSize: '10px',
+                    fontFamily: 'var(--font-jetbrains-mono)',
                   }}
                 />
                 <Area
                   type="monotone"
                   dataKey="value"
                   stroke="var(--color-gold)"
-                  fill="var(--color-gold)"
-                  fillOpacity={0.16}
+                  fill="url(#perfGradient)"
                   strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4, fill: 'var(--color-gold)', stroke: 'var(--color-bg-surface)', strokeWidth: 2 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -236,17 +246,17 @@ export default function PortfolioPage() {
               ].map((asset) => (
                 <div key={asset.name} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-helm-secondary">{asset.name}</span>
-                    <span className="type-label text-helm-platinum">{asset.percentage}%</span>
+                    <span className="type-label text-[var(--color-text-secondary)]">{asset.name}</span>
+                    <span className="type-mono text-[var(--color-text-primary)]">{asset.percentage}%</span>
                   </div>
-                  <div className="w-full bg-helm-elevated border border-helm-border-subtle rounded-full h-2">
+                  <div className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-full h-1.5">
                     <div
-                      className="bg-helm-gold h-2 rounded-full"
+                      className="bg-[var(--color-gold)] h-1.5 rounded-full transition-all duration-500"
                       style={{ width: `${asset.percentage}%` }}
                     />
                   </div>
-                  <div className="text-xs text-helm-muted">
-                    ${asset.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <div className="type-mono text-[var(--color-text-muted)]">
+                    {formatCurrency(asset.value)}
                   </div>
                 </div>
               ))}
@@ -259,26 +269,18 @@ export default function PortfolioPage() {
               <CardTitle>Performance Metrics</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-helm-secondary">1 Month Return</span>
-                <span className="type-label text-helm-positive">+5.2%</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-helm-secondary">3 Month Return</span>
-                <span className="type-label text-helm-positive">+12.8%</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-helm-secondary">YTD Return</span>
-                <span className="type-label text-helm-positive">+18.3%</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-helm-secondary">Sharpe Ratio</span>
-                <span className="type-label text-helm-platinum">1.42</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-helm-secondary">Beta</span>
-                <span className="type-label text-helm-platinum">1.15</span>
-              </div>
+              {[
+                { label: '1 Month Return', value: '+5.2%', color: 'text-[var(--color-positive)]' },
+                { label: '3 Month Return', value: '+12.8%', color: 'text-[var(--color-positive)]' },
+                { label: 'YTD Return', value: '+18.3%', color: 'text-[var(--color-positive)]' },
+                { label: 'Sharpe Ratio', value: '1.42', color: 'text-[var(--color-text-primary)]' },
+                { label: 'Beta', value: '1.15', color: 'text-[var(--color-text-primary)]' },
+              ].map((metric) => (
+                <div key={metric.label} className="flex items-center justify-between">
+                  <span className="type-label text-[var(--color-text-secondary)]">{metric.label}</span>
+                  <span className={`type-mono ${metric.color}`}>{metric.value}</span>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </div>

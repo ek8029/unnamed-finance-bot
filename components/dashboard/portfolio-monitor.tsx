@@ -92,8 +92,8 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
             <TrendingUp className="h-5 w-5" />
             Investment Portfolio
           </CardTitle>
-          <div className="text-sm text-helm-secondary">
-            Total: <span className="type-label text-helm-platinum">{formatCurrency(totalValue)}</span>
+          <div className="text-sm text-[var(--color-text-secondary)]">
+            Total: <span className="type-label text-[var(--color-text-primary)]">{formatCurrency(totalValue)}</span>
           </div>
         </div>
       </CardHeader>
@@ -109,35 +109,35 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
           ) : (
             <table className="w-full">
               <thead>
-                <tr className="border-b border-helm-border-base">
+                <tr className="border-b border-[var(--color-border-base)]">
                   <th
-                    className="text-left py-3 px-4 type-label text-helm-secondary cursor-pointer select-none"
+                    className="text-left py-3 px-4 type-label text-[var(--color-text-secondary)] cursor-pointer select-none"
                     onClick={() => handleSort('asset')}
                   >
                     Asset {renderSortIcon('asset')}
                   </th>
                   <th
-                    className="text-left py-3 px-4 type-label text-helm-secondary cursor-pointer select-none"
+                    className="text-left py-3 px-4 type-label text-[var(--color-text-secondary)] cursor-pointer select-none"
                     onClick={() => handleSort('ticker')}
                   >
                     Ticker {renderSortIcon('ticker')}
                   </th>
-                  <th className="text-right py-3 px-4 type-label text-helm-secondary">Shares</th>
-                  <th className="text-right py-3 px-4 type-label text-helm-secondary">Price</th>
+                  <th className="text-right py-3 px-4 type-label text-[var(--color-text-secondary)]">Shares</th>
+                  <th className="text-right py-3 px-4 type-label text-[var(--color-text-secondary)]">Price</th>
                   <th
-                    className="text-right py-3 px-4 type-label text-helm-secondary cursor-pointer select-none"
+                    className="text-right py-3 px-4 type-label text-[var(--color-text-secondary)] cursor-pointer select-none"
                     onClick={() => handleSort('value')}
                   >
                     Total Value {renderSortIcon('value')}
                   </th>
                   <th
-                    className="text-right py-3 px-4 type-label text-helm-secondary cursor-pointer select-none"
+                    className="text-right py-3 px-4 type-label text-[var(--color-text-secondary)] cursor-pointer select-none"
                     onClick={() => handleSort('change')}
                   >
                     Day Change {renderSortIcon('change')}
                   </th>
                   <th
-                    className="text-right py-3 px-4 type-label text-helm-secondary cursor-pointer select-none"
+                    className="text-right py-3 px-4 type-label text-[var(--color-text-secondary)] cursor-pointer select-none"
                     onClick={() => handleSort('allocation')}
                   >
                     Allocation {renderSortIcon('allocation')}
@@ -158,7 +158,7 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                     <>
                       <tr
                         key={holding.id}
-                        className="border-b border-helm-border-subtle hover:bg-helm-overlay transition-colors cursor-pointer"
+                        className="border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-overlay)] transition-colors cursor-pointer"
                         onClick={() =>
                           setExpandedRowId(isExpanded ? null : holding.id)
                         }
@@ -167,32 +167,32 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                           <div>
                             <div className="type-h3">{holding.asset_name}</div>
                             {holding.sector && (
-                              <div className="text-xs text-helm-muted mt-0.5">
+                              <div className="text-xs text-[var(--color-text-muted)] mt-0.5">
                                 {holding.sector}
                               </div>
                             )}
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <span className="type-data text-sm text-helm-platinum">
+                          <span className="type-data text-sm text-[var(--color-text-primary)]">
                             {holding.ticker}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-right text-sm text-helm-secondary">
+                        <td className="py-3 px-4 text-right text-sm text-[var(--color-text-secondary)]">
                           {formatNumber(holding.shares)}
                         </td>
-                        <td className="py-3 px-4 text-right text-sm text-helm-platinum">
+                        <td className="py-3 px-4 text-right text-sm text-[var(--color-text-primary)]">
                           {formatCurrency(holding.current_price)}
                         </td>
-                        <td className="py-3 px-4 text-right type-label text-helm-platinum">
+                        <td className="py-3 px-4 text-right type-label text-[var(--color-text-primary)]">
                           {formatCurrency(holding.total_value)}
                         </td>
                         <td className="py-3 px-4 text-right">
                           <div
                             className={`flex items-center justify-end gap-1 ${
                               isPositiveChange
-                                ? 'text-helm-positive'
-                                : 'text-helm-negative'
+                                ? 'text-[var(--color-positive)]'
+                                : 'text-[var(--color-negative)]'
                             }`}
                           >
                             {isPositiveChange ? (
@@ -207,24 +207,24 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                         </td>
                         <td className="py-3 px-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <div className="w-16 h-2 bg-helm-elevated border border-helm-border-subtle rounded-full overflow-hidden">
+                            <div className="w-16 h-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-helm-gold"
+                                className="h-full bg-[var(--color-gold)]"
                                 style={{
                                   width: `${holding.portfolio_allocation}%`,
                                 }}
                               />
                             </div>
-                            <span className="type-label text-helm-platinum w-12">
+                            <span className="type-label text-[var(--color-text-primary)] w-12">
                               {holding.portfolio_allocation.toFixed(1)}%
                             </span>
                           </div>
                         </td>
                       </tr>
                       {isExpanded && (
-                        <tr className="border-b border-helm-border-subtle bg-helm-overlay/60">
+                        <tr className="border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-overlay)]/60">
                           <td colSpan={7} className="py-3 px-4">
-                            <div className="flex flex-wrap gap-4 text-xs text-helm-secondary">
+                            <div className="flex flex-wrap gap-4 text-xs text-[var(--color-text-secondary)]">
                               <div>
                                 <span className="type-label block mb-1">
                                   Cost basis (per share)
@@ -242,8 +242,8 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                                 <span
                                   className={`type-data text-sm ${
                                     unrealised >= 0
-                                      ? 'text-helm-positive'
-                                      : 'text-helm-negative'
+                                      ? 'text-[var(--color-positive)]'
+                                      : 'text-[var(--color-negative)]'
                                   }`}
                                 >
                                   {unrealised >= 0 ? '+' : '-'}
@@ -275,9 +275,9 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
           )}
         </div>
 
-        <div className="mt-4 p-4 bg-helm-overlay rounded-md border border-helm-border-base">
+        <div className="mt-4 p-4 bg-[var(--color-bg-overlay)] rounded-md border border-[var(--color-border-base)]">
           <div className="flex items-start gap-2">
-            <div className="text-helm-gold mt-0.5">
+            <div className="text-[var(--color-gold)] mt-0.5">
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
@@ -288,7 +288,7 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
             </div>
             <div className="flex-1">
               <h4 className="type-h3 mb-1">Market Intelligence</h4>
-              <p className="text-sm text-helm-secondary">
+              <p className="text-sm text-[var(--color-text-secondary)]">
                 Monitoring news and filings for your holdings. You'll be notified of any significant events.
               </p>
             </div>

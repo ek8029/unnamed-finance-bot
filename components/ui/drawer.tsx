@@ -57,7 +57,7 @@ export function Drawer({ isOpen, onClose, title, children, size = 'md' }: Drawer
       {/* Drawer */}
       <div
         className={cn(
-          'fixed top-0 right-0 h-full w-full bg-helm-surface border-l border-helm-border-base shadow-2xl z-50',
+          'fixed top-0 right-0 h-full w-full bg-[var(--color-bg-surface)] border-l border-[var(--color-border-base)] shadow-2xl z-50',
           'transform transition-transform duration-300 ease-out',
           isOpen ? 'translate-x-0' : 'translate-x-full',
           drawerSizes[size]
@@ -67,13 +67,13 @@ export function Drawer({ isOpen, onClose, title, children, size = 'md' }: Drawer
         aria-labelledby="drawer-title"
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-helm-border-base bg-helm-surface">
-          <h2 id="drawer-title" className="type-h2 text-helm-platinum">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-[var(--color-border-base)] bg-[var(--color-bg-surface)]">
+          <h2 id="drawer-title" className="type-h2 text-[var(--color-text-primary)]">
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 rounded hover:bg-helm-overlay transition-colors text-helm-secondary hover:text-helm-platinum"
+            className="p-2 rounded hover:bg-[var(--color-bg-overlay)] transition-colors text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             aria-label="Close drawer"
           >
             <X className="h-5 w-5" />
@@ -97,7 +97,7 @@ interface DrawerSectionProps {
 
 export function DrawerSection({ children, className }: DrawerSectionProps) {
   return (
-    <div className={cn('px-6 py-4 border-b border-helm-border-subtle last:border-b-0', className)}>
+    <div className={cn('px-6 py-4 border-b border-[var(--color-border-subtle)] last:border-b-0', className)}>
       {children}
     </div>
   );
@@ -108,5 +108,5 @@ interface DrawerSectionHeaderProps {
 }
 
 export function DrawerSectionHeader({ children }: DrawerSectionHeaderProps) {
-  return <h3 className="type-h3 text-helm-platinum mb-3">{children}</h3>;
+  return <h3 className="type-h3 text-[var(--color-text-primary)] mb-3">{children}</h3>;
 }

@@ -41,14 +41,14 @@ export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
           <DataPanelTitle>Accounts Overview</DataPanelTitle>
           <div className="flex items-center gap-1.5 type-label text-xs">
             {isPositive ? (
-              <TrendingUp className="h-3.5 w-3.5 text-helm-positive" />
+              <TrendingUp className="h-3.5 w-3.5 text-[var(--color-positive)]" />
             ) : (
-              <TrendingUp className="h-3.5 w-3.5 text-helm-negative rotate-180" />
+              <TrendingUp className="h-3.5 w-3.5 text-[var(--color-negative)] rotate-180" />
             )}
-            <span className={isPositive ? 'text-helm-positive' : 'text-helm-negative'}>
+            <span className={isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}>
               {isPositive ? '+' : ''}{balanceChangePercent.toFixed(1)}%
             </span>
-            <span className="text-helm-muted">vs last month</span>
+            <span className="text-[var(--color-text-muted)]">vs last month</span>
           </div>
         </div>
       </DataPanelHeader>
@@ -58,57 +58,57 @@ export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
           <div className="flex-shrink-0 w-[40%] space-y-4">
             {/* Current Balance */}
             <div>
-              <div className="type-caption text-helm-secondary mb-1">Total Balance</div>
-              <div className="type-data text-3xl font-tabular text-helm-platinum">
+              <div className="type-caption text-[var(--color-text-secondary)] mb-1">Total Balance</div>
+              <div className="type-data text-3xl font-tabular text-[var(--color-text-primary)]">
                 {formatCurrency(currentMonth.balance)}
               </div>
               <div className="flex items-center gap-1 mt-1">
-                <span className={`type-label text-xs ${isPositive ? 'text-helm-positive' : 'text-helm-negative'}`}>
+                <span className={`type-label text-xs ${isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
                   {isPositive ? '+' : ''}{formatCurrency(balanceChange)}
                 </span>
-                <span className="type-caption text-helm-muted">this month</span>
+                <span className="type-caption text-[var(--color-text-muted)]">this month</span>
               </div>
             </div>
 
             {/* Monthly Flow */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-helm-elevated rounded border border-helm-border-subtle">
+              <div className="p-3 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <ArrowUpRight className="h-3 w-3 text-helm-positive" />
-                  <div className="type-caption text-helm-secondary">Inflows</div>
+                  <ArrowUpRight className="h-3 w-3 text-[var(--color-positive)]" />
+                  <div className="type-caption text-[var(--color-text-secondary)]">Inflows</div>
                 </div>
-                <div className="type-data text-sm font-tabular text-helm-positive">
+                <div className="type-data text-sm font-tabular text-[var(--color-positive)]">
                   {formatCurrency(currentMonth.inflows)}
                 </div>
               </div>
-              <div className="p-3 bg-helm-elevated rounded border border-helm-border-subtle">
+              <div className="p-3 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <ArrowDownRight className="h-3 w-3 text-helm-negative" />
-                  <div className="type-caption text-helm-secondary">Outflows</div>
+                  <ArrowDownRight className="h-3 w-3 text-[var(--color-negative)]" />
+                  <div className="type-caption text-[var(--color-text-secondary)]">Outflows</div>
                 </div>
-                <div className="type-data text-sm font-tabular text-helm-negative">
+                <div className="type-data text-sm font-tabular text-[var(--color-negative)]">
                   {formatCurrency(currentMonth.outflows)}
                 </div>
               </div>
             </div>
 
             {/* Net Flow */}
-            <div className="p-3 bg-helm-gold-surface rounded border border-helm-gold/20">
-              <div className="type-caption text-helm-secondary mb-1">Net Flow</div>
-              <div className={`type-data text-xl font-tabular ${netFlow >= 0 ? 'text-helm-positive' : 'text-helm-negative'}`}>
+            <div className="p-3 bg-[var(--color-gold-surface)] rounded border border-[var(--color-gold)]/20">
+              <div className="type-caption text-[var(--color-text-secondary)] mb-1">Net Flow</div>
+              <div className={`type-data text-xl font-tabular ${netFlow >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
                 {netFlow >= 0 ? '+' : ''}{formatCurrency(netFlow)}
               </div>
             </div>
 
             {/* 3-Month Averages */}
-            <div className="pt-3 border-t border-helm-border-subtle space-y-2">
+            <div className="pt-3 border-t border-[var(--color-border-subtle)] space-y-2">
               <div className="flex justify-between type-label text-xs">
-                <span className="text-helm-secondary">3-Mo Avg Inflows</span>
-                <span className="text-helm-platinum font-tabular">{formatCurrency(avgInflows)}</span>
+                <span className="text-[var(--color-text-secondary)]">3-Mo Avg Inflows</span>
+                <span className="text-[var(--color-text-primary)] font-tabular">{formatCurrency(avgInflows)}</span>
               </div>
               <div className="flex justify-between type-label text-xs">
-                <span className="text-helm-secondary">3-Mo Avg Outflows</span>
-                <span className="text-helm-platinum font-tabular">{formatCurrency(avgOutflows)}</span>
+                <span className="text-[var(--color-text-secondary)]">3-Mo Avg Outflows</span>
+                <span className="text-[var(--color-text-primary)] font-tabular">{formatCurrency(avgOutflows)}</span>
               </div>
             </div>
           </div>

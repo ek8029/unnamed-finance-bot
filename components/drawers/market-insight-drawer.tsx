@@ -23,14 +23,14 @@ export function MarketInsightDrawer({
   return (
     <>
       {/* Market Alert */}
-      <DrawerSection className="bg-helm-elevated">
+      <DrawerSection className="bg-[var(--color-bg-elevated)]">
         <div className="flex items-start gap-3">
-          <div className="p-2 bg-helm-warning/10 rounded border border-helm-warning/20">
-            <AlertCircle className="h-5 w-5 text-helm-warning" />
+          <div className="p-2 bg-[var(--color-warning)]/10 rounded border border-[var(--color-warning)]/20">
+            <AlertCircle className="h-5 w-5 text-[var(--color-warning)]" />
           </div>
           <div className="flex-1">
-            <h3 className="type-h3 text-helm-platinum mb-1">{insightTitle}</h3>
-            <p className="text-sm text-helm-secondary leading-relaxed">
+            <h3 className="type-h3 text-[var(--color-text-primary)] mb-1">{insightTitle}</h3>
+            <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
               {insightDescription}
             </p>
           </div>
@@ -40,17 +40,17 @@ export function MarketInsightDrawer({
       {/* Exposure Summary */}
       <DrawerSection>
         <DrawerSectionHeader>Your Exposure</DrawerSectionHeader>
-        <div className="p-4 bg-helm-elevated rounded border border-helm-border-subtle">
+        <div className="p-4 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="type-caption text-helm-secondary mb-1">Total Exposure</div>
-              <div className="type-data text-2xl font-tabular text-helm-platinum">
+              <div className="type-caption text-[var(--color-text-secondary)] mb-1">Total Exposure</div>
+              <div className="type-data text-2xl font-tabular text-[var(--color-text-primary)]">
                 {formatCurrency(totalExposure)}
               </div>
             </div>
             <div>
-              <div className="type-caption text-helm-secondary mb-1">Affected Holdings</div>
-              <div className="type-data text-2xl font-tabular text-helm-platinum">
+              <div className="type-caption text-[var(--color-text-secondary)] mb-1">Affected Holdings</div>
+              <div className="type-data text-2xl font-tabular text-[var(--color-text-primary)]">
                 {affectedHoldings.length}
               </div>
             </div>
@@ -61,9 +61,9 @@ export function MarketInsightDrawer({
       {/* Recommended Action */}
       <DrawerSection>
         <DrawerSectionHeader>Recommended Action</DrawerSectionHeader>
-        <div className="p-4 bg-helm-gold-surface rounded border border-helm-gold/20">
+        <div className="p-4 bg-[var(--color-gold-surface)] rounded border border-[var(--color-gold)]/20">
           <div className="flex items-start gap-2">
-            <div className="type-label text-sm text-helm-gold leading-relaxed">
+            <div className="type-label text-sm text-[var(--color-gold)] leading-relaxed">
               {recommendedAction}
             </div>
           </div>
@@ -82,46 +82,46 @@ export function MarketInsightDrawer({
             return (
               <div
                 key={holding.id}
-                className="p-4 bg-helm-elevated rounded border border-helm-border-subtle hover:border-helm-border-strong transition-colors"
+                className="p-4 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)] hover:border-[var(--color-border-strong)] transition-colors"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="type-h3 text-helm-platinum">{holding.ticker}</span>
-                      <span className="type-caption text-helm-secondary">
+                      <span className="type-h3 text-[var(--color-text-primary)]">{holding.ticker}</span>
+                      <span className="type-caption text-[var(--color-text-secondary)]">
                         {holding.asset_name}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3 type-caption text-helm-secondary">
+                    <div className="flex items-center gap-3 type-caption text-[var(--color-text-secondary)]">
                       <span>{holding.shares} shares</span>
                       <span>•</span>
                       <span>{holding.portfolio_allocation.toFixed(1)}% of portfolio</span>
                     </div>
                   </div>
-                  <button className="p-1.5 rounded hover:bg-helm-overlay transition-colors text-helm-secondary hover:text-helm-platinum">
+                  <button className="p-1.5 rounded hover:bg-[var(--color-bg-overlay)] transition-colors text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]">
                     <ExternalLink className="h-4 w-4" />
                   </button>
                 </div>
 
                 {/* Metrics Grid */}
-                <div className="grid grid-cols-4 gap-4 p-3 bg-helm-surface rounded border border-helm-border-subtle">
+                <div className="grid grid-cols-4 gap-4 p-3 bg-[var(--color-bg-surface)] rounded border border-[var(--color-border-subtle)]">
                   <div>
-                    <div className="type-caption text-helm-secondary mb-1">Current Value</div>
-                    <div className="type-data text-sm font-tabular text-helm-platinum">
+                    <div className="type-caption text-[var(--color-text-secondary)] mb-1">Current Value</div>
+                    <div className="type-data text-sm font-tabular text-[var(--color-text-primary)]">
                       {formatCurrency(holding.total_value)}
                     </div>
                   </div>
                   <div>
-                    <div className="type-caption text-helm-secondary mb-1">Current Price</div>
-                    <div className="type-data text-sm font-tabular text-helm-platinum">
+                    <div className="type-caption text-[var(--color-text-secondary)] mb-1">Current Price</div>
+                    <div className="type-data text-sm font-tabular text-[var(--color-text-primary)]">
                       {formatCurrency(holding.current_price)}
                     </div>
                   </div>
                   <div>
-                    <div className="type-caption text-helm-secondary mb-1">Day Change</div>
+                    <div className="type-caption text-[var(--color-text-secondary)] mb-1">Day Change</div>
                     <div
                       className={`flex items-center gap-1 type-data text-sm font-tabular ${
-                        holding.day_change_percentage >= 0 ? 'text-helm-positive' : 'text-helm-negative'
+                        holding.day_change_percentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                       }`}
                     >
                       {holding.day_change_percentage >= 0 ? (
@@ -136,10 +136,10 @@ export function MarketInsightDrawer({
                     </div>
                   </div>
                   <div>
-                    <div className="type-caption text-helm-secondary mb-1">Total Gain/Loss</div>
+                    <div className="type-caption text-[var(--color-text-secondary)] mb-1">Total Gain/Loss</div>
                     <div
                       className={`type-data text-sm font-tabular ${
-                        totalGainLoss >= 0 ? 'text-helm-positive' : 'text-helm-negative'
+                        totalGainLoss >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                       }`}
                     >
                       {totalGainLoss >= 0 ? '+' : ''}

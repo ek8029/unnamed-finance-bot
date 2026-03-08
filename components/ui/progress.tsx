@@ -8,11 +8,11 @@ interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const variantStyles = {
-  default: "bg-helm-platinum",
-  positive: "bg-helm-positive",
-  negative: "bg-helm-negative",
-  warning: "bg-helm-warning",
-  gold: "bg-helm-gold",
+  default: "bg-[var(--color-text-primary)]",
+  positive: "bg-[var(--color-positive)]",
+  negative: "bg-[var(--color-negative)]",
+  warning: "bg-[var(--color-warning)]",
+  gold: "bg-[var(--color-gold)]",
 };
 
 const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
@@ -23,7 +23,7 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
       <div
         ref={ref}
         className={cn(
-          "relative h-1.5 w-full overflow-hidden rounded-full bg-helm-elevated border border-helm-border-subtle",
+          "relative h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)]",
           className
         )}
         {...props}

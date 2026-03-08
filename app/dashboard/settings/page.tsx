@@ -79,12 +79,12 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-md bg-helm-gold-surface border border-helm-gold-border">
-            <span className="type-caption text-helm-gold">Helm</span>
+          <div className="flex items-center justify-center w-10 h-10 rounded-md bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)]">
+            <span className="type-caption text-[var(--color-gold)]">Helm</span>
           </div>
           <div>
             <h1 className="type-h1">Settings</h1>
-            <p className="type-body text-helm-secondary">
+            <p className="type-body text-[var(--color-text-secondary)]">
               Manage your account preferences and application settings
             </p>
           </div>
@@ -92,7 +92,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Live Settings Preview */}
-      <Card variant="outline" className="border-helm-gold-border bg-helm-gold-surface/30">
+      <Card variant="outline" className="border-[var(--color-gold-border)] bg-[var(--color-gold-surface)]/30">
         <CardHeader>
           <CardTitle>Live Preview</CardTitle>
           <CardDescription>See your localization settings in action</CardDescription>
@@ -100,20 +100,20 @@ export default function SettingsPage() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
-              <div className="type-label text-helm-muted mb-1">Theme Mode</div>
+              <div className="type-label text-[var(--color-text-muted)] mb-1">Theme Mode</div>
               <div className="type-h3 capitalize">{settings.theme}</div>
             </div>
             <div>
-              <div className="type-label text-helm-muted mb-1">Density</div>
+              <div className="type-label text-[var(--color-text-muted)] mb-1">Density</div>
               <div className="type-h3 capitalize">{settings.density}</div>
             </div>
             <div>
-              <div className="type-label text-helm-muted mb-1">Sample Amount</div>
+              <div className="type-label text-[var(--color-text-muted)] mb-1">Sample Amount</div>
               <div className="type-h3">{formatCurrency(1234567)}</div>
-              <div className="text-xs text-helm-secondary mt-1">{formatCurrencyDetailed(1234.56)}</div>
+              <div className="text-xs text-[var(--color-text-secondary)] mt-1">{formatCurrencyDetailed(1234.56)}</div>
             </div>
             <div>
-              <div className="type-label text-helm-muted mb-1">Sample Date</div>
+              <div className="type-label text-[var(--color-text-muted)] mb-1">Sample Date</div>
               <div className="type-h3">{formatDate(new Date())}</div>
             </div>
           </div>
@@ -126,8 +126,8 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-helm-gold-surface border border-helm-gold-border">
-                <User className="w-4 h-4 text-helm-gold" />
+              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)]">
+                <User className="w-4 h-4 text-[var(--color-gold)]" />
               </div>
               <div>
                 <CardTitle>Profile Settings</CardTitle>
@@ -173,8 +173,8 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-helm-gold-surface border border-helm-gold-border">
-                <Palette className="w-4 h-4 text-helm-gold" />
+              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)]">
+                <Palette className="w-4 h-4 text-[var(--color-gold)]" />
               </div>
               <div>
                 <CardTitle>Appearance</CardTitle>
@@ -195,8 +195,8 @@ export default function SettingsPage() {
                       p-3 rounded-md border-2 transition-all type-label
                       ${
                         settings.theme === theme
-                          ? 'border-helm-gold bg-helm-gold-surface text-helm-gold'
-                          : 'border-helm-border-base bg-helm-elevated text-helm-secondary hover:border-helm-border-strong hover:text-helm-platinum'
+                          ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
+                          : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]'
                       }
                     `}
                   >
@@ -218,8 +218,8 @@ export default function SettingsPage() {
                       p-3 rounded-md border-2 transition-all type-label
                       ${
                         settings.density === density
-                          ? 'border-helm-gold bg-helm-gold-surface text-helm-gold'
-                          : 'border-helm-border-base bg-helm-elevated text-helm-secondary hover:border-helm-border-strong hover:text-helm-platinum'
+                          ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
+                          : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]'
                       }
                     `}
                   >
@@ -235,8 +235,8 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-helm-gold-surface border border-helm-gold-border">
-                <Bell className="w-4 h-4 text-helm-gold" />
+              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)]">
+                <Bell className="w-4 h-4 text-[var(--color-gold)]" />
               </div>
               <div>
                 <CardTitle>Notification Preferences</CardTitle>
@@ -255,11 +255,11 @@ export default function SettingsPage() {
             ].map((notification) => (
               <div
                 key={notification.key}
-                className="flex items-center justify-between p-3 bg-helm-elevated rounded-md border border-helm-border-subtle hover:border-helm-border-base transition-colors"
+                className="flex items-center justify-between p-3 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-subtle)] hover:border-[var(--color-border-base)] transition-colors"
               >
                 <div className="flex-1 mr-4">
                   <p className="type-h3 mb-0.5">{notification.label}</p>
-                  <p className="text-helm-secondary text-xs">{notification.description}</p>
+                  <p className="text-[var(--color-text-secondary)] text-xs">{notification.description}</p>
                 </div>
                 <Switch
                   checked={settings.notifications[notification.key as keyof typeof settings.notifications]}
@@ -274,8 +274,8 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-helm-gold-surface border border-helm-gold-border">
-                <Shield className="w-4 h-4 text-helm-gold" />
+              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)]">
+                <Shield className="w-4 h-4 text-[var(--color-gold)]" />
               </div>
               <div>
                 <CardTitle>Security</CardTitle>
@@ -284,34 +284,34 @@ export default function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-center justify-between p-4 bg-helm-elevated rounded-md border border-helm-border-base">
+            <div className="flex items-center justify-between p-4 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-base)]">
               <div className="flex items-center gap-3">
-                <Lock className="w-5 h-5 text-helm-muted" />
+                <Lock className="w-5 h-5 text-[var(--color-text-muted)]" />
                 <div>
                   <p className="type-h3">Password</p>
-                  <p className="text-helm-secondary text-xs">Last changed 3 months ago</p>
+                  <p className="text-[var(--color-text-secondary)] text-xs">Last changed 3 months ago</p>
                 </div>
               </div>
               <Button variant="outline" size="sm">Change</Button>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-helm-elevated rounded-md border border-helm-border-base">
+            <div className="flex items-center justify-between p-4 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-base)]">
               <div className="flex items-center gap-3">
-                <Smartphone className="w-5 h-5 text-helm-muted" />
+                <Smartphone className="w-5 h-5 text-[var(--color-text-muted)]" />
                 <div>
                   <p className="type-h3">Two-Factor Authentication</p>
-                  <p className="text-helm-positive text-xs">Enabled via SMS</p>
+                  <p className="text-[var(--color-positive)] text-xs">Enabled via SMS</p>
                 </div>
               </div>
               <Button variant="outline" size="sm">Manage</Button>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-helm-elevated rounded-md border border-helm-border-base">
+            <div className="flex items-center justify-between p-4 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-base)]">
               <div className="flex items-center gap-3">
-                <Globe className="w-5 h-5 text-helm-muted" />
+                <Globe className="w-5 h-5 text-[var(--color-text-muted)]" />
                 <div>
                   <p className="type-h3">Active Sessions</p>
-                  <p className="text-helm-secondary text-xs">2 active devices</p>
+                  <p className="text-[var(--color-text-secondary)] text-xs">2 active devices</p>
                 </div>
               </div>
               <Button variant="outline" size="sm">View</Button>
@@ -323,8 +323,8 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-helm-gold-surface border border-helm-gold-border">
-                <Globe className="w-4 h-4 text-helm-gold" />
+              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)]">
+                <Globe className="w-4 h-4 text-[var(--color-gold)]" />
               </div>
               <div>
                 <CardTitle>Localization</CardTitle>
@@ -344,8 +344,8 @@ export default function SettingsPage() {
                       p-2 rounded-md border transition-all type-label
                       ${
                         settings.currency === currency
-                          ? 'border-helm-gold bg-helm-gold-surface text-helm-gold'
-                          : 'border-helm-border-base bg-helm-elevated text-helm-secondary hover:border-helm-border-strong'
+                          ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
+                          : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]'
                       }
                     `}
                   >
@@ -366,8 +366,8 @@ export default function SettingsPage() {
                       p-2 rounded-md border transition-all type-caption text-[9px]
                       ${
                         settings.dateFormat === format
-                          ? 'border-helm-gold bg-helm-gold-surface text-helm-gold'
-                          : 'border-helm-border-base bg-helm-elevated text-helm-secondary hover:border-helm-border-strong'
+                          ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
+                          : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]'
                       }
                     `}
                   >
@@ -383,8 +383,8 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-helm-gold-surface border border-helm-gold-border">
-                <Accessibility className="w-4 h-4 text-helm-gold" />
+              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)]">
+                <Accessibility className="w-4 h-4 text-[var(--color-gold)]" />
               </div>
               <div>
                 <CardTitle>Accessibility</CardTitle>
@@ -403,8 +403,8 @@ export default function SettingsPage() {
                 key={option.key}
                 className={`flex items-center justify-between p-3 rounded-md border transition-colors ${
                   settings.accessibility[option.key as keyof typeof settings.accessibility]
-                    ? 'bg-helm-gold-surface border-helm-gold-border'
-                    : 'bg-helm-elevated border-helm-border-subtle hover:border-helm-border-base'
+                    ? 'bg-[var(--color-gold-surface)] border-[var(--color-gold-border)]'
+                    : 'bg-[var(--color-bg-elevated)] border-[var(--color-border-subtle)] hover:border-[var(--color-border-base)]'
                 }`}
               >
                 <div className="flex-1 mr-4">
@@ -414,7 +414,7 @@ export default function SettingsPage() {
                       <Badge variant="gold" className="text-xs">{option.activeMessage}</Badge>
                     )}
                   </div>
-                  <p className="text-helm-secondary text-xs">{option.description}</p>
+                  <p className="text-[var(--color-text-secondary)] text-xs">{option.description}</p>
                 </div>
                 <Switch
                   checked={settings.accessibility[option.key as keyof typeof settings.accessibility]}
@@ -429,8 +429,8 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-helm-gold-surface border border-helm-gold-border">
-                <CreditCard className="w-4 h-4 text-helm-gold" />
+              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)]">
+                <CreditCard className="w-4 h-4 text-[var(--color-gold)]" />
               </div>
               <div>
                 <CardTitle>Billing & Subscription</CardTitle>
@@ -439,15 +439,15 @@ export default function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 bg-helm-gold-surface border border-helm-gold-border rounded-md">
+            <div className="p-4 bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] rounded-md">
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <p className="type-h3">Premium Plan</p>
-                  <p className="text-helm-platinum">$29.99/month</p>
+                  <p className="text-[var(--color-text-primary)]">$29.99/month</p>
                 </div>
                 <Badge variant="gold">Active</Badge>
               </div>
-              <p className="text-helm-secondary text-xs mb-3">Next billing date: April 15, 2024</p>
+              <p className="text-[var(--color-text-secondary)] text-xs mb-3">Next billing date: April 15, 2024</p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" className="flex-1">Change Plan</Button>
                 <Button variant="outline" size="sm" className="flex-1">Cancel</Button>
@@ -456,12 +456,12 @@ export default function SettingsPage() {
 
             <div className="space-y-2">
               <Label>Payment Method</Label>
-              <div className="flex items-center justify-between p-3 bg-helm-elevated rounded-md border border-helm-border-base">
+              <div className="flex items-center justify-between p-3 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-base)]">
                 <div className="flex items-center gap-3">
-                  <CreditCard className="w-5 h-5 text-helm-muted" />
+                  <CreditCard className="w-5 h-5 text-[var(--color-text-muted)]" />
                   <div>
                     <p className="type-h3">•••• •••• •••• 4242</p>
-                    <p className="text-helm-secondary text-xs">Expires 12/2026</p>
+                    <p className="text-[var(--color-text-secondary)] text-xs">Expires 12/2026</p>
                   </div>
                 </div>
                 <Button variant="outline" size="sm">Update</Button>
@@ -474,8 +474,8 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-helm-gold-surface border border-helm-gold-border">
-                <Database className="w-4 h-4 text-helm-gold" />
+              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)]">
+                <Database className="w-4 h-4 text-[var(--color-gold)]" />
               </div>
               <div>
                 <CardTitle>Data & Privacy</CardTitle>
@@ -485,10 +485,10 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="space-y-3 mb-4">
-              <div className="flex items-center justify-between p-3 bg-helm-elevated rounded-md border border-helm-border-subtle hover:border-helm-border-base transition-colors">
+              <div className="flex items-center justify-between p-3 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-subtle)] hover:border-[var(--color-border-base)] transition-colors">
                 <div className="flex-1 mr-4">
                   <p className="type-h3 mb-0.5">Analytics</p>
-                  <p className="text-helm-secondary text-xs">Help improve Helm with usage data</p>
+                  <p className="text-[var(--color-text-secondary)] text-xs">Help improve Helm with usage data</p>
                 </div>
                 <Switch
                   checked={settings.analyticsEnabled}
@@ -496,10 +496,10 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-helm-elevated rounded-md border border-helm-border-subtle hover:border-helm-border-base transition-colors">
+              <div className="flex items-center justify-between p-3 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-subtle)] hover:border-[var(--color-border-base)] transition-colors">
                 <div className="flex-1 mr-4">
                   <p className="type-h3 mb-0.5">Crash Reporting</p>
-                  <p className="text-helm-secondary text-xs">Automatically report errors</p>
+                  <p className="text-[var(--color-text-secondary)] text-xs">Automatically report errors</p>
                 </div>
                 <Switch
                   checked={settings.crashReportingEnabled}
@@ -508,17 +508,17 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-helm-elevated rounded-md border border-helm-border-base">
+            <div className="flex items-center justify-between p-3 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-base)]">
               <div>
                 <p className="type-h3">Export Your Data</p>
-                <p className="text-helm-secondary text-xs">Download all your financial data</p>
+                <p className="text-[var(--color-text-secondary)] text-xs">Download all your financial data</p>
               </div>
               <Button variant="outline" size="sm">Export</Button>
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-helm-negative/5 border border-helm-negative/20 rounded-md">
+            <div className="flex items-center justify-between p-3 bg-[var(--color-negative)]/5 border border-[var(--color-negative)]/20 rounded-md">
               <div>
-                <p className="type-h3 text-helm-negative">Delete Account</p>
+                <p className="type-h3 text-[var(--color-negative)]">Delete Account</p>
                 <p className="text-xs" style={{ color: 'var(--color-negative)' }}>Permanently delete your account and data</p>
               </div>
               <Button variant="destructive" size="sm">
@@ -535,7 +535,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="type-h3 mb-1">Reset All Settings</p>
-              <p className="type-body text-helm-secondary">Restore all settings to their default values</p>
+              <p className="type-body text-[var(--color-text-secondary)]">Restore all settings to their default values</p>
             </div>
             <Button variant="outline" onClick={handleResetSettings}>
               Reset to Defaults

@@ -12,13 +12,10 @@ const dataPanelVariants = cva(
     variants: {
       variant: {
         // Single key metric displays
-        metric: 'bg-helm-surface border-helm-border-base hover:border-helm-border-strong',
-        // Data tables and grids
-        grid: 'bg-helm-surface border-helm-border-base',
-        // Visualization containers
-        chart: 'bg-helm-surface border-helm-border-base hover:border-helm-border-strong',
-        // List-based content (insights, feeds)
-        feed: 'bg-helm-surface border-helm-border-base',
+        metric: 'bg-[var(--color-bg-surface)] border-[var(--color-border-base)] hover:border-[var(--color-border-strong)]',
+        grid: 'bg-[var(--color-bg-surface)] border-[var(--color-border-base)]',
+        chart: 'bg-[var(--color-bg-surface)] border-[var(--color-border-base)] hover:border-[var(--color-border-strong)]',
+        feed: 'bg-[var(--color-bg-surface)] border-[var(--color-border-base)]',
       },
       elevation: {
         none: '',
@@ -77,7 +74,7 @@ const DataPanelTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn('type-h3 text-helm-platinum', className)}
+    className={cn('type-h3 text-[var(--color-text-primary)]', className)}
     {...props}
   />
 ));
@@ -93,7 +90,7 @@ const DataPanelDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn('type-label text-helm-secondary', className)}
+    className={cn('type-label text-[var(--color-text-secondary)]', className)}
     {...props}
   />
 ));

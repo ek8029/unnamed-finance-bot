@@ -8,18 +8,18 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "border-helm-border-base bg-helm-elevated text-helm-platinum",
+          "border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-primary)]",
         secondary:
-          "border-helm-border-subtle bg-helm-surface text-helm-secondary",
+          "border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)]",
         destructive:
-          "border-transparent bg-helm-negative/10 text-helm-negative border-helm-negative/20",
-        outline: "border-helm-border-strong bg-transparent text-helm-platinum",
+          "border-[var(--color-negative)]/20 bg-[var(--color-negative)]/10 text-[var(--color-negative)]",
+        outline: "border-[var(--color-border-strong)] bg-transparent text-[var(--color-text-primary)]",
         success:
-          "border-transparent bg-helm-positive/10 text-helm-positive border-helm-positive/20",
+          "border-[var(--color-positive)]/20 bg-[var(--color-positive)]/10 text-[var(--color-positive)]",
         warning:
-          "border-transparent bg-helm-warning/10 text-helm-warning border-helm-warning/20",
+          "border-[var(--color-warning)]/20 bg-[var(--color-warning)]/10 text-[var(--color-warning)]",
         gold:
-          "border-helm-gold-border bg-helm-gold-surface text-helm-gold",
+          "border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]",
       },
     },
     defaultVariants: {

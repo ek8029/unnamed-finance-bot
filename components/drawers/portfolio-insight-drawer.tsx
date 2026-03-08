@@ -36,10 +36,10 @@ export function PortfolioInsightDrawer({ holdings, insightDescription }: Portfol
       {/* Insight Context */}
       <DrawerSection>
         <DrawerSectionHeader>Insight Overview</DrawerSectionHeader>
-        <div className="p-3 bg-helm-elevated rounded border border-helm-border-subtle">
+        <div className="p-3 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
           <div className="flex items-start gap-2 mb-2">
-            <AlertTriangle className="h-4 w-4 text-helm-warning flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-helm-secondary leading-relaxed">
+            <AlertTriangle className="h-4 w-4 text-[var(--color-warning)] flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
               {insightDescription}
             </p>
           </div>
@@ -53,17 +53,17 @@ export function PortfolioInsightDrawer({ holdings, insightDescription }: Portfol
           {sectorTotals.map(({ sector, totalValue, holdings }) => (
             <div key={sector}>
               <div className="flex justify-between items-baseline mb-1">
-                <span className="type-label text-sm text-helm-platinum">{sector}</span>
+                <span className="type-label text-sm text-[var(--color-text-primary)]">{sector}</span>
                 <div className="flex items-center gap-2">
-                  <span className="type-caption text-helm-secondary">{holdings} holdings</span>
-                  <span className="type-data text-sm font-tabular text-helm-platinum">
+                  <span className="type-caption text-[var(--color-text-secondary)]">{holdings} holdings</span>
+                  <span className="type-data text-sm font-tabular text-[var(--color-text-primary)]">
                     {formatCurrency(totalValue)}
                   </span>
                 </div>
               </div>
-              <div className="h-2 bg-helm-elevated rounded-full overflow-hidden">
+              <div className="h-2 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-helm-gold rounded-full transition-all duration-500"
+                  className="h-full bg-[var(--color-gold)] rounded-full transition-all duration-500"
                   style={{
                     width: `${(totalValue / totalPortfolioValue) * 100}%`,
                   }}
@@ -81,31 +81,31 @@ export function PortfolioInsightDrawer({ holdings, insightDescription }: Portfol
           {holdings.map((holding) => (
             <div
               key={holding.id}
-              className="p-3 bg-helm-elevated rounded border border-helm-border-subtle hover:border-helm-border-strong transition-colors"
+              className="p-3 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)] hover:border-[var(--color-border-strong)] transition-colors"
             >
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="type-label text-sm text-helm-platinum font-medium">
+                    <span className="type-label text-sm text-[var(--color-text-primary)] font-medium">
                       {holding.ticker}
                     </span>
-                    <span className="type-caption text-helm-secondary">
+                    <span className="type-caption text-[var(--color-text-secondary)]">
                       {holding.asset_name}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="type-caption text-helm-secondary">
+                    <span className="type-caption text-[var(--color-text-secondary)]">
                       {holding.shares} shares @ {formatCurrency(holding.current_price)}
                     </span>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="type-data text-sm font-tabular text-helm-platinum mb-1">
+                  <div className="type-data text-sm font-tabular text-[var(--color-text-primary)] mb-1">
                     {formatCurrency(holding.total_value)}
                   </div>
                   <div
                     className={`flex items-center gap-1 type-label text-xs ${
-                      holding.day_change_percentage >= 0 ? 'text-helm-positive' : 'text-helm-negative'
+                      holding.day_change_percentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                     }`}
                   >
                     {holding.day_change_percentage >= 0 ? (
@@ -122,26 +122,26 @@ export function PortfolioInsightDrawer({ holdings, insightDescription }: Portfol
               </div>
 
               {/* Additional Details */}
-              <div className="grid grid-cols-3 gap-3 pt-2 border-t border-helm-border-subtle">
+              <div className="grid grid-cols-3 gap-3 pt-2 border-t border-[var(--color-border-subtle)]">
                 <div>
-                  <div className="type-caption text-helm-secondary mb-0.5">Cost Basis</div>
-                  <div className="type-label text-xs font-tabular text-helm-platinum">
+                  <div className="type-caption text-[var(--color-text-secondary)] mb-0.5">Cost Basis</div>
+                  <div className="type-label text-xs font-tabular text-[var(--color-text-primary)]">
                     {formatCurrency(holding.cost_basis || 0)}
                   </div>
                 </div>
                 <div>
-                  <div className="type-caption text-helm-secondary mb-0.5">Unrealized Gain</div>
+                  <div className="type-caption text-[var(--color-text-secondary)] mb-0.5">Unrealized Gain</div>
                   <div
                     className={`type-label text-xs font-tabular ${
-                      (holding.unrealised_gain || 0) >= 0 ? 'text-helm-positive' : 'text-helm-negative'
+                      (holding.unrealised_gain || 0) >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                     }`}
                   >
                     {formatCurrency(holding.unrealised_gain || 0)}
                   </div>
                 </div>
                 <div>
-                  <div className="type-caption text-helm-secondary mb-0.5">Allocation</div>
-                  <div className="type-label text-xs font-tabular text-helm-platinum">
+                  <div className="type-caption text-[var(--color-text-secondary)] mb-0.5">Allocation</div>
+                  <div className="type-label text-xs font-tabular text-[var(--color-text-primary)]">
                     {holding.portfolio_allocation.toFixed(1)}%
                   </div>
                 </div>

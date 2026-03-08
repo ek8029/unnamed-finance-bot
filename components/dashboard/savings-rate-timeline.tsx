@@ -38,14 +38,14 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
           <DataPanelTitle>Savings Rate</DataPanelTitle>
           <div className="flex items-center gap-1.5 type-label text-xs">
             {isPositive ? (
-              <TrendingUp className="h-3.5 w-3.5 text-helm-positive" />
+              <TrendingUp className="h-3.5 w-3.5 text-[var(--color-positive)]" />
             ) : (
-              <TrendingDown className="h-3.5 w-3.5 text-helm-negative" />
+              <TrendingDown className="h-3.5 w-3.5 text-[var(--color-negative)]" />
             )}
-            <span className={isPositive ? 'text-helm-positive' : 'text-helm-negative'}>
+            <span className={isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}>
               {isPositive ? '+' : ''}{rateChange.toFixed(1)}pp
             </span>
-            <span className="text-helm-muted">vs last month</span>
+            <span className="text-[var(--color-text-muted)]">vs last month</span>
           </div>
         </div>
       </DataPanelHeader>
@@ -54,24 +54,24 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
         <div className="grid grid-cols-3 gap-4 mb-4">
           {/* Current Rate */}
           <div>
-            <div className="type-caption text-helm-secondary mb-1">Current</div>
-            <div className="type-data text-xl font-tabular text-helm-platinum">
+            <div className="type-caption text-[var(--color-text-secondary)] mb-1">Current</div>
+            <div className="type-data text-xl font-tabular text-[var(--color-text-primary)]">
               {currentMonth.rate.toFixed(1)}%
             </div>
           </div>
 
           {/* 12-Mo Average */}
           <div>
-            <div className="type-caption text-helm-secondary mb-1">12-Mo Avg</div>
-            <div className="type-data text-xl font-tabular text-helm-secondary">
+            <div className="type-caption text-[var(--color-text-secondary)] mb-1">12-Mo Avg</div>
+            <div className="type-data text-xl font-tabular text-[var(--color-text-secondary)]">
               {avgRate.toFixed(1)}%
             </div>
           </div>
 
           {/* This Month Saved */}
           <div>
-            <div className="type-caption text-helm-secondary mb-1">This Month</div>
-            <div className="type-data text-xl font-tabular text-helm-positive">
+            <div className="type-caption text-[var(--color-text-secondary)] mb-1">This Month</div>
+            <div className="type-data text-xl font-tabular text-[var(--color-positive)]">
               {formatCurrency(currentMonth.saved)}
             </div>
           </div>
@@ -79,12 +79,12 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
 
         {/* Target Progress */}
         {targetRate && (
-          <div className="flex items-center gap-2 mb-3 p-2 bg-helm-elevated rounded border border-helm-border-subtle">
-            <Target className="h-3.5 w-3.5 text-helm-gold" />
-            <div className="type-caption text-helm-secondary">Target</div>
-            <div className="type-label font-tabular text-helm-gold">{targetRate}%</div>
+          <div className="flex items-center gap-2 mb-3 p-2 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
+            <Target className="h-3.5 w-3.5 text-[var(--color-gold)]" />
+            <div className="type-caption text-[var(--color-text-secondary)]">Target</div>
+            <div className="type-label font-tabular text-[var(--color-gold)]">{targetRate}%</div>
             <div className="flex-1" />
-            <div className={`type-label text-xs ${currentMonth.rate >= targetRate ? 'text-helm-positive' : 'text-helm-warning'}`}>
+            <div className={`type-label text-xs ${currentMonth.rate >= targetRate ? 'text-[var(--color-positive)]' : 'text-[var(--color-warning)]'}`}>
               {currentMonth.rate >= targetRate ? 'On Track' : `${(targetRate - currentMonth.rate).toFixed(1)}pp to go`}
             </div>
           </div>
@@ -161,10 +161,10 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
         </div>
 
         {/* Year-to-Date Total */}
-        <div className="mt-3 pt-3 border-t border-helm-border-subtle">
+        <div className="mt-3 pt-3 border-t border-[var(--color-border-subtle)]">
           <div className="flex justify-between type-label text-xs">
-            <span className="text-helm-secondary">Year-to-Date Savings</span>
-            <span className="text-helm-platinum font-tabular">{formatCurrency(totalSaved)}</span>
+            <span className="text-[var(--color-text-secondary)]">Year-to-Date Savings</span>
+            <span className="text-[var(--color-text-primary)] font-tabular">{formatCurrency(totalSaved)}</span>
           </div>
         </div>
       </DataPanelContent>

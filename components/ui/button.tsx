@@ -3,21 +3,21 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md type-label font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-helm-gold focus-visible:ring-offset-2 focus-visible:ring-offset-helm-base disabled:pointer-events-none disabled:opacity-40",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-base)] disabled:pointer-events-none disabled:opacity-40",
   {
     variants: {
       variant: {
-        default: "bg-helm-gold text-helm-inverse hover:bg-helm-gold-hi shadow-sm",
-        destructive: "bg-helm-negative text-helm-inverse hover:bg-helm-negative/80 shadow-sm",
-        outline: "border border-helm-border-strong bg-transparent hover:bg-helm-overlay hover:border-helm-border-strong text-helm-platinum",
-        secondary: "bg-helm-elevated text-helm-platinum hover:bg-helm-overlay border border-helm-border-base",
-        ghost: "hover:bg-helm-overlay text-helm-platinum",
-        link: "text-helm-gold underline-offset-4 hover:underline hover:text-helm-gold-hi",
+        default: "bg-[var(--color-gold)] text-[var(--color-text-inverse)] hover:bg-[var(--color-gold-hi)] shadow-sm font-semibold",
+        destructive: "bg-[var(--color-negative)] text-white hover:opacity-90 shadow-sm font-semibold",
+        outline: "border border-[var(--color-border-base)] bg-transparent hover:bg-[var(--color-bg-elevated)] hover:border-[var(--color-border-strong)] text-[var(--color-text-primary)]",
+        secondary: "bg-[var(--color-bg-elevated)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] border border-[var(--color-border-base)] hover:border-[var(--color-border-strong)]",
+        ghost: "hover:bg-[var(--color-bg-overlay)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]",
+        link: "text-[var(--color-gold)] underline-offset-4 hover:underline hover:text-[var(--color-gold-hi)]",
       },
       size: {
-        default: "h-9 px-4 py-2",
+        default: "h-9 px-4 py-2 text-sm",
         sm: "h-8 rounded-sm px-3 text-xs",
-        lg: "h-11 rounded-md px-8",
+        lg: "h-11 rounded-md px-8 text-sm",
         icon: "h-9 w-9",
       },
     },

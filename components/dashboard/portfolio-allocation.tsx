@@ -11,14 +11,15 @@ interface PortfolioAllocationProps {
   allocation: Allocation[];
 }
 
-// Helm-branded color palette for portfolio allocation
 const HELM_CHART_COLORS = [
-  '#B8914A', // helm-gold
-  '#CBAA68', // helm-gold-hi
-  '#9EC4A8', // helm-positive
-  '#6B7A90', // helm-neutral
-  '#C4A45A', // helm-warning
-  '#8A96AA', // helm-secondary
+  '#C8A95B', // gold
+  '#38D39F', // positive
+  '#6F6F6F', // neutral
+  '#D4A94E', // warning
+  '#9A9A9A', // secondary
+  '#F87171', // negative
+  '#D4B96E', // gold-hi
+  '#4ADE80', // bright green
 ];
 
 export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
@@ -51,8 +52,10 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          <div className="h-[300px] w-full">
+        {/* Side-by-side layout: chart + legend to prevent text cutoff */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Donut Chart */}
+          <div className="h-[280px] w-full lg:w-[280px] flex-shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -60,27 +63,24 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={(entry) => {
-                    const item = entry.payload as Allocation;
-                    return `${item.name} ${item.percentage.toFixed(1)}%`;
-                  }}
                   outerRadius={110}
-                  innerRadius={40}
+                  innerRadius={50}
                   paddingAngle={2}
                   dataKey="value"
                   onMouseEnter={(_, idx) => setActiveIndex(idx)}
                   onMouseLeave={() => setActiveIndex(null)}
+                  animationDuration={800}
+                  animationEasing="ease-out"
                 >
                   {visibleData.map((entry, index) => {
-                    const baseColor =
-                      HELM_CHART_COLORS[index % HELM_CHART_COLORS.length];
+                    const baseColor = HELM_CHART_COLORS[index % HELM_CHART_COLORS.length];
                     const isActive = activeIndex === index;
                     return (
                       <Cell
                         key={`cell-${entry.name}`}
                         fill={baseColor}
-                        fillOpacity={isActive ? 1 : 0.75}
-                        stroke={isActive ? '#ffffff' : 'transparent'}
+                        fillOpacity={isActive ? 1 : 0.8}
+                        stroke={isActive ? 'var(--color-text-primary)' : 'transparent'}
                         strokeWidth={isActive ? 1.5 : 0}
                       />
                     );
@@ -93,10 +93,11 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
                     border: '1px solid var(--color-border-base)',
                     borderRadius: '4px',
                     color: 'var(--color-text-primary)',
+                    fontSize: '12px',
                   }}
                   labelStyle={{
                     color: 'var(--color-text-secondary)',
-                    fontSize: '11px',
+                    fontSize: '10px',
                     fontFamily: 'var(--font-jetbrains-mono)',
                   }}
                 />
@@ -104,38 +105,46 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
             </ResponsiveContainer>
           </div>
 
-          <div className="space-y-2">
+          {/* Legend — no text cutoff, full names visible */}
+          <div className="flex-1 space-y-1.5 overflow-y-auto max-h-[280px] custom-scrollbar">
             {allocation.map((item, index) => {
               const color = HELM_CHART_COLORS[index % HELM_CHART_COLORS.length];
               const isHidden = hiddenNames.has(item.name);
+              const isActive = !isHidden && activeIndex === visibleData.findIndex(v => v.name === item.name);
               return (
                 <button
                   key={item.name}
                   type="button"
                   onClick={() => toggleName(item.name)}
-                  className={`w-full flex items-center justify-between p-3 rounded-md border text-left transition-colors ${
+                  onMouseEnter={() => {
+                    if (!isHidden) {
+                      const idx = visibleData.findIndex(v => v.name === item.name);
+                      setActiveIndex(idx);
+                    }
+                  }}
+                  onMouseLeave={() => setActiveIndex(null)}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-md border text-left transition-all duration-200 ${
                     isHidden
-                      ? 'border-helm-border-subtle bg-helm-surface/40 opacity-60'
-                      : 'border-helm-border-base bg-helm-elevated hover:border-helm-border-strong'
+                      ? 'border-[var(--color-border-subtle)] bg-transparent opacity-40'
+                      : isActive
+                      ? 'border-[var(--color-border-strong)] bg-[var(--color-bg-overlay)]'
+                      : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] hover:border-[var(--color-border-strong)]'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <div
-                      className="w-3 h-3 rounded-sm"
+                      className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
                       style={{ backgroundColor: color }}
                     />
-                    <span className="type-h3">{item.name}</span>
+                    <span className="type-label text-[var(--color-text-primary)] truncate">{item.name}</span>
                   </div>
-                  <div className="text-right">
-                    <div className="type-data text-sm">
-                      {formatCurrency(item.value)}
-                    </div>
-                    <div className="text-helm-secondary text-xs">
+                  <div className="flex items-center gap-3 flex-shrink-0 ml-2">
+                    <span className="type-mono text-[var(--color-text-primary)]">
                       {item.percentage.toFixed(1)}%
-                      {isHidden && (
-                        <span className="ml-1 text-helm-muted">(hidden)</span>
-                      )}
-                    </div>
+                    </span>
+                    <span className="type-mono text-[var(--color-text-muted)]">
+                      {formatCurrency(item.value)}
+                    </span>
                   </div>
                 </button>
               );
