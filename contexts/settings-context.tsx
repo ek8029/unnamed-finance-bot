@@ -64,7 +64,7 @@ export interface Settings {
   crashReportingEnabled: boolean
 }
 
-export type DashboardModuleId = 'netWorth' | 'summary' | 'aiInsights' | 'healthScore'
+export type DashboardModuleId = 'netWorth' | 'summary' | 'aiInsights'
 
 interface SettingsContextType {
   settings: Settings
@@ -120,7 +120,7 @@ const DEFAULT_SETTINGS: Settings = {
     showInsights: true,
     autoRefresh: false,
     refreshInterval: 5,
-    modulesOrder: ['netWorth', 'summary', 'aiInsights', 'healthScore'],
+    modulesOrder: ['netWorth', 'summary', 'aiInsights'],
     hiddenModules: [],
   },
 

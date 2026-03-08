@@ -17,7 +17,7 @@ import {
 } from '@/lib/mock-data';
 import { useSettings, DashboardModuleId } from '@/contexts/settings-context'
 
-const ALL_MODULES: DashboardModuleId[] = ['netWorth', 'summary', 'aiInsights', 'healthScore']
+const ALL_MODULES: DashboardModuleId[] = ['netWorth', 'summary', 'aiInsights']
 
 export default function DashboardOverview() {
   const { settings, updateSettings } = useSettings()
@@ -96,31 +96,17 @@ export default function DashboardOverview() {
               />
             )
           case 'aiInsights':
-          case 'healthScore':
             return (
               <div
-                key={moduleId}
+                key="aiInsights"
                 className="grid grid-cols-1 lg:grid-cols-3 gap-6"
               >
-                {moduleId === 'aiInsights' ? (
-                  <>
-                    <div className="lg:col-span-2">
-                      <AIInsightsFeed insights={mockInsights} />
-                    </div>
-                    <div>
-                      <FinancialHealthScore healthScore={mockFinancialHealthScore} />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="lg:col-span-2">
-                      <AIInsightsFeed insights={mockInsights} />
-                    </div>
-                    <div>
-                      <FinancialHealthScore healthScore={mockFinancialHealthScore} />
-                    </div>
-                  </>
-                )}
+                <div className="lg:col-span-2">
+                  <AIInsightsFeed insights={mockInsights} />
+                </div>
+                <div>
+                  <FinancialHealthScore healthScore={mockFinancialHealthScore} />
+                </div>
               </div>
             )
           default:
@@ -150,9 +136,7 @@ export default function DashboardOverview() {
                 ? 'Net Worth'
                 : id === 'summary'
                 ? 'Financial Summary'
-                : id === 'aiInsights'
-                ? 'AI Insights & Health'
-                : 'Financial Health Score'
+                : 'AI Insights & Health'
 
             return (
               <div
