@@ -62,6 +62,24 @@ const institutions = [
     plaid_institution_id: 'ins_127989',
   },
 
+  // High-Yield Savings
+  {
+    name: 'Marcus by Goldman Sachs',
+    slug: 'marcus',
+    institution_type: 'bank',
+    website_url: 'https://www.marcus.com',
+    supports_plaid: true,
+    plaid_institution_id: 'ins_116794',
+  },
+  {
+    name: 'Ally Bank',
+    slug: 'ally',
+    institution_type: 'bank',
+    website_url: 'https://www.ally.com',
+    supports_plaid: true,
+    plaid_institution_id: 'ins_14',
+  },
+
   // Credit Cards
   {
     name: 'American Express',
