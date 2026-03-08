@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { mockAccounts, mockTransactions } from '@/lib/mock-data';
+import { mockAccounts, mockTransactions, mockAccountBalanceHistory } from '@/lib/mock-data';
 import { Plus, RefreshCcw, Building2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { Transaction } from '@/types';
+import { AccountsOverview } from '@/components/accounts/accounts-overview';
 
 export default function AccountsPage() {
   const totalBalance = mockAccounts.reduce((sum, account) => sum + account.balance, 0);
@@ -16,6 +17,8 @@ export default function AccountsPage() {
 
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [filterType, setFilterType] = useState<'all' | 'assets' | 'liabilities'>('all');
+  const [sortBy, setSortBy] = useState<'balance-high' | 'balance-low' | 'name'>('balance-high');
 
   const primaryAccountId = useMemo(() => {
     const positive = assetAccounts.sort((a, b) => b.balance - a.balance)[0];
@@ -35,6 +38,31 @@ export default function AccountsPage() {
         : [],
     [selectedAccountId]
   );
+
+  // Filter and sort accounts
+  const filteredAndSortedAccounts = useMemo(() => {
+    let filtered = mockAccounts;
+
+    // Apply filter
+    if (filterType === 'assets') {
+      filtered = assetAccounts;
+    } else if (filterType === 'liabilities') {
+      filtered = liabilityAccounts;
+    }
+
+    // Apply sort
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === 'balance-high') {
+        return Math.abs(b.balance) - Math.abs(a.balance);
+      } else if (sortBy === 'balance-low') {
+        return Math.abs(a.balance) - Math.abs(b.balance);
+      } else {
+        return a.institution.localeCompare(b.institution);
+      }
+    });
+
+    return sorted;
+  }, [filterType, sortBy, assetAccounts, liabilityAccounts]);
 
   // Simulate initial loading for skeletons
   useEffect(() => {
@@ -63,6 +91,9 @@ export default function AccountsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Accounts Overview */}
+      <AccountsOverview balanceHistory={mockAccountBalanceHistory} />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -123,6 +154,52 @@ export default function AccountsPage() {
               <CardTitle>Connected Accounts</CardTitle>
               <CardDescription>Tap any account to see recent activity and details.</CardDescription>
             </div>
+            <div className="flex items-center gap-2">
+              {/* Filter Controls */}
+              <div className="flex gap-1 p-1 bg-helm-elevated rounded border border-helm-border-subtle">
+                <button
+                  onClick={() => setFilterType('all')}
+                  className={`px-3 py-1.5 rounded type-label text-xs transition-colors ${
+                    filterType === 'all'
+                      ? 'bg-helm-gold text-helm-base'
+                      : 'text-helm-secondary hover:text-helm-platinum'
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setFilterType('assets')}
+                  className={`px-3 py-1.5 rounded type-label text-xs transition-colors ${
+                    filterType === 'assets'
+                      ? 'bg-helm-positive text-helm-base'
+                      : 'text-helm-secondary hover:text-helm-platinum'
+                  }`}
+                >
+                  Assets
+                </button>
+                <button
+                  onClick={() => setFilterType('liabilities')}
+                  className={`px-3 py-1.5 rounded type-label text-xs transition-colors ${
+                    filterType === 'liabilities'
+                      ? 'bg-helm-negative text-helm-base'
+                      : 'text-helm-secondary hover:text-helm-platinum'
+                  }`}
+                >
+                  Liabilities
+                </button>
+              </div>
+
+              {/* Sort Controls */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'balance-high' | 'balance-low' | 'name')}
+                className="px-3 py-1.5 bg-helm-elevated border border-helm-border-subtle rounded type-label text-xs text-helm-platinum cursor-pointer hover:border-helm-border-strong transition-colors"
+              >
+                <option value="balance-high">Balance: High to Low</option>
+                <option value="balance-low">Balance: Low to High</option>
+                <option value="name">Name: A to Z</option>
+              </select>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -132,8 +209,12 @@ export default function AccountsPage() {
               <Skeleton className="h-16 w-full" />
               <Skeleton className="h-16 w-full" />
             </div>
+          ) : filteredAndSortedAccounts.length === 0 ? (
+            <div className="text-center py-8 text-helm-secondary">
+              <p className="text-sm">No accounts match the current filter.</p>
+            </div>
           ) : (
-            mockAccounts.map((account) => {
+            filteredAndSortedAccounts.map((account) => {
               const isPrimary = account.id === primaryAccountId;
               const isSelected = account.id === selectedAccountId;
 

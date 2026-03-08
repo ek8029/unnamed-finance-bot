@@ -382,3 +382,67 @@ export const mockTransactions: Transaction[] = [
     description: 'ETH spot purchase',
   },
 ];
+
+// Mock cash flow trend data (12 months)
+export const mockCashFlowTrend = [
+  { month: 'Apr \'23', income: 12500, expenses: 8200, netFlow: 4300 },
+  { month: 'May \'23', income: 12500, expenses: 7950, netFlow: 4550 },
+  { month: 'Jun \'23', income: 13200, expenses: 8400, netFlow: 4800 },
+  { month: 'Jul \'23', income: 12500, expenses: 9100, netFlow: 3400 },
+  { month: 'Aug \'23', income: 12500, expenses: 8600, netFlow: 3900 },
+  { month: 'Sep \'23', income: 13800, expenses: 8200, netFlow: 5600 },
+  { month: 'Oct \'23', income: 12500, expenses: 8800, netFlow: 3700 },
+  { month: 'Nov \'23', income: 12500, expenses: 10200, netFlow: 2300 },
+  { month: 'Dec \'23', income: 15200, expenses: 11400, netFlow: 3800 },
+  { month: 'Jan \'24', income: 12500, expenses: 7900, netFlow: 4600 },
+  { month: 'Feb \'24', income: 12500, expenses: 8100, netFlow: 4400 },
+  { month: 'Mar \'24', income: 12500, expenses: 8350, netFlow: 4150 },
+];
+
+// Mock assets composition breakdown
+export const mockAssetsComposition = [
+  { category: 'Investment Accounts', value: 318200, percentage: 75.4 },
+  { category: 'Savings & Cash', value: 57340, percentage: 13.6 },
+  { category: 'Cryptocurrency', value: 24500, percentage: 5.8 },
+  { category: 'Real Estate Equity', value: 21790, percentage: 5.2 },
+];
+
+// Mock liabilities composition breakdown
+export const mockLiabilitiesComposition = [
+  { category: 'Mortgage', value: 18750, percentage: 66.2 },
+  { category: 'Credit Cards', value: 3210, percentage: 11.3 },
+  { category: 'Student Loans', value: 4200, percentage: 14.8 },
+  { category: 'Auto Loan', value: 2140, percentage: 7.6 },
+];
+
+// Mock savings rate timeline (12 months)
+export const mockSavingsRateTimeline = [
+  { month: 'Apr \'23', rate: 34.4, saved: 4300 },
+  { month: 'May \'23', rate: 36.4, saved: 4550 },
+  { month: 'Jun \'23', rate: 36.4, saved: 4800 },
+  { month: 'Jul \'23', rate: 27.2, saved: 3400 },
+  { month: 'Aug \'23', rate: 31.2, saved: 3900 },
+  { month: 'Sep \'23', rate: 40.6, saved: 5600 },
+  { month: 'Oct \'23', rate: 29.6, saved: 3700 },
+  { month: 'Nov \'23', rate: 18.4, saved: 2300 },
+  { month: 'Dec \'23', rate: 25.0, saved: 3800 },
+  { month: 'Jan \'24', rate: 36.8, saved: 4600 },
+  { month: 'Feb \'24', rate: 35.2, saved: 4400 },
+  { month: 'Mar \'24', rate: 33.2, saved: 4150 },
+];
+
+// Mock account balance history (12 months)
+export const mockAccountBalanceHistory = [
+  { month: 'Apr \'23', balance: 395000, inflows: 13200, outflows: 8900 },
+  { month: 'May \'23', balance: 398500, inflows: 12800, outflows: 9300 },
+  { month: 'Jun \'23', balance: 402100, inflows: 14100, outflows: 10500 },
+  { month: 'Jul \'23', balance: 396800, inflows: 12500, outflows: 12800 },
+  { month: 'Aug \'23', balance: 399200, inflows: 13000, outflows: 10600 },
+  { month: 'Sep \'23', balance: 403800, inflows: 13500, outflows: 8900 },
+  { month: 'Oct \'23', balance: 405900, inflows: 12700, outflows: 10600 },
+  { month: 'Nov \'23', balance: 401200, inflows: 12400, outflows: 13100 },
+  { month: 'Dec \'23', balance: 404800, inflows: 15800, outflows: 12200 },
+  { month: 'Jan \'24', balance: 408400, inflows: 12900, outflows: 9300 },
+  { month: 'Feb \'24', balance: 411700, inflows: 13100, outflows: 9800 },
+  { month: 'Mar \'24', balance: 414830, inflows: 13400, outflows: 10270 },
+];

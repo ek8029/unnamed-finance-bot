@@ -1,6 +1,8 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Drawer } from '@/components/ui/drawer';
 import { Insight, InsightType } from '@/types';
 import { useState } from 'react';
 import {
@@ -10,8 +12,13 @@ import {
   FileText,
   CreditCard,
   X,
+  ArrowRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { mockHoldings } from '@/lib/mock-data';
+import { PortfolioInsightDrawer } from '@/components/drawers/portfolio-insight-drawer';
+import { MarketInsightDrawer } from '@/components/drawers/market-insight-drawer';
+import { TaxInsightDrawer } from '@/components/drawers/tax-insight-drawer';
 
 interface AIInsightsFeedProps {
   insights: Insight[];
@@ -36,6 +43,7 @@ const insightColors: Record<InsightType, { bg: string; text: string; badge: 'def
 export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProps) {
   const [insights, setInsights] = useState(initialInsights);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [drawerInsight, setDrawerInsight] = useState<Insight | null>(null);
 
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
@@ -43,6 +51,14 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
 
   const dismissInsight = (id: string) => {
     setInsights(insights.filter((insight) => insight.id !== id));
+  };
+
+  const openDrawer = (insight: Insight) => {
+    setDrawerInsight(insight);
+  };
+
+  const closeDrawer = () => {
+    setDrawerInsight(null);
   };
 
   return (
@@ -112,14 +128,28 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
 
                   {/* Expanded Content */}
                   {isExpanded && insight.recommended_action && (
-                    <div className="mt-2 p-2 bg-helm-overlay rounded border border-helm-border-subtle">
-                      <div className="type-caption text-helm-gold mb-1">
-                        Recommended Action
+                    <>
+                      <div className="mt-2 p-2 bg-helm-overlay rounded border border-helm-border-subtle">
+                        <div className="type-caption text-helm-gold mb-1">
+                          Recommended Action
+                        </div>
+                        <p className="text-xs text-helm-secondary leading-relaxed">
+                          {insight.recommended_action}
+                        </p>
                       </div>
-                      <p className="text-xs text-helm-secondary leading-relaxed">
-                        {insight.recommended_action}
-                      </p>
-                    </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full mt-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDrawer(insight);
+                        }}
+                      >
+                        View Details
+                        <ArrowRight className="h-3 w-3 ml-1.5" />
+                      </Button>
+                    </>
                   )}
 
                   {/* Timestamp */}
@@ -144,6 +174,59 @@ export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProp
           )}
         </div>
       </div>
+
+      {/* Detail Drawer */}
+      {drawerInsight && (
+        <Drawer
+          isOpen={!!drawerInsight}
+          onClose={closeDrawer}
+          title={drawerInsight.title}
+          size="lg"
+        >
+          {drawerInsight.type === 'portfolio' && (
+            <PortfolioInsightDrawer
+              holdings={mockHoldings}
+              insightDescription={drawerInsight.description}
+            />
+          )}
+
+          {drawerInsight.type === 'market' && (
+            <MarketInsightDrawer
+              insightTitle={drawerInsight.title}
+              insightDescription={drawerInsight.description}
+              recommendedAction={drawerInsight.recommended_action || ''}
+              affectedHoldings={mockHoldings.filter((h) =>
+                drawerInsight.description.toLowerCase().includes(h.ticker.toLowerCase())
+              )}
+            />
+          )}
+
+          {drawerInsight.type === 'tax' && (
+            <TaxInsightDrawer
+              insightDescription={drawerInsight.description}
+              recommendedAction={drawerInsight.recommended_action || ''}
+              potentialSavings={2400}
+              holdings={mockHoldings}
+            />
+          )}
+
+          {(drawerInsight.type === 'spending' || drawerInsight.type === 'credit') && (
+            <div className="p-6">
+              <div className="p-4 bg-helm-elevated rounded border border-helm-border-subtle">
+                <p className="text-sm text-helm-secondary">
+                  {drawerInsight.description}
+                </p>
+                {drawerInsight.recommended_action && (
+                  <div className="mt-3 pt-3 border-t border-helm-border-subtle">
+                    <div className="type-caption text-helm-gold mb-1">Recommended Action</div>
+                    <p className="text-sm text-helm-gold">{drawerInsight.recommended_action}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </Drawer>
+      )}
     </div>
   );
 }
