@@ -92,6 +92,19 @@ export async function GET() {
       portfolio_diversification: 0,
     };
 
+    // Transform insights to match frontend expectations
+    const transformedInsights = (insightsResult.data || []).map((insight: Record<string, unknown>) => ({
+      id: insight.id,
+      type: insight.insight_type, // Map database column to expected field
+      priority: insight.priority,
+      title: insight.title,
+      description: insight.description,
+      recommended_action: insight.recommended_action,
+      estimated_impact: insight.estimated_impact_amount,
+      source: insight.source_type,
+      created_at: insight.created_at,
+    }));
+
     return NextResponse.json({
       financialSummary,
       healthScore: {
@@ -103,7 +116,7 @@ export async function GET() {
       },
       accounts,
       holdings,
-      insights: insightsResult.data || [],
+      insights: transformedInsights,
       netWorthHistory: netWorthResult.data ? [netWorthResult.data] : [],
     });
   } catch (error) {
