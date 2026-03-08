@@ -639,9 +639,10 @@ async function seedTestUser() {
 
     // 13. Create tax estimates
     console.log('1️⃣3️⃣ Creating tax estimates...');
+    const currentTaxYear = new Date().getFullYear();
     const { error: taxError } = await supabase.from('tax_estimates').insert({
       user_id: TEST_USER_ID,
-      tax_year: 2024,
+      tax_year: currentTaxYear,
       estimated_income_tax: 89500,
       short_term_capital_gains: 12400,
       long_term_capital_gains: 28500,
@@ -659,11 +660,11 @@ async function seedTestUser() {
     // 14. Create capital gains records
     console.log('1️⃣4️⃣ Creating capital gains records...');
     const capitalGains = [
-      { user_id: TEST_USER_ID, security_id: secMap.get('AAPL'), ticker: 'AAPL', transaction_type: 'sell', transaction_date: '2024-03-15', shares: 50, price_per_share: 172.50, cost_basis: 7200, proceeds: 8625, gain_loss: 1425, gain_loss_type: 'long_term', tax_year: 2024 },
-      { user_id: TEST_USER_ID, security_id: secMap.get('TSLA'), ticker: 'TSLA', transaction_type: 'sell', transaction_date: '2024-06-20', shares: 30, price_per_share: 265.40, cost_basis: 5850, proceeds: 7962, gain_loss: 2112, gain_loss_type: 'short_term', tax_year: 2024 },
-      { user_id: TEST_USER_ID, security_id: secMap.get('NVDA'), ticker: 'NVDA', transaction_type: 'sell', transaction_date: '2024-08-10', shares: 25, price_per_share: 820.00, cost_basis: 12137.50, proceeds: 20500, gain_loss: 8362.50, gain_loss_type: 'long_term', tax_year: 2024 },
-      { user_id: TEST_USER_ID, security_id: secMap.get('META'), ticker: 'META', transaction_type: 'sell', transaction_date: '2024-09-05', shares: 20, price_per_share: 495.80, cost_basis: 5972, proceeds: 9916, gain_loss: 3944, gain_loss_type: 'long_term', tax_year: 2024 },
-      { user_id: TEST_USER_ID, security_id: secMap.get('AMD'), ticker: 'AMD', transaction_type: 'sell', transaction_date: '2024-10-15', shares: 40, price_per_share: 155.20, cost_basis: 5200, proceeds: 6208, gain_loss: 1008, gain_loss_type: 'short_term', tax_year: 2024 },
+      { user_id: TEST_USER_ID, security_id: secMap.get('AAPL'), ticker: 'AAPL', transaction_type: 'sell', transaction_date: `${currentTaxYear}-01-15`, shares: 50, price_per_share: 172.50, cost_basis: 7200, proceeds: 8625, gain_loss: 1425, gain_loss_type: 'long_term', tax_year: currentTaxYear },
+      { user_id: TEST_USER_ID, security_id: secMap.get('TSLA'), ticker: 'TSLA', transaction_type: 'sell', transaction_date: `${currentTaxYear}-02-20`, shares: 30, price_per_share: 265.40, cost_basis: 5850, proceeds: 7962, gain_loss: 2112, gain_loss_type: 'short_term', tax_year: currentTaxYear },
+      { user_id: TEST_USER_ID, security_id: secMap.get('NVDA'), ticker: 'NVDA', transaction_type: 'sell', transaction_date: `${currentTaxYear}-01-10`, shares: 25, price_per_share: 820.00, cost_basis: 12137.50, proceeds: 20500, gain_loss: 8362.50, gain_loss_type: 'long_term', tax_year: currentTaxYear },
+      { user_id: TEST_USER_ID, security_id: secMap.get('META'), ticker: 'META', transaction_type: 'sell', transaction_date: `${currentTaxYear}-02-05`, shares: 20, price_per_share: 495.80, cost_basis: 5972, proceeds: 9916, gain_loss: 3944, gain_loss_type: 'long_term', tax_year: currentTaxYear },
+      { user_id: TEST_USER_ID, security_id: secMap.get('AMD'), ticker: 'AMD', transaction_type: 'sell', transaction_date: `${currentTaxYear}-02-15`, shares: 40, price_per_share: 155.20, cost_basis: 5200, proceeds: 6208, gain_loss: 1008, gain_loss_type: 'short_term', tax_year: currentTaxYear },
     ];
 
     const { error: gainsError } = await supabase.from('capital_gains').insert(capitalGains);
@@ -671,6 +672,82 @@ async function seedTestUser() {
       console.error('❌ Error creating capital gains:', gainsError);
     } else {
       console.log(`✅ Created ${capitalGains.length} capital gains records\n`);
+    }
+
+    // 14b. Create tax optimization tasks
+    console.log('1️⃣4️⃣b Creating tax optimization tasks...');
+    const taxOptimizationTasks = [
+      {
+        user_id: TEST_USER_ID,
+        tax_year: currentTaxYear,
+        task_title: 'Tax-Loss Harvest JNJ Position',
+        task_description: 'Your JNJ position has a $560 unrealized loss. Consider selling to harvest the loss and purchasing a similar healthcare ETF to maintain sector exposure.',
+        potential_savings: 140,
+        task_type: 'harvesting',
+        priority: 'high',
+        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        is_completed: false,
+      },
+      {
+        user_id: TEST_USER_ID,
+        tax_year: currentTaxYear,
+        task_title: 'Maximize 401(k) Contribution',
+        task_description: `You have $4,500 remaining in your ${currentTaxYear} 401(k) contribution limit. Maximizing contributions can reduce taxable income and lower your tax bracket.`,
+        potential_savings: 1080,
+        task_type: 'deduction',
+        priority: 'high',
+        deadline: `${currentTaxYear}-12-31`,
+        is_completed: false,
+      },
+      {
+        user_id: TEST_USER_ID,
+        tax_year: currentTaxYear,
+        task_title: 'Convert Traditional IRA to Roth',
+        task_description: 'Consider a partial Roth conversion during a lower-income year. This creates tax liability now but tax-free growth and withdrawals later.',
+        potential_savings: 0,
+        task_type: 'strategy',
+        priority: 'medium',
+        is_completed: false,
+      },
+      {
+        user_id: TEST_USER_ID,
+        tax_year: currentTaxYear,
+        task_title: 'Defer Capital Gains to Next Year',
+        task_description: 'If you plan to sell appreciated positions, consider waiting until January to defer the tax liability to the following tax year.',
+        potential_savings: 3200,
+        task_type: 'strategy',
+        priority: 'medium',
+        deadline: `${currentTaxYear}-12-15`,
+        is_completed: false,
+      },
+      {
+        user_id: TEST_USER_ID,
+        tax_year: currentTaxYear,
+        task_title: 'Claim Home Office Deduction',
+        task_description: 'Your freelance consulting income may qualify for home office deductions. Calculate square footage used for business purposes.',
+        potential_savings: 850,
+        task_type: 'deduction',
+        priority: 'low',
+        is_completed: false,
+      },
+      {
+        user_id: TEST_USER_ID,
+        tax_year: currentTaxYear,
+        task_title: 'Donate Appreciated Securities',
+        task_description: 'Instead of cash donations, donate appreciated stock directly. You get the full fair market value deduction without paying capital gains tax.',
+        potential_savings: 2400,
+        task_type: 'strategy',
+        priority: 'medium',
+        deadline: `${currentTaxYear}-12-31`,
+        is_completed: false,
+      },
+    ];
+
+    const { error: taxTasksError } = await supabase.from('tax_optimization_tasks').insert(taxOptimizationTasks);
+    if (taxTasksError) {
+      console.error('❌ Error creating tax optimization tasks:', taxTasksError);
+    } else {
+      console.log(`✅ Created ${taxOptimizationTasks.length} tax optimization tasks\n`);
     }
 
     // 15. Create portfolio performance metrics
