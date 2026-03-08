@@ -35,6 +35,7 @@ export default function SettingsPage() {
   })
   const [profileLoading, setProfileLoading] = useState(true)
   const [savingProfile, setSavingProfile] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   // Load profile from API on mount
   useEffect(() => {
@@ -79,6 +80,31 @@ export default function SettingsPage() {
       showError('Save failed', 'An error occurred while saving your profile.')
     } finally {
       setSavingProfile(false)
+    }
+  }
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const res = await fetch('/api/user/export')
+      if (res.ok) {
+        const blob = await res.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `helm-export-${new Date().toISOString().split('T')[0]}.json`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+        success('Export complete', 'Your data has been downloaded')
+      } else {
+        showError('Export failed', 'Could not export your data. Please try again.')
+      }
+    } catch (err) {
+      showError('Export failed', 'An error occurred while exporting your data.')
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -587,7 +613,16 @@ export default function SettingsPage() {
                 <p className="type-h3">Export Your Data</p>
                 <p className="text-[var(--color-text-secondary)] text-xs">Download all your financial data</p>
               </div>
-              <Button variant="outline" size="sm">Export</Button>
+              <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+                {exporting ? (
+                  <>
+                    <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  'Export'
+                )}
+              </Button>
             </div>
 
             <div className="flex items-center justify-between p-3 bg-[var(--color-negative)]/5 border border-[var(--color-negative)]/20 rounded-md">
