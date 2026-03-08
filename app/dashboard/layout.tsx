@@ -35,11 +35,11 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-helm-base">
       {/* Top Navigation Bar */}
       <nav className="bg-helm-surface border-b border-[rgba(255,255,255,0.06)] sticky top-0 z-50">
-        <div className="px-6 py-5">
+        <div className="px-6 py-3">
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-4 group">
-              <HelmMark size={40} className="transition-transform group-hover:scale-110" />
+              <HelmMark size={48} className="transition-transform group-hover:scale-110" />
               <div>
                 <span className="type-h2 text-sm tracking-tight text-helm-platinum">
                   Helm

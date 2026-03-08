@@ -26,8 +26,8 @@ const config: Config = {
         }
       },
       fontFamily: {
-        sans:  ['var(--font-manrope)', 'system-ui', 'sans-serif'],
-        mono:  ['var(--font-dm-mono)', 'ui-monospace', 'monospace'],
+        sans:  ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        mono:  ['var(--font-jetbrains-mono)', 'ui-monospace', 'monospace'],
       },
       borderColor: {
         subtle:  'rgba(255,255,255,0.05)',

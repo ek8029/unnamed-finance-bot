@@ -1,7 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DataPanel,
+  DataPanelContent,
+  DataPanelHeader,
+  DataPanelTitle,
+} from '@/components/ui/data-panel';
 import { formatCurrency } from '@/lib/utils';
 import { NetWorthDataPoint } from '@/types';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -26,28 +31,42 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
   }, []);
 
   return (
-    <Card className="col-span-full">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Net Worth</span>
-          <div className="flex items-center gap-2 type-body font-normal">
-            <TrendingUp className="h-4 w-4 text-helm-positive" />
-            <span className="text-helm-positive">
-              +{changePercentage.toFixed(1)}% from last month
+    <DataPanel variant="chart" elevation="hover">
+      <DataPanelHeader>
+        <div className="flex items-center justify-between">
+          <DataPanelTitle>Net Worth</DataPanelTitle>
+          <div className="flex items-center gap-1.5 type-label text-xs">
+            <TrendingUp className="h-3.5 w-3.5 text-helm-positive" />
+            <span className="text-helm-positive font-tabular">
+              +{changePercentage.toFixed(1)}%
             </span>
+            <span className="text-helm-muted">from last month</span>
           </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+        </div>
+      </DataPanelHeader>
+      <DataPanelContent>
         {isLoading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-10 w-40" />
-            <Skeleton className="h-[200px] w-full" />
+          <div className="flex gap-6">
+            <div className="flex-shrink-0">
+              <Skeleton className="h-10 w-40" />
+            </div>
+            <div className="flex-1">
+              <Skeleton className="h-[280px] w-full" />
+            </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="type-data text-4xl">{formatCurrency(currentNetWorth)}</div>
-            <div className="h-[200px] w-full">
+          // Horizontal Split Layout: Metric (40%) | Chart (60%)
+          <div className="flex gap-6 items-center">
+            {/* Left: Large Metric Display */}
+            <div className="flex-shrink-0">
+              <div className="type-data text-4xl font-tabular text-helm-platinum">
+                {formatCurrency(currentNetWorth)}
+              </div>
+              <div className="type-label text-helm-secondary mt-1">Total Net Worth</div>
+            </div>
+
+            {/* Right: Expanded Chart */}
+            <div className="flex-1 h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={netWorthHistory}>
                   <XAxis
@@ -86,13 +105,15 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
                     stroke="var(--color-gold)"
                     strokeWidth={2}
                     dot={false}
+                    animationDuration={800}
+                    animationEasing="ease-out"
                   />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </DataPanelContent>
+    </DataPanel>
   );
 }

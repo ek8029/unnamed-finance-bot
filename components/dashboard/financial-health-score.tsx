@@ -1,6 +1,11 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DataPanel,
+  DataPanelContent,
+  DataPanelHeader,
+  DataPanelTitle,
+} from '@/components/ui/data-panel';
 import { FinancialHealthScore as HealthScore } from '@/types';
 import { Progress } from '@/components/ui/progress';
 
@@ -29,48 +34,50 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Financial Health Score</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <DataPanel variant="metric" elevation="hover">
+      <DataPanelHeader>
+        <DataPanelTitle>Financial Health</DataPanelTitle>
+      </DataPanelHeader>
+      <DataPanelContent className="space-y-4">
+        {/* Compact Circular Score */}
         <div className="flex flex-col items-center justify-center">
-          <div className="relative h-40 w-40">
-            <svg className="h-40 w-40 -rotate-90" viewBox="0 0 160 160">
+          <div className="relative h-32 w-32">
+            <svg className="h-32 w-32 -rotate-90" viewBox="0 0 128 128">
               <circle
-                cx="80"
-                cy="80"
-                r="70"
+                cx="64"
+                cy="64"
+                r="56"
                 fill="none"
                 stroke="var(--color-border-base)"
-                strokeWidth="10"
+                strokeWidth="8"
               />
               <circle
-                cx="80"
-                cy="80"
-                r="70"
+                cx="64"
+                cy="64"
+                r="56"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="10"
+                strokeWidth="8"
                 strokeLinecap="round"
-                strokeDasharray={`${(healthScore.score / 100) * 439.6} 439.6`}
+                strokeDasharray={`${(healthScore.score / 100) * 351.68} 351.68`}
                 className={getScoreColor(healthScore.score)}
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className={`type-display text-4xl ${getScoreColor(healthScore.score)}`}>
+              <span className={`type-data text-3xl font-tabular ${getScoreColor(healthScore.score)}`}>
                 {healthScore.score}
               </span>
-              <span className="type-label text-helm-secondary mt-1">{getScoreLabel(healthScore.score)}</span>
+              <span className="type-caption text-helm-secondary">{getScoreLabel(healthScore.score)}</span>
             </div>
           </div>
         </div>
 
-        <div className="space-y-4">
+        {/* Compact Metrics */}
+        <div className="space-y-3">
           <div>
-            <div className="flex justify-between type-label mb-2">
-              <span className="text-helm-secondary">Debt-to-Asset Ratio</span>
-              <span className="text-helm-platinum">{(healthScore.debt_to_asset_ratio * 100).toFixed(1)}%</span>
+            <div className="flex justify-between type-label text-xs mb-1.5">
+              <span className="text-helm-secondary">Debt-to-Asset</span>
+              <span className="text-helm-platinum font-tabular">{(healthScore.debt_to_asset_ratio * 100).toFixed(1)}%</span>
             </div>
             <Progress
               value={healthScore.debt_to_asset_ratio * 100}
@@ -80,9 +87,9 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
           </div>
 
           <div>
-            <div className="flex justify-between type-label mb-2">
+            <div className="flex justify-between type-label text-xs mb-1.5">
               <span className="text-helm-secondary">Savings Rate</span>
-              <span className="text-helm-platinum">{(healthScore.savings_rate * 100).toFixed(1)}%</span>
+              <span className="text-helm-platinum font-tabular">{(healthScore.savings_rate * 100).toFixed(1)}%</span>
             </div>
             <Progress
               value={healthScore.savings_rate * 100}
@@ -92,9 +99,9 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
           </div>
 
           <div>
-            <div className="flex justify-between type-label mb-2">
+            <div className="flex justify-between type-label text-xs mb-1.5">
               <span className="text-helm-secondary">Emergency Fund</span>
-              <span className="text-helm-platinum">{healthScore.emergency_fund_months.toFixed(1)} months</span>
+              <span className="text-helm-platinum font-tabular">{healthScore.emergency_fund_months.toFixed(1)} mo</span>
             </div>
             <Progress
               value={(healthScore.emergency_fund_months / 12) * 100}
@@ -104,9 +111,9 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
           </div>
 
           <div>
-            <div className="flex justify-between type-label mb-2">
-              <span className="text-helm-secondary">Portfolio Diversification</span>
-              <span className="text-helm-platinum">{(healthScore.portfolio_diversification * 100).toFixed(1)}%</span>
+            <div className="flex justify-between type-label text-xs mb-1.5">
+              <span className="text-helm-secondary">Diversification</span>
+              <span className="text-helm-platinum font-tabular">{(healthScore.portfolio_diversification * 100).toFixed(1)}%</span>
             </div>
             <Progress
               value={healthScore.portfolio_diversification * 100}
@@ -115,7 +122,7 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
             />
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </DataPanelContent>
+    </DataPanel>
   );
 }

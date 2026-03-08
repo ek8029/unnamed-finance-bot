@@ -1,8 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Insight, InsightType } from '@/types';
 import { useState } from 'react';
 import {
@@ -11,11 +9,9 @@ import {
   ShoppingCart,
   FileText,
   CreditCard,
-  ChevronDown,
-  ChevronUp,
   X,
-  ThumbsUp,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface AIInsightsFeedProps {
   insights: Insight[];
@@ -39,128 +35,115 @@ const insightColors: Record<InsightType, { bg: string; text: string; badge: 'def
 
 export function AIInsightsFeed({ insights: initialInsights }: AIInsightsFeedProps) {
   const [insights, setInsights] = useState(initialInsights);
-  const [expandedInsights, setExpandedInsights] = useState<Set<string>>(new Set());
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const toggleExpand = (id: string) => {
-    const newExpanded = new Set(expandedInsights);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedInsights(newExpanded);
+    setExpandedId(expandedId === id ? null : id);
   };
 
   const dismissInsight = (id: string) => {
     setInsights(insights.filter((insight) => insight.id !== id));
   };
 
-  const markUseful = (id: string) => {
-    setInsights(
-      insights.map((insight) =>
-        insight.id === id ? { ...insight, is_useful: true } : insight
-      )
-    );
-  };
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Lightbulb className="h-5 w-5" />
-          AI Insights
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
+    <div className="h-full flex flex-col bg-helm-surface border-l border-helm-border-base">
+      {/* Sidebar Header */}
+      <div className="flex-shrink-0 px-4 py-3 border-b border-helm-border-base">
+        <div className="flex items-center gap-2">
+          <Lightbulb className="h-4 w-4 text-helm-gold" />
+          <h2 className="type-h3 text-helm-platinum">Intelligence Feed</h2>
+        </div>
+        <p className="type-caption text-helm-secondary mt-0.5">AI-powered insights</p>
+      </div>
+
+      {/* Scrollable Insights List */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="p-3 space-y-2">
           {insights.map((insight) => {
             const Icon = insightIcons[insight.type];
             const colors = insightColors[insight.type];
-            const isExpanded = expandedInsights.has(insight.id);
+            const isExpanded = expandedId === insight.id;
 
             return (
               <div
                 key={insight.id}
-                className="rounded-md border border-helm-border-base bg-helm-elevated p-4 hover:border-helm-border-strong transition-all"
+                className={cn(
+                  "rounded-md border transition-all cursor-pointer",
+                  isExpanded
+                    ? "border-helm-border-strong bg-helm-elevated"
+                    : "border-helm-border-base bg-helm-surface hover:bg-helm-overlay hover:border-helm-border-strong"
+                )}
+                onClick={() => toggleExpand(insight.id)}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className={`rounded-md p-2 ${colors.bg} border border-helm-border-subtle`}>
-                      <Icon className={`h-4 w-4 ${colors.text}`} />
+                <div className="p-3">
+                  {/* Header */}
+                  <div className="flex items-start gap-2 mb-2">
+                    <div className={`rounded p-1 ${colors.bg} border border-helm-border-subtle flex-shrink-0`}>
+                      <Icon className={`h-3 w-3 ${colors.text}`} />
                     </div>
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <h4 className="type-h3">{insight.title}</h4>
-                        <Badge variant={colors.badge} className="capitalize">
-                          {insight.type}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-helm-secondary">{insight.description}</p>
-                      {isExpanded && insight.recommended_action && (
-                        <div className="mt-3 p-3 bg-helm-overlay rounded-md border border-helm-border-base">
-                          <div className="type-label text-helm-platinum mb-1">
-                            Recommended Action
-                          </div>
-                          <p className="text-sm text-helm-secondary">{insight.recommended_action}</p>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2 mt-3">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => toggleExpand(insight.id)}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-1 mb-1">
+                        <h4 className="type-label text-xs text-helm-platinum leading-tight truncate">
+                          {insight.title}
+                        </h4>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dismissInsight(insight.id);
+                          }}
+                          className="flex-shrink-0 text-helm-muted hover:text-helm-platinum transition-colors"
                         >
-                          {isExpanded ? (
-                            <>
-                              <ChevronUp className="h-3 w-3 mr-1" />
-                              Show Less
-                            </>
-                          ) : (
-                            <>
-                              <ChevronDown className="h-3 w-3 mr-1" />
-                              Show More
-                            </>
-                          )}
-                        </Button>
-                        {!insight.is_useful && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => markUseful(insight.id)}
-                          >
-                            <ThumbsUp className="h-3 w-3 mr-1" />
-                            Useful
-                          </Button>
-                        )}
-                        {insight.is_useful && (
-                          <span className="text-xs text-helm-positive flex items-center gap-1">
-                            <ThumbsUp className="h-3 w-3" />
-                            Marked as useful
-                          </span>
-                        )}
+                          <X className="h-3 w-3" />
+                        </button>
                       </div>
+                      <Badge variant={colors.badge} className="capitalize text-[9px] px-1.5 py-0">
+                        {insight.type}
+                      </Badge>
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => dismissInsight(insight.id)}
-                    className="h-6 w-6 p-0"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+
+                  {/* Description */}
+                  <p className={cn(
+                    "text-xs text-helm-secondary leading-relaxed",
+                    !isExpanded && "line-clamp-2"
+                  )}>
+                    {insight.description}
+                  </p>
+
+                  {/* Expanded Content */}
+                  {isExpanded && insight.recommended_action && (
+                    <div className="mt-2 p-2 bg-helm-overlay rounded border border-helm-border-subtle">
+                      <div className="type-caption text-helm-gold mb-1">
+                        Recommended Action
+                      </div>
+                      <p className="text-xs text-helm-secondary leading-relaxed">
+                        {insight.recommended_action}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Timestamp */}
+                  <div className="mt-2 type-caption text-helm-muted">
+                    {new Date(insight.timestamp).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </div>
                 </div>
               </div>
             );
           })}
+
           {insights.length === 0 && (
-            <div className="text-center py-8 text-helm-secondary">
-              <Lightbulb className="h-12 w-12 mx-auto mb-3 text-helm-muted" />
-              <p>No insights available at the moment.</p>
+            <div className="text-center py-12 text-helm-secondary">
+              <Lightbulb className="h-8 w-8 mx-auto mb-2 text-helm-muted" />
+              <p className="text-xs">No insights available</p>
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

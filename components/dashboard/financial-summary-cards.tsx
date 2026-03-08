@@ -1,6 +1,11 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DataPanel,
+  DataPanelContent,
+  DataPanelHeader,
+  DataPanelTitle,
+} from '@/components/ui/data-panel';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { ArrowUpRight, ArrowDownRight, DollarSign, Wallet, CreditCard, TrendingUp } from 'lucide-react';
 
@@ -59,31 +64,34 @@ export function FinancialSummaryCards({
         const isPositive = item.change > 0;
 
         return (
-          <Card key={item.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle>{item.title}</CardTitle>
-              <div className={`rounded-md p-2 ${item.iconBg}`}>
-                <Icon className={`h-4 w-4 ${item.iconColor}`} />
+          <DataPanel key={item.title} variant="metric" elevation="hover">
+            <DataPanelHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3">
+              <DataPanelTitle className="text-xs">{item.title}</DataPanelTitle>
+              <div className={`rounded-md p-1.5 ${item.iconBg}`}>
+                <Icon className={`h-3.5 w-3.5 ${item.iconColor}`} />
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="type-data text-2xl">{formatCurrency(item.value)}</div>
-              <div className="flex items-center gap-1 mt-1">
+            </DataPanelHeader>
+            <DataPanelContent className="p-3 pt-0">
+              <div className="type-data text-2xl font-tabular text-helm-platinum">
+                {formatCurrency(item.value)}
+              </div>
+              <div className="flex items-center gap-1 mt-0.5">
                 {isPositive ? (
-                  <ArrowUpRight className="h-4 w-4 text-helm-positive" />
+                  <ArrowUpRight className="h-3 w-3 text-helm-positive" />
                 ) : (
-                  <ArrowDownRight className="h-4 w-4 text-helm-negative" />
+                  <ArrowDownRight className="h-3 w-3 text-helm-negative" />
                 )}
                 <span
-                  className={`text-xs font-medium ${
+                  className={`type-label text-xs font-tabular ${
                     isPositive ? 'text-helm-positive' : 'text-helm-negative'
                   }`}
                 >
-                  {formatPercentage(item.change)} from last month
+                  {formatPercentage(item.change)}
                 </span>
+                <span className="type-label text-xs text-helm-muted">from last month</span>
               </div>
-            </CardContent>
-          </Card>
+            </DataPanelContent>
+          </DataPanel>
         );
       })}
     </div>
