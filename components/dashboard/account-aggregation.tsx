@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Account } from '@/types';
-import { formatCurrency } from '@/lib/utils';
+import { useFormat } from '@/hooks/use-format';
 import { Building2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -28,6 +28,8 @@ const accountTypeColors: Record<Account['account_type'], 'default' | 'secondary'
 };
 
 export function AccountAggregation({ accounts }: AccountAggregationProps) {
+  const { formatCurrency } = useFormat();
+
   return (
     <Card>
       <CardHeader>

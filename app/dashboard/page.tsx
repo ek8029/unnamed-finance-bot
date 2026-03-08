@@ -20,19 +20,19 @@ import {
 
 export default function DashboardOverview() {
   return (
-    <div className="container mx-auto p-4 max-w-[1600px]">
-      <div className="flex gap-4">
+    <div className="container mx-auto card-padding max-w-[1600px]">
+      <div className="flex gap-density">
         {/* Main Content Area */}
-        <div className="flex-1 min-w-0 space-y-4 stagger-fade-in">
-          {/* Header */}
-          <div className="space-y-1">
+        <div className="flex-1 min-w-0 space-y-density stagger-fade-in">
+          {/* Header with better spacing */}
+          <div className="space-y-2 mb-1">
             <h1 className="type-h1">Financial Command Center</h1>
             <p className="type-body text-[var(--color-text-secondary)]">
               Real-time intelligence across your complete financial system
             </p>
           </div>
 
-          {/* Row 1: Financial Summary Cards (Full Width) */}
+          {/* Row 1: Financial Summary Cards */}
           <div>
             <FinancialSummaryCards
               totalAssets={mockFinancialSummary.total_assets}
@@ -42,38 +42,39 @@ export default function DashboardOverview() {
             />
           </div>
 
-          {/* Row 2: Net Worth (2/3) + Health Score (1/3) */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2">
+          {/* Row 2: Net Worth (larger, 2/3) + Health Score (1/3) */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-density">
+            <div className="lg:col-span-3">
               <NetWorthCard
                 currentNetWorth={mockFinancialSummary.net_worth}
                 netWorthHistory={mockNetWorthHistory}
               />
             </div>
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-2">
               <FinancialHealthScore healthScore={mockFinancialHealthScore} />
             </div>
           </div>
 
-          {/* Row 3: Cash Flow + Composition + Savings — equal columns */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-1">
+          {/* Row 3: Stacked Cash Flow & Savings (left) + Financial Composition (right) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-density">
+            {/* Left Column: Stacked Metrics */}
+            <div className="space-y-density">
               <CashFlowTrend data={mockCashFlowTrend} />
+              <SavingsRateTimeline data={mockSavingsRateTimeline} targetRate={30} />
             </div>
-            <div className="lg:col-span-1">
+
+            {/* Right Column: Financial Composition */}
+            <div>
               <AssetsLiabilitiesComposition
                 assets={mockAssetsComposition}
                 liabilities={mockLiabilitiesComposition}
               />
             </div>
-            <div className="lg:col-span-1">
-              <SavingsRateTimeline data={mockSavingsRateTimeline} targetRate={30} />
-            </div>
           </div>
         </div>
 
         {/* Right Sidebar - Persistent Intelligence Feed */}
-        <aside className="hidden lg:block w-[380px] sticky top-[73px] self-start h-[calc(100vh-89px)]">
+        <aside className="hidden lg:block w-[380px] sticky top-4 self-start h-[calc(100vh-104px)]">
           <AIInsightsFeed insights={mockInsights} />
         </aside>
       </div>

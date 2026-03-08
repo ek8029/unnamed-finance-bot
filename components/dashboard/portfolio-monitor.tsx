@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Holding } from '@/types';
-import { formatCurrency, formatPercentage, formatNumber } from '@/lib/utils';
+import { useFormat } from '@/hooks/use-format';
 import { ArrowUpRight, ArrowDownRight, TrendingUp, ChevronUp, ChevronDown } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -12,6 +12,7 @@ interface PortfolioMonitorProps {
 }
 
 export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
+  const { formatCurrency, formatPercentage, formatNumber } = useFormat();
   const totalValue = holdings.reduce((sum, holding) => sum + holding.total_value, 0);
 
   type SortKey = 'asset' | 'ticker' | 'value' | 'change' | 'allocation';

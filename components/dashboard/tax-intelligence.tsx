@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TaxIntelligence as Tax } from '@/types';
-import { formatCurrency } from '@/lib/utils';
+import { useFormat } from '@/hooks/use-format';
 import { FileText, Info } from 'lucide-react';
 
 interface TaxIntelligenceProps {
@@ -12,6 +12,7 @@ interface TaxIntelligenceProps {
 }
 
 export function TaxIntelligence({ taxData, onCategorySelect }: TaxIntelligenceProps) {
+  const { formatCurrency } = useFormat();
   const [activeLabel, setActiveLabel] = useState<string | null>(null);
 
   const taxItems = [

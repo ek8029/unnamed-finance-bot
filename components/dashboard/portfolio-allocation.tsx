@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PortfolioAllocation as Allocation } from '@/types';
-import { formatCurrency } from '@/lib/utils';
+import { useFormat } from '@/hooks/use-format';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { PieChartIcon } from 'lucide-react';
 
@@ -23,6 +23,8 @@ const HELM_CHART_COLORS = [
 ];
 
 export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
+  const { formatCurrency } = useFormat();
+
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [hiddenNames, setHiddenNames] = useState<Set<string>>(new Set());
 
@@ -52,10 +54,10 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Side-by-side layout: chart + legend to prevent text cutoff */}
-        <div className="flex flex-col lg:flex-row gap-6">
+        {/* Stacked layout: chart on top, legend below */}
+        <div className="flex flex-col gap-4">
           {/* Donut Chart */}
-          <div className="h-[280px] w-full lg:w-[280px] flex-shrink-0">
+          <div className="h-[200px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -63,8 +65,8 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  outerRadius={110}
-                  innerRadius={50}
+                  outerRadius={80}
+                  innerRadius={40}
                   paddingAngle={2}
                   dataKey="value"
                   onMouseEnter={(_, idx) => setActiveIndex(idx)}
@@ -106,7 +108,7 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
           </div>
 
           {/* Legend — no text cutoff, full names visible */}
-          <div className="flex-1 space-y-1.5 overflow-y-auto max-h-[280px] custom-scrollbar">
+          <div className="space-y-1.5">
             {allocation.map((item, index) => {
               const color = HELM_CHART_COLORS[index % HELM_CHART_COLORS.length];
               const isHidden = hiddenNames.has(item.name);

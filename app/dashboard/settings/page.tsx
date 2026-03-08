@@ -335,8 +335,8 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Currency</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {(['USD', 'EUR', 'GBP'] as const).map((currency) => (
+              <div className="grid grid-cols-5 gap-2">
+                {(['USD', 'EUR', 'GBP', 'JPY', 'CAD'] as const).map((currency) => (
                   <button
                     key={currency}
                     onClick={() => updateSettings({ currency })}
@@ -350,6 +350,32 @@ export default function SettingsPage() {
                     `}
                   >
                     {currency}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Number Format</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: 'US', label: 'US (1,234.56)' },
+                  { value: 'EU', label: 'EU (1.234,56)' },
+                  { value: 'UK', label: 'UK (1,234.56)' },
+                ] as const).map((format) => (
+                  <button
+                    key={format.value}
+                    onClick={() => updateSettings({ numberFormat: format.value })}
+                    className={`
+                      p-2 rounded-md border transition-all type-caption text-[9px]
+                      ${
+                        settings.numberFormat === format.value
+                          ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
+                          : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]'
+                      }
+                    `}
+                  >
+                    {format.label}
                   </button>
                 ))}
               </div>

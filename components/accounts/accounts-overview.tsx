@@ -6,7 +6,7 @@ import {
   DataPanelHeader,
   DataPanelTitle,
 } from '@/components/ui/data-panel';
-import { formatCurrency } from '@/lib/utils';
+import { useFormat } from '@/hooks/use-format';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
@@ -22,6 +22,8 @@ interface AccountsOverviewProps {
 }
 
 export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
+  const { formatCurrency } = useFormat();
+
   const currentMonth = balanceHistory[balanceHistory.length - 1];
   const previousMonth = balanceHistory[balanceHistory.length - 2];
   const balanceChange = currentMonth.balance - previousMonth.balance;

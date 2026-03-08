@@ -6,7 +6,7 @@ import {
   DataPanelHeader,
   DataPanelTitle,
 } from '@/components/ui/data-panel';
-import { formatCurrency } from '@/lib/utils';
+import { useFormat } from '@/hooks/use-format';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 
@@ -22,6 +22,8 @@ interface CashFlowTrendProps {
 }
 
 export function CashFlowTrend({ data }: CashFlowTrendProps) {
+  const { formatCurrency } = useFormat();
+
   const currentMonth = data[data.length - 1];
   const previousMonth = data[data.length - 2];
   const flowChange = currentMonth.netFlow - previousMonth.netFlow;
@@ -88,7 +90,7 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
         </div>
 
         {/* Trend Chart */}
-        <div className="h-[120px]">
+        <div className="h-[80px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data}>
               <defs>

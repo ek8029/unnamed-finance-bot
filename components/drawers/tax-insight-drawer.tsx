@@ -2,7 +2,7 @@
 
 import { DrawerSection, DrawerSectionHeader } from '@/components/ui/drawer';
 import { Holding } from '@/types';
-import { formatCurrency } from '@/lib/utils';
+import { useFormat } from '@/hooks/use-format';
 import { FileText, DollarSign, TrendingDown, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -19,6 +19,7 @@ export function TaxInsightDrawer({
   potentialSavings,
   holdings = [],
 }: TaxInsightDrawerProps) {
+  const { formatCurrency } = useFormat();
   // Find holdings with losses for tax-loss harvesting
   const holdingsWithLosses = holdings.filter((h) => (h.unrealised_gain || 0) < 0);
   const totalUnrealizedLosses = holdingsWithLosses.reduce(

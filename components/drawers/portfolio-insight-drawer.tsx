@@ -2,7 +2,7 @@
 
 import { DrawerSection, DrawerSectionHeader } from '@/components/ui/drawer';
 import { Holding } from '@/types';
-import { formatCurrency } from '@/lib/utils';
+import { useFormat } from '@/hooks/use-format';
 import { TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 
 interface PortfolioInsightDrawerProps {
@@ -11,6 +11,8 @@ interface PortfolioInsightDrawerProps {
 }
 
 export function PortfolioInsightDrawer({ holdings, insightDescription }: PortfolioInsightDrawerProps) {
+  const { formatCurrency } = useFormat();
+
   // Calculate total portfolio value
   const totalPortfolioValue = holdings.reduce((sum, h) => sum + h.total_value, 0);
 

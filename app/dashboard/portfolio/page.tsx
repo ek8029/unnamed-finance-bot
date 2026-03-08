@@ -3,13 +3,16 @@
 import { useState } from 'react';
 import { PortfolioMonitor } from '@/components/dashboard/portfolio-monitor';
 import { PortfolioAllocation } from '@/components/dashboard/portfolio-allocation';
+import { MarketIntelligence } from '@/components/portfolio/market-intelligence';
 import { mockHoldings, mockPortfolioAllocation } from '@/lib/mock-data';
 import { TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { formatCurrency } from '@/lib/utils';
+import { useFormat } from '@/hooks/use-format';
 
 export default function PortfolioPage() {
+  const { formatCurrency } = useFormat();
+
   const totalValue = mockHoldings.reduce((sum, holding) => sum + holding.total_value, 0);
   const totalDayChange = mockHoldings.reduce(
     (sum, holding) => sum + (holding.total_value * holding.day_change_percentage) / 100,
@@ -61,6 +64,9 @@ export default function PortfolioPage() {
           Track your investments, allocation, and performance
         </p>
       </div>
+
+      {/* Market Intelligence - Collapsible at Top */}
+      <MarketIntelligence />
 
       {/* Portfolio Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

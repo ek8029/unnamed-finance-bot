@@ -7,10 +7,10 @@ import {
   DataPanelHeader,
   DataPanelTitle,
 } from '@/components/ui/data-panel';
-import { formatCurrency } from '@/lib/utils';
+import { useFormat } from '@/hooks/use-format';
 import { NetWorthDataPoint } from '@/types';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface NetWorthCardProps {
@@ -19,9 +19,12 @@ interface NetWorthCardProps {
 }
 
 export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardProps) {
+  const { formatCurrency } = useFormat();
+
   const previousNetWorth = netWorthHistory[netWorthHistory.length - 2]?.value || 0;
   const change = currentNetWorth - previousNetWorth;
   const changePercentage = (change / previousNetWorth) * 100;
+  const isPositiveChange = change >= 0;
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -39,14 +42,18 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
   const yMax = Math.ceil((maxVal + padding) / 10000) * 10000;
 
   return (
-    <DataPanel variant="chart" elevation="hover">
+    <DataPanel variant="chart" elevation="hover" className="h-full">
       <DataPanelHeader>
         <div className="flex items-center justify-between">
           <DataPanelTitle>Net Worth</DataPanelTitle>
           <div className="flex items-center gap-1.5 type-label text-xs">
-            <TrendingUp className="h-3.5 w-3.5 text-[var(--color-positive)]" />
-            <span className="text-[var(--color-positive)] font-tabular">
-              +{changePercentage.toFixed(1)}%
+            {isPositiveChange ? (
+              <TrendingUp className="h-3.5 w-3.5 text-[var(--color-positive)]" />
+            ) : (
+              <TrendingDown className="h-3.5 w-3.5 text-[var(--color-negative)]" />
+            )}
+            <span className={`font-tabular ${isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+              {isPositiveChange ? '+' : ''}{changePercentage.toFixed(1)}%
             </span>
             <span className="text-[var(--color-text-muted)]">from last month</span>
           </div>
@@ -54,32 +61,17 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
       </DataPanelHeader>
       <DataPanelContent>
         {isLoading ? (
-          <div className="flex gap-6">
-            <div className="flex-shrink-0">
+          <div className="space-y-4">
+            <Skeleton className="h-[240px] w-full" />
+            <div className="flex justify-between items-center">
               <Skeleton className="h-10 w-40" />
-            </div>
-            <div className="flex-1">
-              <Skeleton className="h-[240px] w-full" />
+              <Skeleton className="h-6 w-32" />
             </div>
           </div>
         ) : (
-          <div className="flex gap-6 items-center">
-            {/* Left: Large Metric Display */}
-            <div className="flex-shrink-0">
-              <div className="type-data text-4xl font-tabular text-[var(--color-text-primary)]">
-                {formatCurrency(currentNetWorth)}
-              </div>
-              <div className="type-label text-[var(--color-text-secondary)] mt-1">Total Net Worth</div>
-              <div className="mt-3 flex items-center gap-2">
-                <span className="type-mono text-[var(--color-positive)]">
-                  +{formatCurrency(change)}
-                </span>
-                <span className="type-mono text-[var(--color-text-muted)]">this month</span>
-              </div>
-            </div>
-
-            {/* Right: Chart with proper padding and area fill */}
-            <div className="flex-1 h-[240px]">
+          <div className="space-y-4">
+            {/* Top: Large Chart */}
+            <div className="h-[240px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={netWorthHistory} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
                   <defs>
@@ -95,7 +87,7 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
                     tickLine={false}
                     axisLine={false}
                     fontFamily="var(--font-jetbrains-mono)"
-                    interval="preserveStartEnd"
+                    interval={2}
                     tick={{ dy: 6 }}
                   />
                   <YAxis
@@ -136,6 +128,22 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
                   />
                 </AreaChart>
               </ResponsiveContainer>
+            </div>
+
+            {/* Bottom: Large Metric Display */}
+            <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border-subtle)]">
+              <div>
+                <div className="type-data text-3xl font-tabular text-[var(--color-text-primary)]">
+                  {formatCurrency(currentNetWorth)}
+                </div>
+                <div className="type-label text-[var(--color-text-secondary)] mt-1">Total Net Worth</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`font-tabular text-sm font-medium ${isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`} style={{ fontFamily: 'var(--font-jetbrains-mono), monospace' }}>
+                  {isPositiveChange ? '+' : ''}{formatCurrency(change)}
+                </span>
+                <span className="type-mono text-[var(--color-text-muted)]">this month</span>
+              </div>
             </div>
           </div>
         )}

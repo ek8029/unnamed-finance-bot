@@ -34,7 +34,7 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
   };
 
   return (
-    <DataPanel variant="metric" elevation="hover">
+    <DataPanel variant="metric" elevation="hover" className="h-full">
       <DataPanelHeader>
         <DataPanelTitle>Financial Health</DataPanelTitle>
       </DataPanelHeader>

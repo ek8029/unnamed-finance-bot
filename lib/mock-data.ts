@@ -295,25 +295,25 @@ export const mockFinancialHealthScore: FinancialHealthScore = {
 
 // Mock net worth history (12 months)
 export const mockNetWorthHistory: NetWorthDataPoint[] = [
-  { month: 'Apr 2023', value: 312000 },
-  { month: 'May 2023', value: 318500 },
-  { month: 'Jun 2023', value: 325000 },
-  { month: 'Jul 2023', value: 331200 },
-  { month: 'Aug 2023', value: 328900 },
-  { month: 'Sep 2023', value: 342100 },
-  { month: 'Oct 2023', value: 351800 },
-  { month: 'Nov 2023', value: 368500 },
-  { month: 'Dec 2023', value: 375200 },
-  { month: 'Jan 2024', value: 381900 },
-  { month: 'Feb 2024', value: 388200 },
-  { month: 'Mar 2024', value: 393830 },
+  { month: 'Apr 2025', value: 312000 },
+  { month: 'May 2025', value: 318500 },
+  { month: 'Jun 2025', value: 325000 },
+  { month: 'Jul 2025', value: 331200 },
+  { month: 'Aug 2025', value: 328900 },
+  { month: 'Sep 2025', value: 342100 },
+  { month: 'Oct 2025', value: 351800 },
+  { month: 'Nov 2025', value: 348200 },
+  { month: 'Dec 2025', value: 355700 },
+  { month: 'Jan 2026', value: 361900 },
+  { month: 'Feb 2026', value: 388200 },
+  { month: 'Mar 2026', value: 393830 },
 ];
 
 // Mock portfolio allocation by sector
 export const mockPortfolioAllocation: PortfolioAllocation[] = [
-  { name: 'Technology', value: 184154.5, percentage: 57.9 },
-  { name: 'Diversified ETF', value: 100684, percentage: 31.7 },
-  { name: 'Cryptocurrency', value: 44105, percentage: 13.9 },
+  { name: 'Technology', value: 184154.5, percentage: 56.0 },
+  { name: 'Diversified ETF', value: 100684, percentage: 30.6 },
+  { name: 'Cryptocurrency', value: 44105, percentage: 13.4 },
 ];
 
 // Mock tax intelligence

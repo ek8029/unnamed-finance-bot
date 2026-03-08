@@ -6,7 +6,7 @@ import {
   DataPanelHeader,
   DataPanelTitle,
 } from '@/components/ui/data-panel';
-import { formatCurrency } from '@/lib/utils';
+import { useFormat } from '@/hooks/use-format';
 import { Progress } from '@/components/ui/progress';
 
 interface CompositionItem {
@@ -24,6 +24,8 @@ export function AssetsLiabilitiesComposition({
   assets,
   liabilities,
 }: AssetsLiabilitiesCompositionProps) {
+  const { formatCurrency } = useFormat();
+
   const totalAssets = assets.reduce((sum, item) => sum + item.value, 0);
   const totalLiabilities = liabilities.reduce((sum, item) => sum + item.value, 0);
   const netWorth = totalAssets - totalLiabilities;

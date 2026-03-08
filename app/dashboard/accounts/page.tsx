@@ -6,11 +6,13 @@ import { Plus, RefreshCcw, Building2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatCurrency } from '@/lib/utils';
+import { useFormat } from '@/hooks/use-format';
 import { Transaction } from '@/types';
 import { AccountsOverview } from '@/components/accounts/accounts-overview';
 
 export default function AccountsPage() {
+  const { formatCurrency } = useFormat();
+
   const totalBalance = mockAccounts.reduce((sum, account) => sum + account.balance, 0);
   const assetAccounts = mockAccounts.filter((account) => account.balance > 0);
   const liabilityAccounts = mockAccounts.filter((account) => account.balance < 0);

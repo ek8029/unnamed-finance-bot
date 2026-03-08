@@ -7,11 +7,13 @@ import { FileText, TrendingDown, Calendar, Lightbulb, DollarSign, X } from 'luci
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { formatCurrency } from '@/lib/utils';
+import { useFormat } from '@/hooks/use-format';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/contexts/toast-context';
 
 export default function TaxesPage() {
+  const { formatCurrency } = useFormat();
+
   const totalTaxLiability =
     mockTaxIntelligence.estimated_income_tax +
     mockTaxIntelligence.short_term_capital_gains +

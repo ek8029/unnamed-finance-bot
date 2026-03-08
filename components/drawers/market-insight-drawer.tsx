@@ -2,7 +2,7 @@
 
 import { DrawerSection, DrawerSectionHeader } from '@/components/ui/drawer';
 import { Holding } from '@/types';
-import { formatCurrency } from '@/lib/utils';
+import { useFormat } from '@/hooks/use-format';
 import { TrendingUp, TrendingDown, AlertCircle, ExternalLink } from 'lucide-react';
 
 interface MarketInsightDrawerProps {
@@ -18,6 +18,7 @@ export function MarketInsightDrawer({
   recommendedAction,
   affectedHoldings,
 }: MarketInsightDrawerProps) {
+  const { formatCurrency } = useFormat();
   const totalExposure = affectedHoldings.reduce((sum, h) => sum + h.total_value, 0);
 
   return (

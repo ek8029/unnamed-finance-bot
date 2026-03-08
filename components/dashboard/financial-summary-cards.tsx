@@ -6,7 +6,7 @@ import {
   DataPanelHeader,
   DataPanelTitle,
 } from '@/components/ui/data-panel';
-import { formatCurrency, formatPercentage } from '@/lib/utils';
+import { useFormat } from '@/hooks/use-format';
 import { ArrowUpRight, ArrowDownRight, DollarSign, Wallet, CreditCard, TrendingUp } from 'lucide-react';
 
 interface FinancialSummaryCardsProps {
@@ -22,6 +22,8 @@ export function FinancialSummaryCards({
   monthlyCashFlow,
   portfolioValue,
 }: FinancialSummaryCardsProps) {
+  const { formatCurrency, formatPercentage } = useFormat();
+
   const summaryData = [
     {
       title: 'Total Assets',

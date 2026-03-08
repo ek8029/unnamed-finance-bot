@@ -6,7 +6,7 @@ import {
   DataPanelHeader,
   DataPanelTitle,
 } from '@/components/ui/data-panel';
-import { formatCurrency } from '@/lib/utils';
+import { useFormat } from '@/hooks/use-format';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { TrendingUp, TrendingDown, Target } from 'lucide-react';
 
@@ -22,6 +22,8 @@ interface SavingsRateTimelineProps {
 }
 
 export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimelineProps) {
+  const { formatCurrency } = useFormat();
+
   const currentMonth = data[data.length - 1];
   const previousMonth = data[data.length - 2];
   const rateChange = currentMonth.rate - previousMonth.rate;
@@ -91,7 +93,7 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
         )}
 
         {/* Trend Chart */}
-        <div className="h-[120px]">
+        <div className="h-[80px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>
               <XAxis
