@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { NetWorthCard } from '@/components/dashboard/net-worth-card';
 import { FinancialSummaryCards } from '@/components/dashboard/financial-summary-cards';
@@ -7,18 +7,78 @@ import { AIInsightsFeed } from '@/components/dashboard/ai-insights-feed';
 import { CashFlowTrend } from '@/components/dashboard/cash-flow-trend';
 import { AssetsLiabilitiesComposition } from '@/components/dashboard/assets-liabilities-composition';
 import { SavingsRateTimeline } from '@/components/dashboard/savings-rate-timeline';
+import { useFinancialSummary } from '@/hooks/use-financial-data';
 import {
-  mockFinancialSummary,
-  mockFinancialHealthScore,
+  // Keep mock data as fallback for charts that need historical data
   mockNetWorthHistory,
-  mockInsights,
   mockCashFlowTrend,
   mockAssetsComposition,
   mockLiabilitiesComposition,
   mockSavingsRateTimeline,
 } from '@/lib/mock-data';
 
+function LoadingSkeleton() {
+  return (
+    <div className="animate-pulse space-y-density">
+      <div className="h-8 bg-neutral-800 rounded w-1/3"></div>
+      <div className="h-4 bg-neutral-800 rounded w-1/2"></div>
+      <div className="grid grid-cols-4 gap-density mt-6">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="h-32 bg-neutral-800 rounded-xl"></div>
+        ))}
+      </div>
+      <div className="grid grid-cols-5 gap-density mt-6">
+        <div className="col-span-3 h-64 bg-neutral-800 rounded-xl"></div>
+        <div className="col-span-2 h-64 bg-neutral-800 rounded-xl"></div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardOverview() {
+  const { financialSummary, healthScore, insights, loading, error } = useFinancialSummary();
+
+  if (loading) {
+    return (
+      <div className="container mx-auto card-padding max-w-[1600px]">
+        <LoadingSkeleton />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto card-padding max-w-[1600px]">
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-6 rounded-xl">
+          <h2 className="font-semibold mb-2">Error loading dashboard</h2>
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Transform API data to match component props (FinancialHealthScore type)
+  const transformedHealthScore = healthScore ? {
+    score: healthScore.score || 0,
+    debt_to_asset_ratio: healthScore.debt_to_asset_ratio || 0,
+    savings_rate: healthScore.savings_rate || 0,
+    emergency_fund_months: healthScore.emergency_fund_months || 0,
+    portfolio_diversification: healthScore.portfolio_diversification || 0,
+  } : null;
+
+  // Transform insights for the feed (must match Insight type from @/types)
+  const transformedInsights = insights.map(insight => ({
+    id: insight.id,
+    user_id: '', // Not needed for display
+    type: (insight.type === 'portfolio' ? 'portfolio' : insight.type) as 'spending' | 'portfolio' | 'market' | 'tax' | 'credit',
+    title: insight.title,
+    description: insight.description,
+    recommended_action: insight.recommended_action,
+    timestamp: new Date(insight.created_at),
+    is_dismissed: false,
+    is_useful: undefined,
+  }));
+
   return (
     <div className="container mx-auto card-padding max-w-[1600px]">
       <div className="flex gap-density">
@@ -35,10 +95,10 @@ export default function DashboardOverview() {
           {/* Row 1: Financial Summary Cards */}
           <div>
             <FinancialSummaryCards
-              totalAssets={mockFinancialSummary.total_assets}
-              totalLiabilities={mockFinancialSummary.total_liabilities}
-              monthlyCashFlow={mockFinancialSummary.monthly_cash_flow}
-              portfolioValue={mockFinancialSummary.portfolio_value}
+              totalAssets={financialSummary?.total_assets || 0}
+              totalLiabilities={financialSummary?.total_liabilities || 0}
+              monthlyCashFlow={financialSummary?.monthly_cash_flow || 0}
+              portfolioValue={financialSummary?.portfolio_value || 0}
             />
           </div>
 
@@ -46,12 +106,14 @@ export default function DashboardOverview() {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-density">
             <div className="lg:col-span-3">
               <NetWorthCard
-                currentNetWorth={mockFinancialSummary.net_worth}
+                currentNetWorth={financialSummary?.net_worth || 0}
                 netWorthHistory={mockNetWorthHistory}
               />
             </div>
             <div className="lg:col-span-2">
-              <FinancialHealthScore healthScore={mockFinancialHealthScore} />
+              {transformedHealthScore && (
+                <FinancialHealthScore healthScore={transformedHealthScore} />
+              )}
             </div>
           </div>
 
@@ -75,7 +137,7 @@ export default function DashboardOverview() {
 
         {/* Right Sidebar - Persistent Intelligence Feed */}
         <aside className="hidden lg:block w-[380px] sticky top-4 self-start h-[calc(100vh-104px)]">
-          <AIInsightsFeed insights={mockInsights} />
+          <AIInsightsFeed insights={transformedInsights} />
         </aside>
       </div>
     </div>

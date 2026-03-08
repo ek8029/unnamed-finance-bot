@@ -4,21 +4,37 @@ import { useState } from 'react';
 import { PortfolioMonitor } from '@/components/dashboard/portfolio-monitor';
 import { PortfolioAllocation } from '@/components/dashboard/portfolio-allocation';
 import { MarketIntelligence } from '@/components/portfolio/market-intelligence';
-import { mockHoldings, mockPortfolioAllocation } from '@/lib/mock-data';
+import { useHoldings } from '@/hooks/use-financial-data';
 import { TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useFormat } from '@/hooks/use-format';
 
+function LoadingSkeleton() {
+  return (
+    <div className="container mx-auto p-6 space-y-6 max-w-7xl animate-pulse">
+      <div className="h-8 bg-neutral-800 rounded w-1/4"></div>
+      <div className="h-4 bg-neutral-800 rounded w-1/3"></div>
+      <div className="grid grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="h-28 bg-neutral-800 rounded-xl"></div>
+        ))}
+      </div>
+      <div className="h-64 bg-neutral-800 rounded-xl"></div>
+    </div>
+  );
+}
+
 export default function PortfolioPage() {
   const { formatCurrency } = useFormat();
+  const { holdings, allocation, totalValue, loading, error } = useHoldings();
 
-  const totalValue = mockHoldings.reduce((sum, holding) => sum + holding.total_value, 0);
-  const totalDayChange = mockHoldings.reduce(
+  const totalDayChange = holdings.reduce(
     (sum, holding) => sum + (holding.total_value * holding.day_change_percentage) / 100,
     0
   );
-  const dayChangePercentage = (totalDayChange / totalValue) * 100;
+  const dayChangePercentage = totalValue > 0 ? (totalDayChange / totalValue) * 100 : 0;
 
   type RangeKey = '1M' | '3M' | '6M' | 'YTD';
   type PerformancePoint = { label: string; value: number };
@@ -55,6 +71,49 @@ export default function PortfolioPage() {
   };
   const [range, setRange] = useState<RangeKey>('3M');
 
+  // Transform holdings to match component expectations (Holding type)
+  const transformedHoldings = holdings.map(h => ({
+    id: h.id,
+    user_id: '', // Not needed for display
+    ticker: h.ticker,
+    asset_name: h.asset_name,
+    shares: h.shares,
+    current_price: h.current_price,
+    total_value: h.total_value,
+    day_change_percentage: h.day_change_percentage,
+    portfolio_allocation: h.portfolio_allocation,
+    sector: h.sector,
+    asset_class: h.asset_class,
+    cost_basis: h.cost_basis,
+    unrealised_gain: h.unrealised_gain,
+  }));
+
+  // Transform allocation for pie chart (PortfolioAllocation type)
+  const transformedAllocation = allocation.map(a => ({
+    name: a.name,
+    value: a.value,
+    percentage: a.percentage,
+  }));
+
+  if (loading) {
+    return <LoadingSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6 max-w-7xl">
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-6 rounded-xl">
+          <h2 className="font-semibold mb-2">Error loading portfolio</h2>
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Get sorted holdings for summary cards
+  const sortedByAllocation = [...holdings].sort((a, b) => b.portfolio_allocation - a.portfolio_allocation);
+  const sortedByDayChange = [...holdings].sort((a, b) => b.day_change_percentage - a.day_change_percentage);
+
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-7xl">
       {/* Header */}
@@ -81,7 +140,7 @@ export default function PortfolioPage() {
             <CardTitle className="type-data text-2xl">
               {formatCurrency(totalValue)}
             </CardTitle>
-            <p className="type-mono text-[var(--color-text-secondary)] mt-1">{mockHoldings.length} holdings</p>
+            <p className="type-mono text-[var(--color-text-secondary)] mt-1">{holdings.length} holdings</p>
           </CardContent>
         </Card>
 
@@ -117,10 +176,10 @@ export default function PortfolioPage() {
           </CardHeader>
           <CardContent>
             <CardTitle className="type-data text-xl">
-              {mockHoldings.sort((a, b) => b.portfolio_allocation - a.portfolio_allocation)[0]?.ticker}
+              {sortedByAllocation[0]?.ticker || '-'}
             </CardTitle>
             <p className="type-mono text-[var(--color-text-secondary)] mt-1">
-              {mockHoldings.sort((a, b) => b.portfolio_allocation - a.portfolio_allocation)[0]?.portfolio_allocation}% of portfolio
+              {sortedByAllocation[0]?.portfolio_allocation?.toFixed(1) || 0}% of portfolio
             </p>
           </CardContent>
         </Card>
@@ -134,10 +193,10 @@ export default function PortfolioPage() {
           </CardHeader>
           <CardContent>
             <CardTitle className="type-data text-xl text-[var(--color-positive)]">
-              {mockHoldings.sort((a, b) => b.day_change_percentage - a.day_change_percentage)[0]?.ticker}
+              {sortedByDayChange[0]?.ticker || '-'}
             </CardTitle>
             <p className="type-mono text-[var(--color-positive)] mt-1">
-              +{mockHoldings.sort((a, b) => b.day_change_percentage - a.day_change_percentage)[0]?.day_change_percentage}%
+              +{sortedByDayChange[0]?.day_change_percentage?.toFixed(2) || 0}%
             </p>
           </CardContent>
         </Card>
@@ -232,37 +291,33 @@ export default function PortfolioPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Holdings Table */}
         <div className="lg:col-span-2">
-          <PortfolioMonitor holdings={mockHoldings} />
+          <PortfolioMonitor holdings={transformedHoldings} />
         </div>
 
         {/* Right Column - Allocation Chart */}
         <div className="space-y-6">
-          <PortfolioAllocation allocation={mockPortfolioAllocation} />
+          <PortfolioAllocation allocation={transformedAllocation} />
 
           {/* Asset Class Breakdown */}
           <Card>
             <CardHeader>
-              <CardTitle>Asset Class Breakdown</CardTitle>
+              <CardTitle>Sector Breakdown</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {[
-                { name: 'Equities', value: 262958.5, percentage: 82.6 },
-                { name: 'ETFs', value: 100684, percentage: 31.7 },
-                { name: 'Crypto', value: 44105, percentage: 13.9 },
-              ].map((asset) => (
-                <div key={asset.name} className="space-y-2">
+              {allocation.slice(0, 5).map((sector) => (
+                <div key={sector.name} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="type-label text-[var(--color-text-secondary)]">{asset.name}</span>
-                    <span className="type-mono text-[var(--color-text-primary)]">{asset.percentage}%</span>
+                    <span className="type-label text-[var(--color-text-secondary)]">{sector.name}</span>
+                    <span className="type-mono text-[var(--color-text-primary)]">{sector.percentage.toFixed(1)}%</span>
                   </div>
                   <div className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-full h-1.5">
                     <div
                       className="bg-[var(--color-gold)] h-1.5 rounded-full transition-all duration-500"
-                      style={{ width: `${asset.percentage}%` }}
+                      style={{ width: `${Math.min(100, sector.percentage)}%` }}
                     />
                   </div>
                   <div className="type-mono text-[var(--color-text-muted)]">
-                    {formatCurrency(asset.value)}
+                    {formatCurrency(sector.value)}
                   </div>
                 </div>
               ))}

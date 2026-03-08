@@ -1,24 +1,34 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { mockAccounts, mockTransactions, mockAccountBalanceHistory } from '@/lib/mock-data';
+import { mockAccountBalanceHistory } from '@/lib/mock-data';
 import { Plus, RefreshCcw, Building2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFormat } from '@/hooks/use-format';
-import { Transaction } from '@/types';
+import { useAccounts } from '@/hooks/use-financial-data';
 import { AccountsOverview } from '@/components/accounts/accounts-overview';
+
+interface Account {
+  id: string;
+  institution: string;
+  account_type: string;
+  balance: number;
+  account_name: string;
+  sync_status: string;
+  last_synced_at?: string;
+}
 
 export default function AccountsPage() {
   const { formatCurrency } = useFormat();
+  const { accounts, loading: apiLoading, error } = useAccounts();
 
-  const totalBalance = mockAccounts.reduce((sum, account) => sum + account.balance, 0);
-  const assetAccounts = mockAccounts.filter((account) => account.balance > 0);
-  const liabilityAccounts = mockAccounts.filter((account) => account.balance < 0);
+  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
+  const assetAccounts = accounts.filter((account) => account.balance > 0);
+  const liabilityAccounts = accounts.filter((account) => account.balance < 0);
 
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<'all' | 'assets' | 'liabilities'>('all');
   const [sortBy, setSortBy] = useState<'balance-high' | 'balance-low' | 'name'>('balance-high');
 
@@ -28,22 +38,12 @@ export default function AccountsPage() {
   }, [assetAccounts]);
 
   const selectedAccount = selectedAccountId
-    ? mockAccounts.find((a) => a.id === selectedAccountId) || null
+    ? accounts.find((a) => a.id === selectedAccountId) || null
     : null;
-
-  const recentTransactions: Transaction[] = useMemo(
-    () =>
-      selectedAccountId
-        ? mockTransactions
-            .filter((t) => t.account_id === selectedAccountId)
-            .sort((a, b) => b.date.getTime() - a.date.getTime())
-        : [],
-    [selectedAccountId]
-  );
 
   // Filter and sort accounts
   const filteredAndSortedAccounts = useMemo(() => {
-    let filtered = mockAccounts;
+    let filtered: Account[] = accounts;
 
     // Apply filter
     if (filterType === 'assets') {
@@ -64,13 +64,18 @@ export default function AccountsPage() {
     });
 
     return sorted;
-  }, [filterType, sortBy, assetAccounts, liabilityAccounts]);
+  }, [filterType, sortBy, accounts, assetAccounts, liabilityAccounts]);
 
-  // Simulate initial loading for skeletons
-  useEffect(() => {
-    const timeout = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(timeout);
-  }, []);
+  if (error) {
+    return (
+      <div className="container mx-auto p-6 max-w-7xl">
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-6 rounded-xl">
+          <h2 className="font-semibold mb-2">Error loading accounts</h2>
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-7xl">
@@ -102,7 +107,7 @@ export default function AccountsPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardDescription>Total Balance</CardDescription>
-            {loading ? (
+            {apiLoading ? (
               <Skeleton className="h-8 w-32 mt-2" />
             ) : (
               <CardTitle className="type-data text-3xl">
@@ -111,14 +116,14 @@ export default function AccountsPage() {
             )}
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-[var(--color-text-secondary)]">{mockAccounts.length} accounts connected</p>
+            <p className="text-sm text-[var(--color-text-secondary)]">{accounts.length} accounts connected</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
             <CardDescription>Assets</CardDescription>
-            {loading ? (
+            {apiLoading ? (
               <Skeleton className="h-8 w-32 mt-2" />
             ) : (
               <CardTitle className="type-data text-3xl text-[var(--color-positive)]">
@@ -134,7 +139,7 @@ export default function AccountsPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardDescription>Liabilities</CardDescription>
-            {loading ? (
+            {apiLoading ? (
               <Skeleton className="h-8 w-32 mt-2" />
             ) : (
               <CardTitle className="type-data text-3xl text-[var(--color-negative)]">
@@ -205,7 +210,7 @@ export default function AccountsPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-2">
-          {loading ? (
+          {apiLoading ? (
             <div className="space-y-2">
               <Skeleton className="h-16 w-full" />
               <Skeleton className="h-16 w-full" />
@@ -256,7 +261,9 @@ export default function AccountsPage() {
                       {formatCurrency(Math.abs(account.balance))}{' '}
                       {account.balance < 0 && <span className="type-caption">due</span>}
                     </p>
-                    <p className="text-xs text-[var(--color-text-muted)]">Last synced: 2 hours ago</p>
+                    <p className="text-xs text-[var(--color-text-muted)]">
+                      {account.sync_status === 'healthy' ? 'Synced' : account.sync_status}
+                    </p>
                   </div>
                 </button>
               );
@@ -326,35 +333,13 @@ export default function AccountsPage() {
                 <span className="type-label text-[var(--color-text-secondary)]">Institution</span>
                 <span className="type-label text-[var(--color-text-primary)]">{selectedAccount.institution}</span>
               </div>
+              <div className="flex items-center justify-between">
+                <span className="type-label text-[var(--color-text-secondary)]">Account Name</span>
+                <span className="type-label text-[var(--color-text-primary)]">{selectedAccount.account_name}</span>
+              </div>
               <div className="pt-2 border-t border-[var(--color-border-subtle)]">
                 <p className="type-label text-[var(--color-text-secondary)] mb-2">Recent transactions</p>
-                {recentTransactions.length === 0 ? (
-                  <p className="text-xs text-[var(--color-text-muted)]">No recent activity for this account.</p>
-                ) : (
-                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                    {recentTransactions.map((tx) => (
-                      <div
-                        key={tx.id}
-                        className="flex items-center justify-between rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] px-3 py-2"
-                      >
-                        <div>
-                          <p className="text-xs text-[var(--color-text-primary)]">{tx.description}</p>
-                          <p className="text-[10px] text-[var(--color-text-muted)]">
-                            {tx.category} · {tx.date.toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div
-                          className={`type-data text-sm ${
-                            tx.amount >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-                          }`}
-                        >
-                          {tx.amount >= 0 ? '+' : '-'}
-                          {formatCurrency(Math.abs(tx.amount))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <p className="text-xs text-[var(--color-text-muted)]">Transaction history will be available when Plaid integration is enabled.</p>
               </div>
             </div>
           </div>

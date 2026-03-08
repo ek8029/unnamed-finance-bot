@@ -6,7 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:debug": "tsx scripts/debug-env.ts",
+    "db:verify": "tsx scripts/verify-keys.ts",
+    "db:seed": "tsx scripts/seed-institutions.ts && tsx scripts/seed-categories.ts",
+    "db:seed:institutions": "tsx scripts/seed-institutions.ts",
+    "db:seed:categories": "tsx scripts/seed-categories.ts",
+    "db:seed:test-user": "tsx scripts/seed-test-user.ts"
   },
   "repository": {
     "type": "git",
@@ -20,12 +26,15 @@
   },
   "homepage": "https://github.com/ek8029/unnamed-finance-bot#readme",
   "dependencies": {
+    "@supabase/ssr": "^0.9.0",
+    "@supabase/supabase-js": "^2.98.0",
     "@types/node": "^25.3.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.27",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.3.1",
     "lucide-react": "^0.577.0",
     "next": "^16.1.6",
     "react": "^19.2.4",
@@ -36,6 +45,7 @@
   },
   "devDependencies": {
     "postcss": "^8.5.8",
-    "tailwindcss": "^3.4.19"
+    "tailwindcss": "^3.4.19",
+    "tsx": "^4.21.0"
   }
 }
