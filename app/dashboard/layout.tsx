@@ -1,7 +1,8 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Wallet,
@@ -9,6 +10,7 @@ import {
   FileText,
   Settings,
   LogOut,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
@@ -22,14 +24,64 @@ const navigation = [
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
+interface UserProfile {
+  fullName: string;
+  email: string;
+  initials: string;
+}
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { settings } = useSettings();
   const reduceMotion = settings.accessibility.reduceMotion;
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  // Fetch user profile on mount
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const res = await fetch('/api/user/profile');
+        if (res.ok) {
+          const data = await res.json();
+          const fullName = data.profile?.full_name || data.profile?.email?.split('@')[0] || 'User';
+          const nameParts = fullName.split(' ');
+          const initials = nameParts.length >= 2
+            ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase()
+            : fullName.slice(0, 2).toUpperCase();
+
+          setProfile({
+            fullName,
+            email: data.profile?.email || '',
+            initials,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      }
+    }
+    fetchProfile();
+  }, []);
+
+  // Handle logout
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      const res = await fetch('/api/auth/logout', { method: 'POST' });
+      if (res.ok) {
+        router.push('/login');
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Logout failed:', error);
+      setLoggingOut(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-base)]">
@@ -73,14 +125,27 @@ export default function DashboardLayout({
             {/* User Menu */}
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <p className="text-sm font-medium text-[var(--color-text-primary)]">John Doe</p>
+                <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                  {profile?.fullName || 'Loading...'}
+                </p>
                 <p className="type-eyebrow text-[var(--color-text-muted)]">Premium</p>
               </div>
               <div className="w-8 h-8 rounded-full bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center">
-                <span className="text-xs font-semibold text-[var(--color-gold)]">JD</span>
+                <span className="text-xs font-semibold text-[var(--color-gold)]">
+                  {profile?.initials || '...'}
+                </span>
               </div>
-              <button className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors duration-200">
-                <LogOut className="w-4 h-4" />
+              <button
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors duration-200 disabled:opacity-50"
+                title="Sign out"
+              >
+                {loggingOut ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <LogOut className="w-4 h-4" />
+                )}
               </button>
             </div>
           </div>

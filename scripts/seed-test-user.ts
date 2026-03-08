@@ -737,6 +737,168 @@ async function seedTestUser() {
       console.log(`✅ Created ${portfolioSnapshots.length} portfolio snapshots\n`);
     }
 
+    // 17. Create market news
+    console.log('1️⃣7️⃣ Creating market news...');
+    const marketNews = [
+      {
+        title: 'NVIDIA Reports Record-Breaking Q4 Revenue of $22.1 Billion',
+        summary: 'Data center demand drives unprecedented growth as AI adoption accelerates across industries.',
+        source: 'Reuters',
+        published_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+        tickers: ['NVDA', 'AMD', 'INTC'],
+        sectors: ['Technology'],
+        sentiment: 'positive',
+        url: 'https://example.com/nvda-earnings',
+      },
+      {
+        title: 'Federal Reserve Signals Potential Rate Cuts in 2024',
+        summary: 'Fed Chair Powell indicates inflation progress may allow for monetary policy easing later this year.',
+        source: 'Bloomberg',
+        published_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+        tickers: ['SPY', 'QQQ', 'BND'],
+        sectors: ['Financial', 'Diversified'],
+        sentiment: 'positive',
+        url: 'https://example.com/fed-rates',
+      },
+      {
+        title: 'Apple Vision Pro Launches with Strong Initial Demand',
+        summary: 'Apple\'s new spatial computing device sees robust pre-order numbers, signaling potential new revenue stream.',
+        source: 'CNBC',
+        published_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+        tickers: ['AAPL', 'META'],
+        sectors: ['Technology'],
+        sentiment: 'positive',
+        url: 'https://example.com/apple-vision-pro',
+      },
+      {
+        title: 'Bitcoin ETF Sees Record Inflows as Institutional Adoption Grows',
+        summary: 'Spot Bitcoin ETFs attract $1.2 billion in weekly inflows, marking strongest week since launch.',
+        source: 'CoinDesk',
+        published_at: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+        tickers: ['BTC-USD', 'ETH-USD'],
+        sectors: ['Cryptocurrency'],
+        sentiment: 'positive',
+        url: 'https://example.com/btc-etf',
+      },
+      {
+        title: 'Healthcare Sector Faces Headwinds Amid Drug Pricing Concerns',
+        summary: 'New legislation proposals could impact pharmaceutical company margins in coming years.',
+        source: 'MarketWatch',
+        published_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+        tickers: ['JNJ', 'PFE', 'ABBV', 'UNH'],
+        sectors: ['Healthcare'],
+        sentiment: 'negative',
+        url: 'https://example.com/healthcare-headwinds',
+      },
+      {
+        title: 'Tesla Announces New Gigafactory Location in Mexico',
+        summary: 'Expansion will increase production capacity by 500,000 vehicles annually, targeting Latin American market.',
+        source: 'Reuters',
+        published_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        tickers: ['TSLA'],
+        sectors: ['Technology', 'Consumer'],
+        sentiment: 'positive',
+        url: 'https://example.com/tesla-mexico',
+      },
+      {
+        title: 'Oil Prices Surge on Middle East Supply Concerns',
+        summary: 'Geopolitical tensions push crude oil above $85 per barrel, benefiting energy sector.',
+        source: 'Bloomberg',
+        published_at: new Date(Date.now() - 28 * 60 * 60 * 1000).toISOString(),
+        tickers: ['XOM', 'CVX'],
+        sectors: ['Energy'],
+        sentiment: 'positive',
+        url: 'https://example.com/oil-surge',
+      },
+      {
+        title: 'Microsoft Cloud Revenue Exceeds Expectations',
+        summary: 'Azure growth of 29% year-over-year demonstrates continued enterprise AI adoption momentum.',
+        source: 'CNBC',
+        published_at: new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString(),
+        tickers: ['MSFT', 'GOOGL', 'AMZN'],
+        sectors: ['Technology'],
+        sentiment: 'positive',
+        url: 'https://example.com/msft-cloud',
+      },
+    ];
+
+    // Clear existing market news and events first
+    await supabase.from('market_news').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('market_events').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+    const { error: newsError } = await supabase.from('market_news').insert(marketNews);
+    if (newsError) {
+      console.error('❌ Error creating market news:', newsError);
+    } else {
+      console.log(`✅ Created ${marketNews.length} market news articles\n`);
+    }
+
+    // 18. Create market events
+    console.log('1️⃣8️⃣ Creating market events...');
+    const marketEvents = [
+      {
+        event_type: 'earnings',
+        ticker: 'AAPL',
+        event_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        title: 'Apple Q1 2024 Earnings Report',
+        description: 'Apple Inc. will report fiscal Q1 2024 earnings after market close.',
+        metadata: JSON.stringify({ eps_estimate: 2.10, revenue_estimate: 118000000000 }),
+        impact_level: 'high',
+      },
+      {
+        event_type: 'earnings',
+        ticker: 'MSFT',
+        event_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        title: 'Microsoft Q2 2024 Earnings Report',
+        description: 'Microsoft Corporation will report fiscal Q2 2024 earnings.',
+        metadata: JSON.stringify({ eps_estimate: 2.78, revenue_estimate: 61000000000 }),
+        impact_level: 'high',
+      },
+      {
+        event_type: 'dividend',
+        ticker: 'JNJ',
+        event_date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        title: 'Johnson & Johnson Dividend Payment',
+        description: 'Quarterly dividend of $1.24 per share.',
+        metadata: JSON.stringify({ dividend_amount: 1.24, yield: 3.16 }),
+        impact_level: 'medium',
+      },
+      {
+        event_type: 'dividend',
+        ticker: 'O',
+        event_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        title: 'Realty Income Monthly Dividend',
+        description: 'Monthly dividend of $0.2565 per share.',
+        metadata: JSON.stringify({ dividend_amount: 0.2565, yield: 5.62 }),
+        impact_level: 'low',
+      },
+      {
+        event_type: 'fed_announcement',
+        ticker: null,
+        event_date: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        title: 'FOMC Meeting & Interest Rate Decision',
+        description: 'Federal Reserve will announce interest rate decision and provide economic outlook.',
+        metadata: JSON.stringify({ current_rate: 5.50, expected_action: 'hold' }),
+        impact_level: 'high',
+      },
+      {
+        event_type: 'macro',
+        ticker: null,
+        event_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        title: 'U.S. Jobs Report Release',
+        description: 'Bureau of Labor Statistics will release monthly employment data.',
+        metadata: JSON.stringify({ expected_jobs: 180000, previous_jobs: 216000 }),
+        impact_level: 'high',
+      },
+    ];
+
+    const { error: eventsError } = await supabase.from('market_events').insert(marketEvents);
+    if (eventsError) {
+      console.error('❌ Error creating market events:', eventsError);
+    } else {
+      console.log(`✅ Created ${marketEvents.length} market events\n`);
+    }
+
     console.log('🎉 Comprehensive test user data seeded successfully!');
     console.log('\n📊 Summary:');
     console.log('   - 10 linked accounts (banking, credit, brokerage, crypto)');
@@ -748,6 +910,8 @@ async function seedTestUser() {
     console.log('   - 6 months cash flow history');
     console.log('   - Tax estimates and capital gains');
     console.log('   - Portfolio performance and snapshots');
+    console.log(`   - ${marketNews.length} market news articles`);
+    console.log(`   - ${marketEvents.length} market events`);
     console.log('\n✅ Ready to test!');
 
   } catch (err) {

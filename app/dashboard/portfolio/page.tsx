@@ -115,7 +115,7 @@ export default function PortfolioPage() {
       </div>
 
       {/* Market Intelligence - Collapsible at Top */}
-      <MarketIntelligence />
+      <MarketIntelligence holdings={transformedHoldings} />
 
       {/* Portfolio Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
