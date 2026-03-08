@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -19,26 +19,67 @@ import {
   Lock,
   Smartphone,
   Globe,
-  Monitor,
-  DollarSign,
-  Calendar,
-  Eye,
   Accessibility,
+  Loader2,
 } from 'lucide-react'
 
 export default function SettingsPage() {
   const { settings, updateSettings, resetSettings, formatCurrency, formatCurrencyDetailed, formatDate } = useSettings()
-  const { success, info } = useToast()
+  const { success, info, error: showError } = useToast()
 
   // Profile state
   const [profile, setProfile] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 (555) 123-4567',
+    name: '',
+    email: '',
+    phone: '',
   })
+  const [profileLoading, setProfileLoading] = useState(true)
+  const [savingProfile, setSavingProfile] = useState(false)
 
-  const handleSaveProfile = () => {
-    success('Profile updated', 'Your changes have been saved successfully')
+  // Load profile from API on mount
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const res = await fetch('/api/user/profile')
+        if (res.ok) {
+          const data = await res.json()
+          setProfile({
+            name: data.profile?.full_name || '',
+            email: data.profile?.email || '',
+            phone: data.profile?.phone || '',
+          })
+        }
+      } catch (err) {
+        console.error('Failed to load profile:', err)
+      } finally {
+        setProfileLoading(false)
+      }
+    }
+    loadProfile()
+  }, [])
+
+  const handleSaveProfile = async () => {
+    setSavingProfile(true)
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: profile.name,
+          phone: profile.phone,
+        }),
+      })
+
+      if (res.ok) {
+        success('Profile updated', 'Your changes have been saved successfully')
+      } else {
+        showError('Save failed', 'Could not save your profile. Please try again.')
+      }
+    } catch (err) {
+      showError('Save failed', 'An error occurred while saving your profile.')
+    } finally {
+      setSavingProfile(false)
+    }
   }
 
   const handleThemeChange = (theme: 'light' | 'dark' | 'auto') => {
@@ -163,8 +204,15 @@ export default function SettingsPage() {
                 onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
               />
             </div>
-            <Button onClick={handleSaveProfile} className="w-full">
-              Save Changes
+            <Button onClick={handleSaveProfile} disabled={savingProfile || profileLoading} className="w-full">
+              {savingProfile ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
             </Button>
           </CardContent>
         </Card>

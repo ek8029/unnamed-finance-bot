@@ -164,25 +164,31 @@ export function useAccounts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch('/api/accounts');
-        if (!res.ok) throw new Error('Failed to fetch accounts');
-        const data = await res.json();
-        setAccounts(data.accounts || []);
-        setBalanceHistory(data.balanceHistory || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/accounts');
+      if (!res.ok) throw new Error('Failed to fetch accounts');
+      const data = await res.json();
+      setAccounts(data.accounts || []);
+      setBalanceHistory(data.balanceHistory || []);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
     }
+  };
 
+  useEffect(() => {
     fetchData();
   }, []);
 
-  return { accounts, balanceHistory, loading, error };
+  const refetch = () => {
+    fetchData();
+  };
+
+  return { accounts, balanceHistory, loading, error, refetch };
 }
 
 export function useHoldings() {

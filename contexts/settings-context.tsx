@@ -137,6 +137,74 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 const STORAGE_KEY = 'helm-settings'
 
+// Helper to transform API preferences to Settings format
+function apiToSettings(prefs: Record<string, unknown>): Settings {
+  return {
+    theme: (prefs.theme as Settings['theme']) || DEFAULT_SETTINGS.theme,
+    density: (prefs.density as Settings['density']) || DEFAULT_SETTINGS.density,
+    currency: (prefs.currency as Settings['currency']) || DEFAULT_SETTINGS.currency,
+    dateFormat: (prefs.date_format as Settings['dateFormat']) || DEFAULT_SETTINGS.dateFormat,
+    numberFormat: (prefs.number_format as Settings['numberFormat']) || DEFAULT_SETTINGS.numberFormat,
+    notifications: {
+      marketAlerts: prefs.notification_market_alerts as boolean ?? DEFAULT_SETTINGS.notifications.marketAlerts,
+      transactionAlerts: prefs.notification_transaction_alerts as boolean ?? DEFAULT_SETTINGS.notifications.transactionAlerts,
+      budgetAlerts: prefs.notification_budget_alerts as boolean ?? DEFAULT_SETTINGS.notifications.budgetAlerts,
+      taxReminders: prefs.notification_tax_reminders as boolean ?? DEFAULT_SETTINGS.notifications.taxReminders,
+      weeklyDigest: prefs.notification_weekly_digest as boolean ?? DEFAULT_SETTINGS.notifications.weeklyDigest,
+      monthlyReport: prefs.notification_monthly_report as boolean ?? DEFAULT_SETTINGS.notifications.monthlyReport,
+      email: prefs.notification_email as boolean ?? DEFAULT_SETTINGS.notifications.email,
+      push: prefs.notification_push as boolean ?? DEFAULT_SETTINGS.notifications.push,
+    },
+    accessibility: {
+      reduceMotion: prefs.reduce_motion as boolean ?? DEFAULT_SETTINGS.accessibility.reduceMotion,
+      highContrast: prefs.high_contrast as boolean ?? DEFAULT_SETTINGS.accessibility.highContrast,
+      largeText: prefs.large_text as boolean ?? DEFAULT_SETTINGS.accessibility.largeText,
+      screenReaderOptimized: prefs.screen_reader_optimized as boolean ?? DEFAULT_SETTINGS.accessibility.screenReaderOptimized,
+    },
+    dashboard: {
+      defaultTab: (prefs.default_tab as Settings['dashboard']['defaultTab']) || DEFAULT_SETTINGS.dashboard.defaultTab,
+      compactCharts: prefs.compact_charts as boolean ?? DEFAULT_SETTINGS.dashboard.compactCharts,
+      showInsights: prefs.show_insights as boolean ?? DEFAULT_SETTINGS.dashboard.showInsights,
+      autoRefresh: prefs.auto_refresh as boolean ?? DEFAULT_SETTINGS.dashboard.autoRefresh,
+      refreshInterval: (prefs.refresh_interval as number) || DEFAULT_SETTINGS.dashboard.refreshInterval,
+      modulesOrder: DEFAULT_SETTINGS.dashboard.modulesOrder,
+      hiddenModules: DEFAULT_SETTINGS.dashboard.hiddenModules,
+    },
+    analyticsEnabled: prefs.analytics_enabled as boolean ?? DEFAULT_SETTINGS.analyticsEnabled,
+    crashReportingEnabled: prefs.crash_reporting_enabled as boolean ?? DEFAULT_SETTINGS.crashReportingEnabled,
+  }
+}
+
+// Helper to transform Settings to API format
+function settingsToApi(settings: Settings): Record<string, unknown> {
+  return {
+    theme: settings.theme,
+    density: settings.density,
+    currency: settings.currency,
+    date_format: settings.dateFormat,
+    number_format: settings.numberFormat,
+    notification_market_alerts: settings.notifications.marketAlerts,
+    notification_transaction_alerts: settings.notifications.transactionAlerts,
+    notification_budget_alerts: settings.notifications.budgetAlerts,
+    notification_tax_reminders: settings.notifications.taxReminders,
+    notification_weekly_digest: settings.notifications.weeklyDigest,
+    notification_monthly_report: settings.notifications.monthlyReport,
+    notification_email: settings.notifications.email,
+    notification_push: settings.notifications.push,
+    reduce_motion: settings.accessibility.reduceMotion,
+    high_contrast: settings.accessibility.highContrast,
+    large_text: settings.accessibility.largeText,
+    screen_reader_optimized: settings.accessibility.screenReaderOptimized,
+    default_tab: settings.dashboard.defaultTab,
+    compact_charts: settings.dashboard.compactCharts,
+    show_insights: settings.dashboard.showInsights,
+    auto_refresh: settings.dashboard.autoRefresh,
+    refresh_interval: settings.dashboard.refreshInterval,
+    analytics_enabled: settings.analyticsEnabled,
+    crash_reporting_enabled: settings.crashReportingEnabled,
+  }
+}
+
 // ============================================================================
 // PROVIDER
 // ============================================================================
@@ -144,52 +212,100 @@ const STORAGE_KEY = 'helm-settings'
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
   const [isLoading, setIsLoading] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
-  // Load settings from localStorage on mount
+  // Load settings from API (if authenticated) or localStorage on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored) as Partial<Settings>
-
-        const merged: Settings = {
-          ...DEFAULT_SETTINGS,
-          ...parsed,
-          notifications: {
-            ...DEFAULT_SETTINGS.notifications,
-            ...(parsed.notifications || {}),
-          },
-          accessibility: {
-            ...DEFAULT_SETTINGS.accessibility,
-            ...(parsed.accessibility || {}),
-          },
-          dashboard: {
-            ...DEFAULT_SETTINGS.dashboard,
-            ...(parsed.dashboard || {}),
-          },
+    async function loadSettings() {
+      try {
+        // Try to fetch from API first
+        const res = await fetch('/api/user/preferences')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.preferences) {
+            setSettings(apiToSettings(data.preferences))
+            setIsAuthenticated(true)
+            // Also update localStorage as fallback
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(apiToSettings(data.preferences)))
+          }
+        } else if (res.status === 401) {
+          // Not authenticated, use localStorage
+          const stored = localStorage.getItem(STORAGE_KEY)
+          if (stored) {
+            const parsed = JSON.parse(stored) as Partial<Settings>
+            const merged: Settings = {
+              ...DEFAULT_SETTINGS,
+              ...parsed,
+              notifications: {
+                ...DEFAULT_SETTINGS.notifications,
+                ...(parsed.notifications || {}),
+              },
+              accessibility: {
+                ...DEFAULT_SETTINGS.accessibility,
+                ...(parsed.accessibility || {}),
+              },
+              dashboard: {
+                ...DEFAULT_SETTINGS.dashboard,
+                ...(parsed.dashboard || {}),
+              },
+            }
+            setSettings(merged)
+          }
         }
-
-        setSettings(merged)
-      } else {
-        setSettings(DEFAULT_SETTINGS)
+      } catch (error) {
+        // Network error, fall back to localStorage
+        console.error('Failed to fetch settings from API:', error)
+        const stored = localStorage.getItem(STORAGE_KEY)
+        if (stored) {
+          const parsed = JSON.parse(stored) as Partial<Settings>
+          const merged: Settings = {
+            ...DEFAULT_SETTINGS,
+            ...parsed,
+            notifications: {
+              ...DEFAULT_SETTINGS.notifications,
+              ...(parsed.notifications || {}),
+            },
+            accessibility: {
+              ...DEFAULT_SETTINGS.accessibility,
+              ...(parsed.accessibility || {}),
+            },
+            dashboard: {
+              ...DEFAULT_SETTINGS.dashboard,
+              ...(parsed.dashboard || {}),
+            },
+          }
+          setSettings(merged)
+        }
+      } finally {
+        setIsLoading(false)
       }
-    } catch (error) {
-      console.error('Failed to load settings:', error)
-    } finally {
-      setIsLoading(false)
     }
+
+    loadSettings()
   }, [])
 
-  // Persist settings to localStorage whenever they change
+  // Persist settings to API (if authenticated) and localStorage whenever they change
   useEffect(() => {
     if (!isLoading) {
+      // Always save to localStorage
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
       } catch (error) {
-        console.error('Failed to save settings:', error)
+        console.error('Failed to save settings to localStorage:', error)
+      }
+
+      // If authenticated, also save to API
+      if (isAuthenticated) {
+        fetch('/api/user/preferences', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settingsToApi(settings)),
+        }).catch((error) => {
+          console.error('Failed to save settings to API:', error)
+        })
       }
     }
-  }, [settings, isLoading])
+  }, [settings, isLoading, isAuthenticated])
 
   // Apply theme to document
   useEffect(() => {

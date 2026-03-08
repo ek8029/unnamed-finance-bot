@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Plus, RefreshCcw, Building2, X } from 'lucide-react';
+import { Plus, RefreshCcw, Building2, X, Loader2 } from 'lucide-react';
+import { useToast } from '@/contexts/toast-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,7 +22,8 @@ interface Account {
 
 export default function AccountsPage() {
   const { formatCurrency } = useFormat();
-  const { accounts, balanceHistory, loading: apiLoading, error } = useAccounts();
+  const { accounts, balanceHistory, loading: apiLoading, error, refetch } = useAccounts();
+  const { success, error: showError } = useToast();
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
   const assetAccounts = accounts.filter((account) => account.balance > 0);
@@ -30,6 +32,25 @@ export default function AccountsPage() {
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<'all' | 'assets' | 'liabilities'>('all');
   const [sortBy, setSortBy] = useState<'balance-high' | 'balance-low' | 'name'>('balance-high');
+  const [syncing, setSyncing] = useState(false);
+  const [showAddAccount, setShowAddAccount] = useState(false);
+
+  const handleSyncAll = async () => {
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/accounts/sync', { method: 'POST' });
+      if (res.ok) {
+        success('Sync complete', 'All accounts have been synchronized');
+        refetch?.();
+      } else {
+        showError('Sync failed', 'Could not sync accounts. Please try again.');
+      }
+    } catch (err) {
+      showError('Sync failed', 'An error occurred while syncing accounts.');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const primaryAccountId = useMemo(() => {
     const positive = assetAccounts.sort((a, b) => b.balance - a.balance)[0];
@@ -87,11 +108,20 @@ export default function AccountsPage() {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button variant="outline" className="flex items-center space-x-2">
-            <RefreshCcw className="w-4 h-4" />
-            <span>Sync All</span>
+          <Button
+            variant="outline"
+            className="flex items-center space-x-2"
+            onClick={handleSyncAll}
+            disabled={syncing}
+          >
+            {syncing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCcw className="w-4 h-4" />
+            )}
+            <span>{syncing ? 'Syncing...' : 'Sync All'}</span>
           </Button>
-          <Button className="flex items-center space-x-2">
+          <Button className="flex items-center space-x-2" onClick={() => setShowAddAccount(true)}>
             <Plus className="w-4 h-4" />
             <span>Add Account</span>
           </Button>
@@ -341,6 +371,76 @@ export default function AccountsPage() {
               <div className="pt-2 border-t border-[var(--color-border-subtle)]">
                 <p className="type-label text-[var(--color-text-secondary)] mb-2">Recent transactions</p>
                 <p className="text-xs text-[var(--color-text-muted)]">Transaction history will be available when Plaid integration is enabled.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Account Modal */}
+      {showAddAccount && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setShowAddAccount(false)}
+          />
+          <div className="relative w-full max-w-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl animate-scale-in">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border-base)]">
+              <div>
+                <h2 className="type-h2">Connect Account</h2>
+                <p className="text-sm text-[var(--color-text-secondary)]">Link a new financial account</p>
+              </div>
+              <button
+                className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] rounded-md hover:bg-[var(--color-bg-overlay)] transition-colors"
+                onClick={() => setShowAddAccount(false)}
+                aria-label="Close modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="px-6 py-6 space-y-6">
+              <p className="text-sm text-[var(--color-text-secondary)]">
+                Connect your bank accounts, credit cards, and investment accounts securely using Plaid.
+              </p>
+
+              <div className="space-y-3">
+                <h3 className="type-h3">Supported Account Types</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { icon: '🏦', label: 'Checking & Savings' },
+                    { icon: '💳', label: 'Credit Cards' },
+                    { icon: '📈', label: 'Investment Accounts' },
+                    { icon: '🏠', label: 'Mortgages & Loans' },
+                  ].map((type) => (
+                    <div
+                      key={type.label}
+                      className="flex items-center gap-3 p-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg"
+                    >
+                      <span className="text-xl">{type.icon}</span>
+                      <span className="text-sm text-[var(--color-text-primary)]">{type.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-4 bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] rounded-lg">
+                <p className="type-label text-[var(--color-gold)] mb-1">Coming Soon</p>
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                  Plaid integration is currently being set up. You&apos;ll be able to securely connect your accounts shortly.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowAddAccount(false)}
+                >
+                  Cancel
+                </Button>
+                <Button className="flex-1" disabled>
+                  Connect with Plaid
+                </Button>
               </div>
             </div>
           </div>

@@ -117,37 +117,6 @@
     @apply antialiased;
   }
 
-  /* ── ACCESSIBILITY ── */
-  :root.reduce-motion *,
-  :root.reduce-motion *::before,
-  :root.reduce-motion *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-
-  :root.high-contrast {
-    --color-border-subtle: #3A3A3A;
-    --color-border-base:   #4A4A4A;
-    --color-border-strong: #6A6A6A;
-    --color-text-secondary: #B0B0B0;
-    --color-text-muted:    #8A8A8A;
-  }
-  :root.high-contrast.light {
-    --color-border-subtle: #B0B0B0;
-    --color-border-base:   #909090;
-    --color-border-strong: #606060;
-    --color-text-secondary: #3A3A3A;
-    --color-text-muted:    #5A5A5A;
-  }
-
-  :root.large-text {
-    font-size: 115%;
-  }
-  :root.large-text body {
-    font-size: 115%;
-  }
 }
 
 /* ══════════════════════════════════════════════════
@@ -316,6 +285,13 @@
   .animate-float {
     animation: float 3s ease-in-out infinite;
   }
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .animate-scale-in {
+    animation: scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
 
   /* ── HOVER ELEVATION ── */
   .hover-elevate {
@@ -452,4 +428,74 @@
   .light .glass {
     background: rgba(255, 255, 255, 0.8);
   }
+}
+
+/* ══════════════════════════════════════════════════
+   ACCESSIBILITY OVERRIDES (outside layers for priority)
+   ══════════════════════════════════════════════════ */
+
+/* Reduce Motion - Disable all animations and transitions */
+html.reduce-motion,
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* High Contrast - Increase border and text visibility */
+html.high-contrast {
+  --color-border-subtle: #505050 !important;
+  --color-border-base: #707070 !important;
+  --color-border-strong: #909090 !important;
+  --color-text-secondary: #C0C0C0 !important;
+  --color-text-muted: #A0A0A0 !important;
+}
+html.high-contrast.light {
+  --color-border-subtle: #808080 !important;
+  --color-border-base: #606060 !important;
+  --color-border-strong: #404040 !important;
+  --color-text-secondary: #2A2A2A !important;
+  --color-text-muted: #4A4A4A !important;
+}
+
+/* Large Text - Increase base font size */
+html.large-text {
+  font-size: 118% !important;
+}
+html.large-text body {
+  font-size: inherit !important;
+}
+html.large-text .type-h1 {
+  font-size: 2rem !important;
+}
+html.large-text .type-h2 {
+  font-size: 1.5rem !important;
+}
+html.large-text .type-h3 {
+  font-size: 1.125rem !important;
+}
+html.large-text .type-body {
+  font-size: 1rem !important;
+}
+html.large-text .type-caption,
+html.large-text .type-label {
+  font-size: 0.875rem !important;
+}
+
+/* Screen Reader Optimizations */
+html.screen-reader-optimized [aria-hidden="true"] {
+  display: none !important;
+}
+html.screen-reader-optimized .sr-only {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  clip: auto !important;
+  white-space: normal !important;
 }
