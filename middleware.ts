@@ -69,7 +69,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Auth pages - redirect to dashboard if already authenticated
-  const authPaths = ['/login', '/signup'];
+  const authPaths = ['/login', '/signup', '/forgot-password'];
   const isAuthPath = authPaths.some(path =>
     request.nextUrl.pathname === path
   );

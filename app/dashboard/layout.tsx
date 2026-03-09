@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -12,6 +12,8 @@ import {
   Settings,
   LogOut,
   Loader2,
+  User,
+  ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
@@ -43,6 +45,19 @@ export default function DashboardLayout({
   const reduceMotion = settings.accessibility.reduceMotion;
   const [loggingOut, setLoggingOut] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Fetch user profile on mount
   useEffect(() => {
@@ -125,30 +140,83 @@ export default function DashboardLayout({
             </div>
 
             {/* User Menu */}
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-[var(--color-text-primary)]">
-                  {profile?.fullName || 'Loading...'}
-                </p>
-                <p className="type-eyebrow text-[var(--color-text-muted)]">Premium</p>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center">
-                <span className="text-xs font-semibold text-[var(--color-gold)]">
-                  {profile?.initials || '...'}
-                </span>
-              </div>
+            <div className="relative" ref={menuRef}>
               <button
-                onClick={handleLogout}
-                disabled={loggingOut}
-                className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors duration-200 disabled:opacity-50"
-                title="Sign out"
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="flex items-center space-x-3 px-3 py-1.5 rounded-lg hover:bg-[var(--color-bg-overlay)] transition-colors duration-200"
               >
-                {loggingOut ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <LogOut className="w-4 h-4" />
-                )}
+                <div className="w-8 h-8 rounded-full bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center">
+                  <span className="text-xs font-semibold text-[var(--color-gold)]">
+                    {profile?.initials || '...'}
+                  </span>
+                </div>
+                <div className="text-left hidden sm:block">
+                  <p className="text-sm font-medium text-[var(--color-text-primary)] leading-tight">
+                    {profile?.fullName || 'Loading...'}
+                  </p>
+                  <p className="text-xs text-[var(--color-text-muted)] leading-tight">
+                    {profile?.email || ''}
+                  </p>
+                </div>
+                <ChevronDown className={cn(
+                  'w-4 h-4 text-[var(--color-text-muted)] transition-transform duration-200',
+                  menuOpen && 'rotate-180'
+                )} />
               </button>
+
+              {/* Dropdown Menu */}
+              {menuOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-xl z-50 overflow-hidden">
+                  {/* User Info */}
+                  <div className="px-4 py-3 border-b border-[var(--color-border-base)]">
+                    <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                      {profile?.fullName || 'User'}
+                    </p>
+                    <p className="text-xs text-[var(--color-text-muted)] truncate">
+                      {profile?.email || ''}
+                    </p>
+                  </div>
+
+                  {/* Menu Items */}
+                  <div className="py-1">
+                    <Link
+                      href="/dashboard/settings"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center space-x-3 px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
+                    >
+                      <User className="w-4 h-4" />
+                      <span>Account Settings</span>
+                    </Link>
+                    <Link
+                      href="/dashboard/settings"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center space-x-3 px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>Preferences</span>
+                    </Link>
+                  </div>
+
+                  {/* Logout */}
+                  <div className="border-t border-[var(--color-border-base)] py-1">
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        handleLogout();
+                      }}
+                      disabled={loggingOut}
+                      className="flex items-center space-x-3 w-full px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/5 transition-colors disabled:opacity-50"
+                    >
+                      {loggingOut ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <LogOut className="w-4 h-4" />
+                      )}
+                      <span>{loggingOut ? 'Signing out...' : 'Sign out'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

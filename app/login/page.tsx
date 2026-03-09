@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -8,11 +8,22 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/dashboard';
+  const message = searchParams.get('message');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Load saved email if "remember me" was previously used
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('helm_remembered_email');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +42,13 @@ function LoginForm() {
       if (!res.ok) {
         setError(data.error || 'Login failed');
         return;
+      }
+
+      // Save or clear remembered email
+      if (rememberMe) {
+        localStorage.setItem('helm_remembered_email', email);
+      } else {
+        localStorage.removeItem('helm_remembered_email');
       }
 
       router.push(redirect);
@@ -56,6 +74,12 @@ function LoginForm() {
         {/* Form */}
         <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {message && (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 py-3 rounded-lg text-sm">
+                {message}
+              </div>
+            )}
+
             {error && (
               <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
                 {error}
@@ -72,24 +96,47 @@ function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
                 className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-neutral-300 mb-2">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-neutral-300">
+                  Password
+                </label>
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-amber-500 hover:text-amber-400 transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
                 className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
                 placeholder="Enter your password"
               />
+            </div>
+
+            <div className="flex items-center">
+              <input
+                id="remember-me"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border-neutral-600 bg-neutral-800 text-amber-500 focus:ring-amber-500/50 focus:ring-offset-0 cursor-pointer"
+              />
+              <label htmlFor="remember-me" className="ml-2 text-sm text-neutral-400 cursor-pointer">
+                Remember me
+              </label>
             </div>
 
             <button
@@ -109,13 +156,6 @@ function LoginForm() {
               </Link>
             </p>
           </div>
-        </div>
-
-        {/* Demo credentials hint */}
-        <div className="mt-6 text-center">
-          <p className="text-neutral-500 text-xs">
-            Demo: test@helm.app / password123
-          </p>
         </div>
       </div>
     </div>
