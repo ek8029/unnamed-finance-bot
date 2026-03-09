@@ -20,7 +20,7 @@ export async function GET() {
       .select('*')
       .eq('user_id', user.id)
       .eq('is_active', true)
-      .order('average_amount', { ascending: true }); // Highest cost first (expenses are negative-ish)
+      .order('average_amount', { ascending: true });
 
     if (error) {
       console.error('Error fetching recurring:', error);
@@ -40,19 +40,29 @@ export async function GET() {
       isSubscription: r.is_subscription,
     }));
 
-    const monthlyTotal = items.reduce((sum, r) => {
-      const monthly = toMonthly(r.amount, r.frequency);
-      return sum + monthly;
+    // Separate expenses (subscriptions) from income
+    const expenses = items.filter(r => r.amount < 0);
+    const income = items.filter(r => r.amount > 0);
+
+    // Only sum expenses for the cost total
+    const monthlyExpenseTotal = expenses.reduce((sum, r) => {
+      return sum + Math.abs(toMonthly(r.amount, r.frequency));
     }, 0);
 
-    const annualTotal = monthlyTotal * 12;
+    const monthlyIncomeTotal = income.reduce((sum, r) => {
+      return sum + toMonthly(r.amount, r.frequency);
+    }, 0);
 
     return NextResponse.json({
       recurring: items,
+      expenses,
+      income,
       summary: {
-        count: items.length,
-        monthlyTotal: Math.round(monthlyTotal * 100) / 100,
-        annualTotal: Math.round(annualTotal * 100) / 100,
+        expenseCount: expenses.length,
+        incomeCount: income.length,
+        monthlyExpenseTotal: Math.round(monthlyExpenseTotal * 100) / 100,
+        monthlyIncomeTotal: Math.round(monthlyIncomeTotal * 100) / 100,
+        annualExpenseTotal: Math.round(monthlyExpenseTotal * 12 * 100) / 100,
       },
     });
   } catch (error) {
@@ -69,6 +79,12 @@ export async function POST() {
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Clear old detected recurring before re-detecting
+    await supabase
+      .from('recurring_transactions')
+      .delete()
+      .eq('user_id', user.id);
 
     // Fetch last 6 months of transactions
     const sixMonthsAgo = new Date();
@@ -90,29 +106,35 @@ export async function POST() {
       return NextResponse.json({ success: true, detected: 0 });
     }
 
-    // Group transactions by merchant
+    // Group transactions by merchant + sign (income vs expense separately)
     const merchantGroups = new Map<string, {
-      amounts: number[];
+      amounts: number[]; // preserve sign: negative = expense, positive = income
       dates: Date[];
       category: string | null;
       description: string;
+      isExpense: boolean;
     }>();
 
     for (const t of transactions) {
-      const key = normalizemerchant(t.merchant_name || t.description);
-      if (!key) continue;
+      const merchant = t.merchant_name || t.description;
+      if (!merchant) continue;
+
+      const amount = Number(t.amount);
+      const isExpense = amount < 0;
+      const key = normalizeMerchant(merchant) + (isExpense ? ':expense' : ':income');
 
       const existing = merchantGroups.get(key);
       if (existing) {
-        existing.amounts.push(Math.abs(Number(t.amount)));
+        existing.amounts.push(amount);
         existing.dates.push(new Date(t.transaction_date));
         if (!existing.category && t.category_name) existing.category = t.category_name;
       } else {
         merchantGroups.set(key, {
-          amounts: [Math.abs(Number(t.amount))],
+          amounts: [amount],
           dates: [new Date(t.transaction_date)],
           category: t.category_name,
-          description: t.merchant_name || t.description,
+          description: merchant,
+          isExpense,
         });
       }
     }
@@ -127,16 +149,22 @@ export async function POST() {
       last_date: string;
       next_expected_date: string;
       occurrence_count: number;
+      is_subscription: boolean;
     }[] = [];
 
-    for (const [key, group] of merchantGroups) {
+    for (const [, group] of merchantGroups) {
       // Need at least 2 occurrences
       if (group.dates.length < 2) continue;
 
-      // Check if amounts are consistent (within 20% of average)
-      const avgAmount = group.amounts.reduce((s, a) => s + a, 0) / group.amounts.length;
-      const amountVariance = group.amounts.every(a => Math.abs(a - avgAmount) / avgAmount < 0.2);
-      if (!amountVariance && avgAmount > 5) continue; // Skip if amounts vary too much (unless very small)
+      // Check if amounts are consistent (within 20% of average absolute value)
+      const absAmounts = group.amounts.map(a => Math.abs(a));
+      const avgAbsAmount = absAmounts.reduce((s, a) => s + a, 0) / absAmounts.length;
+      if (avgAbsAmount < 1) continue; // Skip trivially small amounts
+
+      const amountConsistent = absAmounts.every(a =>
+        Math.abs(a - avgAbsAmount) / avgAbsAmount < 0.25
+      );
+      if (!amountConsistent && avgAbsAmount > 5) continue;
 
       // Detect frequency from date intervals
       const sortedDates = [...group.dates].sort((a, b) => a.getTime() - b.getTime());
@@ -148,6 +176,8 @@ export async function POST() {
         intervals.push(days);
       }
 
+      if (intervals.length === 0) continue;
+
       const avgInterval = intervals.reduce((s, i) => s + i, 0) / intervals.length;
       const frequency = detectFrequency(avgInterval, intervals);
       if (!frequency) continue;
@@ -155,19 +185,23 @@ export async function POST() {
       const lastDate = sortedDates[sortedDates.length - 1];
       const nextDate = computeNextDate(lastDate, frequency);
 
+      // Preserve the sign: negative for expenses, positive for income
+      const avgAmount = group.amounts.reduce((s, a) => s + a, 0) / group.amounts.length;
+
       detected.push({
         merchant_name: group.description,
-        description: key,
+        description: group.description,
         average_amount: Math.round(avgAmount * 100) / 100,
         frequency,
         category_name: group.category,
         last_date: lastDate.toISOString().split('T')[0],
         next_expected_date: nextDate.toISOString().split('T')[0],
         occurrence_count: group.dates.length,
+        is_subscription: group.isExpense, // Only expenses are "subscriptions"
       });
     }
 
-    // Upsert detected recurring transactions
+    // Insert detected recurring transactions
     if (detected.length > 0) {
       for (const r of detected) {
         await supabase
@@ -176,7 +210,6 @@ export async function POST() {
             user_id: user.id,
             ...r,
             is_active: true,
-            is_subscription: true,
           }, {
             onConflict: 'user_id,merchant_name,frequency',
           });
@@ -195,7 +228,7 @@ export async function POST() {
 
 // --- Helper functions ---
 
-function normalizemerchant(name: string): string {
+function normalizeMerchant(name: string): string {
   return name
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, '')
@@ -204,8 +237,8 @@ function normalizemerchant(name: string): string {
 }
 
 function detectFrequency(avgDays: number, intervals: number[]): string | null {
-  // Check consistency: intervals should be within 30% of average
-  const consistent = intervals.every(i => Math.abs(i - avgDays) / avgDays < 0.3);
+  // Check consistency: intervals should be within 35% of average
+  const consistent = intervals.every(i => Math.abs(i - avgDays) / Math.max(avgDays, 1) < 0.35);
   if (!consistent && intervals.length > 2) return null;
 
   if (avgDays >= 5 && avgDays <= 10) return 'weekly';

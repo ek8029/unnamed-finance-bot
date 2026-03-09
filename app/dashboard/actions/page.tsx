@@ -40,12 +40,15 @@ interface RecurringItem {
   lastDate: string;
   nextExpected: string;
   occurrences: number;
+  isSubscription: boolean;
 }
 
 interface RecurringSummary {
-  count: number;
-  monthlyTotal: number;
-  annualTotal: number;
+  expenseCount: number;
+  incomeCount: number;
+  monthlyExpenseTotal: number;
+  monthlyIncomeTotal: number;
+  annualExpenseTotal: number;
 }
 
 const priorityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
@@ -219,13 +222,15 @@ export default function ActionsPage() {
           <p className="text-xs text-[var(--color-text-muted)] mt-1">estimated savings</p>
         </div>
         <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl p-4">
-          <p className="text-xs text-[var(--color-text-muted)] mb-1">Recurring Charges</p>
+          <p className="text-xs text-[var(--color-text-muted)] mb-1">Recurring Expenses</p>
           <p className="text-2xl font-semibold text-[var(--color-text-primary)] font-tabular">
-            {recurringSummary ? formatCurrency(recurringSummary.monthlyTotal) : '--'}
+            {recurringSummary ? formatCurrency(recurringSummary.monthlyExpenseTotal) : '--'}
             <span className="text-sm text-[var(--color-text-muted)] font-normal">/mo</span>
           </p>
           <p className="text-xs text-[var(--color-text-muted)] mt-1">
-            {recurringSummary ? `${recurringSummary.count} subscriptions detected` : 'Run detection to see'}
+            {recurringSummary
+              ? `${recurringSummary.expenseCount} subscriptions${recurringSummary.incomeCount > 0 ? `, ${recurringSummary.incomeCount} income` : ''}`
+              : 'Run detection to see'}
           </p>
         </div>
       </div>
@@ -324,65 +329,105 @@ export default function ActionsPage() {
           {/* Recurring Transactions */}
           {recurring.length > 0 && (
             <>
-              <h2 className="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mt-8 mb-2">
-                Detected Subscriptions & Recurring
-              </h2>
-              <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl overflow-hidden">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-[var(--color-border-base)]">
-                      <th className="text-left text-xs font-medium text-[var(--color-text-muted)] p-3">Merchant</th>
-                      <th className="text-left text-xs font-medium text-[var(--color-text-muted)] p-3">Frequency</th>
-                      <th className="text-left text-xs font-medium text-[var(--color-text-muted)] p-3">Category</th>
-                      <th className="text-right text-xs font-medium text-[var(--color-text-muted)] p-3">Amount</th>
-                      <th className="text-right text-xs font-medium text-[var(--color-text-muted)] p-3">Monthly Cost</th>
-                      <th className="text-right text-xs font-medium text-[var(--color-text-muted)] p-3">Next Expected</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recurring.map(r => (
-                      <tr key={r.id} className="border-b border-[var(--color-border-base)] last:border-0 hover:bg-[var(--color-bg-overlay)] transition-colors">
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <Repeat className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
-                            <span className="text-sm text-[var(--color-text-primary)]">{r.merchant}</span>
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          <span className="text-xs text-[var(--color-text-muted)] capitalize">{r.frequency}</span>
-                        </td>
-                        <td className="p-3">
-                          <span className="text-xs text-[var(--color-text-muted)]">{formatCategory(r.category)}</span>
-                        </td>
-                        <td className="p-3 text-right">
-                          <span className="text-sm text-[var(--color-text-primary)] font-tabular">
-                            {formatCurrency(r.amount)}
-                          </span>
-                        </td>
-                        <td className="p-3 text-right">
-                          <span className="text-sm text-[var(--color-text-secondary)] font-tabular">
-                            {formatCurrency(toMonthly(r.amount, r.frequency))}
-                          </span>
-                        </td>
-                        <td className="p-3 text-right">
-                          <span className="text-xs text-[var(--color-text-muted)]">
-                            {new Date(r.nextExpected).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {recurringSummary && (
-                <div className="text-right text-xs text-[var(--color-text-muted)] mt-2">
-                  Total: {formatCurrency(recurringSummary.monthlyTotal)}/month &middot; {formatCurrency(recurringSummary.annualTotal)}/year
-                </div>
+              {/* Recurring Expenses */}
+              {recurring.filter(r => r.amount < 0).length > 0 && (
+                <>
+                  <h2 className="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mt-8 mb-2">
+                    Recurring Expenses & Subscriptions
+                  </h2>
+                  {renderRecurringTable(
+                    recurring.filter(r => r.amount < 0).sort((a, b) => a.amount - b.amount),
+                    formatCurrency,
+                    true
+                  )}
+                  {recurringSummary && recurringSummary.monthlyExpenseTotal > 0 && (
+                    <div className="text-right text-xs text-[var(--color-text-muted)] mt-2">
+                      Total: {formatCurrency(recurringSummary.monthlyExpenseTotal)}/month &middot; {formatCurrency(recurringSummary.annualExpenseTotal)}/year
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Recurring Income */}
+              {recurring.filter(r => r.amount > 0).length > 0 && (
+                <>
+                  <h2 className="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mt-8 mb-2">
+                    Recurring Income
+                  </h2>
+                  {renderRecurringTable(
+                    recurring.filter(r => r.amount > 0).sort((a, b) => b.amount - a.amount),
+                    formatCurrency,
+                    false
+                  )}
+                  {recurringSummary && recurringSummary.monthlyIncomeTotal > 0 && (
+                    <div className="text-right text-xs text-[var(--color-text-muted)] mt-2">
+                      Total: {formatCurrency(recurringSummary.monthlyIncomeTotal)}/month
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function renderRecurringTable(
+  items: RecurringItem[],
+  formatCurrency: (n: number) => string,
+  isExpense: boolean
+) {
+  return (
+    <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl overflow-hidden">
+      <table className="w-full">
+        <thead>
+          <tr className="border-b border-[var(--color-border-base)]">
+            <th className="text-left text-xs font-medium text-[var(--color-text-muted)] p-3">Merchant</th>
+            <th className="text-left text-xs font-medium text-[var(--color-text-muted)] p-3">Frequency</th>
+            <th className="text-left text-xs font-medium text-[var(--color-text-muted)] p-3">Category</th>
+            <th className="text-right text-xs font-medium text-[var(--color-text-muted)] p-3">Amount</th>
+            <th className="text-right text-xs font-medium text-[var(--color-text-muted)] p-3">
+              {isExpense ? 'Monthly Cost' : 'Monthly Income'}
+            </th>
+            <th className="text-right text-xs font-medium text-[var(--color-text-muted)] p-3">Next Expected</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map(r => (
+            <tr key={r.id} className="border-b border-[var(--color-border-base)] last:border-0 hover:bg-[var(--color-bg-overlay)] transition-colors">
+              <td className="p-3">
+                <div className="flex items-center gap-2">
+                  <Repeat className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+                  <span className="text-sm text-[var(--color-text-primary)]">{r.merchant}</span>
+                </div>
+              </td>
+              <td className="p-3">
+                <span className="text-xs text-[var(--color-text-muted)] capitalize">{r.frequency}</span>
+              </td>
+              <td className="p-3">
+                <span className="text-xs text-[var(--color-text-muted)]">{formatCategory(r.category)}</span>
+              </td>
+              <td className="p-3 text-right">
+                <span className={`text-sm font-tabular ${isExpense ? 'text-[var(--color-negative)]' : 'text-[var(--color-positive)]'}`}>
+                  {isExpense ? `-${formatCurrency(Math.abs(r.amount))}` : formatCurrency(r.amount)}
+                </span>
+              </td>
+              <td className="p-3 text-right">
+                <span className={`text-sm font-tabular ${isExpense ? 'text-[var(--color-text-secondary)]' : 'text-[var(--color-positive)]'}`}>
+                  {formatCurrency(Math.abs(toMonthly(r.amount, r.frequency)))}
+                </span>
+              </td>
+              <td className="p-3 text-right">
+                <span className="text-xs text-[var(--color-text-muted)]">
+                  {new Date(r.nextExpected).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
