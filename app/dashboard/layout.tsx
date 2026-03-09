@@ -14,6 +14,7 @@ import {
   Loader2,
   User,
   ChevronDown,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
@@ -21,6 +22,7 @@ import { useSettings } from '@/contexts/settings-context';
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Actions', href: '/dashboard/actions', icon: Zap },
   { name: 'Accounts', href: '/dashboard/accounts', icon: Wallet },
   { name: 'Transactions', href: '/dashboard/transactions', icon: ArrowLeftRight },
   { name: 'Portfolio', href: '/dashboard/portfolio', icon: TrendingUp },
