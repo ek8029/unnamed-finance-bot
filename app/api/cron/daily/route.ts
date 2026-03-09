@@ -143,6 +143,9 @@ export async function GET(request: Request) {
         await computeSnapshots(supabase, userId);
         log.push(`[snapshots] Computed for user ${userId.slice(0, 8)}...`);
 
+        // Update portfolio performance metrics
+        await updatePortfolioPerformance(supabase, userId, log);
+
         // Generate insights
         const count = await generateInsights(supabase, userId);
         insightsGenerated += count;
@@ -432,7 +435,7 @@ async function syncPlaidItem(
             unrealised_gain_loss: totalCostBasis ? totalValue - Number(totalCostBasis) : null,
             unrealised_gain_loss_pct:
               totalCostBasis && Number(totalCostBasis) > 0
-                ? ((totalValue - Number(totalCostBasis)) / Number(totalCostBasis)) * 100
+                ? (totalValue - Number(totalCostBasis)) / Number(totalCostBasis)
                 : null,
           },
           { onConflict: 'user_id,security_id,account_id' },
@@ -479,7 +482,7 @@ async function refreshMarketPrices(
   // Get all unique tickers from holdings
   const { data: holdingTickers, error } = await supabase
     .from('holdings')
-    .select('ticker')
+    .select('ticker, security_id')
     .neq('ticker', 'UNKNOWN');
 
   if (error || !holdingTickers) {
@@ -488,11 +491,19 @@ async function refreshMarketPrices(
   }
 
   const tickerStrings = holdingTickers.map((h: { ticker: string }) => String(h.ticker));
-  const uniqueTickers = [...new Set(tickerStrings)];
+  const uniqueTickers = [...new Set(tickerStrings)] as string[];
 
   if (uniqueTickers.length === 0) {
     log.push('[prices] No tickers to refresh');
     return 0;
+  }
+
+  // Build ticker -> security_id map for market_prices lookups
+  const tickerSecurityMap = new Map<string, string>();
+  for (const h of holdingTickers as { ticker: string; security_id: string }[]) {
+    if (h.security_id && h.ticker) {
+      tickerSecurityMap.set(h.ticker.toUpperCase(), h.security_id);
+    }
   }
 
   log.push(`[prices] Refreshing prices for ${uniqueTickers.length} ticker(s)`);
@@ -501,11 +512,14 @@ async function refreshMarketPrices(
   const now = new Date().toISOString();
 
   // Fetch previous close for each ticker
-  // Using Polygon's /v2/aggs/ticker/{ticker}/prev endpoint
-  for (const ticker of uniqueTickers as string[]) {
+  for (const ticker of uniqueTickers) {
     try {
+      const polygonTicker = ticker.toUpperCase().includes('-USD')
+        ? 'X:' + ticker.toUpperCase().replace('-', '')
+        : ticker.toUpperCase();
+
       const response = await fetch(
-        `https://api.polygon.io/v2/aggs/ticker/${encodeURIComponent(ticker)}/prev?adjusted=true&apiKey=${apiKey}`,
+        `https://api.polygon.io/v2/aggs/ticker/${encodeURIComponent(polygonTicker)}/prev?adjusted=true&apiKey=${apiKey}`,
       );
 
       if (!response.ok) {
@@ -519,6 +533,42 @@ async function refreshMarketPrices(
       if (!result || result.c == null) continue;
 
       const closePrice = result.c;
+      const openPrice = result.o;
+      const priceDate = new Date(result.t).toISOString().split('T')[0];
+
+      // Look up previous close from market_prices for accurate day_change_pct
+      const securityId = tickerSecurityMap.get(ticker.toUpperCase());
+      let dayChangePct = openPrice > 0 ? (closePrice - openPrice) / openPrice : 0;
+
+      if (securityId) {
+        const { data: prevPrice } = await supabase
+          .from('market_prices')
+          .select('close')
+          .eq('security_id', securityId)
+          .lt('price_date', priceDate)
+          .order('price_date', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (prevPrice?.close && Number(prevPrice.close) > 0) {
+          dayChangePct = (closePrice - Number(prevPrice.close)) / Number(prevPrice.close);
+        }
+
+        // Upsert market_prices entry
+        await supabase.from('market_prices').upsert(
+          {
+            security_id: securityId,
+            ticker: ticker.toUpperCase(),
+            price_date: priceDate,
+            open: openPrice,
+            high: result.h,
+            low: result.l,
+            close: closePrice,
+            volume: result.v,
+          },
+          { onConflict: 'security_id,price_date', ignoreDuplicates: false },
+        );
+      }
 
       // Update securities table
       await supabase
@@ -544,8 +594,9 @@ async function refreshMarketPrices(
             unrealised_gain_loss: costBasis != null ? totalValue - costBasis : null,
             unrealised_gain_loss_pct:
               costBasis != null && costBasis > 0
-                ? ((totalValue - costBasis) / costBasis) * 100
+                ? (totalValue - costBasis) / costBasis
                 : null,
+            day_change_pct: dayChangePct,
             last_updated_at: now,
           })
           .eq('id', holding.id);
@@ -560,8 +611,199 @@ async function refreshMarketPrices(
     }
   }
 
+  // Recalculate portfolio_allocation_pct per user
+  await recalcAllocations(supabase, log);
+
   log.push(`[prices] Updated ${updated}/${uniqueTickers.length} ticker prices`);
   return updated;
+}
+
+/**
+ * Recalculate portfolio_allocation_pct for every user that has holdings.
+ */
+async function recalcAllocations(supabase: ServiceClient, log: string[]) {
+  try {
+    const { data: allHoldings } = await supabase
+      .from('holdings')
+      .select('id, user_id, total_value');
+
+    if (!allHoldings || allHoldings.length === 0) return;
+
+    // Group by user
+    const userHoldings = new Map<string, { id: string; total_value: number }[]>();
+    for (const h of allHoldings as { id: string; user_id: string; total_value: number }[]) {
+      const existing = userHoldings.get(h.user_id) || [];
+      existing.push({ id: h.id, total_value: Number(h.total_value) });
+      userHoldings.set(h.user_id, existing);
+    }
+
+    for (const [userId, holdings] of userHoldings) {
+      const total = holdings.reduce((s, h) => s + h.total_value, 0);
+      if (total <= 0) continue;
+
+      for (const h of holdings) {
+        const pct = (h.total_value / total) * 100;
+        await supabase
+          .from('holdings')
+          .update({ portfolio_allocation_pct: Math.round(pct * 100) / 100 })
+          .eq('id', h.id);
+      }
+    }
+
+    log.push(`[allocations] Recalculated for ${userHoldings.size} user(s)`);
+  } catch (error) {
+    console.error('[cron/daily] Error recalculating allocations:', error);
+  }
+}
+
+/**
+ * Compute portfolio_performance metrics for a single user (cron version).
+ */
+async function updatePortfolioPerformance(supabase: ServiceClient, userId: string, log: string[]) {
+  try {
+    const { data: holdings } = await supabase
+      .from('holdings')
+      .select('id, ticker, security_id, total_value, day_change_pct, shares, current_price')
+      .eq('user_id', userId);
+
+    if (!holdings || holdings.length === 0) return;
+
+    const totalPV = holdings.reduce(
+      (s: number, h: { total_value: number }) => s + Number(h.total_value), 0,
+    );
+    if (totalPV <= 0) return;
+
+    // Weighted 1-day return (decimal)
+    const return1d = holdings.reduce(
+      (s: number, h: { total_value: number; day_change_pct: number | null }) => {
+        const w = Number(h.total_value) / totalPV;
+        return s + w * (Number(h.day_change_pct) || 0);
+      }, 0,
+    );
+
+    const secIds = [...new Set(
+      holdings.map((h: { security_id: string }) => h.security_id).filter(Boolean),
+    )];
+
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+    const { data: histPrices } = await supabase
+      .from('market_prices')
+      .select('security_id, price_date, close')
+      .in('security_id', secIds)
+      .gte('price_date', oneYearAgo.toISOString().split('T')[0])
+      .order('price_date', { ascending: true });
+
+    const priceHist = new Map<string, { date: string; close: number }[]>();
+    for (const p of histPrices || []) {
+      const arr = priceHist.get(p.security_id) || [];
+      arr.push({ date: p.price_date, close: Number(p.close) });
+      priceHist.set(p.security_id, arr);
+    }
+
+    function computeReturn(days: number): number | null {
+      const t = new Date();
+      t.setDate(t.getDate() - days);
+      const tStr = t.toISOString().split('T')[0];
+      let past = 0, curr = 0, matched = 0;
+      for (const h of holdings!) {
+        const hist = priceHist.get(h.security_id);
+        if (!hist || hist.length === 0) continue;
+        const entry = [...hist].reverse().find(p => p.date <= tStr);
+        if (!entry) continue;
+        past += Number(h.shares) * entry.close;
+        curr += Number(h.total_value);
+        matched++;
+      }
+      if (matched < holdings!.length / 2 || past <= 0) return null;
+      return (curr - past) / past;
+    }
+
+    const return1w = computeReturn(7);
+    const return1m = computeReturn(30);
+    const return3m = computeReturn(90);
+    const return6m = computeReturn(180);
+    const return1y = computeReturn(365);
+    const ys = new Date(new Date().getFullYear(), 0, 1);
+    const returnYtd = computeReturn(Math.round((Date.now() - ys.getTime()) / 86400000));
+
+    // Diversification (1 - HHI)
+    const hhi = holdings.reduce((s: number, h: { total_value: number }) => {
+      const w = Number(h.total_value) / totalPV;
+      return s + w * w;
+    }, 0);
+
+    // Asset class allocation
+    const { data: secs } = await supabase
+      .from('securities')
+      .select('id, asset_class')
+      .in('id', secIds);
+
+    const acMap = new Map<string, string>();
+    for (const s of secs || []) acMap.set(s.id, s.asset_class || 'other');
+
+    const acAlloc: Record<string, number> = {};
+    for (const h of holdings) {
+      const ac = acMap.get(h.security_id) || 'other';
+      const pct = (Number(h.total_value) / totalPV) * 100;
+      acAlloc[ac] = (acAlloc[ac] || 0) + pct;
+    }
+
+    // Volatility & Sharpe from daily portfolio values
+    let volatility: number | null = null;
+    let sharpeRatio: number | null = null;
+
+    const allDates = new Set<string>();
+    for (const [, hist] of priceHist) for (const p of hist) allDates.add(p.date);
+    const dates = [...allDates].sort();
+
+    if (dates.length >= 20) {
+      const vals: number[] = [];
+      for (const d of dates) {
+        let pv = 0;
+        let ok = true;
+        for (const h of holdings) {
+          const hist = priceHist.get(h.security_id);
+          if (!hist) { ok = false; break; }
+          const e = hist.find(p => p.date === d);
+          if (!e) { ok = false; break; }
+          pv += Number(h.shares) * e.close;
+        }
+        if (ok && pv > 0) vals.push(pv);
+      }
+      if (vals.length >= 20) {
+        const rets: number[] = [];
+        for (let i = 1; i < vals.length; i++) rets.push((vals[i] - vals[i - 1]) / vals[i - 1]);
+        const mean = rets.reduce((s, r) => s + r, 0) / rets.length;
+        const vari = rets.reduce((s, r) => s + (r - mean) ** 2, 0) / (rets.length - 1);
+        const dv = Math.sqrt(vari);
+        volatility = dv * Math.sqrt(252);
+        const rfd = 0.05 / 252;
+        sharpeRatio = dv > 0 ? ((mean - rfd) / dv) * Math.sqrt(252) : null;
+      }
+    }
+
+    await supabase.from('portfolio_performance').insert({
+      user_id: userId,
+      return_1d_pct: return1d,
+      return_1w_pct: return1w,
+      return_1m_pct: return1m,
+      return_3m_pct: return3m,
+      return_6m_pct: return6m,
+      return_ytd_pct: returnYtd,
+      return_1y_pct: return1y,
+      sharpe_ratio: sharpeRatio,
+      beta: null,
+      volatility,
+      diversification_score: Math.min(1, 1 - hhi),
+      asset_class_allocation: acAlloc,
+    });
+
+    log.push(`[perf] Updated portfolio_performance for user ${userId.slice(0, 8)}...`);
+  } catch (error) {
+    console.error(`[cron/daily] Error computing portfolio performance for ${userId}:`, error);
+  }
 }
 
 // ===================================================================

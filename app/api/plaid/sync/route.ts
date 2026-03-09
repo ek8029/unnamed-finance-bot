@@ -315,7 +315,7 @@ async function syncPlaidItem(
               ? totalValue - Number(totalCostBasis)
               : null,
             unrealised_gain_loss_pct: totalCostBasis && Number(totalCostBasis) > 0
-              ? ((totalValue - Number(totalCostBasis)) / Number(totalCostBasis)) * 100
+              ? (totalValue - Number(totalCostBasis)) / Number(totalCostBasis)
               : null,
           }, {
             onConflict: 'user_id,security_id,account_id',
