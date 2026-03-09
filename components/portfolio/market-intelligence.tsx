@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -168,51 +167,48 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
 
   if (loading) {
     return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <div className={cn("bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg overflow-hidden", className)}>
+        <div className="flex-shrink-0 px-4 py-3 border-b border-[var(--color-border-base)]">
+          <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-[var(--color-gold)]" />
-            Market Intelligence
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-[var(--color-text-muted)]" />
+            <h2 className="type-h3 text-[var(--color-text-primary)]">Market Intelligence</h2>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-[var(--color-text-muted)]" />
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <div className={cn("bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg overflow-hidden", className)}>
+        <div className="flex-shrink-0 px-4 py-3 border-b border-[var(--color-border-base)]">
+          <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-[var(--color-gold)]" />
-            Market Intelligence
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <AlertCircle className="h-8 w-8 text-[var(--color-negative)] mb-2" />
-            <p className="text-[var(--color-text-secondary)] text-sm">{error}</p>
-            <Button variant="outline" size="sm" className="mt-4" onClick={handleRefresh}>
-              Try Again
-            </Button>
+            <h2 className="type-h3 text-[var(--color-text-primary)]">Market Intelligence</h2>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <AlertCircle className="h-8 w-8 text-[var(--color-negative)] mb-2" />
+          <p className="text-[var(--color-text-secondary)] text-sm">{error}</p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={handleRefresh}>
+            Try Again
+          </Button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className={className}>
-      <CardHeader>
+    <div className={cn("bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg overflow-hidden", className)}>
+      {/* Header */}
+      <div className="flex-shrink-0 px-4 py-3 border-b border-[var(--color-border-base)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-[var(--color-gold)]" />
-            <CardTitle>Market Intelligence</CardTitle>
+            <h2 className="type-h3 text-[var(--color-text-primary)]">Market Intelligence</h2>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="gold" className="text-xs">
@@ -229,9 +225,12 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
             </Button>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
+        <p className="type-eyebrow text-[var(--color-text-muted)] mt-1">Real-time news & events for your portfolio</p>
+      </div>
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="p-3 space-y-2">
           {intelligence.map((item) => {
             const isExpanded = expandedId === item.id;
             const isNews = item.category === 'news';
@@ -411,7 +410,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
