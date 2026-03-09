@@ -120,8 +120,24 @@ export async function GET(request: Request) {
         const msg = error instanceof Error ? error.message : String(error);
         log.push(`[prices] Market price refresh failed: ${msg}`);
       }
+
+      // Enrich securities metadata + fetch dividends/splits
+      try {
+        await enrichMarketData(supabase, log);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        log.push(`[enrich] Market enrichment failed: ${msg}`);
+      }
+
+      // Refresh news with sentiment scoring
+      try {
+        await refreshMarketNews(supabase, log);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        log.push(`[news] News refresh failed: ${msg}`);
+      }
     } else {
-      log.push('[prices] POLYGON_API_KEY not set — skipping market price refresh');
+      log.push('[prices] POLYGON_API_KEY not set — skipping all market data');
     }
 
     // ---------------------------------------------------------------
@@ -1245,4 +1261,224 @@ function formatCategoryName(raw: string): string {
     .replace(/AND/g, '&')
     .toLowerCase()
     .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// ===================================================================
+// Market data enrichment (ticker details, dividends, splits)
+// ===================================================================
+
+async function enrichMarketData(supabase: ServiceClient, log: string[]) {
+  const { getBatchTickerDetails, getUpcomingDividends, getRecentSplits, mapSicToSector } = await import('@/lib/polygon');
+
+  // Get all unique tickers from holdings
+  const { data: holdingRows } = await supabase
+    .from('holdings')
+    .select('ticker, security_id')
+    .neq('ticker', 'UNKNOWN');
+
+  if (!holdingRows || holdingRows.length === 0) {
+    log.push('[enrich] No holdings to enrich');
+    return;
+  }
+
+  const tickers = [...new Set(
+    holdingRows.map((h: { ticker: string }) => h.ticker).filter(Boolean)
+  )] as string[];
+
+  const securityIds = [...new Set(
+    holdingRows.map((h: { security_id: string }) => h.security_id).filter(Boolean)
+  )] as string[];
+
+  // 1. Enrich securities missing sector data
+  let enriched = 0;
+  if (securityIds.length > 0) {
+    const { data: securities } = await supabase
+      .from('securities')
+      .select('id, ticker, sector')
+      .in('id', securityIds);
+
+    const needsEnrichment = (securities || []).filter(
+      (s: { sector: string | null; ticker: string }) => !s.sector && s.ticker && !s.ticker.includes('-USD')
+    );
+
+    if (needsEnrichment.length > 0) {
+      const detailsMap = await getBatchTickerDetails(
+        needsEnrichment.map((s: { ticker: string }) => s.ticker)
+      );
+
+      for (const sec of needsEnrichment) {
+        const details = detailsMap.get(sec.ticker.toUpperCase());
+        if (!details) continue;
+
+        await supabase
+          .from('securities')
+          .update({
+            sector: mapSicToSector(details.sic_description) || null,
+            industry: details.sic_description || null,
+            logo_url: details.icon_url || details.logo_url || null,
+          })
+          .eq('id', sec.id);
+        enriched++;
+      }
+    }
+  }
+  log.push(`[enrich] Enriched ${enriched} securities with sector/industry data`);
+
+  // 2. Fetch upcoming dividends
+  const dividends = await getUpcomingDividends(tickers, 90);
+  let divsInserted = 0;
+  if (dividends.length > 0) {
+    const { data: existing } = await supabase
+      .from('market_events')
+      .select('ticker, event_date')
+      .eq('event_type', 'dividend')
+      .in('ticker', dividends.map(d => d.ticker));
+
+    const existingKeys = new Set(
+      (existing || []).map((e: { ticker: string; event_date: string }) => `${e.ticker}:${e.event_date}`)
+    );
+
+    const newDivs = dividends.filter(
+      d => !existingKeys.has(`${d.ticker}:${d.ex_dividend_date}`)
+    );
+
+    if (newDivs.length > 0) {
+      const inserts = newDivs.map(d => ({
+        event_type: 'dividend',
+        ticker: d.ticker,
+        event_date: d.ex_dividend_date,
+        title: `${d.ticker} ex-dividend date`,
+        description: `$${d.cash_amount.toFixed(4)}/share dividend. Pay date: ${d.pay_date || 'TBD'}.`,
+        metadata: { cash_amount: d.cash_amount, pay_date: d.pay_date, frequency: d.frequency },
+        impact_level: 'medium',
+      }));
+
+      const { error } = await supabase.from('market_events').insert(inserts);
+      if (!error) divsInserted = newDivs.length;
+    }
+  }
+  log.push(`[enrich] Found ${divsInserted} new dividend events`);
+
+  // 3. Fetch recent/upcoming splits
+  const splits = await getRecentSplits(tickers, 90);
+  let splitsInserted = 0;
+  if (splits.length > 0) {
+    const { data: existing } = await supabase
+      .from('market_events')
+      .select('ticker, event_date')
+      .eq('event_type', 'split')
+      .in('ticker', splits.map(s => s.ticker));
+
+    const existingKeys = new Set(
+      (existing || []).map((e: { ticker: string; event_date: string }) => `${e.ticker}:${e.event_date}`)
+    );
+
+    const newSplits = splits.filter(
+      s => !existingKeys.has(`${s.ticker}:${s.execution_date}`)
+    );
+
+    if (newSplits.length > 0) {
+      const inserts = newSplits.map(s => ({
+        event_type: 'split',
+        ticker: s.ticker,
+        event_date: s.execution_date,
+        title: `${s.ticker} ${s.split_to}-for-${s.split_from} stock split`,
+        description: `Each share becomes ${s.split_to / s.split_from} shares.`,
+        metadata: { split_from: s.split_from, split_to: s.split_to, ratio: s.split_to / s.split_from },
+        impact_level: 'high',
+      }));
+
+      const { error } = await supabase.from('market_events').insert(inserts);
+      if (!error) splitsInserted = newSplits.length;
+    }
+  }
+  log.push(`[enrich] Found ${splitsInserted} new split events`);
+}
+
+// ===================================================================
+// Market news refresh with sentiment (cron version)
+// ===================================================================
+
+async function refreshMarketNews(supabase: ServiceClient, log: string[]) {
+  const { getTickerNews, scoreSentiment } = await import('@/lib/polygon');
+
+  const { data: holdingRows } = await supabase
+    .from('holdings')
+    .select('ticker, security_id')
+    .neq('ticker', 'UNKNOWN');
+
+  if (!holdingRows || holdingRows.length === 0) {
+    log.push('[news] No holdings for news fetch');
+    return;
+  }
+
+  const tickers = [...new Set(
+    holdingRows.map((h: { ticker: string }) => h.ticker).filter(Boolean)
+  )] as string[];
+
+  // Build ticker -> sector map
+  const secIds = [...new Set(
+    holdingRows.map((h: { security_id: string }) => h.security_id).filter(Boolean)
+  )] as string[];
+
+  const tickerSectorMap = new Map<string, string>();
+  if (secIds.length > 0) {
+    const { data: securities } = await supabase
+      .from('securities')
+      .select('ticker, sector')
+      .in('id', secIds);
+    for (const s of (securities || []) as { ticker: string; sector: string | null }[]) {
+      if (s.sector) tickerSectorMap.set(s.ticker?.toUpperCase(), s.sector);
+    }
+  }
+
+  const articles = await getTickerNews(tickers, 30);
+  if (articles.length === 0) {
+    log.push('[news] No articles from Polygon');
+    return;
+  }
+
+  const urls = articles.map(a => a.article_url).filter(Boolean);
+  const { data: existing } = await supabase
+    .from('market_news')
+    .select('url')
+    .in('url', urls);
+
+  const existingUrls = new Set((existing || []).map((a: { url: string }) => a.url));
+  const newArticles = articles.filter(a => a.article_url && !existingUrls.has(a.article_url));
+
+  if (newArticles.length === 0) {
+    log.push(`[news] All ${articles.length} articles already exist`);
+    return;
+  }
+
+  const inserts = newArticles.map(article => {
+    const sentiment = scoreSentiment(`${article.title} ${article.description}`);
+    const sectors = [...new Set(
+      article.tickers
+        .map(t => tickerSectorMap.get(t.toUpperCase()))
+        .filter(Boolean)
+    )];
+
+    return {
+      title: article.title,
+      summary: article.description || null,
+      content: null,
+      url: article.article_url,
+      image_url: article.image_url || null,
+      source: article.source?.name || null,
+      author: article.author || null,
+      published_at: article.published_utc || new Date().toISOString(),
+      tickers: article.tickers,
+      sectors: sectors.length > 0 ? sectors : null,
+      sentiment,
+    };
+  });
+
+  const { error } = await supabase.from('market_news').insert(inserts);
+  if (error) {
+    log.push(`[news] Insert failed: ${error.message}`);
+  } else {
+    log.push(`[news] Inserted ${newArticles.length} new articles (${articles.length - newArticles.length} duplicates skipped)`);
+  }
 }

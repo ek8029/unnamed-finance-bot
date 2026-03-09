@@ -302,8 +302,9 @@ export function useHoldings() {
         }
       }
 
-      // Fire-and-forget news refresh
+      // Fire-and-forget: news refresh + market enrichment (dividends, splits, metadata)
       fetch('/api/market/news/refresh', { method: 'POST' }).catch(() => {});
+      fetch('/api/market/enrich', { method: 'POST' }).catch(() => {});
     } catch {
       // Price refresh failure is non-fatal
     } finally {
@@ -331,19 +332,16 @@ export function useHoldings() {
         const threshold = Date.now() - PRICE_REFRESH_INTERVAL;
 
         if (lastRefresh && Number(lastRefresh) > threshold) {
-          // Set lastRefreshed display from stored timestamp
           setLastRefreshed(new Date(Number(lastRefresh)).toLocaleTimeString());
-          return; // Already refreshed recently this session
+          return;
         }
 
-        // Trigger background price refresh
         setRefreshing(true);
         const res = await fetch('/api/market/prices/refresh', { method: 'POST' });
         if (res.ok) {
           sessionStorage.setItem(PRICE_REFRESH_KEY, String(Date.now()));
           setLastRefreshed(new Date().toLocaleTimeString());
 
-          // Re-fetch holdings to show updated prices
           const holdingsRes = await fetch('/api/holdings');
           if (holdingsRes.ok) {
             const data = await holdingsRes.json();
@@ -351,8 +349,9 @@ export function useHoldings() {
           }
         }
 
-        // Fire-and-forget news refresh
+        // Fire-and-forget: news + enrichment
         fetch('/api/market/news/refresh', { method: 'POST' }).catch(() => {});
+        fetch('/api/market/enrich', { method: 'POST' }).catch(() => {});
       } catch {
         // Auto-refresh failure is non-fatal
       } finally {
