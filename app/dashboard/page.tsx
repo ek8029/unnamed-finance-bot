@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { Wallet, TrendingUp, ArrowLeftRight, Shield } from 'lucide-react';
 import { NetWorthCard } from '@/components/dashboard/net-worth-card';
 import { FinancialSummaryCards } from '@/components/dashboard/financial-summary-cards';
 import { FinancialHealthScore } from '@/components/dashboard/financial-health-score';
@@ -61,6 +63,69 @@ export default function DashboardOverview() {
     );
   }
 
+  // Check if user has no data (new user, no accounts connected)
+  const hasNoData = !financialSummary ||
+    (financialSummary.total_assets === 0 &&
+     financialSummary.total_liabilities === 0 &&
+     financialSummary.portfolio_value === 0);
+
+  if (hasNoData) {
+    return (
+      <div className="container mx-auto card-padding max-w-[1600px]">
+        <div className="max-w-2xl mx-auto py-16">
+          <div className="text-center space-y-6">
+            <div className="w-16 h-16 rounded-2xl bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center mx-auto">
+              <Wallet className="w-8 h-8 text-[var(--color-gold)]" />
+            </div>
+            <div>
+              <h1 className="type-h1 mb-2">Welcome to Helm</h1>
+              <p className="type-body text-[var(--color-text-secondary)] max-w-md mx-auto">
+                Connect your first financial account to unlock your personalized command center with real-time intelligence.
+              </p>
+            </div>
+
+            <Link
+              href="/dashboard/accounts"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hover)] text-black font-semibold rounded-lg transition-colors"
+            >
+              <Wallet className="w-4 h-4" />
+              Connect Your First Account
+            </Link>
+          </div>
+
+          {/* Steps */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16">
+            {[
+              {
+                icon: Shield,
+                title: 'Connect securely',
+                description: 'Link your bank accounts, credit cards, and brokerages through Plaid. Your credentials never touch our servers.',
+              },
+              {
+                icon: TrendingUp,
+                title: 'See the full picture',
+                description: 'Your net worth, cash flow, portfolio, and health score update automatically after each sync.',
+              },
+              {
+                icon: ArrowLeftRight,
+                title: 'Get intelligence',
+                description: 'Helm analyzes your financial data and surfaces actionable insights tailored to your situation.',
+              },
+            ].map((step, i) => (
+              <div key={i} className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl p-6 text-center">
+                <div className="w-10 h-10 rounded-lg bg-[var(--color-bg-overlay)] flex items-center justify-center mx-auto mb-4">
+                  <step.icon className="w-5 h-5 text-[var(--color-text-secondary)]" />
+                </div>
+                <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-2">{step.title}</h3>
+                <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">{step.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Transform API data to match component props (FinancialHealthScore type)
   const transformedHealthScore = healthScore ? {
     score: healthScore.score || 0,
@@ -103,6 +168,7 @@ export default function DashboardOverview() {
               totalLiabilities={financialSummary?.total_liabilities || 0}
               monthlyCashFlow={financialSummary?.monthly_cash_flow || 0}
               portfolioValue={financialSummary?.portfolio_value || 0}
+              changes={financialSummary?.changes}
             />
           </div>
 

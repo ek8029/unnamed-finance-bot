@@ -89,12 +89,53 @@ export async function GET() {
     const latestCashFlow = cashFlowHistory[cashFlowHistory.length - 1];
     const monthlyCashFlow = latestCashFlow?.net_flow || 0;
 
+    // Get previous month's net worth snapshot for % change calculations
+    const now = new Date();
+    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    const { data: prevSnapshot } = await supabase
+      .from('net_worth_snapshots')
+      .select('total_assets, total_liabilities, net_worth, investment_balance')
+      .eq('user_id', user.id)
+      .gte('snapshot_date', prevMonthDate.toISOString().split('T')[0])
+      .lte('snapshot_date', prevMonthEnd.toISOString().split('T')[0])
+      .order('snapshot_date', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // Get previous month's cash flow for cash flow % change
+    const prevMonthStart = prevMonthDate.toISOString().split('T')[0];
+    const { data: prevCashFlow } = await supabase
+      .from('cash_flow_snapshots')
+      .select('net_flow')
+      .eq('user_id', user.id)
+      .eq('snapshot_month', prevMonthStart)
+      .maybeSingle();
+
+    // Calculate real % changes
+    const prevAssets = prevSnapshot ? Number(prevSnapshot.total_assets) : null;
+    const prevLiabilities = prevSnapshot ? Number(prevSnapshot.total_liabilities) : null;
+    const prevPortfolio = prevSnapshot ? Number(prevSnapshot.investment_balance) : null;
+    const prevCashFlowVal = prevCashFlow ? Number(prevCashFlow.net_flow) : null;
+
+    const calcChange = (current: number, prev: number | null) => {
+      if (prev === null || prev === 0) return null;
+      return Math.round(((current - prev) / Math.abs(prev)) * 1000) / 10; // one decimal
+    };
+
     const financialSummary = {
       net_worth: netWorth,
       total_assets: totalAssets,
       total_liabilities: totalLiabilities,
       monthly_cash_flow: monthlyCashFlow,
       portfolio_value: portfolioValue,
+      changes: {
+        assets: calcChange(totalAssets, prevAssets),
+        liabilities: calcChange(totalLiabilities, prevLiabilities),
+        cash_flow: calcChange(monthlyCashFlow, prevCashFlowVal),
+        portfolio: calcChange(portfolioValue, prevPortfolio),
+      },
     };
 
     const healthScore = healthScoreResult.data || {

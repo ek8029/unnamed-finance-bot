@@ -11,11 +11,19 @@ import { useCountUp } from '@/hooks/use-count-up';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 import { ArrowUpRight, ArrowDownRight, DollarSign, Wallet, CreditCard, TrendingUp } from 'lucide-react';
 
+interface Changes {
+  assets: number | null;
+  liabilities: number | null;
+  cash_flow: number | null;
+  portfolio: number | null;
+}
+
 interface FinancialSummaryCardsProps {
   totalAssets: number;
   totalLiabilities: number;
   monthlyCashFlow: number;
   portfolioValue: number;
+  changes?: Changes;
 }
 
 export function FinancialSummaryCards({
@@ -23,6 +31,7 @@ export function FinancialSummaryCards({
   totalLiabilities,
   monthlyCashFlow,
   portfolioValue,
+  changes,
 }: FinancialSummaryCardsProps) {
   const { formatCurrency, formatPercentage } = useFormat();
 
@@ -30,7 +39,7 @@ export function FinancialSummaryCards({
     {
       title: 'Total Assets',
       value: totalAssets,
-      change: 3.2,
+      change: changes?.assets ?? null,
       icon: Wallet,
       iconColor: 'text-[var(--color-gold)]',
       iconBg: 'bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)]',
@@ -38,7 +47,7 @@ export function FinancialSummaryCards({
     {
       title: 'Total Liabilities',
       value: totalLiabilities,
-      change: -2.1,
+      change: changes?.liabilities ?? null,
       icon: CreditCard,
       iconColor: 'text-[var(--color-negative)]',
       iconBg: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)]',
@@ -46,7 +55,7 @@ export function FinancialSummaryCards({
     {
       title: 'Monthly Cash Flow',
       value: monthlyCashFlow,
-      change: 5.4,
+      change: changes?.cash_flow ?? null,
       icon: TrendingUp,
       iconColor: 'text-[var(--color-positive)]',
       iconBg: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)]',
@@ -54,7 +63,7 @@ export function FinancialSummaryCards({
     {
       title: 'Portfolio Value',
       value: portfolioValue,
-      change: 4.8,
+      change: changes?.portfolio ?? null,
       icon: DollarSign,
       iconColor: 'text-[var(--color-text-primary)]',
       iconBg: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)]',
@@ -65,7 +74,7 @@ export function FinancialSummaryCards({
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {summaryData.map((item, index) => {
         const Icon = item.icon;
-        const isPositive = item.change > 0;
+        const isPositive = (item.change ?? 0) > 0;
         const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
         const animatedValue = useCountUp(item.value, 1200, 0, index * 100);
         const displayValue = isVisible ? animatedValue : item.value;
@@ -93,19 +102,25 @@ export function FinancialSummaryCards({
                   {formatCurrency(displayValue)}
                 </div>
                 <div className="flex items-center gap-1 mt-0.5">
-                  {isPositive ? (
-                    <ArrowUpRight className="h-3 w-3 text-[var(--color-positive)]" />
+                  {item.change !== null ? (
+                    <>
+                      {isPositive ? (
+                        <ArrowUpRight className="h-3 w-3 text-[var(--color-positive)]" />
+                      ) : (
+                        <ArrowDownRight className="h-3 w-3 text-[var(--color-negative)]" />
+                      )}
+                      <span
+                        className={`type-label text-xs font-tabular ${
+                          isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                        }`}
+                      >
+                        {formatPercentage(item.change)}
+                      </span>
+                      <span className="type-label text-xs text-[var(--color-text-muted)]">from last month</span>
+                    </>
                   ) : (
-                    <ArrowDownRight className="h-3 w-3 text-[var(--color-negative)]" />
+                    <span className="type-label text-xs text-[var(--color-text-muted)]">--</span>
                   )}
-                  <span
-                    className={`type-label text-xs font-tabular ${
-                      isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-                    }`}
-                  >
-                    {formatPercentage(item.change)}
-                  </span>
-                  <span className="type-label text-xs text-[var(--color-text-muted)]">from last month</span>
                 </div>
               </DataPanelContent>
             </DataPanel>

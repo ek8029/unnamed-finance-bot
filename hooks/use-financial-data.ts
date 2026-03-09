@@ -9,6 +9,12 @@ interface FinancialSummary {
   total_liabilities: number;
   monthly_cash_flow: number;
   portfolio_value: number;
+  changes?: {
+    assets: number | null;
+    liabilities: number | null;
+    cash_flow: number | null;
+    portfolio: number | null;
+  };
 }
 
 interface HealthScore {
@@ -145,7 +151,48 @@ export function useFinancialSummary() {
       }
     }
 
+    // Auto-sync: trigger a background Plaid sync on dashboard load
+    // Only syncs if last sync was more than 1 hour ago
+    async function autoSync() {
+      try {
+        const lastSync = sessionStorage.getItem('helm_last_auto_sync');
+        const oneHourAgo = Date.now() - 60 * 60 * 1000;
+
+        if (lastSync && Number(lastSync) > oneHourAgo) {
+          return; // Already synced recently this session
+        }
+
+        sessionStorage.setItem('helm_last_auto_sync', String(Date.now()));
+
+        // Fire-and-forget background sync
+        const res = await fetch('/api/plaid/sync', { method: 'POST' });
+        if (res.ok) {
+          // Re-fetch dashboard data after sync completes
+          const summaryRes = await fetch('/api/financial-summary');
+          if (summaryRes.ok) {
+            const data = await summaryRes.json();
+            setState(prev => ({
+              ...prev,
+              financialSummary: data.financialSummary,
+              healthScore: data.healthScore,
+              insights: data.insights || prev.insights,
+              accounts: data.accounts || prev.accounts,
+              holdings: data.holdings || prev.holdings,
+              netWorthHistory: data.netWorthHistory || prev.netWorthHistory,
+              cashFlowHistory: data.cashFlowHistory || prev.cashFlowHistory,
+              assetsComposition: data.assetsComposition || prev.assetsComposition,
+              liabilitiesComposition: data.liabilitiesComposition || prev.liabilitiesComposition,
+              savingsRateTimeline: data.savingsRateTimeline || prev.savingsRateTimeline,
+            }));
+          }
+        }
+      } catch {
+        // Auto-sync failure is non-fatal — don't show errors
+      }
+    }
+
     fetchData();
+    autoSync();
   }, []);
 
   return state;

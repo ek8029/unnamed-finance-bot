@@ -72,6 +72,9 @@ export async function POST(request: Request) {
       .eq('user_id', user.id)
       .eq('is_active', true);
 
+    // Compute and write snapshots after sync
+    await computeSnapshots(supabase, user.id);
+
     return NextResponse.json({
       success: true,
       synced_at: now,
@@ -381,5 +384,173 @@ function mapSecurityType(plaidType: string): string {
     case 'cryptocurrency': return 'crypto';
     case 'commodity': return 'commodity';
     default: return 'other';
+  }
+}
+
+/**
+ * Compute and write net worth, cash flow, and financial health snapshots
+ * after a successful sync. Uses upsert to avoid duplicates.
+ */
+async function computeSnapshots(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+) {
+  try {
+    // --- 1. Net Worth Snapshot (daily) ---
+    const { data: accounts } = await supabase
+      .from('linked_accounts')
+      .select('account_type, current_balance')
+      .eq('user_id', userId)
+      .eq('is_active', true);
+
+    const { data: holdings } = await supabase
+      .from('holdings')
+      .select('total_value')
+      .eq('user_id', userId);
+
+    const accts = accounts || [];
+    const holdingsList = holdings || [];
+
+    let cashBalance = 0;
+    let investmentBalance = holdingsList.reduce((s, h) => s + Number(h.total_value), 0);
+    let cryptoBalance = 0;
+    let creditCardDebt = 0;
+    let loanDebt = 0;
+    let totalAssets = 0;
+    let totalLiabilities = 0;
+
+    for (const a of accts) {
+      const bal = Number(a.current_balance);
+      const type = a.account_type;
+
+      if (type === 'credit_card') {
+        creditCardDebt += Math.abs(bal);
+        totalLiabilities += Math.abs(bal);
+      } else if (type === 'loan' || type === 'mortgage') {
+        loanDebt += Math.abs(bal);
+        totalLiabilities += Math.abs(bal);
+      } else if (type === 'crypto') {
+        cryptoBalance += bal;
+        totalAssets += bal;
+      } else if (type === 'brokerage') {
+        // Holdings already counted via holdings table
+        totalAssets += bal;
+      } else {
+        // checking, savings
+        cashBalance += bal;
+        totalAssets += bal;
+      }
+    }
+
+    // Add holdings value to total assets
+    totalAssets += investmentBalance;
+
+    const today = new Date().toISOString().split('T')[0];
+    await supabase
+      .from('net_worth_snapshots')
+      .upsert({
+        user_id: userId,
+        snapshot_date: today,
+        total_assets: totalAssets,
+        total_liabilities: totalLiabilities,
+        net_worth: totalAssets - totalLiabilities,
+        cash_balance: cashBalance,
+        investment_balance: investmentBalance,
+        crypto_balance: cryptoBalance,
+        credit_card_debt: creditCardDebt,
+        loan_debt: loanDebt,
+      }, {
+        onConflict: 'user_id,snapshot_date',
+      });
+
+    // --- 2. Cash Flow Snapshot (monthly) ---
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+
+    // Sum transactions for this month
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+
+    const { data: monthTx } = await supabase
+      .from('transactions')
+      .select('amount')
+      .eq('user_id', userId)
+      .gte('transaction_date', monthStart)
+      .lte('transaction_date', monthEnd);
+
+    let totalIncome = 0;
+    let totalExpenses = 0;
+    for (const t of monthTx || []) {
+      const amt = Number(t.amount);
+      if (amt > 0) totalIncome += amt;
+      else totalExpenses += Math.abs(amt);
+    }
+
+    const netFlow = totalIncome - totalExpenses;
+    const savingsAmount = Math.max(0, netFlow);
+    const savingsRate = totalIncome > 0 ? savingsAmount / totalIncome : 0;
+
+    await supabase
+      .from('cash_flow_snapshots')
+      .upsert({
+        user_id: userId,
+        snapshot_month: monthStart,
+        total_income: totalIncome,
+        total_expenses: totalExpenses,
+        net_flow: netFlow,
+        savings_amount: savingsAmount,
+        savings_rate: savingsRate,
+      }, {
+        onConflict: 'user_id,snapshot_month',
+      });
+
+    // --- 3. Financial Health Score ---
+    const netWorth = totalAssets - totalLiabilities;
+    const debtToAssetRatio = totalAssets > 0 ? totalLiabilities / totalAssets : 0;
+
+    // Emergency fund: months of expenses covered by cash
+    const avgMonthlyExpenses = totalExpenses > 0 ? totalExpenses : 1;
+    const emergencyFundMonths = cashBalance / avgMonthlyExpenses;
+
+    // Portfolio diversification: 1 - HHI (Herfindahl-Hirschman Index)
+    let diversification = 0;
+    if (holdingsList.length > 0) {
+      const totalHoldingsValue = holdingsList.reduce((s, h) => s + Number(h.total_value), 0);
+      if (totalHoldingsValue > 0) {
+        const hhi = holdingsList.reduce((s, h) => {
+          const weight = Number(h.total_value) / totalHoldingsValue;
+          return s + weight * weight;
+        }, 0);
+        diversification = Math.min(1, 1 - hhi);
+      }
+    }
+
+    // Score components (0-100 each)
+    const debtScore = Math.round(Math.max(0, Math.min(100, (1 - debtToAssetRatio) * 100)));
+    const savingsScore = Math.round(Math.min(100, savingsRate * 300)); // 33% savings = 100
+    const emergencyScore = Math.round(Math.min(100, (emergencyFundMonths / 6) * 100)); // 6 months = 100
+    const divScore = Math.round(diversification * 100);
+
+    const overallScore = Math.round(
+      debtScore * 0.25 + savingsScore * 0.25 + emergencyScore * 0.25 + divScore * 0.25
+    );
+
+    await supabase
+      .from('financial_health_scores')
+      .insert({
+        user_id: userId,
+        overall_score: Math.min(100, Math.max(0, overallScore)),
+        debt_to_asset_ratio: debtToAssetRatio,
+        savings_rate: savingsRate,
+        emergency_fund_months: Math.round(emergencyFundMonths * 100) / 100,
+        portfolio_diversification: diversification,
+        debt_score: debtScore,
+        savings_score: savingsScore,
+        emergency_fund_score: emergencyScore,
+        diversification_score: divScore,
+      });
+
+  } catch (error) {
+    // Non-fatal — don't fail the sync if snapshots fail
+    console.error('Error computing snapshots:', error);
   }
 }
