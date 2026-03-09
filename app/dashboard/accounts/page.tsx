@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Plus, RefreshCcw, Building2, X, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Plus, RefreshCcw, Building2, X, Loader2, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import { useToast } from '@/contexts/toast-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +21,18 @@ interface Account {
   last_synced_at?: string;
 }
 
+function formatTimeAgo(dateString: string): string {
+  const now = new Date();
+  const date = new Date(dateString);
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (seconds < 60) return 'Just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+  return date.toLocaleDateString();
+}
+
 export default function AccountsPage() {
   const { formatCurrency } = useFormat();
   const { accounts, balanceHistory, loading: apiLoading, error, refetch } = useAccounts();
@@ -35,6 +47,28 @@ export default function AccountsPage() {
   const [sortBy, setSortBy] = useState<'balance-high' | 'balance-low' | 'name'>('balance-high');
   const [syncing, setSyncing] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
+  const [connectionHealth, setConnectionHealth] = useState<{
+    lastSync: string | null;
+    itemCount: number;
+    errorCount: number;
+    items: { institution_name: string; status: string; last_balances_sync: string | null; last_transactions_sync: string | null }[];
+  }>({ lastSync: null, itemCount: 0, errorCount: 0, items: [] });
+
+  // Fetch connection health from plaid_items
+  useEffect(() => {
+    async function fetchConnectionHealth() {
+      try {
+        const res = await fetch('/api/plaid/health');
+        if (res.ok) {
+          const data = await res.json();
+          setConnectionHealth(data);
+        }
+      } catch {
+        // Non-critical — fail silently
+      }
+    }
+    fetchConnectionHealth();
+  }, [syncing]); // Refetch after sync
 
   const handleSyncAll = async () => {
     setSyncing(true);
@@ -311,7 +345,9 @@ export default function AccountsPage() {
                       {account.balance < 0 && <span className="type-caption">due</span>}
                     </p>
                     <p className="text-xs text-[var(--color-text-muted)]">
-                      {account.sync_status === 'healthy' ? 'Synced' : account.sync_status}
+                      {account.last_synced_at
+                        ? formatTimeAgo(account.last_synced_at)
+                        : account.sync_status === 'healthy' ? 'Synced' : account.sync_status}
                     </p>
                   </div>
                 </button>
@@ -325,21 +361,64 @@ export default function AccountsPage() {
       <Card variant="glass">
         <CardHeader>
           <CardTitle>Connection Status</CardTitle>
-          <CardDescription>High-level health across all linked institutions.</CardDescription>
+          <CardDescription>Health across all linked institutions.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm text-[var(--color-text-secondary)]">Last full sync</span>
-            <span className="type-label text-[var(--color-text-primary)]">2 hours ago</span>
+            <span className="type-label text-[var(--color-text-primary)]">
+              {connectionHealth.lastSync ? formatTimeAgo(connectionHealth.lastSync) : 'Never'}
+            </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-[var(--color-text-secondary)]">Next scheduled sync</span>
-            <span className="type-label text-[var(--color-text-primary)]">In 4 hours</span>
+            <span className="text-sm text-[var(--color-text-secondary)]">Connected institutions</span>
+            <span className="type-label text-[var(--color-text-primary)]">{connectionHealth.itemCount}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-[var(--color-text-secondary)]">Connection health</span>
-            <span className="type-label text-[var(--color-positive)]">All systems operational</span>
+            {connectionHealth.errorCount > 0 ? (
+              <span className="type-label text-[var(--color-negative)] flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {connectionHealth.errorCount} issue{connectionHealth.errorCount > 1 ? 's' : ''}
+              </span>
+            ) : connectionHealth.itemCount > 0 ? (
+              <span className="type-label text-[var(--color-positive)] flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" />
+                All systems operational
+              </span>
+            ) : (
+              <span className="type-label text-[var(--color-text-muted)] flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                No connections
+              </span>
+            )}
           </div>
+          {/* Per-institution status */}
+          {connectionHealth.items.length > 0 && (
+            <div className="pt-2 border-t border-[var(--color-border-subtle)] space-y-2">
+              {connectionHealth.items.map((item, i) => (
+                <div key={i} className="flex items-center justify-between text-xs">
+                  <span className="text-[var(--color-text-secondary)]">{item.institution_name || 'Unknown'}</span>
+                  <div className="flex items-center gap-2">
+                    {item.last_balances_sync && (
+                      <span className="text-[var(--color-text-muted)]">
+                        {formatTimeAgo(item.last_balances_sync)}
+                      </span>
+                    )}
+                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
+                      item.status === 'active'
+                        ? 'bg-emerald-500/10 text-emerald-400'
+                        : item.status === 'error'
+                        ? 'bg-red-500/10 text-red-400'
+                        : 'bg-amber-500/10 text-amber-400'
+                    }`}>
+                      {item.status === 'active' ? 'Healthy' : item.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

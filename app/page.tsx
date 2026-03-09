@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, TrendingUp, Shield, Brain, LineChart, Zap, BarChart3, Target } from 'lucide-react';
+import { ArrowRight, TrendingUp, Shield, Brain, LineChart, BarChart3, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HelmMark } from '@/components/helm-mark';
 import { AnimatedSection } from '@/components/ui/animated-section';
@@ -56,23 +56,22 @@ export default function LandingPage() {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/dashboard">
+                <Link href="/signup">
                   <Button
                     size="lg"
                     className="bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] px-8 font-semibold"
                   >
-                    Launch Helm
+                    Get Started
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
                 </Link>
-                <Link href="/dashboard">
+                <Link href="/login">
                   <Button
                     variant="secondary"
                     size="lg"
                     className="border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-bg-overlay)]"
                   >
-                    <Zap className="mr-2 h-4 w-4 text-[var(--color-gold)]" />
-                    Explore the prototype
+                    Sign In
                   </Button>
                 </Link>
               </div>
