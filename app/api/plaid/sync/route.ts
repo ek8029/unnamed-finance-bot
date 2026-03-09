@@ -344,24 +344,24 @@ function findCategoryId(
   plaidCategory: string,
   categoryMap: Map<string, string>
 ): string | null {
-  // Map Plaid's personal_finance_category to our categories
+  // Map Plaid's personal_finance_category to our category names (lowercase)
   const mapping: Record<string, string> = {
-    'INCOME': 'salary & wages',
-    'TRANSFER_IN': 'transfers',
-    'TRANSFER_OUT': 'transfers',
-    'LOAN_PAYMENTS': 'debt payment',
-    'BANK_FEES': 'fees & charges',
-    'ENTERTAINMENT': 'entertainment',
-    'FOOD_AND_DRINK': 'food & dining',
-    'GENERAL_MERCHANDISE': 'shopping',
-    'HOME_IMPROVEMENT': 'home & garden',
-    'MEDICAL': 'healthcare',
+    'INCOME': 'salary',
+    'TRANSFER_IN': 'transfer in',
+    'TRANSFER_OUT': 'transfer out',
+    'LOAN_PAYMENTS': 'loan payment',
+    'BANK_FEES': 'bank fees',
+    'ENTERTAINMENT': 'streaming',
+    'FOOD_AND_DRINK': 'dining',
+    'GENERAL_MERCHANDISE': 'general shopping',
+    'HOME_IMPROVEMENT': 'home goods',
+    'MEDICAL': 'doctor',
     'PERSONAL_CARE': 'personal care',
-    'GENERAL_SERVICES': 'services',
+    'GENERAL_SERVICES': 'other',
     'GOVERNMENT_AND_NON_PROFIT': 'taxes',
-    'TRANSPORTATION': 'transportation',
-    'TRAVEL': 'travel',
-    'RENT_AND_UTILITIES': 'utilities',
+    'TRANSPORTATION': 'gas',
+    'TRAVEL': 'flights',
+    'RENT_AND_UTILITIES': 'rent',
   };
 
   const mapped = mapping[plaidCategory];

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Wallet,
+  ArrowLeftRight,
   TrendingUp,
   FileText,
   Settings,
@@ -19,6 +20,7 @@ import { useSettings } from '@/contexts/settings-context';
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Accounts', href: '/dashboard/accounts', icon: Wallet },
+  { name: 'Transactions', href: '/dashboard/transactions', icon: ArrowLeftRight },
   { name: 'Portfolio', href: '/dashboard/portfolio', icon: TrendingUp },
   { name: 'Taxes', href: '/dashboard/taxes', icon: FileText },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
