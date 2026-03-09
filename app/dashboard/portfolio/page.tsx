@@ -52,11 +52,12 @@ export default function PortfolioPage() {
 
   useEffect(() => {
     if (lastRefreshed) {
-      setLastRefreshDisplay(new Date(lastRefreshed).toLocaleTimeString());
+      // lastRefreshed is already a formatted time string from the hook
+      setLastRefreshDisplay(lastRefreshed);
     } else {
       try {
         const stored = sessionStorage.getItem('helm_last_price_refresh');
-        if (stored) setLastRefreshDisplay(new Date(stored).toLocaleTimeString());
+        if (stored) setLastRefreshDisplay(new Date(Number(stored)).toLocaleTimeString());
       } catch {}
     }
   }, [lastRefreshed]);
