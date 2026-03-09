@@ -18,8 +18,8 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Test user UUID
-const TEST_USER_ID = '26c5dbd3-357c-44e8-aff1-d31cfc30c33d';
+// Test user UUID - can be overridden via command line argument
+const TEST_USER_ID = process.argv[2] || 'd5781e7c-a38d-41ee-be02-f51fd1e30cc9';
 
 async function clearExistingData() {
   console.log('🧹 Clearing existing test user data...');

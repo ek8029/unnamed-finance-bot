@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useFormat } from '@/hooks/use-format';
 import { useAccounts } from '@/hooks/use-financial-data';
 import { AccountsOverview } from '@/components/accounts/accounts-overview';
+import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
 
 interface Account {
   id: string;
@@ -38,18 +39,35 @@ export default function AccountsPage() {
   const handleSyncAll = async () => {
     setSyncing(true);
     try {
-      const res = await fetch('/api/accounts/sync', { method: 'POST' });
+      const res = await fetch('/api/plaid/sync', { method: 'POST' });
       if (res.ok) {
         success('Sync complete', 'All accounts have been synchronized');
         refetch?.();
       } else {
-        showError('Sync failed', 'Could not sync accounts. Please try again.');
+        // Fallback to legacy sync if no Plaid items exist
+        const fallback = await fetch('/api/accounts/sync', { method: 'POST' });
+        if (fallback.ok) {
+          success('Sync complete', 'All accounts have been synchronized');
+          refetch?.();
+        } else {
+          showError('Sync failed', 'Could not sync accounts. Please try again.');
+        }
       }
     } catch (err) {
       showError('Sync failed', 'An error occurred while syncing accounts.');
     } finally {
       setSyncing(false);
     }
+  };
+
+  const handlePlaidSuccess = () => {
+    success('Account linked', 'Your financial account has been connected successfully');
+    setShowAddAccount(false);
+    refetch?.();
+  };
+
+  const handlePlaidError = (error: string) => {
+    showError('Connection failed', error);
   };
 
   const primaryAccountId = useMemo(() => {
@@ -407,26 +425,24 @@ export default function AccountsPage() {
                 <h3 className="type-h3">Supported Account Types</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { icon: '🏦', label: 'Checking & Savings' },
-                    { icon: '💳', label: 'Credit Cards' },
-                    { icon: '📈', label: 'Investment Accounts' },
-                    { icon: '🏠', label: 'Mortgages & Loans' },
-                  ].map((type) => (
+                    'Checking & Savings',
+                    'Credit Cards',
+                    'Investment Accounts',
+                    'Mortgages & Loans',
+                  ].map((label) => (
                     <div
-                      key={type.label}
-                      className="flex items-center gap-3 p-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg"
+                      key={label}
+                      className="flex items-center p-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg"
                     >
-                      <span className="text-xl">{type.icon}</span>
-                      <span className="text-sm text-[var(--color-text-primary)]">{type.label}</span>
+                      <span className="text-sm text-[var(--color-text-primary)]">{label}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="p-4 bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] rounded-lg">
-                <p className="type-label text-[var(--color-gold)] mb-1">Coming Soon</p>
+              <div className="p-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg">
                 <p className="text-sm text-[var(--color-text-secondary)]">
-                  Plaid integration is currently being set up. You&apos;ll be able to securely connect your accounts shortly.
+                  Your credentials are encrypted end-to-end by Plaid and never touch our servers.
                 </p>
               </div>
 
@@ -438,9 +454,11 @@ export default function AccountsPage() {
                 >
                   Cancel
                 </Button>
-                <Button className="flex-1" disabled>
-                  Connect with Plaid
-                </Button>
+                <PlaidLinkButton
+                  className="flex-1"
+                  onSuccess={handlePlaidSuccess}
+                  onError={handlePlaidError}
+                />
               </div>
             </div>
           </div>

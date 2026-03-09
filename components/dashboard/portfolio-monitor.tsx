@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Holding } from '@/types';
 import { useFormat } from '@/hooks/use-format';
@@ -156,9 +156,8 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                       : null;
 
                   return (
-                    <>
+                    <React.Fragment key={holding.id}>
                       <tr
-                        key={holding.id}
                         className="border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-overlay)] transition-colors cursor-pointer"
                         onClick={() =>
                           setExpandedRowId(isExpanded ? null : holding.id)
@@ -268,7 +267,7 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </React.Fragment>
                   );
                 })}
               </tbody>
