@@ -16,6 +16,30 @@ function getApiKey(): string {
   return key;
 }
 
+// ----- Ticker Normalization -----
+
+/**
+ * Convert app-format tickers to Polygon-format tickers.
+ * Crypto tickers like "BTC-USD" become "X:BTCUSD" on Polygon.
+ * Stock tickers with dots (e.g. "BRK.B") are left as-is.
+ */
+export function toPolygonTicker(ticker: string): string {
+  // Crypto pattern: anything ending with -USD (e.g. BTC-USD, ETH-USD, SOL-USD)
+  if (ticker.toUpperCase().includes('-USD')) {
+    return 'X:' + ticker.toUpperCase().replace('-', '');
+  }
+  return ticker.toUpperCase();
+}
+
+/**
+ * Convert a Polygon-format ticker back to the app-format ticker.
+ * "X:BTCUSD" becomes "BTC-USD".
+ */
+export function fromPolygonTicker(polygonTicker: string, originalTicker: string): string {
+  // Always return the original ticker format the app uses
+  return originalTicker;
+}
+
 // ----- Types -----
 
 export interface PolygonPrice {
@@ -52,7 +76,8 @@ export async function getLatestPrice(
 ): Promise<PolygonPrice | null> {
   try {
     const apiKey = getApiKey();
-    const url = `${POLYGON_BASE_URL}/v2/aggs/ticker/${encodeURIComponent(ticker)}/prev?adjusted=true&apiKey=${apiKey}`;
+    const polygonTicker = toPolygonTicker(ticker);
+    const url = `${POLYGON_BASE_URL}/v2/aggs/ticker/${encodeURIComponent(polygonTicker)}/prev?adjusted=true&apiKey=${apiKey}`;
 
     const response = await fetch(url, {
       method: 'GET',
@@ -81,7 +106,7 @@ export async function getLatestPrice(
     const date = new Date(result.t).toISOString().split('T')[0];
 
     return {
-      ticker: data.ticker || ticker,
+      ticker, // Always return the original app-format ticker
       close: result.c,
       open: result.o,
       high: result.h,
@@ -105,13 +130,23 @@ export async function getBatchPrices(
 ): Promise<Map<string, PolygonPrice>> {
   const results = new Map<string, PolygonPrice>();
 
-  // Deduplicate tickers
-  const uniqueTickers = [...new Set(tickers.map(t => t.toUpperCase()))];
+  // Deduplicate tickers (preserve original format for keys)
+  const seen = new Set<string>();
+  const uniqueTickers: string[] = [];
+  for (const t of tickers) {
+    const upper = t.toUpperCase();
+    if (!seen.has(upper)) {
+      seen.add(upper);
+      uniqueTickers.push(upper);
+    }
+  }
 
   // Process in batches of BATCH_SIZE
   for (let i = 0; i < uniqueTickers.length; i += BATCH_SIZE) {
     const batch = uniqueTickers.slice(i, i + BATCH_SIZE);
 
+    // getLatestPrice handles Polygon ticker normalization internally
+    // and returns results with the original ticker format
     const batchResults = await Promise.allSettled(
       batch.map(ticker => getLatestPrice(ticker))
     );
@@ -119,6 +154,7 @@ export async function getBatchPrices(
     for (let j = 0; j < batch.length; j++) {
       const result = batchResults[j];
       if (result.status === 'fulfilled' && result.value) {
+        // Key by the original app-format ticker (e.g. "BTC-USD", not "X:BTCUSD")
         results.set(batch[j], result.value);
       }
     }
@@ -147,7 +183,8 @@ export async function getTickerNews(
     const apiKey = getApiKey();
 
     // Polygon accepts a comma-separated list of tickers for the ticker.any_of param
-    const tickerList = [...new Set(tickers.map(t => t.toUpperCase()))].join(',');
+    // Normalize tickers for Polygon (e.g. BTC-USD -> X:BTCUSD)
+    const tickerList = [...new Set(tickers.map(t => toPolygonTicker(t)))].join(',');
 
     const params = new URLSearchParams({
       'ticker.any_of': tickerList,

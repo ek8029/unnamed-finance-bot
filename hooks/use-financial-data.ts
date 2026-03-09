@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 // Types for API responses
 interface FinancialSummary {
@@ -169,6 +169,8 @@ export function useFinancialSummary() {
         if (res.ok) {
           // Generate fresh insights from updated data
           await fetch('/api/insights/generate', { method: 'POST' }).catch(() => {});
+          // Refresh market prices in the background
+          await fetch('/api/market/prices/refresh', { method: 'POST' }).catch(() => {});
           // Re-fetch dashboard data after sync completes
           const summaryRes = await fetch('/api/financial-summary');
           if (summaryRes.ok) {
@@ -259,6 +261,9 @@ interface PortfolioHistoryPoint {
   gain_loss: number;
 }
 
+const PRICE_REFRESH_KEY = 'helm_last_price_refresh';
+const PRICE_REFRESH_INTERVAL = 15 * 60 * 1000; // 15 minutes
+
 export function useHoldings() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [allocation, setAllocation] = useState<{ name: string; value: number; percentage: number }[]>([]);
@@ -267,6 +272,44 @@ export function useHoldings() {
   const [portfolioHistory, setPortfolioHistory] = useState<PortfolioHistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
+
+  const applyHoldingsData = useCallback((data: Record<string, unknown>) => {
+    setHoldings((data.holdings as Holding[]) || []);
+    setAllocation((data.allocation as { name: string; value: number; percentage: number }[]) || []);
+    setTotalValue((data.totalValue as number) || 0);
+    setPerformanceMetrics((data.performanceMetrics as PerformanceMetrics) || null);
+    setPortfolioHistory((data.portfolioHistory as PortfolioHistoryPoint[]) || []);
+  }, []);
+
+  const refreshPrices = useCallback(async () => {
+    try {
+      setRefreshing(true);
+
+      // Refresh prices
+      const res = await fetch('/api/market/prices/refresh', { method: 'POST' });
+      if (res.ok) {
+        sessionStorage.setItem(PRICE_REFRESH_KEY, String(Date.now()));
+        const now = new Date().toLocaleTimeString();
+        setLastRefreshed(now);
+
+        // Re-fetch holdings with updated prices
+        const holdingsRes = await fetch('/api/holdings');
+        if (holdingsRes.ok) {
+          const data = await holdingsRes.json();
+          applyHoldingsData(data);
+        }
+      }
+
+      // Fire-and-forget news refresh
+      fetch('/api/market/news/refresh', { method: 'POST' }).catch(() => {});
+    } catch {
+      // Price refresh failure is non-fatal
+    } finally {
+      setRefreshing(false);
+    }
+  }, [applyHoldingsData]);
 
   useEffect(() => {
     async function fetchData() {
@@ -274,11 +317,7 @@ export function useHoldings() {
         const res = await fetch('/api/holdings');
         if (!res.ok) throw new Error('Failed to fetch holdings');
         const data = await res.json();
-        setHoldings(data.holdings || []);
-        setAllocation(data.allocation || []);
-        setTotalValue(data.totalValue || 0);
-        setPerformanceMetrics(data.performanceMetrics || null);
-        setPortfolioHistory(data.portfolioHistory || []);
+        applyHoldingsData(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
@@ -286,10 +325,46 @@ export function useHoldings() {
       }
     }
 
-    fetchData();
-  }, []);
+    async function autoRefreshPrices() {
+      try {
+        const lastRefresh = sessionStorage.getItem(PRICE_REFRESH_KEY);
+        const threshold = Date.now() - PRICE_REFRESH_INTERVAL;
 
-  return { holdings, allocation, totalValue, performanceMetrics, portfolioHistory, loading, error };
+        if (lastRefresh && Number(lastRefresh) > threshold) {
+          // Set lastRefreshed display from stored timestamp
+          setLastRefreshed(new Date(Number(lastRefresh)).toLocaleTimeString());
+          return; // Already refreshed recently this session
+        }
+
+        // Trigger background price refresh
+        setRefreshing(true);
+        const res = await fetch('/api/market/prices/refresh', { method: 'POST' });
+        if (res.ok) {
+          sessionStorage.setItem(PRICE_REFRESH_KEY, String(Date.now()));
+          setLastRefreshed(new Date().toLocaleTimeString());
+
+          // Re-fetch holdings to show updated prices
+          const holdingsRes = await fetch('/api/holdings');
+          if (holdingsRes.ok) {
+            const data = await holdingsRes.json();
+            applyHoldingsData(data);
+          }
+        }
+
+        // Fire-and-forget news refresh
+        fetch('/api/market/news/refresh', { method: 'POST' }).catch(() => {});
+      } catch {
+        // Auto-refresh failure is non-fatal
+      } finally {
+        setRefreshing(false);
+      }
+    }
+
+    fetchData();
+    autoRefreshPrices();
+  }, [applyHoldingsData]);
+
+  return { holdings, allocation, totalValue, performanceMetrics, portfolioHistory, loading, error, refreshing, refreshPrices, lastRefreshed };
 }
 
 export function useInsights() {
