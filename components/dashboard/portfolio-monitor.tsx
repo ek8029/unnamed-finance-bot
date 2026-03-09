@@ -12,12 +12,12 @@ interface PortfolioMonitorProps {
 }
 
 export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
-  const { formatCurrency, formatPercentage, formatNumber } = useFormat();
+  const { formatCurrencyDetailed, formatPercentage, formatNumber } = useFormat();
   const totalValue = holdings.reduce((sum, holding) => sum + holding.total_value, 0);
 
-  type SortKey = 'asset' | 'ticker' | 'value' | 'change' | 'allocation';
-  const [sortKey, setSortKey] = useState<SortKey>('asset');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  type SortKey = 'ticker' | 'price' | 'value' | 'change' | 'allocation';
+  const [sortKey, setSortKey] = useState<SortKey>('value');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -33,13 +33,13 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
       let bVal: number | string = 0;
 
       switch (sortKey) {
-        case 'asset':
-          aVal = a.asset_name;
-          bVal = b.asset_name;
-          break;
         case 'ticker':
           aVal = a.ticker;
           bVal = b.ticker;
+          break;
+        case 'price':
+          aVal = a.current_price;
+          bVal = b.current_price;
           break;
         case 'value':
           aVal = a.total_value;
@@ -72,37 +72,47 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
       setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortKey(key);
-      setSortDirection('asc');
+      setSortDirection(key === 'ticker' ? 'asc' : 'desc');
     }
   };
 
   const renderSortIcon = (key: SortKey) => {
     if (sortKey !== key) return null;
     return sortDirection === 'asc' ? (
-      <ChevronUp className="ml-1 h-3 w-3 inline" />
+      <ChevronUp className="ml-0.5 h-3 w-3 inline" />
     ) : (
-      <ChevronDown className="ml-1 h-3 w-3 inline" />
+      <ChevronDown className="ml-0.5 h-3 w-3 inline" />
     );
+  };
+
+  // Format large currency without cents, small with cents
+  const formatValue = (v: number) => {
+    if (v >= 10000) {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency', currency: 'USD',
+        minimumFractionDigits: 0, maximumFractionDigits: 0,
+      }).format(v);
+    }
+    return formatCurrencyDetailed(v);
   };
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Investment Portfolio
+          <CardTitle className="flex items-center gap-2 text-base">
+            <TrendingUp className="h-4 w-4 text-[var(--color-text-muted)]" />
+            Holdings
           </CardTitle>
-          <div className="text-sm text-[var(--color-text-secondary)]">
-            Total: <span className="type-label text-[var(--color-text-primary)]">{formatCurrency(totalValue)}</span>
-          </div>
+          <span className="type-mono text-sm text-[var(--color-text-secondary)]">
+            {holdings.length} positions
+          </span>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-0 pb-0">
         <div className="overflow-x-auto">
           {isLoading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-full" />
+            <div className="space-y-2 px-6 pb-4">
               <Skeleton className="h-8 w-full" />
               <Skeleton className="h-8 w-full" />
               <Skeleton className="h-8 w-full" />
@@ -112,36 +122,37 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
               <thead>
                 <tr className="border-b border-[var(--color-border-base)]">
                   <th
-                    className="text-left py-3 px-4 type-label text-[var(--color-text-secondary)] cursor-pointer select-none"
-                    onClick={() => handleSort('asset')}
-                  >
-                    Asset {renderSortIcon('asset')}
-                  </th>
-                  <th
-                    className="text-left py-3 px-4 type-label text-[var(--color-text-secondary)] cursor-pointer select-none"
+                    className="text-left py-2.5 px-5 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
                     onClick={() => handleSort('ticker')}
                   >
-                    Ticker {renderSortIcon('ticker')}
+                    Position {renderSortIcon('ticker')}
                   </th>
-                  <th className="text-right py-3 px-4 type-label text-[var(--color-text-secondary)]">Shares</th>
-                  <th className="text-right py-3 px-4 type-label text-[var(--color-text-secondary)]">Price</th>
+                  <th className="text-right py-2.5 px-3 type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider">
+                    Shares
+                  </th>
                   <th
-                    className="text-right py-3 px-4 type-label text-[var(--color-text-secondary)] cursor-pointer select-none"
+                    className="text-right py-2.5 px-3 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
+                    onClick={() => handleSort('price')}
+                  >
+                    Price {renderSortIcon('price')}
+                  </th>
+                  <th
+                    className="text-right py-2.5 px-3 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
                     onClick={() => handleSort('value')}
                   >
-                    Total Value {renderSortIcon('value')}
+                    Value {renderSortIcon('value')}
                   </th>
                   <th
-                    className="text-right py-3 px-4 type-label text-[var(--color-text-secondary)] cursor-pointer select-none"
+                    className="text-right py-2.5 px-3 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
                     onClick={() => handleSort('change')}
                   >
-                    Day Change {renderSortIcon('change')}
+                    Day {renderSortIcon('change')}
                   </th>
                   <th
-                    className="text-right py-3 px-4 type-label text-[var(--color-text-secondary)] cursor-pointer select-none"
+                    className="text-right py-2.5 px-5 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
                     onClick={() => handleSort('allocation')}
                   >
-                    Allocation {renderSortIcon('allocation')}
+                    Weight {renderSortIcon('allocation')}
                   </th>
                 </tr>
               </thead>
@@ -150,117 +161,132 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                   const isPositiveChange = holding.day_change_percentage >= 0;
                   const isExpanded = expandedRowId === holding.id;
                   const unrealised = holding.unrealised_gain ?? 0;
-                  const unrealisedPct =
-                    holding.cost_basis && holding.cost_basis > 0
-                      ? (unrealised / (holding.cost_basis * holding.shares || 1)) * 100
-                      : null;
+                  const costBasisTotal = holding.cost_basis ? holding.cost_basis * holding.shares : null;
+                  const unrealisedPct = costBasisTotal && costBasisTotal > 0
+                    ? (unrealised / costBasisTotal) * 100
+                    : null;
+                  const dayChangeDollars = holding.total_value * (holding.day_change_percentage / 100);
 
                   return (
                     <React.Fragment key={holding.id}>
                       <tr
-                        className="border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-overlay)] transition-colors cursor-pointer"
-                        onClick={() =>
-                          setExpandedRowId(isExpanded ? null : holding.id)
-                        }
+                        className="border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-overlay)] transition-colors cursor-pointer group"
+                        onClick={() => setExpandedRowId(isExpanded ? null : holding.id)}
                       >
-                        <td className="py-3 px-4">
-                          <div>
-                            <div className="type-h3">{holding.asset_name}</div>
-                            {holding.sector && (
-                              <div className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                                {holding.sector}
+                        {/* Position: Ticker prominent, name secondary */}
+                        <td className="py-3 px-5">
+                          <div className="flex items-center gap-3">
+                            <div>
+                              <div className="type-mono text-sm font-semibold text-[var(--color-text-primary)]">
+                                {holding.ticker}
                               </div>
-                            )}
+                              <div className="text-[11px] text-[var(--color-text-muted)] leading-tight mt-0.5 max-w-[140px] truncate">
+                                {holding.asset_name}
+                              </div>
+                            </div>
                           </div>
                         </td>
-                        <td className="py-3 px-4">
-                          <span className="type-data text-sm text-[var(--color-text-primary)]">
-                            {holding.ticker}
+
+                        {/* Shares */}
+                        <td className="py-3 px-3 text-right">
+                          <span className="type-mono text-xs text-[var(--color-text-secondary)]">
+                            {formatNumber(holding.shares)}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-right text-sm text-[var(--color-text-secondary)]">
-                          {formatNumber(holding.shares)}
+
+                        {/* Price — full precision */}
+                        <td className="py-3 px-3 text-right">
+                          <span className="type-mono text-sm font-medium text-[var(--color-text-primary)]">
+                            {formatCurrencyDetailed(holding.current_price)}
+                          </span>
                         </td>
-                        <td className="py-3 px-4 text-right text-sm text-[var(--color-text-primary)]">
-                          {formatCurrency(holding.current_price)}
+
+                        {/* Total Value — prominent */}
+                        <td className="py-3 px-3 text-right">
+                          <span className="type-mono text-sm font-semibold text-[var(--color-text-primary)]">
+                            {formatValue(holding.total_value)}
+                          </span>
                         </td>
-                        <td className="py-3 px-4 text-right type-label text-[var(--color-text-primary)]">
-                          {formatCurrency(holding.total_value)}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <div
-                            className={`flex items-center justify-end gap-1 ${
-                              isPositiveChange
-                                ? 'text-[var(--color-positive)]'
-                                : 'text-[var(--color-negative)]'
-                            }`}
-                          >
-                            {isPositiveChange ? (
-                              <ArrowUpRight className="h-3 w-3" />
-                            ) : (
-                              <ArrowDownRight className="h-3 w-3" />
-                            )}
-                            <span className="text-sm font-medium">
-                              {formatPercentage(holding.day_change_percentage)}
+
+                        {/* Day Change — % and $ */}
+                        <td className="py-3 px-3 text-right">
+                          <div className={`flex flex-col items-end ${
+                            isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                          }`}>
+                            <div className="flex items-center gap-0.5">
+                              {isPositiveChange ? (
+                                <ArrowUpRight className="h-3 w-3" />
+                              ) : (
+                                <ArrowDownRight className="h-3 w-3" />
+                              )}
+                              <span className="type-mono text-xs font-medium">
+                                {formatPercentage(holding.day_change_percentage, 2)}
+                              </span>
+                            </div>
+                            <span className="type-mono text-[10px] opacity-70">
+                              {dayChangeDollars >= 0 ? '+' : ''}{formatCurrencyDetailed(dayChangeDollars)}
                             </span>
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-right">
+
+                        {/* Allocation — bar + % */}
+                        <td className="py-3 px-5 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <div className="w-16 h-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-full overflow-hidden">
+                            <div className="w-14 h-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-[var(--color-gold)]"
-                                style={{
-                                  width: `${holding.portfolio_allocation}%`,
-                                }}
+                                className="h-full bg-[var(--color-gold)] rounded-full"
+                                style={{ width: `${Math.min(100, holding.portfolio_allocation)}%` }}
                               />
                             </div>
-                            <span className="type-label text-[var(--color-text-primary)] w-12">
+                            <span className="type-mono text-xs text-[var(--color-text-secondary)] w-10 text-right">
                               {holding.portfolio_allocation.toFixed(1)}%
                             </span>
                           </div>
                         </td>
                       </tr>
+
+                      {/* Expanded Detail Row */}
                       {isExpanded && (
-                        <tr className="border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-overlay)]/60">
-                          <td colSpan={7} className="py-3 px-4">
-                            <div className="flex flex-wrap gap-4 text-xs text-[var(--color-text-secondary)]">
+                        <tr className="border-b border-[var(--color-border-subtle)]">
+                          <td colSpan={6} className="py-4 px-5 bg-[var(--color-bg-overlay)]/40">
+                            <div className="grid grid-cols-4 gap-6">
                               <div>
-                                <span className="type-label block mb-1">
-                                  Cost basis (per share)
+                                <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1">
+                                  Avg Cost Basis
                                 </span>
-                                <span className="type-data text-sm">
-                                  {holding.cost_basis
-                                    ? formatCurrency(holding.cost_basis)
-                                    : '—'}
+                                <span className="type-mono text-sm text-[var(--color-text-primary)]">
+                                  {holding.cost_basis ? formatCurrencyDetailed(holding.cost_basis) : '—'}
                                 </span>
                               </div>
                               <div>
-                                <span className="type-label block mb-1">
-                                  Unrealised P/L
+                                <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1">
+                                  Total Cost
                                 </span>
-                                <span
-                                  className={`type-data text-sm ${
-                                    unrealised >= 0
-                                      ? 'text-[var(--color-positive)]'
-                                      : 'text-[var(--color-negative)]'
-                                  }`}
-                                >
-                                  {unrealised >= 0 ? '+' : '-'}
-                                  {formatCurrency(Math.abs(unrealised))}
+                                <span className="type-mono text-sm text-[var(--color-text-primary)]">
+                                  {costBasisTotal ? formatValue(costBasisTotal) : '—'}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1">
+                                  Unrealised P&L
+                                </span>
+                                <span className={`type-mono text-sm font-medium ${
+                                  unrealised >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                                }`}>
+                                  {unrealised >= 0 ? '+' : ''}{formatCurrencyDetailed(unrealised)}
                                   {unrealisedPct !== null && (
-                                    <span className="type-caption ml-2">
-                                      ({formatPercentage(unrealisedPct, 1)})
+                                    <span className="text-[10px] opacity-70 ml-1">
+                                      ({unrealisedPct >= 0 ? '+' : ''}{unrealisedPct.toFixed(1)}%)
                                     </span>
                                   )}
                                 </span>
                               </div>
                               <div>
-                                <span className="type-label block mb-1">
-                                  Asset class
+                                <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1">
+                                  Sector / Class
                                 </span>
-                                <span className="type-data text-sm">
-                                  {holding.asset_class ?? '—'}
+                                <span className="type-mono text-sm text-[var(--color-text-primary)]">
+                                  {holding.sector || holding.asset_class || '—'}
                                 </span>
                               </div>
                             </div>
@@ -273,26 +299,6 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
               </tbody>
             </table>
           )}
-        </div>
-
-        <div className="mt-4 p-4 bg-[var(--color-bg-overlay)] rounded-md border border-[var(--color-border-base)]">
-          <div className="flex items-start gap-2">
-            <div className="text-[var(--color-gold)] mt-0.5">
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h4 className="type-h3 mb-1">Market Intelligence</h4>
-              <p className="text-sm text-[var(--color-text-secondary)]">
-                Monitoring news and filings for your holdings. You'll be notified of any significant events.
-              </p>
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>

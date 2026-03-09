@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,9 +18,11 @@ import {
   Loader2,
   Zap,
   RefreshCw,
+  Wallet,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Holding } from '@/types';
+import { useFormat } from '@/hooks/use-format';
 
 interface MarketNewsItem {
   id: string;
@@ -91,12 +93,6 @@ const eventTypeConfig = {
   fed_announcement: { icon: AlertCircle, label: 'Fed', color: 'text-[var(--color-warning)]' },
 };
 
-const impactColors = {
-  high: 'text-[var(--color-negative)]',
-  medium: 'text-[var(--color-warning)]',
-  low: 'text-[var(--color-text-muted)]',
-};
-
 function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
@@ -124,11 +120,26 @@ function formatEventDate(dateString: string): string {
 }
 
 export function MarketIntelligence({ holdings = [], className }: MarketIntelligenceProps) {
+  const { formatCurrencyDetailed, formatNumber } = useFormat();
   const [intelligence, setIntelligence] = useState<MarketIntelligenceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Build a ticker → holding lookup for fast linkage
+  const holdingsMap = useMemo(() => {
+    const map = new Map<string, Holding>();
+    for (const h of holdings) {
+      map.set(h.ticker.toUpperCase(), h);
+    }
+    return map;
+  }, [holdings]);
+
+  const totalPortfolioValue = useMemo(
+    () => holdings.reduce((sum, h) => sum + h.total_value, 0),
+    [holdings],
+  );
 
   const fetchIntelligence = async () => {
     try {
@@ -164,6 +175,274 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
   };
+
+  // ── Expanded-content helpers ──
+
+  /** For news: find which of the user's holdings are mentioned */
+  function getAffectedHoldings(tickers: string[]): Holding[] {
+    return tickers
+      .map(t => holdingsMap.get(t.toUpperCase()))
+      .filter((h): h is Holding => !!h);
+  }
+
+  /** For events: find the user's holding for the event ticker */
+  function getEventHolding(ticker?: string): Holding | undefined {
+    if (!ticker) return undefined;
+    return holdingsMap.get(ticker.toUpperCase());
+  }
+
+  // ── Render helpers ──
+
+  function renderNewsExposure(newsItem: MarketNewsItem) {
+    const affected = getAffectedHoldings(newsItem.tickers);
+    if (affected.length === 0) return null;
+
+    const totalExposure = affected.reduce((sum, h) => sum + h.total_value, 0);
+    const exposurePct = totalPortfolioValue > 0 ? (totalExposure / totalPortfolioValue) * 100 : 0;
+
+    return (
+      <div className="mt-3 p-2.5 bg-[var(--color-bg-overlay)] rounded-md border border-[var(--color-border-base)]">
+        <div className="flex items-center gap-1.5 mb-2">
+          <Wallet className="h-3 w-3 text-[var(--color-gold)]" />
+          <span className="type-eyebrow text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">
+            Portfolio Exposure
+          </span>
+        </div>
+        <div className="space-y-1.5">
+          {affected.map(h => (
+            <div key={h.id} className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="type-mono font-semibold text-[var(--color-text-primary)]">
+                  {h.ticker}
+                </span>
+                <span className="text-[var(--color-text-muted)] truncate text-[11px]">
+                  {h.asset_name}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="type-mono text-[var(--color-text-primary)]">
+                  {formatCurrencyDetailed(h.total_value)}
+                </span>
+                <span className="type-mono text-[10px] text-[var(--color-text-muted)]">
+                  {h.portfolio_allocation.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-2 pt-2 border-t border-[var(--color-border-subtle)] flex items-center justify-between text-xs">
+          <span className="text-[var(--color-text-muted)]">Total Exposure</span>
+          <div className="flex items-center gap-2">
+            <span className="type-mono font-medium text-[var(--color-text-primary)]">
+              {formatCurrencyDetailed(totalExposure)}
+            </span>
+            <span className="type-mono text-[10px] text-[var(--color-gold)]">
+              {exposurePct.toFixed(1)}%
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderDividendDetails(eventItem: MarketEventItem) {
+    const holding = getEventHolding(eventItem.ticker);
+    const cashAmount = eventItem.metadata?.cash_amount as number | undefined;
+    const payDate = eventItem.metadata?.pay_date as string | undefined;
+    const frequency = eventItem.metadata?.frequency as number | undefined;
+
+    const freqLabel = (f?: number) => {
+      if (f === 4) return 'Quarterly';
+      if (f === 12) return 'Monthly';
+      if (f === 2) return 'Semi-Annual';
+      if (f === 1) return 'Annual';
+      return '';
+    };
+
+    const estimatedPayout = holding && cashAmount ? holding.shares * cashAmount : null;
+    const annualizedIncome = estimatedPayout && frequency ? estimatedPayout * frequency : null;
+
+    return (
+      <div className="mt-3 p-2.5 bg-[var(--color-bg-overlay)] rounded-md border border-[var(--color-border-base)]">
+        <div className="flex items-center gap-1.5 mb-2">
+          <DollarSign className="h-3 w-3 text-[var(--color-positive)]" />
+          <span className="type-eyebrow text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">
+            Dividend Details
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+          {cashAmount != null && (
+            <div>
+              <span className="text-[var(--color-text-muted)] block text-[10px]">Per Share</span>
+              <span className="type-mono text-[var(--color-text-primary)]">
+                ${cashAmount.toFixed(4)}
+              </span>
+            </div>
+          )}
+          {frequency != null && (
+            <div>
+              <span className="text-[var(--color-text-muted)] block text-[10px]">Frequency</span>
+              <span className="type-mono text-[var(--color-text-primary)]">
+                {freqLabel(frequency)}
+              </span>
+            </div>
+          )}
+          <div>
+            <span className="text-[var(--color-text-muted)] block text-[10px]">Ex-Dividend</span>
+            <span className="type-mono text-[var(--color-text-primary)]">
+              {new Date(eventItem.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </span>
+          </div>
+          {payDate && (
+            <div>
+              <span className="text-[var(--color-text-muted)] block text-[10px]">Pay Date</span>
+              <span className="type-mono text-[var(--color-text-primary)]">
+                {new Date(payDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {holding && (
+          <div className="mt-2 pt-2 border-t border-[var(--color-border-subtle)]">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Wallet className="h-3 w-3 text-[var(--color-gold)]" />
+              <span className="type-eyebrow text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">
+                Your Position
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+              <div>
+                <span className="text-[var(--color-text-muted)] block text-[10px]">Shares Held</span>
+                <span className="type-mono text-[var(--color-text-primary)]">
+                  {formatNumber(holding.shares)}
+                </span>
+              </div>
+              {estimatedPayout != null && (
+                <div>
+                  <span className="text-[var(--color-text-muted)] block text-[10px]">Est. Payout</span>
+                  <span className="type-mono font-medium text-[var(--color-positive)]">
+                    {formatCurrencyDetailed(estimatedPayout)}
+                  </span>
+                </div>
+              )}
+            </div>
+            {annualizedIncome != null && (
+              <div className="mt-1.5 text-[10px] text-[var(--color-text-muted)]">
+                Annualized income: <span className="type-mono text-[var(--color-positive)]">{formatCurrencyDetailed(annualizedIncome)}</span>/yr
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function renderSplitDetails(eventItem: MarketEventItem) {
+    const holding = getEventHolding(eventItem.ticker);
+    const splitFrom = eventItem.metadata?.split_from as number | undefined;
+    const splitTo = eventItem.metadata?.split_to as number | undefined;
+    const ratio = splitFrom && splitTo ? splitTo / splitFrom : null;
+
+    return (
+      <div className="mt-3 p-2.5 bg-[var(--color-bg-overlay)] rounded-md border border-[var(--color-border-base)]">
+        <div className="flex items-center gap-1.5 mb-2">
+          <Activity className="h-3 w-3 text-[var(--color-warning)]" />
+          <span className="type-eyebrow text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">
+            Split Details
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+          {ratio != null && (
+            <div>
+              <span className="text-[var(--color-text-muted)] block text-[10px]">Ratio</span>
+              <span className="type-mono text-[var(--color-text-primary)]">
+                {splitTo}-for-{splitFrom}
+              </span>
+            </div>
+          )}
+          <div>
+            <span className="text-[var(--color-text-muted)] block text-[10px]">Execution</span>
+            <span className="type-mono text-[var(--color-text-primary)]">
+              {new Date(eventItem.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </span>
+          </div>
+        </div>
+
+        {holding && ratio != null && (
+          <div className="mt-2 pt-2 border-t border-[var(--color-border-subtle)]">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Wallet className="h-3 w-3 text-[var(--color-gold)]" />
+              <span className="type-eyebrow text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">
+                Your Position
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+              <div>
+                <span className="text-[var(--color-text-muted)] block text-[10px]">Current Shares</span>
+                <span className="type-mono text-[var(--color-text-primary)]">
+                  {formatNumber(holding.shares)}
+                </span>
+              </div>
+              <div>
+                <span className="text-[var(--color-text-muted)] block text-[10px]">After Split</span>
+                <span className="type-mono font-medium text-[var(--color-text-primary)]">
+                  {formatNumber(holding.shares * ratio)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function renderGenericEventMeta(eventItem: MarketEventItem) {
+    const holding = getEventHolding(eventItem.ticker);
+    const metaEntries = Object.entries(eventItem.metadata).filter(
+      ([k]) => !['cash_amount', 'currency', 'pay_date', 'record_date', 'declaration_date', 'frequency', 'dividend_type', 'split_from', 'split_to', 'ratio'].includes(k)
+    );
+
+    return (
+      <>
+        {metaEntries.length > 0 && (
+          <div className="mt-3 p-2 bg-[var(--color-bg-overlay)] rounded-md border border-[var(--color-border-base)]">
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {metaEntries.slice(0, 4).map(([key, value]) => (
+                <div key={key}>
+                  <span className="text-[var(--color-text-muted)] capitalize text-[10px]">
+                    {key.replace(/_/g, ' ')}
+                  </span>
+                  <span className="type-mono text-[var(--color-text-primary)] block">
+                    {typeof value === 'number'
+                      ? value.toLocaleString()
+                      : String(value)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {holding && (
+          <div className="mt-2 p-2 bg-[var(--color-bg-overlay)] rounded-md border border-[var(--color-border-base)]">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Wallet className="h-3 w-3 text-[var(--color-gold)]" />
+              <span className="type-eyebrow text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">
+                Your Position
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span className="type-mono font-semibold text-[var(--color-text-primary)]">{holding.ticker}</span>
+                <span className="text-[var(--color-text-muted)] text-[11px]">{holding.asset_name}</span>
+              </div>
+              <span className="type-mono text-[var(--color-text-primary)]">{formatCurrencyDetailed(holding.total_value)}</span>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
 
   if (loading) {
     return (
@@ -225,7 +504,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
             </Button>
           </div>
         </div>
-        <p className="type-eyebrow text-[var(--color-text-muted)] mt-1">Real-time news & events for your portfolio</p>
+        <p className="type-eyebrow text-[var(--color-text-muted)] mt-1">Real-time news & events linked to your positions</p>
       </div>
 
       {/* Scrollable Content */}
@@ -250,6 +529,11 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
             const iconColor = isNews
               ? sentimentStyle.iconColor
               : eventConfig?.color || 'text-[var(--color-text-muted)]';
+
+            // Check if this item affects any of our holdings
+            const hasPortfolioLink = isNews
+              ? newsItem.tickers.some(t => holdingsMap.has(t.toUpperCase()))
+              : !!holdingsMap.get(eventItem.ticker?.toUpperCase() ?? '');
 
             return (
               <div
@@ -299,6 +583,11 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
                             <span className="type-eyebrow text-[var(--color-text-muted)]">
                               {newsItem.source}
                             </span>
+                            {hasPortfolioLink && (
+                              <Badge variant="gold" className="text-[9px] px-1.5 py-0">
+                                In Portfolio
+                              </Badge>
+                            )}
                           </>
                         ) : (
                           <>
@@ -311,6 +600,11 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
                             {eventItem.ticker && (
                               <Badge variant="gold" className="text-[9px] px-1.5 py-0">
                                 {eventItem.ticker}
+                              </Badge>
+                            )}
+                            {hasPortfolioLink && !eventItem.ticker && (
+                              <Badge variant="gold" className="text-[9px] px-1.5 py-0">
+                                In Portfolio
                               </Badge>
                             )}
                           </>
@@ -329,12 +623,25 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
 
                   {/* Expanded Content */}
                   {isExpanded && (
-                    <div className="mt-3 space-y-2">
-                      {/* Tickers/Sectors for news */}
+                    <div className="space-y-0">
+                      {/* Portfolio linkage — the key enhancement */}
+                      {isNews && renderNewsExposure(newsItem)}
+
+                      {!isNews && eventItem.type === 'dividend' && renderDividendDetails(eventItem)}
+
+                      {!isNews && eventItem.type === 'split' && renderSplitDetails(eventItem)}
+
+                      {!isNews && eventItem.type !== 'dividend' && eventItem.type !== 'split' && renderGenericEventMeta(eventItem)}
+
+                      {/* Remaining tickers/sectors badges for news */}
                       {isNews && (newsItem.tickers.length > 0 || newsItem.sectors.length > 0) && (
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap mt-3">
                           {newsItem.tickers.slice(0, 5).map(ticker => (
-                            <Badge key={ticker} variant="outline" className="text-[9px]">
+                            <Badge
+                              key={ticker}
+                              variant={holdingsMap.has(ticker.toUpperCase()) ? 'gold' : 'outline'}
+                              className="text-[9px]"
+                            >
                               {ticker}
                             </Badge>
                           ))}
@@ -346,32 +653,12 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
                         </div>
                       )}
 
-                      {/* Event metadata */}
-                      {!isNews && Object.keys(eventItem.metadata).length > 0 && (
-                        <div className="p-2 bg-[var(--color-bg-overlay)] rounded-md border border-[var(--color-border-base)]">
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            {Object.entries(eventItem.metadata).slice(0, 4).map(([key, value]) => (
-                              <div key={key}>
-                                <span className="text-[var(--color-text-muted)] capitalize">
-                                  {key.replace(/_/g, ' ')}:
-                                </span>{' '}
-                                <span className="text-[var(--color-text-primary)]">
-                                  {typeof value === 'number'
-                                    ? value.toLocaleString()
-                                    : String(value)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
                       {/* View Source for news */}
                       {isNews && newsItem.url && (
                         <Button
                           size="sm"
                           variant="outline"
-                          className="w-full mt-2"
+                          className="w-full mt-3"
                           onClick={(e) => {
                             e.stopPropagation();
                             window.open(newsItem.url, '_blank');

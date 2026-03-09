@@ -33,7 +33,7 @@ function LoadingSkeleton() {
 }
 
 export default function PortfolioPage() {
-  const { formatCurrency } = useFormat();
+  const { formatCurrency, formatCurrencyDetailed } = useFormat();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const holdingsData: any = useHoldings();
   const holdings: { id: string; ticker: string; asset_name: string; shares: number; current_price: number; total_value: number; day_change_percentage: number; portfolio_allocation: number; sector?: string; asset_class?: string; cost_basis?: number; unrealised_gain?: number }[] = holdingsData.holdings ?? [];
@@ -209,7 +209,7 @@ export default function PortfolioPage() {
                 </CardTitle>
                 <p className={`type-mono mt-1 ${dayChangePercentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
                   {dayChangePercentage >= 0 ? '+' : ''}
-                  {formatCurrency(totalDayChange)}
+                  {formatCurrencyDetailed(totalDayChange)}
                 </p>
               </CardContent>
             </Card>
@@ -372,7 +372,7 @@ export default function PortfolioPage() {
                         />
                       </div>
                       <div className="type-mono text-[var(--color-text-muted)]">
-                        {formatCurrency(sector.value)}
+                        {formatCurrencyDetailed(sector.value)}
                       </div>
                     </div>
                   ))}
