@@ -40,29 +40,16 @@ export async function GET() {
       isSubscription: r.is_subscription,
     }));
 
-    // Separate expenses (subscriptions) from income
-    const expenses = items.filter(r => r.amount < 0);
-    const income = items.filter(r => r.amount > 0);
-
-    // Only sum expenses for the cost total
-    const monthlyExpenseTotal = expenses.reduce((sum, r) => {
-      return sum + Math.abs(toMonthly(r.amount, r.frequency));
-    }, 0);
-
-    const monthlyIncomeTotal = income.reduce((sum, r) => {
+    const monthlyTotal = items.reduce((sum, r) => {
       return sum + toMonthly(r.amount, r.frequency);
     }, 0);
 
     return NextResponse.json({
       recurring: items,
-      expenses,
-      income,
       summary: {
-        expenseCount: expenses.length,
-        incomeCount: income.length,
-        monthlyExpenseTotal: Math.round(monthlyExpenseTotal * 100) / 100,
-        monthlyIncomeTotal: Math.round(monthlyIncomeTotal * 100) / 100,
-        annualExpenseTotal: Math.round(monthlyExpenseTotal * 12 * 100) / 100,
+        count: items.length,
+        monthlyTotal: Math.round(monthlyTotal * 100) / 100,
+        annualTotal: Math.round(monthlyTotal * 12 * 100) / 100,
       },
     });
   } catch (error) {
@@ -106,35 +93,35 @@ export async function POST() {
       return NextResponse.json({ success: true, detected: 0 });
     }
 
-    // Group transactions by merchant + sign (income vs expense separately)
+    // Only detect expenses (negative amounts) as recurring subscriptions
+    const expenseTransactions = transactions.filter(t => Number(t.amount) < 0);
+
+    // Group expense transactions by merchant
     const merchantGroups = new Map<string, {
-      amounts: number[]; // preserve sign: negative = expense, positive = income
+      amounts: number[];
       dates: Date[];
       category: string | null;
       description: string;
-      isExpense: boolean;
     }>();
 
-    for (const t of transactions) {
+    for (const t of expenseTransactions) {
       const merchant = t.merchant_name || t.description;
       if (!merchant) continue;
 
       const amount = Number(t.amount);
-      const isExpense = amount < 0;
-      const key = normalizeMerchant(merchant) + (isExpense ? ':expense' : ':income');
+      const key = normalizeMerchant(merchant);
 
       const existing = merchantGroups.get(key);
       if (existing) {
-        existing.amounts.push(amount);
+        existing.amounts.push(Math.abs(amount));
         existing.dates.push(new Date(t.transaction_date));
         if (!existing.category && t.category_name) existing.category = t.category_name;
       } else {
         merchantGroups.set(key, {
-          amounts: [amount],
+          amounts: [Math.abs(amount)],
           dates: [new Date(t.transaction_date)],
           category: t.category_name,
           description: merchant,
-          isExpense,
         });
       }
     }
@@ -149,22 +136,20 @@ export async function POST() {
       last_date: string;
       next_expected_date: string;
       occurrence_count: number;
-      is_subscription: boolean;
     }[] = [];
 
     for (const [, group] of merchantGroups) {
       // Need at least 2 occurrences
       if (group.dates.length < 2) continue;
 
-      // Check if amounts are consistent (within 20% of average absolute value)
-      const absAmounts = group.amounts.map(a => Math.abs(a));
-      const avgAbsAmount = absAmounts.reduce((s, a) => s + a, 0) / absAmounts.length;
-      if (avgAbsAmount < 1) continue; // Skip trivially small amounts
+      // Check if amounts are consistent (within 25% of average)
+      const avgAmount = group.amounts.reduce((s, a) => s + a, 0) / group.amounts.length;
+      if (avgAmount < 1) continue;
 
-      const amountConsistent = absAmounts.every(a =>
-        Math.abs(a - avgAbsAmount) / avgAbsAmount < 0.25
+      const amountConsistent = group.amounts.every(a =>
+        Math.abs(a - avgAmount) / avgAmount < 0.25
       );
-      if (!amountConsistent && avgAbsAmount > 5) continue;
+      if (!amountConsistent && avgAmount > 5) continue;
 
       // Detect frequency from date intervals
       const sortedDates = [...group.dates].sort((a, b) => a.getTime() - b.getTime());
@@ -185,9 +170,6 @@ export async function POST() {
       const lastDate = sortedDates[sortedDates.length - 1];
       const nextDate = computeNextDate(lastDate, frequency);
 
-      // Preserve the sign: negative for expenses, positive for income
-      const avgAmount = group.amounts.reduce((s, a) => s + a, 0) / group.amounts.length;
-
       detected.push({
         merchant_name: group.description,
         description: group.description,
@@ -197,7 +179,6 @@ export async function POST() {
         last_date: lastDate.toISOString().split('T')[0],
         next_expected_date: nextDate.toISOString().split('T')[0],
         occurrence_count: group.dates.length,
-        is_subscription: group.isExpense, // Only expenses are "subscriptions"
       });
     }
 
