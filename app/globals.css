@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    font-size: 125%;
+  }
+
   /* ══════════════════════════════════════════════════
      DARK THEME (Default) — Meridian D3: Navy + Platinum + Gold
      ══════════════════════════════════════════════════ */
