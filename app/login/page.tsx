@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { LegalFooter } from '@/components/legal-footer';
 
 function LoginForm() {
   const router = useRouter();
@@ -157,6 +158,7 @@ function LoginForm() {
             </p>
           </div>
         </div>
+        <LegalFooter variant="minimal" />
       </div>
     </div>
   );

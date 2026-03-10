@@ -5,6 +5,7 @@ import { ArrowRight, TrendingUp, Shield, Brain, LineChart, BarChart3, Target } f
 import { Button } from '@/components/ui/button';
 import { HelmMark } from '@/components/helm-mark';
 import { AnimatedSection } from '@/components/ui/animated-section';
+import { LegalFooter } from '@/components/legal-footer';
 
 export default function LandingPage() {
   return (
@@ -300,21 +301,9 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative border-t border-[var(--color-border-base)]">
-        <div className="container mx-auto px-6 py-6 flex flex-col md:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <HelmMark size={16} />
-            <p className="type-eyebrow text-[var(--color-text-muted)]">
-              &copy; 2026 Helm. Financial intelligence for individuals.
-            </p>
-          </div>
-          <div className="flex gap-6 type-eyebrow text-[var(--color-text-muted)]">
-            <span className="hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer">Privacy</span>
-            <span className="hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer">Security</span>
-            <span className="hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer">Terms</span>
-          </div>
-        </div>
-      </footer>
+      <div className="relative">
+        <LegalFooter />
+      </div>
     </main>
   );
 }

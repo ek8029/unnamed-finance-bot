@@ -499,3 +499,44 @@ html.screen-reader-optimized .sr-only {
   clip: auto !important;
   white-space: normal !important;
 }
+
+/* ── Legal / prose typography ──────────────────────── */
+.prose-helm h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 0.75rem;
+}
+.prose-helm h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+}
+.prose-helm p {
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}
+.prose-helm ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}
+.prose-helm li {
+  margin-bottom: 0.25rem;
+}
+.prose-helm a {
+  color: var(--color-gold);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-helm a:hover {
+  color: var(--color-gold-hi);
+}
+.prose-helm strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}

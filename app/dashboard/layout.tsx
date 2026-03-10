@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
 import { useSettings } from '@/contexts/settings-context';
+import { LegalFooter } from '@/components/legal-footer';
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -103,7 +104,7 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)]">
+    <div className="min-h-screen bg-[var(--color-bg-base)] flex flex-col">
       {/* Top Navigation Bar */}
       <nav className="bg-[var(--color-bg-surface)] border-b border-[var(--color-border-base)] sticky top-0 z-50">
         <div className="px-6 py-3">
@@ -225,7 +226,7 @@ export default function DashboardLayout({
       </nav>
 
       {/* Main Content */}
-      <main className="bg-[var(--color-bg-base)]">
+      <main className="bg-[var(--color-bg-base)] flex-1">
         <div
           key={pathname}
           className={cn(!reduceMotion && 'page-transition')}
@@ -233,6 +234,9 @@ export default function DashboardLayout({
           {children}
         </div>
       </main>
+
+      {/* Legal Footer */}
+      <LegalFooter variant="minimal" />
     </div>
   );
 }

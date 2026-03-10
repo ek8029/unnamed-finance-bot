@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { LegalFooter } from '@/components/legal-footer';
 
 function getPasswordStrength(password: string) {
   const requirements = [
@@ -200,6 +201,7 @@ export default function SignupPage() {
             </p>
           </div>
         </div>
+        <LegalFooter variant="minimal" />
       </div>
     </div>
   );

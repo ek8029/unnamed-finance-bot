@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { LegalFooter } from '@/components/legal-footer';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -112,6 +113,7 @@ export default function ForgotPasswordPage() {
             </>
           )}
         </div>
+        <LegalFooter variant="minimal" />
       </div>
     </div>
   );
