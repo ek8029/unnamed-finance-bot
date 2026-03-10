@@ -3,7 +3,9 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import { LegalFooter } from '@/components/legal-footer';
+import { HelmMark } from '@/components/helm-mark';
 
 function getPasswordStrength(password: string) {
   const requirements = [
@@ -15,7 +17,7 @@ function getPasswordStrength(password: string) {
   ];
   const score = Math.min(4, requirements.filter(r => r.met).length) as 0 | 1 | 2 | 3 | 4;
   const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
-  const colors = ['bg-red-500', 'bg-red-500', 'bg-yellow-500', 'bg-green-500/70', 'bg-green-500'];
+  const colors = ['bg-red-500', 'bg-red-500', 'bg-yellow-500', 'bg-[var(--color-positive)]/70', 'bg-[var(--color-positive)]'];
   return { score, label: labels[score], color: colors[score], requirements };
 }
 
@@ -77,128 +79,147 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-[var(--color-bg-base)] relative overflow-hidden flex items-center justify-center px-4 py-12">
+      {/* Ambient background — matches homepage */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,_rgba(200,169,91,0.08),_transparent_60%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_transparent_0%,_rgba(0,0,0,0.4)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,_rgba(255,255,255,0.02)_1px,_transparent_1px),linear-gradient(to_bottom,_rgba(255,255,255,0.02)_1px,_transparent_1px)] bg-[length:64px_64px] opacity-40" />
+      </div>
+
+      <div className="relative w-full max-w-md">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white">
-            <span className="text-amber-500">Helm</span>
-          </h1>
-          <p className="text-neutral-400 mt-2">Create your account</p>
+        <div className="flex flex-col items-center mb-8">
+          <Link href="/" className="flex items-center gap-3 mb-3 group">
+            <HelmMark size={44} />
+            <div>
+              <div className="text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">Helm</div>
+              <div className="type-eyebrow text-[var(--color-text-muted)]">Financial Intelligence</div>
+            </div>
+          </Link>
+          <p className="text-[var(--color-text-secondary)] mt-2">Create your account</p>
         </div>
 
-        {/* Form */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-neutral-300 mb-2">
-                Full Name
-              </label>
-              <input
-                id="fullName"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                autoComplete="name"
-                className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                placeholder="John Doe"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-neutral-300 mb-2">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                placeholder="you@example.com"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-neutral-300 mb-2">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="new-password"
-                className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                placeholder="Strong password"
-              />
-              {password && (
-                <div className="mt-2 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 flex gap-1">
-                      {[0, 1, 2, 3].map((i) => (
-                        <div
-                          key={i}
-                          className={`h-1.5 flex-1 rounded-full transition-colors ${
-                            i < strength.score ? strength.color : 'bg-neutral-700'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-[10px] text-neutral-400">{strength.label}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-x-3 gap-y-1">
-                    {strength.requirements.map((req) => (
-                      <span key={req.label} className={`text-[10px] ${req.met ? 'text-green-400' : 'text-neutral-500'}`}>
-                        {req.met ? '\u2713' : '\u2717'} {req.label}
-                      </span>
-                    ))}
-                  </div>
+        {/* Form Card */}
+        <div className="relative">
+          <div className="absolute -inset-4 rounded-2xl bg-[var(--color-gold-surface)] blur-2xl opacity-40" />
+          <div className="relative bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl p-8">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
+                  {error}
                 </div>
               )}
+
+              <div>
+                <label htmlFor="fullName" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                  Full Name
+                </label>
+                <input
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  autoComplete="name"
+                  className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]/30 focus:border-[var(--color-gold)] transition-colors"
+                  placeholder="John Doe"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]/30 focus:border-[var(--color-gold)] transition-colors"
+                  placeholder="you@example.com"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                  className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]/30 focus:border-[var(--color-gold)] transition-colors"
+                  placeholder="Strong password"
+                />
+                {password && (
+                  <div className="mt-2 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 flex gap-1">
+                        {[0, 1, 2, 3].map((i) => (
+                          <div
+                            key={i}
+                            className={`h-1.5 flex-1 rounded-full transition-colors ${
+                              i < strength.score ? strength.color : 'bg-[var(--color-border-base)]'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-[10px] text-[var(--color-text-muted)]">{strength.label}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1">
+                      {strength.requirements.map((req) => (
+                        <span key={req.label} className={`text-[10px] ${req.met ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-muted)]'}`}>
+                          {req.met ? '\u2713' : '\u2717'} {req.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                  Confirm Password
+                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                  className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]/30 focus:border-[var(--color-gold)] transition-colors"
+                  placeholder="Confirm your password"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 px-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] disabled:opacity-50 text-[var(--color-bg-base)] font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                {loading ? 'Creating account...' : (
+                  <>
+                    Create account
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-[var(--color-text-secondary)] text-sm">
+                Already have an account?{' '}
+                <Link href="/login" className="text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors font-medium">
+                  Sign in
+                </Link>
+              </p>
             </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-neutral-300 mb-2">
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                autoComplete="new-password"
-                className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                placeholder="Confirm your password"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-500/50 text-black font-semibold rounded-lg transition-colors"
-            >
-              {loading ? 'Creating account...' : 'Create account'}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-neutral-400 text-sm">
-              Already have an account?{' '}
-              <Link href="/login" className="text-amber-500 hover:text-amber-400 transition-colors">
-                Sign in
-              </Link>
-            </p>
           </div>
         </div>
         <LegalFooter variant="minimal" />

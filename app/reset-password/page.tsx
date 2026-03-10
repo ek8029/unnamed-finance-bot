@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { HelmMark } from '@/components/helm-mark';
 import { createClient } from '@/lib/supabase/client';
 
 export default function ResetPasswordPage() {
@@ -74,90 +75,105 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-[var(--color-bg-base)] relative overflow-hidden flex items-center justify-center px-4">
+      {/* Ambient background */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,_rgba(200,169,91,0.08),_transparent_60%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_transparent_0%,_rgba(0,0,0,0.4)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,_rgba(255,255,255,0.02)_1px,_transparent_1px),linear-gradient(to_bottom,_rgba(255,255,255,0.02)_1px,_transparent_1px)] bg-[length:64px_64px] opacity-40" />
+      </div>
+
+      <div className="relative w-full max-w-md">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white">
-            <span className="text-amber-500">Helm</span>
-          </h1>
-          <p className="text-neutral-400 mt-2">Set a new password</p>
+        <div className="flex flex-col items-center mb-8">
+          <Link href="/" className="flex items-center gap-3 mb-3 group">
+            <HelmMark size={44} />
+            <div>
+              <div className="text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">Helm</div>
+              <div className="type-eyebrow text-[var(--color-text-muted)]">Financial Intelligence</div>
+            </div>
+          </Link>
+          <p className="text-[var(--color-text-secondary)] mt-2">Set a new password</p>
         </div>
 
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-8">
-          {success ? (
-            <div className="text-center space-y-4">
-              <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto">
-                <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h2 className="text-lg font-semibold text-white">Password updated</h2>
-              <p className="text-neutral-400 text-sm">
-                Redirecting you to the dashboard...
-              </p>
-            </div>
-          ) : !sessionReady ? (
-            <div className="text-center space-y-4">
-              <p className="text-neutral-400 text-sm">
-                Verifying your reset link...
-              </p>
-              <p className="text-neutral-500 text-xs">
-                If this takes too long, your link may have expired.{' '}
-                <Link href="/forgot-password" className="text-amber-500 hover:text-amber-400 transition-colors">
-                  Request a new one
-                </Link>
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
-                  {error}
+        {/* Card */}
+        <div className="relative">
+          <div className="absolute -inset-4 rounded-2xl bg-[var(--color-gold-surface)] blur-2xl opacity-40" />
+          <div className="relative bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl p-8">
+            {success ? (
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 rounded-full bg-[var(--color-positive)]/10 border border-[var(--color-positive)]/20 flex items-center justify-center mx-auto">
+                  <svg className="w-6 h-6 text-[var(--color-positive)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
                 </div>
-              )}
-
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-neutral-300 mb-2">
-                  New Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="new-password"
-                  className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                  placeholder="At least 6 characters"
-                />
+                <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Password updated</h2>
+                <p className="text-[var(--color-text-secondary)] text-sm">
+                  Redirecting you to the dashboard...
+                </p>
               </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-neutral-300 mb-2">
-                  Confirm New Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  autoComplete="new-password"
-                  className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                  placeholder="Confirm your new password"
-                />
+            ) : !sessionReady ? (
+              <div className="text-center space-y-4">
+                <p className="text-[var(--color-text-secondary)] text-sm">
+                  Verifying your reset link...
+                </p>
+                <p className="text-[var(--color-text-muted)] text-xs">
+                  If this takes too long, your link may have expired.{' '}
+                  <Link href="/forgot-password" className="text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors">
+                    Request a new one
+                  </Link>
+                </p>
               </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {error && (
+                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
+                    {error}
+                  </div>
+                )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-500/50 text-black font-semibold rounded-lg transition-colors"
-              >
-                {loading ? 'Updating...' : 'Update password'}
-              </button>
-            </form>
-          )}
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                    New Password
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="new-password"
+                    className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]/30 focus:border-[var(--color-gold)] transition-colors"
+                    placeholder="At least 6 characters"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                    Confirm New Password
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    autoComplete="new-password"
+                    className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]/30 focus:border-[var(--color-gold)] transition-colors"
+                    placeholder="Confirm your new password"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 px-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] disabled:opacity-50 text-[var(--color-bg-base)] font-semibold rounded-lg transition-colors"
+                >
+                  {loading ? 'Updating...' : 'Update password'}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </div>
