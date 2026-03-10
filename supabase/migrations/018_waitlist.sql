@@ -11,6 +11,9 @@ CREATE TABLE IF NOT EXISTS waitlist (
 CREATE INDEX IF NOT EXISTS idx_waitlist_referral_code ON waitlist(referral_code);
 CREATE INDEX IF NOT EXISTS idx_waitlist_referred_by ON waitlist(referred_by);
 
+-- Grant base permissions to anon and authenticated roles
+GRANT SELECT, INSERT ON waitlist TO anon, authenticated;
+
 -- Allow anonymous reads and inserts (public waitlist)
 ALTER TABLE waitlist ENABLE ROW LEVEL SECURITY;
 
