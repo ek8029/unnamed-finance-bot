@@ -1,25 +1,55 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from 'next/font/google';
+import { Manrope, DM_Mono } from 'next/font/google';
 import "./globals.css";
 import { Providers } from '@/components/providers';
 
-const inter = Inter({
+const manrope = Manrope({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-sans',
   weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const dmMono = DM_Mono({
   subsets: ['latin'],
-  variable: '--font-jetbrains-mono',
-  weight: ['400', '500', '600', '700'],
+  variable: '--font-mono',
+  weight: ['400', '500'],
   display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: "Helm — Financial Intelligence",
-  description: "AI-powered personal financial intelligence platform. Institutional-grade financial intelligence built for individuals.",
+  metadataBase: new URL('https://helmterminal.dev'),
+  title: 'Helm Terminal — AI-Powered Financial Intelligence',
+  description: 'Institutional-grade financial analysis powered by AI. The personal Bloomberg terminal for modern investors.',
+  openGraph: {
+    title: 'Helm Terminal — AI-Powered Financial Intelligence',
+    description: 'Institutional-grade financial analysis powered by AI. The personal Bloomberg terminal for modern investors.',
+    url: 'https://helmterminal.dev',
+    siteName: 'Helm Terminal',
+    type: 'website',
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'Helm Terminal — AI-Powered Financial Intelligence',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Helm Terminal — AI-Powered Financial Intelligence',
+    description: 'Institutional-grade financial analysis powered by AI.',
+    images: ['/opengraph-image'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  icons: {
+    icon: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
@@ -29,7 +59,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans`}>
+      <body className={`${manrope.variable} ${dmMono.variable} font-sans`}>
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -76,10 +76,8 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-base)] relative overflow-hidden flex items-center justify-center px-4">
-      {/* Ambient background */}
+      {/* Grid background */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,_rgba(200,169,91,0.08),_transparent_60%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_transparent_0%,_rgba(0,0,0,0.4)_100%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,_rgba(255,255,255,0.02)_1px,_transparent_1px),linear-gradient(to_bottom,_rgba(255,255,255,0.02)_1px,_transparent_1px)] bg-[length:64px_64px] opacity-40" />
       </div>
 
@@ -98,7 +96,7 @@ export default function ResetPasswordPage() {
 
         {/* Card */}
         <div className="relative">
-          <div className="absolute -inset-4 rounded-2xl bg-[var(--color-gold-surface)] blur-2xl opacity-40" />
+          <div className="absolute -inset-px rounded-xl border border-[var(--color-border-subtle)]" />
           <div className="relative bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl p-8">
             {success ? (
               <div className="text-center space-y-4">

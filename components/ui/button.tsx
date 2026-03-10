@@ -7,12 +7,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-[var(--color-gold)] text-[var(--color-text-inverse)] hover:bg-[var(--color-gold-hi)] shadow-sm font-semibold",
-        destructive: "bg-[var(--color-negative)] text-white hover:opacity-90 shadow-sm font-semibold",
+        default: "bg-[var(--color-text-primary)] text-[var(--color-bg-base)] hover:bg-[var(--color-text-secondary)] font-semibold",
+        accent: "bg-[var(--color-gold)] text-[var(--color-bg-base)] hover:bg-[var(--color-gold-hi)] font-semibold",
+        destructive: "bg-[var(--color-negative)] text-white hover:opacity-90 font-semibold",
         outline: "border border-[var(--color-border-base)] bg-transparent hover:bg-[var(--color-bg-elevated)] hover:border-[var(--color-border-strong)] text-[var(--color-text-primary)]",
         secondary: "bg-[var(--color-bg-elevated)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] border border-[var(--color-border-base)] hover:border-[var(--color-border-strong)]",
         ghost: "hover:bg-[var(--color-bg-overlay)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]",
-        link: "text-[var(--color-gold)] underline-offset-4 hover:underline hover:text-[var(--color-gold-hi)]",
+        link: "text-[var(--color-text-primary)] underline-offset-4 hover:underline hover:text-[var(--color-text-secondary)]",
       },
       size: {
         default: "h-9 px-4 py-2 text-sm",

@@ -20,7 +20,15 @@
       "Bash(npm run db:seed:test-user:*)",
       "Bash(npx tsx:*)",
       "Bash(npx -y rimraf .next)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(mkdir:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx next:*)",
+      "Bash(rm:*)",
+      "Bash(ls:*)",
+      "Bash(node:*)",
+      "Bash(wc:*)",
+      "Bash(grep:*)"
     ]
   }
 }

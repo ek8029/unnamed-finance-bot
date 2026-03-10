@@ -1,26 +1,26 @@
 // Helm Meridian Mark — Single source of truth
-// Based on Helm Design System v3.0 — Dark Grayscale + Gold
+// Meridian D3 — Navy + Platinum + Gold
 
 interface HelmMarkProps {
-  size?: number;      // rendered px size
-  variant?: 'default' | 'light' | 'mono';  // color scheme
+  size?: number;
+  variant?: 'default' | 'light' | 'mono';
   className?: string;
 }
 
 export const HelmMark = ({ size = 24, variant = 'default', className }: HelmMarkProps) => {
   const colors = {
     default: {
-      arc:       '#C8A95B',   // gold
-      crosshair: '#EAEAEA',   // platinum
-      node:      '#C8A95B',   // gold
-      hubOuter:  '#EAEAEA',   // platinum
-      hubInner:  '#C8A95B',   // gold
+      arc:       '#B8914A',
+      crosshair: '#E8ECF1',
+      node:      '#B8914A',
+      hubOuter:  '#E8ECF1',
+      hubInner:  '#B8914A',
     },
     light: {
       arc:       '#8A6A35',
-      crosshair: '#1A1A1A',
+      crosshair: '#0D1117',
       node:      '#8A6A35',
-      hubOuter:  '#1A1A1A',
+      hubOuter:  '#0D1117',
       hubInner:  '#8A6A35',
     },
     mono: {
@@ -34,7 +34,6 @@ export const HelmMark = ({ size = 24, variant = 'default', className }: HelmMark
 
   const c = colors[variant];
 
-  // At ≤16px, render simplified favicon version
   if (size <= 16) {
     return (
       <svg width={size} height={size} viewBox="0 0 56 56" fill="none" className={className}>
@@ -49,7 +48,6 @@ export const HelmMark = ({ size = 24, variant = 'default', className }: HelmMark
     );
   }
 
-  // 17px–32px: small mark (thicker strokes, larger nodes)
   if (size <= 32) {
     return (
       <svg width={size} height={size} viewBox="0 0 56 56" fill="none" className={className}>
@@ -66,7 +64,6 @@ export const HelmMark = ({ size = 24, variant = 'default', className }: HelmMark
     );
   }
 
-  // 33px+: full mark with all details
   return (
     <svg width={size} height={size} viewBox="0 0 56 56" fill="none" className={className}>
       <path d="M 10.06 39.94 A 22 22 0 1 1 45.94 39.94"
