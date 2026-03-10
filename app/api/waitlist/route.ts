@@ -26,24 +26,41 @@ export async function POST(request: Request) {
     const supabase = await createClient();
 
     // Check if already on waitlist
-    const { data: existing } = await supabase
+    const { data: existing, error: selectError } = await supabase
       .from('waitlist')
       .select('position, referral_code')
       .eq('email', trimmed)
       .maybeSingle();
 
+    if (selectError) {
+      console.error('Waitlist select error:', selectError);
+      return NextResponse.json({ error: selectError.message }, { status: 500 });
+    }
+
     if (existing) {
+      // Count their referrals
+      const { count: referralCount } = await supabase
+        .from('waitlist')
+        .select('*', { count: 'exact', head: true })
+        .eq('referred_by', existing.referral_code);
+
       return NextResponse.json({
         position: existing.position,
         referral_code: existing.referral_code,
-        message: 'You are already on the waitlist',
+        referral_count: referralCount ?? 0,
+        already_registered: true,
       });
     }
 
     // Get current count for position
-    const { count } = await supabase
+    const { count, error: countError } = await supabase
       .from('waitlist')
       .select('*', { count: 'exact', head: true });
+
+    if (countError) {
+      console.error('Waitlist count error:', countError);
+      return NextResponse.json({ error: countError.message }, { status: 500 });
+    }
 
     const position = (count ?? 0) + 1;
 
@@ -65,14 +82,17 @@ export async function POST(request: Request) {
     // Validate referred_by code if provided
     let validReferrer: string | null = null;
     if (referred_by && typeof referred_by === 'string') {
-      const { data: referrer } = await supabase
-        .from('waitlist')
-        .select('referral_code')
-        .eq('referral_code', referred_by.trim().toUpperCase())
-        .maybeSingle();
+      const cleaned = referred_by.trim().toUpperCase();
+      if (cleaned.length > 0) {
+        const { data: referrer } = await supabase
+          .from('waitlist')
+          .select('referral_code')
+          .eq('referral_code', cleaned)
+          .maybeSingle();
 
-      if (referrer) {
-        validReferrer = referrer.referral_code;
+        if (referrer) {
+          validReferrer = referrer.referral_code;
+        }
       }
     }
 
@@ -86,17 +106,19 @@ export async function POST(request: Request) {
       });
 
     if (insertError) {
-      console.error('Waitlist insert error:', insertError);
+      console.error('Waitlist insert error:', JSON.stringify(insertError));
       if (insertError.code === '23505') {
         return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
       }
-      return NextResponse.json({ error: 'Failed to join waitlist' }, { status: 500 });
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
     return NextResponse.json({
       position,
       referral_code: referralCode,
-      message: 'Successfully joined the waitlist',
+      referral_count: 0,
+      referred_by: validReferrer,
+      already_registered: false,
     });
   } catch (error) {
     console.error('Waitlist error:', error);
