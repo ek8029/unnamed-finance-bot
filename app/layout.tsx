@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope, DM_Mono } from 'next/font/google';
+import Script from 'next/script';
 import "./globals.css";
 import { Providers } from '@/components/providers';
 
@@ -64,6 +65,13 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${manrope.variable} ${dmMono.variable} font-sans`}>
         <Providers>{children}</Providers>
+        <Script
+          src="https://plausible.io/js/pa-O3gPqcGXLE6Ju_7Ulgsf6.js"
+          strategy="afterInteractive"
+        />
+        <Script id="plausible-init" strategy="afterInteractive">
+          {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`}
+        </Script>
       </body>
     </html>
   );
