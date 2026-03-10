@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -24,27 +24,90 @@ import {
   X,
   Eye,
   EyeOff,
+  Monitor,
+  LogOut,
+  AlertTriangle,
+  Check,
+  Clock,
 } from 'lucide-react'
+
+// ── Password strength (mirrors server-side logic) ──
+
+interface PasswordStrength {
+  score: 0 | 1 | 2 | 3 | 4
+  label: string
+  color: string
+  requirements: { label: string; met: boolean }[]
+}
+
+function getPasswordStrength(password: string): PasswordStrength {
+  const requirements = [
+    { label: 'At least 8 characters', met: password.length >= 8 },
+    { label: 'Uppercase letter', met: /[A-Z]/.test(password) },
+    { label: 'Lowercase letter', met: /[a-z]/.test(password) },
+    { label: 'Number', met: /\d/.test(password) },
+    { label: 'Special character', met: /[^A-Za-z0-9]/.test(password) },
+  ]
+  const metCount = requirements.filter(r => r.met).length
+  const score = Math.min(4, metCount) as 0 | 1 | 2 | 3 | 4
+  const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong']
+  const colors = [
+    'bg-[var(--color-negative)]',
+    'bg-[var(--color-negative)]',
+    'bg-[var(--color-warning)]',
+    'bg-[var(--color-positive)]/70',
+    'bg-[var(--color-positive)]',
+  ]
+  return { score, label: labels[score], color: colors[score], requirements }
+}
+
+// ── Login activity types ──
+
+interface LoginEvent {
+  id: string
+  eventType: string
+  browser: string
+  os: string
+  device: string
+  ipAddress: string
+  createdAt: string
+}
 
 export default function SettingsPage() {
   const { settings, updateSettings, resetSettings, formatCurrency, formatCurrencyDetailed, formatDate } = useSettings()
   const { success, info, error: showError } = useToast()
 
   // Profile state
-  const [profile, setProfile] = useState({
-    name: '',
-    email: '',
-    phone: '',
-  })
+  const [profile, setProfile] = useState({ name: '', email: '', phone: '' })
   const [profileLoading, setProfileLoading] = useState(true)
   const [savingProfile, setSavingProfile] = useState(false)
   const [exporting, setExporting] = useState(false)
+
+  // Password modal state
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [passwordForm, setPasswordForm] = useState({ current: '', new: '', confirm: '' })
   const [changingPassword, setChangingPassword] = useState(false)
   const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false })
 
-  // Load profile from API on mount
+  // Login activity state
+  const [loginActivity, setLoginActivity] = useState<LoginEvent[]>([])
+  const [activityLoading, setActivityLoading] = useState(false)
+  const [showActivity, setShowActivity] = useState(false)
+  const [revokingOthers, setRevokingOthers] = useState(false)
+
+  // Delete account state
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteConfirmation, setDeleteConfirmation] = useState('')
+  const [deletePassword, setDeletePassword] = useState('')
+  const [deleting, setDeleting] = useState(false)
+
+  // Password strength computation
+  const passwordStrength = useMemo(
+    () => getPasswordStrength(passwordForm.new),
+    [passwordForm.new],
+  )
+
+  // Load profile
   useEffect(() => {
     async function loadProfile() {
       try {
@@ -72,18 +135,14 @@ export default function SettingsPage() {
       const res = await fetch('/api/user/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          full_name: profile.name,
-          phone: profile.phone,
-        }),
+        body: JSON.stringify({ full_name: profile.name, phone: profile.phone }),
       })
-
       if (res.ok) {
         success('Profile updated', 'Your changes have been saved successfully')
       } else {
         showError('Save failed', 'Could not save your profile. Please try again.')
       }
-    } catch (err) {
+    } catch {
       showError('Save failed', 'An error occurred while saving your profile.')
     } finally {
       setSavingProfile(false)
@@ -108,7 +167,7 @@ export default function SettingsPage() {
       } else {
         showError('Export failed', 'Could not export your data. Please try again.')
       }
-    } catch (err) {
+    } catch {
       showError('Export failed', 'An error occurred while exporting your data.')
     } finally {
       setExporting(false)
@@ -120,8 +179,8 @@ export default function SettingsPage() {
       showError('Password mismatch', 'New passwords do not match')
       return
     }
-    if (passwordForm.new.length < 8) {
-      showError('Password too short', 'Password must be at least 8 characters')
+    if (passwordStrength.score < 3) {
+      showError('Weak password', 'Password must meet at least 4 of 5 requirements')
       return
     }
 
@@ -130,14 +189,9 @@ export default function SettingsPage() {
       const res = await fetch('/api/auth/password', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          currentPassword: passwordForm.current,
-          newPassword: passwordForm.new,
-        }),
+        body: JSON.stringify({ currentPassword: passwordForm.current, newPassword: passwordForm.new }),
       })
-
       const data = await res.json()
-
       if (res.ok) {
         success('Password changed', 'Your password has been updated successfully')
         setShowPasswordModal(false)
@@ -145,10 +199,83 @@ export default function SettingsPage() {
       } else {
         showError('Change failed', data.error || 'Could not change password')
       }
-    } catch (err) {
+    } catch {
       showError('Change failed', 'An error occurred while changing password')
     } finally {
       setChangingPassword(false)
+    }
+  }
+
+  const handleFetchActivity = async () => {
+    if (showActivity) {
+      setShowActivity(false)
+      return
+    }
+    setActivityLoading(true)
+    try {
+      const res = await fetch('/api/auth/sessions')
+      if (res.ok) {
+        const data = await res.json()
+        setLoginActivity(data.activity || [])
+        setShowActivity(true)
+      } else {
+        showError('Failed', 'Could not load login activity')
+      }
+    } catch {
+      showError('Failed', 'Could not load login activity')
+    } finally {
+      setActivityLoading(false)
+    }
+  }
+
+  const handleRevokeOtherSessions = async () => {
+    setRevokingOthers(true)
+    try {
+      const res = await fetch('/api/auth/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'revoke_others' }),
+      })
+      if (res.ok) {
+        success('Sessions revoked', 'All other devices have been signed out')
+      } else {
+        showError('Failed', 'Could not revoke other sessions')
+      }
+    } catch {
+      showError('Failed', 'An error occurred')
+    } finally {
+      setRevokingOthers(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== 'DELETE') {
+      showError('Confirmation required', 'Please type DELETE to confirm')
+      return
+    }
+    if (!deletePassword) {
+      showError('Password required', 'Please enter your password')
+      return
+    }
+
+    setDeleting(true)
+    try {
+      const res = await fetch('/api/auth/delete-account', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: deletePassword, confirmation: deleteConfirmation }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        // Redirect to home after account deletion
+        window.location.href = '/'
+      } else {
+        showError('Deletion failed', data.error || 'Could not delete account')
+      }
+    } catch {
+      showError('Deletion failed', 'An error occurred while deleting your account')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -168,21 +295,26 @@ export default function SettingsPage() {
   }
 
   const handleNotificationChange = (key: keyof typeof settings.notifications) => {
-    updateSettings({
-      notifications: {
-        ...settings.notifications,
-        [key]: !settings.notifications[key],
-      },
-    })
+    updateSettings({ notifications: { ...settings.notifications, [key]: !settings.notifications[key] } })
   }
 
   const handleAccessibilityChange = (key: keyof typeof settings.accessibility) => {
-    updateSettings({
-      accessibility: {
-        ...settings.accessibility,
-        [key]: !settings.accessibility[key],
-      },
-    })
+    updateSettings({ accessibility: { ...settings.accessibility, [key]: !settings.accessibility[key] } })
+  }
+
+  function formatRelativeTime(dateString: string): string {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
   }
 
   return (
@@ -249,40 +381,19 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                type="text"
-                value={profile.name}
-                onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-              />
+              <Input id="name" type="text" value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={profile.email}
-                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-              />
+              <Input id="email" type="email" value={profile.email} disabled className="opacity-60" />
+              <p className="text-[10px] text-[var(--color-text-muted)]">Contact support to change your email address</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={profile.phone}
-                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-              />
+              <Input id="phone" type="tel" value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} />
             </div>
             <Button onClick={handleSaveProfile} disabled={savingProfile || profileLoading} className="w-full">
-              {savingProfile ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
-              )}
+              {savingProfile ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>) : 'Save Changes'}
             </Button>
           </CardContent>
         </Card>
@@ -301,7 +412,6 @@ export default function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Theme Selector */}
             <div className="space-y-3">
               <Label>Theme</Label>
               <div className="grid grid-cols-3 gap-3">
@@ -309,14 +419,11 @@ export default function SettingsPage() {
                   <button
                     key={theme}
                     onClick={() => handleThemeChange(theme)}
-                    className={`
-                      p-3 rounded-md border-2 transition-all type-label
-                      ${
-                        settings.theme === theme
-                          ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
-                          : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]'
-                      }
-                    `}
+                    className={`p-3 rounded-md border-2 transition-all type-label ${
+                      settings.theme === theme
+                        ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
+                        : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]'
+                    }`}
                   >
                     {theme.charAt(0).toUpperCase() + theme.slice(1)}
                   </button>
@@ -324,7 +431,6 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Density Selector */}
             <div className="space-y-3">
               <Label>Dashboard Density</Label>
               <div className="grid grid-cols-3 gap-3">
@@ -332,14 +438,11 @@ export default function SettingsPage() {
                   <button
                     key={density}
                     onClick={() => handleDensityChange(density)}
-                    className={`
-                      p-3 rounded-md border-2 transition-all type-label
-                      ${
-                        settings.density === density
-                          ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
-                          : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]'
-                      }
-                    `}
+                    className={`p-3 rounded-md border-2 transition-all type-label ${
+                      settings.density === density
+                        ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
+                        : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]'
+                    }`}
                   >
                     {density.charAt(0).toUpperCase() + density.slice(1)}
                   </button>
@@ -402,6 +505,7 @@ export default function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
+            {/* Password */}
             <div className="flex items-center justify-between p-4 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-base)]">
               <div className="flex items-center gap-3">
                 <Lock className="w-5 h-5 text-[var(--color-text-muted)]" />
@@ -413,26 +517,94 @@ export default function SettingsPage() {
               <Button variant="outline" size="sm" onClick={() => setShowPasswordModal(true)}>Change</Button>
             </div>
 
+            {/* Two-Factor Authentication */}
             <div className="flex items-center justify-between p-4 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-base)]">
               <div className="flex items-center gap-3">
                 <Smartphone className="w-5 h-5 text-[var(--color-text-muted)]" />
                 <div>
                   <p className="type-h3">Two-Factor Authentication</p>
-                  <p className="text-[var(--color-positive)] text-xs">Enabled via SMS</p>
+                  <p className="text-[var(--color-text-muted)] text-xs">Not yet enabled</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm">Manage</Button>
+              <Badge variant="secondary" className="text-[10px]">Coming Soon</Badge>
             </div>
 
+            {/* Login Activity */}
+            <div className="p-4 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-base)]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Monitor className="w-5 h-5 text-[var(--color-text-muted)]" />
+                  <div>
+                    <p className="type-h3">Login Activity</p>
+                    <p className="text-[var(--color-text-secondary)] text-xs">Recent sign-ins to your account</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleFetchActivity}
+                  disabled={activityLoading}
+                >
+                  {activityLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : showActivity ? 'Hide' : 'View'}
+                </Button>
+              </div>
+
+              {showActivity && (
+                <div className="mt-3 space-y-2">
+                  {loginActivity.length === 0 ? (
+                    <p className="text-xs text-[var(--color-text-muted)] py-2">No recent login activity recorded</p>
+                  ) : (
+                    loginActivity.map((event) => (
+                      <div
+                        key={event.id}
+                        className="flex items-center justify-between p-2.5 bg-[var(--color-bg-surface)] rounded border border-[var(--color-border-subtle)]"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                            event.eventType === 'login_success' ? 'bg-[var(--color-positive)]'
+                            : event.eventType === 'password_change' ? 'bg-[var(--color-warning)]'
+                            : 'bg-[var(--color-text-muted)]'
+                          }`} />
+                          <div>
+                            <p className="type-label text-xs text-[var(--color-text-primary)]">
+                              {event.browser} on {event.os}
+                              <span className="text-[var(--color-text-muted)] ml-1">({event.device})</span>
+                            </p>
+                            <p className="text-[10px] text-[var(--color-text-muted)]">
+                              {event.ipAddress !== 'unknown' && `${event.ipAddress} · `}
+                              {event.eventType === 'password_change' ? 'Password changed' :
+                               event.eventType === 'session_revoke' ? 'Sessions revoked' : 'Sign in'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-[var(--color-text-muted)]">
+                          <Clock className="w-3 h-3" />
+                          {formatRelativeTime(event.createdAt)}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Sign Out Other Devices */}
             <div className="flex items-center justify-between p-4 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-base)]">
               <div className="flex items-center gap-3">
-                <Globe className="w-5 h-5 text-[var(--color-text-muted)]" />
+                <LogOut className="w-5 h-5 text-[var(--color-text-muted)]" />
                 <div>
-                  <p className="type-h3">Active Sessions</p>
-                  <p className="text-[var(--color-text-secondary)] text-xs">2 active devices</p>
+                  <p className="type-h3">Sign Out Other Devices</p>
+                  <p className="text-[var(--color-text-secondary)] text-xs">End all sessions except this one</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm">View</Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRevokeOtherSessions}
+                disabled={revokingOthers}
+              >
+                {revokingOthers ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Sign Out'}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -458,14 +630,11 @@ export default function SettingsPage() {
                   <button
                     key={currency}
                     onClick={() => updateSettings({ currency })}
-                    className={`
-                      p-2 rounded-md border transition-all type-label
-                      ${
-                        settings.currency === currency
-                          ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
-                          : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]'
-                      }
-                    `}
+                    className={`p-2 rounded-md border transition-all type-label ${
+                      settings.currency === currency
+                        ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
+                        : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]'
+                    }`}
                   >
                     {currency}
                   </button>
@@ -484,14 +653,11 @@ export default function SettingsPage() {
                   <button
                     key={format.value}
                     onClick={() => updateSettings({ numberFormat: format.value })}
-                    className={`
-                      p-2 rounded-md border transition-all type-caption text-[9px]
-                      ${
-                        settings.numberFormat === format.value
-                          ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
-                          : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]'
-                      }
-                    `}
+                    className={`p-2 rounded-md border transition-all type-caption text-[9px] ${
+                      settings.numberFormat === format.value
+                        ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
+                        : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]'
+                    }`}
                   >
                     {format.label}
                   </button>
@@ -506,14 +672,11 @@ export default function SettingsPage() {
                   <button
                     key={format}
                     onClick={() => updateSettings({ dateFormat: format })}
-                    className={`
-                      p-2 rounded-md border transition-all type-caption text-[9px]
-                      ${
-                        settings.dateFormat === format
-                          ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
-                          : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]'
-                      }
-                    `}
+                    className={`p-2 rounded-md border transition-all type-caption text-[9px] ${
+                      settings.dateFormat === format
+                        ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
+                        : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]'
+                    }`}
                   >
                     {format}
                   </button>
@@ -658,23 +821,16 @@ export default function SettingsPage() {
                 <p className="text-[var(--color-text-secondary)] text-xs">Download all your financial data</p>
               </div>
               <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
-                {exporting ? (
-                  <>
-                    <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
-                    Exporting...
-                  </>
-                ) : (
-                  'Export'
-                )}
+                {exporting ? (<><Loader2 className="w-3 h-3 mr-1.5 animate-spin" />Exporting...</>) : 'Export'}
               </Button>
             </div>
 
             <div className="flex items-center justify-between p-3 bg-[var(--color-negative)]/5 border border-[var(--color-negative)]/20 rounded-md">
               <div>
                 <p className="type-h3 text-[var(--color-negative)]">Delete Account</p>
-                <p className="text-xs" style={{ color: 'var(--color-negative)' }}>Permanently delete your account and data</p>
+                <p className="text-xs" style={{ color: 'var(--color-negative)' }}>Permanently delete your account and all data</p>
               </div>
-              <Button variant="destructive" size="sm">
+              <Button variant="destructive" size="sm" onClick={() => setShowDeleteModal(true)}>
                 Delete
               </Button>
             </div>
@@ -697,10 +853,9 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Password Change Modal */}
+      {/* ── Password Change Modal ── */}
       {showPasswordModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => {
@@ -709,8 +864,6 @@ export default function SettingsPage() {
               setShowPasswords({ current: false, new: false, confirm: false })
             }}
           />
-
-          {/* Modal */}
           <div className="relative w-full max-w-md mx-4 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-[var(--color-border-subtle)]">
@@ -779,7 +932,45 @@ export default function SettingsPage() {
                     {showPasswords.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-                <p className="text-xs text-[var(--color-text-muted)]">Minimum 8 characters</p>
+
+                {/* Password Strength Meter */}
+                {passwordForm.new && (
+                  <div className="space-y-2 mt-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 flex gap-1">
+                        {[0, 1, 2, 3].map((i) => (
+                          <div
+                            key={i}
+                            className={`h-1.5 flex-1 rounded-full transition-colors ${
+                              i < passwordStrength.score
+                                ? passwordStrength.color
+                                : 'bg-[var(--color-bg-elevated)]'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className={`text-[10px] type-mono ${
+                        passwordStrength.score >= 3 ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-muted)]'
+                      }`}>
+                        {passwordStrength.label}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1">
+                      {passwordStrength.requirements.map((req) => (
+                        <div key={req.label} className="flex items-center gap-1.5 text-[10px]">
+                          {req.met ? (
+                            <Check className="w-3 h-3 text-[var(--color-positive)]" />
+                          ) : (
+                            <X className="w-3 h-3 text-[var(--color-text-muted)]" />
+                          )}
+                          <span className={req.met ? 'text-[var(--color-text-secondary)]' : 'text-[var(--color-text-muted)]'}>
+                            {req.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Confirm Password */}
@@ -822,16 +1013,102 @@ export default function SettingsPage() {
               </Button>
               <Button
                 onClick={handlePasswordChange}
-                disabled={changingPassword || !passwordForm.current || !passwordForm.new || !passwordForm.confirm}
+                disabled={changingPassword || !passwordForm.current || !passwordForm.new || !passwordForm.confirm || passwordStrength.score < 3}
               >
-                {changingPassword ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Changing...
-                  </>
-                ) : (
-                  'Change Password'
-                )}
+                {changingPassword ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Changing...</>) : 'Change Password'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Account Modal ── */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => {
+              setShowDeleteModal(false)
+              setDeleteConfirmation('')
+              setDeletePassword('')
+            }}
+          />
+          <div className="relative w-full max-w-md mx-4 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-[var(--color-negative)]/20">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-md bg-[var(--color-negative)]/10 border border-[var(--color-negative)]/20">
+                  <AlertTriangle className="w-5 h-5 text-[var(--color-negative)]" />
+                </div>
+                <div>
+                  <h2 className="type-h2 text-[var(--color-negative)]">Delete Account</h2>
+                  <p className="text-[var(--color-text-secondary)] text-sm">This action is permanent and irreversible</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false)
+                  setDeleteConfirmation('')
+                  setDeletePassword('')
+                }}
+                className="p-2 rounded-md hover:bg-[var(--color-bg-elevated)] transition-colors"
+              >
+                <X className="w-5 h-5 text-[var(--color-text-muted)]" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-4">
+              <div className="p-3 bg-[var(--color-negative)]/5 border border-[var(--color-negative)]/20 rounded-md">
+                <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                  This will permanently delete your account, all linked accounts, transaction history,
+                  portfolio data, insights, and settings. This cannot be undone.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="delete-password">Your Password</Label>
+                <Input
+                  id="delete-password"
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Enter your password"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="delete-confirm">
+                  Type <span className="type-mono text-[var(--color-negative)]">DELETE</span> to confirm
+                </Label>
+                <Input
+                  id="delete-confirm"
+                  type="text"
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                  placeholder="DELETE"
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-[var(--color-border-subtle)]">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteModal(false)
+                  setDeleteConfirmation('')
+                  setDeletePassword('')
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteAccount}
+                disabled={deleting || deleteConfirmation !== 'DELETE' || !deletePassword}
+              >
+                {deleting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Deleting...</>) : 'Delete My Account'}
               </Button>
             </div>
           </div>

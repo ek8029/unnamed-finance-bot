@@ -1,8 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+
+function getPasswordStrength(password: string) {
+  const requirements = [
+    { label: '8+ characters', met: password.length >= 8 },
+    { label: 'Uppercase', met: /[A-Z]/.test(password) },
+    { label: 'Lowercase', met: /[a-z]/.test(password) },
+    { label: 'Number', met: /\d/.test(password) },
+    { label: 'Special char', met: /[^A-Za-z0-9]/.test(password) },
+  ];
+  const score = Math.min(4, requirements.filter(r => r.met).length) as 0 | 1 | 2 | 3 | 4;
+  const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+  const colors = ['bg-red-500', 'bg-red-500', 'bg-yellow-500', 'bg-green-500/70', 'bg-green-500'];
+  return { score, label: labels[score], color: colors[score], requirements };
+}
 
 export default function SignupPage() {
   const router = useRouter();
@@ -14,6 +28,8 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const strength = useMemo(() => getPasswordStrength(password), [password]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -23,8 +39,8 @@ export default function SignupPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (strength.score < 3) {
+      setError('Password is too weak. Meet at least 4 of the 5 requirements.');
       return;
     }
 
@@ -122,8 +138,32 @@ export default function SignupPage() {
                 required
                 autoComplete="new-password"
                 className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                placeholder="At least 6 characters"
+                placeholder="Strong password"
               />
+              {password && (
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 flex gap-1">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className={`h-1.5 flex-1 rounded-full transition-colors ${
+                            i < strength.score ? strength.color : 'bg-neutral-700'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-[10px] text-neutral-400">{strength.label}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1">
+                    {strength.requirements.map((req) => (
+                      <span key={req.label} className={`text-[10px] ${req.met ? 'text-green-400' : 'text-neutral-500'}`}>
+                        {req.met ? '\u2713' : '\u2717'} {req.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>

@@ -1,29 +1,52 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { checkRateLimit, logAuthEvent } from '@/lib/auth-security';
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
     const { email, password } = await request.json();
 
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
+    // Rate limit: max 5 failed attempts per email in 15 minutes
+    const rateCheck = await checkRateLimit(email, 'login_failed', 5, 15);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Too many login attempts. Please try again later.',
+          retryAfterSeconds: rateCheck.retryAfterSeconds,
+        },
+        { status: 429 },
+      );
+    }
+
+    const supabase = await createClient();
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
+      // Log failed attempt
+      await logAuthEvent({ email, eventType: 'login_failed', metadata: { reason: error.message } });
+
       return NextResponse.json(
         { error: error.message },
-        { status: 401 }
+        { status: 401 },
       );
     }
+
+    // Log successful login
+    await logAuthEvent({
+      userId: data.user.id,
+      email: data.user.email || email,
+      eventType: 'login_success',
+    });
 
     return NextResponse.json({
       user: {
@@ -39,7 +62,7 @@ export async function POST(request: Request) {
     console.error('Error in login route:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
