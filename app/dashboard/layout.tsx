@@ -62,7 +62,7 @@ export default function DashboardLayout({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch user profile on mount
+  // Fetch user profile on mount + re-fetch when profile is updated
   useEffect(() => {
     async function fetchProfile() {
       try {
@@ -86,6 +86,11 @@ export default function DashboardLayout({
       }
     }
     fetchProfile();
+
+    // Re-fetch when settings page updates the profile
+    const handleProfileUpdate = () => fetchProfile();
+    window.addEventListener('helm:profile-updated', handleProfileUpdate);
+    return () => window.removeEventListener('helm:profile-updated', handleProfileUpdate);
   }, []);
 
   // Handle logout

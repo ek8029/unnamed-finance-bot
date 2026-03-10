@@ -170,6 +170,7 @@ export default function SettingsPage() {
       })
       if (res.ok) {
         success('Profile updated', 'Your changes have been saved successfully')
+        window.dispatchEvent(new Event('helm:profile-updated'))
       } else {
         showError('Save failed', 'Could not save your profile. Please try again.')
       }

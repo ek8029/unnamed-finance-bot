@@ -55,12 +55,11 @@ export async function POST() {
         .eq('user_id', user.id)
         .gte('transaction_date', getMonthStart(-1))
         .lte('transaction_date', getMonthEnd(-1)),
-      // Recent non-dismissed insights to avoid duplicates
+      // Recent insights (including dismissed/archived) to avoid duplicates
       supabase
         .from('insights')
         .select('title, created_at')
         .eq('user_id', user.id)
-        .eq('is_dismissed', false)
         .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
     ]);
 

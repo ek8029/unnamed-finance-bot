@@ -50,21 +50,28 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch insights' }, { status: 500 });
     }
 
-    // Transform to match frontend expectations
-    const transformedInsights = insights?.map(insight => ({
-      id: insight.id,
-      type: insight.insight_type,
-      priority: insight.priority,
-      title: insight.title,
-      description: insight.description,
-      recommended_action: insight.recommended_action,
-      estimated_impact: insight.estimated_impact_amount,
-      source: insight.source_type,
-      created_at: insight.created_at,
-      expires_at: insight.expires_at,
-      snoozed_until: insight.snoozed_until,
-      is_archived: insight.is_archived,
-    }));
+    // Transform and deduplicate by title (keep the newest)
+    const seenTitles = new Set<string>();
+    const transformedInsights = (insights || [])
+      .map(insight => ({
+        id: insight.id,
+        type: insight.insight_type,
+        priority: insight.priority,
+        title: insight.title,
+        description: insight.description,
+        recommended_action: insight.recommended_action,
+        estimated_impact: insight.estimated_impact_amount,
+        source: insight.source_type,
+        created_at: insight.created_at,
+        expires_at: insight.expires_at,
+        snoozed_until: insight.snoozed_until,
+        is_archived: insight.is_archived,
+      }))
+      .filter(insight => {
+        if (seenTitles.has(insight.title)) return false;
+        seenTitles.add(insight.title);
+        return true;
+      });
 
     return NextResponse.json({ insights: transformedInsights });
   } catch (error) {

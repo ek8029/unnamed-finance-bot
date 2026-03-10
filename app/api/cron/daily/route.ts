@@ -1030,7 +1030,6 @@ async function generateInsights(supabase: ServiceClient, userId: string): Promis
           .from('insights')
           .select('title, created_at')
           .eq('user_id', userId)
-          .eq('is_dismissed', false)
           .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
       ]);
 
