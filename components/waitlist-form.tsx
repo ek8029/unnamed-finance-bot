@@ -98,7 +98,7 @@ export function WaitlistForm({ id }: { id: string }) {
         <div className="flex items-center gap-2 text-[var(--color-positive)]">
           <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-positive)]" />
           <span className="type-label">
-            {result.already_registered ? 'Welcome back \u2014 you\u2019re already on the list' : 'You\u2019re on the list'}
+            {result.already_registered ? "Welcome back - you're already on the list" : "You're on the list"}
           </span>
         </div>
 

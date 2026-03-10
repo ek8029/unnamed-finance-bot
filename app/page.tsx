@@ -216,7 +216,7 @@ export default function LandingPage() {
                 Icon: PieChart,
                 title: 'Portfolio Intelligence',
                 description:
-                  'Concentration risk, sector exposure, and performance attribution. Know exactly where your money sits and what\u2019s overweight.',
+                  "Concentration risk, sector exposure, and performance attribution. Know exactly where your money sits and what's overweight.",
                 metric: 'AAPL at 34%',
                 metricLabel: 'above 25% threshold',
               },
@@ -232,7 +232,7 @@ export default function LandingPage() {
                 Icon: Activity,
                 title: 'Market Intelligence',
                 description:
-                  'Earnings, dividends, rate decisions, and macro events mapped to your actual positions \u2014 not generic news.',
+                  'Earnings, dividends, rate decisions, and macro events mapped to your actual positions - not generic news.',
                 metric: '3 events',
                 metricLabel: 'impacting holdings',
               },
@@ -355,7 +355,7 @@ export default function LandingPage() {
                 },
                 {
                   name: 'Koyfin / Yahoo',
-                  price: '$0\u2013468/yr',
+                  price: '$0-468/yr',
                   description: 'Dashboards and charts. No personal portfolio context.',
                   verdict: 'Data, not intelligence',
                   highlight: false,
@@ -424,7 +424,7 @@ export default function LandingPage() {
                 Icon: Target,
                 title: 'Act with confidence',
                 description:
-                  'Prioritized, contextualized recommendations with supporting data \u2014 not guesswork.',
+                  'Prioritized, contextualized recommendations with supporting data - not guesswork.',
               },
             ].map((item, i) => (
               <AnimatedSection key={item.step} delay={i * 120}>
@@ -471,7 +471,7 @@ export default function LandingPage() {
               {
                 Icon: Brain,
                 title: 'Trusted Infrastructure',
-                description: 'Built on Plaid \u2014 used by thousands of financial apps.',
+                description: 'Built on Plaid - used by thousands of financial apps.',
               },
             ].map((item, i) => (
               <AnimatedSection key={item.title} delay={i * 80}>

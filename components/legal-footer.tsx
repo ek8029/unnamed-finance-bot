@@ -42,7 +42,7 @@ export function LegalFooter({ variant = 'full' }: LegalFooterProps) {
         <div className="flex items-center gap-2">
           <HelmMark size={16} />
           <p className="type-eyebrow text-[var(--color-text-muted)]">
-            &copy; {new Date().getFullYear()} Helm. Financial intelligence for individuals.
+            (c) {new Date().getFullYear()} Helm. Financial intelligence for individuals.
           </p>
         </div>
         <div className="flex items-center gap-5">

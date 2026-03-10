@@ -105,7 +105,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isAuthPath && user && needsMFA) {
-    // User has session but needs MFA — redirect to MFA verify page
+    // User has session but needs MFA - redirect to MFA verify page
     return NextResponse.redirect(new URL('/mfa-verify', request.url));
   }
 
