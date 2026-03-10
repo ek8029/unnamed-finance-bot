@@ -194,21 +194,21 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                           </span>
                         </td>
 
-                        {/* Price — full precision */}
+                        {/* Price - full precision */}
                         <td className="py-3 px-3 text-right">
                           <span className="type-mono text-sm font-medium text-[var(--color-text-primary)]">
                             {formatCurrencyDetailed(holding.current_price)}
                           </span>
                         </td>
 
-                        {/* Total Value — prominent */}
+                        {/* Total Value - prominent */}
                         <td className="py-3 px-3 text-right">
                           <span className="type-mono text-sm font-semibold text-[var(--color-text-primary)]">
                             {formatValue(holding.total_value)}
                           </span>
                         </td>
 
-                        {/* Day Change — % and $ */}
+                        {/* Day Change - % and $ */}
                         <td className="py-3 px-3 text-right">
                           <div className={`flex flex-col items-end ${
                             isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
@@ -229,7 +229,7 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                           </div>
                         </td>
 
-                        {/* Allocation — bar + % */}
+                        {/* Allocation - bar + % */}
                         <td className="py-3 px-5 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <div className="w-14 h-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-full overflow-hidden">
@@ -255,7 +255,7 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                                   Avg Cost Basis
                                 </span>
                                 <span className="type-mono text-sm text-[var(--color-text-primary)]">
-                                  {holding.cost_basis ? formatCurrencyDetailed(holding.cost_basis) : '—'}
+                                  {holding.cost_basis ? formatCurrencyDetailed(holding.cost_basis) : '-'}
                                 </span>
                               </div>
                               <div>
@@ -263,7 +263,7 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                                   Total Cost
                                 </span>
                                 <span className="type-mono text-sm text-[var(--color-text-primary)]">
-                                  {costBasisTotal ? formatValue(costBasisTotal) : '—'}
+                                  {costBasisTotal ? formatValue(costBasisTotal) : '-'}
                                 </span>
                               </div>
                               <div>
@@ -286,7 +286,7 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                                   Sector / Class
                                 </span>
                                 <span className="type-mono text-sm text-[var(--color-text-primary)]">
-                                  {holding.sector || holding.asset_class || '—'}
+                                  {holding.sector || holding.asset_class || '-'}
                                 </span>
                               </div>
                             </div>

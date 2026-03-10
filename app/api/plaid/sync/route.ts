@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       const body = await request.json();
       itemId = body.item_id;
     } catch {
-      // No body — sync all items
+      // No body - sync all items
     }
 
     // Get user's plaid items
@@ -329,7 +329,7 @@ async function syncPlaidItem(
         .update({ last_holdings_sync: new Date().toISOString() })
         .eq('id', item.id);
     } catch (error) {
-      // Investments may not be available — that's OK
+      // Investments may not be available - that's OK
       console.log('Holdings sync skipped or failed:', error instanceof Error ? error.message : error);
     }
   }
@@ -550,7 +550,7 @@ async function computeSnapshots(
       });
 
   } catch (error) {
-    // Non-fatal — don't fail the sync if snapshots fail
+    // Non-fatal - don't fail the sync if snapshots fail
     console.error('Error computing snapshots:', error);
   }
 }

@@ -12,7 +12,7 @@ import { WaitlistForm, WaitlistFormFallback } from '@/components/waitlist-form';
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-[var(--color-bg-base)] relative overflow-hidden">
-      {/* Grid background — no gradients, no glows */}
+      {/* Grid background - no gradients, no glows */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,_rgba(255,255,255,0.02)_1px,_transparent_1px),linear-gradient(to_bottom,_rgba(255,255,255,0.02)_1px,_transparent_1px)] bg-[length:64px_64px] opacity-40" />
       </div>
@@ -70,7 +70,7 @@ export default function LandingPage() {
               </h1>
               <p className="type-body text-lg text-[var(--color-text-secondary)] max-w-xl leading-relaxed">
                 Helm monitors your net worth, portfolio risk, tax exposure, and cash
-                flow — then tells you exactly what needs attention, with context
+                flow - then tells you exactly what needs attention, with context
                 and a clear next step.
               </p>
 
@@ -187,7 +187,7 @@ export default function LandingPage() {
               'Read-only access',
               '256-bit encryption',
               'SOC 2 infrastructure',
-              'No data selling — ever',
+              'No data selling - ever',
             ].map((item) => (
               <span key={item} className="type-eyebrow text-[var(--color-text-muted)]">{item}</span>
             ))}
@@ -255,7 +255,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── PRODUCT SHOWCASE — Six Modules ── */}
+      {/* ── PRODUCT SHOWCASE - Six Modules ── */}
       <section className="relative container mx-auto px-6 pb-24">
         <div className="max-w-6xl mx-auto">
           <AnimatedSection>

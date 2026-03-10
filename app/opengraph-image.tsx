@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const alt = 'Helm Terminal — AI-Powered Financial Intelligence';
+export const alt = 'Helm Terminal - AI-Powered Financial Intelligence';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -19,7 +19,7 @@ export default async function Image() {
           padding: '80px',
         }}
       >
-        {/* Meridian Mark — simplified */}
+        {/* Meridian Mark - simplified */}
         <svg width="64" height="64" viewBox="0 0 56 56" fill="none">
           <path
             d="M 10.06 39.94 A 22 22 0 1 1 45.94 39.94"

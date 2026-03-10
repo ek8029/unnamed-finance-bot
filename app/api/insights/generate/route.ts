@@ -152,7 +152,7 @@ export async function POST() {
         insight_type: 'spending',
         priority: excess > 10000 ? 'high' : 'medium',
         title: `$${excess.toLocaleString()} idle cash could be working harder`,
-        description: `You have $${totalCash.toLocaleString()} in cash accounts — about ${Math.round(totalCash / monthlyExpenses)} months of expenses. After keeping a 6-month emergency fund ($${Math.round(monthlyExpenses * 6).toLocaleString()}), $${excess.toLocaleString()} could earn more in a high-yield savings account or short-term investments.`,
+        description: `You have $${totalCash.toLocaleString()} in cash accounts - about ${Math.round(totalCash / monthlyExpenses)} months of expenses. After keeping a 6-month emergency fund ($${Math.round(monthlyExpenses * 6).toLocaleString()}), $${excess.toLocaleString()} could earn more in a high-yield savings account or short-term investments.`,
         recommended_action: `Consider moving excess cash to a high-yield savings account (currently ~4-5% APY) or short-term Treasury bills.`,
         estimated_impact_amount: Math.round(excess * 0.045),
         confidence_score: 0.8,
@@ -221,7 +221,7 @@ export async function POST() {
           insight_type: 'spending',
           priority: 'low',
           title: `Strong savings rate: ${Math.round(savingsRate * 100)}%`,
-          description: `You're saving ${Math.round(savingsRate * 100)}% of your income this month — well above the recommended 20%. Keep it up.`,
+          description: `You're saving ${Math.round(savingsRate * 100)}% of your income this month - well above the recommended 20%. Keep it up.`,
           confidence_score: 0.95,
           source_type: 'rule_based',
         });

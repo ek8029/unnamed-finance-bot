@@ -624,7 +624,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
                   {/* Expanded Content */}
                   {isExpanded && (
                     <div className="space-y-0">
-                      {/* Portfolio linkage — the key enhancement */}
+                      {/* Portfolio linkage - the key enhancement */}
                       {isNews && renderNewsExposure(newsItem)}
 
                       {!isNews && eventItem.type === 'dividend' && renderDividendDetails(eventItem)}

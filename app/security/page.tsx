@@ -1,7 +1,7 @@
 import { LegalPageLayout } from '@/components/legal-page-layout';
 
 export const metadata = {
-  title: 'Security — Helm',
+  title: 'Security - Helm',
   description: 'How Helm protects your financial data and account security.',
 };
 
@@ -26,7 +26,7 @@ export default function SecurityPage() {
           and validated regardless of origin:
         </p>
         <ul>
-          <li><strong>No implicit trust:</strong> All API requests require valid authentication tokens — there are no trusted internal networks or bypassed endpoints</li>
+          <li><strong>No implicit trust:</strong> All API requests require valid authentication tokens - there are no trusted internal networks or bypassed endpoints</li>
           <li><strong>Row-Level Security (RLS):</strong> Database-level policies enforce data isolation per user. Even service-level vulnerabilities cannot access another user&apos;s data</li>
           <li><strong>Short-lived tokens:</strong> JWT access tokens expire frequently and are refreshed via secure HTTP-only cookies</li>
           <li><strong>Least privilege:</strong> Application code uses user-scoped database clients by default. Service-role access is restricted to admin operations (account deletion, audit logging) and never exposed to client code</li>
@@ -58,8 +58,8 @@ export default function SecurityPage() {
       <section>
         <h2>Authentication &amp; Access Control</h2>
         <ul>
-          <li>Passwords are hashed using bcrypt before storage — we never store plaintext passwords</li>
-          <li>Password strength is enforced at signup and password change (uppercase, lowercase, number, special character, minimum 8 characters — must meet 4 of 5 requirements)</li>
+          <li>Passwords are hashed using bcrypt before storage - we never store plaintext passwords</li>
+          <li>Password strength is enforced at signup and password change (uppercase, lowercase, number, special character, minimum 8 characters - must meet 4 of 5 requirements)</li>
           <li>Two-factor authentication (TOTP) is available and recommended for all accounts</li>
           <li>Authentication uses short-lived JWT tokens with secure, HTTP-only cookies</li>
           <li>Login attempts are rate-limited (5 failed attempts per 15-minute window triggers a temporary lockout)</li>
@@ -79,7 +79,7 @@ export default function SecurityPage() {
         </p>
         <ul>
           <li>MFA can be enabled from Settings &gt; Security &gt; Two-Factor Authentication</li>
-          <li>MFA is enforced at login — the session is not granted full access until the TOTP challenge is completed</li>
+          <li>MFA is enforced at login - the session is not granted full access until the TOTP challenge is completed</li>
           <li>Protected routes verify the authentication assurance level (AAL) and redirect to MFA verification when required</li>
         </ul>
       </section>
@@ -89,7 +89,7 @@ export default function SecurityPage() {
         <h2>Data Isolation</h2>
         <p>
           Every database table enforces Row-Level Security (RLS) policies at the database level. This means
-          your financial data is isolated from every other user — even in the event of an application-level
+          your financial data is isolated from every other user - even in the event of an application-level
           vulnerability, the database itself prevents cross-user data access.
         </p>
       </section>
@@ -171,7 +171,7 @@ export default function SecurityPage() {
         <ul>
           <li>Helm <strong>never</strong> receives or stores your bank login credentials</li>
           <li>Plaid authenticates directly with your financial institution using bank-level security</li>
-          <li>We receive only read-only access to account data — we cannot initiate transactions or transfers</li>
+          <li>We receive only read-only access to account data - we cannot initiate transactions or transfers</li>
           <li>Plaid is SOC 2 Type II certified and undergoes regular security audits</li>
           <li>You can revoke Plaid access at any time through your bank&apos;s connected apps settings or by deleting your Helm account</li>
         </ul>

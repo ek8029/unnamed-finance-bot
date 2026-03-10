@@ -168,7 +168,7 @@ function CategoryDropdown({
 
             {Object.entries(grouped).map(([group, items]) => (
               <div key={group}>
-                {/* Group header — clickable to filter entire group */}
+                {/* Group header - clickable to filter entire group */}
                 <button
                   type="button"
                   onClick={() => handleSelect('group', group)}
@@ -505,7 +505,7 @@ export default function TransactionsPage() {
                         </td>
                         <td className="py-3 px-3">
                           <span className="text-sm text-[var(--color-text-secondary)]">
-                            {tx.account_name || '—'}
+                            {tx.account_name || '-'}
                           </span>
                         </td>
                         <td className="py-3 px-3 text-right">

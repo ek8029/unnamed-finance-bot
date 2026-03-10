@@ -1,7 +1,7 @@
 import { LegalPageLayout } from '@/components/legal-page-layout';
 
 export const metadata = {
-  title: 'Information Security Policy — Helm',
+  title: 'Information Security Policy - Helm',
   description: 'Helm\'s formal Information Security Policy (ISP) governing the protection of consumer financial data.',
 };
 
@@ -30,7 +30,7 @@ export default function ISPPage() {
             </tr>
             <tr>
               <td><strong>Classification:</strong></td>
-              <td>Internal — Shareable with regulators and integration partners upon request</td>
+              <td>Internal - Shareable with regulators and integration partners upon request</td>
             </tr>
             <tr>
               <td><strong>Owner:</strong></td>
@@ -95,10 +95,10 @@ export default function ISPPage() {
           equivalent security controls. Helm currently uses:
         </p>
         <ul>
-          <li><strong>Plaid</strong> — Account aggregation (SOC 2 Type II certified)</li>
-          <li><strong>Supabase</strong> — Database and authentication (SOC 2 Type II certified)</li>
-          <li><strong>Vercel</strong> — Application hosting (SOC 2 Type II certified)</li>
-          <li><strong>Polygon.io</strong> — Market data (public data only, no consumer PII shared)</li>
+          <li><strong>Plaid</strong> - Account aggregation (SOC 2 Type II certified)</li>
+          <li><strong>Supabase</strong> - Database and authentication (SOC 2 Type II certified)</li>
+          <li><strong>Vercel</strong> - Application hosting (SOC 2 Type II certified)</li>
+          <li><strong>Polygon.io</strong> - Market data (public data only, no consumer PII shared)</li>
         </ul>
       </section>
 
@@ -189,10 +189,10 @@ export default function ISPPage() {
 
         <h3>6.4 Sensitive Credential Handling</h3>
         <ul>
-          <li>Passwords are hashed using bcrypt — plaintext passwords are never stored or logged</li>
+          <li>Passwords are hashed using bcrypt - plaintext passwords are never stored or logged</li>
           <li>Plaid access tokens are stored encrypted in the database and are never exposed to client-side code</li>
           <li>API keys and service secrets are stored in Vercel&apos;s encrypted environment variable vault</li>
-          <li>No consumer credentials (bank logins) are received or stored by Helm — Plaid handles all bank authentication directly</li>
+          <li>No consumer credentials (bank logins) are received or stored by Helm - Plaid handles all bank authentication directly</li>
         </ul>
       </section>
 
@@ -210,9 +210,9 @@ export default function ISPPage() {
         <h3>7.2 Remediation SLAs</h3>
         <ul>
           <li><strong>Critical</strong> (CVSS 9.0+): Remediated within 48 hours</li>
-          <li><strong>High</strong> (CVSS 7.0–8.9): Remediated within 7 days</li>
-          <li><strong>Medium</strong> (CVSS 4.0–6.9): Remediated within 30 days</li>
-          <li><strong>Low</strong> (CVSS 0.1–3.9): Remediated within 90 days or next release cycle</li>
+          <li><strong>High</strong> (CVSS 7.0-8.9): Remediated within 7 days</li>
+          <li><strong>Medium</strong> (CVSS 4.0-6.9): Remediated within 30 days</li>
+          <li><strong>Low</strong> (CVSS 0.1-3.9): Remediated within 90 days or next release cycle</li>
         </ul>
 
         <h3>7.3 Responsible Disclosure</h3>
@@ -239,7 +239,7 @@ export default function ISPPage() {
         </ul>
         <p>
           Audit logs are retained for a minimum of 12 months. Users can view their own login activity
-          from the Settings page. Logs are protected by RLS — users can only view their own events.
+          from the Settings page. Logs are protected by RLS - users can only view their own events.
           Administrative log access (via service-role) is restricted to the Security Owner.
         </p>
       </section>
@@ -305,8 +305,8 @@ export default function ISPPage() {
 
         <h3>12.1 Plaid</h3>
         <ul>
-          <li>Helm never receives or stores bank login credentials — Plaid handles all bank authentication</li>
-          <li>Read-only access only — no transaction initiation or fund transfer capabilities</li>
+          <li>Helm never receives or stores bank login credentials - Plaid handles all bank authentication</li>
+          <li>Read-only access only - no transaction initiation or fund transfer capabilities</li>
           <li>Plaid access tokens are encrypted at rest and never exposed to client code</li>
           <li>Separate API keys for sandbox and production environments</li>
           <li>Webhook signatures verified on all incoming Plaid events</li>
@@ -314,7 +314,7 @@ export default function ISPPage() {
 
         <h3>12.2 Market Data (Polygon.io)</h3>
         <ul>
-          <li>No consumer PII is shared with Polygon — only ticker symbols are queried</li>
+          <li>No consumer PII is shared with Polygon - only ticker symbols are queried</li>
           <li>Market data (prices, news, dividends) is stored in shared tables not subject to user RLS</li>
           <li>API key stored in server-side environment variables only</li>
         </ul>

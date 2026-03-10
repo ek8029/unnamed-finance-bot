@@ -67,7 +67,7 @@ export async function DELETE(request: Request) {
       const { error } = await serviceClient.from(table).delete().eq(col, userId);
       if (error) {
         console.error(`Error deleting from ${table}:`, error.message);
-        // Continue — best-effort cleanup
+        // Continue - best-effort cleanup
       }
     }
 

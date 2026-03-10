@@ -13,7 +13,7 @@ export async function GET(request: Request) {
 
   try {
     // ---------------------------------------------------------------
-    // 1. Auth check — verify CRON_SECRET
+    // 1. Auth check - verify CRON_SECRET
     // ---------------------------------------------------------------
     const cronSecret = process.env.CRON_SECRET;
     if (cronSecret) {
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
     } else {
-      log.push('CRON_SECRET not set — running in development mode (no auth)');
+      log.push('CRON_SECRET not set - running in development mode (no auth)');
     }
 
     // ---------------------------------------------------------------
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
     }
 
     if (!plaidItems || plaidItems.length === 0) {
-      log.push('No active Plaid items found — nothing to sync');
+      log.push('No active Plaid items found - nothing to sync');
       return NextResponse.json({ success: true, log, duration_ms: Date.now() - startTime });
     }
 
@@ -88,7 +88,7 @@ export async function GET(request: Request) {
         );
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
-        log.push(`[sync] ${item.institution_name || item.id}: FAILED — ${msg}`);
+        log.push(`[sync] ${item.institution_name || item.id}: FAILED - ${msg}`);
         syncResults.push({
           item_id: item.id,
           user_id: item.user_id,
@@ -137,7 +137,7 @@ export async function GET(request: Request) {
         log.push(`[news] News refresh failed: ${msg}`);
       }
     } else {
-      log.push('[prices] POLYGON_API_KEY not set — skipping all market data');
+      log.push('[prices] POLYGON_API_KEY not set - skipping all market data');
     }
 
     // ---------------------------------------------------------------
@@ -223,7 +223,7 @@ interface SyncResult {
 type ServiceClient = any;
 
 // ===================================================================
-// Plaid Sync — mirrors /api/plaid/sync logic but with service client
+// Plaid Sync - mirrors /api/plaid/sync logic but with service client
 // ===================================================================
 
 async function syncPlaidItem(
@@ -823,7 +823,7 @@ async function updatePortfolioPerformance(supabase: ServiceClient, userId: strin
 }
 
 // ===================================================================
-// Snapshot computation — mirrors /api/plaid/sync computeSnapshots
+// Snapshot computation - mirrors /api/plaid/sync computeSnapshots
 // ===================================================================
 
 async function computeSnapshots(supabase: ServiceClient, userId: string) {
@@ -982,7 +982,7 @@ async function computeSnapshots(supabase: ServiceClient, userId: string) {
 }
 
 // ===================================================================
-// Insight generation — mirrors /api/insights/generate logic
+// Insight generation - mirrors /api/insights/generate logic
 // ===================================================================
 
 async function generateInsights(supabase: ServiceClient, userId: string): Promise<number> {
@@ -1148,7 +1148,7 @@ async function generateInsights(supabase: ServiceClient, userId: string): Promis
         insight_type: 'spending',
         priority: excess > 10000 ? 'high' : 'medium',
         title: `$${excess.toLocaleString()} idle cash could be working harder`,
-        description: `You have $${totalCash.toLocaleString()} in cash accounts — about ${Math.round(totalCash / monthlyExpenses)} months of expenses. After keeping a 6-month emergency fund ($${Math.round(monthlyExpenses * 6).toLocaleString()}), $${excess.toLocaleString()} could earn more.`,
+        description: `You have $${totalCash.toLocaleString()} in cash accounts - about ${Math.round(totalCash / monthlyExpenses)} months of expenses. After keeping a 6-month emergency fund ($${Math.round(monthlyExpenses * 6).toLocaleString()}), $${excess.toLocaleString()} could earn more.`,
         recommended_action: `Consider moving excess cash to a high-yield savings account or short-term investments.`,
         estimated_impact_amount: Math.round(excess * 0.045),
         confidence_score: 0.8,

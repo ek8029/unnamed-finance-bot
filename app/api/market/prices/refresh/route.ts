@@ -53,7 +53,7 @@ export async function POST() {
     if (priceMap.size === 0) {
       return NextResponse.json({
         success: true,
-        message: 'No prices returned from Polygon — market may be closed or API key issue',
+        message: 'No prices returned from Polygon - market may be closed or API key issue',
         updated: 0,
       });
     }
@@ -67,7 +67,7 @@ export async function POST() {
     }
 
     // 3b. Fetch previous close prices for accurate day_change_pct
-    // Uses .maybeSingle() — returns null (no error) when no rows found
+    // Uses .maybeSingle() - returns null (no error) when no rows found
     const prevCloseMap = new Map<string, number>();
     for (const ticker of uniqueTickers) {
       const securityId = tickerSecurityMap.get(ticker.toUpperCase());
@@ -146,7 +146,7 @@ export async function POST() {
         .eq('id', securityId);
 
       if (secError) {
-        // Expected to fail if RLS policy not applied yet — non-fatal
+        // Expected to fail if RLS policy not applied yet - non-fatal
         console.warn(`[prices] securities update skipped for ${ticker} (RLS)`);
       }
     }
@@ -178,7 +178,7 @@ export async function POST() {
         });
 
       if (upsertError) {
-        // Expected to fail if RLS policy not applied yet — non-fatal
+        // Expected to fail if RLS policy not applied yet - non-fatal
         console.warn('[prices] market_prices upsert skipped (RLS)');
       }
     }

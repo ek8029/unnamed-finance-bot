@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       eventType: 'password_reset_request',
     });
 
-    // Always return success — don't reveal whether the email exists
+    // Always return success - don't reveal whether the email exists
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error in forgot-password route:', error);

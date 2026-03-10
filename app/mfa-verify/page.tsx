@@ -19,7 +19,7 @@ export default function MfaVerifyPage() {
     async function checkFactors() {
       const { data, error } = await supabase.auth.mfa.listFactors();
       if (error || !data?.totp?.length) {
-        // No factors — shouldn't be here, redirect to dashboard
+        // No factors - shouldn't be here, redirect to dashboard
         router.push('/dashboard');
         return;
       }

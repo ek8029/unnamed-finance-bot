@@ -54,7 +54,7 @@ export async function GET() {
 
 /**
  * POST /api/auth/sessions
- * Actions: 'revoke_others' — sign out all other sessions.
+ * Actions: 'revoke_others' - sign out all other sessions.
  */
 export async function POST(request: Request) {
   try {

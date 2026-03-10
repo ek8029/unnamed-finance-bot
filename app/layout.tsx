@@ -19,10 +19,10 @@ const dmMono = DM_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://helmterminal.dev'),
-  title: 'Helm Terminal — AI-Powered Financial Intelligence',
+  title: 'Helm Terminal - AI-Powered Financial Intelligence',
   description: 'Institutional-grade financial analysis powered by AI. The personal Bloomberg terminal for modern investors.',
   openGraph: {
-    title: 'Helm Terminal — AI-Powered Financial Intelligence',
+    title: 'Helm Terminal - AI-Powered Financial Intelligence',
     description: 'Institutional-grade financial analysis powered by AI. The personal Bloomberg terminal for modern investors.',
     url: 'https://helmterminal.dev',
     siteName: 'Helm Terminal',
@@ -32,15 +32,18 @@ export const metadata: Metadata = {
         url: '/opengraph-image',
         width: 1200,
         height: 630,
-        alt: 'Helm Terminal — AI-Powered Financial Intelligence',
+        alt: 'Helm Terminal - AI-Powered Financial Intelligence',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Helm Terminal — AI-Powered Financial Intelligence',
+    title: 'Helm Terminal - AI-Powered Financial Intelligence',
     description: 'Institutional-grade financial analysis powered by AI.',
     images: ['/opengraph-image'],
+  },
+  alternates: {
+    canonical: 'https://helmterminal.dev',
   },
   robots: {
     index: true,

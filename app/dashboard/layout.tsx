@@ -114,7 +114,7 @@ export default function DashboardLayout({
       <nav className="bg-[var(--color-bg-surface)] border-b border-[var(--color-border-base)] sticky top-0 z-50">
         <div className="px-6 py-3">
           <div className="flex items-center justify-between">
-            {/* Logo — bigger and more prominent */}
+            {/* Logo - bigger and more prominent */}
             <Link href="/" className="flex items-center gap-3 group">
               <HelmMark size={40} className="transition-transform duration-200 group-hover:scale-105" />
               <div>

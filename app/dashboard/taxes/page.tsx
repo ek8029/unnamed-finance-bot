@@ -291,7 +291,7 @@ export default function TaxesPage() {
           <Card>
             <CardHeader>
               <CardTitle>Tax optimization tasks</CardTitle>
-              <CardDescription>Turn Helm’s ideas into concrete next steps.</CardDescription>
+              <CardDescription>Turn Helm's ideas into concrete next steps.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {(optimizationTasks || []).map((task, index) => {
@@ -418,7 +418,7 @@ export default function TaxesPage() {
           <div>
             <p className="type-h3 mb-1">Recommended next steps</p>
             <p className="type-body text-[var(--color-text-secondary)]">
-              Use this mock data to understand how Helm could frame your tax posture: review liability, pick 1–2
+              Use this mock data to understand how Helm could frame your tax posture: review liability, pick 1-2
               optimization tasks, and share a summary with your advisor.
             </p>
           </div>

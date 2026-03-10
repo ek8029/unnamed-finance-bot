@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     const verifiedFactors = factorsData?.totp?.filter(f => f.status === 'verified') || [];
 
     if (verifiedFactors.length > 0) {
-      // MFA required — session is at AAL1, client must complete TOTP challenge
+      // MFA required - session is at AAL1, client must complete TOTP challenge
       return NextResponse.json({
         mfa_required: true,
         factor_id: verifiedFactors[0].id,

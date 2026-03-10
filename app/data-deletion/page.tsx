@@ -1,7 +1,7 @@
 import { LegalPageLayout } from '@/components/legal-page-layout';
 
 export const metadata = {
-  title: 'Data Deletion — Helm',
+  title: 'Data Deletion - Helm',
   description: 'How to delete your Helm account and all associated financial data.',
 };
 
@@ -54,9 +54,9 @@ export default function DataDeletionPage() {
         <h2>What Is Not Affected</h2>
         <p>The following are <strong>not</strong> affected by deleting your Helm account:</p>
         <ul>
-          <li><strong>Your bank accounts</strong> — Helm has read-only access. We cannot modify your accounts. Deleting Helm does not close or affect your bank accounts.</li>
-          <li><strong>Plaid connections</strong> — We revoke our access, but you may also want to remove Helm from your connected apps in your bank&apos;s settings or via <a href="https://my.plaid.com" target="_blank" rel="noopener noreferrer">Plaid&apos;s portal</a>.</li>
-          <li><strong>Shared market data</strong> — Publicly available market prices, news, and events are not personal data and are retained.</li>
+          <li><strong>Your bank accounts</strong> - Helm has read-only access. We cannot modify your accounts. Deleting Helm does not close or affect your bank accounts.</li>
+          <li><strong>Plaid connections</strong> - We revoke our access, but you may also want to remove Helm from your connected apps in your bank&apos;s settings or via <a href="https://my.plaid.com" target="_blank" rel="noopener noreferrer">Plaid&apos;s portal</a>.</li>
+          <li><strong>Shared market data</strong> - Publicly available market prices, news, and events are not personal data and are retained.</li>
         </ul>
       </section>
 

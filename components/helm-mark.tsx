@@ -1,5 +1,5 @@
-// Helm Meridian Mark — Single source of truth
-// Meridian D3 — Navy + Platinum + Gold
+// Helm Meridian Mark - Single source of truth
+// Meridian D3 - Navy + Platinum + Gold
 
 interface HelmMarkProps {
   size?: number;

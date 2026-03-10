@@ -194,7 +194,7 @@ export async function getBatchPrices(tickers: string[]): Promise<Map<string, Pol
 export async function getTickerDetails(ticker: string): Promise<TickerDetails | null> {
   try {
     const apiKey = getApiKey();
-    // Ticker details endpoint doesn't use crypto format — skip crypto tickers
+    // Ticker details endpoint doesn't use crypto format - skip crypto tickers
     if (ticker.toUpperCase().includes('-USD')) return null;
 
     const url = `${POLYGON_BASE_URL}/v3/reference/tickers/${encodeURIComponent(ticker.toUpperCase())}?apiKey=${apiKey}`;

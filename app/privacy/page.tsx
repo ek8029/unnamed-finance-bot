@@ -1,7 +1,7 @@
 import { LegalPageLayout } from '@/components/legal-page-layout';
 
 export const metadata = {
-  title: 'Privacy Policy — Helm',
+  title: 'Privacy Policy - Helm',
   description: 'How Helm collects, uses, and protects your financial data.',
 };
 
@@ -89,7 +89,7 @@ export default function PrivacyPage() {
       <section>
         <h2>4. Data Storage &amp; Security</h2>
         <ul>
-          <li>All data is stored in Supabase (PostgreSQL) with Row-Level Security (RLS) enforced — you can only access your own data</li>
+          <li>All data is stored in Supabase (PostgreSQL) with Row-Level Security (RLS) enforced - you can only access your own data</li>
           <li>All connections use TLS 1.2+ encryption in transit</li>
           <li>Data at rest is encrypted via AES-256 by our infrastructure provider</li>
           <li>Authentication tokens are short-lived JWTs with secure HTTP-only cookies</li>
@@ -116,11 +116,11 @@ export default function PrivacyPage() {
         <h2>6. Your Rights</h2>
         <p>You have the right to:</p>
         <ul>
-          <li><strong>Access</strong> — Export all your data at any time via Settings &gt; Data &amp; Privacy &gt; Export</li>
-          <li><strong>Correction</strong> — Update your profile information in Settings</li>
-          <li><strong>Deletion</strong> — Permanently delete your account and all associated data</li>
-          <li><strong>Portability</strong> — Download your data in JSON format</li>
-          <li><strong>Opt out</strong> — Disable analytics and crash reporting in Settings</li>
+          <li><strong>Access</strong> - Export all your data at any time via Settings &gt; Data &amp; Privacy &gt; Export</li>
+          <li><strong>Correction</strong> - Update your profile information in Settings</li>
+          <li><strong>Deletion</strong> - Permanently delete your account and all associated data</li>
+          <li><strong>Portability</strong> - Download your data in JSON format</li>
+          <li><strong>Opt out</strong> - Disable analytics and crash reporting in Settings</li>
         </ul>
       </section>
 
@@ -129,10 +129,10 @@ export default function PrivacyPage() {
         <h2>7. Third-Party Services</h2>
         <p>Helm integrates with the following third-party services:</p>
         <ul>
-          <li><strong>Plaid</strong> — Account aggregation and transaction data</li>
-          <li><strong>Polygon.io</strong> — Market prices, news, dividends, and corporate actions</li>
-          <li><strong>Supabase</strong> — Database and authentication infrastructure</li>
-          <li><strong>Vercel</strong> — Application hosting</li>
+          <li><strong>Plaid</strong> - Account aggregation and transaction data</li>
+          <li><strong>Polygon.io</strong> - Market prices, news, dividends, and corporate actions</li>
+          <li><strong>Supabase</strong> - Database and authentication infrastructure</li>
+          <li><strong>Vercel</strong> - Application hosting</li>
         </ul>
         <p>Each service operates under its own privacy policy and data handling practices.</p>
       </section>

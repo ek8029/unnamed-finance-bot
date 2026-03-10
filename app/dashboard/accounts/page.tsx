@@ -64,7 +64,7 @@ export default function AccountsPage() {
           setConnectionHealth(data);
         }
       } catch {
-        // Non-critical — fail silently
+        // Non-critical - fail silently
       }
     }
     fetchConnectionHealth();

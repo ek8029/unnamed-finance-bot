@@ -86,7 +86,7 @@ export function AIInsightsFeed({ insights: initialInsights, holdings = [] }: AII
 
   return (
     <div className="h-full flex flex-col bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg overflow-hidden">
-      {/* Sidebar Header — aligned with dashboard content */}
+      {/* Sidebar Header - aligned with dashboard content */}
       <div className="flex-shrink-0 px-4 py-3 border-b border-[var(--color-border-base)]">
         <div className="flex items-center gap-2">
           <Zap className="h-4 w-4 text-[var(--color-gold)]" />

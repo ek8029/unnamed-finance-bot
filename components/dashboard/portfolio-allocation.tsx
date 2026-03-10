@@ -107,7 +107,7 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
             </ResponsiveContainer>
           </div>
 
-          {/* Legend — no text cutoff, full names visible */}
+          {/* Legend - no text cutoff, full names visible */}
           <div className="space-y-1.5">
             {allocation.map((item, index) => {
               const color = HELM_CHART_COLORS[index % HELM_CHART_COLORS.length];

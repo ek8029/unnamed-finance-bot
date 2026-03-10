@@ -48,7 +48,7 @@ export function WaitlistForm({ id }: { id: string }) {
   };
 
   const shareOnTwitter = () => {
-    const text = `I just joined the Helm Terminal waitlist — institutional-grade financial intelligence for individuals. Join me:`;
+    const text = `I just joined the Helm Terminal waitlist - institutional-grade financial intelligence for individuals. Join me:`;
     window.open(
       `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(referralLink)}`,
       '_blank'

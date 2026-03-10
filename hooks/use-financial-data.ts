@@ -191,7 +191,7 @@ export function useFinancialSummary() {
           }
         }
       } catch {
-        // Auto-sync failure is non-fatal — don't show errors
+        // Auto-sync failure is non-fatal - don't show errors
       }
     }
 

@@ -166,7 +166,7 @@ async function handleItemWebhook(
         .from('plaid_items')
         .update({
           status: 'login_required',
-          error_message: 'Credentials will expire soon — please re-authenticate',
+          error_message: 'Credentials will expire soon - please re-authenticate',
           updated_at: new Date().toISOString(),
         })
         .eq('id', plaidItem.id);

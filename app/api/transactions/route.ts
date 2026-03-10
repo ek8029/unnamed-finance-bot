@@ -68,7 +68,7 @@ export async function GET(request: Request) {
         // (which may differ from the DB name), so use the category_name if available
         filterValue = t.category_name || cat.name;
       } else if (t.category_name) {
-        // Raw Plaid category — format it nicely
+        // Raw Plaid category - format it nicely
         displayName = formatCategoryName(t.category_name);
         group = guessCategoryGroup(t.category_name);
         filterValue = t.category_name;
