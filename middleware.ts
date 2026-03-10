@@ -56,26 +56,57 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Check MFA assurance level
+  let needsMFA = false;
+  if (user) {
+    const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    needsMFA = aalData?.nextLevel === 'aal2' && aalData?.currentLevel === 'aal1';
+  }
+
+  const pathname = request.nextUrl.pathname;
+
+  // MFA verification page
+  if (pathname === '/mfa-verify') {
+    if (!user) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+    if (!needsMFA) {
+      // Already verified or no MFA required
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+    return response;
+  }
+
   // Protected routes - redirect to login if not authenticated
   const protectedPaths = ['/dashboard'];
   const isProtectedPath = protectedPaths.some(path =>
-    request.nextUrl.pathname.startsWith(path)
+    pathname.startsWith(path)
   );
 
   if (isProtectedPath && !user) {
     const redirectUrl = new URL('/login', request.url);
-    redirectUrl.searchParams.set('redirect', request.nextUrl.pathname);
+    redirectUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  // Auth pages - redirect to dashboard if already authenticated
+  if (isProtectedPath && user && needsMFA) {
+    // Authenticated but MFA not yet verified this session
+    return NextResponse.redirect(new URL('/mfa-verify', request.url));
+  }
+
+  // Auth pages - redirect to dashboard if already fully authenticated
   const authPaths = ['/login', '/signup', '/forgot-password'];
   const isAuthPath = authPaths.some(path =>
-    request.nextUrl.pathname === path
+    pathname === path
   );
 
-  if (isAuthPath && user) {
+  if (isAuthPath && user && !needsMFA) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  if (isAuthPath && user && needsMFA) {
+    // User has session but needs MFA — redirect to MFA verify page
+    return NextResponse.redirect(new URL('/mfa-verify', request.url));
   }
 
   return response;

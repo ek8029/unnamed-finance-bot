@@ -48,6 +48,22 @@ export async function POST(request: Request) {
       eventType: 'login_success',
     });
 
+    // Check if user has MFA factors enrolled
+    const { data: factorsData } = await supabase.auth.mfa.listFactors();
+    const verifiedFactors = factorsData?.totp?.filter(f => f.status === 'verified') || [];
+
+    if (verifiedFactors.length > 0) {
+      // MFA required — session is at AAL1, client must complete TOTP challenge
+      return NextResponse.json({
+        mfa_required: true,
+        factor_id: verifiedFactors[0].id,
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+        },
+      });
+    }
+
     return NextResponse.json({
       user: {
         id: data.user.id,

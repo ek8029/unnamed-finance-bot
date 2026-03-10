@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { useSettings } from '@/contexts/settings-context'
 import { useToast } from '@/contexts/toast-context'
+import { supabase as supabaseBrowser } from '@/lib/supabase/client'
 import {
   User,
   Bell,
@@ -29,6 +30,8 @@ import {
   AlertTriangle,
   Check,
   Clock,
+  ShieldCheck,
+  Copy,
 } from 'lucide-react'
 
 // ── Password strength (mirrors server-side logic) ──
@@ -101,6 +104,17 @@ export default function SettingsPage() {
   const [deletePassword, setDeletePassword] = useState('')
   const [deleting, setDeleting] = useState(false)
 
+  // MFA state
+  const [mfaEnabled, setMfaEnabled] = useState(false)
+  const [mfaLoading, setMfaLoading] = useState(true)
+  const [mfaEnrolling, setMfaEnrolling] = useState(false)
+  const [mfaQrCode, setMfaQrCode] = useState('')
+  const [mfaSecret, setMfaSecret] = useState('')
+  const [mfaVerifyCode, setMfaVerifyCode] = useState('')
+  const [mfaFactorId, setMfaFactorId] = useState('')
+  const [mfaVerifying, setMfaVerifying] = useState(false)
+  const [mfaDisabling, setMfaDisabling] = useState(false)
+
   // Password strength computation
   const passwordStrength = useMemo(
     () => getPasswordStrength(passwordForm.new),
@@ -127,6 +141,23 @@ export default function SettingsPage() {
       }
     }
     loadProfile()
+  }, [])
+
+  // Check MFA status on mount
+  useEffect(() => {
+    async function checkMfaStatus() {
+      try {
+        const { data } = await supabaseBrowser.auth.mfa.listFactors()
+        const verified = data?.totp?.filter(f => f.status === 'verified') || []
+        setMfaEnabled(verified.length > 0)
+        if (verified.length > 0) setMfaFactorId(verified[0].id)
+      } catch (err) {
+        console.error('Failed to check MFA status:', err)
+      } finally {
+        setMfaLoading(false)
+      }
+    }
+    checkMfaStatus()
   }, [])
 
   const handleSaveProfile = async () => {
@@ -276,6 +307,69 @@ export default function SettingsPage() {
       showError('Deletion failed', 'An error occurred while deleting your account')
     } finally {
       setDeleting(false)
+    }
+  }
+
+  const handleEnableMfa = async () => {
+    setMfaEnrolling(true)
+    try {
+      const { data, error } = await supabaseBrowser.auth.mfa.enroll({
+        factorType: 'totp',
+        friendlyName: 'Helm Authenticator',
+      })
+      if (error) throw error
+      setMfaFactorId(data.id)
+      setMfaQrCode(data.totp.qr_code)
+      setMfaSecret(data.totp.secret)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not start 2FA setup'
+      showError('Setup failed', msg)
+      setMfaEnrolling(false)
+    }
+  }
+
+  const handleVerifyMfa = async () => {
+    if (mfaVerifyCode.length !== 6) {
+      showError('Invalid code', 'Please enter the 6-digit code from your authenticator app')
+      return
+    }
+    setMfaVerifying(true)
+    try {
+      const { data: challenge, error: cErr } = await supabaseBrowser.auth.mfa.challenge({ factorId: mfaFactorId })
+      if (cErr) throw cErr
+      const { error: vErr } = await supabaseBrowser.auth.mfa.verify({
+        factorId: mfaFactorId,
+        challengeId: challenge.id,
+        code: mfaVerifyCode,
+      })
+      if (vErr) throw vErr
+      setMfaEnabled(true)
+      setMfaEnrolling(false)
+      setMfaQrCode('')
+      setMfaSecret('')
+      setMfaVerifyCode('')
+      success('2FA Enabled', 'Two-factor authentication is now active on your account')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Invalid code. Please try again.'
+      showError('Verification failed', msg)
+    } finally {
+      setMfaVerifying(false)
+    }
+  }
+
+  const handleDisableMfa = async () => {
+    setMfaDisabling(true)
+    try {
+      const { error } = await supabaseBrowser.auth.mfa.unenroll({ factorId: mfaFactorId })
+      if (error) throw error
+      setMfaEnabled(false)
+      setMfaFactorId('')
+      success('2FA Disabled', 'Two-factor authentication has been removed')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not disable 2FA'
+      showError('Failed', msg)
+    } finally {
+      setMfaDisabling(false)
     }
   }
 
@@ -518,15 +612,113 @@ export default function SettingsPage() {
             </div>
 
             {/* Two-Factor Authentication */}
-            <div className="flex items-center justify-between p-4 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-base)]">
-              <div className="flex items-center gap-3">
-                <Smartphone className="w-5 h-5 text-[var(--color-text-muted)]" />
-                <div>
-                  <p className="type-h3">Two-Factor Authentication</p>
-                  <p className="text-[var(--color-text-muted)] text-xs">Not yet enabled</p>
+            <div className="p-4 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-base)]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {mfaEnabled ? (
+                    <ShieldCheck className="w-5 h-5 text-[var(--color-positive)]" />
+                  ) : (
+                    <Smartphone className="w-5 h-5 text-[var(--color-text-muted)]" />
+                  )}
+                  <div>
+                    <p className="type-h3">Two-Factor Authentication</p>
+                    <p className={`text-xs ${mfaEnabled ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-muted)]'}`}>
+                      {mfaLoading ? 'Checking...' : mfaEnabled ? 'Enabled via authenticator app' : 'Not yet enabled'}
+                    </p>
+                  </div>
                 </div>
+                {!mfaLoading && !mfaEnrolling && (
+                  mfaEnabled ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDisableMfa}
+                      disabled={mfaDisabling}
+                      className="text-red-400 border-red-500/20 hover:bg-red-500/5"
+                    >
+                      {mfaDisabling ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Disable'}
+                    </Button>
+                  ) : (
+                    <Button variant="outline" size="sm" onClick={handleEnableMfa}>
+                      Enable
+                    </Button>
+                  )
+                )}
               </div>
-              <Badge variant="secondary" className="text-[10px]">Coming Soon</Badge>
+
+              {/* Enrollment Flow */}
+              {mfaEnrolling && mfaQrCode && (
+                <div className="mt-4 pt-4 border-t border-[var(--color-border-subtle)] space-y-4">
+                  <div className="text-center">
+                    <p className="text-sm text-[var(--color-text-secondary)] mb-3">
+                      Scan this QR code with your authenticator app (Google Authenticator, Authy, 1Password, etc.)
+                    </p>
+                    <div className="inline-block bg-white rounded-lg p-3">
+                      <img src={mfaQrCode} alt="2FA QR Code" className="w-48 h-48" />
+                    </div>
+                  </div>
+
+                  {/* Manual entry secret */}
+                  <div className="text-center">
+                    <p className="text-xs text-[var(--color-text-muted)] mb-1.5">Or enter this code manually:</p>
+                    <div className="inline-flex items-center gap-2">
+                      <code className="text-xs font-mono text-[var(--color-gold)] bg-[var(--color-bg-surface)] px-3 py-1.5 rounded border border-[var(--color-border-base)] select-all">
+                        {mfaSecret}
+                      </code>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(mfaSecret)
+                          info('Copied', 'Secret copied to clipboard')
+                        }}
+                        className="p-1.5 rounded hover:bg-[var(--color-bg-overlay)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Verify code */}
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs">Enter the 6-digit code from your app</Label>
+                      <Input
+                        value={mfaVerifyCode}
+                        onChange={(e) => setMfaVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        placeholder="000000"
+                        className="mt-1 text-center text-lg tracking-[0.5em] font-mono"
+                        maxLength={6}
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setMfaEnrolling(false)
+                          setMfaQrCode('')
+                          setMfaSecret('')
+                          setMfaVerifyCode('')
+                          supabaseBrowser.auth.mfa.unenroll({ factorId: mfaFactorId })
+                        }}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleVerifyMfa}
+                        disabled={mfaVerifyCode.length !== 6 || mfaVerifying}
+                        className="flex-1 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)]"
+                      >
+                        {mfaVerifying && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
+                        Verify & Enable
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Login Activity */}
