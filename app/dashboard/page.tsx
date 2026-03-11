@@ -86,7 +86,7 @@ export default function DashboardOverview() {
 
             <Link
               href="/dashboard/accounts"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hover)] text-black font-semibold rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-semibold rounded-lg transition-colors"
             >
               <Wallet className="w-4 h-4" />
               Connect Your First Account

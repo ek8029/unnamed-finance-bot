@@ -24,15 +24,21 @@ interface CashFlowTrendProps {
 export function CashFlowTrend({ data }: CashFlowTrendProps) {
   const { formatCurrency } = useFormat();
 
+  if (!data || data.length === 0) {
+    return null;
+  }
+
   const currentMonth = data[data.length - 1];
-  const previousMonth = data[data.length - 2];
-  const flowChange = currentMonth.netFlow - previousMonth.netFlow;
-  const flowChangePercent = (flowChange / previousMonth.netFlow) * 100;
+  const previousMonth = data.length >= 2 ? data[data.length - 2] : null;
+  const flowChange = previousMonth ? currentMonth.netFlow - previousMonth.netFlow : 0;
+  const flowChangePercent = previousMonth && previousMonth.netFlow !== 0
+    ? (flowChange / previousMonth.netFlow) * 100
+    : 0;
   const isPositive = flowChange > 0;
 
   // Calculate 3-month average
   const recentThreeMonths = data.slice(-3);
-  const avgNetFlow = recentThreeMonths.reduce((sum, d) => sum + d.netFlow, 0) / 3;
+  const avgNetFlow = recentThreeMonths.reduce((sum, d) => sum + d.netFlow, 0) / recentThreeMonths.length;
 
   return (
     <DataPanel variant="chart" elevation="hover">
