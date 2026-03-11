@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { usePlaidLink } from 'react-plaid-link';
 import { Loader2, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -19,114 +20,98 @@ export function PlaidLinkButton({
   variant = 'default',
   children,
 }: PlaidLinkButtonProps) {
-  const [loading, setLoading] = useState(false);
-  const [plaidReady, setPlaidReady] = useState(false);
   const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [exchanging, setExchanging] = useState(false);
+  const [tokenError, setTokenError] = useState(false);
 
-  const createLinkToken = useCallback(async () => {
+  // Fetch link token when the component mounts
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchToken() {
+      try {
+        const res = await fetch('/api/plaid/create-link-token', { method: 'POST' });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Failed to create link token');
+        }
+        const data = await res.json();
+        if (!cancelled) {
+          setLinkToken(data.link_token);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setTokenError(true);
+          const message = err instanceof Error ? err.message : 'Failed to initialize Plaid';
+          onError?.(message);
+        }
+      }
+    }
+
+    fetchToken();
+    return () => { cancelled = true; };
+  }, [onError]);
+
+  const handleSuccess = useCallback(async (publicToken: string, metadata: unknown) => {
+    setExchanging(true);
     try {
-      setLoading(true);
-      const res = await fetch('/api/plaid/create-link-token', { method: 'POST' });
+      const res = await fetch('/api/plaid/exchange-public-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          public_token: publicToken,
+          metadata,
+        }),
+      });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Failed to create link token');
+        throw new Error(data.error || 'Failed to link account');
       }
 
-      const data = await res.json();
-      setLinkToken(data.link_token);
-      return data.link_token;
+      onSuccess();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to initialize Plaid';
+      const message = err instanceof Error ? err.message : 'Failed to link account';
       onError?.(message);
-      return null;
     } finally {
-      setLoading(false);
+      setExchanging(false);
     }
-  }, [onError]);
+  }, [onSuccess, onError]);
 
-  const openPlaidLink = useCallback(async () => {
-    // Get or create link token
-    let token = linkToken;
-    if (!token) {
-      token = await createLinkToken();
-      if (!token) return;
-    }
+  const { open, ready } = usePlaidLink({
+    token: linkToken ?? '',
+    onSuccess: handleSuccess,
+    onExit: (err) => {
+      if (err) {
+        console.error('Plaid Link exit error:', err);
+      }
+    },
+  });
 
-    setLoading(true);
+  const isLoading = !linkToken && !tokenError;
+  const isDisabled = !ready || exchanging || tokenError;
 
-    // Dynamically load Plaid Link script if not already loaded
-    if (!(window as unknown as Record<string, unknown>).Plaid) {
-      await new Promise<void>((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.plaid.com/link/v2/stable/link-initialize.js';
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error('Failed to load Plaid Link'));
-        document.head.appendChild(script);
-      });
-    }
-
-    const Plaid = (window as unknown as Record<string, unknown>).Plaid as {
-      create: (config: Record<string, unknown>) => {
-        open: () => void;
-        destroy: () => void;
-      };
-    };
-
-    const handler = Plaid.create({
-      token,
-      onSuccess: async (publicToken: string, metadata: Record<string, unknown>) => {
-        setLoading(true);
-        try {
-          const res = await fetch('/api/plaid/exchange-public-token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              public_token: publicToken,
-              metadata,
-            }),
-          });
-
-          if (!res.ok) {
-            const data = await res.json();
-            throw new Error(data.error || 'Failed to link account');
-          }
-
-          onSuccess();
-        } catch (err) {
-          const message = err instanceof Error ? err.message : 'Failed to link account';
-          onError?.(message);
-        } finally {
-          setLoading(false);
-        }
-      },
-      onExit: (err: unknown) => {
-        setLoading(false);
-        if (err) {
-          console.error('Plaid Link exit error:', err);
-        }
-      },
-      onLoad: () => {
-        setPlaidReady(true);
-      },
-    });
-
-    handler.open();
-  }, [linkToken, createLinkToken, onSuccess, onError]);
+  const label = exchanging
+    ? 'Linking...'
+    : isLoading
+      ? 'Initializing...'
+      : tokenError
+        ? 'Connection Error'
+        : null;
 
   return (
     <Button
       variant={variant}
       className={className}
-      onClick={openPlaidLink}
-      disabled={loading}
+      onClick={() => open()}
+      disabled={isDisabled}
     >
-      {loading ? (
+      {(isLoading || exchanging) ? (
         <Loader2 className="w-4 h-4 animate-spin mr-2" />
       ) : (
         <Link2 className="w-4 h-4 mr-2" />
       )}
-      {children || (loading ? 'Connecting...' : 'Connect with Plaid')}
+      {children || label || 'Connect with Plaid'}
     </Button>
   );
 }

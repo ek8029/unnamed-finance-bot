@@ -16,8 +16,9 @@ export async function POST() {
 
     const response = await plaidClient.linkTokenCreate({
       user: { client_user_id: user.id },
-      client_name: 'Helm',
+      client_name: 'Helm Terminal',
       products: [Products.Transactions],
+      optional_products: [Products.Investments],
       country_codes: [CountryCode.Us],
       language: 'en',
       ...(webhookUrl && { webhook: webhookUrl }),
@@ -28,7 +29,6 @@ export async function POST() {
       expiration: response.data.expiration,
     });
   } catch (error: unknown) {
-    // Extract Plaid's actual error response for debugging
     const plaidError = (error as { response?: { data?: unknown } })?.response?.data;
     if (plaidError) {
       console.error('Plaid API error:', JSON.stringify(plaidError, null, 2));
