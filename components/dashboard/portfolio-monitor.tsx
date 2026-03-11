@@ -46,12 +46,12 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
           bVal = b.total_value;
           break;
         case 'change':
-          aVal = a.day_change_percentage;
-          bVal = b.day_change_percentage;
+          aVal = a.day_change_percentage ?? 0;
+          bVal = b.day_change_percentage ?? 0;
           break;
         case 'allocation':
-          aVal = a.portfolio_allocation;
-          bVal = b.portfolio_allocation;
+          aVal = a.portfolio_allocation ?? 0;
+          bVal = b.portfolio_allocation ?? 0;
           break;
       }
 
@@ -158,14 +158,16 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
               </thead>
               <tbody>
                 {sortedHoldings.map((holding) => {
-                  const isPositiveChange = holding.day_change_percentage >= 0;
+                  const dayChange = holding.day_change_percentage ?? 0;
+                  const allocation = holding.portfolio_allocation ?? 0;
+                  const isPositiveChange = dayChange >= 0;
                   const isExpanded = expandedRowId === holding.id;
                   const unrealised = holding.unrealised_gain ?? 0;
                   const costBasisTotal = holding.cost_basis ? holding.cost_basis * holding.shares : null;
                   const unrealisedPct = costBasisTotal && costBasisTotal > 0
                     ? (unrealised / costBasisTotal) * 100
                     : null;
-                  const dayChangeDollars = holding.total_value * (holding.day_change_percentage / 100);
+                  const dayChangeDollars = holding.total_value * (dayChange / 100);
 
                   return (
                     <React.Fragment key={holding.id}>
@@ -220,7 +222,7 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                                 <ArrowDownRight className="h-3.5 w-3.5" />
                               )}
                               <span className="type-mono text-sm font-medium">
-                                {formatPercentage(holding.day_change_percentage, 2)}
+                                {formatPercentage(dayChange, 2)}
                               </span>
                             </div>
                             <span className="type-mono text-xs opacity-70">
@@ -235,11 +237,11 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                             <div className="w-16 h-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-full overflow-hidden">
                               <div
                                 className="h-full bg-[var(--color-gold)] rounded-full"
-                                style={{ width: `${Math.min(100, holding.portfolio_allocation)}%` }}
+                                style={{ width: `${Math.min(100, allocation)}%` }}
                               />
                             </div>
                             <span className="type-mono text-sm text-[var(--color-text-secondary)] w-14 text-right">
-                              {holding.portfolio_allocation.toFixed(1)}%
+                              {allocation.toFixed(1)}%
                             </span>
                           </div>
                         </td>
