@@ -69,6 +69,11 @@ export function PlaidLinkButton({
         throw new Error(data.error || 'Failed to link account');
       }
 
+      // Trigger initial sync to pull transactions, holdings, and create snapshots
+      // Clear the auto-sync throttle so the dashboard also refreshes
+      sessionStorage.removeItem('helm_last_auto_sync');
+      await fetch('/api/plaid/sync', { method: 'POST' }).catch(() => {});
+
       onSuccess();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to link account';
