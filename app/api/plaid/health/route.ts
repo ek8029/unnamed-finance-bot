@@ -12,7 +12,7 @@ export async function GET() {
 
     const { data: plaidItems, error } = await supabase
       .from('plaid_items')
-      .select('institution_name, status, last_balances_sync, last_transactions_sync, last_holdings_sync, error_code, error_message, updated_at')
+      .select('id, institution_name, status, last_balances_sync, last_transactions_sync, last_holdings_sync, error_code, error_message, updated_at')
       .eq('user_id', user.id)
       .order('updated_at', { ascending: false });
 
@@ -39,6 +39,7 @@ export async function GET() {
       itemCount: items.length,
       errorCount,
       items: items.map(i => ({
+        id: i.id,
         institution_name: i.institution_name,
         status: i.status,
         last_balances_sync: i.last_balances_sync,

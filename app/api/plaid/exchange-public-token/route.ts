@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { plaidClient, mapPlaidAccountType } from '@/lib/plaid';
+import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
+import { extractPlaidError } from '@/lib/plaid-errors';
 
 export async function POST(request: Request) {
   try {
@@ -25,6 +27,8 @@ export async function POST(request: Request) {
     const accessToken = exchangeResponse.data.access_token;
     const itemId = exchangeResponse.data.item_id;
 
+    await logPlaidSuccess(user.id, 'itemPublicTokenExchange', { item_id: itemId });
+
     // Get item details
     const itemResponse = await plaidClient.itemGet({
       access_token: accessToken,
@@ -41,6 +45,23 @@ export async function POST(request: Request) {
     const plaidInstitutionId = item.institution_id;
     const institutionName = metadata?.institution?.name || 'Unknown Institution';
     const slug = institutionName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+    // --- Duplicate item detection ---
+    // Check if user already has a plaid_item for the same institution
+    let duplicateItem: { id: string; institution_name: string | null } | null = null;
+    if (plaidInstitutionId) {
+      const { data: existing } = await supabase
+        .from('plaid_items')
+        .select('id, institution_name')
+        .eq('user_id', user.id)
+        .eq('plaid_institution_id', plaidInstitutionId)
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) {
+        duplicateItem = existing;
+      }
+    }
 
     // Try to find existing institution by plaid ID or slug
     let institutionId: string;
@@ -59,7 +80,6 @@ export async function POST(request: Request) {
     if (existingInstitution) {
       institutionId = existingInstitution.id;
     } else {
-      // Create a unique slug to avoid conflicts
       const uniqueSlug = plaidInstitutionId ? `${slug}-${plaidInstitutionId}` : `${slug}-${Date.now()}`;
 
       const { data: newInstitution, error: instError } = await supabase
@@ -76,7 +96,6 @@ export async function POST(request: Request) {
 
       if (instError || !newInstitution) {
         console.error('Error creating institution:', instError);
-        // Last resort: try slug lookup again (race condition)
         const { data: retry } = await supabase
           .from('institutions')
           .select('id')
@@ -147,10 +166,22 @@ export async function POST(request: Request) {
       item_id: itemId,
       accounts_created: createdAccounts?.length || 0,
       accounts: createdAccounts,
+      // Include duplicate info so the frontend can prompt the user
+      duplicate_institution: duplicateItem ? {
+        existing_item_id: duplicateItem.id,
+        institution_name: duplicateItem.institution_name || institutionName,
+        message: `You already have a connection to ${duplicateItem.institution_name || institutionName}. You can keep both or disconnect the old one from the Accounts page.`,
+      } : null,
     });
   } catch (error: unknown) {
-    console.error('Error exchanging public token:', error);
-    const message = error instanceof Error ? error.message : 'Failed to link account';
+    const plaidErr = extractPlaidError(error);
+    if (plaidErr) {
+      console.error('Plaid exchange error:', plaidErr);
+    } else {
+      console.error('Error exchanging public token:', error);
+    }
+    const message = plaidErr?.displayMessage
+      || (error instanceof Error ? error.message : 'Failed to link account');
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

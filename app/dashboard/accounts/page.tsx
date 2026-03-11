@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, RefreshCcw, Building2, X, Loader2, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { Plus, RefreshCcw, Building2, X, Loader2, CheckCircle2, AlertCircle, Clock, Trash2 } from 'lucide-react';
 import { useToast } from '@/contexts/toast-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { useFormat } from '@/hooks/use-format';
 import { useAccounts } from '@/hooks/use-financial-data';
 import { AccountsOverview } from '@/components/accounts/accounts-overview';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
+import { PlaidUpdateLink } from '@/components/plaid/plaid-update-link';
 
 interface Account {
   id: string;
@@ -47,11 +48,12 @@ export default function AccountsPage() {
   const [sortBy, setSortBy] = useState<'balance-high' | 'balance-low' | 'name'>('balance-high');
   const [syncing, setSyncing] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [connectionHealth, setConnectionHealth] = useState<{
     lastSync: string | null;
     itemCount: number;
     errorCount: number;
-    items: { institution_name: string; status: string; last_balances_sync: string | null; last_transactions_sync: string | null }[];
+    items: { id: string; institution_name: string; status: string; last_balances_sync: string | null; last_transactions_sync: string | null; error_code: string | null; error_message: string | null }[];
   }>({ lastSync: null, itemCount: 0, errorCount: 0, items: [] });
 
   // Fetch connection health from plaid_items
@@ -102,6 +104,41 @@ export default function AccountsPage() {
 
   const handlePlaidError = (error: string) => {
     showError('Connection failed', error);
+  };
+
+  const handleDisconnect = async (itemId: string, institutionName: string) => {
+    if (!confirm(`Disconnect ${institutionName}? This will remove all associated accounts, transactions, and holdings.`)) {
+      return;
+    }
+    setDisconnecting(itemId);
+    try {
+      const res = await fetch(`/api/plaid/items/${itemId}`, { method: 'DELETE' });
+      if (res.ok) {
+        success('Disconnected', `${institutionName} has been removed`);
+        refetch?.();
+        // Refresh connection health
+        setConnectionHealth(prev => ({
+          ...prev,
+          items: prev.items.filter(i => i.id !== itemId),
+          itemCount: prev.itemCount - 1,
+        }));
+      } else {
+        showError('Disconnect failed', 'Could not disconnect. Please try again.');
+      }
+    } catch {
+      showError('Disconnect failed', 'An error occurred.');
+    } finally {
+      setDisconnecting(null);
+    }
+  };
+
+  const handleReconnectSuccess = () => {
+    success('Reconnected', 'Bank connection has been restored');
+    refetch?.();
+    // Refresh health data
+    fetch('/api/plaid/health').then(r => r.ok ? r.json() : null).then(data => {
+      if (data) setConnectionHealth(data);
+    });
   };
 
   const primaryAccountId = useMemo(() => {
@@ -395,11 +432,11 @@ export default function AccountsPage() {
           </div>
           {/* Per-institution status */}
           {connectionHealth.items.length > 0 && (
-            <div className="pt-2 border-t border-[var(--color-border-subtle)] space-y-2">
-              {connectionHealth.items.map((item, i) => (
-                <div key={i} className="flex items-center justify-between text-xs">
-                  <span className="text-[var(--color-text-secondary)]">{item.institution_name || 'Unknown'}</span>
-                  <div className="flex items-center gap-2">
+            <div className="pt-2 border-t border-[var(--color-border-subtle)] space-y-3">
+              {connectionHealth.items.map((item) => (
+                <div key={item.id} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-[var(--color-text-secondary)]">{item.institution_name || 'Unknown'}</span>
                     {item.last_balances_sync && (
                       <span className="text-[var(--color-text-muted)]">
                         {formatTimeAgo(item.last_balances_sync)}
@@ -412,8 +449,32 @@ export default function AccountsPage() {
                         ? 'bg-red-500/10 text-red-400'
                         : 'bg-amber-500/10 text-amber-400'
                     }`}>
-                      {item.status === 'active' ? 'Healthy' : item.status}
+                      {item.status === 'active' ? 'Healthy' : item.status === 'login_required' ? 'Login Required' : item.status}
                     </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {(item.status === 'error' || item.status === 'login_required') && item.id && (
+                      <PlaidUpdateLink
+                        itemId={item.id}
+                        institutionName={item.institution_name || 'Unknown'}
+                        onSuccess={handleReconnectSuccess}
+                        onError={(err) => showError('Reconnect failed', err)}
+                      />
+                    )}
+                    {item.id && (
+                      <button
+                        onClick={() => handleDisconnect(item.id, item.institution_name || 'Unknown')}
+                        disabled={disconnecting === item.id}
+                        className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-negative)] transition-colors rounded hover:bg-[var(--color-bg-overlay)]"
+                        title="Disconnect"
+                      >
+                        {disconnecting === item.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
