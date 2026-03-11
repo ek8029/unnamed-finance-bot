@@ -255,7 +255,7 @@ function buildComposition(
 
   for (const account of accounts) {
     const key = account[groupBy as keyof typeof account] as string;
-    const label = labelMap[key] || key;
+    const label = labelMap[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     const value = Math.abs(Number(account.current_balance));
 
     if (!grouped[label]) {

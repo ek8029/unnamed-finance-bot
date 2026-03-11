@@ -39,9 +39,18 @@ export default function AccountsPage() {
   const { accounts, balanceHistory, loading: apiLoading, error, refetch } = useAccounts();
   const { success, error: showError } = useToast();
 
-  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
-  const assetAccounts = accounts.filter((account) => account.balance > 0);
-  const liabilityAccounts = accounts.filter((account) => account.balance < 0);
+  // Separate assets from liabilities by account type, not just balance sign
+  // Plaid stores credit card balances as positive (amount owed)
+  const liabilityTypes = ['credit_card', 'loan', 'mortgage'];
+  const assetAccounts = accounts.filter((account) =>
+    !liabilityTypes.includes(account.account_type) && account.balance >= 0
+  );
+  const liabilityAccounts = accounts.filter((account) =>
+    liabilityTypes.includes(account.account_type) || account.balance < 0
+  );
+  const totalAssets = assetAccounts.reduce((sum, a) => sum + a.balance, 0);
+  const totalLiabilities = liabilityAccounts.reduce((sum, a) => sum + Math.abs(a.balance), 0);
+  const totalBalance = totalAssets - totalLiabilities;
 
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<'all' | 'assets' | 'liabilities'>('all');
@@ -247,7 +256,7 @@ export default function AccountsPage() {
               <Skeleton className="h-8 w-32 mt-2" />
             ) : (
               <CardTitle className="type-data text-3xl text-[var(--color-positive)]">
-                {formatCurrency(assetAccounts.reduce((sum, acc) => sum + acc.balance, 0))}
+                {formatCurrency(totalAssets)}
               </CardTitle>
             )}
           </CardHeader>
@@ -263,7 +272,7 @@ export default function AccountsPage() {
               <Skeleton className="h-8 w-32 mt-2" />
             ) : (
               <CardTitle className="type-data text-3xl text-[var(--color-negative)]">
-                {formatCurrency(Math.abs(liabilityAccounts.reduce((sum, acc) => sum + acc.balance, 0)))}
+                {formatCurrency(totalLiabilities)}
               </CardTitle>
             )}
           </CardHeader>

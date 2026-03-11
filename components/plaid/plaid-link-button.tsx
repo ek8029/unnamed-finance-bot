@@ -70,9 +70,12 @@ export function PlaidLinkButton({
       }
 
       // Trigger initial sync to pull transactions, holdings, and create snapshots
-      // Clear the auto-sync throttle so the dashboard also refreshes
+      // Clear throttles so the dashboard and portfolio refresh with real data
       sessionStorage.removeItem('helm_last_auto_sync');
+      sessionStorage.removeItem('helm_last_price_refresh');
       await fetch('/api/plaid/sync', { method: 'POST' }).catch(() => {});
+      // Refresh market prices so holdings have real prices (Plaid sandbox doesn't provide them)
+      await fetch('/api/market/prices/refresh', { method: 'POST' }).catch(() => {});
 
       onSuccess();
     } catch (err) {

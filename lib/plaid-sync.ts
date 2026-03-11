@@ -238,7 +238,10 @@ export async function syncPlaidItem(
             exchange: security.market_identifier_code || null,
             cusip: security.cusip || null,
             isin: security.isin || null,
-            current_price: security.close_price ?? null,
+            current_price: security.close_price
+              ?? (holding.quantity > 0 && holding.institution_value
+                ? holding.institution_value / holding.quantity
+                : null),
           }, {
             onConflict: 'ticker',
             ignoreDuplicates: false,
@@ -257,8 +260,12 @@ export async function syncPlaidItem(
 
         if (!linkedAccount) continue;
 
-        const currentPrice = security.close_price ?? 0;
-        const totalValue = holding.institution_value ?? (holding.quantity * currentPrice);
+        const totalValue = holding.institution_value ?? (holding.quantity * (security.close_price ?? 0));
+        // Derive price: prefer close_price, fall back to institution_value / quantity
+        const currentPrice = security.close_price
+          ?? (holding.quantity > 0 && holding.institution_value
+            ? holding.institution_value / holding.quantity
+            : 0);
         const totalCostBasis = holding.cost_basis ?? null;
 
         await supabase
