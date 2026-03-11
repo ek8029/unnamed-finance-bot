@@ -24,9 +24,13 @@ interface SavingsRateTimelineProps {
 export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimelineProps) {
   const { formatCurrency } = useFormat();
 
+  if (!data || data.length === 0) {
+    return null;
+  }
+
   const currentMonth = data[data.length - 1];
-  const previousMonth = data[data.length - 2];
-  const rateChange = currentMonth.rate - previousMonth.rate;
+  const previousMonth = data.length >= 2 ? data[data.length - 2] : null;
+  const rateChange = previousMonth ? currentMonth.rate - previousMonth.rate : 0;
   const isPositive = rateChange > 0;
 
   // Calculate 12-month average

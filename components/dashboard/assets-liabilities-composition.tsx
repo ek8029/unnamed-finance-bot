@@ -30,7 +30,7 @@ export function AssetsLiabilitiesComposition({
   const totalAssets = assets.reduce((sum, item) => sum + item.value, 0);
   const totalLiabilities = liabilities.reduce((sum, item) => sum + item.value, 0);
   const netWorth = totalAssets - totalLiabilities;
-  const debtToAssetRatio = (totalLiabilities / totalAssets) * 100;
+  const debtToAssetRatio = totalAssets > 0 ? (totalLiabilities / totalAssets) * 100 : 0;
 
   return (
     <DataPanel variant="metric" elevation="hover">

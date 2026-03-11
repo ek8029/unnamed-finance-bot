@@ -24,9 +24,9 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
   const { formatCurrency } = useFormat();
   const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
 
-  const previousNetWorth = netWorthHistory[netWorthHistory.length - 2]?.value || 0;
+  const previousNetWorth = netWorthHistory.length >= 2 ? (netWorthHistory[netWorthHistory.length - 2]?.value || 0) : 0;
   const change = currentNetWorth - previousNetWorth;
-  const changePercentage = (change / previousNetWorth) * 100;
+  const changePercentage = previousNetWorth !== 0 ? (change / previousNetWorth) * 100 : 0;
   const isPositiveChange = change >= 0;
 
   const [isLoading, setIsLoading] = useState(true);
@@ -39,10 +39,11 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
   }, []);
 
   // Calculate proper Y-axis domain with padding
-  const values = netWorthHistory.map(d => d.value);
+  const values = netWorthHistory.length > 0 ? netWorthHistory.map(d => d.value) : [0];
   const minVal = Math.min(...values);
   const maxVal = Math.max(...values);
-  const padding = (maxVal - minVal) * 0.15;
+  const range = maxVal - minVal;
+  const padding = range > 0 ? range * 0.15 : 1000;
   const yMin = Math.floor((minVal - padding) / 10000) * 10000;
   const yMax = Math.ceil((maxVal + padding) / 10000) * 10000;
 

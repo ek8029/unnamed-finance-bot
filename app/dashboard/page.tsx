@@ -192,7 +192,7 @@ export default function DashboardOverview() {
             {/* Left Column: Stacked Metrics */}
             <div className="space-y-density">
               {cashFlowHistory.length > 0 && <CashFlowTrend data={cashFlowHistory} />}
-              <SavingsRateTimeline data={savingsRateTimeline} targetRate={30} />
+              {savingsRateTimeline.length > 0 && <SavingsRateTimeline data={savingsRateTimeline} targetRate={30} />}
             </div>
 
             {/* Right Column: Financial Composition */}
