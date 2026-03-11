@@ -15,6 +15,7 @@ import {
   User,
   ChevronDown,
   Zap,
+  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
@@ -23,12 +24,11 @@ import { LegalFooter } from '@/components/legal-footer';
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Actions', href: '/dashboard/actions', icon: Zap },
-  { name: 'Accounts', href: '/dashboard/accounts', icon: Wallet },
-  { name: 'Transactions', href: '/dashboard/transactions', icon: ArrowLeftRight },
   { name: 'Portfolio', href: '/dashboard/portfolio', icon: TrendingUp },
+  { name: 'Research', href: '/dashboard/chat', icon: MessageSquare },
+  { name: 'Actions', href: '/dashboard/actions', icon: Zap },
+  { name: 'Transactions', href: '/dashboard/transactions', icon: ArrowLeftRight },
   { name: 'Taxes', href: '/dashboard/taxes', icon: FileText },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
 interface UserProfile {
@@ -187,6 +187,14 @@ export default function DashboardLayout({
 
                   {/* Menu Items */}
                   <div className="py-1">
+                    <Link
+                      href="/dashboard/accounts"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center space-x-3 px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
+                    >
+                      <Wallet className="w-4 h-4" />
+                      <span>Connected Accounts</span>
+                    </Link>
                     <Link
                       href="/dashboard/settings"
                       onClick={() => setMenuOpen(false)}
