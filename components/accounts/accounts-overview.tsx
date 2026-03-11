@@ -24,16 +24,22 @@ interface AccountsOverviewProps {
 export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
   const { formatCurrency } = useFormat();
 
+  if (!balanceHistory || balanceHistory.length === 0) {
+    return null;
+  }
+
   const currentMonth = balanceHistory[balanceHistory.length - 1];
-  const previousMonth = balanceHistory[balanceHistory.length - 2];
-  const balanceChange = currentMonth.balance - previousMonth.balance;
-  const balanceChangePercent = (balanceChange / previousMonth.balance) * 100;
+  const previousMonth = balanceHistory.length >= 2 ? balanceHistory[balanceHistory.length - 2] : null;
+  const balanceChange = previousMonth ? currentMonth.balance - previousMonth.balance : 0;
+  const balanceChangePercent = previousMonth && previousMonth.balance !== 0
+    ? (balanceChange / previousMonth.balance) * 100
+    : 0;
   const isPositive = balanceChange > 0;
 
   // Calculate 3-month averages
   const recentThreeMonths = balanceHistory.slice(-3);
-  const avgInflows = recentThreeMonths.reduce((sum, d) => sum + d.inflows, 0) / 3;
-  const avgOutflows = recentThreeMonths.reduce((sum, d) => sum + d.outflows, 0) / 3;
+  const avgInflows = recentThreeMonths.reduce((sum, d) => sum + d.inflows, 0) / recentThreeMonths.length;
+  const avgOutflows = recentThreeMonths.reduce((sum, d) => sum + d.outflows, 0) / recentThreeMonths.length;
   const netFlow = currentMonth.inflows - currentMonth.outflows;
 
   return (
