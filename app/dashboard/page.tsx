@@ -191,7 +191,7 @@ export default function DashboardOverview() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-density">
             {/* Left Column: Stacked Metrics */}
             <div className="space-y-density">
-              <CashFlowTrend data={cashFlowHistory} />
+              {cashFlowHistory.length > 0 && <CashFlowTrend data={cashFlowHistory} />}
               <SavingsRateTimeline data={savingsRateTimeline} targetRate={30} />
             </div>
 
