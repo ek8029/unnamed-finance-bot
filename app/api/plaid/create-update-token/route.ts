@@ -58,12 +58,15 @@ export async function POST(request: Request) {
       expiration: response.data.expiration,
     });
   } catch (error: unknown) {
-    const plaidError = (error as { response?: { data?: unknown } })?.response?.data;
+    const plaidError = (error as { response?: { data?: { error_message?: string; error_code?: string } } })?.response?.data;
     if (plaidError) {
       console.error('Plaid API error (update token):', JSON.stringify(plaidError, null, 2));
-    } else {
-      console.error('Error creating update link token:', error);
+      const message = plaidError.error_code === 'INVALID_ACCESS_TOKEN'
+        ? 'This connection uses an outdated token. Please disconnect and re-link the account.'
+        : plaidError.error_message || 'Plaid error';
+      return NextResponse.json({ error: message, error_code: plaidError.error_code }, { status: 500 });
     }
+    console.error('Error creating update link token:', error);
     const message = error instanceof Error ? error.message : 'Failed to create update token';
     return NextResponse.json({ error: message }, { status: 500 });
   }
