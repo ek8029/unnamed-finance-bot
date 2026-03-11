@@ -98,10 +98,10 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <TrendingUp className="h-4 w-4 text-[var(--color-text-muted)]" />
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <TrendingUp className="h-5 w-5 text-[var(--color-text-muted)]" />
             Holdings
           </CardTitle>
           <span className="type-mono text-sm text-[var(--color-text-secondary)]">
@@ -112,44 +112,44 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
       <CardContent className="px-0 pb-0">
         <div className="overflow-x-auto">
           {isLoading ? (
-            <div className="space-y-2 px-6 pb-4">
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
+            <div className="space-y-3 px-6 pb-4">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
             </div>
           ) : (
-            <table className="w-full">
+            <table className="w-full min-w-[700px]">
               <thead>
                 <tr className="border-b border-[var(--color-border-base)]">
                   <th
-                    className="text-left py-2.5 px-5 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
+                    className="text-left py-3 px-5 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
                     onClick={() => handleSort('ticker')}
                   >
                     Position {renderSortIcon('ticker')}
                   </th>
-                  <th className="text-right py-2.5 px-3 type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider">
+                  <th className="text-right py-3 px-4 type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider">
                     Shares
                   </th>
                   <th
-                    className="text-right py-2.5 px-3 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
+                    className="text-right py-3 px-4 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
                     onClick={() => handleSort('price')}
                   >
                     Price {renderSortIcon('price')}
                   </th>
                   <th
-                    className="text-right py-2.5 px-3 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
+                    className="text-right py-3 px-4 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
                     onClick={() => handleSort('value')}
                   >
                     Value {renderSortIcon('value')}
                   </th>
                   <th
-                    className="text-right py-2.5 px-3 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
+                    className="text-right py-3 px-4 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
                     onClick={() => handleSort('change')}
                   >
                     Day {renderSortIcon('change')}
                   </th>
                   <th
-                    className="text-right py-2.5 px-5 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
+                    className="text-right py-3 pr-5 pl-4 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider whitespace-nowrap"
                     onClick={() => handleSort('allocation')}
                   >
                     Weight {renderSortIcon('allocation')}
@@ -174,13 +174,13 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                         onClick={() => setExpandedRowId(isExpanded ? null : holding.id)}
                       >
                         {/* Position: Ticker prominent, name secondary */}
-                        <td className="py-3 px-5">
+                        <td className="py-4 px-5">
                           <div className="flex items-center gap-3">
                             <div>
-                              <div className="type-mono text-sm font-semibold text-[var(--color-text-primary)]">
+                              <div className="type-mono text-base font-semibold text-[var(--color-text-primary)]">
                                 {holding.ticker}
                               </div>
-                              <div className="text-[11px] text-[var(--color-text-muted)] leading-tight mt-0.5 max-w-[140px] truncate">
+                              <div className="text-xs text-[var(--color-text-muted)] leading-tight mt-0.5 max-w-[180px] truncate">
                                 {holding.asset_name}
                               </div>
                             </div>
@@ -188,57 +188,57 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                         </td>
 
                         {/* Shares */}
-                        <td className="py-3 px-3 text-right">
-                          <span className="type-mono text-xs text-[var(--color-text-secondary)]">
+                        <td className="py-4 px-4 text-right">
+                          <span className="type-mono text-sm text-[var(--color-text-secondary)]">
                             {formatNumber(holding.shares)}
                           </span>
                         </td>
 
                         {/* Price - full precision */}
-                        <td className="py-3 px-3 text-right">
+                        <td className="py-4 px-4 text-right">
                           <span className="type-mono text-sm font-medium text-[var(--color-text-primary)]">
                             {formatCurrencyDetailed(holding.current_price)}
                           </span>
                         </td>
 
                         {/* Total Value - prominent */}
-                        <td className="py-3 px-3 text-right">
-                          <span className="type-mono text-sm font-semibold text-[var(--color-text-primary)]">
+                        <td className="py-4 px-4 text-right">
+                          <span className="type-mono text-base font-bold text-[var(--color-text-primary)]">
                             {formatValue(holding.total_value)}
                           </span>
                         </td>
 
                         {/* Day Change - % and $ */}
-                        <td className="py-3 px-3 text-right">
+                        <td className="py-4 px-4 text-right">
                           <div className={`flex flex-col items-end ${
                             isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                           }`}>
                             <div className="flex items-center gap-0.5">
                               {isPositiveChange ? (
-                                <ArrowUpRight className="h-3 w-3" />
+                                <ArrowUpRight className="h-3.5 w-3.5" />
                               ) : (
-                                <ArrowDownRight className="h-3 w-3" />
+                                <ArrowDownRight className="h-3.5 w-3.5" />
                               )}
-                              <span className="type-mono text-xs font-medium">
+                              <span className="type-mono text-sm font-medium">
                                 {formatPercentage(holding.day_change_percentage, 2)}
                               </span>
                             </div>
-                            <span className="type-mono text-[10px] opacity-70">
+                            <span className="type-mono text-xs opacity-70">
                               {dayChangeDollars >= 0 ? '+' : ''}{formatCurrencyDetailed(dayChangeDollars)}
                             </span>
                           </div>
                         </td>
 
                         {/* Allocation - bar + % */}
-                        <td className="py-3 px-5 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <div className="w-14 h-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-full overflow-hidden">
+                        <td className="py-4 pr-5 pl-4 text-right">
+                          <div className="flex items-center justify-end gap-2.5">
+                            <div className="w-16 h-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-full overflow-hidden">
                               <div
                                 className="h-full bg-[var(--color-gold)] rounded-full"
                                 style={{ width: `${Math.min(100, holding.portfolio_allocation)}%` }}
                               />
                             </div>
-                            <span className="type-mono text-xs text-[var(--color-text-secondary)] w-10 text-right">
+                            <span className="type-mono text-sm text-[var(--color-text-secondary)] w-14 text-right">
                               {holding.portfolio_allocation.toFixed(1)}%
                             </span>
                           </div>
@@ -248,44 +248,44 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                       {/* Expanded Detail Row */}
                       {isExpanded && (
                         <tr className="border-b border-[var(--color-border-subtle)]">
-                          <td colSpan={6} className="py-4 px-5 bg-[var(--color-bg-overlay)]/40">
+                          <td colSpan={6} className="py-5 px-5 bg-[var(--color-bg-overlay)]/40">
                             <div className="grid grid-cols-4 gap-6">
                               <div>
-                                <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1">
+                                <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1.5">
                                   Avg Cost Basis
                                 </span>
-                                <span className="type-mono text-sm text-[var(--color-text-primary)]">
+                                <span className="type-mono text-base text-[var(--color-text-primary)]">
                                   {holding.cost_basis ? formatCurrencyDetailed(holding.cost_basis) : '-'}
                                 </span>
                               </div>
                               <div>
-                                <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1">
+                                <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1.5">
                                   Total Cost
                                 </span>
-                                <span className="type-mono text-sm text-[var(--color-text-primary)]">
+                                <span className="type-mono text-base text-[var(--color-text-primary)]">
                                   {costBasisTotal ? formatValue(costBasisTotal) : '-'}
                                 </span>
                               </div>
                               <div>
-                                <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1">
+                                <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1.5">
                                   Unrealised P&L
                                 </span>
-                                <span className={`type-mono text-sm font-medium ${
+                                <span className={`type-mono text-base font-medium ${
                                   unrealised >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                                 }`}>
                                   {unrealised >= 0 ? '+' : ''}{formatCurrencyDetailed(unrealised)}
                                   {unrealisedPct !== null && (
-                                    <span className="text-[10px] opacity-70 ml-1">
+                                    <span className="text-xs opacity-70 ml-1">
                                       ({unrealisedPct >= 0 ? '+' : ''}{unrealisedPct.toFixed(1)}%)
                                     </span>
                                   )}
                                 </span>
                               </div>
                               <div>
-                                <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1">
+                                <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1.5">
                                   Sector / Class
                                 </span>
-                                <span className="type-mono text-sm text-[var(--color-text-primary)]">
+                                <span className="type-mono text-base text-[var(--color-text-primary)]">
                                   {holding.sector || holding.asset_class || '-'}
                                 </span>
                               </div>

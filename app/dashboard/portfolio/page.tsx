@@ -184,7 +184,7 @@ export default function PortfolioPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <CardTitle className="type-data text-2xl">
+                <CardTitle className="type-data text-3xl">
                   {formatCurrency(totalValue)}
                 </CardTitle>
                 <p className="type-mono text-[var(--color-text-secondary)] mt-1">{holdings.length} holdings</p>
@@ -203,7 +203,7 @@ export default function PortfolioPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <CardTitle className={`type-data text-2xl ${dayChangePercentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+                <CardTitle className={`type-data text-3xl ${dayChangePercentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
                   {dayChangePercentage >= 0 ? '+' : ''}
                   {dayChangePercentage.toFixed(2)}%
                 </CardTitle>
@@ -342,84 +342,79 @@ export default function PortfolioPage() {
             </CardContent>
           </Card>
 
-          {/* Holdings Table and Allocation */}
+          {/* Holdings Table - full width */}
+          <PortfolioMonitor holdings={transformedHoldings} />
+
+          {/* Allocation, Sector Breakdown, Performance Metrics */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-density">
-            {/* Holdings Table */}
-            <div className="lg:col-span-2">
-              <PortfolioMonitor holdings={transformedHoldings} />
-            </div>
+            <PortfolioAllocation allocation={transformedAllocation} />
 
-            {/* Allocation and Metrics */}
-            <div className="space-y-density">
-              <PortfolioAllocation allocation={transformedAllocation} />
-
-              {/* Sector Breakdown */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sector Breakdown</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {allocation.slice(0, 5).map((sector) => (
-                    <div key={sector.name} className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="type-label text-[var(--color-text-secondary)]">{sector.name}</span>
-                        <span className="type-mono text-[var(--color-text-primary)]">{sector.percentage.toFixed(1)}%</span>
-                      </div>
-                      <div className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-full h-1.5">
-                        <div
-                          className="bg-[var(--color-gold)] h-1.5 rounded-full transition-all duration-500"
-                          style={{ width: `${Math.min(100, sector.percentage)}%` }}
-                        />
-                      </div>
-                      <div className="type-mono text-[var(--color-text-muted)]">
-                        {formatCurrencyDetailed(sector.value)}
-                      </div>
+            {/* Sector Breakdown */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Sector Breakdown</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {allocation.slice(0, 5).map((sector) => (
+                  <div key={sector.name} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="type-label text-[var(--color-text-secondary)]">{sector.name}</span>
+                      <span className="type-mono text-[var(--color-text-primary)]">{sector.percentage.toFixed(1)}%</span>
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              {/* Performance Metrics */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Performance Metrics</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {[
-                    {
-                      label: '1 Month Return',
-                      value: performanceMetrics?.return_1m != null ? `${performanceMetrics.return_1m >= 0 ? '+' : ''}${performanceMetrics.return_1m.toFixed(1)}%` : '--',
-                      color: performanceMetrics?.return_1m != null && performanceMetrics.return_1m >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-                    },
-                    {
-                      label: '3 Month Return',
-                      value: performanceMetrics?.return_3m != null ? `${performanceMetrics.return_3m >= 0 ? '+' : ''}${performanceMetrics.return_3m.toFixed(1)}%` : '--',
-                      color: performanceMetrics?.return_3m != null && performanceMetrics.return_3m >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-                    },
-                    {
-                      label: 'YTD Return',
-                      value: performanceMetrics?.return_ytd != null ? `${performanceMetrics.return_ytd >= 0 ? '+' : ''}${performanceMetrics.return_ytd.toFixed(1)}%` : '--',
-                      color: performanceMetrics?.return_ytd != null && performanceMetrics.return_ytd >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-                    },
-                    {
-                      label: 'Sharpe Ratio',
-                      value: performanceMetrics?.sharpe_ratio != null ? performanceMetrics.sharpe_ratio.toFixed(2) : '--',
-                      color: 'text-[var(--color-text-primary)]'
-                    },
-                    {
-                      label: 'Beta',
-                      value: performanceMetrics?.beta != null ? performanceMetrics.beta.toFixed(2) : '--',
-                      color: 'text-[var(--color-text-primary)]'
-                    },
-                  ].map((metric) => (
-                    <div key={metric.label} className="flex items-center justify-between">
-                      <span className="type-label text-[var(--color-text-secondary)]">{metric.label}</span>
-                      <span className={`type-mono ${metric.color}`}>{metric.value}</span>
+                    <div className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-full h-1.5">
+                      <div
+                        className="bg-[var(--color-gold)] h-1.5 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(100, sector.percentage)}%` }}
+                      />
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
+                    <div className="type-mono text-[var(--color-text-muted)]">
+                      {formatCurrencyDetailed(sector.value)}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Performance Metrics */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance Metrics</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {[
+                  {
+                    label: '1 Month Return',
+                    value: performanceMetrics?.return_1m != null ? `${performanceMetrics.return_1m >= 0 ? '+' : ''}${performanceMetrics.return_1m.toFixed(1)}%` : '--',
+                    color: performanceMetrics?.return_1m != null && performanceMetrics.return_1m >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                  },
+                  {
+                    label: '3 Month Return',
+                    value: performanceMetrics?.return_3m != null ? `${performanceMetrics.return_3m >= 0 ? '+' : ''}${performanceMetrics.return_3m.toFixed(1)}%` : '--',
+                    color: performanceMetrics?.return_3m != null && performanceMetrics.return_3m >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                  },
+                  {
+                    label: 'YTD Return',
+                    value: performanceMetrics?.return_ytd != null ? `${performanceMetrics.return_ytd >= 0 ? '+' : ''}${performanceMetrics.return_ytd.toFixed(1)}%` : '--',
+                    color: performanceMetrics?.return_ytd != null && performanceMetrics.return_ytd >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                  },
+                  {
+                    label: 'Sharpe Ratio',
+                    value: performanceMetrics?.sharpe_ratio != null ? performanceMetrics.sharpe_ratio.toFixed(2) : '--',
+                    color: 'text-[var(--color-text-primary)]'
+                  },
+                  {
+                    label: 'Beta',
+                    value: performanceMetrics?.beta != null ? performanceMetrics.beta.toFixed(2) : '--',
+                    color: 'text-[var(--color-text-primary)]'
+                  },
+                ].map((metric) => (
+                  <div key={metric.label} className="flex items-center justify-between">
+                    <span className="type-label text-[var(--color-text-secondary)]">{metric.label}</span>
+                    <span className={`type-mono ${metric.color}`}>{metric.value}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           </div>
         </div>
 
