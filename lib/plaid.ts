@@ -34,11 +34,10 @@ export const PLAID_OPTIONAL_PRODUCTS = ['investments'] as const;
 // Country codes
 export const PLAID_COUNTRY_CODES = ['US'] as const;
 
-// Webhook URL (only set when deployed, not for localhost)
+// Webhook URL (only set in production, not for localhost/sandbox)
 export function getWebhookUrl(): string | undefined {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!appUrl || appUrl.includes('localhost')) return undefined;
-  return `${appUrl}/api/plaid/webhook`;
+  if (PLAID_ENV === 'production') return 'https://helmterminal.dev/api/plaid/webhook';
+  return undefined;
 }
 
 // Map Plaid account types to our account_type enum

@@ -23,12 +23,15 @@ export async function POST(request: Request) {
 
     const webhookUrl = getWebhookUrl();
 
-    // Always include redirect_uri for OAuth bank support (Chase, Capital One, etc.)
-    // Uses the base callback URL (no query params) matching Plaid dashboard config
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    let redirectUri = `${appUrl}/oauth-callback`;
+    // Determine redirect_uri for OAuth bank support (Chase, Capital One, etc.)
+    // Production requires HTTPS; must match the URI configured in Plaid dashboard
+    const isProduction = process.env.PLAID_ENV === 'production';
+    const baseRedirectUri = isProduction
+      ? 'https://helmterminal.dev/oauth-callback'
+      : 'http://localhost:3000/oauth-callback';
 
-    // If returning from OAuth, extract the base URL from the full redirect URI
+    // If returning from OAuth, use the base URL from the received redirect URI
+    let redirectUri = baseRedirectUri;
     if (receivedRedirectUri) {
       try {
         const parsed = new URL(receivedRedirectUri);
