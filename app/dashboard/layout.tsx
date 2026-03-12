@@ -108,10 +108,15 @@ export default function DashboardLayout({
     }
   };
 
+  const isChatPage = pathname === '/dashboard/chat';
+
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)] flex flex-col">
+    <div className={cn(
+      "bg-[var(--color-bg-base)] flex flex-col",
+      isChatPage ? "h-screen overflow-hidden" : "min-h-screen"
+    )}>
       {/* Top Navigation Bar */}
-      <nav className="bg-[var(--color-bg-surface)] border-b border-[var(--color-border-base)] sticky top-0 z-50">
+      <nav className="shrink-0 bg-[var(--color-bg-surface)] border-b border-[var(--color-border-base)] sticky top-0 z-50">
         <div className="px-6 py-3">
           <div className="flex items-center justify-between">
             {/* Logo - bigger and more prominent */}
@@ -239,17 +244,23 @@ export default function DashboardLayout({
       </nav>
 
       {/* Main Content */}
-      <main className="bg-[var(--color-bg-base)] flex-1">
+      <main className={cn(
+        "bg-[var(--color-bg-base)] flex-1",
+        isChatPage && "min-h-0 flex flex-col"
+      )}>
         <div
           key={pathname}
-          className={cn(!reduceMotion && 'page-transition')}
+          className={cn(
+            !reduceMotion && 'page-transition',
+            isChatPage && 'flex-1 min-h-0 flex flex-col'
+          )}
         >
           {children}
         </div>
       </main>
 
-      {/* Legal Footer */}
-      <LegalFooter variant="minimal" />
+      {/* Legal Footer — hidden on chat page for full-height layout */}
+      {!isChatPage && <LegalFooter variant="minimal" />}
     </div>
   );
 }

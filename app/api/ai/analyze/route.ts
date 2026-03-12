@@ -5,35 +5,40 @@ import OpenAI from 'openai';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Extract ticker symbols from a user query
+// ── Query type detection ──
+
+type QueryType = 'stock_analysis' | 'portfolio_review' | 'general';
+
+function detectQueryType(query: string, hasTickers: boolean): QueryType {
+  const lower = query.toLowerCase();
+  const portfolioKeywords = [
+    'my portfolio', 'my holdings', 'my positions', 'my stocks', 'my investments',
+    'portfolio', 'holdings', 'weakspot', 'weak spot', 'improve', 'rebalance',
+    'diversif', 'exposure', 'overweight', 'underweight', 'concentrated',
+    'allocation', 'what do i own', 'what am i holding', 'my account',
+    'optimize', 'review my', 'analyze my', 'how is my', 'how are my',
+    'risk in my', 'suggest changes', 'what should i',
+  ];
+
+  if (portfolioKeywords.some(kw => lower.includes(kw))) return 'portfolio_review';
+  if (hasTickers) return 'stock_analysis';
+  return 'general';
+}
+
+// ── Ticker extraction ──
+
 function extractTickers(query: string): string[] {
-  // Match 1-5 uppercase letters that look like tickers
   const explicit = query.match(/\b[A-Z]{1,5}\b/g) || [];
-  // Also check for $TICKER pattern
   const dollar = query.match(/\$([A-Za-z]{1,5})/g)?.map(t => t.replace('$', '').toUpperCase()) || [];
-  // Common tickers people type in lowercase
   const lower = query.match(/\b(?:aapl|msft|goog|googl|amzn|nvda|tsla|meta|nflx|amd|intc|spy|qqq|voo)\b/gi)?.map(t => t.toUpperCase()) || [];
 
   const all = [...new Set([...explicit, ...dollar, ...lower])];
-  // Filter out common English words that look like tickers
   const stopWords = new Set(['I', 'A', 'IS', 'IT', 'TO', 'IN', 'ON', 'AT', 'BY', 'OR', 'AN', 'OF', 'IF', 'DO', 'MY', 'SO', 'UP', 'AM', 'BE', 'NO', 'VS', 'THE', 'AND', 'FOR', 'BUT', 'NOT', 'ARE', 'WAS', 'HAS', 'CAN', 'HOW', 'WHY', 'ALL', 'NOW', 'ITS', 'LOW', 'HIGH', 'BUY', 'NEW', 'BIG', 'OLD', 'KEY', 'EPS', 'YOY', 'QOQ', 'CEO', 'CFO', 'IPO']);
   return all.filter(t => t.length >= 2 && !stopWords.has(t));
 }
 
-// Detect if the query is about the user's portfolio (not a specific ticker)
-function isPortfolioQuery(query: string): boolean {
-  const lowerQuery = query.toLowerCase();
-  const portfolioKeywords = [
-    'my portfolio', 'my holdings', 'my positions', 'my stocks', 'my investments',
-    'portfolio', 'holdings', 'weakspot', 'weak spot', 'improve', 'rebalance',
-    'diversif', 'risk', 'exposure', 'overweight', 'underweight', 'concentrated',
-    'allocation', 'what do i own', 'what am i holding', 'my account',
-    'suggest', 'recommendation for my', 'optimize', 'review my',
-  ];
-  return portfolioKeywords.some(kw => lowerQuery.includes(kw));
-}
+// ── Portfolio data fetching ──
 
-// Fetch user's holdings from Supabase
 interface UserHolding {
   ticker: string;
   shares: number;
@@ -57,30 +62,22 @@ async function getUserPortfolio(supabase: Awaited<ReturnType<typeof createClient
   const { data, error } = await supabase
     .from('holdings')
     .select(`
-      ticker,
-      shares,
-      current_price,
-      total_value,
-      average_cost_basis,
-      total_cost_basis,
-      unrealised_gain_loss,
-      unrealised_gain_loss_pct,
-      day_change_pct,
-      portfolio_allocation_pct,
+      ticker, shares, current_price, total_value,
+      average_cost_basis, total_cost_basis,
+      unrealised_gain_loss, unrealised_gain_loss_pct,
+      day_change_pct, portfolio_allocation_pct,
       security:securities(security_name, asset_class, sector, exchange)
     `)
     .eq('user_id', userId)
     .order('total_value', { ascending: false });
 
   if (error) {
-    console.error('Failed to fetch user holdings:', error);
+    console.error('Failed to fetch holdings:', error);
     return [];
   }
-
   return (data || []) as unknown as UserHolding[];
 }
 
-// Build portfolio context string for the AI
 function buildPortfolioContext(holdings: UserHolding[]): string {
   if (holdings.length === 0) return '';
 
@@ -90,60 +87,42 @@ function buildPortfolioContext(holdings: UserHolding[]): string {
 
   const lines: string[] = [
     '=== USER PORTFOLIO ===',
-    `Total Portfolio Value: $${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+    `Total Value: $${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
     `Total Cost Basis: $${totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
     `Total Unrealized P&L: $${totalGainLoss.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${totalCost > 0 ? ((totalGainLoss / totalCost) * 100).toFixed(2) : '0.00'}%)`,
-    `Number of Positions: ${holdings.length}`,
+    `Positions: ${holdings.length}`,
     '',
-    'POSITIONS (sorted by value):',
+    'HOLDINGS:',
   ];
 
-  // Sector allocation summary
   const sectorMap = new Map<string, number>();
   const assetClassMap = new Map<string, number>();
 
   for (const h of holdings) {
-    const sector = h.security?.sector || 'Unknown';
-    const assetClass = h.security?.asset_class || 'Unknown';
-    sectorMap.set(sector, (sectorMap.get(sector) || 0) + (h.total_value || 0));
-    assetClassMap.set(assetClass, (assetClassMap.get(assetClass) || 0) + (h.total_value || 0));
+    sectorMap.set(h.security?.sector || 'Unknown', (sectorMap.get(h.security?.sector || 'Unknown') || 0) + (h.total_value || 0));
+    assetClassMap.set(h.security?.asset_class || 'Unknown', (assetClassMap.get(h.security?.asset_class || 'Unknown') || 0) + (h.total_value || 0));
+
+    const alloc = h.portfolio_allocation_pct ?? (totalValue > 0 ? (h.total_value / totalValue) * 100 : 0);
+    const pl = h.unrealised_gain_loss_pct != null ? `${(h.unrealised_gain_loss_pct * 100).toFixed(2)}%` : 'N/A';
+
+    lines.push(`  ${h.ticker} | ${h.security?.security_name || '?'} | ${h.shares} shares @ $${h.current_price} | Value: $${h.total_value?.toLocaleString('en-US', { minimumFractionDigits: 2 })} | ${alloc.toFixed(1)}% of portfolio | P&L: ${pl} | Sector: ${h.security?.sector || 'N/A'} | Class: ${h.security?.asset_class || 'N/A'}`);
   }
 
-  for (const h of holdings) {
-    const allocationPct = h.portfolio_allocation_pct ?? (totalValue > 0 ? (h.total_value / totalValue) * 100 : 0);
-    const gainLossPct = h.unrealised_gain_loss_pct != null ? (h.unrealised_gain_loss_pct * 100).toFixed(2) : 'N/A';
-    const dayChangePct = h.day_change_pct != null ? (h.day_change_pct * 100).toFixed(2) : 'N/A';
-
-    lines.push(
-      `  ${h.ticker} (${h.security?.security_name || 'Unknown'})` +
-      ` | ${h.shares} shares @ $${h.current_price}` +
-      ` | Value: $${h.total_value?.toLocaleString('en-US', { minimumFractionDigits: 2 })}` +
-      ` | Allocation: ${allocationPct.toFixed(1)}%` +
-      ` | P&L: ${gainLossPct}%` +
-      ` | Day: ${dayChangePct}%` +
-      ` | Sector: ${h.security?.sector || 'N/A'}` +
-      ` | Class: ${h.security?.asset_class || 'N/A'}`
-    );
-  }
-
-  lines.push('');
-  lines.push('SECTOR BREAKDOWN:');
+  lines.push('', 'SECTOR BREAKDOWN:');
   for (const [sector, value] of [...sectorMap.entries()].sort((a, b) => b[1] - a[1])) {
-    const pct = totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : '0.0';
-    lines.push(`  ${sector}: $${value.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${pct}%)`);
+    lines.push(`  ${sector}: $${value.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : '0.0'}%)`);
   }
 
-  lines.push('');
-  lines.push('ASSET CLASS BREAKDOWN:');
-  for (const [assetClass, value] of [...assetClassMap.entries()].sort((a, b) => b[1] - a[1])) {
-    const pct = totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : '0.0';
-    lines.push(`  ${assetClass}: $${value.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${pct}%)`);
+  lines.push('', 'ASSET CLASS BREAKDOWN:');
+  for (const [cls, value] of [...assetClassMap.entries()].sort((a, b) => b[1] - a[1])) {
+    lines.push(`  ${cls}: $${value.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : '0.0'}%)`);
   }
 
   return lines.join('\n');
 }
 
-// Format ticker data into a context string for the AI
+// ── Ticker data formatting ──
+
 function buildDataContext(tickerDataList: TickerData[]): string {
   return tickerDataList.map(td => {
     const lines: string[] = [`=== ${td.symbol} ===`];
@@ -164,40 +143,40 @@ function buildDataContext(tickerDataList: TickerData[]): string {
 
     if (td.financials?.metric) {
       const m = td.financials.metric;
-      const metricLines: string[] = [];
-      if (m['peBasicExclExtraTTM'] != null) metricLines.push(`P/E (TTM): ${m['peBasicExclExtraTTM']?.toFixed(2)}`);
-      if (m['psTTM'] != null) metricLines.push(`P/S (TTM): ${m['psTTM']?.toFixed(2)}`);
-      if (m['pbQuarterly'] != null) metricLines.push(`P/B: ${m['pbQuarterly']?.toFixed(2)}`);
-      if (m['epsGrowthTTMYoy'] != null) metricLines.push(`EPS Growth YoY: ${m['epsGrowthTTMYoy']?.toFixed(2)}%`);
-      if (m['revenueGrowthTTMYoy'] != null) metricLines.push(`Revenue Growth YoY: ${m['revenueGrowthTTMYoy']?.toFixed(2)}%`);
-      if (m['roeTTM'] != null) metricLines.push(`ROE (TTM): ${m['roeTTM']?.toFixed(2)}%`);
-      if (m['currentRatioQuarterly'] != null) metricLines.push(`Current Ratio: ${m['currentRatioQuarterly']?.toFixed(2)}`);
-      if (m['debtEquityQuarterly'] != null) metricLines.push(`D/E Ratio: ${m['debtEquityQuarterly']?.toFixed(2)}`);
-      if (m['dividendYieldIndicatedAnnual'] != null) metricLines.push(`Dividend Yield: ${m['dividendYieldIndicatedAnnual']?.toFixed(2)}%`);
-      if (m['52WeekHigh'] != null) metricLines.push(`52W High: $${m['52WeekHigh']}`);
-      if (m['52WeekLow'] != null) metricLines.push(`52W Low: $${m['52WeekLow']}`);
-      if (m['beta'] != null) metricLines.push(`Beta: ${m['beta']?.toFixed(2)}`);
-      if (metricLines.length > 0) {
-        lines.push(`Key Metrics:`);
-        lines.push(...metricLines.map(l => `  ${l}`));
+      const ml: string[] = [];
+      if (m['peBasicExclExtraTTM'] != null) ml.push(`P/E (TTM): ${m['peBasicExclExtraTTM']?.toFixed(2)}`);
+      if (m['psTTM'] != null) ml.push(`P/S (TTM): ${m['psTTM']?.toFixed(2)}`);
+      if (m['pbQuarterly'] != null) ml.push(`P/B: ${m['pbQuarterly']?.toFixed(2)}`);
+      if (m['epsGrowthTTMYoy'] != null) ml.push(`EPS Growth YoY: ${m['epsGrowthTTMYoy']?.toFixed(2)}%`);
+      if (m['revenueGrowthTTMYoy'] != null) ml.push(`Revenue Growth YoY: ${m['revenueGrowthTTMYoy']?.toFixed(2)}%`);
+      if (m['roeTTM'] != null) ml.push(`ROE (TTM): ${m['roeTTM']?.toFixed(2)}%`);
+      if (m['currentRatioQuarterly'] != null) ml.push(`Current Ratio: ${m['currentRatioQuarterly']?.toFixed(2)}`);
+      if (m['debtEquityQuarterly'] != null) ml.push(`D/E Ratio: ${m['debtEquityQuarterly']?.toFixed(2)}`);
+      if (m['dividendYieldIndicatedAnnual'] != null) ml.push(`Dividend Yield: ${m['dividendYieldIndicatedAnnual']?.toFixed(2)}%`);
+      if (m['52WeekHigh'] != null) ml.push(`52W High: $${m['52WeekHigh']}`);
+      if (m['52WeekLow'] != null) ml.push(`52W Low: $${m['52WeekLow']}`);
+      if (m['beta'] != null) ml.push(`Beta: ${m['beta']?.toFixed(2)}`);
+      if (ml.length > 0) {
+        lines.push('Key Metrics:');
+        lines.push(...ml.map(l => `  ${l}`));
       }
     }
 
-    if (td.recommendations && td.recommendations.length > 0) {
-      const latest = td.recommendations[0];
-      lines.push(`Analyst Consensus (${latest.period}): ${latest.strongBuy} Strong Buy, ${latest.buy} Buy, ${latest.hold} Hold, ${latest.sell} Sell, ${latest.strongSell} Strong Sell`);
+    if (td.recommendations?.length) {
+      const r = td.recommendations[0];
+      lines.push(`Analyst Consensus (${r.period}): ${r.strongBuy} Strong Buy, ${r.buy} Buy, ${r.hold} Hold, ${r.sell} Sell, ${r.strongSell} Strong Sell`);
     }
 
-    if (td.earnings && td.earnings.length > 0) {
-      lines.push(`Recent Earnings:`);
+    if (td.earnings?.length) {
+      lines.push('Recent Earnings:');
       td.earnings.slice(0, 4).forEach(e => {
         const beat = e.surprise != null ? (e.surprise > 0 ? ' (BEAT)' : e.surprise < 0 ? ' (MISS)' : ' (MET)') : '';
         lines.push(`  Q${e.quarter} ${e.year}: Actual $${e.actual ?? 'N/A'} vs Est $${e.estimate ?? 'N/A'}${beat}`);
       });
     }
 
-    if (td.news && td.news.length > 0) {
-      lines.push(`Recent Headlines:`);
+    if (td.news?.length) {
+      lines.push('Recent Headlines:');
       td.news.slice(0, 5).forEach(n => {
         const date = new Date(n.datetime * 1000).toISOString().split('T')[0];
         lines.push(`  [${date}] ${n.headline} (${n.source})`);
@@ -208,21 +187,26 @@ function buildDataContext(tickerDataList: TickerData[]): string {
   }).join('\n\n');
 }
 
-const SYSTEM_PROMPT = `You are a senior equity research analyst at Helm Intelligence, an institutional-grade financial terminal. You deliver opinionated, data-rich analysis that reads like a Goldman Sachs research note, not a chatbot response.
+// ── System prompts per query type ──
 
-RULES:
-- Always reference SPECIFIC numbers from the data provided. Never say "strong growth" without citing the exact percentage.
-- Be opinionated. Take a clear stance: bullish, bearish, or neutral. Wishy-washy analysis is useless.
-- Format monetary values with $ and commas (e.g., $2,150,000,000 → $2.15B). Use B for billions, M for millions, T for trillions.
-- Keep responses concise but data-dense. Every sentence should contain a number or specific insight.
-- Structure your response as valid JSON matching the schema below. Do NOT include markdown code fences.
-- If comparing multiple tickers, focus the response on the first/primary ticker but reference comparisons.
-- When analyzing a user's portfolio, set ticker to "PORTFOLIO" and companyName to "Portfolio Analysis". Reference their SPECIFIC holdings, allocations, and P&L numbers. Identify concrete weaknesses with exact percentages.
-- For general market questions without a specific ticker, set ticker to "MARKET" and companyName to "Market Analysis".
-- When data is missing or unavailable, work with what you have and note limitations.
+const BASE_RULES = `You are a senior equity research analyst at Helm Intelligence, an institutional-grade financial terminal. You deliver opinionated, data-rich analysis that reads like a Goldman Sachs research note, not a chatbot response.
 
-You MUST respond with valid JSON in this exact structure:
+CORE RULES:
+- Always reference SPECIFIC numbers from the data provided. Never say "strong growth" without the exact percentage.
+- Be opinionated and direct. No hedging, no "it depends."
+- Format monetary values: $2,150,000,000 → $2.15B. Use B/M/T suffixes.
+- Every sentence should contain a number or specific insight.
+- Respond with valid JSON matching the schema. Do NOT include markdown code fences.`;
+
+const PROMPTS: Record<QueryType, string> = {
+  stock_analysis: `${BASE_RULES}
+
+RESPONSE TYPE: Stock Analysis
+Take a clear bullish, bearish, or neutral stance.
+
+Respond with this JSON structure:
 {
+  "type": "stock_analysis",
   "ticker": "SYMBOL",
   "companyName": "Full Company Name",
   "verdict": "bullish" | "bearish" | "neutral",
@@ -230,19 +214,62 @@ You MUST respond with valid JSON in this exact structure:
   "metrics": [
     { "label": "Metric Name", "value": "Formatted Value", "change": "+X.X%" or null, "context": "vs benchmark" or null }
   ],
-  "bullCase": "2-3 sentences with specific data points supporting the bull case.",
-  "bearCase": "2-3 sentences with specific data points supporting the bear case.",
-  "recommendation": "One decisive sentence. Not 'consider' or 'might want to' — give a clear call.",
+  "bullCase": "2-3 sentences with specific data points.",
+  "bearCase": "2-3 sentences with specific data points.",
+  "recommendation": "One decisive sentence.",
   "newsHighlights": [
     { "headline": "...", "sentiment": "positive" | "negative" | "neutral", "date": "YYYY-MM-DD" }
   ]
 }
 
-For TICKER ANALYSIS: Include 4-6 metrics. Always include Price, and then select the most relevant from: P/E, P/S, Market Cap, Revenue Growth, EPS Growth, ROE, Dividend Yield, 52W Range, Beta, Analyst Consensus.
+Include 4-6 metrics (always include Price). Include 2-4 news highlights if available, otherwise empty array.`,
 
-For PORTFOLIO ANALYSIS: Include 4-6 metrics about the portfolio itself: Total Value, # Positions, Top Holding %, Sector Concentration, Total P&L, largest single-stock risk, etc. Use newsHighlights to list specific actionable improvements (e.g., "Reduce NVDA from 45% to under 20% — single-stock risk is extreme").
+  portfolio_review: `${BASE_RULES}
 
-Include 2-4 news highlights if news data is available. If no news, return an empty array.`;
+RESPONSE TYPE: Portfolio Review
+You are reviewing the user's ACTUAL portfolio. Reference their SPECIFIC holdings by ticker, allocation percentages, and P&L numbers. Identify concrete problems — don't be generic.
+
+Respond with this JSON structure:
+{
+  "type": "portfolio_review",
+  "title": "Brief descriptive title (e.g., 'Portfolio Health Assessment', 'Concentration Risk Alert')",
+  "summary": "One paragraph assessing the portfolio's overall state with specific numbers from their holdings.",
+  "metrics": [
+    { "label": "Metric Name", "value": "Formatted Value", "change": "+X.X%" or null, "context": "context note" or null }
+  ],
+  "strengths": ["Each string is one specific strength with a number. e.g. 'AAPL position up 34% — strong performer.'"],
+  "weaknesses": ["Each string is one specific weakness. e.g. 'NVDA at 45% allocation is extreme concentration risk.'"],
+  "recommendations": [
+    { "action": "Specific action to take", "rationale": "Why, with numbers", "priority": "high" | "medium" | "low" }
+  ],
+  "riskFactors": ["Specific risk with context. e.g. '78% tech exposure leaves portfolio vulnerable to sector rotation.'"]
+}
+
+Include 4-6 portfolio-level metrics (Total Value, # Positions, Top Holding %, Sector Concentration, Total P&L, etc.).
+Include 2-4 strengths, 2-4 weaknesses, 2-5 recommendations, and 2-4 risk factors. Be specific to their holdings.`,
+
+  general: `${BASE_RULES}
+
+RESPONSE TYPE: General Market Analysis
+Answer the user's question with data-backed analysis.
+
+Respond with this JSON structure:
+{
+  "type": "general",
+  "title": "Brief descriptive title",
+  "summary": "2-3 paragraph analysis with specific numbers and clear thesis.",
+  "keyPoints": [
+    { "point": "Key insight headline", "detail": "1-2 sentence explanation with specific data." }
+  ],
+  "metrics": [
+    { "label": "Metric Name", "value": "Formatted Value", "change": "+X.X%" or null, "context": "context note" or null }
+  ]
+}
+
+Include 3-5 key points and 3-6 relevant metrics. If the question is too vague to give numbers, provide the best available context.`,
+};
+
+// ── API handler ──
 
 interface ConversationMessage {
   role: 'user' | 'assistant';
@@ -250,7 +277,6 @@ interface ConversationMessage {
 }
 
 export async function POST(req: NextRequest) {
-  // Auth check
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
@@ -267,68 +293,55 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Query is required' }, { status: 400 });
   }
 
-  // Extract tickers from the current query and conversation context
+  // Extract tickers and determine query type
   const allText = [query, ...(conversationHistory || []).map(m => m.content)].join(' ');
   const tickers = extractTickers(allText);
+  const queryType = detectQueryType(query, tickers.length > 0);
 
-  // Determine if this is a portfolio-level question
-  const portfolioMode = isPortfolioQuery(query);
-
-  // Build data context
+  // Build data context based on query type
   let dataContext = '';
 
-  // If portfolio query, fetch user's holdings first
-  if (portfolioMode) {
+  if (queryType === 'portfolio_review') {
     const holdings = await getUserPortfolio(supabase, user.id);
     const portfolioContext = buildPortfolioContext(holdings);
 
     if (portfolioContext) {
       dataContext = portfolioContext;
-
-      // Also fetch Finnhub data for their top holdings (max 3) for richer analysis
+      // Enrich top holdings with market data
       const topTickers = holdings.slice(0, 3).map(h => h.ticker).filter(Boolean);
       if (topTickers.length > 0) {
         const tickerDataList = await Promise.all(topTickers.map(getFullTickerData));
         const tickerContext = buildDataContext(tickerDataList);
-        if (tickerContext) {
-          dataContext += '\n\n' + tickerContext;
-        }
+        if (tickerContext) dataContext += '\n\n' + tickerContext;
       }
     }
   }
 
-  // If specific tickers were mentioned (or no portfolio data found), fetch ticker data
-  if (!portfolioMode || !dataContext) {
-    const tickersToFetch = tickers.slice(0, 3);
-    if (tickersToFetch.length > 0) {
-      const tickerDataList = await Promise.all(tickersToFetch.map(getFullTickerData));
-      const tickerContext = buildDataContext(tickerDataList);
-      dataContext = dataContext ? `${dataContext}\n\n${tickerContext}` : tickerContext;
-    }
+  // Always fetch ticker data if tickers were mentioned
+  if (tickers.length > 0 && queryType !== 'portfolio_review') {
+    const tickerDataList = await Promise.all(tickers.slice(0, 3).map(getFullTickerData));
+    const tickerContext = buildDataContext(tickerDataList);
+    dataContext = dataContext ? `${dataContext}\n\n${tickerContext}` : tickerContext;
   }
 
-  // Build messages for OpenAI
+  // Build messages
   const messages: OpenAI.ChatCompletionMessageParam[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: PROMPTS[queryType] },
   ];
 
-  // Add conversation history for context
-  if (conversationHistory && conversationHistory.length > 0) {
-    // Keep last 6 messages for context window management
-    const recent = conversationHistory.slice(-6);
-    for (const msg of recent) {
+  if (conversationHistory?.length) {
+    for (const msg of conversationHistory.slice(-6)) {
       messages.push({ role: msg.role, content: msg.content });
     }
   }
 
-  // Add current query with data context
   let userMessage: string;
   if (dataContext) {
     userMessage = `FINANCIAL DATA:\n${dataContext}\n\nUSER QUERY: ${query}`;
-  } else if (portfolioMode) {
-    userMessage = `USER QUERY: ${query}\n\n(User has no linked holdings yet. Advise them to connect their brokerage accounts first via the Accounts page, then come back for portfolio analysis.)`;
+  } else if (queryType === 'portfolio_review') {
+    userMessage = `USER QUERY: ${query}\n\n(User has no linked holdings yet. Advise them to connect brokerage accounts via the Accounts page first.)`;
   } else {
-    userMessage = `USER QUERY: ${query}\n\n(No specific ticker data available. Provide general market analysis based on your knowledge.)`;
+    userMessage = `USER QUERY: ${query}\n\n(No specific ticker data available. Provide analysis based on your knowledge.)`;
   }
 
   messages.push({ role: 'user', content: userMessage });
@@ -338,7 +351,7 @@ export async function POST(req: NextRequest) {
       model: 'gpt-4o-mini',
       messages,
       temperature: 0.7,
-      max_tokens: 1500,
+      max_tokens: 2000,
     });
 
     const content = completion.choices[0]?.message?.content;
@@ -346,7 +359,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No response from AI' }, { status: 500 });
     }
 
-    // Parse the JSON response — handle potential markdown code fences
     let cleaned = content.trim();
     if (cleaned.startsWith('```')) {
       cleaned = cleaned.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
@@ -355,22 +367,19 @@ export async function POST(req: NextRequest) {
     let analysis;
     try {
       analysis = JSON.parse(cleaned);
+      // Ensure type field is set
+      if (!analysis.type) analysis.type = queryType;
     } catch {
-      // If JSON parse fails, return a structured fallback
       analysis = {
-        ticker: portfolioMode ? 'PORTFOLIO' : (tickers[0] || 'MARKET'),
-        companyName: portfolioMode ? 'Portfolio Analysis' : 'Analysis',
-        verdict: 'neutral',
+        type: 'general',
+        title: 'Analysis',
         summary: content,
+        keyPoints: [],
         metrics: [],
-        bullCase: '',
-        bearCase: '',
-        recommendation: '',
-        newsHighlights: [],
       };
     }
 
-    return NextResponse.json({ analysis, rawQuery: query });
+    return NextResponse.json({ analysis, queryType, rawQuery: query });
   } catch (error) {
     console.error('AI analysis failed:', error);
     const message = error instanceof Error ? error.message : 'Analysis failed';

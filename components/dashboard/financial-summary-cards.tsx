@@ -98,28 +98,28 @@ export function FinancialSummaryCards({
                 </div>
               </DataPanelHeader>
               <DataPanelContent className="p-3 pt-0">
-                <div className="type-data text-2xl font-tabular text-[var(--color-text-primary)]">
+                <div className="type-data font-tabular text-[var(--color-text-primary)]">
                   {formatCurrency(displayValue)}
                 </div>
-                <div className="flex items-center gap-1 mt-0.5">
+                <div className="flex items-center gap-1 mt-1 whitespace-nowrap overflow-hidden">
                   {item.change !== null ? (
                     <>
                       {isPositive ? (
-                        <ArrowUpRight className="h-3 w-3 text-[var(--color-positive)]" />
+                        <ArrowUpRight className="h-3 w-3 shrink-0 text-[var(--color-positive)]" />
                       ) : (
-                        <ArrowDownRight className="h-3 w-3 text-[var(--color-negative)]" />
+                        <ArrowDownRight className="h-3 w-3 shrink-0 text-[var(--color-negative)]" />
                       )}
                       <span
-                        className={`type-label text-xs font-tabular ${
+                        className={`type-label font-tabular ${
                           isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                         }`}
                       >
                         {formatPercentage(item.change)}
                       </span>
-                      <span className="type-label text-xs text-[var(--color-text-muted)]">from last month</span>
+                      <span className="type-label text-[var(--color-text-muted)]">vs last mo</span>
                     </>
                   ) : (
-                    <span className="type-label text-xs text-[var(--color-text-muted)]">--</span>
+                    <span className="type-label text-[var(--color-text-muted)]">--</span>
                   )}
                 </div>
               </DataPanelContent>
