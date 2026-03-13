@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { HelmMark } from '@/components/helm-mark';
+import { LegalFooter } from '@/components/legal-footer';
 import { TickerSearch } from './ticker-search';
 
 export const metadata: Metadata = {
@@ -29,26 +32,32 @@ const POPULAR_TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'
 export default function AnalyzePage() {
   return (
     <div className="min-h-screen bg-[var(--color-bg-base)] flex flex-col">
-      {/* Nav */}
-      <header className="border-b border-[var(--color-border-subtle)]">
-        <div className="max-w-4xl mx-auto px-6 h-14 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2.5">
-            <svg width="24" height="24" viewBox="0 0 56 56" fill="none">
-              <path d="M 10.06 39.94 A 22 22 0 1 1 45.94 39.94" stroke="#B8914A" strokeWidth="4.5" strokeLinecap="round" />
-              <line x1="28" y1="7" x2="28" y2="49" stroke="#E8ECF1" strokeWidth="5" strokeLinecap="round" />
-              <line x1="7" y1="28" x2="49" y2="28" stroke="#E8ECF1" strokeWidth="5" strokeLinecap="round" />
-              <circle cx="28" cy="28" r="10" fill="#B8914A" />
-            </svg>
-            <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text-primary)]">Helm Terminal</span>
-          </a>
-          <a
-            href="/signup"
-            className="px-4 py-1.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[12px] font-semibold rounded-sm transition-colors"
-          >
-            Get Started
-          </a>
+      {/* Nav — matches landing page */}
+      <nav className="container mx-auto px-6 py-5">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="flex items-center space-x-3">
+            <HelmMark size={44} />
+            <div>
+              <div className="text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">Helm</div>
+              <div className="type-eyebrow text-[var(--color-text-muted)]">Financial Intelligence</div>
+            </div>
+          </Link>
+          <div className="flex items-center gap-5">
+            <Link
+              href="/analyze"
+              className="text-sm text-[var(--color-text-primary)] font-medium transition-colors"
+            >
+              Free Stock Analysis
+            </Link>
+            <Link
+              href="/login"
+              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+            >
+              Sign in
+            </Link>
+          </div>
         </div>
-      </header>
+      </nav>
 
       {/* Hero */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-20">
@@ -83,16 +92,7 @@ export default function AnalyzePage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-[var(--color-border-subtle)] py-6">
-        <div className="max-w-4xl mx-auto px-6 flex items-center justify-between">
-          <span className="type-eyebrow text-[var(--color-text-muted)]">helmterminal.dev</span>
-          <div className="flex gap-4">
-            <a href="/privacy" className="type-eyebrow text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors">Privacy</a>
-            <a href="/terms" className="type-eyebrow text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors">Terms</a>
-          </div>
-        </div>
-      </footer>
+      <LegalFooter />
     </div>
   );
 }
