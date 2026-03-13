@@ -58,10 +58,10 @@ async function main() {
       .single();
 
     if (accErr) { console.error('Error creating account:', accErr); return; }
-    accounts.push(newAccount);
+    accounts!.push(newAccount);
   }
 
-  const brokerageAccount = accounts.find(a => a.account_type === 'brokerage') || accounts[0];
+  const brokerageAccount = accounts!.find(a => a.account_type === 'brokerage') || accounts![0];
   console.log(`Using account: ${brokerageAccount.account_name} (${brokerageAccount.id})\n`);
 
   // 3. Upsert securities (includes some that will be losers)
