@@ -457,3 +457,220 @@ export function useTaxData() {
 
   return { ...taxData, loading, error };
 }
+
+// ── Tax-loss harvesting opportunities ──
+
+export interface TaxOpportunity {
+  ticker: string;
+  securityName: string;
+  sector: string;
+  shares: number;
+  costBasis: number;
+  currentValue: number;
+  unrealizedLoss: number;
+  lossPct: number;
+  estimatedSavings: number;
+  replacement: { ticker: string; name: string; reason: string } | null;
+  washSaleRisk: boolean;
+  washSaleDetail: string | null;
+}
+
+export interface TaxHarvestReport {
+  totalHarvestableLoss: number;
+  totalEstimatedSavings: number;
+  opportunityCount: number;
+  taxRate: number;
+  opportunities: TaxOpportunity[];
+}
+
+// ── Earnings impact data ──
+
+export interface EarningsPosition {
+  ticker: string;
+  securityName: string;
+  shares: number;
+  currentPrice: number;
+  totalValue: number;
+  allocationPct: number;
+  sector: string;
+}
+
+export interface UpcomingEarning {
+  ticker: string;
+  companyName: string;
+  date: string;
+  time: 'before_open' | 'after_close' | 'unknown';
+  epsEstimate: number | null;
+  revenueEstimate: number | null;
+  position: EarningsPosition;
+  beatImpact5pct: number;
+  missImpact5pct: number;
+}
+
+export interface RecentEarning {
+  ticker: string;
+  companyName: string;
+  date: string;
+  epsActual: number | null;
+  epsEstimate: number | null;
+  surprisePct: number | null;
+  beat: boolean;
+  position: EarningsPosition;
+  estimatedImpact: number;
+  actualPostEarningsMove: number | null;
+  actualDollarImpact: number | null;
+}
+
+export interface EarningsReport {
+  upcoming: UpcomingEarning[];
+  recent: RecentEarning[];
+  totalUpcomingExposure: number;
+  recentNetImpact: number;
+}
+
+export function useEarnings() {
+  const [report, setReport] = useState<EarningsReport | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/dashboard/earnings');
+        if (!res.ok) throw new Error('Failed to fetch earnings data');
+        const data = await res.json();
+        setReport(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  return { report, loading, error };
+}
+
+// ── Tax-loss harvesting opportunities ──
+
+export function useTaxOpportunities() {
+  const [report, setReport] = useState<TaxHarvestReport | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/dashboard/tax-opportunities');
+        if (!res.ok) throw new Error('Failed to fetch tax opportunities');
+        const data = await res.json();
+        setReport(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  return { report, loading, error };
+}
+
+// ── Intelligence Feed ──
+
+export interface IntelligenceMetric {
+  label: string;
+  value: string;
+}
+
+export interface IntelligenceInsight {
+  id: string;
+  type: 'risk' | 'opportunity' | 'info' | 'action';
+  priority: 'high' | 'medium' | 'low';
+  title: string;
+  summary: string;
+  detail: string;
+  metrics: IntelligenceMetric[];
+  suggestedFollowUp: string;
+  createdAt: string;
+}
+
+export function useIntelligence() {
+  const [insights, setInsights] = useState<IntelligenceInsight[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/dashboard/intelligence');
+        if (!res.ok) throw new Error('Failed to fetch intelligence feed');
+        const data = await res.json();
+        setInsights(data.insights || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  return { insights, loading, error };
+}
+
+// ── Portfolio Wrapped ──
+
+export interface WrappedPosition {
+  ticker: string;
+  name: string;
+  returnPct: number;
+  returnDollars: number;
+  value: number;
+}
+
+export interface WrappedData {
+  period: 'quarter' | 'year';
+  periodLabel: string;
+  periodRange: string;
+  totalReturn: { pct: number; dollars: number };
+  bestPosition: WrappedPosition | null;
+  worstPosition: WrappedPosition | null;
+  totalDividends: number;
+  tradeCount: number;
+  spyComparison: { userReturn: number; spyReturn: number | null; beat: boolean | null };
+  taxSavings: number;
+  mostActiveTradingDay: { date: string; trades: number } | null;
+  sectorBreakdown: { sector: string; pct: number; value: number }[];
+  healthScoreTrend: { start: number | null; end: number | null; change: number };
+  netWorthChange: { start: number; end: number; change: number; changePct: number };
+  positionCount: number;
+  portfolioValue: number;
+}
+
+export function useWrapped(period: 'quarter' | 'year' = 'quarter') {
+  const [data, setData] = useState<WrappedData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    async function fetchData() {
+      try {
+        const res = await fetch(`/api/dashboard/wrapped?period=${period}`);
+        if (!res.ok) throw new Error('Failed to fetch wrapped data');
+        const result = await res.json();
+        setData(result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [period]);
+
+  return { data, loading, error };
+}

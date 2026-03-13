@@ -36,10 +36,8 @@ export async function POST(request: Request) {
     }
 
     const webhookUrl = getWebhookUrl();
-    const isProduction = process.env.PLAID_ENV === 'production';
-    const redirectUri = isProduction
-      ? 'https://helmterminal.dev/oauth-callback'
-      : 'http://localhost:3000/oauth-callback';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const redirectUri = `${appUrl}/oauth-callback`;
 
     const response = await plaidClient.linkTokenCreate({
       user: { client_user_id: user.id },

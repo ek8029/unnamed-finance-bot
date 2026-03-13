@@ -175,6 +175,32 @@ export async function getCompanyNews(symbol: string): Promise<FinnhubNewsItem[] 
   });
 }
 
+// ── Earnings Calendar ──
+
+export interface EarningsCalendarItem {
+  date: string;           // YYYY-MM-DD
+  epsActual: number | null;
+  epsEstimate: number | null;
+  hour: string;           // "bmo" (before market open), "amc" (after market close), ""
+  quarter: number;
+  revenueActual: number | null;
+  revenueEstimate: number | null;
+  symbol: string;
+  year: number;
+}
+
+interface EarningsCalendarResponse {
+  earningsCalendar: EarningsCalendarItem[];
+}
+
+export async function getEarningsCalendar(
+  from: string,
+  to: string,
+): Promise<EarningsCalendarItem[]> {
+  const result = await finnhubFetch<EarningsCalendarResponse>('/calendar/earnings', { from, to });
+  return result?.earningsCalendar || [];
+}
+
 // ── Aggregated fetch for a single ticker ──
 
 export interface TickerData {

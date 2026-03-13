@@ -249,7 +249,7 @@ export default function TransactionsPage() {
   if (error) {
     return (
       <div className="container mx-auto p-6 max-w-7xl">
-        <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-6 rounded-xl">
+        <div className="bg-[var(--color-negative)]/10 border border-[var(--color-negative)]/20 text-[var(--color-negative)] p-6 rounded-xl">
           <h2 className="font-semibold mb-2">Error loading transactions</h2>
           <p>{error}</p>
         </div>

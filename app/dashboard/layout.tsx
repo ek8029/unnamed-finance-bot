@@ -16,6 +16,8 @@ import {
   ChevronDown,
   Zap,
   MessageSquare,
+  BarChart3,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
@@ -24,12 +26,22 @@ import { LegalFooter } from '@/components/legal-footer';
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Portfolio', href: '/dashboard/portfolio', icon: TrendingUp },
-  { name: 'Research', href: '/dashboard/chat', icon: MessageSquare },
+  {
+    name: 'Portfolio',
+    href: '/dashboard/portfolio',
+    icon: TrendingUp,
+    children: [
+      { name: 'Research', href: '/dashboard/chat', icon: MessageSquare },
+      { name: 'Earnings', href: '/dashboard/earnings', icon: BarChart3 },
+    ],
+  },
   { name: 'Actions', href: '/dashboard/actions', icon: Zap },
   { name: 'Transactions', href: '/dashboard/transactions', icon: ArrowLeftRight },
   { name: 'Taxes', href: '/dashboard/taxes', icon: FileText },
+  { name: 'Wrapped', href: '/dashboard/wrapped', icon: Sparkles },
 ];
+
+const PORTFOLIO_HREFS = ['/dashboard/portfolio', '/dashboard/chat', '/dashboard/earnings'];
 
 interface UserProfile {
   fullName: string;
@@ -49,13 +61,18 @@ export default function DashboardLayout({
   const [loggingOut, setLoggingOut] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [portfolioDropdownOpen, setPortfolioDropdownOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const portfolioRef = useRef<HTMLDivElement>(null);
 
-  // Close menu on click outside
+  // Close menus on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setMenuOpen(false);
+      }
+      if (portfolioRef.current && !portfolioRef.current.contains(event.target as Node)) {
+        setPortfolioDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -133,6 +150,65 @@ export default function DashboardLayout({
             {/* Navigation Links */}
             <div className="flex items-center space-x-1">
               {navigation.map((item) => {
+                if ('children' in item && item.children) {
+                  const isGroupActive = PORTFOLIO_HREFS.includes(pathname);
+                  const activeStyle = 'text-[var(--color-gold)] bg-[var(--color-bg-overlay)] border border-[var(--color-gold-border)]';
+                  const inactiveStyle = 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] border border-transparent hover:border-[var(--color-border-base)]';
+                  return (
+                    <div key={item.name} className="relative" ref={portfolioRef}>
+                      <div
+                        className={cn(
+                          'flex items-center text-sm font-medium rounded-md transition-all duration-200',
+                          isGroupActive ? activeStyle : inactiveStyle,
+                        )}
+                      >
+                        <Link
+                          href={item.href}
+                          onClick={() => setPortfolioDropdownOpen(false)}
+                          className="flex items-center space-x-2 pl-4 pr-1 py-2"
+                        >
+                          <item.icon className="w-4 h-4" />
+                          <span>{item.name}</span>
+                        </Link>
+                        <button
+                          onClick={() => setPortfolioDropdownOpen(!portfolioDropdownOpen)}
+                          className="pr-3 pl-1 py-2 self-stretch flex items-center"
+                          aria-label="Portfolio sub-menu"
+                        >
+                          <ChevronDown className={cn(
+                            'w-3 h-3 transition-transform duration-200',
+                            portfolioDropdownOpen && 'rotate-180'
+                          )} />
+                        </button>
+                      </div>
+
+                      {portfolioDropdownOpen && (
+                        <div className="absolute left-0 mt-1 w-48 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg shadow-xl z-50 overflow-hidden py-1">
+                          {item.children.map((child) => {
+                            const isChildActive = pathname === child.href;
+                            return (
+                              <Link
+                                key={child.name}
+                                href={child.href}
+                                onClick={() => setPortfolioDropdownOpen(false)}
+                                className={cn(
+                                  'flex items-center space-x-3 px-4 py-2.5 text-sm transition-colors',
+                                  isChildActive
+                                    ? 'text-[var(--color-gold)] bg-[var(--color-bg-overlay)]'
+                                    : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)]'
+                                )}
+                              >
+                                <child.icon className="w-4 h-4" />
+                                <span>{child.name}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
                 const isActive = pathname === item.href;
                 return (
                   <Link
@@ -226,7 +302,7 @@ export default function DashboardLayout({
                         handleLogout();
                       }}
                       disabled={loggingOut}
-                      className="flex items-center space-x-3 w-full px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/5 transition-colors disabled:opacity-50"
+                      className="flex items-center space-x-3 w-full px-4 py-2.5 text-sm text-[var(--color-negative)] hover:text-[var(--color-negative)] hover:bg-[var(--color-negative)]/5 transition-colors disabled:opacity-50"
                     >
                       {loggingOut ? (
                         <Loader2 className="w-4 h-4 animate-spin" />

@@ -49,12 +49,20 @@ export default function LandingPage() {
               <div className="type-eyebrow text-[var(--color-text-muted)]">Financial Intelligence</div>
             </div>
           </div>
-          <Link
-            href="/login"
-            className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-          >
-            Sign in
-          </Link>
+          <div className="flex items-center gap-5">
+            <Link
+              href="/analyze"
+              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+            >
+              Free Stock Analysis
+            </Link>
+            <Link
+              href="/login"
+              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+            >
+              Sign in
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -440,6 +448,27 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ── TRY IT CTA ── */}
+      <section className="relative container mx-auto px-6 pb-24">
+        <AnimatedSection>
+          <div className="max-w-2xl mx-auto text-center bg-[var(--color-bg-surface)] border border-[var(--color-gold-border)] rounded p-8 space-y-4">
+            <div className="type-eyebrow text-[var(--color-gold)]">Try It Now</div>
+            <h2 className="type-h1 text-2xl">
+              Free AI stock analysis for any ticker
+            </h2>
+            <p className="type-body text-[var(--color-text-secondary)] max-w-lg mx-auto">
+              Get institutional-grade analysis with real-time data, financial metrics, analyst consensus, and news sentiment — no account required.
+            </p>
+            <Link
+              href="/analyze"
+              className="inline-block px-8 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded text-sm transition-colors"
+            >
+              Analyze a stock free
+            </Link>
+          </div>
+        </AnimatedSection>
       </section>
 
       {/* ── SECURITY ── */}

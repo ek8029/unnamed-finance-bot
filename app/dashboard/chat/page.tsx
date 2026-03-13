@@ -1,72 +1,22 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useResearch, type ResearchMessage } from '@/contexts/research-context';
 import {
+  AnalysisCard,
+  AnalysisSkeletonCard,
+} from '@/components/analysis/analysis-cards';
+import type { Analysis } from '@/components/analysis/types';
+import {
   Send,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  ChevronDown,
-  ChevronUp,
   Loader2,
   MessageSquare,
-  Sparkles,
-  AlertTriangle,
-  CheckCircle2,
-  Target,
   Trash2,
 } from 'lucide-react';
 
 // ── Types ──
-
-interface AnalysisMetric {
-  label: string;
-  value: string;
-  change?: string | null;
-  context?: string | null;
-}
-
-interface NewsHighlight {
-  headline: string;
-  sentiment: 'positive' | 'negative' | 'neutral';
-  date: string;
-}
-
-interface StockAnalysis {
-  type: 'stock_analysis';
-  ticker: string;
-  companyName: string;
-  verdict: 'bullish' | 'bearish' | 'neutral';
-  summary: string;
-  metrics: AnalysisMetric[];
-  bullCase: string;
-  bearCase: string;
-  recommendation: string;
-  newsHighlights: NewsHighlight[];
-}
-
-interface PortfolioReview {
-  type: 'portfolio_review';
-  title: string;
-  summary: string;
-  metrics: AnalysisMetric[];
-  strengths: string[];
-  weaknesses: string[];
-  recommendations: { action: string; rationale: string; priority: 'high' | 'medium' | 'low' }[];
-  riskFactors: string[];
-}
-
-interface GeneralAnalysis {
-  type: 'general';
-  title: string;
-  summary: string;
-  keyPoints: { point: string; detail: string }[];
-  metrics: AnalysisMetric[];
-}
-
-type Analysis = StockAnalysis | PortfolioReview | GeneralAnalysis;
 
 interface Message {
   id: string;
@@ -76,390 +26,46 @@ interface Message {
   timestamp: Date;
 }
 
-// ── Shared sub-components ──
+// ── Query routing ──
 
-function MetricsGrid({ metrics }: { metrics: AnalysisMetric[] }) {
-  if (!metrics?.length) return null;
+const PORTFOLIO_KEYWORDS = [
+  'my portfolio', 'my holdings', 'my positions', 'my stocks', 'my investments',
+  'portfolio', 'holdings', 'weakspot', 'weak spot', 'diversif', 'exposure',
+  'overweight', 'underweight', 'concentrated', 'allocation', 'what do i own',
+  'what am i holding', 'my account', 'optimize', 'review my', 'analyze my',
+  'how is my', 'how are my', 'risk in my', 'suggest changes', 'what should i',
+  'biggest risk', 'how would a', 'crash affect', 'drop affect', 'tax purposes',
+  'selling for tax', 'total exposure', 'single stock', 'rebalance',
+  'cost basis', 'unrealized', 'gain', 'loss harvest',
+];
 
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-[var(--color-border-subtle)] rounded-sm overflow-hidden">
-      {metrics.map((metric, i) => (
-        <div key={i} className="bg-[var(--color-bg-surface)] px-4 py-3">
-          <div className="type-caption text-[var(--color-text-muted)] mb-1">{metric.label}</div>
-          <div className="text-[17px] font-bold tracking-tight text-[var(--color-text-primary)] font-tabular">{metric.value}</div>
-          <div className="flex items-center gap-2 mt-0.5">
-            {metric.change && (
-              <span
-                className="text-[11px] font-medium font-tabular"
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  color: metric.change.startsWith('+') ? 'var(--color-positive)'
-                    : metric.change.startsWith('-') ? 'var(--color-negative)'
-                    : 'var(--color-text-muted)',
-                }}
-              >
-                {metric.change}
-              </span>
-            )}
-            {metric.context && (
-              <span className="text-[11px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
-                {metric.context}
-              </span>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function CardHeader({ left, right }: { left: React.ReactNode; right?: React.ReactNode }) {
-  return (
-    <div className="px-5 py-3.5 flex items-center justify-between border-b border-[var(--color-border-subtle)]">
-      {left}
-      {right || (
-        <div className="flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-[var(--color-gold)]" />
-          <span className="type-eyebrow text-[var(--color-gold)]">Helm AI</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ExpandableSection({ title, content, defaultOpen = false }: { title: string; content: string; defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(defaultOpen);
-  if (!content) return null;
-
-  return (
-    <div className="border-t border-[var(--color-border-subtle)]">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full py-3 text-left group"
-      >
-        <span className="type-caption text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors">
-          {title}
-        </span>
-        {open
-          ? <ChevronUp className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
-          : <ChevronDown className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
-        }
-      </button>
-      {open && (
-        <p className="text-[13px] leading-[1.65] text-[var(--color-text-secondary)] pb-3.5 animate-fade-in">
-          {content}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// ── Stock Analysis Card ──
-
-function StockAnalysisCard({ analysis }: { analysis: StockAnalysis }) {
-  const verdictConfig = {
-    bullish: { icon: TrendingUp, label: 'Bullish', color: 'var(--color-positive)', border: 'rgba(56, 211, 159, 0.25)', bg: 'rgba(56, 211, 159, 0.06)' },
-    bearish: { icon: TrendingDown, label: 'Bearish', color: 'var(--color-negative)', border: 'rgba(248, 113, 113, 0.25)', bg: 'rgba(248, 113, 113, 0.06)' },
-    neutral: { icon: Minus, label: 'Neutral', color: 'var(--color-text-secondary)', border: 'rgba(184, 145, 74, 0.25)', bg: 'rgba(138, 148, 166, 0.06)' },
-  }[analysis.verdict];
-
-  const VerdictIcon = verdictConfig.icon;
-
-  return (
-    <div
-      className="rounded-sm overflow-hidden animate-fade-in-scale"
-      style={{ background: 'var(--color-bg-surface)', border: `1px solid ${verdictConfig.border}` }}
-    >
-      <CardHeader
-        left={
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className="text-lg font-bold tracking-tight text-[var(--color-text-primary)]">{analysis.ticker}</span>
-              <span
-                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm text-[10px] font-semibold uppercase tracking-wider"
-                style={{ color: verdictConfig.color, background: verdictConfig.bg, border: `1px solid ${verdictConfig.border}` }}
-              >
-                <VerdictIcon className="w-3 h-3" />
-                {verdictConfig.label}
-              </span>
-            </div>
-            <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
-              {analysis.companyName}
-            </p>
-          </div>
-        }
-      />
-
-      {/* Summary */}
-      <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
-        <p className="text-[13px] leading-[1.65] text-[var(--color-text-primary)]">{analysis.summary}</p>
-      </div>
-
-      {/* Metrics */}
-      <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
-        <MetricsGrid metrics={analysis.metrics} />
-      </div>
-
-      {/* Bull / Bear */}
-      <div className="px-5">
-        <ExpandableSection title="Bull Case" content={analysis.bullCase} />
-        <ExpandableSection title="Bear Case" content={analysis.bearCase} />
-      </div>
-
-      {/* Recommendation */}
-      {analysis.recommendation && (
-        <div className="px-5 py-3.5 border-t border-[var(--color-border-subtle)]" style={{ background: 'rgba(184, 145, 74, 0.03)' }}>
-          <div className="type-caption text-[var(--color-gold)] mb-1">Recommendation</div>
-          <p className="text-[13px] font-medium leading-[1.5] text-[var(--color-text-primary)]">{analysis.recommendation}</p>
-        </div>
-      )}
-
-      {/* News */}
-      {analysis.newsHighlights?.length > 0 && (
-        <div className="px-5 py-3.5 border-t border-[var(--color-border-subtle)]">
-          <div className="type-caption text-[var(--color-text-muted)] mb-2">Recent Headlines</div>
-          <div className="space-y-1.5">
-            {analysis.newsHighlights.map((item, i) => (
-              <div key={i} className="flex items-start gap-2 py-0.5">
-                <span
-                  className="w-1.5 h-1.5 rounded-full mt-[7px] shrink-0"
-                  style={{
-                    background: item.sentiment === 'positive' ? 'var(--color-positive)'
-                      : item.sentiment === 'negative' ? 'var(--color-negative)'
-                      : 'var(--color-text-muted)',
-                  }}
-                />
-                <div className="min-w-0">
-                  <p className="text-[12px] text-[var(--color-text-secondary)] leading-snug">{item.headline}</p>
-                  <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>{item.date}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Portfolio Review Card ──
-
-function PortfolioReviewCard({ analysis }: { analysis: PortfolioReview }) {
-  const priorityColor = { high: 'var(--color-negative)', medium: 'var(--color-warning)', low: 'var(--color-text-secondary)' };
-
-  return (
-    <div
-      className="rounded-sm overflow-hidden animate-fade-in-scale"
-      style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-gold-border)' }}
-    >
-      <CardHeader
-        left={
-          <div>
-            <span className="text-base font-semibold text-[var(--color-text-primary)]">{analysis.title}</span>
-          </div>
-        }
-      />
-
-      {/* Summary */}
-      <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
-        <p className="text-[13px] leading-[1.65] text-[var(--color-text-primary)]">{analysis.summary}</p>
-      </div>
-
-      {/* Metrics */}
-      {analysis.metrics?.length > 0 && (
-        <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
-          <MetricsGrid metrics={analysis.metrics} />
-        </div>
-      )}
-
-      {/* Strengths */}
-      {analysis.strengths?.length > 0 && (
-        <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
-          <div className="flex items-center gap-1.5 mb-2">
-            <CheckCircle2 className="w-3.5 h-3.5 text-[var(--color-positive)]" />
-            <span className="type-caption text-[var(--color-positive)]">Strengths</span>
-          </div>
-          <ul className="space-y-1.5">
-            {analysis.strengths.map((s, i) => (
-              <li key={i} className="text-[13px] leading-[1.5] text-[var(--color-text-secondary)] pl-5 relative before:content-[''] before:absolute before:left-0 before:top-[9px] before:w-1.5 before:h-1.5 before:rounded-full before:bg-[var(--color-positive)] before:opacity-40">
-                {s}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Weaknesses */}
-      {analysis.weaknesses?.length > 0 && (
-        <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
-          <div className="flex items-center gap-1.5 mb-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-[var(--color-warning)]" />
-            <span className="type-caption text-[var(--color-warning)]">Weaknesses</span>
-          </div>
-          <ul className="space-y-1.5">
-            {analysis.weaknesses.map((w, i) => (
-              <li key={i} className="text-[13px] leading-[1.5] text-[var(--color-text-secondary)] pl-5 relative before:content-[''] before:absolute before:left-0 before:top-[9px] before:w-1.5 before:h-1.5 before:rounded-full before:bg-[var(--color-warning)] before:opacity-40">
-                {w}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Recommendations */}
-      {analysis.recommendations?.length > 0 && (
-        <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
-          <div className="flex items-center gap-1.5 mb-2">
-            <Target className="w-3.5 h-3.5 text-[var(--color-gold)]" />
-            <span className="type-caption text-[var(--color-gold)]">Recommendations</span>
-          </div>
-          <div className="space-y-2.5">
-            {analysis.recommendations.map((rec, i) => (
-              <div key={i} className="flex gap-3">
-                <span
-                  className="shrink-0 mt-0.5 px-1.5 py-px rounded-sm text-[9px] font-semibold uppercase tracking-wider"
-                  style={{
-                    color: priorityColor[rec.priority],
-                    background: `color-mix(in srgb, ${priorityColor[rec.priority]} 8%, transparent)`,
-                    border: `1px solid color-mix(in srgb, ${priorityColor[rec.priority]} 20%, transparent)`,
-                  }}
-                >
-                  {rec.priority}
-                </span>
-                <div>
-                  <p className="text-[13px] font-medium text-[var(--color-text-primary)] leading-snug">{rec.action}</p>
-                  <p className="text-[12px] text-[var(--color-text-muted)] leading-snug mt-0.5">{rec.rationale}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Risk Factors */}
-      {analysis.riskFactors?.length > 0 && (
-        <div className="px-5 py-3.5">
-          <div className="type-caption text-[var(--color-text-muted)] mb-2">Risk Factors</div>
-          <ul className="space-y-1.5">
-            {analysis.riskFactors.map((r, i) => (
-              <li key={i} className="text-[12px] leading-[1.5] text-[var(--color-text-muted)] pl-5 relative before:content-[''] before:absolute before:left-0 before:top-[8px] before:w-1 before:h-1 before:rounded-full before:bg-[var(--color-text-muted)]">
-                {r}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── General Analysis Card ──
-
-function GeneralAnalysisCard({ analysis }: { analysis: GeneralAnalysis }) {
-  return (
-    <div
-      className="rounded-sm overflow-hidden animate-fade-in-scale"
-      style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
-    >
-      <CardHeader
-        left={<span className="text-base font-semibold text-[var(--color-text-primary)]">{analysis.title}</span>}
-      />
-
-      {/* Summary */}
-      <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
-        <p className="text-[13px] leading-[1.65] text-[var(--color-text-primary)] whitespace-pre-line">{analysis.summary}</p>
-      </div>
-
-      {/* Metrics */}
-      {analysis.metrics?.length > 0 && (
-        <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
-          <MetricsGrid metrics={analysis.metrics} />
-        </div>
-      )}
-
-      {/* Key Points */}
-      {analysis.keyPoints?.length > 0 && (
-        <div className="px-5 py-3.5">
-          <div className="type-caption text-[var(--color-text-muted)] mb-2.5">Key Points</div>
-          <div className="space-y-3">
-            {analysis.keyPoints.map((kp, i) => (
-              <div key={i}>
-                <p className="text-[13px] font-medium text-[var(--color-text-primary)] leading-snug">{kp.point}</p>
-                <p className="text-[12px] text-[var(--color-text-muted)] leading-[1.5] mt-0.5">{kp.detail}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Analysis Card Router ──
-
-function AnalysisCard({ analysis }: { analysis: Analysis }) {
-  switch (analysis.type) {
-    case 'stock_analysis':
-      return <StockAnalysisCard analysis={analysis as StockAnalysis} />;
-    case 'portfolio_review':
-      return <PortfolioReviewCard analysis={analysis as PortfolioReview} />;
-    case 'general':
-      return <GeneralAnalysisCard analysis={analysis as GeneralAnalysis} />;
-    default:
-      // Fallback: try to render as stock analysis if it has verdict, otherwise general
-      if ('verdict' in analysis) return <StockAnalysisCard analysis={analysis as StockAnalysis} />;
-      return <GeneralAnalysisCard analysis={analysis as GeneralAnalysis} />;
-  }
-}
-
-// ── Skeleton ──
-
-function SkeletonCard() {
-  return (
-    <div className="rounded-sm overflow-hidden bg-[var(--color-bg-surface)] border border-[var(--color-border-base)]">
-      <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)] flex items-center gap-3">
-        <div className="skeleton h-5 w-24 rounded-sm" />
-        <div className="skeleton h-5 w-16 rounded-sm" />
-      </div>
-      <div className="px-5 py-3.5 space-y-2 border-b border-[var(--color-border-subtle)]">
-        <div className="skeleton h-3.5 w-full rounded-sm" />
-        <div className="skeleton h-3.5 w-[90%] rounded-sm" />
-        <div className="skeleton h-3.5 w-[70%] rounded-sm" />
-      </div>
-      <div className="px-5 py-3.5">
-        <div className="grid grid-cols-3 gap-px bg-[var(--color-border-subtle)] rounded-sm overflow-hidden">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="bg-[var(--color-bg-surface)] px-4 py-3 space-y-1.5">
-              <div className="skeleton h-2 w-12 rounded-sm" />
-              <div className="skeleton h-4 w-16 rounded-sm" />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+function isPortfolioQuery(query: string): boolean {
+  const lower = query.toLowerCase();
+  return PORTFOLIO_KEYWORDS.some(kw => lower.includes(kw));
 }
 
 // ── Suggested Queries ──
 
 const SUGGESTED_QUERIES = [
   'Analyze NVDA',
-  'Is AAPL overvalued?',
-  'Review my portfolio',
+  "What's my biggest risk?",
+  'How diversified am I?',
   'TSLA bull vs bear case',
-  'Find weakspots in my holdings',
-  'Compare MSFT vs GOOG',
+  'How would a 20% tech crash affect me?',
+  'Which positions should I sell for taxes?',
 ];
 
 // ── Main Page ──
 
-export default function ResearchChatPage() {
+function ResearchChatContent() {
+  const searchParams = useSearchParams();
   const { messages: storedMessages, addMessage, clearMessages } = useResearch();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const initialQueryRef = useRef(searchParams.get('q'));
 
   // Hydrate from session storage on mount
   useEffect(() => {
@@ -520,10 +126,17 @@ export default function ResearchChatPage() {
         content: m.analysis ? JSON.stringify(m.analysis) : m.content,
       }));
 
-      const res = await fetch('/api/ai/analyze', {
+      // Route portfolio questions to the dedicated portfolio-qa endpoint
+      const isPortfolio = isPortfolioQuery(query);
+      const endpoint = isPortfolio ? '/api/ai/portfolio-qa' : '/api/ai/analyze';
+      const payload = isPortfolio
+        ? { question: query, conversationHistory }
+        : { query, conversationHistory };
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, conversationHistory }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -569,6 +182,17 @@ export default function ResearchChatPage() {
     clearMessages();
   };
 
+  // ── Auto-send from intelligence feed follow-up (?q=...) ──
+
+  useEffect(() => {
+    if (initialQueryRef.current) {
+      const q = initialQueryRef.current;
+      initialQueryRef.current = null;
+      sendMessage(q);
+      window.history.replaceState({}, '', '/dashboard/chat');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Empty State ──
 
   const EmptyState = () => (
@@ -582,7 +206,7 @@ export default function ResearchChatPage() {
         </div>
         <h2 className="text-lg font-semibold tracking-tight text-[var(--color-text-primary)] mb-1">Research Terminal</h2>
         <p className="text-[13px] text-[var(--color-text-secondary)] mb-6 leading-relaxed">
-          AI-powered analysis. Ask about any ticker, review your portfolio, or explore market trends.
+          Ask about any stock, or ask Helm to analyze your portfolio with real dollar amounts from your connected accounts.
         </p>
         <div className="grid grid-cols-2 gap-2.5">
           {SUGGESTED_QUERIES.map((q) => (
@@ -630,7 +254,7 @@ export default function ResearchChatPage() {
                 ) : (
                   <div className="w-full">
                     {message.analysis ? (
-                      <AnalysisCard analysis={message.analysis} />
+                      <AnalysisCard analysis={message.analysis} onFollowUp={sendMessage} />
                     ) : (
                       <div
                         className="px-5 py-3.5 rounded-sm text-[13px] leading-[1.65] text-[var(--color-text-secondary)]"
@@ -649,7 +273,7 @@ export default function ResearchChatPage() {
 
             {isLoading && (
               <div className="flex justify-start">
-                <div className="w-full"><SkeletonCard /></div>
+                <div className="w-full"><AnalysisSkeletonCard /></div>
               </div>
             )}
 
@@ -670,7 +294,7 @@ export default function ResearchChatPage() {
               value={input}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder="Analyze a ticker, review your portfolio, or ask a market question..."
+              placeholder="Ask about your portfolio or analyze any stock..."
               rows={1}
               className="flex-1 bg-transparent text-[13px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] resize-none outline-none leading-normal"
               style={{ fontFamily: 'var(--font-sans)', minHeight: '20px' }}
@@ -680,6 +304,7 @@ export default function ResearchChatPage() {
               {messages.length > 0 && (
                 <button
                   onClick={handleClear}
+                  aria-label="Clear conversation"
                   className="w-8 h-8 rounded-sm flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
                   title="Clear conversation"
                 >
@@ -706,5 +331,13 @@ export default function ResearchChatPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResearchChatPage() {
+  return (
+    <Suspense>
+      <ResearchChatContent />
+    </Suspense>
   );
 }

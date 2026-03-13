@@ -2,25 +2,151 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { TaxIntelligence } from '@/components/dashboard/tax-intelligence';
-import { FileText, TrendingDown, Calendar, Lightbulb, X } from 'lucide-react';
+import {
+  FileText, TrendingDown, Calendar, Lightbulb, X,
+  AlertTriangle, CheckCircle2, ArrowRight, Scissors,
+} from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useFormat } from '@/hooks/use-format';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/contexts/toast-context';
-import { useTaxData } from '@/hooks/use-financial-data';
+import { useTaxData, useTaxOpportunities } from '@/hooks/use-financial-data';
+import type { TaxOpportunity } from '@/hooks/use-financial-data';
+
+// ── Tax Opportunity Card ──
+
+function OpportunityCard({
+  opp,
+  formatCurrency,
+  onDismiss,
+}: {
+  opp: TaxOpportunity;
+  formatCurrency: (n: number) => string;
+  onDismiss?: () => void;
+}) {
+  return (
+    <div
+      className="rounded-sm overflow-hidden"
+      style={{
+        background: 'var(--color-bg-surface)',
+        border: '1px solid rgba(248, 113, 113, 0.20)',
+      }}
+    >
+      {/* Header */}
+      <div className="px-5 py-3 flex items-center justify-between border-b border-[var(--color-border-subtle)]">
+        <div className="flex items-center gap-2">
+          <Scissors className="w-3.5 h-3.5 text-[var(--color-negative)]" />
+          <span className="type-caption text-[var(--color-negative)]">Loss Harvesting Opportunity</span>
+        </div>
+        {onDismiss && (
+          <button
+            onClick={onDismiss}
+            className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+
+      {/* Position info */}
+      <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
+        <div className="flex items-baseline justify-between mb-1">
+          <div>
+            <span className="text-lg font-bold tracking-tight text-[var(--color-text-primary)]">{opp.ticker}</span>
+            <span className="text-[11px] text-[var(--color-text-muted)] ml-2" style={{ fontFamily: 'var(--font-mono)' }}>
+              {opp.securityName}
+            </span>
+          </div>
+          <span className="type-eyebrow text-[var(--color-text-muted)]">{opp.sector}</span>
+        </div>
+        <div className="flex items-center gap-6 mt-2">
+          <div>
+            <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Cost Basis</div>
+            <div className="text-[14px] font-semibold text-[var(--color-text-primary)] font-tabular">
+              {formatCurrency(opp.costBasis)}
+            </div>
+          </div>
+          <ArrowRight className="w-3.5 h-3.5 text-[var(--color-text-muted)] shrink-0" />
+          <div>
+            <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Current Value</div>
+            <div className="text-[14px] font-semibold text-[var(--color-text-primary)] font-tabular">
+              {formatCurrency(opp.currentValue)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Loss + Savings highlight */}
+      <div className="grid grid-cols-2 gap-px bg-[var(--color-border-subtle)]">
+        <div className="bg-[var(--color-bg-surface)] px-5 py-3">
+          <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Unrealized Loss</div>
+          <div className="type-data text-[var(--color-negative)] font-tabular">
+            {formatCurrency(opp.unrealizedLoss)}
+          </div>
+          <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
+            {opp.lossPct.toFixed(1)}% decline
+          </div>
+        </div>
+        <div className="bg-[var(--color-bg-surface)] px-5 py-3">
+          <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Est. Tax Savings</div>
+          <div className="type-data text-[var(--color-positive)] font-tabular">
+            {formatCurrency(opp.estimatedSavings)}
+          </div>
+          <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
+            at 32% combined rate
+          </div>
+        </div>
+      </div>
+
+      {/* Replacement suggestion */}
+      {opp.replacement && (
+        <div className="px-5 py-3 border-t border-[var(--color-border-subtle)]" style={{ background: 'rgba(184, 145, 74, 0.03)' }}>
+          <div className="type-eyebrow text-[var(--color-gold)] mb-1">Suggested Swap</div>
+          <div className="flex items-center gap-2">
+            <span className="text-[13px] font-semibold text-[var(--color-text-primary)]">{opp.replacement.ticker}</span>
+            <span className="text-[12px] text-[var(--color-text-secondary)]">— {opp.replacement.name}</span>
+          </div>
+          <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">{opp.replacement.reason}</p>
+        </div>
+      )}
+
+      {/* Wash sale status */}
+      <div className="px-5 py-2.5 border-t border-[var(--color-border-subtle)] flex items-center gap-2">
+        {opp.washSaleRisk ? (
+          <>
+            <AlertTriangle className="w-3 h-3 text-[var(--color-warning)]" />
+            <span className="text-[11px] text-[var(--color-warning)]" style={{ fontFamily: 'var(--font-mono)' }}>
+              Wash sale risk: {opp.washSaleDetail}
+            </span>
+          </>
+        ) : (
+          <>
+            <CheckCircle2 className="w-3 h-3 text-[var(--color-positive)]" />
+            <span className="text-[11px] text-[var(--color-positive)]" style={{ fontFamily: 'var(--font-mono)' }}>
+              No recent sales — wash sale safe
+            </span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Main Page ──
 
 export default function TaxesPage() {
   const { formatCurrency } = useFormat();
   const { taxEstimate, optimizationTasks, loading: apiLoading, error } = useTaxData();
+  const { report: harvestReport, loading: harvestLoading } = useTaxOpportunities();
 
   const { success } = useToast();
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [completedTasks, setCompletedTasks] = useState<Record<number, boolean>>({});
+  const [dismissedOpps, setDismissedOpps] = useState<Set<string>>(new Set());
 
-  // Build tax data for components
   const taxData = useMemo(() => ({
     estimated_income_tax: taxEstimate?.estimatedIncomeTax || 0,
     short_term_capital_gains: taxEstimate?.shortTermCapitalGains || 0,
@@ -32,18 +158,18 @@ export default function TaxesPage() {
 
   const totalTaxLiability = taxEstimate?.totalEstimatedTax || 0;
 
-  const potentialSavings = optimizationTasks?.reduce((sum, task) => {
+  const potentialSavings = (optimizationTasks?.reduce((sum, task) => {
     return sum + (task.potentialSavings || 0);
-  }, 0) || 0;
+  }, 0) || 0) + (harvestReport?.totalEstimatedSavings || 0);
 
   useEffect(() => {
     const raw = localStorage.getItem('helm-tax-tasks');
     if (raw) {
-      try {
-        setCompletedTasks(JSON.parse(raw));
-      } catch {
-        setCompletedTasks({});
-      }
+      try { setCompletedTasks(JSON.parse(raw)); } catch { setCompletedTasks({}); }
+    }
+    const dismissed = localStorage.getItem('helm-tax-dismissed');
+    if (dismissed) {
+      try { setDismissedOpps(new Set(JSON.parse(dismissed))); } catch { /* ignore */ }
     }
   }, []);
 
@@ -58,6 +184,15 @@ export default function TaxesPage() {
     const next = { ...completedTasks, [index]: !completedTasks[index] };
     saveTasks(next);
   };
+
+  const dismissOpp = (ticker: string) => {
+    const next = new Set(dismissedOpps);
+    next.add(ticker);
+    setDismissedOpps(next);
+    localStorage.setItem('helm-tax-dismissed', JSON.stringify([...next]));
+  };
+
+  const visibleOpps = harvestReport?.opportunities.filter(o => !dismissedOpps.has(o.ticker)) || [];
 
   const timelineData = useMemo(
     () => [
@@ -89,9 +224,7 @@ export default function TaxesPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-32" />
-            ) : (
+            {loading ? <Skeleton className="h-8 w-32" /> : (
               <>
                 <CardTitle className="type-data text-3xl text-[var(--color-negative)]">
                   {formatCurrency(totalTaxLiability)}
@@ -110,9 +243,7 @@ export default function TaxesPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-32" />
-            ) : (
+            {loading ? <Skeleton className="h-8 w-32" /> : (
               <>
                 <CardTitle className="type-data text-3xl text-[var(--color-positive)]">
                   {formatCurrency(potentialSavings)}
@@ -131,9 +262,7 @@ export default function TaxesPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-32" />
-            ) : (
+            {loading ? <Skeleton className="h-8 w-32" /> : (
               <>
                 <CardTitle className="type-data text-3xl">
                   {formatCurrency(taxData.estimated_quarterly_payment)}
@@ -147,24 +276,97 @@ export default function TaxesPage() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center space-x-2">
-              <Lightbulb className="w-4 h-4 text-[var(--color-gold)]" />
-              <CardDescription>Optimization Ideas</CardDescription>
+              <Scissors className="w-4 h-4 text-[var(--color-gold)]" />
+              <CardDescription>Harvesting Opportunities</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
+            {harvestLoading ? <Skeleton className="h-8 w-16" /> : (
               <>
                 <CardTitle className="type-data text-3xl">
-                  {optimizationTasks?.length || 0}
+                  {harvestReport?.opportunityCount || 0}
                 </CardTitle>
-                <p className="text-sm text-[var(--color-text-secondary)] mt-1">Available strategies</p>
+                <p className="text-sm text-[var(--color-text-secondary)] mt-1">Positions with losses</p>
               </>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* ── Tax-Loss Harvesting Section ── */}
+      {(harvestLoading || (harvestReport && harvestReport.opportunityCount > 0)) && (
+        <div className="space-y-4">
+          {/* Harvest Summary Card */}
+          {!harvestLoading && harvestReport && harvestReport.opportunityCount > 0 && (
+            <div
+              className="rounded-sm overflow-hidden"
+              style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-gold-border)' }}
+            >
+              <div className="px-5 py-3.5 flex items-center justify-between border-b border-[var(--color-border-subtle)]">
+                <div className="flex items-center gap-2">
+                  <Scissors className="w-4 h-4 text-[var(--color-gold)]" />
+                  <span className="type-h2">Tax-Loss Harvesting</span>
+                </div>
+                <span className="type-eyebrow text-[var(--color-text-muted)]">
+                  {harvestReport.opportunityCount} {harvestReport.opportunityCount === 1 ? 'opportunity' : 'opportunities'}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-px bg-[var(--color-border-subtle)]">
+                <div className="bg-[var(--color-bg-surface)] px-5 py-4 text-center">
+                  <div className="type-eyebrow text-[var(--color-text-muted)] mb-1">Total Harvestable Losses</div>
+                  <div className="type-data text-xl text-[var(--color-negative)] font-tabular">
+                    {formatCurrency(harvestReport.totalHarvestableLoss)}
+                  </div>
+                </div>
+                <div className="bg-[var(--color-bg-surface)] px-5 py-4 text-center">
+                  <div className="type-eyebrow text-[var(--color-text-muted)] mb-1">Est. Tax Savings</div>
+                  <div className="type-data text-xl text-[var(--color-positive)] font-tabular">
+                    {formatCurrency(harvestReport.totalEstimatedSavings)}
+                  </div>
+                </div>
+                <div className="bg-[var(--color-bg-surface)] px-5 py-4 text-center">
+                  <div className="type-eyebrow text-[var(--color-text-muted)] mb-1">Combined Tax Rate</div>
+                  <div className="type-data text-xl font-tabular">
+                    {(harvestReport.taxRate * 100).toFixed(0)}%
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Individual opportunity cards */}
+          {harvestLoading ? (
+            <div className="space-y-3">
+              {[1, 2].map(i => (
+                <div key={i} className="rounded-sm bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] p-5 space-y-3">
+                  <div className="flex gap-3">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-8 w-3/4" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {visibleOpps.map((opp) => (
+                <OpportunityCard
+                  key={opp.ticker}
+                  opp={opp}
+                  formatCurrency={formatCurrency}
+                  onDismiss={() => dismissOpp(opp.ticker)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Disclaimer */}
+          <p className="text-[10px] text-[var(--color-text-muted)] text-center" style={{ fontFamily: 'var(--font-mono)' }}>
+            This is not tax advice. Tax-loss harvesting involves risks and may not be suitable for all investors. Consult a qualified tax professional before making any tax-related decisions. Wash sale rules apply for 30 days before and after a sale.
+          </p>
+        </div>
+      )}
 
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -183,9 +385,7 @@ export default function TaxesPage() {
                     <p className="type-h3">Estimated Income Tax</p>
                     <p className="text-sm text-[var(--color-text-secondary)]">Federal and state income tax</p>
                   </div>
-                  <span className="type-data text-lg">
-                    {formatCurrency(taxData.estimated_income_tax)}
-                  </span>
+                  <span className="type-data text-lg">{formatCurrency(taxData.estimated_income_tax)}</span>
                 </div>
 
                 <div className="flex items-center justify-between p-4 bg-[var(--color-bg-elevated)] rounded-lg border border-[var(--color-border-subtle)]">
@@ -193,9 +393,7 @@ export default function TaxesPage() {
                     <p className="type-h3">Short-Term Capital Gains</p>
                     <p className="text-sm text-[var(--color-text-secondary)]">Taxed as ordinary income</p>
                   </div>
-                  <span className="type-data text-lg">
-                    {formatCurrency(taxData.short_term_capital_gains)}
-                  </span>
+                  <span className="type-data text-lg">{formatCurrency(taxData.short_term_capital_gains)}</span>
                 </div>
 
                 <div className="flex items-center justify-between p-4 bg-[var(--color-bg-elevated)] rounded-lg border border-[var(--color-border-subtle)]">
@@ -203,9 +401,7 @@ export default function TaxesPage() {
                     <p className="type-h3">Long-Term Capital Gains</p>
                     <p className="text-sm text-[var(--color-text-secondary)]">Preferential tax rate applies</p>
                   </div>
-                  <span className="type-data text-lg">
-                    {formatCurrency(taxData.long_term_capital_gains)}
-                  </span>
+                  <span className="type-data text-lg">{formatCurrency(taxData.long_term_capital_gains)}</span>
                 </div>
 
                 <div className="flex items-center justify-between p-4 bg-[var(--color-positive)]/5 rounded-lg border border-[var(--color-positive)]/30">
@@ -291,7 +487,7 @@ export default function TaxesPage() {
           <Card>
             <CardHeader>
               <CardTitle>Tax optimization tasks</CardTitle>
-              <CardDescription>Turn Helm's ideas into concrete next steps.</CardDescription>
+              <CardDescription>Turn Helm&apos;s ideas into concrete next steps.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {(optimizationTasks || []).map((task, index) => {
@@ -418,8 +614,7 @@ export default function TaxesPage() {
           <div>
             <p className="type-h3 mb-1">Recommended next steps</p>
             <p className="type-body text-[var(--color-text-secondary)]">
-              Use this mock data to understand how Helm could frame your tax posture: review liability, pick 1-2
-              optimization tasks, and share a summary with your advisor.
+              Review harvesting opportunities, pick 1-2 optimization tasks, and share a summary with your advisor.
             </p>
           </div>
           <div className="flex gap-3">
@@ -430,7 +625,7 @@ export default function TaxesPage() {
               Export tax report
             </button>
             <button
-              className="px-4 py-2 rounded-md bg-[var(--color-gold)] text-[var(--color-text-inverse)] type-label text-sm hover:bg-[var(--color-gold)]-hi"
+              className="px-4 py-2 rounded-md bg-[var(--color-gold)] text-[var(--color-text-inverse)] type-label text-sm hover:bg-[var(--color-gold-hi)]"
               onClick={() => success('Advisor handoff noted', 'Share this view with your tax professional')}
             >
               Talk to an advisor
@@ -461,7 +656,7 @@ export default function TaxesPage() {
             </div>
             <div className="px-6 py-4 space-y-3 text-sm text-[var(--color-text-secondary)]">
               <p>
-                These numbers assume stable income, current portfolio mix, and no additional large one‑time events.
+                These numbers assume stable income, current portfolio mix, and no additional large one-time events.
               </p>
               <ul className="list-disc list-inside space-y-1 text-xs">
                 <li>Federal marginal bracket approximated from your mock income level.</li>
