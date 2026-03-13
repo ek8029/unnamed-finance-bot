@@ -59,7 +59,7 @@ export function TaxInsightDrawer({
             {recommendedAction}
           </p>
           <div className="flex gap-2">
-            <Button size="sm" variant="default" className="bg-[var(--color-gold)] text-[var(--color-text-inverse)] hover:bg-[var(--color-gold)]/90">
+            <Button size="sm" variant="default" className="bg-[var(--color-gold)] text-black font-semibold hover:bg-[var(--color-gold-hi)]">
               <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
               Schedule Tax Consultation
             </Button>

@@ -625,7 +625,7 @@ export default function TaxesPage() {
               Export tax report
             </button>
             <button
-              className="px-4 py-2 rounded-md bg-[var(--color-gold)] text-[var(--color-text-inverse)] type-label text-sm hover:bg-[var(--color-gold-hi)]"
+              className="px-4 py-2 rounded-md bg-[var(--color-gold)] text-black font-semibold text-sm hover:bg-[var(--color-gold-hi)] transition-colors"
               onClick={() => success('Advisor handoff noted', 'Share this view with your tax professional')}
             >
               Talk to an advisor

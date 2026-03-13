@@ -562,7 +562,7 @@ export default function TransactionsPage() {
                       onClick={() => goToPage(pageNum)}
                       className={`w-8 h-8 rounded-md text-sm transition-colors ${
                         pageNum === pagination.page
-                          ? 'bg-[var(--color-gold)] text-[var(--color-text-inverse)] font-medium'
+                          ? 'bg-[var(--color-gold)] text-black font-medium'
                           : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-overlay)]'
                       }`}
                     >

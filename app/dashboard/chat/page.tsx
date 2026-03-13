@@ -377,7 +377,7 @@ function ResearchChatContent() {
                 className={cn(
                   'w-8 h-8 rounded-sm flex items-center justify-center transition-all duration-200',
                   input.trim() && !isLoading
-                    ? 'bg-[var(--color-gold)] text-[var(--color-text-inverse)] hover:bg-[var(--color-gold-hi)]'
+                    ? 'bg-[var(--color-gold)] text-black hover:bg-[var(--color-gold-hi)]'
                     : 'text-[var(--color-text-muted)] cursor-not-allowed'
                 )}
               >

@@ -297,7 +297,7 @@ export default function AccountsPage() {
                   onClick={() => setFilterType('all')}
                   className={`px-3 py-1.5 rounded type-label text-xs transition-colors ${
                     filterType === 'all'
-                      ? 'bg-[var(--color-gold)] text-[var(--color-text-inverse)]'
+                      ? 'bg-[var(--color-gold)] text-black font-medium'
                       : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
                   }`}
                 >
