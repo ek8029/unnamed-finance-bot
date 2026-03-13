@@ -3,6 +3,7 @@ import { Manrope, DM_Mono } from 'next/font/google';
 import Script from 'next/script';
 import "./globals.css";
 import { Providers } from '@/components/providers';
+import { RecoveryRedirect } from '@/components/recovery-redirect';
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -64,6 +65,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${manrope.variable} ${dmMono.variable} font-sans`}>
+        <RecoveryRedirect />
         <Providers>{children}</Providers>
         <Script
           src="https://plausible.io/js/pa-O3gPqcGXLE6Ju_7Ulgsf6.js"
