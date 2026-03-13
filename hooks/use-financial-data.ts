@@ -404,37 +404,50 @@ export function useInsights() {
   return { insights, loading, error, dismissInsight };
 }
 
+// ── Tax position with unrealized P&L ──
+
+export interface TaxPosition {
+  ticker: string;
+  name: string;
+  shares: number;
+  costBasis: number;
+  currentValue: number;
+  gainLoss: number;
+  gainLossPct: number;
+  sector: string;
+  allocationPct: number;
+}
+
+export interface RealizedTransaction {
+  ticker: string;
+  date: string;
+  shares: number;
+  proceeds: number;
+  costBasis: number;
+  gainLoss: number;
+  gainLossType: 'short_term' | 'long_term';
+}
+
+export interface TaxSummary {
+  unrealized: {
+    totalGains: number;
+    totalLosses: number;
+    netUnrealized: number;
+    positions: TaxPosition[];
+  };
+  realized: {
+    shortTermGains: number;
+    shortTermLosses: number;
+    longTermGains: number;
+    longTermLosses: number;
+    netRealized: number;
+    transactionCount: number;
+    transactions: RealizedTransaction[];
+  };
+}
+
 export function useTaxData() {
-  const [taxData, setTaxData] = useState<{
-    taxEstimate: {
-      year: number;
-      estimatedIncomeTax: number;
-      shortTermCapitalGains: number;
-      longTermCapitalGains: number;
-      deductionsIdentified: number;
-      totalEstimatedTax: number;
-      estimatedQuarterlyPayment: number;
-    } | null;
-    capitalGainsSummary: {
-      totalRealizedGains: number;
-      shortTermGains: number;
-      longTermGains: number;
-      transactions: number;
-    } | null;
-    optimizationTasks: {
-      id: string;
-      title: string;
-      description?: string;
-      potentialSavings?: number;
-      type: string;
-      priority: string;
-      deadline?: string;
-    }[];
-  }>({
-    taxEstimate: null,
-    capitalGainsSummary: null,
-    optimizationTasks: [],
-  });
+  const [data, setData] = useState<TaxSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -443,19 +456,18 @@ export function useTaxData() {
       try {
         const res = await fetch('/api/tax');
         if (!res.ok) throw new Error('Failed to fetch tax data');
-        const data = await res.json();
-        setTaxData(data);
+        const json = await res.json();
+        setData(json);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setLoading(false);
       }
     }
-
     fetchData();
   }, []);
 
-  return { ...taxData, loading, error };
+  return { data, loading, error };
 }
 
 // ── Tax-loss harvesting opportunities ──

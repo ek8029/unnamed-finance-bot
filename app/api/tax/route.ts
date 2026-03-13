@@ -1,10 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
+import { getPortfolioSummary } from '@/lib/portfolio-analysis';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
     const supabase = await createClient();
-
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -13,84 +13,87 @@ export async function GET() {
 
     const currentYear = new Date().getFullYear();
 
-    // Fetch tax estimates, capital gains, and optimization tasks in parallel
-    const [
-      taxEstimateResult,
-      capitalGainsResult,
-      optimizationTasksResult,
-    ] = await Promise.all([
-      supabase
-        .from('tax_estimates')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('tax_year', currentYear)
-        .single(),
+    // Fetch portfolio + realized gains concurrently
+    const [portfolioSummary, capitalGainsResult] = await Promise.all([
+      getPortfolioSummary(user.id),
       supabase
         .from('capital_gains')
-        .select('*')
+        .select('ticker, transaction_type, transaction_date, shares, price_per_share, cost_basis, proceeds, gain_loss, gain_loss_type')
         .eq('user_id', user.id)
         .eq('tax_year', currentYear)
         .order('transaction_date', { ascending: false }),
-      supabase
-        .from('tax_optimization_tasks')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('tax_year', currentYear)
-        .eq('is_completed', false)
-        .order('priority', { ascending: true }),
     ]);
 
-    const taxEstimate = taxEstimateResult.data || {
-      tax_year: currentYear,
-      estimated_income_tax: 0,
-      short_term_capital_gains: 0,
-      long_term_capital_gains: 0,
-      deductions_identified: 0,
-      total_estimated_tax: 0,
-      estimated_quarterly_payment: 0,
-    };
+    // ── Unrealized P&L from live holdings ──
+    const positions = portfolioSummary.holdings
+      .filter(h => h.unrealizedGainLoss != null && h.totalCostBasis != null)
+      .map(h => ({
+        ticker: h.ticker,
+        name: h.securityName,
+        shares: h.shares,
+        costBasis: h.totalCostBasis!,
+        currentValue: h.totalValue,
+        gainLoss: h.unrealizedGainLoss!,
+        gainLossPct: (h.unrealizedGainLossPct ?? 0) * 100,
+        sector: h.sector,
+        allocationPct: h.allocationPct,
+      }))
+      .sort((a, b) => Math.abs(b.gainLoss) - Math.abs(a.gainLoss));
 
+    const totalUnrealizedGains = positions
+      .filter(p => p.gainLoss > 0)
+      .reduce((s, p) => s + p.gainLoss, 0);
+
+    const totalUnrealizedLosses = positions
+      .filter(p => p.gainLoss < 0)
+      .reduce((s, p) => s + p.gainLoss, 0);
+
+    // ── Realized capital gains from transactions ──
     const capitalGains = capitalGainsResult.data || [];
-    const optimizationTasks = optimizationTasksResult.data || [];
+    const sells = capitalGains.filter(g => g.transaction_type === 'sell');
 
-    // Calculate summary metrics
-    const totalRealizedGains = capitalGains
-      .filter(g => g.transaction_type === 'sell')
-      .reduce((sum, g) => sum + Number(g.gain_loss || 0), 0);
+    const shortTermGains = sells
+      .filter(g => g.gain_loss_type === 'short_term' && (g.gain_loss ?? 0) > 0)
+      .reduce((s, g) => s + Number(g.gain_loss || 0), 0);
 
-    const shortTermGains = capitalGains
-      .filter(g => g.gain_loss_type === 'short_term')
-      .reduce((sum, g) => sum + Number(g.gain_loss || 0), 0);
+    const shortTermLosses = sells
+      .filter(g => g.gain_loss_type === 'short_term' && (g.gain_loss ?? 0) < 0)
+      .reduce((s, g) => s + Number(g.gain_loss || 0), 0);
 
-    const longTermGains = capitalGains
-      .filter(g => g.gain_loss_type === 'long_term')
-      .reduce((sum, g) => sum + Number(g.gain_loss || 0), 0);
+    const longTermGains = sells
+      .filter(g => g.gain_loss_type === 'long_term' && (g.gain_loss ?? 0) > 0)
+      .reduce((s, g) => s + Number(g.gain_loss || 0), 0);
+
+    const longTermLosses = sells
+      .filter(g => g.gain_loss_type === 'long_term' && (g.gain_loss ?? 0) < 0)
+      .reduce((s, g) => s + Number(g.gain_loss || 0), 0);
+
+    const realizedTransactions = sells.map(g => ({
+      ticker: g.ticker,
+      date: g.transaction_date,
+      shares: g.shares,
+      proceeds: g.proceeds,
+      costBasis: g.cost_basis,
+      gainLoss: Number(g.gain_loss || 0),
+      gainLossType: g.gain_loss_type as 'short_term' | 'long_term',
+    }));
 
     return NextResponse.json({
-      taxEstimate: {
-        year: taxEstimate.tax_year,
-        estimatedIncomeTax: taxEstimate.estimated_income_tax,
-        shortTermCapitalGains: taxEstimate.short_term_capital_gains,
-        longTermCapitalGains: taxEstimate.long_term_capital_gains,
-        deductionsIdentified: taxEstimate.deductions_identified,
-        totalEstimatedTax: taxEstimate.total_estimated_tax,
-        estimatedQuarterlyPayment: taxEstimate.estimated_quarterly_payment,
+      unrealized: {
+        totalGains: totalUnrealizedGains,
+        totalLosses: totalUnrealizedLosses,
+        netUnrealized: totalUnrealizedGains + totalUnrealizedLosses,
+        positions,
       },
-      capitalGainsSummary: {
-        totalRealizedGains,
+      realized: {
         shortTermGains,
+        shortTermLosses,
         longTermGains,
-        transactions: capitalGains.length,
+        longTermLosses,
+        netRealized: shortTermGains + shortTermLosses + longTermGains + longTermLosses,
+        transactionCount: sells.length,
+        transactions: realizedTransactions,
       },
-      optimizationTasks: optimizationTasks.map(task => ({
-        id: task.id,
-        title: task.task_title,
-        description: task.task_description,
-        potentialSavings: task.potential_savings,
-        type: task.task_type,
-        priority: task.priority,
-        deadline: task.deadline,
-      })),
     });
   } catch (error) {
     console.error('Error in tax route:', error);
