@@ -124,7 +124,7 @@ function PositionRow({ pos, formatCurrency }: { pos: TaxPosition; formatCurrency
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[11px] text-[var(--color-text-muted)] truncate" style={MONO}>{pos.name}</span>
+          <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>{pos.name}</span>
           <span className={cn('text-xs font-semibold', isGain ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]')} style={TNUM}>
             {isGain ? '+' : ''}{formatCurrency(pos.gainLoss)}
           </span>
@@ -403,7 +403,7 @@ export default function TaxesPage() {
                     <span className="text-[11px] text-[var(--color-text-muted)] w-5 text-right" style={MONO}>{i + 1}</span>
                     <span className="text-sm font-bold text-[var(--color-text-primary)] w-16">{pos.ticker}</span>
                     <div className="flex-1 min-w-0">
-                      <span className="text-[11px] text-[var(--color-text-muted)] truncate" style={MONO}>{pos.name}</span>
+                      <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>{pos.name}</span>
                     </div>
                     <span className={cn('text-xs font-semibold', isLoss ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]')} style={TNUM}>
                       {isLoss ? 'Harvest loss' : `+${formatCurrency(pos.gainLoss)} tax event`}

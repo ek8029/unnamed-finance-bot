@@ -446,7 +446,7 @@ export default function SettingsPage() {
               <div className="type-h3 capitalize">{settings.density}</div>
             </div>
             <div>
-              <div className="type-label text-[var(--color-text-muted)] mb-1">Sample Amount</div>
+              <div className="type-label text-[var(--color-text-muted)] mb-1">Currency Format</div>
               <div className="type-h3">{formatCurrency(1234567)}</div>
               <div className="text-xs text-[var(--color-text-secondary)] mt-1">{formatCurrencyDetailed(1234.56)}</div>
             </div>
@@ -947,10 +947,20 @@ export default function SettingsPage() {
                 </div>
                 <Badge variant="gold">Active</Badge>
               </div>
-              <p className="text-[var(--color-text-secondary)] text-xs mb-3">Next billing date: April 15, 2024</p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" className="flex-1">Change Plan</Button>
-                <Button variant="outline" size="sm" className="flex-1">Cancel</Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => {
+                    if (confirm('Are you sure you want to cancel your plan? You will lose access to premium features at the end of your current billing period.')) {
+                      // TODO: implement cancel subscription
+                    }
+                  }}
+                >
+                  Cancel Plan
+                </Button>
               </div>
             </div>
 

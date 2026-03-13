@@ -537,7 +537,7 @@ export default function AccountsPage() {
               </div>
               <div className="pt-2 border-t border-[var(--color-border-subtle)]">
                 <p className="type-label text-[var(--color-text-secondary)] mb-2">Recent transactions</p>
-                <p className="text-xs text-[var(--color-text-muted)]">Transaction history will be available when Plaid integration is enabled.</p>
+                <p className="text-xs text-[var(--color-text-muted)]">View full transaction history on the Transactions page.</p>
               </div>
             </div>
           </div>

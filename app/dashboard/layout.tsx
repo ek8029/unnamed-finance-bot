@@ -129,7 +129,7 @@ export default function DashboardLayout({
 
   return (
     <div className={cn(
-      "bg-[var(--color-bg-base)] flex flex-col",
+      "bg-[var(--color-bg-base)] flex flex-col max-w-[100vw] overflow-x-hidden",
       isChatPage ? "h-screen overflow-hidden" : "min-h-screen"
     )}>
       {/* Top Navigation Bar */}
@@ -283,14 +283,6 @@ export default function DashboardLayout({
                     >
                       <User className="w-4 h-4" />
                       <span>Account Settings</span>
-                    </Link>
-                    <Link
-                      href="/dashboard/settings"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center space-x-3 px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
-                    >
-                      <Settings className="w-4 h-4" />
-                      <span>Preferences</span>
                     </Link>
                   </div>
 

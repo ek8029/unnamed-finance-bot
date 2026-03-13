@@ -68,7 +68,10 @@ const EYEBROW: React.CSSProperties = { ...MONO, fontSize: '11px', letterSpacing:
 
 // ── Stagger entrance animation ──
 
-function stagger(active: boolean, index: number): React.CSSProperties {
+function stagger(active: boolean, index: number, reduceMotion = false): React.CSSProperties {
+  if (reduceMotion) {
+    return { opacity: active ? 1 : 0 };
+  }
   return {
     opacity: active ? 1 : 0,
     transform: active ? 'translateY(0)' : 'translateY(16px)',
@@ -956,6 +959,15 @@ export default function WrappedPage() {
   const [touchStartX, setTouchStartX] = useState(0);
   const [confettiKey, setConfettiKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduceMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setReduceMotion(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   // Fetch data
   useEffect(() => {
@@ -1118,8 +1130,8 @@ export default function WrappedPage() {
         ))}
       </div>
 
-      {/* Confetti overlay */}
-      {showConfetti && <Confetti key={confettiKey} />}
+      {/* Confetti overlay — skip when user prefers reduced motion */}
+      {showConfetti && !reduceMotion && <Confetti key={confettiKey} />}
 
       {/* Card content */}
       <div className="absolute inset-0 pt-20">
@@ -1127,7 +1139,8 @@ export default function WrappedPage() {
           <div
             key={`${type}-${i}`}
             className={cn(
-              'absolute inset-0 transition-all duration-500 ease-out',
+              'absolute inset-0',
+              !reduceMotion && 'transition-all duration-500 ease-out',
               i === currentCard
                 ? 'opacity-100 scale-100 translate-x-0'
                 : i < currentCard

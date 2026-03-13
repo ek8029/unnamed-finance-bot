@@ -384,27 +384,27 @@ export default function PortfolioPage() {
                 {[
                   {
                     label: '1 Month Return',
-                    value: performanceMetrics?.return_1m != null ? `${performanceMetrics.return_1m >= 0 ? '+' : ''}${performanceMetrics.return_1m.toFixed(1)}%` : '--',
+                    value: performanceMetrics?.return_1m != null ? `${performanceMetrics.return_1m >= 0 ? '+' : ''}${performanceMetrics.return_1m.toFixed(1)}%` : 'N/A',
                     color: performanceMetrics?.return_1m != null && performanceMetrics.return_1m >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                   },
                   {
                     label: '3 Month Return',
-                    value: performanceMetrics?.return_3m != null ? `${performanceMetrics.return_3m >= 0 ? '+' : ''}${performanceMetrics.return_3m.toFixed(1)}%` : '--',
+                    value: performanceMetrics?.return_3m != null ? `${performanceMetrics.return_3m >= 0 ? '+' : ''}${performanceMetrics.return_3m.toFixed(1)}%` : 'N/A',
                     color: performanceMetrics?.return_3m != null && performanceMetrics.return_3m >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                   },
                   {
                     label: 'YTD Return',
-                    value: performanceMetrics?.return_ytd != null ? `${performanceMetrics.return_ytd >= 0 ? '+' : ''}${performanceMetrics.return_ytd.toFixed(1)}%` : '--',
+                    value: performanceMetrics?.return_ytd != null ? `${performanceMetrics.return_ytd >= 0 ? '+' : ''}${performanceMetrics.return_ytd.toFixed(1)}%` : 'N/A',
                     color: performanceMetrics?.return_ytd != null && performanceMetrics.return_ytd >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                   },
                   {
                     label: 'Sharpe Ratio',
-                    value: performanceMetrics?.sharpe_ratio != null ? performanceMetrics.sharpe_ratio.toFixed(2) : '--',
+                    value: performanceMetrics?.sharpe_ratio != null ? performanceMetrics.sharpe_ratio.toFixed(2) : 'N/A',
                     color: 'text-[var(--color-text-primary)]'
                   },
                   {
                     label: 'Beta',
-                    value: performanceMetrics?.beta != null ? performanceMetrics.beta.toFixed(2) : '--',
+                    value: performanceMetrics?.beta != null ? performanceMetrics.beta.toFixed(2) : 'N/A',
                     color: 'text-[var(--color-text-primary)]'
                   },
                 ].map((metric) => (
@@ -420,10 +420,10 @@ export default function PortfolioPage() {
 
         {/* Right Sidebar - Market Intelligence Feed */}
         <aside className="hidden lg:block w-[420px] flex-shrink-0">
-          <div className="sticky top-4 h-[calc(100vh-104px)]">
+          <div className="sticky top-20">
             <MarketIntelligence
               holdings={transformedHoldings}
-              className="h-full flex flex-col"
+              className="max-h-[calc(100vh-6rem)] flex flex-col"
             />
           </div>
         </aside>

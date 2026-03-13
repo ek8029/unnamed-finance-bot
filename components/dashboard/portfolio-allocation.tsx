@@ -138,7 +138,7 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
                       className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
                       style={{ backgroundColor: color }}
                     />
-                    <span className="type-label text-[var(--color-text-primary)] truncate">{item.name}</span>
+                    <span className="type-label text-[var(--color-text-primary)]">{item.name}</span>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0 ml-2">
                     <span className="type-mono text-[var(--color-text-primary)]">

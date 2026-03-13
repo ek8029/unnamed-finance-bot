@@ -320,7 +320,7 @@ export default function ActionsPage() {
                         {action.priority}
                       </span>
                     </div>
-                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5 truncate">{action.description}</p>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5 truncate">{action.recommended_action || action.description}</p>
                   </div>
                   {action.estimated_impact && action.estimated_impact > 0 && (
                     <span className="text-sm font-semibold text-[var(--color-positive)] font-tabular whitespace-nowrap">

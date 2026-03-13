@@ -322,7 +322,7 @@ export default function TransactionsPage() {
       {/* Filters */}
       <Card>
         <CardContent className="pt-5 pb-4">
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-end gap-3">
             {/* Search */}
             <form onSubmit={handleSearch} className="flex-1 min-w-[200px]">
               <label className="type-label text-xs text-[var(--color-text-secondary)] mb-1.5 block">Search</label>
