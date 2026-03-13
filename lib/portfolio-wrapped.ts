@@ -19,6 +19,13 @@ export interface WrappedPosition {
   value: number;
 }
 
+export interface InvestorPersonality {
+  type: string;
+  title: string;
+  description: string;
+  traits: string[];
+}
+
 export interface WrappedData {
   period: 'quarter' | 'year';
   periodLabel: string;           // "Q1 2026" or "2026"
@@ -36,6 +43,100 @@ export interface WrappedData {
   netWorthChange: { start: number; end: number; change: number; changePct: number };
   positionCount: number;
   portfolioValue: number;
+  topHoldings: { ticker: string; name: string; value: number; pct: number }[];
+  investorPersonality: InvestorPersonality;
+  uniqueTickersTraded: number;
+}
+
+// ── Investor Personality Classification ──
+
+const PERSONALITIES: Record<string, InvestorPersonality> = {
+  concentrator: {
+    type: 'concentrator',
+    title: 'The Concentrator',
+    description: "You don't follow the crowd — you go deep on your highest-conviction picks.",
+    traits: ['High conviction', 'Research-driven', 'Focused'],
+  },
+  activeTrader: {
+    type: 'active-trader',
+    title: 'The Active Trader',
+    description: "Markets don't sleep and neither does your portfolio. Always in motion, always looking for the next opportunity.",
+    traits: ['Market-aware', 'Opportunity-driven', 'Decisive'],
+  },
+  incomeInvestor: {
+    type: 'income-investor',
+    title: 'The Income Investor',
+    description: 'You build wealth that works for you. Dividends are your compounding engine.',
+    traits: ['Patient', 'Cash-flow focused', 'Long-term thinker'],
+  },
+  diversifier: {
+    type: 'diversifier',
+    title: 'The Diversifier',
+    description: 'Your portfolio is built like a fortress. Broad exposure keeps risk in check while capturing upside.',
+    traits: ['Risk-aware', 'Methodical', 'Well-balanced'],
+  },
+  growthHunter: {
+    type: 'growth-hunter',
+    title: 'The Growth Hunter',
+    description: "You bet on the future. A tech-forward portfolio shows you're chasing the next big thing.",
+    traits: ['Forward-looking', 'Tech-savvy', 'Ambitious'],
+  },
+  taxOptimizer: {
+    type: 'tax-optimizer',
+    title: 'The Tax Optimizer',
+    description: "Returns aren't just about gains — it's what you keep. Smart tax moves are your edge.",
+    traits: ['Strategic', 'Detail-oriented', 'Efficient'],
+  },
+  steadyHand: {
+    type: 'steady-hand',
+    title: 'The Steady Hand',
+    description: 'Buy and hold is your mantra. You tune out noise and let time do the heavy lifting.',
+    traits: ['Disciplined', 'Patient', 'Low-maintenance'],
+  },
+  momentumRider: {
+    type: 'momentum-rider',
+    title: 'The Momentum Rider',
+    description: "You know how to catch a wave. Strong returns show you're positioned in the right places at the right time.",
+    traits: ['Trend-aware', 'Well-timed', 'Performance-driven'],
+  },
+  balancedNavigator: {
+    type: 'balanced-navigator',
+    title: 'The Balanced Navigator',
+    description: 'Strategic and measured. You chart a steady course through any market conditions.',
+    traits: ['Measured', 'Adaptive', 'Thoughtful'],
+  },
+};
+
+function classifyInvestor(params: {
+  positionCount: number;
+  tradeCount: number;
+  totalDividends: number;
+  portfolioValue: number;
+  taxSavings: number;
+  sectorBreakdown: { sector: string; pct: number }[];
+  totalReturnPct: number;
+  period: 'quarter' | 'year';
+}): InvestorPersonality {
+  const { positionCount, tradeCount, totalDividends, portfolioValue, taxSavings, sectorBreakdown, totalReturnPct, period } = params;
+
+  const techPct = sectorBreakdown
+    .filter(s => ['Technology', 'Communication Services'].includes(s.sector))
+    .reduce((sum, s) => sum + s.pct, 0);
+
+  // Annualize dividend yield for quarter comparison
+  const annualizedDividends = period === 'quarter' ? totalDividends * 4 : totalDividends;
+  const dividendYield = portfolioValue > 0 ? (annualizedDividends / portfolioValue) * 100 : 0;
+
+  // Priority-based classification — strongest behavioral signals first
+  if (positionCount <= 3 && positionCount > 0) return PERSONALITIES.concentrator;
+  if (tradeCount >= 50) return PERSONALITIES.activeTrader;
+  if (dividendYield >= 2) return PERSONALITIES.incomeInvestor;
+  if (positionCount >= 20) return PERSONALITIES.diversifier;
+  if (techPct >= 50) return PERSONALITIES.growthHunter;
+  if (taxSavings >= 500) return PERSONALITIES.taxOptimizer;
+  if (tradeCount <= 3) return PERSONALITIES.steadyHand;
+  if (totalReturnPct >= 15) return PERSONALITIES.momentumRider;
+  return PERSONALITIES.balancedNavigator;
 }
 
 // ── Cache (1 hour per user+period) ──
@@ -160,7 +261,6 @@ export async function generateWrapped(
       ? (totalReturnDollars / first.total_value) * 100
       : 0;
   } else if (portfolioSummary.totalValue > 0 && portfolioSummary.totalCostBasis > 0) {
-    // Fall back to current unrealized P&L
     totalReturnDollars = portfolioSummary.totalUnrealizedGainLoss;
     totalReturnPct = portfolioSummary.totalUnrealizedGainLossPct;
   }
@@ -198,6 +298,19 @@ export async function generateWrapped(
     }
   }
 
+  // ── Top Holdings ──
+  const topHoldings = portfolioSummary.holdings
+    .sort((a, b) => b.totalValue - a.totalValue)
+    .slice(0, 5)
+    .map(h => ({
+      ticker: h.ticker,
+      name: h.securityName,
+      value: h.totalValue,
+      pct: portfolioSummary.totalValue > 0
+        ? (h.totalValue / portfolioSummary.totalValue) * 100
+        : 0,
+    }));
+
   // ── Dividends ──
   const dividends = dividendsResult.data || [];
   const totalDividends = dividends.reduce((s, d) => s + (d.amount || 0), 0);
@@ -205,6 +318,7 @@ export async function generateWrapped(
   // ── Trades ──
   const trades = tradesResult.data || [];
   const tradeCount = trades.length;
+  const uniqueTickersTraded = new Set(trades.map(t => t.ticker)).size;
 
   // Most active trading day
   let mostActiveTradingDay: { date: string; trades: number } | null = null;
@@ -226,7 +340,6 @@ export async function generateWrapped(
   // ── SPY Comparison ──
   let spyReturn: number | null = null;
   if (spyQuote && spyQuote.pc > 0) {
-    // Use daily change as proxy — not perfect but available data
     spyReturn = spyQuote.dp;
   }
 
@@ -266,6 +379,18 @@ export async function generateWrapped(
   const nwChange = nwEnd - nwStart;
   const nwChangePct = nwStart > 0 ? (nwChange / nwStart) * 100 : 0;
 
+  // ── Investor Personality ──
+  const investorPersonality = classifyInvestor({
+    positionCount: portfolioSummary.positionCount,
+    tradeCount,
+    totalDividends,
+    portfolioValue: portfolioSummary.totalValue,
+    taxSavings,
+    sectorBreakdown,
+    totalReturnPct,
+    period,
+  });
+
   const result: WrappedData = {
     period,
     periodLabel: label,
@@ -287,6 +412,9 @@ export async function generateWrapped(
     netWorthChange: { start: nwStart, end: nwEnd, change: nwChange, changePct: nwChangePct },
     positionCount: portfolioSummary.positionCount,
     portfolioValue: portfolioSummary.totalValue,
+    topHoldings,
+    investorPersonality,
+    uniqueTickersTraded,
   };
 
   wrappedCache.set(cacheKey, { data: result, expiry: Date.now() + CACHE_TTL });
