@@ -30,7 +30,6 @@ export default function PrivacyPage() {
         <ul>
           <li>Email address</li>
           <li>Full name (optional)</li>
-          <li>Phone number (optional)</li>
           <li>Encrypted password (we never store plaintext passwords)</li>
         </ul>
 
@@ -106,8 +105,9 @@ export default function PrivacyPage() {
           and portfolio snapshots are kept to provide historical analytics and trend analysis.
         </p>
         <p>
-          When you delete your account, all personal data is permanently removed within 30 days.
-          See our <a href="/data-deletion">Data Deletion</a> page for details.
+          When you delete your account, access is revoked immediately, all personal data is removed
+          from active databases within 24 hours, and purged from encrypted backups within 30 days.
+          See our <a href="/data-deletion">Data Deletion</a> page for the full timeline.
         </p>
       </section>
 

@@ -12,6 +12,7 @@ export function LegalFooter({ variant = 'full' }: LegalFooterProps) {
     { label: 'Terms', href: '/terms' },
     { label: 'Security', href: '/security' },
     { label: 'Data Deletion', href: '/data-deletion' },
+    { label: 'Contact', href: 'mailto:support@helmterminal.dev' },
   ];
 
   if (variant === 'minimal') {
@@ -20,12 +21,21 @@ export function LegalFooter({ variant = 'full' }: LegalFooterProps) {
         <div className="flex items-center justify-center gap-4 flex-wrap">
           {links.map((link, i) => (
             <span key={link.href} className="flex items-center gap-4">
-              <Link
-                href={link.href}
-                className="text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
-              >
-                {link.label}
-              </Link>
+              {link.href.startsWith('mailto:') ? (
+                <a
+                  href={link.href}
+                  className="text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+                >
+                  {link.label}
+                </a>
+              ) : (
+                <Link
+                  href={link.href}
+                  className="text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+                >
+                  {link.label}
+                </Link>
+              )}
               {i < links.length - 1 && (
                 <span className="text-[var(--color-border-base)] text-[10px]">&middot;</span>
               )}
@@ -46,21 +56,25 @@ export function LegalFooter({ variant = 'full' }: LegalFooterProps) {
           </p>
         </div>
         <div className="flex items-center gap-5">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="type-eyebrow text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
-          <a
-            href="mailto:support@helmterminal.dev"
-            className="type-eyebrow text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
-          >
-            Contact
-          </a>
+          {links.map((link) =>
+            link.href.startsWith('mailto:') ? (
+              <a
+                key={link.href}
+                href={link.href}
+                className="type-eyebrow text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="type-eyebrow text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+              >
+                {link.label}
+              </Link>
+            )
+          )}
         </div>
       </div>
     </footer>

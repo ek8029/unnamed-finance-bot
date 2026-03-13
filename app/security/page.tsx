@@ -207,10 +207,9 @@ export default function SecurityPage() {
       <section>
         <h2>Information Security Policy</h2>
         <p>
-          Our formal Information Security Policy (ISP) is available at{' '}
+          Our formal Information Security Policy (ISP) is publicly available at{' '}
           <a href="/security/isp">/security/isp</a>. This document covers access control, de-provisioning,
           periodic reviews, vulnerability management, incident response, and all security controls in detail.
-          It is provided to regulators and integration partners upon request.
         </p>
       </section>
 

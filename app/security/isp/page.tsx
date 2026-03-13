@@ -10,34 +10,20 @@ export default function ISPPage() {
     <LegalPageLayout title="Information Security Policy" lastUpdated="March 10, 2026">
       {/* Header block */}
       <section>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <tbody>
-            <tr>
-              <td><strong>Document:</strong></td>
-              <td>Helm Information Security Policy (ISP)</td>
-            </tr>
-            <tr>
-              <td><strong>Version:</strong></td>
-              <td>1.0</td>
-            </tr>
-            <tr>
-              <td><strong>Effective Date:</strong></td>
-              <td>March 10, 2026</td>
-            </tr>
-            <tr>
-              <td><strong>Next Review:</strong></td>
-              <td>June 10, 2026 (Quarterly)</td>
-            </tr>
-            <tr>
-              <td><strong>Classification:</strong></td>
-              <td>Internal - Shareable with regulators and integration partners upon request</td>
-            </tr>
-            <tr>
-              <td><strong>Owner:</strong></td>
-              <td>Helm Security Team</td>
-            </tr>
-          </tbody>
-        </table>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
+          <dt className="font-semibold text-[var(--color-text-primary)]">Document:</dt>
+          <dd>Helm Information Security Policy (ISP)</dd>
+          <dt className="font-semibold text-[var(--color-text-primary)]">Version:</dt>
+          <dd>1.0</dd>
+          <dt className="font-semibold text-[var(--color-text-primary)]">Effective Date:</dt>
+          <dd>March 10, 2026</dd>
+          <dt className="font-semibold text-[var(--color-text-primary)]">Next Review:</dt>
+          <dd>June 10, 2026 (Quarterly)</dd>
+          <dt className="font-semibold text-[var(--color-text-primary)]">Classification:</dt>
+          <dd>Public</dd>
+          <dt className="font-semibold text-[var(--color-text-primary)]">Owner:</dt>
+          <dd>Helm Security Team</dd>
+        </dl>
       </section>
 
       {/* 1. Purpose */}
