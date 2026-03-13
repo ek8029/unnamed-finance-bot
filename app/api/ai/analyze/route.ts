@@ -19,9 +19,11 @@ function detectQueryType(query: string, hasTickers: boolean): QueryType {
     'my portfolio', 'my holdings', 'my positions', 'my stocks', 'my investments',
     'portfolio', 'holdings', 'weakspot', 'weak spot', 'improve', 'rebalance',
     'diversif', 'exposure', 'overweight', 'underweight', 'concentrated',
-    'allocation', 'what do i own', 'what am i holding', 'my account',
-    'optimize', 'review my', 'analyze my', 'how is my', 'how are my',
-    'risk in my', 'suggest changes', 'what should i',
+    'concentration', 'allocation', 'what do i own', 'what am i holding',
+    'my account', 'optimize', 'review my', 'analyze my', 'how is my',
+    'how are my', 'risk in my', 'suggest changes', 'what should i',
+    'should i reduce', 'should i sell', 'should i trim', 'reduce my',
+    'trim my', 'trimming', 'tax implications', 'tax impact',
   ];
 
   if (portfolioKeywords.some(kw => lower.includes(kw))) return 'portfolio_review';

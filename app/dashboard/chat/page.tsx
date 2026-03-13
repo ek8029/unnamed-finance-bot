@@ -31,12 +31,14 @@ interface Message {
 const PORTFOLIO_KEYWORDS = [
   'my portfolio', 'my holdings', 'my positions', 'my stocks', 'my investments',
   'portfolio', 'holdings', 'weakspot', 'weak spot', 'diversif', 'exposure',
-  'overweight', 'underweight', 'concentrated', 'allocation', 'what do i own',
-  'what am i holding', 'my account', 'optimize', 'review my', 'analyze my',
-  'how is my', 'how are my', 'risk in my', 'suggest changes', 'what should i',
-  'biggest risk', 'how would a', 'crash affect', 'drop affect', 'tax purposes',
-  'selling for tax', 'total exposure', 'single stock', 'rebalance',
-  'cost basis', 'unrealized', 'gain', 'loss harvest',
+  'overweight', 'underweight', 'concentrated', 'concentration', 'allocation',
+  'what do i own', 'what am i holding', 'my account', 'optimize',
+  'review my', 'analyze my', 'how is my', 'how are my', 'risk in my',
+  'suggest changes', 'what should i', 'should i reduce', 'should i sell',
+  'should i trim', 'biggest risk', 'how would a', 'crash affect', 'drop affect',
+  'tax purposes', 'tax implications', 'tax impact', 'selling for tax',
+  'total exposure', 'single stock', 'rebalance', 'reduce my', 'trim my',
+  'trimming', 'cost basis', 'unrealized', 'gain', 'loss harvest',
 ];
 
 function isPortfolioQuery(query: string): boolean {
@@ -66,9 +68,11 @@ function ResearchChatContent() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const initialQueryRef = useRef(searchParams.get('q'));
+  const hasAutoQuery = useRef(!!searchParams.get('q'));
 
-  // Hydrate from session storage on mount
+  // Hydrate from session storage on mount — skip if we have a ?q= auto-query
   useEffect(() => {
+    if (hasAutoQuery.current) return;
     if (storedMessages.length > 0 && messages.length === 0) {
       setMessages(storedMessages.map(m => ({
         ...m,
@@ -185,12 +189,68 @@ function ResearchChatContent() {
   // ── Auto-send from intelligence feed follow-up (?q=...) ──
 
   useEffect(() => {
-    if (initialQueryRef.current) {
-      const q = initialQueryRef.current;
-      initialQueryRef.current = null;
-      sendMessage(q);
-      window.history.replaceState({}, '', '/dashboard/chat');
-    }
+    if (!initialQueryRef.current) return;
+    const q = initialQueryRef.current;
+    initialQueryRef.current = null;
+
+    // Clean URL immediately
+    window.history.replaceState({}, '', '/dashboard/chat');
+
+    // Add user message to state synchronously so it renders immediately
+    const userMessage: Message = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: q,
+      timestamp: new Date(),
+    };
+    setMessages([userMessage]);
+    persistMessage(userMessage);
+    setIsLoading(true);
+
+    // Perform the analysis fetch
+    const isPortfolio = isPortfolioQuery(q);
+    const endpoint = isPortfolio ? '/api/ai/portfolio-qa' : '/api/ai/analyze';
+    const payload = isPortfolio
+      ? { question: q, conversationHistory: [] }
+      : { query: q, conversationHistory: [] };
+
+    fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Analysis failed');
+        }
+        return res.json();
+      })
+      .then((data) => {
+        const assistantMessage: Message = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: data.analysis?.summary || 'Analysis complete.',
+          analysis: data.analysis,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+        persistMessage(assistantMessage);
+      })
+      .catch((error) => {
+        const errorMessage: Message = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: error instanceof Error ? error.message : 'Something went wrong. Please try again.',
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, errorMessage]);
+        persistMessage(errorMessage);
+      })
+      .finally(() => {
+        setIsLoading(false);
+        hasAutoQuery.current = false;
+      });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Empty State ──
