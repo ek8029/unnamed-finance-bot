@@ -26,35 +26,17 @@ interface Message {
   timestamp: Date;
 }
 
-// ── Query routing ──
-
-const PORTFOLIO_KEYWORDS = [
-  'my portfolio', 'my holdings', 'my positions', 'my stocks', 'my investments',
-  'portfolio', 'holdings', 'weakspot', 'weak spot', 'diversif', 'exposure',
-  'overweight', 'underweight', 'concentrated', 'concentration', 'allocation',
-  'what do i own', 'what am i holding', 'my account', 'optimize',
-  'review my', 'analyze my', 'how is my', 'how are my', 'risk in my',
-  'suggest changes', 'what should i', 'should i reduce', 'should i sell',
-  'should i trim', 'biggest risk', 'how would a', 'crash affect', 'drop affect',
-  'tax purposes', 'tax implications', 'tax impact', 'selling for tax',
-  'total exposure', 'single stock', 'rebalance', 'reduce my', 'trim my',
-  'trimming', 'cost basis', 'unrealized', 'gain', 'loss harvest',
-];
-
-function isPortfolioQuery(query: string): boolean {
-  const lower = query.toLowerCase();
-  return PORTFOLIO_KEYWORDS.some(kw => lower.includes(kw));
-}
-
 // ── Suggested Queries ──
 
 const SUGGESTED_QUERIES = [
   'Analyze NVDA',
   "What's my biggest risk?",
-  'How diversified am I?',
+  'How much will I owe in taxes?',
   'TSLA bull vs bear case',
-  'How would a 20% tech crash affect me?',
-  'Which positions should I sell for taxes?',
+  'Should I harvest any tax losses?',
+  'How diversified am I?',
+  'Am I on track for retirement?',
+  'How would a 20% crash affect me?',
 ];
 
 // ── Main Page ──
@@ -130,17 +112,10 @@ function ResearchChatContent() {
         content: m.analysis ? JSON.stringify(m.analysis) : m.content,
       }));
 
-      // Route portfolio questions to the dedicated portfolio-qa endpoint
-      const isPortfolio = isPortfolioQuery(query);
-      const endpoint = isPortfolio ? '/api/ai/portfolio-qa' : '/api/ai/analyze';
-      const payload = isPortfolio
-        ? { question: query, conversationHistory }
-        : { query, conversationHistory };
-
-      const res = await fetch(endpoint, {
+      const res = await fetch('/api/ai/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ query, conversationHistory }),
       });
 
       if (!res.ok) {
@@ -208,16 +183,10 @@ function ResearchChatContent() {
     setIsLoading(true);
 
     // Perform the analysis fetch
-    const isPortfolio = isPortfolioQuery(q);
-    const endpoint = isPortfolio ? '/api/ai/portfolio-qa' : '/api/ai/analyze';
-    const payload = isPortfolio
-      ? { question: q, conversationHistory: [] }
-      : { query: q, conversationHistory: [] };
-
-    fetch(endpoint, {
+    fetch('/api/ai/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ query: q, conversationHistory: [] }),
     })
       .then(async (res) => {
         if (!res.ok) {

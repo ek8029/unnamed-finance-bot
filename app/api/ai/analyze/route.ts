@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getPortfolioSummary, formatPortfolioContext, type PortfolioSummary } from '@/lib/portfolio-analysis';
+import { generateTaxReport, type TaxHarvestReport } from '@/lib/tax-analysis';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import OpenAI from 'openai';
 
@@ -9,170 +11,224 @@ function getOpenAIClient() {
   return new OpenAI({ apiKey });
 }
 
-// ── Query type detection ──
+// ── Query Classification ──
 
-type QueryType = 'stock_analysis' | 'portfolio_review' | 'general';
+type QueryType = 'stock_analysis' | 'portfolio_review' | 'tax_planning' | 'personal_finance' | 'general';
 
-function detectQueryType(query: string, hasTickers: boolean): QueryType {
+// Maps internal query type → card component type (reuses existing UI components)
+type ResponseType = 'stock_analysis' | 'portfolio_qa' | 'general';
+
+const RESPONSE_TYPE_MAP: Record<QueryType, ResponseType> = {
+  stock_analysis: 'stock_analysis',
+  portfolio_review: 'portfolio_qa',
+  tax_planning: 'portfolio_qa',
+  personal_finance: 'general',
+  general: 'general',
+};
+
+/**
+ * Intent-based query classifier.
+ * Priority: tax → portfolio → stock (with intent) → personal finance → stock (ticker fallback) → general.
+ *
+ * Uses regex patterns rather than substring matching for precision.
+ * Tax is checked first because tax queries often contain portfolio-like words.
+ */
+function classifyQuery(query: string, tickers: string[]): QueryType {
   const lower = query.toLowerCase();
-  const portfolioKeywords = [
-    'my portfolio', 'my holdings', 'my positions', 'my stocks', 'my investments',
-    'portfolio', 'holdings', 'weakspot', 'weak spot', 'improve', 'rebalance',
-    'diversif', 'exposure', 'overweight', 'underweight', 'concentrated',
-    'concentration', 'allocation', 'what do i own', 'what am i holding',
-    'my account', 'optimize', 'review my', 'analyze my', 'how is my',
-    'how are my', 'risk in my', 'suggest changes', 'what should i',
-    'should i reduce', 'should i sell', 'should i trim', 'reduce my',
-    'trim my', 'trimming', 'tax implications', 'tax impact',
-  ];
 
-  if (portfolioKeywords.some(kw => lower.includes(kw))) return 'portfolio_review';
-  if (hasTickers) return 'stock_analysis';
+  // ── 1. Tax planning ──
+  const TAX_PATTERNS = [
+    /\btax(es|able|ation|ed)?\b/,
+    /\bcapital gain/,
+    /\bharvest(ing|able)?\b/,
+    /\bwash sale/,
+    /\b(short|long)[- ]term (gain|loss)/,
+    /\btax[- ]loss/,
+    /\bdeduct(ion|ible|ions)/,
+    /\b1099\b/,
+    /\bschedule d\b/,
+    /\brealized (gain|loss)/,
+    /\bunrealized (gain|loss)/,
+    /\bcost basis\b/,
+    /\bcarryover loss/,
+    /\b(offset|reduce).{0,20}(gain|tax)/,
+    /\b(pay|owe|save|expect).{0,20}tax/,
+    /\btax.{0,20}(pay|owe|save|bill|liability|burden|obligation|rate|bracket|strategy|planning|optimi|shelter|defer|efficient|benefit|saving|implication|impact|purpose)/,
+  ];
+  if (TAX_PATTERNS.some(p => p.test(lower))) return 'tax_planning';
+
+  // ── 2. Portfolio review (user's specific holdings) ──
+  const PORTFOLIO_PATTERNS = [
+    /\bmy (portfolio|holdings|positions|stocks|investments|account|money|assets|net worth)\b/,
+    /\b(review|analyze|assess|evaluate|check|look at|audit|examine) my\b/,
+    /\bhow('s| is| are| does) my\b/,
+    /\bam i (diversified|overweight|underweight|concentrated|exposed|balanced)/,
+    /\b(should i|do i need to) (sell|buy|trim|reduce|rebalance|add|increase|hold)/,
+    /\bwhat do i (own|hold|have)\b/,
+    /\bwhat am i (holding|invested in)\b/,
+    /\bmy (risk|exposure|allocation|diversification|concentration|returns?|performance)\b/,
+    /\b(crash|drop|correction|recession|downturn|bear market).{0,25}(affect|impact|hit|do to) (me|my)\b/,
+    /\b(affect|impact|hit) my (portfolio|holdings|positions)/,
+    /\bbiggest (risk|position|holding|winner|loser|gainer)\b/,
+    /\bweak\s?spot/,
+    /\brebalance\b/,
+    /\b(over|under)weight/,
+    /\bconcentrat(ed|ion)\b/,
+    /\bsector (exposure|allocation|breakdown)\b/,
+    /\bportfolio (health|performance|risk|allocation|review|analysis|summary|overview)\b/,
+    /\b(trim|reduce|sell|cut) .{0,20}(position|holding|exposure)/,
+    /\bwhat('s| is) my .{0,20}(worth|value|performance|return)\b/,
+    /\bhow much (am i|have i) (up|down|made|lost|gained)\b/,
+    /\bhow would a\b/,
+    /\bsuggest changes\b/,
+    /\bportfolio\b/,
+  ];
+  if (PORTFOLIO_PATTERNS.some(p => p.test(lower))) return 'portfolio_review';
+
+  // ── 3. Stock analysis (only if tickers + analysis intent) ──
+  if (tickers.length > 0) {
+    const STOCK_INTENT = [
+      /\banalyze\b/, /\b(bull|bear) case\b/,
+      /\bwhat.{0,20}think/, /\bwhat.{0,10}about\b/,
+      /\b(price target|valuation|fair value|upside|downside)\b/,
+      /\b(compare|vs|versus)\b/,
+      /\b(research|deep dive|breakdown|overview)\b/,
+      /\b(earnings|revenue|growth|margin|fundamentals)\b/,
+      /\b(buy|sell|hold)\b/,
+      /\b(p\/e|pe ratio|p\/s|p\/b)\b/,
+    ];
+    // If there's clear stock-analysis intent, route there
+    if (STOCK_INTENT.some(p => p.test(lower))) return 'stock_analysis';
+    // If tickers are present and nothing else matched, assume stock analysis
+    return 'stock_analysis';
+  }
+
+  // ── 4. Personal finance education ──
+  const PERSONAL_FINANCE_PATTERNS = [
+    /\b(what is|what's|explain|how does|how do|tell me about|define).{0,40}\b(roth|ira|401k|403b|hsa|fsa|529|sep ira)\b/,
+    /\b(roth|traditional) (ira|401k|conversion)\b/,
+    /\bretire(ment|e)?\b/,
+    /\bcompound(ing)? (interest|growth|returns)\b/,
+    /\bdollar cost averag/,
+    /\bemergency fund\b/,
+    /\b(mortgage|student loan|debt payoff|credit score|credit card debt)\b/,
+    /\b(financial plan|financial advisor|financial goal|financial independence)\b/,
+    /\b(inflation|purchasing power|real return)\b/,
+    /\b(asset allocation|modern portfolio theory|efficient frontier)\b/,
+    /\b(index fund|mutual fund|bond fund|fixed income|treasury|money market)\b/,
+    /\b(backdoor roth|mega backdoor|contribution limit|required minimum|rmd)\b/,
+    /\b(social security|medicare|pension)\b/,
+    /\bshould i .{0,30}(invest|save|pay off|contribute|open|start|max out)\b/,
+    /\bhow much (should|do) i (need|save|invest|contribute|put|set aside)\b/,
+    /\bam i (on track|behind|ahead|saving enough|investing enough)\b/,
+    /\b(fire|early retirement)\b/i,
+    /\b(estate plan|will|trust|beneficiar)\b/,
+    /\b(life insurance|disability insurance|umbrella policy)\b/,
+    /\bnet worth\b/,
+    /\bsaving rate\b/,
+    /\b(budget|budgeting)\b/,
+  ];
+  if (PERSONAL_FINANCE_PATTERNS.some(p => p.test(lower))) return 'personal_finance';
+
   return 'general';
 }
 
-// ── Ticker extraction ──
+// ── Ticker extraction (CURRENT query only) ──
+
+const STOP_WORDS = new Set([
+  // Pronouns, articles, prepositions, conjunctions
+  'I', 'A', 'MY', 'ME', 'WE', 'HE', 'IT', 'AN', 'TO', 'IN', 'ON', 'AT', 'BY',
+  'OR', 'OF', 'IF', 'SO', 'AS', 'UP', 'NO', 'VS', 'AND', 'FOR', 'BUT', 'NOT',
+  'NOR', 'YET', 'THE',
+  // Verbs
+  'IS', 'AM', 'BE', 'DO', 'HAS', 'CAN', 'WAS', 'ARE', 'GOT', 'GET', 'LET',
+  'SAY', 'SET', 'PUT', 'RUN', 'USE', 'TRY', 'ASK', 'OWN', 'PAY', 'CUT',
+  'ADD', 'HIT', 'MAY', 'WIN', 'DID', 'SEE', 'BUY',
+  // Question words
+  'HOW', 'WHY', 'WHO', 'WHAT', 'WHEN',
+  // Common modifiers
+  'ALL', 'NOW', 'ITS', 'LOW', 'HIGH', 'BIG', 'OLD', 'NEW', 'TOP', 'BEST',
+  'MOST', 'MORE', 'LESS', 'GOOD', 'WELL', 'LONG', 'SOME', 'EACH', 'BOTH',
+  'NEXT', 'LAST', 'JUST', 'ONLY', 'VERY', 'MUCH', 'MANY', 'ALSO', 'EVEN',
+  'WILL', 'BEEN', 'INTO', 'OVER', 'LIKE', 'THAN', 'THEM', 'THEN', 'THAT',
+  'THIS', 'SAME', 'SUCH', 'WITH', 'FROM', 'HAVE', 'WERE', 'DOES', 'DONE',
+  'BACK', 'YEAR', 'TERM',
+  // Finance terms that aren't tickers
+  'TAX', 'FEE', 'ETF', 'APR', 'APY', 'ROI', 'EPS', 'YOY', 'QOQ',
+  'CEO', 'CFO', 'IPO', 'SEC', 'FED', 'GDP', 'CPI', 'NAV', 'AUM',
+  'YTD', 'ATH', 'ATL', 'AVG', 'MAX', 'MIN', 'PCT', 'KEY', 'WAY',
+  'ANY', 'END', 'OUT', 'OUR', 'DAY', 'TWO', 'RATE', 'PLAN', 'REIT',
+  'TIPS', 'BOND', 'SAVE', 'RISK', 'SELL', 'HOLD', 'DROP', 'MOVE',
+  'LOSS', 'GAIN', 'CALL', 'LOOK', 'COME', 'FIND', 'WANT', 'NEED',
+  'SHOW', 'HELP', 'PICK', 'GIVE', 'KEEP', 'MAKE', 'TAKE', 'TELL',
+  'MISS', 'LOSE', 'WORK', 'KNOW', 'MEAN', 'FEEL', 'REAL', 'FULL',
+  'FREE', 'SAFE', 'SURE', 'OPEN', 'NEAR', 'LATE', 'ABLE', 'ELSE',
+  'HERE', 'ONCE', 'UPON', 'WENT', 'LEFT', 'SAID', 'AWAY', 'TURN',
+  'PART', 'MADE', 'CASE', 'STAY', 'GOES', 'SEEM', 'SENT', 'PLAY',
+  'PAID', 'WENT', 'WORD', 'FACT', 'IDEA', 'SORT', 'KIND', 'TYPE',
+  'LINE', 'FORM', 'LINK', 'RULE', 'NOTE', 'AREA', 'SIDE', 'HEAD',
+  'HAND', 'VIEW', 'HOME', 'COST', 'ZERO', 'HALF', 'SIZE',
+  // 5-letter common words
+  'ABOUT', 'AFTER', 'COULD', 'THINK', 'WOULD', 'WHICH', 'THEIR', 'THESE',
+  'THOSE', 'WHERE', 'STILL', 'BEING', 'FIRST', 'GOING', 'GREAT', 'MIGHT',
+  'MONEY', 'STOCK', 'SHARE', 'POINT', 'PRICE', 'VALUE', 'TOTAL', 'SMART',
+  'WORTH', 'SPEND', 'CRASH', 'NEVER', 'EVERY', 'UNDER', 'ABOVE', 'SINCE',
+  'WHILE', 'OTHER', 'WORLD', 'PLACE', 'RIGHT', 'SMALL', 'LARGE', 'EARLY',
+  'YOUNG', 'LATER', 'GIVEN', 'TAKEN', 'TRACK', 'BASED', 'CHECK',
+]);
 
 function extractTickers(query: string): string[] {
+  // Match explicit ALL-CAPS tokens (1-5 letters)
   const explicit = query.match(/\b[A-Z]{1,5}\b/g) || [];
+  // Match $TICKER format
   const dollar = query.match(/\$([A-Za-z]{1,5})/g)?.map(t => t.replace('$', '').toUpperCase()) || [];
-  const lower = query.match(/\b(?:aapl|msft|goog|googl|amzn|nvda|tsla|meta|nflx|amd|intc|spy|qqq|voo)\b/gi)?.map(t => t.toUpperCase()) || [];
+  // Match well-known tickers even in lowercase
+  const wellKnown = query.match(
+    /\b(?:aapl|msft|goog|googl|amzn|nvda|tsla|meta|nflx|amd|intc|spy|qqq|voo|vti|brk|jpm|dis|ba|nke|pypl|pfe|crm|adbe|cost|wmt|hd|ko|pep|abnb|uber|sofi|pltr|coin|snap|pins|sq|shop|roku|rivn|lcid)\b/gi
+  )?.map(t => t.toUpperCase()) || [];
 
-  const all = [...new Set([...explicit, ...dollar, ...lower])];
-  const stopWords = new Set(['I', 'A', 'IS', 'IT', 'TO', 'IN', 'ON', 'AT', 'BY', 'OR', 'AN', 'OF', 'IF', 'DO', 'MY', 'SO', 'UP', 'AM', 'BE', 'NO', 'VS', 'THE', 'AND', 'FOR', 'BUT', 'NOT', 'ARE', 'WAS', 'HAS', 'CAN', 'HOW', 'WHY', 'ALL', 'NOW', 'ITS', 'LOW', 'HIGH', 'BUY', 'NEW', 'BIG', 'OLD', 'KEY', 'EPS', 'YOY', 'QOQ', 'CEO', 'CFO', 'IPO']);
-  return all.filter(t => t.length >= 2 && !stopWords.has(t));
+  const all = [...new Set([...explicit, ...dollar, ...wellKnown])];
+  return all.filter(t => t.length >= 2 && !STOP_WORDS.has(t));
 }
 
-// ── Portfolio data fetching ──
+// ── Data formatting ──
 
-interface UserHolding {
-  ticker: string;
-  shares: number;
-  current_price: number;
-  total_value: number;
-  average_cost_basis: number | null;
-  total_cost_basis: number | null;
-  unrealised_gain_loss: number | null;
-  unrealised_gain_loss_pct: number | null;
-  day_change_pct: number | null;
-  portfolio_allocation_pct: number | null;
-  security: {
-    security_name: string | null;
-    asset_class: string | null;
-    sector: string | null;
-    exchange: string | null;
-  } | null;
+function fmt(n: number): string {
+  return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-async function getUserPortfolio(supabase: Awaited<ReturnType<typeof createClient>>, userId: string): Promise<UserHolding[]> {
-  const { data, error } = await supabase
-    .from('holdings')
-    .select(`
-      ticker, shares, current_price, total_value,
-      average_cost_basis, total_cost_basis,
-      unrealised_gain_loss, unrealised_gain_loss_pct,
-      day_change_pct, portfolio_allocation_pct,
-      security:securities(security_name, asset_class, sector, exchange)
-    `)
-    .eq('user_id', userId)
-    .order('total_value', { ascending: false });
-
-  if (error) {
-    console.error('Failed to fetch holdings:', error);
-    return [];
-  }
-  return (data || []) as unknown as UserHolding[];
-}
-
-function buildPortfolioContext(holdings: UserHolding[]): string {
-  if (holdings.length === 0) return '';
-
-  const totalValue = holdings.reduce((sum, h) => sum + (h.total_value || 0), 0);
-  const totalCost = holdings.reduce((sum, h) => sum + (h.total_cost_basis || 0), 0);
-  const totalGainLoss = holdings.reduce((sum, h) => sum + (h.unrealised_gain_loss || 0), 0);
-
-  const lines: string[] = [
-    '=== USER PORTFOLIO ===',
-    `Total Value: $${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-    `Total Cost Basis: $${totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-    `Total Unrealized P&L: $${totalGainLoss.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${totalCost > 0 ? ((totalGainLoss / totalCost) * 100).toFixed(2) : '0.00'}%)`,
-    `Positions: ${holdings.length}`,
-    '',
-    'HOLDINGS:',
-  ];
-
-  const sectorMap = new Map<string, number>();
-  const assetClassMap = new Map<string, number>();
-
-  for (const h of holdings) {
-    sectorMap.set(h.security?.sector || 'Unknown', (sectorMap.get(h.security?.sector || 'Unknown') || 0) + (h.total_value || 0));
-    assetClassMap.set(h.security?.asset_class || 'Unknown', (assetClassMap.get(h.security?.asset_class || 'Unknown') || 0) + (h.total_value || 0));
-
-    const alloc = h.portfolio_allocation_pct ?? (totalValue > 0 ? (h.total_value / totalValue) * 100 : 0);
-    const pl = h.unrealised_gain_loss_pct != null ? `${(h.unrealised_gain_loss_pct * 100).toFixed(2)}%` : 'N/A';
-
-    lines.push(`  ${h.ticker} | ${h.security?.security_name || '?'} | ${h.shares} shares @ $${h.current_price} | Value: $${h.total_value?.toLocaleString('en-US', { minimumFractionDigits: 2 })} | ${alloc.toFixed(1)}% of portfolio | P&L: ${pl} | Sector: ${h.security?.sector || 'N/A'} | Class: ${h.security?.asset_class || 'N/A'}`);
-  }
-
-  lines.push('', 'SECTOR BREAKDOWN:');
-  for (const [sector, value] of [...sectorMap.entries()].sort((a, b) => b[1] - a[1])) {
-    lines.push(`  ${sector}: $${value.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : '0.0'}%)`);
-  }
-
-  lines.push('', 'ASSET CLASS BREAKDOWN:');
-  for (const [cls, value] of [...assetClassMap.entries()].sort((a, b) => b[1] - a[1])) {
-    lines.push(`  ${cls}: $${value.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : '0.0'}%)`);
-  }
-
-  return lines.join('\n');
-}
-
-// ── Ticker data formatting ──
-
-function buildDataContext(tickerDataList: TickerData[]): string {
-  return tickerDataList.map(td => {
+function buildTickerContext(dataList: TickerData[]): string {
+  return dataList.map(td => {
     const lines: string[] = [`=== ${td.symbol} ===`];
-
     if (td.profile) {
       lines.push(`Company: ${td.profile.name}`);
       lines.push(`Industry: ${td.profile.finnhubIndustry}`);
       lines.push(`Market Cap: $${(td.profile.marketCapitalization * 1_000_000).toLocaleString()}`);
       lines.push(`Exchange: ${td.profile.exchange}`);
     }
-
     if (td.quote) {
       lines.push(`Current Price: $${td.quote.c}`);
       lines.push(`Change: ${td.quote.d >= 0 ? '+' : ''}${td.quote.d} (${td.quote.dp >= 0 ? '+' : ''}${td.quote.dp}%)`);
       lines.push(`Day Range: $${td.quote.l} - $${td.quote.h}`);
-      lines.push(`Previous Close: $${td.quote.pc}`);
     }
-
     if (td.financials?.metric) {
       const m = td.financials.metric;
       const ml: string[] = [];
-      if (m['peBasicExclExtraTTM'] != null) ml.push(`P/E (TTM): ${m['peBasicExclExtraTTM']?.toFixed(2)}`);
-      if (m['psTTM'] != null) ml.push(`P/S (TTM): ${m['psTTM']?.toFixed(2)}`);
-      if (m['pbQuarterly'] != null) ml.push(`P/B: ${m['pbQuarterly']?.toFixed(2)}`);
+      if (m['peBasicExclExtraTTM'] != null) ml.push(`P/E: ${m['peBasicExclExtraTTM']?.toFixed(2)}`);
+      if (m['psTTM'] != null) ml.push(`P/S: ${m['psTTM']?.toFixed(2)}`);
       if (m['epsGrowthTTMYoy'] != null) ml.push(`EPS Growth YoY: ${m['epsGrowthTTMYoy']?.toFixed(2)}%`);
       if (m['revenueGrowthTTMYoy'] != null) ml.push(`Revenue Growth YoY: ${m['revenueGrowthTTMYoy']?.toFixed(2)}%`);
-      if (m['roeTTM'] != null) ml.push(`ROE (TTM): ${m['roeTTM']?.toFixed(2)}%`);
-      if (m['currentRatioQuarterly'] != null) ml.push(`Current Ratio: ${m['currentRatioQuarterly']?.toFixed(2)}`);
-      if (m['debtEquityQuarterly'] != null) ml.push(`D/E Ratio: ${m['debtEquityQuarterly']?.toFixed(2)}`);
+      if (m['roeTTM'] != null) ml.push(`ROE: ${m['roeTTM']?.toFixed(2)}%`);
       if (m['dividendYieldIndicatedAnnual'] != null) ml.push(`Dividend Yield: ${m['dividendYieldIndicatedAnnual']?.toFixed(2)}%`);
       if (m['52WeekHigh'] != null) ml.push(`52W High: $${m['52WeekHigh']}`);
       if (m['52WeekLow'] != null) ml.push(`52W Low: $${m['52WeekLow']}`);
       if (m['beta'] != null) ml.push(`Beta: ${m['beta']?.toFixed(2)}`);
-      if (ml.length > 0) {
-        lines.push('Key Metrics:');
-        lines.push(...ml.map(l => `  ${l}`));
-      }
+      if (ml.length > 0) lines.push('Key Metrics:', ...ml.map(l => `  ${l}`));
     }
-
     if (td.recommendations?.length) {
       const r = td.recommendations[0];
       lines.push(`Analyst Consensus (${r.period}): ${r.strongBuy} Strong Buy, ${r.buy} Buy, ${r.hold} Hold, ${r.sell} Sell, ${r.strongSell} Strong Sell`);
     }
-
     if (td.earnings?.length) {
       lines.push('Recent Earnings:');
       td.earnings.slice(0, 4).forEach(e => {
@@ -180,7 +236,6 @@ function buildDataContext(tickerDataList: TickerData[]): string {
         lines.push(`  Q${e.quarter} ${e.year}: Actual $${e.actual ?? 'N/A'} vs Est $${e.estimate ?? 'N/A'}${beat}`);
       });
     }
-
     if (td.news?.length) {
       lines.push('Recent Headlines:');
       td.news.slice(0, 5).forEach(n => {
@@ -188,19 +243,93 @@ function buildDataContext(tickerDataList: TickerData[]): string {
         lines.push(`  [${date}] ${n.headline} (${n.source})`);
       });
     }
-
     return lines.join('\n');
   }).join('\n\n');
 }
 
-// ── System prompts per query type ──
+interface CapitalGainRow {
+  ticker: string;
+  transaction_type: string;
+  transaction_date: string;
+  shares: number;
+  price_per_share: number;
+  cost_basis: number;
+  proceeds: number;
+  gain_loss: number;
+  gain_loss_type: string;
+}
 
-const BASE_RULES = `You are a senior equity research analyst at Helm Intelligence, an institutional-grade financial terminal. You deliver opinionated, data-rich analysis that reads like a Goldman Sachs research note, not a chatbot response.
+function buildTaxContext(
+  portfolio: PortfolioSummary,
+  capitalGains: CapitalGainRow[],
+  taxReport: TaxHarvestReport,
+): string {
+  const lines: string[] = [];
+
+  if (portfolio.positionCount > 0) {
+    lines.push('=== PORTFOLIO UNREALIZED P&L ===');
+    lines.push(`Total Value: $${fmt(portfolio.totalValue)} | Cost Basis: $${fmt(portfolio.totalCostBasis)} | Unrealized P&L: $${fmt(portfolio.totalUnrealizedGainLoss)}`);
+
+    const gainers = portfolio.holdings.filter(h => (h.unrealizedGainLoss ?? 0) > 0);
+    const losers = portfolio.holdings.filter(h => (h.unrealizedGainLoss ?? 0) < 0);
+    const totalGains = gainers.reduce((s, h) => s + (h.unrealizedGainLoss ?? 0), 0);
+    const totalLosses = losers.reduce((s, h) => s + (h.unrealizedGainLoss ?? 0), 0);
+
+    lines.push(`Unrealized Gains: +$${fmt(totalGains)} across ${gainers.length} positions`);
+    lines.push(`Unrealized Losses: -$${fmt(Math.abs(totalLosses))} across ${losers.length} positions`);
+    lines.push('');
+
+    lines.push('POSITIONS (sorted by P&L):');
+    const sorted = [...portfolio.holdings].sort((a, b) => (a.unrealizedGainLoss ?? 0) - (b.unrealizedGainLoss ?? 0));
+    for (const h of sorted) {
+      if (h.unrealizedGainLoss == null) continue;
+      const pct = h.unrealizedGainLossPct != null ? `${(h.unrealizedGainLossPct * 100).toFixed(1)}%` : 'N/A';
+      lines.push(`  ${h.ticker}: ${h.unrealizedGainLoss >= 0 ? '+' : ''}$${fmt(h.unrealizedGainLoss)} (${pct}) | Value: $${fmt(h.totalValue)} | Cost: $${fmt(h.totalCostBasis ?? 0)} | Sector: ${h.sector}`);
+    }
+  }
+
+  const sells = capitalGains.filter(g => g.transaction_type === 'sell');
+  if (sells.length > 0) {
+    const stGains = sells.filter(g => g.gain_loss_type === 'short_term' && g.gain_loss > 0).reduce((s, g) => s + Number(g.gain_loss), 0);
+    const stLosses = sells.filter(g => g.gain_loss_type === 'short_term' && g.gain_loss < 0).reduce((s, g) => s + Number(g.gain_loss), 0);
+    const ltGains = sells.filter(g => g.gain_loss_type === 'long_term' && g.gain_loss > 0).reduce((s, g) => s + Number(g.gain_loss), 0);
+    const ltLosses = sells.filter(g => g.gain_loss_type === 'long_term' && g.gain_loss < 0).reduce((s, g) => s + Number(g.gain_loss), 0);
+    const net = stGains + stLosses + ltGains + ltLosses;
+
+    lines.push('', `=== REALIZED CAPITAL GAINS (${new Date().getFullYear()} YTD) ===`);
+    lines.push(`Short-term gains: +$${fmt(stGains)} | Short-term losses: -$${fmt(Math.abs(stLosses))}`);
+    lines.push(`Long-term gains: +$${fmt(ltGains)} | Long-term losses: -$${fmt(Math.abs(ltLosses))}`);
+    lines.push(`Net realized: $${fmt(net)}`);
+    lines.push(`Estimated tax on realized gains (32% blended): $${fmt(Math.max(0, net) * 0.32)}`);
+    lines.push('', 'TRANSACTIONS:');
+    for (const g of sells) {
+      lines.push(`  ${g.ticker} | ${g.transaction_date} | ${g.shares} shares | Proceeds: $${fmt(g.proceeds)} | Cost: $${fmt(g.cost_basis)} | ${Number(g.gain_loss) >= 0 ? '+' : ''}$${fmt(Number(g.gain_loss))} (${g.gain_loss_type})`);
+    }
+  }
+
+  if (taxReport.opportunityCount > 0) {
+    lines.push('', '=== TAX-LOSS HARVESTING OPPORTUNITIES ===');
+    lines.push(`Total harvestable losses: $${fmt(Math.abs(taxReport.totalHarvestableLoss))}`);
+    lines.push(`Estimated tax savings (at ${(taxReport.taxRate * 100).toFixed(0)}% rate): $${fmt(taxReport.totalEstimatedSavings)}`);
+    for (const opp of taxReport.opportunities) {
+      let line = `  ${opp.ticker} (${opp.securityName}): Loss $${fmt(Math.abs(opp.unrealizedLoss))} (${opp.lossPct.toFixed(1)}%) → Savings: $${fmt(opp.estimatedSavings)}`;
+      if (opp.replacement) line += ` | Replace with: ${opp.replacement.ticker} (${opp.replacement.reason})`;
+      if (opp.washSaleRisk) line += ` | WASH SALE RISK: ${opp.washSaleDetail}`;
+      lines.push(line);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+// ── System prompts ──
+
+const BASE_RULES = `You are a senior analyst at Helm Intelligence, an institutional-grade financial terminal. You deliver opinionated, data-rich analysis that reads like a Goldman Sachs research note, not a chatbot response.
 
 CORE RULES:
 - Always reference SPECIFIC numbers from the data provided. Never say "strong growth" without the exact percentage.
 - Be opinionated and direct. No hedging, no "it depends."
-- Format monetary values: $2,150,000,000 → $2.15B. Use B/M/T suffixes.
+- Format monetary values: $2,150,000,000 → $2.15B. Use B/M/T suffixes for large numbers, exact dollars for position-level.
 - Every sentence should contain a number or specific insight.
 - Respond with valid JSON matching the schema. Do NOT include markdown code fences.`;
 
@@ -228,35 +357,92 @@ Respond with this JSON structure:
   ]
 }
 
-Include 4-6 metrics (always include Price). Include 2-4 news highlights if available, otherwise empty array.`,
+Include 4-6 metrics (always include Price). Include 2-4 news highlights if available.`,
 
   portfolio_review: `${BASE_RULES}
 
-RESPONSE TYPE: Portfolio Review
-You are reviewing the user's ACTUAL portfolio. Reference their SPECIFIC holdings by ticker, allocation percentages, and P&L numbers. Identify concrete problems — don't be generic.
+RESPONSE TYPE: Portfolio Analysis
+You are reviewing the user's ACTUAL portfolio. Every number is real, from their linked brokerage accounts. Reference their SPECIFIC holdings by ticker, allocation percentages, and P&L numbers.
 
 Respond with this JSON structure:
 {
-  "type": "portfolio_review",
-  "title": "Brief descriptive title (e.g., 'Portfolio Health Assessment', 'Concentration Risk Alert')",
-  "summary": "One paragraph assessing the portfolio's overall state with specific numbers from their holdings.",
-  "metrics": [
-    { "label": "Metric Name", "value": "Formatted Value", "change": "+X.X%" or null, "context": "context note" or null }
+  "type": "portfolio_qa",
+  "title": "Brief, specific title (include a dollar amount or percentage)",
+  "summary": "2-3 sentences answering the question with SPECIFIC numbers from their portfolio. Lead with the most important number.",
+  "highlights": [
+    {
+      "label": "Description of the metric",
+      "value": "$XX,XXX or XX.X%",
+      "sentiment": "positive" | "negative" | "neutral" | "warning",
+      "detail": "One sentence of context with another specific number"
+    }
   ],
-  "strengths": ["Each string is one specific strength with a number. e.g. 'AAPL position up 34% — strong performer.'"],
-  "weaknesses": ["Each string is one specific weakness. e.g. 'NVDA at 45% allocation is extreme concentration risk.'"],
-  "recommendations": [
-    { "action": "Specific action to take", "rationale": "Why, with numbers", "priority": "high" | "medium" | "low" }
-  ],
-  "riskFactors": ["Specific risk with context. e.g. '78% tech exposure leaves portfolio vulnerable to sector rotation.'"]
+  "recommendation": "One clear, actionable sentence with a specific number (e.g. 'Trim NVDA by $12,700 to bring it to 25% allocation').",
+  "followUpQuestions": ["Question 1", "Question 2", "Question 3"]
 }
 
-Include 4-6 portfolio-level metrics (Total Value, # Positions, Top Holding %, Sector Concentration, Total P&L, etc.).
-Include 2-4 strengths, 2-4 weaknesses, 2-5 recommendations, and 2-4 risk factors. Be specific to their holdings.`,
+Include 3-6 highlights. Each MUST have a real dollar amount or percentage from their data. Be specific to their holdings — reference tickers and exact values.`,
+
+  tax_planning: `${BASE_RULES}
+
+RESPONSE TYPE: Tax Analysis
+You are a tax-aware portfolio analyst reviewing the user's ACTUAL positions, realized gains, and harvesting opportunities. Every number comes from their linked accounts.
+
+ADDITIONAL TAX RULES:
+- Use a 32% blended federal+state rate for estimates unless the user specifies otherwise.
+- Distinguish short-term (ordinary income rates, up to 37%) vs long-term (0/15/20%) clearly.
+- Explain the $3,000/year capital loss deduction limit and carryover rules when relevant.
+- Flag wash sale risks (buying substantially identical security within 30 days).
+- Be specific about WHICH positions to harvest and the dollar impact.
+
+Respond with this JSON structure:
+{
+  "type": "portfolio_qa",
+  "title": "Brief title with a dollar amount (e.g. 'Tax Liability: ~$4,200 on $13,750 Net Gains')",
+  "summary": "2-3 sentences answering the tax question with SPECIFIC dollar amounts. Lead with the bottom-line number.",
+  "highlights": [
+    {
+      "label": "Description",
+      "value": "$XX,XXX or XX.X%",
+      "sentiment": "positive" | "negative" | "neutral" | "warning",
+      "detail": "One sentence of context"
+    }
+  ],
+  "recommendation": "One clear, actionable sentence about the best tax move.",
+  "followUpQuestions": ["Question 1", "Question 2", "Question 3"]
+}
+
+Include 4-6 highlights covering: realized gains/losses YTD, unrealized positions, harvestable savings, estimated tax liability. Each MUST have a dollar amount.`,
+
+  personal_finance: `${BASE_RULES}
+
+RESPONSE TYPE: Personal Finance Guidance
+You are a certified financial planner providing clear, actionable personal finance education.
+
+ADDITIONAL RULES:
+- Use current tax brackets, contribution limits, and regulations (2024-2025 figures).
+- If portfolio data is provided, personalize advice to the user's situation.
+- Give concrete numbers — contribution limits, tax brackets, expected returns, not vague guidance.
+- Be opinionated. Give a clear recommendation, not a list of options with no conclusion.
+
+Respond with this JSON structure:
+{
+  "type": "general",
+  "title": "Brief descriptive title",
+  "summary": "2-3 paragraph answer with specific numbers, current limits, and clear guidance.",
+  "keyPoints": [
+    { "point": "Key insight headline", "detail": "1-2 sentence explanation with specific data." }
+  ],
+  "metrics": [
+    { "label": "Metric Name", "value": "Formatted Value", "change": null, "context": "context note" or null }
+  ]
+}
+
+Include 3-5 key points and 3-6 relevant metrics (contribution limits, tax brackets, rates, benchmarks, etc.).`,
 
   general: `${BASE_RULES}
 
-RESPONSE TYPE: General Market Analysis
+RESPONSE TYPE: General Financial Analysis
 Answer the user's question with data-backed analysis.
 
 Respond with this JSON structure:
@@ -272,8 +458,33 @@ Respond with this JSON structure:
   ]
 }
 
-Include 3-5 key points and 3-6 relevant metrics. If the question is too vague to give numbers, provide the best available context.`,
+Include 3-5 key points and 3-6 relevant metrics.`,
 };
+
+// ── Follow-up suggestions ──
+
+function generateFollowUps(query: string, queryType: QueryType): string[] {
+  const lower = query.toLowerCase();
+
+  switch (queryType) {
+    case 'tax_planning':
+      return [
+        'Which positions should I harvest for tax losses?',
+        'What are my short-term vs long-term gains?',
+        'How much could tax-loss harvesting save me?',
+      ];
+    case 'portfolio_review':
+      if (lower.includes('risk') || lower.includes('concentrat') || lower.includes('crash'))
+        return ['How would a 20% correction affect me?', 'Which positions should I trim?', 'What sectors am I overexposed to?'];
+      if (lower.includes('diversif'))
+        return ['What sectors am I missing?', 'Am I overweight in any single stock?', 'Should I add international exposure?'];
+      if (lower.includes('sell') || lower.includes('trim'))
+        return ['What are the tax implications of selling?', 'Which positions have the highest risk?', 'How should I reinvest the proceeds?'];
+      return ['What\'s my biggest risk?', 'How diversified am I?', 'Should I harvest any tax losses?'];
+    default:
+      return [];
+  }
+}
 
 // ── API handler ──
 
@@ -290,47 +501,81 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { query, conversationHistory } = body as {
-    query: string;
-    conversationHistory?: ConversationMessage[];
-  };
+  // Accept both 'query' and 'question' for compatibility
+  const userQuery: string = body.query || body.question;
+  const conversationHistory: ConversationMessage[] | undefined = body.conversationHistory;
 
-  if (!query || typeof query !== 'string') {
+  if (!userQuery || typeof userQuery !== 'string') {
     return NextResponse.json({ error: 'Query is required' }, { status: 400 });
   }
 
-  // Extract tickers and determine query type
-  const allText = [query, ...(conversationHistory || []).map(m => m.content)].join(' ');
-  const tickers = extractTickers(allText);
-  const queryType = detectQueryType(query, tickers.length > 0);
+  // Extract tickers from CURRENT query only — not conversation history
+  const tickers = extractTickers(userQuery);
+  const queryType = classifyQuery(userQuery, tickers);
+  const responseType = RESPONSE_TYPE_MAP[queryType];
 
-  // Build data context based on query type
+  // ── Fetch data based on query type ──
   let dataContext = '';
 
   if (queryType === 'portfolio_review') {
-    const holdings = await getUserPortfolio(supabase, user.id);
-    const portfolioContext = buildPortfolioContext(holdings);
-
-    if (portfolioContext) {
-      dataContext = portfolioContext;
-      // Enrich top holdings with market data
-      const topTickers = holdings.slice(0, 3).map(h => h.ticker).filter(Boolean);
-      if (topTickers.length > 0) {
-        const tickerDataList = await Promise.all(topTickers.map(getFullTickerData));
-        const tickerContext = buildDataContext(tickerDataList);
-        if (tickerContext) dataContext += '\n\n' + tickerContext;
-      }
+    const portfolio = await getPortfolioSummary(user.id);
+    if (portfolio.positionCount === 0) {
+      return NextResponse.json({
+        analysis: {
+          type: 'portfolio_qa',
+          title: 'No portfolio data found',
+          summary: "You don't have any holdings linked yet. Connect your brokerage account on the Accounts page to get AI-powered portfolio analysis with real dollar amounts.",
+          highlights: [],
+          recommendation: 'Go to Connected Accounts and link your brokerage via Plaid.',
+          followUpQuestions: [],
+        },
+      });
+    }
+    dataContext = formatPortfolioContext(portfolio);
+    // Enrich top holdings with live market data
+    const topTickers = portfolio.holdings.slice(0, 5).map(h => h.ticker).filter(Boolean);
+    if (topTickers.length > 0) {
+      const tickerDataList = await Promise.all(topTickers.map(getFullTickerData));
+      const marketCtx = buildTickerContext(tickerDataList.filter(td => td.quote || td.profile));
+      if (marketCtx) dataContext += '\n\n' + marketCtx;
+    }
+  } else if (queryType === 'tax_planning') {
+    const currentYear = new Date().getFullYear();
+    const [portfolio, capitalGainsResult, taxReport] = await Promise.all([
+      getPortfolioSummary(user.id),
+      supabase
+        .from('capital_gains')
+        .select('ticker, transaction_type, transaction_date, shares, price_per_share, cost_basis, proceeds, gain_loss, gain_loss_type')
+        .eq('user_id', user.id)
+        .eq('tax_year', currentYear)
+        .order('transaction_date', { ascending: false }),
+      generateTaxReport(user.id),
+    ]);
+    if (portfolio.positionCount === 0 && (capitalGainsResult.data || []).length === 0) {
+      return NextResponse.json({
+        analysis: {
+          type: 'portfolio_qa',
+          title: 'No tax data available',
+          summary: 'Connect your brokerage account to get tax analysis based on your actual holdings and realized gains.',
+          highlights: [],
+          recommendation: 'Link your brokerage on the Accounts page to get started.',
+          followUpQuestions: [],
+        },
+      });
+    }
+    dataContext = buildTaxContext(portfolio, (capitalGainsResult.data || []) as CapitalGainRow[], taxReport);
+  } else if (queryType === 'stock_analysis' && tickers.length > 0) {
+    const tickerDataList = await Promise.all(tickers.slice(0, 3).map(getFullTickerData));
+    dataContext = buildTickerContext(tickerDataList);
+  } else if (queryType === 'personal_finance') {
+    // Include portfolio context for personalized advice if available
+    const portfolio = await getPortfolioSummary(user.id);
+    if (portfolio.positionCount > 0) {
+      dataContext = `USER CONTEXT: Portfolio value $${fmt(portfolio.totalValue)}, ${portfolio.positionCount} positions, unrealized P&L $${fmt(portfolio.totalUnrealizedGainLoss)}.`;
     }
   }
 
-  // Always fetch ticker data if tickers were mentioned
-  if (tickers.length > 0 && queryType !== 'portfolio_review') {
-    const tickerDataList = await Promise.all(tickers.slice(0, 3).map(getFullTickerData));
-    const tickerContext = buildDataContext(tickerDataList);
-    dataContext = dataContext ? `${dataContext}\n\n${tickerContext}` : tickerContext;
-  }
-
-  // Build messages
+  // ── Build LLM messages ──
   const messages: OpenAI.ChatCompletionMessageParam[] = [
     { role: 'system', content: PROMPTS[queryType] },
   ];
@@ -343,13 +588,12 @@ export async function POST(req: NextRequest) {
 
   let userMessage: string;
   if (dataContext) {
-    userMessage = `FINANCIAL DATA:\n${dataContext}\n\nUSER QUERY: ${query}`;
-  } else if (queryType === 'portfolio_review') {
-    userMessage = `USER QUERY: ${query}\n\n(User has no linked holdings yet. Advise them to connect brokerage accounts via the Accounts page first.)`;
+    userMessage = `FINANCIAL DATA:\n${dataContext}\n\nUSER QUERY: ${userQuery}`;
+  } else if (queryType === 'portfolio_review' || queryType === 'tax_planning') {
+    userMessage = `USER QUERY: ${userQuery}\n\n(User has no linked holdings. Advise them to connect accounts on the Accounts page.)`;
   } else {
-    userMessage = `USER QUERY: ${query}\n\n(No specific ticker data available. Provide analysis based on your knowledge.)`;
+    userMessage = `USER QUERY: ${userQuery}\n\n(No specific data available. Provide analysis based on your knowledge.)`;
   }
-
   messages.push({ role: 'user', content: userMessage });
 
   try {
@@ -357,7 +601,7 @@ export async function POST(req: NextRequest) {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages,
-      temperature: 0.7,
+      temperature: queryType === 'stock_analysis' ? 0.7 : 0.6,
       max_tokens: 2000,
     });
 
@@ -374,19 +618,37 @@ export async function POST(req: NextRequest) {
     let analysis;
     try {
       analysis = JSON.parse(cleaned);
-      // Ensure type field is set
-      if (!analysis.type) analysis.type = queryType;
+      // Ensure the response type matches what our cards expect
+      if (!analysis.type || analysis.type !== responseType) {
+        analysis.type = responseType;
+      }
+      // Add follow-up questions for portfolio_qa responses if missing
+      if (responseType === 'portfolio_qa' && !analysis.followUpQuestions?.length) {
+        analysis.followUpQuestions = generateFollowUps(userQuery, queryType);
+      }
     } catch {
-      analysis = {
-        type: 'general',
-        title: 'Analysis',
-        summary: content,
-        keyPoints: [],
-        metrics: [],
-      };
+      // Fallback: wrap raw text in the appropriate card structure
+      if (responseType === 'portfolio_qa') {
+        analysis = {
+          type: 'portfolio_qa',
+          title: 'Analysis',
+          summary: content,
+          highlights: [],
+          recommendation: '',
+          followUpQuestions: generateFollowUps(userQuery, queryType),
+        };
+      } else {
+        analysis = {
+          type: 'general',
+          title: 'Analysis',
+          summary: content,
+          keyPoints: [],
+          metrics: [],
+        };
+      }
     }
 
-    return NextResponse.json({ analysis, queryType, rawQuery: query });
+    return NextResponse.json({ analysis, queryType, rawQuery: userQuery });
   } catch (error) {
     console.error('AI analysis failed:', error);
     const message = error instanceof Error ? error.message : 'Analysis failed';
