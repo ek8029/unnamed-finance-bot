@@ -57,6 +57,12 @@ export default function LandingPage() {
               Free Stock Analysis
             </Link>
             <Link
+              href="/blog"
+              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+            >
+              Blog
+            </Link>
+            <Link
               href="/login"
               className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
             >
