@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       await logAuthEvent({ email, eventType: 'login_failed', metadata: { reason: error.message } });
 
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Invalid email or password' },
         { status: 401 },
       );
     }

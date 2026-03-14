@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getPortfolioSummary, formatPortfolioContext } from '@/lib/portfolio-analysis';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
+import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import OpenAI from 'openai';
 
 function getOpenAIClient() {
@@ -118,6 +119,16 @@ interface ConversationMessage {
 }
 
 export async function POST(req: NextRequest) {
+  // Rate limit: 20 requests per IP per hour
+  const ip = getClientIP(req);
+  const limit = rateLimit(`portfolio-qa:${ip}`, 20, 3600);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.', retryAfterSeconds: limit.retryAfterSeconds },
+      { status: 429 },
+    );
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -136,6 +147,10 @@ export async function POST(req: NextRequest) {
 
   if (!question || typeof question !== 'string') {
     return NextResponse.json({ error: 'Question is required' }, { status: 400 });
+  }
+
+  if (question.length > 500) {
+    return NextResponse.json({ error: 'Question too long (max 500 characters)' }, { status: 400 });
   }
 
   // Get portfolio summary (cached 5 min)
@@ -230,8 +245,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ analysis });
   } catch (error) {
-    console.error('Portfolio Q&A failed:', error);
-    const message = error instanceof Error ? error.message : 'Analysis failed';
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('Portfolio Q&A failed:', error instanceof Error ? error.message : 'Unknown error');
+    return NextResponse.json({ error: 'Analysis failed. Please try again.' }, { status: 500 });
   }
 }
