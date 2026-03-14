@@ -18,6 +18,7 @@ import {
   MessageSquare,
   BarChart3,
   Sparkles,
+  BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
@@ -284,6 +285,16 @@ export default function DashboardLayout({
                       <User className="w-4 h-4" />
                       <span>Account Settings</span>
                     </Link>
+                    <a
+                      href="/blog"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center space-x-3 px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      <span>Blog</span>
+                    </a>
                   </div>
 
                   {/* Logout */}

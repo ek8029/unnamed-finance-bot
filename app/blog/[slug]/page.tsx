@@ -75,7 +75,7 @@ export default async function BlogPost({ params }: PageProps) {
   }
 
   const headings = extractHeadings(post.content);
-  const shareText = encodeURIComponent(`${post.title} — by @HelmTerminal\n\nhttps://helmterminal.dev/blog/${slug}`);
+  const shareText = encodeURIComponent(`${post.title} — by @helmterminal\n\nhttps://helmterminal.dev/blog/${slug}`);
   const shareUrl = `https://x.com/intent/tweet?text=${shareText}`;
 
   const jsonLd = {
@@ -192,22 +192,6 @@ export default async function BlogPost({ params }: PageProps) {
 
             {/* ── Post Footer ── */}
             <footer className="mt-16 space-y-6">
-              {/* CTA Card */}
-              <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-gold-border)] rounded-sm p-6">
-                <h3 className="font-sans font-semibold text-[18px] text-[var(--color-text-primary)] mb-2">
-                  Try Helm Terminal
-                </h3>
-                <p className="text-[15px] text-[var(--color-text-secondary)] mb-4">
-                  Institutional-grade financial intelligence for individuals. Free stock analysis, portfolio monitoring, and more.
-                </p>
-                <a
-                  href="https://helmterminal.dev/analyze"
-                  className="inline-block bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-text-inverse)] font-medium text-[14px] px-5 py-2 rounded-sm transition-colors"
-                >
-                  Analyze a Stock Free
-                </a>
-              </div>
-
               {/* Share + Back */}
               <div className="flex items-center justify-between pt-4 border-t border-[var(--color-border-base)]">
                 <Link
