@@ -2,9 +2,20 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { plaidClient, getWebhookUrl } from '@/lib/plaid';
 import { Products, CountryCode } from 'plaid';
+import { rateLimit, getClientIP } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
   try {
+    // Rate limit: 10 requests per IP per hour
+    const ip = getClientIP(request);
+    const limit = rateLimit(`plaid-link:${ip}`, 10, 3600);
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 },
+      );
+    }
+
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -55,13 +66,7 @@ export async function POST(request: Request) {
       expiration: response.data.expiration,
     });
   } catch (error: unknown) {
-    const plaidError = (error as { response?: { data?: unknown } })?.response?.data;
-    if (plaidError) {
-      console.error('Plaid API error:', JSON.stringify(plaidError, null, 2));
-    } else {
-      console.error('Error creating link token:', error);
-    }
-    const message = error instanceof Error ? error.message : 'Failed to create link token';
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('Error creating link token:', error instanceof Error ? error.message : 'Unknown error');
+    return NextResponse.json({ error: 'Failed to create link token' }, { status: 500 });
   }
 }

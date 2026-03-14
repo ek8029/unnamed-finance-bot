@@ -174,14 +174,7 @@ export async function POST(request: Request) {
       } : null,
     });
   } catch (error: unknown) {
-    const plaidErr = extractPlaidError(error);
-    if (plaidErr) {
-      console.error('Plaid exchange error:', plaidErr);
-    } else {
-      console.error('Error exchanging public token:', error);
-    }
-    const message = plaidErr?.displayMessage
-      || (error instanceof Error ? error.message : 'Failed to link account');
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('Error exchanging public token:', error instanceof Error ? error.message : 'Unknown error');
+    return NextResponse.json({ error: 'Failed to link account. Please try again.' }, { status: 500 });
   }
 }

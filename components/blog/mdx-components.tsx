@@ -146,8 +146,8 @@ function Hr() {
 
 function Table({ children }: { children?: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto my-6 border border-[var(--color-border-base)] rounded-sm">
-      <table className="w-full text-[14px] text-[#C8CDD5]">
+    <div className="overflow-x-auto my-6 border border-[var(--color-border-base)] rounded-[4px]">
+      <table className="w-full border-collapse text-[14px] text-[#C8CDD5]">
         {children}
       </table>
     </div>
@@ -156,7 +156,7 @@ function Table({ children }: { children?: React.ReactNode }) {
 
 function Thead({ children }: { children?: React.ReactNode }) {
   return (
-    <thead className="bg-[var(--color-bg-elevated)] text-[var(--color-text-primary)] text-left text-[12px] uppercase tracking-wider font-mono">
+    <thead className="bg-[var(--color-bg-elevated)] text-left">
       {children}
     </thead>
   );
@@ -164,7 +164,7 @@ function Thead({ children }: { children?: React.ReactNode }) {
 
 function Th({ children }: { children?: React.ReactNode }) {
   return (
-    <th className="px-4 py-3 border-b border-[var(--color-border-base)] font-medium">
+    <th className="px-3.5 py-2.5 border-b border-[var(--color-border-base)] font-medium font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--color-text-primary)]">
       {children}
     </th>
   );
@@ -172,7 +172,7 @@ function Th({ children }: { children?: React.ReactNode }) {
 
 function Td({ children }: { children?: React.ReactNode }) {
   return (
-    <td className="px-4 py-3 border-b border-[var(--color-border-subtle)]">
+    <td className="px-3.5 py-2.5 border-b border-[var(--color-border-base)] bg-[var(--color-bg-surface)] text-[14px] text-[#C8CDD5] [&>strong]:text-[var(--color-text-primary)]">
       {children}
     </td>
   );
@@ -180,7 +180,7 @@ function Td({ children }: { children?: React.ReactNode }) {
 
 function Tr({ children }: { children?: React.ReactNode }) {
   return (
-    <tr className="even:bg-[var(--color-bg-elevated)]">
+    <tr className="even:[&>td]:bg-[var(--color-bg-elevated)]">
       {children}
     </tr>
   );
@@ -217,12 +217,12 @@ export function ComparisonTable({
   rows: string[][];
 }) {
   return (
-    <div className="overflow-x-auto my-8 border border-[var(--color-border-base)] rounded-sm">
-      <table className="w-full text-[14px] text-[#C8CDD5]">
-        <thead className="bg-[var(--color-bg-elevated)] text-[var(--color-text-primary)] text-left text-[12px] uppercase tracking-wider font-mono">
+    <div className="overflow-x-auto my-6 border border-[var(--color-border-base)] rounded-[4px]">
+      <table className="w-full border-collapse text-[14px] text-[#C8CDD5]">
+        <thead className="bg-[var(--color-bg-elevated)] text-left">
           <tr>
             {headers.map((h) => (
-              <th key={h} className="px-4 py-3 border-b border-[var(--color-border-base)] font-medium">
+              <th key={h} className="px-3.5 py-2.5 border-b border-[var(--color-border-base)] font-medium font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--color-text-primary)]">
                 {h}
               </th>
             ))}
@@ -230,9 +230,9 @@ export function ComparisonTable({
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className="even:bg-[var(--color-bg-elevated)]">
+            <tr key={i} className="even:[&>td]:bg-[var(--color-bg-elevated)]">
               {row.map((cell, j) => (
-                <td key={j} className="px-4 py-3 border-b border-[var(--color-border-subtle)]">
+                <td key={j} className="px-3.5 py-2.5 border-b border-[var(--color-border-base)] bg-[var(--color-bg-surface)] text-[14px] text-[#C8CDD5]">
                   {cell}
                 </td>
               ))}
