@@ -1,12 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { StockAnalysisCard, AnalysisWatermark } from '@/components/analysis/analysis-cards';
 import type { StockAnalysis } from '@/components/analysis/types';
-import { Lock } from 'lucide-react';
+import { Lock, Search, Loader2 } from 'lucide-react';
 
 const STORAGE_KEY = 'helm_analysis_count';
 const FREE_LIMIT = 1;
+
+const POPULAR_TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA'];
 
 function getViewCount(): number {
   if (typeof window === 'undefined') return 0;
@@ -26,6 +29,83 @@ function incrementViewCount(): number {
     // localStorage not available
   }
   return next;
+}
+
+function InlineSearch({ currentTicker }: { currentTicker: string }) {
+  const router = useRouter();
+  const [input, setInput] = useState(currentTicker);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      const clean = input.trim().toUpperCase().replace(/[^A-Z]/g, '');
+      if (clean && clean.length <= 5 && clean !== currentTicker) {
+        setLoading(true);
+        router.push(`/analyze/${clean}`);
+      }
+    },
+    [input, currentTicker, router],
+  );
+
+  return (
+    <form onSubmit={handleSubmit} className="flex gap-2 w-full">
+      <div className="flex-1 relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value.toUpperCase())}
+          placeholder="Ticker symbol"
+          maxLength={5}
+          disabled={loading}
+          className="w-full pl-9 pr-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-sm tracking-wider disabled:opacity-60"
+          style={{ fontFamily: 'var(--font-mono)' }}
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={!input.trim() || input.trim().toUpperCase() === currentTicker || loading}
+        className="px-5 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded-sm transition-colors text-sm whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+      >
+        {loading ? (
+          <>
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            Analyzing…
+          </>
+        ) : (
+          'Analyze'
+        )}
+      </button>
+    </form>
+  );
+}
+
+function RelatedTickers({ currentTicker }: { currentTicker: string }) {
+  const others = POPULAR_TICKERS.filter((t) => t !== currentTicker).slice(0, 6);
+
+  return (
+    <div className="space-y-3">
+      <p
+        className="text-[11px] uppercase tracking-wider text-[var(--color-text-muted)]"
+        style={{ fontFamily: 'var(--font-mono)' }}
+      >
+        Analyze another stock
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {others.map((t) => (
+          <a
+            key={t}
+            href={`/analyze/${t}`}
+            className="px-3.5 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm text-[13px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-gold)] hover:border-[var(--color-gold-border)] transition-colors"
+            style={{ fontFamily: 'var(--font-mono)' }}
+          >
+            {t}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function AnalysisResultClient({
@@ -96,9 +176,15 @@ export function AnalysisResultClient({
     );
   }
 
+  const searchBar = <InlineSearch currentTicker={ticker} />;
+  const relatedTickers = <RelatedTickers currentTicker={ticker} />;
+
   if (gated) {
     return (
       <div className="space-y-6">
+        {/* Search bar */}
+        {searchBar}
+
         {/* Blurred preview */}
         <div className="relative">
           <div className="blur-[6px] pointer-events-none select-none" aria-hidden="true">
@@ -145,12 +231,18 @@ export function AnalysisResultClient({
           </div>
         </div>
         <AnalysisWatermark />
+
+        {/* Related tickers */}
+        {relatedTickers}
       </div>
     );
   }
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Search bar */}
+      {searchBar}
+
       <StockAnalysisCard analysis={analysis} />
 
       {/* Share bar */}
@@ -171,6 +263,9 @@ export function AnalysisResultClient({
       </div>
 
       <AnalysisWatermark />
+
+      {/* Related tickers */}
+      {relatedTickers}
 
       {/* CTA */}
       <div className="bg-[var(--color-bg-surface)] border border-[var(--color-gold-border)] rounded-sm p-6 text-center space-y-3">
