@@ -8,8 +8,11 @@ import { HelmMark } from '@/components/helm-mark';
 import { AnimatedSection } from '@/components/ui/animated-section';
 import { LegalFooter } from '@/components/legal-footer';
 import { WaitlistForm, WaitlistFormFallback } from '@/components/waitlist-form';
+import { createClient } from '@/lib/supabase/server';
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
   return (
     <main className="min-h-screen bg-[var(--color-bg-base)] relative overflow-hidden">
       {/* Grid background - no gradients, no glows */}
@@ -57,17 +60,32 @@ export default function LandingPage() {
               Free Stock Analysis
             </Link>
             <Link
+              href="/pricing"
+              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+            >
+              Pricing
+            </Link>
+            <Link
               href="/blog"
               className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               Blog
             </Link>
-            <Link
-              href="/login"
-              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-            >
-              Sign in
-            </Link>
+            {user ? (
+              <Link
+                href="/dashboard"
+                className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+              >
+                Sign in
+              </Link>
+            )}
           </div>
         </div>
       </nav>

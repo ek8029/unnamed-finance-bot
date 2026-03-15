@@ -285,6 +285,14 @@ export default function DashboardLayout({
                       <User className="w-4 h-4" />
                       <span>Account Settings</span>
                     </Link>
+                    <Link
+                      href="/pricing"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center space-x-3 px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
+                    >
+                      <TrendingUp className="w-4 h-4" />
+                      <span>Pricing</span>
+                    </Link>
                     <a
                       href="/blog"
                       target="_blank"
