@@ -10,6 +10,7 @@ import {
   getEarnings,
   getCompanyProfile,
   getQuote,
+  getBasicFinancials,
   type EarningsCalendarItem,
   type FinnhubEarning,
 } from '@/lib/financial-data';
@@ -63,8 +64,10 @@ export interface EarningsReport {
 // ── Config ──
 
 // Earnings surprise impact model:
-// Every 1% EPS surprise → ~0.5% stock move (conservative estimate)
-const SURPRISE_MOVE_FACTOR = 0.5;
+// Every 1% EPS surprise → ~1% stock move.
+// Historical average: stocks move ~5-8% on earnings.
+// A 5% EPS beat with factor 1.0 → 5% stock move, which is realistic.
+const SURPRISE_MOVE_FACTOR = 1.0;
 
 // ── Holdings fetch ──
 
@@ -132,18 +135,30 @@ async function getUpcomingEarnings(
     const position = holdingsMap.get(event.symbol);
     if (!position) continue;
 
-    // Calculate scenario impacts
-    // 5% EPS beat → stock moves ~2.5%, applied to position value
-    const beatMove = 0.05 * SURPRISE_MOVE_FACTOR;
-    const beatImpact = position.totalValue * beatMove;
-    const missImpact = -(position.totalValue * beatMove);
+    // Refresh position with live price + company data
+    const [quote, profile] = await Promise.all([
+      getQuote(event.symbol),
+      position.securityName === event.symbol ? getCompanyProfile(event.symbol) : null,
+    ]);
 
-    // Enrich company name if missing
-    let companyName = position.securityName;
-    if (companyName === event.symbol) {
-      const profile = await getCompanyProfile(event.symbol);
-      if (profile) companyName = profile.name;
+    // Use live price if available, recalculate exposure
+    let livePosition = position;
+    if (quote && quote.c > 0) {
+      const liveValue = position.shares * quote.c;
+      livePosition = {
+        ...position,
+        currentPrice: quote.c,
+        totalValue: liveValue,
+      };
     }
+
+    const companyName = profile?.name || position.securityName;
+
+    // Calculate scenario impacts
+    // 5% EPS beat → stock moves ~5%, applied to live position value
+    const beatMove = 0.05 * SURPRISE_MOVE_FACTOR;
+    const beatImpact = livePosition.totalValue * beatMove;
+    const missImpact = -(livePosition.totalValue * beatMove);
 
     upcoming.push({
       ticker: event.symbol,
@@ -152,7 +167,7 @@ async function getUpcomingEarnings(
       time: event.hour === 'bmo' ? 'before_open' : event.hour === 'amc' ? 'after_close' : 'unknown',
       epsEstimate: event.epsEstimate,
       revenueEstimate: event.revenueEstimate,
-      position,
+      position: livePosition,
       beatImpact5pct: beatImpact,
       missImpact5pct: missImpact,
     });
@@ -202,6 +217,21 @@ async function getRecentEarnings(
         }
       }
 
+      // Fetch live quote + profile once per ticker
+      const [quote, profile] = await Promise.all([
+        getQuote(ticker),
+        position.securityName === ticker ? getCompanyProfile(ticker) : null,
+      ]);
+
+      // Use live price for position value
+      let livePosition = position;
+      if (quote && quote.c > 0) {
+        const liveValue = position.shares * quote.c;
+        livePosition = { ...position, currentPrice: quote.c, totalValue: liveValue };
+      }
+
+      const companyName = profile?.name || position.securityName;
+
       for (const e of recent) {
         if (e.actual == null || e.estimate == null) continue;
 
@@ -210,25 +240,14 @@ async function getRecentEarnings(
 
         // Estimate stock move from surprise
         const estimatedStockMove = (surprisePct / 100) * SURPRISE_MOVE_FACTOR;
-        const estimatedImpact = position.totalValue * estimatedStockMove;
+        const estimatedImpact = livePosition.totalValue * estimatedStockMove;
 
-        // Get actual post-earnings move from quote
+        // Actual post-earnings move from quote (day change)
         let actualMove: number | null = null;
         let actualDollarImpact: number | null = null;
-        try {
-          const quote = await getQuote(ticker);
-          if (quote && quote.dp != null) {
-            actualMove = quote.dp;
-            actualDollarImpact = position.totalValue * (quote.dp / 100);
-          }
-        } catch {
-          // Swallow
-        }
-
-        let companyName = position.securityName;
-        if (companyName === ticker) {
-          const profile = await getCompanyProfile(ticker);
-          if (profile) companyName = profile.name;
+        if (quote && quote.dp != null) {
+          actualMove = quote.dp;
+          actualDollarImpact = livePosition.totalValue * (quote.dp / 100);
         }
 
         results.push({
@@ -239,7 +258,7 @@ async function getRecentEarnings(
           epsEstimate: e.estimate,
           surprisePct,
           beat,
-          position,
+          position: livePosition,
           estimatedImpact,
           actualPostEarningsMove: actualMove,
           actualDollarImpact,
