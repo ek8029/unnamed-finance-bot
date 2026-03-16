@@ -544,11 +544,19 @@ export function useEarnings() {
   const [report, setReport] = useState<EarningsReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [proRequired, setProRequired] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
       try {
         const res = await fetch('/api/dashboard/earnings');
+        if (res.status === 403) {
+          const body = await res.json().catch(() => ({}));
+          if (body.code === 'PRO_REQUIRED') {
+            setProRequired(true);
+            return;
+          }
+        }
         if (!res.ok) throw new Error('Failed to fetch earnings data');
         const data = await res.json();
         setReport(data);
@@ -561,7 +569,7 @@ export function useEarnings() {
     fetchData();
   }, []);
 
-  return { report, loading, error };
+  return { report, loading, error, proRequired };
 }
 
 // ── Tax-loss harvesting opportunities ──
@@ -570,11 +578,19 @@ export function useTaxOpportunities() {
   const [report, setReport] = useState<TaxHarvestReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [proRequired, setProRequired] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
       try {
         const res = await fetch('/api/dashboard/tax-opportunities');
+        if (res.status === 403) {
+          const body = await res.json().catch(() => ({}));
+          if (body.code === 'PRO_REQUIRED') {
+            setProRequired(true);
+            return;
+          }
+        }
         if (!res.ok) throw new Error('Failed to fetch tax opportunities');
         const data = await res.json();
         setReport(data);
@@ -587,7 +603,7 @@ export function useTaxOpportunities() {
     fetchData();
   }, []);
 
-  return { report, loading, error };
+  return { report, loading, error, proRequired };
 }
 
 // ── Intelligence Feed ──

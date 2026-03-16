@@ -957,6 +957,7 @@ export default function WrappedPage() {
   const [data, setData] = useState<WrappedData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [proRequired, setProRequired] = useState(false);
   const [currentCard, setCurrentCard] = useState(0);
   const [period, setPeriod] = useState<'quarter' | 'year'>('quarter');
   const [touchStartX, setTouchStartX] = useState(0);
@@ -972,7 +973,29 @@ export default function WrappedPage() {
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  if (!tierLoading && !isPro) {
+  // Fetch data
+  useEffect(() => {
+    setLoading(true);
+    setCurrentCard(0);
+    fetch(`/api/dashboard/wrapped?period=${period}`)
+      .then(async res => {
+        if (res.status === 403) {
+          const body = await res.json().catch(() => ({}));
+          if (body.code === 'PRO_REQUIRED') {
+            setProRequired(true);
+            setLoading(false);
+            return null;
+          }
+        }
+        if (!res.ok) throw new Error('Failed to load');
+        return res.json();
+      })
+      .then(d => { if (d) { setData(d); setLoading(false); } })
+      .catch(e => { setError(e.message); setLoading(false); });
+  }, [period]);
+
+  // Show upgrade wall if tier check says free OR if API returned PRO_REQUIRED
+  if ((!tierLoading && !isPro) || proRequired) {
     return (
       <ProGate
         feature="Portfolio Wrapped"
@@ -980,19 +1003,6 @@ export default function WrappedPage() {
       />
     );
   }
-
-  // Fetch data
-  useEffect(() => {
-    setLoading(true);
-    setCurrentCard(0);
-    fetch(`/api/dashboard/wrapped?period=${period}`)
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to load');
-        return res.json();
-      })
-      .then(d => { setData(d); setLoading(false); })
-      .catch(e => { setError(e.message); setLoading(false); });
-  }, [period]);
 
   // Build cards dynamically
   const cards = useMemo<CardType[]>(() => {

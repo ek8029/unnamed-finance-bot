@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch'
 import { useSettings } from '@/contexts/settings-context'
 import { useToast } from '@/contexts/toast-context'
 import { supabase as supabaseBrowser } from '@/lib/supabase/client'
+import { useTier } from '@/hooks/use-tier'
 import {
   User,
   Bell,
@@ -79,6 +80,7 @@ interface LoginEvent {
 export default function SettingsPage() {
   const { settings, updateSettings, resetSettings, formatCurrency, formatCurrencyDetailed, formatDate } = useSettings()
   const { success, info, error: showError } = useToast()
+  const { tier, isPro, loading: tierLoading } = useTier()
 
   // Profile state
   const [profile, setProfile] = useState({ name: '', email: '', phone: '' })
@@ -934,49 +936,46 @@ export default function SettingsPage() {
               </div>
               <div>
                 <CardTitle>Billing & Subscription</CardTitle>
-                <CardDescription>Manage your subscription and payment</CardDescription>
+                <CardDescription>Manage your subscription plan</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] rounded-md">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="type-h3">Premium Plan</p>
-                  <p className="text-[var(--color-text-primary)]">$29.99/month</p>
-                </div>
-                <Badge variant="gold">Active</Badge>
+            {tierLoading ? (
+              <div className="p-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-md">
+                <div className="h-6 w-32 bg-white/5 rounded animate-pulse mb-2" />
+                <div className="h-4 w-24 bg-white/5 rounded animate-pulse" />
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">Change Plan</Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => {
-                    if (confirm('Are you sure you want to cancel your plan? You will lose access to premium features at the end of your current billing period.')) {
-                      // TODO: implement cancel subscription
-                    }
-                  }}
-                >
-                  Cancel Plan
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Payment Method</Label>
-              <div className="flex items-center justify-between p-3 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-base)]">
-                <div className="flex items-center gap-3">
-                  <CreditCard className="w-5 h-5 text-[var(--color-text-muted)]" />
+            ) : isPro ? (
+              <div className="p-4 bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] rounded-md">
+                <div className="flex items-center justify-between">
                   <div>
-                    <p className="type-h3">•••• •••• •••• 4242</p>
-                    <p className="text-[var(--color-text-secondary)] text-xs">Expires 12/2026</p>
+                    <p className="type-h3">Pro Plan</p>
+                    <p className="text-[var(--color-text-primary)]">$24.99/month</p>
                   </div>
+                  <Badge variant="gold">Active</Badge>
                 </div>
-                <Button variant="outline" size="sm">Update</Button>
+                <p className="text-xs text-[var(--color-text-secondary)] mt-2">
+                  Unlimited AI analysis, tax-loss harvesting, earnings impact, Portfolio Wrapped, and full intelligence feed.
+                </p>
               </div>
-            </div>
+            ) : (
+              <div className="p-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-md">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="type-h3">Free Plan</p>
+                    <p className="text-[var(--color-text-secondary)] text-sm">3 AI analyses per day, basic alerts</p>
+                  </div>
+                  <Badge variant="outline">Free</Badge>
+                </div>
+                <a
+                  href="/pricing"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-[2px] bg-[#B8914A] text-[#070C17] hover:bg-[#C9A45E] transition-colors"
+                >
+                  Upgrade to Pro — $24.99/mo
+                </a>
+              </div>
+            )}
           </CardContent>
         </Card>
 

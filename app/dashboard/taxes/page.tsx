@@ -157,16 +157,7 @@ export default function TaxesPage() {
   const { formatCurrency } = useFormat();
   const { isPro, loading: tierLoading } = useTier();
   const { data: taxData, loading: taxLoading } = useTaxData();
-  const { report: harvestReport, loading: harvestLoading } = useTaxOpportunities();
-
-  if (!tierLoading && !isPro) {
-    return (
-      <ProGate
-        feature="Tax Center"
-        description="Tax-loss harvesting intelligence, unrealized P&L tracking, and tax-efficient sell ordering are available on the Pro plan."
-      />
-    );
-  }
+  const { report: harvestReport, loading: harvestLoading, proRequired } = useTaxOpportunities();
 
   const [plFilter, setPlFilter] = useState<PLFilter>('all');
   const [dismissedOpps, setDismissedOpps] = useState<Set<string>>(() => {
@@ -179,6 +170,16 @@ export default function TaxesPage() {
   const [sellOrderExpanded, setSellOrderExpanded] = useState(false);
 
   const loading = taxLoading;
+
+  // Show upgrade wall if tier check says free OR if API returned PRO_REQUIRED
+  if ((!tierLoading && !isPro) || proRequired) {
+    return (
+      <ProGate
+        feature="Tax Center"
+        description="Tax-loss harvesting intelligence, unrealized P&L tracking, and tax-efficient sell ordering are available on the Pro plan."
+      />
+    );
+  }
 
   const dismissOpp = (ticker: string) => {
     const next = new Set(dismissedOpps);

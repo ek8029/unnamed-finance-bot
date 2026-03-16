@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
 import { useSettings } from '@/contexts/settings-context';
 import { LegalFooter } from '@/components/legal-footer';
+import { useTier } from '@/hooks/use-tier';
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -58,6 +59,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { settings } = useSettings();
+  const { isPro } = useTier();
   const reduceMotion = settings.accessibility.reduceMotion;
   const [loggingOut, setLoggingOut] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -201,7 +203,7 @@ export default function DashboardLayout({
                               >
                                 <child.icon className="w-4 h-4" />
                                 <span>{child.name}</span>
-                                {'pro' in child && child.pro && (
+                                {'pro' in child && child.pro && !isPro && (
                                   <span className="ml-auto text-[9px] uppercase tracking-wider font-semibold text-[var(--color-gold)] bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] px-1.5 py-0.5 rounded" style={{ fontFamily: 'var(--font-mono)' }}>Pro</span>
                                 )}
                               </Link>
@@ -227,7 +229,7 @@ export default function DashboardLayout({
                   >
                     <item.icon className="w-4 h-4" />
                     <span>{item.name}</span>
-                    {'pro' in item && item.pro && (
+                    {'pro' in item && item.pro && !isPro && (
                       <span className="text-[9px] uppercase tracking-wider font-semibold text-[var(--color-gold)] bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] px-1.5 py-0.5 rounded" style={{ fontFamily: 'var(--font-mono)' }}>Pro</span>
                     )}
                   </Link>

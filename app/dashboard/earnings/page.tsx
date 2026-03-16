@@ -204,9 +204,10 @@ function RecentCard({ result, formatCurrency }: { result: RecentEarning; formatC
 export default function EarningsPage() {
   const { formatCurrency } = useFormat();
   const { isPro, loading: tierLoading } = useTier();
-  const { report, loading, error } = useEarnings();
+  const { report, loading, error, proRequired } = useEarnings();
 
-  if (!tierLoading && !isPro) {
+  // Show upgrade wall if tier check says free OR if API returned PRO_REQUIRED
+  if ((!tierLoading && !isPro) || proRequired) {
     return (
       <ProGate
         feature="Earnings Impact"
