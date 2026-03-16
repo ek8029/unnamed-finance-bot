@@ -17,6 +17,18 @@ export interface InsightMetric {
   value: string;
 }
 
+export type InsightSource =
+  | 'concentration'
+  | 'tax'
+  | 'earnings'
+  | 'cash_flow'
+  | 'market'
+  | 'performance'
+  | 'rebalancing';
+
+// Sources available on the free "basic alerts" tier
+export const FREE_INSIGHT_SOURCES: InsightSource[] = ['cash_flow', 'performance'];
+
 export interface FeedInsight {
   id: string;
   type: 'risk' | 'opportunity' | 'info' | 'action';
@@ -26,6 +38,7 @@ export interface FeedInsight {
   detail: string;
   metrics: InsightMetric[];
   suggestedFollowUp: string;
+  source: InsightSource;
   createdAt: string;
 }
 
@@ -76,6 +89,7 @@ function concentrationAlerts(portfolio: PortfolioSummary): FeedInsight[] {
       id: makeId(),
       type: 'risk',
       priority,
+      source: 'concentration',
       title: `${alert.ticker} concentration above ${alert.threshold}%`,
       summary: `${alert.ticker} is ${alert.allocationPct.toFixed(1)}% of your portfolio ($${fmt(alert.totalValue)}). Recommended max single-stock: ${alert.threshold}%.`,
       detail: `Consider trimming $${fmt(Math.max(0, trimAmount))} to reduce single-stock risk. A 20% decline in ${alert.ticker} would cost you $${fmt(alert.totalValue * 0.2)}.`,
@@ -102,6 +116,7 @@ async function taxOpportunities(userId: string): Promise<FeedInsight[]> {
     insights.push({
       id: makeId(),
       type: 'opportunity',
+      source: 'tax',
       priority: report.totalEstimatedSavings > 500 ? 'high' : 'medium',
       title: `$${fmt(report.totalEstimatedSavings)} in tax savings available`,
       summary: `${report.opportunityCount} positions have unrealized losses totaling $${fmt(Math.abs(report.totalHarvestableLoss))}. Harvesting could save ~$${fmt(report.totalEstimatedSavings)} on your tax bill.`,
@@ -118,6 +133,7 @@ async function taxOpportunities(userId: string): Promise<FeedInsight[]> {
     insights.push({
       id: makeId(),
       type: 'opportunity',
+      source: 'tax',
       priority: top.estimatedSavings > 200 ? 'medium' : 'low',
       title: `Tax-loss harvest opportunity: ${top.ticker}`,
       summary: `${top.ticker} has an unrealized loss of $${fmt(Math.abs(top.unrealizedLoss))} (${top.lossPct.toFixed(1)}% below cost basis). Selling could save ~$${fmt(top.estimatedSavings)}.`,
@@ -148,6 +164,7 @@ async function earningsPreview(userId: string): Promise<FeedInsight[]> {
     insights.push({
       id: makeId(),
       type: 'info',
+      source: 'earnings',
       priority: nextEvent.position.allocationPct > 10 ? 'high' : 'medium',
       title: multiple
         ? `${report.upcoming.length} holdings report earnings soon`
@@ -177,6 +194,7 @@ async function earningsPreview(userId: string): Promise<FeedInsight[]> {
       insights.push({
         id: makeId(),
         type: top.beat ? 'info' : 'risk',
+        source: 'earnings',
         priority: Math.abs(top.estimatedImpact) > 500 ? 'medium' : 'low',
         title: `${top.ticker} ${top.beat ? 'beat' : 'missed'} earnings by ${Math.abs(top.surprisePct || 0).toFixed(1)}%`,
         summary: `${top.companyName} reported EPS $${top.epsActual?.toFixed(2)} vs $${top.epsEstimate?.toFixed(2)} expected.`,
@@ -218,6 +236,7 @@ async function cashFlowAnomalies(userId: string): Promise<FeedInsight[]> {
     insights.push({
       id: makeId(),
       type: 'info',
+      source: 'cash_flow',
       priority: Math.abs(biggest.amount) > 2000 ? 'medium' : 'low',
       title: `Large charge: $${fmt(Math.abs(biggest.amount))}`,
       summary: `${biggest.merchant_name || biggest.description || 'Unknown merchant'} charged $${fmt(Math.abs(biggest.amount))} on ${biggest.transaction_date}.${biggest.category_name ? ` Category: ${biggest.category_name}.` : ''}`,
@@ -240,6 +259,7 @@ async function cashFlowAnomalies(userId: string): Promise<FeedInsight[]> {
     insights.push({
       id: makeId(),
       type: 'info',
+      source: 'cash_flow',
       priority: 'low',
       title: `$${fmt(total)} in deposits this week`,
       summary: `${incomeDeposits.length} deposit${incomeDeposits.length > 1 ? 's' : ''} totaling $${fmt(total)} in the past 7 days.`,
@@ -277,6 +297,7 @@ function marketEventImpact(portfolio: PortfolioSummary): FeedInsight[] {
       insights.push({
         id: makeId(),
         type: avgChange < 0 ? 'risk' : 'info',
+        source: 'market',
         priority: Math.abs(avgChange) > 3 ? 'medium' : 'low',
         title: `${sector.sector} sector ${avgChange > 0 ? 'rallying' : 'declining'} ${Math.abs(avgChange).toFixed(1)}%`,
         summary: `Your ${sector.sector} holdings (${sector.holdings.map(h => h.ticker).join(', ')}) moved an average of ${avgChange > 0 ? '+' : ''}${avgChange.toFixed(1)}% today. Impact: ${dollarImpact > 0 ? '+' : ''}$${fmt(Math.abs(dollarImpact))}.`,
@@ -304,6 +325,7 @@ function performanceHighlights(portfolio: PortfolioSummary): FeedInsight[] {
     insights.push({
       id: makeId(),
       type: 'info',
+      source: 'performance',
       priority: (g.unrealizedGainLoss ?? 0) > 1000 ? 'medium' : 'low',
       title: `${g.ticker} is your best performer`,
       summary: `${g.securityName} is up $${fmt(g.unrealizedGainLoss!)} (${((g.unrealizedGainLossPct ?? 0) * 100).toFixed(1)}%) from cost basis.${g.dayChangePct != null ? ` Today: ${(g.dayChangePct * 100) >= 0 ? '+' : ''}${(g.dayChangePct * 100).toFixed(2)}%.` : ''}`,
@@ -323,6 +345,7 @@ function performanceHighlights(portfolio: PortfolioSummary): FeedInsight[] {
     insights.push({
       id: makeId(),
       type: 'risk',
+      source: 'performance',
       priority: Math.abs(l.unrealizedGainLoss ?? 0) > 1000 ? 'medium' : 'low',
       title: `${l.ticker} is your worst performer`,
       summary: `${l.securityName} is down $${fmt(Math.abs(l.unrealizedGainLoss!))} (${((l.unrealizedGainLossPct ?? 0) * 100).toFixed(1)}%) from cost basis.`,
@@ -348,6 +371,7 @@ function performanceHighlights(portfolio: PortfolioSummary): FeedInsight[] {
     insights.push({
       id: makeId(),
       type: pct > 0 ? 'info' : 'risk',
+      source: 'performance',
       priority: Math.abs(pct) > 5 ? 'medium' : 'low',
       title: `${mover.ticker} moved ${pct >= 0 ? '+' : ''}${pct.toFixed(1)}% today`,
       summary: `${mover.securityName} ${pct > 0 ? 'gained' : 'lost'} ${Math.abs(pct).toFixed(1)}% today, a ${dollarMove >= 0 ? '+' : ''}$${fmt(Math.abs(dollarMove))} impact on your portfolio.`,
@@ -374,6 +398,7 @@ function rebalancingSuggestions(portfolio: PortfolioSummary): FeedInsight[] {
       insights.push({
         id: makeId(),
         type: 'risk',
+        source: 'rebalancing',
         priority: sector.allocationPct > 50 ? 'high' : 'medium',
         title: `${sector.sector} sector is ${sector.allocationPct.toFixed(0)}% of portfolio`,
         summary: `Your ${sector.sector} exposure ($${fmt(sector.totalValue)}) is ${sector.allocationPct.toFixed(1)}%. Diversification guidelines suggest <30-40% in any single sector.`,
@@ -393,6 +418,7 @@ function rebalancingSuggestions(portfolio: PortfolioSummary): FeedInsight[] {
     insights.push({
       id: makeId(),
       type: 'action',
+      source: 'rebalancing',
       priority: 'medium',
       title: `Portfolio has only ${portfolio.positionCount} position${portfolio.positionCount > 1 ? 's' : ''}`,
       summary: `With ${portfolio.positionCount} holding${portfolio.positionCount > 1 ? 's' : ''}, a single earnings miss or sector downturn has outsized impact on your portfolio.`,

@@ -234,7 +234,7 @@ export default async function PricingPage() {
                   </p>
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-bold text-[#B8914A] tabular-nums">
-                      $12
+                      $24.99
                     </span>
                     <span className="text-sm text-[var(--color-text-muted)]">
                       / month

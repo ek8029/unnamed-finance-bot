@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useResearch, type ResearchMessage } from '@/contexts/research-context';
 import {
@@ -15,6 +16,7 @@ import {
   MessageSquare,
   Trash2,
 } from 'lucide-react';
+import { useTier } from '@/hooks/use-tier';
 
 // ── Types ──
 
@@ -44,13 +46,22 @@ const SUGGESTED_QUERIES = [
 function ResearchChatContent() {
   const searchParams = useSearchParams();
   const { messages: storedMessages, addMessage, clearMessages } = useResearch();
+  const { tier, quota, isPro, loading: tierLoading } = useTier();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [liveQuota, setLiveQuota] = useState<{ used: number; limit: number; remaining: number } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const initialQueryRef = useRef(searchParams.get('q'));
   const hasAutoQuery = useRef(!!searchParams.get('q'));
+
+  // Initialize live quota from tier data
+  useEffect(() => {
+    if (quota && quota.limit != null) {
+      setLiveQuota({ used: quota.used, limit: quota.limit, remaining: quota.remaining ?? 0 });
+    }
+  }, [quota]);
 
   // Hydrate from session storage on mount — skip if we have a ?q= auto-query
   useEffect(() => {
@@ -120,10 +131,18 @@ function ResearchChatContent() {
 
       if (!res.ok) {
         const err = await res.json();
+        if (err.code === 'QUOTA_EXCEEDED' && err.quota) {
+          setLiveQuota({ used: err.quota.used, limit: err.quota.limit, remaining: 0 });
+        }
         throw new Error(err.error || 'Analysis failed');
       }
 
       const data = await res.json();
+
+      // Update live quota from response
+      if (data.quota) {
+        setLiveQuota({ used: data.quota.used, limit: data.quota.limit, remaining: data.quota.remaining });
+      }
 
       const assistantMessage: Message = {
         id: crypto.randomUUID(),
@@ -354,9 +373,27 @@ function ResearchChatContent() {
               </button>
             </div>
           </div>
-          <p className="text-[10px] text-[var(--color-text-muted)] mt-1.5 text-center" style={{ fontFamily: 'var(--font-mono)' }}>
-            Powered by Finnhub + GPT-4o-mini. Not financial advice.
-          </p>
+          <div className="flex items-center justify-center gap-3 mt-1.5">
+            <p className="text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+              Powered by Finnhub + GPT-4o-mini. Not financial advice.
+            </p>
+            {!isPro && liveQuota && (
+              <span
+                className={cn(
+                  'text-[10px] px-2 py-0.5 rounded-full border',
+                  liveQuota.remaining > 0
+                    ? 'text-[var(--color-text-muted)] border-[var(--color-border-base)]'
+                    : 'text-[var(--color-warning)] border-[var(--color-warning)]/30 bg-[var(--color-warning)]/5',
+                )}
+                style={{ fontFamily: 'var(--font-mono)' }}
+              >
+                {liveQuota.remaining}/{liveQuota.limit} analyses left today
+                {liveQuota.remaining === 0 && (
+                  <> &middot; <Link href="/pricing" className="text-[var(--color-gold)] hover:underline">Upgrade</Link></>
+                )}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>

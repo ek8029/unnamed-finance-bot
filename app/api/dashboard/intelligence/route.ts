@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { generateDailyInsights } from '@/lib/intelligence-feed';
+import { generateDailyInsights, FREE_INSIGHT_SOURCES } from '@/lib/intelligence-feed';
+import { getUserTier } from '@/lib/tier';
 
 export async function GET() {
   const supabase = await createClient();
@@ -14,8 +15,21 @@ export async function GET() {
   }
 
   try {
-    const insights = await generateDailyInsights(user.id);
-    return NextResponse.json({ insights });
+    const [insights, tier] = await Promise.all([
+      generateDailyInsights(user.id),
+      getUserTier(user.id),
+    ]);
+
+    if (tier === 'pro') {
+      return NextResponse.json({ insights, tier });
+    }
+
+    // Free tier "basic alerts": cash flow anomalies + performance highlights only
+    const basicInsights = insights.filter(i =>
+      FREE_INSIGHT_SOURCES.includes(i.source)
+    );
+
+    return NextResponse.json({ insights: basicInsights, tier });
   } catch (error) {
     console.error('Intelligence feed failed:', error);
     return NextResponse.json({ error: 'Failed to generate insights' }, { status: 500 });

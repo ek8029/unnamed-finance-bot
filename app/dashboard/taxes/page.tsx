@@ -10,6 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useTaxData, useTaxOpportunities } from '@/hooks/use-financial-data';
 import type { TaxPosition, TaxOpportunity } from '@/hooks/use-financial-data';
 import { cn } from '@/lib/utils';
+import { useTier } from '@/hooks/use-tier';
+import { ProGate } from '@/components/pro-gate';
 
 // ── Helpers ──
 
@@ -153,8 +155,18 @@ function PositionRow({ pos, formatCurrency }: { pos: TaxPosition; formatCurrency
 
 export default function TaxesPage() {
   const { formatCurrency } = useFormat();
+  const { isPro, loading: tierLoading } = useTier();
   const { data: taxData, loading: taxLoading } = useTaxData();
   const { report: harvestReport, loading: harvestLoading } = useTaxOpportunities();
+
+  if (!tierLoading && !isPro) {
+    return (
+      <ProGate
+        feature="Tax Center"
+        description="Tax-loss harvesting intelligence, unrealized P&L tracking, and tax-efficient sell ordering are available on the Pro plan."
+      />
+    );
+  }
 
   const [plFilter, setPlFilter] = useState<PLFilter>('all');
   const [dismissedOpps, setDismissedOpps] = useState<Set<string>>(() => {

@@ -4,6 +4,7 @@ import { getPortfolioSummary, formatPortfolioContext, type PortfolioSummary } fr
 import { generateTaxReport, type TaxHarvestReport } from '@/lib/tax-analysis';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
+import { checkAnalysisQuota, recordAnalysisUsage } from '@/lib/tier';
 import OpenAI from 'openai';
 
 function getOpenAIClient() {
@@ -511,6 +512,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Check daily analysis quota (free: 3/day, pro: unlimited)
+  const quota = await checkAnalysisQuota(user.id);
+  if (!quota.allowed) {
+    return NextResponse.json(
+      {
+        error: 'Daily analysis limit reached. Upgrade to Pro for unlimited analyses.',
+        code: 'QUOTA_EXCEEDED',
+        quota: { used: quota.used, limit: quota.limit, remaining: 0 },
+      },
+      { status: 429 },
+    );
+  }
+
   const body = await req.json();
   // Accept both 'query' and 'question' for compatibility
   const userQuery: string = body.query || body.question;
@@ -664,7 +678,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ analysis, queryType, rawQuery: userQuery });
+    // Record usage after successful analysis
+    await recordAnalysisUsage(user.id);
+
+    return NextResponse.json({
+      analysis,
+      queryType,
+      rawQuery: userQuery,
+      quota: quota.limit != null
+        ? { used: quota.used + 1, limit: quota.limit, remaining: Math.max(0, (quota.remaining ?? 0) - 1) }
+        : undefined,
+    });
   } catch (error) {
     console.error('AI analysis failed:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json({ error: 'Analysis failed. Please try again.' }, { status: 500 });

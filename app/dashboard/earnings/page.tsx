@@ -14,6 +14,8 @@ import {
   BarChart3,
   AlertTriangle,
 } from 'lucide-react';
+import { useTier } from '@/hooks/use-tier';
+import { ProGate } from '@/components/pro-gate';
 
 // ── Upcoming Earnings Card ──
 
@@ -201,7 +203,17 @@ function RecentCard({ result, formatCurrency }: { result: RecentEarning; formatC
 
 export default function EarningsPage() {
   const { formatCurrency } = useFormat();
+  const { isPro, loading: tierLoading } = useTier();
   const { report, loading, error } = useEarnings();
+
+  if (!tierLoading && !isPro) {
+    return (
+      <ProGate
+        feature="Earnings Impact"
+        description="See how upcoming and recent earnings reports affect your portfolio with specific dollar amounts. Available on the Pro plan."
+      />
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-5xl">

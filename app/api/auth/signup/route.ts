@@ -76,6 +76,18 @@ export async function POST(request: Request) {
       console.error('Error creating preferences:', prefsError);
     }
 
+    // Create free tier subscription
+    const { error: subError } = await supabase
+      .from('user_subscriptions')
+      .insert({
+        user_id: data.user.id,
+        tier: 'free',
+      });
+
+    if (subError) {
+      console.error('Error creating subscription:', subError);
+    }
+
     // Log signup event
     await logAuthEvent({
       userId: data.user.id,

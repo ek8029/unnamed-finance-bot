@@ -33,13 +33,13 @@ const navigation = [
     icon: TrendingUp,
     children: [
       { name: 'Research', href: '/dashboard/chat', icon: MessageSquare },
-      { name: 'Earnings', href: '/dashboard/earnings', icon: BarChart3 },
+      { name: 'Earnings', href: '/dashboard/earnings', icon: BarChart3, pro: true },
     ],
   },
   { name: 'Actions', href: '/dashboard/actions', icon: Zap },
   { name: 'Transactions', href: '/dashboard/transactions', icon: ArrowLeftRight },
-  { name: 'Taxes', href: '/dashboard/taxes', icon: FileText },
-  { name: 'Wrapped', href: '/dashboard/wrapped', icon: Sparkles },
+  { name: 'Taxes', href: '/dashboard/taxes', icon: FileText, pro: true },
+  { name: 'Wrapped', href: '/dashboard/wrapped', icon: Sparkles, pro: true },
 ];
 
 const PORTFOLIO_HREFS = ['/dashboard/portfolio', '/dashboard/chat', '/dashboard/earnings'];
@@ -201,6 +201,9 @@ export default function DashboardLayout({
                               >
                                 <child.icon className="w-4 h-4" />
                                 <span>{child.name}</span>
+                                {'pro' in child && child.pro && (
+                                  <span className="ml-auto text-[9px] uppercase tracking-wider font-semibold text-[var(--color-gold)] bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] px-1.5 py-0.5 rounded" style={{ fontFamily: 'var(--font-mono)' }}>Pro</span>
+                                )}
                               </Link>
                             );
                           })}
@@ -224,6 +227,9 @@ export default function DashboardLayout({
                   >
                     <item.icon className="w-4 h-4" />
                     <span>{item.name}</span>
+                    {'pro' in item && item.pro && (
+                      <span className="text-[9px] uppercase tracking-wider font-semibold text-[var(--color-gold)] bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] px-1.5 py-0.5 rounded" style={{ fontFamily: 'var(--font-mono)' }}>Pro</span>
+                    )}
                   </Link>
                 );
               })}

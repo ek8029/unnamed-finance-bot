@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { X, ChevronLeft, ChevronRight, Share2, Copy, Check } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
 import { cn } from '@/lib/utils';
+import { useTier } from '@/hooks/use-tier';
+import { ProGate } from '@/components/pro-gate';
 
 // ── Types ──
 
@@ -951,6 +953,7 @@ function LoadingState() {
 
 export default function WrappedPage() {
   const router = useRouter();
+  const { isPro, loading: tierLoading } = useTier();
   const [data, setData] = useState<WrappedData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -968,6 +971,15 @@ export default function WrappedPage() {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
+
+  if (!tierLoading && !isPro) {
+    return (
+      <ProGate
+        feature="Portfolio Wrapped"
+        description="Your personalized portfolio recap — returns, top performers, investor personality, and more. Available on the Pro plan."
+      />
+    );
+  }
 
   // Fetch data
   useEffect(() => {
