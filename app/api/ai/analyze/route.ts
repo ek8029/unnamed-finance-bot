@@ -383,7 +383,9 @@ Respond with this JSON structure:
   "followUpQuestions": ["Question 1", "Question 2", "Question 3"]
 }
 
-Include 3-6 highlights. Each MUST have a real dollar amount or percentage from their data. Be specific to their holdings — reference tickers and exact values.`,
+Include 3-6 highlights. Each MUST have a real dollar amount or percentage from their data. Be specific to their holdings — reference tickers and exact values.
+
+IMPORTANT: followUpQuestions are clickable buttons the USER will use to ask YOU a follow-up. Write them as queries the user would type, NOT questions you would ask them. Good: "How should I reduce my tech concentration?" Bad: "Are you comfortable with your allocations?"`,
 
   tax_planning: `${BASE_RULES}
 
@@ -414,7 +416,9 @@ Respond with this JSON structure:
   "followUpQuestions": ["Question 1", "Question 2", "Question 3"]
 }
 
-Include 4-6 highlights covering: realized gains/losses YTD, unrealized positions, harvestable savings, estimated tax liability. Each MUST have a dollar amount.`,
+Include 4-6 highlights covering: realized gains/losses YTD, unrealized positions, harvestable savings, estimated tax liability. Each MUST have a dollar amount.
+
+IMPORTANT: followUpQuestions are clickable buttons the USER will use to ask YOU a follow-up. Write them as queries the user would type, NOT questions you would ask them. Good: "Which positions should I harvest for tax losses?" Bad: "Have you considered your tax bracket?"`,
 
   personal_finance: `${BASE_RULES}
 
