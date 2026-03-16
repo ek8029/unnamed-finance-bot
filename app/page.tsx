@@ -122,6 +122,21 @@ export default async function LandingPage() {
                   </div>
                 ))}
               </div>
+
+              <div className="pt-3">
+                <a
+                  href="https://www.producthunt.com/products/helm-terminal?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-helm-terminal"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <img
+                    src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1100124&theme=dark&t=1773689496228"
+                    alt="Helm Terminal - AI-powered financial intelligence for your actual portfolio. | Product Hunt"
+                    width={250}
+                    height={54}
+                  />
+                </a>
+              </div>
             </div>
           </AnimatedSection>
 
