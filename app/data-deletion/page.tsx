@@ -5,11 +5,9 @@ export const metadata = {
   description: 'How to delete your Helm account and all associated financial data.',
 };
 
-// TODO: Update with specific data retention timelines and compliance details before launch.
-
 export default function DataDeletionPage() {
   return (
-    <LegalPageLayout title="Data Deletion" lastUpdated="March 10, 2026">
+    <LegalPageLayout title="Data Deletion" lastUpdated="March 17, 2026">
       {/* Overview */}
       <section>
         <h2>Your Right to Delete</h2>
@@ -73,6 +71,21 @@ export default function DataDeletionPage() {
         </p>
       </section>
 
+      {/* Data Retention */}
+      <section>
+        <h2>Data Retention Policy</h2>
+        <p>While your account is active, we retain your financial data only as long as needed to provide the service:</p>
+        <ul>
+          <li><strong>Financial data</strong> (transactions, holdings, balances) — retained while your account is active. Deleted upon account deletion.</li>
+          <li><strong>Authentication logs</strong> — retained for 90 days for security and fraud prevention, then automatically purged.</li>
+          <li><strong>Plaid access tokens</strong> — revoked and deleted immediately upon account deletion or when you disconnect an institution.</li>
+          <li><strong>Analytics</strong> — we use privacy-first analytics (Plausible). No personal identifiers are collected or stored.</li>
+        </ul>
+        <p>
+          We do not sell, rent, or share your personal financial data with third parties for marketing or advertising purposes. Data is processed solely to deliver Helm&apos;s intelligence features to you.
+        </p>
+      </section>
+
       {/* Timeline */}
       <section>
         <h2>Deletion Timeline</h2>
@@ -81,6 +94,23 @@ export default function DataDeletionPage() {
           <li><strong>Within 24 hours:</strong> All personal data is removed from active databases</li>
           <li><strong>Within 30 days:</strong> Data is purged from encrypted backups</li>
         </ul>
+      </section>
+
+      {/* Your Rights */}
+      <section>
+        <h2>Your Rights</h2>
+        <p>Depending on your jurisdiction, you may have the right to:</p>
+        <ul>
+          <li><strong>Access</strong> — request a copy of the personal data we hold about you</li>
+          <li><strong>Rectification</strong> — correct inaccurate data</li>
+          <li><strong>Erasure</strong> — delete your data (as described above)</li>
+          <li><strong>Portability</strong> — receive your data in a machine-readable format</li>
+        </ul>
+        <p>
+          To exercise any of these rights, contact{' '}
+          <a href="mailto:privacy@helmterminal.dev">privacy@helmterminal.dev</a>.
+          We will respond within 30 days.
+        </p>
       </section>
 
       {/* Contact */}
