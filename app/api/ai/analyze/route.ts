@@ -341,6 +341,8 @@ const PROMPTS: Record<QueryType, string> = {
 RESPONSE TYPE: Stock Analysis
 Take a clear bullish, bearish, or neutral stance.
 
+IMPORTANT: If the user's position data is provided (showing they hold this stock), you MUST reference their specific shares, cost basis, unrealized P&L, and portfolio allocation in your analysis. Frame the recommendation in terms of their actual position (e.g. "Your 15 shares of AAPL at $182 cost basis are up $425..."). If they don't hold the stock, note that and frame it as a potential new position relative to their portfolio size.
+
 Respond with this JSON structure:
 {
   "type": "stock_analysis",
@@ -427,44 +429,53 @@ You are a certified financial planner providing clear, actionable personal finan
 
 ADDITIONAL RULES:
 - Use current tax brackets, contribution limits, and regulations (2024-2025 figures).
-- If portfolio data is provided, personalize advice to the user's situation.
+- CRITICAL: If the user's portfolio data is provided in the FINANCIAL DATA section, you MUST reference their specific holdings, dollar amounts, allocations, and P&L in your answer. Do NOT give generic advice when you have their real data. For example, if they ask about retirement, reference their actual portfolio value and holdings. If they ask about investing, reference what they already own.
 - Give concrete numbers — contribution limits, tax brackets, expected returns, not vague guidance.
 - Be opinionated. Give a clear recommendation, not a list of options with no conclusion.
+- When portfolio data is available, frame every key point in terms of the user's actual situation (e.g. "With your $45,000 portfolio weighted 35% in tech..." not "Generally, investors should...").
 
 Respond with this JSON structure:
 {
   "type": "general",
   "title": "Brief descriptive title",
-  "summary": "2-3 paragraph answer with specific numbers, current limits, and clear guidance.",
+  "summary": "2-3 paragraph answer with specific numbers, current limits, and clear guidance. ALWAYS reference the user's actual portfolio numbers when available.",
   "keyPoints": [
-    { "point": "Key insight headline", "detail": "1-2 sentence explanation with specific data." }
+    { "point": "Key insight headline", "detail": "1-2 sentence explanation with specific data from their portfolio or current rates." }
   ],
   "metrics": [
     { "label": "Metric Name", "value": "Formatted Value", "change": null, "context": "context note" or null }
-  ]
+  ],
+  "followUpQuestions": ["Question 1", "Question 2", "Question 3"]
 }
 
-Include 3-5 key points and 3-6 relevant metrics (contribution limits, tax brackets, rates, benchmarks, etc.).`,
+Include 3-5 key points and 3-6 relevant metrics (contribution limits, tax brackets, rates, benchmarks, etc.). If portfolio data is available, include metrics from their portfolio too.
+
+IMPORTANT: followUpQuestions are clickable buttons the USER will use to ask YOU a follow-up. Write them as queries the user would type, NOT questions you would ask them. Good: "How should I allocate my 401k contributions?" Bad: "What are your retirement goals?"`,
 
   general: `${BASE_RULES}
 
 RESPONSE TYPE: General Financial Analysis
 Answer the user's question with data-backed analysis.
 
+CRITICAL: If the user's portfolio data is provided in the FINANCIAL DATA section, you MUST tie your answer back to their specific holdings, dollar amounts, and allocations. Do NOT give generic advice or benchmarks when you have their real data. For example, if they ask about market conditions, explain how it specifically affects their holdings. If they ask about a strategy, evaluate it against what they actually own.
+
 Respond with this JSON structure:
 {
   "type": "general",
   "title": "Brief descriptive title",
-  "summary": "2-3 paragraph analysis with specific numbers and clear thesis.",
+  "summary": "2-3 paragraph analysis with specific numbers and clear thesis. When portfolio data is available, reference the user's actual positions and dollar amounts.",
   "keyPoints": [
-    { "point": "Key insight headline", "detail": "1-2 sentence explanation with specific data." }
+    { "point": "Key insight headline", "detail": "1-2 sentence explanation referencing the user's actual data when available." }
   ],
   "metrics": [
     { "label": "Metric Name", "value": "Formatted Value", "change": "+X.X%" or null, "context": "context note" or null }
-  ]
+  ],
+  "followUpQuestions": ["Question 1", "Question 2", "Question 3"]
 }
 
-Include 3-5 key points and 3-6 relevant metrics.`,
+Include 3-5 key points and 3-6 relevant metrics. When portfolio data is available, include at least 2 metrics from their actual portfolio.
+
+IMPORTANT: followUpQuestions are clickable buttons the USER will use to ask YOU a follow-up. Write them as queries the user would type, NOT questions you would ask them. Good: "How would a recession affect my portfolio?" Bad: "What is your risk tolerance?"`,
 };
 
 // ── Follow-up suggestions ──
@@ -487,7 +498,15 @@ function generateFollowUps(query: string, queryType: QueryType): string[] {
       if (lower.includes('sell') || lower.includes('trim'))
         return ['What are the tax implications of selling?', 'Which positions have the highest risk?', 'How should I reinvest the proceeds?'];
       return ['What\'s my biggest risk?', 'How diversified am I?', 'Should I harvest any tax losses?'];
-    default:
+    case 'personal_finance':
+      if (lower.includes('retire'))
+        return ['Am I on track for retirement?', 'How should I allocate my 401k?', 'What\'s my projected retirement income?'];
+      if (lower.includes('save') || lower.includes('invest'))
+        return ['How should I invest based on my current portfolio?', 'What am I missing in my portfolio?', 'How much should I invest monthly?'];
+      return ['How does this apply to my portfolio?', 'What should I do with my current holdings?', 'Break down my portfolio allocation'];
+    case 'general':
+      return ['How does this affect my portfolio?', 'What should I do based on my holdings?', 'Show me my portfolio breakdown'];
+    case 'stock_analysis':
       return [];
   }
 }
@@ -599,13 +618,38 @@ export async function POST(req: NextRequest) {
     }
     dataContext = buildTaxContext(portfolio, (capitalGainsResult.data || []) as CapitalGainRow[], taxReport);
   } else if (queryType === 'stock_analysis' && tickers.length > 0) {
-    const tickerDataList = await Promise.all(tickers.slice(0, 3).map(getFullTickerData));
+    // Fetch ticker data + portfolio context so we can reference user's position
+    const [tickerDataList, portfolio] = await Promise.all([
+      Promise.all(tickers.slice(0, 3).map(getFullTickerData)),
+      getPortfolioSummary(user.id),
+    ]);
     dataContext = buildTickerContext(tickerDataList);
+    // Add user's position context if they hold any of these stocks
+    if (portfolio.positionCount > 0) {
+      const heldTickers = tickers.filter(t => portfolio.holdings.some(h => h.ticker === t));
+      if (heldTickers.length > 0) {
+        const positionLines = heldTickers.map(t => {
+          const h = portfolio.holdings.find(h => h.ticker === t)!;
+          const gl = h.unrealizedGainLoss != null ? `$${fmt(h.unrealizedGainLoss)}` : 'N/A';
+          const glPct = h.unrealizedGainLossPct != null ? `${(h.unrealizedGainLossPct * 100).toFixed(2)}%` : '';
+          return `  ${h.ticker}: ${h.shares} shares @ $${h.currentPrice} = $${fmt(h.totalValue)} (${h.allocationPct.toFixed(1)}% of portfolio) | Unrealized P&L: ${gl} (${glPct}) | Cost basis: $${h.totalCostBasis != null ? fmt(h.totalCostBasis) : 'N/A'}`;
+        });
+        dataContext += `\n\n=== USER'S POSITION IN THESE STOCKS ===\nTotal Portfolio Value: $${fmt(portfolio.totalValue)}\n${positionLines.join('\n')}`;
+      } else {
+        dataContext += `\n\n=== USER DOES NOT HOLD ${tickers.join(', ')} ===\nTotal Portfolio Value: $${fmt(portfolio.totalValue)} across ${portfolio.positionCount} positions.`;
+      }
+    }
   } else if (queryType === 'personal_finance') {
-    // Include portfolio context for personalized advice if available
+    // Include FULL portfolio context for personalized advice
     const portfolio = await getPortfolioSummary(user.id);
     if (portfolio.positionCount > 0) {
-      dataContext = `USER CONTEXT: Portfolio value $${fmt(portfolio.totalValue)}, ${portfolio.positionCount} positions, unrealized P&L $${fmt(portfolio.totalUnrealizedGainLoss)}.`;
+      dataContext = formatPortfolioContext(portfolio);
+    }
+  } else if (queryType === 'general') {
+    // Include full portfolio context so general answers can reference real data
+    const portfolio = await getPortfolioSummary(user.id);
+    if (portfolio.positionCount > 0) {
+      dataContext = formatPortfolioContext(portfolio);
     }
   }
 
@@ -626,7 +670,7 @@ export async function POST(req: NextRequest) {
   } else if (queryType === 'portfolio_review' || queryType === 'tax_planning') {
     userMessage = `USER QUERY: ${userQuery}\n\n(User has no linked holdings. Advise them to connect accounts on the Accounts page.)`;
   } else {
-    userMessage = `USER QUERY: ${userQuery}\n\n(No specific data available. Provide analysis based on your knowledge.)`;
+    userMessage = `USER QUERY: ${userQuery}\n\n(User has no linked portfolio. If the question would benefit from portfolio data, mention that connecting accounts on the Accounts page would allow personalized analysis.)`;
   }
   messages.push({ role: 'user', content: userMessage });
 
@@ -656,9 +700,12 @@ export async function POST(req: NextRequest) {
       if (!analysis.type || analysis.type !== responseType) {
         analysis.type = responseType;
       }
-      // Add follow-up questions for portfolio_qa responses if missing
-      if (responseType === 'portfolio_qa' && !analysis.followUpQuestions?.length) {
-        analysis.followUpQuestions = generateFollowUps(userQuery, queryType);
+      // Add follow-up questions if missing
+      if (!analysis.followUpQuestions?.length) {
+        const followUps = generateFollowUps(userQuery, queryType);
+        if (followUps.length > 0) {
+          analysis.followUpQuestions = followUps;
+        }
       }
     } catch {
       // Fallback: wrap raw text in the appropriate card structure

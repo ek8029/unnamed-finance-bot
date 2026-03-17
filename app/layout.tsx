@@ -64,6 +64,25 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'Helm Terminal',
+              url: 'https://helmterminal.dev',
+              logo: 'https://helmterminal.dev/icon',
+              description:
+                'Institutional-grade financial intelligence terminal. AI-powered portfolio analysis for modern investors.',
+              sameAs: [
+                'https://x.com/helmterminal',
+              ],
+            }),
+          }}
+        />
+      </head>
       <body className={`${manrope.variable} ${dmMono.variable} font-sans`}>
         <RecoveryRedirect />
         <Providers>{children}</Providers>

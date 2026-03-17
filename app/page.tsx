@@ -101,9 +101,10 @@ export default async function LandingPage() {
                 <span className="text-[var(--color-gold)]">decoded.</span>
               </h1>
               <p className="type-body text-lg text-[var(--color-text-secondary)] max-w-xl leading-relaxed">
-                Helm monitors your net worth, portfolio risk, tax exposure, and cash
-                flow - then tells you exactly what needs attention, with context
-                and a clear next step.
+                Connect your brokerage, bank, and credit card accounts. Helm
+                surfaces concentration risk, tax-loss harvesting windows, cash
+                flow shifts, and earnings events — then tells you exactly what
+                to do about them.
               </p>
 
               <Suspense fallback={<WaitlistFormFallback />}>
@@ -122,6 +123,11 @@ export default async function LandingPage() {
                   </div>
                 ))}
               </div>
+
+              <p className="type-body text-sm text-[var(--color-text-muted)] max-w-md">
+                Built for investors managing $50K–$2M+ across multiple accounts.
+                A smarter alternative to fragmented trackers and overpriced terminal software.
+              </p>
 
               <div className="pt-3">
                 <a

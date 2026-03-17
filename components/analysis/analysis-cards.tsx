@@ -290,7 +290,13 @@ export function PortfolioReviewCard({ analysis }: { analysis: PortfolioReview })
 
 // ── General Analysis Card ──
 
-export function GeneralAnalysisCard({ analysis }: { analysis: GeneralAnalysis }) {
+export function GeneralAnalysisCard({
+  analysis,
+  onFollowUp,
+}: {
+  analysis: GeneralAnalysis;
+  onFollowUp?: (question: string) => void;
+}) {
   return (
     <div
       className="rounded-sm overflow-hidden"
@@ -309,7 +315,7 @@ export function GeneralAnalysisCard({ analysis }: { analysis: GeneralAnalysis })
       )}
 
       {analysis.keyPoints?.length > 0 && (
-        <div className="px-5 py-3.5">
+        <div className={`px-5 py-3.5${analysis.followUpQuestions?.length ? ' border-b border-[var(--color-border-subtle)]' : ''}`}>
           <div className="type-caption text-[var(--color-text-muted)] mb-2.5">Key Points</div>
           <div className="space-y-3">
             {analysis.keyPoints.map((kp, i) => (
@@ -321,6 +327,24 @@ export function GeneralAnalysisCard({ analysis }: { analysis: GeneralAnalysis })
           </div>
         </div>
       )}
+
+      {analysis.followUpQuestions?.length ? (
+        <div className="px-5 py-3.5">
+          <div className="type-caption text-[var(--color-text-muted)] mb-2">Follow up</div>
+          <div className="flex flex-wrap gap-1.5">
+            {analysis.followUpQuestions.map((q, i) => (
+              <button
+                key={i}
+                onClick={() => onFollowUp?.(q)}
+                className="px-3 py-1.5 text-[11px] text-[var(--color-text-secondary)] bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] transition-colors"
+                style={{ fontFamily: 'var(--font-mono)' }}
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -450,11 +474,11 @@ export function AnalysisCard({
     case 'portfolio_qa':
       return <PortfolioQACard analysis={analysis} onFollowUp={onFollowUp} />;
     case 'general':
-      return <GeneralAnalysisCard analysis={analysis} />;
+      return <GeneralAnalysisCard analysis={analysis} onFollowUp={onFollowUp} />;
     default:
       if ('verdict' in analysis) return <StockAnalysisCard analysis={analysis as StockAnalysis} showWatermark={showWatermark} />;
       if ('highlights' in analysis) return <PortfolioQACard analysis={analysis as PortfolioQA} onFollowUp={onFollowUp} />;
-      return <GeneralAnalysisCard analysis={analysis as GeneralAnalysis} />;
+      return <GeneralAnalysisCard analysis={analysis as GeneralAnalysis} onFollowUp={onFollowUp} />;
   }
 }
 

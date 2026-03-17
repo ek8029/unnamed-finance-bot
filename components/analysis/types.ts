@@ -43,6 +43,7 @@ export interface GeneralAnalysis {
   summary: string;
   keyPoints: { point: string; detail: string }[];
   metrics: AnalysisMetric[];
+  followUpQuestions?: string[];
 }
 
 export interface PortfolioQAHighlight {

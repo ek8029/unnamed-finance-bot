@@ -29,7 +29,9 @@
       "Bash(node:*)",
       "Bash(wc:*)",
       "Bash(grep:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(echo EXIT:$?:*)",
+      "Bash(npx vercel:*)"
     ]
   }
 }
