@@ -49,7 +49,7 @@ export async function GET() {
         .eq('user_id', user.id)
         .order('calculated_at', { ascending: false })
         .limit(1)
-        .single(),
+        .maybeSingle(),
       supabase
         .from('insights')
         .select('*')

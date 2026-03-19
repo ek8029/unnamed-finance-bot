@@ -1,6 +1,13 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
+/** Strip volatile dollar amounts and percentages for stable dedup */
+function normalizeTitle(title: string): string {
+  return title
+    .replace(/\$[\d,]+(\.\d+)?/g, '$X')
+    .replace(/\d+(\.\d+)?%/g, 'X%');
+}
+
 export async function GET(request: Request) {
   try {
     const supabase = await createClient();
@@ -50,8 +57,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch insights' }, { status: 500 });
     }
 
-    // Transform and deduplicate by title (keep the newest)
-    const seenTitles = new Set<string>();
+    // Transform and deduplicate by normalized title (keep the newest)
+    const seenNormalized = new Set<string>();
     const transformedInsights = (insights || [])
       .map(insight => ({
         id: insight.id,
@@ -68,8 +75,9 @@ export async function GET(request: Request) {
         is_archived: insight.is_archived,
       }))
       .filter(insight => {
-        if (seenTitles.has(insight.title)) return false;
-        seenTitles.add(insight.title);
+        const norm = normalizeTitle(insight.title);
+        if (seenNormalized.has(norm)) return false;
+        seenNormalized.add(norm);
         return true;
       });
 
@@ -107,7 +115,7 @@ export async function PATCH(request: Request) {
         updateData = { is_useful: true };
         break;
       case 'not_useful':
-        updateData = { is_useful: false };
+        updateData = { is_useful: false, is_dismissed: true };
         break;
       case 'feedback':
         updateData = { user_feedback: feedback };

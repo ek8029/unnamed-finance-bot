@@ -40,7 +40,9 @@ function buildTickerContext(dataList: TickerData[]): string {
       }
       if (td.quote) {
         lines.push(`Current Price: $${td.quote.c}`);
-        lines.push(`Change: ${td.quote.d >= 0 ? '+' : ''}${td.quote.d} (${td.quote.dp >= 0 ? '+' : ''}${td.quote.dp}%)`);
+        if (td.quote.d != null && td.quote.dp != null) {
+          lines.push(`Change: ${td.quote.d >= 0 ? '+' : ''}${td.quote.d} (${td.quote.dp >= 0 ? '+' : ''}${td.quote.dp}%)`);
+        }
       }
       if (td.financials?.metric) {
         const m = td.financials.metric;
@@ -190,9 +192,11 @@ export async function POST(req: NextRequest) {
     { role: 'system', content: SYSTEM_PROMPT },
   ];
 
-  if (conversationHistory?.length) {
+  if (Array.isArray(conversationHistory) && conversationHistory.length > 0) {
     for (const msg of conversationHistory.slice(-6)) {
-      messages.push({ role: msg.role, content: msg.content });
+      if (msg && (msg.role === 'user' || msg.role === 'assistant') && typeof msg.content === 'string') {
+        messages.push({ role: msg.role, content: msg.content });
+      }
     }
   }
 
@@ -225,6 +229,12 @@ export async function POST(req: NextRequest) {
     try {
       analysis = JSON.parse(cleaned);
       analysis.type = 'portfolio_qa';
+      // Validate required fields
+      if (!analysis.summary && !analysis.title) {
+        throw new Error('Missing required fields');
+      }
+      // Ensure arrays are actually arrays
+      if (!Array.isArray(analysis.highlights)) analysis.highlights = [];
       // Inject follow-up suggestions if the LLM didn't provide them
       if (!analysis.followUpQuestions?.length) {
         analysis.followUpQuestions = generateFollowUps(

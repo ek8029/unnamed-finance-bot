@@ -15,6 +15,13 @@ interface InsightCandidate {
   related_entity_ids?: string[];
 }
 
+/** Strip volatile dollar amounts and percentages for stable dedup */
+function normalizeTitle(title: string): string {
+  return title
+    .replace(/\$[\d,]+(\.\d+)?/g, '$X')
+    .replace(/\d+(\.\d+)?%/g, 'X%');
+}
+
 export async function POST() {
   try {
     const supabase = await createClient();
@@ -55,11 +62,13 @@ export async function POST() {
         .eq('user_id', user.id)
         .gte('transaction_date', getMonthStart(-1))
         .lte('transaction_date', getMonthEnd(-1)),
-      // Recent insights (including dismissed/archived) to avoid duplicates
+      // Recent active insights for dedup (need IDs to dismiss stale ones)
       supabase
         .from('insights')
-        .select('title, created_at')
+        .select('id, title, created_at')
         .eq('user_id', user.id)
+        .eq('is_dismissed', false)
+        .eq('is_archived', false)
         .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
     ]);
 
@@ -67,7 +76,13 @@ export async function POST() {
     const holdings = holdingsRes.data || [];
     const currentTx = recentTxRes.data || [];
     const prevTx = prevMonthTxRes.data || [];
-    const existingTitles = new Set((existingInsightsRes.data || []).map(i => i.title));
+    // Build map: normalized title → existing insight IDs (for dismissing stale dupes)
+    const existingByNorm = new Map<string, string[]>();
+    for (const i of (existingInsightsRes.data || [])) {
+      const norm = normalizeTitle(i.title);
+      if (!existingByNorm.has(norm)) existingByNorm.set(norm, []);
+      existingByNorm.get(norm)!.push(i.id);
+    }
 
     const candidates: InsightCandidate[] = [];
 
@@ -228,8 +243,32 @@ export async function POST() {
       }
     }
 
-    // Filter out duplicates (same title as existing recent insights)
-    const newInsights = candidates.filter(c => !existingTitles.has(c.title));
+    // Deduplicate using normalized titles (strips volatile dollar amounts/percentages)
+    const newInsights: InsightCandidate[] = [];
+    const staleIds: string[] = [];
+
+    for (const c of candidates) {
+      const norm = normalizeTitle(c.title);
+      const existingIds = existingByNorm.get(norm);
+      if (!existingIds || existingIds.length === 0) {
+        newInsights.push(c);
+        existingByNorm.set(norm, []); // prevent batch self-duplication
+      } else {
+        // Numbers changed — dismiss old, insert fresh
+        staleIds.push(...existingIds);
+        newInsights.push(c);
+        existingByNorm.set(norm, []);
+      }
+    }
+
+    // Dismiss stale insights being replaced with fresh data
+    if (staleIds.length > 0) {
+      await supabase
+        .from('insights')
+        .update({ is_dismissed: true })
+        .in('id', staleIds)
+        .eq('user_id', user.id);
+    }
 
     // Insert new insights
     if (newInsights.length > 0) {

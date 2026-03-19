@@ -113,7 +113,7 @@ export default function ActionsPage() {
   };
 
   const handleAction = async (id: string, action: string, extra?: Record<string, unknown>) => {
-    if (action === 'dismiss' || action === 'archive') {
+    if (action === 'dismiss' || action === 'archive' || action === 'not_useful') {
       setDismissing(prev => new Set(prev).add(id));
     }
     if (action === 'snooze') {
@@ -127,7 +127,7 @@ export default function ActionsPage() {
         body: JSON.stringify({ id, action, ...extra }),
       });
 
-      if (action === 'dismiss' || action === 'archive' || action === 'snooze') {
+      if (action === 'dismiss' || action === 'archive' || action === 'snooze' || action === 'not_useful') {
         setActions(prev => prev.filter(a => a.id !== id));
       }
       if (action === 'unarchive') {

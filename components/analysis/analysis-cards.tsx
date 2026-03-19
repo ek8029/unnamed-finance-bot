@@ -115,11 +115,12 @@ export function AnalysisWatermark() {
 // ── Stock Analysis Card ──
 
 export function StockAnalysisCard({ analysis, showWatermark = false }: { analysis: StockAnalysis; showWatermark?: boolean }) {
-  const verdictConfig = {
+  const verdictOptions = {
     bullish: { icon: TrendingUp, label: 'Bullish', color: 'var(--color-positive)', border: 'rgba(56, 211, 159, 0.25)', bg: 'rgba(56, 211, 159, 0.06)' },
     bearish: { icon: TrendingDown, label: 'Bearish', color: 'var(--color-negative)', border: 'rgba(248, 113, 113, 0.25)', bg: 'rgba(248, 113, 113, 0.06)' },
     neutral: { icon: Minus, label: 'Neutral', color: 'var(--color-text-secondary)', border: 'rgba(184, 145, 74, 0.25)', bg: 'rgba(138, 148, 166, 0.06)' },
-  }[analysis.verdict];
+  };
+  const verdictConfig = verdictOptions[analysis.verdict as keyof typeof verdictOptions] || verdictOptions.neutral;
 
   const VerdictIcon = verdictConfig.icon;
 

@@ -192,7 +192,13 @@ export async function analyzeStock(ticker: string): Promise<{ analysis: StockAna
     try {
       analysis = JSON.parse(cleaned);
       analysis.type = 'stock_analysis';
-    } catch {
+      // Ensure required arrays exist
+      if (!Array.isArray(analysis.metrics)) analysis.metrics = [];
+      if (!Array.isArray(analysis.newsHighlights)) analysis.newsHighlights = [];
+      if (!analysis.ticker) analysis.ticker = symbol;
+      if (!analysis.verdict) analysis.verdict = 'neutral';
+    } catch (parseError) {
+      console.error(`Failed to parse analysis for ${symbol}:`, parseError);
       return { analysis: null, fromCache: false };
     }
 

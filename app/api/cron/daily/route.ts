@@ -1027,8 +1027,10 @@ async function generateInsights(supabase: ServiceClient, userId: string): Promis
           .lte('transaction_date', prevMonthEnd),
         supabase
           .from('insights')
-          .select('title, created_at')
+          .select('id, title, created_at')
           .eq('user_id', userId)
+          .eq('is_dismissed', false)
+          .eq('is_archived', false)
           .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
       ]);
 
@@ -1036,9 +1038,13 @@ async function generateInsights(supabase: ServiceClient, userId: string): Promis
     const holdings = holdingsRes.data || [];
     const currentTx = currentTxRes.data || [];
     const prevTx = prevTxRes.data || [];
-    const existingTitles = new Set(
-      (existingInsightsRes.data || []).map((i: { title: string }) => i.title),
-    );
+    // Build map: normalized title → existing insight IDs (for dismissing stale dupes)
+    const existingByNorm = new Map<string, string[]>();
+    for (const i of (existingInsightsRes.data || []) as { id: string; title: string }[]) {
+      const norm = normalizeInsightTitle(i.title);
+      if (!existingByNorm.has(norm)) existingByNorm.set(norm, []);
+      existingByNorm.get(norm)!.push(i.id);
+    }
 
     interface InsightCandidate {
       insight_type: 'spending' | 'portfolio' | 'market' | 'tax' | 'credit';
@@ -1155,8 +1161,32 @@ async function generateInsights(supabase: ServiceClient, userId: string): Promis
       });
     }
 
-    // Filter duplicates
-    const newInsights = candidates.filter(c => !existingTitles.has(c.title));
+    // Deduplicate using normalized titles (strips volatile dollar amounts/percentages)
+    const newInsights: InsightCandidate[] = [];
+    const staleIds: string[] = [];
+
+    for (const c of candidates) {
+      const norm = normalizeInsightTitle(c.title);
+      const existingIds = existingByNorm.get(norm);
+      if (!existingIds || existingIds.length === 0) {
+        newInsights.push(c);
+        existingByNorm.set(norm, []);
+      } else {
+        // Numbers changed — dismiss old, insert fresh
+        staleIds.push(...existingIds);
+        newInsights.push(c);
+        existingByNorm.set(norm, []);
+      }
+    }
+
+    // Dismiss stale insights being replaced with fresh data
+    if (staleIds.length > 0) {
+      await supabase
+        .from('insights')
+        .update({ is_dismissed: true })
+        .in('id', staleIds)
+        .eq('user_id', userId);
+    }
 
     if (newInsights.length > 0) {
       const inserts = newInsights.map(insight => ({
@@ -1238,6 +1268,13 @@ function mapSecurityType(plaidType: string): string {
     default:
       return 'other';
   }
+}
+
+/** Strip volatile dollar amounts and percentages for stable dedup */
+function normalizeInsightTitle(title: string): string {
+  return title
+    .replace(/\$[\d,]+(\.\d+)?/g, '$X')
+    .replace(/\d+(\.\d+)?%/g, 'X%');
 }
 
 function groupSpending(

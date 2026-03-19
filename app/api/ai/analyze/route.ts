@@ -210,8 +210,12 @@ function buildTickerContext(dataList: TickerData[]): string {
     }
     if (td.quote) {
       lines.push(`Current Price: $${td.quote.c}`);
-      lines.push(`Change: ${td.quote.d >= 0 ? '+' : ''}${td.quote.d} (${td.quote.dp >= 0 ? '+' : ''}${td.quote.dp}%)`);
-      lines.push(`Day Range: $${td.quote.l} - $${td.quote.h}`);
+      if (td.quote.d != null && td.quote.dp != null) {
+        lines.push(`Change: ${td.quote.d >= 0 ? '+' : ''}${td.quote.d} (${td.quote.dp >= 0 ? '+' : ''}${td.quote.dp}%)`);
+      }
+      if (td.quote.l != null && td.quote.h != null) {
+        lines.push(`Day Range: $${td.quote.l} - $${td.quote.h}`);
+      }
     }
     if (td.financials?.metric) {
       const m = td.financials.metric;
@@ -623,7 +627,7 @@ export async function POST(req: NextRequest) {
       Promise.all(tickers.slice(0, 3).map(getFullTickerData)),
       getPortfolioSummary(user.id),
     ]);
-    dataContext = buildTickerContext(tickerDataList);
+    dataContext = buildTickerContext(tickerDataList.filter(td => td.quote || td.profile));
     // Add user's position context if they hold any of these stocks
     if (portfolio.positionCount > 0) {
       const heldTickers = tickers.filter(t => portfolio.holdings.some(h => h.ticker === t));
@@ -658,9 +662,11 @@ export async function POST(req: NextRequest) {
     { role: 'system', content: PROMPTS[queryType] },
   ];
 
-  if (conversationHistory?.length) {
+  if (Array.isArray(conversationHistory) && conversationHistory.length > 0) {
     for (const msg of conversationHistory.slice(-6)) {
-      messages.push({ role: msg.role, content: msg.content });
+      if (msg && (msg.role === 'user' || msg.role === 'assistant') && typeof msg.content === 'string') {
+        messages.push({ role: msg.role, content: msg.content });
+      }
     }
   }
 
@@ -683,7 +689,7 @@ export async function POST(req: NextRequest) {
       max_tokens: 2000,
     });
 
-    const content = completion.choices[0]?.message?.content;
+    const content = completion.choices[0]?.message?.content?.trim();
     if (!content) {
       return NextResponse.json({ error: 'No response from AI' }, { status: 500 });
     }
@@ -699,6 +705,20 @@ export async function POST(req: NextRequest) {
       // Ensure the response type matches what our cards expect
       if (!analysis.type || analysis.type !== responseType) {
         analysis.type = responseType;
+      }
+      // Validate required fields exist — fall through to fallback if not
+      if (!analysis.summary && !analysis.title) {
+        throw new Error('Missing required fields in AI response');
+      }
+      // Ensure arrays are actually arrays (AI sometimes returns null)
+      if (responseType === 'general') {
+        if (!Array.isArray(analysis.keyPoints)) analysis.keyPoints = [];
+        if (!Array.isArray(analysis.metrics)) analysis.metrics = [];
+      } else if (responseType === 'portfolio_qa') {
+        if (!Array.isArray(analysis.highlights)) analysis.highlights = [];
+      } else if (responseType === 'stock_analysis') {
+        if (!Array.isArray(analysis.metrics)) analysis.metrics = [];
+        if (!Array.isArray(analysis.newsHighlights)) analysis.newsHighlights = [];
       }
       // Add follow-up questions if missing
       if (!analysis.followUpQuestions?.length) {
@@ -725,6 +745,7 @@ export async function POST(req: NextRequest) {
           summary: content,
           keyPoints: [],
           metrics: [],
+          followUpQuestions: generateFollowUps(userQuery, queryType),
         };
       }
     }
