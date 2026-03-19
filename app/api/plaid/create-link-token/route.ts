@@ -34,20 +34,22 @@ export async function POST(request: Request) {
 
     const webhookUrl = getWebhookUrl();
 
-    // Determine redirect_uri for OAuth bank support (Chase, Capital One, etc.)
-    // Production requires HTTPS; must match the URI configured in Plaid dashboard
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const baseRedirectUri = `${appUrl}/oauth-callback`;
+    // Only include redirect_uri when a real app URL is configured (production/preview).
+    // Plaid rejects unregistered redirect URIs, and localhost isn't registered by default.
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    let redirectUri: string | undefined;
 
-    // If returning from OAuth, use the base URL from the received redirect URI
-    let redirectUri = baseRedirectUri;
     if (receivedRedirectUri) {
+      // Returning from OAuth — use the origin from the received redirect
       try {
         const parsed = new URL(receivedRedirectUri);
-        redirectUri = `${parsed.origin}${parsed.pathname}`;
+        redirectUri = `${parsed.origin}/oauth-callback`;
       } catch {
-        // Malformed URL - fall back to default
+        // Malformed URL — skip redirect_uri
       }
+    } else if (appUrl && appUrl.startsWith('https://')) {
+      // Production/preview with HTTPS — safe to include
+      redirectUri = `${appUrl}/oauth-callback`;
     }
 
     const response = await plaidClient.linkTokenCreate({
@@ -57,7 +59,7 @@ export async function POST(request: Request) {
       optional_products: [Products.Investments],
       country_codes: [CountryCode.Us],
       language: 'en',
-      redirect_uri: redirectUri,
+      ...(redirectUri && { redirect_uri: redirectUri }),
       ...(webhookUrl && { webhook: webhookUrl }),
     });
 
@@ -66,6 +68,12 @@ export async function POST(request: Request) {
       expiration: response.data.expiration,
     });
   } catch (error: unknown) {
+    // Plaid errors include response.data with error_type, error_code, error_message
+    const plaidError = (error as { response?: { data?: { error_type?: string; error_code?: string; error_message?: string } } })?.response?.data;
+    if (plaidError?.error_code) {
+      console.error('Plaid link token error:', plaidError.error_type, plaidError.error_code, plaidError.error_message);
+      return NextResponse.json({ error: plaidError.error_message || 'Failed to create link token' }, { status: 500 });
+    }
     console.error('Error creating link token:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json({ error: 'Failed to create link token' }, { status: 500 });
   }
