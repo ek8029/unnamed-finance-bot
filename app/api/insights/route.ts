@@ -25,7 +25,7 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from('insights')
-      .select('*')
+      .select('id, insight_type, priority, title, description, recommended_action, estimated_impact_amount, source_type, created_at, expires_at, snoozed_until, is_archived')
       .eq('user_id', user.id);
 
     if (archived === 'true') {
