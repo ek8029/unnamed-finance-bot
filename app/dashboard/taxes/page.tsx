@@ -171,26 +171,9 @@ export default function TaxesPage() {
 
   const loading = taxLoading;
 
-  // Show upgrade wall if tier check says free OR if API returned PRO_REQUIRED
-  if ((!tierLoading && !isPro) || proRequired) {
-    return (
-      <ProGate
-        feature="Tax Center"
-        description="Tax-loss harvesting intelligence, unrealized P&L tracking, and tax-efficient sell ordering are available on the Pro plan."
-      />
-    );
-  }
-
-  const dismissOpp = (ticker: string) => {
-    const next = new Set(dismissedOpps);
-    next.add(ticker);
-    setDismissedOpps(next);
-    localStorage.setItem('helm-tax-dismissed', JSON.stringify([...next]));
-  };
-
   const visibleOpps = harvestReport?.opportunities.filter(o => !dismissedOpps.has(o.ticker)) || [];
 
-  // ── Filtered positions ──
+  // ── Filtered positions ── (hooks must be before any conditional return)
   const filteredPositions = useMemo(() => {
     if (!taxData) return [];
     const positions = taxData.unrealized.positions;
@@ -207,6 +190,23 @@ export default function TaxesPage() {
 
   const gainCount = taxData?.unrealized.positions.filter(p => p.gainLoss > 0).length ?? 0;
   const lossCount = taxData?.unrealized.positions.filter(p => p.gainLoss < 0).length ?? 0;
+
+  // Show upgrade wall if tier check says free OR if API returned PRO_REQUIRED
+  if ((!tierLoading && !isPro) || proRequired) {
+    return (
+      <ProGate
+        feature="Tax Center"
+        description="Tax-loss harvesting intelligence, unrealized P&L tracking, and tax-efficient sell ordering are available on the Pro plan."
+      />
+    );
+  }
+
+  const dismissOpp = (ticker: string) => {
+    const next = new Set(dismissedOpps);
+    next.add(ticker);
+    setDismissedOpps(next);
+    localStorage.setItem('helm-tax-dismissed', JSON.stringify([...next]));
+  };
 
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-6xl">

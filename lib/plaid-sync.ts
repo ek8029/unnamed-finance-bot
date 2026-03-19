@@ -166,7 +166,7 @@ export async function syncPlaidItem(
         amount: t.amount * -1,
         description: t.name,
         merchant_name: t.merchant_name || null,
-        pending: t.pending,
+        is_pending: t.pending,
       })
       .eq('plaid_transaction_id', t.transaction_id)
       .eq('user_id', userId);
@@ -247,7 +247,7 @@ export async function syncPlaidItem(
             ignoreDuplicates: false,
           })
           .select('id')
-          .single();
+          .maybeSingle();
 
         if (!dbSecurity) continue;
 
@@ -256,7 +256,7 @@ export async function syncPlaidItem(
           .select('id')
           .eq('plaid_account_id', holding.account_id)
           .eq('user_id', userId)
-          .single();
+          .maybeSingle();
 
         if (!linkedAccount) continue;
 
@@ -410,7 +410,9 @@ export async function computeSnapshots(
         cryptoBalance += bal;
         totalAssets += bal;
       } else if (type === 'brokerage') {
-        totalAssets += bal;
+        // Skip brokerage account balance — investment value comes from
+        // holdings below, which reflects latest market prices.
+        // Adding both would double-count.
       } else {
         cashBalance += bal;
         totalAssets += bal;

@@ -994,17 +994,7 @@ export default function WrappedPage() {
       .catch(e => { setError(e.message); setLoading(false); });
   }, [period]);
 
-  // Show upgrade wall if tier check says free OR if API returned PRO_REQUIRED
-  if ((!tierLoading && !isPro) || proRequired) {
-    return (
-      <ProGate
-        feature="Portfolio Wrapped"
-        description="Your personalized portfolio recap — returns, top performers, investor personality, and more. Available on the Pro plan."
-      />
-    );
-  }
-
-  // Build cards dynamically
+  // Build cards dynamically (all hooks must be before conditional returns)
   const cards = useMemo<CardType[]>(() => {
     if (!data) return [];
     const c: CardType[] = ['intro'];
@@ -1078,6 +1068,16 @@ export default function WrappedPage() {
     if (x < rect.width / 3) prev();
     else next();
   };
+
+  // Show upgrade wall if tier check says free OR if API returned PRO_REQUIRED
+  if ((!tierLoading && !isPro) || proRequired) {
+    return (
+      <ProGate
+        feature="Portfolio Wrapped"
+        description="Your personalized portfolio recap — returns, top performers, investor personality, and more. Available on the Pro plan."
+      />
+    );
+  }
 
   if (loading) return <LoadingState />;
 

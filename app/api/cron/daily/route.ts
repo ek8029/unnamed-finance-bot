@@ -347,7 +347,7 @@ async function syncPlaidItem(
         amount: t.amount * -1,
         description: t.name,
         merchant_name: t.merchant_name || null,
-        pending: t.pending,
+        is_pending: t.pending,
       })
       .eq('plaid_transaction_id', t.transaction_id)
       .eq('user_id', userId);
@@ -416,7 +416,7 @@ async function syncPlaidItem(
             { onConflict: 'ticker', ignoreDuplicates: false },
           )
           .select('id')
-          .single();
+          .maybeSingle();
 
         if (!dbSecurity) continue;
 
@@ -425,7 +425,7 @@ async function syncPlaidItem(
           .select('id')
           .eq('plaid_account_id', holding.account_id)
           .eq('user_id', userId)
-          .single();
+          .maybeSingle();
 
         if (!linkedAccount) continue;
 
@@ -563,7 +563,7 @@ async function refreshMarketPrices(
           .lt('price_date', priceDate)
           .order('price_date', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (prevPrice?.close && Number(prevPrice.close) > 0) {
           dayChangePct = (closePrice - Number(prevPrice.close)) / Number(prevPrice.close);
@@ -866,7 +866,9 @@ async function computeSnapshots(supabase: ServiceClient, userId: string) {
         cryptoBalance += bal;
         totalAssets += bal;
       } else if (type === 'brokerage') {
-        totalAssets += bal;
+        // Skip brokerage account balance — investment value comes from
+        // holdings below, which reflects latest market prices.
+        // Adding both would double-count.
       } else {
         cashBalance += bal;
         totalAssets += bal;
@@ -1293,9 +1295,9 @@ function groupSpending(
 function formatCategoryName(raw: string): string {
   return raw
     .replace(/_/g, ' ')
-    .replace(/AND/g, '&')
     .toLowerCase()
-    .replace(/\b\w/g, c => c.toUpperCase());
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .replace(/\bAnd\b/g, '&');
 }
 
 // ===================================================================

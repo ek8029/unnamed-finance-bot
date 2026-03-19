@@ -336,7 +336,7 @@ function groupSpending(
 function formatCategoryName(raw: string): string {
   return raw
     .replace(/_/g, ' ')
-    .replace(/AND/g, '&')
     .toLowerCase()
-    .replace(/\b\w/g, c => c.toUpperCase());
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .replace(/\bAnd\b/g, '&');
 }

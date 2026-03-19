@@ -65,11 +65,13 @@ export async function GET() {
     const netWorthHistory = netWorthHistoryResult.data || [];
     const cashFlowHistory = cashFlowHistoryResult.data || [];
 
-    // Calculate asset accounts (positive balances, excluding credit cards)
-    const assetAccounts = accounts.filter(a =>
-      a.current_balance > 0 && a.account_type !== 'credit_card'
+    // Calculate asset accounts (positive balances, excluding credit cards and brokerage)
+    // Brokerage accounts are excluded because portfolio value comes from holdings
+    // (which reflect latest market prices), avoiding double-counting.
+    const cashAccounts = accounts.filter(a =>
+      a.current_balance > 0 && a.account_type !== 'credit_card' && a.account_type !== 'brokerage'
     );
-    const totalAssets = assetAccounts.reduce((sum, a) => sum + Number(a.current_balance), 0);
+    const cashAssets = cashAccounts.reduce((sum, a) => sum + Number(a.current_balance), 0);
 
     // Calculate liability accounts (credit cards and negative balances)
     const liabilityAccounts = accounts.filter(a =>
@@ -79,8 +81,16 @@ export async function GET() {
       sum + Math.abs(Number(a.current_balance)), 0
     );
 
-    // Calculate portfolio value from holdings
+    // Calculate portfolio value from holdings (source of truth for investments)
     const portfolioValue = holdings.reduce((sum, h) => sum + Number(h.total_value), 0);
+
+    // Total assets = cash/savings + portfolio (no double-counting)
+    const totalAssets = cashAssets + portfolioValue;
+
+    // For composition display, include brokerage as "Investments"
+    const assetAccounts = accounts.filter(a =>
+      (a.current_balance > 0 && a.account_type !== 'credit_card') || a.account_type === 'brokerage'
+    );
 
     // Net worth
     const netWorth = totalAssets - totalLiabilities;

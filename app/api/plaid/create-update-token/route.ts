@@ -36,8 +36,11 @@ export async function POST(request: Request) {
     }
 
     const webhookUrl = getWebhookUrl();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const redirectUri = `${appUrl}/oauth-callback`;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    let redirectUri: string | undefined;
+    if (appUrl && appUrl.startsWith('https://')) {
+      redirectUri = `${appUrl}/oauth-callback`;
+    }
 
     const response = await plaidClient.linkTokenCreate({
       user: { client_user_id: user.id },
@@ -45,7 +48,7 @@ export async function POST(request: Request) {
       access_token: plaidItem.plaid_access_token,
       country_codes: [CountryCode.Us],
       language: 'en',
-      redirect_uri: redirectUri,
+      ...(redirectUri && { redirect_uri: redirectUri }),
       ...(webhookUrl && { webhook: webhookUrl }),
     });
 
