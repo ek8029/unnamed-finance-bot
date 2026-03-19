@@ -65,23 +65,31 @@ export async function GET() {
     const netWorthHistory = netWorthHistoryResult.data || [];
     const cashFlowHistory = cashFlowHistoryResult.data || [];
 
-    // Calculate asset accounts (positive balances, excluding credit cards and brokerage)
-    // Brokerage accounts are excluded because portfolio value comes from holdings
-    // (which reflect latest market prices), avoiding double-counting.
-    const cashAccounts = accounts.filter(a =>
-      a.current_balance > 0 && a.account_type !== 'credit_card' && a.account_type !== 'brokerage'
-    );
-    const cashAssets = cashAccounts.reduce((sum, a) => sum + Number(a.current_balance), 0);
+    // Classify accounts using the SAME logic as computeSnapshots in plaid-sync.ts:
+    //   credit_card / loan / mortgage  → liability
+    //   brokerage                      → skip (investment value comes from holdings)
+    //   everything else (positive bal) → cash asset
+    const cashAccounts: typeof accounts = [];
+    const liabilityAccounts: typeof accounts = [];
+    let cashAssets = 0;
+    let totalLiabilities = 0;
 
-    // Calculate liability accounts (credit cards and negative balances)
-    const liabilityAccounts = accounts.filter(a =>
-      a.account_type === 'credit_card' || a.current_balance < 0
-    );
-    const totalLiabilities = liabilityAccounts.reduce((sum, a) =>
-      sum + Math.abs(Number(a.current_balance)), 0
-    );
+    for (const a of accounts) {
+      const bal = Number(a.current_balance);
+      const type = a.account_type;
 
-    // Calculate portfolio value from holdings (source of truth for investments)
+      if (type === 'credit_card' || type === 'loan' || type === 'mortgage') {
+        liabilityAccounts.push(a);
+        totalLiabilities += Math.abs(bal);
+      } else if (type === 'brokerage') {
+        // Skip — investment value comes from holdings below
+      } else if (bal > 0) {
+        cashAccounts.push(a);
+        cashAssets += bal;
+      }
+    }
+
+    // Portfolio value from holdings (source of truth for investments)
     const portfolioValue = holdings.reduce((sum, h) => sum + Number(h.total_value), 0);
 
     // Total assets = cash/savings + portfolio (no double-counting)
@@ -161,6 +169,18 @@ export async function GET() {
         liabilities: Number(snapshot.total_liabilities),
       };
     });
+
+    // Replace or append the current month with live-computed values so the
+    // graph's latest point matches the displayed net worth exactly.
+    // Historical snapshots may contain stale data from prior computation bugs.
+    const todayLabel = now.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+    const livePoint = { month: todayLabel, value: netWorth, assets: totalAssets, liabilities: totalLiabilities };
+    const existingIdx = transformedNetWorthHistory.findIndex(p => p.month === todayLabel);
+    if (existingIdx >= 0) {
+      transformedNetWorthHistory[existingIdx] = livePoint;
+    } else {
+      transformedNetWorthHistory.push(livePoint);
+    }
 
     // Transform cash flow history for chart
     const transformedCashFlowHistory = cashFlowHistory.map(snapshot => {
