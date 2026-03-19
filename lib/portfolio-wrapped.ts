@@ -203,6 +203,8 @@ export async function generateWrapped(
     healthResult,
     tradesResult,
     dividendsResult,
+    accountsResult,
+    holdingsResult,
   ] = await Promise.all([
     getPortfolioSummary(userId),
     generateTaxReport(userId),
@@ -246,6 +248,17 @@ export async function generateWrapped(
       .lte('transaction_date', end)
       .gt('amount', 0)
       .or('category_name.ilike.%dividend%,category_name.ilike.%interest earned%'),
+    // Live accounts for accurate net worth (avoids stale double-counted snapshots)
+    supabase
+      .from('linked_accounts')
+      .select('account_type, current_balance')
+      .eq('user_id', userId)
+      .eq('is_active', true),
+    // Live holdings for accurate net worth
+    supabase
+      .from('holdings')
+      .select('total_value')
+      .eq('user_id', userId),
   ]);
 
   // ── Total Return ──
@@ -366,16 +379,29 @@ export async function generateWrapped(
     : healthScores.length === 1 ? healthScores[0].overall_score : null;
 
   // ── Net worth change ──
-  const netWorthData = netWorthResult.data || [];
-  let nwStart = 0;
-  let nwEnd = 0;
-  if (netWorthData.length >= 2) {
-    nwStart = netWorthData[0].net_worth || 0;
-    nwEnd = netWorthData[netWorthData.length - 1].net_worth || 0;
-  } else if (netWorthData.length === 1) {
-    nwStart = netWorthData[0].net_worth || 0;
-    nwEnd = nwStart;
+  // Compute CURRENT net worth live from accounts + holdings to avoid
+  // stale snapshots that may have been recorded with double-counting bugs.
+  const liveAccounts = accountsResult.data || [];
+  const liveHoldings = holdingsResult.data || [];
+  let liveAssets = 0;
+  let liveLiabilities = 0;
+  for (const a of liveAccounts) {
+    const bal = Number(a.current_balance);
+    const type = a.account_type;
+    if (type === 'credit_card' || type === 'loan' || type === 'mortgage') {
+      liveLiabilities += Math.abs(bal);
+    } else if (type !== 'brokerage') {
+      // Skip brokerage — investment value comes from holdings
+      liveAssets += Math.max(0, bal);
+    }
   }
+  liveAssets += liveHoldings.reduce((s: number, h: { total_value: number }) => s + Number(h.total_value), 0);
+  const liveNetWorth = liveAssets - liveLiabilities;
+
+  // For start-of-period, use the earliest snapshot (best available historical data)
+  const netWorthData = netWorthResult.data || [];
+  const nwStart = netWorthData.length > 0 ? (netWorthData[0].net_worth || 0) : 0;
+  const nwEnd = liveNetWorth;
   const nwChange = nwEnd - nwStart;
   const nwChangePct = nwStart > 0 ? (nwChange / nwStart) * 100 : 0;
 

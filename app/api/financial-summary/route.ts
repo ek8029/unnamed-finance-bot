@@ -87,11 +87,6 @@ export async function GET() {
     // Total assets = cash/savings + portfolio (no double-counting)
     const totalAssets = cashAssets + portfolioValue;
 
-    // For composition display, include brokerage as "Investments"
-    const assetAccounts = accounts.filter(a =>
-      (a.current_balance > 0 && a.account_type !== 'credit_card') || a.account_type === 'brokerage'
-    );
-
     // Net worth
     const netWorth = totalAssets - totalLiabilities;
 
@@ -178,13 +173,25 @@ export async function GET() {
       };
     });
 
-    // Build assets composition from accounts by type
-    const assetsComposition = buildComposition(assetAccounts, 'account_type', {
+    // Build assets composition: cash accounts by type + holdings as "Investments"
+    // Uses the SAME sources as totalAssets so the numbers agree.
+    const assetsComposition = buildComposition(cashAccounts, 'account_type', {
       checking: 'Cash',
       savings: 'Savings',
-      brokerage: 'Investments',
       crypto: 'Crypto',
     });
+    if (portfolioValue > 0) {
+      assetsComposition.push({
+        name: 'Investments',
+        value: portfolioValue,
+        percentage: 0,
+        items: [...new Set(holdings.map((h: Record<string, unknown>) => String(h.ticker || 'Unknown')))].slice(0, 10),
+      });
+    }
+    // Recalculate percentages so they sum correctly against totalAssets
+    for (const item of assetsComposition) {
+      item.percentage = totalAssets > 0 ? Math.round((item.value / totalAssets) * 100) : 0;
+    }
 
     // Build liabilities composition
     const liabilitiesComposition = buildComposition(liabilityAccounts, 'account_type', {
