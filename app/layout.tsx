@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Manrope, DM_Mono } from 'next/font/google';
+import { Manrope, Space_Grotesk } from 'next/font/google';
 import Script from 'next/script';
 import "./globals.css";
 import { Providers } from '@/components/providers';
@@ -12,10 +12,10 @@ const manrope = Manrope({
   display: 'swap',
 });
 
-const dmMono = DM_Mono({
+const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-mono',
-  weight: ['400', '500'],
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
 
@@ -92,7 +92,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${manrope.variable} ${dmMono.variable} font-sans`}>
+      <body className={`${manrope.variable} ${spaceGrotesk.variable} font-sans`}>
         <RecoveryRedirect />
         <Providers>{children}</Providers>
         <Script

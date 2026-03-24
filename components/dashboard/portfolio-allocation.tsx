@@ -10,14 +10,13 @@ import {
 import { PortfolioAllocation as Allocation } from '@/types';
 import { useFormat } from '@/hooks/use-format';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { PieChartIcon } from 'lucide-react';
 
 interface PortfolioAllocationProps {
   allocation: Allocation[];
 }
 
 const HELM_CHART_COLORS = [
-  '#C8A95B', // gold
+  '#E6B94D', // gold
   '#38D39F', // positive
   '#6F6F6F', // neutral
   '#D4A94E', // warning
@@ -53,10 +52,7 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
   return (
     <DataPanel variant="metric">
       <DataPanelHeader>
-        <DataPanelTitle className="flex items-center gap-2">
-          <PieChartIcon className="h-5 w-5 text-[var(--color-gold)]" />
-          Portfolio Allocation
-        </DataPanelTitle>
+        <DataPanelTitle>Portfolio Allocation</DataPanelTitle>
       </DataPanelHeader>
       <DataPanelContent>
         {/* Stacked layout: chart on top, legend below */}
@@ -96,11 +92,12 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
                 <Tooltip
                   formatter={(value) => formatCurrency(Number(value))}
                   contentStyle={{
-                    backgroundColor: 'var(--color-bg-elevated)',
-                    border: '1px solid var(--color-border-base)',
+                    backgroundColor: '#131313',
+                    border: '1px solid rgba(255,255,255,0.06)',
                     borderRadius: '4px',
                     color: 'var(--color-text-primary)',
                     fontSize: '12px',
+                    fontFamily: 'var(--font-mono)',
                   }}
                   labelStyle={{
                     color: 'var(--color-text-secondary)',
@@ -130,7 +127,7 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
                     }
                   }}
                   onMouseLeave={() => setActiveIndex(null)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-md border text-left transition-all duration-200 ${
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded border text-left transition-all duration-200 ${
                     isHidden
                       ? 'border-[var(--color-border-subtle)] bg-transparent opacity-40'
                       : isActive
@@ -140,7 +137,7 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div
-                      className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                      className="w-2.5 h-2.5 rounded flex-shrink-0"
                       style={{ backgroundColor: color }}
                     />
                     <span className="type-label text-[var(--color-text-primary)]">{item.name}</span>

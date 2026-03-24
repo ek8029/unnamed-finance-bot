@@ -113,11 +113,12 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
                   <Tooltip
                     formatter={(value) => [formatCurrency(Number(value)), 'Net Worth']}
                     contentStyle={{
-                      backgroundColor: 'var(--color-bg-elevated)',
-                      border: '1px solid var(--color-border-base)',
-                      borderRadius: '8px',
+                      backgroundColor: '#131313',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      borderRadius: '4px',
                       color: 'var(--color-text-primary)',
                       fontSize: '12px',
+                      fontFamily: 'var(--font-mono)',
                     }}
                     labelStyle={{
                       color: 'var(--color-text-secondary)',
@@ -146,7 +147,7 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
                 <div className="type-statement font-tabular text-[var(--color-text-primary)] glow-gold">
                   {formatCurrency(isVisible ? animatedNetWorth : currentNetWorth)}
                 </div>
-                <div className="type-data-label text-[var(--color-gold-hi)] mt-1">Total Net Worth</div>
+                <div className="text-[10px] uppercase tracking-widest text-[var(--color-gold-hi)] font-mono mt-1">Total Net Worth</div>
               </div>
               <div className="flex items-center gap-2">
                 <span className={`font-tabular text-sm font-medium ${isPositiveChange ? 'text-[var(--color-positive)] glow-positive' : 'text-[var(--color-negative)] glow-negative'}`}>

@@ -62,7 +62,7 @@ const PRIORITY_CONFIG = {
   },
   medium: {
     dot: 'bg-[var(--color-gold)]',
-    dotGlow: '0 0 8px rgba(184,145,74,0.4)',
+    dotGlow: '0 0 8px rgba(230,185,77,0.4)',
     border: 'border-l-[var(--color-gold)]',
     label: 'MED',
     labelClass: 'text-[var(--color-gold)]',
@@ -208,7 +208,7 @@ function InsightCard({
   return (
     <div
       className={cn(
-        'glass-panel rounded-lg',
+        'sovereign-card rounded',
         'border-l-[3px]',
         priorityConfig.border,
         'transition-all duration-200 hover:border-[var(--color-border-strong)]',
@@ -344,7 +344,7 @@ export function IntelligenceFeed({
   // Loading state — single shimmer bar
   if (loading) {
     return (
-      <div className="glass-panel rounded-lg">
+      <div className="sovereign-card rounded">
         <div className="flex items-center gap-3 px-5 py-3.5">
           <Loader2 className="w-4 h-4 text-[var(--color-gold)] animate-spin" />
           <span className="text-sm text-[var(--color-text-muted)]">Loading alerts…</span>
@@ -356,7 +356,7 @@ export function IntelligenceFeed({
   // Error or no insights at all
   if (error || insights.length === 0) {
     return (
-      <div className="glass-panel rounded-lg">
+      <div className="sovereign-card rounded">
         <div className="flex items-center gap-3 px-5 py-3.5">
           <Zap className="w-4 h-4 text-[var(--color-text-muted)]" />
           <span className="text-sm text-[var(--color-text-muted)]">
@@ -368,7 +368,7 @@ export function IntelligenceFeed({
   }
 
   return (
-    <div className="glass-panel rounded-lg overflow-hidden">
+    <div className="sovereign-card rounded overflow-hidden">
       {/* Collapsed header row */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -496,7 +496,7 @@ export function IntelligenceFeedExpanded({
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="animate-pulse glass-panel rounded-lg p-5"
+            className="animate-pulse sovereign-card rounded p-5"
           >
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-full bg-neutral-700" />
@@ -513,8 +513,8 @@ export function IntelligenceFeedExpanded({
 
   if (error || activeInsights.length === 0) {
     return (
-      <div className="glass-panel rounded-lg p-10 text-center">
-        <div className="w-10 h-10 rounded-lg bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center mx-auto mb-3">
+      <div className="sovereign-card rounded p-10 text-center">
+        <div className="w-10 h-10 rounded bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center mx-auto mb-3">
           <Activity className="w-5 h-5 text-[var(--color-gold)]" />
         </div>
         <p className="type-body text-[var(--color-text-secondary)]">

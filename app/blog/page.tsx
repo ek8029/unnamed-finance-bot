@@ -85,13 +85,13 @@ export default function BlogIndex() {
               <Link
                 key={post.slug}
                 href={`/blog/${post.slug}`}
-                className="group block glass-card hover-glow-card rounded-sm p-6 transition-colors"
+                className="group block sovereign-card hover-glow-card rounded p-6 transition-colors"
               >
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   {post.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="type-eyebrow text-[var(--color-gold)] bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] px-2 py-0.5 rounded-sm"
+                      className="type-eyebrow text-[var(--color-gold)] bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] px-2 py-0.5 rounded"
                     >
                       {tag}
                     </span>

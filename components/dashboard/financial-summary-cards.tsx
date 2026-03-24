@@ -94,7 +94,7 @@ export function FinancialSummaryCards({
             <DataPanel variant="metric">
               <DataPanelHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 p-2.5">
                 <DataPanelTitle className="text-xs">{item.title}</DataPanelTitle>
-                <div className={`rounded-md p-1.5 ${item.iconBg} ${index === 0 ? 'shadow-glow-gold' : ''}`}>
+                <div className={`rounded p-1.5 ${item.iconBg} ${index === 0 ? 'shadow-glow-gold' : ''}`}>
                   <Icon className={`h-3.5 w-3.5 ${item.iconColor}`} />
                 </div>
               </DataPanelHeader>

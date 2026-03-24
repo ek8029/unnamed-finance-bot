@@ -84,7 +84,7 @@ const faqItems = [
 
 function FAQItem({ question, answer }: { question: string; answer: string }) {
   return (
-    <details className="group glass-card rounded overflow-hidden">
+    <details className="group sovereign-card rounded overflow-hidden">
       <summary className="flex items-center justify-between cursor-pointer px-5 py-3 text-sm font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors list-none [&::-webkit-details-marker]:hidden">
         {question}
         <ChevronDown className="w-4 h-4 text-[var(--color-text-muted)] transition-transform duration-200 group-open:rotate-180 shrink-0 ml-4" />
@@ -211,7 +211,7 @@ export default async function PricingPage() {
         <div className="grid md:grid-cols-5 gap-4 max-w-3xl mx-auto pt-4">
           {/* Free Tier — understated */}
           <AnimatedSection delay={100} className="md:col-span-2">
-            <div className="h-full flex flex-col glass-card rounded-lg shadow-card p-5">
+            <div className="h-full flex flex-col sovereign-card rounded shadow-card p-5">
               <div className="mb-5">
                 <p className="type-label text-[var(--color-text-muted)] mb-2">
                   Free
@@ -261,12 +261,12 @@ export default async function PricingPage() {
           {/* Pro Tier — dominant */}
           <AnimatedSection delay={200} className="md:col-span-3">
             <div className="relative">
-              <div className="h-full flex flex-col glass-card animate-border-glow rounded-lg shadow-elevated p-6 relative overflow-hidden">
+              <div className="h-full flex flex-col sovereign-card gradient-border animate-border-glow rounded shadow-elevated p-6 relative overflow-hidden">
                 {/* Brass top-rule */}
-                <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #B8914A, rgba(184,145,74,0.3), transparent)' }} />
+                <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #E6B94D, rgba(230,185,77,0.3), transparent)' }} />
                 {/* Coming Soon badge */}
                 <div className="absolute -top-3 right-6 z-10">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-[var(--color-gold)] text-[var(--color-bg-base)] text-[11px] font-medium uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)' }}>
+                  <span className="inline-flex items-center px-3 py-1 rounded bg-[var(--color-gold)] text-[var(--color-bg-base)] text-[11px] font-medium uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)' }}>
                     Coming Soon
                   </span>
                 </div>

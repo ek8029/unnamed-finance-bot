@@ -56,7 +56,7 @@ export default async function TickerAnalysisPage({ params }: Props) {
             </p>
             <a
               href="/analyze"
-              className="inline-block mt-2 px-5 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[13px] font-semibold rounded-sm transition-colors"
+              className="inline-block mt-2 px-5 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[13px] font-semibold rounded transition-colors"
             >
               Try another ticker
             </a>

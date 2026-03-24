@@ -70,7 +70,7 @@ export default function AnalyzePage() {
           </div>
 
           {/* Command palette style search */}
-          <div className="glass-card rounded-md p-5">
+          <div className="sovereign-card rounded p-5">
             <TickerSearch />
           </div>
 

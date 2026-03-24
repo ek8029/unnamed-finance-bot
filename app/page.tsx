@@ -21,7 +21,7 @@ export default async function LandingPage() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,_rgba(255,255,255,0.015)_1px,_transparent_1px),linear-gradient(to_bottom,_rgba(255,255,255,0.015)_1px,_transparent_1px)] bg-[length:64px_64px] opacity-40" />
       </div>
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[radial-gradient(ellipse_at_center,_rgba(184,145,74,0.06)_0%,_transparent_70%)] opacity-60" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[radial-gradient(ellipse_at_center,_rgba(230,185,77,0.06)_0%,_transparent_70%)] opacity-60" />
       </div>
 
       {/* JSON-LD Structured Data */}
@@ -155,7 +155,7 @@ export default async function LandingPage() {
 
           {/* Product Preview */}
           <AnimatedSection delay={200} direction="right">
-            <div className="glass-card rounded-lg gradient-border overflow-hidden animate-data-pulse">
+            <div className="glass-card rounded gradient-border overflow-hidden animate-data-pulse">
               {/* Terminal Header */}
               <div className="flex items-center justify-between px-4 pt-3 pb-2.5 border-b border-[var(--color-border-base)]">
                 <div className="flex items-center gap-2">
@@ -276,7 +276,7 @@ export default async function LandingPage() {
           <div className="grid md:grid-cols-3 gap-3">
             {/* Featured card — spans 2 cols */}
             <AnimatedSection delay={0}>
-              <div className="md:col-span-1 glass-card p-5 rounded-lg hover-glow-card h-full flex flex-col">
+              <div className="md:col-span-1 sovereign-card p-5 rounded hover-glow-card h-full flex flex-col">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-9 h-9 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded flex items-center justify-center">
                     <PieChart className="w-4 h-4 text-[var(--color-gold)]" />
@@ -295,7 +295,7 @@ export default async function LandingPage() {
             </AnimatedSection>
 
             <AnimatedSection delay={80}>
-              <div className="glass-card p-5 rounded-lg hover-glow-card h-full flex flex-col">
+              <div className="sovereign-card p-5 rounded hover-glow-card h-full flex flex-col">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-9 h-9 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded flex items-center justify-center">
                     <LineChart className="w-4 h-4 text-[var(--color-positive)]" />
@@ -313,7 +313,7 @@ export default async function LandingPage() {
             </AnimatedSection>
 
             <AnimatedSection delay={160}>
-              <div className="glass-card p-5 rounded-lg hover-glow-card h-full flex flex-col">
+              <div className="sovereign-card p-5 rounded hover-glow-card h-full flex flex-col">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-9 h-9 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded flex items-center justify-center">
                     <Activity className="w-4 h-4 text-[var(--color-text-secondary)]" />
@@ -346,7 +346,7 @@ export default async function LandingPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 auto-rows-fr">
             {/* Net Worth — large tile */}
             <AnimatedSection delay={0}>
-              <div className="col-span-2 row-span-2 glass-panel gradient-border p-5 rounded h-full flex flex-col justify-between">
+              <div className="col-span-2 row-span-2 sovereign-card gradient-border p-5 rounded h-full flex flex-col justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <TrendingUp className="w-4 h-4 text-[var(--color-gold)]" />
@@ -376,7 +376,7 @@ export default async function LandingPage() {
 
             {/* Portfolio */}
             <AnimatedSection delay={60}>
-              <div className="glass-card p-4 rounded-lg h-full">
+              <div className="sovereign-card p-4 rounded h-full">
                 <div className="flex items-center gap-2 mb-2">
                   <PieChart className="w-4 h-4 text-[var(--color-text-muted)]" />
                   <span className="type-label text-[var(--color-text-primary)]">Portfolio</span>
@@ -391,7 +391,7 @@ export default async function LandingPage() {
 
             {/* Tax Engine */}
             <AnimatedSection delay={120}>
-              <div className="glass-card p-4 rounded-lg h-full">
+              <div className="sovereign-card p-4 rounded h-full">
                 <div className="flex items-center gap-2 mb-2">
                   <LineChart className="w-4 h-4 text-[var(--color-text-muted)]" />
                   <span className="type-label text-[var(--color-text-primary)]">Tax Engine</span>
@@ -406,7 +406,7 @@ export default async function LandingPage() {
 
             {/* Cash Flow */}
             <AnimatedSection delay={180}>
-              <div className="glass-card p-4 rounded-lg h-full">
+              <div className="sovereign-card p-4 rounded h-full">
                 <div className="flex items-center gap-2 mb-2">
                   <Wallet className="w-4 h-4 text-[var(--color-text-muted)]" />
                   <span className="type-label text-[var(--color-text-primary)]">Cash Flow</span>
@@ -421,7 +421,7 @@ export default async function LandingPage() {
 
             {/* Market Intel */}
             <AnimatedSection delay={240}>
-              <div className="glass-card p-4 rounded-lg h-full">
+              <div className="sovereign-card p-4 rounded h-full">
                 <div className="flex items-center gap-2 mb-2">
                   <Activity className="w-4 h-4 text-[var(--color-text-muted)]" />
                   <span className="type-label text-[var(--color-text-primary)]">Market Intel</span>
@@ -436,7 +436,7 @@ export default async function LandingPage() {
 
             {/* Health Score */}
             <AnimatedSection delay={300}>
-              <div className="glass-card p-4 rounded-lg h-full">
+              <div className="sovereign-card p-4 rounded h-full">
                 <div className="flex items-center gap-2 mb-2">
                   <Target className="w-4 h-4 text-[var(--color-text-muted)]" />
                   <span className="type-label text-[var(--color-text-primary)]">Health Score</span>
@@ -462,7 +462,7 @@ export default async function LandingPage() {
           </AnimatedSection>
 
           <AnimatedSection delay={100}>
-            <div className="glass-card rounded-lg overflow-hidden">
+            <div className="sovereign-card rounded overflow-hidden">
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-[var(--color-border-base)]">
@@ -555,7 +555,7 @@ export default async function LandingPage() {
                 <div key={item.step} className="flex items-start flex-1">
                   <div className="flex-1">
                     <div className="type-data text-sm text-[var(--color-gold)] mb-2">{item.step}</div>
-                    <div className="w-8 h-8 glass-card rounded flex items-center justify-center mb-2.5">
+                    <div className="w-8 h-8 sovereign-card rounded flex items-center justify-center mb-2.5">
                       <item.Icon className="w-4 h-4 text-[var(--color-text-secondary)]" />
                     </div>
                     <h3 className="type-h2 text-base mb-1.5">{item.title}</h3>
@@ -611,7 +611,7 @@ export default async function LandingPage() {
       {/* ── TRY IT CTA ── */}
       <section className="relative container mx-auto px-6 pb-16">
         <AnimatedSection>
-          <div className="max-w-2xl mx-auto text-center glass-card rounded-lg gradient-border p-6 space-y-3">
+          <div className="max-w-2xl mx-auto text-center sovereign-card rounded gradient-border p-6 space-y-3">
             <div className="type-eyebrow text-[var(--color-gold)]">Try It Now</div>
             <h2 className="type-h1 text-2xl">
               Free AI stock analysis for any ticker

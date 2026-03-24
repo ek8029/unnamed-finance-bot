@@ -63,7 +63,7 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
         <div className="grid grid-cols-3 gap-3 mb-3">
           {/* Net Flow */}
           <div>
-            <div className="type-caption text-[var(--color-text-secondary)] mb-1">Net Flow</div>
+            <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-1">Net Flow</div>
             <div className="type-data text-xl font-tabular text-[var(--color-text-primary)] glow-white">
               {formatCurrency(currentMonth.netFlow)}
             </div>
@@ -71,7 +71,7 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
 
           {/* Income */}
           <div>
-            <div className="type-caption text-[var(--color-text-secondary)] mb-1">Income</div>
+            <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-1">Income</div>
             <div className="type-data text-xl font-tabular text-[var(--color-positive)] glow-positive">
               {formatCurrency(currentMonth.income)}
             </div>
@@ -79,7 +79,7 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
 
           {/* Expenses */}
           <div>
-            <div className="type-caption text-[var(--color-text-secondary)] mb-1">Expenses</div>
+            <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-1">Expenses</div>
             <div className="type-data text-xl font-tabular text-[var(--color-negative)] glow-negative">
               {formatCurrency(currentMonth.expenses)}
             </div>
@@ -88,7 +88,7 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
 
         {/* 3-Month Average */}
         <div className="flex items-center gap-2 mb-3 p-2 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
-          <div className="type-caption text-[var(--color-text-secondary)]">3-Mo Avg</div>
+          <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono">3-Mo Avg</div>
           <ArrowRight className="h-3 w-3 text-[var(--color-text-muted)]" />
           <div className="type-label font-tabular text-[var(--color-text-primary)]">
             {formatCurrency(avgNetFlow)}
@@ -107,14 +107,14 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
               </defs>
               <XAxis
                 dataKey="month"
-                stroke="var(--color-text-secondary)"
+                stroke="var(--color-text-muted)"
                 fontSize={9}
                 tickLine={false}
                 axisLine={false}
                 fontFamily="var(--font-mono)"
               />
               <YAxis
-                stroke="var(--color-text-secondary)"
+                stroke="var(--color-text-muted)"
                 fontSize={9}
                 tickLine={false}
                 axisLine={false}
@@ -129,11 +129,12 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
                   return '';
                 }}
                 contentStyle={{
-                  backgroundColor: 'var(--color-bg-elevated)',
-                  border: '1px solid var(--color-border-base)',
-                  borderRadius: '8px',
+                  backgroundColor: '#131313',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: '4px',
                   color: 'var(--color-text-primary)',
                   fontSize: '11px',
+                  fontFamily: 'var(--font-mono)',
                 }}
                 labelStyle={{
                   color: 'var(--color-text-secondary)',

@@ -7,14 +7,14 @@ import { cva, type VariantProps } from 'class-variance-authority';
 // ============================================================================
 
 const dataPanelVariants = cva(
-  'rounded-lg border relative overflow-hidden transition-all duration-200',
+  'rounded border relative overflow-hidden transition-all duration-200',
   {
     variants: {
       variant: {
-        metric: 'glass-card hover-glow-card',
-        grid: 'glass-card',
-        chart: 'glass-card hover-glow-card',
-        feed: 'glass-card',
+        metric: 'sovereign-card',
+        grid: 'sovereign-card',
+        chart: 'sovereign-card',
+        feed: 'sovereign-card',
       },
       accent: {
         none: '',
@@ -46,16 +46,15 @@ const DataPanel = React.forwardRef<HTMLDivElement, DataPanelProps>(
       {accent === 'brass' && (
         <>
           <div
-            className="absolute top-0 left-0 right-0 h-[2px] rounded-t-lg animate-gradient-shift"
+            className="absolute top-0 left-0 right-0 h-[1px]"
             style={{
-              background: 'linear-gradient(90deg, transparent, rgba(184,145,74,0.6), #B8914A, rgba(184,145,74,0.6), transparent)',
-              backgroundSize: '200% 100%',
+              background: 'linear-gradient(90deg, transparent, rgba(230,185,77,0.5), #E6B94D, rgba(230,185,77,0.5), transparent)',
             }}
           />
           <div
-            className="absolute inset-0 rounded-lg pointer-events-none"
+            className="absolute inset-0 pointer-events-none"
             style={{
-              background: 'radial-gradient(ellipse 50% 30% at 50% 0%, rgba(184,145,74,0.04) 0%, transparent 60%)',
+              background: 'radial-gradient(ellipse 50% 30% at 50% 0%, rgba(230,185,77,0.04) 0%, transparent 60%)',
             }}
           />
         </>
@@ -92,7 +91,7 @@ const DataPanelTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn('type-h3 text-[var(--color-text-primary)]', className)}
+    className={cn('text-xs uppercase tracking-widest text-[var(--color-text-muted)] font-mono', className)}
     {...props}
   />
 ));

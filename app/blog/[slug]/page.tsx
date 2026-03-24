@@ -149,7 +149,7 @@ export default async function BlogPost({ params }: PageProps) {
       <div className="container mx-auto px-6 pt-8 pb-24">
         <div className="max-w-5xl mx-auto lg:grid lg:grid-cols-[1fr_220px] lg:gap-12">
           {/* ── Article ── */}
-          <article className="max-w-3xl glass-panel rounded-lg p-6 md:p-8">
+          <article className="max-w-3xl sovereign-card rounded p-6 md:p-8">
             {/* Back link */}
             <Link
               href="/blog"
@@ -165,7 +165,7 @@ export default async function BlogPost({ params }: PageProps) {
                 {post.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="type-eyebrow text-[var(--color-gold)] bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] px-2 py-0.5 rounded-sm"
+                    className="type-eyebrow text-[var(--color-gold)] bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] px-2 py-0.5 rounded"
                   >
                     {tag}
                   </span>

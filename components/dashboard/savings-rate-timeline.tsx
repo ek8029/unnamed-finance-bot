@@ -60,7 +60,7 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
         <div className="grid grid-cols-3 gap-3 mb-3">
           {/* Current Rate */}
           <div>
-            <div className="type-caption text-[var(--color-text-secondary)] mb-1">Current</div>
+            <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-1">Current</div>
             <div className="type-data text-xl font-tabular text-[var(--color-text-primary)] glow-white">
               {currentMonth.rate.toFixed(1)}%
             </div>
@@ -68,7 +68,7 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
 
           {/* 12-Mo Average */}
           <div>
-            <div className="type-caption text-[var(--color-text-secondary)] mb-1">12-Mo Avg</div>
+            <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-1">12-Mo Avg</div>
             <div className="type-data text-xl font-tabular text-[var(--color-text-secondary)]">
               {avgRate.toFixed(1)}%
             </div>
@@ -76,7 +76,7 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
 
           {/* This Month Saved */}
           <div>
-            <div className="type-caption text-[var(--color-text-secondary)] mb-1">This Month</div>
+            <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-1">This Month</div>
             <div className="type-data text-xl font-tabular text-[var(--color-positive)] glow-positive">
               {formatCurrency(currentMonth.saved)}
             </div>
@@ -87,7 +87,7 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
         {targetRate && (
           <div className="flex items-center gap-2 mb-3 p-2 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
             <Target className="h-3.5 w-3.5 text-[var(--color-gold)]" />
-            <div className="type-caption text-[var(--color-text-secondary)]">Target</div>
+            <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono">Target</div>
             <div className="type-label font-tabular text-[var(--color-gold)] glow-gold-subtle">{targetRate}%</div>
             <div className="flex-1" />
             <div className={`type-label text-xs ${currentMonth.rate >= targetRate ? 'text-[var(--color-positive)]' : 'text-[var(--color-warning)]'}`}>
@@ -102,14 +102,14 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
             <LineChart data={data}>
               <XAxis
                 dataKey="month"
-                stroke="var(--color-text-secondary)"
+                stroke="var(--color-text-muted)"
                 fontSize={9}
                 tickLine={false}
                 axisLine={false}
                 fontFamily="var(--font-mono)"
               />
               <YAxis
-                stroke="var(--color-text-secondary)"
+                stroke="var(--color-text-muted)"
                 fontSize={9}
                 tickLine={false}
                 axisLine={false}
@@ -125,11 +125,12 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
                   return '';
                 }}
                 contentStyle={{
-                  backgroundColor: 'var(--color-bg-elevated)',
-                  border: '1px solid var(--color-border-base)',
-                  borderRadius: '8px',
+                  backgroundColor: '#131313',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: '4px',
                   color: 'var(--color-text-primary)',
                   fontSize: '11px',
+                  fontFamily: 'var(--font-mono)',
                 }}
                 labelStyle={{
                   color: 'var(--color-text-secondary)',
@@ -155,10 +156,10 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
               <Line
                 type="monotone"
                 dataKey="rate"
-                stroke="var(--color-positive)"
+                stroke="#E6B94D"
                 strokeWidth={2}
-                dot={{ fill: 'var(--color-positive)', r: 3 }}
-                activeDot={{ r: 5 }}
+                dot={{ fill: '#E6B94D', r: 3 }}
+                activeDot={{ r: 5, fill: '#E6B94D', stroke: 'var(--color-bg-surface)', strokeWidth: 2 }}
                 animationDuration={800}
                 animationEasing="ease-out"
               />

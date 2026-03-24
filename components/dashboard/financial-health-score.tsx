@@ -52,8 +52,10 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
               <defs>
                 <filter id="scoreGlow" x="-20%" y="-20%" width="140%" height="140%">
                   <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+                  <feFlood floodColor="#E6B94D" floodOpacity="0.3" result="glowColor" />
+                  <feComposite in="glowColor" in2="blur" operator="in" result="coloredBlur" />
                   <feMerge>
-                    <feMergeNode in="blur" />
+                    <feMergeNode in="coloredBlur" />
                     <feMergeNode in="SourceGraphic" />
                   </feMerge>
                 </filter>
@@ -71,16 +73,15 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
                 cy="64"
                 r="56"
                 fill="none"
-                stroke="currentColor"
+                stroke="#E6B94D"
                 strokeWidth="8"
                 strokeLinecap="round"
                 strokeDasharray={`${(healthScore.score / 100) * 351.68} 351.68`}
-                className={getScoreColor(healthScore.score)}
                 filter="url(#scoreGlow)"
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className={`type-data font-tabular ${getScoreColor(healthScore.score)} ${getScoreGlow(healthScore.score)}`}>
+              <span className={`type-data font-tabular text-[var(--color-gold)] glow-gold`}>
                 {healthScore.score}
               </span>
               <span className="type-caption text-[var(--color-text-secondary)]">{getScoreLabel(healthScore.score)}</span>

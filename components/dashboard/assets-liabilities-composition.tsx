@@ -41,13 +41,13 @@ export function AssetsLiabilitiesComposition({
         {/* Summary Metrics */}
         <div className="grid grid-cols-2 gap-3 mb-3 pb-3 border-b border-[var(--color-border-subtle)]">
           <div>
-            <div className="type-caption text-[var(--color-text-secondary)] mb-1">Total Assets</div>
+            <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-1">Total Assets</div>
             <div className="type-data text-xl font-tabular text-[var(--color-positive)] glow-positive">
               {formatCurrency(totalAssets)}
             </div>
           </div>
           <div>
-            <div className="type-caption text-[var(--color-text-secondary)] mb-1">Total Liabilities</div>
+            <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-1">Total Liabilities</div>
             <div className="type-data text-xl font-tabular text-[var(--color-negative)] glow-negative">
               {formatCurrency(totalLiabilities)}
             </div>
@@ -71,7 +71,7 @@ export function AssetsLiabilitiesComposition({
 
         {/* Assets Breakdown */}
         <div className="mb-4">
-          <div className="type-label text-xs text-[var(--color-text-primary)] mb-2">Assets Breakdown</div>
+          <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-2">Assets Breakdown</div>
           <div className="space-y-2">
             {assets.map((item) => (
               <div key={item.name}>
@@ -81,9 +81,9 @@ export function AssetsLiabilitiesComposition({
                     {formatCurrency(item.value)} ({item.percentage.toFixed(1)}%)
                   </span>
                 </div>
-                <div className="h-1.5 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
+                <div className="h-1.5 bg-[var(--color-bg-elevated)] rounded overflow-hidden">
                   <div
-                    className="h-full bg-[var(--color-positive)] rounded-full transition-all duration-500"
+                    className="h-full bg-[var(--color-positive)] rounded transition-all duration-500"
                     style={{ width: `${item.percentage}%` }}
                   />
                 </div>
@@ -94,7 +94,7 @@ export function AssetsLiabilitiesComposition({
 
         {/* Liabilities Breakdown */}
         <div>
-          <div className="type-label text-xs text-[var(--color-text-primary)] mb-2">Liabilities Breakdown</div>
+          <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-2">Liabilities Breakdown</div>
           <div className="space-y-2">
             {liabilities.map((item) => (
               <div key={item.name}>
@@ -104,9 +104,9 @@ export function AssetsLiabilitiesComposition({
                     {formatCurrency(item.value)} ({item.percentage.toFixed(1)}%)
                   </span>
                 </div>
-                <div className="h-1.5 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
+                <div className="h-1.5 bg-[var(--color-bg-elevated)] rounded overflow-hidden">
                   <div
-                    className="h-full bg-[var(--color-negative)] rounded-full transition-all duration-500"
+                    className="h-full bg-[var(--color-negative)] rounded transition-all duration-500"
                     style={{ width: `${item.percentage}%` }}
                   />
                 </div>

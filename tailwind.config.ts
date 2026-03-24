@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: 'class',
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,25 +10,31 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Sovereign Architect palette
+        brand: {
+          DEFAULT: '#E6B94D',
+          light:   '#FFD67A',
+          dim:     'rgba(230, 185, 77, 0.1)',
+        },
         helm: {
-          base:      '#09090B',
-          surface:   '#0F1219',
-          elevated:  '#151920',
-          overlay:   '#1A1E27',
-          inset:     '#07070A',
+          base:      '#0A0A0A',
+          surface:   '#131313',
+          elevated:  '#201F1F',
+          overlay:   '#2A2A2A',
+          inset:     '#060606',
           platinum:  '#FAFAFA',
-          secondary: '#6B7080',
-          muted:     '#52525B',
-          gold:      '#B8914A',
-          'gold-hi': '#C9A45E',
-          'gold-lo': '#9A7838',
+          secondary: '#737373',
+          muted:     '#525252',
+          gold:      '#E6B94D',
+          'gold-hi': '#FFD67A',
+          'gold-lo': '#C4993F',
           positive:  '#4ADE80',
           negative:  '#F87171',
-          neutral:   '#52525B',
-          warning:   '#D4A94E',
+          neutral:   '#525252',
+          warning:   '#FBBF24',
         },
         chart: {
-          gold:     '#B8914A',
+          gold:     '#E6B94D',
           green:    '#4ADE80',
           red:      '#F87171',
           blue:     '#60A5FA',
@@ -39,13 +46,14 @@ const config: Config = {
       },
       fontFamily: {
         sans:  ['var(--font-sans)', 'system-ui', 'sans-serif'],
-        mono:  ['var(--font-mono)', 'ui-monospace', 'monospace'],
+        mono:  ['var(--font-mono)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       borderRadius: {
-        'sm':   '4px',
-        DEFAULT: '6px',
-        'md':   '6px',
-        'lg':   '8px',
+        'none': '0',
+        'sm':   '2px',
+        DEFAULT: '4px',
+        'md':   '4px',
+        'lg':   '6px',
         'xl':   '8px',
         '2xl':  '10px',
         '3xl':  '12px',
@@ -55,6 +63,7 @@ const config: Config = {
         card:          'var(--shadow-card)',
         'card-hover':  'var(--shadow-card-hover)',
         elevated:      'var(--shadow-elevated)',
+        glow:          '0 0 20px rgba(230, 185, 77, 0.15)',
         'glow-gold':   'var(--shadow-glow-gold)',
         'glow-green':  'var(--shadow-glow-green)',
         'glow-red':    'var(--shadow-glow-red)',
