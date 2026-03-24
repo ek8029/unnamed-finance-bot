@@ -75,9 +75,18 @@ export default function RootLayout({
               url: 'https://helmterminal.dev',
               logo: 'https://helmterminal.dev/icon',
               description:
-                'Institutional-grade financial intelligence terminal. AI-powered portfolio analysis for modern investors.',
+                'Institutional-grade financial intelligence terminal. AI-powered portfolio analysis, tax optimization, and wealth monitoring for individuals managing $50K–$2M+ across multiple accounts.',
+              foundingDate: '2025',
               sameAs: [
                 'https://x.com/helmterminal',
+              ],
+              knowsAbout: [
+                'Portfolio Analysis',
+                'Tax-Loss Harvesting',
+                'Net Worth Tracking',
+                'Financial Intelligence',
+                'AI Stock Analysis',
+                'Cash Flow Monitoring',
               ],
             }),
           }}

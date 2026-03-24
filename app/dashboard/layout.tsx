@@ -136,18 +136,14 @@ export default function DashboardLayout({
       isChatPage ? "h-screen overflow-hidden" : "min-h-screen"
     )}>
       {/* Top Navigation Bar */}
-      <nav className="shrink-0 bg-[var(--color-bg-surface)] border-b border-[var(--color-border-base)] sticky top-0 z-50">
-        <div className="px-6 py-3">
+      <nav className="shrink-0 glass-nav sticky top-0 z-50">
+        <div className="px-6 py-2">
           <div className="flex items-center justify-between">
-            {/* Logo - bigger and more prominent */}
-            <Link href="/" className="flex items-center gap-3 group">
-              <HelmMark size={40} className="transition-transform duration-200 group-hover:scale-105" />
-              <div>
-                <span className="text-[17px] font-semibold tracking-tight text-[var(--color-text-primary)]">
-                  Helm
-                </span>
-                <div className="type-eyebrow text-[var(--color-text-muted)]">Intelligence</div>
-              </div>
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <HelmMark size={28} />
+              <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text-primary)]">
+                Helm
+              </span>
             </Link>
 
             {/* Navigation Links */}
@@ -155,7 +151,7 @@ export default function DashboardLayout({
               {navigation.map((item) => {
                 if ('children' in item && item.children) {
                   const isGroupActive = PORTFOLIO_HREFS.includes(pathname);
-                  const activeStyle = 'text-[var(--color-gold)] bg-[var(--color-bg-overlay)] border border-[var(--color-gold-border)]';
+                  const activeStyle = 'text-[var(--color-gold)] bg-[var(--color-bg-overlay)] border border-[var(--color-gold-border)] shadow-glow-gold';
                   const inactiveStyle = 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] border border-transparent hover:border-[var(--color-border-base)]';
                   return (
                     <div key={item.name} className="relative" ref={portfolioRef}>
@@ -168,14 +164,14 @@ export default function DashboardLayout({
                         <Link
                           href={item.href}
                           onClick={() => setPortfolioDropdownOpen(false)}
-                          className="flex items-center space-x-2 pl-4 pr-1 py-2"
+                          className="flex items-center space-x-2 pl-3 pr-1 py-1.5"
                         >
                           <item.icon className="w-4 h-4" />
                           <span>{item.name}</span>
                         </Link>
                         <button
                           onClick={() => setPortfolioDropdownOpen(!portfolioDropdownOpen)}
-                          className="pr-3 pl-1 py-2 self-stretch flex items-center"
+                          className="pr-2.5 pl-1 py-1.5 self-stretch flex items-center"
                           aria-label="Portfolio sub-menu"
                         >
                           <ChevronDown className={cn(
@@ -186,7 +182,7 @@ export default function DashboardLayout({
                       </div>
 
                       {portfolioDropdownOpen && (
-                        <div className="absolute left-0 mt-1 w-48 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg shadow-xl z-50 overflow-hidden py-1">
+                        <div className="absolute left-0 mt-1 w-48 glass-panel rounded-md shadow-xl z-50 overflow-hidden py-1">
                           {item.children.map((child) => {
                             const isChildActive = pathname === child.href;
                             return (
@@ -221,9 +217,9 @@ export default function DashboardLayout({
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      'flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200',
+                      'flex items-center space-x-2 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200',
                       isActive
-                        ? 'text-[var(--color-gold)] bg-[var(--color-bg-overlay)] border border-[var(--color-gold-border)]'
+                        ? 'text-[var(--color-gold)] bg-[var(--color-bg-overlay)] border border-[var(--color-gold-border)] shadow-glow-gold'
                         : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] border border-transparent hover:border-[var(--color-border-base)]'
                     )}
                   >
@@ -241,7 +237,7 @@ export default function DashboardLayout({
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="flex items-center space-x-3 px-3 py-1.5 rounded-lg hover:bg-[var(--color-bg-overlay)] transition-colors duration-200"
+                className="flex items-center space-x-2 px-3 py-1.5 rounded-md hover:bg-[var(--color-bg-overlay)] transition-colors duration-200"
               >
                 <div className="w-8 h-8 rounded-full bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center">
                   <span className="text-xs font-semibold text-[var(--color-gold)]">
@@ -264,7 +260,7 @@ export default function DashboardLayout({
 
               {/* Dropdown Menu */}
               {menuOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-xl z-50 overflow-hidden">
+                <div className="absolute right-0 mt-2 w-64 glass-panel rounded-md shadow-xl z-50 overflow-hidden">
                   {/* User Info */}
                   <div className="px-4 py-3 border-b border-[var(--color-border-base)]">
                     <p className="text-sm font-medium text-[var(--color-text-primary)]">
@@ -340,7 +336,7 @@ export default function DashboardLayout({
 
       {/* Main Content */}
       <main className={cn(
-        "bg-[var(--color-bg-base)] flex-1",
+        "bg-[var(--color-bg-base)] bg-depth flex-1",
         isChatPage && "min-h-0 flex flex-col"
       )}>
         <div

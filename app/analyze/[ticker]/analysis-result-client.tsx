@@ -193,7 +193,7 @@ export function AnalysisResultClient({
 
           {/* Gate overlay */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] rounded-sm p-8 max-w-sm w-full mx-4 text-center space-y-4">
+            <div className="glass-card rounded-sm p-8 max-w-sm w-full mx-4 text-center space-y-4">
               <div className="flex justify-center">
                 <div className="w-10 h-10 rounded-full bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center">
                   <Lock className="w-4 h-4 text-[var(--color-gold)]" />
@@ -268,7 +268,7 @@ export function AnalysisResultClient({
       {relatedTickers}
 
       {/* CTA */}
-      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-gold-border)] rounded-sm p-6 text-center space-y-3">
+      <div className="glass-card rounded-sm p-6 text-center space-y-3">
         <p className="text-[14px] font-medium text-[var(--color-text-primary)]">
           Want AI analysis of your entire portfolio?
         </p>

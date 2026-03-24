@@ -23,6 +23,23 @@ export const metadata: Metadata = {
   title: 'Pricing - Helm Terminal',
   description:
     'Simple, transparent pricing for institutional-grade financial intelligence. Start free, upgrade when you need more.',
+  openGraph: {
+    title: 'Pricing — Helm Terminal',
+    description:
+      'Free portfolio dashboard with AI analysis. Pro tier coming soon at $24.99/month for unlimited intelligence.',
+    url: 'https://helmterminal.dev/pricing',
+    siteName: 'Helm Terminal',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Pricing — Helm Terminal',
+    description:
+      'Free portfolio dashboard with AI analysis. Pro tier coming soon at $24.99/month for unlimited intelligence.',
+  },
+  alternates: {
+    canonical: 'https://helmterminal.dev/pricing',
+  },
 };
 
 const freeTierFeatures = [
@@ -67,12 +84,12 @@ const faqItems = [
 
 function FAQItem({ question, answer }: { question: string; answer: string }) {
   return (
-    <details className="group border border-[var(--color-border-base)] rounded-[4px] bg-[var(--color-bg-surface)] overflow-hidden">
-      <summary className="flex items-center justify-between cursor-pointer px-6 py-4 text-sm font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors list-none [&::-webkit-details-marker]:hidden">
+    <details className="group glass-card rounded overflow-hidden">
+      <summary className="flex items-center justify-between cursor-pointer px-5 py-3 text-sm font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors list-none [&::-webkit-details-marker]:hidden">
         {question}
         <ChevronDown className="w-4 h-4 text-[var(--color-text-muted)] transition-transform duration-200 group-open:rotate-180 shrink-0 ml-4" />
       </summary>
-      <div className="px-6 pb-4 text-sm text-[var(--color-text-secondary)] leading-relaxed">
+      <div className="px-5 pb-3 text-sm text-[var(--color-text-secondary)] leading-relaxed">
         {answer}
       </div>
     </details>
@@ -83,32 +100,64 @@ export default async function PricingPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   return (
-    <main className="min-h-screen bg-[var(--color-bg-base)] relative overflow-hidden">
+    <main className="min-h-screen bg-[var(--color-bg-base)] bg-depth relative overflow-hidden">
+      {/* FAQPage + BreadcrumbList JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([
+            {
+              '@context': 'https://schema.org',
+              '@type': 'FAQPage',
+              mainEntity: faqItems.map((item) => ({
+                '@type': 'Question',
+                name: item.question,
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: item.answer,
+                },
+              })),
+            },
+            {
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                {
+                  '@type': 'ListItem',
+                  position: 1,
+                  name: 'Home',
+                  item: 'https://helmterminal.dev',
+                },
+                {
+                  '@type': 'ListItem',
+                  position: 2,
+                  name: 'Pricing',
+                  item: 'https://helmterminal.dev/pricing',
+                },
+              ],
+            },
+          ]),
+        }}
+      />
+
       {/* Grid background */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,_rgba(255,255,255,0.02)_1px,_transparent_1px),linear-gradient(to_bottom,_rgba(255,255,255,0.02)_1px,_transparent_1px)] bg-[length:64px_64px] opacity-40" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,_rgba(255,255,255,0.01)_1px,_transparent_1px),linear-gradient(to_bottom,_rgba(255,255,255,0.01)_1px,_transparent_1px)] bg-[length:64px_64px] opacity-40" />
       </div>
 
       {/* ── Navigation ── */}
-      <nav className="relative container mx-auto px-6 py-5">
+      <nav className="relative container mx-auto px-6 py-3 glass-nav">
         <div className="flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-3">
-            <HelmMark size={44} />
-            <div>
-              <div className="text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">
-                Helm
-              </div>
-              <div className="type-eyebrow text-[var(--color-text-muted)]">
-                Financial Intelligence
-              </div>
-            </div>
+          <Link href="/" className="flex items-center space-x-2.5">
+            <HelmMark size={32} />
+            <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text-primary)]">Helm</span>
           </Link>
           <div className="flex items-center gap-5">
             <Link
               href="/analyze"
               className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
             >
-              Free Stock Analysis
+              Analyze
             </Link>
             <Link
               href="/pricing"
@@ -142,33 +191,33 @@ export default async function PricingPage() {
       </nav>
 
       {/* ── Header ── */}
-      <section className="relative container mx-auto px-6 pt-16 pb-12 text-center">
+      <section className="relative container mx-auto px-6 pt-12 pb-8 text-center">
         <AnimatedSection delay={0}>
-          <p className="type-eyebrow text-[var(--color-accent-gold)] mb-4">
+          <p className="type-eyebrow text-[var(--color-gold)] mb-3">
             Pricing
           </p>
-          <h1 className="type-display text-[var(--color-text-primary)] mb-4">
+          <h1 className="type-h1 text-[var(--color-text-primary)] mb-3">
             Simple, transparent pricing
           </h1>
-          <p className="text-[var(--color-text-secondary)] max-w-lg mx-auto text-sm">
+          <p className="type-body text-[var(--color-text-secondary)] max-w-lg mx-auto">
             Start with full access to the Helm dashboard for free. Upgrade to
             Pro when you need institutional-grade intelligence.
           </p>
         </AnimatedSection>
       </section>
 
-      {/* ── Pricing Cards ── */}
-      <section className="relative container mx-auto px-6 pb-24">
-        <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto pt-4">
-          {/* Free Tier */}
-          <AnimatedSection delay={100}>
-            <div className="h-full flex flex-col border border-[var(--color-border-base)] rounded-[4px] bg-[var(--color-bg-surface)] p-6">
-              <div className="mb-6">
+      {/* ── Pricing Cards — Pro dominant ── */}
+      <section className="relative container mx-auto px-6 pb-16">
+        <div className="grid md:grid-cols-5 gap-4 max-w-3xl mx-auto pt-4">
+          {/* Free Tier — understated */}
+          <AnimatedSection delay={100} className="md:col-span-2">
+            <div className="h-full flex flex-col glass-card rounded-lg shadow-card p-5">
+              <div className="mb-5">
                 <p className="type-label text-[var(--color-text-muted)] mb-2">
                   Free
                 </p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold text-[var(--color-text-primary)] tabular-nums">
+                  <span className="type-data text-[var(--color-text-primary)]">
                     $0
                   </span>
                   <span className="text-sm text-[var(--color-text-muted)]">
@@ -176,15 +225,15 @@ export default async function PricingPage() {
                   </span>
                 </div>
                 <p className="text-sm text-[var(--color-text-secondary)] mt-2">
-                  Everything you need to monitor your financial system.
+                  Everything you need to monitor your finances.
                 </p>
               </div>
 
-              <div className="border-t border-[var(--color-border-subtle)] pt-5 mb-6 flex-1">
-                <ul className="space-y-3">
+              <div className="border-t border-[var(--color-border-subtle)] pt-4 mb-5 flex-1">
+                <ul className="space-y-2.5">
                   {freeTierFeatures.map((f) => (
                     <li key={f.label} className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-[2px] bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] flex items-center justify-center shrink-0">
+                      <div className="w-5 h-5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] flex items-center justify-center shrink-0">
                         <f.icon className="w-3 h-3 text-[var(--color-text-secondary)]" />
                       </div>
                       <span className="text-sm text-[var(--color-text-primary)]">
@@ -202,38 +251,32 @@ export default async function PricingPage() {
 
               <Link
                 href="/signup"
-                className="block w-full text-center text-sm font-medium py-2.5 rounded-[2px] border border-[var(--color-text-secondary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
+                className="block w-full text-center text-sm font-medium py-2.5 rounded border border-[var(--color-border-strong)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
               >
                 Get Started Free
               </Link>
             </div>
           </AnimatedSection>
 
-          {/* Pro Tier */}
-          <AnimatedSection delay={200}>
+          {/* Pro Tier — dominant */}
+          <AnimatedSection delay={200} className="md:col-span-3">
             <div className="relative">
-              {/* Subtle gold glow behind card */}
-              <div
-                className="absolute inset-0 rounded-[4px] pointer-events-none"
-                style={{
-                  background:
-                    'radial-gradient(ellipse at 50% 40%, rgba(184,145,74,0.06) 0%, transparent 70%)',
-                }}
-              />
-              <div className="h-full flex flex-col border border-[#B8914A] rounded-[4px] bg-[var(--color-bg-surface)] p-6 relative">
+              <div className="h-full flex flex-col glass-card animate-border-glow rounded-lg shadow-elevated p-6 relative overflow-hidden">
+                {/* Brass top-rule */}
+                <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #B8914A, rgba(184,145,74,0.3), transparent)' }} />
                 {/* Coming Soon badge */}
                 <div className="absolute -top-3 right-6 z-10">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#B8914A] text-black text-[11px] font-medium uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)' }}>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-[var(--color-gold)] text-[var(--color-bg-base)] text-[11px] font-medium uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)' }}>
                     Coming Soon
                   </span>
                 </div>
 
-                <div className="mb-6 mt-2">
-                  <p className="type-label text-[#B8914A] mb-2">
+                <div className="mb-5 mt-1">
+                  <p className="type-label text-[var(--color-gold)] mb-2">
                     Pro
                   </p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-[#B8914A] tabular-nums">
+                    <span className="type-data text-[var(--color-gold)] glow-gold">
                       $24.99
                     </span>
                     <span className="text-sm text-[var(--color-text-muted)]">
@@ -245,15 +288,15 @@ export default async function PricingPage() {
                   </p>
                 </div>
 
-                <div className="border-t border-[rgba(184,145,74,0.25)] pt-5 mb-6 flex-1">
+                <div className="border-t border-[var(--color-gold-border)] pt-4 mb-5 flex-1">
                   <p className="text-xs text-[var(--color-text-muted)] mb-3 font-medium">
                     Everything in Free, plus:
                   </p>
-                  <ul className="space-y-3">
+                  <ul className="space-y-2.5">
                     {proTierFeatures.map((f) => (
                       <li key={f.label} className="flex items-center gap-3">
-                        <div className="w-5 h-5 rounded-[2px] bg-[rgba(184,145,74,0.06)] border border-[rgba(184,145,74,0.25)] flex items-center justify-center shrink-0">
-                          <f.icon className="w-3 h-3 text-[#B8914A]" />
+                        <div className="w-5 h-5 rounded bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center shrink-0">
+                          <f.icon className="w-3 h-3 text-[var(--color-gold)]" />
                         </div>
                         <span className="text-sm text-[var(--color-text-primary)]">
                           {f.label}
@@ -265,7 +308,7 @@ export default async function PricingPage() {
 
                 <Link
                   href="/signup"
-                  className="block w-full text-center text-sm font-medium py-2.5 rounded-[2px] bg-[#B8914A] text-[#070C17] hover:bg-[#C9A45E] transition-colors"
+                  className="block w-full text-center text-sm font-medium py-2.5 rounded bg-[var(--color-gold)] text-[var(--color-bg-base)] hover:bg-[var(--color-gold-hi)] transition-colors hover:shadow-glow-gold transition-shadow"
                 >
                   Join Waitlist for Pro
                 </Link>
@@ -276,15 +319,15 @@ export default async function PricingPage() {
       </section>
 
       {/* ── FAQ ── */}
-      <section className="relative container mx-auto px-6 pb-24">
+      <section className="relative container mx-auto px-6 pb-16">
         <div className="max-w-2xl mx-auto">
           <AnimatedSection delay={0}>
-            <h2 className="type-h1 text-[var(--color-text-primary)] text-center mb-8">
+            <h2 className="type-h2 text-[var(--color-text-primary)] text-center mb-6">
               Frequently asked questions
             </h2>
           </AnimatedSection>
           <AnimatedSection delay={100}>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {faqItems.map((item) => (
                 <FAQItem
                   key={item.question}

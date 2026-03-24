@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getPortfolioSummary } from '@/lib/portfolio-analysis';
 import { generateTaxReport } from '@/lib/tax-analysis';
 import { getQuote } from '@/lib/financial-data';
+import { CACHE_TTL as GLOBAL_CACHE_TTL } from '@/lib/financial-config';
 
 // ── Types ──
 
@@ -142,7 +143,7 @@ function classifyInvestor(params: {
 // ── Cache (1 hour per user+period) ──
 
 const wrappedCache = new Map<string, { data: WrappedData; expiry: number }>();
-const CACHE_TTL = 60 * 60 * 1000;
+const CACHE_TTL = GLOBAL_CACHE_TTL.portfolioWrapped;
 
 function getCached(key: string): WrappedData | null {
   const entry = wrappedCache.get(key);

@@ -5,8 +5,9 @@
  * Powers: prices, news, ticker details, dividends, splits, and sentiment.
  */
 
+import { POLYGON_BATCH_SIZE, POLYGON_BATCH_DELAY_MS, POLYGON_CALL_DELAY_MS } from '@/lib/financial-config';
+
 const POLYGON_BASE_URL = 'https://api.polygon.io';
-const BATCH_SIZE = 5; // Max parallel requests per batch (free tier: 5/min)
 
 function getApiKey(): string {
   const key = process.env.POLYGON_API_KEY;
@@ -162,8 +163,8 @@ export async function getBatchPrices(tickers: string[]): Promise<Map<string, Pol
     }
   }
 
-  for (let i = 0; i < uniqueTickers.length; i += BATCH_SIZE) {
-    const batch = uniqueTickers.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < uniqueTickers.length; i += POLYGON_BATCH_SIZE) {
+    const batch = uniqueTickers.slice(i, i + POLYGON_BATCH_SIZE);
 
     const batchResults = await Promise.allSettled(
       batch.map(ticker => getLatestPrice(ticker))
@@ -176,8 +177,8 @@ export async function getBatchPrices(tickers: string[]): Promise<Map<string, Pol
       }
     }
 
-    if (i + BATCH_SIZE < uniqueTickers.length) {
-      await new Promise(resolve => setTimeout(resolve, 250));
+    if (i + POLYGON_BATCH_SIZE < uniqueTickers.length) {
+      await new Promise(resolve => setTimeout(resolve, POLYGON_BATCH_DELAY_MS));
     }
   }
 
@@ -258,9 +259,9 @@ export async function getBatchTickerDetails(
       results.set(unique[i], details);
     }
 
-    // 300ms delay between calls to stay under 5/min rate limit
+    // Delay between calls to stay under rate limit
     if (i < unique.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, POLYGON_CALL_DELAY_MS));
     }
   }
 
@@ -326,7 +327,7 @@ export async function getUpcomingDividends(
         }
 
         // Rate limit delay
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, POLYGON_CALL_DELAY_MS));
       } catch {
         // Skip individual ticker failures
       }
@@ -392,7 +393,7 @@ export async function getRecentSplits(
           });
         }
 
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, POLYGON_CALL_DELAY_MS));
       } catch {
         // Skip individual ticker failures
       }

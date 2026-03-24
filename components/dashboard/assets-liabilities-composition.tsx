@@ -33,22 +33,22 @@ export function AssetsLiabilitiesComposition({
   const debtToAssetRatio = totalAssets > 0 ? (totalLiabilities / totalAssets) * 100 : 0;
 
   return (
-    <DataPanel variant="metric" elevation="hover">
+    <DataPanel variant="metric">
       <DataPanelHeader>
         <DataPanelTitle>Financial Composition</DataPanelTitle>
       </DataPanelHeader>
       <DataPanelContent>
         {/* Summary Metrics */}
-        <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-[var(--color-border-subtle)]">
+        <div className="grid grid-cols-2 gap-3 mb-3 pb-3 border-b border-[var(--color-border-subtle)]">
           <div>
             <div className="type-caption text-[var(--color-text-secondary)] mb-1">Total Assets</div>
-            <div className="type-data text-xl font-tabular text-[var(--color-positive)]">
+            <div className="type-data text-xl font-tabular text-[var(--color-positive)] glow-positive">
               {formatCurrency(totalAssets)}
             </div>
           </div>
           <div>
             <div className="type-caption text-[var(--color-text-secondary)] mb-1">Total Liabilities</div>
-            <div className="type-data text-xl font-tabular text-[var(--color-negative)]">
+            <div className="type-data text-xl font-tabular text-[var(--color-negative)] glow-negative">
               {formatCurrency(totalLiabilities)}
             </div>
           </div>

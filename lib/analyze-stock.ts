@@ -8,17 +8,18 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import OpenAI from 'openai';
 import type { StockAnalysis } from '@/components/analysis/types';
+import { CACHE_TTL } from '@/lib/financial-config';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const CACHE_TTL_HOURS = 24;
+const CACHE_TTL_MS = CACHE_TTL.stockAnalysis;
 
 // ── Check cache ──
 
 async function getCachedAnalysis(ticker: string): Promise<StockAnalysis | null> {
   try {
     const supabase = await createServiceClient();
-    const cutoff = new Date(Date.now() - CACHE_TTL_HOURS * 60 * 60 * 1000).toISOString();
+    const cutoff = new Date(Date.now() - CACHE_TTL_MS).toISOString();
 
     const { data, error } = await supabase
       .from('analysis_cache')

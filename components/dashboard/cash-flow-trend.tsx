@@ -41,8 +41,8 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
   const avgNetFlow = recentThreeMonths.reduce((sum, d) => sum + d.netFlow, 0) / recentThreeMonths.length;
 
   return (
-    <DataPanel variant="chart" elevation="hover">
-      <DataPanelHeader>
+    <DataPanel variant="chart">
+      <DataPanelHeader className="!pt-3 !pb-1.5">
         <div className="flex items-center justify-between">
           <DataPanelTitle>Cash Flow</DataPanelTitle>
           <div className="flex items-center gap-1.5 type-label text-xs">
@@ -60,11 +60,11 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
       </DataPanelHeader>
       <DataPanelContent>
         {/* Multi-Metric Display */}
-        <div className="grid grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-3 gap-3 mb-3">
           {/* Net Flow */}
           <div>
             <div className="type-caption text-[var(--color-text-secondary)] mb-1">Net Flow</div>
-            <div className="type-data text-xl font-tabular text-[var(--color-text-primary)]">
+            <div className="type-data text-xl font-tabular text-[var(--color-text-primary)] glow-white">
               {formatCurrency(currentMonth.netFlow)}
             </div>
           </div>
@@ -72,7 +72,7 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
           {/* Income */}
           <div>
             <div className="type-caption text-[var(--color-text-secondary)] mb-1">Income</div>
-            <div className="type-data text-xl font-tabular text-[var(--color-positive)]">
+            <div className="type-data text-xl font-tabular text-[var(--color-positive)] glow-positive">
               {formatCurrency(currentMonth.income)}
             </div>
           </div>
@@ -80,7 +80,7 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
           {/* Expenses */}
           <div>
             <div className="type-caption text-[var(--color-text-secondary)] mb-1">Expenses</div>
-            <div className="type-data text-xl font-tabular text-[var(--color-negative)]">
+            <div className="type-data text-xl font-tabular text-[var(--color-negative)] glow-negative">
               {formatCurrency(currentMonth.expenses)}
             </div>
           </div>
@@ -96,7 +96,7 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
         </div>
 
         {/* Trend Chart */}
-        <div className="h-[80px]">
+        <div className="h-[120px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data}>
               <defs>
@@ -111,7 +111,7 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
                 fontSize={9}
                 tickLine={false}
                 axisLine={false}
-                fontFamily="var(--font-inter)"
+                fontFamily="var(--font-mono)"
               />
               <YAxis
                 stroke="var(--color-text-secondary)"
@@ -119,7 +119,7 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                fontFamily="var(--font-inter)"
+                fontFamily="var(--font-mono)"
               />
               <Tooltip
                 formatter={(value) => {
@@ -131,14 +131,14 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
                 contentStyle={{
                   backgroundColor: 'var(--color-bg-elevated)',
                   border: '1px solid var(--color-border-base)',
-                  borderRadius: '4px',
+                  borderRadius: '8px',
                   color: 'var(--color-text-primary)',
                   fontSize: '11px',
                 }}
                 labelStyle={{
                   color: 'var(--color-text-secondary)',
                   fontSize: '10px',
-                  fontFamily: 'var(--font-inter)',
+                  fontFamily: 'var(--font-mono)',
                 }}
               />
               <Area

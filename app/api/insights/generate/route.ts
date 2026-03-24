@@ -1,5 +1,19 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import {
+  TAX_RATE,
+  TAX_INSIGHT_HIGH_PRIORITY_LOSS,
+  CONCENTRATION_THRESHOLDS,
+  SPENDING_SPIKE_FACTOR,
+  SPENDING_SPIKE_MIN_DOLLARS,
+  CREDIT_CARD_ALERT_THRESHOLD,
+  CREDIT_CARD_APR,
+  HYSA_APY,
+  EMERGENCY_FUND_MONTHS,
+  IDLE_CASH_MONTHS,
+  IDLE_CASH_HIGH_PRIORITY,
+  STRONG_SAVINGS_RATE,
+} from '@/lib/financial-config';
 
 interface InsightCandidate {
   insight_type: 'spending' | 'portfolio' | 'market' | 'tax' | 'credit';
@@ -92,7 +106,7 @@ export async function POST() {
 
     for (const [category, currentAmt] of Object.entries(currentSpending)) {
       const prevAmt = prevSpending[category] || 0;
-      if (prevAmt > 0 && currentAmt > prevAmt * 1.3 && currentAmt - prevAmt > 50) {
+      if (prevAmt > 0 && currentAmt > prevAmt * SPENDING_SPIKE_FACTOR && currentAmt - prevAmt > SPENDING_SPIKE_MIN_DOLLARS) {
         const increase = Math.round(((currentAmt - prevAmt) / prevAmt) * 100);
         const displayName = formatCategoryName(category);
         candidates.push({
@@ -113,7 +127,7 @@ export async function POST() {
     if (totalPortfolio > 0) {
       for (const h of holdings) {
         const weight = Number(h.total_value) / totalPortfolio;
-        if (weight > 0.25 && holdings.length > 1) {
+        if (weight > CONCENTRATION_THRESHOLDS.critical / 100 && holdings.length > 1) {
           candidates.push({
             insight_type: 'portfolio',
             priority: weight > 0.5 ? 'high' : 'medium',
@@ -130,19 +144,21 @@ export async function POST() {
     }
 
     // --- RULE 3: Unrealized losses (tax-loss harvesting) ---
+    // Must match lib/tax-analysis.ts: no minimum loss filter, uses TAX_RATE from config
     const losers = holdings.filter(h =>
-      h.unrealised_gain_loss && Number(h.unrealised_gain_loss) < -100
+      h.unrealised_gain_loss != null && Number(h.unrealised_gain_loss) < 0
     );
     if (losers.length > 0) {
       const totalLoss = losers.reduce((s, h) => s + Math.abs(Number(h.unrealised_gain_loss)), 0);
+      const estimatedSavings = Math.round(totalLoss * TAX_RATE);
       const tickers = losers.map(h => h.ticker).join(', ');
       candidates.push({
         insight_type: 'tax',
-        priority: totalLoss > 1000 ? 'high' : 'medium',
-        title: `$${totalLoss.toLocaleString()} tax-loss harvesting opportunity`,
-        description: `You have unrealized losses in ${tickers} that could offset capital gains and reduce your tax bill by up to $${Math.round(totalLoss * 0.25).toLocaleString()}.`,
+        priority: totalLoss > TAX_INSIGHT_HIGH_PRIORITY_LOSS ? 'high' : 'medium',
+        title: `$${estimatedSavings.toLocaleString()} in potential tax savings`,
+        description: `You have $${totalLoss.toLocaleString()} in unrealized losses across ${tickers} that could offset capital gains and reduce your tax bill at an estimated ${(TAX_RATE * 100).toFixed(0)}% combined rate.`,
         recommended_action: `Review selling ${tickers} to harvest losses, then reinvest in similar but not "substantially identical" assets to maintain exposure.`,
-        estimated_impact_amount: Math.round(totalLoss * 0.25),
+        estimated_impact_amount: estimatedSavings,
         confidence_score: 0.85,
         source_type: 'rule_based',
         related_entity_type: 'holding',
@@ -161,15 +177,15 @@ export async function POST() {
       .reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
 
     // If more than 6 months expenses sitting in cash
-    if (monthlyExpenses > 0 && totalCash > monthlyExpenses * 6) {
-      const excess = totalCash - (monthlyExpenses * 6);
+    if (monthlyExpenses > 0 && totalCash > monthlyExpenses * IDLE_CASH_MONTHS) {
+      const excess = totalCash - (monthlyExpenses * IDLE_CASH_MONTHS);
       candidates.push({
         insight_type: 'spending',
-        priority: excess > 10000 ? 'high' : 'medium',
+        priority: excess > IDLE_CASH_HIGH_PRIORITY ? 'high' : 'medium',
         title: `$${excess.toLocaleString()} idle cash could be working harder`,
-        description: `You have $${totalCash.toLocaleString()} in cash accounts - about ${Math.round(totalCash / monthlyExpenses)} months of expenses. After keeping a 6-month emergency fund ($${Math.round(monthlyExpenses * 6).toLocaleString()}), $${excess.toLocaleString()} could earn more in a high-yield savings account or short-term investments.`,
-        recommended_action: `Consider moving excess cash to a high-yield savings account (currently ~4-5% APY) or short-term Treasury bills.`,
-        estimated_impact_amount: Math.round(excess * 0.045),
+        description: `You have $${totalCash.toLocaleString()} in cash accounts - about ${Math.round(totalCash / monthlyExpenses)} months of expenses. After keeping a ${IDLE_CASH_MONTHS}-month emergency fund ($${Math.round(monthlyExpenses * IDLE_CASH_MONTHS).toLocaleString()}), $${excess.toLocaleString()} could earn more in a high-yield savings account or short-term investments.`,
+        recommended_action: `Consider moving excess cash to a high-yield savings account or short-term Treasury bills.`,
+        estimated_impact_amount: Math.round(excess * HYSA_APY),
         confidence_score: 0.8,
         source_type: 'rule_based',
       });
@@ -180,14 +196,14 @@ export async function POST() {
     for (const card of creditCards) {
       const balance = Math.abs(Number(card.current_balance));
       // We don't have credit limits in this query, but flag high balances
-      if (balance > 5000) {
+      if (balance > CREDIT_CARD_ALERT_THRESHOLD) {
         candidates.push({
           insight_type: 'credit',
-          priority: balance > 10000 ? 'high' : 'medium',
+          priority: balance > CREDIT_CARD_ALERT_THRESHOLD * 2 ? 'high' : 'medium',
           title: `${card.account_name} balance is $${balance.toLocaleString()}`,
-          description: `Carrying a high credit card balance incurs significant interest charges. At a typical 24% APR, this costs roughly $${Math.round(balance * 0.24 / 12).toLocaleString()}/month in interest.`,
+          description: `Carrying a high credit card balance incurs significant interest charges. At a typical ${(CREDIT_CARD_APR * 100).toFixed(0)}% APR, this costs roughly $${Math.round(balance * CREDIT_CARD_APR / 12).toLocaleString()}/month in interest.`,
           recommended_action: `Prioritize paying down this balance. Consider a balance transfer to a 0% APR card if available.`,
-          estimated_impact_amount: Math.round(balance * 0.24),
+          estimated_impact_amount: Math.round(balance * CREDIT_CARD_APR),
           confidence_score: 0.85,
           source_type: 'rule_based',
           related_entity_type: 'account',
@@ -231,7 +247,7 @@ export async function POST() {
         .reduce((s, t) => s + Number(t.amount), 0);
       const savingsRate = monthlyIncome > 0 ? (monthlyIncome - monthlyExpenses) / monthlyIncome : 0;
 
-      if (savingsRate > 0.3) {
+      if (savingsRate > STRONG_SAVINGS_RATE) {
         candidates.push({
           insight_type: 'spending',
           priority: 'low',

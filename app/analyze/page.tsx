@@ -31,23 +31,20 @@ const POPULAR_TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'
 
 export default function AnalyzePage() {
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)] flex flex-col">
-      {/* Nav — matches landing page */}
-      <nav className="container mx-auto px-6 py-5">
+    <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col">
+      {/* Nav */}
+      <nav className="container mx-auto px-6 py-3 glass-nav">
         <div className="flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-3">
-            <HelmMark size={44} />
-            <div>
-              <div className="text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">Helm</div>
-              <div className="type-eyebrow text-[var(--color-text-muted)]">Financial Intelligence</div>
-            </div>
+          <Link href="/" className="flex items-center space-x-2.5">
+            <HelmMark size={32} />
+            <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text-primary)]">Helm</span>
           </Link>
           <div className="flex items-center gap-5">
             <Link
               href="/analyze"
               className="text-sm text-[var(--color-text-primary)] font-medium transition-colors"
             >
-              Free Stock Analysis
+              Analyze
             </Link>
             <Link
               href="/login"
@@ -60,28 +57,31 @@ export default function AnalyzePage() {
       </nav>
 
       {/* Hero */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-20">
-        <div className="max-w-2xl w-full text-center space-y-8">
+      <main className="flex-1 flex flex-col items-center justify-center px-6 py-16">
+        <div className="max-w-xl w-full text-center space-y-6">
           <div className="space-y-3">
             <div className="type-eyebrow text-[var(--color-gold)]">Free Stock Analysis</div>
             <h1 className="type-display text-[var(--color-text-primary)]">
               Institutional-grade<br />stock analysis
             </h1>
-            <p className="text-[15px] leading-relaxed text-[var(--color-text-secondary)] max-w-lg mx-auto">
-              AI-powered reports with real-time pricing, financial metrics, analyst consensus, earnings data, and news sentiment for any publicly traded stock.
+            <p className="type-body text-[var(--color-text-secondary)] max-w-lg mx-auto">
+              AI-powered reports with real-time pricing, financial metrics, analyst consensus, earnings data, and news sentiment.
             </p>
           </div>
 
-          <TickerSearch />
+          {/* Command palette style search */}
+          <div className="glass-card rounded-md p-5">
+            <TickerSearch />
+          </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="type-eyebrow text-[var(--color-text-muted)]">Popular</div>
             <div className="flex flex-wrap justify-center gap-2">
               {POPULAR_TICKERS.map((ticker) => (
                 <a
                   key={ticker}
                   href={`/analyze/${ticker}`}
-                  className="px-3 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm text-[12px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors"
+                  className="px-3 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[12px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors"
                   style={{ fontFamily: 'var(--font-mono)' }}
                 >
                   {ticker}

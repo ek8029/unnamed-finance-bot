@@ -43,7 +43,7 @@ export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
   const netFlow = currentMonth.inflows - currentMonth.outflows;
 
   return (
-    <DataPanel variant="chart" elevation="hover">
+    <DataPanel variant="chart">
       <DataPanelHeader>
         <div className="flex items-center justify-between">
           <DataPanelTitle>Accounts Overview</DataPanelTitle>
@@ -138,7 +138,7 @@ export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
                     fontSize={10}
                     tickLine={false}
                     axisLine={false}
-                    fontFamily="var(--font-inter)"
+                    fontFamily="var(--font-mono)"
                   />
                   <YAxis
                     stroke="var(--color-text-secondary)"
@@ -146,7 +146,7 @@ export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                    fontFamily="var(--font-inter)"
+                    fontFamily="var(--font-mono)"
                   />
                   <Tooltip
                     formatter={(value) => {
@@ -165,7 +165,7 @@ export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
                     labelStyle={{
                       color: 'var(--color-text-secondary)',
                       fontSize: '10px',
-                      fontFamily: 'var(--font-inter)',
+                      fontFamily: 'var(--font-mono)',
                     }}
                   />
                   <Area

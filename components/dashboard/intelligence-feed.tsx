@@ -55,18 +55,21 @@ const TYPE_CONFIG = {
 const PRIORITY_CONFIG = {
   high: {
     dot: 'bg-[var(--color-negative)]',
+    dotGlow: '0 0 8px rgba(248,113,113,0.4)',
     border: 'border-l-[var(--color-negative)]',
     label: 'HIGH',
     labelClass: 'text-[var(--color-negative)]',
   },
   medium: {
     dot: 'bg-[var(--color-gold)]',
+    dotGlow: '0 0 8px rgba(184,145,74,0.4)',
     border: 'border-l-[var(--color-gold)]',
     label: 'MED',
     labelClass: 'text-[var(--color-gold)]',
   },
   low: {
     dot: 'bg-[var(--color-text-muted)]',
+    dotGlow: undefined,
     border: 'border-l-[var(--color-border-strong)]',
     label: 'LOW',
     labelClass: 'text-[var(--color-text-muted)]',
@@ -123,7 +126,7 @@ function AlertRow({
             open && 'rotate-180',
           )}
         />
-        <div className={cn('w-1.5 h-1.5 rounded-full shrink-0', priorityConfig.dot)} />
+        <div className={cn('w-1.5 h-1.5 rounded-full shrink-0', priorityConfig.dot)} style={priorityConfig.dotGlow ? { boxShadow: priorityConfig.dotGlow } : undefined} />
         <Icon className="w-3.5 h-3.5 shrink-0 text-[var(--color-text-muted)]" />
         <span className="text-sm text-[var(--color-text-primary)] truncate flex-1">
           {insight.title}
@@ -205,7 +208,7 @@ function InsightCard({
   return (
     <div
       className={cn(
-        'bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl',
+        'glass-panel rounded-lg',
         'border-l-[3px]',
         priorityConfig.border,
         'transition-all duration-200 hover:border-[var(--color-border-strong)]',
@@ -216,7 +219,7 @@ function InsightCard({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <div className={cn('w-2 h-2 rounded-full', priorityConfig.dot)} />
+              <div className={cn('w-2 h-2 rounded-full', priorityConfig.dot)} style={priorityConfig.dotGlow ? { boxShadow: priorityConfig.dotGlow } : undefined} />
               <span className={cn('type-eyebrow', priorityConfig.labelClass)}>
                 {priorityConfig.label}
               </span>
@@ -341,7 +344,7 @@ export function IntelligenceFeed({
   // Loading state — single shimmer bar
   if (loading) {
     return (
-      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl">
+      <div className="glass-panel rounded-lg">
         <div className="flex items-center gap-3 px-5 py-3.5">
           <Loader2 className="w-4 h-4 text-[var(--color-gold)] animate-spin" />
           <span className="text-sm text-[var(--color-text-muted)]">Loading alerts…</span>
@@ -353,7 +356,7 @@ export function IntelligenceFeed({
   // Error or no insights at all
   if (error || insights.length === 0) {
     return (
-      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl">
+      <div className="glass-panel rounded-lg">
         <div className="flex items-center gap-3 px-5 py-3.5">
           <Zap className="w-4 h-4 text-[var(--color-text-muted)]" />
           <span className="text-sm text-[var(--color-text-muted)]">
@@ -365,7 +368,7 @@ export function IntelligenceFeed({
   }
 
   return (
-    <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl overflow-hidden">
+    <div className="glass-panel rounded-lg overflow-hidden">
       {/* Collapsed header row */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -493,7 +496,7 @@ export function IntelligenceFeedExpanded({
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="animate-pulse bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl p-5"
+            className="animate-pulse glass-panel rounded-lg p-5"
           >
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-full bg-neutral-700" />
@@ -510,7 +513,7 @@ export function IntelligenceFeedExpanded({
 
   if (error || activeInsights.length === 0) {
     return (
-      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl p-10 text-center">
+      <div className="glass-panel rounded-lg p-10 text-center">
         <div className="w-10 h-10 rounded-lg bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center mx-auto mb-3">
           <Activity className="w-5 h-5 text-[var(--color-gold)]" />
         </div>

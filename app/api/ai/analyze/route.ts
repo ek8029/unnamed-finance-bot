@@ -5,6 +5,7 @@ import { generateTaxReport, type TaxHarvestReport } from '@/lib/tax-analysis';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { checkAnalysisQuota, recordAnalysisUsage } from '@/lib/tier';
+import { TAX_RATE } from '@/lib/financial-config';
 import OpenAI from 'openai';
 
 function getOpenAIClient() {
@@ -306,7 +307,7 @@ function buildTaxContext(
     lines.push(`Short-term gains: +$${fmt(stGains)} | Short-term losses: -$${fmt(Math.abs(stLosses))}`);
     lines.push(`Long-term gains: +$${fmt(ltGains)} | Long-term losses: -$${fmt(Math.abs(ltLosses))}`);
     lines.push(`Net realized: $${fmt(net)}`);
-    lines.push(`Estimated tax on realized gains (32% blended): $${fmt(Math.max(0, net) * 0.32)}`);
+    lines.push(`Estimated tax on realized gains (${(TAX_RATE * 100).toFixed(0)}% blended): $${fmt(Math.max(0, net) * TAX_RATE)}`);
     lines.push('', 'TRANSACTIONS:');
     for (const g of sells) {
       lines.push(`  ${g.ticker} | ${g.transaction_date} | ${g.shares} shares | Proceeds: $${fmt(g.proceeds)} | Cost: $${fmt(g.cost_basis)} | ${Number(g.gain_loss) >= 0 ? '+' : ''}$${fmt(Number(g.gain_loss))} (${g.gain_loss_type})`);
@@ -399,7 +400,7 @@ RESPONSE TYPE: Tax Analysis
 You are a tax-aware portfolio analyst reviewing the user's ACTUAL positions, realized gains, and harvesting opportunities. Every number comes from their linked accounts.
 
 ADDITIONAL TAX RULES:
-- Use a 32% blended federal+state rate for estimates unless the user specifies otherwise.
+- Use a ${(TAX_RATE * 100).toFixed(0)}% blended federal+state rate for estimates unless the user specifies otherwise.
 - Distinguish short-term (ordinary income rates, up to 37%) vs long-term (0/15/20%) clearly.
 - Explain the $3,000/year capital loss deduction limit and carryover rules when relevant.
 - Flag wash sale risks (buying substantially identical security within 30 days).

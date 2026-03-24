@@ -2,6 +2,24 @@ import { NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { plaidClient, mapPlaidAccountType } from '@/lib/plaid';
 import { RemovedTransaction, Transaction } from 'plaid';
+import {
+  TAX_RATE,
+  TAX_INSIGHT_HIGH_PRIORITY_LOSS,
+  CONCENTRATION_THRESHOLDS,
+  SPENDING_SPIKE_FACTOR,
+  SPENDING_SPIKE_MIN_DOLLARS,
+  CREDIT_CARD_ALERT_THRESHOLD,
+  CREDIT_CARD_APR,
+  HYSA_APY,
+  EMERGENCY_FUND_MONTHS,
+  IDLE_CASH_MONTHS,
+  IDLE_CASH_HIGH_PRIORITY,
+  STRONG_SAVINGS_RATE,
+  RISK_FREE_RATE,
+  TRADING_DAYS_PER_YEAR,
+  HEALTH_SCORE_WEIGHTS,
+  SAVINGS_SCORE_MULTIPLIER,
+} from '@/lib/financial-config';
 
 // Vercel Cron uses GET requests
 export const dynamic = 'force-dynamic';
@@ -793,9 +811,9 @@ async function updatePortfolioPerformance(supabase: ServiceClient, userId: strin
         const mean = rets.reduce((s, r) => s + r, 0) / rets.length;
         const vari = rets.reduce((s, r) => s + (r - mean) ** 2, 0) / (rets.length - 1);
         const dv = Math.sqrt(vari);
-        volatility = dv * Math.sqrt(252);
-        const rfd = 0.05 / 252;
-        sharpeRatio = dv > 0 ? ((mean - rfd) / dv) * Math.sqrt(252) : null;
+        volatility = dv * Math.sqrt(TRADING_DAYS_PER_YEAR);
+        const rfd = RISK_FREE_RATE / TRADING_DAYS_PER_YEAR;
+        sharpeRatio = dv > 0 ? ((mean - rfd) / dv) * Math.sqrt(TRADING_DAYS_PER_YEAR) : null;
       }
     }
 
@@ -957,12 +975,15 @@ async function computeSnapshots(supabase: ServiceClient, userId: string) {
     }
 
     const debtScore = Math.round(Math.max(0, Math.min(100, (1 - debtToAssetRatio) * 100)));
-    const savingsScore = Math.round(Math.min(100, savingsRate * 300));
-    const emergencyScore = Math.round(Math.min(100, (emergencyFundMonths / 6) * 100));
+    const savingsScore = Math.round(Math.min(100, savingsRate * SAVINGS_SCORE_MULTIPLIER));
+    const emergencyScore = Math.round(Math.min(100, (emergencyFundMonths / EMERGENCY_FUND_MONTHS) * 100));
     const divScore = Math.round(diversification * 100);
 
     const overallScore = Math.round(
-      debtScore * 0.25 + savingsScore * 0.25 + emergencyScore * 0.25 + divScore * 0.25,
+      debtScore * HEALTH_SCORE_WEIGHTS.debt +
+      savingsScore * HEALTH_SCORE_WEIGHTS.savings +
+      emergencyScore * HEALTH_SCORE_WEIGHTS.emergencyFund +
+      divScore * HEALTH_SCORE_WEIGHTS.diversification,
     );
 
     await supabase.from('financial_health_scores').insert({
@@ -1069,7 +1090,7 @@ async function generateInsights(supabase: ServiceClient, userId: string): Promis
 
     for (const [category, currentAmt] of Object.entries(currentSpending)) {
       const prevAmt = prevSpending[category] || 0;
-      if (prevAmt > 0 && currentAmt > prevAmt * 1.3 && currentAmt - prevAmt > 50) {
+      if (prevAmt > 0 && currentAmt > prevAmt * SPENDING_SPIKE_FACTOR && currentAmt - prevAmt > SPENDING_SPIKE_MIN_DOLLARS) {
         const increase = Math.round(((currentAmt - prevAmt) / prevAmt) * 100);
         const displayName = formatCategoryName(category);
         candidates.push({
@@ -1093,12 +1114,12 @@ async function generateInsights(supabase: ServiceClient, userId: string): Promis
     if (totalPortfolio > 0) {
       for (const h of holdings) {
         const weight = Number(h.total_value) / totalPortfolio;
-        if (weight > 0.25 && holdings.length > 1) {
+        if (weight > CONCENTRATION_THRESHOLDS.critical / 100 && holdings.length > 1) {
           candidates.push({
             insight_type: 'portfolio',
             priority: weight > 0.5 ? 'high' : 'medium',
             title: `${h.ticker} is ${Math.round(weight * 100)}% of your portfolio`,
-            description: `A single position making up more than 25% of your portfolio increases risk. ${h.ticker} currently represents $${Number(h.total_value).toLocaleString()} of your $${totalPortfolio.toLocaleString()} portfolio.`,
+            description: `A single position making up more than ${CONCENTRATION_THRESHOLDS.critical}% of your portfolio increases risk. ${h.ticker} currently represents $${Number(h.total_value).toLocaleString()} of your $${totalPortfolio.toLocaleString()} portfolio.`,
             recommended_action: `Consider diversifying by reducing your ${h.ticker} position or adding to other holdings.`,
             confidence_score: 0.95,
             source_type: 'rule_based',
@@ -1110,9 +1131,10 @@ async function generateInsights(supabase: ServiceClient, userId: string): Promis
     }
 
     // --- Tax-loss harvesting ---
+    // Must match lib/tax-analysis.ts: no minimum filter, uses TAX_RATE from config
     const losers = holdings.filter(
       (h: { unrealised_gain_loss: number | null }) =>
-        h.unrealised_gain_loss && Number(h.unrealised_gain_loss) < -100,
+        h.unrealised_gain_loss != null && Number(h.unrealised_gain_loss) < 0,
     );
     if (losers.length > 0) {
       const totalLoss = losers.reduce(
@@ -1120,14 +1142,15 @@ async function generateInsights(supabase: ServiceClient, userId: string): Promis
           s + Math.abs(Number(h.unrealised_gain_loss)),
         0,
       );
+      const estimatedSavings = Math.round(totalLoss * TAX_RATE);
       const tickers = losers.map((h: { ticker: string }) => h.ticker).join(', ');
       candidates.push({
         insight_type: 'tax',
-        priority: totalLoss > 1000 ? 'high' : 'medium',
-        title: `$${totalLoss.toLocaleString()} tax-loss harvesting opportunity`,
-        description: `You have unrealized losses in ${tickers} that could offset capital gains and reduce your tax bill by up to $${Math.round(totalLoss * 0.25).toLocaleString()}.`,
+        priority: totalLoss > TAX_INSIGHT_HIGH_PRIORITY_LOSS ? 'high' : 'medium',
+        title: `$${estimatedSavings.toLocaleString()} in potential tax savings`,
+        description: `You have $${totalLoss.toLocaleString()} in unrealized losses across ${tickers} that could offset capital gains and reduce your tax bill at an estimated ${(TAX_RATE * 100).toFixed(0)}% combined rate.`,
         recommended_action: `Review selling ${tickers} to harvest losses, then reinvest in similar but not "substantially identical" assets to maintain exposure.`,
-        estimated_impact_amount: Math.round(totalLoss * 0.25),
+        estimated_impact_amount: estimatedSavings,
         confidence_score: 0.85,
         source_type: 'rule_based',
         related_entity_type: 'holding',
@@ -1149,15 +1172,15 @@ async function generateInsights(supabase: ServiceClient, userId: string): Promis
       .filter((t: { amount: number }) => Number(t.amount) < 0)
       .reduce((s: number, t: { amount: number }) => s + Math.abs(Number(t.amount)), 0);
 
-    if (monthlyExpenses > 0 && totalCash > monthlyExpenses * 6) {
-      const excess = totalCash - monthlyExpenses * 6;
+    if (monthlyExpenses > 0 && totalCash > monthlyExpenses * IDLE_CASH_MONTHS) {
+      const excess = totalCash - monthlyExpenses * IDLE_CASH_MONTHS;
       candidates.push({
         insight_type: 'spending',
-        priority: excess > 10000 ? 'high' : 'medium',
+        priority: excess > IDLE_CASH_HIGH_PRIORITY ? 'high' : 'medium',
         title: `$${excess.toLocaleString()} idle cash could be working harder`,
-        description: `You have $${totalCash.toLocaleString()} in cash accounts - about ${Math.round(totalCash / monthlyExpenses)} months of expenses. After keeping a 6-month emergency fund ($${Math.round(monthlyExpenses * 6).toLocaleString()}), $${excess.toLocaleString()} could earn more.`,
+        description: `You have $${totalCash.toLocaleString()} in cash accounts - about ${Math.round(totalCash / monthlyExpenses)} months of expenses. After keeping a ${IDLE_CASH_MONTHS}-month emergency fund ($${Math.round(monthlyExpenses * IDLE_CASH_MONTHS).toLocaleString()}), $${excess.toLocaleString()} could earn more.`,
         recommended_action: `Consider moving excess cash to a high-yield savings account or short-term investments.`,
-        estimated_impact_amount: Math.round(excess * 0.045),
+        estimated_impact_amount: Math.round(excess * HYSA_APY),
         confidence_score: 0.8,
         source_type: 'rule_based',
       });

@@ -31,7 +31,7 @@ export function MetricsGrid({ metrics }: { metrics: AnalysisMetric[] }) {
       {metrics.map((metric, i) => (
         <div key={i} className="bg-[var(--color-bg-surface)] px-4 py-3">
           <div className="type-caption text-[var(--color-text-muted)] mb-1">{metric.label}</div>
-          <div className="text-[17px] font-bold tracking-tight text-[var(--color-text-primary)] font-tabular">{metric.value}</div>
+          <div className="text-[17px] font-bold tracking-tight text-[var(--color-text-primary)] font-tabular glow-gold-subtle">{metric.value}</div>
           <div className="flex items-center gap-2 mt-0.5">
             {metric.change && (
               <span
@@ -127,14 +127,14 @@ export function StockAnalysisCard({ analysis, showWatermark = false }: { analysi
   return (
     <div>
       <div
-        className="rounded-sm overflow-hidden"
-        style={{ background: 'var(--color-bg-surface)', border: `1px solid ${verdictConfig.border}` }}
+        className="glass-card rounded-sm overflow-hidden"
+        style={{ border: `1px solid ${verdictConfig.border}` }}
       >
         <CardHeader
           left={
             <div>
               <div className="flex items-center gap-2.5">
-                <span className="text-lg font-bold tracking-tight text-[var(--color-text-primary)]">{analysis.ticker}</span>
+                <span className="text-lg font-bold tracking-tight text-[var(--color-text-primary)] glow-white">{analysis.ticker}</span>
                 <span
                   className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm text-[10px] font-semibold uppercase tracking-wider"
                   style={{ color: verdictConfig.color, background: verdictConfig.bg, border: `1px solid ${verdictConfig.border}` }}

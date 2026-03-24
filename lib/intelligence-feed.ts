@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getPortfolioSummary, type PortfolioSummary } from '@/lib/portfolio-analysis';
 import { generateTaxReport } from '@/lib/tax-analysis';
 import { generateEarningsReport } from '@/lib/earnings-analysis';
+import { SECTOR_CONCENTRATION_THRESHOLD, CACHE_TTL } from '@/lib/financial-config';
 
 // ── Types ──
 
@@ -45,7 +46,7 @@ export interface FeedInsight {
 // ── Cache (1-hour TTL per user) ──
 
 const feedCache = new Map<string, { data: FeedInsight[]; expiry: number }>();
-const FEED_CACHE_TTL = 60 * 60 * 1000;
+const FEED_CACHE_TTL = CACHE_TTL.intelligenceFeed;
 
 function getCachedFeed(userId: string): FeedInsight[] | null {
   const entry = feedCache.get(userId);
@@ -392,14 +393,14 @@ function performanceHighlights(portfolio: PortfolioSummary): FeedInsight[] {
 function rebalancingSuggestions(portfolio: PortfolioSummary): FeedInsight[] {
   const insights: FeedInsight[] = [];
 
-  // Flag sectors above 40%
+  // Flag sectors above threshold
   for (const sector of portfolio.sectorExposure) {
-    if (sector.allocationPct > 40 && sector.sector !== 'Unknown') {
+    if (sector.allocationPct > SECTOR_CONCENTRATION_THRESHOLD && sector.sector !== 'Unknown') {
       insights.push({
         id: makeId(),
         type: 'risk',
         source: 'rebalancing',
-        priority: sector.allocationPct > 50 ? 'high' : 'medium',
+        priority: sector.allocationPct > SECTOR_CONCENTRATION_THRESHOLD + 10 ? 'high' : 'medium',
         title: `${sector.sector} sector is ${sector.allocationPct.toFixed(0)}% of portfolio`,
         summary: `Your ${sector.sector} exposure ($${fmt(sector.totalValue)}) is ${sector.allocationPct.toFixed(1)}%. Diversification guidelines suggest <30-40% in any single sector.`,
         detail: `Holdings: ${sector.holdings.map(h => `${h.ticker} ($${fmt(h.value)})`).join(', ')}. A 20% sector decline would cost $${fmt(sector.totalValue * 0.2)}.`,

@@ -20,6 +20,12 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
     return 'text-[var(--color-negative)]';
   };
 
+  const getScoreGlow = (score: number) => {
+    if (score >= 80) return 'glow-positive';
+    if (score >= 60) return 'glow-gold-subtle';
+    return 'glow-negative';
+  };
+
   const getScoreVariant = (score: number): 'positive' | 'warning' | 'negative' => {
     if (score >= 80) return 'positive';
     if (score >= 60) return 'warning';
@@ -34,15 +40,24 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
   };
 
   return (
-    <DataPanel variant="metric" elevation="hover" className="h-full">
+    <DataPanel variant="metric" className="h-full">
       <DataPanelHeader>
         <DataPanelTitle>Financial Health</DataPanelTitle>
       </DataPanelHeader>
-      <DataPanelContent className="space-y-4">
+      <DataPanelContent className="space-y-3">
         {/* Compact Circular Score */}
         <div className="flex flex-col items-center justify-center">
-          <div className="relative h-32 w-32">
-            <svg className="h-32 w-32 -rotate-90" viewBox="0 0 128 128">
+          <div className="relative h-40 w-40">
+            <svg className="h-40 w-40 -rotate-90" viewBox="0 0 128 128">
+              <defs>
+                <filter id="scoreGlow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
               <circle
                 cx="64"
                 cy="64"
@@ -61,10 +76,11 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
                 strokeLinecap="round"
                 strokeDasharray={`${(healthScore.score / 100) * 351.68} 351.68`}
                 className={getScoreColor(healthScore.score)}
+                filter="url(#scoreGlow)"
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className={`type-data text-3xl font-tabular ${getScoreColor(healthScore.score)}`}>
+              <span className={`type-data font-tabular ${getScoreColor(healthScore.score)} ${getScoreGlow(healthScore.score)}`}>
                 {healthScore.score}
               </span>
               <span className="type-caption text-[var(--color-text-secondary)]">{getScoreLabel(healthScore.score)}</span>

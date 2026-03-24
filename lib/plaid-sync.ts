@@ -7,6 +7,11 @@ import { plaidClient, mapPlaidAccountType } from '@/lib/plaid';
 import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
 import { extractPlaidError } from '@/lib/plaid-errors';
 import { RemovedTransaction, Transaction } from 'plaid';
+import {
+  EMERGENCY_FUND_MONTHS,
+  SAVINGS_SCORE_MULTIPLIER,
+  HEALTH_SCORE_WEIGHTS,
+} from '@/lib/financial-config';
 
 // The supabase client type (works with both user-scoped and service-role clients)
 type SupabaseClient = {
@@ -495,11 +500,14 @@ export async function computeSnapshots(
     }
 
     const debtScore = Math.round(Math.max(0, Math.min(100, (1 - debtToAssetRatio) * 100)));
-    const savingsScore = Math.round(Math.min(100, savingsRate * 300));
-    const emergencyScore = Math.round(Math.min(100, (emergencyFundMonths / 6) * 100));
+    const savingsScore = Math.round(Math.min(100, savingsRate * SAVINGS_SCORE_MULTIPLIER));
+    const emergencyScore = Math.round(Math.min(100, (emergencyFundMonths / EMERGENCY_FUND_MONTHS) * 100));
     const divScore = Math.round(diversification * 100);
     const overallScore = Math.round(
-      debtScore * 0.25 + savingsScore * 0.25 + emergencyScore * 0.25 + divScore * 0.25
+      debtScore * HEALTH_SCORE_WEIGHTS.debt +
+      savingsScore * HEALTH_SCORE_WEIGHTS.savings +
+      emergencyScore * HEALTH_SCORE_WEIGHTS.emergencyFund +
+      divScore * HEALTH_SCORE_WEIGHTS.diversification
     );
 
     await supabase

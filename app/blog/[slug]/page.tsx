@@ -78,23 +78,34 @@ export default async function BlogPost({ params }: PageProps) {
   const shareText = encodeURIComponent(`${post.title} — by @helmterminal\n\nhttps://helmterminal.dev/blog/${slug}`);
   const shareUrl = `https://x.com/intent/tweet?text=${shareText}`;
 
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: post.title,
-    description: post.description,
-    datePublished: post.date,
-    author: { '@type': 'Organization', name: post.author },
-    publisher: {
-      '@type': 'Organization',
-      name: 'Helm Terminal',
-      url: 'https://helmterminal.dev',
+  const jsonLd = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: post.title,
+      description: post.description,
+      datePublished: post.date,
+      author: { '@type': 'Organization', name: post.author },
+      publisher: {
+        '@type': 'Organization',
+        name: 'Helm Terminal',
+        url: 'https://helmterminal.dev',
+      },
+      url: `https://helmterminal.dev/blog/${slug}`,
+      ...(post.image && {
+        image: `https://helmterminal.dev${post.image}`,
+      }),
     },
-    url: `https://helmterminal.dev/blog/${slug}`,
-    ...(post.image && {
-      image: `https://helmterminal.dev${post.image}`,
-    }),
-  };
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://helmterminal.dev' },
+        { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://helmterminal.dev/blog' },
+        { '@type': 'ListItem', position: 3, name: post.title, item: `https://helmterminal.dev/blog/${slug}` },
+      ],
+    },
+  ];
 
   return (
     <main className="min-h-screen bg-[var(--color-bg-base)]">
@@ -105,18 +116,11 @@ export default async function BlogPost({ params }: PageProps) {
       />
 
       {/* ── Navigation ── */}
-      <nav className="container mx-auto px-6 py-5">
+      <nav className="container mx-auto px-6 py-3 glass-nav">
         <div className="flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-3">
-            <HelmMark size={44} />
-            <div>
-              <div className="text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">
-                Helm
-              </div>
-              <div className="type-eyebrow text-[var(--color-text-muted)]">
-                Financial Intelligence
-              </div>
-            </div>
+          <Link href="/" className="flex items-center space-x-2.5">
+            <HelmMark size={32} />
+            <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text-primary)]">Helm</span>
           </Link>
           <div className="flex items-center gap-5">
             <Link
@@ -145,7 +149,7 @@ export default async function BlogPost({ params }: PageProps) {
       <div className="container mx-auto px-6 pt-8 pb-24">
         <div className="max-w-5xl mx-auto lg:grid lg:grid-cols-[1fr_220px] lg:gap-12">
           {/* ── Article ── */}
-          <article className="max-w-3xl">
+          <article className="max-w-3xl glass-panel rounded-lg p-6 md:p-8">
             {/* Back link */}
             <Link
               href="/blog"

@@ -7,24 +7,23 @@ import { cva, type VariantProps } from 'class-variance-authority';
 // ============================================================================
 
 const dataPanelVariants = cva(
-  'rounded-md border transition-all duration-150',
+  'rounded-lg border relative overflow-hidden transition-all duration-200',
   {
     variants: {
       variant: {
-        // Single key metric displays
-        metric: 'bg-[var(--color-bg-surface)] border-[var(--color-border-base)] hover:border-[var(--color-border-strong)]',
-        grid: 'bg-[var(--color-bg-surface)] border-[var(--color-border-base)]',
-        chart: 'bg-[var(--color-bg-surface)] border-[var(--color-border-base)] hover:border-[var(--color-border-strong)]',
-        feed: 'bg-[var(--color-bg-surface)] border-[var(--color-border-base)]',
+        metric: 'glass-card hover-glow-card',
+        grid: 'glass-card',
+        chart: 'glass-card hover-glow-card',
+        feed: 'glass-card',
       },
-      elevation: {
+      accent: {
         none: '',
-        hover: 'hover:shadow-sm hover:-translate-y-px',
+        brass: '',
       },
     },
     defaultVariants: {
       variant: 'metric',
-      elevation: 'none',
+      accent: 'none',
     },
   }
 );
@@ -38,12 +37,31 @@ export interface DataPanelProps
     VariantProps<typeof dataPanelVariants> {}
 
 const DataPanel = React.forwardRef<HTMLDivElement, DataPanelProps>(
-  ({ className, variant, elevation, ...props }, ref) => (
+  ({ className, variant, accent, children, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn(dataPanelVariants({ variant, elevation }), className)}
+      className={cn(dataPanelVariants({ variant, accent }), className)}
       {...props}
-    />
+    >
+      {accent === 'brass' && (
+        <>
+          <div
+            className="absolute top-0 left-0 right-0 h-[2px] rounded-t-lg animate-gradient-shift"
+            style={{
+              background: 'linear-gradient(90deg, transparent, rgba(184,145,74,0.6), #B8914A, rgba(184,145,74,0.6), transparent)',
+              backgroundSize: '200% 100%',
+            }}
+          />
+          <div
+            className="absolute inset-0 rounded-lg pointer-events-none"
+            style={{
+              background: 'radial-gradient(ellipse 50% 30% at 50% 0%, rgba(184,145,74,0.04) 0%, transparent 60%)',
+            }}
+          />
+        </>
+      )}
+      {children}
+    </div>
   )
 );
 DataPanel.displayName = 'DataPanel';
@@ -58,7 +76,7 @@ const DataPanelHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn('flex flex-col space-y-1 card-padding pb-3', className)}
+    className={cn('flex flex-col space-y-1 card-padding pb-2', className)}
     {...props}
   />
 ));

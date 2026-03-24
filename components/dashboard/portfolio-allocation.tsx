@@ -1,7 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DataPanel,
+  DataPanelContent,
+  DataPanelHeader,
+  DataPanelTitle,
+} from '@/components/ui/data-panel';
 import { PortfolioAllocation as Allocation } from '@/types';
 import { useFormat } from '@/hooks/use-format';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -46,14 +51,14 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <PieChartIcon className="h-5 w-5" />
+    <DataPanel variant="metric">
+      <DataPanelHeader>
+        <DataPanelTitle className="flex items-center gap-2">
+          <PieChartIcon className="h-5 w-5 text-[var(--color-gold)]" />
           Portfolio Allocation
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+        </DataPanelTitle>
+      </DataPanelHeader>
+      <DataPanelContent>
         {/* Stacked layout: chart on top, legend below */}
         <div className="flex flex-col gap-4">
           {/* Donut Chart */}
@@ -100,7 +105,7 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
                   labelStyle={{
                     color: 'var(--color-text-secondary)',
                     fontSize: '10px',
-                    fontFamily: 'var(--font-inter)',
+                    fontFamily: 'var(--font-mono)',
                   }}
                 />
               </PieChart>
@@ -141,7 +146,7 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
                     <span className="type-label text-[var(--color-text-primary)]">{item.name}</span>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0 ml-2">
-                    <span className="type-mono text-[var(--color-text-primary)]">
+                    <span className="type-mono text-[var(--color-text-primary)] glow-white">
                       {item.percentage.toFixed(1)}%
                     </span>
                     <span className="type-mono text-[var(--color-text-muted)]">
@@ -153,7 +158,7 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
             })}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </DataPanelContent>
+    </DataPanel>
   );
 }

@@ -5,6 +5,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
+import { TAX_RATE, WASH_SALE_WINDOW_DAYS } from '@/lib/financial-config';
 
 // ── Types ──
 
@@ -154,7 +155,7 @@ async function checkWashSaleRisk(
   if (tickers.length === 0) return new Map();
 
   const supabase = await createClient();
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  const thirtyDaysAgo = new Date(Date.now() - WASH_SALE_WINDOW_DAYS * 24 * 60 * 60 * 1000)
     .toISOString()
     .split('T')[0];
 
@@ -182,8 +183,6 @@ async function checkWashSaleRisk(
 
 // ── Tax savings calculation ──
 
-const DEFAULT_TAX_RATE = 0.32; // 32% combined federal + state
-
 function calculateSavings(loss: number, taxRate: number): number {
   return Math.abs(loss) * taxRate;
 }
@@ -192,7 +191,7 @@ function calculateSavings(loss: number, taxRate: number): number {
 
 export async function generateTaxReport(
   userId: string,
-  taxRate: number = DEFAULT_TAX_RATE,
+  taxRate: number = TAX_RATE,
 ): Promise<TaxHarvestReport> {
   const holdings = await fetchHoldingsWithLosses(userId);
 

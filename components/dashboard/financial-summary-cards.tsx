@@ -71,7 +71,7 @@ export function FinancialSummaryCards({
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
       {summaryData.map((item, index) => {
         const Icon = item.icon;
         const isPositive = (item.change ?? 0) > 0;
@@ -83,22 +83,23 @@ export function FinancialSummaryCards({
           <div
             key={item.title}
             ref={ref}
-            className="transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+            className="transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{
               opacity: isVisible ? 1 : 0,
               transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
+              filter: isVisible ? 'blur(0px)' : 'blur(4px)',
               transitionDelay: `${index * 80}ms`,
             }}
           >
-            <DataPanel variant="metric" elevation="hover">
-              <DataPanelHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3">
+            <DataPanel variant="metric">
+              <DataPanelHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 p-2.5">
                 <DataPanelTitle className="text-xs">{item.title}</DataPanelTitle>
-                <div className={`rounded-md p-1.5 ${item.iconBg}`}>
+                <div className={`rounded-md p-1.5 ${item.iconBg} ${index === 0 ? 'shadow-glow-gold' : ''}`}>
                   <Icon className={`h-3.5 w-3.5 ${item.iconColor}`} />
                 </div>
               </DataPanelHeader>
-              <DataPanelContent className="p-3 pt-0">
-                <div className="type-data font-tabular text-[var(--color-text-primary)]">
+              <DataPanelContent className="p-2.5 pt-0">
+                <div className="type-data-sm font-tabular text-[var(--color-text-primary)] glow-white">
                   {formatCurrency(displayValue)}
                 </div>
                 <div className="flex items-center gap-1 mt-1 whitespace-nowrap overflow-hidden">

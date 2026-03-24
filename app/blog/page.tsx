@@ -32,20 +32,13 @@ export default function BlogIndex() {
   const posts = getAllPosts();
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg-base)]">
+    <main className="min-h-screen bg-[var(--color-bg-base)] bg-depth">
       {/* ── Navigation ── */}
-      <nav className="container mx-auto px-6 py-5">
+      <nav className="container mx-auto px-6 py-3 glass-nav">
         <div className="flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-3">
-            <HelmMark size={44} />
-            <div>
-              <div className="text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">
-                Helm
-              </div>
-              <div className="type-eyebrow text-[var(--color-text-muted)]">
-                Financial Intelligence
-              </div>
-            </div>
+          <Link href="/" className="flex items-center space-x-2.5">
+            <HelmMark size={32} />
+            <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text-primary)]">Helm</span>
           </Link>
           <div className="flex items-center gap-5">
             <Link
@@ -92,7 +85,7 @@ export default function BlogIndex() {
               <Link
                 key={post.slug}
                 href={`/blog/${post.slug}`}
-                className="group block bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] hover:border-[var(--color-border-strong)] rounded-sm p-6 transition-colors"
+                className="group block glass-card hover-glow-card rounded-sm p-6 transition-colors"
               >
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   {post.tags.map((tag) => (

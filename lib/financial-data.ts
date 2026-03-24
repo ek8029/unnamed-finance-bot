@@ -6,6 +6,8 @@
  * In-memory cache with 15-minute TTL to avoid rate limits.
  */
 
+import { CACHE_TTL as GLOBAL_CACHE_TTL } from '@/lib/financial-config';
+
 const FINNHUB_BASE = 'https://finnhub.io/api/v1';
 
 function getApiKey(): string {
@@ -22,7 +24,7 @@ interface CacheEntry<T> {
 }
 
 const cache = new Map<string, CacheEntry<unknown>>();
-const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+const CACHE_TTL = GLOBAL_CACHE_TTL.financialData;
 
 function getCached<T>(key: string): T | null {
   const entry = cache.get(key);

@@ -9,6 +9,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { getCompanyProfile } from '@/lib/financial-data';
+import { CONCENTRATION_THRESHOLDS, CACHE_TTL } from '@/lib/financial-config';
 
 // ── Types ──
 
@@ -63,7 +64,7 @@ export interface PortfolioSummary {
 // ── In-memory cache (5 min TTL) ──
 
 const cache = new Map<string, { data: PortfolioSummary; expiry: number }>();
-const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_TTL_MS = CACHE_TTL.portfolioAnalysis;
 
 function getCached(userId: string): PortfolioSummary | null {
   const entry = cache.get(userId);
@@ -170,31 +171,31 @@ function enrichHoldings(raw: RawHolding[], totalValue: number): EnrichedHolding[
 function getConcentrationAlerts(holdings: EnrichedHolding[]): ConcentrationAlert[] {
   const alerts: ConcentrationAlert[] = [];
   for (const h of holdings) {
-    if (h.allocationPct >= 25) {
+    if (h.allocationPct >= CONCENTRATION_THRESHOLDS.critical) {
       alerts.push({
         ticker: h.ticker,
         securityName: h.securityName,
         allocationPct: h.allocationPct,
         totalValue: h.totalValue,
-        threshold: 25,
+        threshold: CONCENTRATION_THRESHOLDS.critical,
         severity: 'critical',
       });
-    } else if (h.allocationPct >= 20) {
+    } else if (h.allocationPct >= CONCENTRATION_THRESHOLDS.high) {
       alerts.push({
         ticker: h.ticker,
         securityName: h.securityName,
         allocationPct: h.allocationPct,
         totalValue: h.totalValue,
-        threshold: 20,
+        threshold: CONCENTRATION_THRESHOLDS.high,
         severity: 'high',
       });
-    } else if (h.allocationPct >= 10) {
+    } else if (h.allocationPct >= CONCENTRATION_THRESHOLDS.medium) {
       alerts.push({
         ticker: h.ticker,
         securityName: h.securityName,
         allocationPct: h.allocationPct,
         totalValue: h.totalValue,
-        threshold: 10,
+        threshold: CONCENTRATION_THRESHOLDS.medium,
         severity: 'medium',
       });
     }

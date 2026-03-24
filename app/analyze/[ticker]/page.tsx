@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { analyzeStock } from '@/lib/analyze-stock';
 import { AnalysisResultClient } from './analysis-result-client';
+import { HelmMark } from '@/components/helm-mark';
 
 interface Props {
   params: Promise<{ ticker: string }>;
@@ -44,7 +45,7 @@ export default async function TickerAnalysisPage({ params }: Props) {
 
   if (!analysis) {
     return (
-      <div className="min-h-screen bg-[var(--color-bg-base)] flex flex-col">
+      <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col">
         <AnalysisNav />
         <main className="flex-1 flex items-center justify-center px-6">
           <div className="text-center space-y-4 max-w-md">
@@ -66,22 +67,33 @@ export default async function TickerAnalysisPage({ params }: Props) {
   }
 
   // JSON-LD structured data
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: `${analysis.companyName} (${symbol}) Stock Analysis`,
-    description: analysis.summary,
-    author: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
-    publisher: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
-    datePublished: new Date().toISOString(),
-    mainEntityOfPage: `https://helmterminal.dev/analyze/${symbol}`,
-  };
+  const jsonLd = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: `${analysis.companyName} (${symbol}) Stock Analysis`,
+      description: analysis.summary,
+      author: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
+      publisher: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
+      datePublished: new Date().toISOString(),
+      mainEntityOfPage: `https://helmterminal.dev/analyze/${symbol}`,
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://helmterminal.dev' },
+        { '@type': 'ListItem', position: 2, name: 'Stock Analysis', item: 'https://helmterminal.dev/analyze' },
+        { '@type': 'ListItem', position: 3, name: `${symbol} Analysis`, item: `https://helmterminal.dev/analyze/${symbol}` },
+      ],
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)] flex flex-col">
+    <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col">
       <AnalysisNav />
 
-      <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-10">
+      <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-8">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -120,16 +132,11 @@ export default async function TickerAnalysisPage({ params }: Props) {
 
 function AnalysisNav() {
   return (
-    <header className="border-b border-[var(--color-border-subtle)]">
-      <div className="max-w-3xl mx-auto px-6 h-14 flex items-center justify-between">
+    <header className="glass-nav">
+      <div className="max-w-3xl mx-auto px-6 h-12 flex items-center justify-between">
         <a href="/" className="flex items-center gap-2.5">
-          <svg width="24" height="24" viewBox="0 0 56 56" fill="none">
-            <path d="M 10.06 39.94 A 22 22 0 1 1 45.94 39.94" stroke="#B8914A" strokeWidth="4.5" strokeLinecap="round" />
-            <line x1="28" y1="7" x2="28" y2="49" stroke="#E8ECF1" strokeWidth="5" strokeLinecap="round" />
-            <line x1="7" y1="28" x2="49" y2="28" stroke="#E8ECF1" strokeWidth="5" strokeLinecap="round" />
-            <circle cx="28" cy="28" r="10" fill="#B8914A" />
-          </svg>
-          <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text-primary)]">Helm Terminal</span>
+          <HelmMark size={24} />
+          <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text-primary)]">Helm</span>
         </a>
         <div className="flex items-center gap-4">
           <a
@@ -141,7 +148,7 @@ function AnalysisNav() {
           </a>
           <a
             href="/signup"
-            className="px-4 py-1.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[12px] font-semibold rounded-sm transition-colors"
+            className="px-4 py-1.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[12px] font-semibold rounded transition-colors"
           >
             Get Started
           </a>

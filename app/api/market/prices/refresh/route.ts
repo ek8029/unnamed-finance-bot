@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { getBatchPrices } from '@/lib/polygon';
+import { RISK_FREE_RATE, TRADING_DAYS_PER_YEAR } from '@/lib/financial-config';
 
 export async function POST() {
   try {
@@ -103,11 +104,12 @@ export async function POST() {
 
       const currentPrice = price.close;
       const shares = Number(holding.shares);
-      const totalCostBasis = Number(holding.total_cost_basis);
+      const hasCostBasis = holding.total_cost_basis != null;
+      const totalCostBasis = hasCostBasis ? Number(holding.total_cost_basis) : 0;
       const totalValue = shares * currentPrice;
-      const unrealisedGainLoss = totalValue - totalCostBasis;
+      const unrealisedGainLoss = hasCostBasis ? totalValue - totalCostBasis : null;
       const unrealisedGainLossPct =
-        totalCostBasis > 0 ? unrealisedGainLoss / totalCostBasis : 0;
+        hasCostBasis && totalCostBasis > 0 ? (totalValue - totalCostBasis) / totalCostBasis : null;
 
       // Day change: compare to prior close from market_prices, fall back to intraday
       const prevClose = prevCloseMap.get(ticker);
@@ -381,11 +383,11 @@ async function updatePortfolioPerformance(
         const variance =
           dailyReturns.reduce((s, r) => s + (r - meanReturn) ** 2, 0) / (dailyReturns.length - 1);
         const dailyVol = Math.sqrt(variance);
-        volatility = dailyVol * Math.sqrt(252); // annualized
+        volatility = dailyVol * Math.sqrt(TRADING_DAYS_PER_YEAR); // annualized
 
-        const riskFreeDaily = 0.05 / 252;
+        const riskFreeDaily = RISK_FREE_RATE / TRADING_DAYS_PER_YEAR;
         const excessReturn = meanReturn - riskFreeDaily;
-        sharpeRatio = dailyVol > 0 ? (excessReturn / dailyVol) * Math.sqrt(252) : null;
+        sharpeRatio = dailyVol > 0 ? (excessReturn / dailyVol) * Math.sqrt(TRADING_DAYS_PER_YEAR) : null;
       }
     }
 
