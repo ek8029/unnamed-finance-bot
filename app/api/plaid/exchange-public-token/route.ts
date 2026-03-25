@@ -66,13 +66,16 @@ export async function POST(request: Request) {
     // Try to find existing institution by plaid ID or slug
     let institutionId: string;
 
+    const safeInstitutionId = plaidInstitutionId?.replace(/[^a-zA-Z0-9_-]/g, '') || '';
+    const safeSlug = slug.replace(/[^a-z0-9-]/g, '');
+
     const { data: existingInstitution } = await supabase
       .from('institutions')
       .select('id')
       .or(
-        plaidInstitutionId
-          ? `plaid_institution_id.eq.${plaidInstitutionId},slug.eq.${slug}`
-          : `slug.eq.${slug}`
+        safeInstitutionId
+          ? `plaid_institution_id.eq.${safeInstitutionId},slug.eq.${safeSlug}`
+          : `slug.eq.${safeSlug}`
       )
       .limit(1)
       .single();

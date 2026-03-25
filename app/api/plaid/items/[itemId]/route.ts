@@ -59,23 +59,18 @@ export async function DELETE(
     if (linkedAccounts && linkedAccounts.length > 0) {
       const accountIds = linkedAccounts.map(a => a.id);
 
-      // Delete holdings for these accounts
-      for (const accountId of accountIds) {
-        await supabase
-          .from('holdings')
-          .delete()
-          .eq('account_id', accountId)
-          .eq('user_id', user.id);
-      }
+      // Delete holdings and transactions for these accounts in bulk
+      await supabase
+        .from('holdings')
+        .delete()
+        .in('account_id', accountIds)
+        .eq('user_id', user.id);
 
-      // Delete transactions for these accounts
-      for (const accountId of accountIds) {
-        await supabase
-          .from('transactions')
-          .delete()
-          .eq('account_id', accountId)
-          .eq('user_id', user.id);
-      }
+      await supabase
+        .from('transactions')
+        .delete()
+        .in('account_id', accountIds)
+        .eq('user_id', user.id);
     }
 
     // 3. Delete linked accounts

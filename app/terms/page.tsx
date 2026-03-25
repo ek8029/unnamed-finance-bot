@@ -5,8 +5,6 @@ export const metadata = {
   description: 'Terms and conditions for using the Helm financial intelligence platform.',
 };
 
-// TODO: Replace placeholder text with formally reviewed legal terms before production launch.
-
 export default function TermsPage() {
   return (
     <LegalPageLayout title="Terms of Service" lastUpdated="March 10, 2026">
@@ -147,7 +145,7 @@ export default function TermsPage() {
       <section>
         <h2>11. Governing Law</h2>
         <p>
-          These Terms shall be governed by and construed in accordance with the laws of the United States.
+          These Terms shall be governed by and construed in accordance with the laws of the Commonwealth of Pennsylvania.
           Any disputes arising from these Terms or the Service shall be resolved through binding arbitration
           in accordance with the rules of the American Arbitration Association.
         </p>

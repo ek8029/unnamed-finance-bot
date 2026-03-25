@@ -116,6 +116,10 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
               <Skeleton className="h-16 w-full" />
               <Skeleton className="h-16 w-full" />
             </div>
+          ) : sortedHoldings.length === 0 ? (
+            <div className="py-12 text-center">
+              <p className="type-body text-[var(--color-text-muted)]">No holdings to display</p>
+            </div>
           ) : (
             <table className="w-full">
               <thead>

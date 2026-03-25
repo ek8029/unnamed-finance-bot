@@ -163,31 +163,34 @@ export async function syncPlaidItem(
     }
   }
 
-  // Process modified transactions
-  for (const t of allModified) {
-    await supabase
-      .from('transactions')
-      .update({
-        amount: t.amount * -1,
-        description: t.name,
-        merchant_name: t.merchant_name || null,
-        is_pending: t.pending,
-      })
-      .eq('plaid_transaction_id', t.transaction_id)
-      .eq('user_id', userId);
-    transactionsModified++;
+  // Process modified transactions (concurrent updates)
+  if (allModified.length > 0) {
+    await Promise.all(allModified.map(t =>
+      supabase
+        .from('transactions')
+        .update({
+          amount: t.amount * -1,
+          description: t.name,
+          merchant_name: t.merchant_name || null,
+          is_pending: t.pending,
+        })
+        .eq('plaid_transaction_id', t.transaction_id)
+        .eq('user_id', userId)
+    ));
+    transactionsModified = allModified.length;
   }
 
-  // Process removed transactions
-  for (const t of allRemoved) {
-    if (t.transaction_id) {
-      await supabase
-        .from('transactions')
-        .delete()
-        .eq('plaid_transaction_id', t.transaction_id)
-        .eq('user_id', userId);
-      transactionsRemoved++;
-    }
+  // Process removed transactions (single bulk delete)
+  const removedIds = allRemoved
+    .map(t => t.transaction_id)
+    .filter((id): id is string => Boolean(id));
+  if (removedIds.length > 0) {
+    await supabase
+      .from('transactions')
+      .delete()
+      .in('plaid_transaction_id', removedIds)
+      .eq('user_id', userId);
+    transactionsRemoved = removedIds.length;
   }
 
   // Save the new cursor
@@ -228,15 +231,48 @@ export async function syncPlaidItem(
         plaidSecurities.map(s => [s.security_id, s])
       );
 
+      // Batch-fetch all linked_accounts for this user into a Map
+      const { data: userLinkedAccounts } = await supabase
+        .from('linked_accounts')
+        .select('id, plaid_account_id')
+        .eq('user_id', userId);
+
+      const linkedAccountMap = new Map(
+        (userLinkedAccounts || []).map((a: { plaid_account_id: string; id: string }) => [a.plaid_account_id, a.id])
+      );
+
+      // Collect unique securities for batch upsert
+      const securitiesUpserts = new Map<string, {
+        ticker: string;
+        security_name: string;
+        asset_class: string;
+        exchange: string | null;
+        cusip: string | null;
+        isin: string | null;
+        current_price: number | null;
+      }>();
+
+      // Pre-compute holding data keyed by ticker for the holdings upsert
+      const holdingsByTicker: {
+        ticker: string;
+        plaid_account_id: string;
+        quantity: number;
+        institution_value: number | null;
+        close_price: number | null;
+        cost_basis: number | null;
+      }[] = [];
+
       for (const holding of plaidHoldings) {
         const security = securityMap.get(holding.security_id);
         if (!security) continue;
 
         const ticker = security.ticker_symbol || security.name || 'UNKNOWN';
+        const linkedAccountId = linkedAccountMap.get(holding.account_id);
+        if (!linkedAccountId) continue;
 
-        const { data: dbSecurity } = await supabase
-          .from('securities')
-          .upsert({
+        // Collect security upsert (deduped by ticker)
+        if (!securitiesUpserts.has(ticker)) {
+          securitiesUpserts.set(ticker, {
             ticker: ticker,
             security_name: security.name || ticker,
             asset_class: mapSecurityType(security.type || ''),
@@ -247,42 +283,61 @@ export async function syncPlaidItem(
               ?? (holding.quantity > 0 && holding.institution_value
                 ? holding.institution_value / holding.quantity
                 : null),
-          }, {
+          });
+        }
+
+        holdingsByTicker.push({
+          ticker,
+          plaid_account_id: holding.account_id,
+          quantity: holding.quantity,
+          institution_value: holding.institution_value,
+          close_price: security.close_price,
+          cost_basis: holding.cost_basis ?? null,
+        });
+      }
+
+      // Batch upsert all securities at once
+      const securitiesArray = Array.from(securitiesUpserts.values());
+      let dbSecurities: { id: string; ticker: string }[] = [];
+      if (securitiesArray.length > 0) {
+        const { data } = await supabase
+          .from('securities')
+          .upsert(securitiesArray, {
             onConflict: 'ticker',
             ignoreDuplicates: false,
           })
-          .select('id')
-          .maybeSingle();
+          .select('id, ticker');
 
-        if (!dbSecurity) continue;
+        dbSecurities = data || [];
+      }
 
-        const { data: linkedAccount } = await supabase
-          .from('linked_accounts')
-          .select('id')
-          .eq('plaid_account_id', holding.account_id)
-          .eq('user_id', userId)
-          .maybeSingle();
+      // Build ticker -> security DB id map
+      const tickerToSecurityId = new Map(
+        dbSecurities.map((s: { ticker: string; id: string }) => [s.ticker, s.id])
+      );
 
-        if (!linkedAccount) continue;
+      // Build holdings upsert array
+      const holdingsUpserts = holdingsByTicker
+        .map(h => {
+          const securityId = tickerToSecurityId.get(h.ticker);
+          const linkedAccountId = linkedAccountMap.get(h.plaid_account_id);
+          if (!securityId || !linkedAccountId) return null;
 
-        const totalValue = holding.institution_value ?? (holding.quantity * (security.close_price ?? 0));
-        // Derive price: prefer close_price, fall back to institution_value / quantity
-        const currentPrice = security.close_price
-          ?? (holding.quantity > 0 && holding.institution_value
-            ? holding.institution_value / holding.quantity
-            : 0);
-        const totalCostBasis = holding.cost_basis ?? null;
+          const totalValue = h.institution_value ?? (h.quantity * (h.close_price ?? 0));
+          const currentPrice = h.close_price
+            ?? (h.quantity > 0 && h.institution_value
+              ? h.institution_value / h.quantity
+              : 0);
+          const totalCostBasis = h.cost_basis;
 
-        await supabase
-          .from('holdings')
-          .upsert({
+          return {
             user_id: userId,
-            account_id: linkedAccount.id,
-            security_id: dbSecurity.id,
-            ticker: ticker,
-            shares: holding.quantity,
-            average_cost_basis: totalCostBasis && holding.quantity
-              ? Number(totalCostBasis) / holding.quantity
+            account_id: linkedAccountId,
+            security_id: securityId,
+            ticker: h.ticker,
+            shares: h.quantity,
+            average_cost_basis: totalCostBasis && h.quantity
+              ? Number(totalCostBasis) / h.quantity
               : null,
             total_cost_basis: totalCostBasis,
             current_price: currentPrice,
@@ -293,11 +348,19 @@ export async function syncPlaidItem(
             unrealised_gain_loss_pct: totalCostBasis && Number(totalCostBasis) > 0
               ? (totalValue - Number(totalCostBasis)) / Number(totalCostBasis)
               : null,
-          }, {
+          };
+        })
+        .filter(Boolean);
+
+      // Batch upsert all holdings at once
+      if (holdingsUpserts.length > 0) {
+        await supabase
+          .from('holdings')
+          .upsert(holdingsUpserts, {
             onConflict: 'user_id,security_id,account_id',
           });
 
-        holdingsSynced++;
+        holdingsSynced = holdingsUpserts.length;
       }
 
       await supabase

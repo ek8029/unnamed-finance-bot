@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { PortfolioMonitor } from '@/components/dashboard/portfolio-monitor';
 import { PortfolioAllocation } from '@/components/dashboard/portfolio-allocation';
 import { MarketIntelligence } from '@/components/portfolio/market-intelligence';
@@ -135,6 +136,33 @@ export default function PortfolioPage() {
         <div className="bg-[var(--color-negative)]/10 border border-[var(--color-negative)]/20 text-[var(--color-negative)] p-6 rounded-xl">
           <h2 className="font-semibold mb-2">Error loading portfolio</h2>
           <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (holdings.length === 0) {
+    return (
+      <div className="container mx-auto card-padding max-w-[1600px]">
+        <div className="max-w-2xl mx-auto py-16">
+          <div className="text-center space-y-6">
+            <div className="w-16 h-16 rounded-2xl bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center mx-auto">
+              <TrendingUp className="w-8 h-8 text-[var(--color-gold)]" />
+            </div>
+            <div>
+              <h1 className="type-h1 mb-2">No holdings yet</h1>
+              <p className="type-body text-[var(--color-text-secondary)] max-w-md mx-auto">
+                Connect a brokerage account to see your portfolio holdings, allocation, and performance tracked in real time.
+              </p>
+            </div>
+            <Link
+              href="/dashboard/accounts"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-semibold rounded-lg transition-colors"
+            >
+              <TrendingUp className="w-4 h-4" />
+              Connect a Brokerage Account
+            </Link>
+          </div>
         </div>
       </div>
     );

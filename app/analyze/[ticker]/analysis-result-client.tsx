@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { StockAnalysisCard, AnalysisWatermark } from '@/components/analysis/analysis-cards';
 import type { StockAnalysis } from '@/components/analysis/types';
 import { Lock, Search, Loader2 } from 'lucide-react';
+import { FinancialDisclaimer } from '@/components/financial-disclaimer';
 
 const STORAGE_KEY = 'helm_analysis_count';
 const FREE_LIMIT = 1;
@@ -282,6 +283,8 @@ export function AnalysisResultClient({
           Get started free
         </a>
       </div>
+
+      <FinancialDisclaimer />
     </div>
   );
 }

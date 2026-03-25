@@ -71,12 +71,24 @@ export async function PATCH(request: Request) {
 
     const updates = await request.json();
 
-    // Upsert preferences (insert if not exists, update if exists)
+    const allowedFields = [
+      'theme', 'density', 'currency', 'number_format', 'date_format',
+      'notification_market_alerts', 'notification_transaction_alerts',
+      'notification_budget_alerts', 'notification_tax_reminders',
+      'notification_weekly_digest', 'notification_monthly_report',
+      'reduce_motion', 'high_contrast', 'large_text', 'screen_reader_optimized',
+      'analytics_enabled', 'crash_reporting_enabled',
+    ];
+    const sanitized: Record<string, unknown> = {};
+    for (const field of allowedFields) {
+      if (field in updates) sanitized[field] = updates[field];
+    }
+
     const { data, error } = await supabase
       .from('user_preferences')
       .upsert({
         user_id: user.id,
-        ...updates,
+        ...sanitized,
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'user_id',

@@ -68,90 +68,116 @@ export async function POST() {
     }
 
     // 3b. Fetch previous close prices for accurate day_change_pct
-    // Uses .maybeSingle() - returns null (no error) when no rows found
+    // Batch-fetch recent market_prices for all relevant securities, then find prev close in-memory
     const prevCloseMap = new Map<string, number>();
-    for (const ticker of uniqueTickers) {
-      const securityId = tickerSecurityMap.get(ticker.toUpperCase());
-      if (!securityId) continue;
+    const relevantSecurityIds = uniqueTickers
+      .map(t => tickerSecurityMap.get(t.toUpperCase()))
+      .filter((id): id is string => Boolean(id));
 
-      const newPrice = priceMap.get(ticker.toUpperCase());
-      if (!newPrice) continue;
-
-      const { data: prevPrice } = await supabase
+    if (relevantSecurityIds.length > 0) {
+      const { data: recentPrices } = await supabase
         .from('market_prices')
-        .select('close')
-        .eq('security_id', securityId)
-        .lt('price_date', newPrice.date)
-        .order('price_date', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .select('security_id, price_date, close')
+        .in('security_id', relevantSecurityIds)
+        .order('price_date', { ascending: false });
 
-      if (prevPrice?.close) {
-        prevCloseMap.set(ticker.toUpperCase(), Number(prevPrice.close));
+      // Group by security_id for efficient lookup
+      const pricesBySecurity = new Map<string, { price_date: string; close: number }[]>();
+      for (const p of recentPrices || []) {
+        const existing = pricesBySecurity.get(p.security_id) || [];
+        existing.push({ price_date: p.price_date, close: Number(p.close) });
+        pricesBySecurity.set(p.security_id, existing);
+      }
+
+      for (const ticker of uniqueTickers) {
+        const securityId = tickerSecurityMap.get(ticker.toUpperCase());
+        if (!securityId) continue;
+
+        const newPrice = priceMap.get(ticker.toUpperCase());
+        if (!newPrice) continue;
+
+        const prices = pricesBySecurity.get(securityId) || [];
+        // Already sorted descending by price_date from the query
+        const prevPrice = prices.find(p => p.price_date < newPrice.date);
+        if (prevPrice?.close) {
+          prevCloseMap.set(ticker.toUpperCase(), prevPrice.close);
+        }
       }
     }
 
     const updatedTickers: string[] = [];
     const errors: string[] = [];
 
-    // 4. Update each holding (holdings table has full CRUD RLS)
-    for (const holding of holdings) {
-      const ticker = holding.ticker?.toUpperCase();
-      if (!ticker) continue;
+    // 4. Update each holding concurrently (holdings table has full CRUD RLS)
+    const holdingUpdates = holdings
+      .map(holding => {
+        const ticker = holding.ticker?.toUpperCase();
+        if (!ticker) return null;
 
-      const price = priceMap.get(ticker);
-      if (!price) continue;
+        const price = priceMap.get(ticker);
+        if (!price) return null;
 
-      const currentPrice = price.close;
-      const shares = Number(holding.shares);
-      const hasCostBasis = holding.total_cost_basis != null;
-      const totalCostBasis = hasCostBasis ? Number(holding.total_cost_basis) : 0;
-      const totalValue = shares * currentPrice;
-      const unrealisedGainLoss = hasCostBasis ? totalValue - totalCostBasis : null;
-      const unrealisedGainLossPct =
-        hasCostBasis && totalCostBasis > 0 ? (totalValue - totalCostBasis) / totalCostBasis : null;
+        const currentPrice = price.close;
+        const shares = Number(holding.shares);
+        const hasCostBasis = holding.total_cost_basis != null;
+        const totalCostBasis = hasCostBasis ? Number(holding.total_cost_basis) : 0;
+        const totalValue = shares * currentPrice;
+        const unrealisedGainLoss = hasCostBasis ? totalValue - totalCostBasis : null;
+        const unrealisedGainLossPct =
+          hasCostBasis && totalCostBasis > 0 ? (totalValue - totalCostBasis) / totalCostBasis : null;
 
-      // Day change: compare to prior close from market_prices, fall back to intraday
-      const prevClose = prevCloseMap.get(ticker);
-      const dayChangePct = prevClose && prevClose > 0
-        ? (price.close - prevClose) / prevClose
-        : (price.open > 0 ? (price.close - price.open) / price.open : 0);
+        // Day change: compare to prior close from market_prices, fall back to intraday
+        const prevClose = prevCloseMap.get(ticker);
+        const dayChangePct = prevClose && prevClose > 0
+          ? (price.close - prevClose) / prevClose
+          : (price.open > 0 ? (price.close - price.open) / price.open : 0);
 
-      const { error: updateError } = await supabase
-        .from('holdings')
-        .update({
-          current_price: currentPrice,
-          total_value: totalValue,
-          unrealised_gain_loss: unrealisedGainLoss,
-          unrealised_gain_loss_pct: unrealisedGainLossPct,
-          day_change_pct: dayChangePct,
+        return { holding, ticker, currentPrice, totalValue, unrealisedGainLoss, unrealisedGainLossPct, dayChangePct };
+      })
+      .filter(Boolean);
+
+    const updateResults = await Promise.all(
+      holdingUpdates.map(async (u) => {
+        const { error: updateError } = await supabase
+          .from('holdings')
+          .update({
+            current_price: u!.currentPrice,
+            total_value: u!.totalValue,
+            unrealised_gain_loss: u!.unrealisedGainLoss,
+            unrealised_gain_loss_pct: u!.unrealisedGainLossPct,
+            day_change_pct: u!.dayChangePct,
+          })
+          .eq('id', u!.holding.id);
+
+        return { ticker: u!.ticker, holdingId: u!.holding.id, holdingTicker: u!.holding.ticker, error: updateError };
+      })
+    );
+
+    for (const result of updateResults) {
+      if (result.error) {
+        console.error(`Error updating holding ${result.holdingId}:`, result.error);
+        errors.push(`holding:${result.holdingTicker}`);
+      } else {
+        updatedTickers.push(result.ticker);
+      }
+    }
+
+    // 5. Update securities table concurrently (needs RLS write policy)
+    await Promise.all(
+      Array.from(priceMap.entries())
+        .filter(([ticker]) => tickerSecurityMap.has(ticker))
+        .map(async ([ticker, price]) => {
+          const { error: secError } = await supabase
+            .from('securities')
+            .update({ current_price: price.close })
+            .eq('id', tickerSecurityMap.get(ticker)!);
+
+          if (secError) {
+            // Expected to fail if RLS policy not applied yet - non-fatal
+            console.warn(`[prices] securities update skipped for ${ticker} (RLS)`);
+          }
         })
-        .eq('id', holding.id);
-
-      if (updateError) {
-        console.error(`Error updating holding ${holding.id}:`, updateError);
-        errors.push(`holding:${holding.ticker}`);
-        continue;
-      }
-
-      updatedTickers.push(ticker);
-    }
-
-    // 5. Update securities table (needs RLS write policy)
-    for (const [ticker, price] of priceMap.entries()) {
-      const securityId = tickerSecurityMap.get(ticker);
-      if (!securityId) continue;
-
-      const { error: secError } = await supabase
-        .from('securities')
-        .update({ current_price: price.close })
-        .eq('id', securityId);
-
-      if (secError) {
-        // Expected to fail if RLS policy not applied yet - non-fatal
-        console.warn(`[prices] securities update skipped for ${ticker} (RLS)`);
-      }
-    }
+    );
 
     // 6. Upsert into market_prices table (needs RLS write policy)
     const priceInserts = [];
@@ -197,13 +223,13 @@ export async function POST() {
       );
 
       if (totalPortfolioValue > 0) {
-        for (const h of allHoldings) {
+        await Promise.all(allHoldings.map(h => {
           const allocationPct = (Number(h.total_value) / totalPortfolioValue) * 100;
-          await supabase
+          return supabase
             .from('holdings')
             .update({ portfolio_allocation_pct: Math.round(allocationPct * 100) / 100 })
             .eq('id', h.id);
-        }
+        }));
       }
     }
 

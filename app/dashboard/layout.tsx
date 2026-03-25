@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
 import { useSettings } from '@/contexts/settings-context';
 import { LegalFooter } from '@/components/legal-footer';
+import { FinancialDisclaimer } from '@/components/financial-disclaimer';
 import { useTier } from '@/hooks/use-tier';
 
 const navigation = [
@@ -534,7 +535,7 @@ export default function DashboardLayout({
           </div>
         </main>
 
-        {/* Legal Footer — hidden on chat page for full-height layout */}
+        {!isChatPage && <FinancialDisclaimer />}
         {!isChatPage && <LegalFooter variant="minimal" />}
       </div>
     </div>

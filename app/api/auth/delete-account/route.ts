@@ -1,6 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { logAuthEvent } from '@/lib/auth-security';
+import { plaidClient } from '@/lib/plaid';
 
 /**
  * DELETE /api/auth/delete-account
@@ -39,6 +40,23 @@ export async function DELETE(request: Request) {
     const userId = user.id;
     const serviceClient = await createServiceClient();
 
+    const { data: plaidItems } = await serviceClient
+      .from('plaid_items')
+      .select('plaid_access_token')
+      .eq('user_id', userId);
+
+    if (plaidItems && plaidItems.length > 0) {
+      for (const item of plaidItems) {
+        try {
+          await plaidClient.itemRemove({
+            access_token: item.plaid_access_token,
+          });
+        } catch (err) {
+          console.error('Plaid itemRemove failed during account deletion:', err);
+        }
+      }
+    }
+
     // Delete user data from all tables (order matters for FK constraints)
     const tables = [
       'auth_events',
@@ -57,6 +75,7 @@ export async function DELETE(request: Request) {
       'transactions',
       'account_balances',
       'linked_accounts',
+      'plaid_items',
       'liabilities',
       'user_preferences',
       'user_profiles',

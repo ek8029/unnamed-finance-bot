@@ -5,8 +5,6 @@ export const metadata = {
   description: 'How Helm collects, uses, and protects your financial data.',
 };
 
-// TODO: Replace placeholder text with formally reviewed legal policy before production launch.
-
 export default function PrivacyPage() {
   return (
     <LegalPageLayout title="Privacy Policy" lastUpdated="March 10, 2026">

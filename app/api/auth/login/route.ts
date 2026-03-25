@@ -69,10 +69,6 @@ export async function POST(request: Request) {
         id: data.user.id,
         email: data.user.email,
       },
-      session: {
-        access_token: data.session.access_token,
-        expires_at: data.session.expires_at,
-      },
     });
   } catch (error) {
     console.error('Error in login route:', error);

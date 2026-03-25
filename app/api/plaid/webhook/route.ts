@@ -98,14 +98,13 @@ export async function POST(request: Request) {
     // Read body once for both verification and parsing
     const rawBody = await request.text();
 
-    // Verify webhook signature in production
-    const isProduction = process.env.PLAID_ENV === 'production';
-    if (isProduction) {
-      const isValid = await verifyWebhookSignature(request, rawBody);
-      if (!isValid) {
-        console.error('Webhook signature verification failed - rejecting');
+    const isValid = await verifyWebhookSignature(request, rawBody);
+    if (!isValid) {
+      const isProduction = process.env.PLAID_ENV === 'production';
+      if (isProduction) {
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
       }
+      console.warn('Webhook signature verification failed in non-production — allowing with warning');
     }
 
     const body: PlaidWebhook = JSON.parse(rawBody);

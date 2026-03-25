@@ -122,8 +122,9 @@ export async function GET(request: Request) {
       .range(offset, offset + limit - 1);
 
     // Apply filters
-    if (search) {
-      query = query.or(`description.ilike.%${search}%,merchant_name.ilike.%${search}%`);
+    const sanitizedSearch = search.replace(/[,%().]/g, '');
+    if (sanitizedSearch) {
+      query = query.or(`description.ilike.%${sanitizedSearch}%,merchant_name.ilike.%${sanitizedSearch}%`);
     }
     if (accountId) {
       query = query.eq('account_id', accountId);
@@ -170,8 +171,8 @@ export async function GET(request: Request) {
       .select('amount')
       .eq('user_id', user.id);
 
-    if (search) {
-      summaryQuery = summaryQuery.or(`description.ilike.%${search}%,merchant_name.ilike.%${search}%`);
+    if (sanitizedSearch) {
+      summaryQuery = summaryQuery.or(`description.ilike.%${sanitizedSearch}%,merchant_name.ilike.%${sanitizedSearch}%`);
     }
     if (accountId) {
       summaryQuery = summaryQuery.eq('account_id', accountId);

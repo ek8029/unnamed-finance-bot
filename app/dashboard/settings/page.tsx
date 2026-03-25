@@ -508,6 +508,9 @@ export default function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
+            <p className="type-caption text-[var(--color-text-muted)] mb-4">
+              Preferences are saved. Email and push delivery coming soon.
+            </p>
             {[
               { key: 'marketAlerts', label: 'Market Alerts', description: 'Price movements and market events' },
               { key: 'transactionAlerts', label: 'Transaction Alerts', description: 'Unusual transactions and spending' },
