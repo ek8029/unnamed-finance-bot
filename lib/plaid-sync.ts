@@ -166,9 +166,8 @@ export async function syncPlaidItem(
     }
   }
 
-  // Process modified transactions (concurrent updates)
   if (allModified.length > 0) {
-    await Promise.all(allModified.map(t =>
+    const modifiedResults = await Promise.allSettled(allModified.map(t =>
       supabase
         .from('transactions')
         .update({
@@ -180,6 +179,10 @@ export async function syncPlaidItem(
         .eq('plaid_transaction_id', t.transaction_id)
         .eq('user_id', userId)
     ));
+    const modifiedFailures = modifiedResults.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+    if (modifiedFailures.length > 0) {
+      console.error(`[plaid-sync] ${modifiedFailures.length} modified transaction updates failed`);
+    }
     transactionsModified = allModified.length;
   }
 

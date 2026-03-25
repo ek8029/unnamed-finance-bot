@@ -31,15 +31,12 @@ export async function GET() {
       ? new Date(latestItem.last_balances_sync)
       : null;
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    let syncTriggered = false;
+    const isStale = !lastSync || lastSync < oneHourAgo;
 
-    if (!lastSync || lastSync < oneHourAgo) {
-      try {
-        await syncAllItems(supabase, user.id);
-        syncTriggered = true;
-      } catch {
-        // Non-fatal - continue with stale data
-      }
+    if (isStale) {
+      syncAllItems(supabase, user.id).catch(err =>
+        console.error('[overview] background sync failed:', err)
+      );
     }
 
     // 1. Net worth (latest snapshot)
@@ -100,7 +97,7 @@ export async function GET() {
     const degradedConnections = (plaidItems || []).filter(i => i.status !== 'active');
 
     return NextResponse.json({
-      sync_triggered: syncTriggered,
+      sync_triggered: isStale,
       net_worth: netWorthSnapshot ? {
         total_assets: netWorthSnapshot.total_assets,
         total_liabilities: netWorthSnapshot.total_liabilities,

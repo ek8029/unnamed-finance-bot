@@ -30,7 +30,7 @@ export async function GET(request: Request) {
 
     if (!supabaseUrl || !serviceRoleKey) {
       return NextResponse.json(
-        { error: 'Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY' },
+        { error: 'Missing required environment variables' },
         { status: 500 },
       );
     }
@@ -123,26 +123,24 @@ export async function GET(request: Request) {
     let pricesRefreshed = 0;
 
     if (process.env.POLYGON_API_KEY) {
-      try {
-        pricesRefreshed = await refreshMarketPrices(serviceClient, log);
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        log.push(`[prices] Market price refresh failed: ${msg}`);
-      }
+      const marketResults = await Promise.allSettled([
+        refreshMarketPrices(serviceClient, log),
+        enrichMarketData(serviceClient, log),
+        refreshMarketNews(serviceClient, log),
+      ]);
 
-      try {
-        await enrichMarketData(serviceClient, log);
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        log.push(`[enrich] Market enrichment failed: ${msg}`);
-      }
-
-      try {
-        await refreshMarketNews(serviceClient, log);
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        log.push(`[news] News refresh failed: ${msg}`);
-      }
+      const marketNames = ['prices', 'enrich', 'news'] as const;
+      marketResults.forEach((result, i) => {
+        if (result.status === 'fulfilled') {
+          if (i === 0 && typeof result.value === 'number') {
+            pricesRefreshed = result.value;
+          }
+        } else {
+          const msg = result.reason instanceof Error ? result.reason.message : String(result.reason);
+          log.push(`[${marketNames[i]}] Market ${marketNames[i]} failed: ${msg}`);
+          console.error(`[cron/daily] Market ${marketNames[i]} failed:`, result.reason);
+        }
+      });
     } else {
       log.push('[prices] POLYGON_API_KEY not set - skipping all market data');
     }
@@ -196,9 +194,8 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         error: 'Cron job failed',
-        message: error instanceof Error ? error.message : String(error),
+        message: 'Cron job failed',
         duration_ms: Date.now() - startTime,
-        log,
       },
       { status: 500 },
     );

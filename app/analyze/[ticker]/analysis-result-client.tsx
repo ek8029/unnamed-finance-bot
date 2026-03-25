@@ -234,6 +234,11 @@ export function AnalysisResultClient({
         <AnalysisWatermark />
 
         <FinancialDisclaimer />
+        <div className="flex items-center justify-center gap-3 py-1">
+          <a href="/privacy" className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors">Privacy</a>
+          <span className="text-[10px] text-[var(--color-text-muted)]">&middot;</span>
+          <a href="/terms" className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors">Terms</a>
+        </div>
 
         {/* Related tickers */}
         {relatedTickers}
@@ -287,6 +292,11 @@ export function AnalysisResultClient({
       </div>
 
       <FinancialDisclaimer />
+      <div className="flex items-center justify-center gap-3 py-1">
+        <a href="/privacy" className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors">Privacy</a>
+        <span className="text-[10px] text-[var(--color-text-muted)]">&middot;</span>
+        <a href="/terms" className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors">Terms</a>
+      </div>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import {
   IDLE_CASH_HIGH_PRIORITY,
   STRONG_SAVINGS_RATE,
 } from '@/lib/financial-config';
+import { formatCategoryName } from '@/lib/utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyClient = any;
@@ -46,14 +47,6 @@ function groupSpending(
     groups[cat] = (groups[cat] || 0) + Math.abs(amt);
   }
   return groups;
-}
-
-function formatCategoryName(raw: string): string {
-  return raw
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, c => c.toUpperCase())
-    .replace(/\bAnd\b/g, '&');
 }
 
 function getMonthStart(offset: number): string {

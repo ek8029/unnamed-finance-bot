@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     const plaidError = (error as { response?: { data?: { error_type?: string; error_code?: string; error_message?: string } } })?.response?.data;
     if (plaidError?.error_code) {
       console.error('Plaid link token error:', plaidError.error_type, plaidError.error_code, plaidError.error_message);
-      return NextResponse.json({ error: plaidError.error_message || 'Failed to create link token' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to create link token. Please try again.' }, { status: 500 });
     }
     console.error('Error creating link token:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json({ error: 'Failed to create link token' }, { status: 500 });

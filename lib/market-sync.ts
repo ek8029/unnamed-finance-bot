@@ -134,7 +134,7 @@ export async function refreshMarketPrices(
     });
   }
 
-  await Promise.all(holdingUpdates.map(u =>
+  const holdingResults = await Promise.allSettled(holdingUpdates.map(u =>
     supabase
       .from('holdings')
       .update({
@@ -147,8 +147,12 @@ export async function refreshMarketPrices(
       })
       .eq('id', u.holdingId)
   ));
+  const holdingFailures = holdingResults.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+  if (holdingFailures.length > 0) {
+    console.error(`[prices] ${holdingFailures.length} holding updates failed`);
+  }
 
-  await Promise.all(
+  const securityResults = await Promise.allSettled(
     Array.from(priceMap.entries())
       .filter(([ticker]) => tickerSecurityMap.has(ticker))
       .map(([ticker, price]) =>
@@ -158,6 +162,10 @@ export async function refreshMarketPrices(
           .eq('id', tickerSecurityMap.get(ticker)!)
       )
   );
+  const securityFailures = securityResults.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+  if (securityFailures.length > 0) {
+    console.error(`[prices] ${securityFailures.length} security updates failed`);
+  }
 
   for (const [ticker, price] of priceMap.entries()) {
     const securityId = tickerSecurityMap.get(ticker);
@@ -209,13 +217,17 @@ export async function recalcAllocations(supabase: AnyClient, log: string[]) {
       const total = holdings.reduce((s, h) => s + h.total_value, 0);
       if (total <= 0) continue;
 
-      await Promise.all(holdings.map(h => {
+      const allocResults = await Promise.allSettled(holdings.map(h => {
         const pct = (h.total_value / total) * 100;
         return supabase
           .from('holdings')
           .update({ portfolio_allocation_pct: Math.round(pct * 100) / 100 })
           .eq('id', h.id);
       }));
+      const allocFailures = allocResults.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+      if (allocFailures.length > 0) {
+        console.error(`[allocations] ${allocFailures.length} allocation updates failed`);
+      }
     }
 
     log.push(`[allocations] Recalculated for ${userHoldings.size} user(s)`);
