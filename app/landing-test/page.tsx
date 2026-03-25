@@ -11,6 +11,7 @@ import {
   CountUp,
   TypingText,
   FadeIn,
+  TerminalBlock,
 } from './effects';
 
 /* ─── Static data ───────────────────────────────────────────────────────── */
@@ -43,6 +44,12 @@ const comparisons = [
   { before: 'Email newsletter alerts', after: 'Prioritized inbox' },
   { before: '$2,000 – $24,000 / year', after: 'Free to start' },
   { before: 'Days to weeks of setup', after: 'Under 2 minutes' },
+];
+
+const howItWorks = [
+  { cmd: 'helm connect', desc: '— link bank, brokerage, crypto via Plaid (90s)' },
+  { cmd: 'helm analyze', desc: '— 7 engines scan positions, tax, risk, cash flow' },
+  { cmd: 'helm act',     desc: '— prioritized actions land in your inbox daily' },
 ];
 
 /* ─── Page ──────────────────────────────────────────────────────────────── */
@@ -455,6 +462,35 @@ export default function LandingTestPage() {
               </FadeIn>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          HOW IT WORKS — terminal command sequence
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="relative z-10 container mx-auto px-6 pb-28">
+        <div className="max-w-3xl mx-auto">
+          <FadeIn>
+            <h2 className="text-center text-2xl md:text-3xl font-bold uppercase tracking-wider mb-12 text-[var(--color-text-secondary)]">
+              Get Started.
+            </h2>
+          </FadeIn>
+
+          <FadeIn delay={150}>
+            <TerminalBlock>
+              <div className="space-y-3">
+                {howItWorks.map((line, i) => (
+                  <FadeIn key={line.cmd} delay={300 + i * 200} direction="none">
+                    <div>
+                      <span className="text-[var(--color-gold)]">&rarr;</span>{' '}
+                      <span className="text-[var(--color-positive)] font-semibold">{line.cmd}</span>{' '}
+                      <span className="text-[var(--color-text-muted)]">{line.desc}</span>
+                    </div>
+                  </FadeIn>
+                ))}
+              </div>
+            </TerminalBlock>
+          </FadeIn>
         </div>
       </section>
 
