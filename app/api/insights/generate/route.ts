@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { generateInsights } from '@/lib/insights-engine';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST() {
   try {
@@ -9,6 +10,11 @@ export async function POST() {
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { allowed } = rateLimit(`insights-generate:${user.id}`, 5, 600);
+    if (!allowed) {
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
     }
 
     const count = await generateInsights(supabase, user.id);

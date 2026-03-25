@@ -6,6 +6,7 @@ import {
   getRecentSplits,
   mapSicToSector,
 } from '@/lib/polygon';
+import { rateLimit } from '@/lib/rate-limit';
 
 /**
  * POST /api/market/enrich
@@ -25,6 +26,11 @@ export async function POST() {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { allowed } = rateLimit(`market-enrich:${user.id}`, 3, 600);
+    if (!allowed) {
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
     }
 
     // Get user's holdings with their security IDs

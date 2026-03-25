@@ -4,6 +4,7 @@ import Script from 'next/script';
 import "./globals.css";
 import { Providers } from '@/components/providers';
 import { RecoveryRedirect } from '@/components/recovery-redirect';
+import { CookieConsent } from '@/components/cookie-consent';
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -102,6 +103,7 @@ export default function RootLayout({
         <Script id="plausible-init" strategy="afterInteractive">
           {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`}
         </Script>
+        <CookieConsent />
       </body>
     </html>
   );

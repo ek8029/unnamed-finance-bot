@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { checkPasswordStrength, logAuthEvent } from '@/lib/auth-security';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function PATCH(request: Request) {
   try {
@@ -9,6 +10,11 @@ export async function PATCH(request: Request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { allowed } = rateLimit(`password-change:${user.id}`, 5, 900);
+    if (!allowed) {
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
     }
 
     const { currentPassword, newPassword } = await request.json();

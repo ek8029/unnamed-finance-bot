@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { getTickerNews, scoreSentiment } from '@/lib/polygon';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST() {
   try {
@@ -10,6 +11,11 @@ export async function POST() {
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { allowed } = rateLimit(`news-refresh:${user.id}`, 3, 300);
+    if (!allowed) {
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
     }
 
     // 1. Fetch all unique tickers from the user's holdings + their sectors
