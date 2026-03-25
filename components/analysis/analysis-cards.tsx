@@ -76,10 +76,14 @@ function ExpandableSection({ title, content, defaultOpen = false }: { title: str
   const [open, setOpen] = useState(defaultOpen);
   if (!content) return null;
 
+  const sectionId = `section-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`;
+
   return (
     <div className="border-t border-[var(--color-border-subtle)]">
       <button
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-controls={sectionId}
         className="flex items-center justify-between w-full py-3 text-left group"
       >
         <span className="type-caption text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors">
@@ -91,7 +95,7 @@ function ExpandableSection({ title, content, defaultOpen = false }: { title: str
         }
       </button>
       {open && (
-        <p className="text-[13px] leading-[1.65] text-[var(--color-text-secondary)] pb-3.5 animate-fade-in">
+        <p id={sectionId} className="text-[13px] leading-[1.65] text-[var(--color-text-secondary)] pb-3.5 animate-fade-in">
           {content}
         </p>
       )}

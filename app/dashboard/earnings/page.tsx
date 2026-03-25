@@ -74,7 +74,7 @@ function UpcomingCard({ event, formatCurrency }: { event: UpcomingEarning; forma
           </div>
 
           {/* Scenario analysis */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="flex items-center gap-2 px-3 py-2 rounded-sm" style={{ background: 'rgba(56, 211, 159, 0.06)', border: '1px solid rgba(56, 211, 159, 0.15)' }}>
               <TrendingUp className="w-3 h-3 text-[var(--color-positive)] shrink-0" />
               <div>
@@ -155,7 +155,7 @@ function RecentCard({ result, formatCurrency }: { result: RecentEarning; formatC
         )}
 
         {/* Impact grid */}
-        <div className="grid grid-cols-2 gap-px bg-[var(--color-border-subtle)] rounded-sm overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-[var(--color-border-subtle)] rounded-sm overflow-hidden">
           <div className="bg-[var(--color-bg-surface)] px-4 py-3">
             <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Your Position</div>
             <div className="text-[15px] font-bold text-[var(--color-text-primary)] font-tabular">
@@ -289,7 +289,7 @@ export default function EarningsPage() {
       {/* Loading */}
       {loading && (
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[1, 2, 3].map(i => (
               <div key={i} className="rounded-sm p-5 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)]">
                 <Skeleton className="h-3 w-24 mb-2" />

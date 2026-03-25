@@ -102,7 +102,7 @@ export default function LandingTestPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-[var(--color-text-primary)] overflow-x-hidden">
+    <div className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)] overflow-x-hidden">
       {/* ── Custom keyframes ── */}
       <style
         dangerouslySetInnerHTML={{
@@ -152,11 +152,11 @@ export default function LandingTestPage() {
 
       {/* Drifting glow orbs */}
       <div
-        className="fixed top-[15%] left-[5%] w-[600px] h-[600px] rounded-full pointer-events-none z-0 opacity-[0.04] blur-[150px] bg-[var(--color-gold)]"
+        className="fixed top-[15%] left-[5%] w-[600px] h-[600px] rounded-full pointer-events-none z-0 opacity-[0.04] blur-[150px] bg-[var(--color-gold)] will-change-transform"
         style={{ animation: 'drift-a 25s ease-in-out infinite' }}
       />
       <div
-        className="fixed bottom-[10%] right-[5%] w-[500px] h-[500px] rounded-full pointer-events-none z-0 opacity-[0.025] blur-[120px] bg-[var(--color-positive)]"
+        className="fixed bottom-[10%] right-[5%] w-[500px] h-[500px] rounded-full pointer-events-none z-0 opacity-[0.025] blur-[120px] bg-[var(--color-positive)] will-change-transform"
         style={{ animation: 'drift-b 30s ease-in-out infinite' }}
       />
 
@@ -164,7 +164,7 @@ export default function LandingTestPage() {
           STICKY NAV
           ════════════════════════════════════════════════════════════════════ */}
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 border-b transition-all duration-500 ${
+        className={`fixed top-0 left-0 right-0 z-50 border-b transition-[background-color,border-color,backdrop-filter] duration-500 ${
           scrolled
             ? 'bg-[rgba(10,10,10,0.85)] backdrop-blur-xl border-white/[0.06]'
             : 'bg-transparent border-transparent'
@@ -190,7 +190,7 @@ export default function LandingTestPage() {
           </div>
           <Link
             href="/signup"
-            className="px-5 py-2 bg-[var(--color-gold)] text-[#0A0A0A] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:bg-[var(--color-gold-hi)] hover:shadow-[0_0_30px_rgba(230,185,77,0.35)]"
+            className="px-5 py-2 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-[background-color,box-shadow] duration-200 hover:bg-[var(--color-gold-hi)] hover:shadow-[0_0_30px_rgba(230,185,77,0.35)]"
           >
             Access Terminal
           </Link>
@@ -200,6 +200,7 @@ export default function LandingTestPage() {
       {/* ════════════════════════════════════════════════════════════════════
           HERO
           ════════════════════════════════════════════════════════════════════ */}
+      <main>
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         {/* Vignette */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,#0A0A0A_75%)] z-[1]" />
@@ -219,7 +220,7 @@ export default function LandingTestPage() {
         {/* Rotating helm beams — 6 spokes like a ship's wheel */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1] overflow-hidden">
           <div
-            className="w-[900px] h-[900px]"
+            className="w-[900px] h-[900px] will-change-transform"
             style={{ animation: 'rotate-slow 120s linear infinite' }}
           >
             {[0, 60, 120, 180, 240, 300].map((angle) => (
@@ -238,7 +239,7 @@ export default function LandingTestPage() {
         {/* Giant logo watermark — slow counter-rotation against helm beams */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-[1]">
           <div
-            className="opacity-[0.04]"
+            className="opacity-[0.04] will-change-transform"
             style={{ animation: 'rotate-slow 180s linear infinite reverse' }}
           >
             <HelmMark size={1200} variant="mono" className="text-[var(--color-gold)]" />
@@ -279,7 +280,7 @@ export default function LandingTestPage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/signup"
-                className="group relative px-10 py-3.5 bg-[var(--color-gold)] text-[#0A0A0A] font-bold text-sm uppercase tracking-[0.2em] rounded transition-all hover:bg-[var(--color-gold-hi)] hover:shadow-[0_0_50px_rgba(230,185,77,0.4)] overflow-hidden"
+                className="group relative px-10 py-3.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-sm uppercase tracking-[0.2em] rounded transition-[background-color,box-shadow] hover:bg-[var(--color-gold-hi)] hover:shadow-[0_0_50px_rgba(230,185,77,0.4)] overflow-hidden"
               >
                 {/* Button shimmer */}
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
@@ -379,9 +380,9 @@ export default function LandingTestPage() {
             <div className="rounded-xl overflow-hidden border border-[var(--color-gold)]/20 shadow-[0_0_80px_rgba(230,185,77,0.06)]">
               {/* Browser chrome */}
               <div className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.03]">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-500/40" />
+                <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-negative)]/40" />
                 <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/40" />
-                <div className="w-2.5 h-2.5 rounded-full bg-green-500/40" />
+                <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-positive)]/40" />
                 <span className="ml-2 text-[10px] font-mono text-[var(--color-text-muted)]">
                   helm terminal — dashboard
                 </span>
@@ -454,10 +455,10 @@ export default function LandingTestPage() {
                     <path
                       d="M0,78 C30,72 60,65 100,58 C140,51 170,55 200,45 C230,35 260,40 300,28 C330,20 360,15 400,8"
                       fill="none"
-                      stroke="#E6B94D"
+                      stroke="var(--color-gold)"
                       strokeWidth="1.5"
                     />
-                    <circle cx="400" cy="8" r="2.5" fill="#E6B94D" />
+                    <circle cx="400" cy="8" r="2.5" fill="var(--color-gold)" />
                     <circle cx="400" cy="8" r="5" fill="rgba(230,185,77,0.2)" />
                     <defs>
                       <linearGradient id="nwGradient" x1="0" y1="0" x2="0" y2="1">
@@ -507,7 +508,7 @@ export default function LandingTestPage() {
                     </span>
                   </div>
                   {/* Hover arrow */}
-                  <ArrowRight className="hidden md:block w-4 h-4 text-[var(--color-gold)] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all ml-6 shrink-0" />
+                  <ArrowRight className="hidden md:block w-4 h-4 text-[var(--color-gold)] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-[opacity,transform] ml-6 shrink-0" />
                 </div>
               </FadeIn>
             ))}
@@ -650,10 +651,10 @@ export default function LandingTestPage() {
                 <input
                   type="email"
                   placeholder="your@email.com"
-                  className="bg-transparent flex-1 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none font-mono"
+                  className="bg-transparent flex-1 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]/30 focus:border-[var(--color-gold)] font-mono"
                 />
               </div>
-              <button className="group relative px-6 py-3 bg-[var(--color-gold)] text-[#0A0A0A] font-bold text-xs uppercase tracking-[0.15em] rounded-r-lg hover:bg-[var(--color-gold-hi)] hover:shadow-[0_0_30px_rgba(230,185,77,0.4)] transition-all whitespace-nowrap overflow-hidden">
+              <button className="group relative px-6 py-3 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded-r-lg hover:bg-[var(--color-gold-hi)] hover:shadow-[0_0_30px_rgba(230,185,77,0.4)] transition-[background-color,box-shadow] whitespace-nowrap overflow-hidden">
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                 <span className="relative">Enter</span>
               </button>
@@ -664,6 +665,8 @@ export default function LandingTestPage() {
           </div>
         </FadeIn>
       </section>
+
+      </main>
 
       {/* ════════════════════════════════════════════════════════════════════
           FOOTER

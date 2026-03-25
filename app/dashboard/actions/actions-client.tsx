@@ -36,10 +36,10 @@ export interface ActionItem {
 
 const priorityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 const priorityColors: Record<string, string> = {
-  critical: 'bg-red-500/10 text-red-400 border-red-500/20',
-  high: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-  medium: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  low: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  critical: 'bg-[var(--color-negative-muted)] text-[var(--color-negative-text)] border-[var(--color-negative-border)]',
+  high: 'bg-[var(--color-warning-muted)] text-[var(--color-warning-text)] border-[var(--color-warning-border)]',
+  medium: 'bg-[var(--color-warning-muted)] text-[var(--color-warning-text)] border-[var(--color-warning-border)]',
+  low: 'bg-[var(--color-info-muted)] text-[var(--color-info-text)] border-[var(--color-info-border)]',
 };
 
 const typeIcons: Record<string, typeof TrendingUp> = {
@@ -208,7 +208,7 @@ export function ActionsClient({ initialActions }: { initialActions: ActionItem[]
             <p className="text-xs text-[var(--color-text-muted)] mb-1">Active Actions</p>
             <p className="text-2xl font-semibold text-[var(--color-text-primary)] font-tabular">{actions.length}</p>
             {criticalCount > 0 && (
-              <p className="text-xs text-orange-400 mt-1">{criticalCount} high priority</p>
+              <p className="text-xs text-[var(--color-warning-text)] mt-1">{criticalCount} high priority</p>
             )}
           </div>
           <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl p-4">
@@ -303,7 +303,7 @@ export function ActionsClient({ initialActions }: { initialActions: ActionItem[]
             return (
               <div
                 key={action.id}
-                className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl overflow-hidden transition-all"
+                className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl overflow-hidden transition-colors"
               >
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : action.id)}

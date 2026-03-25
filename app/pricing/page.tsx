@@ -17,6 +17,7 @@ import {
 import { HelmMark } from '@/components/helm-mark';
 import { AnimatedSection } from '@/components/ui/animated-section';
 import { LegalFooter } from '@/components/legal-footer';
+import { CinematicBg } from '@/components/cinematic-bg';
 import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
@@ -140,14 +141,11 @@ export default async function PricingPage() {
         }}
       />
 
-      {/* Grid background */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,_rgba(255,255,255,0.01)_1px,_transparent_1px),linear-gradient(to_bottom,_rgba(255,255,255,0.01)_1px,_transparent_1px)] bg-[length:64px_64px] opacity-40" />
-      </div>
+      <CinematicBg />
 
       {/* ── Navigation ── */}
-      <nav className="relative container mx-auto px-6 py-3 glass-nav">
-        <div className="flex items-center justify-between">
+      <nav className="relative z-10 glass-nav">
+        <div className="container mx-auto px-6 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2.5">
             <HelmMark size={32} />
             <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
@@ -263,7 +261,7 @@ export default async function PricingPage() {
             <div className="relative">
               <div className="h-full flex flex-col sovereign-card gradient-border animate-border-glow rounded shadow-elevated p-6 relative overflow-hidden">
                 {/* Brass top-rule */}
-                <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #E6B94D, rgba(230,185,77,0.3), transparent)' }} />
+                <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, var(--color-gold), rgba(230,185,77,0.3), transparent)' }} />
                 {/* Coming Soon badge */}
                 <div className="absolute -top-3 right-6 z-10">
                   <span className="inline-flex items-center px-3 py-1 rounded bg-[var(--color-gold)] text-[var(--color-bg-base)] text-[11px] font-medium uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)' }}>

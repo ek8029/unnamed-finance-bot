@@ -1,20 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import {
-  Shield,
-  TrendingUp,
   Activity,
-  Target,
-  ArrowRight,
   ChevronDown,
-  X,
   Eye,
   Zap,
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AlertRow } from './intelligence-feed-alert-row';
+import { InsightCard } from './intelligence-feed-insight-card';
 
 // ── Types ──
 
@@ -45,37 +41,6 @@ interface DismissedEntry {
 const DISMISSED_STORAGE_KEY = 'helm_dismissed_alerts';
 const DISMISS_RETENTION_DAYS = 14;
 
-const TYPE_CONFIG = {
-  risk: { icon: Shield, label: 'Risk' },
-  opportunity: { icon: TrendingUp, label: 'Opportunity' },
-  info: { icon: Activity, label: 'Insight' },
-  action: { icon: Target, label: 'Action' },
-} as const;
-
-const PRIORITY_CONFIG = {
-  high: {
-    dot: 'bg-[var(--color-negative)]',
-    dotGlow: '0 0 8px rgba(248,113,113,0.4)',
-    border: 'border-l-[var(--color-negative)]',
-    label: 'HIGH',
-    labelClass: 'text-[var(--color-negative)]',
-  },
-  medium: {
-    dot: 'bg-[var(--color-gold)]',
-    dotGlow: '0 0 8px rgba(230,185,77,0.4)',
-    border: 'border-l-[var(--color-gold)]',
-    label: 'MED',
-    labelClass: 'text-[var(--color-gold)]',
-  },
-  low: {
-    dot: 'bg-[var(--color-text-muted)]',
-    dotGlow: undefined,
-    border: 'border-l-[var(--color-border-strong)]',
-    label: 'LOW',
-    labelClass: 'text-[var(--color-text-muted)]',
-  },
-} as const;
-
 // ── Dismissed storage helpers ──
 
 function getDismissed(): DismissedEntry[] {
@@ -97,194 +62,6 @@ function saveDismissed(entries: DismissedEntry[]) {
   } catch {
     // localStorage unavailable
   }
-}
-
-// ── Alert Row (expandable inline) ──
-
-function AlertRow({
-  insight,
-  onDismiss,
-}: {
-  insight: FeedInsight;
-  onDismiss: (id: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const priorityConfig = PRIORITY_CONFIG[insight.priority];
-  const typeConfig = TYPE_CONFIG[insight.type];
-  const Icon = typeConfig.icon;
-
-  return (
-    <div>
-      {/* Summary row */}
-      <div
-        className="flex items-center gap-3 py-2.5 px-4 group cursor-pointer hover:bg-[var(--color-bg-overlay)] transition-colors"
-        onClick={() => setOpen(!open)}
-      >
-        <ChevronDown
-          className={cn(
-            'w-3 h-3 shrink-0 text-[var(--color-text-muted)] transition-transform duration-200',
-            open && 'rotate-180',
-          )}
-        />
-        <div className={cn('w-1.5 h-1.5 rounded-full shrink-0', priorityConfig.dot)} style={priorityConfig.dotGlow ? { boxShadow: priorityConfig.dotGlow } : undefined} />
-        <Icon className="w-3.5 h-3.5 shrink-0 text-[var(--color-text-muted)]" />
-        <span className="text-sm text-[var(--color-text-primary)] truncate flex-1">
-          {insight.title}
-        </span>
-        <span className={cn('type-eyebrow shrink-0', priorityConfig.labelClass)}>
-          {priorityConfig.label}
-        </span>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDismiss(insight.id);
-          }}
-          className="shrink-0 p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity"
-          aria-label={`Dismiss ${insight.title}`}
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      {/* Expanded detail */}
-      {open && (
-        <div className="px-4 pb-4 pt-1 ml-[26px] border-l-2 border-[var(--color-border-base)] mr-4 space-y-3">
-          <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-            {insight.summary}
-          </p>
-
-          {insight.metrics.length > 0 && (
-            <div className="flex gap-6">
-              {insight.metrics.map((m, i) => (
-                <div key={i}>
-                  <p className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">{m.label}</p>
-                  <p className="type-data text-[var(--color-text-primary)]">{m.value}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {insight.detail && (
-            <p className="type-caption text-[var(--color-text-muted)] leading-relaxed">
-              {insight.detail}
-            </p>
-          )}
-
-          <div className="flex items-center gap-4">
-            <Link
-              href={`/dashboard/chat?q=${encodeURIComponent(insight.suggestedFollowUp)}`}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors"
-            >
-              Ask Helm about this
-              <ArrowRight className="w-3 h-3" />
-            </Link>
-            <button
-              onClick={() => onDismiss(insight.id)}
-              className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Expanded Insight Card ──
-
-function InsightCard({
-  insight,
-  onDismiss,
-}: {
-  insight: FeedInsight;
-  onDismiss: (id: string) => void;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const typeConfig = TYPE_CONFIG[insight.type];
-  const priorityConfig = PRIORITY_CONFIG[insight.priority];
-  const Icon = typeConfig.icon;
-
-  return (
-    <div
-      className={cn(
-        'sovereign-card rounded',
-        'border-l-[3px]',
-        priorityConfig.border,
-        'transition-all duration-200 hover:border-[var(--color-border-strong)]',
-      )}
-    >
-      <div className="p-5">
-        {/* Header row */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <div className={cn('w-2 h-2 rounded-full', priorityConfig.dot)} style={priorityConfig.dotGlow ? { boxShadow: priorityConfig.dotGlow } : undefined} />
-              <span className={cn('type-eyebrow', priorityConfig.labelClass)}>
-                {priorityConfig.label}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 text-[var(--color-text-muted)]">
-              <Icon className="w-3.5 h-3.5" />
-              <span className="type-caption">{typeConfig.label}</span>
-            </div>
-          </div>
-          <button
-            onClick={() => onDismiss(insight.id)}
-            className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
-            aria-label={`Dismiss ${insight.title}`}
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <h3 className="text-[15px] font-semibold tracking-tight text-[var(--color-text-primary)] mb-2 leading-snug">
-          {insight.title}
-        </h3>
-
-        <p className="type-body text-[var(--color-text-secondary)] mb-4 leading-relaxed">
-          {insight.summary}
-        </p>
-
-        {insight.metrics.length > 0 && (
-          <div className="flex gap-6 mb-4">
-            {insight.metrics.map((m, i) => (
-              <div key={i}>
-                <p className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">{m.label}</p>
-                <p className="type-data text-[var(--color-text-primary)]">{m.value}</p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {insight.detail && (
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors mb-3"
-          >
-            <ChevronDown
-              className={cn('w-3.5 h-3.5 transition-transform duration-200', expanded && 'rotate-180')}
-            />
-            {expanded ? 'Less detail' : 'More detail'}
-          </button>
-        )}
-
-        {expanded && (
-          <p className="type-caption text-[var(--color-text-secondary)] mb-4 pl-4 border-l-2 border-[var(--color-border-base)] leading-relaxed">
-            {insight.detail}
-          </p>
-        )}
-
-        <Link
-          href={`/dashboard/chat?q=${encodeURIComponent(insight.suggestedFollowUp)}`}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors"
-        >
-          Ask Helm about this
-          <ArrowRight className="w-3 h-3" />
-        </Link>
-      </div>
-    </div>
-  );
 }
 
 // ── Main Collapsible Feed ──
@@ -372,6 +149,7 @@ export function IntelligenceFeed({
       {/* Collapsed header row */}
       <button
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
         className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-[var(--color-bg-overlay)] transition-colors"
       >
         <div className="flex items-center gap-3">
@@ -417,6 +195,7 @@ export function IntelligenceFeed({
             <div className="border-t border-[var(--color-border-base)]">
               <button
                 onClick={() => setShowDismissed(!showDismissed)}
+                aria-expanded={showDismissed}
                 className="w-full flex items-center gap-2 px-5 py-2.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
               >
                 <Eye className="w-3.5 h-3.5" />
@@ -499,12 +278,12 @@ export function IntelligenceFeedExpanded({
             className="animate-pulse sovereign-card rounded p-5"
           >
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-full bg-neutral-700" />
-              <div className="h-3 w-12 bg-neutral-700 rounded" />
+              <div className="w-2 h-2 rounded-full bg-[var(--color-bg-elevated)]" />
+              <div className="h-3 w-12 bg-[var(--color-bg-elevated)] rounded" />
             </div>
-            <div className="h-5 w-3/4 bg-neutral-700 rounded mb-2" />
-            <div className="h-4 w-full bg-neutral-700 rounded mb-1" />
-            <div className="h-4 w-2/3 bg-neutral-700 rounded" />
+            <div className="h-5 w-3/4 bg-[var(--color-bg-elevated)] rounded mb-2" />
+            <div className="h-4 w-full bg-[var(--color-bg-elevated)] rounded mb-1" />
+            <div className="h-4 w-2/3 bg-[var(--color-bg-elevated)] rounded" />
           </div>
         ))}
       </div>

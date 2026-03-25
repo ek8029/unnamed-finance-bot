@@ -256,12 +256,12 @@ function ResearchChatContent() {
         <p className="text-[13px] text-[var(--color-text-secondary)] mb-6 leading-relaxed">
           Ask about any stock, or ask Helm to analyze your portfolio with real dollar amounts from your connected accounts.
         </p>
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {SUGGESTED_QUERIES.map((q) => (
             <button
               key={q}
               onClick={() => sendMessage(q)}
-              className="px-3.5 py-2.5 text-left text-[13px] text-[var(--color-text-secondary)] bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-sm hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] transition-all duration-200"
+              className="px-3.5 py-2.5 text-left text-[13px] text-[var(--color-text-secondary)] bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-sm hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] transition-colors duration-200"
             >
               {q}
             </button>
@@ -363,7 +363,7 @@ function ResearchChatContent() {
                 onClick={() => sendMessage()}
                 disabled={!input.trim() || isLoading}
                 className={cn(
-                  'w-8 h-8 rounded-sm flex items-center justify-center transition-all duration-200',
+                  'w-8 h-8 rounded-sm flex items-center justify-center transition-colors duration-200',
                   input.trim() && !isLoading
                     ? 'bg-[var(--color-gold)] text-black hover:bg-[var(--color-gold-hi)]'
                     : 'text-[var(--color-text-muted)] cursor-not-allowed'

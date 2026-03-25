@@ -97,7 +97,7 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
         )}
 
         {/* Trend Chart */}
-        <div className="h-[120px]">
+        <div className="h-[100px] md:h-[120px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>
               <XAxis
@@ -125,8 +125,8 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
                   return '';
                 }}
                 contentStyle={{
-                  backgroundColor: '#131313',
-                  border: '1px solid rgba(255,255,255,0.06)',
+                  backgroundColor: 'var(--color-bg-elevated, #131313)',
+                  border: '1px solid var(--color-border-base, rgba(255,255,255,0.06))',
                   borderRadius: '4px',
                   color: 'var(--color-text-primary)',
                   fontSize: '11px',
@@ -156,10 +156,10 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
               <Line
                 type="monotone"
                 dataKey="rate"
-                stroke="#E6B94D"
+                stroke="var(--color-gold)"
                 strokeWidth={2}
-                dot={{ fill: '#E6B94D', r: 3 }}
-                activeDot={{ r: 5, fill: '#E6B94D', stroke: 'var(--color-bg-surface)', strokeWidth: 2 }}
+                dot={{ fill: 'var(--color-gold)', r: 3 }}
+                activeDot={{ r: 5, fill: 'var(--color-gold)', stroke: 'var(--color-bg-surface)', strokeWidth: 2 }}
                 animationDuration={800}
                 animationEasing="ease-out"
               />

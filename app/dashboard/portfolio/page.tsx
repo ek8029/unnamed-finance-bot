@@ -15,17 +15,17 @@ function LoadingSkeleton() {
     <div className="container mx-auto p-6 max-w-[1600px] animate-pulse">
       <div className="flex gap-6">
         <div className="flex-1 space-y-6">
-          <div className="h-8 bg-neutral-800 rounded w-1/4"></div>
-          <div className="h-4 bg-neutral-800 rounded w-1/3"></div>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="h-8 bg-[var(--color-bg-elevated)] rounded w-1/4"></div>
+          <div className="h-4 bg-[var(--color-bg-elevated)] rounded w-1/3"></div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-28 bg-neutral-800 rounded-xl"></div>
+              <div key={i} className="h-28 bg-[var(--color-bg-elevated)] rounded-xl"></div>
             ))}
           </div>
-          <div className="h-64 bg-neutral-800 rounded-xl"></div>
+          <div className="h-64 bg-[var(--color-bg-elevated)] rounded-xl"></div>
         </div>
         <div className="hidden lg:block w-[420px]">
-          <div className="h-[600px] bg-neutral-800 rounded-xl"></div>
+          <div className="h-[600px] bg-[var(--color-bg-elevated)] rounded-xl"></div>
         </div>
       </div>
     </div>
@@ -266,7 +266,7 @@ export default function PortfolioPage() {
                   <button
                     key={key}
                     onClick={() => setRange(key)}
-                    className={`px-2.5 py-1 rounded-md type-caption transition-all duration-200 ${
+                    className={`px-2.5 py-1 rounded-md type-caption transition-colors duration-200 ${
                       range === key
                         ? 'bg-[var(--color-gold-surface)] text-[var(--color-gold)] border border-[var(--color-gold-border)]'
                         : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] hover:border-[var(--color-border-base)]'

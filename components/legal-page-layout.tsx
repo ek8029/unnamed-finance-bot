@@ -11,7 +11,7 @@ interface LegalPageLayoutProps {
 
 export function LegalPageLayout({ title, lastUpdated, children }: LegalPageLayoutProps) {
   return (
-    <main className="min-h-screen bg-[#0A0A0A] flex flex-col">
+    <main className="min-h-screen bg-[var(--color-bg-base)] flex flex-col">
       {/* Nav */}
       <nav className="border-b border-white/[0.06] bg-[rgba(10,10,10,0.85)] backdrop-blur-xl">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">

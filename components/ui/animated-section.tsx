@@ -30,7 +30,7 @@ export function AnimatedSection({
     <div
       ref={ref}
       className={cn(
-        'transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
+        'transition-[opacity,transform,filter] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
         isVisible
           ? 'opacity-100 translate-y-0 translate-x-0 scale-100'
           : `opacity-0 ${directionStyles[direction]}`,

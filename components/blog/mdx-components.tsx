@@ -7,6 +7,7 @@ import type { MDXComponents } from 'mdx/types';
 function AnchorIcon() {
   return (
     <svg
+      aria-hidden="true"
       className="inline-block ml-2 w-4 h-4 opacity-0 group-hover:opacity-60 transition-opacity text-[var(--color-text-muted)]"
       fill="none"
       stroke="currentColor"
@@ -65,7 +66,7 @@ function H4({ children }: { children?: React.ReactNode }) {
 
 function P({ children }: { children?: React.ReactNode }) {
   return (
-    <p className="text-[16px] md:text-[17px] leading-[1.75] text-[#C8CDD5] mb-5 max-w-[65ch]">
+    <p className="text-[16px] md:text-[17px] leading-[1.75] text-[var(--color-text-secondary)] mb-5 max-w-[65ch]">
       {children}
     </p>
   );
@@ -95,7 +96,7 @@ function A({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorEl
 
 function Blockquote({ children }: { children?: React.ReactNode }) {
   return (
-    <blockquote className="border-l-2 border-[var(--color-gold)] bg-[var(--color-bg-elevated)] pl-5 pr-4 py-3 my-6 rounded-r-sm [&>p]:mb-0 [&>p]:text-[#C8CDD5]">
+    <blockquote className="border-l-2 border-[var(--color-gold)] bg-[var(--color-bg-elevated)] pl-5 pr-4 py-3 my-6 rounded-r-sm [&>p]:mb-0 [&>p]:text-[var(--color-text-secondary)]">
       {children}
     </blockquote>
   );
@@ -122,7 +123,7 @@ function Code({ children, ...props }: React.HTMLAttributes<HTMLElement>) {
 
 function Ul({ children }: { children?: React.ReactNode }) {
   return (
-    <ul className="list-disc list-outside pl-6 mb-5 space-y-2 text-[16px] md:text-[17px] leading-[1.75] text-[#C8CDD5] max-w-[65ch] marker:text-[var(--color-gold)]">
+    <ul className="list-disc list-outside pl-6 mb-5 space-y-2 text-[16px] md:text-[17px] leading-[1.75] text-[var(--color-text-secondary)] max-w-[65ch] marker:text-[var(--color-gold)]">
       {children}
     </ul>
   );
@@ -130,7 +131,7 @@ function Ul({ children }: { children?: React.ReactNode }) {
 
 function Ol({ children }: { children?: React.ReactNode }) {
   return (
-    <ol className="list-decimal list-outside pl-6 mb-5 space-y-2 text-[16px] md:text-[17px] leading-[1.75] text-[#C8CDD5] max-w-[65ch] marker:text-[var(--color-gold)]">
+    <ol className="list-decimal list-outside pl-6 mb-5 space-y-2 text-[16px] md:text-[17px] leading-[1.75] text-[var(--color-text-secondary)] max-w-[65ch] marker:text-[var(--color-gold)]">
       {children}
     </ol>
   );
@@ -147,7 +148,7 @@ function Hr() {
 function Table({ children }: { children?: React.ReactNode }) {
   return (
     <div className="overflow-x-auto my-6 border border-[var(--color-border-base)] rounded-[4px]">
-      <table className="w-full border-collapse text-[14px] text-[#C8CDD5]">
+      <table className="w-full border-collapse text-[14px] text-[var(--color-text-secondary)]">
         {children}
       </table>
     </div>
@@ -172,7 +173,7 @@ function Th({ children }: { children?: React.ReactNode }) {
 
 function Td({ children }: { children?: React.ReactNode }) {
   return (
-    <td className="px-3.5 py-2.5 border-b border-[var(--color-border-base)] bg-[var(--color-bg-surface)] text-[14px] text-[#C8CDD5] [&>strong]:text-[var(--color-text-primary)]">
+    <td className="px-3.5 py-2.5 border-b border-[var(--color-border-base)] bg-[var(--color-bg-surface)] text-[14px] text-[var(--color-text-secondary)] [&>strong]:text-[var(--color-text-primary)]">
       {children}
     </td>
   );
@@ -218,7 +219,7 @@ export function ComparisonTable({
 }) {
   return (
     <div className="overflow-x-auto my-6 border border-[var(--color-border-base)] rounded-[4px]">
-      <table className="w-full border-collapse text-[14px] text-[#C8CDD5]">
+      <table className="w-full border-collapse text-[14px] text-[var(--color-text-secondary)]">
         <thead className="bg-[var(--color-bg-elevated)] text-left">
           <tr>
             {headers.map((h) => (
@@ -232,7 +233,7 @@ export function ComparisonTable({
           {rows.map((row, i) => (
             <tr key={i} className="even:[&>td]:bg-[var(--color-bg-elevated)]">
               {row.map((cell, j) => (
-                <td key={j} className="px-3.5 py-2.5 border-b border-[var(--color-border-base)] bg-[var(--color-bg-surface)] text-[14px] text-[#C8CDD5]">
+                <td key={j} className="px-3.5 py-2.5 border-b border-[var(--color-border-base)] bg-[var(--color-bg-surface)] text-[14px] text-[var(--color-text-secondary)]">
                   {cell}
                 </td>
               ))}
@@ -260,7 +261,7 @@ export function CTACard({
       <h4 className="font-sans font-semibold text-[18px] text-[var(--color-text-primary)] mb-2">
         {title}
       </h4>
-      <p className="text-[15px] text-[#C8CDD5] mb-4">{description}</p>
+      <p className="text-[15px] text-[var(--color-text-secondary)] mb-4">{description}</p>
       <a
         href={href}
         className="inline-block bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-text-inverse)] font-medium text-[14px] px-5 py-2 rounded-sm transition-colors"
@@ -278,7 +279,7 @@ export function ProTip({ children }: { children?: React.ReactNode }) {
         <span className="text-[var(--color-gold)] font-mono text-[12px] font-medium uppercase tracking-wider mt-0.5 shrink-0">
           Pro Tip
         </span>
-        <div className="text-[15px] leading-[1.7] text-[#C8CDD5] [&>p]:mb-0">
+        <div className="text-[15px] leading-[1.7] text-[var(--color-text-secondary)] [&>p]:mb-0">
           {children}
         </div>
       </div>

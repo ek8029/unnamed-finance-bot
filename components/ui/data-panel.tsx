@@ -7,7 +7,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 // ============================================================================
 
 const dataPanelVariants = cva(
-  'rounded border relative overflow-hidden transition-all duration-200',
+  'rounded border relative overflow-hidden transition-[border-color,box-shadow,background-color] duration-200',
   {
     variants: {
       variant: {
@@ -48,7 +48,7 @@ const DataPanel = React.forwardRef<HTMLDivElement, DataPanelProps>(
           <div
             className="absolute top-0 left-0 right-0 h-[1px]"
             style={{
-              background: 'linear-gradient(90deg, transparent, rgba(230,185,77,0.5), #E6B94D, rgba(230,185,77,0.5), transparent)',
+              background: 'linear-gradient(90deg, transparent, rgba(230,185,77,0.5), var(--color-gold), rgba(230,185,77,0.5), transparent)',
             }}
           />
           <div

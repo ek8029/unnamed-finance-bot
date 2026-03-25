@@ -14,16 +14,16 @@ import { useFinancialSummary, useIntelligence } from '@/hooks/use-financial-data
 function LoadingSkeleton() {
   return (
     <div className="animate-pulse space-y-density">
-      <div className="h-8 bg-neutral-800 rounded w-1/3"></div>
-      <div className="h-4 bg-neutral-800 rounded w-1/2"></div>
-      <div className="grid grid-cols-4 gap-density mt-6">
+      <div className="h-8 bg-[var(--color-bg-elevated)] rounded w-1/3"></div>
+      <div className="h-4 bg-[var(--color-bg-elevated)] rounded w-1/2"></div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-density mt-6">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-32 bg-neutral-800 rounded-xl"></div>
+          <div key={i} className="h-32 bg-[var(--color-bg-elevated)] rounded-xl"></div>
         ))}
       </div>
-      <div className="grid grid-cols-2 gap-density mt-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-density mt-6">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-40 bg-neutral-800 rounded-xl"></div>
+          <div key={i} className="h-40 bg-[var(--color-bg-elevated)] rounded-xl"></div>
         ))}
       </div>
     </div>

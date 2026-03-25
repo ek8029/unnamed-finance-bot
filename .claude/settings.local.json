@@ -31,7 +31,21 @@
       "Bash(grep:*)",
       "Bash(curl:*)",
       "Bash(echo EXIT:$?:*)",
-      "Bash(npx vercel:*)"
+      "Bash(npx vercel:*)",
+      "WebSearch",
+      "Bash(for file in app/login/page.tsx app/signup/page.tsx app/forgot-password/page.tsx app/reset-password/page.tsx app/data-deletion/page.tsx)",
+      "Bash(do echo \"=== $file ===\")",
+      "Read(//c/Users/Evan/OneDrive - The Pennsylvania State University/Desktop/unnamed fintech bot/**)",
+      "Bash(done)",
+      "Bash(bash:*)",
+      "Bash(python3:*)",
+      "Bash(where:*)",
+      "Bash(python:*)",
+      "Bash(python.exe:*)",
+      "Bash(\"/c/Users/Evan/AppData/Local/Programs/Python/Python312/python.exe\" --version)",
+      "Bash(\"/c/Users/Evan/AppData/Local/Programs/Python/Python313/python.exe\" --version)",
+      "Read(//c/Users/Evan/AppData/Local/Programs/Python//**)",
+      "Bash(\"/c/Users/Evan/AppData/Local/Programs/Python/Python312/python.exe\":*)"
     ]
   }
 }

@@ -7,7 +7,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 // ============================================================================
 
 const cardVariants = cva(
-  "rounded-md transition-all duration-200",
+  "rounded-md transition-[border-color,box-shadow,background-color] duration-200",
   {
     variants: {
       variant: {

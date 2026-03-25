@@ -96,7 +96,7 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
         </div>
 
         {/* Trend Chart */}
-        <div className="h-[120px]">
+        <div className="h-[100px] md:h-[120px]" role="img" aria-label="Cash flow trend over time">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data}>
               <defs>
@@ -129,8 +129,8 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
                   return '';
                 }}
                 contentStyle={{
-                  backgroundColor: '#131313',
-                  border: '1px solid rgba(255,255,255,0.06)',
+                  backgroundColor: 'var(--color-bg-elevated, #131313)',
+                  border: '1px solid var(--color-border-base, rgba(255,255,255,0.06))',
                   borderRadius: '4px',
                   color: 'var(--color-text-primary)',
                   fontSize: '11px',

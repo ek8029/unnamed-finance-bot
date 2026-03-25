@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Holding } from '@/types';
 import { useFormat } from '@/hooks/use-format';
@@ -20,10 +20,10 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useState(() => {
+  useEffect(() => {
     const timeout = setTimeout(() => setIsLoading(false), 500);
     return () => clearTimeout(timeout);
-  });
+  }, []);
 
   const sortedHoldings = useMemo(() => {
     const sorted = [...holdings];
@@ -117,7 +117,7 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
               <Skeleton className="h-16 w-full" />
             </div>
           ) : (
-            <table className="w-full min-w-[760px]">
+            <table className="w-full">
               <thead>
                 <tr className="border-b border-[var(--color-border-base)]">
                   <th
@@ -261,7 +261,7 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                       {isExpanded && (
                         <tr className="border-b border-[var(--color-border-subtle)]">
                           <td colSpan={5} className="py-5 px-5 bg-[var(--color-bg-overlay)]/40">
-                            <div className="grid grid-cols-4 gap-6 ml-[54px]">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 ml-[54px]">
                               <div>
                                 <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1.5">
                                   Avg Cost Basis

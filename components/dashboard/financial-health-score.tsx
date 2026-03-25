@@ -52,7 +52,7 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
               <defs>
                 <filter id="scoreGlow" x="-20%" y="-20%" width="140%" height="140%">
                   <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
-                  <feFlood floodColor="#E6B94D" floodOpacity="0.3" result="glowColor" />
+                  <feFlood floodColor="var(--color-gold)" floodOpacity="0.3" result="glowColor" />
                   <feComposite in="glowColor" in2="blur" operator="in" result="coloredBlur" />
                   <feMerge>
                     <feMergeNode in="coloredBlur" />
@@ -73,7 +73,7 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
                 cy="64"
                 r="56"
                 fill="none"
-                stroke="#E6B94D"
+                stroke="var(--color-gold)"
                 strokeWidth="8"
                 strokeLinecap="round"
                 strokeDasharray={`${(healthScore.score / 100) * 351.68} 351.68`}

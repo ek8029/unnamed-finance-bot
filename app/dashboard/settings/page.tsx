@@ -12,70 +12,20 @@ import { useToast } from '@/contexts/toast-context'
 import { supabase as supabaseBrowser } from '@/lib/supabase/client'
 import { useTier } from '@/hooks/use-tier'
 import {
-  User,
   Bell,
-  Shield,
   Palette,
   CreditCard,
   Database,
-  Lock,
-  Smartphone,
   Globe,
   Accessibility,
   Loader2,
   X,
-  Eye,
-  EyeOff,
-  Monitor,
-  LogOut,
   AlertTriangle,
-  Check,
-  Clock,
-  ShieldCheck,
-  Copy,
 } from 'lucide-react'
 
-// ── Password strength (mirrors server-side logic) ──
-
-interface PasswordStrength {
-  score: 0 | 1 | 2 | 3 | 4
-  label: string
-  color: string
-  requirements: { label: string; met: boolean }[]
-}
-
-function getPasswordStrength(password: string): PasswordStrength {
-  const requirements = [
-    { label: 'At least 8 characters', met: password.length >= 8 },
-    { label: 'Uppercase letter', met: /[A-Z]/.test(password) },
-    { label: 'Lowercase letter', met: /[a-z]/.test(password) },
-    { label: 'Number', met: /\d/.test(password) },
-    { label: 'Special character', met: /[^A-Za-z0-9]/.test(password) },
-  ]
-  const metCount = requirements.filter(r => r.met).length
-  const score = Math.min(4, metCount) as 0 | 1 | 2 | 3 | 4
-  const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong']
-  const colors = [
-    'bg-[var(--color-negative)]',
-    'bg-[var(--color-negative)]',
-    'bg-[var(--color-warning)]',
-    'bg-[var(--color-positive)]/70',
-    'bg-[var(--color-positive)]',
-  ]
-  return { score, label: labels[score], color: colors[score], requirements }
-}
-
-// ── Login activity types ──
-
-interface LoginEvent {
-  id: string
-  eventType: string
-  browser: string
-  os: string
-  device: string
-  ipAddress: string
-  createdAt: string
-}
+import { ProfileSection } from './profile-section'
+import { SecuritySection, type LoginEvent } from './security-section'
+import { PasswordSection } from './password-section'
 
 export default function SettingsPage() {
   const { settings, updateSettings, resetSettings, formatCurrency, formatCurrencyDetailed, formatDate } = useSettings()
@@ -376,6 +326,25 @@ export default function SettingsPage() {
     }
   }
 
+  const handleCancelMfaEnrollment = () => {
+    setMfaEnrolling(false)
+    setMfaQrCode('')
+    setMfaSecret('')
+    setMfaVerifyCode('')
+    supabaseBrowser.auth.mfa.unenroll({ factorId: mfaFactorId })
+  }
+
+  const handleCopySecret = () => {
+    navigator.clipboard.writeText(mfaSecret)
+    info('Copied', 'Secret copied to clipboard')
+  }
+
+  const handlePasswordModalClose = () => {
+    setShowPasswordModal(false)
+    setPasswordForm({ current: '', new: '', confirm: '' })
+    setShowPasswords({ current: false, new: false, confirm: false })
+  }
+
   const handleThemeChange = (theme: 'light' | 'dark' | 'auto') => {
     updateSettings({ theme })
     info('Theme changed', `Switched to ${theme} mode`)
@@ -463,37 +432,13 @@ export default function SettingsPage() {
       {/* Settings Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Profile Settings */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)]">
-                <User className="w-4 h-4 text-[var(--color-gold)]" />
-              </div>
-              <div>
-                <CardTitle>Profile Settings</CardTitle>
-                <CardDescription>Update your personal information</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input id="name" type="text" value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={profile.email} disabled className="opacity-60" />
-              <p className="text-[10px] text-[var(--color-text-muted)]">Contact support to change your email address</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" type="tel" value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} />
-            </div>
-            <Button onClick={handleSaveProfile} disabled={savingProfile || profileLoading} className="w-full">
-              {savingProfile ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>) : 'Save Changes'}
-            </Button>
-          </CardContent>
-        </Card>
+        <ProfileSection
+          profile={profile}
+          setProfile={setProfile}
+          profileLoading={profileLoading}
+          savingProfile={savingProfile}
+          onSaveProfile={handleSaveProfile}
+        />
 
         {/* Appearance Settings */}
         <Card>
@@ -511,12 +456,12 @@ export default function SettingsPage() {
           <CardContent className="space-y-6">
             <div className="space-y-3">
               <Label>Theme</Label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {(['light', 'dark', 'auto'] as const).map((theme) => (
                   <button
                     key={theme}
                     onClick={() => handleThemeChange(theme)}
-                    className={`p-3 rounded-md border-2 transition-all type-label ${
+                    className={`p-3 rounded-md border-2 transition-colors type-label ${
                       settings.theme === theme
                         ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
                         : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]'
@@ -530,12 +475,12 @@ export default function SettingsPage() {
 
             <div className="space-y-3">
               <Label>Dashboard Density</Label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {(['compact', 'comfortable', 'spacious'] as const).map((density) => (
                   <button
                     key={density}
                     onClick={() => handleDensityChange(density)}
-                    className={`p-3 rounded-md border-2 transition-all type-label ${
+                    className={`p-3 rounded-md border-2 transition-colors type-label ${
                       settings.density === density
                         ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
                         : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]'
@@ -589,220 +534,30 @@ export default function SettingsPage() {
         </Card>
 
         {/* Security Settings */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)]">
-                <Shield className="w-4 h-4 text-[var(--color-gold)]" />
-              </div>
-              <div>
-                <CardTitle>Security</CardTitle>
-                <CardDescription>Protect your account and data</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {/* Password */}
-            <div className="flex items-center justify-between p-4 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-base)]">
-              <div className="flex items-center gap-3">
-                <Lock className="w-5 h-5 text-[var(--color-text-muted)]" />
-                <div>
-                  <p className="type-h3">Password</p>
-                  <p className="text-[var(--color-text-secondary)] text-xs">Secure your account with a strong password</p>
-                </div>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => setShowPasswordModal(true)}>Change</Button>
-            </div>
-
-            {/* Two-Factor Authentication */}
-            <div className="p-4 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-base)]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {mfaEnabled ? (
-                    <ShieldCheck className="w-5 h-5 text-[var(--color-positive)]" />
-                  ) : (
-                    <Smartphone className="w-5 h-5 text-[var(--color-text-muted)]" />
-                  )}
-                  <div>
-                    <p className="type-h3">Two-Factor Authentication</p>
-                    <p className={`text-xs ${mfaEnabled ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-muted)]'}`}>
-                      {mfaLoading ? 'Checking...' : mfaEnabled ? 'Enabled via authenticator app' : 'Not yet enabled'}
-                    </p>
-                  </div>
-                </div>
-                {!mfaLoading && !mfaEnrolling && (
-                  mfaEnabled ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleDisableMfa}
-                      disabled={mfaDisabling}
-                      className="text-red-400 border-red-500/20 hover:bg-red-500/5"
-                    >
-                      {mfaDisabling ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Disable'}
-                    </Button>
-                  ) : (
-                    <Button variant="outline" size="sm" onClick={handleEnableMfa}>
-                      Enable
-                    </Button>
-                  )
-                )}
-              </div>
-
-              {/* Enrollment Flow */}
-              {mfaEnrolling && mfaQrCode && (
-                <div className="mt-4 pt-4 border-t border-[var(--color-border-subtle)] space-y-4">
-                  <div className="text-center">
-                    <p className="text-sm text-[var(--color-text-secondary)] mb-3">
-                      Scan this QR code with your authenticator app (Google Authenticator, Authy, 1Password, etc.)
-                    </p>
-                    <div className="inline-block bg-white rounded-lg p-3">
-                      <img src={mfaQrCode} alt="2FA QR Code" className="w-48 h-48" />
-                    </div>
-                  </div>
-
-                  {/* Manual entry secret */}
-                  <div className="text-center">
-                    <p className="text-xs text-[var(--color-text-muted)] mb-1.5">Or enter this code manually:</p>
-                    <div className="inline-flex items-center gap-2">
-                      <code className="text-xs font-mono text-[var(--color-gold)] bg-[var(--color-bg-surface)] px-3 py-1.5 rounded border border-[var(--color-border-base)] select-all">
-                        {mfaSecret}
-                      </code>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(mfaSecret)
-                          info('Copied', 'Secret copied to clipboard')
-                        }}
-                        className="p-1.5 rounded hover:bg-[var(--color-bg-overlay)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Verify code */}
-                  <div className="space-y-3">
-                    <div>
-                      <Label className="text-xs">Enter the 6-digit code from your app</Label>
-                      <Input
-                        value={mfaVerifyCode}
-                        onChange={(e) => setMfaVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                        placeholder="000000"
-                        className="mt-1 text-center text-lg tracking-[0.5em] font-mono"
-                        maxLength={6}
-                        inputMode="numeric"
-                        autoComplete="one-time-code"
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setMfaEnrolling(false)
-                          setMfaQrCode('')
-                          setMfaSecret('')
-                          setMfaVerifyCode('')
-                          supabaseBrowser.auth.mfa.unenroll({ factorId: mfaFactorId })
-                        }}
-                        className="flex-1"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={handleVerifyMfa}
-                        disabled={mfaVerifyCode.length !== 6 || mfaVerifying}
-                        className="flex-1 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)]"
-                      >
-                        {mfaVerifying && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
-                        Verify & Enable
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Login Activity */}
-            <div className="p-4 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-base)]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Monitor className="w-5 h-5 text-[var(--color-text-muted)]" />
-                  <div>
-                    <p className="type-h3">Login Activity</p>
-                    <p className="text-[var(--color-text-secondary)] text-xs">Recent sign-ins to your account</p>
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleFetchActivity}
-                  disabled={activityLoading}
-                >
-                  {activityLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : showActivity ? 'Hide' : 'View'}
-                </Button>
-              </div>
-
-              {showActivity && (
-                <div className="mt-3 space-y-2">
-                  {loginActivity.length === 0 ? (
-                    <p className="text-xs text-[var(--color-text-muted)] py-2">No recent login activity recorded</p>
-                  ) : (
-                    loginActivity.map((event) => (
-                      <div
-                        key={event.id}
-                        className="flex items-center justify-between p-2.5 bg-[var(--color-bg-surface)] rounded border border-[var(--color-border-subtle)]"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                            event.eventType === 'login_success' ? 'bg-[var(--color-positive)]'
-                            : event.eventType === 'password_change' ? 'bg-[var(--color-warning)]'
-                            : 'bg-[var(--color-text-muted)]'
-                          }`} />
-                          <div>
-                            <p className="type-label text-xs text-[var(--color-text-primary)]">
-                              {event.browser} on {event.os}
-                              <span className="text-[var(--color-text-muted)] ml-1">({event.device})</span>
-                            </p>
-                            <p className="text-[10px] text-[var(--color-text-muted)]">
-                              {event.ipAddress !== 'unknown' && `${event.ipAddress} · `}
-                              {event.eventType === 'password_change' ? 'Password changed' :
-                               event.eventType === 'session_revoke' ? 'Sessions revoked' : 'Sign in'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 text-[10px] text-[var(--color-text-muted)]">
-                          <Clock className="w-3 h-3" />
-                          {formatRelativeTime(event.createdAt)}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Sign Out Other Devices */}
-            <div className="flex items-center justify-between p-4 bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-base)]">
-              <div className="flex items-center gap-3">
-                <LogOut className="w-5 h-5 text-[var(--color-text-muted)]" />
-                <div>
-                  <p className="type-h3">Sign Out Other Devices</p>
-                  <p className="text-[var(--color-text-secondary)] text-xs">End all sessions except this one</p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRevokeOtherSessions}
-                disabled={revokingOthers}
-              >
-                {revokingOthers ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Sign Out'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <SecuritySection
+          mfaEnabled={mfaEnabled}
+          mfaLoading={mfaLoading}
+          mfaEnrolling={mfaEnrolling}
+          mfaQrCode={mfaQrCode}
+          mfaSecret={mfaSecret}
+          mfaVerifyCode={mfaVerifyCode}
+          mfaVerifying={mfaVerifying}
+          mfaDisabling={mfaDisabling}
+          setMfaVerifyCode={setMfaVerifyCode}
+          onEnableMfa={handleEnableMfa}
+          onVerifyMfa={handleVerifyMfa}
+          onDisableMfa={handleDisableMfa}
+          onCancelMfaEnrollment={handleCancelMfaEnrollment}
+          onCopySecret={handleCopySecret}
+          onOpenPasswordModal={() => setShowPasswordModal(true)}
+          loginActivity={loginActivity}
+          activityLoading={activityLoading}
+          showActivity={showActivity}
+          onFetchActivity={handleFetchActivity}
+          formatRelativeTime={formatRelativeTime}
+          revokingOthers={revokingOthers}
+          onRevokeOtherSessions={handleRevokeOtherSessions}
+        />
 
         {/* Localization Settings */}
         <Card>
@@ -820,12 +575,12 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Currency</Label>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                 {(['USD', 'EUR', 'GBP', 'JPY', 'CAD'] as const).map((currency) => (
                   <button
                     key={currency}
                     onClick={() => updateSettings({ currency })}
-                    className={`p-2 rounded-md border transition-all type-label ${
+                    className={`p-2 rounded-md border transition-colors type-label ${
                       settings.currency === currency
                         ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
                         : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]'
@@ -839,7 +594,7 @@ export default function SettingsPage() {
 
             <div className="space-y-2">
               <Label>Number Format</Label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {([
                   { value: 'US', label: 'US (1,234.56)' },
                   { value: 'EU', label: 'EU (1.234,56)' },
@@ -848,7 +603,7 @@ export default function SettingsPage() {
                   <button
                     key={format.value}
                     onClick={() => updateSettings({ numberFormat: format.value })}
-                    className={`p-2 rounded-md border transition-all type-caption text-[9px] ${
+                    className={`p-2 rounded-md border transition-colors type-caption text-[9px] ${
                       settings.numberFormat === format.value
                         ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
                         : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]'
@@ -862,12 +617,12 @@ export default function SettingsPage() {
 
             <div className="space-y-2">
               <Label>Date Format</Label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {(['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD'] as const).map((format) => (
                   <button
                     key={format}
                     onClick={() => updateSettings({ dateFormat: format })}
-                    className={`p-2 rounded-md border transition-all type-caption text-[9px] ${
+                    className={`p-2 rounded-md border transition-colors type-caption text-[9px] ${
                       settings.dateFormat === format
                         ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
                         : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]'
@@ -970,7 +725,7 @@ export default function SettingsPage() {
                 </div>
                 <a
                   href="/pricing"
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-[2px] bg-[#B8914A] text-[#070C17] hover:bg-[#C9A45E] transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-[2px] bg-[var(--color-gold)] text-[var(--color-bg-base)] hover:bg-[var(--color-gold-hi)] transition-colors"
                 >
                   Upgrade to Pro — $24.99/mo
                 </a>
@@ -1056,173 +811,16 @@ export default function SettingsPage() {
       </Card>
 
       {/* ── Password Change Modal ── */}
-      {showPasswordModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => {
-              setShowPasswordModal(false)
-              setPasswordForm({ current: '', new: '', confirm: '' })
-              setShowPasswords({ current: false, new: false, confirm: false })
-            }}
-          />
-          <div className="relative w-full max-w-md mx-4 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-[var(--color-border-subtle)]">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-md bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)]">
-                  <Lock className="w-5 h-5 text-[var(--color-gold)]" />
-                </div>
-                <div>
-                  <h2 className="type-h2">Change Password</h2>
-                  <p className="text-[var(--color-text-secondary)] text-sm">Enter your current and new password</p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setShowPasswordModal(false)
-                  setPasswordForm({ current: '', new: '', confirm: '' })
-                  setShowPasswords({ current: false, new: false, confirm: false })
-                }}
-                className="p-2 rounded-md hover:bg-[var(--color-bg-elevated)] transition-colors"
-              >
-                <X className="w-5 h-5 text-[var(--color-text-muted)]" />
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="p-6 space-y-4">
-              {/* Current Password */}
-              <div className="space-y-2">
-                <Label htmlFor="current-password">Current Password</Label>
-                <div className="relative">
-                  <Input
-                    id="current-password"
-                    type={showPasswords.current ? 'text' : 'password'}
-                    value={passwordForm.current}
-                    onChange={(e) => setPasswordForm({ ...passwordForm, current: e.target.value })}
-                    placeholder="Enter current password"
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-                  >
-                    {showPasswords.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* New Password */}
-              <div className="space-y-2">
-                <Label htmlFor="new-password">New Password</Label>
-                <div className="relative">
-                  <Input
-                    id="new-password"
-                    type={showPasswords.new ? 'text' : 'password'}
-                    value={passwordForm.new}
-                    onChange={(e) => setPasswordForm({ ...passwordForm, new: e.target.value })}
-                    placeholder="Enter new password"
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-                  >
-                    {showPasswords.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-
-                {/* Password Strength Meter */}
-                {passwordForm.new && (
-                  <div className="space-y-2 mt-2">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 flex gap-1">
-                        {[0, 1, 2, 3].map((i) => (
-                          <div
-                            key={i}
-                            className={`h-1.5 flex-1 rounded-full transition-colors ${
-                              i < passwordStrength.score
-                                ? passwordStrength.color
-                                : 'bg-[var(--color-bg-elevated)]'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className={`text-[10px] type-mono ${
-                        passwordStrength.score >= 3 ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-muted)]'
-                      }`}>
-                        {passwordStrength.label}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-1">
-                      {passwordStrength.requirements.map((req) => (
-                        <div key={req.label} className="flex items-center gap-1.5 text-[10px]">
-                          {req.met ? (
-                            <Check className="w-3 h-3 text-[var(--color-positive)]" />
-                          ) : (
-                            <X className="w-3 h-3 text-[var(--color-text-muted)]" />
-                          )}
-                          <span className={req.met ? 'text-[var(--color-text-secondary)]' : 'text-[var(--color-text-muted)]'}>
-                            {req.label}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Confirm Password */}
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm New Password</Label>
-                <div className="relative">
-                  <Input
-                    id="confirm-password"
-                    type={showPasswords.confirm ? 'text' : 'password'}
-                    value={passwordForm.confirm}
-                    onChange={(e) => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
-                    placeholder="Confirm new password"
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-                  >
-                    {showPasswords.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                {passwordForm.new && passwordForm.confirm && passwordForm.new !== passwordForm.confirm && (
-                  <p className="text-xs text-[var(--color-negative)]">Passwords do not match</p>
-                )}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-[var(--color-border-subtle)]">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowPasswordModal(false)
-                  setPasswordForm({ current: '', new: '', confirm: '' })
-                  setShowPasswords({ current: false, new: false, confirm: false })
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handlePasswordChange}
-                disabled={changingPassword || !passwordForm.current || !passwordForm.new || !passwordForm.confirm || passwordStrength.score < 3}
-              >
-                {changingPassword ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Changing...</>) : 'Change Password'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <PasswordSection
+        showPasswordModal={showPasswordModal}
+        passwordForm={passwordForm}
+        setPasswordForm={setPasswordForm}
+        changingPassword={changingPassword}
+        showPasswords={showPasswords}
+        setShowPasswords={setShowPasswords}
+        onPasswordChange={handlePasswordChange}
+        onClose={handlePasswordModalClose}
+      />
 
       {/* ── Delete Account Modal ── */}
       {showDeleteModal && (
@@ -1318,4 +916,19 @@ export default function SettingsPage() {
       )}
     </div>
   )
+}
+
+// ── Password strength (kept for validation in handlers) ──
+
+function getPasswordStrength(password: string) {
+  const requirements = [
+    { label: 'At least 8 characters', met: password.length >= 8 },
+    { label: 'Uppercase letter', met: /[A-Z]/.test(password) },
+    { label: 'Lowercase letter', met: /[a-z]/.test(password) },
+    { label: 'Number', met: /\d/.test(password) },
+    { label: 'Special character', met: /[^A-Za-z0-9]/.test(password) },
+  ]
+  const metCount = requirements.filter(r => r.met).length
+  const score = Math.min(4, metCount) as 0 | 1 | 2 | 3 | 4
+  return { score, requirements }
 }

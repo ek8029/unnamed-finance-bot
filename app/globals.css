@@ -26,8 +26,8 @@
 
     /* ── Text ── */
     --color-text-primary:  #FAFAFA;
-    --color-text-secondary:#737373;
-    --color-text-muted:    #525252;
+    --color-text-secondary:#8F8F8F;
+    --color-text-muted:    #8A8A8A;
     --color-text-inverse:  #0A0A0A;
 
     /* ── Brand Accent — Sovereign Gold ── */
@@ -37,11 +37,25 @@
     --color-gold-surface:  rgba(230, 185, 77, 0.06);
     --color-gold-border:   rgba(230, 185, 77, 0.15);
 
+    /* ── Ambient Glow ── */
+    --color-glow-primary: rgba(230, 185, 77, 0.06);
+    --color-glow-secondary: rgba(230, 185, 77, 0.04);
+
     /* ── Semantic Data Colors ── */
     --color-positive:      #4ADE80;
-    --color-negative:      #F87171;
+    --color-negative:      #ef4444;
+    --color-negative-muted: rgba(239, 68, 68, 0.10);
+    --color-negative-border: rgba(239, 68, 68, 0.20);
+    --color-negative-text: #f87171;
     --color-neutral:       #525252;
-    --color-warning:       #FBBF24;
+    --color-warning:       #f59e0b;
+    --color-warning-muted: rgba(245, 158, 11, 0.10);
+    --color-warning-border: rgba(245, 158, 11, 0.20);
+    --color-warning-text:  #fbbf24;
+    --color-info:          #3b82f6;
+    --color-info-muted:    rgba(59, 130, 246, 0.10);
+    --color-info-border:   rgba(59, 130, 246, 0.20);
+    --color-info-text:     #60a5fa;
 
     /* ── Spacing Scale ── */
     --space-1:  4px;
@@ -116,10 +130,24 @@
     --color-gold-surface:  rgba(184, 145, 74, 0.04);
     --color-gold-border:   rgba(184, 145, 74, 0.12);
 
+    /* ── Ambient Glow ── */
+    --color-glow-primary: rgba(180, 140, 50, 0.04);
+    --color-glow-secondary: rgba(180, 140, 50, 0.03);
+
     --color-positive:      #16A34A;
-    --color-negative:      #DC2626;
+    --color-negative:      #dc2626;
+    --color-negative-muted: rgba(220, 38, 38, 0.08);
+    --color-negative-border: rgba(220, 38, 38, 0.15);
+    --color-negative-text: #dc2626;
     --color-neutral:       #6B7280;
-    --color-warning:       #CA8A04;
+    --color-warning:       #d97706;
+    --color-warning-muted: rgba(217, 119, 6, 0.08);
+    --color-warning-border: rgba(217, 119, 6, 0.15);
+    --color-warning-text:  #d97706;
+    --color-info:          #2563eb;
+    --color-info-muted:    rgba(37, 99, 235, 0.08);
+    --color-info-border:   rgba(37, 99, 235, 0.15);
+    --color-info-text:     #2563eb;
 
     --shadow-card:       0 2px 12px rgba(0, 0, 0, 0.06);
     --shadow-card-hover: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -373,7 +401,7 @@
     background: var(--color-bg-surface);
     border: 1px solid var(--color-border-base);
     box-shadow: var(--shadow-card);
-    transition: all 200ms ease;
+    transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
   }
   .sovereign-card:hover {
     border-color: rgba(230, 185, 77, 0.2);

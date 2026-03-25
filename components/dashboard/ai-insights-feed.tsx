@@ -106,14 +106,18 @@ export function AIInsightsFeed({ insights: initialInsights, holdings = [] }: AII
             return (
               <div
                 key={insight.id}
+                role="button"
+                tabIndex={0}
+                aria-expanded={isExpanded}
                 className={cn(
-                  "rounded-md border transition-all duration-200 cursor-pointer",
+                  "rounded-md border transition-[border-color,background-color] duration-200 cursor-pointer",
                   isExpanded
                     ? "border-[var(--color-border-strong)] bg-[var(--color-bg-elevated)]"
                     : "border-[var(--color-border-base)] bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-overlay)] hover:border-[var(--color-border-strong)]"
                 )}
                 style={{ animationDelay: `${index * 60}ms` }}
                 onClick={() => toggleExpand(insight.id)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpand(insight.id); } }}
               >
                 <div className="p-3">
                   {/* Header */}

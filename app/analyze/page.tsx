@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
+import { CinematicBg } from '@/components/cinematic-bg';
 import { TickerSearch } from './ticker-search';
 
 export const metadata: Metadata = {
@@ -31,10 +32,11 @@ const POPULAR_TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'
 
 export default function AnalyzePage() {
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col">
+    <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col relative overflow-hidden">
+      <CinematicBg />
       {/* Nav */}
-      <nav className="container mx-auto px-6 py-3 glass-nav">
-        <div className="flex items-center justify-between">
+      <nav className="relative z-10 glass-nav">
+        <div className="container mx-auto px-6 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2.5">
             <HelmMark size={32} />
             <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
@@ -57,7 +59,7 @@ export default function AnalyzePage() {
       </nav>
 
       {/* Hero */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-16">
+      <main className="relative flex-1 flex flex-col items-center justify-center px-6 py-16">
         <div className="max-w-xl w-full text-center space-y-6">
           <div className="space-y-3">
             <div className="type-eyebrow text-[var(--color-gold)]">Free Stock Analysis</div>
@@ -81,7 +83,7 @@ export default function AnalyzePage() {
                 <a
                   key={ticker}
                   href={`/analyze/${ticker}`}
-                  className="px-3 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[12px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors"
+                  className="px-4 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[13px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors"
                   style={{ fontFamily: 'var(--font-mono)' }}
                 >
                   {ticker}

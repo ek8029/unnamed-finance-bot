@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
+import { CinematicBg } from '@/components/cinematic-bg';
 import { getAllPosts } from '@/lib/blog';
 
 export const metadata: Metadata = {
@@ -32,10 +33,11 @@ export default function BlogIndex() {
   const posts = getAllPosts();
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg-base)] bg-depth">
+    <main className="min-h-screen bg-[var(--color-bg-base)] bg-depth relative overflow-hidden">
+      <CinematicBg />
       {/* ── Navigation ── */}
-      <nav className="container mx-auto px-6 py-3 glass-nav">
-        <div className="flex items-center justify-between">
+      <nav className="relative z-10 glass-nav">
+        <div className="container mx-auto px-6 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2.5">
             <HelmMark size={32} />
             <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
@@ -64,7 +66,7 @@ export default function BlogIndex() {
       </nav>
 
       {/* ── Header ── */}
-      <section className="container mx-auto px-6 pt-12 pb-8 max-w-4xl">
+      <section className="relative container mx-auto px-6 pt-12 pb-8 max-w-4xl">
         <h1 className="font-sans font-bold text-[32px] md:text-[40px] text-[var(--color-text-primary)] tracking-tight mb-3">
           Blog
         </h1>
@@ -74,7 +76,7 @@ export default function BlogIndex() {
       </section>
 
       {/* ── Post Grid ── */}
-      <section className="container mx-auto px-6 pb-24 max-w-4xl">
+      <section className="relative container mx-auto px-6 pb-24 max-w-4xl">
         {posts.length === 0 ? (
           <p className="text-[var(--color-text-muted)] text-[15px]">
             No posts yet. Check back soon.

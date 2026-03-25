@@ -41,7 +41,7 @@ export function ProGate({ feature, description }: ProGateProps) {
         <div className="flex items-center justify-center gap-3">
           <Link
             href="/pricing"
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-[2px] bg-[#B8914A] text-[#070C17] hover:bg-[#C9A45E] transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-[2px] bg-[var(--color-gold)] text-[var(--color-bg-base)] hover:bg-[var(--color-gold-hi)] transition-colors"
           >
             Upgrade to Pro
           </Link>

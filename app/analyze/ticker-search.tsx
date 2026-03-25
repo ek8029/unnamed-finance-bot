@@ -32,7 +32,7 @@ export function TickerSearch() {
           placeholder="Enter ticker symbol (e.g. AAPL)"
           maxLength={5}
           disabled={loading}
-          className="w-full pl-12 pr-4 py-3.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-all text-base tracking-wider disabled:opacity-60"
+          className="w-full pl-12 pr-4 py-3.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors text-base tracking-wider disabled:opacity-60"
           style={{ fontFamily: 'var(--font-mono)' }}
           autoFocus
         />

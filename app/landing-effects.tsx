@@ -42,17 +42,26 @@ export function InteractiveGrid() {
     resize();
     window.addEventListener('resize', resize);
 
+    let cols = Math.ceil(canvas.width / SPACING) + 1;
+    let rows = Math.ceil(canvas.height / SPACING) + 1;
+    let prox: number[][] = Array.from({ length: cols }, () => new Array(rows));
+
+    const origResize = resize;
+    const resizeAndReallocate = () => {
+      origResize();
+      cols = Math.ceil(canvas.width / SPACING) + 1;
+      rows = Math.ceil(canvas.height / SPACING) + 1;
+      prox = Array.from({ length: cols }, () => new Array(rows));
+    };
+    window.removeEventListener('resize', resize);
+    window.addEventListener('resize', resizeAndReallocate);
+
     const draw = () => {
       const { width, height } = canvas;
       ctx.clearRect(0, 0, width, height);
 
       const mx = mouse.current.x;
       const my = mouse.current.y;
-      const cols = Math.ceil(width / SPACING) + 1;
-      const rows = Math.ceil(height / SPACING) + 1;
-
-      // ── Grid proximity ──
-      const prox: number[][] = Array.from({ length: cols }, () => new Array(rows));
       for (let c = 0; c < cols; c++) {
         for (let r = 0; r < rows; r++) {
           const dx = mx - c * SPACING;
@@ -160,7 +169,7 @@ export function InteractiveGrid() {
 
     return () => {
       cancelAnimationFrame(raf.current);
-      window.removeEventListener('resize', resize);
+      window.removeEventListener('resize', resizeAndReallocate);
       window.removeEventListener('mousemove', onMouse);
     };
   }, []);
@@ -246,12 +255,26 @@ export function TiltCard({
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const rectRef = useRef<DOMRect | null>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [hover, setHover] = useState(false);
 
+  useEffect(() => {
+    const update = () => {
+      if (ref.current) rectRef.current = ref.current.getBoundingClientRect();
+    };
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, { passive: true });
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update);
+    };
+  }, []);
+
   const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
+    const rect = rectRef.current;
+    if (!rect) return;
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
     setTilt({

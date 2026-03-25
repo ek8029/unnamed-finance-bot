@@ -4,6 +4,7 @@ import { ArrowLeft, Share2 } from 'lucide-react';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
+import { CinematicBg } from '@/components/cinematic-bg';
 import { getAllPosts, getPostBySlug, extractHeadings } from '@/lib/blog';
 import { mdxComponents, CTACard, ComparisonTable, ProTip } from '@/components/blog/mdx-components';
 import { TableOfContents } from './table-of-contents';
@@ -108,7 +109,8 @@ export default async function BlogPost({ params }: PageProps) {
   ];
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg-base)]">
+    <main className="min-h-screen bg-[var(--color-bg-base)] relative overflow-hidden">
+      <CinematicBg />
       {/* JSON-LD */}
       <script
         type="application/ld+json"
@@ -116,8 +118,8 @@ export default async function BlogPost({ params }: PageProps) {
       />
 
       {/* ── Navigation ── */}
-      <nav className="container mx-auto px-6 py-3 glass-nav">
-        <div className="flex items-center justify-between">
+      <nav className="relative z-10 glass-nav">
+        <div className="container mx-auto px-6 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2.5">
             <HelmMark size={32} />
             <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
@@ -146,7 +148,7 @@ export default async function BlogPost({ params }: PageProps) {
       </nav>
 
       {/* ── Article Layout ── */}
-      <div className="container mx-auto px-6 pt-8 pb-24">
+      <div className="relative container mx-auto px-6 pt-8 pb-24">
         <div className="max-w-5xl mx-auto lg:grid lg:grid-cols-[1fr_220px] lg:gap-12">
           {/* ── Article ── */}
           <article className="max-w-3xl sovereign-card rounded p-6 md:p-8">

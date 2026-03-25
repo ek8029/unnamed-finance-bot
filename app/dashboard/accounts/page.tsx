@@ -359,7 +359,7 @@ export default function AccountsPage() {
                   key={account.id}
                   type="button"
                   onClick={() => setSelectedAccountId(account.id)}
-                  className={`w-full text-left rounded-md border px-4 py-3 flex items-center justify-between gap-4 transition-all ${
+                  className={`w-full text-left rounded-md border px-4 py-3 flex items-center justify-between gap-4 transition-colors ${
                     isPrimary
                       ? 'border-[var(--color-gold-border)] bg-[var(--color-gold-surface)]'
                       : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] hover:border-[var(--color-border-strong)]'
@@ -455,8 +455,8 @@ export default function AccountsPage() {
                       item.status === 'active'
                         ? 'bg-emerald-500/10 text-emerald-400'
                         : item.status === 'error'
-                        ? 'bg-red-500/10 text-red-400'
-                        : 'bg-amber-500/10 text-amber-400'
+                        ? 'bg-[var(--color-negative-muted)] text-[var(--color-negative-text)]'
+                        : 'bg-[var(--color-warning-muted)] text-[var(--color-warning-text)]'
                     }`}>
                       {item.status === 'active' ? 'Healthy' : item.status === 'login_required' ? 'Login Required' : item.status}
                     </span>

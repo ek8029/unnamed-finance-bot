@@ -18,6 +18,8 @@ import {
   BarChart3,
   Sparkles,
   BookOpen,
+  Menu,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
@@ -74,13 +76,16 @@ export default function DashboardLayout({
   const { settings } = useSettings();
   const { isPro } = useTier();
   const reduceMotion = settings.accessibility.reduceMotion;
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [topMenuOpen, setTopMenuOpen] = useState(false);
   const [portfolioDropdownOpen, setPortfolioDropdownOpen] = useState(() =>
     PORTFOLIO_HREFS.includes(typeof window !== 'undefined' ? window.location.pathname : '')
   );
   const menuRef = useRef<HTMLDivElement>(null);
+  const topMenuRef = useRef<HTMLDivElement>(null);
 
   // Auto-expand portfolio section when navigating to a child route
   useEffect(() => {
@@ -89,11 +94,19 @@ export default function DashboardLayout({
     }
   }, [pathname]);
 
-  // Close user menu on click outside
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
+  // Close user menus on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setMenuOpen(false);
+      }
+      if (topMenuRef.current && !topMenuRef.current.contains(event.target as Node)) {
+        setTopMenuOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -158,7 +171,21 @@ export default function DashboardLayout({
       {/* ═══════════════════════════════════════════════
           FIXED SIDEBAR
           ═══════════════════════════════════════════════ */}
-      <aside className="fixed inset-y-0 left-0 z-40 w-64 flex flex-col bg-[var(--color-bg-surface)] border-r border-[var(--color-border-base)]">
+      {/* Backdrop overlay for mobile sidebar */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          onKeyDown={(e) => { if (e.key === 'Escape') setSidebarOpen(false); }}
+          role="presentation"
+        />
+      )}
+
+      <aside className={cn(
+        "fixed inset-y-0 left-0 z-40 w-64 flex flex-col bg-[var(--color-bg-surface)] border-r border-[var(--color-border-base)]",
+        "transition-transform duration-300",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      )}>
 
         {/* ── Logo ── */}
         <div className="shrink-0 px-5 py-5">
@@ -171,7 +198,7 @@ export default function DashboardLayout({
         </div>
 
         {/* ── Navigation ── */}
-        <nav className="flex-1 overflow-y-auto custom-scrollbar px-3 pb-4">
+        <nav aria-label="Dashboard navigation" className="flex-1 overflow-y-auto custom-scrollbar px-3 pb-4">
           <div className="mb-3 px-3">
             <span className="tracking-widest uppercase text-[10px] font-medium text-[var(--color-text-muted)]">
               Navigation
@@ -192,7 +219,7 @@ export default function DashboardLayout({
                       <Link
                         href={item.href}
                         className={cn(
-                          'flex-1 flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded transition-all duration-200',
+                          'flex-1 flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded transition-colors duration-200',
                           isExactActive
                             ? 'sidebar-active'
                             : isGroupActive
@@ -208,8 +235,9 @@ export default function DashboardLayout({
                       </Link>
                       <button
                         onClick={() => setPortfolioDropdownOpen(!portfolioDropdownOpen)}
-                        className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+                        className="p-3 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
                         aria-label="Toggle portfolio sub-menu"
+                        aria-expanded={portfolioDropdownOpen}
                       >
                         <ChevronDown className={cn(
                           'w-3.5 h-3.5 transition-transform duration-200',
@@ -228,7 +256,7 @@ export default function DashboardLayout({
                               key={child.name}
                               href={child.href}
                               className={cn(
-                                'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded transition-all duration-200',
+                                'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded transition-colors duration-200',
                                 isChildActive
                                   ? 'text-[var(--color-gold)] bg-[var(--color-gold-surface)]'
                                   : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)]'
@@ -258,7 +286,7 @@ export default function DashboardLayout({
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded transition-all duration-200',
+                    'flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded transition-colors duration-200',
                     isActive
                       ? 'sidebar-active'
                       : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)]'
@@ -288,7 +316,7 @@ export default function DashboardLayout({
             <Link
               href="/dashboard/accounts"
               className={cn(
-                'flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded transition-all duration-200',
+                'flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded transition-colors duration-200',
                 pathname === '/dashboard/accounts'
                   ? 'sidebar-active'
                   : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)]'
@@ -300,7 +328,7 @@ export default function DashboardLayout({
             <Link
               href="/dashboard/settings"
               className={cn(
-                'flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded transition-all duration-200',
+                'flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded transition-colors duration-200',
                 pathname === '/dashboard/settings'
                   ? 'sidebar-active'
                   : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)]'
@@ -399,25 +427,93 @@ export default function DashboardLayout({
           MAIN AREA (offset by sidebar width)
           ═══════════════════════════════════════════════ */}
       <div className={cn(
-        "ml-64 flex flex-col flex-1 min-w-0",
+        "ml-0 md:ml-64 flex flex-col flex-1 min-w-0",
         isChatPage ? "h-screen overflow-hidden" : "min-h-screen"
       )}>
 
-        {/* ── Glassmorphic Top Bar ── */}
-        <header className="shrink-0 glass-nav sticky top-0 z-30">
+        {/* ── Mobile Top Bar (hamburger + logo) ── */}
+        <div className="sticky top-0 z-30 bg-[var(--color-bg-base)] border-b border-[var(--color-border-base)] px-4 py-3 flex items-center gap-3 md:hidden">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-1 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+            aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+          >
+            {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+          <HelmMark size={22} />
+          <span className="text-sm font-semibold text-[var(--color-text-primary)] tracking-tight">
+            {pageTitle}
+          </span>
+        </div>
+
+        {/* ── Glassmorphic Top Bar (desktop only) ── */}
+        <header className="shrink-0 glass-nav sticky top-0 z-30 hidden md:block">
           <div className="flex items-center justify-between px-6 py-3">
             <h1 className="text-sm font-semibold text-[var(--color-text-primary)] tracking-tight">
               {pageTitle}
             </h1>
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="w-8 h-8 rounded-full bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center hover:border-[var(--color-gold)] transition-colors"
-              >
-                <span className="text-xs font-semibold text-[var(--color-gold)]">
-                  {profile?.initials || '...'}
-                </span>
-              </button>
+              <div className="relative" ref={topMenuRef}>
+                <button
+                  onClick={() => setTopMenuOpen(!topMenuOpen)}
+                  className="w-8 h-8 rounded-full bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center hover:border-[var(--color-gold)] transition-colors"
+                >
+                  <span className="text-xs font-semibold text-[var(--color-gold)]">
+                    {profile?.initials || '...'}
+                  </span>
+                </button>
+
+                {/* Top-right dropdown (opens downward) */}
+                {topMenuOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-56 bg-[var(--color-bg-elevated)] rounded-lg shadow-xl z-50 overflow-hidden border border-[var(--color-border-base)]">
+                    <div className="px-4 py-3 border-b border-[var(--color-border-base)]">
+                      <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                        {profile?.fullName || 'User'}
+                      </p>
+                      <p className="text-xs text-[var(--color-text-muted)] truncate">
+                        {profile?.email || ''}
+                      </p>
+                    </div>
+                    <div className="py-1">
+                      <Link
+                        href="/pricing"
+                        onClick={() => setTopMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
+                      >
+                        <TrendingUp className="w-4 h-4" />
+                        <span>Pricing</span>
+                      </Link>
+                      <a
+                        href="/blog"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setTopMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        <span>Blog</span>
+                      </a>
+                    </div>
+                    <div className="border-t border-[var(--color-border-base)] py-1">
+                      <button
+                        onClick={() => {
+                          setTopMenuOpen(false);
+                          handleLogout();
+                        }}
+                        disabled={loggingOut}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-[var(--color-negative)] hover:text-[var(--color-negative)] hover:bg-[var(--color-negative)]/5 transition-colors disabled:opacity-50"
+                      >
+                        {loggingOut ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <LogOut className="w-4 h-4" />
+                        )}
+                        <span>{loggingOut ? 'Signing out...' : 'Sign out'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>

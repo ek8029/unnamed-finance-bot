@@ -122,7 +122,7 @@ function CategoryDropdown({
       <button
         type="button"
         onClick={() => { setOpen(!open); setQuery(''); }}
-        className="w-full flex items-center justify-between px-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-md text-sm text-[var(--color-text-primary)] cursor-pointer hover:border-[var(--color-border-strong)] transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-md text-sm text-[var(--color-text-primary)] cursor-pointer hover:border-[var(--color-border-strong)] transition-colors"
       >
         <span className={`truncate ${activeValue ? '' : 'text-[var(--color-text-secondary)]'}`}>
           {selectedLabel}
@@ -142,7 +142,7 @@ function CategoryDropdown({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search categories..."
-                className="w-full pl-8 pr-3 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)]"
+                className="w-full pl-8 pr-3 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-2 focus:ring-[var(--color-gold)]/30"
               />
             </div>
           </div>
@@ -333,7 +333,7 @@ export default function TransactionsPage() {
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="Search by description or merchant..."
-                  className="w-full pl-9 pr-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-md text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)]"
+                  className="w-full pl-9 pr-3 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-md text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-2 focus:ring-[var(--color-gold)]/30"
                 />
               </div>
             </form>
@@ -344,7 +344,7 @@ export default function TransactionsPage() {
               <select
                 value={filters.account_id}
                 onChange={(e) => updateFilters({ account_id: e.target.value })}
-                className="w-full px-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-md text-sm text-[var(--color-text-primary)] cursor-pointer focus:outline-none focus:border-[var(--color-gold)]"
+                className="w-full px-3 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-md text-sm text-[var(--color-text-primary)] cursor-pointer focus:outline-none focus:border-[var(--color-gold)] focus:ring-2 focus:ring-[var(--color-gold)]/30"
               >
                 <option value="">All Accounts</option>
                 {accountOptions.map((a) => (
@@ -369,7 +369,7 @@ export default function TransactionsPage() {
               <select
                 value={filters.type}
                 onChange={(e) => updateFilters({ type: e.target.value })}
-                className="w-full px-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-md text-sm text-[var(--color-text-primary)] cursor-pointer focus:outline-none focus:border-[var(--color-gold)]"
+                className="w-full px-3 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-md text-sm text-[var(--color-text-primary)] cursor-pointer focus:outline-none focus:border-[var(--color-gold)] focus:ring-2 focus:ring-[var(--color-gold)]/30"
               >
                 <option value="">All</option>
                 <option value="income">Income</option>
@@ -384,7 +384,7 @@ export default function TransactionsPage() {
                 type="date"
                 value={filters.date_from}
                 onChange={(e) => updateFilters({ date_from: e.target.value })}
-                className="w-full px-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-md text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-gold)]"
+                className="w-full px-3 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-md text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-2 focus:ring-[var(--color-gold)]/30"
               />
             </div>
 
@@ -395,7 +395,7 @@ export default function TransactionsPage() {
                 type="date"
                 value={filters.date_to}
                 onChange={(e) => updateFilters({ date_to: e.target.value })}
-                className="w-full px-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-md text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-gold)]"
+                className="w-full px-3 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-md text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-2 focus:ring-[var(--color-gold)]/30"
               />
             </div>
 
@@ -403,7 +403,7 @@ export default function TransactionsPage() {
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
-                className="flex items-center gap-1 px-3 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+                className="flex items-center gap-1 px-3 py-2.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
               >
                 <X className="w-3 h-3" />
                 Clear

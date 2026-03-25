@@ -45,7 +45,7 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
   return (
     <div
       ref={ref}
-      className="transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] h-full"
+      className="transition-[opacity,transform,filter] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] h-full"
       style={{
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
@@ -81,7 +81,7 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
         ) : (
           <div className="space-y-4">
             {/* Top: Large Chart */}
-            <div className="h-[280px]">
+            <div className="h-[200px] md:h-[280px]" role="img" aria-label="Net worth trend over time">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={netWorthHistory} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
                   <defs>
@@ -113,8 +113,8 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardP
                   <Tooltip
                     formatter={(value) => [formatCurrency(Number(value)), 'Net Worth']}
                     contentStyle={{
-                      backgroundColor: '#131313',
-                      border: '1px solid rgba(255,255,255,0.06)',
+                      backgroundColor: 'var(--color-bg-elevated, #131313)',
+                      border: '1px solid var(--color-border-base, rgba(255,255,255,0.06))',
                       borderRadius: '4px',
                       color: 'var(--color-text-primary)',
                       fontSize: '12px',

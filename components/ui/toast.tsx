@@ -22,7 +22,7 @@ export function ToastContainer() {
               'p-4 pr-10',
               'relative',
               'animate-slide-in-bottom',
-              'transition-all duration-200'
+              'transition-[opacity,transform] duration-200'
             )}
           >
             <button

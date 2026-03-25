@@ -18,6 +18,72 @@ interface Changes {
   portfolio: number | null;
 }
 
+interface SummaryItem {
+  title: string;
+  value: number;
+  change: number | null;
+  icon: typeof Wallet;
+  iconColor: string;
+  iconBg: string;
+}
+
+function SummaryCard({ item, index }: { item: SummaryItem; index: number }) {
+  const { formatCurrency, formatPercentage } = useFormat();
+  const Icon = item.icon;
+  const isPositive = (item.change ?? 0) > 0;
+  const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
+  const animatedValue = useCountUp(item.value, 1200, 0, index * 100);
+  const displayValue = isVisible ? animatedValue : item.value;
+
+  return (
+    <div
+      ref={ref}
+      className="transition-[opacity,transform,filter] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
+        filter: isVisible ? 'blur(0px)' : 'blur(4px)',
+        transitionDelay: `${index * 80}ms`,
+      }}
+    >
+      <DataPanel variant="metric">
+        <DataPanelHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 p-2.5">
+          <DataPanelTitle className="text-xs">{item.title}</DataPanelTitle>
+          <div className={`rounded p-2.5 ${item.iconBg} ${index === 0 ? 'shadow-glow-gold' : ''}`}>
+            <Icon className={`h-3.5 w-3.5 ${item.iconColor}`} />
+          </div>
+        </DataPanelHeader>
+        <DataPanelContent className="p-2.5 pt-0">
+          <div className="type-data-sm font-tabular text-[var(--color-text-primary)] glow-white">
+            {formatCurrency(displayValue)}
+          </div>
+          <div className="flex items-center gap-1 mt-1 whitespace-nowrap overflow-hidden">
+            {item.change !== null ? (
+              <>
+                {isPositive ? (
+                  <ArrowUpRight className="h-3 w-3 shrink-0 text-[var(--color-positive)]" />
+                ) : (
+                  <ArrowDownRight className="h-3 w-3 shrink-0 text-[var(--color-negative)]" />
+                )}
+                <span
+                  className={`type-label font-tabular ${
+                    isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                  }`}
+                >
+                  {formatPercentage(item.change)}
+                </span>
+                <span className="type-label text-[var(--color-text-muted)]">vs last mo</span>
+              </>
+            ) : (
+              <span className="type-label text-[var(--color-text-muted)]">--</span>
+            )}
+          </div>
+        </DataPanelContent>
+      </DataPanel>
+    </div>
+  );
+}
+
 interface FinancialSummaryCardsProps {
   totalAssets: number;
   totalLiabilities: number;
@@ -33,9 +99,7 @@ export function FinancialSummaryCards({
   portfolioValue,
   changes,
 }: FinancialSummaryCardsProps) {
-  const { formatCurrency, formatPercentage } = useFormat();
-
-  const summaryData = [
+  const summaryData: SummaryItem[] = [
     {
       title: 'Total Assets',
       value: totalAssets,
@@ -72,62 +136,9 @@ export function FinancialSummaryCards({
 
   return (
     <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
-      {summaryData.map((item, index) => {
-        const Icon = item.icon;
-        const isPositive = (item.change ?? 0) > 0;
-        const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
-        const animatedValue = useCountUp(item.value, 1200, 0, index * 100);
-        const displayValue = isVisible ? animatedValue : item.value;
-
-        return (
-          <div
-            key={item.title}
-            ref={ref}
-            className="transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-            style={{
-              opacity: isVisible ? 1 : 0,
-              transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
-              filter: isVisible ? 'blur(0px)' : 'blur(4px)',
-              transitionDelay: `${index * 80}ms`,
-            }}
-          >
-            <DataPanel variant="metric">
-              <DataPanelHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 p-2.5">
-                <DataPanelTitle className="text-xs">{item.title}</DataPanelTitle>
-                <div className={`rounded p-1.5 ${item.iconBg} ${index === 0 ? 'shadow-glow-gold' : ''}`}>
-                  <Icon className={`h-3.5 w-3.5 ${item.iconColor}`} />
-                </div>
-              </DataPanelHeader>
-              <DataPanelContent className="p-2.5 pt-0">
-                <div className="type-data-sm font-tabular text-[var(--color-text-primary)] glow-white">
-                  {formatCurrency(displayValue)}
-                </div>
-                <div className="flex items-center gap-1 mt-1 whitespace-nowrap overflow-hidden">
-                  {item.change !== null ? (
-                    <>
-                      {isPositive ? (
-                        <ArrowUpRight className="h-3 w-3 shrink-0 text-[var(--color-positive)]" />
-                      ) : (
-                        <ArrowDownRight className="h-3 w-3 shrink-0 text-[var(--color-negative)]" />
-                      )}
-                      <span
-                        className={`type-label font-tabular ${
-                          isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-                        }`}
-                      >
-                        {formatPercentage(item.change)}
-                      </span>
-                      <span className="type-label text-[var(--color-text-muted)]">vs last mo</span>
-                    </>
-                  ) : (
-                    <span className="type-label text-[var(--color-text-muted)]">--</span>
-                  )}
-                </div>
-              </DataPanelContent>
-            </DataPanel>
-          </div>
-        );
-      })}
+      {summaryData.map((item, index) => (
+        <SummaryCard key={item.title} item={item} index={index} />
+      ))}
     </div>
   );
 }

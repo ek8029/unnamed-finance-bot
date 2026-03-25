@@ -538,8 +538,11 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
             return (
               <div
                 key={item.id}
+                role="button"
+                tabIndex={0}
+                aria-expanded={isExpanded}
                 className={cn(
-                  "rounded-md border transition-all duration-200 cursor-pointer",
+                  "rounded-md border transition-colors duration-200 cursor-pointer",
                   isExpanded
                     ? "border-[var(--color-border-strong)] bg-[var(--color-bg-elevated)]"
                     : cn(
@@ -549,6 +552,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
                       )
                 )}
                 onClick={() => toggleExpand(item.id)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpand(item.id); } }}
               >
                 <div className="p-3">
                   {/* Header Row */}

@@ -16,14 +16,14 @@ interface PortfolioAllocationProps {
 }
 
 const HELM_CHART_COLORS = [
-  '#E6B94D', // gold
+  'var(--color-gold)', // gold
   '#38D39F', // positive
   '#6F6F6F', // neutral
   '#D4A94E', // warning
   '#9A9A9A', // secondary
-  '#F87171', // negative
+  'var(--color-negative)', // negative
   '#D4B96E', // gold-hi
-  '#4ADE80', // bright green
+  'var(--color-positive)', // bright green
 ];
 
 export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
@@ -58,7 +58,7 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
         {/* Stacked layout: chart on top, legend below */}
         <div className="flex flex-col gap-4">
           {/* Donut Chart */}
-          <div className="h-[200px] w-full">
+          <div className="h-[160px] md:h-[200px] w-full" role="img" aria-label="Portfolio allocation breakdown">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -92,8 +92,8 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
                 <Tooltip
                   formatter={(value) => formatCurrency(Number(value))}
                   contentStyle={{
-                    backgroundColor: '#131313',
-                    border: '1px solid rgba(255,255,255,0.06)',
+                    backgroundColor: 'var(--color-bg-elevated, #131313)',
+                    border: '1px solid var(--color-border-base, rgba(255,255,255,0.06))',
                     borderRadius: '4px',
                     color: 'var(--color-text-primary)',
                     fontSize: '12px',
@@ -127,7 +127,7 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
                     }
                   }}
                   onMouseLeave={() => setActiveIndex(null)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded border text-left transition-all duration-200 ${
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded border text-left transition-colors duration-200 ${
                     isHidden
                       ? 'border-[var(--color-border-subtle)] bg-transparent opacity-40'
                       : isActive

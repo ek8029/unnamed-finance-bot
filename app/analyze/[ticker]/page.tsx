@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { analyzeStock } from '@/lib/analyze-stock';
 import { AnalysisResultClient } from './analysis-result-client';
 import { HelmMark } from '@/components/helm-mark';
+import { CinematicBg } from '@/components/cinematic-bg';
 
 interface Props {
   params: Promise<{ ticker: string }>;
@@ -45,9 +46,10 @@ export default async function TickerAnalysisPage({ params }: Props) {
 
   if (!analysis) {
     return (
-      <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col">
+      <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col relative overflow-hidden">
+        <CinematicBg />
         <AnalysisNav />
-        <main className="flex-1 flex items-center justify-center px-6">
+        <main className="relative z-10 flex-1 flex items-center justify-center px-6">
           <div className="text-center space-y-4 max-w-md">
             <div className="type-h1 text-[var(--color-text-primary)]">Ticker not found</div>
             <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed">
@@ -90,10 +92,11 @@ export default async function TickerAnalysisPage({ params }: Props) {
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col">
+    <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col relative overflow-hidden">
+      <CinematicBg />
       <AnalysisNav />
 
-      <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-8">
+      <main className="relative z-10 flex-1 max-w-3xl mx-auto w-full px-6 py-8">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -117,7 +120,7 @@ export default async function TickerAnalysisPage({ params }: Props) {
         <AnalysisResultClient analysis={analysis} ticker={symbol} />
       </main>
 
-      <footer className="border-t border-[var(--color-border-subtle)] py-6">
+      <footer className="relative z-10 border-t border-[var(--color-border-subtle)] py-6">
         <div className="max-w-3xl mx-auto px-6 flex items-center justify-between">
           <span className="type-eyebrow text-[var(--color-text-muted)]">helmterminal.dev</span>
           <div className="flex gap-4">
@@ -132,7 +135,7 @@ export default async function TickerAnalysisPage({ params }: Props) {
 
 function AnalysisNav() {
   return (
-    <header className="glass-nav">
+    <header className="relative z-10 glass-nav">
       <div className="max-w-3xl mx-auto px-6 h-12 flex items-center justify-between">
         <a href="/" className="flex items-center gap-2.5">
           <HelmMark size={24} />
