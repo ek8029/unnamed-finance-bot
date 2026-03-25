@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { getAllPosts } from '@/lib/blog';
+import { TOP_TICKERS } from '@/lib/top-tickers';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = 'https://helmterminal.dev';
@@ -24,5 +25,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...blogPosts];
+  const tickerPages: MetadataRoute.Sitemap = TOP_TICKERS.map((ticker) => ({
+    url: `${base}/analyze/${ticker}`,
+    lastModified: new Date(),
+    changeFrequency: 'daily' as const,
+    priority: 0.8,
+  }));
+
+  return [...staticRoutes, ...blogPosts, ...tickerPages];
 }
