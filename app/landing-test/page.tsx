@@ -3,20 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import {
-  PieChart,
-  LineChart,
-  Zap,
-  Lock,
-  Eye,
-  Shield,
-  ArrowRight,
-} from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
 import {
   InteractiveGrid,
   StaggerText,
-  TiltCard,
   CountUp,
   TypingText,
   FadeIn,
@@ -24,58 +15,41 @@ import {
 
 /* ─── Static data ───────────────────────────────────────────────────────── */
 
-const comparisons = [
-  { feature: 'Market Data', legacy: '15-min delay', helm: 'Real-time' },
-  { feature: 'Portfolio Analysis', legacy: 'Generic screeners', helm: 'Your positions' },
-  { feature: 'Tax Optimization', legacy: 'Manual spreadsheets', helm: 'Automated detection' },
-  { feature: 'Risk Alerts', legacy: 'Email newsletters', helm: 'Prioritized inbox' },
-  { feature: 'Annual Cost', legacy: '$2,000 – $24,000', helm: 'Free to start' },
-  { feature: 'Time to Value', legacy: 'Days to weeks', helm: 'Under 2 minutes' },
-];
-
-const features = [
+const dataRows = [
   {
-    icon: PieChart,
-    iconColor: 'text-[var(--color-gold)]',
-    glowColor: 'rgba(230,185,77,0.15)',
-    title: 'Portfolio Intelligence',
-    desc: 'Concentration risk, sector exposure, and performance attribution across all your positions. Know exactly where your money sits.',
     metric: 'AAPL 34%',
-    metricLabel: 'above 25% threshold',
     metricColor: 'text-[var(--color-warning)]',
+    title: 'Portfolio Intelligence',
+    desc: 'Concentration risk, sector exposure, and performance attribution across all your positions.',
   },
   {
-    icon: LineChart,
-    iconColor: 'text-[var(--color-positive)]',
-    glowColor: 'rgba(74,222,128,0.15)',
-    title: 'Tax-Loss Engine',
-    desc: 'Automated harvesting detection, wash-sale compliance, and estimated savings — updated daily across your portfolio.',
     metric: '$2,400',
-    metricLabel: 'harvestable losses',
     metricColor: 'text-[var(--color-positive)]',
+    title: 'Tax-Loss Engine',
+    desc: 'Automated harvesting detection, wash-sale compliance, and estimated tax savings.',
   },
   {
-    icon: Zap,
-    iconColor: 'text-[var(--color-warning)]',
-    glowColor: 'rgba(251,191,36,0.15)',
-    title: 'Actions Inbox',
-    desc: 'Prioritized, data-backed alerts for earnings events, risk threshold breaches, and cash flow anomalies.',
-    metric: '3 actions',
-    metricLabel: 'this week',
+    metric: '3 Actions',
     metricColor: 'text-[var(--color-text-primary)]',
+    title: 'Actions Inbox',
+    desc: 'Prioritized alerts for earnings events, risk breaches, and cash flow anomalies.',
   },
 ];
 
-const trustBadges = [
-  { Icon: Lock, text: 'Bank-level encryption' },
-  { Icon: Eye, text: 'Read-only access' },
-  { Icon: Shield, text: 'Your data is never sold' },
+const comparisons = [
+  { before: '15-minute delayed data', after: 'Real-time' },
+  { before: 'Generic stock screeners', after: 'Your actual positions' },
+  { before: 'Manual tax spreadsheets', after: 'Automated detection' },
+  { before: 'Email newsletter alerts', after: 'Prioritized inbox' },
+  { before: '$2,000 – $24,000 / year', after: 'Free to start' },
+  { before: 'Days to weeks of setup', after: 'Under 2 minutes' },
 ];
 
 /* ─── Page ──────────────────────────────────────────────────────────────── */
 
 export default function LandingTestPage() {
   const [scrolled, setScrolled] = useState(false);
+  const [totalNetWorth, setTotalNetWorth] = useState(0);
   const { scrollY } = useScroll();
   const heroY = useTransform(scrollY, [0, 600], [0, -150]);
   const heroOpacity = useTransform(scrollY, [0, 500], [1, 0]);
@@ -84,6 +58,13 @@ export default function LandingTestPage() {
     const handler = () => setScrolled(window.scrollY > 60);
     window.addEventListener('scroll', handler, { passive: true });
     return () => window.removeEventListener('scroll', handler);
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/metrics/platform')
+      .then((r) => r.json())
+      .then((d) => { if (d.totalNetWorth) setTotalNetWorth(d.totalNetWorth); })
+      .catch(() => {});
   }, []);
 
   return (
@@ -235,16 +216,18 @@ export default function LandingTestPage() {
           className="relative z-[2] text-center px-6 max-w-5xl mx-auto"
           style={{ y: heroY, opacity: heroOpacity }}
         >
-          {/* Three-line stagger headline */}
-          <div className="text-5xl sm:text-7xl md:text-8xl lg:text-[7rem] font-black uppercase tracking-tighter leading-[0.88] mb-8">
-            <StaggerText text="YOUR WEALTH." delay={300} className="block" />
-            <StaggerText text="YOUR RULES." delay={700} className="block" />
+          {/* Two-part headline: challenge + answer */}
+          <div className="mb-8">
+            <div className="text-5xl sm:text-7xl md:text-8xl lg:text-[7rem] font-black uppercase tracking-tighter leading-[0.88]">
+              <StaggerText text="STEER." delay={300} className="block" />
+              <StaggerText text="DON'T DRIFT." delay={700} className="block" />
+            </div>
             <StaggerText
-              text="YOUR HELM."
-              delay={1100}
+              text="TAKE THE HELM."
+              delay={1400}
               goldWord="HELM"
               glowClass="glow-breathe"
-              className="block"
+              className="block text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-[0.15em] mt-5 text-[var(--color-text-secondary)]"
             />
           </div>
 
@@ -279,23 +262,20 @@ export default function LandingTestPage() {
           </FadeIn>
         </motion.div>
 
-        {/* Scroll indicator */}
+        {/* Scroll indicator — slim gold arrow */}
         <motion.div
           className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[2]"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1, y: [0, 8, 0] }}
+          animate={{ opacity: 1, y: [0, 6, 0] }}
           transition={{
             opacity: { delay: 4, duration: 0.5 },
             y: { delay: 4, duration: 2.5, repeat: Infinity, ease: 'easeInOut' },
           }}
         >
-          <div className="w-6 h-10 border border-[var(--color-border-base)] rounded-full flex justify-center pt-2">
-            <motion.div
-              className="w-1 h-2 bg-[var(--color-gold)] rounded-full"
-              animate={{ opacity: [1, 0.3, 1] }}
-              transition={{ duration: 2.5, repeat: Infinity }}
-            />
-          </div>
+          <svg width="14" height="42" viewBox="0 0 14 42" fill="none">
+            <line x1="7" y1="0" x2="7" y2="34" stroke="rgba(230,185,77,0.35)" strokeWidth="1" />
+            <path d="M2 30 L7 38 L12 30" stroke="rgba(230,185,77,0.5)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </motion.div>
       </section>
 
@@ -314,12 +294,16 @@ export default function LandingTestPage() {
               <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-mono mb-1">
                 Net Worth Tracked
               </div>
-              <CountUp
-                end={393830}
-                formatter={(v) => `$${Math.round(v).toLocaleString()}`}
-                duration={2500}
-                className="font-mono font-bold text-lg md:text-xl"
-              />
+              {totalNetWorth > 0 ? (
+                <CountUp
+                  end={totalNetWorth}
+                  formatter={(v) => `$${Math.round(v).toLocaleString()}`}
+                  duration={2500}
+                  className="font-mono font-bold text-lg md:text-xl"
+                />
+              ) : (
+                <span className="font-mono font-bold text-lg md:text-xl text-[var(--color-text-muted)]">&mdash;</span>
+              )}
             </div>
             <div className="text-center md:text-left md:px-6">
               <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-mono mb-1">
@@ -347,49 +331,156 @@ export default function LandingTestPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════
-          COMMAND GRID
+          DASHBOARD PREVIEW — hybrid mockup with live data
           ════════════════════════════════════════════════════════════════════ */}
       <section className="relative z-10 container mx-auto px-6 py-28">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <FadeIn>
-            <div className="text-center mb-16">
-              <div className="text-[10px] uppercase tracking-[0.3em] text-[var(--color-text-muted)] font-mono mb-3">
-                The Command Center
-              </div>
-              <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tight">
-                Three systems. One financial picture.
-              </h2>
-            </div>
+            <h2 className="text-center text-2xl md:text-3xl font-bold uppercase tracking-wider mb-12 text-[var(--color-text-secondary)]">
+              Your Command Center.
+            </h2>
           </FadeIn>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {features.map((card, i) => (
-              <FadeIn key={card.title} delay={i * 150}>
-                <TiltCard className="h-full">
-                  <div className="h-full bg-[var(--color-bg-surface)] border border-white/[0.06] rounded-lg p-6 flex flex-col hover:border-[rgba(230,185,77,0.15)] transition-colors duration-500">
-                    <div className="relative w-12 h-12 rounded-lg bg-[var(--color-bg-elevated)] border border-white/[0.06] flex items-center justify-center mb-5">
-                      <div
-                        className="absolute inset-0 rounded-lg blur-xl"
-                        style={{ background: card.glowColor }}
-                      />
-                      <card.icon className={`w-5 h-5 ${card.iconColor} relative z-10`} />
+          <FadeIn delay={200}>
+            <div className="rounded-xl overflow-hidden border border-[var(--color-gold)]/20 shadow-[0_0_80px_rgba(230,185,77,0.06)]">
+              {/* Browser chrome */}
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.03]">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500/40" />
+                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/40" />
+                <div className="w-2.5 h-2.5 rounded-full bg-green-500/40" />
+                <span className="ml-2 text-[10px] font-mono text-[var(--color-text-muted)]">
+                  helm terminal — dashboard
+                </span>
+              </div>
+
+              {/* Dashboard content */}
+              <div className="p-6 bg-[rgba(10,10,10,0.9)]">
+                {/* Stat cards row */}
+                <div className="grid grid-cols-3 gap-4 mb-5">
+                  <div className="bg-white/[0.03] rounded-lg p-4">
+                    <div className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-mono mb-1">
+                      Net Worth
                     </div>
-
-                    <h3 className="text-lg font-bold tracking-tight mb-2">{card.title}</h3>
-                    <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed mb-6 flex-1">
-                      {card.desc}
-                    </p>
-
-                    <div className="pt-4 border-t border-white/[0.04] flex items-baseline gap-2">
-                      <span className={`font-mono font-bold text-lg ${card.metricColor}`}>
-                        {card.metric}
-                      </span>
-                      <span className="font-mono text-xs text-[var(--color-text-muted)]">
-                        {card.metricLabel}
-                      </span>
+                    <div className="font-mono font-bold text-xl md:text-2xl text-[var(--color-gold)]">
+                      {totalNetWorth > 0 ? (
+                        <CountUp
+                          end={totalNetWorth}
+                          formatter={(v) => `$${Math.round(v).toLocaleString()}`}
+                          duration={2000}
+                        />
+                      ) : (
+                        '$—'
+                      )}
+                    </div>
+                    <div className="text-xs text-[var(--color-positive)] font-mono mt-0.5">
+                      +2.4% this month
                     </div>
                   </div>
-                </TiltCard>
+                  <div className="bg-white/[0.03] rounded-lg p-4">
+                    <div className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-mono mb-1">
+                      Actions
+                    </div>
+                    <div className="font-mono font-bold text-xl md:text-2xl">
+                      <CountUp end={3} duration={1500} />
+                    </div>
+                    <div className="text-xs text-[var(--color-gold)] font-mono mt-0.5">
+                      2 high priority
+                    </div>
+                  </div>
+                  <div className="bg-white/[0.03] rounded-lg p-4">
+                    <div className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-mono mb-1">
+                      Tax Savings
+                    </div>
+                    <div className="font-mono font-bold text-xl md:text-2xl text-[var(--color-positive)]">
+                      <CountUp
+                        end={2400}
+                        formatter={(v) => `$${Math.round(v).toLocaleString()}`}
+                        duration={2000}
+                      />
+                    </div>
+                    <div className="text-xs text-[var(--color-text-muted)] font-mono mt-0.5">
+                      YTD estimated
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chart placeholder */}
+                <div className="bg-white/[0.02] rounded-lg h-32 flex items-center justify-center">
+                  <span className="text-xs font-mono text-[var(--color-text-muted)]">
+                    ▁▂▃▅▆▇█▇▆▅▆▇█▇▅▃▅▆▇█
+                  </span>
+                </div>
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          WHAT HELM WATCHES — horizontal data rows, not cards
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="relative z-10 container mx-auto px-6 py-28">
+        <div className="max-w-4xl mx-auto">
+          <FadeIn>
+            <h2 className="text-center text-2xl md:text-3xl font-bold uppercase tracking-wider mb-16 text-[var(--color-text-secondary)]">
+              What Helm watches.
+            </h2>
+          </FadeIn>
+
+          <div className="border-t border-white/[0.06]">
+            {dataRows.map((row, i) => (
+              <FadeIn key={row.title} delay={i * 100}>
+                <div className="group flex flex-col md:flex-row md:items-center border-b border-white/[0.06] py-7 px-2 hover:bg-white/[0.015] transition-colors cursor-default">
+                  {/* Metric — big, mono, left-aligned */}
+                  <div className="md:w-44 shrink-0 mb-2 md:mb-0">
+                    <span className={`font-mono font-bold text-2xl md:text-3xl ${row.metricColor}`}>
+                      {row.metric}
+                    </span>
+                  </div>
+                  {/* Title */}
+                  <div className="md:w-52 shrink-0 mb-1 md:mb-0">
+                    <span className="font-bold uppercase tracking-wider text-xs text-[var(--color-text-primary)]">
+                      {row.title}
+                    </span>
+                  </div>
+                  {/* Description */}
+                  <div className="flex-1">
+                    <span className="text-sm text-[var(--color-text-muted)] leading-relaxed">
+                      {row.desc}
+                    </span>
+                  </div>
+                  {/* Hover arrow */}
+                  <ArrowRight className="hidden md:block w-4 h-4 text-[var(--color-gold)] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all ml-6 shrink-0" />
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          BEFORE HELM — editorial strikethrough comparison
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="relative z-10 container mx-auto px-6 pb-32">
+        <div className="max-w-3xl mx-auto">
+          <FadeIn>
+            <h2 className="text-center text-2xl md:text-3xl font-bold uppercase tracking-wider mb-16 text-[var(--color-text-secondary)]">
+              Before Helm.
+            </h2>
+          </FadeIn>
+
+          <div className="space-y-5">
+            {comparisons.map((row, i) => (
+              <FadeIn key={row.after} delay={i * 80}>
+                <div className="flex items-center gap-4 md:gap-8 font-mono text-sm md:text-base">
+                  <span className="flex-1 text-right text-[var(--color-text-muted)] line-through decoration-white/20">
+                    {row.before}
+                  </span>
+                  <span className="text-[var(--color-gold)] text-lg shrink-0">&rarr;</span>
+                  <span className="flex-1 text-[var(--color-text-primary)] font-semibold">
+                    {row.after}
+                  </span>
+                </div>
               </FadeIn>
             ))}
           </div>
@@ -402,93 +493,29 @@ export default function LandingTestPage() {
       </div>
 
       {/* ════════════════════════════════════════════════════════════════════
-          BENCHMARK TABLE
-          ════════════════════════════════════════════════════════════════════ */}
-      <section className="relative z-10 container mx-auto px-6 pb-28">
-        <div className="max-w-4xl mx-auto">
-          <FadeIn>
-            <div className="text-center mb-12">
-              <div className="text-[10px] uppercase tracking-[0.3em] text-[var(--color-text-muted)] font-mono mb-3">
-                The Benchmark
-              </div>
-              <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tight">
-                Legacy tools weren&apos;t built for this.
-              </h2>
-            </div>
-          </FadeIn>
-
-          <FadeIn delay={150}>
-            <div className="bg-[var(--color-bg-surface)] border border-white/[0.06] rounded-lg overflow-x-auto">
-              <table className="w-full min-w-[560px]">
-                <thead>
-                  <tr className="border-b border-white/[0.06]">
-                    <th className="text-left p-4 text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-mono font-normal w-[35%]">
-                      Capability
-                    </th>
-                    <th className="p-4 text-center text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-mono font-normal">
-                      Legacy Tools
-                    </th>
-                    <th className="p-4 text-center text-[10px] uppercase tracking-[0.2em] text-[var(--color-gold)] font-mono font-normal bg-[rgba(230,185,77,0.04)] border-l border-[rgba(230,185,77,0.1)]">
-                      Helm Terminal
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="font-mono text-sm">
-                  {comparisons.map((row) => (
-                    <tr
-                      key={row.feature}
-                      className="border-b border-white/[0.03] last:border-0 group"
-                    >
-                      <td className="p-4 text-[var(--color-text-secondary)]">{row.feature}</td>
-                      <td className="p-4 text-center text-[var(--color-text-muted)]">{row.legacy}</td>
-                      <td className="p-4 text-center text-[var(--color-gold)] font-medium bg-[rgba(230,185,77,0.04)] border-l border-[rgba(230,185,77,0.1)] group-hover:bg-[rgba(230,185,77,0.07)] transition-colors">
-                        {row.helm}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════════════════════════════════════
-          FINAL CTA
+          FINAL CTA — terminal prompt
           ════════════════════════════════════════════════════════════════════ */}
       <section className="relative z-10 container mx-auto px-6 pb-28">
         <FadeIn>
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-4">
+          <div className="max-w-xl mx-auto text-center">
+            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-10">
               Take the{' '}
               <span className="text-[var(--color-gold)] glow-breathe">Helm</span>.
             </h2>
-            <p className="text-[var(--color-text-secondary)] mb-8 font-mono text-sm">
-              Join the waitlist for early access to institutional-grade financial
-              intelligence.
-            </p>
 
-            <div className="flex max-w-md mx-auto mb-6">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-3 bg-[var(--color-bg-elevated)] border border-white/[0.06] rounded-l-lg text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors font-mono"
-              />
+            <div className="flex max-w-md mx-auto">
+              <div className="flex items-center gap-2 flex-1 px-4 py-3 bg-[var(--color-bg-elevated)] border border-white/[0.06] rounded-l-lg">
+                <span className="text-[var(--color-gold)] font-mono text-sm select-none">&rarr;</span>
+                <input
+                  type="email"
+                  placeholder="your@email.com"
+                  className="bg-transparent flex-1 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none font-mono"
+                />
+              </div>
               <button className="group relative px-6 py-3 bg-[var(--color-gold)] text-[#0A0A0A] font-bold text-xs uppercase tracking-[0.15em] rounded-r-lg hover:bg-[var(--color-gold-hi)] hover:shadow-[0_0_30px_rgba(230,185,77,0.4)] transition-all whitespace-nowrap overflow-hidden">
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                <span className="relative">Request Access</span>
+                <span className="relative">Enter</span>
               </button>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-              {trustBadges.map((item) => (
-                <div key={item.text} className="flex items-center gap-1.5">
-                  <item.Icon className="w-3 h-3 text-[var(--color-text-muted)]" />
-                  <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-mono">
-                    {item.text}
-                  </span>
-                </div>
-              ))}
             </div>
           </div>
         </FadeIn>
