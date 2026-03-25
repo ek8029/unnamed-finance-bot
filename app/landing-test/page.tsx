@@ -11,8 +11,10 @@ import {
   CountUp,
   TypingText,
   FadeIn,
+  ScrollTypingLine,
   TerminalBlock,
 } from './effects';
+import type { Segment } from './effects';
 
 /* ─── Static data ───────────────────────────────────────────────────────── */
 
@@ -46,34 +48,35 @@ const comparisons = [
   { before: 'Days to weeks of setup', after: 'Under 2 minutes' },
 ];
 
-const howItWorks = [
-  { cmd: 'helm connect', desc: '— link bank, brokerage, crypto via Plaid (90s)' },
-  { cmd: 'helm analyze', desc: '— 7 engines scan positions, tax, risk, cash flow' },
-  { cmd: 'helm act',     desc: '— prioritized actions land in your inbox daily' },
+const g = 'text-[var(--color-positive)]';
+const a = 'text-[var(--color-gold)]';
+const m = 'text-[var(--color-text-muted)]';
+const d = 'text-[var(--color-text-muted)] opacity-50';
+
+const howItWorks: Segment[][] = [
+  [{ text: '→ ', cls: a }, { text: 'helm connect', cls: `${g} font-semibold` }, { text: '  — link bank, brokerage, crypto via Plaid ', cls: m }, { text: '(90s)', cls: d }],
+  [{ text: '→ ', cls: a }, { text: 'helm analyze', cls: `${g} font-semibold` }, { text: '  — 7 engines scan positions, tax, risk, cash flow', cls: m }],
+  [{ text: '→ ', cls: a }, { text: 'helm act', cls: `${g} font-semibold` }, { text: '     — prioritized actions land in your inbox ', cls: m }, { text: 'daily', cls: a }],
 ];
 
-const securityChecks = [
-  { label: 'read-only access',    desc: '— cannot move money or execute trades' },
-  { label: 'AES-256 encryption',  desc: '— bank-level, in transit + at rest' },
-  { label: 'plaid infrastructure', desc: '— same provider as Venmo, Robinhood, Coinbase' },
-  { label: 'zero data selling',   desc: '— your data is never sold or shared. ever.' },
-  { label: 'full data deletion',  desc: '— delete everything, anytime, no questions' },
+const securityChecks: Segment[][] = [
+  [{ text: '✓ ', cls: g }, { text: 'read-only access', cls: `${a} font-semibold` }, { text: '       — cannot move money or execute trades', cls: m }],
+  [{ text: '✓ ', cls: g }, { text: 'AES-256 encryption', cls: `${a} font-semibold` }, { text: '     — bank-level, in transit + at rest', cls: m }],
+  [{ text: '✓ ', cls: g }, { text: 'plaid infrastructure', cls: `${a} font-semibold` }, { text: '    — same provider as ', cls: m }, { text: 'Venmo, Robinhood, Coinbase', cls: d }],
+  [{ text: '✓ ', cls: g }, { text: 'zero data selling', cls: `${a} font-semibold` }, { text: '      — your data is never sold or shared. ', cls: m }, { text: 'ever.', cls: 'text-[var(--color-text-primary)] font-semibold' }],
+  [{ text: '✓ ', cls: g }, { text: 'full data deletion', cls: `${a} font-semibold` }, { text: '     — delete everything, anytime, no questions', cls: m }],
 ];
 
-const sessionExcerpts = [
-  {
-    lines: [
-      { verb: 'flagged', highlight: '$2,847 tax-loss harvest', detail: 'in VXUS position', color: 'positive' as const },
-      { verb: 'detected', highlight: '38% concentration', detail: 'in single sector (tech)', color: 'gold' as const },
-      { verb: 'surfaced', highlight: '$340/mo subscription creep', detail: '— 3 flagged', color: 'positive' as const },
-    ],
-  },
-  {
-    lines: [
-      { verb: 'identified', highlight: '$1,200 dividend income', detail: 'not accounted for in planning', color: 'positive' as const },
-      { verb: 'alert:', highlight: 'AAPL earnings in 3 days', detail: '— 34% of portfolio exposed', color: 'gold' as const },
-    ],
-  },
+const sessionExcerpts: Segment[][][] = [
+  [
+    [{ text: '→ ', cls: a }, { text: 'flagged ', cls: m }, { text: '$2,847 tax-loss harvest', cls: `${g} font-semibold` }, { text: ' in VXUS position', cls: d }],
+    [{ text: '→ ', cls: a }, { text: 'detected ', cls: m }, { text: '38% concentration', cls: `${a} font-semibold` }, { text: ' in single sector (tech)', cls: d }],
+    [{ text: '→ ', cls: a }, { text: 'surfaced ', cls: m }, { text: '$340/mo subscription creep', cls: `${g} font-semibold` }, { text: ' — 3 flagged', cls: d }],
+  ],
+  [
+    [{ text: '→ ', cls: a }, { text: 'identified ', cls: m }, { text: '$1,200 dividend income', cls: `${g} font-semibold` }, { text: ' not accounted for in planning', cls: d }],
+    [{ text: '→ ', cls: a }, { text: 'alert: ', cls: 'text-[var(--color-negative)]' }, { text: 'AAPL earnings in 3 days', cls: `${a} font-semibold` }, { text: ' — 34% of portfolio exposed', cls: d }],
+  ],
 ];
 
 /* ─── Page ──────────────────────────────────────────────────────────────── */
@@ -161,10 +164,10 @@ export default function LandingTestPage() {
           STICKY NAV
           ════════════════════════════════════════════════════════════════════ */}
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        className={`fixed top-0 left-0 right-0 z-50 border-b transition-all duration-500 ${
           scrolled
-            ? 'bg-[rgba(10,10,10,0.85)] backdrop-blur-xl border-b border-white/[0.06]'
-            : 'bg-transparent'
+            ? 'bg-[rgba(10,10,10,0.85)] backdrop-blur-xl border-white/[0.06]'
+            : 'bg-transparent border-transparent'
         }`}
       >
         <div className="container mx-auto px-6 py-3 flex items-center justify-between">
@@ -435,11 +438,34 @@ export default function LandingTestPage() {
                   </div>
                 </div>
 
-                {/* Chart placeholder */}
-                <div className="bg-white/[0.02] rounded-lg h-32 flex items-center justify-center">
-                  <span className="text-xs font-mono text-[var(--color-text-muted)]">
-                    ▁▂▃▅▆▇█▇▆▅▆▇█▇▅▃▅▆▇█
-                  </span>
+                {/* Net worth chart */}
+                <div className="bg-white/[0.02] rounded-lg p-4 h-36 relative overflow-hidden">
+                  <div className="text-[9px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-mono mb-2">
+                    Net Worth — 12 Months
+                  </div>
+                  <svg viewBox="0 0 400 90" className="w-full h-full" preserveAspectRatio="none">
+                    {[0, 30, 60, 90].map((y) => (
+                      <line key={y} x1="0" y1={y} x2="400" y2={y} stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
+                    ))}
+                    <path
+                      d="M0,78 C30,72 60,65 100,58 C140,51 170,55 200,45 C230,35 260,40 300,28 C330,20 360,15 400,8 L400,90 L0,90 Z"
+                      fill="url(#nwGradient)"
+                    />
+                    <path
+                      d="M0,78 C30,72 60,65 100,58 C140,51 170,55 200,45 C230,35 260,40 300,28 C330,20 360,15 400,8"
+                      fill="none"
+                      stroke="#E6B94D"
+                      strokeWidth="1.5"
+                    />
+                    <circle cx="400" cy="8" r="2.5" fill="#E6B94D" />
+                    <circle cx="400" cy="8" r="5" fill="rgba(230,185,77,0.2)" />
+                    <defs>
+                      <linearGradient id="nwGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="rgba(230,185,77,0.12)" />
+                        <stop offset="100%" stopColor="rgba(230,185,77,0)" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
                 </div>
               </div>
             </div>
@@ -503,14 +529,10 @@ export default function LandingTestPage() {
           <FadeIn delay={150}>
             <TerminalBlock>
               <div className="space-y-3">
-                {howItWorks.map((line, i) => (
-                  <FadeIn key={line.cmd} delay={300 + i * 200} direction="none">
-                    <div>
-                      <span className="text-[var(--color-gold)]">&rarr;</span>{' '}
-                      <span className="text-[var(--color-positive)] font-semibold">{line.cmd}</span>{' '}
-                      <span className="text-[var(--color-text-muted)]">{line.desc}</span>
-                    </div>
-                  </FadeIn>
+                {howItWorks.map((segs, i) => (
+                  <div key={i}>
+                    <ScrollTypingLine segments={segs} delay={i * 600} speed={20} />
+                  </div>
                 ))}
               </div>
             </TerminalBlock>
@@ -561,17 +583,13 @@ export default function LandingTestPage() {
           <FadeIn delay={150}>
             <TerminalBlock command="$ helm security --verify">
               <div className="space-y-2.5">
-                {securityChecks.map((check, i) => (
-                  <FadeIn key={check.label} delay={300 + i * 150} direction="none">
-                    <div>
-                      <span className="text-[var(--color-positive)]">✓</span>{' '}
-                      <span className="text-[var(--color-gold)] font-semibold">{check.label}</span>{' '}
-                      <span className="text-[var(--color-text-muted)]">{check.desc}</span>
-                    </div>
-                  </FadeIn>
+                {securityChecks.map((segs, i) => (
+                  <div key={i}>
+                    <ScrollTypingLine segments={segs} delay={i * 500} speed={18} />
+                  </div>
                 ))}
               </div>
-              <FadeIn delay={1100} direction="none">
+              <FadeIn delay={2800} direction="none">
                 <div className="mt-4 text-xs text-[var(--color-text-muted)]">
                   All checks passed. System secure. <span className="text-[var(--color-positive)]">●</span>
                 </div>
@@ -593,7 +611,7 @@ export default function LandingTestPage() {
         <div className="max-w-3xl mx-auto">
           <FadeIn>
             <h2 className="text-center text-2xl md:text-3xl font-bold uppercase tracking-wider mb-12 text-[var(--color-text-secondary)]">
-              What Helm Found.
+              What Helm Finds.
             </h2>
           </FadeIn>
 
@@ -602,20 +620,9 @@ export default function LandingTestPage() {
               <FadeIn key={si} delay={si * 200}>
                 <TerminalBlock command="// session — early access user">
                   <div className="space-y-2">
-                    {session.lines.map((line, li) => (
+                    {session.map((segs, li) => (
                       <div key={li}>
-                        <span className="text-[var(--color-gold)]">&rarr;</span>{' '}
-                        <span className="text-[var(--color-text-muted)]">{line.verb}</span>{' '}
-                        <span
-                          className={`font-semibold ${
-                            line.color === 'positive'
-                              ? 'text-[var(--color-positive)]'
-                              : 'text-[var(--color-gold)]'
-                          }`}
-                        >
-                          {line.highlight}
-                        </span>{' '}
-                        <span className="text-[var(--color-text-muted)] opacity-60">{line.detail}</span>
+                        <ScrollTypingLine segments={segs} delay={li * 500} speed={18} />
                       </div>
                     ))}
                   </div>
@@ -637,7 +644,7 @@ export default function LandingTestPage() {
               <span className="text-[var(--color-gold)] glow-breathe">Helm</span>.
             </h2>
 
-            <div className="flex max-w-md mx-auto">
+            <div className="flex max-w-md mx-auto mb-4">
               <div className="flex items-center gap-2 flex-1 px-4 py-3 bg-[var(--color-bg-elevated)] border border-white/[0.06] rounded-l-lg">
                 <span className="text-[var(--color-gold)] font-mono text-sm select-none">&rarr;</span>
                 <input
@@ -651,6 +658,9 @@ export default function LandingTestPage() {
                 <span className="relative">Enter</span>
               </button>
             </div>
+            <p className="text-xs font-mono text-[var(--color-text-muted)]">
+              free to start. no credit card required.
+            </p>
           </div>
         </FadeIn>
       </section>
@@ -658,11 +668,43 @@ export default function LandingTestPage() {
       {/* ════════════════════════════════════════════════════════════════════
           FOOTER
           ════════════════════════════════════════════════════════════════════ */}
-      <footer className="relative z-10 border-t border-white/[0.04] py-6">
-        <div className="container mx-auto px-6 text-center">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--color-text-muted)] font-mono">
-            &copy; 2026 Helm Terminal. Encrypted Terminal Access.
-          </p>
+      <footer className="relative z-10 border-t border-white/[0.06] py-8">
+        <div className="container mx-auto px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              <HelmMark size={16} />
+              <span className="text-[10px] uppercase tracking-[0.3em] text-[var(--color-text-muted)] font-mono">
+                &copy; {new Date().getFullYear()} Helm Terminal
+              </span>
+            </div>
+            <div className="flex items-center gap-5">
+              {[
+                { label: 'Privacy', href: '/privacy' },
+                { label: 'Terms', href: '/terms' },
+                { label: 'Security', href: '/security' },
+                { label: 'Data Deletion', href: '/data-deletion' },
+                { label: 'Contact', href: 'mailto:support@helmterminal.dev' },
+              ].map((link) =>
+                link.href.startsWith('mailto:') ? (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors font-mono"
+                  >
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors font-mono"
+                  >
+                    {link.label}
+                  </Link>
+                ),
+              )}
+            </div>
+          </div>
         </div>
       </footer>
     </div>

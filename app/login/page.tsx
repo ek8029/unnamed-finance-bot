@@ -128,8 +128,7 @@ function LoginForm() {
           <Link href="/" className="flex items-center gap-3 mb-3 group">
             <HelmMark size={44} />
             <div>
-              <div className="text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">Helm</div>
-              <div className="type-eyebrow text-[var(--color-text-muted)]">Financial Intelligence</div>
+              <div className="text-lg font-bold tracking-tight uppercase text-[var(--color-text-primary)]">Helm</div>
             </div>
           </Link>
           <p className="text-[var(--color-text-secondary)] mt-2">

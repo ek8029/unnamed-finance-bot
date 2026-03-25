@@ -425,6 +425,80 @@ export function FadeIn({
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   Scroll-Triggered Typing Line (with syntax highlighting)
+   Types through colored segments like a syntax-highlighted terminal
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+export interface Segment {
+  text: string;
+  cls?: string;
+}
+
+export function ScrollTypingLine({
+  segments,
+  delay = 0,
+  speed = 20,
+}: {
+  segments: Segment[];
+  delay?: number;
+  speed?: number;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-60px' });
+  const [charCount, setCharCount] = useState(0);
+  const [cursor, setCursor] = useState(false);
+
+  const totalLength = segments.reduce((sum, s) => sum + s.text.length, 0);
+
+  useEffect(() => {
+    if (!inView) return;
+    setCursor(true);
+    let interval: ReturnType<typeof setInterval>;
+    let cursorTimer: ReturnType<typeof setTimeout>;
+
+    const start = setTimeout(() => {
+      let i = 0;
+      interval = setInterval(() => {
+        if (i < totalLength) {
+          setCharCount(++i);
+        } else {
+          clearInterval(interval);
+          cursorTimer = setTimeout(() => setCursor(false), 1500);
+        }
+      }, speed);
+    }, delay);
+
+    return () => {
+      clearTimeout(start);
+      clearInterval(interval);
+      clearTimeout(cursorTimer);
+    };
+  }, [inView, totalLength, delay, speed]);
+
+  // Render segments up to charCount
+  let remaining = charCount;
+  const rendered = segments.map((seg, i) => {
+    if (remaining <= 0) return null;
+    const visible = seg.text.slice(0, remaining);
+    remaining -= seg.text.length;
+    return (
+      <span key={i} className={seg.cls}>
+        {visible}
+      </span>
+    );
+  });
+
+  return (
+    <span ref={ref}>
+      {rendered}
+      {cursor && (
+        <span className="inline-block w-[2px] h-[1.1em] bg-[var(--color-gold)] ml-0.5 align-middle animate-pulse" />
+      )}
+    </span>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    Terminal Block
    Reusable dark terminal container with optional command header
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -440,7 +514,7 @@ export function TerminalBlock({
 }) {
   return (
     <div
-      className={`bg-[rgba(10,10,10,0.8)] border border-white/[0.06] rounded-lg px-5 py-4 font-mono text-sm ${className}`}
+      className={`bg-[rgba(10,10,10,0.8)] border border-white/[0.06] rounded-lg px-6 py-5 font-mono text-base ${className}`}
     >
       {command && (
         <div className="text-[var(--color-text-muted)] mb-3 text-xs">

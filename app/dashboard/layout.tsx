@@ -164,7 +164,7 @@ export default function DashboardLayout({
         <div className="shrink-0 px-5 py-5">
           <Link href="/" className="flex items-center gap-2.5 group">
             <HelmMark size={28} />
-            <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text-primary)]">
+            <span className="text-[15px] font-bold tracking-tight uppercase">
               Helm
             </span>
           </Link>

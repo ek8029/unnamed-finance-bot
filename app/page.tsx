@@ -77,7 +77,7 @@ export default async function LandingPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
             <HelmMark size={32} />
-            <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text-primary)]">Helm</span>
+            <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
           </div>
           <div className="flex items-center gap-5">
             <Link

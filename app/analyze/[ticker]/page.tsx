@@ -136,7 +136,7 @@ function AnalysisNav() {
       <div className="max-w-3xl mx-auto px-6 h-12 flex items-center justify-between">
         <a href="/" className="flex items-center gap-2.5">
           <HelmMark size={24} />
-          <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text-primary)]">Helm</span>
+          <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
         </a>
         <div className="flex items-center gap-4">
           <a

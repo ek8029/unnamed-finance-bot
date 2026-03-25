@@ -6,38 +6,33 @@ interface LegalFooterProps {
   variant?: 'full' | 'minimal';
 }
 
-export function LegalFooter({ variant = 'full' }: LegalFooterProps) {
-  const links = [
-    { label: 'Privacy', href: '/privacy' },
-    { label: 'Terms', href: '/terms' },
-    { label: 'Security', href: '/security' },
-    { label: 'Data Deletion', href: '/data-deletion' },
-    { label: 'Contact', href: 'mailto:support@helmterminal.dev' },
-  ];
+const links = [
+  { label: 'Privacy', href: '/privacy' },
+  { label: 'Terms', href: '/terms' },
+  { label: 'Security', href: '/security' },
+  { label: 'Data Deletion', href: '/data-deletion' },
+  { label: 'Contact', href: 'mailto:support@helmterminal.dev' },
+];
 
+function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const cls =
+    'text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors font-mono';
+  if (href.startsWith('mailto:')) {
+    return <a href={href} className={cls}>{children}</a>;
+  }
+  return <Link href={href} className={cls}>{children}</Link>;
+}
+
+export function LegalFooter({ variant = 'full' }: LegalFooterProps) {
   if (variant === 'minimal') {
     return (
       <footer className="py-4 px-6 text-center">
         <div className="flex items-center justify-center gap-4 flex-wrap">
           {links.map((link, i) => (
             <span key={link.href} className="flex items-center gap-4">
-              {link.href.startsWith('mailto:') ? (
-                <a
-                  href={link.href}
-                  className="text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
-                >
-                  {link.label}
-                </a>
-              ) : (
-                <Link
-                  href={link.href}
-                  className="text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
-                >
-                  {link.label}
-                </Link>
-              )}
+              <FooterLink href={link.href}>{link.label}</FooterLink>
               {i < links.length - 1 && (
-                <span className="text-[var(--color-border-base)] text-[10px]">&middot;</span>
+                <span className="text-[var(--color-text-muted)] text-[10px] opacity-30">&middot;</span>
               )}
             </span>
           ))}
@@ -47,34 +42,18 @@ export function LegalFooter({ variant = 'full' }: LegalFooterProps) {
   }
 
   return (
-    <footer className="border-t border-[var(--color-border-base)]">
-      <div className="container mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+    <footer className="border-t border-white/[0.06]">
+      <div className="container mx-auto px-6 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-2.5">
           <HelmMark size={16} />
-          <p className="type-eyebrow text-[var(--color-text-muted)]">
-            &copy; {new Date().getFullYear()} Helm. Financial intelligence for individuals.
+          <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--color-text-muted)] font-mono">
+            &copy; {new Date().getFullYear()} Helm Terminal
           </p>
         </div>
         <div className="flex items-center gap-5">
-          {links.map((link) =>
-            link.href.startsWith('mailto:') ? (
-              <a
-                key={link.href}
-                href={link.href}
-                className="type-eyebrow text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
-              >
-                {link.label}
-              </a>
-            ) : (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="type-eyebrow text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
-              >
-                {link.label}
-              </Link>
-            )
-          )}
+          {links.map((link) => (
+            <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>
+          ))}
         </div>
       </div>
     </footer>
