@@ -13,6 +13,19 @@ export default async function Image({ params }: { params: Promise<{ ticker: stri
   const logoData = await readFile(join(process.cwd(), 'public', 'helm-logo.png'));
   const logoBase64 = `data:image/png;base64,${logoData.toString('base64')}`;
 
+  const gridLines = [];
+  const spacing = 60;
+  for (let x = 0; x <= 1200; x += spacing) {
+    gridLines.push(
+      <div key={`v${x}`} style={{ position: 'absolute', left: x, top: 0, width: 1, height: 630, background: 'rgba(230,185,77,0.04)' }} />
+    );
+  }
+  for (let y = 0; y <= 630; y += spacing) {
+    gridLines.push(
+      <div key={`h${y}`} style={{ position: 'absolute', left: 0, top: y, width: 1200, height: 1, background: 'rgba(230,185,77,0.04)' }} />
+    );
+  }
+
   return new ImageResponse(
     (
       <div
@@ -21,78 +34,17 @@ export default async function Image({ params }: { params: Promise<{ ticker: stri
           width: '100%',
           height: '100%',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '80px',
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
-        <img src={logoBase64} width={120} height={120} alt="" />
+        {gridLines}
 
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            marginTop: '36px',
-          }}
-        >
-          <div
-            style={{
-              fontSize: '72px',
-              fontWeight: 700,
-              color: '#E8ECF1',
-              letterSpacing: '-0.03em',
-              lineHeight: 1,
-            }}
-          >
-            {symbol}
-          </div>
-          <div
-            style={{
-              fontSize: '20px',
-              fontWeight: 400,
-              color: '#8A94A6',
-              marginTop: '16px',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase' as const,
-            }}
-          >
-            AI Stock Analysis
-          </div>
-        </div>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 500, height: 500, background: 'radial-gradient(circle, rgba(230,185,77,0.06) 0%, transparent 70%)', display: 'flex' }} />
 
-        <div
-          style={{
-            display: 'flex',
-            gap: '24px',
-            marginTop: '44px',
-            fontSize: '14px',
-            color: '#505A6B',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase' as const,
-          }}
-        >
-          <span>Real-time Data</span>
-          <span style={{ color: '#B8914A' }}>|</span>
-          <span>Analyst Consensus</span>
-          <span style={{ color: '#B8914A' }}>|</span>
-          <span>Earnings</span>
-          <span style={{ color: '#B8914A' }}>|</span>
-          <span>News Sentiment</span>
-        </div>
-
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '40px',
-            fontSize: '13px',
-            color: '#505A6B',
-            letterSpacing: '0.05em',
-          }}
-        >
-          helmterminal.dev/analyze
-        </div>
+        <img src={logoBase64} width={280} height={280} alt="" style={{ position: 'relative' }} />
       </div>
     ),
     { ...size },
