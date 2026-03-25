@@ -24,8 +24,8 @@ export async function GET() {
       taxEstimatesResult,
       capitalGainsResult,
     ] = await Promise.all([
-      supabase.from('user_profiles').select('*').eq('id', user.id).single(),
-      supabase.from('user_preferences').select('*').eq('user_id', user.id).single(),
+      supabase.from('user_profiles').select('*').eq('id', user.id).maybeSingle(),
+      supabase.from('user_preferences').select('*').eq('user_id', user.id).maybeSingle(),
       supabase.from('linked_accounts').select('*').eq('user_id', user.id),
       supabase.from('holdings').select('*, security:securities(security_name, sector, asset_class)').eq('user_id', user.id),
       supabase.from('transactions').select('*').eq('user_id', user.id).order('transaction_date', { ascending: false }).limit(500),

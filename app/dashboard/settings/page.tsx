@@ -514,7 +514,7 @@ export default function SettingsPage() {
             {[
               { key: 'marketAlerts', label: 'Market Alerts', description: 'Price movements and market events' },
               { key: 'transactionAlerts', label: 'Transaction Alerts', description: 'Unusual transactions and spending' },
-              { key: 'budgetAlerts', label: 'Budget Alerts', description: 'Budget threshold notifications' },
+              { key: 'budgetAlerts', label: 'Spending Alerts', description: 'Get notified about unusual spending patterns' },
               { key: 'taxReminders', label: 'Tax Reminders', description: 'Tax deadlines and opportunities' },
               { key: 'weeklyDigest', label: 'Weekly Digest', description: 'Weekly summary of your finances' },
               { key: 'monthlyReport', label: 'Monthly Report', description: 'Comprehensive monthly analysis' },

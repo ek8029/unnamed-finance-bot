@@ -93,11 +93,14 @@ export async function syncPlaidItem(
   // --- 2. Sync transactions (incremental) ---
   let cursor = item.transactions_cursor || undefined;
   let hasMore = true;
+  let iterations = 0;
+  const MAX_SYNC_ITERATIONS = 50;
   const allAdded: Transaction[] = [];
   const allModified: Transaction[] = [];
   const allRemoved: RemovedTransaction[] = [];
 
-  while (hasMore) {
+  while (hasMore && iterations < MAX_SYNC_ITERATIONS) {
+    iterations++;
     const response = await plaidClient.transactionsSync({
       access_token: accessToken,
       cursor: cursor,

@@ -214,7 +214,7 @@ export async function POST() {
   } catch (error) {
     console.error('Error enriching market data:', error);
     return NextResponse.json(
-      { error: 'Internal server error', detail: error instanceof Error ? error.message : String(error) },
+      { error: 'Internal server error' },
       { status: 500 },
     );
   }

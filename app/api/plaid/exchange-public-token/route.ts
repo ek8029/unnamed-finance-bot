@@ -78,7 +78,7 @@ export async function POST(request: Request) {
           : `slug.eq.${safeSlug}`
       )
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (existingInstitution) {
       institutionId = existingInstitution.id;
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
           .from('institutions')
           .select('id')
           .eq('slug', slug)
-          .single();
+          .maybeSingle();
         if (!retry) {
           return NextResponse.json({ error: 'Failed to create institution' }, { status: 500 });
         }

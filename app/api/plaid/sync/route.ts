@@ -58,7 +58,7 @@ export async function POST(request: Request) {
           item_id: item.id,
           institution: item.institution_name,
           success: false,
-          error: error instanceof Error ? error.message : 'Sync failed',
+          error: 'Sync failed for this item',
         });
       }
     }

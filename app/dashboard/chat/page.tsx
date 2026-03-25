@@ -17,6 +17,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useTier } from '@/hooks/use-tier';
+import { FinancialDisclaimer } from '@/components/financial-disclaimer';
 
 // ── Types ──
 
@@ -374,6 +375,7 @@ function ResearchChatContent() {
             </div>
           </div>
           <div className="flex items-center justify-center gap-3 mt-1.5">
+            <FinancialDisclaimer />
             <p className="text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
               Powered by Finnhub + GPT-4o-mini. Not financial advice.
             </p>

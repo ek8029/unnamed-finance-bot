@@ -233,6 +233,8 @@ export function AnalysisResultClient({
         </div>
         <AnalysisWatermark />
 
+        <FinancialDisclaimer />
+
         {/* Related tickers */}
         {relatedTickers}
       </div>

@@ -15,9 +15,9 @@ export async function GET() {
       .from('user_preferences')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+    if (error) {
       console.error('Error fetching preferences:', error);
       return NextResponse.json({ error: 'Failed to fetch preferences' }, { status: 500 });
     }

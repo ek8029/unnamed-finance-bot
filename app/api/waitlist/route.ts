@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
     if (selectError) {
       console.error('Waitlist select error:', selectError);
-      return NextResponse.json({ error: selectError.message }, { status: 500 });
+      return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
     }
 
     if (existing) {
