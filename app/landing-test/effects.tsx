@@ -423,3 +423,31 @@ export function FadeIn({
     </motion.div>
   );
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Terminal Block
+   Reusable dark terminal container with optional command header
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+export function TerminalBlock({
+  command,
+  children,
+  className = '',
+}: {
+  command?: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`bg-[rgba(10,10,10,0.8)] border border-white/[0.06] rounded-lg px-5 py-4 font-mono text-sm ${className}`}
+    >
+      {command && (
+        <div className="text-[var(--color-text-muted)] mb-3 text-xs">
+          {command}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
