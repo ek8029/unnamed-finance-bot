@@ -60,6 +60,22 @@ const securityChecks = [
   { label: 'full data deletion',  desc: '— delete everything, anytime, no questions' },
 ];
 
+const sessionExcerpts = [
+  {
+    lines: [
+      { verb: 'flagged', highlight: '$2,847 tax-loss harvest', detail: 'in VXUS position', color: 'positive' as const },
+      { verb: 'detected', highlight: '38% concentration', detail: 'in single sector (tech)', color: 'gold' as const },
+      { verb: 'surfaced', highlight: '$340/mo subscription creep', detail: '— 3 flagged', color: 'positive' as const },
+    ],
+  },
+  {
+    lines: [
+      { verb: 'identified', highlight: '$1,200 dividend income', detail: 'not accounted for in planning', color: 'positive' as const },
+      { verb: 'alert:', highlight: 'AAPL earnings in 3 days', detail: '— 34% of portfolio exposed', color: 'gold' as const },
+    ],
+  },
+];
+
 /* ─── Page ──────────────────────────────────────────────────────────────── */
 
 export default function LandingTestPage() {
@@ -562,6 +578,51 @@ export default function LandingTestPage() {
               </FadeIn>
             </TerminalBlock>
           </FadeIn>
+        </div>
+      </section>
+
+      {/* Gold divider between terminal sections */}
+      <div className="relative z-10 flex justify-center mb-28">
+        <div className="w-24 h-px bg-gradient-to-r from-transparent via-[var(--color-gold)] to-transparent opacity-20" />
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          SOCIAL PROOF — terminal session excerpts
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="relative z-10 container mx-auto px-6 pb-28">
+        <div className="max-w-3xl mx-auto">
+          <FadeIn>
+            <h2 className="text-center text-2xl md:text-3xl font-bold uppercase tracking-wider mb-12 text-[var(--color-text-secondary)]">
+              What Helm Found.
+            </h2>
+          </FadeIn>
+
+          <div className="space-y-4">
+            {sessionExcerpts.map((session, si) => (
+              <FadeIn key={si} delay={si * 200}>
+                <TerminalBlock command="// session — early access user">
+                  <div className="space-y-2">
+                    {session.lines.map((line, li) => (
+                      <div key={li}>
+                        <span className="text-[var(--color-gold)]">&rarr;</span>{' '}
+                        <span className="text-[var(--color-text-muted)]">{line.verb}</span>{' '}
+                        <span
+                          className={`font-semibold ${
+                            line.color === 'positive'
+                              ? 'text-[var(--color-positive)]'
+                              : 'text-[var(--color-gold)]'
+                          }`}
+                        >
+                          {line.highlight}
+                        </span>{' '}
+                        <span className="text-[var(--color-text-muted)] opacity-60">{line.detail}</span>
+                      </div>
+                    ))}
+                  </div>
+                </TerminalBlock>
+              </FadeIn>
+            ))}
+          </div>
         </div>
       </section>
 
