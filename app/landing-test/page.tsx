@@ -52,6 +52,14 @@ const howItWorks = [
   { cmd: 'helm act',     desc: '— prioritized actions land in your inbox daily' },
 ];
 
+const securityChecks = [
+  { label: 'read-only access',    desc: '— cannot move money or execute trades' },
+  { label: 'AES-256 encryption',  desc: '— bank-level, in transit + at rest' },
+  { label: 'plaid infrastructure', desc: '— same provider as Venmo, Robinhood, Coinbase' },
+  { label: 'zero data selling',   desc: '— your data is never sold or shared. ever.' },
+  { label: 'full data deletion',  desc: '— delete everything, anytime, no questions' },
+];
+
 /* ─── Page ──────────────────────────────────────────────────────────────── */
 
 export default function LandingTestPage() {
@@ -523,10 +531,39 @@ export default function LandingTestPage() {
         </div>
       </section>
 
-      {/* Gold divider */}
-      <div className="relative z-10 flex justify-center mb-28">
-        <div className="w-24 h-px bg-gradient-to-r from-transparent via-[var(--color-gold)] to-transparent opacity-20" />
-      </div>
+      {/* ════════════════════════════════════════════════════════════════════
+          TRUST & SECURITY — terminal audit log
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="relative z-10 container mx-auto px-6 pb-28">
+        <div className="max-w-3xl mx-auto">
+          <FadeIn>
+            <h2 className="text-center text-2xl md:text-3xl font-bold uppercase tracking-wider mb-12 text-[var(--color-text-secondary)]">
+              Security.
+            </h2>
+          </FadeIn>
+
+          <FadeIn delay={150}>
+            <TerminalBlock command="$ helm security --verify">
+              <div className="space-y-2.5">
+                {securityChecks.map((check, i) => (
+                  <FadeIn key={check.label} delay={300 + i * 150} direction="none">
+                    <div>
+                      <span className="text-[var(--color-positive)]">✓</span>{' '}
+                      <span className="text-[var(--color-gold)] font-semibold">{check.label}</span>{' '}
+                      <span className="text-[var(--color-text-muted)]">{check.desc}</span>
+                    </div>
+                  </FadeIn>
+                ))}
+              </div>
+              <FadeIn delay={1100} direction="none">
+                <div className="mt-4 text-xs text-[var(--color-text-muted)]">
+                  All checks passed. System secure. <span className="text-[var(--color-positive)]">●</span>
+                </div>
+              </FadeIn>
+            </TerminalBlock>
+          </FadeIn>
+        </div>
+      </section>
 
       {/* ════════════════════════════════════════════════════════════════════
           FINAL CTA — terminal prompt
