@@ -1,4 +1,6 @@
 import { ImageResponse } from 'next/og';
+import { readFile } from 'fs/promises';
+import { join } from 'path';
 
 export const alt = 'Stock Analysis — Helm Terminal';
 export const size = { width: 1200, height: 630 };
@@ -8,11 +10,14 @@ export default async function Image({ params }: { params: Promise<{ ticker: stri
   const { ticker } = await params;
   const symbol = ticker.toUpperCase().replace(/[^A-Z]/g, '');
 
+  const logoData = await readFile(join(process.cwd(), 'public', 'helm-logo.png'));
+  const logoBase64 = `data:image/png;base64,${logoData.toString('base64')}`;
+
   return new ImageResponse(
     (
       <div
         style={{
-          background: '#070C17',
+          background: '#0A0A0A',
           width: '100%',
           height: '100%',
           display: 'flex',
@@ -22,18 +27,7 @@ export default async function Image({ params }: { params: Promise<{ ticker: stri
           padding: '80px',
         }}
       >
-        {/* Meridian Mark */}
-        <svg width="48" height="48" viewBox="0 0 56 56" fill="none">
-          <path
-            d="M 10.06 39.94 A 22 22 0 1 1 45.94 39.94"
-            stroke="#B8914A"
-            strokeWidth="4.5"
-            strokeLinecap="round"
-          />
-          <line x1="28" y1="7" x2="28" y2="49" stroke="#E8ECF1" strokeWidth="5" strokeLinecap="round" />
-          <line x1="7" y1="28" x2="49" y2="28" stroke="#E8ECF1" strokeWidth="5" strokeLinecap="round" />
-          <circle cx="28" cy="28" r="10" fill="#B8914A" />
-        </svg>
+        <img src={logoBase64} width={120} height={120} alt="" />
 
         <div
           style={{
