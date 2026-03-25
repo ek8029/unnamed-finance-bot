@@ -1,666 +1,712 @@
-import { Suspense } from 'react';
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import {
-  TrendingUp, Shield, LineChart,
-  Target, Lock, Eye, PieChart, Activity, Wallet, Brain,
-  Check, Minus,
-} from 'lucide-react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
-import { AnimatedSection } from '@/components/ui/animated-section';
-import { LegalFooter } from '@/components/legal-footer';
-import { WaitlistForm, WaitlistFormFallback } from '@/components/waitlist-form';
-import { createClient } from '@/lib/supabase/server';
+import {
+  InteractiveGrid,
+  StaggerText,
+  CountUp,
+  TypingText,
+  FadeIn,
+  ScrollTypingLine,
+  TerminalBlock,
+} from './landing-effects';
+import type { Segment } from './landing-effects';
 
-export default async function LandingPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+/* ─── Static data ───────────────────────────────────────────────────────── */
+
+const dataRows = [
+  {
+    metric: 'AAPL 34%',
+    metricColor: 'text-[var(--color-warning)]',
+    title: 'Portfolio Intelligence',
+    desc: 'Concentration risk, sector exposure, and performance attribution across all your positions.',
+  },
+  {
+    metric: '$2,400',
+    metricColor: 'text-[var(--color-positive)]',
+    title: 'Tax-Loss Engine',
+    desc: 'Automated harvesting detection, wash-sale compliance, and estimated tax savings.',
+  },
+  {
+    metric: '3 Actions',
+    metricColor: 'text-[var(--color-text-primary)]',
+    title: 'Actions Inbox',
+    desc: 'Prioritized alerts for earnings events, risk breaches, and cash flow anomalies.',
+  },
+];
+
+const comparisons = [
+  { before: '15-minute delayed data', after: 'Real-time' },
+  { before: 'Generic stock screeners', after: 'Your actual positions' },
+  { before: 'Manual tax spreadsheets', after: 'Automated detection' },
+  { before: 'Email newsletter alerts', after: 'Prioritized inbox' },
+  { before: '$2,000 – $24,000 / year', after: 'Free to start' },
+  { before: 'Days to weeks of setup', after: 'Under 2 minutes' },
+];
+
+const g = 'text-[var(--color-positive)]';
+const a = 'text-[var(--color-gold)]';
+const m = 'text-[var(--color-text-muted)]';
+const d = 'text-[var(--color-text-muted)] opacity-50';
+
+const howItWorks: Segment[][] = [
+  [{ text: '→ ', cls: a }, { text: 'helm connect', cls: `${g} font-semibold` }, { text: '  — link bank, brokerage, crypto via Plaid ', cls: m }, { text: '(90s)', cls: d }],
+  [{ text: '→ ', cls: a }, { text: 'helm analyze', cls: `${g} font-semibold` }, { text: '  — 7 engines scan positions, tax, risk, cash flow', cls: m }],
+  [{ text: '→ ', cls: a }, { text: 'helm act', cls: `${g} font-semibold` }, { text: '     — prioritized actions land in your inbox ', cls: m }, { text: 'daily', cls: a }],
+];
+
+const securityChecks: Segment[][] = [
+  [{ text: '✓ ', cls: g }, { text: 'read-only access', cls: `${a} font-semibold` }, { text: '       — cannot move money or execute trades', cls: m }],
+  [{ text: '✓ ', cls: g }, { text: 'AES-256 encryption', cls: `${a} font-semibold` }, { text: '     — bank-level, in transit + at rest', cls: m }],
+  [{ text: '✓ ', cls: g }, { text: 'plaid infrastructure', cls: `${a} font-semibold` }, { text: '    — same provider as ', cls: m }, { text: 'Venmo, Robinhood, Coinbase', cls: d }],
+  [{ text: '✓ ', cls: g }, { text: 'zero data selling', cls: `${a} font-semibold` }, { text: '      — your data is never sold or shared. ', cls: m }, { text: 'ever.', cls: 'text-[var(--color-text-primary)] font-semibold' }],
+  [{ text: '✓ ', cls: g }, { text: 'full data deletion', cls: `${a} font-semibold` }, { text: '     — delete everything, anytime, no questions', cls: m }],
+];
+
+const sessionExcerpts: Segment[][][] = [
+  [
+    [{ text: '→ ', cls: a }, { text: 'flagged ', cls: m }, { text: '$2,847 tax-loss harvest', cls: `${g} font-semibold` }, { text: ' in VXUS position', cls: d }],
+    [{ text: '→ ', cls: a }, { text: 'detected ', cls: m }, { text: '38% concentration', cls: `${a} font-semibold` }, { text: ' in single sector (tech)', cls: d }],
+    [{ text: '→ ', cls: a }, { text: 'surfaced ', cls: m }, { text: '$340/mo subscription creep', cls: `${g} font-semibold` }, { text: ' — 3 flagged', cls: d }],
+  ],
+  [
+    [{ text: '→ ', cls: a }, { text: 'identified ', cls: m }, { text: '$1,200 dividend income', cls: `${g} font-semibold` }, { text: ' not accounted for in planning', cls: d }],
+    [{ text: '→ ', cls: a }, { text: 'alert: ', cls: 'text-[var(--color-negative)]' }, { text: 'AAPL earnings in 3 days', cls: `${a} font-semibold` }, { text: ' — 34% of portfolio exposed', cls: d }],
+  ],
+];
+
+/* ─── Page ──────────────────────────────────────────────────────────────── */
+
+export default function LandingTestPage() {
+  const [scrolled, setScrolled] = useState(false);
+  const [totalNetWorth, setTotalNetWorth] = useState(0);
+  const { scrollY } = useScroll();
+  const heroY = useTransform(scrollY, [0, 600], [0, -150]);
+  const heroOpacity = useTransform(scrollY, [0, 500], [1, 0]);
+
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 60);
+    window.addEventListener('scroll', handler, { passive: true });
+    return () => window.removeEventListener('scroll', handler);
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/metrics/platform')
+      .then((r) => r.json())
+      .then((d) => { if (d.totalNetWorth) setTotalNetWorth(d.totalNetWorth); })
+      .catch(() => {});
+  }, []);
+
   return (
-    <main className="min-h-screen bg-[var(--color-bg-base)] bg-depth relative overflow-hidden">
-      {/* Grid background */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,_rgba(255,255,255,0.015)_1px,_transparent_1px),linear-gradient(to_bottom,_rgba(255,255,255,0.015)_1px,_transparent_1px)] bg-[length:64px_64px] opacity-40" />
-      </div>
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[radial-gradient(ellipse_at_center,_rgba(230,185,77,0.06)_0%,_transparent_70%)] opacity-60" />
-      </div>
-
-      {/* JSON-LD Structured Data */}
-      <script
-        type="application/ld+json"
+    <div className="min-h-screen bg-[#0A0A0A] text-[var(--color-text-primary)] overflow-x-hidden">
+      {/* ── Custom keyframes ── */}
+      <style
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify([
-            {
-              '@context': 'https://schema.org',
-              '@type': 'SoftwareApplication',
-              name: 'Helm Terminal',
-              applicationCategory: 'FinanceApplication',
-              operatingSystem: 'Web',
-              description:
-                'Institutional-grade financial intelligence terminal. AI-powered portfolio analysis, tax-loss harvesting, and wealth monitoring for investors managing $50K–$2M+ across multiple accounts.',
-              url: 'https://helmterminal.dev',
-              featureList: [
-                'AI-powered stock analysis',
-                'Portfolio concentration risk alerts',
-                'Tax-loss harvesting intelligence',
-                'Net worth tracking with historical snapshots',
-                'Cash flow monitoring and savings rate',
-                'Market event impact analysis',
-                'Financial health score',
-              ],
-              offers: {
-                '@type': 'Offer',
-                price: '0',
-                priceCurrency: 'USD',
-                description: 'Free tier with full dashboard access and 3 AI analyses per day',
-              },
-            },
-            {
-              '@context': 'https://schema.org',
-              '@type': 'WebSite',
-              name: 'Helm Terminal',
-              url: 'https://helmterminal.dev',
-              potentialAction: {
-                '@type': 'SearchAction',
-                target: {
-                  '@type': 'EntryPoint',
-                  urlTemplate: 'https://helmterminal.dev/analyze/{ticker}',
-                },
-                'query-input': 'required name=ticker',
-              },
-            },
-          ]),
+          __html: `
+            @keyframes sonar {
+              0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0.2; }
+              100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+            }
+            @keyframes scanline {
+              0% { top: -2%; }
+              100% { top: 102%; }
+            }
+            @keyframes glow-breathe {
+              0%, 100% { text-shadow: 0 0 40px rgba(230,185,77,0.3), 0 0 80px rgba(230,185,77,0.1); }
+              50% { text-shadow: 0 0 60px rgba(230,185,77,0.5), 0 0 120px rgba(230,185,77,0.2); }
+            }
+            @keyframes rotate-slow {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+            @keyframes drift-a {
+              0%, 100% { transform: translate(0, 0); }
+              33% { transform: translate(60px, -40px); }
+              66% { transform: translate(-30px, 25px); }
+            }
+            @keyframes drift-b {
+              0%, 100% { transform: translate(0, 0); }
+              33% { transform: translate(-50px, 30px); }
+              66% { transform: translate(40px, -20px); }
+            }
+            .glow-breathe { animation: glow-breathe 3s ease-in-out infinite; }
+          `,
         }}
       />
 
-      {/* ── Navigation ── */}
-      <nav className="relative container mx-auto px-6 py-3 glass-nav">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2.5">
-            <HelmMark size={32} />
-            <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
+      {/* ── Ambient layers ── */}
+      <InteractiveGrid />
+
+      {/* Scan line */}
+      <div
+        className="fixed left-0 right-0 h-px pointer-events-none z-10"
+        style={{
+          background: 'linear-gradient(to right, transparent, rgba(230,185,77,0.06), transparent)',
+          animation: 'scanline 8s linear infinite',
+        }}
+      />
+
+      {/* Drifting glow orbs */}
+      <div
+        className="fixed top-[15%] left-[5%] w-[600px] h-[600px] rounded-full pointer-events-none z-0 opacity-[0.04] blur-[150px] bg-[var(--color-gold)]"
+        style={{ animation: 'drift-a 25s ease-in-out infinite' }}
+      />
+      <div
+        className="fixed bottom-[10%] right-[5%] w-[500px] h-[500px] rounded-full pointer-events-none z-0 opacity-[0.025] blur-[120px] bg-[var(--color-positive)]"
+        style={{ animation: 'drift-b 30s ease-in-out infinite' }}
+      />
+
+      {/* ════════════════════════════════════════════════════════════════════
+          STICKY NAV
+          ════════════════════════════════════════════════════════════════════ */}
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 border-b transition-all duration-500 ${
+          scrolled
+            ? 'bg-[rgba(10,10,10,0.85)] backdrop-blur-xl border-white/[0.06]'
+            : 'bg-transparent border-transparent'
+        }`}
+      >
+        <div className="container mx-auto px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <HelmMark size={28} />
+            <span className="text-[15px] font-bold tracking-tight uppercase">
+              Helm
+            </span>
           </div>
-          <div className="flex items-center gap-5">
-            <Link
-              href="/analyze"
-              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-            >
-              Analyze
-            </Link>
-            <Link
-              href="/pricing"
-              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-            >
-              Pricing
-            </Link>
-            <Link
-              href="/blog"
-              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-            >
-              Blog
-            </Link>
-            {user ? (
+          <div className="hidden md:flex items-center gap-8">
+            {['Terminal', 'Portfolio', 'Intelligence'].map((label) => (
               <Link
+                key={label}
                 href="/dashboard"
-                className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+                className="text-xs uppercase tracking-[0.15em] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
               >
-                Dashboard
+                {label}
               </Link>
-            ) : (
-              <Link
-                href="/login"
-                className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-              >
-                Sign in
-              </Link>
-            )}
+            ))}
           </div>
+          <Link
+            href="/signup"
+            className="px-5 py-2 bg-[var(--color-gold)] text-[#0A0A0A] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:bg-[var(--color-gold-hi)] hover:shadow-[0_0_30px_rgba(230,185,77,0.35)]"
+          >
+            Access Terminal
+          </Link>
         </div>
       </nav>
 
-      {/* ── HERO ── */}
-      <section className="relative container mx-auto px-6 pt-12 pb-16">
-        <div className="grid lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
-          {/* Copy */}
-          <AnimatedSection delay={0}>
-            <div className="space-y-5">
-              <h1 className="type-display text-[var(--color-text-primary)] text-balance">
-                Your financial life,{' '}
-                <span className="text-[var(--color-gold)] glow-gold">decoded.</span>
-              </h1>
-              <p className="type-body text-[var(--color-text-secondary)] max-w-xl">
-                Helm monitors your portfolio for concentration risk, tax-loss
-                harvesting windows, and earnings events — then tells you exactly
-                what to do about them. Built for investors managing $50K–$2M+
-                across multiple accounts.
-              </p>
+      {/* ════════════════════════════════════════════════════════════════════
+          HERO
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+        {/* Vignette */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,#0A0A0A_75%)] z-[1]" />
 
-              <Suspense fallback={<WaitlistFormFallback />}>
-                <WaitlistForm id="hero-email" />
-              </Suspense>
+        {/* Gold ambient glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[700px] bg-[radial-gradient(ellipse,rgba(230,185,77,0.07),transparent_65%)] z-[1]" />
 
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-                {[
-                  { Icon: Lock, text: 'Bank-level encryption' },
-                  { Icon: Eye, text: 'Read-only access' },
-                  { Icon: Shield, text: 'Your data is never sold' },
-                ].map((item) => (
-                  <div key={item.text} className="flex items-center gap-1.5">
-                    <item.Icon className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
-                    <span className="type-eyebrow text-[var(--color-text-muted)]">{item.text}</span>
-                  </div>
-                ))}
-              </div>
+        {/* Sonar pulses */}
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="absolute left-1/2 top-1/2 w-[300px] h-[300px] rounded-full border border-[var(--color-gold)] opacity-0 pointer-events-none z-[1]"
+            style={{ animation: `sonar 5s ${i * 1.6}s ease-out infinite` }}
+          />
+        ))}
+
+        {/* Rotating helm beams — 6 spokes like a ship's wheel */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1] overflow-hidden">
+          <div
+            className="w-[900px] h-[900px]"
+            style={{ animation: 'rotate-slow 120s linear infinite' }}
+          >
+            {[0, 60, 120, 180, 240, 300].map((angle) => (
+              <div
+                key={angle}
+                className="absolute top-1/2 left-1/2 w-[450px] h-[1px] origin-left"
+                style={{
+                  transform: `rotate(${angle}deg)`,
+                  background: 'linear-gradient(to right, rgba(230,185,77,0.05), transparent)',
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Giant logo watermark — slow counter-rotation against helm beams */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-[1]">
+          <div
+            className="opacity-[0.04]"
+            style={{ animation: 'rotate-slow 180s linear infinite reverse' }}
+          >
+            <HelmMark size={1200} variant="mono" className="text-[var(--color-gold)]" />
+          </div>
+        </div>
+
+        {/* ── Hero content ── */}
+        <motion.div
+          className="relative z-[2] text-center px-6 max-w-5xl mx-auto"
+          style={{ y: heroY, opacity: heroOpacity }}
+        >
+          {/* Two-part headline: challenge + answer */}
+          <div className="mb-8">
+            <div className="text-5xl sm:text-7xl md:text-8xl lg:text-[7rem] font-black uppercase tracking-tighter leading-[0.88]">
+              <StaggerText text="STEER." delay={300} className="block" />
+              <StaggerText text="DON'T DRIFT." delay={700} className="block" />
             </div>
-          </AnimatedSection>
+            <StaggerText
+              text="TAKE THE HELM."
+              delay={1400}
+              goldWord="HELM"
+              glowClass="glow-breathe"
+              className="block text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-[0.15em] mt-5 text-[var(--color-text-secondary)]"
+            />
+          </div>
 
-          {/* Product Preview */}
-          <AnimatedSection delay={200} direction="right">
-            <div className="glass-card rounded gradient-border overflow-hidden animate-data-pulse">
-              {/* Terminal Header */}
-              <div className="flex items-center justify-between px-4 pt-3 pb-2.5 border-b border-[var(--color-border-base)]">
-                <div className="flex items-center gap-2">
-                  <HelmMark size={18} />
-                  <div>
-                    <div className="type-label text-[var(--color-text-primary)]">Command Center</div>
-                    <div className="type-eyebrow text-[var(--color-text-muted)]">Last sync 2m ago</div>
-                  </div>
-                </div>
-                <div className="bg-[var(--color-bg-overlay)] px-2.5 py-0.5 flex items-center gap-1.5 rounded">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.5)]" />
-                  <span className="type-eyebrow text-[var(--color-positive)]">Live</span>
-                </div>
-              </div>
+          <FadeIn delay={2000}>
+            <p className="text-sm md:text-base text-[var(--color-text-secondary)] max-w-xl mx-auto mb-10 font-mono leading-relaxed">
+              <TypingText
+                text="Real-time portfolio intelligence. Automated tax optimization. Actionable risk detection."
+                delay={2200}
+                speed={22}
+              />
+            </p>
+          </FadeIn>
 
-              <div className="px-4 py-3 space-y-2">
-                {/* Metrics */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="border border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] p-2.5 rounded">
-                    <div className="type-eyebrow text-[var(--color-text-muted)] mb-1">Net Worth</div>
-                    <div className="type-data text-xl mb-0.5">$393,830</div>
-                    <div className="type-mono text-[var(--color-positive)]">+5.4% QoQ</div>
-                  </div>
-                  <div className="border border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] p-2.5 rounded">
-                    <div className="type-eyebrow text-[var(--color-text-muted)] mb-1">Portfolio</div>
-                    <div className="type-data text-xl mb-0.5">$318,200</div>
-                    <div className="type-mono text-[var(--color-positive)]">+18.3% YTD</div>
-                  </div>
-                </div>
-
-                {/* Insight */}
-                <div className="border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] p-2.5 flex items-center gap-3 rounded">
-                  <div className="bg-[var(--color-bg-overlay)] p-1.5 rounded">
-                    <LineChart className="h-4 w-4 text-[var(--color-gold)]" />
-                  </div>
-                  <div>
-                    <div className="type-label text-[var(--color-text-primary)]">Tax Intelligence</div>
-                    <div className="type-mono text-[var(--color-text-secondary)]">
-                      Loss harvesting opportunity: <span className="text-[var(--color-positive)]">$2,400</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions Inbox */}
-                <div className="border border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] p-2.5 rounded">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="type-eyebrow text-[var(--color-text-muted)]">Actions Inbox</div>
-                    <div className="type-eyebrow text-[var(--color-gold)]">3 new</div>
-                  </div>
-                  <div className="space-y-1.5">
-                    {[
-                      { color: 'var(--color-warning)', text: 'AAPL concentration above 25% threshold' },
-                      { color: 'var(--color-gold)', text: 'Emergency fund below 3-month target' },
-                      { color: 'var(--color-positive)', text: 'Recurring charge increase: +$147/mo' },
-                    ].map((item) => (
-                      <div key={item.text} className="flex items-center gap-2 text-[11px]">
-                        <div className="w-1 h-1 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                        <span className="text-[var(--color-text-secondary)]">{item.text}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Bottom Metrics */}
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { label: 'Health', value: '78', color: 'text-[var(--color-positive)]' },
-                    { label: 'Savings', value: '24%', color: '' },
-                    { label: 'Risk', value: 'Med', color: 'text-[var(--color-warning)]' },
-                  ].map((m) => (
-                    <div key={m.label} className="border border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] p-1.5 text-center rounded">
-                      <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">{m.label}</div>
-                      <div className={`type-data text-base ${m.color}`}>{m.value}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+          <FadeIn delay={3200}>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                href="/signup"
+                className="group relative px-10 py-3.5 bg-[var(--color-gold)] text-[#0A0A0A] font-bold text-sm uppercase tracking-[0.2em] rounded transition-all hover:bg-[var(--color-gold-hi)] hover:shadow-[0_0_50px_rgba(230,185,77,0.4)] overflow-hidden"
+              >
+                {/* Button shimmer */}
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                <span className="relative">Access Terminal</span>
+              </Link>
+              <Link
+                href="/analyze"
+                className="flex items-center gap-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors group"
+              >
+                <span>Explore the platform</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </div>
-          </AnimatedSection>
+          </FadeIn>
+        </motion.div>
+
+        {/* Scroll indicator — slim gold arrow */}
+        <motion.div
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[2]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, y: [0, 6, 0] }}
+          transition={{
+            opacity: { delay: 4, duration: 0.5 },
+            y: { delay: 4, duration: 2.5, repeat: Infinity, ease: 'easeInOut' },
+          }}
+        >
+          <svg width="14" height="42" viewBox="0 0 14 42" fill="none">
+            <line x1="7" y1="0" x2="7" y2="34" stroke="rgba(230,185,77,0.35)" strokeWidth="1" />
+            <path d="M2 30 L7 38 L12 30" stroke="rgba(230,185,77,0.5)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </motion.div>
+      </section>
+
+      {/* Gold divider */}
+      <div className="relative z-10 flex justify-center">
+        <div className="w-32 h-px bg-gradient-to-r from-transparent via-[var(--color-gold)] to-transparent opacity-30" />
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          METRICS STRIP
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="relative z-10 border-y border-white/[0.06] bg-[rgba(10,10,10,0.6)] backdrop-blur-md">
+        <div className="container mx-auto px-6 py-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0 md:divide-x md:divide-white/[0.06]">
+            <div className="text-center md:text-left md:px-6 first:md:pl-0">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-mono mb-1">
+                Net Worth Tracked
+              </div>
+              {totalNetWorth > 0 ? (
+                <CountUp
+                  end={totalNetWorth}
+                  formatter={(v) => `$${Math.round(v).toLocaleString()}`}
+                  duration={2500}
+                  className="font-mono font-bold text-lg md:text-xl"
+                />
+              ) : (
+                <span className="font-mono font-bold text-lg md:text-xl text-[var(--color-text-muted)]">&mdash;</span>
+              )}
+            </div>
+            <div className="text-center md:text-left md:px-6">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-mono mb-1">
+                Accounts Monitored
+              </div>
+              <CountUp end={3} duration={1500} className="font-mono font-bold text-lg md:text-xl" />
+            </div>
+            <div className="text-center md:text-left md:px-6">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-mono mb-1">
+                Intelligence Engines
+              </div>
+              <CountUp end={7} duration={1800} className="font-mono font-bold text-lg md:text-xl" />
+            </div>
+            <div className="text-center md:text-left md:px-6 last:md:pr-0">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-mono mb-1">
+                System Status
+              </div>
+              <span className="flex items-center justify-center md:justify-start gap-2 font-mono font-bold text-lg md:text-xl text-[var(--color-positive)]">
+                <span className="w-2 h-2 rounded-full bg-[var(--color-positive)] animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.6)]" />
+                OPERATIONAL
+              </span>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ── SOCIAL PROOF BAR ── */}
-      <section className="relative border-y border-[var(--color-border-base)] glass-panel">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex flex-wrap items-center justify-center gap-y-3 divide-x divide-[var(--color-border-base)]">
-            {[
-              { value: '256-bit', label: 'encryption' },
-              { value: 'Read-only', label: 'bank access' },
-              { value: 'SOC 2', label: 'infrastructure' },
-              { value: 'Plaid', label: 'secured' },
-              { value: 'Zero', label: 'data sold' },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center gap-1.5 px-6">
-                <span className="type-label text-[var(--color-text-primary)]">{item.value}</span>
-                <span className="type-eyebrow text-[var(--color-text-muted)]">{item.label}</span>
+      {/* ════════════════════════════════════════════════════════════════════
+          DASHBOARD PREVIEW — hybrid mockup with live data
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="relative z-10 container mx-auto px-6 py-28">
+        <div className="max-w-4xl mx-auto">
+          <FadeIn>
+            <h2 className="text-center text-2xl md:text-3xl font-bold uppercase tracking-wider mb-12 text-[var(--color-text-secondary)]">
+              Your Command Center.
+            </h2>
+          </FadeIn>
+
+          <FadeIn delay={200}>
+            <div className="rounded-xl overflow-hidden border border-[var(--color-gold)]/20 shadow-[0_0_80px_rgba(230,185,77,0.06)]">
+              {/* Browser chrome */}
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.03]">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500/40" />
+                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/40" />
+                <div className="w-2.5 h-2.5 rounded-full bg-green-500/40" />
+                <span className="ml-2 text-[10px] font-mono text-[var(--color-text-muted)]">
+                  helm terminal — dashboard
+                </span>
               </div>
+
+              {/* Dashboard content */}
+              <div className="p-6 bg-[rgba(10,10,10,0.9)]">
+                {/* Stat cards row */}
+                <div className="grid grid-cols-3 gap-4 mb-5">
+                  <div className="bg-white/[0.03] rounded-lg p-4">
+                    <div className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-mono mb-1">
+                      Net Worth
+                    </div>
+                    <div className="font-mono font-bold text-xl md:text-2xl text-[var(--color-gold)]">
+                      {totalNetWorth > 0 ? (
+                        <CountUp
+                          end={totalNetWorth}
+                          formatter={(v) => `$${Math.round(v).toLocaleString()}`}
+                          duration={2000}
+                        />
+                      ) : (
+                        '$—'
+                      )}
+                    </div>
+                    <div className="text-xs text-[var(--color-positive)] font-mono mt-0.5">
+                      +2.4% this month
+                    </div>
+                  </div>
+                  <div className="bg-white/[0.03] rounded-lg p-4">
+                    <div className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-mono mb-1">
+                      Actions
+                    </div>
+                    <div className="font-mono font-bold text-xl md:text-2xl">
+                      <CountUp end={3} duration={1500} />
+                    </div>
+                    <div className="text-xs text-[var(--color-gold)] font-mono mt-0.5">
+                      2 high priority
+                    </div>
+                  </div>
+                  <div className="bg-white/[0.03] rounded-lg p-4">
+                    <div className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-mono mb-1">
+                      Tax Savings
+                    </div>
+                    <div className="font-mono font-bold text-xl md:text-2xl text-[var(--color-positive)]">
+                      <CountUp
+                        end={2400}
+                        formatter={(v) => `$${Math.round(v).toLocaleString()}`}
+                        duration={2000}
+                      />
+                    </div>
+                    <div className="text-xs text-[var(--color-text-muted)] font-mono mt-0.5">
+                      YTD estimated
+                    </div>
+                  </div>
+                </div>
+
+                {/* Net worth chart */}
+                <div className="bg-white/[0.02] rounded-lg p-4 h-36 relative overflow-hidden">
+                  <div className="text-[9px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-mono mb-2">
+                    Net Worth — 12 Months
+                  </div>
+                  <svg viewBox="0 0 400 90" className="w-full h-full" preserveAspectRatio="none">
+                    {[0, 30, 60, 90].map((y) => (
+                      <line key={y} x1="0" y1={y} x2="400" y2={y} stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
+                    ))}
+                    <path
+                      d="M0,78 C30,72 60,65 100,58 C140,51 170,55 200,45 C230,35 260,40 300,28 C330,20 360,15 400,8 L400,90 L0,90 Z"
+                      fill="url(#nwGradient)"
+                    />
+                    <path
+                      d="M0,78 C30,72 60,65 100,58 C140,51 170,55 200,45 C230,35 260,40 300,28 C330,20 360,15 400,8"
+                      fill="none"
+                      stroke="#E6B94D"
+                      strokeWidth="1.5"
+                    />
+                    <circle cx="400" cy="8" r="2.5" fill="#E6B94D" />
+                    <circle cx="400" cy="8" r="5" fill="rgba(230,185,77,0.2)" />
+                    <defs>
+                      <linearGradient id="nwGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="rgba(230,185,77,0.12)" />
+                        <stop offset="100%" stopColor="rgba(230,185,77,0)" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          WHAT HELM WATCHES — horizontal data rows, not cards
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="relative z-10 container mx-auto px-6 py-28">
+        <div className="max-w-4xl mx-auto">
+          <FadeIn>
+            <h2 className="text-center text-2xl md:text-3xl font-bold uppercase tracking-wider mb-16 text-[var(--color-text-secondary)]">
+              What Helm watches.
+            </h2>
+          </FadeIn>
+
+          <div className="border-t border-white/[0.06]">
+            {dataRows.map((row, i) => (
+              <FadeIn key={row.title} delay={i * 100}>
+                <div className="group flex flex-col md:flex-row md:items-center border-b border-white/[0.06] py-7 px-2 hover:bg-white/[0.015] transition-colors cursor-default">
+                  {/* Metric — big, mono, left-aligned */}
+                  <div className="md:w-44 shrink-0 mb-2 md:mb-0">
+                    <span className={`font-mono font-bold text-2xl md:text-3xl ${row.metricColor}`}>
+                      {row.metric}
+                    </span>
+                  </div>
+                  {/* Title */}
+                  <div className="md:w-52 shrink-0 mb-1 md:mb-0">
+                    <span className="font-bold uppercase tracking-wider text-xs text-[var(--color-text-primary)]">
+                      {row.title}
+                    </span>
+                  </div>
+                  {/* Description */}
+                  <div className="flex-1">
+                    <span className="text-sm text-[var(--color-text-muted)] leading-relaxed">
+                      {row.desc}
+                    </span>
+                  </div>
+                  {/* Hover arrow */}
+                  <ArrowRight className="hidden md:block w-4 h-4 text-[var(--color-gold)] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all ml-6 shrink-0" />
+                </div>
+              </FadeIn>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── VALUE PROPOSITIONS ── */}
-      <section className="relative container mx-auto px-6 py-16">
-        <div className="max-w-6xl mx-auto">
-          <AnimatedSection>
-            <div className="text-center mb-10 max-w-2xl mx-auto">
-              <h2 className="type-h1 mb-3">
-                Most finance apps show data.<br />
-                Helm delivers intelligence.
-              </h2>
-              <p className="type-body text-[var(--color-text-secondary)]">
-                Every insight is specific, data-backed, and actionable.
-              </p>
-            </div>
-          </AnimatedSection>
+      {/* ════════════════════════════════════════════════════════════════════
+          HOW IT WORKS — terminal command sequence
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="relative z-10 container mx-auto px-6 pb-28">
+        <div className="max-w-3xl mx-auto">
+          <FadeIn>
+            <h2 className="text-center text-2xl md:text-3xl font-bold uppercase tracking-wider mb-12 text-[var(--color-text-secondary)]">
+              Get Started.
+            </h2>
+          </FadeIn>
 
-          <div className="grid md:grid-cols-3 gap-3">
-            {/* Featured card — spans 2 cols */}
-            <AnimatedSection delay={0}>
-              <div className="md:col-span-1 sovereign-card p-5 rounded hover-glow-card h-full flex flex-col">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded flex items-center justify-center">
-                    <PieChart className="w-4 h-4 text-[var(--color-gold)]" />
+          <FadeIn delay={150}>
+            <TerminalBlock>
+              <div className="space-y-3">
+                {howItWorks.map((segs, i) => (
+                  <div key={i}>
+                    <ScrollTypingLine segments={segs} delay={i * 600} speed={20} />
                   </div>
-                  <h3 className="type-h2">Portfolio Intelligence</h3>
-                </div>
-                <p className="type-body text-[var(--color-text-secondary)] text-sm mb-4 flex-1">
-                  Concentration risk, sector exposure, and performance attribution.
-                  Know exactly where your money sits and what&apos;s overweight.
-                </p>
-                <div className="pt-3 border-t border-[var(--color-border-subtle)] flex items-baseline gap-2">
-                  <span className="type-data text-lg glow-gold-subtle">AAPL at 34%</span>
-                  <span className="type-mono text-[var(--color-warning)]">above 25% threshold</span>
-                </div>
+                ))}
               </div>
-            </AnimatedSection>
+            </TerminalBlock>
+          </FadeIn>
+        </div>
+      </section>
 
-            <AnimatedSection delay={80}>
-              <div className="sovereign-card p-5 rounded hover-glow-card h-full flex flex-col">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded flex items-center justify-center">
-                    <LineChart className="w-4 h-4 text-[var(--color-positive)]" />
-                  </div>
-                  <h3 className="type-h2">Tax Optimization</h3>
-                </div>
-                <p className="type-body text-[var(--color-text-secondary)] text-sm mb-4 flex-1">
-                  Loss harvesting windows, estimated liability, and wash-sale-compliant swaps. Save thousands at year-end.
-                </p>
-                <div className="pt-3 border-t border-[var(--color-border-subtle)] flex items-baseline gap-2">
-                  <span className="type-data text-lg text-[var(--color-positive)] glow-gold-subtle">$2,400</span>
-                  <span className="type-mono text-[var(--color-text-muted)]">harvestable losses</span>
-                </div>
-              </div>
-            </AnimatedSection>
+      {/* ════════════════════════════════════════════════════════════════════
+          BEFORE HELM — editorial strikethrough comparison
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="relative z-10 container mx-auto px-6 pb-32">
+        <div className="max-w-3xl mx-auto">
+          <FadeIn>
+            <h2 className="text-center text-2xl md:text-3xl font-bold uppercase tracking-wider mb-16 text-[var(--color-text-secondary)]">
+              Before Helm.
+            </h2>
+          </FadeIn>
 
-            <AnimatedSection delay={160}>
-              <div className="sovereign-card p-5 rounded hover-glow-card h-full flex flex-col">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded flex items-center justify-center">
-                    <Activity className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                  </div>
-                  <h3 className="type-h2">Market Intelligence</h3>
+          <div className="space-y-5">
+            {comparisons.map((row, i) => (
+              <FadeIn key={row.after} delay={i * 80}>
+                <div className="flex items-center gap-4 md:gap-8 font-mono text-sm md:text-base">
+                  <span className="flex-1 text-right text-[var(--color-text-muted)] line-through decoration-white/20">
+                    {row.before}
+                  </span>
+                  <span className="text-[var(--color-gold)] text-lg shrink-0">&rarr;</span>
+                  <span className="flex-1 text-[var(--color-text-primary)] font-semibold">
+                    {row.after}
+                  </span>
                 </div>
-                <p className="type-body text-[var(--color-text-secondary)] text-sm mb-4 flex-1">
-                  Earnings, dividends, rate decisions, and macro events mapped to your actual positions — not generic news.
-                </p>
-                <div className="pt-3 border-t border-[var(--color-border-subtle)] flex items-baseline gap-2">
-                  <span className="type-data text-lg glow-gold-subtle">3 events</span>
-                  <span className="type-mono text-[var(--color-text-muted)]">impacting holdings</span>
-                </div>
-              </div>
-            </AnimatedSection>
+              </FadeIn>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── PRODUCT SHOWCASE — Bento Grid ── */}
-      <section className="relative container mx-auto px-6 pb-16">
-        <div className="max-w-6xl mx-auto">
-          <AnimatedSection>
-            <div className="text-center mb-10 max-w-2xl mx-auto">
-              <div className="type-eyebrow text-[var(--color-text-muted)] mb-3">The Platform</div>
-              <h2 className="type-h1">Six modules. One financial picture.</h2>
-            </div>
-          </AnimatedSection>
+      {/* ════════════════════════════════════════════════════════════════════
+          TRUST & SECURITY — terminal audit log
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="relative z-10 container mx-auto px-6 pb-28">
+        <div className="max-w-3xl mx-auto">
+          <FadeIn>
+            <h2 className="text-center text-2xl md:text-3xl font-bold uppercase tracking-wider mb-12 text-[var(--color-text-secondary)]">
+              Security.
+            </h2>
+          </FadeIn>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 auto-rows-fr">
-            {/* Net Worth — large tile */}
-            <AnimatedSection delay={0}>
-              <div className="col-span-2 row-span-2 sovereign-card gradient-border p-5 rounded h-full flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <TrendingUp className="w-4 h-4 text-[var(--color-gold)]" />
-                    <span className="type-label text-[var(--color-text-primary)]">Net Worth</span>
+          <FadeIn delay={150}>
+            <TerminalBlock command="$ helm security --verify">
+              <div className="space-y-2.5">
+                {securityChecks.map((segs, i) => (
+                  <div key={i}>
+                    <ScrollTypingLine segments={segs} delay={i * 500} speed={18} />
                   </div>
-                  <p className="type-body text-[var(--color-text-secondary)] text-sm mb-4">
-                    Assets, liabilities, and trends across all linked accounts.
-                    Track month-over-month changes with historical snapshots.
-                  </p>
+                ))}
+              </div>
+              <FadeIn delay={2800} direction="none">
+                <div className="mt-4 text-xs text-[var(--color-text-muted)]">
+                  All checks passed. System secure. <span className="text-[var(--color-positive)]">●</span>
                 </div>
-                <div>
-                  <div className="type-data text-3xl mb-1 glow-white">$393,830</div>
-                  <div className="type-mono text-[var(--color-positive)]">+5.4% QoQ</div>
-                  {/* Mini sparkline placeholder */}
-                  <div className="mt-3 h-12 flex items-end gap-px">
-                    {[32, 35, 33, 40, 38, 42, 45, 43, 48, 52, 50, 56].map((h, i) => (
-                      <div
-                        key={i}
-                        className="flex-1 bg-[var(--color-gold)] opacity-30 rounded-t"
-                        style={{ height: `${h}%` }}
-                      />
+              </FadeIn>
+            </TerminalBlock>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* Gold divider between terminal sections */}
+      <div className="relative z-10 flex justify-center mb-28">
+        <div className="w-24 h-px bg-gradient-to-r from-transparent via-[var(--color-gold)] to-transparent opacity-20" />
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          SOCIAL PROOF — terminal session excerpts
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="relative z-10 container mx-auto px-6 pb-28">
+        <div className="max-w-3xl mx-auto">
+          <FadeIn>
+            <h2 className="text-center text-2xl md:text-3xl font-bold uppercase tracking-wider mb-12 text-[var(--color-text-secondary)]">
+              What Helm Finds.
+            </h2>
+          </FadeIn>
+
+          <div className="space-y-4">
+            {sessionExcerpts.map((session, si) => (
+              <FadeIn key={si} delay={si * 200}>
+                <TerminalBlock command="// session — early access user">
+                  <div className="space-y-2">
+                    {session.map((segs, li) => (
+                      <div key={li}>
+                        <ScrollTypingLine segments={segs} delay={li * 500} speed={18} />
+                      </div>
                     ))}
                   </div>
-                </div>
-              </div>
-            </AnimatedSection>
-
-            {/* Portfolio */}
-            <AnimatedSection delay={60}>
-              <div className="sovereign-card p-4 rounded h-full">
-                <div className="flex items-center gap-2 mb-2">
-                  <PieChart className="w-4 h-4 text-[var(--color-text-muted)]" />
-                  <span className="type-label text-[var(--color-text-primary)]">Portfolio</span>
-                </div>
-                <p className="type-body text-[var(--color-text-secondary)] text-xs mb-3">Position analysis, concentration risk, sector exposure.</p>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="type-data text-lg glow-gold-subtle">7 positions</span>
-                  <span className="type-mono text-xs text-[var(--color-warning)]">2 alerts</span>
-                </div>
-              </div>
-            </AnimatedSection>
-
-            {/* Tax Engine */}
-            <AnimatedSection delay={120}>
-              <div className="sovereign-card p-4 rounded h-full">
-                <div className="flex items-center gap-2 mb-2">
-                  <LineChart className="w-4 h-4 text-[var(--color-text-muted)]" />
-                  <span className="type-label text-[var(--color-text-primary)]">Tax Engine</span>
-                </div>
-                <p className="type-body text-[var(--color-text-secondary)] text-xs mb-3">Loss harvesting, estimated liability, efficient rebalancing.</p>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="type-data text-lg text-[var(--color-positive)] glow-gold-subtle">$2,400</span>
-                  <span className="type-mono text-xs text-[var(--color-positive)]">harvestable</span>
-                </div>
-              </div>
-            </AnimatedSection>
-
-            {/* Cash Flow */}
-            <AnimatedSection delay={180}>
-              <div className="sovereign-card p-4 rounded h-full">
-                <div className="flex items-center gap-2 mb-2">
-                  <Wallet className="w-4 h-4 text-[var(--color-text-muted)]" />
-                  <span className="type-label text-[var(--color-text-primary)]">Cash Flow</span>
-                </div>
-                <p className="type-body text-[var(--color-text-secondary)] text-xs mb-3">Income vs. expenses, recurring charges, savings rate.</p>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="type-data text-lg glow-gold-subtle">$3,060</span>
-                  <span className="type-mono text-xs">net / month</span>
-                </div>
-              </div>
-            </AnimatedSection>
-
-            {/* Market Intel */}
-            <AnimatedSection delay={240}>
-              <div className="sovereign-card p-4 rounded h-full">
-                <div className="flex items-center gap-2 mb-2">
-                  <Activity className="w-4 h-4 text-[var(--color-text-muted)]" />
-                  <span className="type-label text-[var(--color-text-primary)]">Market Intel</span>
-                </div>
-                <p className="type-body text-[var(--color-text-secondary)] text-xs mb-3">Earnings, dividends, splits, and macro events.</p>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="type-data text-lg glow-gold-subtle">3 events</span>
-                  <span className="type-mono text-xs text-[var(--color-text-secondary)]">this week</span>
-                </div>
-              </div>
-            </AnimatedSection>
-
-            {/* Health Score */}
-            <AnimatedSection delay={300}>
-              <div className="sovereign-card p-4 rounded h-full">
-                <div className="flex items-center gap-2 mb-2">
-                  <Target className="w-4 h-4 text-[var(--color-text-muted)]" />
-                  <span className="type-label text-[var(--color-text-primary)]">Health Score</span>
-                </div>
-                <p className="type-body text-[var(--color-text-secondary)] text-xs mb-3">Composite: diversification, liquidity, savings, risk.</p>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="type-data text-lg text-[var(--color-positive)] glow-gold-subtle">78</span>
-                  <span className="type-mono text-xs text-[var(--color-positive)]">/ 100</span>
-                </div>
-              </div>
-            </AnimatedSection>
+                </TerminalBlock>
+              </FadeIn>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── COMPARISON TABLE ── */}
-      <section className="relative container mx-auto px-6 pb-16">
-        <div className="max-w-4xl mx-auto">
-          <AnimatedSection>
-            <div className="text-center mb-8">
-              <h2 className="type-h1">The right tool for your wealth.</h2>
-            </div>
-          </AnimatedSection>
-
-          <AnimatedSection delay={100}>
-            <div className="sovereign-card rounded overflow-hidden">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-[var(--color-border-base)]">
-                    <th className="type-eyebrow text-[var(--color-text-muted)] p-3 w-[30%]">Feature</th>
-                    <th className="type-eyebrow text-[var(--color-text-muted)] p-3 text-center">Bloomberg</th>
-                    <th className="type-eyebrow text-[var(--color-text-muted)] p-3 text-center">Koyfin / Yahoo</th>
-                    <th className="type-eyebrow text-[var(--color-gold)] glow-gold-subtle p-3 text-center bg-[var(--color-gold-surface)] border-l border-[var(--color-gold-border)]">Helm</th>
-                  </tr>
-                </thead>
-                <tbody className="type-mono">
-                  {[
-                    { feature: 'Price', bloomberg: '$24K/yr', koyfin: '$0–468/yr', helm: 'Free to start' },
-                    { feature: 'Personal portfolio context', bloomberg: false, koyfin: false, helm: true },
-                    { feature: 'Tax-loss harvesting', bloomberg: false, koyfin: false, helm: true },
-                    { feature: 'AI-powered analysis', bloomberg: false, koyfin: false, helm: true },
-                    { feature: 'Actionable alerts', bloomberg: false, koyfin: false, helm: true },
-                    { feature: 'Cash flow monitoring', bloomberg: false, koyfin: false, helm: true },
-                  ].map((row) => (
-                    <tr key={row.feature} className="border-b border-[var(--color-border-subtle)] last:border-0">
-                      <td className="p-3 text-[var(--color-text-secondary)] text-sm">{row.feature}</td>
-                      <td className="p-3 text-center">
-                        {typeof row.bloomberg === 'string' ? (
-                          <span className="text-[var(--color-text-muted)]">{row.bloomberg}</span>
-                        ) : row.bloomberg ? (
-                          <Check className="w-4 h-4 text-[var(--color-positive)] mx-auto" />
-                        ) : (
-                          <Minus className="w-4 h-4 text-[var(--color-text-muted)] mx-auto" />
-                        )}
-                      </td>
-                      <td className="p-3 text-center">
-                        {typeof row.koyfin === 'string' ? (
-                          <span className="text-[var(--color-text-muted)]">{row.koyfin}</span>
-                        ) : row.koyfin ? (
-                          <Check className="w-4 h-4 text-[var(--color-positive)] mx-auto" />
-                        ) : (
-                          <Minus className="w-4 h-4 text-[var(--color-text-muted)] mx-auto" />
-                        )}
-                      </td>
-                      <td className="p-3 text-center bg-[var(--color-gold-surface)] border-l border-[var(--color-gold-border)]">
-                        {typeof row.helm === 'string' ? (
-                          <span className="text-[var(--color-gold)] font-medium">{row.helm}</span>
-                        ) : row.helm ? (
-                          <Check className="w-4 h-4 text-[var(--color-gold)] mx-auto" />
-                        ) : (
-                          <Minus className="w-4 h-4 text-[var(--color-text-muted)] mx-auto" />
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </AnimatedSection>
-        </div>
-      </section>
-
-      {/* ── HOW IT WORKS — Horizontal Steps ── */}
-      <section className="relative container mx-auto px-6 pb-16">
-        <div className="max-w-4xl mx-auto">
-          <AnimatedSection>
-            <div className="text-center mb-10">
-              <div className="type-eyebrow text-[var(--color-text-muted)] mb-3">How It Works</div>
-              <h2 className="type-h1">Three steps to financial clarity</h2>
-            </div>
-          </AnimatedSection>
-
-          {/* Desktop: horizontal */}
-          <AnimatedSection delay={100}>
-            <div className="hidden md:flex items-start">
-              {[
-                {
-                  step: '01',
-                  Icon: Brain,
-                  title: 'Connect accounts',
-                  description: 'Link banks, brokerages, and credit cards through Plaid. Read-only, under 2 minutes.',
-                },
-                {
-                  step: '02',
-                  Icon: Activity,
-                  title: 'Helm analyzes daily',
-                  description: 'Scans for risk, tax windows, cash flow anomalies, and market events impacting your positions.',
-                },
-                {
-                  step: '03',
-                  Icon: Target,
-                  title: 'Act with confidence',
-                  description: 'Prioritized, contextualized recommendations with supporting data — not guesswork.',
-                },
-              ].map((item, i) => (
-                <div key={item.step} className="flex items-start flex-1">
-                  <div className="flex-1">
-                    <div className="type-data text-sm text-[var(--color-gold)] mb-2">{item.step}</div>
-                    <div className="w-8 h-8 sovereign-card rounded flex items-center justify-center mb-2.5">
-                      <item.Icon className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                    </div>
-                    <h3 className="type-h2 text-base mb-1.5">{item.title}</h3>
-                    <p className="type-body text-[var(--color-text-secondary)] text-sm pr-6">{item.description}</p>
-                  </div>
-                  {i < 2 && (
-                    <div className="w-12 flex items-center pt-5">
-                      <div className="w-full h-px bg-[var(--color-border-base)]" />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Mobile: vertical */}
-            <div className="md:hidden space-y-6">
-              {[
-                {
-                  step: '01',
-                  Icon: Brain,
-                  title: 'Connect accounts',
-                  description: 'Link banks, brokerages, and credit cards through Plaid. Read-only, under 2 minutes.',
-                },
-                {
-                  step: '02',
-                  Icon: Activity,
-                  title: 'Helm analyzes daily',
-                  description: 'Scans for risk, tax windows, cash flow anomalies, and market events impacting your positions.',
-                },
-                {
-                  step: '03',
-                  Icon: Target,
-                  title: 'Act with confidence',
-                  description: 'Prioritized, contextualized recommendations with supporting data — not guesswork.',
-                },
-              ].map((item) => (
-                <div key={item.step} className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="type-data text-sm text-[var(--color-gold)]">{item.step}</div>
-                    <div className="flex-1 w-px bg-[var(--color-border-base)] mt-2" />
-                  </div>
-                  <div className="pb-2">
-                    <h3 className="type-h2 text-base mb-1">{item.title}</h3>
-                    <p className="type-body text-[var(--color-text-secondary)] text-sm">{item.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </AnimatedSection>
-        </div>
-      </section>
-
-      {/* ── TRY IT CTA ── */}
-      <section className="relative container mx-auto px-6 pb-16">
-        <AnimatedSection>
-          <div className="max-w-2xl mx-auto text-center sovereign-card rounded gradient-border p-6 space-y-3">
-            <div className="type-eyebrow text-[var(--color-gold)]">Try It Now</div>
-            <h2 className="type-h1 text-2xl">
-              Free AI stock analysis for any ticker
+      {/* ════════════════════════════════════════════════════════════════════
+          FINAL CTA — terminal prompt
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="relative z-10 container mx-auto px-6 pb-28">
+        <FadeIn>
+          <div className="max-w-xl mx-auto text-center">
+            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-10">
+              Take the{' '}
+              <span className="text-[var(--color-gold)] glow-breathe">Helm</span>.
             </h2>
-            <p className="type-body text-[var(--color-text-secondary)] max-w-lg mx-auto">
-              Institutional-grade analysis with real-time data, financial metrics, analyst consensus, and news sentiment — no account required.
+
+            <div className="flex max-w-md mx-auto mb-4">
+              <div className="flex items-center gap-2 flex-1 px-4 py-3 bg-[var(--color-bg-elevated)] border border-white/[0.06] rounded-l-lg">
+                <span className="text-[var(--color-gold)] font-mono text-sm select-none">&rarr;</span>
+                <input
+                  type="email"
+                  placeholder="your@email.com"
+                  className="bg-transparent flex-1 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none font-mono"
+                />
+              </div>
+              <button className="group relative px-6 py-3 bg-[var(--color-gold)] text-[#0A0A0A] font-bold text-xs uppercase tracking-[0.15em] rounded-r-lg hover:bg-[var(--color-gold-hi)] hover:shadow-[0_0_30px_rgba(230,185,77,0.4)] transition-all whitespace-nowrap overflow-hidden">
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                <span className="relative">Enter</span>
+              </button>
+            </div>
+            <p className="text-xs font-mono text-[var(--color-text-muted)]">
+              free to start. no credit card required.
             </p>
-            <Link
-              href="/analyze"
-              className="inline-block px-8 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded text-sm transition-all hover:shadow-glow-gold"
-            >
-              Analyze a stock free
-            </Link>
           </div>
-        </AnimatedSection>
+        </FadeIn>
       </section>
 
-      {/* ── FINAL CTA ── */}
-      <section className="relative container mx-auto px-6 pb-16">
-        <AnimatedSection>
-          <div className="max-w-xl mx-auto text-center space-y-5">
-            <h2 className="type-h1">
-              Start monitoring your portfolio this week.
-            </h2>
-            <p className="type-body text-[var(--color-text-secondary)]">
-              Free forever for basic monitoring. No credit card required.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link
-                href="/signup"
-                className="px-8 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded text-sm hover:shadow-glow-gold transition-shadow"
-              >
-                Get Started Free
-              </Link>
-              <Link
-                href="/analyze"
-                className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-              >
-                or analyze a stock first
-              </Link>
+      {/* ════════════════════════════════════════════════════════════════════
+          FOOTER
+          ════════════════════════════════════════════════════════════════════ */}
+      <footer className="relative z-10 border-t border-white/[0.06] py-8">
+        <div className="container mx-auto px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              <HelmMark size={16} />
+              <span className="text-[10px] uppercase tracking-[0.3em] text-[var(--color-text-muted)] font-mono">
+                &copy; {new Date().getFullYear()} Helm Terminal
+              </span>
+            </div>
+            <div className="flex items-center gap-5">
+              {[
+                { label: 'Privacy', href: '/privacy' },
+                { label: 'Terms', href: '/terms' },
+                { label: 'Security', href: '/security' },
+                { label: 'Data Deletion', href: '/data-deletion' },
+                { label: 'Contact', href: 'mailto:support@helmterminal.dev' },
+              ].map((link) =>
+                link.href.startsWith('mailto:') ? (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors font-mono"
+                  >
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors font-mono"
+                  >
+                    {link.label}
+                  </Link>
+                ),
+              )}
             </div>
           </div>
-        </AnimatedSection>
-      </section>
-
-      {/* Footer */}
-      <div className="relative">
-        <LegalFooter />
-      </div>
-    </main>
+        </div>
+      </footer>
+    </div>
   );
 }
