@@ -645,19 +645,21 @@ export default function LandingTestPage() {
               <span className="text-[var(--color-gold)] glow-breathe">Helm</span>.
             </h2>
 
-            <div className="flex max-w-md mx-auto mb-4">
-              <div className="flex items-center gap-2 flex-1 px-4 py-3 bg-[var(--color-bg-elevated)] border border-white/[0.06] rounded-l-lg">
-                <span className="text-[var(--color-gold)] font-mono text-sm select-none">&rarr;</span>
-                <input
-                  type="email"
-                  placeholder="your@email.com"
-                  className="bg-transparent flex-1 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]/30 focus:border-[var(--color-gold)] font-mono"
-                />
-              </div>
-              <button className="group relative px-6 py-3 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded-r-lg hover:bg-[var(--color-gold-hi)] hover:shadow-[0_0_30px_rgba(230,185,77,0.4)] transition-[background-color,box-shadow] whitespace-nowrap overflow-hidden">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
+              <Link
+                href="/signup"
+                className="group relative px-10 py-3.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-sm uppercase tracking-[0.2em] rounded transition-[background-color,box-shadow] hover:bg-[var(--color-gold-hi)] hover:shadow-[0_0_50px_rgba(230,185,77,0.4)] overflow-hidden"
+              >
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                <span className="relative">Enter</span>
-              </button>
+                <span className="relative">Get Started Free</span>
+              </Link>
+              <Link
+                href="/analyze"
+                className="flex items-center gap-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors group"
+              >
+                <span>Try free stock analysis</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </div>
             <p className="text-xs font-mono text-[var(--color-text-muted)]">
               free to start. no credit card required.
