@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+
+const STORAGE_KEY = 'helm-pro-waitlist';
 
 interface ProWaitlistButtonProps {
   email?: string;
@@ -14,6 +16,12 @@ export function ProWaitlistButton({ email: prefilledEmail, source = 'pricing', v
   const [email, setEmail] = useState(prefilledEmail || '');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'already' | 'error'>('idle');
   const [showInput, setShowInput] = useState(!prefilledEmail);
+
+  useEffect(() => {
+    if (localStorage.getItem(STORAGE_KEY)) {
+      setStatus('already');
+    }
+  }, []);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -28,8 +36,10 @@ export function ProWaitlistButton({ email: prefilledEmail, source = 'pricing', v
       });
       const data = await res.json();
       if (data.already_registered) {
+        localStorage.setItem(STORAGE_KEY, 'joined');
         setStatus('already');
       } else if (data.success) {
+        localStorage.setItem(STORAGE_KEY, 'joined');
         setStatus('success');
       } else {
         setStatus('error');
