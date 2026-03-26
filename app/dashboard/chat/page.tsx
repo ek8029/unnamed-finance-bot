@@ -254,7 +254,7 @@ function ResearchChatContent() {
           <MessageSquare className="w-5 h-5 text-[var(--color-gold)]" />
         </div>
         <h2 className="text-lg font-semibold tracking-tight text-[var(--color-text-primary)] mb-1">Research Terminal</h2>
-        <p className="text-[13px] text-[var(--color-text-secondary)] mb-6 leading-relaxed">
+        <p className="text-[0.8125rem] text-[var(--color-text-secondary)] mb-6 leading-relaxed">
           Ask about any stock, or ask Helm to analyze your portfolio with real dollar amounts from your connected accounts.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -262,7 +262,7 @@ function ResearchChatContent() {
             <button
               key={q}
               onClick={() => sendMessage(q)}
-              className="px-3.5 py-2.5 text-left text-[13px] text-[var(--color-text-secondary)] bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-sm hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] transition-colors duration-200"
+              className="px-3.5 py-2.5 text-left text-[0.8125rem] text-[var(--color-text-secondary)] bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-sm hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] transition-colors duration-200"
             >
               {q}
             </button>
@@ -291,12 +291,12 @@ function ResearchChatContent() {
                 {message.role === 'user' ? (
                   <div className="max-w-md">
                     <div
-                      className="px-4 py-2.5 rounded-sm text-[13px] leading-relaxed text-[var(--color-text-primary)]"
+                      className="px-4 py-2.5 rounded-sm text-[0.8125rem] leading-relaxed text-[var(--color-text-primary)]"
                       style={{ background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-base)' }}
                     >
                       {message.content}
                     </div>
-                    <p className="text-[10px] text-[var(--color-text-muted)] mt-1 text-right" style={{ fontFamily: 'var(--font-mono)' }}>
+                    <p className="text-[0.625rem] text-[var(--color-text-muted)] mt-1 text-right" style={{ fontFamily: 'var(--font-mono)' }}>
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
@@ -306,13 +306,13 @@ function ResearchChatContent() {
                       <AnalysisCard analysis={message.analysis} onFollowUp={sendMessage} />
                     ) : (
                       <div
-                        className="px-5 py-3.5 rounded-sm text-[13px] leading-[1.65] text-[var(--color-text-secondary)]"
+                        className="px-5 py-3.5 rounded-sm text-[0.8125rem] leading-[1.65] text-[var(--color-text-secondary)]"
                         style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
                       >
                         {message.content}
                       </div>
                     )}
-                    <p className="text-[10px] text-[var(--color-text-muted)] mt-1" style={{ fontFamily: 'var(--font-mono)' }}>
+                    <p className="text-[0.625rem] text-[var(--color-text-muted)] mt-1" style={{ fontFamily: 'var(--font-mono)' }}>
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
@@ -345,7 +345,7 @@ function ResearchChatContent() {
               onKeyDown={handleKeyDown}
               placeholder="Ask about your portfolio or analyze any stock..."
               rows={1}
-              className="flex-1 bg-transparent text-[13px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] resize-none outline-none leading-normal"
+              className="flex-1 bg-transparent text-[0.8125rem] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] resize-none outline-none leading-normal"
               style={{ fontFamily: 'var(--font-sans)', minHeight: '20px' }}
               disabled={isLoading}
             />
@@ -376,13 +376,13 @@ function ResearchChatContent() {
           </div>
           <div className="flex items-center justify-center gap-3 mt-1.5">
             <FinancialDisclaimer />
-            <p className="text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+            <p className="text-[0.625rem] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
               Powered by Finnhub + GPT-4o-mini. Not financial advice.
             </p>
             {!isPro && liveQuota && (
               <span
                 className={cn(
-                  'text-[10px] px-2 py-0.5 rounded-full border',
+                  'text-[0.625rem] px-2 py-0.5 rounded-full border',
                   liveQuota.remaining > 0
                     ? 'text-[var(--color-text-muted)] border-[var(--color-border-base)]'
                     : 'text-[var(--color-warning)] border-[var(--color-warning)]/30 bg-[var(--color-warning)]/5',

@@ -31,11 +31,11 @@ export function MetricsGrid({ metrics }: { metrics: AnalysisMetric[] }) {
       {metrics.map((metric, i) => (
         <div key={i} className="bg-[var(--color-bg-surface)] px-4 py-3">
           <div className="type-caption text-[var(--color-text-muted)] mb-1">{metric.label}</div>
-          <div className="text-[17px] font-bold tracking-tight text-[var(--color-text-primary)] font-tabular glow-gold-subtle">{metric.value}</div>
+          <div className="text-[1.0625rem] font-bold tracking-tight text-[var(--color-text-primary)] font-tabular glow-gold-subtle">{metric.value}</div>
           <div className="flex items-center gap-2 mt-0.5">
             {metric.change && (
               <span
-                className="text-[11px] font-medium font-tabular"
+                className="text-[0.6875rem] font-medium font-tabular"
                 style={{
                   fontFamily: 'var(--font-mono)',
                   color: metric.change.startsWith('+') ? 'var(--color-positive)'
@@ -47,7 +47,7 @@ export function MetricsGrid({ metrics }: { metrics: AnalysisMetric[] }) {
               </span>
             )}
             {metric.context && (
-              <span className="text-[11px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+              <span className="text-[0.6875rem] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
                 {metric.context}
               </span>
             )}
@@ -95,7 +95,7 @@ function ExpandableSection({ title, content, defaultOpen = false }: { title: str
         }
       </button>
       {open && (
-        <p id={sectionId} className="text-[13px] leading-[1.65] text-[var(--color-text-secondary)] pb-3.5 animate-fade-in">
+        <p id={sectionId} className="text-[0.8125rem] leading-[1.65] text-[var(--color-text-secondary)] pb-3.5 animate-fade-in">
           {content}
         </p>
       )}
@@ -109,7 +109,7 @@ export function AnalysisWatermark() {
   return (
     <div className="mt-3 flex items-center justify-center gap-2 opacity-50">
       <Sparkles className="w-3 h-3 text-[var(--color-gold)]" />
-      <span className="text-[10px] text-[var(--color-text-muted)] tracking-wider uppercase" style={{ fontFamily: 'var(--font-mono)' }}>
+      <span className="text-[0.625rem] text-[var(--color-text-muted)] tracking-wider uppercase" style={{ fontFamily: 'var(--font-mono)' }}>
         Powered by Helm Terminal — helmterminal.dev
       </span>
     </div>
@@ -140,14 +140,14 @@ export function StockAnalysisCard({ analysis, showWatermark = false }: { analysi
               <div className="flex items-center gap-2.5">
                 <span className="text-lg font-bold tracking-tight text-[var(--color-text-primary)] glow-white">{analysis.ticker}</span>
                 <span
-                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm text-[10px] font-semibold uppercase tracking-wider"
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm text-[0.625rem] font-semibold uppercase tracking-wider"
                   style={{ color: verdictConfig.color, background: verdictConfig.bg, border: `1px solid ${verdictConfig.border}` }}
                 >
                   <VerdictIcon className="w-3 h-3" />
                   {verdictConfig.label}
                 </span>
               </div>
-              <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
+              <p className="text-[0.6875rem] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
                 {analysis.companyName}
               </p>
             </div>
@@ -155,7 +155,7 @@ export function StockAnalysisCard({ analysis, showWatermark = false }: { analysi
         />
 
         <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
-          <p className="text-[13px] leading-[1.65] text-[var(--color-text-primary)]">{analysis.summary}</p>
+          <p className="text-[0.8125rem] leading-[1.65] text-[var(--color-text-primary)]">{analysis.summary}</p>
         </div>
 
         <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
@@ -170,7 +170,7 @@ export function StockAnalysisCard({ analysis, showWatermark = false }: { analysi
         {analysis.recommendation && (
           <div className="px-5 py-3.5 border-t border-[var(--color-border-subtle)]" style={{ background: 'rgba(184, 145, 74, 0.03)' }}>
             <div className="type-caption text-[var(--color-gold)] mb-1">Recommendation</div>
-            <p className="text-[13px] font-medium leading-[1.5] text-[var(--color-text-primary)]">{analysis.recommendation}</p>
+            <p className="text-[0.8125rem] font-medium leading-[1.5] text-[var(--color-text-primary)]">{analysis.recommendation}</p>
           </div>
         )}
 
@@ -189,8 +189,8 @@ export function StockAnalysisCard({ analysis, showWatermark = false }: { analysi
                     }}
                   />
                   <div className="min-w-0">
-                    <p className="text-[12px] text-[var(--color-text-secondary)] leading-snug">{item.headline}</p>
-                    <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>{item.date}</p>
+                    <p className="text-[0.75rem] text-[var(--color-text-secondary)] leading-snug">{item.headline}</p>
+                    <p className="text-[0.625rem] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>{item.date}</p>
                   </div>
                 </div>
               ))}
@@ -216,7 +216,7 @@ export function PortfolioReviewCard({ analysis }: { analysis: PortfolioReview })
       <CardHeader left={<span className="text-base font-semibold text-[var(--color-text-primary)]">{analysis.title}</span>} />
 
       <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
-        <p className="text-[13px] leading-[1.65] text-[var(--color-text-primary)]">{analysis.summary}</p>
+        <p className="text-[0.8125rem] leading-[1.65] text-[var(--color-text-primary)]">{analysis.summary}</p>
       </div>
 
       {analysis.metrics?.length > 0 && (
@@ -233,7 +233,7 @@ export function PortfolioReviewCard({ analysis }: { analysis: PortfolioReview })
           </div>
           <ul className="space-y-1.5">
             {analysis.strengths.map((s, i) => (
-              <li key={i} className="text-[13px] leading-[1.5] text-[var(--color-text-secondary)] pl-5 relative before:content-[''] before:absolute before:left-0 before:top-[9px] before:w-1.5 before:h-1.5 before:rounded-full before:bg-[var(--color-positive)] before:opacity-40">{s}</li>
+              <li key={i} className="text-[0.8125rem] leading-[1.5] text-[var(--color-text-secondary)] pl-5 relative before:content-[''] before:absolute before:left-0 before:top-[9px] before:w-1.5 before:h-1.5 before:rounded-full before:bg-[var(--color-positive)] before:opacity-40">{s}</li>
             ))}
           </ul>
         </div>
@@ -247,7 +247,7 @@ export function PortfolioReviewCard({ analysis }: { analysis: PortfolioReview })
           </div>
           <ul className="space-y-1.5">
             {analysis.weaknesses.map((w, i) => (
-              <li key={i} className="text-[13px] leading-[1.5] text-[var(--color-text-secondary)] pl-5 relative before:content-[''] before:absolute before:left-0 before:top-[9px] before:w-1.5 before:h-1.5 before:rounded-full before:bg-[var(--color-warning)] before:opacity-40">{w}</li>
+              <li key={i} className="text-[0.8125rem] leading-[1.5] text-[var(--color-text-secondary)] pl-5 relative before:content-[''] before:absolute before:left-0 before:top-[9px] before:w-1.5 before:h-1.5 before:rounded-full before:bg-[var(--color-warning)] before:opacity-40">{w}</li>
             ))}
           </ul>
         </div>
@@ -262,7 +262,7 @@ export function PortfolioReviewCard({ analysis }: { analysis: PortfolioReview })
           <div className="space-y-2.5">
             {analysis.recommendations.map((rec, i) => (
               <div key={i} className="flex gap-3">
-                <span className="shrink-0 mt-0.5 px-1.5 py-px rounded-sm text-[9px] font-semibold uppercase tracking-wider"
+                <span className="shrink-0 mt-0.5 px-1.5 py-px rounded-sm text-[0.5625rem] font-semibold uppercase tracking-wider"
                   style={{
                     color: priorityColor[rec.priority],
                     background: `color-mix(in srgb, ${priorityColor[rec.priority]} 8%, transparent)`,
@@ -270,8 +270,8 @@ export function PortfolioReviewCard({ analysis }: { analysis: PortfolioReview })
                   }}
                 >{rec.priority}</span>
                 <div>
-                  <p className="text-[13px] font-medium text-[var(--color-text-primary)] leading-snug">{rec.action}</p>
-                  <p className="text-[12px] text-[var(--color-text-muted)] leading-snug mt-0.5">{rec.rationale}</p>
+                  <p className="text-[0.8125rem] font-medium text-[var(--color-text-primary)] leading-snug">{rec.action}</p>
+                  <p className="text-[0.75rem] text-[var(--color-text-muted)] leading-snug mt-0.5">{rec.rationale}</p>
                 </div>
               </div>
             ))}
@@ -284,7 +284,7 @@ export function PortfolioReviewCard({ analysis }: { analysis: PortfolioReview })
           <div className="type-caption text-[var(--color-text-muted)] mb-2">Risk Factors</div>
           <ul className="space-y-1.5">
             {analysis.riskFactors.map((r, i) => (
-              <li key={i} className="text-[12px] leading-[1.5] text-[var(--color-text-muted)] pl-5 relative before:content-[''] before:absolute before:left-0 before:top-[8px] before:w-1 before:h-1 before:rounded-full before:bg-[var(--color-text-muted)]">{r}</li>
+              <li key={i} className="text-[0.75rem] leading-[1.5] text-[var(--color-text-muted)] pl-5 relative before:content-[''] before:absolute before:left-0 before:top-[8px] before:w-1 before:h-1 before:rounded-full before:bg-[var(--color-text-muted)]">{r}</li>
             ))}
           </ul>
         </div>
@@ -310,7 +310,7 @@ export function GeneralAnalysisCard({
       <CardHeader left={<span className="text-base font-semibold text-[var(--color-text-primary)]">{analysis.title}</span>} />
 
       <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
-        <p className="text-[13px] leading-[1.65] text-[var(--color-text-primary)] whitespace-pre-line">{analysis.summary}</p>
+        <p className="text-[0.8125rem] leading-[1.65] text-[var(--color-text-primary)] whitespace-pre-line">{analysis.summary}</p>
       </div>
 
       {analysis.metrics?.length > 0 && (
@@ -325,8 +325,8 @@ export function GeneralAnalysisCard({
           <div className="space-y-3">
             {analysis.keyPoints.map((kp, i) => (
               <div key={i}>
-                <p className="text-[13px] font-medium text-[var(--color-text-primary)] leading-snug">{kp.point}</p>
-                <p className="text-[12px] text-[var(--color-text-muted)] leading-[1.5] mt-0.5">{kp.detail}</p>
+                <p className="text-[0.8125rem] font-medium text-[var(--color-text-primary)] leading-snug">{kp.point}</p>
+                <p className="text-[0.75rem] text-[var(--color-text-muted)] leading-[1.5] mt-0.5">{kp.detail}</p>
               </div>
             ))}
           </div>
@@ -341,7 +341,7 @@ export function GeneralAnalysisCard({
               <button
                 key={i}
                 onClick={() => onFollowUp?.(q)}
-                className="px-3 py-1.5 text-[11px] text-[var(--color-text-secondary)] bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] transition-colors"
+                className="px-3 py-1.5 text-[0.6875rem] text-[var(--color-text-secondary)] bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] transition-colors"
                 style={{ fontFamily: 'var(--font-mono)' }}
               >
                 {q}
@@ -386,7 +386,7 @@ export function PortfolioQACard({
 
       {/* Summary */}
       <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
-        <p className="text-[13px] leading-[1.65] text-[var(--color-text-primary)]">{analysis.summary}</p>
+        <p className="text-[0.8125rem] leading-[1.65] text-[var(--color-text-primary)]">{analysis.summary}</p>
       </div>
 
       {/* Highlights — the centerpiece */}
@@ -409,17 +409,17 @@ export function PortfolioQACard({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2 flex-wrap">
                     <span
-                      className="text-[18px] font-bold tracking-tight font-tabular"
+                      className="text-[1.125rem] font-bold tracking-tight font-tabular"
                       style={{ color: cfg.color }}
                     >
                       {h.value}
                     </span>
-                    <span className="text-[12px] text-[var(--color-text-secondary)]" style={{ fontFamily: 'var(--font-mono)' }}>
+                    <span className="text-[0.75rem] text-[var(--color-text-secondary)]" style={{ fontFamily: 'var(--font-mono)' }}>
                       {h.label}
                     </span>
                   </div>
                   {h.detail && (
-                    <p className="text-[12px] leading-[1.5] text-[var(--color-text-muted)] mt-0.5">
+                    <p className="text-[0.75rem] leading-[1.5] text-[var(--color-text-muted)] mt-0.5">
                       {h.detail}
                     </p>
                   )}
@@ -434,7 +434,7 @@ export function PortfolioQACard({
       {analysis.recommendation && (
         <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]" style={{ background: 'rgba(184, 145, 74, 0.03)' }}>
           <div className="type-caption text-[var(--color-gold)] mb-1">Recommendation</div>
-          <p className="text-[13px] font-medium leading-[1.5] text-[var(--color-text-primary)]">{analysis.recommendation}</p>
+          <p className="text-[0.8125rem] font-medium leading-[1.5] text-[var(--color-text-primary)]">{analysis.recommendation}</p>
         </div>
       )}
 
@@ -447,7 +447,7 @@ export function PortfolioQACard({
               <button
                 key={i}
                 onClick={() => onFollowUp?.(q)}
-                className="px-3 py-1.5 text-[11px] text-[var(--color-text-secondary)] bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] transition-colors"
+                className="px-3 py-1.5 text-[0.6875rem] text-[var(--color-text-secondary)] bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] transition-colors"
                 style={{ fontFamily: 'var(--font-mono)' }}
               >
                 {q}
