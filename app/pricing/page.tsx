@@ -19,6 +19,7 @@ import { AnimatedSection } from '@/components/ui/animated-section';
 import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { createClient } from '@/lib/supabase/server';
+import { ProWaitlistButton } from '@/components/pro-waitlist-button';
 
 export const metadata: Metadata = {
   title: 'Pricing - Helm Terminal',
@@ -304,12 +305,7 @@ export default async function PricingPage() {
                   </ul>
                 </div>
 
-                <Link
-                  href="/signup"
-                  className="block w-full text-center text-sm font-medium py-2.5 rounded bg-[var(--color-gold)] text-[var(--color-bg-base)] hover:bg-[var(--color-gold-hi)] transition-colors hover:shadow-glow-gold transition-shadow"
-                >
-                  Join Waitlist for Pro
-                </Link>
+                <ProWaitlistButton source="pricing" />
               </div>
             </div>
           </AnimatedSection>

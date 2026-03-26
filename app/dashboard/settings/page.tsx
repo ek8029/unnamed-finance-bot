@@ -26,6 +26,7 @@ import {
 import { ProfileSection } from './profile-section'
 import { SecuritySection, type LoginEvent } from './security-section'
 import { PasswordSection } from './password-section'
+import { ProWaitlistButton } from '@/components/pro-waitlist-button'
 
 export default function SettingsPage() {
   const { settings, updateSettings, resetSettings, formatCurrency, formatCurrencyDetailed, formatDate } = useSettings()
@@ -726,12 +727,7 @@ export default function SettingsPage() {
                   </div>
                   <Badge variant="outline">Free</Badge>
                 </div>
-                <a
-                  href="/pricing"
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-[2px] bg-[var(--color-gold)] text-[var(--color-bg-base)] hover:bg-[var(--color-gold-hi)] transition-colors"
-                >
-                  Upgrade to Pro — $24.99/mo
-                </a>
+                <ProWaitlistButton source="settings" variant="gold" className="max-w-xs" />
               </div>
             )}
           </CardContent>

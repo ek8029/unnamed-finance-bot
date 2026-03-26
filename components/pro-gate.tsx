@@ -2,15 +2,13 @@
 
 import Link from 'next/link';
 import { Lock } from 'lucide-react';
+import { ProWaitlistButton } from '@/components/pro-waitlist-button';
 
 interface ProGateProps {
   feature: string;
   description: string;
 }
 
-/**
- * Full-page upgrade wall shown in place of Pro-only pages for free users.
- */
 export function ProGate({ feature, description }: ProGateProps) {
   return (
     <div className="container mx-auto p-6 max-w-5xl">
@@ -38,20 +36,16 @@ export function ProGate({ feature, description }: ProGateProps) {
           {description}
         </p>
 
-        <div className="flex items-center justify-center gap-3">
-          <Link
-            href="/pricing"
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-[2px] bg-[var(--color-gold)] text-[var(--color-bg-base)] hover:bg-[var(--color-gold-hi)] transition-colors"
-          >
-            Upgrade to Pro
-          </Link>
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center px-5 py-2.5 text-sm font-medium rounded-[2px] border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
-          >
-            Back to Dashboard
-          </Link>
+        <div className="max-w-sm mx-auto mb-4">
+          <ProWaitlistButton source={`gate:${feature.toLowerCase().replace(/\s+/g, '-')}`} />
         </div>
+
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center px-5 py-2.5 text-sm font-medium rounded-[2px] border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
+        >
+          Back to Dashboard
+        </Link>
 
         <p
           className="text-[10px] text-[var(--color-text-muted)] mt-6"
