@@ -267,7 +267,7 @@ export default function LandingTestPage() {
           </div>
 
           <FadeIn delay={2000}>
-            <p className="text-sm md:text-base text-[var(--color-text-secondary)] max-w-xl mx-auto mb-10 font-mono leading-relaxed">
+            <p className="text-sm md:text-base text-[var(--color-text-secondary)] max-w-xl mx-auto mb-10 font-mono leading-relaxed min-h-[3em]">
               <TypingText
                 text="Real-time portfolio intelligence. Automated tax optimization. Actionable risk detection."
                 delay={2200}
