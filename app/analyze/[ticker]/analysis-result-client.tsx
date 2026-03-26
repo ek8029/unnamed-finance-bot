@@ -109,7 +109,7 @@ function RelatedTickers({ currentTicker }: { currentTicker: string }) {
   );
 }
 
-function ShareBar({ ticker, shareText, utmUrl }: { ticker: string; shareText: string; utmUrl: (medium: string) => string }) {
+function ShareBar({ ticker, shareText, copyText, utmUrl }: { ticker: string; shareText: string; copyText: string; utmUrl: (medium: string) => string }) {
   const [copied, setCopied] = useState(false);
 
   const shareOnX = () => {
@@ -128,7 +128,7 @@ function ShareBar({ ticker, shareText, utmUrl }: { ticker: string; shareText: st
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(utmUrl('copy'));
+      await navigator.clipboard.writeText(`${copyText} ${utmUrl('copy')}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -213,7 +213,11 @@ export function AnalysisResultClient({
 
   const baseUrl = `https://helmterminal.dev/analyze/${ticker}`;
   const utmUrl = (medium: string) => `${baseUrl}?utm_source=${medium}&utm_medium=social&utm_campaign=analysis_share&utm_content=${ticker}`;
-  const shareText = `Check out this AI analysis of $${ticker} — institutional-grade insights for free:`;
+
+  const verdictEmoji = analysis.verdict === 'bullish' ? '🟢' : analysis.verdict === 'bearish' ? '🔴' : '🟡';
+  const verdictLabel = analysis.verdict.charAt(0).toUpperCase() + analysis.verdict.slice(1);
+  const shareText = `${verdictEmoji} $${ticker} (${analysis.companyName}) — ${verdictLabel}\n\n${analysis.recommendation}\n\nFull AI analysis:`;
+  const copyText = `$${ticker} — ${analysis.companyName}\nVerdict: ${verdictLabel}\n\n${analysis.summary}\n\n${analysis.recommendation}\n\nFull analysis:`;
 
   // Don't render gated state during SSR — show full content for crawlers
   if (!mounted) {
@@ -228,7 +232,7 @@ export function AnalysisResultClient({
   const searchBar = <InlineSearch currentTicker={ticker} />;
   const relatedTickers = <RelatedTickers currentTicker={ticker} />;
 
-  const shareBar = <ShareBar ticker={ticker} shareText={shareText} utmUrl={utmUrl} />;
+  const shareBar = <ShareBar ticker={ticker} shareText={shareText} copyText={copyText} utmUrl={utmUrl} />;
 
   if (gated) {
     return (

@@ -34,6 +34,7 @@ export default async function Image({ params }: { params: Promise<{ ticker: stri
           width: '100%',
           height: '100%',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           position: 'relative',
@@ -42,9 +43,23 @@ export default async function Image({ params }: { params: Promise<{ ticker: stri
       >
         {gridLines}
 
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 500, height: 500, background: 'radial-gradient(circle, rgba(230,185,77,0.06) 0%, transparent 70%)', display: 'flex' }} />
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 600, height: 600, background: 'radial-gradient(circle, rgba(230,185,77,0.06) 0%, transparent 70%)', display: 'flex' }} />
 
-        <img src={logoBase64} width={280} height={280} alt="" style={{ position: 'relative' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20, position: 'relative' }}>
+          <img src={logoBase64} width={80} height={80} alt="" />
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: 96, fontWeight: 800, color: '#E8ECF1', letterSpacing: '-0.03em', lineHeight: 1 }}>
+              ${symbol}
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 400, color: '#8A94A6', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 8 }}>
+              AI Stock Analysis
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', position: 'absolute', bottom: 40, fontSize: 14, color: '#505A6B', letterSpacing: '0.08em' }}>
+          helmterminal.dev/analyze
+        </div>
       </div>
     ),
     { ...size },
