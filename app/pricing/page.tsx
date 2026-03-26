@@ -259,16 +259,16 @@ export default async function PricingPage() {
 
           {/* Pro Tier — dominant */}
           <AnimatedSection delay={200} className="md:col-span-3">
-            <div className="relative">
+            <div className="relative pt-3">
+              {/* Coming Soon badge — outside overflow-hidden card */}
+              <div className="absolute -top-0 right-6 z-10">
+                <span className="inline-flex items-center px-3 py-1 rounded bg-[var(--color-gold)] text-[var(--color-bg-base)] text-[11px] font-medium uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)' }}>
+                  Coming Soon
+                </span>
+              </div>
               <div className="h-full flex flex-col sovereign-card gradient-border animate-border-glow rounded shadow-elevated p-6 relative overflow-hidden">
                 {/* Brass top-rule */}
                 <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, var(--color-gold), rgba(230,185,77,0.3), transparent)' }} />
-                {/* Coming Soon badge */}
-                <div className="absolute -top-3 right-6 z-10">
-                  <span className="inline-flex items-center px-3 py-1 rounded bg-[var(--color-gold)] text-[var(--color-bg-base)] text-[11px] font-medium uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)' }}>
-                    Coming Soon
-                  </span>
-                </div>
 
                 <div className="mb-5 mt-1">
                   <p className="type-label text-[var(--color-gold)] mb-2">
