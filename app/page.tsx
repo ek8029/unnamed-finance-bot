@@ -198,13 +198,16 @@ export default function LandingTestPage() {
             </span>
           </div>
           <div className="hidden md:flex items-center gap-8">
-            {['Terminal', 'Portfolio', 'Intelligence'].map((label) => (
+            {[
+              { label: 'Analyze', href: '/analyze' },
+              { label: 'Pricing', href: '/pricing' },
+            ].map((item) => (
               <Link
-                key={label}
-                href="/dashboard"
+                key={item.label}
+                href={item.href}
                 className="text-xs uppercase tracking-[0.15em] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
               >
-                {label}
+                {item.label}
               </Link>
             ))}
           </div>
