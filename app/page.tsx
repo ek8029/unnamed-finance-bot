@@ -138,6 +138,26 @@ export default function LandingTestPage() {
         }}
       />
 
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'SoftwareApplication',
+            name: 'Helm Terminal',
+            description: 'AI-powered financial intelligence platform for individual investors. Free stock analysis, portfolio tracking, and market insights.',
+            url: 'https://helmterminal.dev',
+            applicationCategory: 'FinanceApplication',
+            operatingSystem: 'Web',
+            offers: {
+              '@type': 'Offer',
+              price: '0',
+              priceCurrency: 'USD',
+            },
+          }),
+        }}
+      />
+
       {/* ── Ambient layers ── */}
       <InteractiveGrid />
 
@@ -632,6 +652,44 @@ export default function LandingTestPage() {
             ))}
           </div>
         </div>
+      </section>
+
+      <section className="relative z-10 container mx-auto px-6 py-20">
+        <FadeIn>
+          <div className="max-w-3xl mx-auto text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-[var(--color-text-primary)]">
+              From the <span className="text-[var(--color-gold)]">Blog</span>
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+            <Link
+              href="/blog/best-bloomberg-terminal-alternatives"
+              className="group sovereign-card rounded p-5 block"
+            >
+              <p className="type-eyebrow text-[var(--color-gold)] mb-2">Guide</p>
+              <p className="text-sm font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors">
+                Best Bloomberg Terminal Alternatives in 2026
+              </p>
+            </Link>
+            <Link
+              href="/blog/tax-loss-harvesting-guide"
+              className="group sovereign-card rounded p-5 block"
+            >
+              <p className="type-eyebrow text-[var(--color-gold)] mb-2">Strategy</p>
+              <p className="text-sm font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors">
+                Tax-Loss Harvesting: The Complete Guide
+              </p>
+            </Link>
+          </div>
+          <div className="text-center mt-6">
+            <Link
+              href="/blog"
+              className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+            >
+              View all posts →
+            </Link>
+          </div>
+        </FadeIn>
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════

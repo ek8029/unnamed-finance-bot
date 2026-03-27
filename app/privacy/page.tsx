@@ -3,6 +3,7 @@ import { LegalPageLayout } from '@/components/legal-page-layout';
 export const metadata = {
   title: 'Privacy Policy - Helm',
   description: 'How Helm collects, uses, and protects your financial data.',
+  alternates: { canonical: 'https://helmterminal.dev/privacy' },
 };
 
 export default function PrivacyPage() {

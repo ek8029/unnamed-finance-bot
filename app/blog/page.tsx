@@ -7,13 +7,13 @@ import { CinematicBg } from '@/components/cinematic-bg';
 import { getAllPosts } from '@/lib/blog';
 
 export const metadata: Metadata = {
-  title: 'Blog | Helm Terminal',
+  title: 'Investing Insights & Financial Guides | Helm Terminal Blog',
   description:
-    'Financial intelligence insights, market analysis, and product updates from Helm Terminal.',
+    'Expert guides on stock analysis, portfolio management, tax-loss harvesting, and Bloomberg Terminal alternatives. Free investing education from Helm Terminal.',
   openGraph: {
-    title: 'Blog | Helm Terminal',
+    title: 'Investing Insights & Financial Guides | Helm Terminal Blog',
     description:
-      'Financial intelligence insights, market analysis, and product updates from Helm Terminal.',
+      'Expert guides on stock analysis, portfolio management, tax-loss harvesting, and Bloomberg Terminal alternatives. Free investing education from Helm Terminal.',
     url: 'https://helmterminal.dev/blog',
     siteName: 'Helm Terminal',
     type: 'website',
@@ -34,6 +34,20 @@ export default function BlogIndex() {
 
   return (
     <main className="min-h-screen bg-[var(--color-bg-base)] bg-depth relative overflow-hidden">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name": "Investing Insights & Financial Guides",
+            "description": "Expert guides on stock analysis, portfolio management, tax-loss harvesting, and Bloomberg Terminal alternatives. Free investing education from Helm Terminal.",
+            "url": "https://helmterminal.dev/blog",
+            "isPartOf": { "@type": "WebSite", "name": "Helm Terminal", "url": "https://helmterminal.dev" },
+            "provider": { "@type": "Organization", "name": "Helm Terminal" },
+          }),
+        }}
+      />
       <CinematicBg />
       {/* ── Navigation ── */}
       <nav className="relative z-10 glass-nav">

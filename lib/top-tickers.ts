@@ -41,6 +41,10 @@ export const TOP_TICKERS = [
   'K', 'LYV', 'MTB', 'SYY', 'BAX', 'WTW', 'IRM', 'LUV', 'FE', 'TDY',
   'IT', 'UAL', 'BALL', 'CF', 'DG', 'HOLX', 'AWK', 'CHD', 'BR', 'PPL',
   'NTAP', 'DRI', 'J', 'MKC', 'SBAC', 'TER', 'CINF', 'PFG', 'TRMB', 'LYB',
+  'HUBB', 'WDC', 'ETR', 'FITB', 'HBAN', 'RF', 'CFG', 'STLD', 'LDOS', 'SNA',
+  'IEX', 'PTC', 'TYL', 'MPWR', 'EQT', 'AXON', 'PODD', 'ALGN', 'MOH', 'CNC',
+  'TTWO', 'FICO', 'DECK', 'DOV', 'BIIB', 'WY', 'LH', 'ERIE', 'CBOE', 'PAYC',
+  'EL', 'HIG', 'NDAQ', 'NTRS', 'SWKS', 'CTRA', 'DVN', 'ENPH', 'SEDG', 'CEG',
 
   // ── S&P 500 (401-503) ──
   'STE', 'WAT', 'AMCR', 'MOS', 'IP', 'AES', 'KIM', 'L', 'SWK', 'WRB',
@@ -49,17 +53,25 @@ export const TOP_TICKERS = [
   'NI', 'DPZ', 'EMN', 'REG', 'UDR', 'HST', 'BXP', 'CPT', 'AOS', 'RL',
   'NDSN', 'CHRW', 'HWM', 'GL', 'CZR', 'AIZ', 'GNRC', 'HII', 'BBWI', 'PARA',
   'VFC', 'FRT', 'MTCH', 'IVZ', 'NWSA', 'NWS', 'BEN', 'MHK', 'BWA', 'DVA',
+  'TPR', 'CTLT', 'HSIC', 'AAL', 'WYNN', 'QRVO', 'ETSY', 'FMC', 'EPAM', 'LKQ',
+  'CMA', 'ZION', 'MKTX', 'PNR', 'RHI', 'JNPR', 'SEE', 'ALLE', 'ROL', 'FOXA',
+  'FOX', 'XRAY', 'WHR', 'LNT', 'TROW', 'DXC', 'AAP', 'CTSH', 'GRMN', 'EXPE',
+  'LUMN', 'WBA', 'DISH', 'GEN', 'ABNB', 'CPRT', 'ODFL', 'CBRE', 'INVH', 'GPC',
 
   // ── Popular ETFs ──
   'SPY', 'QQQ', 'VOO', 'VTI', 'IWM', 'DIA', 'ARKK', 'VGT', 'SCHD', 'VYM',
   'XLF', 'XLE', 'XLK', 'XLV', 'XLI', 'XLP', 'XLU', 'XLY', 'XLB', 'XLRE',
   'BND', 'TLT', 'HYG', 'LQD', 'AGG', 'GLD', 'SLV', 'VNQ', 'VNQI', 'IEMG',
   'VWO', 'EFA', 'SOXX', 'SMH', 'KWEB', 'HACK', 'BOTZ', 'ICLN', 'TAN', 'JETS',
+  'XLC', 'ARKW', 'ARKG', 'ARKF', 'SOXL', 'TQQQ', 'SQQQ', 'UVXY', 'VIG', 'VXUS',
+  'EEM', 'FXI', 'EWJ', 'EWZ', 'INDA', 'IBB', 'XBI', 'XOP', 'KRE', 'ITB',
 
   // ── High-search-volume names outside S&P 500 ──
   'PLTR', 'RIVN', 'LCID', 'NIO', 'SOFI', 'COIN', 'SNAP', 'RBLX', 'U', 'DKNG',
   'SHOP', 'SQ', 'ROKU', 'CRWD', 'NET', 'SNOW', 'PINS', 'HOOD', 'MARA', 'RIOT',
   'ARM', 'SMCI', 'MSTR', 'IONQ', 'RGTI', 'AI', 'UPST', 'AFRM', 'PATH', 'BILL',
+  'RDDT', 'DUOL', 'CELH', 'HIMS', 'OPEN', 'JOBY', 'LUNR', 'RKLB', 'CIFR', 'CLSK',
+  'GRAB', 'SE', 'BABA', 'JD', 'PDD', 'SPOT', 'TTD', 'DDOG', 'ZS', 'OKTA',
 ] as const;
 
 export type Ticker = (typeof TOP_TICKERS)[number];

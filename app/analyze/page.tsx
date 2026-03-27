@@ -6,22 +6,22 @@ import { CinematicBg } from '@/components/cinematic-bg';
 import { TickerSearch } from './ticker-search';
 
 export const metadata: Metadata = {
-  title: 'Free Stock Analysis — Helm Terminal',
+  title: 'Free AI Stock Analysis Tool — Analyze 150+ US Stocks | Helm Terminal',
   description:
-    'Get institutional-grade AI stock analysis for any ticker. Real-time data, analyst consensus, earnings, and news — powered by Helm Terminal.',
+    'Get free AI-powered analysis for any US stock. Real-time prices, financial metrics, and intelligent insights for AAPL, TSLA, MSFT, and 150+ more tickers.',
   openGraph: {
-    title: 'Free Stock Analysis — Helm Terminal',
+    title: 'Free AI Stock Analysis Tool — Analyze 150+ US Stocks | Helm Terminal',
     description:
-      'AI-powered stock analysis with real financial data. Instant reports for any publicly traded company.',
+      'Get free AI-powered analysis for any US stock. Real-time prices, financial metrics, and intelligent insights for AAPL, TSLA, MSFT, and 150+ more tickers.',
     url: 'https://helmterminal.dev/analyze',
     siteName: 'Helm Terminal',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Free Stock Analysis — Helm Terminal',
+    title: 'Free AI Stock Analysis Tool — Analyze 150+ US Stocks | Helm Terminal',
     description:
-      'AI-powered stock analysis with real financial data. Instant reports for any publicly traded company.',
+      'Get free AI-powered analysis for any US stock. Real-time prices, financial metrics, and intelligent insights for AAPL, TSLA, MSFT, and 150+ more tickers.',
   },
   alternates: {
     canonical: 'https://helmterminal.dev/analyze',
@@ -33,6 +33,20 @@ const POPULAR_TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'
 export default function AnalyzePage() {
   return (
     <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col relative overflow-hidden">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name": "Free AI Stock Analysis Tool — Analyze 150+ US Stocks",
+            "description": "Get free AI-powered analysis for any US stock. Real-time prices, financial metrics, and intelligent insights for AAPL, TSLA, MSFT, and 150+ more tickers.",
+            "url": "https://helmterminal.dev/analyze",
+            "isPartOf": { "@type": "WebSite", "name": "Helm Terminal", "url": "https://helmterminal.dev" },
+            "provider": { "@type": "Organization", "name": "Helm Terminal" },
+          }),
+        }}
+      />
       <CinematicBg />
       {/* Nav */}
       <nav className="relative z-10 glass-nav">

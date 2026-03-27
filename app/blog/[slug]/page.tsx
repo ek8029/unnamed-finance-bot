@@ -86,7 +86,7 @@ export default async function BlogPost({ params }: PageProps) {
       headline: post.title,
       description: post.description,
       datePublished: post.date,
-      author: { '@type': 'Organization', name: post.author },
+      author: { '@type': 'Person', name: post.author || 'Evan', url: 'https://helmterminal.dev' },
       publisher: {
         '@type': 'Organization',
         name: 'Helm Terminal',

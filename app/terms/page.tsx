@@ -3,6 +3,7 @@ import { LegalPageLayout } from '@/components/legal-page-layout';
 export const metadata = {
   title: 'Terms of Service - Helm',
   description: 'Terms and conditions for using the Helm financial intelligence platform.',
+  alternates: { canonical: 'https://helmterminal.dev/terms' },
 };
 
 export default function TermsPage() {
