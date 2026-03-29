@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 interface PlaidUpdateLinkProps {
   itemId: string;
   institutionName: string;
-  onSuccess: () => void;
+  onSuccess?: () => void;
   onError?: (error: string) => void;
 }
 
@@ -53,16 +53,15 @@ export function PlaidUpdateLink({
   const handleSuccess = useCallback(async () => {
     setStatus('reconnecting');
     try {
-      // Trigger a sync to refresh data after reconnection
       await fetch('/api/plaid/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ item_id: itemId }),
       });
-      onSuccess();
     } catch {
-      // The reconnection itself succeeded even if sync fails
-      onSuccess();
+    } finally {
+      setStatus('idle');
+      onSuccess?.();
     }
   }, [itemId, onSuccess]);
 

@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 interface PlaidLinkButtonProps {
   onSuccess: () => void;
   onError?: (error: string) => void;
+  onExit?: () => void;
+  onWarning?: (message: string) => void;
   className?: string;
   variant?: 'default' | 'outline' | 'ghost';
   children?: React.ReactNode;
@@ -16,6 +18,8 @@ interface PlaidLinkButtonProps {
 export function PlaidLinkButton({
   onSuccess,
   onError,
+  onExit,
+  onWarning,
   className,
   variant = 'default',
   children,
@@ -64,13 +68,16 @@ export function PlaidLinkButton({
         }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json();
         throw new Error(data.error || 'Failed to link account');
       }
 
-      // Trigger initial sync to pull transactions, holdings, and create snapshots
-      // Clear throttles so the dashboard and portfolio refresh with real data
+      if (data.duplicate_institution) {
+        onWarning?.('This institution was already connected. Duplicate connection created.');
+      }
+
       sessionStorage.removeItem('helm_last_auto_sync');
       sessionStorage.removeItem('helm_last_price_refresh');
       await fetch('/api/plaid/sync', { method: 'POST' }).catch(() => {});
@@ -84,7 +91,7 @@ export function PlaidLinkButton({
     } finally {
       setExchanging(false);
     }
-  }, [onSuccess, onError]);
+  }, [onSuccess, onError, onWarning]);
 
   const { open, ready } = usePlaidLink({
     token: linkToken ?? '',
@@ -93,6 +100,7 @@ export function PlaidLinkButton({
       if (err) {
         console.error('Plaid Link exit error:', err);
       }
+      onExit?.();
     },
   });
 
@@ -111,7 +119,7 @@ export function PlaidLinkButton({
     <Button
       variant={variant}
       className={className}
-      onClick={() => open()}
+      onClick={() => { if (!exchanging) open(); }}
       disabled={isDisabled}
     >
       {(isLoading || exchanging) ? (

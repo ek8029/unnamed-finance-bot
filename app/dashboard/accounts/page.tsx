@@ -58,6 +58,8 @@ export default function AccountsPage() {
   const [syncing, setSyncing] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null);
+  const [healthError, setHealthError] = useState(false);
   const [connectionHealth, setConnectionHealth] = useState<{
     lastSync: string | null;
     itemCount: number;
@@ -65,31 +67,38 @@ export default function AccountsPage() {
     items: { id: string; institution_name: string; status: string; last_balances_sync: string | null; last_transactions_sync: string | null; error_code: string | null; error_message: string | null }[];
   }>({ lastSync: null, itemCount: 0, errorCount: 0, items: [] });
 
-  // Fetch connection health from plaid_items
-  useEffect(() => {
-    async function fetchConnectionHealth() {
-      try {
-        const res = await fetch('/api/plaid/health');
-        if (res.ok) {
-          const data = await res.json();
-          setConnectionHealth(data);
-        }
-      } catch {
-        // Non-critical - fail silently
+  const fetchConnectionHealth = async () => {
+    try {
+      const res = await fetch('/api/plaid/health');
+      if (res.ok) {
+        const data = await res.json();
+        setConnectionHealth(data);
+        setHealthError(false);
+      } else {
+        setHealthError(true);
       }
+    } catch {
+      setHealthError(true);
     }
+  };
+
+  useEffect(() => {
     fetchConnectionHealth();
-  }, [syncing]); // Refetch after sync
+  }, [syncing]);
 
   const handleSyncAll = async () => {
     setSyncing(true);
     try {
       const res = await fetch('/api/plaid/sync', { method: 'POST' });
       if (res.ok) {
-        success('Sync complete', 'All accounts have been synchronized');
+        const data = await res.json();
+        if (data.synced === 0 || data.message === 'No active Plaid connections to sync') {
+          showError('No accounts to sync', 'Connect an account first.');
+        } else {
+          success('Sync complete', 'All accounts have been synchronized');
+        }
         refetch?.();
       } else {
-        // Fallback to legacy sync if no Plaid items exist
         const fallback = await fetch('/api/accounts/sync', { method: 'POST' });
         if (fallback.ok) {
           success('Sync complete', 'All accounts have been synchronized');
@@ -115,17 +124,16 @@ export default function AccountsPage() {
     showError('Connection failed', error);
   };
 
-  const handleDisconnect = async (itemId: string, institutionName: string) => {
-    if (!confirm(`Disconnect ${institutionName}? This will remove all associated accounts, transactions, and holdings.`)) {
-      return;
-    }
+  const handleDisconnect = async (itemId: string) => {
+    const item = connectionHealth.items.find(i => i.id === itemId);
+    const institutionName = item?.institution_name || 'Unknown';
     setDisconnecting(itemId);
+    setConfirmDisconnect(null);
     try {
       const res = await fetch(`/api/plaid/items/${itemId}`, { method: 'DELETE' });
       if (res.ok) {
         success('Disconnected', `${institutionName} has been removed`);
         refetch?.();
-        // Refresh connection health
         setConnectionHealth(prev => ({
           ...prev,
           items: prev.items.filter(i => i.id !== itemId),
@@ -144,10 +152,7 @@ export default function AccountsPage() {
   const handleReconnectSuccess = () => {
     success('Reconnected', 'Bank connection has been restored');
     refetch?.();
-    // Refresh health data
-    fetch('/api/plaid/health').then(r => r.ok ? r.json() : null).then(data => {
-      if (data) setConnectionHealth(data);
-    });
+    fetchConnectionHealth();
   };
 
   const primaryAccountId = useMemo(() => {
@@ -345,6 +350,15 @@ export default function AccountsPage() {
               <Skeleton className="h-16 w-full" />
               <Skeleton className="h-16 w-full" />
             </div>
+          ) : filteredAndSortedAccounts.length === 0 && accounts.length === 0 ? (
+            <div className="text-center py-12 text-[var(--color-text-secondary)]">
+              <Building2 className="w-10 h-10 mx-auto mb-3 text-[var(--color-text-muted)]" />
+              <p className="text-sm mb-4">No accounts connected yet</p>
+              <Button onClick={() => setShowAddAccount(true)} className="inline-flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                <span>Connect Account</span>
+              </Button>
+            </div>
           ) : filteredAndSortedAccounts.length === 0 ? (
             <div className="text-center py-8 text-[var(--color-text-secondary)]">
               <p className="text-sm">No accounts match the current filter.</p>
@@ -410,6 +424,13 @@ export default function AccountsPage() {
           <CardDescription>Health across all linked institutions.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          {healthError && (
+            <div className="flex items-center gap-2 p-3 bg-[var(--color-negative)]/10 border border-[var(--color-negative)]/20 rounded-lg text-sm text-[var(--color-negative)]">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>Could not load connection health.</span>
+              <button onClick={fetchConnectionHealth} className="underline hover:no-underline ml-auto">Retry</button>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <span className="text-sm text-[var(--color-text-secondary)]">Last full sync</span>
             <span className="type-label text-[var(--color-text-primary)]">
@@ -460,6 +481,9 @@ export default function AccountsPage() {
                     }`}>
                       {item.status === 'active' ? 'Healthy' : item.status === 'login_required' ? 'Login Required' : item.status}
                     </span>
+                    {item.error_message && (item.status === 'error' || item.status === 'login_required') && (
+                      <span className="text-[10px] text-[var(--color-text-muted)]">{item.error_message}</span>
+                    )}
                   </div>
                   <div className="flex items-center gap-1.5">
                     {(item.status === 'error' || item.status === 'login_required') && item.id && (
@@ -472,7 +496,7 @@ export default function AccountsPage() {
                     )}
                     {item.id && (
                       <button
-                        onClick={() => handleDisconnect(item.id, item.institution_name || 'Unknown')}
+                        onClick={() => setConfirmDisconnect(item.id)}
                         disabled={disconnecting === item.id}
                         className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-negative)] transition-colors rounded hover:bg-[var(--color-bg-overlay)]"
                         title="Disconnect"
@@ -544,6 +568,47 @@ export default function AccountsPage() {
         </div>
       )}
 
+      {/* Disconnect Confirmation Modal */}
+      {confirmDisconnect && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setConfirmDisconnect(null)}
+          />
+          <div className="relative w-full max-w-sm bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl animate-scale-in p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-[var(--color-negative)]/10 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-[var(--color-negative)]" />
+              </div>
+              <div>
+                <h3 className="type-h3">Disconnect this institution?</h3>
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                  {connectionHealth.items.find(i => i.id === confirmDisconnect)?.institution_name || 'This institution'}
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              This will remove all associated accounts, transactions, and holdings. This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setConfirmDisconnect(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-[var(--color-negative)] hover:bg-[var(--color-negative)]/90 text-white"
+                onClick={() => handleDisconnect(confirmDisconnect)}
+              >
+                Disconnect
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add Account Modal */}
       {showAddAccount && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -604,6 +669,7 @@ export default function AccountsPage() {
                   Cancel
                 </Button>
                 <PlaidLinkButton
+                  key={showAddAccount ? 'open' : 'closed'}
                   className="flex-1"
                   onSuccess={handlePlaidSuccess}
                   onError={handlePlaidError}
