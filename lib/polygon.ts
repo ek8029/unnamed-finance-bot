@@ -106,6 +106,8 @@ export interface PolygonSplit {
  * Uses the /v2/aggs/ticker/{ticker}/prev endpoint (previous day's OHLCV).
  */
 export async function getLatestPrice(ticker: string): Promise<PolygonPrice | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
   try {
     const apiKey = getApiKey();
     const polygonTicker = toPolygonTicker(ticker);
@@ -115,7 +117,9 @@ export async function getLatestPrice(ticker: string): Promise<PolygonPrice | nul
       method: 'GET',
       headers: { Accept: 'application/json' },
       cache: 'no-store',
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
     if (!response.ok) {
       console.error(`Polygon API error for ${ticker}: ${response.status} ${response.statusText}`);
@@ -140,8 +144,13 @@ export async function getLatestPrice(ticker: string): Promise<PolygonPrice | nul
       volume: result.v,
       date,
     };
-  } catch (error) {
-    console.error(`Failed to fetch price for ${ticker}:`, error);
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err instanceof Error && err.name === 'AbortError') {
+      console.error(`[polygon] Request timed out: ${ticker}`);
+      return null;
+    }
+    console.error(`Failed to fetch price for ${ticker}:`, err);
     return null;
   }
 }
@@ -193,17 +202,21 @@ export async function getBatchPrices(tickers: string[]): Promise<Map<string, Pol
  * Uses /v3/reference/tickers/{ticker}
  */
 export async function getTickerDetails(ticker: string): Promise<TickerDetails | null> {
+  if (ticker.toUpperCase().includes('-USD')) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
   try {
     const apiKey = getApiKey();
-    // Ticker details endpoint doesn't use crypto format - skip crypto tickers
-    if (ticker.toUpperCase().includes('-USD')) return null;
 
     const url = `${POLYGON_BASE_URL}/v3/reference/tickers/${encodeURIComponent(ticker.toUpperCase())}?apiKey=${apiKey}`;
 
     const response = await fetch(url, {
       headers: { Accept: 'application/json' },
       cache: 'no-store',
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
     if (!response.ok) {
       if (response.status !== 404) {
@@ -234,8 +247,13 @@ export async function getTickerDetails(ticker: string): Promise<TickerDetails | 
       logo_url: r.branding?.logo_url ? `${r.branding.logo_url}?apiKey=${apiKey}` : null,
       icon_url: r.branding?.icon_url ? `${r.branding.icon_url}?apiKey=${apiKey}` : null,
     };
-  } catch (error) {
-    console.error(`Failed to fetch ticker details for ${ticker}:`, error);
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err instanceof Error && err.name === 'AbortError') {
+      console.error(`[polygon] Request timed out: ${ticker}`);
+      return null;
+    }
+    console.error(`Failed to fetch ticker details for ${ticker}:`, err);
     return null;
   }
 }
@@ -293,6 +311,8 @@ export async function getUpcomingDividends(
 
     // Polygon v3 dividends supports ticker query param (one at a time on free tier)
     for (const ticker of stockTickers) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
       try {
         const params = new URLSearchParams({
           ticker: ticker.toUpperCase(),
@@ -306,8 +326,9 @@ export async function getUpcomingDividends(
 
         const response = await fetch(
           `${POLYGON_BASE_URL}/v3/reference/dividends?${params}`,
-          { headers: { Accept: 'application/json' }, cache: 'no-store' },
+          { headers: { Accept: 'application/json' }, cache: 'no-store', signal: controller.signal },
         );
+        clearTimeout(timeout);
 
         if (!response.ok) continue;
 
@@ -326,10 +347,12 @@ export async function getUpcomingDividends(
           });
         }
 
-        // Rate limit delay
         await new Promise(resolve => setTimeout(resolve, POLYGON_CALL_DELAY_MS));
-      } catch {
-        // Skip individual ticker failures
+      } catch (err) {
+        clearTimeout(timeout);
+        if (err instanceof Error && err.name === 'AbortError') {
+          console.error(`[polygon] Dividend request timed out: ${ticker}`);
+        }
       }
     }
 
@@ -365,6 +388,8 @@ export async function getRecentSplits(
     const allSplits: PolygonSplit[] = [];
 
     for (const ticker of stockTickers) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
       try {
         const params = new URLSearchParams({
           ticker: ticker.toUpperCase(),
@@ -378,8 +403,9 @@ export async function getRecentSplits(
 
         const response = await fetch(
           `${POLYGON_BASE_URL}/v3/reference/splits?${params}`,
-          { headers: { Accept: 'application/json' }, cache: 'no-store' },
+          { headers: { Accept: 'application/json' }, cache: 'no-store', signal: controller.signal },
         );
+        clearTimeout(timeout);
 
         if (!response.ok) continue;
 
@@ -394,8 +420,11 @@ export async function getRecentSplits(
         }
 
         await new Promise(resolve => setTimeout(resolve, POLYGON_CALL_DELAY_MS));
-      } catch {
-        // Skip individual ticker failures
+      } catch (err) {
+        clearTimeout(timeout);
+        if (err instanceof Error && err.name === 'AbortError') {
+          console.error(`[polygon] Splits request timed out: ${ticker}`);
+        }
       }
     }
 
@@ -416,6 +445,8 @@ export async function getTickerNews(
   tickers: string[],
   limit: number = 20,
 ): Promise<PolygonNewsArticle[]> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
   try {
     const apiKey = getApiKey();
     const tickerList = [...new Set(tickers.map(t => toPolygonTicker(t)))].join(',');
@@ -434,7 +465,9 @@ export async function getTickerNews(
       method: 'GET',
       headers: { Accept: 'application/json' },
       cache: 'no-store',
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
     if (!response.ok) {
       console.error(`Polygon news API error: ${response.status} ${response.statusText}`);
@@ -458,8 +491,13 @@ export async function getTickerNews(
       tickers: Array.isArray(article.tickers) ? article.tickers : [],
       keywords: Array.isArray(article.keywords) ? article.keywords : [],
     }));
-  } catch (error) {
-    console.error('Failed to fetch ticker news:', error);
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err instanceof Error && err.name === 'AbortError') {
+      console.error('[polygon] News request timed out');
+      return [];
+    }
+    console.error('Failed to fetch ticker news:', err);
     return [];
   }
 }

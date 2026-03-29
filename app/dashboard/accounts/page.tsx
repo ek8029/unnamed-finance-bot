@@ -334,6 +334,7 @@ export default function AccountsPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'balance-high' | 'balance-low' | 'name')}
+                aria-label="Sort accounts"
                 className="px-3 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded type-label text-xs text-[var(--color-text-primary)] cursor-pointer hover:border-[var(--color-border-strong)] transition-colors"
               >
                 <option value="balance-high">Balance: High to Low</option>
@@ -522,12 +523,13 @@ export default function AccountsPage() {
           <div
             className="flex-1 bg-black/40"
             onClick={() => setSelectedAccountId(null)}
+            aria-hidden="true"
           />
-          <div className="w-full max-w-md bg-[var(--color-bg-surface)] border-l border-[var(--color-border-base)] shadow-2xl animate-slide-in-bottom">
+          <div role="dialog" aria-modal="true" aria-labelledby="account-detail-heading" className="w-full max-w-md bg-[var(--color-bg-surface)] border-l border-[var(--color-border-base)] shadow-2xl animate-slide-in-bottom">
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border-base)]">
               <div>
                 <p className="type-caption text-[var(--color-text-secondary)] mb-1">Account details</p>
-                <h2 className="type-h2">{selectedAccount.institution}</h2>
+                <h2 id="account-detail-heading" className="type-h2">{selectedAccount.institution}</h2>
                 <p className="text-xs text-[var(--color-text-secondary)] capitalize">
                   {selectedAccount.account_type.replace('_', ' ')}
                 </p>
@@ -574,14 +576,15 @@ export default function AccountsPage() {
           <div
             className="absolute inset-0 bg-black/60"
             onClick={() => setConfirmDisconnect(null)}
+            aria-hidden="true"
           />
-          <div className="relative w-full max-w-sm bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl animate-scale-in p-6 space-y-4">
+          <div role="dialog" aria-modal="true" aria-labelledby="disconnect-heading" className="relative w-full max-w-sm bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl animate-scale-in p-6 space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-[var(--color-negative)]/10 rounded-full flex items-center justify-center">
                 <Trash2 className="w-5 h-5 text-[var(--color-negative)]" />
               </div>
               <div>
-                <h3 className="type-h3">Disconnect this institution?</h3>
+                <h3 id="disconnect-heading" className="type-h3">Disconnect this institution?</h3>
                 <p className="text-sm text-[var(--color-text-secondary)]">
                   {connectionHealth.items.find(i => i.id === confirmDisconnect)?.institution_name || 'This institution'}
                 </p>
@@ -615,11 +618,12 @@ export default function AccountsPage() {
           <div
             className="absolute inset-0 bg-black/60"
             onClick={() => setShowAddAccount(false)}
+            aria-hidden="true"
           />
-          <div className="relative w-full max-w-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl animate-scale-in">
+          <div role="dialog" aria-modal="true" aria-labelledby="add-account-heading" className="relative w-full max-w-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl animate-scale-in">
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border-base)]">
               <div>
-                <h2 className="type-h2">Connect Account</h2>
+                <h2 id="add-account-heading" className="type-h2">Connect Account</h2>
                 <p className="text-sm text-[var(--color-text-secondary)]">Link a new financial account</p>
               </div>
               <button

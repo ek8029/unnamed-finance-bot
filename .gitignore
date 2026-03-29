@@ -45,3 +45,5 @@ Thumbs.db
 
 # Superpowers brainstorm sessions
 .superpowers/
+__pycache__/
+*.pyc

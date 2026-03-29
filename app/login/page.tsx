@@ -146,6 +146,7 @@ function LoginForm() {
               maxLength={6}
               required
               autoComplete="one-time-code"
+              aria-label="MFA verification code"
               className="w-full px-4 py-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-lg text-[var(--color-text-primary)] text-center text-2xl tracking-[0.5em] font-mono placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]/30 focus:border-[var(--color-gold)] transition-colors"
               placeholder="------"
             />

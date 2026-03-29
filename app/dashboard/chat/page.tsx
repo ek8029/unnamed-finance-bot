@@ -345,6 +345,7 @@ function ResearchChatContent() {
               onKeyDown={handleKeyDown}
               placeholder="Ask about your portfolio or analyze any stock..."
               rows={1}
+              aria-label="Ask Helm a question"
               className="flex-1 bg-transparent text-[0.8125rem] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] resize-none outline-none leading-normal"
               style={{ fontFamily: 'var(--font-sans)', minHeight: '20px' }}
               disabled={isLoading}

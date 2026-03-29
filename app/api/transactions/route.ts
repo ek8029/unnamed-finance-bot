@@ -32,7 +32,9 @@ export async function GET(request: Request) {
     const { data: allUserTx } = await supabase
       .from('transactions')
       .select('category_id, category_name')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .not('category_name', 'is', null)
+      .limit(500);
 
     // Build the real category options from actual transaction data
     const categoryCountMap = new Map<string, { name: string; group: string; count: number; filterValue: string }>();
@@ -205,7 +207,7 @@ export async function GET(request: Request) {
       summaryQuery = summaryQuery.lt('amount', 0);
     }
 
-    const { data: allFiltered } = await summaryQuery;
+    const { data: allFiltered } = await summaryQuery.limit(10000);
 
     let totalIncome = 0;
     let totalExpenses = 0;

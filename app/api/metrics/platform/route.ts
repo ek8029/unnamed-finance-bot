@@ -13,8 +13,9 @@ export async function GET() {
     // Fetch latest snapshot per user (ordered by date desc, dedupe in JS)
     const { data, error } = await supabase
       .from('net_worth_snapshots')
-      .select('user_id, net_worth, snapshot_date')
-      .order('snapshot_date', { ascending: false });
+      .select('user_id, net_worth')
+      .order('snapshot_date', { ascending: false })
+      .limit(1000);
 
     if (error) {
       return NextResponse.json(

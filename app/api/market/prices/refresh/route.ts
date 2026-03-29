@@ -81,11 +81,15 @@ export async function POST() {
       .filter((id): id is string => Boolean(id));
 
     if (relevantSecurityIds.length > 0) {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const { data: recentPrices } = await supabase
         .from('market_prices')
         .select('security_id, price_date, close')
         .in('security_id', relevantSecurityIds)
-        .order('price_date', { ascending: false });
+        .gte('price_date', sevenDaysAgo.toISOString().split('T')[0])
+        .order('price_date', { ascending: false })
+        .limit(relevantSecurityIds.length * 7);
 
       // Group by security_id for efficient lookup
       const pricesBySecurity = new Map<string, { price_date: string; close: number }[]>();

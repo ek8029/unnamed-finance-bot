@@ -40,12 +40,13 @@ export async function POST(request: Request) {
     let redirectUri: string | undefined;
 
     if (receivedRedirectUri) {
-      // Returning from OAuth — use the origin from the received redirect
       try {
         const parsed = new URL(receivedRedirectUri);
-        redirectUri = `${parsed.origin}/oauth-callback`;
+        const appUrlObj = new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev');
+        if (parsed.origin === appUrlObj.origin) {
+          redirectUri = `${parsed.origin}/oauth-callback`;
+        }
       } catch {
-        // Malformed URL — skip redirect_uri
       }
     } else if (appUrl && appUrl.startsWith('https://')) {
       // Production/preview with HTTPS — safe to include

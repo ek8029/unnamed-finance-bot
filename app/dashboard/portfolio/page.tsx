@@ -262,16 +262,20 @@ export default function PortfolioPage() {
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center space-x-2">
-                  <TrendingUp className="w-4 h-4 text-[var(--color-text-muted)]" />
+                  {(sortedByDayChange[0]?.day_change_percentage ?? 0) >= 0 ? (
+                    <TrendingUp className="w-4 h-4 text-[var(--color-positive)]" />
+                  ) : (
+                    <TrendingDown className="w-4 h-4 text-[var(--color-negative)]" />
+                  )}
                   <CardDescription>Best Performer Today</CardDescription>
                 </div>
               </CardHeader>
               <CardContent>
-                <CardTitle className="type-data text-xl text-[var(--color-positive)]">
+                <CardTitle className={`type-data text-xl ${(sortedByDayChange[0]?.day_change_percentage ?? 0) >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
                   {sortedByDayChange[0]?.ticker || '-'}
                 </CardTitle>
-                <p className="type-mono text-[var(--color-positive)] mt-1">
-                  +{sortedByDayChange[0]?.day_change_percentage?.toFixed(2) || 0}%
+                <p className={`type-mono mt-1 ${(sortedByDayChange[0]?.day_change_percentage ?? 0) >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+                  {(sortedByDayChange[0]?.day_change_percentage ?? 0) >= 0 ? '+' : ''}{sortedByDayChange[0]?.day_change_percentage?.toFixed(2) || 0}%
                 </p>
               </CardContent>
             </Card>

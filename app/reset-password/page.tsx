@@ -1,10 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { HelmMark } from '@/components/helm-mark';
 import { createClient } from '@/lib/supabase/client';
+
+function getPasswordStrength(password: string) {
+  const requirements = [
+    { label: '8+ characters', met: password.length >= 8 },
+    { label: 'Uppercase', met: /[A-Z]/.test(password) },
+    { label: 'Lowercase', met: /[a-z]/.test(password) },
+    { label: 'Number', met: /\d/.test(password) },
+    { label: 'Special char', met: /[^A-Za-z0-9]/.test(password) },
+  ];
+  const score = Math.min(4, requirements.filter(r => r.met).length) as 0 | 1 | 2 | 3 | 4;
+  const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+  const colors = ['bg-[var(--color-negative)]', 'bg-[var(--color-negative)]', 'bg-[var(--color-warning)]', 'bg-[var(--color-positive)]/70', 'bg-[var(--color-positive)]'];
+  return { score, label: labels[score], color: colors[score], requirements };
+}
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -14,6 +28,8 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
+
+  const strength = useMemo(() => getPasswordStrength(password), [password]);
 
   // Supabase automatically picks up the token from the URL hash
   useEffect(() => {
@@ -47,8 +63,8 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (strength.score < 3) {
+      setError('Password is too weak. Meet at least 4 of the 5 requirements.');
       return;
     }
 
@@ -142,7 +158,7 @@ export default function ResetPasswordPage() {
                     required
                     autoComplete="new-password"
                     className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]/30 focus:border-[var(--color-gold)] transition-colors"
-                    placeholder="At least 6 characters"
+                    placeholder="At least 8 characters"
                   />
                 </div>
 
