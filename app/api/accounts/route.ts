@@ -20,6 +20,7 @@ export async function GET() {
           institution:institutions(name, slug, logo_url)
         `)
         .eq('user_id', user.id)
+        .eq('is_active', true)
         .order('current_balance', { ascending: false }),
       supabase
         .from('cash_flow_snapshots')

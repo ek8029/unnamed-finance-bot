@@ -24,11 +24,13 @@ export async function GET() {
       supabase
         .from('linked_accounts')
         .select('*, institutions(name, logo_url)')
-        .eq('user_id', user.id),
+        .eq('user_id', user.id)
+        .eq('is_active', true),
       supabase
         .from('holdings')
         .select('*, securities(security_name, sector, asset_class)')
-        .eq('user_id', user.id),
+        .eq('user_id', user.id)
+        .eq('is_active', true),
       // Fetch all net worth history (last 12 months)
       supabase
         .from('net_worth_snapshots')
