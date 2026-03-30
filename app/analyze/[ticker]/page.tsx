@@ -50,18 +50,26 @@ export default async function TickerAnalysisPage({ params }: Props) {
         <CinematicBg />
         <AnalysisNav />
         <main className="relative z-10 flex-1 flex items-center justify-center px-6">
-          <div className="text-center space-y-4 max-w-md">
+          <div className="text-center space-y-5 max-w-md">
             <div className="type-h1 text-[var(--color-text-primary)]">Ticker not found</div>
             <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed">
               We couldn&apos;t find data for <span className="font-bold text-[var(--color-text-primary)]">{symbol}</span>.
-              Make sure it&apos;s a valid US stock ticker.
+              Helm currently covers US-listed stocks and ETFs (NYSE, NASDAQ, AMEX). International stocks, mutual funds, and OTC securities are not yet supported.
             </p>
-            <a
-              href="/analyze"
-              className="inline-block mt-2 px-5 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[13px] font-semibold rounded transition-colors"
-            >
-              Try another ticker
-            </a>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <a
+                href="/analyze"
+                className="px-5 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[13px] font-semibold rounded transition-colors"
+              >
+                Try another ticker
+              </a>
+              <a
+                href="/analyze/AAPL"
+                className="px-5 py-2 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] text-[13px] font-medium rounded transition-colors"
+              >
+                See an example (AAPL)
+              </a>
+            </div>
           </div>
         </main>
       </div>
