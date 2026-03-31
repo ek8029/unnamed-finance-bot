@@ -80,6 +80,7 @@ export default function RootLayout({
               foundingDate: '2025',
               sameAs: [
                 'https://x.com/helmterminal',
+                'https://www.linkedin.com/company/helmfintech',
               ],
               knowsAbout: [
                 'Portfolio Analysis',
