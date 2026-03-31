@@ -31,7 +31,7 @@ function slugify(text: string): string {
 function H1({ children }: { children?: React.ReactNode }) {
   const id = slugify(String(children ?? ''));
   return (
-    <h1 id={id} className="group font-sans font-bold text-[28px] md:text-[32px] text-[var(--color-text-primary)] tracking-tight mt-12 mb-4 scroll-mt-24">
+    <h1 id={id} className="group font-sans font-bold text-[1.75rem] md:text-[2rem] text-[var(--color-text-primary)] tracking-tight mt-12 mb-4 scroll-mt-24">
       <a href={`#${id}`} className="no-underline text-inherit">{children}<AnchorIcon /></a>
     </h1>
   );
@@ -40,7 +40,7 @@ function H1({ children }: { children?: React.ReactNode }) {
 function H2({ children }: { children?: React.ReactNode }) {
   const id = slugify(String(children ?? ''));
   return (
-    <h2 id={id} className="group font-sans font-semibold text-[22px] md:text-[24px] text-[var(--color-text-primary)] tracking-tight mt-10 mb-3 scroll-mt-24">
+    <h2 id={id} className="group font-sans font-semibold text-[1.375rem] md:text-[1.5rem] text-[var(--color-text-primary)] tracking-tight mt-10 mb-3 scroll-mt-24">
       <a href={`#${id}`} className="no-underline text-inherit">{children}<AnchorIcon /></a>
     </h2>
   );
@@ -49,7 +49,7 @@ function H2({ children }: { children?: React.ReactNode }) {
 function H3({ children }: { children?: React.ReactNode }) {
   const id = slugify(String(children ?? ''));
   return (
-    <h3 id={id} className="group font-sans font-semibold text-[18px] md:text-[20px] text-[var(--color-text-primary)] tracking-tight mt-8 mb-2 scroll-mt-24">
+    <h3 id={id} className="group font-sans font-semibold text-[1.125rem] md:text-[1.25rem] text-[var(--color-text-primary)] tracking-tight mt-8 mb-2 scroll-mt-24">
       <a href={`#${id}`} className="no-underline text-inherit">{children}<AnchorIcon /></a>
     </h3>
   );
@@ -58,7 +58,7 @@ function H3({ children }: { children?: React.ReactNode }) {
 function H4({ children }: { children?: React.ReactNode }) {
   const id = slugify(String(children ?? ''));
   return (
-    <h4 id={id} className="group font-sans font-semibold text-[16px] text-[var(--color-text-primary)] tracking-tight mt-6 mb-2 scroll-mt-24">
+    <h4 id={id} className="group font-sans font-semibold text-[1rem] text-[var(--color-text-primary)] tracking-tight mt-6 mb-2 scroll-mt-24">
       <a href={`#${id}`} className="no-underline text-inherit">{children}<AnchorIcon /></a>
     </h4>
   );
@@ -66,7 +66,7 @@ function H4({ children }: { children?: React.ReactNode }) {
 
 function P({ children }: { children?: React.ReactNode }) {
   return (
-    <p className="text-[16px] md:text-[17px] leading-[1.75] text-[var(--color-text-secondary)] mb-5 max-w-[65ch]">
+    <p className="text-[1rem] md:text-[1.0625rem] leading-[1.75] text-[var(--color-text-secondary)] mb-5 max-w-[65ch]">
       {children}
     </p>
   );
@@ -104,7 +104,7 @@ function Blockquote({ children }: { children?: React.ReactNode }) {
 
 function Pre({ children, ...props }: React.HTMLAttributes<HTMLPreElement>) {
   return (
-    <pre className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm px-5 py-4 my-6 overflow-x-auto font-mono text-[13px] leading-relaxed text-[var(--color-text-primary)]" {...props}>
+    <pre className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm px-5 py-4 my-6 overflow-x-auto font-mono text-[0.8125rem] leading-relaxed text-[var(--color-text-primary)]" {...props}>
       {children}
     </pre>
   );
@@ -123,7 +123,7 @@ function Code({ children, ...props }: React.HTMLAttributes<HTMLElement>) {
 
 function Ul({ children }: { children?: React.ReactNode }) {
   return (
-    <ul className="list-disc list-outside pl-6 mb-5 space-y-2 text-[16px] md:text-[17px] leading-[1.75] text-[var(--color-text-secondary)] max-w-[65ch] marker:text-[var(--color-gold)]">
+    <ul className="list-disc list-outside pl-6 mb-5 space-y-2 text-[1rem] md:text-[1.0625rem] leading-[1.75] text-[var(--color-text-secondary)] max-w-[65ch] marker:text-[var(--color-gold)]">
       {children}
     </ul>
   );
@@ -131,7 +131,7 @@ function Ul({ children }: { children?: React.ReactNode }) {
 
 function Ol({ children }: { children?: React.ReactNode }) {
   return (
-    <ol className="list-decimal list-outside pl-6 mb-5 space-y-2 text-[16px] md:text-[17px] leading-[1.75] text-[var(--color-text-secondary)] max-w-[65ch] marker:text-[var(--color-gold)]">
+    <ol className="list-decimal list-outside pl-6 mb-5 space-y-2 text-[1rem] md:text-[1.0625rem] leading-[1.75] text-[var(--color-text-secondary)] max-w-[65ch] marker:text-[var(--color-gold)]">
       {children}
     </ol>
   );
@@ -148,7 +148,7 @@ function Hr() {
 function Table({ children }: { children?: React.ReactNode }) {
   return (
     <div className="overflow-x-auto my-6 border border-[var(--color-border-base)] rounded-[4px]">
-      <table className="w-full border-collapse text-[14px] text-[var(--color-text-secondary)]">
+      <table className="w-full border-collapse text-[0.875rem] text-[var(--color-text-secondary)]">
         {children}
       </table>
     </div>
@@ -165,7 +165,7 @@ function Thead({ children }: { children?: React.ReactNode }) {
 
 function Th({ children }: { children?: React.ReactNode }) {
   return (
-    <th className="px-3.5 py-2.5 border-b border-[var(--color-border-base)] font-medium font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--color-text-primary)]">
+    <th className="px-3.5 py-2.5 border-b border-[var(--color-border-base)] font-medium font-mono text-[0.6875rem] uppercase tracking-[0.08em] text-[var(--color-text-primary)]">
       {children}
     </th>
   );
@@ -173,10 +173,14 @@ function Th({ children }: { children?: React.ReactNode }) {
 
 function Td({ children }: { children?: React.ReactNode }) {
   return (
-    <td className="px-3.5 py-2.5 border-b border-[var(--color-border-base)] bg-[var(--color-bg-surface)] text-[14px] text-[var(--color-text-secondary)] [&>strong]:text-[var(--color-text-primary)]">
+    <td className="px-3.5 py-2.5 border-b border-[var(--color-border-base)] bg-[var(--color-bg-surface)] text-[0.875rem] text-[var(--color-text-secondary)] [&>strong]:text-[var(--color-text-primary)]">
       {children}
     </td>
   );
+}
+
+function Tbody({ children }: { children?: React.ReactNode }) {
+  return <tbody>{children}</tbody>;
 }
 
 function Tr({ children }: { children?: React.ReactNode }) {
@@ -200,7 +204,7 @@ function Img({ src, alt }: { src?: string; alt?: string }) {
         loading="lazy"
       />
       {alt && (
-        <figcaption className="mt-2 text-center text-[13px] text-[var(--color-text-muted)]">
+        <figcaption className="mt-2 text-center text-[0.8125rem] text-[var(--color-text-muted)]">
           {alt}
         </figcaption>
       )}
@@ -219,11 +223,11 @@ export function ComparisonTable({
 }) {
   return (
     <div className="overflow-x-auto my-6 border border-[var(--color-border-base)] rounded-[4px]">
-      <table className="w-full border-collapse text-[14px] text-[var(--color-text-secondary)]">
+      <table className="w-full border-collapse text-[0.875rem] text-[var(--color-text-secondary)]">
         <thead className="bg-[var(--color-bg-elevated)] text-left">
           <tr>
             {headers.map((h) => (
-              <th key={h} className="px-3.5 py-2.5 border-b border-[var(--color-border-base)] font-medium font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--color-text-primary)]">
+              <th key={h} className="px-3.5 py-2.5 border-b border-[var(--color-border-base)] font-medium font-mono text-[0.6875rem] uppercase tracking-[0.08em] text-[var(--color-text-primary)]">
                 {h}
               </th>
             ))}
@@ -233,7 +237,7 @@ export function ComparisonTable({
           {rows.map((row, i) => (
             <tr key={i} className="even:[&>td]:bg-[var(--color-bg-elevated)]">
               {row.map((cell, j) => (
-                <td key={j} className="px-3.5 py-2.5 border-b border-[var(--color-border-base)] bg-[var(--color-bg-surface)] text-[14px] text-[var(--color-text-secondary)]">
+                <td key={j} className="px-3.5 py-2.5 border-b border-[var(--color-border-base)] bg-[var(--color-bg-surface)] text-[0.875rem] text-[var(--color-text-secondary)]">
                   {cell}
                 </td>
               ))}
@@ -258,13 +262,13 @@ export function CTACard({
 }) {
   return (
     <div className="my-8 bg-[var(--color-bg-elevated)] border border-[var(--color-gold-border)] rounded-sm p-6">
-      <h4 className="font-sans font-semibold text-[18px] text-[var(--color-text-primary)] mb-2">
+      <h4 className="font-sans font-semibold text-[1.125rem] text-[var(--color-text-primary)] mb-2">
         {title}
       </h4>
-      <p className="text-[15px] text-[var(--color-text-secondary)] mb-4">{description}</p>
+      <p className="text-[0.9375rem] text-[var(--color-text-secondary)] mb-4">{description}</p>
       <a
         href={href}
-        className="inline-block bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-text-inverse)] font-medium text-[14px] px-5 py-2 rounded-sm transition-colors"
+        className="inline-block bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-text-inverse)] font-medium text-[0.875rem] px-5 py-2 rounded-sm transition-colors"
       >
         {buttonText}
       </a>
@@ -276,10 +280,10 @@ export function ProTip({ children }: { children?: React.ReactNode }) {
   return (
     <div className="my-6 bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] rounded-sm p-5">
       <div className="flex items-start gap-3">
-        <span className="text-[var(--color-gold)] font-mono text-[12px] font-medium uppercase tracking-wider mt-0.5 shrink-0">
+        <span className="text-[var(--color-gold)] font-mono text-[0.75rem] font-medium uppercase tracking-wider mt-0.5 shrink-0">
           Pro Tip
         </span>
-        <div className="text-[15px] leading-[1.7] text-[var(--color-text-secondary)] [&>p]:mb-0">
+        <div className="text-[0.9375rem] leading-[1.7] text-[var(--color-text-secondary)] [&>p]:mb-0">
           {children}
         </div>
       </div>
@@ -305,6 +309,7 @@ export const mdxComponents: MDXComponents = {
   hr: Hr,
   table: Table,
   thead: Thead,
+  tbody: Tbody,
   th: Th,
   td: Td,
   tr: Tr,
