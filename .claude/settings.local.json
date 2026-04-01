@@ -45,7 +45,8 @@
       "Bash(\"/c/Users/Evan/AppData/Local/Programs/Python/Python312/python.exe\" --version)",
       "Bash(\"/c/Users/Evan/AppData/Local/Programs/Python/Python313/python.exe\" --version)",
       "Read(//c/Users/Evan/AppData/Local/Programs/Python//**)",
-      "Bash(\"/c/Users/Evan/AppData/Local/Programs/Python/Python312/python.exe\":*)"
+      "Bash(\"/c/Users/Evan/AppData/Local/Programs/Python/Python312/python.exe\":*)",
+      "Bash(npx playwright:*)"
     ]
   }
 }

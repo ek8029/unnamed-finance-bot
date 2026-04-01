@@ -163,10 +163,8 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                   const isPositiveChange = dayChange >= 0;
                   const isExpanded = expandedRowId === holding.id;
                   const unrealised = holding.unrealised_gain ?? 0;
+                  const unrealisedPct = holding.unrealised_pct ?? null;
                   const costBasisTotal = holding.cost_basis ? holding.cost_basis * holding.shares : null;
-                  const unrealisedPct = costBasisTotal && costBasisTotal > 0
-                    ? (unrealised / costBasisTotal) * 100
-                    : null;
                   const dayChangeDollars = holding.total_value * (dayChange / 100);
                   const isPositiveUnrealised = unrealised >= 0;
 

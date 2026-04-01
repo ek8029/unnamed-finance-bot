@@ -39,6 +39,7 @@ export interface Holding {
   asset_class?: string;
    cost_basis?: number;
    unrealised_gain?: number;
+   unrealised_pct?: number | null;
 }
 
 // Insight types

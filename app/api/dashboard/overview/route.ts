@@ -57,15 +57,16 @@ export async function GET() {
 
     const totalBalance = (accounts || []).reduce((sum, a) => sum + Number(a.current_balance), 0);
 
-    // 3. Holdings (top 10 by value)
-    const { data: holdings } = await supabase
+    // 3. Holdings (all for accurate total, top 10 for display)
+    const { data: allHoldings } = await supabase
       .from('holdings')
       .select('ticker, shares, current_price, total_value, unrealised_gain_loss')
       .eq('user_id', user.id)
-      .order('total_value', { ascending: false })
-      .limit(10);
+      .order('total_value', { ascending: false });
 
-    const portfolioValue = (holdings || []).reduce((sum, h) => sum + Number(h.total_value), 0);
+    const holdings = allHoldings || [];
+    const portfolioValue = holdings.reduce((sum, h) => sum + Number(h.total_value), 0);
+    const topHoldings = holdings.slice(0, 10);
 
     // 4. Recent transactions (last 30 days)
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
@@ -111,7 +112,7 @@ export async function GET() {
       },
       portfolio: {
         value: portfolioValue,
-        top_holdings: holdings || [],
+        top_holdings: topHoldings,
       },
       cash_flow: cashFlow ? {
         income: cashFlow.total_income,

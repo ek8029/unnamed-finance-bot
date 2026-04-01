@@ -84,7 +84,7 @@ export async function GET() {
         totalLiabilities += Math.abs(bal);
       } else if (type === 'brokerage') {
         // Skip — investment value comes from holdings below
-      } else if (bal > 0) {
+      } else {
         cashAccounts.push(a);
         cashAssets += bal;
       }

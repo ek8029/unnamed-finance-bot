@@ -68,6 +68,7 @@ export async function GET() {
         asset_class: holding.security?.asset_class,
         cost_basis: holding.average_cost_basis,
         unrealised_gain: holding.unrealised_gain_loss,
+        unrealised_pct: holding.unrealised_gain_loss_pct ? Number(holding.unrealised_gain_loss_pct) * 100 : null,
       };
     });
 

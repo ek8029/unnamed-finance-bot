@@ -151,7 +151,9 @@ export async function refreshMarketPrices(
       })
       .eq('id', u.holdingId)
   ));
-  const holdingFailures = holdingResults.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+  const holdingFailures = holdingResults.filter(r =>
+    r.status === 'rejected' || (r.status === 'fulfilled' && r.value?.error)
+  );
   if (holdingFailures.length > 0) {
     console.error(`[prices] ${holdingFailures.length} holding updates failed`);
   }
@@ -166,7 +168,9 @@ export async function refreshMarketPrices(
           .eq('id', tickerSecurityMap.get(ticker)!)
       )
   );
-  const securityFailures = securityResults.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+  const securityFailures = securityResults.filter(r =>
+    r.status === 'rejected' || (r.status === 'fulfilled' && r.value?.error)
+  );
   if (securityFailures.length > 0) {
     console.error(`[prices] ${securityFailures.length} security updates failed`);
   }
@@ -195,7 +199,20 @@ export async function refreshMarketPrices(
       });
   }
 
-  await recalcAllocations(supabase, log);
+  const totalPortfolioValue = holdingUpdates.reduce((sum, u) => sum + u.totalValue, 0);
+  if (totalPortfolioValue > 0) {
+    const allocResults = await Promise.allSettled(holdingUpdates.map(u =>
+      supabase.from('holdings').update({
+        portfolio_allocation_pct: Math.round((u.totalValue / totalPortfolioValue) * 10000) / 100,
+      }).eq('id', u.holdingId)
+    ));
+    const allocFailures = allocResults.filter(r =>
+      r.status === 'rejected' || (r.status === 'fulfilled' && r.value?.error)
+    );
+    if (allocFailures.length > 0) {
+      console.error(`[prices] ${allocFailures.length} allocation updates failed`);
+    }
+  }
 
   const updated = holdingUpdates.length;
   log.push(`[prices] Updated ${updated}/${uniqueTickers.length} ticker prices`);
@@ -228,7 +245,9 @@ export async function recalcAllocations(supabase: AnyClient, log: string[]) {
           .update({ portfolio_allocation_pct: Math.round(pct * 100) / 100 })
           .eq('id', h.id);
       }));
-      const allocFailures = allocResults.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+      const allocFailures = allocResults.filter(r =>
+        r.status === 'rejected' || (r.status === 'fulfilled' && r.value?.error)
+      );
       if (allocFailures.length > 0) {
         console.error(`[allocations] ${allocFailures.length} allocation updates failed`);
       }
