@@ -6,6 +6,8 @@ import { Holding } from '@/types';
 import { useFormat } from '@/hooks/use-format';
 import { ArrowUpRight, ArrowDownRight, TrendingUp, ChevronUp, ChevronDown } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { HoldingMiniChart } from '@/components/dashboard/holding-mini-chart';
+import Link from 'next/link';
 
 interface PortfolioMonitorProps {
   holdings: Holding[];
@@ -263,39 +265,49 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                       {isExpanded && (
                         <tr className="border-b border-[var(--color-border-subtle)]">
                           <td colSpan={5} className="py-5 px-5 bg-[var(--color-bg-overlay)]/40">
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 ml-[54px]">
-                              <div>
-                                <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1.5">
-                                  Avg Cost Basis
-                                </span>
-                                <span className="font-mono text-[15px] text-[var(--color-text-primary)] tabular-nums">
-                                  {holding.cost_basis ? formatCurrencyDetailed(holding.cost_basis) : '-'}
-                                </span>
+                            <div className="ml-[54px] space-y-4">
+                              <HoldingMiniChart ticker={holding.ticker} />
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                                <div>
+                                  <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1.5">
+                                    Avg Cost Basis
+                                  </span>
+                                  <span className="font-mono text-[15px] text-[var(--color-text-primary)] tabular-nums">
+                                    {holding.cost_basis ? formatCurrencyDetailed(holding.cost_basis) : '-'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1.5">
+                                    Total Cost
+                                  </span>
+                                  <span className="font-mono text-[15px] text-[var(--color-text-primary)] tabular-nums">
+                                    {costBasisTotal ? formatValue(costBasisTotal) : '-'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1.5">
+                                    Sector
+                                  </span>
+                                  <span className="font-mono text-[15px] text-[var(--color-text-primary)]">
+                                    {holding.sector || '-'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1.5">
+                                    Asset Class
+                                  </span>
+                                  <span className="font-mono text-[15px] text-[var(--color-text-primary)]">
+                                    {holding.asset_class || '-'}
+                                  </span>
+                                </div>
                               </div>
-                              <div>
-                                <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1.5">
-                                  Total Cost
-                                </span>
-                                <span className="font-mono text-[15px] text-[var(--color-text-primary)] tabular-nums">
-                                  {costBasisTotal ? formatValue(costBasisTotal) : '-'}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1.5">
-                                  Sector
-                                </span>
-                                <span className="font-mono text-[15px] text-[var(--color-text-primary)]">
-                                  {holding.sector || '-'}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1.5">
-                                  Asset Class
-                                </span>
-                                <span className="font-mono text-[15px] text-[var(--color-text-primary)]">
-                                  {holding.asset_class || '-'}
-                                </span>
-                              </div>
+                              <Link
+                                href={`/analyze/${holding.ticker}`}
+                                className="inline-flex items-center gap-1.5 text-[0.75rem] font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors"
+                              >
+                                View full analysis
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+                              </Link>
                             </div>
                           </td>
                         </tr>
