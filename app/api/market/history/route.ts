@@ -1,4 +1,4 @@
-import { createServiceClient } from '@/lib/supabase/service';
+import { createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { toPolygonTicker } from '@/lib/polygon';
 import { rateLimit } from '@/lib/rate-limit';
