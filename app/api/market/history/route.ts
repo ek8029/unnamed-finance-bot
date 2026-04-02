@@ -1,19 +1,19 @@
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { NextResponse } from 'next/server';
 import { toPolygonTicker } from '@/lib/polygon';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const ticker = searchParams.get('ticker')?.toUpperCase();
-    if (!ticker) {
-      return NextResponse.json({ error: 'Ticker required' }, { status: 400 });
+    if (!ticker || ticker.length > 10) {
+      return NextResponse.json({ error: 'Valid ticker required' }, { status: 400 });
+    }
+
+    const limited = rateLimit(`history:${ticker}`, 10, 60);
+    if (!limited.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
 
     const thirtyDaysAgo = new Date();
@@ -21,7 +21,8 @@ export async function GET(request: Request) {
     const fromDate = thirtyDaysAgo.toISOString().split('T')[0];
     const toDate = new Date().toISOString().split('T')[0];
 
-    const { data: dbPrices } = await supabase
+    const serviceClient = createServiceClient();
+    const { data: dbPrices } = await serviceClient
       .from('market_prices')
       .select('price_date, close')
       .eq('ticker', ticker)
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
       return NextResponse.json({
         prices: dbPrices,
       }, {
-        headers: { 'Cache-Control': 'private, max-age=3600' },
+        headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' },
       });
     }
 
@@ -54,7 +55,6 @@ export async function GET(request: Request) {
       clearTimeout(timeout);
 
       if (!res.ok) {
-        console.error(`[history] Polygon returned ${res.status} for ${ticker}`);
         return NextResponse.json({ prices: dbPrices || [] });
       }
 
@@ -62,7 +62,6 @@ export async function GET(request: Request) {
       const results = json.results || [];
 
       if (results.length === 0) {
-        console.error(`[history] Polygon returned 0 results for ${ticker}`);
         return NextResponse.json({ prices: dbPrices || [] });
       }
 
@@ -74,11 +73,10 @@ export async function GET(request: Request) {
       return NextResponse.json({
         prices,
       }, {
-        headers: { 'Cache-Control': 'private, max-age=3600' },
+        headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' },
       });
-    } catch (err) {
+    } catch {
       clearTimeout(timeout);
-      console.error(`[history] Polygon fetch failed for ${ticker}:`, err);
       return NextResponse.json({ prices: dbPrices || [] });
     }
   } catch {
