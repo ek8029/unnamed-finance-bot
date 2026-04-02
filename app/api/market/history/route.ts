@@ -54,11 +54,17 @@ export async function GET(request: Request) {
       clearTimeout(timeout);
 
       if (!res.ok) {
+        console.error(`[history] Polygon returned ${res.status} for ${ticker}`);
         return NextResponse.json({ prices: dbPrices || [] });
       }
 
-      const data = await res.json();
-      const results = data.results || [];
+      const json = await res.json();
+      const results = json.results || [];
+
+      if (results.length === 0) {
+        console.error(`[history] Polygon returned 0 results for ${ticker}`);
+        return NextResponse.json({ prices: dbPrices || [] });
+      }
 
       const prices = results.map((bar: { t: number; c: number }) => ({
         price_date: new Date(bar.t).toISOString().split('T')[0],
@@ -70,8 +76,9 @@ export async function GET(request: Request) {
       }, {
         headers: { 'Cache-Control': 'private, max-age=3600' },
       });
-    } catch {
+    } catch (err) {
       clearTimeout(timeout);
+      console.error(`[history] Polygon fetch failed for ${ticker}:`, err);
       return NextResponse.json({ prices: dbPrices || [] });
     }
   } catch {

@@ -16,17 +16,28 @@ export function HoldingMiniChart({ ticker }: Props) {
     let cancelled = false;
     setLoading(true);
     fetch(`/api/market/history?ticker=${encodeURIComponent(ticker)}`)
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      })
       .then(d => {
         if (!cancelled) {
-          setData((d.prices || []).map((p: { price_date: string; close: number }) => ({
-            date: p.price_date,
-            close: Number(p.close),
-          })));
+          const prices = (d.prices || [])
+            .map((p: { price_date: string; close: string | number }) => ({
+              date: p.price_date,
+              close: Number(p.close),
+            }))
+            .filter((p: { close: number }) => p.close > 0);
+          setData(prices);
           setLoading(false);
         }
       })
-      .catch(() => { if (!cancelled) setLoading(false); });
+      .catch(() => {
+        if (!cancelled) {
+          setData([]);
+          setLoading(false);
+        }
+      });
     return () => { cancelled = true; };
   }, [ticker]);
 
