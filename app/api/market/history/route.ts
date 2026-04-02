@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     const fromDate = thirtyDaysAgo.toISOString().split('T')[0];
     const toDate = new Date().toISOString().split('T')[0];
 
-    const serviceClient = createServiceClient();
+    const serviceClient = await createServiceClient();
     const { data: dbPrices } = await serviceClient
       .from('market_prices')
       .select('price_date, close')
