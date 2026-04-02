@@ -266,41 +266,43 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                         <tr className="border-b border-[var(--color-border-subtle)]">
                           <td colSpan={5} className="py-5 px-5 bg-[var(--color-bg-overlay)]/40">
                             <div className="ml-[54px] space-y-4">
-                              <HoldingMiniChart ticker={holding.ticker} />
-                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-                                <div>
-                                  <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1.5">
-                                    Avg Cost Basis
+                              <HoldingMiniChart ticker={holding.ticker} currentPrice={holding.current_price} />
+
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-3 py-2">
+                                  <span className="block text-[0.5625rem] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-0.5">
+                                    Avg Cost
                                   </span>
-                                  <span className="font-mono text-[15px] text-[var(--color-text-primary)] tabular-nums">
+                                  <span className="font-mono text-[0.8125rem] text-[var(--color-text-primary)] tabular-nums font-medium">
                                     {holding.cost_basis ? formatCurrencyDetailed(holding.cost_basis) : '-'}
                                   </span>
                                 </div>
-                                <div>
-                                  <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1.5">
+                                <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-3 py-2">
+                                  <span className="block text-[0.5625rem] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-0.5">
                                     Total Cost
                                   </span>
-                                  <span className="font-mono text-[15px] text-[var(--color-text-primary)] tabular-nums">
+                                  <span className="font-mono text-[0.8125rem] text-[var(--color-text-primary)] tabular-nums font-medium">
                                     {costBasisTotal ? formatValue(costBasisTotal) : '-'}
                                   </span>
                                 </div>
-                                <div>
-                                  <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1.5">
+                                <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-3 py-2">
+                                  <span className="block text-[0.5625rem] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-0.5">
                                     Sector
                                   </span>
-                                  <span className="font-mono text-[15px] text-[var(--color-text-primary)]">
+                                  <span className="font-mono text-[0.8125rem] text-[var(--color-text-primary)] font-medium">
                                     {holding.sector || '-'}
                                   </span>
                                 </div>
-                                <div>
-                                  <span className="type-eyebrow text-[var(--color-text-muted)] uppercase tracking-wider text-[10px] block mb-1.5">
+                                <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-3 py-2">
+                                  <span className="block text-[0.5625rem] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-0.5">
                                     Asset Class
                                   </span>
-                                  <span className="font-mono text-[15px] text-[var(--color-text-primary)]">
+                                  <span className="font-mono text-[0.8125rem] text-[var(--color-text-primary)] font-medium">
                                     {holding.asset_class || '-'}
                                   </span>
                                 </div>
                               </div>
+
                               <Link
                                 href={`/analyze/${holding.ticker}`}
                                 className="inline-flex items-center gap-1.5 text-[0.75rem] font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors"
