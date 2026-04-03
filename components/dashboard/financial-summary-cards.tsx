@@ -135,7 +135,7 @@ export function FinancialSummaryCards({
   ];
 
   return (
-    <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
       {summaryData.map((item, index) => (
         <SummaryCard key={item.title} item={item} index={index} />
       ))}
