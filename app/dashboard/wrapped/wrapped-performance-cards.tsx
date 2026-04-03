@@ -14,7 +14,7 @@ export function BestTradeCard({ data, active }: { data: WrappedData; active: boo
   const animPct = useCountUp(pos.returnPct, active);
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-8 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-8 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"
            style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(52,211,153,0.15), transparent 70%)' }} />
       <p className="uppercase text-[var(--color-text-muted)] mb-2"
@@ -59,7 +59,7 @@ export function SpyComparisonCard({ data, active }: { data: WrappedData; active:
     : 0;
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-8 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-8 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"
            style={{ background: beat
              ? 'radial-gradient(ellipse at 50% 60%, rgba(184,145,74,0.18), transparent 70%)'
@@ -133,7 +133,7 @@ export function WorstTradeCard({ data, active }: { data: WrappedData; active: bo
   const pos = data.worstPosition!;
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-8 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-8 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"
            style={{ background: 'radial-gradient(ellipse at 50% 70%, rgba(248,113,113,0.08), transparent 70%)' }} />
       <p className="uppercase text-[var(--color-text-muted)] mb-6"

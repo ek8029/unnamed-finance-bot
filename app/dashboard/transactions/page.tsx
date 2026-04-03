@@ -115,7 +115,7 @@ function CategoryDropdown({
   };
 
   return (
-    <div className="min-w-[180px] relative" ref={ref}>
+    <div className="min-w-0 sm:min-w-[180px] relative" ref={ref}>
       <label className="type-label text-xs text-[var(--color-text-secondary)] mb-1.5 block">
         Category
       </label>
@@ -131,7 +131,7 @@ function CategoryDropdown({
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-72 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg shadow-xl overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full sm:w-72 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg shadow-xl overflow-hidden">
           {/* Search input */}
           <div className="p-2 border-b border-[var(--color-border-subtle)]">
             <div className="relative">
@@ -324,7 +324,7 @@ export default function TransactionsPage() {
         <CardContent className="pt-5 pb-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-end gap-3">
             {/* Search */}
-            <form onSubmit={handleSearch} className="flex-1 min-w-[200px]">
+            <form onSubmit={handleSearch} className="flex-1 min-w-0 sm:min-w-[200px]">
               <label className="type-label text-xs text-[var(--color-text-secondary)] mb-1.5 block">Search</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
@@ -339,7 +339,7 @@ export default function TransactionsPage() {
             </form>
 
             {/* Account Filter */}
-            <div className="min-w-[160px]">
+            <div className="min-w-0 sm:min-w-[160px]">
               <label className="type-label text-xs text-[var(--color-text-secondary)] mb-1.5 block">Account</label>
               <select
                 value={filters.account_id}
@@ -364,7 +364,7 @@ export default function TransactionsPage() {
             />
 
             {/* Type Filter */}
-            <div className="min-w-[120px]">
+            <div className="min-w-0 sm:min-w-[120px]">
               <label className="type-label text-xs text-[var(--color-text-secondary)] mb-1.5 block">Type</label>
               <select
                 value={filters.type}
@@ -378,7 +378,7 @@ export default function TransactionsPage() {
             </div>
 
             {/* Date From */}
-            <div className="min-w-[140px]">
+            <div className="min-w-0 sm:min-w-[140px]">
               <label className="type-label text-xs text-[var(--color-text-secondary)] mb-1.5 block">From</label>
               <input
                 type="date"
@@ -389,7 +389,7 @@ export default function TransactionsPage() {
             </div>
 
             {/* Date To */}
-            <div className="min-w-[140px]">
+            <div className="min-w-0 sm:min-w-[140px]">
               <label className="type-label text-xs text-[var(--color-text-secondary)] mb-1.5 block">To</label>
               <input
                 type="date"
@@ -489,7 +489,7 @@ export default function TransactionsPage() {
                         <td className="py-3 px-3">
                           <div className="type-h3 text-sm">{tx.merchant_name || tx.description}</div>
                           {tx.merchant_name && tx.description !== tx.merchant_name && (
-                            <div className="text-xs text-[var(--color-text-muted)] mt-0.5 truncate max-w-[280px]">
+                            <div className="text-xs text-[var(--color-text-muted)] mt-0.5 truncate max-w-[180px] sm:max-w-[280px]">
                               {tx.description}
                             </div>
                           )}

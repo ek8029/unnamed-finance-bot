@@ -19,7 +19,7 @@ export function HealthScoreCard({ data, active }: { data: WrappedData; active: b
   const animEnd = useCountUp(end ?? 0, active);
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-8 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-8 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"
            style={{ background: 'radial-gradient(ellipse at 70% 70%, rgba(34,211,238,0.1), transparent 70%)' }} />
       <p className="uppercase text-[var(--color-text-muted)] mb-6"
@@ -69,7 +69,7 @@ export function PersonalityCard({ data, active }: { data: WrappedData; active: b
   const p = data.investorPersonality;
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-8 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-8 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"
            style={{ background: 'radial-gradient(ellipse at 40% 40%, rgba(184,145,74,0.12), transparent 50%), radial-gradient(ellipse at 60% 70%, rgba(168,85,247,0.1), transparent 50%)' }} />
       <p className="uppercase text-[var(--color-text-muted)] mb-2"
@@ -158,7 +158,7 @@ export function SummaryCard({ data, active }: { data: WrappedData; active: boole
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full px-8 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full px-4 sm:px-8 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"
            style={{ background: 'radial-gradient(ellipse at 50% 80%, rgba(184,145,74,0.1), transparent 70%)' }} />
       <div style={stagger(active, 0)}>

@@ -133,7 +133,7 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                     Position {renderSortIcon('ticker')}
                   </th>
                   <th
-                    className="text-right py-3 px-4 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
+                    className="hidden sm:table-cell text-right py-3 px-4 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
                     onClick={() => handleSort('price')}
                   >
                     Price {renderSortIcon('price')}
@@ -145,13 +145,13 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                     Market Value {renderSortIcon('value')}
                   </th>
                   <th
-                    className="text-right py-3 px-4 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
+                    className="hidden sm:table-cell text-right py-3 px-4 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
                     onClick={() => handleSort('change')}
                   >
                     Day {renderSortIcon('change')}
                   </th>
                   <th
-                    className="text-right py-3 pr-5 pl-4 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider whitespace-nowrap"
+                    className="hidden sm:table-cell text-right py-3 pr-5 pl-4 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider whitespace-nowrap"
                     onClick={() => handleSort('allocation')}
                   >
                     Weight {renderSortIcon('allocation')}
@@ -199,7 +199,7 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                         </td>
 
                         {/* Price */}
-                        <td className="py-5 px-4 text-right">
+                        <td className="hidden sm:table-cell py-5 px-4 text-right">
                           <span className="font-mono text-[14px] font-medium text-[var(--color-text-primary)] tabular-nums">
                             {formatCurrencyDetailed(holding.current_price)}
                           </span>
@@ -225,7 +225,7 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                         </td>
 
                         {/* Day Change - % and $ */}
-                        <td className="py-5 px-4 text-right">
+                        <td className="hidden sm:table-cell py-5 px-4 text-right">
                           <div className={`flex flex-col items-end ${
                             isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                           }`}>
@@ -246,7 +246,7 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                         </td>
 
                         {/* Allocation - bar + % */}
-                        <td className="py-5 pr-5 pl-4 text-right">
+                        <td className="hidden sm:table-cell py-5 pr-5 pl-4 text-right">
                           <div className="flex items-center justify-end gap-2.5">
                             <div className="w-20 h-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-full overflow-hidden">
                               <div

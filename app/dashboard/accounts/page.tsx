@@ -295,7 +295,7 @@ export default function AccountsPage() {
               <CardTitle>Connected Accounts</CardTitle>
               <CardDescription>Tap any account to see recent activity and details.</CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {/* Filter Controls */}
               <div className="flex gap-1 p-1 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
                 <button
@@ -526,7 +526,7 @@ export default function AccountsPage() {
             aria-hidden="true"
           />
           <div role="dialog" aria-modal="true" aria-labelledby="account-detail-heading" className="w-full max-w-md bg-[var(--color-bg-surface)] border-l border-[var(--color-border-base)] shadow-2xl animate-slide-in-bottom">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border-base)]">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[var(--color-border-base)]">
               <div>
                 <p className="type-caption text-[var(--color-text-secondary)] mb-1">Account details</p>
                 <h2 id="account-detail-heading" className="type-h2">{selectedAccount.institution}</h2>
@@ -542,7 +542,7 @@ export default function AccountsPage() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="px-6 py-4 space-y-4">
+            <div className="px-4 sm:px-6 py-4 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="type-label text-[var(--color-text-secondary)]">Current balance</span>
                 <span
@@ -621,7 +621,7 @@ export default function AccountsPage() {
             aria-hidden="true"
           />
           <div role="dialog" aria-modal="true" aria-labelledby="add-account-heading" className="relative w-full max-w-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl animate-scale-in">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border-base)]">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[var(--color-border-base)]">
               <div>
                 <h2 id="add-account-heading" className="type-h2">Connect Account</h2>
                 <p className="text-sm text-[var(--color-text-secondary)]">Link a new financial account</p>
@@ -634,7 +634,7 @@ export default function AccountsPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="px-6 py-6 space-y-6">
+            <div className="px-4 sm:px-6 py-6 space-y-6">
               <p className="text-sm text-[var(--color-text-secondary)]">
                 Connect your bank accounts, credit cards, and investment accounts securely using Plaid.
               </p>

@@ -13,7 +13,7 @@ import {
 
 export function IntroCard({ data, active }: { data: WrappedData; active: boolean }) {
   return (
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-8 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-8 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"
            style={{ background: 'radial-gradient(ellipse at 50% 80%, rgba(184,145,74,0.18), transparent 70%)' }} />
       <div style={stagger(active, 0)}>
@@ -45,7 +45,7 @@ export function NetWorthCard({ data, active }: { data: WrappedData; active: bool
   const animVal = useCountUp(Math.abs(data.netWorthChange.change), active);
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-8 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-8 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"
            style={{ background: isPositive
              ? 'radial-gradient(ellipse at 50% 60%, rgba(56,189,248,0.12), transparent 70%)'
@@ -91,7 +91,7 @@ export function ReturnCard({ data, active }: { data: WrappedData; active: boolea
   const animPct = useCountUp(Math.abs(data.totalReturn.pct), active);
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-8 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-8 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"
            style={{ background: isPositive
              ? 'radial-gradient(ellipse at 50% 60%, rgba(74,222,128,0.12), transparent 70%)'

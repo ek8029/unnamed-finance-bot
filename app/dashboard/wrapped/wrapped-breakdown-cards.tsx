@@ -12,7 +12,7 @@ export function SectorBreakdownCard({ data, active }: { data: WrappedData; activ
   const maxPct = Math.max(...data.sectorBreakdown.map(s => s.pct));
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-8 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-8 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"
            style={{ background: 'radial-gradient(ellipse at 30% 60%, rgba(168,85,247,0.1), transparent 70%)' }} />
       <p className="uppercase text-[var(--color-text-muted)] mb-8"
@@ -54,7 +54,7 @@ export function TopHoldingsCard({ data, active }: { data: WrappedData; active: b
   const maxVal = data.topHoldings.length > 0 ? data.topHoldings[0].value : 1;
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-8 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-8 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"
            style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(56,189,248,0.08), transparent 70%)' }} />
       <p className="uppercase text-[var(--color-text-muted)] mb-8"
@@ -103,7 +103,7 @@ export function DividendCard({ data, active }: { data: WrappedData; active: bool
   const animVal = useCountUp(data.totalDividends, active);
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-8 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-8 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"
            style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(45,212,191,0.12), transparent 70%)' }} />
       <p className="uppercase text-[var(--color-text-muted)] mb-6"
@@ -137,7 +137,7 @@ export function TradingActivityCard({ data, active }: { data: WrappedData; activ
   const animTrades = useCountUp(data.tradeCount, active);
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-8 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-8 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"
            style={{ background: 'radial-gradient(ellipse at 60% 60%, rgba(251,191,36,0.1), transparent 70%)' }} />
       <p className="uppercase text-[var(--color-text-muted)] mb-6"
@@ -187,7 +187,7 @@ export function TaxSavingsCard({ data, active }: { data: WrappedData; active: bo
   const animVal = useCountUp(data.taxSavings, active);
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-8 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-8 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"
            style={{ background: 'radial-gradient(ellipse at 50% 60%, rgba(184,145,74,0.15), transparent 70%)' }} />
       <p className="uppercase text-[var(--color-text-muted)] mb-6"

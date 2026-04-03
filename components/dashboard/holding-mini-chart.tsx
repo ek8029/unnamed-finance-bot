@@ -140,7 +140,7 @@ export function HoldingMiniChart({ ticker, currentPrice }: Props) {
         </ResponsiveContainer>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
         <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-3 py-2">
           <span className="block text-[0.5625rem] text-[var(--color-text-muted)] font-mono uppercase tracking-wider mb-0.5">
             30d High
