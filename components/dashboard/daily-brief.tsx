@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -128,56 +128,20 @@ function formatEventDay(dateStr: string): string {
   return days[date.getDay()];
 }
 
-function SectorHeatStrip({ sectors }: { sectors: BriefData['sectorHeat'] }) {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const stripRef = useRef<HTMLDivElement>(null);
-
-  const totalWeight = useMemo(
-    () => sectors.reduce((sum, s) => sum + s.weight, 0),
-    [sectors],
-  );
-
-  if (sectors.length === 0 || totalWeight === 0) return null;
+function SectorHeatLabels({ sectors }: { sectors: BriefData['sectorHeat'] }) {
+  if (sectors.length === 0) return null;
 
   return (
-    <div className="relative">
-      <div ref={stripRef} className="flex h-1.5 w-full overflow-hidden rounded-full gap-px">
-        {sectors.map((sector, i) => {
-          const pct = (sector.weight / totalWeight) * 100;
-          let bg: string;
-          if (sector.changePct > 0.5) bg = 'rgba(74,222,128,0.9)';
-          else if (sector.changePct > 0.1) bg = 'rgba(74,222,128,0.4)';
-          else if (sector.changePct < -0.5) bg = 'rgba(239,68,68,0.9)';
-          else if (sector.changePct < -0.1) bg = 'rgba(239,68,68,0.4)';
-          else bg = 'rgba(255,255,255,0.08)';
-
-          return (
-            <div
-              key={sector.sector}
-              className={cn(
-                'h-full transition-opacity duration-150',
-                hoveredIndex !== null && hoveredIndex !== i && 'opacity-40',
-              )}
-              style={{ width: `${pct}%`, backgroundColor: bg }}
-              onMouseEnter={() => setHoveredIndex(i)}
-              onMouseLeave={() => setHoveredIndex(null)}
-            />
-          );
-        })}
-      </div>
-      {hoveredIndex !== null && (
-        <div className="absolute top-full mt-1 left-0 z-10 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] px-2 py-1 pointer-events-none">
-          <span className="text-[0.6875rem] text-[var(--color-text-primary)]">
-            {sectors[hoveredIndex].sector}
+    <div className="flex flex-wrap gap-x-3 gap-y-1">
+      <span className="text-[0.6875rem] text-[var(--color-text-muted)]">Sectors:</span>
+      {sectors.map((sector) => (
+        <span key={sector.sector} className="text-[0.75rem] whitespace-nowrap">
+          <span className="text-[var(--color-text-secondary)]">{sector.sector}</span>
+          <span className={cn('font-mono tabular-nums ml-1', colorClass(sector.changePct))}>
+            {formatPct(sector.changePct)}
           </span>
-          <span className={cn('text-[0.6875rem] font-mono tabular-nums ml-1.5', colorClass(sectors[hoveredIndex].changePct))}>
-            {formatPct(sectors[hoveredIndex].changePct)}
-          </span>
-          <span className="text-[0.6875rem] text-[var(--color-text-muted)] ml-1.5">
-            {sectors[hoveredIndex].weight.toFixed(1)}% of portfolio
-          </span>
-        </div>
-      )}
+        </span>
+      ))}
     </div>
   );
 }
@@ -284,11 +248,11 @@ export function DailyBrief() {
       }}
     >
       <div className="overflow-hidden">
-        <div className="px-4 py-3 space-y-3">
-          <div className="flex items-start justify-between gap-4">
+        <div className="px-4 py-2.5 space-y-1.5">
+          <div className="flex items-center justify-between">
             <p className="text-[0.8125rem] text-[var(--color-text-secondary)] leading-snug">
               Your portfolio moved{' '}
-              <span className={cn('text-[1.125rem] font-mono tabular-nums font-semibold', colorClass(brief.portfolio.overnightChange))}>
+              <span className={cn('text-[1rem] font-mono tabular-nums font-semibold', colorClass(brief.portfolio.overnightChange))}>
                 {formatLargeCurrency(brief.portfolio.overnightChange)}
               </span>{' '}
               <span className={cn('text-[0.8125rem] font-mono tabular-nums', colorClass(brief.portfolio.overnightChangePct))}>
@@ -298,101 +262,66 @@ export function DailyBrief() {
             </p>
             <button
               onClick={handleDismiss}
-              className="shrink-0 p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+              className="shrink-0 p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
               aria-label="Dismiss brief"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
             {brief.market.spy && (
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-[0.6875rem] text-[var(--color-text-muted)]">SPY</span>
-                <span className={cn('text-[0.8125rem] font-mono tabular-nums font-medium', colorClass(brief.market.spy.changePct))}>
+              <span className="text-[0.75rem]">
+                <span className="text-[var(--color-text-muted)]">SPY </span>
+                <span className={cn('font-mono tabular-nums font-medium', colorClass(brief.market.spy.changePct))}>
                   {formatPct(brief.market.spy.changePct)}
                 </span>
-              </div>
+              </span>
             )}
             {brief.market.qqq && (
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-[0.6875rem] text-[var(--color-text-muted)]">QQQ</span>
-                <span className={cn('text-[0.8125rem] font-mono tabular-nums font-medium', colorClass(brief.market.qqq.changePct))}>
+              <span className="text-[0.75rem]">
+                <span className="text-[var(--color-text-muted)]">QQQ </span>
+                <span className={cn('font-mono tabular-nums font-medium', colorClass(brief.market.qqq.changePct))}>
                   {formatPct(brief.market.qqq.changePct)}
                 </span>
-              </div>
+              </span>
             )}
-            {brief.market.vix && (
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-[0.6875rem] text-[var(--color-gold)]">VIX</span>
-                <span className="text-[0.8125rem] font-mono tabular-nums font-medium text-[var(--color-text-primary)]">
-                  {brief.market.vix.price.toFixed(1)}
-                </span>
-                <span className="text-[0.6875rem] text-[var(--color-text-muted)]">
-                  &middot; {formatVixLevel(brief.market.vix.level)}
-                </span>
-              </div>
-            )}
-            {brief.market.treasury10y ? (
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-[0.6875rem] text-[var(--color-text-muted)]">10Y</span>
-                <span className="text-[0.8125rem] font-mono tabular-nums font-medium text-[var(--color-text-primary)]">
-                  {brief.market.treasury10y.yield.toFixed(2)}%
-                </span>
-              </div>
-            ) : (
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-[0.6875rem] text-[var(--color-text-muted)]">10Y</span>
-                <span className="text-[0.8125rem] font-mono tabular-nums text-[var(--color-text-muted)]">&mdash;</span>
-              </div>
-            )}
-          </div>
-
-          {brief.sectorHeat.length > 0 && (
-            <SectorHeatStrip sectors={brief.sectorHeat} />
-          )}
-
-          <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
             {brief.movers.length > 0 && (
-              <div className="flex flex-wrap items-baseline gap-x-1">
-                <span className="text-[0.6875rem] text-[var(--color-text-muted)] mr-1">Top movers:</span>
-                {brief.movers.slice(0, 3).map((mover, i) => (
-                  <span key={mover.ticker} className="text-[0.8125rem] whitespace-nowrap">
-                    {i > 0 && <span className="text-[var(--color-text-muted)] mx-1.5">&nbsp;</span>}
+              <>
+                <span className="text-[var(--color-border-strong)] text-[0.625rem]">|</span>
+                {brief.movers.slice(0, 3).map((mover) => (
+                  <span key={mover.ticker} className="text-[0.75rem] whitespace-nowrap">
                     <span className="font-mono tabular-nums font-medium text-[var(--color-text-primary)]">{mover.ticker}</span>
                     <span className={cn('font-mono tabular-nums ml-1', colorClass(mover.changePct))}>
                       {formatPct(mover.changePct)}
                     </span>
-                    <span className={cn('font-mono tabular-nums text-[0.75rem] ml-0.5 opacity-70', colorClass(mover.dollarImpact))}>
+                    <span className={cn('font-mono tabular-nums text-[0.6875rem] ml-0.5 opacity-60', colorClass(mover.dollarImpact))}>
                       ({formatImpact(mover.dollarImpact)})
                     </span>
                   </span>
                 ))}
-              </div>
+              </>
             )}
-
-            <div className="flex flex-col gap-0.5 lg:items-end lg:text-right shrink-0">
-              {hasEvents ? (
-                <>
-                  {brief.earningsThisWeek.slice(0, 2).map((e) => (
-                    <span key={e.ticker} className="text-[0.75rem] text-[var(--color-text-secondary)]">
-                      Earnings {formatEventDay(e.reportDate)}:{' '}
-                      <span className="font-mono tabular-nums font-medium text-[var(--color-text-primary)]">{e.ticker}</span>
-                      <span className="text-[var(--color-text-muted)] ml-1">({e.portfolioWeight.toFixed(1)}%)</span>
-                    </span>
-                  ))}
-                  {brief.dividendsThisWeek.slice(0, 2).map((d) => (
-                    <span key={d.ticker} className="text-[0.75rem] text-[var(--color-text-secondary)]">
-                      Ex-div {formatEventDay(d.exDate)}:{' '}
-                      <span className="font-mono tabular-nums font-medium text-[var(--color-text-primary)]">{d.ticker}</span>
-                    </span>
-                  ))}
-                </>
-              ) : (
-                <span className="text-[0.75rem] text-[var(--color-text-muted)]">No events this week</span>
-              )}
-            </div>
           </div>
+
+          {brief.sectorHeat.length > 0 && (
+            <SectorHeatLabels sectors={brief.sectorHeat} />
+          )}
+
+          {hasEvents && (
+            <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+              {brief.earningsThisWeek.slice(0, 2).map((e) => (
+                <span key={e.ticker} className="text-[0.6875rem] text-[var(--color-text-muted)]">
+                  Earnings {formatEventDay(e.reportDate)}: <span className="font-mono font-medium text-[var(--color-text-secondary)]">{e.ticker}</span> ({e.portfolioWeight.toFixed(1)}%)
+                </span>
+              ))}
+              {brief.dividendsThisWeek.slice(0, 2).map((d) => (
+                <span key={d.ticker} className="text-[0.6875rem] text-[var(--color-text-muted)]">
+                  Ex-div {formatEventDay(d.exDate)}: <span className="font-mono font-medium text-[var(--color-text-secondary)]">{d.ticker}</span>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
