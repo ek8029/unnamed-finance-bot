@@ -553,7 +553,57 @@ export function scoreSentiment(text: string): 'positive' | 'negative' | 'neutral
 
 // ----- Sector Mapping -----
 
-// Map Polygon SIC descriptions to standard GICS-like sectors
+const TICKER_SECTOR_OVERRIDE: Record<string, string> = {
+  AAPL: 'Technology', MSFT: 'Technology', GOOGL: 'Technology', GOOG: 'Technology',
+  AMZN: 'Consumer Cyclical', META: 'Technology', NVDA: 'Technology', TSLA: 'Consumer Cyclical',
+  AMD: 'Technology', INTC: 'Technology', AVGO: 'Technology', CRM: 'Technology',
+  ADBE: 'Technology', CSCO: 'Technology', ORCL: 'Technology', QCOM: 'Technology',
+  TXN: 'Technology', AMAT: 'Technology', NFLX: 'Communication Services', DIS: 'Communication Services',
+  CMCSA: 'Communication Services', VZ: 'Communication Services', T: 'Communication Services',
+  JPM: 'Financial Services', BAC: 'Financial Services', GS: 'Financial Services',
+  MS: 'Financial Services', WFC: 'Financial Services', C: 'Financial Services',
+  BLK: 'Financial Services', SCHW: 'Financial Services', V: 'Financial Services',
+  MA: 'Financial Services', AXP: 'Financial Services', COF: 'Financial Services',
+  JNJ: 'Healthcare', UNH: 'Healthcare', PFE: 'Healthcare', ABBV: 'Healthcare',
+  MRK: 'Healthcare', LLY: 'Healthcare', TMO: 'Healthcare', ABT: 'Healthcare',
+  AMGN: 'Healthcare', GILD: 'Healthcare', ISRG: 'Healthcare', MDT: 'Healthcare',
+  XOM: 'Energy', CVX: 'Energy', COP: 'Energy', SLB: 'Energy', EOG: 'Energy',
+  PG: 'Consumer Defensive', KO: 'Consumer Defensive', PEP: 'Consumer Defensive',
+  WMT: 'Consumer Defensive', COST: 'Consumer Defensive', MCD: 'Consumer Cyclical',
+  NKE: 'Consumer Cyclical', SBUX: 'Consumer Cyclical', HD: 'Consumer Cyclical',
+  LOW: 'Consumer Cyclical', TGT: 'Consumer Cyclical', TJX: 'Consumer Cyclical',
+  CAT: 'Industrials', DE: 'Industrials', HON: 'Industrials', UNP: 'Industrials',
+  BA: 'Industrials', GE: 'Industrials', RTX: 'Industrials', LMT: 'Industrials',
+  NEE: 'Utilities', DUK: 'Utilities', SO: 'Utilities', D: 'Utilities',
+  AMT: 'Real Estate', PLD: 'Real Estate', CCI: 'Real Estate', O: 'Real Estate',
+  SPY: 'Diversified', VOO: 'Diversified', VTI: 'Diversified', QQQ: 'Technology',
+  IWM: 'Diversified', DIA: 'Diversified', VGT: 'Technology', SCHD: 'Diversified',
+  VYM: 'Diversified', BND: 'Fixed Income', AGG: 'Fixed Income', TLT: 'Fixed Income',
+  LQD: 'Fixed Income', HYG: 'Fixed Income', GLD: 'Commodities', SLV: 'Commodities',
+  VNQ: 'Real Estate', XLF: 'Financial Services', XLE: 'Energy', XLK: 'Technology',
+  XLV: 'Healthcare', XLI: 'Industrials', XLP: 'Consumer Defensive', XLU: 'Utilities',
+  XLY: 'Consumer Cyclical', XLB: 'Basic Materials', XLRE: 'Real Estate',
+  ARKK: 'Technology', SOXX: 'Technology', SMH: 'Technology',
+  BRK: 'Financial Services', 'BRK.B': 'Financial Services',
+  PLTR: 'Technology', COIN: 'Financial Services', SQ: 'Financial Services',
+  SHOP: 'Technology', SNOW: 'Technology', CRWD: 'Technology', NET: 'Technology',
+  SOFI: 'Financial Services', HOOD: 'Financial Services', DKNG: 'Consumer Cyclical',
+  RIVN: 'Consumer Cyclical', NIO: 'Consumer Cyclical', LCID: 'Consumer Cyclical',
+  VXUS: 'Diversified', EFA: 'Diversified', VWO: 'Diversified', IEMG: 'Diversified',
+  EEM: 'Diversified', VNQI: 'Real Estate', VIG: 'Diversified', VOOG: 'Diversified',
+  VOOV: 'Diversified', VTV: 'Diversified', VUG: 'Diversified', MGK: 'Diversified',
+  ITOT: 'Diversified', SPTM: 'Diversified', SPLG: 'Diversified', SPYG: 'Diversified',
+  SPYV: 'Diversified', RSP: 'Diversified', QUAL: 'Diversified', MTUM: 'Diversified',
+  USMV: 'Diversified', ACWI: 'Diversified', VT: 'Diversified', IXUS: 'Diversified',
+  IEFA: 'Diversified', SPDW: 'Diversified', FXI: 'Diversified', EWJ: 'Diversified',
+  EWZ: 'Diversified', INDA: 'Diversified', KWEB: 'Technology',
+  IBB: 'Healthcare', XBI: 'Healthcare', XOP: 'Energy', KRE: 'Financial Services',
+  ITB: 'Consumer Cyclical', JETS: 'Industrials', HACK: 'Technology', BOTZ: 'Technology',
+  ICLN: 'Energy', TAN: 'Energy', XLC: 'Communication Services',
+  ARKW: 'Technology', ARKG: 'Healthcare', ARKF: 'Financial Services',
+  SOXL: 'Technology', TQQQ: 'Technology', SQQQ: 'Technology', UVXY: 'Diversified',
+};
+
 const SIC_TO_SECTOR: Record<string, string> = {
   'electronic computers': 'Technology',
   'computer peripheral equipment': 'Technology',
@@ -597,6 +647,10 @@ const SIC_TO_SECTOR: Record<string, string> = {
 /**
  * Map a Polygon SIC description to a sector name.
  */
+export function getTickerSectorOverride(ticker: string): string | null {
+  return TICKER_SECTOR_OVERRIDE[ticker.toUpperCase()] || null;
+}
+
 export function mapSicToSector(sicDescription: string | null): string | null {
   if (!sicDescription) return null;
   const lower = sicDescription.toLowerCase();

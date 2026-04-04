@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getLatestPrice, type PolygonPrice } from '@/lib/polygon';
+import { getLatestPrice, getTickerSectorOverride, type PolygonPrice } from '@/lib/polygon';
 import { rateLimit } from '@/lib/rate-limit';
 
 type VixLevel = 'extreme_fear' | 'fear' | 'neutral' | 'greed' | 'extreme_greed';
@@ -27,6 +27,10 @@ function formatIndex(data: PolygonPrice | null) {
   if (!data) return null;
   const changePct = data.open > 0 ? ((data.close - data.open) / data.open) * 100 : 0;
   return { price: data.close, changePct: Math.round(changePct * 100) / 100 };
+}
+
+function resolveSector(ticker: string): string {
+  return getTickerSectorOverride(ticker) || 'Diversified';
 }
 
 function getWeekBounds(): { start: string; end: string } {
@@ -62,9 +66,11 @@ export async function GET() {
       .from('holdings')
       .select('ticker, total_value, day_change_pct, shares, current_price, portfolio_allocation_pct, security:securities(security_name, sector)')
       .eq('user_id', user.id)
+      .gt('total_value', 0)
+      .gt('shares', 0)
       .order('total_value', { ascending: false });
 
-    const holdings: HoldingRow[] = (rawHoldings || []).map((h: Record<string, unknown>) => ({
+    const rawParsed: HoldingRow[] = (rawHoldings || []).map((h: Record<string, unknown>) => ({
       ticker: h.ticker as string,
       total_value: Number(h.total_value),
       day_change_pct: Number(h.day_change_pct),
@@ -73,6 +79,23 @@ export async function GET() {
       portfolio_allocation_pct: Number(h.portfolio_allocation_pct),
       security: h.security as HoldingRow['security'],
     }));
+
+    const mergedMap = new Map<string, HoldingRow>();
+    for (const h of rawParsed) {
+      const existing = mergedMap.get(h.ticker);
+      if (existing) {
+        const combinedValue = existing.total_value + h.total_value;
+        const w1 = existing.total_value / (combinedValue || 1);
+        const w2 = h.total_value / (combinedValue || 1);
+        existing.total_value = combinedValue;
+        existing.shares += h.shares;
+        existing.day_change_pct = existing.day_change_pct * w1 + h.day_change_pct * w2;
+        existing.portfolio_allocation_pct += h.portfolio_allocation_pct;
+      } else {
+        mergedMap.set(h.ticker, { ...h });
+      }
+    }
+    const holdings = [...mergedMap.values()];
 
     const totalValue = holdings.reduce((sum, h) => sum + h.total_value, 0);
 
@@ -89,32 +112,46 @@ export async function GET() {
       ? (overnightChange / previousValue) * 100
       : 0;
 
-    const movers = [...holdingsWithImpact]
-      .sort((a, b) => Math.abs(b.dollarImpact) - Math.abs(a.dollarImpact))
-      .slice(0, 3)
-      .map((h) => ({
+    const significantMovers = [...holdingsWithImpact]
+      .filter((h) => Math.abs(h.day_change_pct) >= 0.01)
+      .sort((a, b) => Math.abs(b.dollarImpact) - Math.abs(a.dollarImpact));
+
+    const movers = significantMovers.slice(0, 8).map((h) => ({
         ticker: h.ticker,
         name: h.security?.security_name || h.ticker,
+        sector: resolveSector(h.ticker),
         changePct: Math.round(h.day_change_pct * 10000) / 100,
         dollarImpact: Math.round(h.dollarImpact * 100) / 100,
       }));
 
-    const sectorMap = new Map<string, { weight: number; weightedChange: number }>();
+    const allHoldings = holdingsWithImpact.map((h) => ({
+      ticker: h.ticker,
+      name: h.security?.security_name || h.ticker,
+      sector: resolveSector(h.ticker),
+      changePct: Math.round(h.day_change_pct * 10000) / 100,
+      dollarImpact: Math.round(h.dollarImpact * 100) / 100,
+    }));
+
+    const sectorMap = new Map<string, { weight: number; weightedChange: number; tickers: Set<string> }>();
     for (const h of holdings) {
-      const sector = h.security?.sector || 'Other';
-      const existing = sectorMap.get(sector) || { weight: 0, weightedChange: 0 };
+      const sector = resolveSector(h.ticker);
+      const existing = sectorMap.get(sector) || { weight: 0, weightedChange: 0, tickers: new Set<string>() };
       existing.weight += h.portfolio_allocation_pct;
       existing.weightedChange += h.portfolio_allocation_pct * h.day_change_pct;
+      existing.tickers.add(h.ticker);
       sectorMap.set(sector, existing);
     }
 
+
     const sectorHeat = Array.from(sectorMap.entries())
+      .filter(([, data]) => data.tickers.size > 0 && data.weight >= 1)
       .map(([sector, data]) => ({
         sector,
         weight: Math.round(data.weight * 100) / 100,
         changePct: data.weight > 0
           ? Math.round((data.weightedChange / data.weight) * 10000) / 100
           : 0,
+        tickers: [...data.tickers],
       }))
       .sort((a, b) => b.weight - a.weight);
 
@@ -150,8 +187,13 @@ export async function GET() {
     let earningsThisWeek: { ticker: string; reportDate: string; portfolioWeight: number }[] = [];
     let dividendsThisWeek: { ticker: string; exDate: string }[] = [];
 
+    let news: { title: string; ticker: string; tickers: string[]; sentiment: string; source: string; timeAgo: string; url: string }[] = [];
+
     if (userTickers.length > 0) {
-      const [earningsResult, dividendsResult] = await Promise.all([
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 2);
+
+      const [earningsResult, dividendsResult, newsResult] = await Promise.all([
         supabase
           .from('market_events')
           .select('ticker, event_date')
@@ -166,6 +208,13 @@ export async function GET() {
           .in('ticker', userTickers)
           .gte('event_date', start)
           .lte('event_date', end),
+        supabase
+          .from('market_news')
+          .select('title, tickers, sentiment, source, published_at, url')
+          .overlaps('tickers', userTickers)
+          .gte('published_at', oneDayAgo.toISOString())
+          .order('published_at', { ascending: false })
+          .limit(5),
       ]);
 
       const allocationMap = new Map(holdings.map((h) => [h.ticker, h.portfolio_allocation_pct]));
@@ -180,7 +229,28 @@ export async function GET() {
         ticker: d.ticker,
         exDate: d.event_date,
       }));
+
+      const now = Date.now();
+      news = (newsResult.data || []).map((n) => {
+        const pubTime = new Date(n.published_at).getTime();
+        const hoursAgo = Math.round((now - pubTime) / (1000 * 60 * 60));
+        const matchedTickers = (n.tickers || []).filter((t: string) => userTickers.includes(t));
+        return {
+          title: n.title,
+          ticker: matchedTickers[0] || '',
+          tickers: matchedTickers,
+          sentiment: n.sentiment || 'neutral',
+          source: n.source || '',
+          timeAgo: hoursAgo < 1 ? 'just now' : hoursAgo < 24 ? `${hoursAgo}h ago` : `${Math.round(hoursAgo / 24)}d ago`,
+          url: n.url || '',
+        };
+      });
     }
+
+    const spyChangePct = market.spy?.changePct ?? null;
+    const vsBenchmark = spyChangePct !== null
+      ? Math.round((overnightChangePct - spyChangePct) * 100) / 100
+      : null;
 
     return NextResponse.json(
       {
@@ -188,10 +258,13 @@ export async function GET() {
           totalValue: Math.round(totalValue * 100) / 100,
           overnightChange: Math.round(overnightChange * 100) / 100,
           overnightChangePct: Math.round(overnightChangePct * 100) / 100,
+          vsBenchmark,
         },
         market,
         movers,
+        allHoldings,
         sectorHeat,
+        news,
         earningsThisWeek,
         dividendsThisWeek,
       },

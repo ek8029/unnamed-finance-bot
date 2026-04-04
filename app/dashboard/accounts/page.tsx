@@ -501,6 +501,7 @@ export default function AccountsPage() {
                         disabled={disconnecting === item.id}
                         className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-negative)] transition-colors rounded hover:bg-[var(--color-bg-overlay)]"
                         title="Disconnect"
+                        aria-label={`Disconnect ${item.institution_name}`}
                       >
                         {disconnecting === item.id ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />

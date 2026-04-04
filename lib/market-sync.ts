@@ -1,4 +1,4 @@
-import { getBatchPrices, getBatchTickerDetails, getUpcomingDividends, getRecentSplits, getTickerNews, scoreSentiment, mapSicToSector } from '@/lib/polygon';
+import { getBatchPrices, getBatchTickerDetails, getUpcomingDividends, getRecentSplits, getTickerNews, scoreSentiment, mapSicToSector, getTickerSectorOverride } from '@/lib/polygon';
 import { RISK_FREE_RATE, TRADING_DAYS_PER_YEAR } from '@/lib/financial-config';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -457,8 +457,16 @@ export async function enrichMarketData(supabase: AnyClient, log: string[]) {
       .select('id, ticker, sector')
       .in('id', securityIds);
 
+    for (const sec of (securities || []) as { id: string; ticker: string; sector: string | null }[]) {
+      const override = getTickerSectorOverride(sec.ticker);
+      if (override && override !== sec.sector) {
+        await supabase.from('securities').update({ sector: override }).eq('id', sec.id);
+        enriched++;
+      }
+    }
+
     const needsEnrichment = (securities || []).filter(
-      (s: { sector: string | null; ticker: string }) => !s.sector && s.ticker && !s.ticker.includes('-USD')
+      (s: { sector: string | null; ticker: string }) => !s.sector && !getTickerSectorOverride(s.ticker) && s.ticker && !s.ticker.includes('-USD')
     );
 
     if (needsEnrichment.length > 0) {

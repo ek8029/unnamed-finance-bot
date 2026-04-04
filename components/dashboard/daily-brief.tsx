@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { X, ChevronDown } from 'lucide-react';
+import { X, ChevronDown, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BriefData {
@@ -9,6 +9,7 @@ interface BriefData {
     totalValue: number;
     overnightChange: number;
     overnightChangePct: number;
+    vsBenchmark: number | null;
   };
   market: {
     spy: { price: number; changePct: number } | null;
@@ -19,6 +20,14 @@ interface BriefData {
   movers: {
     ticker: string;
     name: string;
+    sector: string;
+    changePct: number;
+    dollarImpact: number;
+  }[];
+  allHoldings: {
+    ticker: string;
+    name: string;
+    sector: string;
     changePct: number;
     dollarImpact: number;
   }[];
@@ -26,6 +35,16 @@ interface BriefData {
     sector: string;
     weight: number;
     changePct: number;
+    tickers: string[];
+  }[];
+  news: {
+    title: string;
+    ticker: string;
+    tickers: string[];
+    sentiment: string;
+    source: string;
+    timeAgo: string;
+    url: string;
   }[];
   earningsThisWeek: {
     ticker: string;
@@ -37,6 +56,19 @@ interface BriefData {
     exDate: string;
   }[];
 }
+
+const COLORS = {
+  positiveStrong: 'rgba(74, 222, 128, 0.8)',
+  positiveMild: 'rgba(74, 222, 128, 0.4)',
+  positiveText: '#4ADE80',
+  positiveTextMild: 'rgba(74, 222, 128, 0.6)',
+  negativeStrong: 'rgba(239, 68, 68, 0.8)',
+  negativeMild: 'rgba(239, 68, 68, 0.4)',
+  negativeText: '#ef4444',
+  negativeTextMild: 'rgba(239, 68, 68, 0.6)',
+  neutralBar: 'rgba(255, 255, 255, 0.08)',
+  neutralDot: 'rgba(255, 255, 255, 0.2)',
+};
 
 const STORAGE_PREFIX = 'helm-brief-dismissed-';
 
@@ -66,42 +98,11 @@ function dismissToday(): void {
   } catch {}
 }
 
-function formatLargeCurrency(value: number): string {
-  const abs = Math.abs(value);
-  if (abs >= 1_000_000) {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 1,
-      notation: 'compact',
-    }).format(value);
-  }
-  if (abs >= 1000) {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0,
-    }).format(value);
-  }
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-function formatImpact(value: number): string {
+function formatCurrency(value: number): string {
   const abs = Math.abs(value);
   const sign = value >= 0 ? '+' : '-';
-  if (abs >= 1_000_000) {
-    return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
-  }
-  if (abs >= 10_000) {
-    return `${sign}$${(abs / 1000).toFixed(0)}K`;
-  }
-  if (abs >= 1000) {
-    return `${sign}$${(abs / 1000).toFixed(1)}K`;
-  }
+  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}K`;
   return `${sign}$${abs.toFixed(0)}`;
 }
 
@@ -112,101 +113,57 @@ function formatPct(value: number): string {
 function colorClass(value: number): string {
   if (value > 0) return 'text-[var(--color-positive)]';
   if (value < 0) return 'text-[var(--color-negative)]';
-  return 'text-[var(--color-text-secondary)]';
-}
-
-function formatVixLevel(level: string): string {
-  return level
-    .split('_')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+  return 'text-[var(--color-text-muted)]';
 }
 
 function formatEventDay(dateStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00');
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  return days[date.getDay()];
+  const date = new Date(dateStr + 'T12:00:00');
+  return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
 }
 
 function sectorBarColor(changePct: number): string {
-  if (changePct > 0.5) return 'rgba(74,222,128,0.8)';
-  if (changePct > 0.1) return 'rgba(74,222,128,0.4)';
-  if (changePct < -0.5) return 'rgba(239,68,68,0.8)';
-  if (changePct < -0.1) return 'rgba(239,68,68,0.4)';
-  return 'rgba(255,255,255,0.08)';
+  if (changePct > 0.5) return COLORS.positiveStrong;
+  if (changePct > 0.1) return COLORS.positiveMild;
+  if (changePct < -0.5) return COLORS.negativeStrong;
+  if (changePct < -0.1) return COLORS.negativeMild;
+  return COLORS.neutralBar;
 }
 
 function sectorDotColor(changePct: number): string {
-  if (changePct > 0.5) return '#4ADE80';
-  if (changePct > 0.1) return 'rgba(74,222,128,0.6)';
-  if (changePct < -0.5) return '#ef4444';
-  if (changePct < -0.1) return 'rgba(239,68,68,0.6)';
-  return 'rgba(255,255,255,0.2)';
+  if (changePct > 0.5) return COLORS.positiveText;
+  if (changePct > 0.1) return COLORS.positiveTextMild;
+  if (changePct < -0.5) return COLORS.negativeText;
+  if (changePct < -0.1) return COLORS.negativeTextMild;
+  return COLORS.neutralDot;
 }
 
-function SectorHeatMap({ sectors }: { sectors: BriefData['sectorHeat'] }) {
-  const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
-  if (sectors.length === 0 || totalWeight === 0) return null;
+function sentimentColor(sentiment: string): string {
+  if (sentiment === 'positive') return 'text-[var(--color-positive)]';
+  if (sentiment === 'negative') return 'text-[var(--color-negative)]';
+  return 'text-[var(--color-text-muted)]';
+}
 
-  return (
-    <div className="space-y-1.5">
-      <div className="flex h-2 w-full overflow-hidden rounded-sm">
-        {sectors.map((sector, i) => {
-          const pct = (sector.weight / totalWeight) * 100;
-          return (
-            <div
-              key={sector.sector}
-              className="h-full"
-              style={{
-                width: `${pct}%`,
-                backgroundColor: sectorBarColor(sector.changePct),
-                marginRight: i < sectors.length - 1 ? '1px' : '0',
-              }}
-              title={`${sector.sector}: ${formatPct(sector.changePct)} · ${sector.weight.toFixed(1)}% of portfolio`}
-            />
-          );
-        })}
-      </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-1">
-        {sectors.map((sector) => (
-          <div key={sector.sector} className="flex items-center gap-1.5">
-            <div
-              className="w-2 h-2 rounded-full shrink-0"
-              style={{ backgroundColor: sectorDotColor(sector.changePct) }}
-            />
-            <span className="text-[0.6875rem] text-[var(--color-text-secondary)]">
-              {sector.sector}
-            </span>
-            <span className={cn('text-[0.6875rem] font-mono tabular-nums font-medium', colorClass(sector.changePct))}>
-              {formatPct(sector.changePct)}
-            </span>
-            <span className="text-[0.5625rem] text-[var(--color-text-muted)] font-mono tabular-nums">
-              {sector.weight.toFixed(0)}%
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+function sentimentDot(sentiment: string): string {
+  if (sentiment === 'positive') return COLORS.positiveText;
+  if (sentiment === 'negative') return COLORS.negativeText;
+  return COLORS.neutralDot;
 }
 
 function BriefSkeleton() {
   return (
-    <div className="bg-[var(--color-bg-surface)] border-l-2 border-[var(--color-gold)] px-4 py-4 space-y-3 animate-pulse">
+    <div className="bg-[var(--color-bg-surface)] border-l-2 border-[var(--color-gold)] px-5 py-4 space-y-3 animate-pulse">
       <div className="flex items-center justify-between">
-        <div className="h-5 w-72 bg-[var(--color-bg-elevated)] rounded" />
+        <div className="h-6 w-80 bg-[var(--color-bg-elevated)] rounded" />
         <div className="h-4 w-4 bg-[var(--color-bg-elevated)] rounded" />
       </div>
       <div className="flex gap-6">
-        <div className="h-4 w-24 bg-[var(--color-bg-elevated)] rounded" />
-        <div className="h-4 w-24 bg-[var(--color-bg-elevated)] rounded" />
-        <div className="h-4 w-28 bg-[var(--color-bg-elevated)] rounded" />
-        <div className="h-4 w-16 bg-[var(--color-bg-elevated)] rounded" />
+        <div className="h-4 w-20 bg-[var(--color-bg-elevated)] rounded" />
+        <div className="h-4 w-20 bg-[var(--color-bg-elevated)] rounded" />
       </div>
       <div className="h-2 w-full bg-[var(--color-bg-elevated)] rounded" />
-      <div className="flex items-center justify-between">
-        <div className="h-4 w-80 bg-[var(--color-bg-elevated)] rounded" />
-        <div className="h-4 w-40 bg-[var(--color-bg-elevated)] rounded" />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="h-16 bg-[var(--color-bg-elevated)] rounded" />
+        <div className="h-16 bg-[var(--color-bg-elevated)] rounded" />
       </div>
     </div>
   );
@@ -217,6 +174,7 @@ export function DailyBrief() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [collapsed, setCollapsed] = useState(() => isDismissedToday());
+  const [sectorFilter, setSectorFilter] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -248,6 +206,10 @@ export function DailyBrief() {
     setCollapsed(false);
   }, []);
 
+  const toggleSector = useCallback((sector: string) => {
+    setSectorFilter((prev) => (prev === sector ? null : sector));
+  }, []);
+
   if (error || (!loading && !data)) return null;
   if (loading) return <BriefSkeleton />;
 
@@ -256,117 +218,251 @@ export function DailyBrief() {
   if (collapsed) {
     return (
       <div
-        className="bg-[var(--color-bg-surface)] border-l-2 border-[var(--color-gold)] px-4 py-2.5 flex items-center justify-between cursor-pointer"
+        className="bg-[var(--color-bg-surface)] border-l-2 border-[var(--color-gold)] px-5 py-2.5 flex items-center justify-between cursor-pointer hover:bg-[var(--color-bg-elevated)] transition-colors"
         onClick={handleExpand}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleExpand();
-          }
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleExpand(); }
         }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <span className="text-[0.75rem] font-medium text-[var(--color-text-muted)]">Today&apos;s Brief</span>
-          <span className={cn('text-[0.75rem] font-mono tabular-nums', colorClass(brief.portfolio.overnightChange))}>
-            {formatImpact(brief.portfolio.overnightChange)} ({formatPct(brief.portfolio.overnightChangePct)})
+          <span className={cn('text-[0.8125rem] font-mono tabular-nums font-medium', colorClass(brief.portfolio.overnightChange))}>
+            {formatCurrency(brief.portfolio.overnightChange)}
           </span>
+          <span className={cn('text-[0.75rem] font-mono tabular-nums', colorClass(brief.portfolio.overnightChangePct))}>
+            ({formatPct(brief.portfolio.overnightChangePct)})
+          </span>
+          {brief.portfolio.vsBenchmark !== null && (
+            <span className="text-[0.6875rem] text-[var(--color-text-muted)]">
+              vs SPY {brief.portfolio.vsBenchmark >= 0 ? '+' : ''}{brief.portfolio.vsBenchmark.toFixed(1)}pp
+            </span>
+          )}
         </div>
         <ChevronDown className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
       </div>
     );
   }
 
+  const activeSector = sectorFilter
+    ? brief.sectorHeat.find((s) => s.sector === sectorFilter)
+    : null;
+
+  const sectorTickerSet = activeSector
+    ? new Set(activeSector.tickers)
+    : null;
+
+  const filteredMovers = sectorTickerSet
+    ? brief.allHoldings.filter((m) => sectorTickerSet.has(m.ticker))
+    : brief.movers;
+
+  const filteredNews = sectorTickerSet
+    ? brief.news.filter((n) => n.tickers.some((t) => sectorTickerSet.has(t)))
+    : brief.news;
+
   const hasEarnings = brief.earningsThisWeek.length > 0;
   const hasDividends = brief.dividendsThisWeek.length > 0;
   const hasEvents = hasEarnings || hasDividends;
+  const hasNews = filteredNews.length > 0;
 
   return (
-    <div
-      className="bg-[var(--color-bg-surface)] border-l-2 border-[var(--color-gold)]"
-      style={{
-        display: 'grid',
-        gridTemplateRows: '1fr',
-        transition: 'grid-template-rows 300ms ease',
-      }}
-    >
-      <div className="overflow-hidden">
-        <div className="px-4 py-2.5 space-y-1.5">
-          <div className="flex items-center justify-between">
-            <p className="text-[0.8125rem] text-[var(--color-text-secondary)] leading-snug">
-              Your portfolio moved{' '}
-              <span className={cn('text-[1rem] font-mono tabular-nums font-semibold', colorClass(brief.portfolio.overnightChange))}>
-                {formatLargeCurrency(brief.portfolio.overnightChange)}
-              </span>{' '}
-              <span className={cn('text-[0.8125rem] font-mono tabular-nums', colorClass(brief.portfolio.overnightChangePct))}>
-                ({formatPct(brief.portfolio.overnightChangePct)})
-              </span>{' '}
-              overnight
-            </p>
-            <button
-              onClick={handleDismiss}
-              className="shrink-0 p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
-              aria-label="Dismiss brief"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
+    <div className="bg-[var(--color-bg-surface)] border-l-2 border-[var(--color-gold)]">
+      <div className="px-5 py-4 space-y-4">
 
-          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-            {brief.market.spy && (
-              <span className="text-[0.75rem]">
-                <span className="text-[var(--color-text-muted)]">SPY </span>
-                <span className={cn('font-mono tabular-nums font-medium', colorClass(brief.market.spy.changePct))}>
-                  {formatPct(brief.market.spy.changePct)}
-                </span>
+        {/* ── Row 1: Headline ── */}
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-[0.8125rem] text-[var(--color-text-secondary)]">Portfolio overnight</span>
+              <span className={cn('text-[1.25rem] font-mono tabular-nums font-bold', colorClass(brief.portfolio.overnightChange))}>
+                {formatCurrency(brief.portfolio.overnightChange)}
               </span>
-            )}
-            {brief.market.qqq && (
-              <span className="text-[0.75rem]">
-                <span className="text-[var(--color-text-muted)]">QQQ </span>
-                <span className={cn('font-mono tabular-nums font-medium', colorClass(brief.market.qqq.changePct))}>
-                  {formatPct(brief.market.qqq.changePct)}
-                </span>
+              <span className={cn('text-[0.875rem] font-mono tabular-nums', colorClass(brief.portfolio.overnightChangePct))}>
+                {formatPct(brief.portfolio.overnightChangePct)}
               </span>
-            )}
-            {brief.movers.length > 0 && (
-              <>
-                <span className="text-[var(--color-border-strong)] text-[0.625rem]">|</span>
-                {brief.movers.slice(0, 3).map((mover) => (
-                  <span key={mover.ticker} className="text-[0.75rem] whitespace-nowrap">
-                    <span className="font-mono tabular-nums font-medium text-[var(--color-text-primary)]">{mover.ticker}</span>
-                    <span className={cn('font-mono tabular-nums ml-1', colorClass(mover.changePct))}>
+            </div>
+            <div className="flex items-center gap-4 mt-1">
+              {brief.market.spy && (
+                <span className="text-[0.75rem]">
+                  <span className="text-[var(--color-text-muted)]">SPY </span>
+                  <span className={cn('font-mono tabular-nums font-medium', colorClass(brief.market.spy.changePct))}>
+                    {formatPct(brief.market.spy.changePct)}
+                  </span>
+                </span>
+              )}
+              {brief.market.qqq && (
+                <span className="text-[0.75rem]">
+                  <span className="text-[var(--color-text-muted)]">QQQ </span>
+                  <span className={cn('font-mono tabular-nums font-medium', colorClass(brief.market.qqq.changePct))}>
+                    {formatPct(brief.market.qqq.changePct)}
+                  </span>
+                </span>
+              )}
+              {brief.portfolio.vsBenchmark !== null && (
+                <span className={cn('text-[0.75rem] font-mono tabular-nums', colorClass(brief.portfolio.vsBenchmark))}>
+                  {brief.portfolio.vsBenchmark >= 0 ? 'Outperforming' : 'Underperforming'} SPY by {Math.abs(brief.portfolio.vsBenchmark).toFixed(1)}pp
+                </span>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={handleDismiss}
+            className="shrink-0 p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors rounded hover:bg-[var(--color-bg-overlay)]"
+            aria-label="Dismiss brief"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* ── Row 2: Sector heat (interactive) ── */}
+        {brief.sectorHeat.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex h-2 w-full overflow-hidden rounded-sm">
+              {(() => {
+                const totalWeight = brief.sectorHeat.reduce((sum, s) => sum + s.weight, 0);
+                return brief.sectorHeat.map((sector, i) => (
+                  <div
+                    key={sector.sector}
+                    className={cn(
+                      'h-full cursor-pointer transition-opacity duration-150',
+                      sectorFilter && sectorFilter !== sector.sector && 'opacity-25',
+                    )}
+                    style={{
+                      width: `${(sector.weight / totalWeight) * 100}%`,
+                      backgroundColor: sectorBarColor(sector.changePct),
+                      marginRight: i < brief.sectorHeat.length - 1 ? '1px' : '0',
+                    }}
+                    title={`${sector.sector}: ${formatPct(sector.changePct)} · ${sector.weight.toFixed(1)}% of portfolio`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => toggleSector(sector.sector)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSector(sector.sector); } }}
+                  />
+                ));
+              })()}
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              {brief.sectorHeat.map((sector) => (
+                <div
+                  key={sector.sector}
+                  className={cn(
+                    'flex items-center gap-1.5 cursor-pointer transition-opacity duration-150 rounded px-1 -mx-1',
+                    sectorFilter === sector.sector && 'bg-[var(--color-bg-overlay)]',
+                    sectorFilter && sectorFilter !== sector.sector && 'opacity-40',
+                  )}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => toggleSector(sector.sector)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSector(sector.sector); } }}
+                >
+                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: sectorDotColor(sector.changePct) }} />
+                  <span className="text-[0.6875rem] text-[var(--color-text-secondary)]">{sector.sector}</span>
+                  <span className={cn('text-[0.6875rem] font-mono tabular-nums', colorClass(sector.changePct))}>
+                    {formatPct(sector.changePct)}
+                  </span>
+                  <span className="text-[0.5625rem] text-[var(--color-text-muted)] font-mono tabular-nums">{sector.weight.toFixed(0)}%</span>
+                </div>
+              ))}
+              {sectorFilter && (
+                <button
+                  onClick={() => setSectorFilter(null)}
+                  className="text-[0.625rem] text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors"
+                >
+                  Clear filter
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Row 3: Movers (filtered) ── */}
+        {filteredMovers.length > 0 && (
+          <div>
+            <span className="text-[0.625rem] uppercase tracking-wider text-[var(--color-text-muted)] font-medium">
+              {sectorFilter ? `${sectorFilter} Movers` : 'Movers'}
+            </span>
+            <div className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-1">
+              {filteredMovers.map((mover) => (
+                <div key={mover.ticker} className="flex items-baseline justify-between py-0.5">
+                  <span className="text-[0.8125rem] font-mono tabular-nums font-medium text-[var(--color-text-primary)]">
+                    {mover.ticker}
+                  </span>
+                  <div className="flex items-baseline gap-2">
+                    <span className={cn('text-[0.8125rem] font-mono tabular-nums', colorClass(mover.changePct))}>
                       {formatPct(mover.changePct)}
                     </span>
-                    <span className={cn('font-mono tabular-nums text-[0.6875rem] ml-0.5 opacity-60', colorClass(mover.dollarImpact))}>
-                      ({formatImpact(mover.dollarImpact)})
+                    <span className={cn('text-[0.6875rem] font-mono tabular-nums opacity-60', colorClass(mover.dollarImpact))}>
+                      {formatCurrency(mover.dollarImpact)}
                     </span>
-                  </span>
-                ))}
-              </>
-            )}
-          </div>
-
-          {brief.sectorHeat.length > 0 && (
-            <SectorHeatMap sectors={brief.sectorHeat} />
-          )}
-
-          {hasEvents && (
-            <div className="flex flex-wrap gap-x-4 gap-y-0.5">
-              {brief.earningsThisWeek.slice(0, 2).map((e) => (
-                <span key={e.ticker} className="text-[0.6875rem] text-[var(--color-text-muted)]">
-                  Earnings {formatEventDay(e.reportDate)}: <span className="font-mono font-medium text-[var(--color-text-secondary)]">{e.ticker}</span> ({e.portfolioWeight.toFixed(1)}%)
-                </span>
-              ))}
-              {brief.dividendsThisWeek.slice(0, 2).map((d) => (
-                <span key={d.ticker} className="text-[0.6875rem] text-[var(--color-text-muted)]">
-                  Ex-div {formatEventDay(d.exDate)}: <span className="font-mono font-medium text-[var(--color-text-secondary)]">{d.ticker}</span>
-                </span>
+                  </div>
+                </div>
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* ── Row 4: News ── */}
+        {hasNews && (
+          <div>
+            <span className="text-[0.625rem] uppercase tracking-wider text-[var(--color-text-muted)] font-medium">
+              {sectorFilter ? `${sectorFilter} News` : 'Portfolio News'}
+            </span>
+            <div className="mt-1.5 space-y-1.5">
+              {filteredNews.slice(0, 4).map((article, i) => (
+                <div key={i} className="flex items-start gap-2 group">
+                  <div className="w-1.5 h-1.5 rounded-full shrink-0 mt-1.5" style={{ backgroundColor: sentimentDot(article.sentiment) }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-2">
+                      {article.ticker && (
+                        <span className="text-[0.6875rem] font-mono font-semibold text-[var(--color-text-primary)] shrink-0">
+                          {article.ticker}
+                        </span>
+                      )}
+                      <span className="text-[0.75rem] text-[var(--color-text-secondary)] truncate">
+                        {article.title}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {article.source && (
+                        <span className="text-[0.5625rem] text-[var(--color-text-muted)]">{article.source}</span>
+                      )}
+                      <span className="text-[0.5625rem] text-[var(--color-text-muted)]">{article.timeAgo}</span>
+                      {article.url && (
+                        <a
+                          href={article.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors opacity-0 group-hover:opacity-100"
+                          aria-label={`Read full article: ${article.title}`}
+                        >
+                          <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Row 5: Events ── */}
+        {hasEvents && (
+          <div className="flex flex-wrap gap-x-5 gap-y-1 pt-1 border-t border-[var(--color-border-subtle)]">
+            {brief.earningsThisWeek.slice(0, 3).map((e) => (
+              <span key={e.ticker} className="text-[0.6875rem] text-[var(--color-text-muted)]">
+                Earnings {formatEventDay(e.reportDate)}: <span className="font-mono font-medium text-[var(--color-text-secondary)]">{e.ticker}</span>
+                <span className="ml-1 opacity-60">({e.portfolioWeight.toFixed(1)}%)</span>
+              </span>
+            ))}
+            {brief.dividendsThisWeek.slice(0, 3).map((d) => (
+              <span key={d.ticker} className="text-[0.6875rem] text-[var(--color-text-muted)]">
+                Ex-div {formatEventDay(d.exDate)}: <span className="font-mono font-medium text-[var(--color-text-secondary)]">{d.ticker}</span>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

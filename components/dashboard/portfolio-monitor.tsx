@@ -174,7 +174,9 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                     <React.Fragment key={holding.id}>
                       <tr
                         className="border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-overlay)] transition-colors cursor-pointer group"
+                        tabIndex={0}
                         onClick={() => setExpandedRowId(isExpanded ? null : holding.id)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedRowId(isExpanded ? null : holding.id); } }}
                       >
                         {/* Position: Ticker large + name + shares */}
                         <td className="py-5 px-5">
@@ -194,6 +196,11 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                                   {formatNumber(holding.shares)} shares
                                 </span>
                               </div>
+                              <span className="sr-only">
+                                Price: {formatCurrencyDetailed(holding.current_price)},
+                                Day change: {formatPercentage(dayChange, 2)},
+                                Weight: {allocation.toFixed(1)}%
+                              </span>
                             </div>
                           </div>
                         </td>
