@@ -77,9 +77,9 @@ export async function GET() {
     const totalValue = holdings.reduce((sum, h) => sum + h.total_value, 0);
 
     const holdingsWithImpact = holdings.map((h) => {
-      const dollarImpact = h.day_change_pct !== 0
+      const dollarImpact = (h.day_change_pct !== 0 && h.day_change_pct !== -1)
         ? (h.total_value * h.day_change_pct) / (1 + h.day_change_pct)
-        : 0;
+        : (h.day_change_pct === -1 ? -h.total_value : 0);
       return { ...h, dollarImpact };
     });
 

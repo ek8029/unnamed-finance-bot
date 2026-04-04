@@ -55,7 +55,14 @@ function isDismissedToday(): boolean {
 
 function dismissToday(): void {
   try {
-    localStorage.setItem(`${STORAGE_PREFIX}${getTodayKey()}`, '1');
+    const key = `${STORAGE_PREFIX}${getTodayKey()}`;
+    localStorage.setItem(key, '1');
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k?.startsWith(STORAGE_PREFIX) && k !== key) {
+        localStorage.removeItem(k);
+      }
+    }
   } catch {}
 }
 
@@ -205,25 +212,24 @@ export function DailyBrief() {
   const [collapsed, setCollapsed] = useState(() => isDismissedToday());
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
     async function fetchBrief() {
       try {
-        const res = await fetch('/api/dashboard/brief');
+        const res = await fetch('/api/dashboard/brief', { signal: controller.signal });
         if (!res.ok) throw new Error('Failed to fetch brief');
         const json = await res.json();
-        if (!cancelled) setData(json);
-      } catch {
-        if (!cancelled) setError(true);
+        if (!controller.signal.aborted) setData(json);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        if (!controller.signal.aborted) setError(true);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
     fetchBrief();
-    return () => {
-      cancelled = true;
-    };
+    return () => controller.abort();
   }, []);
 
   const handleDismiss = useCallback(() => {
