@@ -1,6 +1,4 @@
 import { ImageResponse } from 'next/og';
-import { readFile } from 'fs/promises';
-import { join } from 'path';
 
 export const alt = 'Stock Analysis — Helm Terminal';
 export const size = { width: 1200, height: 630 };
@@ -10,19 +8,16 @@ export default async function Image({ params }: { params: Promise<{ ticker: stri
   const { ticker } = await params;
   const symbol = ticker.toUpperCase().replace(/[^A-Z]/g, '');
 
-  const logoData = await readFile(join(process.cwd(), 'public', 'helm-logo.png'));
-  const logoBase64 = `data:image/png;base64,${logoData.toString('base64')}`;
-
   const gridLines = [];
-  const spacing = 60;
+  const spacing = 80;
   for (let x = 0; x <= 1200; x += spacing) {
     gridLines.push(
-      <div key={`v${x}`} style={{ position: 'absolute', left: x, top: 0, width: 1, height: 630, background: 'rgba(230,185,77,0.04)' }} />
+      <div key={`v${x}`} style={{ position: 'absolute', left: x, top: 0, width: 1, height: 630, background: 'rgba(230,185,77,0.03)' }} />
     );
   }
   for (let y = 0; y <= 630; y += spacing) {
     gridLines.push(
-      <div key={`h${y}`} style={{ position: 'absolute', left: 0, top: y, width: 1200, height: 1, background: 'rgba(230,185,77,0.04)' }} />
+      <div key={`h${y}`} style={{ position: 'absolute', left: 0, top: y, width: 1200, height: 1, background: 'rgba(230,185,77,0.03)' }} />
     );
   }
 
@@ -43,22 +38,37 @@ export default async function Image({ params }: { params: Promise<{ ticker: stri
       >
         {gridLines}
 
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 600, height: 600, background: 'radial-gradient(circle, rgba(230,185,77,0.06) 0%, transparent 70%)', display: 'flex' }} />
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 600, height: 600, background: 'radial-gradient(circle, rgba(230,185,77,0.05) 0%, transparent 60%)', display: 'flex' }} />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20, position: 'relative' }}>
-          <img src={logoBase64} width={80} height={80} alt="" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 24, position: 'relative' }}>
+          <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+            <path
+              d="M 10.06 39.94 A 22 22 0 1 1 45.94 39.94"
+              stroke="#B8914A"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
+            <line x1="28" y1="7" x2="28" y2="49" stroke="#E8ECF1" strokeWidth="2.5" strokeLinecap="round" />
+            <line x1="7" y1="28" x2="49" y2="28" stroke="#E8ECF1" strokeWidth="2.5" strokeLinecap="round" />
+            <circle cx="28" cy="7" r="4.5" fill="#B8914A" />
+            <circle cx="28" cy="28" r="6" fill="#E8ECF1" />
+            <circle cx="28" cy="28" r="3" fill="#B8914A" />
+          </svg>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontSize: 96, fontWeight: 800, color: '#E8ECF1', letterSpacing: '-0.03em', lineHeight: 1 }}>
+            <div style={{ fontSize: 88, fontWeight: 800, color: '#FAFAFA', letterSpacing: '-0.03em', lineHeight: 1 }}>
               ${symbol}
             </div>
-            <div style={{ fontSize: 20, fontWeight: 400, color: '#8A94A6', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 8 }}>
+            <div style={{ fontSize: 16, fontWeight: 400, color: '#8A8A8A', letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginTop: 6 }}>
               AI Stock Analysis
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', position: 'absolute', bottom: 40, fontSize: 14, color: '#505A6B', letterSpacing: '0.08em' }}>
-          helmterminal.dev/analyze
+        <div style={{ position: 'absolute', bottom: 36, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#B8914A' }} />
+          <div style={{ fontSize: 13, color: '#525252', letterSpacing: '0.06em' }}>
+            helmterminal.dev/analyze
+          </div>
         </div>
       </div>
     ),
