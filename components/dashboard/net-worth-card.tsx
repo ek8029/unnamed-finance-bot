@@ -18,15 +18,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 interface NetWorthCardProps {
   currentNetWorth: number;
   netWorthHistory: NetWorthDataPoint[];
+  changePercentage?: number | null;
 }
 
-export function NetWorthCard({ currentNetWorth, netWorthHistory }: NetWorthCardProps) {
+export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentage: apiChangePct }: NetWorthCardProps) {
   const { formatCurrency } = useFormat();
   const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
 
   const previousNetWorth = netWorthHistory.length >= 2 ? (netWorthHistory[netWorthHistory.length - 2]?.value || 0) : 0;
   const change = currentNetWorth - previousNetWorth;
-  const changePercentage = previousNetWorth !== 0 ? (change / previousNetWorth) * 100 : 0;
+  const changePercentage = apiChangePct ?? (previousNetWorth !== 0 ? (change / previousNetWorth) * 100 : 0);
   const isPositiveChange = change >= 0;
 
   const [isLoading] = useState(false);

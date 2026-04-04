@@ -30,7 +30,7 @@ interface SummaryItem {
 function SummaryCard({ item, index }: { item: SummaryItem; index: number }) {
   const { formatCurrency, formatPercentage } = useFormat();
   const Icon = item.icon;
-  const isPositive = (item.change ?? 0) > 0;
+  const isPositive = (item.change ?? 0) >= 0;
   const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
   const animatedValue = useCountUp(item.value, 1200, 0, index * 100);
   const displayValue = isVisible ? animatedValue : item.value;

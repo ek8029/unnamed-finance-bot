@@ -178,6 +178,7 @@ export default function DashboardOverview() {
             <NetWorthCard
               currentNetWorth={financialSummary?.net_worth || 0}
               netWorthHistory={netWorthHistory}
+              changePercentage={financialSummary?.changes?.net_worth}
             />
           </div>
           <div className="lg:col-span-2">

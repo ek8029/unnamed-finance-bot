@@ -130,12 +130,13 @@ export async function GET() {
     // Calculate real % changes
     const prevAssets = prevSnapshot ? Number(prevSnapshot.total_assets) : null;
     const prevLiabilities = prevSnapshot ? Number(prevSnapshot.total_liabilities) : null;
+    const prevNetWorth = prevSnapshot ? Number(prevSnapshot.net_worth) : null;
     const prevPortfolio = prevSnapshot ? Number(prevSnapshot.investment_balance) : null;
     const prevCashFlowVal = prevCashFlow ? Number(prevCashFlow.net_flow) : null;
 
     const calcChange = (current: number, prev: number | null) => {
       if (prev === null || prev === 0) return null;
-      return Math.round(((current - prev) / Math.abs(prev)) * 1000) / 10; // one decimal
+      return Math.round(((current - prev) / Math.abs(prev)) * 1000) / 10;
     };
 
     const financialSummary = {
@@ -149,6 +150,7 @@ export async function GET() {
         liabilities: calcChange(totalLiabilities, prevLiabilities),
         cash_flow: calcChange(monthlyCashFlow, prevCashFlowVal),
         portfolio: calcChange(portfolioValue, prevPortfolio),
+        net_worth: calcChange(netWorth, prevNetWorth),
       },
     };
 
