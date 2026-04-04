@@ -128,20 +128,60 @@ function formatEventDay(dateStr: string): string {
   return days[date.getDay()];
 }
 
-function SectorHeatLabels({ sectors }: { sectors: BriefData['sectorHeat'] }) {
-  if (sectors.length === 0) return null;
+function sectorColor(changePct: number): string {
+  if (changePct > 0.5) return 'rgba(74,222,128,0.85)';
+  if (changePct > 0.1) return 'rgba(74,222,128,0.35)';
+  if (changePct < -0.5) return 'rgba(239,68,68,0.85)';
+  if (changePct < -0.1) return 'rgba(239,68,68,0.35)';
+  return 'rgba(255,255,255,0.06)';
+}
+
+function sectorAbbrev(name: string): string {
+  const abbrevs: Record<string, string> = {
+    'Technology': 'Tech', 'Healthcare': 'Health', 'Financials': 'Fin',
+    'Consumer Cyclical': 'Cons', 'Communication Services': 'Comm',
+    'Consumer Defensive': 'Stapl', 'Industrials': 'Ind', 'Energy': 'Enrg',
+    'Real Estate': 'RE', 'Utilities': 'Util', 'Basic Materials': 'Mat',
+  };
+  return abbrevs[name] || name.slice(0, 4);
+}
+
+function SectorHeatMap({ sectors }: { sectors: BriefData['sectorHeat'] }) {
+  const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
+  if (sectors.length === 0 || totalWeight === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-x-3 gap-y-1">
-      <span className="text-[0.6875rem] text-[var(--color-text-muted)]">Sectors:</span>
-      {sectors.map((sector) => (
-        <span key={sector.sector} className="text-[0.75rem] whitespace-nowrap">
-          <span className="text-[var(--color-text-secondary)]">{sector.sector}</span>
-          <span className={cn('font-mono tabular-nums ml-1', colorClass(sector.changePct))}>
-            {formatPct(sector.changePct)}
+    <div className="space-y-1">
+      <div className="flex h-5 w-full overflow-hidden rounded gap-px">
+        {sectors.map((sector) => {
+          const pct = (sector.weight / totalWeight) * 100;
+          const showLabel = pct > 8;
+          return (
+            <div
+              key={sector.sector}
+              className="h-full flex items-center justify-center overflow-hidden"
+              style={{ width: `${pct}%`, backgroundColor: sectorColor(sector.changePct) }}
+              title={`${sector.sector} ${formatPct(sector.changePct)} · ${sector.weight.toFixed(1)}% of portfolio`}
+            >
+              {showLabel && (
+                <span className="text-[0.5rem] font-medium text-white/80 truncate px-0.5">
+                  {sectorAbbrev(sector.sector)}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+        {sectors.map((sector) => (
+          <span key={sector.sector} className="text-[0.625rem] whitespace-nowrap">
+            <span className="text-[var(--color-text-muted)]">{sector.sector} </span>
+            <span className={cn('font-mono tabular-nums', colorClass(sector.changePct))}>
+              {formatPct(sector.changePct)}
+            </span>
           </span>
-        </span>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
@@ -305,7 +345,7 @@ export function DailyBrief() {
           </div>
 
           {brief.sectorHeat.length > 0 && (
-            <SectorHeatLabels sectors={brief.sectorHeat} />
+            <SectorHeatMap sectors={brief.sectorHeat} />
           )}
 
           {hasEvents && (
