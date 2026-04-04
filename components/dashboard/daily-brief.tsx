@@ -128,22 +128,20 @@ function formatEventDay(dateStr: string): string {
   return days[date.getDay()];
 }
 
-function sectorColor(changePct: number): string {
-  if (changePct > 0.5) return 'rgba(74,222,128,0.85)';
-  if (changePct > 0.1) return 'rgba(74,222,128,0.35)';
-  if (changePct < -0.5) return 'rgba(239,68,68,0.85)';
-  if (changePct < -0.1) return 'rgba(239,68,68,0.35)';
-  return 'rgba(255,255,255,0.06)';
+function sectorBarColor(changePct: number): string {
+  if (changePct > 0.5) return 'rgba(74,222,128,0.8)';
+  if (changePct > 0.1) return 'rgba(74,222,128,0.4)';
+  if (changePct < -0.5) return 'rgba(239,68,68,0.8)';
+  if (changePct < -0.1) return 'rgba(239,68,68,0.4)';
+  return 'rgba(255,255,255,0.08)';
 }
 
-function sectorAbbrev(name: string): string {
-  const abbrevs: Record<string, string> = {
-    'Technology': 'Tech', 'Healthcare': 'Health', 'Financials': 'Fin',
-    'Consumer Cyclical': 'Cons', 'Communication Services': 'Comm',
-    'Consumer Defensive': 'Stapl', 'Industrials': 'Ind', 'Energy': 'Enrg',
-    'Real Estate': 'RE', 'Utilities': 'Util', 'Basic Materials': 'Mat',
-  };
-  return abbrevs[name] || name.slice(0, 4);
+function sectorDotColor(changePct: number): string {
+  if (changePct > 0.5) return '#4ADE80';
+  if (changePct > 0.1) return 'rgba(74,222,128,0.6)';
+  if (changePct < -0.5) return '#ef4444';
+  if (changePct < -0.1) return 'rgba(239,68,68,0.6)';
+  return 'rgba(255,255,255,0.2)';
 }
 
 function SectorHeatMap({ sectors }: { sectors: BriefData['sectorHeat'] }) {
@@ -151,35 +149,41 @@ function SectorHeatMap({ sectors }: { sectors: BriefData['sectorHeat'] }) {
   if (sectors.length === 0 || totalWeight === 0) return null;
 
   return (
-    <div className="space-y-1">
-      <div className="flex h-5 w-full overflow-hidden rounded gap-px">
-        {sectors.map((sector) => {
+    <div className="space-y-1.5">
+      <div className="flex h-2 w-full overflow-hidden rounded-sm">
+        {sectors.map((sector, i) => {
           const pct = (sector.weight / totalWeight) * 100;
-          const showLabel = pct > 8;
           return (
             <div
               key={sector.sector}
-              className="h-full flex items-center justify-center overflow-hidden"
-              style={{ width: `${pct}%`, backgroundColor: sectorColor(sector.changePct) }}
-              title={`${sector.sector} ${formatPct(sector.changePct)} · ${sector.weight.toFixed(1)}% of portfolio`}
-            >
-              {showLabel && (
-                <span className="text-[0.5rem] font-medium text-white/80 truncate px-0.5">
-                  {sectorAbbrev(sector.sector)}
-                </span>
-              )}
-            </div>
+              className="h-full"
+              style={{
+                width: `${pct}%`,
+                backgroundColor: sectorBarColor(sector.changePct),
+                marginRight: i < sectors.length - 1 ? '1px' : '0',
+              }}
+              title={`${sector.sector}: ${formatPct(sector.changePct)} · ${sector.weight.toFixed(1)}% of portfolio`}
+            />
           );
         })}
       </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+      <div className="flex flex-wrap gap-x-4 gap-y-1">
         {sectors.map((sector) => (
-          <span key={sector.sector} className="text-[0.625rem] whitespace-nowrap">
-            <span className="text-[var(--color-text-muted)]">{sector.sector} </span>
-            <span className={cn('font-mono tabular-nums', colorClass(sector.changePct))}>
+          <div key={sector.sector} className="flex items-center gap-1.5">
+            <div
+              className="w-2 h-2 rounded-full shrink-0"
+              style={{ backgroundColor: sectorDotColor(sector.changePct) }}
+            />
+            <span className="text-[0.6875rem] text-[var(--color-text-secondary)]">
+              {sector.sector}
+            </span>
+            <span className={cn('text-[0.6875rem] font-mono tabular-nums font-medium', colorClass(sector.changePct))}>
               {formatPct(sector.changePct)}
             </span>
-          </span>
+            <span className="text-[0.5625rem] text-[var(--color-text-muted)] font-mono tabular-nums">
+              {sector.weight.toFixed(0)}%
+            </span>
+          </div>
         ))}
       </div>
     </div>
