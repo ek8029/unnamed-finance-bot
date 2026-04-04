@@ -14,6 +14,7 @@ interface FinancialSummary {
     liabilities: number | null;
     cash_flow: number | null;
     portfolio: number | null;
+    net_worth: number | null;
   };
 }
 
