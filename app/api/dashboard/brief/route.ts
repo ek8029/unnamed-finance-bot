@@ -126,20 +126,18 @@ export async function GET() {
     } = { spy: null, qqq: null, vix: null, treasury10y: null };
 
     try {
-      const [spyData, qqqData, vixData] = await Promise.allSettled([
+      const [spyData, qqqData] = await Promise.allSettled([
         getLatestPrice('SPY'),
         getLatestPrice('QQQ'),
-        getLatestPrice('VIXY'),
       ]);
 
       const spy = spyData.status === 'fulfilled' ? spyData.value : null;
       const qqq = qqqData.status === 'fulfilled' ? qqqData.value : null;
-      const vix = vixData.status === 'fulfilled' ? vixData.value : null;
 
       market = {
         spy: formatIndex(spy),
         qqq: formatIndex(qqq),
-        vix: vix ? { price: vix.close, level: classifyVix(vix.close) } : null,
+        vix: null,
         treasury10y: null,
       };
     } catch (err) {

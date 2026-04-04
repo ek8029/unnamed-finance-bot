@@ -141,25 +141,24 @@ function SectorHeatStrip({ sectors }: { sectors: BriefData['sectorHeat'] }) {
 
   return (
     <div className="relative">
-      <div ref={stripRef} className="flex h-2 w-full overflow-hidden">
+      <div ref={stripRef} className="flex h-1.5 w-full overflow-hidden rounded-full gap-px">
         {sectors.map((sector, i) => {
           const pct = (sector.weight / totalWeight) * 100;
           let bg: string;
-          if (sector.changePct > 0.5) bg = 'bg-[var(--color-positive)]';
-          else if (sector.changePct > 0.1) bg = 'bg-[var(--color-positive)]/60';
-          else if (sector.changePct < -0.5) bg = 'bg-[var(--color-negative)]';
-          else if (sector.changePct < -0.1) bg = 'bg-[var(--color-negative)]/60';
-          else bg = 'bg-[var(--color-bg-elevated)]';
+          if (sector.changePct > 0.5) bg = 'rgba(74,222,128,0.9)';
+          else if (sector.changePct > 0.1) bg = 'rgba(74,222,128,0.4)';
+          else if (sector.changePct < -0.5) bg = 'rgba(239,68,68,0.9)';
+          else if (sector.changePct < -0.1) bg = 'rgba(239,68,68,0.4)';
+          else bg = 'rgba(255,255,255,0.08)';
 
           return (
             <div
               key={sector.sector}
               className={cn(
                 'h-full transition-opacity duration-150',
-                bg,
                 hoveredIndex !== null && hoveredIndex !== i && 'opacity-40',
               )}
-              style={{ width: `${pct}%` }}
+              style={{ width: `${pct}%`, backgroundColor: bg }}
               onMouseEnter={() => setHoveredIndex(i)}
               onMouseLeave={() => setHoveredIndex(null)}
             />
