@@ -9,6 +9,7 @@ import { IntelligenceFeed } from '@/components/dashboard/intelligence-feed';
 import { CashFlowTrend } from '@/components/dashboard/cash-flow-trend';
 import { AssetsLiabilitiesComposition } from '@/components/dashboard/assets-liabilities-composition';
 import { SavingsRateTimeline } from '@/components/dashboard/savings-rate-timeline';
+import { DailyBrief } from '@/components/dashboard/daily-brief';
 import { useFinancialSummary, useIntelligence } from '@/hooks/use-financial-data';
 
 function LoadingSkeleton() {
@@ -149,6 +150,9 @@ export default function DashboardOverview() {
             Real-time intelligence across your complete financial system
           </p>
         </div>
+
+        {/* Daily Brief */}
+        <DailyBrief />
 
         {/* Row 1: Financial Summary Cards */}
         <div>
