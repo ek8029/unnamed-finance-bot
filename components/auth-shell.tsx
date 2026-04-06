@@ -35,17 +35,17 @@ export function AuthShell({ subtitle, children }: AuthShellProps) {
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           className="flex flex-col items-center mb-8"
         >
-          <Link href="/" className="flex items-center gap-3 mb-3 group">
-            <div className="relative flex items-center justify-center">
+          <Link href="/" className="flex flex-col items-center gap-3 mb-3 group">
+            <div className="relative flex items-center justify-center w-[44px] h-[44px]">
               <motion.div
-                className="absolute w-11 h-11 rounded-full border border-[var(--color-gold)]/20"
+                className="absolute inset-0 rounded-full border border-[var(--color-gold)]/20"
                 animate={{ scale: [1, 2.5], opacity: [0.2, 0] }}
-                transition={{ duration: 3, repeat: Infinity, ease: 'easeOut' }}
+                transition={{ duration: 3, repeat: Infinity, repeatDelay: 0.5, ease: 'easeOut' }}
               />
               <motion.div
-                className="absolute w-11 h-11 rounded-full border border-[var(--color-gold)]/10"
+                className="absolute inset-0 rounded-full border border-[var(--color-gold)]/10"
                 animate={{ scale: [1, 2.5], opacity: [0.15, 0] }}
-                transition={{ duration: 3, delay: 1.5, repeat: Infinity, ease: 'easeOut' }}
+                transition={{ duration: 3, delay: 1.5, repeat: Infinity, repeatDelay: 0.5, ease: 'easeOut' }}
               />
               <HelmMark size={44} />
             </div>
