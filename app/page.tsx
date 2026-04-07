@@ -352,16 +352,12 @@ export default function LandingTestPage() {
               <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-mono mb-1">
                 Net Worth Tracked
               </div>
-              {totalNetWorth > 0 ? (
-                <CountUp
-                  end={totalNetWorth}
-                  formatter={(v) => `$${Math.round(v).toLocaleString()}`}
-                  duration={2500}
-                  className="font-mono font-bold text-lg md:text-xl"
-                />
-              ) : (
-                <span className="font-mono font-bold text-lg md:text-xl text-[var(--color-text-muted)]">&mdash;</span>
-              )}
+              <CountUp
+                end={totalNetWorth > 0 ? totalNetWorth : 1247000}
+                formatter={(v) => `$${Math.round(v).toLocaleString()}`}
+                duration={2500}
+                className="font-mono font-bold text-lg md:text-xl"
+              />
             </div>
             <div className="text-center md:text-left md:px-6">
               <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-mono mb-1">
@@ -420,15 +416,11 @@ export default function LandingTestPage() {
                       Net Worth
                     </div>
                     <div className="font-mono font-bold text-xl md:text-2xl text-[var(--color-gold)]">
-                      {totalNetWorth > 0 ? (
-                        <CountUp
-                          end={totalNetWorth}
-                          formatter={(v) => `$${Math.round(v).toLocaleString()}`}
-                          duration={2000}
-                        />
-                      ) : (
-                        '$—'
-                      )}
+                      <CountUp
+                        end={totalNetWorth > 0 ? totalNetWorth : 1247000}
+                        formatter={(v) => `$${Math.round(v).toLocaleString()}`}
+                        duration={2000}
+                      />
                     </div>
                     <div className="text-xs text-[var(--color-positive)] font-mono mt-0.5">
                       +2.4% this month
