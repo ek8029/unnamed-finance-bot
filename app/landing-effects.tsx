@@ -120,43 +120,6 @@ export function InteractiveGrid() {
         }
       }
 
-      // ── Floating particles ──
-      if (particles.length < MAX_PARTICLES && Math.random() < 0.12) {
-        particles.push({
-          x: Math.random() * width,
-          y: height + 5,
-          vx: (Math.random() - 0.5) * 0.3,
-          vy: -(0.2 + Math.random() * 0.4),
-          size: 0.5 + Math.random() * 1.5,
-          life: 0,
-          maxLife: 400 + Math.random() * 300,
-        });
-      }
-
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const pt = particles[i];
-        pt.x += pt.vx;
-        pt.y += pt.vy;
-        pt.life++;
-
-        if (pt.life > pt.maxLife || pt.y < -10) {
-          particles.splice(i, 1);
-          continue;
-        }
-
-        const ratio = pt.life / pt.maxLife;
-        let alpha: number;
-        if (ratio < 0.15) alpha = ratio / 0.15;
-        else if (ratio > 0.7) alpha = (1 - ratio) / 0.3;
-        else alpha = 1;
-        alpha *= 0.25;
-
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(230,185,77,${alpha})`;
-        ctx.fill();
-      }
-
       raf.current = requestAnimationFrame(draw);
     };
 
