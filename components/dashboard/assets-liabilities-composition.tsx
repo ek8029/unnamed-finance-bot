@@ -83,8 +83,8 @@ export function AssetsLiabilitiesComposition({
                 </div>
                 <div className="h-1.5 bg-[var(--color-bg-elevated)] rounded overflow-hidden">
                   <div
-                    className="h-full bg-[var(--color-positive)] rounded transition-all duration-500"
-                    style={{ width: `${item.percentage}%` }}
+                    className="h-full bg-[var(--color-positive)] rounded transition-transform duration-500 origin-left w-full"
+                    style={{ transform: `scaleX(${item.percentage / 100})` }}
                   />
                 </div>
               </div>
@@ -106,8 +106,8 @@ export function AssetsLiabilitiesComposition({
                 </div>
                 <div className="h-1.5 bg-[var(--color-bg-elevated)] rounded overflow-hidden">
                   <div
-                    className="h-full bg-[var(--color-negative)] rounded transition-all duration-500"
-                    style={{ width: `${item.percentage}%` }}
+                    className="h-full bg-[var(--color-negative)] rounded transition-transform duration-500 origin-left w-full"
+                    style={{ transform: `scaleX(${item.percentage / 100})` }}
                   />
                 </div>
               </div>

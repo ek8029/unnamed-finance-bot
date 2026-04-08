@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { parseDateLocal, formatMonthLabel } from '@/lib/date-format';
 
 export async function GET() {
   try {
@@ -60,7 +61,7 @@ export async function GET() {
         shares: holding.shares,
         current_price: Number(holding.current_price || 0),
         total_value: value,
-        day_change_percentage: holding.day_change_pct != null ? Number(holding.day_change_pct) * 100 : 0,
+        day_change_percentage: holding.day_change_pct != null ? Number(holding.day_change_pct) * 100 : null,
         portfolio_allocation: holding.portfolio_allocation_pct != null
           ? Number(holding.portfolio_allocation_pct)
           : (totalValue > 0 ? (value / totalValue) * 100 : 0),
@@ -104,9 +105,9 @@ export async function GET() {
 
     // Transform portfolio history for charts
     const portfolioHistory = snapshots?.map(s => {
-      const date = new Date(s.snapshot_date);
+      const date = parseDateLocal(s.snapshot_date);
       return {
-        label: date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+        label: formatMonthLabel(date),
         value: Number(s.total_value),
         gain_loss: Number(s.total_gain_loss),
       };

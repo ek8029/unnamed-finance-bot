@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { PortfolioMonitor } from '@/components/dashboard/portfolio-monitor';
 import { PortfolioAllocation } from '@/components/dashboard/portfolio-allocation';
@@ -37,7 +37,7 @@ export default function PortfolioPage() {
   const { formatCurrency, formatCurrencyDetailed } = useFormat();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const holdingsData: any = useHoldings();
-  const holdings: { id: string; ticker: string; asset_name: string; shares: number; current_price: number; total_value: number; day_change_percentage: number; portfolio_allocation: number; sector?: string; asset_class?: string; cost_basis?: number; unrealised_gain?: number }[] = holdingsData.holdings ?? [];
+  const holdings: { id: string; ticker: string; asset_name: string; shares: number; current_price: number; total_value: number; day_change_percentage: number | null; portfolio_allocation: number; sector?: string; asset_class?: string; cost_basis?: number; unrealised_gain?: number }[] = holdingsData.holdings ?? [];
   const allocation: { name: string; value: number; percentage: number }[] = holdingsData.allocation ?? [];
   const totalValue: number = holdingsData.totalValue ?? 0;
   const performanceMetrics = holdingsData.performanceMetrics ?? null;
@@ -80,17 +80,20 @@ export default function PortfolioPage() {
     }
   };
 
-  const totalDayChange = holdings.reduce(
-    (sum: number, holding: any) => sum + (holding.total_value * holding.day_change_percentage) / 100,
-    0
-  );
-  const dayChangePercentage = totalValue > 0 ? (totalDayChange / totalValue) * 100 : 0;
+  const { totalDayChange, dayChangePercentage } = useMemo(() => {
+    const totalDayChange = holdings.reduce(
+      (sum: number, holding: any) => sum + (holding.total_value * (holding.day_change_percentage ?? 0)) / 100,
+      0
+    );
+    const dayChangePercentage = totalValue > 0 ? (totalDayChange / totalValue) * 100 : 0;
+    return { totalDayChange, dayChangePercentage };
+  }, [holdings, totalValue]);
 
   type RangeKey = '3M' | '6M' | '1Y' | 'ALL';
 
   // Build a single-point fallback from the current total value (no fake data)
   const singlePointFallback = totalValue > 0
-    ? [{ label: new Date().toLocaleDateString('en-US', { month: 'short', year: '2-digit' }), value: totalValue }]
+    ? [{ label: (() => { const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][new Date().getMonth()]; return `${m} '${new Date().getFullYear().toString().slice(-2)}`; })(), value: totalValue }]
     : [];
 
   // Use real portfolio history data only -- never generate random numbers
@@ -169,8 +172,8 @@ export default function PortfolioPage() {
   }
 
   // Get sorted holdings for summary cards
-  const sortedByAllocation = [...holdings].sort((a, b) => b.portfolio_allocation - a.portfolio_allocation);
-  const sortedByDayChange = [...holdings].sort((a, b) => b.day_change_percentage - a.day_change_percentage);
+  const sortedByAllocation = useMemo(() => [...holdings].sort((a, b) => b.portfolio_allocation - a.portfolio_allocation), [holdings]);
+  const sortedByDayChange = useMemo(() => [...holdings].sort((a, b) => (b.day_change_percentage ?? 0) - (a.day_change_percentage ?? 0)), [holdings]);
 
   return (
     <div className="container mx-auto card-padding max-w-[1600px]">
@@ -203,7 +206,7 @@ export default function PortfolioPage() {
           </div>
 
           {/* Portfolio Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center space-x-2">

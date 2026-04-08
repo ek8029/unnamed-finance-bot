@@ -100,7 +100,7 @@ export async function refreshMarketPrices(
     totalValue: number;
     unrealisedGainLoss: number | null;
     unrealisedGainLossPct: number | null;
-    dayChangePct: number;
+    dayChangePct: number | null;
   }[] = [];
 
   const { data: allHoldingsForUpdate } = await supabase
@@ -125,7 +125,7 @@ export async function refreshMarketPrices(
     const prevClose = prevCloseMap.get(ticker);
     const dayChangePct = prevClose && prevClose > 0
       ? (price.close - prevClose) / prevClose
-      : (price.open > 0 ? (price.close - price.open) / price.open : 0);
+      : (price.open > 0 ? (price.close - price.open) / price.open : null);
 
     holdingUpdates.push({
       holdingId: holding.id,

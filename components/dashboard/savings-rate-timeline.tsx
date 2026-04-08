@@ -160,7 +160,7 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
                 strokeWidth={2}
                 dot={{ fill: 'var(--color-gold)', r: 3 }}
                 activeDot={{ r: 5, fill: 'var(--color-gold)', stroke: 'var(--color-bg-surface)', strokeWidth: 2 }}
-                animationDuration={800}
+                animationDuration={600}
                 animationEasing="ease-out"
               />
             </LineChart>

@@ -99,8 +99,8 @@ export function MarketInsightDrawer({
                       <span>{holding.portfolio_allocation.toFixed(1)}% of portfolio</span>
                     </div>
                   </div>
-                  <button className="p-1.5 rounded hover:bg-[var(--color-bg-overlay)] transition-colors text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]">
-                    <ExternalLink className="h-4 w-4" />
+                  <button className="p-1.5 rounded hover:bg-[var(--color-bg-overlay)] transition-colors text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]" aria-label="View ticker details">
+                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
                   </button>
                 </div>
 
@@ -122,17 +122,19 @@ export function MarketInsightDrawer({
                     <div className="type-caption text-[var(--color-text-secondary)] mb-1">Day Change</div>
                     <div
                       className={`flex items-center gap-1 type-data text-sm font-tabular ${
-                        holding.day_change_percentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                        (holding.day_change_percentage ?? 0) >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                       }`}
                     >
-                      {holding.day_change_percentage >= 0 ? (
-                        <TrendingUp className="h-3 w-3" />
+                      {(holding.day_change_percentage ?? 0) >= 0 ? (
+                        <TrendingUp className="h-3 w-3" aria-hidden="true" />
                       ) : (
-                        <TrendingDown className="h-3 w-3" />
+                        <TrendingDown className="h-3 w-3" aria-hidden="true" />
                       )}
+                      <span className="sr-only">{(holding.day_change_percentage ?? 0) >= 0 ? 'Up' : 'Down'}</span>
                       <span>
-                        {holding.day_change_percentage >= 0 ? '+' : ''}
-                        {holding.day_change_percentage.toFixed(2)}%
+                        {holding.day_change_percentage != null
+                          ? `${holding.day_change_percentage >= 0 ? '+' : ''}${holding.day_change_percentage.toFixed(2)}%`
+                          : '--'}
                       </span>
                     </div>
                   </div>

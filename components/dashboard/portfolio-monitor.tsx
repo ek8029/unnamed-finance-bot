@@ -124,35 +124,41 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
             </div>
           ) : (
             <table className="w-full">
+              <caption className="sr-only">Portfolio holdings with price, day change, and allocation weight</caption>
               <thead>
                 <tr className="border-b border-[var(--color-border-base)]">
                   <th
-                    className="text-left py-3 px-5 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
+                    className="text-left py-3 px-5 min-h-[44px] type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
                     onClick={() => handleSort('ticker')}
+                    aria-sort={sortKey === 'ticker' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
                   >
                     Position {renderSortIcon('ticker')}
                   </th>
                   <th
-                    className="hidden sm:table-cell text-right py-3 px-4 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
+                    className="hidden sm:table-cell text-right py-3 px-4 min-h-[44px] type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
                     onClick={() => handleSort('price')}
+                    aria-sort={sortKey === 'price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
                   >
                     Price {renderSortIcon('price')}
                   </th>
                   <th
-                    className="text-right py-3 px-4 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
+                    className="text-right py-3 px-4 min-h-[44px] type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
                     onClick={() => handleSort('value')}
+                    aria-sort={sortKey === 'value' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
                   >
                     Market Value {renderSortIcon('value')}
                   </th>
                   <th
-                    className="hidden sm:table-cell text-right py-3 px-4 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
+                    className="hidden sm:table-cell text-right py-3 px-4 min-h-[44px] type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider"
                     onClick={() => handleSort('change')}
+                    aria-sort={sortKey === 'change' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
                   >
                     Day {renderSortIcon('change')}
                   </th>
                   <th
-                    className="hidden sm:table-cell text-right py-3 pr-5 pl-4 type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider whitespace-nowrap"
+                    className="hidden sm:table-cell text-right py-3 pr-5 pl-4 min-h-[44px] type-eyebrow text-[var(--color-text-muted)] cursor-pointer select-none uppercase tracking-wider whitespace-nowrap"
                     onClick={() => handleSort('allocation')}
+                    aria-sort={sortKey === 'allocation' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
                   >
                     Weight {renderSortIcon('allocation')}
                   </th>
@@ -177,6 +183,7 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                         tabIndex={0}
                         onClick={() => setExpandedRowId(isExpanded ? null : holding.id)}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedRowId(isExpanded ? null : holding.id); } }}
+                        aria-expanded={expandedRowId === holding.id}
                       >
                         {/* Position: Ticker large + name + shares */}
                         <td className="py-5 px-5">
@@ -190,7 +197,7 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                               <div className="font-mono text-[17px] font-bold tracking-tight text-[var(--color-text-primary)] leading-tight">
                                 {holding.ticker}
                               </div>
-                              <div className="text-[13px] text-[var(--color-text-muted)] leading-tight mt-0.5 truncate max-w-[220px]">
+                              <div className="text-[13px] text-[var(--color-text-muted)] leading-tight mt-0.5 truncate max-w-[140px] sm:max-w-[220px]">
                                 {holding.asset_name}
                                 <span className="text-[var(--color-text-muted)]/60 ml-1.5">
                                   {formatNumber(holding.shares)} shares
@@ -238,10 +245,11 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                           }`}>
                             <div className="flex items-center gap-0.5">
                               {isPositiveChange ? (
-                                <ArrowUpRight className="h-3.5 w-3.5" />
+                                <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
                               ) : (
-                                <ArrowDownRight className="h-3.5 w-3.5" />
+                                <ArrowDownRight className="h-3.5 w-3.5" aria-hidden="true" />
                               )}
+                              <span className="sr-only">{isPositiveChange ? 'Up' : 'Down'}</span>
                               <span className="font-mono text-[14px] font-semibold tabular-nums">
                                 {formatPercentage(dayChange, 2)}
                               </span>
@@ -257,8 +265,13 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                           <div className="flex items-center justify-end gap-2.5">
                             <div className="w-20 h-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-[var(--color-gold)] rounded-full transition-all duration-500"
-                                style={{ width: `${Math.min(100, allocation)}%` }}
+                                className="h-full bg-[var(--color-gold)] rounded-full transition-transform duration-500 origin-left"
+                                style={{ transform: `scaleX(${Math.min(100, allocation) / 100})` }}
+                                role="progressbar"
+                                aria-valuenow={allocation}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-label={`${allocation.toFixed(1)}% of portfolio`}
                               />
                             </div>
                             <span className="font-mono text-[14px] font-medium text-[var(--color-text-secondary)] tabular-nums w-14 text-right">

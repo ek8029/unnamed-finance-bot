@@ -593,8 +593,150 @@ export async function computeSnapshots(
         emergency_fund_score: emergencyScore,
         diversification_score: divScore,
       });
+
+    // Backfill historical snapshots for new users (runs once when ≤1 snapshot exists)
+    await backfillHistoricalSnapshots(supabase, userId, {
+      totalAssets,
+      totalLiabilities,
+      cashBalance,
+      investmentBalance,
+      cryptoBalance,
+      creditCardDebt,
+      loanDebt,
+    });
   } catch (error) {
     console.error('Error computing snapshots:', error);
+  }
+}
+
+/**
+ * Backfill 5 months of historical snapshots for new users.
+ * Cash-flow snapshots use real transaction data (accurate).
+ * Net-worth snapshots estimate balances by working backwards from
+ * current values using transaction deltas.
+ * Only runs when user has ≤1 existing snapshot — no-ops after that.
+ */
+async function backfillHistoricalSnapshots(
+  supabase: AnyClient,
+  userId: string,
+  current: {
+    totalAssets: number;
+    totalLiabilities: number;
+    cashBalance: number;
+    investmentBalance: number;
+    cryptoBalance: number;
+    creditCardDebt: number;
+    loanDebt: number;
+  }
+): Promise<void> {
+  try {
+    const { count } = await supabase
+      .from('net_worth_snapshots')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    if (count !== null && count > 1) return; // Already have history
+
+    const now = new Date();
+
+    // Fetch transactions from past 6 months for accurate cash-flow data
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    const { data: transactions } = await supabase
+      .from('transactions')
+      .select('amount, transaction_date')
+      .eq('user_id', userId)
+      .gte('transaction_date', sixMonthsAgo.toISOString().split('T')[0]);
+
+    // Group transactions by month
+    const monthlyFlows = new Map<string, { income: number; expenses: number }>();
+    for (const tx of transactions || []) {
+      const d = new Date(tx.transaction_date + 'T12:00:00');
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+      if (!monthlyFlows.has(key)) monthlyFlows.set(key, { income: 0, expenses: 0 });
+      const flow = monthlyFlows.get(key)!;
+      const amt = Number(tx.amount);
+      if (amt > 0) flow.income += amt;
+      else flow.expenses += Math.abs(amt);
+    }
+
+    // Build ordered month keys: current → 5 months back
+    const monthKeys: string[] = [];
+    for (let i = 0; i <= 5; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      monthKeys.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`);
+    }
+
+    // Walk backwards from current cash balance to estimate historical figures.
+    // For each month, subtract that month's net transaction flow from the running
+    // cash total. Example: if current cash is $100k and April had +$2k net inflow,
+    // then March ending cash was ~$98k. This is accurate for cash; investments and
+    // crypto use a slight backward variance since we lack historical prices.
+    let estCash = current.cashBalance;
+    const netWorthRows: Record<string, unknown>[] = [];
+    const cashFlowRows: Record<string, unknown>[] = [];
+
+    for (let i = 0; i < monthKeys.length; i++) {
+      const monthKey = monthKeys[i];
+      const flow = monthlyFlows.get(monthKey) || { income: 0, expenses: 0 };
+      const netFlow = flow.income - flow.expenses;
+
+      // Subtract this month's net flow BEFORE the skip — this is intentional.
+      // After subtraction, estCash represents the balance at the START of this month.
+      // For i=0 (current month), we subtract but skip row creation since today's
+      // snapshot already exists. The subtracted value carries forward correctly.
+      estCash -= netFlow;
+
+      if (i === 0) continue; // Current month already has a snapshot
+
+      // Investments/crypto: apply conservative backward variance (~0.8%/mo for equities,
+      // ~1.5%/mo for crypto). These are approximations — replaced with real data as
+      // daily snapshots accumulate. Floors (0.90/0.85) prevent unrealistic values.
+      const estInvestment = current.investmentBalance * Math.max(0.90, 1 - i * 0.008);
+      const estCrypto = current.cryptoBalance * Math.max(0.85, 1 - i * 0.015);
+      const safeCash = Math.max(0, estCash);
+      const estAssets = safeCash + estInvestment + estCrypto;
+      // Liabilities assumed constant — we lack historical credit card/loan balance data.
+      // This is a known approximation; real snapshots replace this over time.
+      const estLiabilities = current.totalLiabilities;
+
+      netWorthRows.push({
+        user_id: userId,
+        snapshot_date: monthKey,
+        total_assets: Math.round(estAssets * 100) / 100,
+        total_liabilities: Math.round(estLiabilities * 100) / 100,
+        net_worth: Math.round((estAssets - estLiabilities) * 100) / 100,
+        cash_balance: Math.round(safeCash * 100) / 100,
+        investment_balance: Math.round(estInvestment * 100) / 100,
+        crypto_balance: Math.round(estCrypto * 100) / 100,
+        credit_card_debt: current.creditCardDebt,
+        loan_debt: current.loanDebt,
+      });
+
+      const savingsAmt = Math.max(0, netFlow);
+      cashFlowRows.push({
+        user_id: userId,
+        snapshot_month: monthKey,
+        total_income: Math.round(flow.income * 100) / 100,
+        total_expenses: Math.round(flow.expenses * 100) / 100,
+        net_flow: Math.round(netFlow * 100) / 100,
+        savings_amount: Math.round(savingsAmt * 100) / 100,
+        savings_rate: flow.income > 0 ? Math.round((savingsAmt / flow.income) * 10000) / 10000 : 0,
+      });
+    }
+
+    if (netWorthRows.length > 0) {
+      await supabase
+        .from('net_worth_snapshots')
+        .upsert(netWorthRows, { onConflict: 'user_id,snapshot_date' });
+    }
+    if (cashFlowRows.length > 0) {
+      await supabase
+        .from('cash_flow_snapshots')
+        .upsert(cashFlowRows, { onConflict: 'user_id,snapshot_month' });
+    }
+  } catch (error) {
+    // Best-effort — don't break the sync
+    console.error('Error backfilling historical snapshots:', error);
   }
 }
 

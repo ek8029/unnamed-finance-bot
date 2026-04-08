@@ -65,10 +65,15 @@ export function PortfolioInsightDrawer({ holdings, insightDescription }: Portfol
               </div>
               <div className="h-2 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-[var(--color-gold)] rounded-full transition-all duration-500"
+                  className="h-full bg-[var(--color-gold)] rounded-full transition-transform duration-500 origin-left w-full"
                   style={{
-                    width: `${(totalValue / totalPortfolioValue) * 100}%`,
+                    transform: `scaleX(${(totalValue / totalPortfolioValue)})`,
                   }}
+                  role="progressbar"
+                  aria-valuenow={Math.round((totalValue / totalPortfolioValue) * 100)}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`${sector} allocation: ${((totalValue / totalPortfolioValue) * 100).toFixed(1)}%`}
                 />
               </div>
             </div>
@@ -107,17 +112,19 @@ export function PortfolioInsightDrawer({ holdings, insightDescription }: Portfol
                   </div>
                   <div
                     className={`flex items-center gap-1 type-label text-xs ${
-                      holding.day_change_percentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                      (holding.day_change_percentage ?? 0) >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                     }`}
                   >
-                    {holding.day_change_percentage >= 0 ? (
-                      <TrendingUp className="h-3 w-3" />
+                    {(holding.day_change_percentage ?? 0) >= 0 ? (
+                      <TrendingUp className="h-3 w-3" aria-hidden="true" />
                     ) : (
-                      <TrendingDown className="h-3 w-3" />
+                      <TrendingDown className="h-3 w-3" aria-hidden="true" />
                     )}
+                    <span className="sr-only">{(holding.day_change_percentage ?? 0) >= 0 ? 'Up' : 'Down'}</span>
                     <span className="font-tabular">
-                      {holding.day_change_percentage >= 0 ? '+' : ''}
-                      {holding.day_change_percentage.toFixed(2)}%
+                      {holding.day_change_percentage != null
+                        ? `${holding.day_change_percentage >= 0 ? '+' : ''}${holding.day_change_percentage.toFixed(2)}%`
+                        : '--'}
                     </span>
                   </div>
                 </div>
@@ -138,6 +145,7 @@ export function PortfolioInsightDrawer({ holdings, insightDescription }: Portfol
                       (holding.unrealised_gain || 0) >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                     }`}
                   >
+                    <span className="sr-only">{(holding.unrealised_gain || 0) >= 0 ? 'Gain' : 'Loss'}:</span>
                     {formatCurrency(holding.unrealised_gain || 0)}
                   </div>
                 </div>

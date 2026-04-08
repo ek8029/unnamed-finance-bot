@@ -56,7 +56,7 @@ interface Holding {
   shares: number;
   current_price: number;
   total_value: number;
-  day_change_percentage: number;
+  day_change_percentage: number | null;
   portfolio_allocation: number;
   sector?: string;
   asset_class?: string;
@@ -169,9 +169,10 @@ export function useFinancialSummary() {
         const res = await fetch('/api/plaid/sync', { method: 'POST' });
         if (res.ok) {
           // Generate fresh insights from updated data
-          await fetch('/api/insights/generate', { method: 'POST' }).catch(() => {});
-          // Refresh market prices in the background
-          await fetch('/api/market/prices/refresh', { method: 'POST' }).catch(() => {});
+          await Promise.all([
+            fetch('/api/insights/generate', { method: 'POST' }).catch(() => {}),
+            fetch('/api/market/prices/refresh', { method: 'POST' }).catch(() => {}),
+          ]);
           // Re-fetch dashboard data after sync completes
           const summaryRes = await fetch('/api/financial-summary');
           if (summaryRes.ok) {

@@ -59,10 +59,11 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentag
             <DataPanelTitle>Net Worth</DataPanelTitle>
             <div className="flex items-center gap-1.5 type-label text-xs">
               {isPositiveChange ? (
-                <TrendingUp className="h-3.5 w-3.5 text-[var(--color-positive)]" />
+                <TrendingUp className="h-3.5 w-3.5 text-[var(--color-positive)]" aria-hidden="true" />
               ) : (
-                <TrendingDown className="h-3.5 w-3.5 text-[var(--color-negative)]" />
+                <TrendingDown className="h-3.5 w-3.5 text-[var(--color-negative)]" aria-hidden="true" />
               )}
+              <span className="sr-only">{isPositiveChange ? 'Increased' : 'Decreased'}</span>
               <span className={`font-tabular ${isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
                 {isPositiveChange ? '+' : ''}{changePercentage.toFixed(1)}%
               </span>
@@ -72,7 +73,7 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentag
         </DataPanelHeader>
         <DataPanelContent>
         {isLoading ? (
-          <div className="space-y-4">
+          <div className="space-y-4" role="status" aria-live="polite" aria-label="Loading net worth chart">
             <Skeleton className="h-[240px] w-full" />
             <div className="flex justify-between items-center">
               <Skeleton className="h-10 w-40" />
@@ -82,7 +83,7 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentag
         ) : (
           <div className="space-y-4">
             {/* Top: Large Chart */}
-            <div className="h-[200px] md:h-[280px]" role="img" aria-label="Net worth trend over time">
+            <div className="h-[200px] md:h-[280px]" role="img" aria-label={`Net worth trend: ${netWorthHistory.length} months of data, currently ${formatCurrency(currentNetWorth)}`}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={netWorthHistory} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
                   <defs>
@@ -135,7 +136,7 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentag
                     fill="url(#netWorthGradient)"
                     dot={false}
                     activeDot={{ r: 4, fill: 'var(--color-gold)', stroke: 'var(--color-bg-surface)', strokeWidth: 2 }}
-                    animationDuration={1000}
+                    animationDuration={600}
                     animationEasing="ease-out"
                   />
                 </AreaChart>

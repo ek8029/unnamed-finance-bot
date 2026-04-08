@@ -33,7 +33,7 @@ export interface Holding {
   shares: number;
   current_price: number;
   total_value: number;
-  day_change_percentage: number;
+  day_change_percentage: number | null;
   portfolio_allocation: number;
   sector?: string;
   asset_class?: string;

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { parseDateLocal, formatMonthLabel, formatMonthShort } from '@/lib/date-format';
 
 export async function GET() {
   try {
@@ -105,10 +106,11 @@ export async function GET() {
 
     // Get previous month's net worth snapshot for % change calculations
     const now = new Date();
+    const today = now.toISOString().split('T')[0];
     const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
 
-    const { data: prevSnapshot } = await supabase
+    let prevSnapshot = (await supabase
       .from('net_worth_snapshots')
       .select('total_assets, total_liabilities, net_worth, investment_balance')
       .eq('user_id', user.id)
@@ -116,16 +118,41 @@ export async function GET() {
       .lte('snapshot_date', prevMonthEnd.toISOString().split('T')[0])
       .order('snapshot_date', { ascending: false })
       .limit(1)
-      .maybeSingle();
+      .maybeSingle()).data;
+
+    // Fallback: if no previous-month snapshot, use earliest available (not today)
+    if (!prevSnapshot) {
+      prevSnapshot = (await supabase
+        .from('net_worth_snapshots')
+        .select('total_assets, total_liabilities, net_worth, investment_balance')
+        .eq('user_id', user.id)
+        .lt('snapshot_date', today)
+        .order('snapshot_date', { ascending: true })
+        .limit(1)
+        .maybeSingle()).data;
+    }
 
     // Get previous month's cash flow for cash flow % change
     const prevMonthStart = prevMonthDate.toISOString().split('T')[0];
-    const { data: prevCashFlow } = await supabase
+    let prevCashFlow = (await supabase
       .from('cash_flow_snapshots')
       .select('net_flow')
       .eq('user_id', user.id)
       .eq('snapshot_month', prevMonthStart)
-      .maybeSingle();
+      .maybeSingle()).data;
+
+    // Fallback: use earliest available cash flow snapshot (not current month)
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    if (!prevCashFlow) {
+      prevCashFlow = (await supabase
+        .from('cash_flow_snapshots')
+        .select('net_flow')
+        .eq('user_id', user.id)
+        .lt('snapshot_month', currentMonthStart)
+        .order('snapshot_month', { ascending: true })
+        .limit(1)
+        .maybeSingle()).data;
+    }
 
     // Calculate real % changes
     const prevAssets = prevSnapshot ? Number(prevSnapshot.total_assets) : null;
@@ -163,10 +190,12 @@ export async function GET() {
     };
 
     // Transform net worth history for chart
+    // NOTE: Date-only strings ("2026-04-01") parse as UTC midnight, which
+    // shifts to the previous day in western timezones. Adding T12:00:00 avoids this.
     const transformedNetWorthHistory = netWorthHistory.map(snapshot => {
-      const date = new Date(snapshot.snapshot_date);
+      const date = parseDateLocal(snapshot.snapshot_date);
       return {
-        month: date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+        month: formatMonthLabel(date),
         value: Number(snapshot.net_worth),
         assets: Number(snapshot.total_assets),
         liabilities: Number(snapshot.total_liabilities),
@@ -176,7 +205,7 @@ export async function GET() {
     // Replace or append the current month with live-computed values so the
     // graph's latest point matches the displayed net worth exactly.
     // Historical snapshots may contain stale data from prior computation bugs.
-    const todayLabel = now.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+    const todayLabel = formatMonthLabel(now);
     const livePoint = { month: todayLabel, value: netWorth, assets: totalAssets, liabilities: totalLiabilities };
     const existingIdx = transformedNetWorthHistory.findIndex(p => p.month === todayLabel);
     if (existingIdx >= 0) {
@@ -187,9 +216,9 @@ export async function GET() {
 
     // Transform cash flow history for chart
     const transformedCashFlowHistory = cashFlowHistory.map(snapshot => {
-      const date = new Date(snapshot.snapshot_month);
+      const date = parseDateLocal(snapshot.snapshot_month);
       return {
-        month: date.toLocaleDateString('en-US', { month: 'short' }),
+        month: formatMonthShort(date),
         income: Number(snapshot.total_income),
         expenses: Number(snapshot.total_expenses),
         netFlow: Number(snapshot.net_flow),
@@ -225,9 +254,9 @@ export async function GET() {
 
     // Build savings rate timeline from cash flow history
     const savingsRateTimeline = cashFlowHistory.map(snapshot => {
-      const date = new Date(snapshot.snapshot_month);
+      const date = parseDateLocal(snapshot.snapshot_month);
       return {
-        month: date.toLocaleDateString('en-US', { month: 'short' }),
+        month: formatMonthShort(date),
         rate: Math.round(Number(snapshot.savings_rate || 0) * 100),
         saved: Number(snapshot.savings_amount || 0),
       };

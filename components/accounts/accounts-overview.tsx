@@ -174,7 +174,7 @@ export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
                     stroke="var(--color-gold)"
                     strokeWidth={2}
                     fill="url(#balanceGradient)"
-                    animationDuration={800}
+                    animationDuration={600}
                     animationEasing="ease-out"
                   />
                 </AreaChart>

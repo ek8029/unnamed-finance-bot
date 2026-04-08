@@ -40,32 +40,29 @@ export function HoldingMiniChart({ ticker, currentPrice }: Props) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
     setLoading(true);
-    fetch(`/api/market/history?ticker=${encodeURIComponent(ticker)}`)
+    fetch(`/api/market/history?ticker=${encodeURIComponent(ticker)}`, { signal: controller.signal })
       .then(r => {
         if (!r.ok) throw new Error(`${r.status}`);
         return r.json();
       })
       .then(d => {
-        if (!cancelled) {
-          const prices = (d.prices || [])
-            .map((p: { price_date: string; close: string | number }) => ({
-              date: p.price_date,
-              close: Number(p.close),
-            }))
-            .filter((p: PricePoint) => p.close > 0);
-          setData(prices);
-          setLoading(false);
-        }
+        const prices = (d.prices || [])
+          .map((p: { price_date: string; close: string | number }) => ({
+            date: p.price_date,
+            close: Number(p.close),
+          }))
+          .filter((p: PricePoint) => p.close > 0);
+        setData(prices);
+        setLoading(false);
       })
-      .catch(() => {
-        if (!cancelled) {
-          setData([]);
-          setLoading(false);
-        }
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        setData([]);
+        setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => { controller.abort(); };
   }, [ticker]);
 
   if (loading) {

@@ -72,7 +72,7 @@ export function PortfolioAllocation({ allocation }: PortfolioAllocationProps) {
                   dataKey="value"
                   onMouseEnter={(_, idx) => setActiveIndex(idx)}
                   onMouseLeave={() => setActiveIndex(null)}
-                  animationDuration={800}
+                  animationDuration={600}
                   animationEasing="ease-out"
                 >
                   {visibleData.map((entry, index) => {

@@ -38,11 +38,10 @@ function SummaryCard({ item, index }: { item: SummaryItem; index: number }) {
   return (
     <div
       ref={ref}
-      className="transition-[opacity,transform,filter] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+      className="transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
       style={{
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
-        filter: isVisible ? 'blur(0px)' : 'blur(4px)',
         transitionDelay: `${index * 80}ms`,
       }}
     >
@@ -61,21 +60,18 @@ function SummaryCard({ item, index }: { item: SummaryItem; index: number }) {
             {item.change !== null ? (
               <>
                 {isPositive ? (
-                  <ArrowUpRight className="h-3 w-3 shrink-0 text-[var(--color-positive)]" />
+                  <ArrowUpRight className="h-3 w-3 shrink-0 text-[var(--color-positive)]" aria-hidden="true" />
                 ) : (
-                  <ArrowDownRight className="h-3 w-3 shrink-0 text-[var(--color-negative)]" />
+                  <ArrowDownRight className="h-3 w-3 shrink-0 text-[var(--color-negative)]" aria-hidden="true" />
                 )}
-                <span
-                  className={`type-label font-tabular ${
-                    isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-                  }`}
-                >
+                <span className="sr-only">{isPositive ? 'Up' : 'Down'}</span>
+                <span className={`type-label font-tabular ${isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
                   {formatPercentage(item.change)}
                 </span>
                 <span className="type-label text-[var(--color-text-muted)]">vs last mo</span>
               </>
             ) : (
-              <span className="type-label text-[var(--color-text-muted)]">--</span>
+              <span className="type-label text-[var(--color-text-muted)]" aria-label="No change data available">--</span>
             )}
           </div>
         </DataPanelContent>
@@ -135,7 +131,7 @@ export function FinancialSummaryCards({
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
       {summaryData.map((item, index) => (
         <SummaryCard key={item.title} item={item} index={index} />
       ))}

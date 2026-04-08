@@ -14,7 +14,7 @@ import { useFinancialSummary, useIntelligence } from '@/hooks/use-financial-data
 
 function LoadingSkeleton() {
   return (
-    <div className="animate-pulse space-y-density">
+    <div className="animate-pulse space-y-density" role="status" aria-live="polite" aria-label="Loading dashboard data">
       <div className="h-8 bg-[var(--color-bg-elevated)] rounded w-1/3"></div>
       <div className="h-4 bg-[var(--color-bg-elevated)] rounded w-1/2"></div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-density mt-6">

@@ -47,10 +47,11 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
           <DataPanelTitle>Cash Flow</DataPanelTitle>
           <div className="flex items-center gap-1.5 type-label text-xs">
             {isPositive ? (
-              <TrendingUp className="h-3.5 w-3.5 text-[var(--color-positive)]" />
+              <TrendingUp className="h-3.5 w-3.5 text-[var(--color-positive)]" aria-hidden="true" />
             ) : (
-              <TrendingDown className="h-3.5 w-3.5 text-[var(--color-negative)]" />
+              <TrendingDown className="h-3.5 w-3.5 text-[var(--color-negative)]" aria-hidden="true" />
             )}
+            <span className="sr-only">{isPositive ? 'Increased' : 'Decreased'}</span>
             <span className={isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}>
               {isPositive ? '+' : ''}{flowChangePercent.toFixed(1)}%
             </span>
@@ -89,14 +90,14 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
         {/* 3-Month Average */}
         <div className="flex items-center gap-2 mb-3 p-2 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
           <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono">3-Mo Avg</div>
-          <ArrowRight className="h-3 w-3 text-[var(--color-text-muted)]" />
+          <ArrowRight className="h-3 w-3 text-[var(--color-text-muted)]" aria-hidden="true" />
           <div className="type-label font-tabular text-[var(--color-text-primary)]">
             {formatCurrency(avgNetFlow)}
           </div>
         </div>
 
         {/* Trend Chart */}
-        <div className="h-[100px] md:h-[120px]" role="img" aria-label="Cash flow trend over time">
+        <div className="h-[100px] md:h-[120px]" role="img" aria-label={`Cash flow trend: ${data.length} months of data, current net flow ${formatCurrency(currentMonth.netFlow)}`}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data}>
               <defs>
@@ -148,7 +149,7 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
                 stroke="var(--color-gold)"
                 strokeWidth={2}
                 fill="url(#netFlowGradient)"
-                animationDuration={800}
+                animationDuration={600}
                 animationEasing="ease-out"
               />
             </AreaChart>

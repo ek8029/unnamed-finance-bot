@@ -8,7 +8,7 @@ type VixLevel = 'extreme_fear' | 'fear' | 'neutral' | 'greed' | 'extreme_greed';
 interface HoldingRow {
   ticker: string;
   total_value: number;
-  day_change_pct: number;
+  day_change_pct: number; // null from DB is coerced to 0 — "no data" treated as "no change" for portfolio aggregation
   shares: number;
   current_price: number;
   portfolio_allocation_pct: number;
@@ -73,7 +73,7 @@ export async function GET() {
     const rawParsed: HoldingRow[] = (rawHoldings || []).map((h: Record<string, unknown>) => ({
       ticker: h.ticker as string,
       total_value: Number(h.total_value),
-      day_change_pct: Number(h.day_change_pct),
+      day_change_pct: Number(h.day_change_pct) || 0, // null → 0: no data means assume no change
       shares: Number(h.shares),
       current_price: Number(h.current_price),
       portfolio_allocation_pct: Number(h.portfolio_allocation_pct),

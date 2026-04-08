@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { parseDateLocal, formatMonthShort } from '@/lib/date-format';
 
 export async function GET() {
   try {
@@ -59,10 +60,10 @@ export async function GET() {
 
     // Build balance history from net worth snapshots with cash flow
     const balanceHistory = netWorth.map((snapshot, index) => {
-      const date = new Date(snapshot.snapshot_date);
+      const date = parseDateLocal(snapshot.snapshot_date);
       const flow = cashFlow[index] || { total_income: 0, total_expenses: 0 };
       return {
-        month: date.toLocaleDateString('en-US', { month: 'short' }),
+        month: formatMonthShort(date),
         balance: Number(snapshot.total_assets) - Number(snapshot.total_liabilities),
         inflows: Number(flow.total_income || 0),
         outflows: Number(flow.total_expenses || 0),
