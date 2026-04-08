@@ -45,6 +45,8 @@ export async function POST(request: Request) {
     }
 
     if (!plaidItems || plaidItems.length === 0) {
+      // Still compute snapshots — user may have seeded/test data without Plaid items
+      await computeSnapshots(supabase, user.id).catch(() => {});
       return NextResponse.json({
         success: true,
         message: 'No active Plaid connections to sync',

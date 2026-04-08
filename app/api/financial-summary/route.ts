@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { parseDateLocal, formatMonthLabel, formatMonthShort } from '@/lib/date-format';
+import { computeSnapshots } from '@/lib/plaid-sync';
 
 export async function GET() {
   try {
@@ -64,8 +65,8 @@ export async function GET() {
     // Calculate totals from accounts
     const accounts = accountsResult.data || [];
     const holdings = holdingsResult.data || [];
-    const netWorthHistory = netWorthHistoryResult.data || [];
-    const cashFlowHistory = cashFlowHistoryResult.data || [];
+    let netWorthHistory = netWorthHistoryResult.data || [];
+    let cashFlowHistory = cashFlowHistoryResult.data || [];
 
     // Classify accounts using the SAME logic as computeSnapshots in plaid-sync.ts:
     //   credit_card / loan / mortgage  → liability
@@ -99,6 +100,33 @@ export async function GET() {
 
     // Net worth
     const netWorth = totalAssets - totalLiabilities;
+
+    // If user has accounts but ≤1 snapshot, trigger snapshot computation + backfill.
+    // This handles seeded/test accounts and users whose first sync didn't complete.
+    if (accounts.length > 0 && netWorthHistory.length <= 1) {
+      try {
+        await computeSnapshots(supabase, user.id);
+        // Re-fetch snapshots after backfill
+        const [freshNW, freshCF] = await Promise.all([
+          supabase
+            .from('net_worth_snapshots')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('snapshot_date', { ascending: true })
+            .limit(12),
+          supabase
+            .from('cash_flow_snapshots')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('snapshot_month', { ascending: true })
+            .limit(6),
+        ]);
+        netWorthHistory = freshNW.data || [];
+        cashFlowHistory = freshCF.data || [];
+      } catch (e) {
+        console.error('Error computing snapshots on dashboard load:', e);
+      }
+    }
 
     // Get monthly cash flow from latest snapshot
     const latestCashFlow = cashFlowHistory[cashFlowHistory.length - 1];
