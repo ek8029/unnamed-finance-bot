@@ -8,22 +8,56 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import OpenAI from 'openai';
 import type { StockAnalysis } from '@/components/analysis/types';
-import { CACHE_TTL } from '@/lib/financial-config';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const CACHE_TTL_MS = CACHE_TTL.stockAnalysis;
+/** Methodology version — bump when the analysis pipeline changes materially. */
+const METHODOLOGY_VERSION = 'v1.0';
+const DATA_SOURCES = ['finnhub.io', 'openai-gpt-4o-mini'];
+
+/**
+ * Cache TTL depends on US equity market hours (9:30am–4:00pm ET, Mon–Fri).
+ * YMYL finance content must not be 24h stale during a live trading session.
+ *
+ * - Market hours: 30 min (fresh enough to reflect intraday moves)
+ * - Off-hours + weekends: 24 hr (nothing's moving; save OpenAI credits)
+ */
+function getCacheTtlMs(): number {
+  const now = new Date();
+  // Convert to ET regardless of server timezone
+  const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const day = et.getDay(); // 0=Sun, 6=Sat
+  const hour = et.getHours();
+  const minute = et.getMinutes();
+  const minutesSinceMidnight = hour * 60 + minute;
+
+  const isWeekday = day >= 1 && day <= 5;
+  const marketOpen = 9 * 60 + 30; // 9:30am ET
+  const marketClose = 16 * 60;    // 4:00pm ET
+  const isMarketHours = isWeekday && minutesSinceMidnight >= marketOpen && minutesSinceMidnight < marketClose;
+
+  return isMarketHours
+    ? 30 * 60 * 1000       // 30 min during market hours
+    : 24 * 60 * 60 * 1000; // 24 hr off-hours
+}
+
+export interface CachedAnalysisResult {
+  analysis: StockAnalysis;
+  computedAt: string; // ISO timestamp
+  dataSources: string[];
+  methodologyVersion: string;
+}
 
 // ── Check cache ──
 
-async function getCachedAnalysis(ticker: string): Promise<StockAnalysis | null> {
+async function getCachedAnalysis(ticker: string): Promise<CachedAnalysisResult | null> {
   try {
     const supabase = await createServiceClient();
-    const cutoff = new Date(Date.now() - CACHE_TTL_MS).toISOString();
+    const cutoff = new Date(Date.now() - getCacheTtlMs()).toISOString();
 
     const { data, error } = await supabase
       .from('analysis_cache')
-      .select('analysis_json')
+      .select('analysis_json, created_at, data_sources, methodology_version')
       .eq('ticker', ticker.toUpperCase())
       .gte('created_at', cutoff)
       .order('created_at', { ascending: false })
@@ -31,24 +65,37 @@ async function getCachedAnalysis(ticker: string): Promise<StockAnalysis | null> 
       .maybeSingle();
 
     if (error || !data) return null;
-    return data.analysis_json as StockAnalysis;
+    return {
+      analysis: data.analysis_json as StockAnalysis,
+      computedAt: data.created_at,
+      dataSources: (data.data_sources as string[]) || DATA_SOURCES,
+      methodologyVersion: (data.methodology_version as string) || METHODOLOGY_VERSION,
+    };
   } catch {
     return null;
   }
 }
 
-async function setCachedAnalysis(ticker: string, analysis: StockAnalysis): Promise<void> {
+async function setCachedAnalysis(ticker: string, analysis: StockAnalysis): Promise<string> {
+  const computedAt = new Date().toISOString();
   try {
     const supabase = await createServiceClient();
     await supabase
       .from('analysis_cache')
       .upsert(
-        { ticker: ticker.toUpperCase(), analysis_json: analysis, created_at: new Date().toISOString() },
+        {
+          ticker: ticker.toUpperCase(),
+          analysis_json: analysis,
+          created_at: computedAt,
+          data_sources: DATA_SOURCES,
+          methodology_version: METHODOLOGY_VERSION,
+        },
         { onConflict: 'ticker' }
       );
   } catch (error) {
     console.error('Failed to cache analysis:', error);
   }
+  return computedAt;
 }
 
 // ── Build data context ──
@@ -148,16 +195,37 @@ Include 4-6 metrics (always include Price). Include 2-4 news highlights if avail
 
 // ── Main export ──
 
-export async function analyzeStock(ticker: string): Promise<{ analysis: StockAnalysis | null; fromCache: boolean }> {
+export interface AnalyzeStockResult {
+  analysis: StockAnalysis | null;
+  fromCache: boolean;
+  computedAt: string | null;
+  dataSources: string[];
+  methodologyVersion: string;
+}
+
+export async function analyzeStock(ticker: string): Promise<AnalyzeStockResult> {
   const symbol = ticker.toUpperCase().replace(/[^A-Z]/g, '');
+  const emptyResult: AnalyzeStockResult = {
+    analysis: null,
+    fromCache: false,
+    computedAt: null,
+    dataSources: DATA_SOURCES,
+    methodologyVersion: METHODOLOGY_VERSION,
+  };
   if (!symbol || symbol.length > 5) {
-    return { analysis: null, fromCache: false };
+    return emptyResult;
   }
 
   // Check cache first
   const cached = await getCachedAnalysis(symbol);
   if (cached) {
-    return { analysis: cached, fromCache: true };
+    return {
+      analysis: cached.analysis,
+      fromCache: true,
+      computedAt: cached.computedAt,
+      dataSources: cached.dataSources,
+      methodologyVersion: cached.methodologyVersion,
+    };
   }
 
   // Fetch financial data
@@ -165,7 +233,7 @@ export async function analyzeStock(ticker: string): Promise<{ analysis: StockAna
 
   // If no data at all (invalid ticker), return null
   if (!tickerData.quote && !tickerData.profile) {
-    return { analysis: null, fromCache: false };
+    return emptyResult;
   }
 
   const dataContext = buildDataContext(tickerData);
@@ -182,7 +250,7 @@ export async function analyzeStock(ticker: string): Promise<{ analysis: StockAna
     });
 
     const content = completion.choices[0]?.message?.content;
-    if (!content) return { analysis: null, fromCache: false };
+    if (!content) return emptyResult;
 
     let cleaned = content.trim();
     if (cleaned.startsWith('```')) {
@@ -200,15 +268,21 @@ export async function analyzeStock(ticker: string): Promise<{ analysis: StockAna
       if (!analysis.verdict) analysis.verdict = 'neutral';
     } catch (parseError) {
       console.error(`Failed to parse analysis for ${symbol}:`, parseError);
-      return { analysis: null, fromCache: false };
+      return emptyResult;
     }
 
-    // Cache the result
-    await setCachedAnalysis(symbol, analysis);
+    // Cache the result — returns the computed_at ISO string
+    const computedAt = await setCachedAnalysis(symbol, analysis);
 
-    return { analysis, fromCache: false };
+    return {
+      analysis,
+      fromCache: false,
+      computedAt,
+      dataSources: DATA_SOURCES,
+      methodologyVersion: METHODOLOGY_VERSION,
+    };
   } catch (error) {
     console.error('Stock analysis failed:', error);
-    return { analysis: null, fromCache: false };
+    return emptyResult;
   }
 }
