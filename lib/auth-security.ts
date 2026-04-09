@@ -70,10 +70,25 @@ export async function checkRateLimit(
 
 // ── Auth Event Logging ─────────────────────────────────────────────
 
+/**
+ * Extract the lowercased domain from an email without validating anything.
+ * Used to populate auth_events.email_domain for attack-pattern queries.
+ */
+function deriveEmailDomain(email: string | undefined | null): string | null {
+  if (!email || typeof email !== 'string') return null;
+  const atIdx = email.lastIndexOf('@');
+  if (atIdx <= 0 || atIdx === email.length - 1) return null;
+  return email.slice(atIdx + 1).toLowerCase().trim();
+}
+
 export async function logAuthEvent(params: {
   userId?: string;
   email?: string;
   eventType: string;
+  /** Attack-pattern reason code (e.g. 'honeypot', 'rl_ip'). Persisted to first-class column. */
+  reason?: string;
+  /** Email domain override. If omitted, derived from params.email. */
+  emailDomain?: string;
   metadata?: Record<string, unknown>;
 }) {
   try {
@@ -83,13 +98,23 @@ export async function logAuthEvent(params: {
     const ip = forwarded?.split(',')[0]?.trim() || headersList.get('x-real-ip') || 'unknown';
     const userAgent = headersList.get('user-agent') || 'unknown';
 
+    // Pull reason out of metadata if the caller stuffed it there — they
+    // shouldn't but it's a cheap safety net
+    const metadata = params.metadata ? { ...params.metadata } : {};
+    const metadataReason = typeof metadata.reason === 'string' ? metadata.reason : undefined;
+    const metadataDomain = typeof metadata.emailDomain === 'string' ? metadata.emailDomain : undefined;
+    delete metadata.reason;
+    delete metadata.emailDomain;
+
     await supabase.from('auth_events').insert({
       user_id: params.userId || null,
       email: params.email || null,
+      email_domain: params.emailDomain ?? metadataDomain ?? deriveEmailDomain(params.email),
+      reason: params.reason ?? metadataReason ?? null,
       event_type: params.eventType,
       ip_address: ip,
       user_agent: userAgent,
-      metadata: params.metadata || {},
+      metadata,
     });
   } catch (err) {
     // Non-fatal - never break the auth flow for logging

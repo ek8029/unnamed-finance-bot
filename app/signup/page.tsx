@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { AuthShell } from '@/components/auth-shell';
 
 function getPasswordStrength(password: string) {
@@ -30,6 +31,23 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // ── Signup hardening: captcha token, honeypot, time-gate ──
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState(''); // stays empty for real users
+  const formRenderedAt = useRef<number>(0);
+  const captchaRef = useRef<HCaptcha | null>(null);
+
+  // Record when the form first mounted on the client — submitted with the
+  // form so the server can enforce a minimum time-gate
+  useEffect(() => {
+    formRenderedAt.current = Date.now();
+  }, []);
+
+  const captchaSiteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
+  // If no site key is configured (local dev), skip the widget and let the
+  // server handle fail-open
+  const captchaConfigured = Boolean(captchaSiteKey);
+
   const strength = useMemo(() => getPasswordStrength(password), [password]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,19 +64,34 @@ export default function SignupPage() {
       return;
     }
 
+    if (captchaConfigured && !captchaToken) {
+      setError('Please complete the captcha.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, full_name: fullName }),
+        body: JSON.stringify({
+          email,
+          password,
+          full_name: fullName,
+          captchaToken,
+          website: honeypot, // honeypot — must be empty
+          form_rendered_at: formRenderedAt.current,
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
         setError(data.error || 'Signup failed');
+        // Reset captcha so the user can try again
+        captchaRef.current?.resetCaptcha();
+        setCaptchaToken(null);
         return;
       }
 
@@ -72,6 +105,8 @@ export default function SignupPage() {
       }
     } catch {
       setError('Something went wrong. Please try again.');
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -80,6 +115,32 @@ export default function SignupPage() {
   return (
     <AuthShell subtitle="Create your account">
       <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Honeypot — hidden via absolute positioning (not display:none which bots detect) */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            left: '-9999px',
+            top: '-9999px',
+            width: '1px',
+            height: '1px',
+            overflow: 'hidden',
+            opacity: 0,
+            pointerEvents: 'none',
+          }}
+        >
+          <label htmlFor="website-field">Website (leave blank)</label>
+          <input
+            id="website-field"
+            type="text"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+          />
+        </div>
+
         {error && (
           <div className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-lg text-sm">
             {error}
@@ -173,10 +234,23 @@ export default function SignupPage() {
           />
         </div>
 
+        {captchaConfigured && (
+          <div className="flex justify-center">
+            <HCaptcha
+              ref={captchaRef}
+              sitekey={captchaSiteKey!}
+              onVerify={setCaptchaToken}
+              onExpire={() => setCaptchaToken(null)}
+              onError={() => setCaptchaToken(null)}
+              theme="dark"
+            />
+          </div>
+        )}
+
         <button
           type="submit"
-          disabled={loading}
-          className="w-full py-3 px-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] disabled:opacity-50 text-[var(--color-bg-base)] font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+          disabled={loading || (captchaConfigured && !captchaToken)}
+          className="w-full py-3 px-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--color-bg-base)] font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
         >
           {loading ? 'Creating account...' : (
             <>
