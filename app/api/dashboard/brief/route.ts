@@ -193,7 +193,19 @@ export async function GET() {
       const oneDayAgo = new Date();
       oneDayAgo.setDate(oneDayAgo.getDate() - 2);
 
-      const [earningsResult, dividendsResult, newsResult] = await Promise.all([
+      // Try the precise primary_ticker query first. If migration 025 hasn't
+      // been applied yet (or no legacy rows have primary_ticker backfilled),
+      // fall back to the old overlaps() behavior so the user isn't left with
+      // an empty news feed.
+      const primaryTickerNewsPromise = supabase
+        .from('market_news')
+        .select('title, tickers, primary_ticker, sentiment, source, published_at, url')
+        .in('primary_ticker', userTickers)
+        .gte('published_at', oneDayAgo.toISOString())
+        .order('published_at', { ascending: false })
+        .limit(5);
+
+      const [earningsResult, dividendsResult, primaryNewsResult] = await Promise.all([
         supabase
           .from('market_events')
           .select('ticker, event_date')
@@ -208,14 +220,25 @@ export async function GET() {
           .in('ticker', userTickers)
           .gte('event_date', start)
           .lte('event_date', end),
-        supabase
+        primaryTickerNewsPromise,
+      ]);
+
+      // Fallback if the primary_ticker query failed (column missing) OR
+      // returned no rows (migration applied but legacy rows not backfilled
+      // to match this user's holdings).
+      let newsResult = primaryNewsResult;
+      const primaryFailed = !!primaryNewsResult.error;
+      const primaryEmpty = !primaryFailed && (primaryNewsResult.data || []).length === 0;
+      if (primaryFailed || primaryEmpty) {
+        const { data: legacyNews } = await supabase
           .from('market_news')
-          .select('title, tickers, primary_ticker, sentiment, source, published_at, url')
-          .in('primary_ticker', userTickers)
+          .select('title, tickers, sentiment, source, published_at, url')
+          .overlaps('tickers', userTickers)
           .gte('published_at', oneDayAgo.toISOString())
           .order('published_at', { ascending: false })
-          .limit(5),
-      ]);
+          .limit(5);
+        newsResult = { data: legacyNews, error: null } as typeof primaryNewsResult;
+      }
 
       const allocationMap = new Map(holdings.map((h) => [h.ticker, h.portfolio_allocation_pct]));
 
