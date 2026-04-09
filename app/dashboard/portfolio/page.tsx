@@ -129,6 +129,10 @@ export default function PortfolioPage() {
     percentage: a.percentage,
   }));
 
+  // NOTE: All hooks must be called before any early returns (Rules of Hooks)
+  const sortedByAllocation = useMemo(() => [...holdings].sort((a, b) => b.portfolio_allocation - a.portfolio_allocation), [holdings]);
+  const sortedByDayChange = useMemo(() => [...holdings].sort((a, b) => (b.day_change_percentage ?? 0) - (a.day_change_percentage ?? 0)), [holdings]);
+
   if (loading) {
     return <LoadingSkeleton />;
   }
@@ -170,10 +174,6 @@ export default function PortfolioPage() {
       </div>
     );
   }
-
-  // Get sorted holdings for summary cards
-  const sortedByAllocation = useMemo(() => [...holdings].sort((a, b) => b.portfolio_allocation - a.portfolio_allocation), [holdings]);
-  const sortedByDayChange = useMemo(() => [...holdings].sort((a, b) => (b.day_change_percentage ?? 0) - (a.day_change_percentage ?? 0)), [holdings]);
 
   return (
     <div className="container mx-auto card-padding max-w-[1600px]">
