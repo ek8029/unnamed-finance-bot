@@ -93,6 +93,43 @@ export default function RootLayout({
             }),
           }}
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'SoftwareApplication',
+              name: 'Helm Terminal',
+              applicationCategory: 'FinanceApplication',
+              operatingSystem: 'Web',
+              url: 'https://helmterminal.dev',
+              description:
+                'AI-powered stock analysis, portfolio intelligence, and tax-loss harvesting for retail investors. Live-refreshed analysis based on real-time market data.',
+              offers: {
+                '@type': 'Offer',
+                price: '0',
+                priceCurrency: 'USD',
+                description: 'Free AI stock analysis for any US ticker. Paid plans available for portfolio features.',
+              },
+              featureList: [
+                'Live AI stock analysis',
+                'Portfolio sync via Plaid',
+                'Tax-loss harvesting signals',
+                'Real-time market data',
+                'Risk intelligence and alerts',
+                'Sector comparison',
+                'Earnings exposure tracking',
+                'Cash flow monitoring',
+              ],
+              aggregateRating: undefined,
+              publisher: {
+                '@type': 'Organization',
+                name: 'Helm Terminal',
+                url: 'https://helmterminal.dev',
+              },
+            }),
+          }}
+        />
       </head>
       <body className={`${manrope.variable} ${spaceGrotesk.variable} font-sans`}>
         <RecoveryRedirect />
