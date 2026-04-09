@@ -109,6 +109,29 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/mfa-verify', request.url));
   }
 
+  // ── /analyze/[ticker] Cache-Control override ──
+  //
+  // Next.js defaults dynamic routes to `Cache-Control: private, no-store`.
+  // The /analyze/[ticker] pages are PUBLIC — every visitor sees the same
+  // AI analysis for a given ticker — and we want Google/Vercel edge to
+  // cache them for 30 min (matching analysis_cache market-hours TTL) with
+  // a 24h stale-while-revalidate window.
+  //
+  // We tried `export const revalidate = 1800` on the page itself but
+  // something in the analyzeStock code graph (likely a transitive no-store
+  // fetch or cookies() call) keeps Next marking the route dynamic, which
+  // overrides route-segment config. Setting the header here in middleware
+  // runs AFTER Next's own header emission and reliably wins.
+  //
+  // Matches /analyze/AAPL but not /analyze (index page, already static) or
+  // /analyze/AAPL/summary (future, different caching policy may apply).
+  if (/^\/analyze\/[A-Za-z]{1,5}$/.test(pathname)) {
+    response.headers.set(
+      'Cache-Control',
+      'public, s-maxage=1800, stale-while-revalidate=86400',
+    );
+  }
+
   // ── Security headers ──
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
