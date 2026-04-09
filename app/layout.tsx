@@ -121,7 +121,6 @@ export default function RootLayout({
                 'Earnings exposure tracking',
                 'Cash flow monitoring',
               ],
-              aggregateRating: undefined,
               publisher: {
                 '@type': 'Organization',
                 name: 'Helm Terminal',

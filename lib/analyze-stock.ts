@@ -1,7 +1,8 @@
 /**
  * Server-side stock analysis with Supabase caching.
  * Used by both the public /analyze/[ticker] page and the dashboard chat API.
- * Caches results for 24 hours per ticker to avoid redundant API calls.
+ * Cache TTL is market-hours-aware: 30 min during US equity market hours
+ * (9:30am–4:00pm ET, Mon–Fri), 24 hr off-hours and weekends.
  */
 
 import { createServiceClient } from '@/lib/supabase/server';

@@ -33,6 +33,10 @@ interface MarketNewsItem {
   url?: string;
   sentiment: 'positive' | 'neutral' | 'negative';
   tickers: string[];
+  /** Article's actual subject — computed server-side via detectPrimaryTicker.
+   *  Use this (not tickers) for portfolio-relevance checks to avoid matching
+   *  on tangentially-mentioned tickers from Polygon's full tag array. */
+  primaryTicker?: string | null;
   sectors: string[];
   publishedAt: string;
   relevance: string;
@@ -530,9 +534,12 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
               ? sentimentStyle.iconColor
               : eventConfig?.color || 'text-[var(--color-text-muted)]';
 
-            // Check if this item affects any of our holdings
+            // Check if this item affects any of our holdings. For news, use
+            // primaryTicker (the article's actual subject) — NOT the full
+            // tickers array, which would match tangentially-tagged articles
+            // like "Is Spotify a buy?" to AAPL holders.
             const hasPortfolioLink = isNews
-              ? newsItem.tickers.some(t => holdingsMap.has(t.toUpperCase()))
+              ? !!(newsItem.primaryTicker && holdingsMap.has(newsItem.primaryTicker.toUpperCase()))
               : !!holdingsMap.get(eventItem.ticker?.toUpperCase() ?? '');
 
             return (

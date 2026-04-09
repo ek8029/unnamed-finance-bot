@@ -72,13 +72,16 @@ export function detectPrimaryTicker(
     if (new RegExp(`\\b${escaped}\\b`).test(titleUpper)) return t;
   }
 
-  // 3. Company name in title (e.g. "Apple" → AAPL)
+  // 3. Company name in title (e.g. "Apple" → AAPL). Uses word-boundary
+  // regex to prevent short prefixes like "CORE" matching inside "COREWEAVE".
   if (nameMap) {
     for (const t of normalizedTickers) {
       const fullName = nameMap.get(t);
       if (!fullName) continue;
       const normalized = normalizeCompanyName(fullName);
-      if (normalized && titleUpper.includes(normalized)) return t;
+      if (!normalized) continue;
+      const escapedName = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (new RegExp(`\\b${escapedName}\\b`).test(titleUpper)) return t;
     }
   }
 
@@ -93,7 +96,9 @@ export function detectPrimaryTicker(
         const fullName = nameMap.get(t);
         if (!fullName) continue;
         const normalized = normalizeCompanyName(fullName);
-        if (normalized && descUpper.includes(normalized)) return t;
+        if (!normalized) continue;
+        const escapedName = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (new RegExp(`\\b${escapedName}\\b`).test(descUpper)) return t;
       }
     }
   }
