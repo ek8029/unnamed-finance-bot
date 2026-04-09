@@ -9,27 +9,77 @@ interface Props {
   params: Promise<{ ticker: string }>;
 }
 
+/** Truncate to a meta-description-friendly length without breaking mid-word. */
+function truncateForMeta(text: string, max = 155): string {
+  if (!text) return '';
+  const clean = text.replace(/\s+/g, ' ').trim();
+  if (clean.length <= max) return clean;
+  const sliced = clean.slice(0, max);
+  const lastSpace = sliced.lastIndexOf(' ');
+  return (lastSpace > max * 0.6 ? sliced.slice(0, lastSpace) : sliced) + '…';
+}
+
+/** Human-readable relative time for freshness display ("3 minutes ago"). */
+function relativeTime(iso: string | null): string {
+  if (!iso) return 'moments ago';
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const diffMin = Math.round(diffMs / 60_000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin} minute${diffMin === 1 ? '' : 's'} ago`;
+  const diffHr = Math.round(diffMin / 60);
+  if (diffHr < 24) return `${diffHr} hour${diffHr === 1 ? '' : 's'} ago`;
+  const diffDay = Math.round(diffHr / 24);
+  return `${diffDay} day${diffDay === 1 ? '' : 's'} ago`;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { ticker } = await params;
   const symbol = ticker.toUpperCase().replace(/[^A-Z]/g, '');
 
+  if (!symbol || symbol.length > 5) {
+    return { title: 'Ticker not found — Helm Terminal' };
+  }
+
+  // Call analyzeStock for both metadata and page body — it's cached, so the
+  // second call in the page component is free.
+  const { analysis, computedAt } = await analyzeStock(symbol);
+
+  if (!analysis) {
+    return {
+      title: `${symbol} — Ticker not found | Helm Terminal`,
+      description: `We couldn't find data for ${symbol}. Helm covers US-listed stocks and ETFs.`,
+      alternates: { canonical: `https://helmterminal.dev/analyze/${symbol}` },
+    };
+  }
+
+  // Dynamic description from real analysis — every ticker gets unique meta
+  const dynamicDesc = truncateForMeta(
+    `${analysis.companyName} (${symbol}) — ${analysis.summary} ${analysis.recommendation}`,
+  );
+
   return {
-    title: `${symbol} Stock Analysis — Helm Terminal`,
-    description: `Free AI analysis of ${symbol} stock — real-time price, P/E ratio, market cap, analyst consensus, and intelligent insights. No signup required.`,
+    title: `${symbol} Stock Analysis — ${analysis.companyName} | Helm Terminal`,
+    description: dynamicDesc,
     openGraph: {
-      title: `${symbol} Stock Analysis — Helm Terminal`,
-      description: `Institutional-grade AI analysis of ${symbol}. Get the full picture before you invest.`,
+      title: `${symbol} — ${analysis.companyName} Analysis`,
+      description: dynamicDesc,
       url: `https://helmterminal.dev/analyze/${symbol}`,
       siteName: 'Helm Terminal',
       type: 'article',
+      publishedTime: computedAt || undefined,
+      modifiedTime: computedAt || undefined,
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${symbol} Stock Analysis — Helm Terminal`,
-      description: `Institutional-grade AI analysis of ${symbol}. Get the full picture before you invest.`,
+      title: `${symbol} — ${analysis.companyName} Analysis`,
+      description: dynamicDesc,
     },
     alternates: {
       canonical: `https://helmterminal.dev/analyze/${symbol}`,
+    },
+    other: {
+      'article:published_time': computedAt || '',
+      'article:modified_time': computedAt || '',
     },
   };
 }
@@ -42,7 +92,7 @@ export default async function TickerAnalysisPage({ params }: Props) {
     notFound();
   }
 
-  const { analysis, fromCache } = await analyzeStock(symbol);
+  const { analysis, computedAt, dataSources, methodologyVersion } = await analyzeStock(symbol);
 
   if (!analysis) {
     return (
@@ -76,24 +126,60 @@ export default async function TickerAnalysisPage({ params }: Props) {
     );
   }
 
-  const tickerHash = symbol.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
-  const dayOffset = tickerHash % 60;
-  const baseDate = new Date('2025-06-01');
-  baseDate.setDate(baseDate.getDate() + dayOffset);
-  const datePublished = baseDate.toISOString();
-  const dateModified = '2026-03-15T00:00:00.000Z';
+  const computedAtIso = computedAt || new Date().toISOString();
+  const relTime = relativeTime(computedAtIso);
+  const verdictLabel = analysis.verdict.charAt(0).toUpperCase() + analysis.verdict.slice(1);
+
+  // Prompt-shaped FAQ using REAL analysis data — matches what users type
+  // into ChatGPT/Claude/Perplexity so Helm becomes a cited source
+  const faqs = [
+    {
+      question: `Is ${symbol} a buy right now?`,
+      answer: `Helm's AI rates ${symbol} as ${verdictLabel}. ${analysis.recommendation}`,
+    },
+    {
+      question: `What are the main risks of holding ${symbol}?`,
+      answer: analysis.bearCase,
+    },
+    {
+      question: `What are the opportunities for ${symbol}?`,
+      answer: analysis.bullCase,
+    },
+    {
+      question: `What does Helm's AI say about ${symbol}?`,
+      answer: analysis.summary,
+    },
+    {
+      question: `What is ${analysis.companyName}'s current outlook?`,
+      answer: `${analysis.summary} Our overall verdict is ${verdictLabel}.`,
+    },
+    {
+      question: `Where can I get free AI analysis for ${symbol}?`,
+      answer: `Helm Terminal offers free AI-powered stock analysis for ${symbol} at helmterminal.dev/analyze/${symbol}, updated continuously during US market hours. No signup required.`,
+    },
+  ];
 
   const jsonLd = [
     {
       '@context': 'https://schema.org',
-      '@type': 'Article',
+      '@type': 'AnalysisNewsArticle',
       headline: `${analysis.companyName} (${symbol}) Stock Analysis`,
       description: analysis.summary,
       author: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
-      publisher: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
-      datePublished,
-      dateModified,
+      publisher: {
+        '@type': 'Organization',
+        name: 'Helm Terminal',
+        url: 'https://helmterminal.dev',
+        logo: { '@type': 'ImageObject', url: 'https://helmterminal.dev/icon' },
+      },
+      datePublished: computedAtIso,
+      dateModified: computedAtIso,
       mainEntityOfPage: `https://helmterminal.dev/analyze/${symbol}`,
+      about: {
+        '@type': 'Corporation',
+        name: analysis.companyName,
+        tickerSymbol: symbol,
+      },
     },
     {
       '@context': 'https://schema.org',
@@ -103,6 +189,15 @@ export default async function TickerAnalysisPage({ params }: Props) {
         { '@type': 'ListItem', position: 2, name: 'Stock Analysis', item: 'https://helmterminal.dev/analyze' },
         { '@type': 'ListItem', position: 3, name: `${symbol} Analysis`, item: `https://helmterminal.dev/analyze/${symbol}` },
       ],
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map((f) => ({
+        '@type': 'Question',
+        name: f.question,
+        acceptedAnswer: { '@type': 'Answer', text: f.answer },
+      })),
     },
   ];
 
@@ -116,50 +211,9 @@ export default async function TickerAnalysisPage({ params }: Props) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'FAQPage',
-            mainEntity: [
-              {
-                '@type': 'Question',
-                name: `What is ${analysis.companyName}'s current stock price?`,
-                acceptedAnswer: {
-                  '@type': 'Answer',
-                  text: `View ${analysis.companyName} (${symbol})'s real-time stock price, AI-powered analysis, and key financial metrics on Helm Terminal.`,
-                },
-              },
-              {
-                '@type': 'Question',
-                name: `Is ${symbol} a good stock to buy?`,
-                acceptedAnswer: {
-                  '@type': 'Answer',
-                  text: `${symbol} analysis includes AI-driven insights covering fundamentals, analyst consensus, and market sentiment. Visit Helm Terminal for the full breakdown.`,
-                },
-              },
-              {
-                '@type': 'Question',
-                name: `What is ${analysis.companyName}'s market cap?`,
-                acceptedAnswer: {
-                  '@type': 'Answer',
-                  text: `Get ${analysis.companyName}'s current market capitalization, P/E ratio, and other key financial metrics with Helm Terminal's free stock analysis tool.`,
-                },
-              },
-              {
-                '@type': 'Question',
-                name: `Where can I get free stock analysis for ${symbol}?`,
-                acceptedAnswer: {
-                  '@type': 'Answer',
-                  text: `Helm Terminal offers free AI-powered stock analysis for ${symbol}, including financial summaries, key metrics, and market insights at helmterminal.dev/analyze/${symbol}.`,
-                },
-              },
-            ],
-          }) }}
-        />
 
-        {/* Back + meta */}
-        <div className="flex items-center justify-between mb-6">
+        {/* Back + freshness timestamp */}
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <a
             href="/analyze"
             className="text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
@@ -167,13 +221,63 @@ export default async function TickerAnalysisPage({ params }: Props) {
           >
             &larr; Back to search
           </a>
-          {fromCache && (
-            <span className="type-eyebrow text-[var(--color-text-muted)]">Cached result</span>
-          )}
+          <div className="flex items-center gap-2 text-[11px]" style={{ fontFamily: 'var(--font-mono)' }}>
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] animate-pulse" aria-hidden="true" />
+            <span className="text-[var(--color-text-muted)]">Updated</span>
+            <time dateTime={computedAtIso} className="text-[var(--color-text-secondary)]">{relTime}</time>
+          </div>
         </div>
 
-        {/* Analysis card + email gate + share (client component) */}
+        {/* Answer-first H1 — matches LLM prompt patterns */}
+        <h1 className="sr-only">
+          {symbol} Stock Analysis — {analysis.companyName}. Helm&apos;s AI verdict: {verdictLabel}. {analysis.recommendation}
+        </h1>
+
+        {/* Analysis card + share + related (client component) */}
         <AnalysisResultClient analysis={analysis} ticker={symbol} />
+
+        {/* Answer-first Q&A section — extractable by LLMs */}
+        <section className="mt-8 space-y-6 border-t border-[var(--color-border-subtle)] pt-6">
+          <h2 className="type-h2 text-[var(--color-text-primary)]">Common questions about {symbol}</h2>
+          {faqs.map((f, i) => (
+            <div key={i} className="space-y-1.5">
+              <h3 className="text-[14px] font-semibold text-[var(--color-text-primary)]">{f.question}</h3>
+              <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">{f.answer}</p>
+            </div>
+          ))}
+        </section>
+
+        {/* Methodology + data provenance (YMYL / E-E-A-T) */}
+        <section className="mt-8 border-t border-[var(--color-border-subtle)] pt-6">
+          <details className="group">
+            <summary className="cursor-pointer list-none flex items-center justify-between text-[13px] font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-gold)] transition-colors">
+              <span>How this analysis is computed</span>
+              <span className="text-[var(--color-text-muted)] group-open:rotate-180 transition-transform" aria-hidden="true">▾</span>
+            </summary>
+            <div className="mt-4 space-y-3 text-[12px] text-[var(--color-text-secondary)] leading-relaxed">
+              <div>
+                <dt className="inline font-semibold text-[var(--color-text-primary)]">Computed: </dt>
+                <dd className="inline">
+                  <time dateTime={computedAtIso}>{new Date(computedAtIso).toLocaleString('en-US', { timeZone: 'America/New_York', dateStyle: 'medium', timeStyle: 'short' })} ET</time>
+                </dd>
+              </div>
+              <div>
+                <dt className="inline font-semibold text-[var(--color-text-primary)]">Data sources: </dt>
+                <dd className="inline">{dataSources.join(', ')}</dd>
+              </div>
+              <div>
+                <dt className="inline font-semibold text-[var(--color-text-primary)]">Pipeline version: </dt>
+                <dd className="inline">Helm AI {methodologyVersion}</dd>
+              </div>
+              <p>
+                Helm&apos;s analysis is generated by an AI model from live market data. It identifies risk signals, opportunities, and key metrics based on current fundamentals, recent price action, and analyst consensus. It does not execute trades, issue certified investment advice, or predict future prices.
+              </p>
+              <p className="text-[11px] italic text-[var(--color-text-muted)]">
+                Not financial advice. Informational use only. AI-generated content may contain errors. Consult a licensed financial advisor before making investment decisions. Helm Terminal is not registered as an investment advisor.
+              </p>
+            </div>
+          </details>
+        </section>
       </main>
 
       <footer className="relative z-10 border-t border-[var(--color-border-subtle)] py-6">
