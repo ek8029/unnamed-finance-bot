@@ -210,8 +210,8 @@ export async function GET() {
           .lte('event_date', end),
         supabase
           .from('market_news')
-          .select('title, tickers, sentiment, source, published_at, url')
-          .overlaps('tickers', userTickers)
+          .select('title, tickers, primary_ticker, sentiment, source, published_at, url')
+          .in('primary_ticker', userTickers)
           .gte('published_at', oneDayAgo.toISOString())
           .order('published_at', { ascending: false })
           .limit(5),
@@ -234,11 +234,12 @@ export async function GET() {
       news = (newsResult.data || []).map((n) => {
         const pubTime = new Date(n.published_at).getTime();
         const hoursAgo = Math.round((now - pubTime) / (1000 * 60 * 60));
-        const matchedTickers = (n.tickers || []).filter((t: string) => userTickers.includes(t));
+        // Display the article's primary subject ticker, not a tangential match
+        const primary = n.primary_ticker || (n.tickers || [])[0] || '';
         return {
           title: n.title,
-          ticker: matchedTickers[0] || '',
-          tickers: matchedTickers,
+          ticker: primary,
+          tickers: primary ? [primary] : [],
           sentiment: n.sentiment || 'neutral',
           source: n.source || '',
           timeAgo: hoursAgo < 1 ? 'just now' : hoursAgo < 24 ? `${hoursAgo}h ago` : `${Math.round(hoursAgo / 24)}d ago`,

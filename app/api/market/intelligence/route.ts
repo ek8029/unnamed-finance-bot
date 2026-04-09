@@ -39,22 +39,28 @@ export async function GET(request: Request) {
     }
 
     // Transform news for frontend
-    const news = (newsResult.data || []).map(article => ({
-      id: article.id,
-      type: 'news' as const,
-      title: article.title,
-      description: article.summary || article.content?.substring(0, 200) || '',
-      source: article.source,
-      url: article.url,
-      sentiment: article.sentiment,
-      tickers: article.tickers || [],
-      sectors: article.sectors || [],
-      publishedAt: article.published_at,
-      // Determine relevance based on user tickers
-      relevance: userTickers && article.tickers?.some((t: string) => userTickers.includes(t))
-        ? 'Your Holdings'
-        : article.sectors?.[0] || 'Market',
-    }));
+    const news = (newsResult.data || []).map(article => {
+      // Use primary_ticker for relevance — the article's actual subject,
+      // not a tangentially mentioned ticker from Polygon's full tag array
+      const primary = article.primary_ticker || (article.tickers || [])[0] || null;
+      const isUserHolding = userTickers && primary && userTickers.includes(primary);
+      return {
+        id: article.id,
+        type: 'news' as const,
+        title: article.title,
+        description: article.summary || article.content?.substring(0, 200) || '',
+        source: article.source,
+        url: article.url,
+        sentiment: article.sentiment,
+        tickers: article.tickers || [],
+        primaryTicker: primary,
+        sectors: article.sectors || [],
+        publishedAt: article.published_at,
+        relevance: isUserHolding
+          ? 'Your Holdings'
+          : article.sectors?.[0] || 'Market',
+      };
+    });
 
     // Transform events for frontend
     const events = (eventsResult.data || []).map(event => {

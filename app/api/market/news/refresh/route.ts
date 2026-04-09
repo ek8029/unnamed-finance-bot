@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { getTickerNews, scoreSentiment } from '@/lib/polygon';
 import { rateLimit } from '@/lib/rate-limit';
+import { detectPrimaryTicker } from '@/lib/news-primary-ticker';
 
 export async function POST() {
   try {
@@ -43,13 +44,17 @@ export async function POST() {
       holdings.map(h => h.security_id).filter(Boolean)
     )];
     const tickerSectorMap = new Map<string, string>();
+    const tickerNameMap = new Map<string, string>();
     if (securityIds.length > 0) {
       const { data: securities } = await supabase
         .from('securities')
-        .select('ticker, sector')
+        .select('ticker, sector, security_name')
         .in('id', securityIds);
       for (const s of securities || []) {
-        if (s.sector) tickerSectorMap.set(s.ticker?.toUpperCase(), s.sector);
+        const upperTicker = s.ticker?.toUpperCase();
+        if (!upperTicker) continue;
+        if (s.sector) tickerSectorMap.set(upperTicker, s.sector);
+        if (s.security_name) tickerNameMap.set(upperTicker, s.security_name);
       }
     }
 
@@ -81,7 +86,7 @@ export async function POST() {
       });
     }
 
-    // 5. Insert new articles with sentiment scoring and sector tagging
+    // 5. Insert new articles with sentiment scoring, sector tagging, and primary-ticker detection
     const inserts = newArticles.map(article => {
       // Score sentiment from title + description
       const sentiment = scoreSentiment(
@@ -95,6 +100,15 @@ export async function POST() {
           .filter(Boolean)
       )];
 
+      // Determine primary (subject) ticker — prevents tangentially mentioned
+      // tickers from being misattributed to the article in the daily brief
+      const primaryTicker = detectPrimaryTicker(
+        article.title,
+        article.description,
+        article.tickers,
+        tickerNameMap,
+      );
+
       return {
         title: article.title,
         summary: article.description || null,
@@ -105,6 +119,7 @@ export async function POST() {
         author: article.author || null,
         published_at: article.published_utc || new Date().toISOString(),
         tickers: article.tickers,
+        primary_ticker: primaryTicker,
         sectors: sectors.length > 0 ? sectors : null,
         sentiment,
       };

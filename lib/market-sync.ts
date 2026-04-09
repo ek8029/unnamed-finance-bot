@@ -1,4 +1,5 @@
 import { getBatchPrices, getBatchTickerDetails, getUpcomingDividends, getRecentSplits, getTickerNews, scoreSentiment, mapSicToSector, getTickerSectorOverride } from '@/lib/polygon';
+import { detectPrimaryTicker } from '@/lib/news-primary-ticker';
 import { RISK_FREE_RATE, TRADING_DAYS_PER_YEAR } from '@/lib/financial-config';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -581,13 +582,17 @@ export async function refreshMarketNews(supabase: AnyClient, log: string[]) {
   )] as string[];
 
   const tickerSectorMap = new Map<string, string>();
+  const tickerNameMap = new Map<string, string>();
   if (secIds.length > 0) {
     const { data: securities } = await supabase
       .from('securities')
-      .select('ticker, sector')
+      .select('ticker, sector, security_name')
       .in('id', secIds);
-    for (const s of (securities || []) as { ticker: string; sector: string | null }[]) {
-      if (s.sector) tickerSectorMap.set(s.ticker?.toUpperCase(), s.sector);
+    for (const s of (securities || []) as { ticker: string; sector: string | null; security_name: string | null }[]) {
+      const upperTicker = s.ticker?.toUpperCase();
+      if (!upperTicker) continue;
+      if (s.sector) tickerSectorMap.set(upperTicker, s.sector);
+      if (s.security_name) tickerNameMap.set(upperTicker, s.security_name);
     }
   }
 
@@ -618,6 +623,12 @@ export async function refreshMarketNews(supabase: AnyClient, log: string[]) {
         .map(t => tickerSectorMap.get(t.toUpperCase()))
         .filter(Boolean)
     )];
+    const primaryTicker = detectPrimaryTicker(
+      article.title,
+      article.description,
+      article.tickers,
+      tickerNameMap,
+    );
 
     return {
       title: article.title,
@@ -629,6 +640,7 @@ export async function refreshMarketNews(supabase: AnyClient, log: string[]) {
       author: article.author || null,
       published_at: article.published_utc || new Date().toISOString(),
       tickers: article.tickers,
+      primary_ticker: primaryTicker,
       sectors: sectors.length > 0 ? sectors : null,
       sentiment,
     };
