@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { X, ChevronDown, ExternalLink } from 'lucide-react';
+import { X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BriefData {
@@ -36,15 +36,6 @@ interface BriefData {
     weight: number;
     changePct: number;
     tickers: string[];
-  }[];
-  news: {
-    title: string;
-    ticker: string;
-    tickers: string[];
-    sentiment: string;
-    source: string;
-    timeAgo: string;
-    url: string;
   }[];
   earningsThisWeek: {
     ticker: string;
@@ -134,18 +125,6 @@ function sectorDotColor(changePct: number): string {
   if (changePct > 0.1) return COLORS.positiveTextMild;
   if (changePct < -0.5) return COLORS.negativeText;
   if (changePct < -0.1) return COLORS.negativeTextMild;
-  return COLORS.neutralDot;
-}
-
-function sentimentColor(sentiment: string): string {
-  if (sentiment === 'positive') return 'text-[var(--color-positive)]';
-  if (sentiment === 'negative') return 'text-[var(--color-negative)]';
-  return 'text-[var(--color-text-muted)]';
-}
-
-function sentimentDot(sentiment: string): string {
-  if (sentiment === 'positive') return COLORS.positiveText;
-  if (sentiment === 'negative') return COLORS.negativeText;
   return COLORS.neutralDot;
 }
 
@@ -257,14 +236,9 @@ export function DailyBrief() {
     ? brief.allHoldings.filter((m) => sectorTickerSet.has(m.ticker))
     : brief.movers;
 
-  const filteredNews = sectorTickerSet
-    ? brief.news.filter((n) => n.tickers.some((t) => sectorTickerSet.has(t)))
-    : brief.news;
-
   const hasEarnings = brief.earningsThisWeek.length > 0;
   const hasDividends = brief.dividendsThisWeek.length > 0;
   const hasEvents = hasEarnings || hasDividends;
-  const hasNews = filteredNews.length > 0;
 
   return (
     <div className="bg-[var(--color-bg-surface)] border-l-2 border-[var(--color-gold)]">
@@ -402,52 +376,7 @@ export function DailyBrief() {
           </div>
         )}
 
-        {/* ── Row 4: News ── */}
-        {hasNews && (
-          <div>
-            <span className="text-[0.625rem] uppercase tracking-wider text-[var(--color-text-muted)] font-medium">
-              {sectorFilter ? `${sectorFilter} News` : 'Portfolio News'}
-            </span>
-            <div className="mt-1.5 space-y-1.5">
-              {filteredNews.slice(0, 4).map((article, i) => (
-                <div key={i} className="flex items-start gap-2 group">
-                  <div className="w-1.5 h-1.5 rounded-full shrink-0 mt-1.5" style={{ backgroundColor: sentimentDot(article.sentiment) }} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2">
-                      {article.ticker && (
-                        <span className="text-[0.6875rem] font-mono font-semibold text-[var(--color-text-primary)] shrink-0">
-                          {article.ticker}
-                        </span>
-                      )}
-                      <span className="text-[0.75rem] text-[var(--color-text-secondary)] truncate">
-                        {article.title}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      {article.source && (
-                        <span className="text-[0.5625rem] text-[var(--color-text-muted)]">{article.source}</span>
-                      )}
-                      <span className="text-[0.5625rem] text-[var(--color-text-muted)]">{article.timeAgo}</span>
-                      {article.url && (
-                        <a
-                          href={article.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors opacity-0 group-hover:opacity-100"
-                          aria-label={`Read full article: ${article.title}`}
-                        >
-                          <ExternalLink className="w-3 h-3" aria-hidden="true" />
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── Row 5: Events ── */}
+        {/* ── Row 4: Events ── */}
         {hasEvents && (
           <div className="flex flex-wrap gap-x-5 gap-y-1 pt-1 border-t border-[var(--color-border-subtle)]">
             {brief.earningsThisWeek.slice(0, 3).map((e) => (

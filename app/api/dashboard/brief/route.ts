@@ -187,25 +187,8 @@ export async function GET() {
     let earningsThisWeek: { ticker: string; reportDate: string; portfolioWeight: number }[] = [];
     let dividendsThisWeek: { ticker: string; exDate: string }[] = [];
 
-    let news: { title: string; ticker: string; tickers: string[]; sentiment: string; source: string; timeAgo: string; url: string }[] = [];
-
     if (userTickers.length > 0) {
-      const oneDayAgo = new Date();
-      oneDayAgo.setDate(oneDayAgo.getDate() - 2);
-
-      // Try the precise primary_ticker query first. If migration 025 hasn't
-      // been applied yet (or no legacy rows have primary_ticker backfilled),
-      // fall back to the old overlaps() behavior so the user isn't left with
-      // an empty news feed.
-      const primaryTickerNewsPromise = supabase
-        .from('market_news')
-        .select('title, tickers, primary_ticker, sentiment, source, published_at, url')
-        .in('primary_ticker', userTickers)
-        .gte('published_at', oneDayAgo.toISOString())
-        .order('published_at', { ascending: false })
-        .limit(5);
-
-      const [earningsResult, dividendsResult, primaryNewsResult] = await Promise.all([
+      const [earningsResult, dividendsResult] = await Promise.all([
         supabase
           .from('market_events')
           .select('ticker, event_date')
@@ -220,25 +203,7 @@ export async function GET() {
           .in('ticker', userTickers)
           .gte('event_date', start)
           .lte('event_date', end),
-        primaryTickerNewsPromise,
       ]);
-
-      // Fallback if the primary_ticker query failed (column missing) OR
-      // returned no rows (migration applied but legacy rows not backfilled
-      // to match this user's holdings).
-      let newsResult = primaryNewsResult;
-      const primaryFailed = !!primaryNewsResult.error;
-      const primaryEmpty = !primaryFailed && (primaryNewsResult.data || []).length === 0;
-      if (primaryFailed || primaryEmpty) {
-        const { data: legacyNews } = await supabase
-          .from('market_news')
-          .select('title, tickers, sentiment, source, published_at, url')
-          .overlaps('tickers', userTickers)
-          .gte('published_at', oneDayAgo.toISOString())
-          .order('published_at', { ascending: false })
-          .limit(5);
-        newsResult = { data: legacyNews, error: null } as typeof primaryNewsResult;
-      }
 
       const allocationMap = new Map(holdings.map((h) => [h.ticker, h.portfolio_allocation_pct]));
 
@@ -252,23 +217,6 @@ export async function GET() {
         ticker: d.ticker,
         exDate: d.event_date,
       }));
-
-      const now = Date.now();
-      news = (newsResult.data || []).map((n) => {
-        const pubTime = new Date(n.published_at).getTime();
-        const hoursAgo = Math.round((now - pubTime) / (1000 * 60 * 60));
-        // Display the article's primary subject ticker, not a tangential match
-        const primary = n.primary_ticker || (n.tickers || [])[0] || '';
-        return {
-          title: n.title,
-          ticker: primary,
-          tickers: primary ? [primary] : [],
-          sentiment: n.sentiment || 'neutral',
-          source: n.source || '',
-          timeAgo: hoursAgo < 1 ? 'just now' : hoursAgo < 24 ? `${hoursAgo}h ago` : `${Math.round(hoursAgo / 24)}d ago`,
-          url: n.url || '',
-        };
-      });
     }
 
     const spyChangePct = market.spy?.changePct ?? null;
@@ -288,7 +236,6 @@ export async function GET() {
         movers,
         allHoldings,
         sectorHeat,
-        news,
         earningsThisWeek,
         dividendsThisWeek,
       },
