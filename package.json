@@ -45,6 +45,7 @@
     "next-mdx-remote": "^6.0.0",
     "openai": "^6.27.0",
     "plaid": "^41.4.0",
+    "posthog-js": "^1.367.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-plaid-link": "^4.1.1",
