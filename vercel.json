@@ -4,14 +4,6 @@
     {
       "path": "/api/cron/daily",
       "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/cron/refresh-tickers",
-      "schedule": "5 14-20 * * 1-5"
-    },
-    {
-      "path": "/api/cron/refresh-tickers",
-      "schedule": "0 22,2,6,10 * * *"
     }
   ]
 }
