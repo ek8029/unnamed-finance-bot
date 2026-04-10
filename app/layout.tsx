@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Manrope, Space_Grotesk } from 'next/font/google';
-import Script from 'next/script';
 import "./globals.css";
 import { Providers } from '@/components/providers';
 import { RecoveryRedirect } from '@/components/recovery-redirect';
@@ -133,13 +132,6 @@ export default function RootLayout({
       <body className={`${manrope.variable} ${spaceGrotesk.variable} font-sans`}>
         <RecoveryRedirect />
         <Providers>{children}</Providers>
-        <Script
-          src="https://plausible.io/js/pa-O3gPqcGXLE6Ju_7Ulgsf6.js"
-          strategy="afterInteractive"
-        />
-        <Script id="plausible-init" strategy="afterInteractive">
-          {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`}
-        </Script>
         <CookieConsent />
       </body>
     </html>

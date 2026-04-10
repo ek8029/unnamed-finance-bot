@@ -139,16 +139,19 @@ export async function middleware(request: NextRequest) {
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+  // PostHog domains: us.i.posthog.com (events) + us-assets.i.posthog.com (recorder/surveys assets).
+  // EU users should swap to eu.i.posthog.com / eu-assets.i.posthog.com if NEXT_PUBLIC_POSTHOG_HOST is set to the EU host.
   response.headers.set(
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''} https://plausible.io`,
+      `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''} https://us-assets.i.posthog.com https://eu-assets.i.posthog.com`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https: blob:",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.polygon.io https://plausible.io https://cdn.plaid.com https://*.plaid.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.polygon.io https://us.i.posthog.com https://eu.i.posthog.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com https://cdn.plaid.com https://*.plaid.com",
       "frame-src https://cdn.plaid.com https://*.plaid.com",
+      "worker-src 'self' blob:",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
