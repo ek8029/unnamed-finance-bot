@@ -18,10 +18,20 @@ const DATA_SOURCES = ['finnhub.io', 'openai-gpt-4o-mini'];
 
 /**
  * Cache TTL depends on US equity market hours (9:30am–4:00pm ET, Mon–Fri).
- * YMYL finance content must not be 24h stale during a live trading session.
+ * YMYL finance content must not be hours stale.
  *
- * - Market hours: 30 min (fresh enough to reflect intraday moves)
- * - Off-hours + weekends: 24 hr (nothing's moving; save OpenAI credits)
+ * Tightened from the previous (30min market / 24h off-hours) values to:
+ *   - Market hours:  15 min — catches intraday news + price moves
+ *   - Off-hours:     4 hr   — catches earnings releases, after-hours moves,
+ *                            8-K filings, pre-market activity
+ *
+ * These are fallback TTLs for tickers NOT in the popular list. Tickers in
+ * lib/popular-tickers.ts (top 50) are proactively refreshed by
+ * /api/cron/refresh-tickers on a schedule and rarely hit the TTL fallback.
+ *
+ * Long-tail tickers refresh on the first visit after the TTL expires —
+ * the visitor pays a ~5-15 second wait while Finnhub + OpenAI run, then
+ * subsequent visitors get the cached result for the next 15min/4h.
  */
 function getCacheTtlMs(): number {
   const now = new Date();
@@ -38,8 +48,8 @@ function getCacheTtlMs(): number {
   const isMarketHours = isWeekday && minutesSinceMidnight >= marketOpen && minutesSinceMidnight < marketClose;
 
   return isMarketHours
-    ? 30 * 60 * 1000       // 30 min during market hours
-    : 24 * 60 * 60 * 1000; // 24 hr off-hours
+    ? 15 * 60 * 1000        // 15 min during market hours
+    : 4 * 60 * 60 * 1000;   // 4 hr off-hours
 }
 
 export interface CachedAnalysisResult {
