@@ -19,8 +19,10 @@ export const LTCG_RATE_DEFAULT = Number(process.env.LTCG_RATE) || 0.15;
  * IRC §1211(b): Net capital losses can offset up to $3,000 of ordinary
  * income per year ($1,500 for married filing separately). Excess carries
  * forward indefinitely per IRC §1212(b).
+ *
+ * Default assumes single/MFJ. Override via env for MFS users: TAX_ANNUAL_LOSS_CAP=1500
  */
-export const ANNUAL_LOSS_DEDUCTION_CAP = 3_000;
+export const ANNUAL_LOSS_DEDUCTION_CAP = Number(process.env.TAX_ANNUAL_LOSS_CAP) || 3_000;
 
 // ── Portfolio Risk ──
 
