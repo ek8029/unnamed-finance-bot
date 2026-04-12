@@ -9,8 +9,18 @@
 
 // ── Tax ──
 
-/** Combined federal + state capital gains tax rate for estimates. */
+/** Combined federal + state SHORT-TERM capital gains / ordinary income rate for estimates. */
 export const TAX_RATE = Number(process.env.TAX_RATE_BLENDED) || 0.32;
+
+/** Default LONG-TERM capital gains rate (15% federal is the most common bracket). */
+export const LTCG_RATE_DEFAULT = Number(process.env.LTCG_RATE) || 0.15;
+
+/**
+ * IRC §1211(b): Net capital losses can offset up to $3,000 of ordinary
+ * income per year ($1,500 for married filing separately). Excess carries
+ * forward indefinitely per IRC §1212(b).
+ */
+export const ANNUAL_LOSS_DEDUCTION_CAP = 3_000;
 
 // ── Portfolio Risk ──
 

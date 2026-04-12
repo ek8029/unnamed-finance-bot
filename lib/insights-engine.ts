@@ -159,7 +159,7 @@ export async function generateInsights(
       }
     }
 
-    // Rule 3: Tax-loss harvesting
+    // Rule 3: Tax-loss harvesting (with $3,000 annual cap per IRC §1211(b))
     const losers = holdings.filter(
       (h: { unrealised_gain_loss: number | null }) =>
         h.unrealised_gain_loss != null && Number(h.unrealised_gain_loss) < 0,
@@ -170,14 +170,32 @@ export async function generateInsights(
           s + Math.abs(Number(h.unrealised_gain_loss)),
         0,
       );
-      const estimatedSavings = Math.round(totalLoss * TAX_RATE);
+      // Cap the deductible amount at $3,000 against ordinary income per IRC §1211(b).
+      // Losses first offset capital gains dollar-for-dollar (no limit), then up to
+      // $3,000 of ordinary income. Excess carries forward per IRC §1212(b).
+      const ANNUAL_CAP = 3_000;
+      const deductibleThisYear = Math.min(totalLoss, ANNUAL_CAP);
+      const estimatedSavings = Math.round(deductibleThisYear * TAX_RATE);
+      const carryforward = Math.max(0, totalLoss - ANNUAL_CAP);
       const tickers = losers.map((h: { ticker: string }) => h.ticker).join(', ');
+
+      let description = `You have $${totalLoss.toLocaleString()} in unrealized losses across ${tickers}.`;
+      if (totalLoss > ANNUAL_CAP) {
+        description += ` Up to $${ANNUAL_CAP.toLocaleString()} can offset ordinary income this year (IRC §1211(b)), ` +
+          `saving an estimated $${estimatedSavings.toLocaleString()} at your ${(TAX_RATE * 100).toFixed(0)}% rate. ` +
+          `The remaining $${carryforward.toLocaleString()} carries forward to future years.`;
+      } else {
+        description += ` This could save an estimated $${estimatedSavings.toLocaleString()} at your ${(TAX_RATE * 100).toFixed(0)}% combined rate.`;
+      }
+
       candidates.push({
         insight_type: 'tax',
         priority: totalLoss > TAX_INSIGHT_HIGH_PRIORITY_LOSS ? 'high' : 'medium',
         title: `$${estimatedSavings.toLocaleString()} in potential tax savings`,
-        description: `You have $${totalLoss.toLocaleString()} in unrealized losses across ${tickers} that could offset capital gains and reduce your tax bill at an estimated ${(TAX_RATE * 100).toFixed(0)}% combined rate.`,
-        recommended_action: `Review selling ${tickers} to harvest losses, then reinvest in similar but not "substantially identical" assets to maintain exposure.`,
+        description,
+        recommended_action: `Review selling ${tickers} to harvest losses, then reinvest in similar but not "substantially identical" assets to maintain exposure. ` +
+          `Important: do NOT repurchase the same security within 30 days or you will trigger a wash sale (IRC §1091). ` +
+          `This is not tax advice — consult a qualified tax professional before acting.`,
         estimated_impact_amount: estimatedSavings,
         confidence_score: 0.85,
         source_type: 'rule_based',

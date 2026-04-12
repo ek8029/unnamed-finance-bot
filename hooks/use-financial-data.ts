@@ -484,9 +484,20 @@ export interface TaxOpportunity {
   unrealizedLoss: number;
   lossPct: number;
   estimatedSavings: number;
+  holdingPeriod: 'short_term' | 'long_term' | 'unknown';
+  effectiveTaxRate: number;
   replacement: { ticker: string; name: string; reason: string } | null;
   washSaleRisk: boolean;
   washSaleDetail: string | null;
+}
+
+export interface AnnualCapInfo {
+  annualDeductionCap: number;
+  ytdNetRealized: number;
+  remainingDeductibleLoss: number;
+  estimatedCarryforward: number;
+  cappedSavings: number;
+  uncappedSavings: number;
 }
 
 export interface TaxHarvestReport {
@@ -494,7 +505,10 @@ export interface TaxHarvestReport {
   totalEstimatedSavings: number;
   opportunityCount: number;
   taxRate: number;
+  ltcgRate: number;
   opportunities: TaxOpportunity[];
+  annualCap: AnnualCapInfo;
+  disclaimer: string;
 }
 
 // ── Earnings impact data ──
