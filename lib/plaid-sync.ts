@@ -553,7 +553,32 @@ export async function computeSnapshots(
 
     // Financial Health Score
     const debtToAssetRatio = totalAssets > 0 ? totalLiabilities / totalAssets : 0;
-    const avgMonthlyExpenses = totalExpenses > 0 ? totalExpenses : 1;
+
+    // Emergency fund: use rolling 3-month average expenses if available,
+    // falling back to current month. A single month's expenses is too
+    // volatile — one big purchase could halve the emergency score.
+    let avgMonthlyExpenses = totalExpenses > 0 ? totalExpenses : 1;
+    try {
+      const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString().split('T')[0];
+      const { data: recentCashFlows } = await supabase
+        .from('cash_flow_snapshots')
+        .select('total_expenses')
+        .eq('user_id', userId)
+        .gte('snapshot_month', threeMonthsAgo)
+        .order('snapshot_month', { ascending: false })
+        .limit(3);
+
+      if (recentCashFlows && recentCashFlows.length >= 2) {
+        const totalRecentExpenses = recentCashFlows.reduce(
+          (sum: number, row: { total_expenses: number }) => sum + Number(row.total_expenses), 0
+        );
+        const avg = totalRecentExpenses / recentCashFlows.length;
+        if (avg > 0) avgMonthlyExpenses = avg;
+      }
+    } catch {
+      // Fallback to current month — non-fatal
+    }
+
     const emergencyFundMonths = cashBalance / avgMonthlyExpenses;
 
     let diversification = 0;
@@ -578,6 +603,17 @@ export async function computeSnapshots(
       emergencyScore * HEALTH_SCORE_WEIGHTS.emergencyFund +
       divScore * HEALTH_SCORE_WEIGHTS.diversification
     );
+
+    // Prevent duplicate health scores when dashboard auto-sync and daily
+    // cron run concurrently — both call computeSnapshots which previously
+    // did a blind INSERT. Delete any score for this user from the same UTC
+    // day, then insert the fresh one. One health score per user per day.
+    const todayStart = new Date().toISOString().split('T')[0] + 'T00:00:00Z';
+    await supabase
+      .from('financial_health_scores')
+      .delete()
+      .eq('user_id', userId)
+      .gte('calculated_at', todayStart);
 
     await supabase
       .from('financial_health_scores')
