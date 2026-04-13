@@ -2,6 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { logAuthEvent } from '@/lib/auth-security';
 import { plaidClient } from '@/lib/plaid';
+import { getStripe } from '@/lib/stripe';
 
 /**
  * DELETE /api/auth/delete-account
@@ -39,6 +40,29 @@ export async function DELETE(request: Request) {
 
     const userId = user.id;
     const serviceClient = await createServiceClient();
+
+    // Cancel any active Stripe subscription BEFORE deleting the user.
+    // Hard abort: if cancellation fails we leave the account intact rather
+    // than orphan a subscription that would keep billing the customer.
+    const { data: subData } = await serviceClient
+      .from('user_subscriptions')
+      .select('stripe_customer_id, stripe_subscription_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const stripeSubscriptionId = subData?.stripe_subscription_id ?? null;
+
+    if (stripeSubscriptionId) {
+      try {
+        await getStripe().subscriptions.cancel(stripeSubscriptionId);
+      } catch (stripeError) {
+        console.error('Failed to cancel Stripe subscription:', stripeError);
+        return NextResponse.json(
+          { error: 'Failed to cancel subscription. Please try again or contact support.' },
+          { status: 500 }
+        );
+      }
+    }
 
     const { data: plaidItems } = await serviceClient
       .from('plaid_items')
