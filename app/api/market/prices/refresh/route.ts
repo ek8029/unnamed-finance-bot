@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { getBatchPrices } from '@/lib/polygon';
 import { updatePortfolioPerformance } from '@/lib/market-sync';
@@ -19,11 +19,16 @@ export async function POST() {
       return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
     }
 
-    // 1. Fetch all unique tickers from the user's holdings
-    const { data: holdings, error: holdingsError } = await supabase
+    // Use service client for global holdings operations (price of AAPL is the
+    // same for everyone — no reason to scope updates per-user). The user client
+    // above is kept for auth check + allocation recalc at the end.
+    const serviceClient = await createServiceClient();
+
+    // 1. Fetch ALL unique tickers from ALL users' holdings (not just this user)
+    // so a price refresh triggered by any user benefits everyone.
+    const { data: holdings, error: holdingsError } = await serviceClient
       .from('holdings')
-      .select('id, ticker, security_id, shares, total_cost_basis, current_price')
-      .eq('user_id', user.id);
+      .select('id, ticker, security_id, shares, total_cost_basis, current_price, user_id');
 
     if (holdingsError) {
       console.error('Error fetching holdings:', holdingsError);
@@ -74,7 +79,6 @@ export async function POST() {
     }
 
     // 3b. Fetch previous close prices for accurate day_change_pct
-    // Batch-fetch recent market_prices for all relevant securities, then find prev close in-memory
     const prevCloseMap = new Map<string, number>();
     const relevantSecurityIds = uniqueTickers
       .map(t => tickerSecurityMap.get(t.toUpperCase()))
@@ -83,7 +87,7 @@ export async function POST() {
     if (relevantSecurityIds.length > 0) {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      const { data: recentPrices } = await supabase
+      const { data: recentPrices } = await serviceClient
         .from('market_prices')
         .select('security_id, price_date, close')
         .in('security_id', relevantSecurityIds)
@@ -148,7 +152,7 @@ export async function POST() {
 
     const updateResults = await Promise.all(
       holdingUpdates.map(async (u) => {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await serviceClient
           .from('holdings')
           .update({
             current_price: u!.currentPrice,
@@ -172,12 +176,12 @@ export async function POST() {
       }
     }
 
-    // 5. Update securities table concurrently (needs RLS write policy)
+    // 5. Update securities table concurrently (service client bypasses RLS)
     await Promise.all(
       Array.from(priceMap.entries())
         .filter(([ticker]) => tickerSecurityMap.has(ticker))
         .map(async ([ticker, price]) => {
-          const { error: secError } = await supabase
+          const { error: secError } = await serviceClient
             .from('securities')
             .update({ current_price: price.close })
             .eq('id', tickerSecurityMap.get(ticker)!);
@@ -208,7 +212,7 @@ export async function POST() {
     }
 
     if (priceInserts.length > 0) {
-      const { error: upsertError } = await supabase
+      const { error: upsertError } = await serviceClient
         .from('market_prices')
         .upsert(priceInserts, {
           onConflict: 'security_id,price_date',
@@ -221,30 +225,40 @@ export async function POST() {
       }
     }
 
-    // 7. Recalculate portfolio_allocation_pct for all user holdings
-    const { data: allHoldings } = await supabase
-      .from('holdings')
-      .select('id, total_value')
-      .eq('user_id', user.id);
+    // 7. Recalculate portfolio_allocation_pct for ALL users whose holdings were updated
+    const affectedUserIds = [...new Set(
+      holdings.map((h: { user_id: string }) => h.user_id).filter(Boolean)
+    )];
 
-    if (allHoldings && allHoldings.length > 0) {
-      const totalPortfolioValue = allHoldings.reduce(
-        (sum: number, h: { total_value: number }) => sum + Number(h.total_value), 0
-      );
+    for (const uid of affectedUserIds) {
+      const { data: userHoldings } = await serviceClient
+        .from('holdings')
+        .select('id, total_value')
+        .eq('user_id', uid);
 
-      if (totalPortfolioValue > 0) {
-        await Promise.all(allHoldings.map(h => {
-          const allocationPct = (Number(h.total_value) / totalPortfolioValue) * 100;
-          return supabase
-            .from('holdings')
-            .update({ portfolio_allocation_pct: Math.round(allocationPct * 100) / 100 })
-            .eq('id', h.id);
-        }));
+      if (userHoldings && userHoldings.length > 0) {
+        const totalPortfolioValue = userHoldings.reduce(
+          (sum: number, h: { total_value: number }) => sum + Number(h.total_value), 0
+        );
+
+        if (totalPortfolioValue > 0) {
+          await Promise.all(userHoldings.map(h => {
+            const allocationPct = (Number(h.total_value) / totalPortfolioValue) * 100;
+            return serviceClient
+              .from('holdings')
+              .update({ portfolio_allocation_pct: Math.round(allocationPct * 100) / 100 })
+              .eq('id', h.id);
+          }));
+        }
+      }
+
+      // 8. Update portfolio_performance metrics per user
+      try {
+        await updatePortfolioPerformance(serviceClient, uid);
+      } catch (e) {
+        console.error(`[prices] portfolio_performance update failed for ${uid}:`, e);
       }
     }
-
-    // 8. Update portfolio_performance metrics
-    await updatePortfolioPerformance(supabase, user.id);
 
     return NextResponse.json({
       success: true,
