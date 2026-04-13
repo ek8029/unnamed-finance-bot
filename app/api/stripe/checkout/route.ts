@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import {
-  stripe,
+  getStripe,
   getPriceId,
   isValidBillingPeriod,
   getCheckoutMode,
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     // Create Stripe customer if we don't have one
     if (!stripeCustomerId) {
-      const customer = await stripe.customers.create({
+      const customer = await getStripe().customers.create({
         email: user.email,
         metadata: { supabase_user_id: user.id },
       });
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 7. Create Checkout Session
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       ui_mode: 'embedded',
       mode: getCheckoutMode(billingPeriod),
       customer: stripeCustomerId,

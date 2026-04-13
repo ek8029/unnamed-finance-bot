@@ -5,14 +5,30 @@
  */
 import Stripe from 'stripe';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  console.warn('[stripe] STRIPE_SECRET_KEY not set');
+/**
+ * Lazy Stripe client — only constructed when first accessed.
+ * This prevents the build from crashing when STRIPE_SECRET_KEY isn't set
+ * (e.g., during Vercel builds before the operator creates a Stripe account).
+ * API routes that use `getStripe()` will return 503 if the key is missing.
+ */
+let _stripe: Stripe | null = null;
+
+export function getStripe(): Stripe {
+  if (!_stripe) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+      throw new Error('STRIPE_SECRET_KEY is not configured');
+    }
+    _stripe = new Stripe(key, {
+      apiVersion: '2025-02-24.acacia',
+      typescript: true,
+    });
+  }
+  return _stripe;
 }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-02-24.acacia',
-  typescript: true,
-});
+/** @deprecated Use getStripe() instead — this crashes at build time if key is missing */
+export const stripe = null as unknown as Stripe;
 
 export type BillingPeriod = 'monthly' | 'annual' | 'lifetime';
 
