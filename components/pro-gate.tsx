@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import {
-  Crown,
   Zap,
   TrendingDown,
   BarChart3,
@@ -12,6 +11,7 @@ import {
   Check,
   ArrowRight,
 } from 'lucide-react';
+import { HelmMark } from '@/components/helm-mark';
 import { CheckoutModal } from '@/components/checkout-modal';
 
 interface ProGateProps {
@@ -72,7 +72,7 @@ export function ProGate({ feature, description }: ProGateProps) {
               border: '1px solid var(--color-gold-border)',
             }}
           >
-            <Crown className="w-5 h-5 text-[var(--color-gold)]" />
+            <HelmMark size={24} />
           </div>
 
           <h2 className="text-lg font-bold tracking-tight text-[var(--color-text-primary)] mb-1.5">

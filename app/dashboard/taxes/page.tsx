@@ -191,8 +191,17 @@ export default function TaxesPage() {
   const gainCount = taxData?.unrealized.positions.filter(p => p.gainLoss > 0).length ?? 0;
   const lossCount = taxData?.unrealized.positions.filter(p => p.gainLoss < 0).length ?? 0;
 
-  // Show upgrade wall if tier check says free OR if API returned PRO_REQUIRED
-  if ((!tierLoading && !isPro) || proRequired) {
+  // Block rendering while tier is loading — prevents flash of Pro content
+  if (tierLoading) {
+    return (
+      <div className="container mx-auto p-6 max-w-5xl animate-pulse">
+        <div className="h-8 bg-[var(--color-bg-elevated)] rounded w-1/4 mb-4" />
+        <div className="h-64 bg-[var(--color-bg-elevated)] rounded-xl" />
+      </div>
+    );
+  }
+
+  if (!isPro || proRequired) {
     return (
       <ProGate
         feature="Tax Center"
