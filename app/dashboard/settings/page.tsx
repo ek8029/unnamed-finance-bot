@@ -51,6 +51,14 @@ export default function SettingsPage() {
   const [showActivity, setShowActivity] = useState(false)
   const [revokingOthers, setRevokingOthers] = useState(false)
 
+  // Billing state
+  const [billing, setBilling] = useState<{
+    tier: string;
+    billingPeriod: string | null;
+    currentPeriodEnd: string | null;
+    cancelAtPeriodEnd: boolean;
+  } | null>(null)
+
   // Delete account state
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
@@ -94,6 +102,18 @@ export default function SettingsPage() {
       }
     }
     loadProfile()
+  }, [])
+
+  // Load billing data
+  useEffect(() => {
+    async function fetchBilling() {
+      const res = await fetch('/api/user/tier')
+      if (res.ok) {
+        const data = await res.json()
+        setBilling(data)
+      }
+    }
+    fetchBilling()
   }, [])
 
   // Check MFA status on mount
@@ -344,6 +364,12 @@ export default function SettingsPage() {
     setShowPasswordModal(false)
     setPasswordForm({ current: '', new: '', confirm: '' })
     setShowPasswords({ current: false, new: false, confirm: false })
+  }
+
+  const handleManageBilling = async () => {
+    const res = await fetch('/api/stripe/portal', { method: 'POST' })
+    const data = await res.json()
+    if (data.url) window.location.href = data.url
   }
 
   const handleThemeChange = (theme: 'light' | 'dark' | 'auto') => {
@@ -700,23 +726,52 @@ export default function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {tierLoading ? (
+            {tierLoading || billing === null ? (
               <div className="p-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-md">
                 <div className="h-6 w-32 bg-white/5 rounded animate-pulse mb-2" />
                 <div className="h-4 w-24 bg-white/5 rounded animate-pulse" />
               </div>
-            ) : isPro ? (
+            ) : billing.tier === 'lifetime' ? (
               <div className="p-4 bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] rounded-md">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="type-h3">Pro Plan</p>
-                    <p className="text-[var(--color-text-primary)]">$24.99/month</p>
+                    <p className="type-h3">Lifetime Plan</p>
+                    <p className="text-sm text-[var(--color-text-secondary)]">Lifetime access</p>
+                  </div>
+                  <Badge variant="gold">Lifetime</Badge>
+                </div>
+                <p className="text-xs text-[var(--color-text-secondary)] mt-2">
+                  Unlimited AI analysis, tax-loss harvesting, earnings impact, Portfolio Wrapped, and full intelligence feed.
+                </p>
+              </div>
+            ) : billing.tier === 'pro' ? (
+              <div className="p-4 bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] rounded-md">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="type-h3">
+                      {billing.billingPeriod === 'annual' ? 'Pro Annual' : 'Pro Monthly'}
+                    </p>
+                    {billing.currentPeriodEnd && (
+                      <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">
+                        {billing.cancelAtPeriodEnd
+                          ? `Cancels on ${new Date(billing.currentPeriodEnd).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
+                          : `Renews on ${new Date(billing.currentPeriodEnd).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
+                      </p>
+                    )}
                   </div>
                   <Badge variant="gold">Active</Badge>
                 </div>
                 <p className="text-xs text-[var(--color-text-secondary)] mt-2">
                   Unlimited AI analysis, tax-loss harvesting, earnings impact, Portfolio Wrapped, and full intelligence feed.
                 </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={handleManageBilling}
+                >
+                  Manage Billing
+                </Button>
               </div>
             ) : (
               <div className="p-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-md">
@@ -727,7 +782,11 @@ export default function SettingsPage() {
                   </div>
                   <Badge variant="outline">Free</Badge>
                 </div>
-                <ProWaitlistButton source="settings" variant="gold" className="max-w-xs" />
+                <a href="/pricing">
+                  <Button variant="accent" size="sm" className="max-w-xs">
+                    Upgrade to Pro
+                  </Button>
+                </a>
               </div>
             )}
           </CardContent>
