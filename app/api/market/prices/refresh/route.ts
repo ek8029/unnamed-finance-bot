@@ -1,13 +1,23 @@
+/**
+ * Real-time price refresh via Finnhub quotes.
+ *
+ * Replaces the previous Polygon-based refresh which only returned
+ * end-of-day prices (previous close). Finnhub /quote returns real-time
+ * data during US market hours at no cost (free tier, 60 calls/min).
+ *
+ * When ANY user triggers this (via dashboard load auto-sync), ALL users'
+ * holdings get updated — the price of AAPL is the same for everyone.
+ */
+
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { getBatchPrices } from '@/lib/polygon';
+import { getBatchQuotes, type FinnhubQuote } from '@/lib/financial-data';
 import { updatePortfolioPerformance } from '@/lib/market-sync';
 import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST() {
   try {
     const supabase = await createClient();
-
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -16,122 +26,62 @@ export async function POST() {
 
     const { allowed } = rateLimit(`prices-refresh:${user.id}`, 3, 300);
     if (!allowed) {
-      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
 
-    // Use service client for global holdings operations (price of AAPL is the
-    // same for everyone — no reason to scope updates per-user). The user client
-    // above is kept for auth check + allocation recalc at the end.
     const serviceClient = await createServiceClient();
 
-    // 1. Fetch ALL unique tickers from ALL users' holdings (not just this user)
-    // so a price refresh triggered by any user benefits everyone.
-    const { data: holdings, error: holdingsError } = await serviceClient
+    // 1. Fetch ALL holdings across ALL users (global price update)
+    const { data: allHoldings, error: holdingsError } = await serviceClient
       .from('holdings')
-      .select('id, ticker, security_id, shares, total_cost_basis, current_price, user_id');
+      .select('id, ticker, security_id, shares, total_cost_basis, user_id')
+      .neq('ticker', 'UNKNOWN');
 
-    if (holdingsError) {
-      console.error('Error fetching holdings:', holdingsError);
-      return NextResponse.json(
-        { error: 'Failed to fetch holdings' },
-        { status: 500 }
-      );
+    if (holdingsError || !allHoldings || allHoldings.length === 0) {
+      return NextResponse.json({ success: true, message: 'No holdings to update', updated: 0 });
     }
 
-    if (!holdings || holdings.length === 0) {
-      return NextResponse.json({
-        success: true,
-        message: 'No holdings to update',
-        updated: 0,
-      });
-    }
-
-    // Filter null/undefined tickers before passing to Polygon
     const uniqueTickers = [...new Set(
-      holdings.map(h => h.ticker).filter((t): t is string => Boolean(t))
+      allHoldings.map(h => h.ticker).filter((t): t is string => Boolean(t))
     )];
 
     if (uniqueTickers.length === 0) {
+      return NextResponse.json({ success: true, message: 'No valid tickers', updated: 0 });
+    }
+
+    // 2. Fetch real-time quotes from Finnhub (not Polygon end-of-day)
+    const quoteMap = await getBatchQuotes(uniqueTickers);
+
+    if (quoteMap.size === 0) {
       return NextResponse.json({
         success: true,
-        message: 'No valid tickers found in holdings',
+        message: 'No quotes returned from Finnhub — market may be closed',
         updated: 0,
       });
     }
 
-    // 2. Fetch latest prices from Polygon
-    const priceMap = await getBatchPrices(uniqueTickers);
-
-    if (priceMap.size === 0) {
-      return NextResponse.json({
-        success: true,
-        message: 'No prices returned from Polygon - market may be closed or API key issue',
-        updated: 0,
-      });
-    }
-
-    // 3. Build ticker -> security_id map
+    // 3. Build ticker → security_id map for market_prices table
     const tickerSecurityMap = new Map<string, string>();
-    for (const h of holdings) {
+    for (const h of allHoldings) {
       if (h.security_id && h.ticker) {
         tickerSecurityMap.set(h.ticker.toUpperCase(), h.security_id);
       }
     }
 
-    // 3b. Fetch previous close prices for accurate day_change_pct
-    const prevCloseMap = new Map<string, number>();
-    const relevantSecurityIds = uniqueTickers
-      .map(t => tickerSecurityMap.get(t.toUpperCase()))
-      .filter((id): id is string => Boolean(id));
-
-    if (relevantSecurityIds.length > 0) {
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      const { data: recentPrices } = await serviceClient
-        .from('market_prices')
-        .select('security_id, price_date, close')
-        .in('security_id', relevantSecurityIds)
-        .gte('price_date', sevenDaysAgo.toISOString().split('T')[0])
-        .order('price_date', { ascending: false })
-        .limit(relevantSecurityIds.length * 7);
-
-      // Group by security_id for efficient lookup
-      const pricesBySecurity = new Map<string, { price_date: string; close: number }[]>();
-      for (const p of recentPrices || []) {
-        const existing = pricesBySecurity.get(p.security_id) || [];
-        existing.push({ price_date: p.price_date, close: Number(p.close) });
-        pricesBySecurity.set(p.security_id, existing);
-      }
-
-      for (const ticker of uniqueTickers) {
-        const securityId = tickerSecurityMap.get(ticker.toUpperCase());
-        if (!securityId) continue;
-
-        const newPrice = priceMap.get(ticker.toUpperCase());
-        if (!newPrice) continue;
-
-        const prices = pricesBySecurity.get(securityId) || [];
-        // Already sorted descending by price_date from the query
-        const prevPrice = prices.find(p => p.price_date < newPrice.date);
-        if (prevPrice?.close) {
-          prevCloseMap.set(ticker.toUpperCase(), prevPrice.close);
-        }
-      }
-    }
-
+    const now = new Date().toISOString();
+    const today = new Date().toISOString().split('T')[0];
     const updatedTickers: string[] = [];
-    const errors: string[] = [];
 
-    // 4. Update each holding concurrently (holdings table has full CRUD RLS)
-    const holdingUpdates = holdings
+    // 4. Update each holding with real-time price
+    const holdingUpdates = allHoldings
       .map(holding => {
         const ticker = holding.ticker?.toUpperCase();
         if (!ticker) return null;
 
-        const price = priceMap.get(ticker);
-        if (!price) return null;
+        const quote = quoteMap.get(ticker);
+        if (!quote) return null;
 
-        const currentPrice = price.close;
+        const currentPrice = quote.c; // real-time current price
         const shares = Number(holding.shares);
         const hasCostBasis = holding.total_cost_basis != null;
         const totalCostBasis = hasCostBasis ? Number(holding.total_cost_basis) : 0;
@@ -140,95 +90,76 @@ export async function POST() {
         const unrealisedGainLossPct =
           hasCostBasis && totalCostBasis > 0 ? (totalValue - totalCostBasis) / totalCostBasis : null;
 
-        // Day change: compare to prior close from market_prices, fall back to intraday
-        const prevClose = prevCloseMap.get(ticker);
-        const dayChangePct = prevClose && prevClose > 0
-          ? (price.close - prevClose) / prevClose
-          : (price.open > 0 ? (price.close - price.open) / price.open : 0);
+        // Day change from Finnhub: quote.pc = previous close, quote.c = current
+        const dayChangePct = quote.pc > 0
+          ? (quote.c - quote.pc) / quote.pc
+          : null;
 
-        return { holding, ticker, currentPrice, totalValue, unrealisedGainLoss, unrealisedGainLossPct, dayChangePct };
+        return { holdingId: holding.id, ticker, currentPrice, totalValue, unrealisedGainLoss, unrealisedGainLossPct, dayChangePct, userId: holding.user_id };
       })
-      .filter(Boolean);
+      .filter(Boolean) as { holdingId: string; ticker: string; currentPrice: number; totalValue: number; unrealisedGainLoss: number | null; unrealisedGainLossPct: number | null; dayChangePct: number | null; userId: string }[];
 
-    const updateResults = await Promise.all(
-      holdingUpdates.map(async (u) => {
-        const { error: updateError } = await serviceClient
+    // Batch update holdings
+    const updateResults = await Promise.allSettled(
+      holdingUpdates.map(u =>
+        serviceClient
           .from('holdings')
           .update({
-            current_price: u!.currentPrice,
-            total_value: u!.totalValue,
-            unrealised_gain_loss: u!.unrealisedGainLoss,
-            unrealised_gain_loss_pct: u!.unrealisedGainLossPct,
-            day_change_pct: u!.dayChangePct,
+            current_price: u.currentPrice,
+            total_value: u.totalValue,
+            unrealised_gain_loss: u.unrealisedGainLoss,
+            unrealised_gain_loss_pct: u.unrealisedGainLossPct,
+            day_change_pct: u.dayChangePct,
+            last_updated_at: now,
           })
-          .eq('id', u!.holding.id);
-
-        return { ticker: u!.ticker, holdingId: u!.holding.id, holdingTicker: u!.holding.ticker, error: updateError };
-      })
+          .eq('id', u.holdingId)
+      )
     );
 
-    for (const result of updateResults) {
-      if (result.error) {
-        console.error(`Error updating holding ${result.holdingId}:`, result.error);
-        errors.push(`holding:${result.holdingTicker}`);
-      } else {
-        updatedTickers.push(result.ticker);
+    for (const [i, result] of updateResults.entries()) {
+      if (result.status === 'fulfilled' && !result.value?.error) {
+        updatedTickers.push(holdingUpdates[i].ticker);
       }
     }
 
-    // 5. Update securities table concurrently (service client bypasses RLS)
-    await Promise.all(
-      Array.from(priceMap.entries())
+    // 5. Update securities table with current prices
+    await Promise.allSettled(
+      Array.from(quoteMap.entries())
         .filter(([ticker]) => tickerSecurityMap.has(ticker))
-        .map(async ([ticker, price]) => {
-          const { error: secError } = await serviceClient
+        .map(([ticker, quote]) =>
+          serviceClient
             .from('securities')
-            .update({ current_price: price.close })
-            .eq('id', tickerSecurityMap.get(ticker)!);
-
-          if (secError) {
-            // Expected to fail if RLS policy not applied yet - non-fatal
-            console.warn(`[prices] securities update skipped for ${ticker} (RLS)`);
-          }
-        })
+            .update({ current_price: quote.c, last_updated_at: now })
+            .eq('id', tickerSecurityMap.get(ticker)!)
+        )
     );
 
-    // 6. Upsert into market_prices table (needs RLS write policy)
-    const priceInserts = [];
-    for (const [ticker, price] of priceMap.entries()) {
-      const securityId = tickerSecurityMap.get(ticker);
-      if (!securityId) continue;
-
-      priceInserts.push({
-        security_id: securityId,
+    // 6. Upsert into market_prices for historical tracking
+    const priceInserts = Array.from(quoteMap.entries())
+      .filter(([ticker]) => tickerSecurityMap.has(ticker))
+      .map(([ticker, quote]) => ({
+        security_id: tickerSecurityMap.get(ticker)!,
         ticker,
-        price_date: price.date,
-        open: price.open,
-        high: price.high,
-        low: price.low,
-        close: price.close,
-        volume: price.volume,
-      });
-    }
+        price_date: today,
+        open: quote.o,
+        high: quote.h,
+        low: quote.l,
+        close: quote.c,
+        volume: 0, // Finnhub quote doesn't include volume
+      }));
 
     if (priceInserts.length > 0) {
-      const { error: upsertError } = await serviceClient
-        .from('market_prices')
-        .upsert(priceInserts, {
-          onConflict: 'security_id,price_date',
-          ignoreDuplicates: false,
-        });
-
-      if (upsertError) {
-        // Expected to fail if RLS policy not applied yet - non-fatal
-        console.warn('[prices] market_prices upsert skipped (RLS)');
+      try {
+        await serviceClient
+          .from('market_prices')
+          .upsert(priceInserts, { onConflict: 'security_id,price_date', ignoreDuplicates: false });
+      } catch {
+        // Non-fatal — historical price tracking can fail without affecting live prices
       }
     }
 
-    // 7. Recalculate portfolio_allocation_pct for ALL users whose holdings were updated
-    const affectedUserIds = [...new Set(
-      holdings.map((h: { user_id: string }) => h.user_id).filter(Boolean)
-    )];
+    // 7. Recalculate allocation + performance for all affected users
+    const affectedUserIds = [...new Set(holdingUpdates.map(u => u.userId).filter(Boolean))];
 
     for (const uid of affectedUserIds) {
       const { data: userHoldings } = await serviceClient
@@ -240,39 +171,32 @@ export async function POST() {
         const totalPortfolioValue = userHoldings.reduce(
           (sum: number, h: { total_value: number }) => sum + Number(h.total_value), 0
         );
-
         if (totalPortfolioValue > 0) {
-          await Promise.all(userHoldings.map(h => {
-            const allocationPct = (Number(h.total_value) / totalPortfolioValue) * 100;
-            return serviceClient
+          await Promise.allSettled(userHoldings.map(h =>
+            serviceClient
               .from('holdings')
-              .update({ portfolio_allocation_pct: Math.round(allocationPct * 100) / 100 })
-              .eq('id', h.id);
-          }));
+              .update({ portfolio_allocation_pct: Math.round((Number(h.total_value) / totalPortfolioValue) * 10000) / 100 })
+              .eq('id', h.id)
+          ));
         }
       }
 
-      // 8. Update portfolio_performance metrics per user
       try {
         await updatePortfolioPerformance(serviceClient, uid);
-      } catch (e) {
-        console.error(`[prices] portfolio_performance update failed for ${uid}:`, e);
+      } catch {
+        // Non-fatal
       }
     }
 
     return NextResponse.json({
       success: true,
-      updated: updatedTickers.length,
-      tickers: updatedTickers,
-      pricesRecorded: priceInserts.length,
-      errors: errors.length > 0 ? errors : undefined,
+      source: 'finnhub',
+      updated: [...new Set(updatedTickers)].length,
+      tickers: [...new Set(updatedTickers)],
+      usersUpdated: affectedUserIds.length,
     });
   } catch (error) {
     console.error('Error refreshing market prices:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-

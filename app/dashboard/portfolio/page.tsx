@@ -6,7 +6,7 @@ import { PortfolioMonitor } from '@/components/dashboard/portfolio-monitor';
 import { PortfolioAllocation } from '@/components/dashboard/portfolio-allocation';
 import { MarketIntelligence } from '@/components/portfolio/market-intelligence';
 import { useHoldings } from '@/hooks/use-financial-data';
-import { TrendingUp, TrendingDown, DollarSign, PieChart, RefreshCw, Loader2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useFormat } from '@/hooks/use-format';
@@ -44,41 +44,7 @@ export default function PortfolioPage() {
   const portfolioHistory: { label: string; value: number; gain_loss: number }[] = holdingsData.portfolioHistory ?? [];
   const loading: boolean = holdingsData.loading ?? true;
   const error: string | null = holdingsData.error ?? null;
-  const refreshing: boolean = holdingsData.refreshing ?? false;
-  const refreshPrices: (() => Promise<void>) | null = holdingsData.refreshPrices ?? null;
   const lastRefreshed: string | null = holdingsData.lastRefreshed ?? null;
-
-  // Track last refresh timestamp from sessionStorage as fallback
-  const [lastRefreshDisplay, setLastRefreshDisplay] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (lastRefreshed) {
-      // lastRefreshed is already a formatted time string from the hook
-      setLastRefreshDisplay(lastRefreshed);
-    } else {
-      try {
-        const stored = sessionStorage.getItem('helm_last_price_refresh');
-        if (stored) setLastRefreshDisplay(new Date(Number(stored)).toLocaleTimeString());
-      } catch {}
-    }
-  }, [lastRefreshed]);
-
-  const handleRefreshPrices = async () => {
-    if (refreshPrices) {
-      await refreshPrices();
-    } else {
-      // Fallback: call the API directly if hook doesn't provide refreshPrices
-      try {
-        await fetch('/api/market/prices/refresh', { method: 'POST' });
-        const now = new Date().toISOString();
-        sessionStorage.setItem('helm_last_price_refresh', now);
-        setLastRefreshDisplay(new Date(now).toLocaleTimeString());
-        window.location.reload();
-      } catch (err) {
-        console.error('Failed to refresh prices:', err);
-      }
-    }
-  };
 
   const { totalDayChange, dayChangePercentage } = useMemo(() => {
     const totalDayChange = holdings.reduce(
@@ -188,21 +154,14 @@ export default function PortfolioPage() {
                 Track your investments, allocation, and performance
               </p>
             </div>
-            <div className="flex flex-col items-end gap-1.5">
-              <button
-                onClick={handleRefreshPrices}
-                disabled={refreshing}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[var(--color-gold)] hover:brightness-110 text-black rounded-lg transition-colors disabled:opacity-50"
-              >
-                {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                Refresh Prices
-              </button>
-              {lastRefreshDisplay && (
-                <span className="type-caption text-[var(--color-text-muted)]">
-                  Last updated: {lastRefreshDisplay}
+            {lastRefreshed && (
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] animate-pulse" aria-hidden="true" />
+                <span className="type-caption text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+                  Prices as of {lastRefreshed}
                 </span>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Portfolio Summary Cards */}

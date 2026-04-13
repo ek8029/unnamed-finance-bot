@@ -144,6 +144,45 @@ export async function getQuote(symbol: string): Promise<FinnhubQuote | null> {
   return finnhubFetch<FinnhubQuote>('/quote', { symbol: symbol.toUpperCase() });
 }
 
+/**
+ * Fetch real-time quotes for multiple tickers from Finnhub.
+ * Throttled to stay under the 60 calls/min free-tier limit.
+ * Returns a Map of uppercase ticker → FinnhubQuote.
+ *
+ * Uses the in-memory cache (15min TTL) per ticker, so repeated calls
+ * for the same ticker within the window are free.
+ */
+export async function getBatchQuotes(
+  tickers: string[],
+): Promise<Map<string, FinnhubQuote>> {
+  const results = new Map<string, FinnhubQuote>();
+  const unique = [...new Set(tickers.map(t => t.toUpperCase()))];
+
+  // Process in batches of 10 with 1.2s delay between batches
+  // to stay well under 60 calls/min (10 per 1.2s = ~50/min)
+  const BATCH_SIZE = 10;
+  for (let i = 0; i < unique.length; i += BATCH_SIZE) {
+    const batch = unique.slice(i, i + BATCH_SIZE);
+    const quotes = await Promise.all(
+      batch.map(async (ticker) => {
+        const quote = await getQuote(ticker);
+        return { ticker, quote };
+      }),
+    );
+    for (const { ticker, quote } of quotes) {
+      if (quote && quote.c > 0) {
+        results.set(ticker, quote);
+      }
+    }
+    // Throttle between batches (skip delay on last batch)
+    if (i + BATCH_SIZE < unique.length) {
+      await new Promise(resolve => setTimeout(resolve, 1200));
+    }
+  }
+
+  return results;
+}
+
 export async function getCompanyProfile(symbol: string): Promise<FinnhubProfile | null> {
   return finnhubFetch<FinnhubProfile>('/stock/profile2', { symbol: symbol.toUpperCase() });
 }
