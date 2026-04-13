@@ -13,127 +13,141 @@ interface ProGateProps {
 
 type BillingPeriod = 'monthly' | 'annual' | 'lifetime';
 
-const PLANS: { period: BillingPeriod; label: string; price: string; detail: string }[] = [
-  { period: 'monthly',  label: 'Monthly',  price: '$14.99/mo',            detail: '' },
-  { period: 'annual',   label: 'Annual',   price: '$9.99/mo',             detail: 'billed $119/yr' },
-  { period: 'lifetime', label: 'Lifetime', price: '$249',                 detail: 'one-time, forever' },
+const PLANS: {
+  period: BillingPeriod;
+  label: string;
+  price: string;
+  unit: string;
+  note: string | null;
+  save: string | null;
+}[] = [
+  { period: 'monthly',  label: 'Monthly',  price: '$14.99', unit: '/mo',   note: null,                save: null },
+  { period: 'annual',   label: 'Annual',   price: '$9.99',  unit: '/mo',   note: 'Billed $119/year',  save: 'Save 33%' },
+  { period: 'lifetime', label: 'Lifetime', price: '$249',   unit: '',      note: 'One-time payment',  save: null },
 ];
 
 export function ProGate({ feature, description }: ProGateProps) {
   const [showCheckout, setShowCheckout] = useState(false);
-  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('annual');
+  const [selected, setSelected] = useState<BillingPeriod>('annual');
 
-  const selected = PLANS.find(p => p.period === billingPeriod)!;
+  const plan = PLANS.find(p => p.period === selected)!;
 
   return (
-    <div className="container mx-auto px-6 py-16 max-w-xl">
+    <div className="min-h-[60vh] flex items-center justify-center px-6 py-12">
+      <div className="w-full max-w-md">
 
-      {/* Gold accent line + logo */}
-      <div className="border-l-2 border-[var(--color-gold)] pl-5 mb-8">
-        <div className="flex items-center gap-3 mb-3">
-          <HelmMark size={20} />
+        {/* Eyebrow */}
+        <div className="flex items-center gap-2.5 mb-6">
+          <HelmMark size={18} />
+          <div className="h-px flex-1 bg-[var(--color-border-base)]" />
           <span
-            className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-gold)] font-semibold"
+            className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-gold)] font-medium"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             Pro
           </span>
         </div>
-        <h2 className="type-h1 text-[var(--color-text-primary)] mb-2">
+
+        {/* Headline */}
+        <h2 className="text-[22px] font-bold tracking-tight text-[var(--color-text-primary)] leading-tight mb-2">
           {feature}
         </h2>
-        <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed max-w-md">
+        <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed mb-8">
           {description}
         </p>
-      </div>
 
-      {/* What you get — reads like a brief, not a feature list */}
-      <div className="mb-8 pl-5 ml-[1px]">
-        <p
-          className="text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-3"
-          style={{ fontFamily: 'var(--font-mono)' }}
-        >
-          Included with Pro
-        </p>
-        <div className="text-[13px] text-[var(--color-text-secondary)] leading-[1.8] space-y-0">
-          <p>Unlimited AI analysis on any US ticker &middot; Tax-loss harvesting with wash-sale detection &middot; Earnings exposure tracking with dollar impact &middot; Portfolio Wrapped &amp; full intelligence feed &middot; Priority data refresh during market hours</p>
-        </div>
-      </div>
-
-      {/* Plan toggle — segmented control, not 3 competing cards */}
-      <div className="mb-5 pl-5 ml-[1px]">
-        <div className="inline-flex rounded-[3px] border border-[var(--color-border-base)] overflow-hidden">
-          {PLANS.map((plan) => {
-            const isActive = billingPeriod === plan.period;
+        {/* Plan options — radio-style list, not cards */}
+        <div className="space-y-2 mb-6">
+          {PLANS.map((p) => {
+            const active = selected === p.period;
             return (
               <button
-                key={plan.period}
-                onClick={() => setBillingPeriod(plan.period)}
-                className={`px-4 py-2 text-[12px] font-medium transition-colors duration-150 ${
-                  isActive
-                    ? 'bg-[var(--color-gold)] text-[var(--color-bg-base)]'
-                    : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
+                key={p.period}
+                onClick={() => setSelected(p.period)}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-[var(--radius-md)] border cursor-pointer transition-colors duration-150 text-left ${
+                  active
+                    ? 'border-[var(--color-gold-border)] bg-[var(--color-gold-surface)]'
+                    : 'border-[var(--color-border-base)] bg-transparent hover:border-[var(--color-border-strong)]'
                 }`}
-                style={{ fontFamily: 'var(--font-mono)' }}
               >
-                {plan.label}
+                <div className="flex items-center gap-3">
+                  {/* Radio dot */}
+                  <div className={`w-[14px] h-[14px] rounded-full border-2 flex items-center justify-center shrink-0 transition-colors duration-150 ${
+                    active
+                      ? 'border-[var(--color-gold)]'
+                      : 'border-[var(--color-border-strong)]'
+                  }`}>
+                    {active && (
+                      <div className="w-[6px] h-[6px] rounded-full bg-[var(--color-gold)]" />
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[13px] font-medium ${
+                        active ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'
+                      }`}>
+                        {p.label}
+                      </span>
+                      {p.save && (
+                        <span
+                          className="text-[9px] uppercase tracking-wider font-semibold text-[var(--color-positive)] px-1.5 py-0.5 rounded-sm bg-[rgba(74,222,128,0.08)]"
+                          style={{ fontFamily: 'var(--font-mono)' }}
+                        >
+                          {p.save}
+                        </span>
+                      )}
+                    </div>
+                    {p.note && (
+                      <span className="text-[11px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+                        {p.note}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Price */}
+                <div className="text-right shrink-0">
+                  <span className={`text-[15px] font-bold tabular-nums ${
+                    active ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'
+                  }`}>
+                    {p.price}
+                  </span>
+                  <span className={`text-[11px] ${
+                    active ? 'text-[var(--color-text-secondary)]' : 'text-[var(--color-text-muted)]'
+                  }`}>
+                    {p.unit}
+                  </span>
+                </div>
               </button>
             );
           })}
         </div>
-      </div>
 
-      {/* Price display */}
-      <div className="mb-6 pl-5 ml-[1px]">
-        <div className="flex items-baseline gap-2">
-          <span className="text-[28px] font-bold text-[var(--color-text-primary)] tabular-nums tracking-tight">
-            {selected.price}
-          </span>
-          {selected.detail && (
-            <span className="text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
-              {selected.detail}
-            </span>
-          )}
-        </div>
-        {billingPeriod === 'annual' && (
-          <p className="text-[11px] text-[var(--color-positive)] mt-1" style={{ fontFamily: 'var(--font-mono)' }}>
-            Save 33% vs monthly
-          </p>
-        )}
-      </div>
-
-      {/* CTA — the only loud element */}
-      <div className="pl-5 ml-[1px] mb-8">
+        {/* CTA */}
         <button
           onClick={() => setShowCheckout(true)}
-          className="group inline-flex items-center gap-2.5 px-7 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[14px] rounded-[3px] transition-all duration-200"
+          className="group w-full flex items-center justify-center gap-2 px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[13px] rounded-[var(--radius-md)] cursor-pointer transition-colors duration-200 mb-4"
         >
-          Upgrade to Pro
-          <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+          Continue with {plan.label}
+          <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
         </button>
-      </div>
 
-      {/* Trust line */}
-      <div className="pl-5 ml-[1px] flex items-center gap-4">
-        <Link
-          href="/dashboard"
-          className="text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
-          style={{ fontFamily: 'var(--font-mono)' }}
-        >
-          &larr; Back
-        </Link>
-        <span className="text-[var(--color-border-strong)]">&middot;</span>
-        <span
-          className="text-[10px] text-[var(--color-text-muted)]"
-          style={{ fontFamily: 'var(--font-mono)' }}
-        >
-          30-day money-back guarantee &middot; Cancel anytime &middot; Stripe checkout
-        </span>
+        {/* Fine print */}
+        <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+          <Link
+            href="/dashboard"
+            className="hover:text-[var(--color-text-secondary)] transition-colors duration-150 cursor-pointer"
+          >
+            &larr; Back
+          </Link>
+          <span>Cancel anytime &middot; Secure via Stripe</span>
+        </div>
       </div>
 
       {showCheckout && (
         <CheckoutModal
-          billingPeriod={billingPeriod}
+          billingPeriod={selected}
           onClose={() => setShowCheckout(false)}
         />
       )}
