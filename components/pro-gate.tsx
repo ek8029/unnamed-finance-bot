@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Lock } from 'lucide-react';
-import { ProWaitlistButton } from '@/components/pro-waitlist-button';
+import { CheckoutModal } from '@/components/checkout-modal';
 
 interface ProGateProps {
   feature: string;
@@ -10,6 +11,9 @@ interface ProGateProps {
 }
 
 export function ProGate({ feature, description }: ProGateProps) {
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual' | 'lifetime'>('annual');
+
   return (
     <div className="container mx-auto p-6 max-w-5xl">
       <div
@@ -36,16 +40,49 @@ export function ProGate({ feature, description }: ProGateProps) {
           {description}
         </p>
 
-        <div className="max-w-sm mx-auto mb-4">
-          <ProWaitlistButton source={`gate:${feature.toLowerCase().replace(/\s+/g, '-')}`} />
+        {/* Plan selector */}
+        <div className="flex gap-2 justify-center mb-4">
+          {[
+            { period: 'monthly' as const, label: '$14.99/mo' },
+            { period: 'annual' as const, label: '$9.99/mo (billed yearly)' },
+            { period: 'lifetime' as const, label: '$249 one-time' },
+          ].map(({ period, label }) => (
+            <button
+              key={period}
+              onClick={() => setBillingPeriod(period)}
+              className={`px-3 py-1.5 text-xs rounded-sm border transition-colors ${
+                billingPeriod === period
+                  ? 'border-[var(--color-gold)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
+                  : 'border-[var(--color-border-base)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center px-5 py-2.5 text-sm font-medium rounded-[2px] border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
+        <button
+          onClick={() => setShowCheckout(true)}
+          className="w-full max-w-sm px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded-sm transition-colors text-sm"
         >
-          Back to Dashboard
-        </Link>
+          Upgrade to Pro
+        </button>
+
+        {showCheckout && (
+          <CheckoutModal
+            billingPeriod={billingPeriod}
+            onClose={() => setShowCheckout(false)}
+          />
+        )}
+
+        <div className="mt-6">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center px-5 py-2.5 text-sm font-medium rounded-[2px] border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
+          >
+            Back to Dashboard
+          </Link>
+        </div>
 
         <p
           className="text-[10px] text-[var(--color-text-muted)] mt-6"

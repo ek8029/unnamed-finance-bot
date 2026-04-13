@@ -19,7 +19,6 @@ import { AnimatedSection } from '@/components/ui/animated-section';
 import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { createClient } from '@/lib/supabase/server';
-import { ProWaitlistButton } from '@/components/pro-waitlist-button';
 
 export const metadata: Metadata = {
   title: 'Pricing - Helm Terminal',
@@ -28,7 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Pricing — Helm Terminal',
     description:
-      'Free portfolio dashboard with AI analysis. Pro tier coming soon at $24.99/month for unlimited intelligence.',
+      'Free portfolio dashboard with AI analysis. Upgrade to Pro at $14.99/month for unlimited intelligence.',
     url: 'https://helmterminal.dev/pricing',
     siteName: 'Helm Terminal',
     type: 'website',
@@ -37,7 +36,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Pricing — Helm Terminal',
     description:
-      'Free portfolio dashboard with AI analysis. Pro tier coming soon at $24.99/month for unlimited intelligence.',
+      'Free portfolio dashboard with AI analysis. Upgrade to Pro at $14.99/month for unlimited intelligence.',
   },
   alternates: {
     canonical: 'https://helmterminal.dev/pricing',
@@ -68,14 +67,14 @@ const faqItems = [
       'The Free plan gives you full access to the Helm dashboard — portfolio tracking, net worth monitoring, cash flow overview, basic alerts, and up to 3 AI-powered stock analyses per day. No credit card required.',
   },
   {
-    question: 'When does Pro launch?',
+    question: 'What pricing tiers does Pro offer?',
     answer:
-      "Pro is currently in development and will launch soon. Join the waitlist to be among the first to access unlimited AI analysis, tax-loss harvesting intelligence, earnings impact analysis, and more. We'll notify you as soon as it's available.",
+      'Pro is available now. Choose from monthly ($14.99/mo), annual ($9.99/mo billed yearly — save 33%), or a lifetime plan ($249 one-time). All tiers include unlimited AI analysis, tax-loss harvesting intelligence, earnings impact analysis, Portfolio Wrapped, and priority data sync.',
   },
   {
     question: 'Can I cancel anytime?',
     answer:
-      'Yes. When Pro launches, you can cancel your subscription at any time with no questions asked. You will retain access through the end of your billing period.',
+      'Yes. You can cancel your monthly or annual subscription at any time with no questions asked. You will retain access through the end of your billing period.',
   },
   {
     question: 'Is my data secure?',
@@ -259,13 +258,7 @@ export default async function PricingPage() {
 
           {/* Pro Tier — dominant */}
           <AnimatedSection delay={200} className="md:col-span-3">
-            <div className="relative pt-3">
-              {/* Coming Soon badge — outside overflow-hidden card */}
-              <div className="absolute -top-0 right-6 z-10">
-                <span className="inline-flex items-center px-3 py-1 rounded bg-[var(--color-gold)] text-[var(--color-bg-base)] text-[11px] font-medium uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)' }}>
-                  Coming Soon
-                </span>
-              </div>
+            <div className="relative">
               <div className="h-full flex flex-col sovereign-card gradient-border animate-border-glow rounded shadow-elevated p-6 relative overflow-hidden">
                 {/* Brass top-rule */}
                 <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, var(--color-gold), rgba(230,185,77,0.3), transparent)' }} />
@@ -276,7 +269,7 @@ export default async function PricingPage() {
                   </p>
                   <div className="flex items-baseline gap-1">
                     <span className="type-data text-[var(--color-gold)] glow-gold">
-                      $24.99
+                      $14.99
                     </span>
                     <span className="text-sm text-[var(--color-text-muted)]">
                       / month
@@ -305,7 +298,21 @@ export default async function PricingPage() {
                   </ul>
                 </div>
 
-                <ProWaitlistButton source="pricing" />
+                {user ? (
+                  <Link
+                    href="/dashboard"
+                    className="block w-full text-center text-sm font-semibold py-3 rounded-sm bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] transition-colors"
+                  >
+                    Go to Dashboard
+                  </Link>
+                ) : (
+                  <Link
+                    href="/signup"
+                    className="block w-full text-center text-sm font-semibold py-3 rounded-sm bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] transition-colors"
+                  >
+                    Upgrade to Pro
+                  </Link>
+                )}
               </div>
             </div>
           </AnimatedSection>
