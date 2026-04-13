@@ -33,15 +33,15 @@ export function ProGate({ feature, description }: ProGateProps) {
   const plan = PLANS.find(p => p.period === selected)!;
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-md">
+    <div className="min-h-[60vh] flex items-center justify-center px-6 py-16">
+      <div className="w-full max-w-lg">
 
         {/* Eyebrow */}
-        <div className="flex items-center gap-2.5 mb-6">
-          <HelmMark size={18} />
+        <div className="flex items-center gap-3 mb-8">
+          <HelmMark size={24} />
           <div className="h-px flex-1 bg-[var(--color-border-base)]" />
           <span
-            className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-gold)] font-medium"
+            className="text-[12px] uppercase tracking-[0.2em] text-[var(--color-gold)] font-medium"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             Pro
@@ -49,49 +49,49 @@ export function ProGate({ feature, description }: ProGateProps) {
         </div>
 
         {/* Headline */}
-        <h2 className="text-[22px] font-bold tracking-tight text-[var(--color-text-primary)] leading-tight mb-2">
+        <h2 className="text-[28px] font-bold tracking-tight text-[var(--color-text-primary)] leading-tight mb-3">
           {feature}
         </h2>
-        <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed mb-8">
+        <p className="text-[16px] text-[var(--color-text-secondary)] leading-relaxed mb-10">
           {description}
         </p>
 
-        {/* Plan options — radio-style list, not cards */}
-        <div className="space-y-2 mb-6">
+        {/* Plan options */}
+        <div className="space-y-3 mb-8">
           {PLANS.map((p) => {
             const active = selected === p.period;
             return (
               <button
                 key={p.period}
                 onClick={() => setSelected(p.period)}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-[var(--radius-md)] border cursor-pointer transition-colors duration-150 text-left ${
+                className={`w-full flex items-center justify-between px-5 py-4 rounded-[var(--radius-md)] border cursor-pointer transition-colors duration-150 text-left ${
                   active
                     ? 'border-[var(--color-gold-border)] bg-[var(--color-gold-surface)]'
                     : 'border-[var(--color-border-base)] bg-transparent hover:border-[var(--color-border-strong)]'
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   {/* Radio dot */}
-                  <div className={`w-[14px] h-[14px] rounded-full border-2 flex items-center justify-center shrink-0 transition-colors duration-150 ${
+                  <div className={`w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center shrink-0 transition-colors duration-150 ${
                     active
                       ? 'border-[var(--color-gold)]'
                       : 'border-[var(--color-border-strong)]'
                   }`}>
                     {active && (
-                      <div className="w-[6px] h-[6px] rounded-full bg-[var(--color-gold)]" />
+                      <div className="w-[8px] h-[8px] rounded-full bg-[var(--color-gold)]" />
                     )}
                   </div>
 
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[13px] font-medium ${
+                    <div className="flex items-center gap-2.5">
+                      <span className={`text-[16px] font-medium ${
                         active ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'
                       }`}>
                         {p.label}
                       </span>
                       {p.save && (
                         <span
-                          className="text-[9px] uppercase tracking-wider font-semibold text-[var(--color-positive)] px-1.5 py-0.5 rounded-sm bg-[rgba(74,222,128,0.08)]"
+                          className="text-[10px] uppercase tracking-wider font-semibold text-[var(--color-positive)] px-2 py-0.5 rounded-sm bg-[rgba(74,222,128,0.08)]"
                           style={{ fontFamily: 'var(--font-mono)' }}
                         >
                           {p.save}
@@ -99,7 +99,7 @@ export function ProGate({ feature, description }: ProGateProps) {
                       )}
                     </div>
                     {p.note && (
-                      <span className="text-[11px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+                      <span className="text-[13px] text-[var(--color-text-muted)] mt-0.5 block" style={{ fontFamily: 'var(--font-mono)' }}>
                         {p.note}
                       </span>
                     )}
@@ -108,12 +108,12 @@ export function ProGate({ feature, description }: ProGateProps) {
 
                 {/* Price */}
                 <div className="text-right shrink-0">
-                  <span className={`text-[15px] font-bold tabular-nums ${
+                  <span className={`text-[18px] font-bold tabular-nums ${
                     active ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'
                   }`}>
                     {p.price}
                   </span>
-                  <span className={`text-[11px] ${
+                  <span className={`text-[13px] ${
                     active ? 'text-[var(--color-text-secondary)]' : 'text-[var(--color-text-muted)]'
                   }`}>
                     {p.unit}
@@ -127,14 +127,14 @@ export function ProGate({ feature, description }: ProGateProps) {
         {/* CTA */}
         <button
           onClick={() => setShowCheckout(true)}
-          className="group w-full flex items-center justify-center gap-2 px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[13px] rounded-[var(--radius-md)] cursor-pointer transition-colors duration-200 mb-4"
+          className="group w-full flex items-center justify-center gap-2.5 px-8 py-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-colors duration-200 mb-6"
         >
           Continue with {plan.label}
-          <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+          <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
         </button>
 
         {/* Fine print */}
-        <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+        <div className="flex items-center justify-between text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
           <Link
             href="/dashboard"
             className="hover:text-[var(--color-text-secondary)] transition-colors duration-150 cursor-pointer"
