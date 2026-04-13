@@ -264,7 +264,8 @@ interface PortfolioHistoryPoint {
 }
 
 const PRICE_REFRESH_KEY = 'helm_last_price_refresh';
-const PRICE_REFRESH_INTERVAL = 15 * 60 * 1000; // 15 minutes
+const PRICE_REFRESH_INTERVAL = 60 * 1000; // 60 seconds — Finnhub real-time quotes
+const PRICE_POLL_INTERVAL = 60 * 1000;    // Poll every 60s while page is open
 
 export function useHoldings() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
@@ -363,6 +364,30 @@ export function useHoldings() {
 
     fetchData();
     autoRefreshPrices();
+
+    // Poll every 60s while the page is open — keeps prices live
+    // during market hours without the user needing to do anything.
+    // The API rate limiter (3 calls per 5 min) prevents abuse if
+    // multiple tabs are open.
+    const pollId = setInterval(async () => {
+      try {
+        const res = await fetch('/api/market/prices/refresh', { method: 'POST' });
+        if (res.ok) {
+          sessionStorage.setItem(PRICE_REFRESH_KEY, String(Date.now()));
+          setLastRefreshed(new Date().toLocaleTimeString());
+
+          const holdingsRes = await fetch('/api/holdings');
+          if (holdingsRes.ok) {
+            const data = await holdingsRes.json();
+            applyHoldingsData(data);
+          }
+        }
+      } catch {
+        // Polling failure is non-fatal — next tick will retry
+      }
+    }, PRICE_POLL_INTERVAL);
+
+    return () => clearInterval(pollId);
   }, [applyHoldingsData]);
 
   return { holdings, allocation, totalValue, performanceMetrics, portfolioHistory, loading, error, refreshing, refreshPrices, lastRefreshed };

@@ -24,7 +24,10 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { allowed } = rateLimit(`prices-refresh:${user.id}`, 3, 300);
+    // Rate limit: 8 calls per 10 min per user — enough for 60-second polling
+    // (6 calls in 6 minutes) with headroom for page reloads. The Finnhub
+    // in-memory cache (60s TTL) prevents actual API calls on every poll.
+    const { allowed } = rateLimit(`prices-refresh:${user.id}`, 8, 600);
     if (!allowed) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }

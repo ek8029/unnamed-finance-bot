@@ -422,6 +422,11 @@ export default function PortfolioPage() {
           </div>
         </aside>
       </div>
+
+      {/* Disclaimer */}
+      <p className="text-[10px] text-[var(--color-text-muted)] mt-6 text-center" style={{ fontFamily: 'var(--font-mono)' }}>
+        Prices may be delayed up to 60 seconds. Not intended for active trading.
+      </p>
     </div>
   );
 }

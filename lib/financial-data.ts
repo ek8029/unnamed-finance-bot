@@ -36,8 +36,8 @@ function getCached<T>(key: string): T | null {
   return entry.data as T;
 }
 
-function setCache<T>(key: string, data: T): void {
-  cache.set(key, { data, expiresAt: Date.now() + CACHE_TTL });
+function setCache<T>(key: string, data: T, ttlOverride?: number): void {
+  cache.set(key, { data, expiresAt: Date.now() + (ttlOverride ?? CACHE_TTL) });
 }
 
 async function finnhubFetch<T>(endpoint: string, params: Record<string, string>): Promise<T | null> {
@@ -140,8 +140,31 @@ export interface FinnhubNewsItem {
 
 // ── API Functions ──
 
+/** Short TTL for quotes — 60s instead of 15min so the 60-second poll gets fresh data. */
+const QUOTE_CACHE_TTL = 60 * 1000;
+
 export async function getQuote(symbol: string): Promise<FinnhubQuote | null> {
-  return finnhubFetch<FinnhubQuote>('/quote', { symbol: symbol.toUpperCase() });
+  const cacheKey = `/quote:${JSON.stringify({ symbol: symbol.toUpperCase() })}`;
+  const cached = getCached<FinnhubQuote>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const url = new URL(`${FINNHUB_BASE}/quote`);
+    url.searchParams.set('token', getApiKey());
+    url.searchParams.set('symbol', symbol.toUpperCase());
+
+    const res = await fetch(url.toString(), {
+      headers: { Accept: 'application/json' },
+      next: { revalidate: 60 },
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    setCache(cacheKey, data, QUOTE_CACHE_TTL);
+    return data as FinnhubQuote;
+  } catch {
+    return null;
+  }
 }
 
 /**
