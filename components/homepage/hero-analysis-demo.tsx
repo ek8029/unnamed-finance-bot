@@ -3,10 +3,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence, animate, useReducedMotion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Minus, ArrowRight, ChevronRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, ArrowRight } from 'lucide-react';
 import type { DemoAnalysis } from '@/lib/demo-tickers';
+import { DashboardMockup, DASHBOARD_MOMENT_COUNT } from './dashboard-mockup';
 
-const CYCLE_INTERVAL = 10000;
+/**
+ * Showcase surfaces alternate:
+ *  - 3 analysis tickers (10s each = 30s)
+ *  - 3 dashboard moments (10s each = 30s)
+ *  - loop
+ */
+const SURFACE_INTERVAL = 10000;
 
 /* ── Animated number counter ── */
 function AnimatedValue({ value }: { value: string }) {
@@ -63,26 +70,41 @@ function VerdictBadge({ verdict }: { verdict: string }) {
   );
 }
 
-/* ── Full product showcase ── */
+/* ── Main showcase: alternates between analysis + dashboard ── */
+
+type Surface = { type: 'analysis'; index: number } | { type: 'dashboard'; index: number };
+
 export function HeroAnalysisDemo({ analyses }: { analyses: DemoAnalysis[] }) {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const analysisCount = Math.min(analyses.length, 3);
+  const dashboardCount = DASHBOARD_MOMENT_COUNT;
+  const totalSlides = analysisCount + dashboardCount;
+
+  const [slideIndex, setSlideIndex] = useState(0);
   const prefersReduced = useReducedMotion();
 
-  const advance = useCallback(() => {
-    setActiveIndex((i) => (i + 1) % analyses.length);
-  }, [analyses.length]);
-
   useEffect(() => {
-    if (analyses.length <= 1) return;
-    const id = setInterval(advance, CYCLE_INTERVAL);
+    if (totalSlides <= 1) return;
+    const id = setInterval(() => setSlideIndex((i) => (i + 1) % totalSlides), SURFACE_INTERVAL);
     return () => clearInterval(id);
-  }, [advance, analyses.length]);
+  }, [totalSlides]);
 
   if (!analyses.length) return null;
+
+  // Determine current surface
+  const surface: Surface = slideIndex < analysisCount
+    ? { type: 'analysis', index: slideIndex }
+    : { type: 'dashboard', index: slideIndex - analysisCount };
+
+  const isAnalysis = surface.type === 'analysis';
+  const currentAnalysis = isAnalysis ? analyses[surface.index] : null;
 
   const fadeVariants = prefersReduced
     ? { initial: {}, animate: {}, exit: {} }
     : { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -12 } };
+
+  const frameUrl = isAnalysis
+    ? `helmterminal.dev/analyze/${currentAnalysis!.ticker.toLowerCase()}`
+    : 'helmterminal.dev/dashboard';
 
   return (
     <div className="relative w-full">
@@ -97,67 +119,107 @@ export function HeroAnalysisDemo({ analyses }: { analyses: DemoAnalysis[] }) {
           </div>
           <div className="flex-1 flex justify-center">
             <div className="px-4 py-0.5 rounded bg-white/[0.04] text-[10px] font-mono text-[var(--color-text-muted)]">
-              helmterminal.dev/analyze/{analyses[activeIndex].ticker.toLowerCase()}
+              {frameUrl}
             </div>
           </div>
-          {/* Ticker tabs */}
-          <div className="hidden sm:flex gap-1">
-            {analyses.map((a, i) => (
-              <button
-                key={a.ticker}
-                onClick={() => setActiveIndex(i)}
-                className={`px-2 py-0.5 text-[9px] font-mono font-bold rounded transition-all duration-150 ${
-                  i === activeIndex
-                    ? 'text-[var(--color-gold)] bg-[var(--color-gold)]/10'
-                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
-                }`}
-              >
-                {a.ticker}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Analysis content — cross-fade */}
-        <div className="min-h-[420px] sm:min-h-[480px]">
+          {/* Surface label */}
           <AnimatePresence mode="wait">
             <motion.div
-              key={analyses[activeIndex].ticker}
+              key={isAnalysis ? 'free' : 'pro'}
+              initial={{ opacity: 0, x: 4 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -4 }}
+              transition={{ duration: 0.2 }}
+              className="text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded text-[var(--color-gold)] bg-[var(--color-gold)]/10"
+            >
+              {isAnalysis ? 'ANALYSIS' : 'DASHBOARD'}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Content area — cross-fade between surfaces */}
+        <div className="min-h-[400px] sm:min-h-[460px]" aria-live="polite" aria-label={isAnalysis ? `Free analysis: ${currentAnalysis?.ticker}` : 'Pro dashboard intelligence'}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${surface.type}-${surface.index}`}
               variants={fadeVariants}
               initial="initial"
               animate="animate"
               exit="exit"
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             >
-              <ShowcaseContent
-                ticker={analyses[activeIndex].ticker}
-                analysis={analyses[activeIndex].analysis}
-                computedAt={analyses[activeIndex].computedAt}
-              />
+              {isAnalysis ? (
+                <AnalysisContent
+                  ticker={currentAnalysis!.ticker}
+                  analysis={currentAnalysis!.analysis}
+                  computedAt={currentAnalysis!.computedAt}
+                />
+              ) : (
+                <DashboardMockup momentIndex={surface.index} />
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
+      </div>
+
+      {/* Below-frame label */}
+      <div className="flex justify-center mt-3">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={isAnalysis ? 'free-sub' : 'pro-sub'}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="text-[10px] font-mono text-[var(--color-text-muted)]"
+          >
+            {isAnalysis ? (
+              <Link href="/analyze" className="text-sm hover:text-[var(--color-gold)] transition-colors">Free — try any ticker →</Link>
+            ) : (
+              <Link href="/signup" className="text-sm hover:text-[var(--color-gold)] transition-colors">Free — create your dashboard →</Link>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Slide indicators */}
+      <div className="flex justify-center gap-1 mt-2">
+        {Array.from({ length: totalSlides }).map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setSlideIndex(i)}
+            className={`rounded-full transition-all duration-200 p-2 ${
+              i === slideIndex
+                ? 'bg-[var(--color-gold)]/20'
+                : 'bg-transparent hover:bg-white/5'
+            }`}
+            aria-label={`Show ${i < analysisCount ? 'analysis' : 'dashboard'} slide`}
+          >
+            <span className={`block rounded-full transition-all duration-200 h-1.5 ${
+              i === slideIndex
+                ? 'bg-[var(--color-gold)] w-4'
+                : 'bg-white/15 w-1.5'
+            }`} />
+          </button>
+        ))}
       </div>
     </div>
   );
 }
 
-/* ── Full showcase content ── */
-function ShowcaseContent({ ticker, analysis, computedAt }: { ticker: string; analysis: DemoAnalysis['analysis']; computedAt: string }) {
+/* ── Analysis content ── */
+function AnalysisContent({ ticker, analysis, computedAt }: { ticker: string; analysis: DemoAnalysis['analysis']; computedAt: string }) {
   const metrics = (analysis.metrics || []).slice(0, 6);
   const news = (analysis.newsHighlights || []).slice(0, 2);
   const age = computedAt ? formatAge(computedAt) : '';
 
   return (
-    <div className="p-4 sm:p-5 space-y-4">
-      {/* Header — ticker + verdict + timestamp */}
+    <div className="p-4 sm:p-5 space-y-3">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
             <div className="font-mono font-bold text-xl text-[var(--color-text-primary)]">{ticker}</div>
-            {analysis.companyName && (
-              <div className="text-[11px] text-[var(--color-text-muted)]">{analysis.companyName}</div>
-            )}
+            {analysis.companyName && <div className="text-[11px] text-[var(--color-text-muted)]">{analysis.companyName}</div>}
           </div>
           <VerdictBadge verdict={analysis.verdict} />
         </div>
@@ -168,9 +230,9 @@ function ShowcaseContent({ ticker, analysis, computedAt }: { ticker: string; ana
       </div>
 
       {/* Summary */}
-      <p className="text-[0.8rem] text-[var(--color-text-secondary)] leading-relaxed line-clamp-3">{analysis.summary}</p>
+      <p className="text-[0.8rem] text-[var(--color-text-secondary)] leading-relaxed line-clamp-2">{analysis.summary}</p>
 
-      {/* Bull / Bear cases */}
+      {/* Bull / Bear */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {analysis.bullCase && (
           <div className="rounded border border-[var(--color-positive)]/15 bg-[var(--color-positive)]/[0.03] px-3 py-2">
@@ -192,35 +254,28 @@ function ShowcaseContent({ ticker, analysis, computedAt }: { ticker: string; ana
         )}
       </div>
 
-      {/* Metrics grid — 3 or 6 */}
+      {/* Metrics */}
       {metrics.length > 0 && (
-        <div className={`grid ${metrics.length > 3 ? 'grid-cols-3 sm:grid-cols-3' : 'grid-cols-3'} gap-2`}>
+        <div className="grid grid-cols-3 gap-2">
           {metrics.map((met, i) => (
             <div key={i} className="rounded bg-white/[0.02] border border-white/[0.04] px-2.5 py-2 text-center">
               <div className="text-[8px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5 truncate">{met.label}</div>
-              <div className="font-mono font-bold text-xs text-[var(--color-text-primary)]">
-                <AnimatedValue value={met.value} />
-              </div>
+              <div className="font-mono font-bold text-xs text-[var(--color-text-primary)]"><AnimatedValue value={met.value} /></div>
               {met.change && (
-                <div className={`text-[9px] font-mono ${met.change.startsWith('+') || met.change.startsWith('↑') ? 'text-[var(--color-positive)]' : met.change.startsWith('-') || met.change.startsWith('↓') ? 'text-[var(--color-negative)]' : 'text-[var(--color-text-muted)]'}`}>
-                  {met.change}
-                </div>
+                <div className={`text-[9px] font-mono ${met.change.startsWith('+') || met.change.startsWith('↑') ? 'text-[var(--color-positive)]' : met.change.startsWith('-') || met.change.startsWith('↓') ? 'text-[var(--color-negative)]' : 'text-[var(--color-text-muted)]'}`}>{met.change}</div>
               )}
             </div>
           ))}
         </div>
       )}
 
-      {/* News headlines */}
+      {/* News */}
       {news.length > 0 && (
         <div className="space-y-1">
           <div className="text-[9px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Recent Headlines</div>
           {news.map((item, i) => (
             <div key={i} className="flex items-start gap-2">
-              <span
-                className="w-1.5 h-1.5 rounded-full mt-[5px] shrink-0"
-                style={{ background: item.sentiment === 'positive' ? 'var(--color-positive)' : item.sentiment === 'negative' ? 'var(--color-negative)' : 'var(--color-text-muted)' }}
-              />
+              <span className="w-1.5 h-1.5 rounded-full mt-[5px] shrink-0" style={{ background: item.sentiment === 'positive' ? 'var(--color-positive)' : item.sentiment === 'negative' ? 'var(--color-negative)' : 'var(--color-text-muted)' }} />
               <p className="text-[11px] text-[var(--color-text-muted)] leading-snug line-clamp-1">{item.headline}</p>
             </div>
           ))}
@@ -228,12 +283,8 @@ function ShowcaseContent({ ticker, analysis, computedAt }: { ticker: string; ana
       )}
 
       {/* CTA */}
-      <Link
-        href={`/analyze/${ticker}`}
-        className="flex items-center justify-center gap-2 py-2.5 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 text-xs font-mono uppercase tracking-wider text-[var(--color-gold)] hover:bg-[var(--color-gold)]/5 transition-colors border-t border-white/[0.06] group"
-      >
-        See full analysis
-        <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+      <Link href={`/analyze/${ticker}`} className="flex items-center justify-center gap-2 py-2.5 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 text-xs font-mono uppercase tracking-wider text-[var(--color-gold)] hover:bg-[var(--color-gold)]/5 transition-colors border-t border-white/[0.06] group">
+        See full analysis <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
       </Link>
     </div>
   );
