@@ -220,27 +220,29 @@ export async function GET() {
     // Transform net worth history for chart
     // NOTE: Date-only strings ("2026-04-01") parse as UTC midnight, which
     // shifts to the previous day in western timezones. Adding T12:00:00 avoids this.
-    const transformedNetWorthHistory = netWorthHistory.map(snapshot => {
+    // Deduplicate snapshots by month label — multiple snapshots in the same
+    // month (e.g., backfill on the 1st + real sync on the 8th) both format as
+    // "Apr '26", creating duplicate x-axis entries on the chart. Keep the LATEST
+    // snapshot per month, then override the current month with live-computed values.
+    const snapshotsByMonth = new Map<string, { month: string; value: number; assets: number; liabilities: number }>();
+    for (const snapshot of netWorthHistory) {
       const date = parseDateLocal(snapshot.snapshot_date);
-      return {
-        month: formatMonthLabel(date),
+      const label = formatMonthLabel(date);
+      // Later snapshots overwrite earlier ones for the same month
+      snapshotsByMonth.set(label, {
+        month: label,
         value: Number(snapshot.net_worth),
         assets: Number(snapshot.total_assets),
         liabilities: Number(snapshot.total_liabilities),
-      };
-    });
-
-    // Replace or append the current month with live-computed values so the
-    // graph's latest point matches the displayed net worth exactly.
-    // Historical snapshots may contain stale data from prior computation bugs.
-    const todayLabel = formatMonthLabel(now);
-    const livePoint = { month: todayLabel, value: netWorth, assets: totalAssets, liabilities: totalLiabilities };
-    const existingIdx = transformedNetWorthHistory.findIndex(p => p.month === todayLabel);
-    if (existingIdx >= 0) {
-      transformedNetWorthHistory[existingIdx] = livePoint;
-    } else {
-      transformedNetWorthHistory.push(livePoint);
+      });
     }
+
+    // Override current month with live-computed values so the graph's latest
+    // point matches the displayed net worth exactly.
+    const todayLabel = formatMonthLabel(now);
+    snapshotsByMonth.set(todayLabel, { month: todayLabel, value: netWorth, assets: totalAssets, liabilities: totalLiabilities });
+
+    const transformedNetWorthHistory = Array.from(snapshotsByMonth.values());
 
     // Transform cash flow history for chart
     const transformedCashFlowHistory = cashFlowHistory.map(snapshot => {
