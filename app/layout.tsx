@@ -23,10 +23,10 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   metadataBase: new URL('https://helmterminal.dev'),
   title: 'Helm Terminal - AI-Powered Financial Intelligence',
-  description: 'Institutional-grade financial analysis powered by AI. The personal Bloomberg terminal for modern investors.',
+  description: 'AI-powered, institutional-grade financial analysis with portfolio intelligence. Helm Terminal is your personal command center for modern investors. Free to start.',
   openGraph: {
     title: 'Helm Terminal - AI-Powered Financial Intelligence',
-    description: 'Institutional-grade financial analysis powered by AI. The personal Bloomberg terminal for modern investors.',
+    description: 'AI-powered, institutional-grade financial analysis with portfolio intelligence. Helm Terminal is your personal command center for modern investors. Free to start.',
     url: 'https://helmterminal.dev',
     siteName: 'Helm Terminal',
     type: 'website',

@@ -189,8 +189,12 @@ export function StockAnalysisCard({ analysis, showWatermark = false }: { analysi
                     }}
                   />
                   <div className="min-w-0">
-                    <p className="text-[0.75rem] text-[var(--color-text-secondary)] leading-snug">{item.headline}</p>
-                    <p className="text-[0.625rem] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>{item.date}</p>
+                    {item.url ? (
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-[0.75rem] text-[var(--color-text-secondary)] leading-snug hover:text-[var(--color-gold)] transition-colors">{item.headline}</a>
+                    ) : (
+                      <p className="text-[0.75rem] text-[var(--color-text-secondary)] leading-snug">{item.headline}</p>
+                    )}
+                    <p className="text-[0.625rem] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>{item.date}{item.url && ' · '}{item.url && <a href={item.url} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-gold)] transition-colors">source</a>}</p>
                   </div>
                 </div>
               ))}

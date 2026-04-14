@@ -11,6 +11,7 @@ export interface NewsHighlight {
   headline: string;
   sentiment: 'positive' | 'negative' | 'neutral';
   date: string;
+  url?: string;
 }
 
 export interface StockAnalysis {

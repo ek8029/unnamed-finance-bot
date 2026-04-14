@@ -277,6 +277,18 @@ export async function analyzeStock(ticker: string): Promise<AnalyzeStockResult> 
       if (!Array.isArray(analysis.newsHighlights)) analysis.newsHighlights = [];
       if (!analysis.ticker) analysis.ticker = symbol;
       if (!analysis.verdict) analysis.verdict = 'neutral';
+
+      // Enrich AI-generated headlines with URLs from the original Finnhub data
+      if (tickerData.news?.length && analysis.newsHighlights.length) {
+        for (const highlight of analysis.newsHighlights) {
+          const match = tickerData.news.find(n =>
+            n.headline === highlight.headline ||
+            n.headline.toLowerCase().includes(highlight.headline.toLowerCase()) ||
+            highlight.headline.toLowerCase().includes(n.headline.toLowerCase())
+          );
+          if (match?.url) highlight.url = match.url;
+        }
+      }
     } catch (parseError) {
       console.error(`Failed to parse analysis for ${symbol}:`, parseError);
       return emptyResult;
