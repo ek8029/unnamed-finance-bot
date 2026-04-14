@@ -322,9 +322,9 @@ export default function TransactionsPage() {
       {/* Filters */}
       <Card>
         <CardContent className="pt-5 pb-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-end gap-3">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-end gap-3">
             {/* Search */}
-            <form onSubmit={handleSearch} className="flex-1 min-w-0 sm:min-w-[200px]">
+            <form onSubmit={handleSearch} className="w-full sm:flex-1 sm:min-w-[200px]">
               <label className="type-label text-xs text-[var(--color-text-secondary)] mb-1.5 block">Search</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
@@ -339,7 +339,7 @@ export default function TransactionsPage() {
             </form>
 
             {/* Account Filter */}
-            <div className="min-w-0 sm:min-w-[160px]">
+            <div className="w-full sm:w-auto sm:min-w-[160px]">
               <label className="type-label text-xs text-[var(--color-text-secondary)] mb-1.5 block">Account</label>
               <select
                 value={filters.account_id}
@@ -364,7 +364,7 @@ export default function TransactionsPage() {
             />
 
             {/* Type Filter */}
-            <div className="min-w-0 sm:min-w-[120px]">
+            <div className="w-full sm:w-auto sm:min-w-[120px]">
               <label className="type-label text-xs text-[var(--color-text-secondary)] mb-1.5 block">Type</label>
               <select
                 value={filters.type}
@@ -378,7 +378,7 @@ export default function TransactionsPage() {
             </div>
 
             {/* Date From */}
-            <div className="min-w-0 sm:min-w-[140px]">
+            <div className="w-full sm:w-auto sm:min-w-[140px]">
               <label className="type-label text-xs text-[var(--color-text-secondary)] mb-1.5 block">From</label>
               <input
                 type="date"
@@ -389,7 +389,7 @@ export default function TransactionsPage() {
             </div>
 
             {/* Date To */}
-            <div className="min-w-0 sm:min-w-[140px]">
+            <div className="w-full sm:w-auto sm:min-w-[140px]">
               <label className="type-label text-xs text-[var(--color-text-secondary)] mb-1.5 block">To</label>
               <input
                 type="date"
@@ -458,8 +458,8 @@ export default function TransactionsPage() {
                   <tr className="border-b border-[var(--color-border-subtle)]">
                     <th className="text-left py-2 px-3 type-label text-xs text-[var(--color-text-muted)]">Date</th>
                     <th className="text-left py-2 px-3 type-label text-xs text-[var(--color-text-muted)]">Description</th>
-                    <th className="text-left py-2 px-3 type-label text-xs text-[var(--color-text-muted)]">Category</th>
-                    <th className="text-left py-2 px-3 type-label text-xs text-[var(--color-text-muted)]">Account</th>
+                    <th className="hidden sm:table-cell text-left py-2 px-3 type-label text-xs text-[var(--color-text-muted)]">Category</th>
+                    <th className="hidden sm:table-cell text-left py-2 px-3 type-label text-xs text-[var(--color-text-muted)]">Account</th>
                     <th className="text-right py-2 px-3 type-label text-xs text-[var(--color-text-muted)]">Amount</th>
                   </tr>
                 </thead>
@@ -494,7 +494,7 @@ export default function TransactionsPage() {
                             </div>
                           )}
                         </td>
-                        <td className="py-3 px-3">
+                        <td className="hidden sm:table-cell py-3 px-3">
                           {tx.category_name ? (
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[var(--color-bg-overlay)] text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)]">
                               {tx.category_name}
@@ -503,7 +503,7 @@ export default function TransactionsPage() {
                             <span className="text-xs text-[var(--color-text-muted)]">Uncategorized</span>
                           )}
                         </td>
-                        <td className="py-3 px-3">
+                        <td className="hidden sm:table-cell py-3 px-3">
                           <span className="text-sm text-[var(--color-text-secondary)]">
                             {tx.account_name || '-'}
                           </span>

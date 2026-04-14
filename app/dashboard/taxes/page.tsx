@@ -301,7 +301,7 @@ export default function TaxesPage() {
               <div className="grid grid-cols-3 gap-px bg-[var(--color-border-subtle)]">
                 <div className="bg-[var(--color-bg-surface)] px-5 py-3.5 text-center">
                   <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1" style={MONO}>Total Harvestable</div>
-                  <div className="text-lg font-bold text-[var(--color-negative)]" style={TNUM}>{formatCurrency(harvestReport.totalHarvestableLoss)}</div>
+                  <div className="text-sm sm:text-lg font-bold text-[var(--color-negative)] whitespace-nowrap" style={TNUM}>{formatCurrency(harvestReport.totalHarvestableLoss)}</div>
                 </div>
                 <div className="bg-[var(--color-bg-surface)] px-5 py-3.5 text-center">
                   <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1" style={MONO}>Est. Tax Savings</div>
