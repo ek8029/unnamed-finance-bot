@@ -201,6 +201,7 @@ export function DailyBrief() {
         onClick={handleExpand}
         role="button"
         tabIndex={0}
+        aria-label="Expand today's brief"
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleExpand(); }
         }}
@@ -292,7 +293,7 @@ export function DailyBrief() {
         {/* ── Row 2: Sector heat (interactive) ── */}
         {brief.sectorHeat.length > 0 && (
           <div className="space-y-2">
-            <div className="flex h-2 w-full overflow-hidden rounded-sm">
+            <div className="flex h-2 w-full overflow-hidden rounded-sm" style={{ minHeight: '44px', paddingBlock: '13px', boxSizing: 'content-box' }}>
               {(() => {
                 const totalWeight = brief.sectorHeat.reduce((sum, s) => sum + s.weight, 0);
                 return brief.sectorHeat.map((sector, i) => (
@@ -310,6 +311,7 @@ export function DailyBrief() {
                     title={`${sector.sector}: ${formatPct(sector.changePct)} · ${sector.weight.toFixed(1)}% of portfolio`}
                     role="button"
                     tabIndex={0}
+                    aria-label={`Filter by ${sector.sector} sector`}
                     onClick={() => toggleSector(sector.sector)}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSector(sector.sector); } }}
                   />
@@ -321,7 +323,7 @@ export function DailyBrief() {
                 <div
                   key={sector.sector}
                   className={cn(
-                    'flex items-center gap-1.5 cursor-pointer transition-opacity duration-150 rounded px-1 -mx-1',
+                    'flex items-center gap-1.5 cursor-pointer transition-opacity duration-150 rounded px-2 py-1.5 -mx-2',
                     sectorFilter === sector.sector && 'bg-[var(--color-bg-overlay)]',
                     sectorFilter && sectorFilter !== sector.sector && 'opacity-40',
                   )}

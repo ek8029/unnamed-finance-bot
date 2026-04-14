@@ -152,6 +152,9 @@
     --shadow-card:       0 2px 12px rgba(0, 0, 0, 0.06);
     --shadow-card-hover: 0 4px 20px rgba(0, 0, 0, 0.08);
     --shadow-elevated:   0 8px 30px rgba(0, 0, 0, 0.10);
+    --shadow-glow-gold:  0 0 12px rgba(184, 145, 74, 0.08), 0 0 40px rgba(184, 145, 74, 0.03);
+    --shadow-glow-green: 0 0 12px rgba(22, 163, 74, 0.08), 0 0 40px rgba(22, 163, 74, 0.03);
+    --shadow-glow-red:   0 0 12px rgba(220, 38, 38, 0.08), 0 0 40px rgba(220, 38, 38, 0.03);
   }
 
   /* ── DENSITY VARIANTS ── */
@@ -429,7 +432,21 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   }
 
-  /* ── GLOW EFFECTS (brighter gold) ── */
+  /* ── FOCUS VISIBLE ── */
+  *:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+
+  /* ── GLOW EFFECTS ── */
+  /* Suppressed in light mode — white/gold text-shadows are invisible on light backgrounds */
+  :root.light .glow-gold,
+  :root.light .glow-gold-subtle,
+  :root.light .glow-positive,
+  :root.light .glow-negative,
+  :root.light .glow-white {
+    text-shadow: none;
+  }
   .glow-gold {
     text-shadow: 0 0 20px rgba(230, 185, 77, 0.4), 0 0 40px rgba(230, 185, 77, 0.15);
   }

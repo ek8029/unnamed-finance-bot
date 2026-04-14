@@ -32,7 +32,7 @@ function SummaryCard({ item, index }: { item: SummaryItem; index: number }) {
   const Icon = item.icon;
   const isPositive = (item.change ?? 0) >= 0;
   const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
-  const animatedValue = useCountUp(item.value, 1200, 0, index * 100);
+  const animatedValue = useCountUp(item.value, 800, 0, index * 80);
   const displayValue = isVisible ? animatedValue : item.value;
 
   return (

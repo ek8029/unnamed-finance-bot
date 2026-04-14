@@ -287,7 +287,7 @@ export async function GET() {
       const date = parseDateLocal(snapshot.snapshot_month);
       return {
         month: formatMonthShort(date),
-        rate: Math.round(Number(snapshot.savings_rate || 0) * 100),
+        rate: Number(snapshot.savings_rate || 0) * 100,
         saved: Number(snapshot.savings_amount || 0),
       };
     });
@@ -322,7 +322,7 @@ export async function GET() {
       healthScore: {
         score: healthScore.overall_score,
         debt_to_asset_ratio: healthScore.debt_to_asset_ratio,
-        savings_rate: healthScore.savings_rate,
+        savings_rate: latestCashFlow?.savings_rate ?? healthScore.savings_rate,
         emergency_fund_months: healthScore.emergency_fund_months,
         portfolio_diversification: healthScore.portfolio_diversification,
       },

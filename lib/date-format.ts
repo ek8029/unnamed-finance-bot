@@ -21,13 +21,12 @@ export function parseDateLocal(dateStr: string): Date {
 }
 
 /**
- * Format as "Apr '26" — unambiguous month + 2-digit year.
- * Avoids "Apr 26" which looks like April 26th.
+ * Format as short month name for chart axis labels ("Apr").
+ * Year context comes from the tooltip on hover.
+ * Previous "Apr '26" format was misread as "April 26th".
  */
 export function formatMonthLabel(date: Date): string {
-  const month = MONTH_NAMES[date.getMonth()];
-  const year = date.getFullYear().toString().slice(-2);
-  return `${month} '${year}`;
+  return MONTH_NAMES[date.getMonth()];
 }
 
 /**

@@ -286,6 +286,7 @@ export default function DashboardLayout({
                 <Link
                   key={item.name}
                   href={item.href}
+                  aria-current={isActive ? "page" : undefined}
                   className={cn(
                     'flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded transition-colors duration-200',
                     isActive
@@ -347,7 +348,7 @@ export default function DashboardLayout({
             onClick={() => setMenuOpen(!menuOpen)}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded hover:bg-[var(--color-bg-overlay)] transition-colors duration-200"
           >
-            <div className="w-8 h-8 rounded-full bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-full bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center shrink-0" aria-hidden="true">
               <span className="text-xs font-semibold text-[var(--color-gold)]">
                 {profile?.initials || '...'}
               </span>

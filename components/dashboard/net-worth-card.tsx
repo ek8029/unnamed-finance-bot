@@ -13,7 +13,6 @@ import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 import { NetWorthDataPoint } from '@/types';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 
 interface NetWorthCardProps {
   currentNetWorth: number;
@@ -30,9 +29,8 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentag
   const changePercentage = apiChangePct ?? (previousNetWorth !== 0 ? (change / previousNetWorth) * 100 : 0);
   const isPositiveChange = change >= 0;
 
-  const [isLoading] = useState(false);
-  const animatedNetWorth = useCountUp(currentNetWorth, 1400, 0, 200);
-  const animatedChange = useCountUp(Math.abs(change), 1400, 0, 300);
+  const animatedNetWorth = useCountUp(currentNetWorth, 800, 0, 100);
+  const animatedChange = useCountUp(Math.abs(change), 800, 0, 200);
 
   // Calculate proper Y-axis domain with padding
   const values = netWorthHistory.length > 0 ? netWorthHistory.map(d => d.value) : [0];
@@ -67,20 +65,11 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentag
               <span className={`font-tabular ${isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
                 {isPositiveChange ? '+' : ''}{changePercentage.toFixed(1)}%
               </span>
-              <span className="text-[var(--color-text-muted)]">from last month</span>
+              <span className="text-[var(--color-text-muted)] whitespace-nowrap">from last month</span>
             </div>
           </div>
         </DataPanelHeader>
         <DataPanelContent>
-        {isLoading ? (
-          <div className="space-y-4" role="status" aria-live="polite" aria-label="Loading net worth chart">
-            <Skeleton className="h-[240px] w-full" />
-            <div className="flex justify-between items-center">
-              <Skeleton className="h-10 w-40" />
-              <Skeleton className="h-6 w-32" />
-            </div>
-          </div>
-        ) : (
           <div className="space-y-4">
             {/* Top: Large Chart */}
             <div className="h-[200px] md:h-[280px]" role="img" aria-label={`Net worth trend: ${netWorthHistory.length} months of data, currently ${formatCurrency(currentNetWorth)}`}>
@@ -99,7 +88,7 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentag
                     tickLine={false}
                     axisLine={false}
                     fontFamily="var(--font-mono)"
-                    interval={2}
+                    interval={0}
                     tick={{ dy: 6 }}
                   />
                   <YAxis
@@ -159,7 +148,6 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentag
               </div>
             </div>
           </div>
-        )}
         </DataPanelContent>
       </DataPanel>
     </div>

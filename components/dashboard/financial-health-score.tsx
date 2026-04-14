@@ -48,7 +48,7 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
         {/* Compact Circular Score */}
         <div className="flex flex-col items-center justify-center">
           <div className="relative h-40 w-40">
-            <svg className="h-40 w-40 -rotate-90" viewBox="0 0 128 128">
+            <svg className="h-40 w-40 -rotate-90" viewBox="0 0 128 128" role="img" aria-label={`Health score: ${healthScore.score} out of 100`}>
               <defs>
                 <filter id="scoreGlow" x="-20%" y="-20%" width="140%" height="140%">
                   <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
