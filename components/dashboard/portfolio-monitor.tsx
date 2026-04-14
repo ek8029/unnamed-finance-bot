@@ -197,7 +197,7 @@ export function PortfolioMonitor({ holdings }: PortfolioMonitorProps) {
                               <div className="font-mono text-[17px] font-bold tracking-tight text-[var(--color-text-primary)] leading-tight">
                                 {holding.ticker}
                               </div>
-                              <div className="text-[13px] text-[var(--color-text-muted)] leading-tight mt-0.5 truncate max-w-[140px] sm:max-w-[220px]">
+                              <div className="text-[13px] text-[var(--color-text-muted)] leading-tight mt-0.5 truncate max-w-[160px] sm:max-w-[220px]">
                                 {holding.asset_name}
                                 <span className="text-[var(--color-text-muted)]/60 ml-1.5">
                                   {formatNumber(holding.shares)} shares

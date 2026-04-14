@@ -260,7 +260,7 @@ export default function PortfolioPage() {
                   <button
                     key={key}
                     onClick={() => setRange(key)}
-                    className={`px-2.5 py-1 rounded-md type-caption transition-colors duration-200 ${
+                    className={`px-2.5 py-1.5 rounded-md type-caption transition-colors duration-200 ${
                       range === key
                         ? 'bg-[var(--color-gold-surface)] text-[var(--color-gold)] border border-[var(--color-gold-border)]'
                         : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] hover:border-[var(--color-border-base)]'
