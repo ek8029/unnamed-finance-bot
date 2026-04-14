@@ -489,7 +489,7 @@ export default function TransactionsPage() {
                         <td className="py-3 px-3">
                           <div className="type-h3 text-sm">{tx.merchant_name || tx.description}</div>
                           {tx.merchant_name && tx.description !== tx.merchant_name && (
-                            <div className="text-xs text-[var(--color-text-muted)] mt-0.5 truncate max-w-[180px] sm:max-w-[280px]">
+                            <div className="text-xs text-[var(--color-text-muted)] mt-0.5 truncate max-w-[200px] sm:max-w-[280px]">
                               {tx.description}
                             </div>
                           )}

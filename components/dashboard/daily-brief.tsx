@@ -335,7 +335,7 @@ export function DailyBrief() {
                   <span className={cn('text-[0.6875rem] font-mono tabular-nums', colorClass(sector.changePct))}>
                     {formatPct(sector.changePct)}
                   </span>
-                  <span className="text-[0.5625rem] text-[var(--color-text-muted)] font-mono tabular-nums">{sector.weight.toFixed(0)}%</span>
+                  <span className="text-[0.625rem] text-[var(--color-text-muted)] font-mono tabular-nums">{sector.weight.toFixed(0)}%</span>
                 </div>
               ))}
               {sectorFilter && (
