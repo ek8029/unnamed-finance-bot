@@ -265,7 +265,7 @@ export default function LandingTestPage() {
             className="opacity-[0.04] will-change-transform"
             style={{ animation: 'rotate-slow 180s linear infinite reverse' }}
           >
-            <HelmMark size={800} variant="mono" className="text-[var(--color-gold)] w-[250px] h-[250px] sm:w-[400px] sm:h-[400px] md:w-[600px] md:h-[600px] lg:w-[800px] lg:h-[800px]" />
+            <HelmMark size={1200} variant="mono" className="text-[var(--color-gold)] w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] md:w-[800px] md:h-[800px] lg:w-[1200px] lg:h-[1200px]" />
           </div>
         </div>
 
