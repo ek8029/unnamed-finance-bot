@@ -162,6 +162,29 @@ export async function GET(request: Request) {
         try {
           await updatePortfolioPerformance(serviceClient, userId);
           log.push(`[perf] Updated portfolio_performance for user ${userId.slice(0, 8)}...`);
+
+          // Write a daily portfolio snapshot for the chart
+          const { data: userHoldings } = await serviceClient
+            .from('holdings')
+            .select('total_value, unrealised_gain_loss')
+            .eq('user_id', userId);
+
+          if (userHoldings && userHoldings.length > 0) {
+            const totalValue = userHoldings.reduce((s: number, h: { total_value: number }) => s + Number(h.total_value), 0);
+            const totalGainLoss = userHoldings.reduce((s: number, h: { unrealised_gain_loss: number | null }) => s + Number(h.unrealised_gain_loss || 0), 0);
+            const today = new Date().toISOString().split('T')[0];
+
+            await serviceClient
+              .from('portfolio_snapshots')
+              .upsert({
+                user_id: userId,
+                snapshot_date: today,
+                total_value: totalValue,
+                total_gain_loss: totalGainLoss,
+              }, { onConflict: 'user_id,snapshot_date' });
+
+            log.push(`[snapshots] Wrote portfolio_snapshots for user ${userId.slice(0, 8)}...`);
+          }
         } catch (error) {
           console.error(`[cron/daily] Error computing portfolio performance for ${userId}:`, error);
         }

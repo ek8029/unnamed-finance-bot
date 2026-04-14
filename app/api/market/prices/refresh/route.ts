@@ -186,6 +186,27 @@ export async function POST() {
 
       try {
         await updatePortfolioPerformance(serviceClient, uid);
+
+        // Write a portfolio snapshot for the chart (so it updates on every price refresh, not just daily cron)
+        const { data: snapHoldings } = await serviceClient
+          .from('holdings')
+          .select('total_value, unrealised_gain_loss')
+          .eq('user_id', uid);
+
+        if (snapHoldings && snapHoldings.length > 0) {
+          const totalValue = snapHoldings.reduce((s: number, h: { total_value: number }) => s + Number(h.total_value), 0);
+          const totalGainLoss = snapHoldings.reduce((s: number, h: { unrealised_gain_loss: number | null }) => s + Number(h.unrealised_gain_loss || 0), 0);
+          const today = new Date().toISOString().split('T')[0];
+
+          await serviceClient
+            .from('portfolio_snapshots')
+            .upsert({
+              user_id: uid,
+              snapshot_date: today,
+              total_value: totalValue,
+              total_gain_loss: totalGainLoss,
+            }, { onConflict: 'user_id,snapshot_date' });
+        }
       } catch {
         // Non-fatal
       }

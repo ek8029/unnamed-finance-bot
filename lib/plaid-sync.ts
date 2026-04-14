@@ -535,7 +535,25 @@ export async function computeSnapshots(
 
     const netFlow = totalIncome - totalExpenses;
     const savingsAmount = Math.max(0, netFlow);
-    const savingsRate = totalIncome > 0 ? savingsAmount / totalIncome : 0;
+    // Use rolling average savings rate if available (same pattern as emergency fund)
+    let savingsRate = totalIncome > 0 ? savingsAmount / totalIncome : 0;
+    try {
+      const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString().split('T')[0];
+      const { data: recentFlows } = await supabase
+        .from('cash_flow_snapshots')
+        .select('savings_rate')
+        .eq('user_id', userId)
+        .gte('snapshot_month', threeMonthsAgo)
+        .order('snapshot_month', { ascending: false })
+        .limit(3);
+
+      if (recentFlows && recentFlows.length >= 2) {
+        const avgRate = recentFlows.reduce((s: number, r: { savings_rate: number }) => s + Number(r.savings_rate), 0) / recentFlows.length;
+        if (avgRate > 0) savingsRate = avgRate;
+      }
+    } catch {
+      // Fallback to current month
+    }
 
     await supabase
       .from('cash_flow_snapshots')
