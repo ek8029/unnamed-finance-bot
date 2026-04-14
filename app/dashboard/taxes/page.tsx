@@ -228,7 +228,7 @@ export default function TaxesPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
         <div className="rounded-sm p-4" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}>
           <div className="flex items-center gap-1.5 mb-2">
             <TrendingUp className="w-3.5 h-3.5 text-[var(--color-positive)]" />
@@ -469,7 +469,7 @@ export default function TaxesPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[var(--color-border-subtle)]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-px bg-[var(--color-border-subtle)]">
               <div className="bg-[var(--color-bg-surface)] px-5 py-3.5 text-center">
                 <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1" style={MONO}>Short-Term Gains</div>
                 <div className="text-sm font-bold text-[var(--color-positive)]" style={TNUM}>{formatCurrency(taxData!.realized.shortTermGains)}</div>

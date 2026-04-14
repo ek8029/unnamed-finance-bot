@@ -37,7 +37,7 @@ function UpcomingCard({ event, formatCurrency }: { event: UpcomingEarning; forma
           <span className="type-data text-2xl">{day}</span>
           <div className="flex items-center gap-1 mt-1">
             <Clock className="w-2.5 h-2.5 text-[var(--color-text-muted)]" />
-            <span className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider" style={{ fontFamily: 'var(--font-mono)' }}>{timeLabel}</span>
+            <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider" style={{ fontFamily: 'var(--font-mono)' }}>{timeLabel}</span>
           </div>
         </div>
 

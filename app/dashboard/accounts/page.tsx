@@ -499,7 +499,7 @@ export default function AccountsPage() {
                       <button
                         onClick={() => setConfirmDisconnect(item.id)}
                         disabled={disconnecting === item.id}
-                        className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-negative)] transition-colors rounded hover:bg-[var(--color-bg-overlay)]"
+                        className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-negative)] transition-colors rounded hover:bg-[var(--color-bg-overlay)]"
                         title="Disconnect"
                         aria-label={`Disconnect ${item.institution_name}`}
                       >
@@ -579,7 +579,7 @@ export default function AccountsPage() {
             onClick={() => setConfirmDisconnect(null)}
             aria-hidden="true"
           />
-          <div role="dialog" aria-modal="true" aria-labelledby="disconnect-heading" className="relative w-full max-w-sm bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl animate-scale-in p-6 space-y-4">
+          <div role="dialog" aria-modal="true" aria-labelledby="disconnect-heading" className="relative w-[calc(100%-2rem)] max-w-sm bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl animate-scale-in p-6 space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-[var(--color-negative)]/10 rounded-full flex items-center justify-center">
                 <Trash2 className="w-5 h-5 text-[var(--color-negative)]" />
@@ -621,7 +621,7 @@ export default function AccountsPage() {
             onClick={() => setShowAddAccount(false)}
             aria-hidden="true"
           />
-          <div role="dialog" aria-modal="true" aria-labelledby="add-account-heading" className="relative w-full max-w-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl animate-scale-in">
+          <div role="dialog" aria-modal="true" aria-labelledby="add-account-heading" className="relative w-[calc(100%-2rem)] max-w-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl animate-scale-in">
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[var(--color-border-base)]">
               <div>
                 <h2 id="add-account-heading" className="type-h2">Connect Account</h2>
