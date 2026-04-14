@@ -260,12 +260,12 @@ export default function LandingTestPage() {
         </div>
 
         {/* Giant logo watermark — slow counter-rotation against helm beams */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-[1]">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-[1] overflow-hidden">
           <div
             className="opacity-[0.04] will-change-transform"
             style={{ animation: 'rotate-slow 180s linear infinite reverse' }}
           >
-            <HelmMark size={1200} variant="mono" className="text-[var(--color-gold)]" />
+            <HelmMark size={800} variant="mono" className="text-[var(--color-gold)] w-[250px] h-[250px] sm:w-[400px] sm:h-[400px] md:w-[600px] md:h-[600px] lg:w-[800px] lg:h-[800px]" />
           </div>
         </div>
 
@@ -356,26 +356,26 @@ export default function LandingTestPage() {
                 end={totalNetWorth > 0 ? totalNetWorth : 1247000}
                 formatter={(v) => `$${Math.round(v).toLocaleString()}`}
                 duration={2500}
-                className="font-mono font-bold text-lg md:text-xl"
+                className="font-mono font-bold text-sm md:text-xl truncate block"
               />
             </div>
             <div className="text-center md:text-left md:px-6">
               <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-mono mb-1">
                 Accounts Monitored
               </div>
-              <CountUp end={3} duration={1500} className="font-mono font-bold text-lg md:text-xl" />
+              <CountUp end={3} duration={1500} className="font-mono font-bold text-sm md:text-xl" />
             </div>
             <div className="text-center md:text-left md:px-6">
               <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-mono mb-1">
                 Intelligence Engines
               </div>
-              <CountUp end={7} duration={1800} className="font-mono font-bold text-lg md:text-xl" />
+              <CountUp end={7} duration={1800} className="font-mono font-bold text-sm md:text-xl" />
             </div>
             <div className="text-center md:text-left md:px-6 last:md:pr-0">
               <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-mono mb-1">
                 System Status
               </div>
-              <span className="flex items-center justify-center md:justify-start gap-2 font-mono font-bold text-lg md:text-xl text-[var(--color-positive)]">
+              <span className="flex items-center justify-center md:justify-start gap-2 font-mono font-bold text-sm md:text-xl text-[var(--color-positive)]">
                 <span className="w-2 h-2 rounded-full bg-[var(--color-positive)] animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.6)]" />
                 OPERATIONAL
               </span>
@@ -415,7 +415,7 @@ export default function LandingTestPage() {
                     <div className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-mono mb-1">
                       Net Worth
                     </div>
-                    <div className="font-mono font-bold text-xl md:text-2xl text-[var(--color-gold)]">
+                    <div className="font-mono font-bold text-base md:text-2xl text-[var(--color-gold)] truncate overflow-hidden">
                       <CountUp
                         end={totalNetWorth > 0 ? totalNetWorth : 1247000}
                         formatter={(v) => `$${Math.round(v).toLocaleString()}`}
@@ -430,7 +430,7 @@ export default function LandingTestPage() {
                     <div className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-mono mb-1">
                       Actions
                     </div>
-                    <div className="font-mono font-bold text-xl md:text-2xl">
+                    <div className="font-mono font-bold text-base md:text-2xl">
                       <CountUp end={3} duration={1500} />
                     </div>
                     <div className="text-xs text-[var(--color-gold)] font-mono mt-0.5">
@@ -441,7 +441,7 @@ export default function LandingTestPage() {
                     <div className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-mono mb-1">
                       Tax Savings
                     </div>
-                    <div className="font-mono font-bold text-xl md:text-2xl text-[var(--color-positive)]">
+                    <div className="font-mono font-bold text-base md:text-2xl text-[var(--color-positive)] truncate overflow-hidden">
                       <CountUp
                         end={2400}
                         formatter={(v) => `$${Math.round(v).toLocaleString()}`}
@@ -543,8 +543,8 @@ export default function LandingTestPage() {
           </FadeIn>
 
           <FadeIn delay={150}>
-            <TerminalBlock>
-              <div className="space-y-3">
+            <TerminalBlock command="$ helm analyze --portfolio">
+              <div className="space-y-3 min-h-[100px]">
                 {howItWorks.map((segs, i) => (
                   <div key={i}>
                     <ScrollTypingLine segments={segs} delay={i * 600} speed={20} />
@@ -635,10 +635,10 @@ export default function LandingTestPage() {
             {sessionExcerpts.map((session, si) => (
               <FadeIn key={si} delay={si * 200}>
                 <TerminalBlock command="// session — early access user">
-                  <div className="space-y-2">
+                  <div className="space-y-2 min-h-[100px]">
                     {session.map((segs, li) => (
                       <div key={li}>
-                        <ScrollTypingLine segments={segs} delay={li * 500} speed={18} />
+                        <ScrollTypingLine segments={segs} delay={li * 300} speed={18} />
                       </div>
                     ))}
                   </div>

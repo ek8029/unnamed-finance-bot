@@ -500,7 +500,7 @@ export function TerminalBlock({
 }) {
   return (
     <div
-      className={`bg-[rgba(10,10,10,0.8)] border border-white/[0.06] rounded-lg px-6 py-5 font-mono text-base ${className}`}
+      className={`bg-[rgba(10,10,10,0.8)] border border-white/[0.06] rounded-lg px-6 py-5 font-mono text-base min-h-[100px] ${className}`}
     >
       {command && (
         <div className="text-[var(--color-text-muted)] mb-3 text-xs">
