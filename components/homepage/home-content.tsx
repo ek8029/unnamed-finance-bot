@@ -93,7 +93,10 @@ function HeroSearch() {
 export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalysis[] }) {
   const [scrolled, setScrolled] = useState(false);
   const { scrollY } = useScroll();
-  const heroOpacity = useTransform(scrollY, [0, 600], [1, 0]);
+  // On mobile, hero content extends below fold — don't fade it on scroll.
+  // On desktop (lg+), fade out as user scrolls past the hero.
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+  const heroOpacity = useTransform(scrollY, [0, isMobile ? 2000 : 600], [1, isMobile ? 1 : 0]);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 60);
@@ -125,7 +128,7 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
       <div className="absolute top-[20%] left-[10%] w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] rounded-full pointer-events-none z-0 opacity-[0.03] blur-[120px] bg-[var(--color-gold)] will-change-transform" />
       <div className="absolute bottom-[15%] right-[10%] w-[250px] sm:w-[400px] h-[250px] sm:h-[400px] rounded-full pointer-events-none z-0 opacity-[0.02] blur-[100px] bg-[var(--color-positive)] will-change-transform" />
       {[0, 1, 2].map((i) => (
-        <div key={i} className="absolute left-1/2 top-1/2 w-[300px] h-[300px] rounded-full border border-[var(--color-gold)] opacity-0 pointer-events-none z-[1]" style={{ animation: `sonar 5s ${i * 1.6}s ease-out infinite` }} />
+        <div key={i} className="hidden sm:block absolute left-1/2 top-1/2 w-[300px] h-[300px] rounded-full border border-[var(--color-gold)] opacity-0 pointer-events-none z-[1]" style={{ animation: `sonar 5s ${i * 1.6}s ease-out infinite` }} />
       ))}
 
       {/* ═══ NAV — Sign in + Sign up for logged-out ═══ */}
@@ -151,16 +154,16 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
         </div>
       </nav>
 
-      <main>
+      <main className="overflow-x-hidden">
 
       {/* ════════════════════════════════════════════════════════════════════════
           HERO — dual positioning: terminal + free
           ════════════════════════════════════════════════════════════════════════ */}
       <section className="relative min-h-screen flex items-center overflow-hidden pt-24 pb-16">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#0A0A0A_80%)] z-[1]" />
-        <div className="absolute top-[40%] left-[30%] w-[800px] h-[600px] bg-[radial-gradient(ellipse,rgba(230,185,77,0.06),transparent_60%)] z-[1]" />
+        <div className="hidden sm:block absolute top-[40%] left-[30%] w-[800px] h-[600px] bg-[radial-gradient(ellipse,rgba(230,185,77,0.06),transparent_60%)] z-[1]" />
 
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1] overflow-hidden opacity-50">
+        <div className="hidden md:flex absolute inset-0 items-center justify-center pointer-events-none z-[1] overflow-hidden opacity-50">
           <div className="w-[1200px] h-[1200px] will-change-transform" style={{ animation: 'rotate-slow 120s linear infinite' }}>
             {[0, 60, 120, 180, 240, 300].map((angle) => (
               <div key={angle} className="absolute top-1/2 left-1/2 w-[600px] h-[1px] origin-left" style={{ transform: `rotate(${angle}deg)`, background: 'linear-gradient(to right, rgba(230,185,77,0.04), transparent)' }} />
@@ -168,9 +171,9 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
           </div>
         </div>
 
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-[1] overflow-hidden" aria-hidden="true">
+        <div className="hidden sm:flex absolute inset-0 items-center justify-center pointer-events-none select-none z-[1] overflow-hidden" aria-hidden="true">
           <div className="opacity-[0.025] will-change-transform" style={{ animation: 'rotate-slow 180s linear infinite reverse' }}>
-            <HelmMark size={1200} variant="mono" className="text-[var(--color-gold)] w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] md:w-[800px] md:h-[800px] lg:w-[1200px] lg:h-[1200px]" />
+            <HelmMark size={1200} variant="mono" className="text-[var(--color-gold)] sm:w-[500px] sm:h-[500px] md:w-[800px] md:h-[800px] lg:w-[1200px] lg:h-[1200px]" />
           </div>
         </div>
 
