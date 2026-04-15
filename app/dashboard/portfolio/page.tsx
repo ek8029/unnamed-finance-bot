@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { PortfolioMonitor } from '@/components/dashboard/portfolio-monitor';
 import { PortfolioAllocation } from '@/components/dashboard/portfolio-allocation';
 import { MarketIntelligence } from '@/components/portfolio/market-intelligence';
-import { useHoldings } from '@/hooks/use-financial-data';
+import { useHoldings, useTaxData } from '@/hooks/use-financial-data';
 import { TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -37,6 +37,7 @@ export default function PortfolioPage() {
   const { formatCurrency, formatCurrencyDetailed } = useFormat();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const holdingsData: any = useHoldings();
+  const { data: taxData } = useTaxData();
   const holdings: { id: string; ticker: string; asset_name: string; shares: number; current_price: number; total_value: number; day_change_percentage: number | null; portfolio_allocation: number; sector?: string; asset_class?: string; cost_basis?: number; unrealised_gain?: number }[] = holdingsData.holdings ?? [];
   const allocation: { name: string; value: number; percentage: number }[] = holdingsData.allocation ?? [];
   const totalValue: number = holdingsData.totalValue ?? 0;
@@ -242,6 +243,50 @@ export default function PortfolioPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* TLH Snapshot — harvestable losses + realized gains */}
+          {(() => {
+            const underwater = holdings.filter((h: { unrealised_gain?: number }) => (h.unrealised_gain ?? 0) < 0);
+            const harvestable = underwater.reduce((sum: number, h: { unrealised_gain?: number }) => sum + Math.abs(h.unrealised_gain ?? 0), 0);
+            if (underwater.length === 0) return null;
+            const realizedGains = Math.max(0, (taxData?.realized?.shortTermGains ?? 0) + (taxData?.realized?.longTermGains ?? 0));
+            const calcParams = new URLSearchParams({
+              losses: Math.round(harvestable).toString(),
+              portfolio: Math.round(totalValue).toString(),
+              ...(realizedGains > 0 ? { gains: Math.round(realizedGains).toString() } : {}),
+            });
+            return (
+              <div className="rounded-lg border border-[var(--color-gold)]/15 bg-[var(--color-gold)]/[0.02] px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <TrendingDown className="w-4 h-4 text-[var(--color-gold)]" />
+                    <div>
+                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                        {formatCurrency(harvestable)} in harvestable losses
+                      </span>
+                      <span className="text-xs text-[var(--color-text-muted)] ml-2">
+                        across {underwater.length} position{underwater.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </div>
+                  <Link
+                    href={`/tools/tlh-calculator?${calcParams.toString()}`}
+                    className="text-xs font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors whitespace-nowrap"
+                  >
+                    Estimate tax savings →
+                  </Link>
+                </div>
+                {realizedGains > 0 && (
+                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[var(--color-gold)]/10">
+                    <TrendingUp className="w-3.5 h-3.5 text-[var(--color-positive)]" />
+                    <span className="text-xs text-[var(--color-text-muted)]">
+                      YTD realized gains: <span className="text-[var(--color-positive)] font-mono">{formatCurrency(realizedGains)}</span> — losses can offset these dollar-for-dollar
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Performance over time */}
           <Card>

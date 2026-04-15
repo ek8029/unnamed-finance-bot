@@ -346,6 +346,8 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
               </h2>
               <p className="text-sm text-[var(--color-text-muted)] max-w-lg mx-auto">
                 Pro unlocks three advanced features for investors who want more. <span className="font-mono text-[var(--color-text-secondary)]">$14.99/mo</span> or <span className="font-mono text-[var(--color-text-secondary)]">$119/yr</span>.
+                <br />
+                <Link href="/tools/tlh-calculator" className="text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors">Estimate your TLH savings →</Link>
               </p>
             </div>
 

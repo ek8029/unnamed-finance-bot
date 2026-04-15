@@ -1,439 +1,502 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, DollarSign, TrendingDown, Shield, Calculator, Mail, Check, ChevronDown } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { motion, AnimatePresence, animate } from 'framer-motion';
+import { ArrowRight, Shield, Mail, Check, ChevronRight, RotateCcw } from 'lucide-react';
 
-/* ── Tax bracket data (2026 federal) ── */
+/* ── Data ── */
 
-const FEDERAL_BRACKETS = [
-  { label: '10%', rate: 0.10, single: '$0 – $11,925' },
-  { label: '12%', rate: 0.12, single: '$11,926 – $48,475' },
-  { label: '22%', rate: 0.22, single: '$48,476 – $103,350' },
-  { label: '24%', rate: 0.24, single: '$103,351 – $197,300' },
-  { label: '32%', rate: 0.32, single: '$197,301 – $250,525' },
-  { label: '35%', rate: 0.35, single: '$250,526 – $626,350' },
-  { label: '37%', rate: 0.37, single: '$626,351+' },
+const BRACKETS = [
+  { label: '10%', rate: 0.10 },
+  { label: '12%', rate: 0.12 },
+  { label: '22%', rate: 0.22 },
+  { label: '24%', rate: 0.24 },
+  { label: '32%', rate: 0.32 },
+  { label: '35%', rate: 0.35 },
+  { label: '37%', rate: 0.37 },
 ];
 
-const LTCG_RATES = [
-  { label: '0%', rate: 0.00 },
-  { label: '15%', rate: 0.15 },
-  { label: '20%', rate: 0.20 },
-];
-
-const STATE_RATES = [
+const STATES = [
   { label: 'No state tax', rate: 0 },
-  { label: '~3% (e.g. PA, IN, ND)', rate: 0.03 },
-  { label: '~5% (e.g. CO, IL, MA)', rate: 0.05 },
-  { label: '~7% (e.g. MN, WI, SC)', rate: 0.07 },
-  { label: '~9% (e.g. NJ, OR, NY)', rate: 0.09 },
-  { label: '~11%+ (e.g. CA, HI)', rate: 0.11 },
+  { label: '~3%', rate: 0.03 },
+  { label: '~5%', rate: 0.05 },
+  { label: '~7%', rate: 0.07 },
+  { label: '~9%', rate: 0.09 },
+  { label: '~11%+', rate: 0.11 },
 ];
 
-/* ── Helpers ── */
-
-function formatDollars(n: number): string {
+function fmt(n: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
 }
 
-function parseDollarInput(s: string): number {
-  return Math.max(0, parseFloat(s.replace(/[^0-9.]/g, '')) || 0);
+/* ── Animated counter for the big reveal ── */
+function CountUpValue({ value, className, style }: { value: number; className?: string; style?: React.CSSProperties }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    const controls = animate(0, value, {
+      duration: 1.2,
+      ease: [0.22, 1, 0.36, 1],
+      onUpdate: (v) => { if (ref.current) ref.current.textContent = fmt(v); },
+    });
+    return () => controls.stop();
+  }, [value]);
+  return <span ref={ref} className={className} style={style}>{fmt(0)}</span>;
 }
 
-/* ── Component ── */
+/* ── Main ── */
 
 export function TLHCalculator() {
-  // Inputs
-  const [portfolioSize, setPortfolioSize] = useState('250000');
-  const [unrealizedLosses, setUnrealizedLosses] = useState('15000');
-  const [federalBracketIdx, setFederalBracketIdx] = useState(3); // 24%
-  const [ltcgRateIdx, setLtcgRateIdx] = useState(1); // 15%
-  const [stateRateIdx, setStateRateIdx] = useState(0); // no state
-  const [shortTermPct, setShortTermPct] = useState(30); // 30% short-term
+  const searchParams = useSearchParams();
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const [step, setStep] = useState<'input' | 'results'>('input');
 
-  // Email gate state
+  const [portfolio, setPortfolio] = useState(searchParams.get('portfolio') || '');
+  const [losses, setLosses] = useState(searchParams.get('losses') || '');
+  const [bracketIdx, setBracketIdx] = useState(3);
+  const [stateIdx, setStateIdx] = useState(0);
+  const [stPct, setStPct] = useState(30);
+  const [gains, setGains] = useState(searchParams.get('gains') || '');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   const [email, setEmail] = useState('');
-  const [emailSubmitted, setEmailSubmitted] = useState(false);
+  const [emailDone, setEmailDone] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
-  const [emailError, setEmailError] = useState('');
-  const [showDetailedBreakdown, setShowDetailedBreakdown] = useState(false);
+  const [emailErr, setEmailErr] = useState('');
 
-  // Calculation
-  const results = useMemo(() => {
-    const losses = parseDollarInput(unrealizedLosses);
-    const portfolio = parseDollarInput(portfolioSize);
-    const fedRate = FEDERAL_BRACKETS[federalBracketIdx].rate;
-    const ltcgRate = LTCG_RATES[ltcgRateIdx].rate;
-    const stateRate = STATE_RATES[stateRateIdx].rate;
-    const stPct = shortTermPct / 100;
-    const ltPct = 1 - stPct;
+  const pVal = Math.max(0, parseFloat(portfolio.replace(/\D/g, '')) || 0);
+  const lVal = Math.max(0, parseFloat(losses.replace(/\D/g, '')) || 0);
+  const gVal = Math.max(0, parseFloat(gains.replace(/\D/g, '')) || 0);
 
-    const stLosses = losses * stPct;
-    const ltLosses = losses * ltPct;
+  const r = useMemo(() => {
+    const fed = BRACKETS[bracketIdx].rate;
+    const state = STATES[stateIdx].rate;
+    const ltcg = fed <= 0.12 ? 0 : fed >= 0.37 ? 0.20 : 0.15;
+    const stL = lVal * (stPct / 100);
+    const ltL = lVal * (1 - stPct / 100);
+    // Step 1: Losses offset gains dollar-for-dollar (no cap)
+    const gainsOffset = Math.min(lVal, gVal);
+    const gainsOffsetSavings = gainsOffset * (fed + state);
 
-    // Short-term losses offset at ordinary income rate
-    const stSavings = stLosses * (fedRate + stateRate);
-    // Long-term losses offset at LTCG rate
-    const ltSavings = ltLosses * (ltcgRate + stateRate);
+    // Step 2: Remaining losses hit $3,000/yr ordinary income deduction cap
+    const CAP = 3000;
+    const excessLoss = Math.max(0, lVal - gVal);
+    const deductibleY1 = Math.min(excessLoss, CAP);
+    const ordinaryDeductionSavings = deductibleY1 * (fed + state);
 
-    const totalAnnualSavings = stSavings + ltSavings;
+    // Total year-1 savings
+    const total = gainsOffsetSavings + ordinaryDeductionSavings;
 
-    // $3,000 ordinary income deduction (if losses exceed gains)
-    const ordinaryDeduction = Math.min(3000, losses) * fedRate;
+    // Carryforward: excess beyond gains + $3K deduction
+    const carryforward = Math.max(0, excessLoss - CAP);
+    const yearsToExhaust = carryforward > 0 ? Math.ceil(carryforward / CAP) + 1 : 0;
 
-    // 5-year projection (conservative: assume similar harvesting each year)
-    const fiveYearSavings = totalAnnualSavings * 5;
+    // 5-year projection
+    const futureYearSavings = Math.min(carryforward, CAP * 4) * (fed + state);
+    const fiveYear = total + futureYearSavings;
 
-    // Helm Pro cost comparison
-    const helmProAnnual = 14.99 * 12;
-    const netSavingsAfterHelm = totalAnnualSavings - helmProAnnual;
-    const roi = helmProAnnual > 0 ? (totalAnnualSavings / helmProAnnual) * 100 : 0;
+    // Breakdown for display
+    const stS = stL * (fed + state);
+    const ltS = ltL * (ltcg + state);
 
-    // Loss as % of portfolio
-    const lossPct = portfolio > 0 ? (losses / portfolio) * 100 : 0;
-
+    const helmCost = 14.99 * 12;
     return {
-      losses,
-      portfolio,
-      stLosses,
-      ltLosses,
-      stSavings,
-      ltSavings,
-      totalAnnualSavings,
-      ordinaryDeduction,
-      fiveYearSavings,
-      helmProAnnual,
-      netSavingsAfterHelm,
-      roi,
-      lossPct,
-      fedRate,
-      ltcgRate,
-      stateRate,
+      stL, ltL, stS, ltS,
+      total, gainsOffset, gainsOffsetSavings, ordinaryDeductionSavings,
+      carryforward, yearsToExhaust, fiveYear,
+      helmCost,
+      net: total - helmCost,
+      roi: helmCost > 0 ? (total / helmCost) * 100 : 0,
+      lossPct: pVal > 0 ? (lVal / pVal) * 100 : 0,
+      fed, ltcg, state,
     };
-  }, [portfolioSize, unrealizedLosses, federalBracketIdx, ltcgRateIdx, stateRateIdx, shortTermPct]);
+  }, [portfolio, losses, gains, bracketIdx, stateIdx, stPct, pVal, lVal, gVal]);
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
+  const canGo = pVal > 0 && lVal > 0;
+
+  const doCalc = () => {
+    if (!canGo) return;
+    setStep('results');
+    setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  };
+
+  const doEmail = async (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = email.trim();
-    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      setEmailError('Enter a valid email address.');
-      return;
-    }
-    setEmailLoading(true);
-    setEmailError('');
+    const t = email.trim();
+    if (!t || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) { setEmailErr('Enter a valid email.'); return; }
+    setEmailLoading(true); setEmailErr('');
     try {
-      const res = await fetch('/api/pro-waitlist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: trimmed, source: 'tlh-calculator' }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        if (body.code === 'DUPLICATE') {
-          setEmailSubmitted(true);
-          setShowDetailedBreakdown(true);
-          return;
-        }
-        throw new Error(body.error || 'Failed to save');
-      }
-      setEmailSubmitted(true);
-      setShowDetailedBreakdown(true);
-    } catch {
-      setEmailError('Something went wrong. Try again.');
-    } finally {
-      setEmailLoading(false);
-    }
+      const res = await fetch('/api/pro-waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: t, source: 'tlh-calculator' }) });
+      if (!res.ok) { const b = await res.json().catch(() => ({})); if (b.code === 'DUPLICATE') { setEmailDone(true); return; } throw new Error(); }
+      setEmailDone(true);
+    } catch { setEmailErr('Something went wrong.'); } finally { setEmailLoading(false); }
   };
 
   return (
-    <section className="container mx-auto px-6 py-12 max-w-4xl">
-      {/* Header */}
-      <div className="text-center mb-10">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--color-gold)]/5 border border-[var(--color-gold)]/15 mb-4">
-          <Calculator className="w-3.5 h-3.5 text-[var(--color-gold)]" />
-          <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-gold)]">Free Tool</span>
-        </div>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">
-          Tax-Loss Harvesting Calculator
-        </h1>
-        <p className="text-sm md:text-base text-[var(--color-text-muted)] max-w-lg mx-auto">
-          Enter your portfolio details to see how much you could save annually through tax-loss harvesting.
-        </p>
-      </div>
+    <div className="relative min-h-[80vh]">
+      {/* Ambient glow — centered, subtle */}
+      <div className="absolute top-24 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(230,185,77,0.05),transparent_70%)] pointer-events-none" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        {/* LEFT — Inputs (3 cols) */}
-        <div className="lg:col-span-3 space-y-6">
-          <div className="sovereign-card rounded-lg p-6 space-y-5">
-            {/* Portfolio Size */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
-                Total taxable portfolio value
-              </label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
-                <input
-                  type="text"
-                  value={portfolioSize}
-                  onChange={(e) => setPortfolioSize(e.target.value.replace(/[^0-9]/g, ''))}
-                  className="w-full pl-9 pr-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors font-mono text-base"
+      <section className="relative container mx-auto px-6 pt-16 pb-20 max-w-xl">
+
+        {/* ── Header ── */}
+        <div className="mb-12">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)]" />
+            <div className="h-px flex-1 bg-gradient-to-r from-[var(--color-gold)]/30 to-transparent" />
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-[1.1] mb-3">
+            How much could<br />
+            <span className="text-[var(--color-gold)]">tax-loss harvesting</span><br />
+            save you?
+          </h1>
+          <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed">
+            30 seconds. Two numbers. Real math.
+          </p>
+        </div>
+
+        <AnimatePresence mode="wait">
+          {step === 'input' ? (
+            <motion.div
+              key="input"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {/* ── Primary inputs — large, breathing room ── */}
+              <div className="space-y-8 mb-8">
+                <InputField
+                  label="What's your taxable portfolio worth?"
+                  hint="401(k), IRA, Roth don't count — taxable accounts only."
+                  value={portfolio}
+                  onChange={setPortfolio}
                   placeholder="250,000"
                 />
-              </div>
-              <div className="text-[11px] text-[var(--color-text-muted)] mt-1 font-mono">
-                Only taxable accounts — 401(k), IRA, Roth are tax-advantaged and don&apos;t qualify.
-              </div>
-            </div>
-
-            {/* Unrealized Losses */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
-                Estimated unrealized losses
-              </label>
-              <div className="relative">
-                <TrendingDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-negative)]" />
-                <input
-                  type="text"
-                  value={unrealizedLosses}
-                  onChange={(e) => setUnrealizedLosses(e.target.value.replace(/[^0-9]/g, ''))}
-                  className="w-full pl-9 pr-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors font-mono text-base"
+                <InputField
+                  label="How much are you down across all positions?"
+                  hint="Total unrealized losses across all underwater positions."
+                  value={losses}
+                  onChange={setLosses}
                   placeholder="15,000"
+                  belowHint={
+                    <Link href="/signup" className="inline-flex items-center gap-1 text-xs text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors mt-1">
+                      Not sure? Connect your brokerage — Helm calculates it for you <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  }
                 />
-              </div>
-              <div className="text-[11px] text-[var(--color-text-muted)] mt-1 font-mono">
-                Total losses across all positions currently underwater. Not sure? Check your brokerage.
-              </div>
-            </div>
 
-            {/* Federal bracket */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
-                Federal tax bracket
-              </label>
-              <div className="relative">
-                <select
-                  value={federalBracketIdx}
-                  onChange={(e) => setFederalBracketIdx(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors text-sm appearance-none cursor-pointer"
-                >
-                  {FEDERAL_BRACKETS.map((b, i) => (
-                    <option key={i} value={i}>{b.label} — Single {b.single}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none" />
-              </div>
-            </div>
+                <InputField
+                  label="Realized capital gains this year?"
+                  hint="Gains from selling winners in 2026. Enter $0 if none or unsure."
+                  value={gains}
+                  onChange={setGains}
+                  placeholder="0"
+                />
 
-            {/* LTCG rate */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
-                Long-term capital gains rate
-              </label>
-              <div className="flex gap-2">
-                {LTCG_RATES.map((r, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setLtcgRateIdx(i)}
-                    className={`flex-1 py-2.5 rounded border text-sm font-mono font-bold transition-colors cursor-pointer ${
-                      i === ltcgRateIdx
-                        ? 'border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
-                        : 'border-[var(--color-border-base)] text-[var(--color-text-muted)] hover:border-[var(--color-border-strong)]'
-                    }`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* State rate */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
-                State tax rate
-              </label>
-              <div className="relative">
-                <select
-                  value={stateRateIdx}
-                  onChange={(e) => setStateRateIdx(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors text-sm appearance-none cursor-pointer"
-                >
-                  {STATE_RATES.map((s, i) => (
-                    <option key={i} value={i}>{s.label}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Short-term % slider */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
-                  Short-term vs long-term losses
-                </label>
-                <span className="text-xs font-mono text-[var(--color-text-secondary)]">
-                  {shortTermPct}% ST / {100 - shortTermPct}% LT
-                </span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                step={5}
-                value={shortTermPct}
-                onChange={(e) => setShortTermPct(Number(e.target.value))}
-                className="w-full accent-[var(--color-gold)] cursor-pointer"
-              />
-              <div className="flex justify-between text-[10px] font-mono text-[var(--color-text-muted)] mt-1">
-                <span>All long-term</span>
-                <span>All short-term</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT — Results (2 cols) */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Headline savings — always visible */}
-          <div className="sovereign-card gradient-border rounded-lg p-6 text-center relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, var(--color-gold), rgba(230,185,77,0.3), transparent)' }} />
-            <div className="text-xs font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
-              Estimated annual tax savings
-            </div>
-            <div className="text-4xl md:text-5xl font-bold font-mono text-[var(--color-gold)] glow-gold mb-1">
-              {formatDollars(results.totalAnnualSavings)}
-            </div>
-            <div className="text-[11px] text-[var(--color-text-muted)] font-mono">
-              from {formatDollars(results.losses)} in harvestable losses
-            </div>
-          </div>
-
-          {/* Quick stats — always visible */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="sovereign-card rounded-lg p-4 text-center">
-              <div className="text-[9px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1">5-Year Projection</div>
-              <div className="text-lg font-bold font-mono text-[var(--color-text-primary)]">{formatDollars(results.fiveYearSavings)}</div>
-            </div>
-            <div className="sovereign-card rounded-lg p-4 text-center">
-              <div className="text-[9px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1">Loss % of Portfolio</div>
-              <div className="text-lg font-bold font-mono text-[var(--color-text-primary)]">{results.lossPct.toFixed(1)}%</div>
-            </div>
-          </div>
-
-          {/* Email gate OR detailed breakdown */}
-          {!showDetailedBreakdown ? (
-            <div className="sovereign-card rounded-lg p-6 space-y-4">
-              <div className="text-sm font-bold text-[var(--color-text-primary)]">
-                Get your full TLH breakdown
-              </div>
-              <ul className="space-y-2 text-[12px] text-[var(--color-text-muted)]">
-                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[var(--color-gold)] shrink-0" />Short-term vs long-term savings split</li>
-                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[var(--color-gold)] shrink-0" />Federal + state tax impact</li>
-                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[var(--color-gold)] shrink-0" />Helm Pro ROI comparison</li>
-              </ul>
-              <form onSubmit={handleEmailSubmit} className="space-y-2">
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => { setEmail(e.target.value); setEmailError(''); }}
-                    placeholder="you@example.com"
-                    className="w-full pl-9 pr-4 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors text-sm"
-                  />
-                </div>
-                {emailError && <div className="text-xs text-[var(--color-negative)]">{emailError}</div>}
-                <button
-                  type="submit"
-                  disabled={emailLoading}
-                  className="w-full py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-sm rounded transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  {emailLoading ? 'Saving…' : 'Show Full Breakdown'}
-                </button>
-              </form>
-              <div className="text-[10px] text-[var(--color-text-muted)] text-center font-mono">
-                No spam. Unsubscribe anytime.
-              </div>
-            </div>
-          ) : (
-            <div className="sovereign-card rounded-lg p-6 space-y-4">
-              {emailSubmitted && (
-                <div className="flex items-center gap-2 text-xs text-[var(--color-positive)] mb-2">
-                  <Check className="w-3.5 h-3.5" />
-                  Breakdown unlocked
-                </div>
-              )}
-
-              <div className="text-sm font-bold text-[var(--color-text-primary)] mb-3">Detailed Breakdown</div>
-
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-[var(--color-text-muted)]">Short-term losses ({shortTermPct}%)</span>
-                  <span className="font-mono text-[var(--color-text-primary)]">{formatDollars(results.stLosses)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--color-text-muted)]">ST tax savings ({(results.fedRate * 100).toFixed(0)}% + {(results.stateRate * 100).toFixed(0)}% state)</span>
-                  <span className="font-mono text-[var(--color-positive)]">{formatDollars(results.stSavings)}</span>
-                </div>
-                <div className="h-px bg-[var(--color-border-subtle)]" />
-                <div className="flex justify-between">
-                  <span className="text-[var(--color-text-muted)]">Long-term losses ({100 - shortTermPct}%)</span>
-                  <span className="font-mono text-[var(--color-text-primary)]">{formatDollars(results.ltLosses)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--color-text-muted)]">LT tax savings ({(results.ltcgRate * 100).toFixed(0)}% + {(results.stateRate * 100).toFixed(0)}% state)</span>
-                  <span className="font-mono text-[var(--color-positive)]">{formatDollars(results.ltSavings)}</span>
-                </div>
-                <div className="h-px bg-[var(--color-border-subtle)]" />
-                <div className="flex justify-between font-bold">
-                  <span className="text-[var(--color-text-primary)]">Total annual savings</span>
-                  <span className="font-mono text-[var(--color-gold)]">{formatDollars(results.totalAnnualSavings)}</span>
+                {/* Bracket — pill selector */}
+                <div>
+                  <div className="text-sm font-medium text-[var(--color-text-secondary)] mb-3">Federal tax bracket</div>
+                  <div className="flex flex-wrap gap-2">
+                    {BRACKETS.map((b, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setBracketIdx(i)}
+                        className={`px-4 py-2 rounded-full text-sm font-mono font-semibold transition-all duration-150 cursor-pointer ${
+                          i === bracketIdx
+                            ? 'bg-[var(--color-gold)] text-[var(--color-bg-base)] shadow-[0_0_20px_rgba(230,185,77,0.25)]'
+                            : 'bg-white/[0.04] text-[var(--color-text-muted)] hover:bg-white/[0.08] hover:text-[var(--color-text-secondary)]'
+                        }`}
+                      >
+                        {b.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Helm Pro ROI */}
-              <div className="mt-4 rounded border border-[var(--color-gold)]/20 bg-[var(--color-gold)]/[0.03] p-4 space-y-2">
-                <div className="text-xs font-bold uppercase tracking-wider text-[var(--color-gold)]">Helm Pro ROI</div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[var(--color-text-muted)]">Helm Pro cost</span>
-                  <span className="font-mono text-[var(--color-text-primary)]">{formatDollars(results.helmProAnnual)}/yr</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[var(--color-text-muted)]">Your estimated TLH savings</span>
-                  <span className="font-mono text-[var(--color-positive)]">{formatDollars(results.totalAnnualSavings)}/yr</span>
-                </div>
-                <div className="flex justify-between text-sm font-bold">
-                  <span className="text-[var(--color-text-primary)]">Net savings after Helm Pro</span>
-                  <span className={`font-mono ${results.netSavingsAfterHelm >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
-                    {formatDollars(results.netSavingsAfterHelm)}/yr
-                  </span>
-                </div>
-                <div className="text-[10px] font-mono text-[var(--color-text-muted)]">
-                  {results.roi.toFixed(0)}% return on your Helm Pro subscription
-                </div>
-              </div>
-
-              {/* CTA */}
-              <Link
-                href="/signup"
-                className="flex items-center justify-center gap-2 w-full py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-sm rounded transition-colors cursor-pointer mt-4"
+              {/* ── Advanced — collapsed ── */}
+              <button
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer mb-6"
               >
-                Start Helm Pro — automate your TLH
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          )}
+                <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${showAdvanced ? 'rotate-90' : ''}`} />
+                <span>State tax &amp; holding period</span>
+              </button>
 
-          {/* Disclaimer */}
-          <div className="flex items-start gap-2 text-[10px] text-[var(--color-text-muted)] leading-relaxed">
-            <Shield className="w-3 h-3 shrink-0 mt-0.5" />
-            <span>
-              This calculator provides estimates only and does not constitute tax or investment advice. Consult a tax professional for your specific situation. Tax rates are approximate for 2026.
-            </span>
-          </div>
-        </div>
+              <AnimatePresence>
+                {showAdvanced && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="space-y-6 pb-8 border-t border-white/[0.06] pt-6">
+                      {/* State */}
+                      <div>
+                        <div className="text-sm font-medium text-[var(--color-text-secondary)] mb-3">State tax rate</div>
+                        <div className="flex flex-wrap gap-2">
+                          {STATES.map((s, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setStateIdx(i)}
+                              className={`px-3 py-1.5 rounded-full text-xs font-mono transition-all duration-150 cursor-pointer ${
+                                i === stateIdx
+                                  ? 'bg-white/10 text-[var(--color-text-primary)] border border-white/20'
+                                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] border border-transparent'
+                              }`}
+                            >
+                              {s.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {/* ST/LT slider */}
+                      <div>
+                        <div className="flex justify-between mb-2">
+                          <span className="text-sm font-medium text-[var(--color-text-secondary)]">Holding period mix</span>
+                          <span className="text-xs font-mono text-[var(--color-text-muted)]">{stPct}% short / {100 - stPct}% long</span>
+                        </div>
+                        <input type="range" min={0} max={100} step={5} value={stPct} onChange={(e) => setStPct(Number(e.target.value))}
+                          className="w-full accent-[var(--color-gold)] cursor-pointer h-1" />
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* ── CTA ── */}
+              <motion.button
+                onClick={doCalc}
+                disabled={!canGo}
+                whileHover={canGo ? { scale: 1.01 } : {}}
+                whileTap={canGo ? { scale: 0.98 } : {}}
+                className="group w-full flex items-center justify-center gap-3 py-4 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[15px] tracking-wide rounded-lg shadow-[0_8px_32px_rgba(230,185,77,0.3)] transition-all duration-200 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Show me the math
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              </motion.button>
+            </motion.div>
+          ) : (
+            /* ════════════════════════════════════════════════
+               RESULTS — the dramatic reveal
+               ════════════════════════════════════════════════ */
+            <motion.div
+              key="results"
+              ref={resultsRef}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {/* ── The number — massive, centered, unmissable ── */}
+              <motion.div
+                className="text-center py-12 mb-10"
+                initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+              >
+                <div className="text-xs font-mono uppercase tracking-[0.25em] text-[var(--color-text-muted)] mb-4">
+                  Estimated annual tax savings
+                </div>
+                <CountUpValue
+                  value={r.total}
+                  className="text-6xl sm:text-7xl md:text-8xl font-mono text-[var(--color-gold)] leading-none"
+                  style={{ fontWeight: 600, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}
+                />
+                <motion.div
+                  className="text-sm text-[var(--color-text-muted)] mt-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                >
+                  <span>from {fmt(lVal)} in losses · {r.lossPct.toFixed(1)}% of your portfolio</span>
+                  {r.carryforward > 0 && (
+                    <span className="block text-xs mt-1">
+                      {fmt(r.gainsOffset)} offsets gains directly · {fmt(r.carryforward)} carries forward at $3,000/yr
+                    </span>
+                  )}
+                </motion.div>
+              </motion.div>
+
+              {/* ── Secondary metrics — staggered reveal ── */}
+              <motion.div
+                className="grid grid-cols-3 mb-10"
+                initial="hidden"
+                animate="visible"
+                variants={{ visible: { transition: { staggerChildren: 0.1, delayChildren: 0.6 } } }}
+              >
+                {[
+                  { label: '5-Year Savings', value: fmt(r.fiveYear) },
+                  { label: 'Gains Offset', value: fmt(r.gainsOffset) },
+                  { label: 'Carryforward', value: r.carryforward > 0 ? fmt(r.carryforward) : 'None' },
+                ].map((m) => (
+                  <motion.div
+                    key={m.label}
+                    variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
+                    className="text-center py-4 border-b border-white/[0.06] first:border-r last:border-l border-r-white/[0.06] border-l-white/[0.06]"
+                  >
+                    <div className="text-xs font-mono uppercase tracking-[0.15em] text-[var(--color-text-muted)] mb-1.5">{m.label}</div>
+                    <div className="text-lg font-bold font-mono text-[var(--color-text-primary)]">{m.value}</div>
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              {/* ── Breakdown — clean table ── */}
+              <motion.div
+                className="mb-8"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.9 }}
+              >
+                <div className="text-xs font-mono uppercase tracking-[0.15em] text-[var(--color-text-muted)] mb-4">Breakdown</div>
+                <div className="space-y-3 text-[14px]">
+                  {r.gainsOffset > 0 && (
+                    <>
+                      <Row left="Losses offsetting gains (no cap)" right={fmt(r.gainsOffset)} />
+                      <Row left={`→ Tax saved at ${((r.fed + r.state) * 100).toFixed(0)}%`} right={fmt(r.gainsOffsetSavings)} rightColor="text-[var(--color-positive)]" />
+                      <div className="h-px bg-white/[0.04]" />
+                    </>
+                  )}
+                  {r.ordinaryDeductionSavings > 0 && (
+                    <>
+                      <Row left="$3,000 ordinary income deduction" right={fmt(Math.min(lVal - gVal, 3000))} />
+                      <Row left={`→ Tax saved at ${((r.fed + r.state) * 100).toFixed(0)}%`} right={fmt(r.ordinaryDeductionSavings)} rightColor="text-[var(--color-positive)]" />
+                      <div className="h-px bg-white/[0.04]" />
+                    </>
+                  )}
+                  {r.carryforward > 0 && (
+                    <>
+                      <Row left="Carryforward to future years" right={fmt(r.carryforward)} />
+                      <Row left={`→ Deductible at $3,000/yr (${r.yearsToExhaust - 1} more yrs)`} right="" rightColor="text-[var(--color-text-muted)]" />
+                      <div className="h-px bg-white/[0.04]" />
+                    </>
+                  )}
+                  <Row left="Year 1 tax savings" right={fmt(r.total)} rightColor="text-[var(--color-gold)]" bold />
+                </div>
+              </motion.div>
+
+              {/* ── Helm Pro ROI — the pitch ── */}
+              <motion.div
+                className="rounded-lg border border-[var(--color-gold)]/15 bg-[var(--color-gold)]/[0.02] p-5 mb-8"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.1 }}
+              >
+                <div className="text-xs font-mono uppercase tracking-[0.15em] text-[var(--color-gold)] mb-4">What if this was automated?</div>
+                <div className="space-y-2.5 text-[14px]">
+                  <Row left="Your TLH savings" right={`${fmt(r.total)}/yr`} rightColor="text-[var(--color-positive)]" />
+                  <Row left="Helm Pro" right={`${fmt(r.helmCost)}/yr`} />
+                  <div className="h-px bg-[var(--color-gold)]/10" />
+                  <Row left="Net after Helm" right={`${fmt(r.net)}/yr`} rightColor={r.net >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'} bold />
+                </div>
+                <div className="text-xs font-mono text-[var(--color-text-muted)] mt-3">
+                  {r.roi.toFixed(0)}% return on your subscription. Helm scans your brokerage daily.
+                </div>
+              </motion.div>
+
+              {/* ── Email capture — quarterly reminder ── */}
+              <motion.div
+                className="mb-10"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.3 }}
+              >
+                {!emailDone ? (
+                  <div className="border border-white/[0.06] rounded-lg p-5">
+                    <div className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">Get quarterly TLH reminders</div>
+                    <p className="text-xs text-[var(--color-text-muted)] mb-4">A nudge each quarter to check for harvesting opportunities — when it matters most.</p>
+                    <form onSubmit={doEmail} className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+                        <input type="email" value={email} onChange={(e) => { setEmail(e.target.value); setEmailErr(''); }}
+                          placeholder="you@example.com" aria-label="Email for TLH reminders"
+                          className="w-full pl-9 pr-3 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors" />
+                      </div>
+                      <button type="submit" disabled={emailLoading}
+                        className="px-5 py-2.5 bg-white/[0.06] hover:bg-white/[0.1] text-[var(--color-text-primary)] font-medium text-xs rounded transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap border border-white/[0.08]">
+                        {emailLoading ? '...' : 'Subscribe'}
+                      </button>
+                    </form>
+                    {emailErr && <p className="text-xs text-[var(--color-negative)] mt-1.5">{emailErr}</p>}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-[var(--color-positive)]">
+                    <Check className="w-4 h-4" /> Quarterly reminders set. Check your inbox.
+                  </div>
+                )}
+              </motion.div>
+
+              {/* ── CTAs ── */}
+              <motion.div
+                className="space-y-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.4 }}
+              >
+                <Link href="/signup"
+                  className="flex items-center justify-center gap-2.5 w-full py-4 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[15px] tracking-wide rounded-lg shadow-[0_8px_32px_rgba(230,185,77,0.3)] hover:brightness-110 transition-all cursor-pointer">
+                  Start Helm Pro — automate your TLH <ArrowRight className="w-4 h-4" />
+                </Link>
+                <div className="flex gap-3">
+                  <button onClick={() => { setStep('input'); setShowAdvanced(false); }}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] border border-white/[0.06] hover:border-white/[0.12] rounded-lg transition-colors cursor-pointer">
+                    <RotateCcw className="w-3.5 h-3.5" /> Recalculate
+                  </button>
+                  <Link href="/analyze"
+                    className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-gold)] border border-white/[0.06] hover:border-[var(--color-gold)]/30 rounded-lg transition-colors cursor-pointer">
+                    Try stock analysis <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </motion.div>
+
+              {/* Disclaimer */}
+              <div className="flex items-start gap-2 text-xs text-[var(--color-text-muted)] leading-relaxed mt-8">
+                <Shield className="w-3 h-3 shrink-0 mt-0.5" />
+                <span>Estimates only. Not tax or investment advice. Consult a qualified tax professional. Rates approximate for 2026.</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
+    </div>
+  );
+}
+
+/* ── Subcomponents ── */
+
+function InputField({ label, hint, value, onChange, placeholder, belowHint }: {
+  label: string; hint: string; value: string; onChange: (v: string) => void; placeholder: string; belowHint?: React.ReactNode;
+}) {
+  const display = value ? Number(value).toLocaleString() : '';
+  return (
+    <div>
+      <label className="block text-[15px] font-medium text-[var(--color-text-primary)] mb-2">{label}</label>
+      <div className="relative">
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg text-[var(--color-text-muted)] font-mono">$</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={display}
+          onChange={(e) => onChange(e.target.value.replace(/\D/g, ''))}
+          placeholder={placeholder}
+          className="w-full pl-10 pr-4 py-4 bg-transparent border-b-2 border-white/[0.1] text-[var(--color-text-primary)] placeholder-white/[0.15] focus:outline-none focus:border-[var(--color-gold)] transition-colors font-mono text-2xl"
+        />
       </div>
-    </section>
+      <p className="text-xs text-[var(--color-text-muted)] mt-1.5">{hint}</p>
+      {belowHint}
+    </div>
+  );
+}
+
+function Row({ left, right, rightColor, bold }: { left: string; right: string; rightColor?: string; bold?: boolean }) {
+  return (
+    <div className={`flex justify-between items-baseline ${bold ? 'font-semibold' : ''}`}>
+      <span className={bold ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-muted)]'}>{left}</span>
+      <span className={`font-mono ${rightColor || 'text-[var(--color-text-primary)]'}`}>{right}</span>
+    </div>
   );
 }
