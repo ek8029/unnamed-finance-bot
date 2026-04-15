@@ -154,7 +154,7 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
         </div>
       </nav>
 
-      <main className="overflow-x-hidden">
+      <main>
 
       {/* ════════════════════════════════════════════════════════════════════════
           HERO — dual positioning: terminal + free
