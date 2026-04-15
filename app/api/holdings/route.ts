@@ -33,8 +33,8 @@ export async function GET() {
         .from('portfolio_snapshots')
         .select('*')
         .eq('user_id', user.id)
-        .order('snapshot_date', { ascending: true })
-        .limit(12),
+        .gte('snapshot_date', new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+        .order('snapshot_date', { ascending: true }),
     ]);
 
     const holdings = holdingsResult.data;
@@ -103,15 +103,32 @@ export async function GET() {
       volatility: performance.volatility ? Number(performance.volatility) * 100 : null,
     } : null;
 
-    // Transform portfolio history for charts
-    const portfolioHistory = snapshots?.map(s => {
+    // Transform portfolio history for charts.
+    // Deduplicate by month label (same pattern as net worth chart) and
+    // override the current month with live values so the chart endpoint
+    // matches the displayed total portfolio value.
+    const snapshotsByMonth = new Map<string, { label: string; value: number; gain_loss: number }>();
+    for (const s of snapshots || []) {
       const date = parseDateLocal(s.snapshot_date);
-      return {
-        label: formatMonthLabel(date),
+      const label = formatMonthLabel(date);
+      snapshotsByMonth.set(label, {
+        label,
         value: Number(s.total_value),
         gain_loss: Number(s.total_gain_loss),
-      };
-    }) || [];
+      });
+    }
+
+    // Override current month with live-computed values from holdings
+    const totalGainLoss = holdings?.reduce((sum, h) => sum + Number(h.unrealised_gain_loss || 0), 0) || 0;
+    const now = new Date();
+    const todayLabel = formatMonthLabel(now);
+    snapshotsByMonth.set(todayLabel, {
+      label: todayLabel,
+      value: totalValue,
+      gain_loss: totalGainLoss,
+    });
+
+    const portfolioHistory = Array.from(snapshotsByMonth.values());
 
     return NextResponse.json({
       holdings: transformedHoldings,
@@ -119,6 +136,8 @@ export async function GET() {
       totalValue,
       performanceMetrics,
       portfolioHistory,
+    }, {
+      headers: { 'Cache-Control': 'no-store, max-age=0' },
     });
   } catch (error) {
     console.error('Error in holdings route:', error);
