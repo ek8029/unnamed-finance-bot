@@ -43,10 +43,10 @@ const proFeatures = [
 /* ─── Shared animation ──────────────────────────────────────────────────── */
 
 const sectionReveal = {
-  initial: { opacity: 0, y: 32 } as const,
+  initial: { opacity: 0, y: 24 } as const,
   whileInView: { opacity: 1, y: 0 } as const,
-  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
-  viewport: { once: true, margin: '-80px' as const },
+  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const },
+  viewport: { once: true, amount: 0.1 as const },
 };
 
 /* ─── Hero search ───────────────────────────────────────────────────────── */
@@ -122,8 +122,8 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
 
       {/* ── Ambient ── */}
       <InteractiveGrid />
-      <div className="fixed top-[20%] left-[10%] w-[500px] h-[500px] rounded-full pointer-events-none z-0 opacity-[0.03] blur-[120px] bg-[var(--color-gold)] will-change-transform" />
-      <div className="fixed bottom-[15%] right-[10%] w-[400px] h-[400px] rounded-full pointer-events-none z-0 opacity-[0.02] blur-[100px] bg-[var(--color-positive)] will-change-transform" />
+      <div className="absolute top-[20%] left-[10%] w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] rounded-full pointer-events-none z-0 opacity-[0.03] blur-[120px] bg-[var(--color-gold)] will-change-transform" />
+      <div className="absolute bottom-[15%] right-[10%] w-[250px] sm:w-[400px] h-[250px] sm:h-[400px] rounded-full pointer-events-none z-0 opacity-[0.02] blur-[100px] bg-[var(--color-positive)] will-change-transform" />
       {[0, 1, 2].map((i) => (
         <div key={i} className="absolute left-1/2 top-1/2 w-[300px] h-[300px] rounded-full border border-[var(--color-gold)] opacity-0 pointer-events-none z-[1]" style={{ animation: `sonar 5s ${i * 1.6}s ease-out infinite` }} />
       ))}
@@ -188,10 +188,11 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
 
               <FadeIn delay={400}>
                 <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[3.5rem] xl:text-[4rem] font-bold tracking-tight leading-[1.1]">
-                  See your portfolio<br className="hidden sm:block" />
+                  See your portfolio{' '}
+                  <br className="hidden sm:block" />
                   the way{' '}
                   <span className="whitespace-nowrap bg-gradient-to-r from-[var(--color-gold)] to-[#E8C478] bg-clip-text text-transparent">hedge funds</span>
-                  <br className="hidden sm:block" />
+                  {' '}<br className="hidden sm:block" />
                   see theirs.
                 </h1>
               </FadeIn>

@@ -382,7 +382,7 @@ export function FadeIn({
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-60px' });
+  const inView = useInView(ref, { once: true, amount: 0.05 });
 
   const offsets = {
     up: { x: 0, y: 40 },
@@ -430,7 +430,7 @@ export function ScrollTypingLine({
   speed?: number;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-60px' });
+  const inView = useInView(ref, { once: true, amount: 0.05 });
   const [charCount, setCharCount] = useState(0);
   const [cursor, setCursor] = useState(false);
 
