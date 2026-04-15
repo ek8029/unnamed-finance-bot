@@ -53,7 +53,7 @@ export function DashboardMockup({ momentIndex = 0 }: { momentIndex?: number }) {
   return (
     <div className="p-4 sm:p-5 space-y-3">
       {/* Stat cards */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {moment.cards.map((card) => (
           <div key={card.label} className="bg-white/[0.03] rounded-lg p-2.5">
             <div className="text-[8px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-mono mb-0.5">{card.label}</div>

@@ -137,7 +137,7 @@ export function TLHCalculator() {
   return (
     <div className="relative min-h-[80vh]">
       {/* Ambient glow — centered, subtle */}
-      <div className="absolute top-24 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(230,185,77,0.05),transparent_70%)] pointer-events-none" />
+      <div className="absolute top-24 left-1/2 -translate-x-1/2 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-[radial-gradient(circle,rgba(230,185,77,0.05),transparent_70%)] pointer-events-none" />
 
       <section className="relative container mx-auto px-6 pt-16 pb-20 max-w-xl">
 
@@ -147,7 +147,7 @@ export function TLHCalculator() {
             <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)]" />
             <div className="h-px flex-1 bg-gradient-to-r from-[var(--color-gold)]/30 to-transparent" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-[1.1] mb-3">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-[1.1] mb-3">
             How much could<br />
             <span className="text-[var(--color-gold)]">tax-loss harvesting</span><br />
             save you?
@@ -304,7 +304,7 @@ export function TLHCalculator() {
                 </div>
                 <CountUpValue
                   value={r.total}
-                  className="text-6xl sm:text-7xl md:text-8xl font-mono text-[var(--color-gold)] leading-none"
+                  className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-mono text-[var(--color-gold)] leading-none"
                   style={{ fontWeight: 600, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}
                 />
                 <motion.div
@@ -324,7 +324,7 @@ export function TLHCalculator() {
 
               {/* ── Secondary metrics — staggered reveal ── */}
               <motion.div
-                className="grid grid-cols-3 mb-10"
+                className="grid grid-cols-1 sm:grid-cols-3 mb-10"
                 initial="hidden"
                 animate="visible"
                 variants={{ visible: { transition: { staggerChildren: 0.1, delayChildren: 0.6 } } }}

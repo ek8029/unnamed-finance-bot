@@ -293,7 +293,7 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
       {/* ════════════════════════════════════════════════════════════════════════
           SECTION 1 — "The full terminal. Free." (FREE features)
           ════════════════════════════════════════════════════════════════════════ */}
-      <motion.section className="relative z-10 py-28 md:py-36" {...sectionReveal}>
+      <motion.section className="relative z-10 py-16 sm:py-24 md:py-36" {...sectionReveal}>
         <div className="container mx-auto px-6">
           <div className="max-w-5xl mx-auto">
             <div className="text-center space-y-3 mb-16">
@@ -314,7 +314,7 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
                   transition={{ delay: i * 0.08, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                   viewport={{ once: true }}>
                   <div className="flex items-start gap-3.5">
-                    <div className="w-9 h-9 rounded-lg bg-[var(--color-gold)]/5 border border-[var(--color-gold)]/15 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 sm:w-9 sm:h-9 rounded-lg bg-[var(--color-gold)]/5 border border-[var(--color-gold)]/15 flex items-center justify-center shrink-0">
                       <feat.icon className="w-4 h-4 text-[var(--color-gold)]" aria-hidden="true" />
                     </div>
                     <div>
@@ -337,7 +337,7 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
       {/* ════════════════════════════════════════════════════════════════════════
           SECTION 2 — "Upgrade when you're ready." (PRO features)
           ════════════════════════════════════════════════════════════════════════ */}
-      <motion.section className="relative z-10 py-28 md:py-36" {...sectionReveal}>
+      <motion.section className="relative z-10 py-16 sm:py-24 md:py-36" {...sectionReveal}>
         <div className="container mx-auto px-6">
           <div className="max-w-5xl mx-auto">
             <div className="text-center space-y-3 mb-16">
@@ -361,7 +361,7 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
                   viewport={{ once: true }}>
                   {/* PRO tag */}
                   <div className="absolute top-3 right-3 text-[8px] font-mono font-bold uppercase tracking-wider text-[var(--color-gold)] bg-[var(--color-gold)]/10 px-1.5 py-0.5 rounded">PRO</div>
-                  <div className="w-9 h-9 rounded-lg bg-[var(--color-gold)]/5 border border-[var(--color-gold)]/15 flex items-center justify-center mb-3">
+                  <div className="w-10 h-10 sm:w-9 sm:h-9 rounded-lg bg-[var(--color-gold)]/5 border border-[var(--color-gold)]/15 flex items-center justify-center mb-3">
                     <feat.icon className="w-4 h-4 text-[var(--color-gold)]" aria-hidden="true" />
                   </div>
                   <div className="text-sm font-bold text-[var(--color-text-primary)] mb-1.5">{feat.title}</div>
@@ -388,7 +388,7 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
       {/* ════════════════════════════════════════════════════════════════════════
           SECTION 3 — "See the reasoning." (Transparency / methodology)
           ════════════════════════════════════════════════════════════════════════ */}
-      <motion.section className="relative z-10 py-28 md:py-36" {...sectionReveal}>
+      <motion.section className="relative z-10 py-16 sm:py-24 md:py-36" {...sectionReveal}>
         <div className="container mx-auto px-6">
           <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="space-y-6">
@@ -418,7 +418,7 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
                   ))}
                 </div>
               </div>
-              <div className="px-5 py-4 grid grid-cols-2 gap-3">
+              <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="rounded bg-[var(--color-positive)]/[0.04] border border-[var(--color-positive)]/15 px-3 py-2.5">
                   <div className="flex items-center gap-1.5 mb-1">
                     <TrendingUp className="w-3 h-3 text-[var(--color-positive)]" aria-hidden="true" />
@@ -447,7 +447,7 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
       {/* ════════════════════════════════════════════════════════════════════════
           SECTION 4 — Security
           ════════════════════════════════════════════════════════════════════════ */}
-      <motion.section className="relative z-10 py-28 md:py-36" {...sectionReveal}>
+      <motion.section className="relative z-10 py-16 sm:py-24 md:py-36" {...sectionReveal}>
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto text-center space-y-4 mb-12">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-[1.12]">
@@ -473,7 +473,7 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
       {/* ════════════════════════════════════════════════════════════════════════
           SECTION 5 — Pricing teaser
           ════════════════════════════════════════════════════════════════════════ */}
-      <motion.section className="relative z-10 py-28 border-t border-white/[0.04]" {...sectionReveal}>
+      <motion.section className="relative z-10 py-16 sm:py-24 md:py-28 border-t border-white/[0.04]" {...sectionReveal}>
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto text-center space-y-3 mb-14">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
@@ -508,7 +508,7 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
       {/* ════════════════════════════════════════════════════════════════════════
           SECTION 6 — Final CTA
           ════════════════════════════════════════════════════════════════════════ */}
-      <motion.section className="relative z-10 py-28 md:py-36" {...sectionReveal}
+      <motion.section className="relative z-10 py-16 sm:py-24 md:py-36" {...sectionReveal}
         style={{ backgroundImage: 'radial-gradient(ellipse 60% 40% at 50% 60%, rgba(230,185,77,0.04), transparent)' }}>
         <div className="max-w-xl mx-auto text-center px-6">
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">
@@ -518,7 +518,7 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
             Connect your brokerage when you&apos;re ready to unlock the full terminal.
           </p>
           <Link href="/analyze"
-            className="inline-flex items-center gap-3 px-12 py-4 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-sm uppercase tracking-[0.2em] rounded shadow-[0_8px_32px_rgba(230,185,77,0.3)] hover:brightness-110 hover:shadow-[0_8px_48px_rgba(230,185,77,0.45)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-150 ease-out cursor-pointer"
+            className="inline-flex items-center gap-3 px-8 sm:px-12 py-3 sm:py-4 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-sm uppercase tracking-[0.2em] rounded shadow-[0_8px_32px_rgba(230,185,77,0.3)] hover:brightness-110 hover:shadow-[0_8px_48px_rgba(230,185,77,0.45)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-150 ease-out cursor-pointer"
             style={{ animation: 'cta-breathe 4s ease-in-out infinite' }}>
             Analyze your first stock free <ArrowRight className="w-4 h-4" />
           </Link>

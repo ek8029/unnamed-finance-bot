@@ -140,6 +140,9 @@ export default function RootLayout({
         <Script id="plausible-init" strategy="afterInteractive">
           {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`}
         </Script>
+        <Script id="apollo-tracker" strategy="afterInteractive">
+          {`(function(){var n=Math.random().toString(36).substring(7),o=document.createElement("script");o.src="https://assets.apollo.io/micro/website-tracker/tracker.iife.js?nocache="+n;o.async=true;o.defer=true;o.onload=function(){window.trackingFunctions.onLoad({appId:"69df97bfa786e5001d3cd2c3"})};document.head.appendChild(o)})()`}
+        </Script>
         <CookieConsent />
       </body>
     </html>

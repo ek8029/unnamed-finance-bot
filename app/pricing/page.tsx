@@ -189,7 +189,7 @@ export default function PricingPage() {
               </div>
 
               {/* Headline */}
-              <h2 className="text-[28px] font-bold tracking-tight text-[var(--color-text-primary)] leading-tight mb-3">
+              <h2 className="text-2xl sm:text-[28px] font-bold tracking-tight text-[var(--color-text-primary)] leading-tight mb-3">
                 Unlock advanced intelligence
               </h2>
               <p className="text-[16px] text-[var(--color-text-secondary)] leading-relaxed mb-4">
@@ -214,13 +214,13 @@ export default function PricingPage() {
                     <button
                       key={p.period}
                       onClick={() => setSelected(p.period)}
-                      className={`w-full flex items-center justify-between px-5 py-4 rounded-[var(--radius-md)] border cursor-pointer transition-colors duration-150 text-left ${
+                      className={`w-full flex items-center justify-between px-4 py-3 sm:px-5 sm:py-4 rounded-[var(--radius-md)] border cursor-pointer transition-colors duration-150 text-left ${
                         active
                           ? 'border-[var(--color-gold-border)] bg-[var(--color-gold-surface)]'
                           : 'border-[var(--color-border-base)] bg-transparent hover:border-[var(--color-border-strong)]'
                       }`}
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3 sm:gap-4">
                         <div className={`w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center shrink-0 transition-colors duration-150 ${
                           active ? 'border-[var(--color-gold)]' : 'border-[var(--color-border-strong)]'
                         }`}>
@@ -260,7 +260,7 @@ export default function PricingPage() {
               {/* CTA */}
               <button
                 onClick={() => setShowCheckout(true)}
-                className="group w-full flex items-center justify-center gap-2.5 px-8 py-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-colors duration-200 mb-6"
+                className="group w-full flex items-center justify-center gap-2.5 px-6 py-3 sm:px-8 sm:py-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-colors duration-200 mb-6"
               >
                 Continue with {plan.label}
                 <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />

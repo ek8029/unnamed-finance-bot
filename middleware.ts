@@ -143,11 +143,11 @@ export async function middleware(request: NextRequest) {
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''} https://plausible.io https://js.stripe.com https://hcaptcha.com https://*.hcaptcha.com`,
+      `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''} https://plausible.io https://js.stripe.com https://hcaptcha.com https://*.hcaptcha.com https://assets.apollo.io`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https: blob:",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.polygon.io https://plausible.io https://cdn.plaid.com https://*.plaid.com https://api.stripe.com https://hcaptcha.com https://*.hcaptcha.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.polygon.io https://plausible.io https://cdn.plaid.com https://*.plaid.com https://api.stripe.com https://hcaptcha.com https://*.hcaptcha.com https://assets.apollo.io https://app.apollo.io",
       "frame-src https://cdn.plaid.com https://*.plaid.com https://js.stripe.com https://hcaptcha.com https://*.hcaptcha.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",

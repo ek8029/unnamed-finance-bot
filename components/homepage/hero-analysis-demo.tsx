@@ -138,7 +138,7 @@ export function HeroAnalysisDemo({ analyses }: { analyses: DemoAnalysis[] }) {
         </div>
 
         {/* Content area — cross-fade between surfaces */}
-        <div className="min-h-[400px] sm:min-h-[460px]" aria-live="polite" aria-label={isAnalysis ? `Free analysis: ${currentAnalysis?.ticker}` : 'Pro dashboard intelligence'}>
+        <div className="min-h-[320px] sm:min-h-[460px]" aria-live="polite" aria-label={isAnalysis ? `Free analysis: ${currentAnalysis?.ticker}` : 'Pro dashboard intelligence'}>
           <AnimatePresence mode="wait">
             <motion.div
               key={`${surface.type}-${surface.index}`}
@@ -256,7 +256,7 @@ function AnalysisContent({ ticker, analysis, computedAt }: { ticker: string; ana
 
       {/* Metrics */}
       {metrics.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {metrics.map((met, i) => (
             <div key={i} className="rounded bg-white/[0.02] border border-white/[0.04] px-2.5 py-2 text-center">
               <div className="text-[8px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5 truncate">{met.label}</div>
@@ -283,7 +283,7 @@ function AnalysisContent({ ticker, analysis, computedAt }: { ticker: string; ana
       )}
 
       {/* CTA */}
-      <Link href={`/analyze/${ticker}`} className="flex items-center justify-center gap-2 py-2.5 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 text-xs font-mono uppercase tracking-wider text-[var(--color-gold)] hover:bg-[var(--color-gold)]/5 transition-colors border-t border-white/[0.06] group">
+      <Link href={`/analyze/${ticker}`} className="flex items-center justify-center gap-2 py-2.5 -mx-2 sm:-mx-5 -mb-2 sm:-mb-5 text-xs font-mono uppercase tracking-wider text-[var(--color-gold)] hover:bg-[var(--color-gold)]/5 transition-colors border-t border-white/[0.06] group">
         See full analysis <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
       </Link>
     </div>
