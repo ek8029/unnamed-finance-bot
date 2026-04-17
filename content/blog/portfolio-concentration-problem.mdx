@@ -1,0 +1,75 @@
+---
+title: "The Concentration Problem: Why Your Portfolio Probably Has a Single Point of Failure"
+description: "Most investors think they're diversified. The math says otherwise. Here's how to measure concentration risk — and what to do about it."
+date: "2026-04-17"
+tags: ["investing", "portfolio-analysis", "risk-management", "concentration-risk", "diversification"]
+author: "Evan Kim"
+---
+
+Open your brokerage app. Look at the pie chart. Five colors, six colors, maybe eight. Feels balanced.
+
+It's not.
+
+The top 10 stocks in the S&P 500 now make up **37% of the entire index**. Highest since the dot-com bubble. If you own VOO or SPY, a third of your money sits in ten companies. Apple, Microsoft, NVIDIA, Amazon, Meta, Alphabet, Broadcom, Tesla, Eli Lilly, Berkshire. That's not diversification. That's a mega-cap tech bet wearing a trench coat.
+
+Zoom out to your full portfolio and it gets worse.
+
+## How concentration sneaks in
+
+**RSU vests you never sold.** An engineer at NVIDIA who vested $200K over two years and held? That position is worth $600K+ after the run-up. Total portfolio: $900K. NVIDIA alone: 67%. One guidance miss and a third of their net worth is gone before market open.
+
+I've seen portfolios where a single stock is 40%, 50%, 70% of total value. The owner always knows it's risky. They've just never run the numbers on how risky.
+
+**Winners that drifted.** You bought NVIDIA at $150. It ran. You didn't trim because selling winners feels wrong and triggers taxes. Now that $10K position is $45K and represents 25% of your portfolio. You didn't choose a concentrated bet. The market chose it for you.
+
+This is portfolio drift. It happens to every buy-and-hold investor. Winners grow, losers shrink, and your careful allocation slowly becomes a momentum bet on whatever ran hardest.
+
+**The index fund illusion.** "I'm diversified, I own a total market fund." VTI holds 3,600+ stocks. The top 10 represent 33% of the fund's value. The bottom 3,000 represent less than 20%. If Apple drops 20%, your "diversified" fund drops 2.3% from that single holding. If the top 10 all sell off 20% in a correlated risk-off event, you're down 6.6%. That's not a tail risk. That's the base case during real market stress.
+
+**Inherited positions you can't bring yourself to sell.** 5,000 shares of J&J from your parents. Cost basis: $12/share from 1985. Current value: $800K. Selling triggers a $740K capital gain. So you hold. And one stock becomes 40% of your portfolio because the tax bill feels scarier than the concentration.
+
+## How to measure it
+
+Pie charts lie. You need actual math.
+
+**The Herfindahl-Hirschman Index (HHI).** Same formula the DOJ uses for antitrust. Square each position's portfolio weight, sum them.
+
+HHI = Σ(weight²)
+
+Under 0.15 = diversified. 0.15 to 0.25 = concentrated. Over 0.25 = one bad week away from real pain.
+
+Twenty equally-weighted positions: HHI of 0.05. One stock at 50%: HHI above 0.25 no matter what else you hold. The math doesn't care how many small positions you use as filler.
+
+**The 30% drawdown test.** Take your largest position. If it drops 30% tomorrow — a normal drawdown for an individual stock — what happens to your total portfolio? If the answer is "down more than 5% from one name," that's a concentration problem.
+
+**The sector check.** AAPL, MSFT, GOOG, NVDA, META. Five tickers. One sector bet. If you're 60%+ in tech across all positions, a sector rotation doesn't hit one holding. It hits everything at once. Diversification means your positions don't all move in the same direction on the same day.
+
+## What it costs
+
+$500K portfolio, well diversified (HHI 0.08). Severe market downturn. Expected max drawdown: about 25%. You lose $125K. It hurts. You recover.
+
+Same $500K but 45% in one stock (HHI 0.23). Same downturn hits that stock harder. Max drawdown: 40%+. You lose $200K.
+
+The extra $75K is the concentration tax. You pay it during every major drawdown. It doesn't fund anything useful. It just disappears.
+
+## Fixing it
+
+**See the full picture first.** Most people have 2-3 accounts. A brokerage, a 401(k), maybe an IRA. Each one looks fine alone. Combined, the concentration becomes obvious. Your brokerage won't show you this view because they only see what they hold.
+
+**Tax-loss harvest before you rebalance.** Got underwater positions elsewhere? Sell those to generate losses that offset the gains from trimming your winners. A $15K loss somewhere in your portfolio turns a $15K taxable gain from selling concentrated stock into a $0 tax event. I wrote a longer breakdown of this [here](/blog/tax-loss-harvesting-guide). There's also a [free calculator](/tools/tlh-calculator) if you want to estimate the savings.
+
+**Set threshold rules.** "If any position exceeds 25% of my portfolio, I trim to 20%." Write it down. Put it on a sticky note. Rules work because they remove emotion. Emotion is the reason you're concentrated in the first place.
+
+**Replace, don't just sell.** Trim NVIDIA and buy SMH (semiconductor ETF). You keep sector exposure while killing single-stock risk. Same principle works for any concentrated position — find the ETF that covers the same sector or theme.
+
+**Monitor it.** Concentration isn't a one-time fix. Prices move every day. The position you trimmed to 20% last quarter could be back at 28% after one good earnings print. You need something watching for you, not a quarterly reminder to open a spreadsheet.
+
+## What I'd do this week
+
+Open your largest account. Find your single biggest holding. Calculate what percentage of your total portfolio it represents — not just that account, your total across everything.
+
+If it's over 20%, you have work to do.
+
+If you want to skip the spreadsheet, [Helm](https://helmterminal.dev/signup) connects to your brokerage via Plaid and calculates your concentration risk score across all accounts automatically. The portfolio tools are free — not trial-limited, actually free. Tax-loss harvesting automation is $14.99/mo if you want that too.
+
+But the spreadsheet works fine. The tool doesn't matter. What matters is that you look at the number. Because the expensive mistake isn't holding a concentrated position. It's holding one and not knowing it.
