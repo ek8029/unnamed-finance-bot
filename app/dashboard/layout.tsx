@@ -20,6 +20,7 @@ import {
   BookOpen,
   Menu,
   X,
+  Search,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
@@ -39,6 +40,7 @@ const navigation = [
       { name: 'Earnings', href: '/dashboard/earnings', icon: BarChart3, pro: true },
     ],
   },
+  { name: 'Analyze', href: '/analyze', icon: Search },
   { name: 'Daily Brief', href: '/dashboard/brief', icon: BookOpen },
   { name: 'Actions', href: '/dashboard/actions', icon: Zap },
   { name: 'Transactions', href: '/dashboard/transactions', icon: ArrowLeftRight },

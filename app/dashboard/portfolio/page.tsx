@@ -503,12 +503,12 @@ export default function PortfolioPage() {
                       >
                         {/* SYMBOL */}
                         <td className="pl-5 pr-2 py-2">
-                          <div className="flex items-center gap-2.5">
+                          <Link href={`/analyze/${h.ticker}`} className="flex items-center gap-2.5 group">
                             <TickerIcon ticker={h.ticker} />
-                            <span className="font-mono text-sm font-semibold text-[var(--color-text-primary)]">
+                            <span className="font-mono text-sm font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors">
                               {h.ticker}
                             </span>
-                          </div>
+                          </Link>
                         </td>
                         {/* NAME + sector */}
                         <td className="px-2 py-2">
