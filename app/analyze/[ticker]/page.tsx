@@ -5,7 +5,6 @@ import { getFullTickerData } from '@/lib/financial-data';
 import { AnalysisTerminal } from './analysis-terminal';
 import { HelmMark } from '@/components/helm-mark';
 import { CinematicBg } from '@/components/cinematic-bg';
-import { createClient } from '@/lib/supabase/server';
 
 interface Props {
   params: Promise<{ ticker: string }>;
@@ -94,50 +93,39 @@ export default async function TickerAnalysisPage({ params }: Props) {
     notFound();
   }
 
-  const [{ analysis, computedAt, dataSources, methodologyVersion }, tickerData, supabase] = await Promise.all([
+  const [{ analysis, computedAt, dataSources, methodologyVersion }, tickerData] = await Promise.all([
     analyzeStock(symbol),
     getFullTickerData(symbol),
-    createClient(),
   ]);
 
-  const { data: { user } } = await supabase.auth.getUser();
-  const isAuthenticated = !!user;
-
   if (!analysis) {
-    // Not-found view — dashboard-aware when authenticated (layout provides sidebar)
-    const notFoundContent = (
-      <div className={isAuthenticated ? "flex-1 flex items-center justify-center px-6 py-16" : "relative z-10 flex-1 flex items-center justify-center px-6"}>
-        <div className="text-center space-y-5 max-w-md">
-          <div className="type-h1 text-[var(--color-text-primary)]">Ticker not found</div>
-          <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed">
-            We couldn&apos;t find data for <span className="font-bold text-[var(--color-text-primary)]">{symbol}</span>.
-            Helm currently covers US-listed stocks and ETFs (NYSE, NASDAQ, AMEX). International stocks, mutual funds, and OTC securities are not yet supported.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a
-              href="/analyze"
-              className="px-5 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[13px] font-semibold rounded transition-colors"
-            >
-              Try another ticker
-            </a>
-            <a
-              href="/analyze/AAPL"
-              className="px-5 py-2 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] text-[13px] font-medium rounded transition-colors"
-            >
-              See an example (AAPL)
-            </a>
-          </div>
-        </div>
-      </div>
-    );
-
-    if (isAuthenticated) return notFoundContent;
-
     return (
       <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col relative overflow-hidden">
         <CinematicBg />
         <AnalysisNav />
-        {notFoundContent}
+        <main className="relative z-10 flex-1 flex items-center justify-center px-6">
+          <div className="text-center space-y-5 max-w-md">
+            <div className="type-h1 text-[var(--color-text-primary)]">Ticker not found</div>
+            <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed">
+              We couldn&apos;t find data for <span className="font-bold text-[var(--color-text-primary)]">{symbol}</span>.
+              Helm currently covers US-listed stocks and ETFs (NYSE, NASDAQ, AMEX). International stocks, mutual funds, and OTC securities are not yet supported.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <a
+                href="/analyze"
+                className="px-5 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[13px] font-semibold rounded transition-colors"
+              >
+                Try another ticker
+              </a>
+              <a
+                href="/analyze/AAPL"
+                className="px-5 py-2 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] text-[13px] font-medium rounded transition-colors"
+              >
+                See an example (AAPL)
+              </a>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
@@ -217,80 +205,76 @@ export default async function TickerAnalysisPage({ params }: Props) {
     },
   ];
 
-  // ── Shared content blocks ──
-  const analysisContent = (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <h1 className="sr-only">
-        {symbol} Stock Analysis — {analysis.companyName}. Helm&apos;s AI verdict: {verdictLabel}. {analysis.recommendation}
-      </h1>
-      <AnalysisTerminal
-        analysis={analysis}
-        tickerData={tickerData}
-        ticker={symbol}
-        computedAt={computedAtIso}
-        dataSources={dataSources}
-        methodologyVersion={methodologyVersion}
-      />
-      <section className="mt-8 space-y-6 border-t border-[var(--color-border-subtle)] pt-6 max-w-3xl mx-auto">
-        <h2 className="type-h2 text-[var(--color-text-primary)]">Common questions about {symbol}</h2>
-        {faqs.map((f, i) => (
-          <div key={i} className="space-y-1.5">
-            <h3 className="text-[14px] font-semibold text-[var(--color-text-primary)]">{f.question}</h3>
-            <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">{f.answer}</p>
-          </div>
-        ))}
-      </section>
-      <section className="mt-8 border-t border-[var(--color-border-subtle)] pt-6 max-w-3xl mx-auto">
-        <details className="group">
-          <summary className="cursor-pointer list-none flex items-center justify-between text-[13px] font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-gold)] transition-colors">
-            <span>How this analysis is computed</span>
-            <span className="text-[var(--color-text-muted)] group-open:rotate-180 transition-transform" aria-hidden="true">&#9662;</span>
-          </summary>
-          <div className="mt-4 space-y-3 text-[12px] text-[var(--color-text-secondary)] leading-relaxed">
-            <div>
-              <dt className="inline font-semibold text-[var(--color-text-primary)]">Computed: </dt>
-              <dd className="inline">
-                <time dateTime={computedAtIso}>{new Date(computedAtIso).toLocaleString('en-US', { timeZone: 'America/New_York', dateStyle: 'medium', timeStyle: 'short' })} ET</time>
-              </dd>
-            </div>
-            <div>
-              <dt className="inline font-semibold text-[var(--color-text-primary)]">Data sources: </dt>
-              <dd className="inline">{dataSources.join(', ')}</dd>
-            </div>
-            <div>
-              <dt className="inline font-semibold text-[var(--color-text-primary)]">Pipeline version: </dt>
-              <dd className="inline">Helm AI {methodologyVersion}</dd>
-            </div>
-            <p>
-              Helm&apos;s analysis is generated by an AI model from live market data. It identifies risk signals, opportunities, and key metrics based on current fundamentals, recent price action, and analyst consensus. It does not execute trades, issue certified investment advice, or predict future prices.
-            </p>
-            <p className="text-[11px] italic text-[var(--color-text-muted)]">
-              Not financial advice. Informational use only. AI-generated content may contain errors. Consult a licensed financial advisor before making investment decisions. Helm Terminal is not registered as an investment advisor.
-            </p>
-          </div>
-        </details>
-      </section>
-    </>
-  );
-
-  // ── Authenticated: content only (layout provides sidebar + chrome) ──
-  if (isAuthenticated) {
-    return (
-      <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 py-6">
-        {analysisContent}
-      </div>
-    );
-  }
-
-  // ── Anonymous: full standalone page ──
   return (
     <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col relative overflow-hidden">
       <CinematicBg />
       <AnalysisNav />
+
       <main className="relative z-10 flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 py-6">
-        {analysisContent}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+
+        {/* Answer-first H1 — matches LLM prompt patterns */}
+        <h1 className="sr-only">
+          {symbol} Stock Analysis — {analysis.companyName}. Helm&apos;s AI verdict: {verdictLabel}. {analysis.recommendation}
+        </h1>
+
+        {/* Bloomberg-style 3-pane terminal */}
+        <AnalysisTerminal
+          analysis={analysis}
+          tickerData={tickerData}
+          ticker={symbol}
+          computedAt={computedAtIso}
+          dataSources={dataSources}
+          methodologyVersion={methodologyVersion}
+        />
+
+        {/* Answer-first Q&A section — extractable by LLMs */}
+        <section className="mt-8 space-y-6 border-t border-[var(--color-border-subtle)] pt-6 max-w-3xl mx-auto">
+          <h2 className="type-h2 text-[var(--color-text-primary)]">Common questions about {symbol}</h2>
+          {faqs.map((f, i) => (
+            <div key={i} className="space-y-1.5">
+              <h3 className="text-[14px] font-semibold text-[var(--color-text-primary)]">{f.question}</h3>
+              <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">{f.answer}</p>
+            </div>
+          ))}
+        </section>
+
+        {/* Methodology + data provenance (YMYL / E-E-A-T) */}
+        <section className="mt-8 border-t border-[var(--color-border-subtle)] pt-6 max-w-3xl mx-auto">
+          <details className="group">
+            <summary className="cursor-pointer list-none flex items-center justify-between text-[13px] font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-gold)] transition-colors">
+              <span>How this analysis is computed</span>
+              <span className="text-[var(--color-text-muted)] group-open:rotate-180 transition-transform" aria-hidden="true">&#9662;</span>
+            </summary>
+            <div className="mt-4 space-y-3 text-[12px] text-[var(--color-text-secondary)] leading-relaxed">
+              <div>
+                <dt className="inline font-semibold text-[var(--color-text-primary)]">Computed: </dt>
+                <dd className="inline">
+                  <time dateTime={computedAtIso}>{new Date(computedAtIso).toLocaleString('en-US', { timeZone: 'America/New_York', dateStyle: 'medium', timeStyle: 'short' })} ET</time>
+                </dd>
+              </div>
+              <div>
+                <dt className="inline font-semibold text-[var(--color-text-primary)]">Data sources: </dt>
+                <dd className="inline">{dataSources.join(', ')}</dd>
+              </div>
+              <div>
+                <dt className="inline font-semibold text-[var(--color-text-primary)]">Pipeline version: </dt>
+                <dd className="inline">Helm AI {methodologyVersion}</dd>
+              </div>
+              <p>
+                Helm&apos;s analysis is generated by an AI model from live market data. It identifies risk signals, opportunities, and key metrics based on current fundamentals, recent price action, and analyst consensus. It does not execute trades, issue certified investment advice, or predict future prices.
+              </p>
+              <p className="text-[11px] italic text-[var(--color-text-muted)]">
+                Not financial advice. Informational use only. AI-generated content may contain errors. Consult a licensed financial advisor before making investment decisions. Helm Terminal is not registered as an investment advisor.
+              </p>
+            </div>
+          </details>
+        </section>
       </main>
+
       <footer className="relative z-10 border-t border-[var(--color-border-subtle)] py-6">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 flex items-center justify-between">
           <span className="type-eyebrow text-[var(--color-text-muted)]">helmterminal.dev</span>

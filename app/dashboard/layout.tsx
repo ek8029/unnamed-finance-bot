@@ -40,7 +40,7 @@ const navigation = [
       { name: 'Earnings', href: '/dashboard/earnings', icon: BarChart3, pro: true },
     ],
   },
-  { name: 'Analyze', href: '/analyze', icon: Search },
+  { name: 'Analyze', href: '/dashboard/analyze', icon: Search },
   { name: 'Daily Brief', href: '/dashboard/brief', icon: BookOpen },
   { name: 'Actions', href: '/dashboard/actions', icon: Zap },
   { name: 'Transactions', href: '/dashboard/transactions', icon: ArrowLeftRight },
@@ -63,13 +63,13 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/wrapped': 'Wrapped',
   '/dashboard/accounts': 'Connected Accounts',
   '/dashboard/settings': 'Settings',
-  '/analyze': 'Analyze',
+  '/dashboard/analyze': 'Analyze',
 };
 
 function getPageTitle(pathname: string): string {
   if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
-  if (pathname.startsWith('/analyze/')) {
-    const ticker = pathname.split('/')[2]?.toUpperCase();
+  if (pathname.startsWith('/dashboard/analyze/')) {
+    const ticker = pathname.split('/')[3]?.toUpperCase();
     return ticker ? `Analyze ${ticker}` : 'Analyze';
   }
   return 'Dashboard';
@@ -294,9 +294,9 @@ export default function DashboardLayout({
                 );
               }
 
-              // Regular nav items — /analyze uses startsWith so /analyze/AAPL highlights too
-              const isActive = item.href === '/analyze'
-                ? pathname.startsWith('/analyze')
+              // Regular nav items — /dashboard/analyze uses startsWith so /dashboard/analyze/AAPL highlights too
+              const isActive = item.href === '/dashboard/analyze'
+                ? pathname.startsWith('/dashboard/analyze')
                 : pathname === item.href;
               return (
                 <Link

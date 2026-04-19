@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Loader2 } from 'lucide-react';
 
-export function TickerSearch() {
+export function TickerSearch({ basePath = '/analyze' }: { basePath?: string }) {
   const router = useRouter();
   const [ticker, setTicker] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,10 +15,10 @@ export function TickerSearch() {
       const clean = ticker.trim().toUpperCase().replace(/[^A-Z]/g, '');
       if (clean && clean.length <= 5) {
         setLoading(true);
-        router.push(`/analyze/${clean}`);
+        router.push(`${basePath}/${clean}`);
       }
     },
-    [ticker, router],
+    [ticker, router, basePath],
   );
 
   return (
