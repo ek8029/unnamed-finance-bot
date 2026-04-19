@@ -4,24 +4,23 @@ const POPULAR_TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'
 
 export default function DashboardAnalyzePage() {
   return (
-    <div className="px-4 sm:px-6 py-10 max-w-xl mx-auto space-y-6">
-      <div className="space-y-3 text-center">
-        <div className="type-eyebrow text-[var(--color-gold)]">Stock Analysis</div>
-        <h1 className="type-display text-[var(--color-text-primary)]">
-          Analyze a ticker
-        </h1>
-        <p className="type-body text-[var(--color-text-secondary)] max-w-lg mx-auto">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+      <div className="space-y-3">
+        <h1 className="type-h1 text-[var(--color-text-primary)]">Analyze</h1>
+        <p className="type-body text-[var(--color-text-secondary)]">
           AI-powered reports with real-time pricing, financial metrics, analyst consensus, earnings data, and news sentiment.
         </p>
       </div>
 
-      <div className="sovereign-card rounded p-5">
-        <TickerSearch basePath="/dashboard/analyze" />
+      <div className="max-w-2xl">
+        <div className="sovereign-card rounded p-5">
+          <TickerSearch basePath="/dashboard/analyze" />
+        </div>
       </div>
 
-      <div className="space-y-2 text-center">
-        <div className="type-eyebrow text-[var(--color-text-muted)]">Popular</div>
-        <div className="flex flex-wrap justify-center gap-2">
+      <div className="space-y-3">
+        <div className="type-eyebrow text-[var(--color-text-muted)]">Popular tickers</div>
+        <div className="flex flex-wrap gap-2">
           {POPULAR_TICKERS.map((ticker) => (
             <a
               key={ticker}
