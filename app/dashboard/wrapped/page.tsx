@@ -135,10 +135,25 @@ function SlideCover({
 
       {/* Headline */}
       <h1 className="text-[clamp(40px,8vw,72px)] font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.05] mb-5">
-        You had a{' '}
-        <span className="italic text-[var(--color-gold)]" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
-          year.
-        </span>
+        {data?.totalReturn?.pct != null && data.totalReturn.pct > 0 ? (
+          <>Your portfolio grew{' '}
+            <span className="italic text-[var(--color-gold)]" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+              {Math.abs(data.totalReturn.pct).toFixed(1)}%.
+            </span>
+          </>
+        ) : data?.totalReturn?.pct != null ? (
+          <>A tough {year}.{' '}
+            <span className="italic text-[var(--color-negative)]" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+              Let&apos;s review.
+            </span>
+          </>
+        ) : (
+          <>Your {year}{' '}
+            <span className="italic text-[var(--color-gold)]" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+              in review.
+            </span>
+          </>
+        )}
       </h1>
 
       {/* Subtitle */}

@@ -376,6 +376,9 @@ export default function PortfolioPage() {
             </div>
           </div>
 
+          {/* ---- TAB CONTENT ---- */}
+          {(activeTab === 'Positions' || activeTab === 'Overview') && (
+          <>
           {/* ---- 3. TLH BANNER ---- */}
           {(() => {
             const underwater = holdings.filter(h => (h.unrealised_gain ?? 0) < 0);
@@ -605,6 +608,11 @@ export default function PortfolioPage() {
             </div>
           </div>
 
+          </>
+          )}
+
+          {(activeTab === 'Performance' || activeTab === 'Overview') && (
+          <>
           {/* ---- 5. PERFORMANCE CHART ---- */}
           <Card>
             <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
@@ -697,6 +705,11 @@ export default function PortfolioPage() {
             </CardContent>
           </Card>
 
+          </>
+          )}
+
+          {(activeTab === 'Overview' || activeTab === 'Performance') && (
+          <>
           {/* ---- 6. ALLOCATION, SECTOR, METRICS ROW ---- */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <PortfolioAllocation allocation={transformedAllocation} />
@@ -768,6 +781,25 @@ export default function PortfolioPage() {
               </CardContent>
             </Card>
           </div>
+
+          </>
+          )}
+
+          {activeTab === 'Tax lots' && (
+            <div className="border border-white/[0.06] rounded-lg p-12 text-center">
+              <div className="font-mono text-xs uppercase tracking-[0.15em] text-[var(--color-text-muted)] mb-3">Tax Lots</div>
+              <p className="text-sm text-[var(--color-text-muted)]">Tax lot tracking requires lot-level position data. Connect your brokerage to enable per-lot cost basis, holding period, and wash-sale detection.</p>
+              <a href="/dashboard/taxes" className="inline-block mt-4 text-sm text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors">View tax page →</a>
+            </div>
+          )}
+
+          {activeTab === 'Activity' && (
+            <div className="border border-white/[0.06] rounded-lg p-12 text-center">
+              <div className="font-mono text-xs uppercase tracking-[0.15em] text-[var(--color-text-muted)] mb-3">Activity</div>
+              <p className="text-sm text-[var(--color-text-muted)]">Recent trades, dividends received, and account activity.</p>
+              <a href="/dashboard/transactions" className="inline-block mt-4 text-sm text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors">View transactions →</a>
+            </div>
+          )}
 
           {/* ---- Legacy PortfolioMonitor (hidden, keeps data flow) ---- */}
           <div className="hidden">
