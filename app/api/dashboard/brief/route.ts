@@ -224,6 +224,58 @@ export async function GET() {
       ? Math.round((overnightChangePct - spyChangePct) * 100) / 100
       : null;
 
+    // ── Fetch market news: position-relevant + general ──
+    const oneDayAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+
+    const [positionNewsResult, generalNewsResult] = await Promise.all([
+      // News about tickers the user holds
+      userTickers.length > 0
+        ? supabase
+            .from('market_news')
+            .select('id, title, summary, source, url, published_at, primary_ticker, sentiment')
+            .in('primary_ticker', userTickers)
+            .gte('published_at', oneDayAgo)
+            .order('published_at', { ascending: false })
+            .limit(8)
+        : Promise.resolve({ data: [], error: null }),
+      // General market news (not tied to a specific ticker)
+      supabase
+        .from('market_news')
+        .select('id, title, summary, source, url, published_at, primary_ticker, sentiment')
+        .gte('published_at', oneDayAgo)
+        .order('published_at', { ascending: false })
+        .limit(10),
+    ]);
+
+    const positionNews = (positionNewsResult.data || []).map(n => ({
+      id: n.id,
+      title: n.title,
+      summary: n.summary,
+      source: n.source,
+      url: n.url,
+      publishedAt: n.published_at,
+      ticker: n.primary_ticker,
+      sentiment: n.sentiment,
+      isHolding: true,
+    }));
+
+    // General news: exclude articles already in position news
+    const positionNewsIds = new Set(positionNews.map(n => n.id));
+    const generalNews = (generalNewsResult.data || [])
+      .filter(n => !positionNewsIds.has(n.id))
+      .slice(0, 6)
+      .map(n => ({
+        id: n.id,
+        title: n.title,
+        summary: n.summary,
+        source: n.source,
+        url: n.url,
+        publishedAt: n.published_at,
+        ticker: n.primary_ticker,
+        sentiment: n.sentiment,
+        isHolding: false,
+      }));
+
     return NextResponse.json(
       {
         portfolio: {
@@ -238,6 +290,8 @@ export async function GET() {
         sectorHeat,
         earningsThisWeek,
         dividendsThisWeek,
+        positionNews,
+        generalNews,
       },
       {
         headers: { 'Cache-Control': 'private, max-age=300' },
