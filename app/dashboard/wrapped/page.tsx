@@ -476,6 +476,7 @@ function SlideSectors({ data }: { data: WrappedData | null }) {
 
 function SlideShareCard({ data }: { data: WrappedData | null }) {
   const pct = data?.totalReturn.pct ?? 0;
+  const dollars = data?.totalReturn.dollars ?? 0;
   const positive = pct >= 0;
   const positions = data?.positionCount ?? 0;
   const trades = data?.tradeCount ?? 0;
@@ -516,7 +517,7 @@ function SlideShareCard({ data }: { data: WrappedData | null }) {
             <Share2 className="w-4 h-4" /> Share Wrapped
           </button>
           <a
-            href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`My ${year} portfolio returned ${fmtPct(pct)} 📈\n\n#HelmWrapped helmterminal.dev/dashboard/wrapped`)}`}
+            href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`My ${year} portfolio returned ${fmtPct(pct)} (${fmtDollar(dollars)}) 📈\n\n${positions} positions · ${trades} trades\n\n#HelmWrapped helmterminal.dev`)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="px-6 py-3 border border-white/10 hover:border-white/20 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-medium text-[14px] rounded-full transition-colors duration-200 text-center"
