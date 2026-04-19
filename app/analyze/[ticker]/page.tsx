@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { analyzeStock } from '@/lib/analyze-stock';
-import { AnalysisResultClient } from './analysis-result-client';
+import { getFullTickerData } from '@/lib/financial-data';
+import { AnalysisTerminal } from './analysis-terminal';
 import { HelmMark } from '@/components/helm-mark';
 import { CinematicBg } from '@/components/cinematic-bg';
 
@@ -92,7 +93,10 @@ export default async function TickerAnalysisPage({ params }: Props) {
     notFound();
   }
 
-  const { analysis, computedAt, dataSources, methodologyVersion } = await analyzeStock(symbol);
+  const [{ analysis, computedAt, dataSources, methodologyVersion }, tickerData] = await Promise.all([
+    analyzeStock(symbol),
+    getFullTickerData(symbol),
+  ]);
 
   if (!analysis) {
     return (
@@ -206,38 +210,29 @@ export default async function TickerAnalysisPage({ params }: Props) {
       <CinematicBg />
       <AnalysisNav />
 
-      <main className="relative z-10 flex-1 max-w-3xl mx-auto w-full px-6 py-8">
+      <main className="relative z-10 flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 py-6">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-
-        {/* Back + freshness timestamp */}
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <a
-            href="/analyze"
-            className="text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
-            style={{ fontFamily: 'var(--font-mono)' }}
-          >
-            &larr; Back to search
-          </a>
-          <div className="flex items-center gap-2 text-[11px]" style={{ fontFamily: 'var(--font-mono)' }}>
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] animate-pulse" aria-hidden="true" />
-            <span className="text-[var(--color-text-muted)]">Updated</span>
-            <time dateTime={computedAtIso} className="text-[var(--color-text-secondary)]">{relTime}</time>
-          </div>
-        </div>
 
         {/* Answer-first H1 — matches LLM prompt patterns */}
         <h1 className="sr-only">
           {symbol} Stock Analysis — {analysis.companyName}. Helm&apos;s AI verdict: {verdictLabel}. {analysis.recommendation}
         </h1>
 
-        {/* Analysis card + share + related (client component) */}
-        <AnalysisResultClient analysis={analysis} ticker={symbol} />
+        {/* Bloomberg-style 3-pane terminal */}
+        <AnalysisTerminal
+          analysis={analysis}
+          tickerData={tickerData}
+          ticker={symbol}
+          computedAt={computedAtIso}
+          dataSources={dataSources}
+          methodologyVersion={methodologyVersion}
+        />
 
         {/* Answer-first Q&A section — extractable by LLMs */}
-        <section className="mt-8 space-y-6 border-t border-[var(--color-border-subtle)] pt-6">
+        <section className="mt-8 space-y-6 border-t border-[var(--color-border-subtle)] pt-6 max-w-3xl mx-auto">
           <h2 className="type-h2 text-[var(--color-text-primary)]">Common questions about {symbol}</h2>
           {faqs.map((f, i) => (
             <div key={i} className="space-y-1.5">
@@ -248,11 +243,11 @@ export default async function TickerAnalysisPage({ params }: Props) {
         </section>
 
         {/* Methodology + data provenance (YMYL / E-E-A-T) */}
-        <section className="mt-8 border-t border-[var(--color-border-subtle)] pt-6">
+        <section className="mt-8 border-t border-[var(--color-border-subtle)] pt-6 max-w-3xl mx-auto">
           <details className="group">
             <summary className="cursor-pointer list-none flex items-center justify-between text-[13px] font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-gold)] transition-colors">
               <span>How this analysis is computed</span>
-              <span className="text-[var(--color-text-muted)] group-open:rotate-180 transition-transform" aria-hidden="true">▾</span>
+              <span className="text-[var(--color-text-muted)] group-open:rotate-180 transition-transform" aria-hidden="true">&#9662;</span>
             </summary>
             <div className="mt-4 space-y-3 text-[12px] text-[var(--color-text-secondary)] leading-relaxed">
               <div>
@@ -281,7 +276,7 @@ export default async function TickerAnalysisPage({ params }: Props) {
       </main>
 
       <footer className="relative z-10 border-t border-[var(--color-border-subtle)] py-6">
-        <div className="max-w-3xl mx-auto px-6 flex items-center justify-between">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 flex items-center justify-between">
           <span className="type-eyebrow text-[var(--color-text-muted)]">helmterminal.dev</span>
           <div className="flex gap-4">
             <a href="/privacy" className="type-eyebrow text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors">Privacy</a>
@@ -296,7 +291,7 @@ export default async function TickerAnalysisPage({ params }: Props) {
 function AnalysisNav() {
   return (
     <header className="relative z-10 glass-nav">
-      <div className="max-w-3xl mx-auto px-6 h-12 flex items-center justify-between">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
         <a href="/" className="flex items-center gap-2.5">
           <HelmMark size={24} />
           <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
