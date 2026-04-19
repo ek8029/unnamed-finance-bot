@@ -1,22 +1,20 @@
 import { getDemoAnalyses } from '@/lib/demo-tickers';
+import { getTickerTapeData } from '@/lib/ticker-tape';
 import HomeContent from '@/components/homepage/home-content';
 
 /**
  * Homepage — Server Component wrapper.
- * Fetches cached demo analyses at request time so the first analysis card
- * is SSR'd into the HTML (no loading state, good for SEO + bounce rate).
- * Times out after 3s to prevent hanging if Supabase is slow.
+ * Fetches cached demo analyses + live ticker tape at request time.
+ * Times out after 3s to prevent hanging if external services are slow.
  */
 export default async function HomePage() {
-  let demoAnalyses: Awaited<ReturnType<typeof getDemoAnalyses>> = [];
-  try {
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('timeout')), 3000)
-    );
-    demoAnalyses = await Promise.race([getDemoAnalyses(), timeout]);
-  } catch {
-    // Supabase slow or unavailable — render without demo analyses
-  }
+  const timeout = <T,>(p: Promise<T>, ms: number, fallback: T) =>
+    Promise.race([p, new Promise<T>((r) => setTimeout(() => r(fallback), ms))]);
 
-  return <HomeContent demoAnalyses={demoAnalyses} />;
+  const [demoAnalyses, tickerTape] = await Promise.all([
+    timeout(getDemoAnalyses(), 3000, []),
+    timeout(getTickerTapeData(), 3000, []),
+  ]);
+
+  return <HomeContent demoAnalyses={demoAnalyses} tickerTape={tickerTape} />;
 }

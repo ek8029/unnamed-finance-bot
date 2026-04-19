@@ -9,23 +9,11 @@ import { HelmMark } from '@/components/helm-mark';
 import { InteractiveGrid, FadeIn } from '@/app/landing-effects';
 import { HeroAnalysisDemo } from './hero-analysis-demo';
 import type { DemoAnalysis } from '@/lib/demo-tickers';
+import type { TickerTapeItem } from '@/lib/ticker-tape';
 
 /* ─── Static data ───────────────────────────────────────────────────────── */
 
 const TICKER_CHIPS = ['AAPL', 'NVDA', 'TSLA', 'GOOGL', 'AMZN', 'META', 'MSFT'];
-
-const TICKER_TAPE_DATA = [
-  { symbol: 'NVDA',  price: '131.28', change: '+2.41%' },
-  { symbol: 'AAPL',  price: '198.11', change: '+0.87%' },
-  { symbol: 'TSLA',  price: '241.37', change: '-1.23%' },
-  { symbol: 'MSFT',  price: '452.80', change: '+1.14%' },
-  { symbol: 'GOOGL', price: '176.49', change: '+0.63%' },
-  { symbol: 'META',  price: '531.20', change: '+1.91%' },
-  { symbol: 'AMZN',  price: '192.55', change: '-0.34%' },
-  { symbol: 'SPY',   price: '528.72', change: '+0.72%' },
-  { symbol: 'QQQ',   price: '456.33', change: '+1.05%' },
-  { symbol: 'JPM',   price: '198.64', change: '+0.48%' },
-];
 
 const NAV_LINKS = [
   { label: 'Analyze', href: '/analyze' },
@@ -179,7 +167,7 @@ function HeroSearch() {
    HomeContent
    ═══════════════════════════════════════════════════════════════════════════ */
 
-export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalysis[] }) {
+export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAnalyses: DemoAnalysis[]; tickerTape?: TickerTapeItem[] }) {
   const router = useRouter();
   const { scrollY } = useScroll();
   const navBg = useTransform(scrollY, [0, 80], [0, 1]);
@@ -191,7 +179,7 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
   }, [navBg]);
 
   // Tripled ticker array for seamless CSS loop
-  const tickerItems = [...TICKER_TAPE_DATA, ...TICKER_TAPE_DATA, ...TICKER_TAPE_DATA];
+  const tickerItems = [...tickerTape, ...tickerTape, ...tickerTape];
 
   return (
     <>
@@ -319,7 +307,7 @@ export default function HomeContent({ demoAnalyses }: { demoAnalyses: DemoAnalys
             >
               <span className="text-[var(--color-gold)] font-semibold">{t.symbol}</span>
               <span className="text-white/80">{t.price}</span>
-              <span className={t.change.startsWith('+') ? 'text-emerald-400' : 'text-red-400'}>
+              <span className={t.positive ? 'text-emerald-400' : 'text-red-400'}>
                 {t.change}
               </span>
             </div>
