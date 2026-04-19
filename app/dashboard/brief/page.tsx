@@ -1,410 +1,261 @@
 'use client';
 
-import { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { HelmMark } from '@/components/helm-mark';
-import { cn } from '@/lib/utils';
+import { ChevronDown } from 'lucide-react';
 
-// ---------------------------------------------------------------------------
-// Static sample data -- will be replaced by AI brief generation pipeline
-// ---------------------------------------------------------------------------
-
-const ISSUE_NUMBER = 42;
-const GENERATED_AT = '6:12 AM ET';
-const READ_TIME = 4;
-
-const MARKET_SNAPSHOT = [
-  { label: 'S&P 500',   value: '5,428.71', delta: +0.34 },
-  { label: 'NASDAQ',    value: '17,031.44', delta: +0.52 },
-  { label: 'DOW',       value: '40,113.50', delta: -0.11 },
-  { label: '10Y YIELD', value: '4.33%',     delta: +0.02 },
-  { label: 'VIX',       value: '14.21',     delta: -3.80 },
-  { label: 'OIL WTI',   value: '$78.42',    delta: -1.15 },
-];
-
-const MOVERS = [
-  { ticker: 'NVDA', name: 'NVIDIA',    pct: +3.42, reason: 'Upgraded to Overweight at Morgan Stanley on AI capex cycle' },
-  { ticker: 'AAPL', name: 'Apple',     pct: -1.18, reason: 'iPhone 17 supply chain delays reported by Nikkei Asia' },
-  { ticker: 'TSLA', name: 'Tesla',     pct: +2.07, reason: 'Robotaxi pilot expanded to Austin; deliveries beat whisper' },
-  { ticker: 'META', name: 'Meta',      pct: +0.94, reason: 'Threads MAU crossed 300M; ad monetization ahead of schedule' },
-  { ticker: 'JPM',  name: 'JPMorgan',  pct: -0.61, reason: 'Net interest income guide trimmed on deposit migration' },
-];
-
-const ECON_CALENDAR = [
-  { time: '8:30 AM',  event: 'Initial Jobless Claims',    value: '215K (est.)' },
-  { time: '10:00 AM', event: 'Existing Home Sales',       value: '4.20M (est.)' },
-  { time: '11:00 AM', event: 'Kansas City Fed Mfg Index', value: '-2 (est.)' },
-  { time: '2:00 PM',  event: 'Fed Beige Book',            value: '' },
-];
-
-const LEAD_HEADLINE = 'Your Portfolio Gained $4,217 Overnight as Tech Earnings Lifted Sentiment';
-const LEAD_BODY = `arnings season is shaping up to be a tailwind for your portfolio. With 68% of S&P 500 companies now reported, the blended earnings growth rate stands at +7.2% year-over-year, well ahead of the +4.1% consensus at the start of the quarter. Your technology-heavy allocation benefited disproportionately: NVIDIA, your largest single-stock position at 8.3% of portfolio, surged after Morgan Stanley upgraded the name to Overweight, citing durable AI infrastructure spending through 2027.
-
-Across your 23 holdings, 17 closed higher overnight. The net effect: +$4,217 (+0.62%), outperforming the S&P 500 by 28 basis points. Your portfolio beta of 1.14 is running slightly hot relative to your target of 1.0, driven primarily by the semiconductor overweight. If you want to trim exposure, consider reviewing your NVDA and AMD positions, which together represent 12.1% of your portfolio.
-
-One area to watch: Apple reports next Thursday. At 6.7% of your portfolio, a miss could offset much of this week's gains. The options market is pricing a 4.2% move in either direction.`;
-
-const TLH_HEADLINE = 'Tax-Loss Harvesting Opportunity: $2,340 in Unrealized Losses Available';
-const TLH_BODY = `Three positions in your taxable brokerage account are currently showing unrealized short-term losses that could be harvested before quarter-end. INTC (-$1,180), DIS (-$740), and PYPL (-$420) together represent $2,340 in potential tax savings at your marginal rate. Harvesting now and swapping into correlated ETFs (SMH, VCR, IPAY) would maintain sector exposure while locking in the deduction. The 30-day wash-sale window would expire before your next planned rebalance.`;
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function todayFormatted(): string {
-  const d = new Date();
-  const weekday = d.toLocaleDateString('en-US', { weekday: 'long' });
-  const rest = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-  return `${weekday}, ${rest}`;
+interface BriefData {
+  portfolio: { totalValue: number; overnightChange: number; overnightChangePct: number; vsBenchmark: number | null };
+  market: { spy: { price: number; changePct: number } | null; qqq: { price: number; changePct: number } | null; vix: { price: number; level: string } | null; treasury10y: { yield: number } | null };
+  movers: { ticker: string; name: string; sector: string; changePct: number; dollarImpact: number }[];
+  allHoldings: { ticker: string; name: string; sector: string; changePct: number; dollarImpact: number }[];
+  sectorHeat: { sector: string; weight: number; changePct: number; tickers: string[] }[];
+  earningsThisWeek: { ticker: string; reportDate: string; portfolioWeight: number }[];
+  dividendsThisWeek: { ticker: string; exDate: string }[];
 }
 
-function deltaColor(v: number): string {
-  if (v > 0) return 'text-emerald-400';
-  if (v < 0) return 'text-red-400';
-  return 'text-neutral-500';
+function fmt(n: number): string {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
+}
+function fmtPct(n: number): string {
+  return `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
 }
 
-function formatDelta(v: number): string {
-  const sign = v >= 0 ? '+' : '';
-  return `${sign}${v.toFixed(2)}%`;
-}
+const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-function Masthead() {
-  const weekday = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
-  const dateStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase();
-
-  return (
-    <header className="border-t-2 border-[var(--color-gold)] pt-6 pb-5">
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        {/* Left: date + title */}
-        <div>
-          <p
-            className="text-[0.6875rem] tracking-[0.2em] text-[var(--color-gold)] mb-2"
-            style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace' }}
-          >
-            {weekday} &middot; {dateStr}
-          </p>
-          <div className="flex items-center gap-3">
-            <HelmMark size={36} />
-            <h1
-              className="text-[2.5rem] sm:text-[3.5rem] font-bold leading-none tracking-tight text-[var(--color-text-primary)]"
-              style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-            >
-              The Helm Brief
-            </h1>
-          </div>
-        </div>
-
-        {/* Right: issue meta */}
-        <div
-          className="text-right space-y-0.5 shrink-0"
-          style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace' }}
-        >
-          <p className="text-[0.6875rem] tracking-[0.15em] text-[var(--color-text-muted)]">
-            ISSUE No. {ISSUE_NUMBER} &middot; PRE-MARKET
-          </p>
-          <p className="text-[0.625rem] text-[var(--color-text-muted)]">
-            GENERATED {GENERATED_AT} &middot; {READ_TIME} MIN READ
-          </p>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-function MarketSnapshotBar() {
-  return (
-    <div className="bg-[#080808] border border-[var(--color-border-subtle)] rounded -mx-1 px-1">
-      <div className="grid grid-cols-3 sm:grid-cols-6 divide-x divide-[rgba(255,255,255,0.06)]">
-        {MARKET_SNAPSHOT.map((item) => (
-          <div key={item.label} className="px-3 py-3 text-center">
-            <p
-              className="text-[0.5625rem] tracking-[0.15em] text-neutral-500 uppercase mb-1"
-              style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace' }}
-            >
-              {item.label}
-            </p>
-            <p
-              className="text-[0.8125rem] font-medium text-[var(--color-text-primary)] tabular-nums"
-              style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace' }}
-            >
-              {item.value}
-            </p>
-            <p
-              className={cn(
-                'text-[0.6875rem] tabular-nums mt-0.5',
-                deltaColor(item.delta),
-              )}
-              style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace' }}
-            >
-              {formatDelta(item.delta)}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function GoldDivider() {
-  return (
-    <div className="flex items-center gap-3 my-8">
-      <div className="flex-1 h-px bg-[var(--color-gold-border)]" />
-      <div className="w-1.5 h-1.5 rotate-45 bg-[var(--color-gold)]" />
-      <div className="flex-1 h-px bg-[var(--color-gold-border)]" />
-    </div>
-  );
-}
-
-function SectionEyebrow({ section, category }: { section: string; category: string }) {
-  return (
-    <p
-      className="text-[0.6875rem] tracking-[0.2em] text-[var(--color-gold)] mb-3 uppercase"
-      style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace' }}
-    >
-      &sect; {section} &middot; {category}
-    </p>
-  );
-}
-
-function LeadStory() {
-  const firstLetter = LEAD_BODY.charAt(0).toUpperCase();
-
-  return (
-    <article>
-      <SectionEyebrow section="LEAD" category="YOUR PORTFOLIO" />
-
-      <h2
-        className="text-[1.75rem] sm:text-[2.25rem] lg:text-[2.75rem] font-bold leading-[1.15] tracking-tight text-[var(--color-text-primary)] mb-3"
-        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-      >
-        {LEAD_HEADLINE}
-      </h2>
-
-      {/* Attribution */}
-      <p
-        className="text-[0.625rem] tracking-[0.1em] text-[var(--color-text-muted)] mb-5 uppercase"
-        style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace' }}
-      >
-        HELM INTELLIGENCE ENGINE v1.0 &middot; POLYGON.IO &middot; PLAID
-      </p>
-
-      {/* Body with drop cap */}
-      <div
-        className="text-[1rem] leading-[1.75] text-[var(--color-text-secondary)] space-y-4"
-        style={{ fontFamily: 'Georgia, "Source Serif Pro", "Times New Roman", serif' }}
-      >
-        <p>
-          <span
-            className="float-left text-[4rem] leading-[0.8] font-bold text-[var(--color-gold)] mr-3 mt-1"
-            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-            aria-hidden="true"
-          >
-            E
-          </span>
-          {LEAD_BODY.split('\n\n')[0]}
-        </p>
-        {LEAD_BODY.split('\n\n').slice(1).map((para, i) => (
-          <p key={i}>{para}</p>
-        ))}
-      </div>
-    </article>
-  );
-}
-
-function TlhStory() {
-  return (
-    <article>
-      <SectionEyebrow section="ACTIONABLE" category="TAX" />
-
-      <h2
-        className="text-[1.375rem] sm:text-[1.75rem] lg:text-[2rem] font-bold leading-[1.2] tracking-tight text-[var(--color-text-primary)] mb-3"
-        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-      >
-        {TLH_HEADLINE}
-      </h2>
-
-      <div
-        className="text-[1rem] leading-[1.75] text-[var(--color-text-secondary)] mb-5"
-        style={{ fontFamily: 'Georgia, "Source Serif Pro", "Times New Roman", serif' }}
-      >
-        <p>{TLH_BODY}</p>
-      </div>
-
-      <div className="flex flex-wrap gap-3">
-        <button className="px-4 py-2 text-[0.8125rem] font-medium bg-[var(--color-gold)] text-[#0D1117] rounded hover:bg-[var(--color-gold-hi)] transition-colors">
-          Open harvest plan &rarr;
-        </button>
-        <button className="px-4 py-2 text-[0.8125rem] font-medium border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] rounded hover:bg-[var(--color-bg-elevated)] transition-colors">
-          Dismiss
-        </button>
-      </div>
-    </article>
-  );
-}
-
-function SidebarMovers() {
-  return (
-    <div>
-      <p
-        className="text-[0.6875rem] tracking-[0.2em] text-[var(--color-gold)] uppercase mb-2"
-        style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace' }}
-      >
-        &sect; MARKET MOVERS
-      </p>
-      <div className="h-px bg-[var(--color-gold-border)] mb-4" />
-
-      <div className="space-y-3">
-        {MOVERS.map((m) => (
-          <div key={m.ticker} className="space-y-0.5">
-            <div className="flex items-baseline justify-between">
-              <span
-                className="text-[0.875rem] font-medium text-[var(--color-text-primary)]"
-                style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace' }}
-              >
-                {m.ticker}
-                <span className="ml-2 text-[0.75rem] font-normal text-[var(--color-text-muted)]">
-                  {m.name}
-                </span>
-              </span>
-              <span
-                className={cn(
-                  'text-[0.875rem] font-medium tabular-nums',
-                  deltaColor(m.pct),
-                )}
-                style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace' }}
-              >
-                {formatDelta(m.pct)}
-              </span>
-            </div>
-            <p className="text-[0.75rem] leading-[1.5] text-[var(--color-text-muted)]">
-              {m.reason}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SidebarEconCalendar() {
-  return (
-    <div>
-      <p
-        className="text-[0.6875rem] tracking-[0.2em] text-[var(--color-gold)] uppercase mb-2"
-        style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace' }}
-      >
-        &sect; ECON CALENDAR
-      </p>
-      <div className="h-px bg-[var(--color-gold-border)] mb-4" />
-
-      <div className="space-y-2.5">
-        {ECON_CALENDAR.map((e, i) => (
-          <div key={i} className="flex gap-3">
-            <span
-              className="text-[0.75rem] text-[var(--color-text-muted)] shrink-0 w-16 tabular-nums"
-              style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace' }}
-            >
-              {e.time}
-            </span>
-            <div>
-              <p className="text-[0.8125rem] text-[var(--color-text-secondary)] leading-tight">
-                {e.event}
-              </p>
-              {e.value && (
-                <p
-                  className="text-[0.6875rem] text-[var(--color-text-muted)] tabular-nums mt-0.5"
-                  style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace' }}
-                >
-                  {e.value}
-                </p>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function FooterColophon() {
-  return (
-    <footer className="border-t border-[var(--color-border-subtle)] mt-12 pt-4 pb-8">
-      <div
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-[0.625rem] text-[var(--color-text-muted)] tracking-[0.1em] uppercase"
-        style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace' }}
-      >
-        <p>HELM INTELLIGENCE ENGINE v1.0 &middot; POLYGON.IO &middot; PLAID &middot; RULE-BASED</p>
-        <p>NEXT ISSUE: TOMORROW {todayFormatted().includes('Friday') ? 'MONDAY' : ''} 6:00 AM ET</p>
-      </div>
-    </footer>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
-
-export default function DailyBriefPage() {
+export default function BriefPage() {
+  const [data, setData] = useState<BriefData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  useEffect(() => {
+    fetch('/api/dashboard/brief')
+      .then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); })
+      .then(d => { setData(d); setLoading(false); })
+      .catch(e => { setError(e.message); setLoading(false); });
+  }, []);
+
+  const now = new Date();
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const dateStr = `${dayNames[now.getDay()]} · ${monthNames[now.getMonth()]} ${now.getDate()} · ${now.getFullYear()}`;
+  const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[var(--color-bg-base)] flex items-center justify-center">
+        <div className="text-sm text-[var(--color-text-muted)] font-mono animate-pulse">Generating brief...</div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="min-h-screen bg-[var(--color-bg-base)] flex items-center justify-center">
+        <div className="text-sm text-[var(--color-negative)]">Failed to load brief. <Link href="/dashboard" className="text-[var(--color-gold)]">Back to dashboard</Link></div>
+      </div>
+    );
+  }
+
+  const topGainers = [...data.movers].filter(m => m.changePct > 0).sort((a, b) => b.changePct - a.changePct).slice(0, 5);
+  const topLosers = [...data.movers].filter(m => m.changePct < 0).sort((a, b) => a.changePct - b.changePct).slice(0, 5);
+  const allMovers = [...topGainers, ...topLosers].sort((a, b) => Math.abs(b.dollarImpact) - Math.abs(a.dollarImpact)).slice(0, 6);
+  const portfolioUp = data.portfolio.overnightChangePct >= 0;
+  const topSector = data.sectorHeat.length > 0 ? data.sectorHeat.sort((a, b) => b.weight - a.weight)[0] : null;
+
   return (
-    <div className="min-h-screen">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-
-        {/* Masthead */}
-        <Masthead />
-
-        {/* Market snapshot bar */}
-        <div className="mt-6 mb-8">
-          <MarketSnapshotBar />
-        </div>
-
-        {/* Mobile sidebar toggle */}
-        <div className="lg:hidden mb-6">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="flex items-center gap-2 text-[0.75rem] tracking-[0.15em] text-[var(--color-gold)] uppercase"
-            style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace' }}
-            aria-expanded={sidebarOpen}
-            aria-controls="brief-sidebar"
-          >
-            {sidebarOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-            Market Movers &amp; Calendar
-          </button>
-
-          {sidebarOpen && (
-            <div id="brief-sidebar" className="mt-4 space-y-8 pb-6 border-b border-[var(--color-border-subtle)]">
-              <SidebarMovers />
-              <SidebarEconCalendar />
+    <div className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)]">
+      {/* Masthead */}
+      <header className="border-b-2 border-[var(--color-gold)]">
+        <div className="max-w-6xl mx-auto px-6 py-6 md:py-8">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+            <div>
+              <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-gold)] mb-2" style={MONO}>{dateStr}</div>
+              <div className="flex items-center gap-3">
+                <HelmMark size={28} />
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight">The Helm Brief</h1>
+              </div>
             </div>
-          )}
+            <div className="text-right" style={MONO}>
+              <div className="text-xs tracking-[0.15em] text-[var(--color-text-muted)]">GENERATED {timeStr}</div>
+              <div className="text-xs tracking-[0.15em] text-[var(--color-text-muted)] mt-1">{data.allHoldings.length} POSITIONS TRACKED</div>
+            </div>
+          </div>
         </div>
+      </header>
 
-        {/* Two-column editorial layout */}
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-14">
+      {/* Market snapshot */}
+      <div className="bg-[#080808] border-b border-white/[0.06]">
+        <div className="max-w-6xl mx-auto px-6 py-4 grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-8">
+          {[
+            data.market.spy ? ['S&P 500', `$${data.market.spy.price.toFixed(2)}`, fmtPct(data.market.spy.changePct), data.market.spy.changePct >= 0] : ['S&P 500', '—', '—', true],
+            data.market.qqq ? ['NASDAQ', `$${data.market.qqq.price.toFixed(2)}`, fmtPct(data.market.qqq.changePct), data.market.qqq.changePct >= 0] : ['NASDAQ', '—', '—', true],
+            data.market.vix ? ['VIX', data.market.vix.price.toFixed(2), data.market.vix.level, true] : ['VIX', '—', '—', true],
+            data.market.treasury10y ? ['10Y YIELD', `${data.market.treasury10y.yield.toFixed(2)}%`, '', true] : ['10Y', '—', '—', true],
+          ].map(([label, value, delta, pos]) => (
+            <div key={label as string}>
+              <div className="text-[9px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]" style={MONO}>{label as string}</div>
+              <div className="text-base font-bold mt-1 tabular-nums">{value as string}</div>
+              {delta && <div className={`text-xs font-semibold mt-0.5 ${pos ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`} style={MONO}>{delta as string}</div>}
+            </div>
+          ))}
+        </div>
+      </div>
 
+      {/* Two-column editorial */}
+      <div className="max-w-6xl mx-auto px-6 py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[2.2fr_1fr] gap-12">
           {/* Main column */}
-          <main className="flex-[2.2] min-w-0">
-            <LeadStory />
-            <GoldDivider />
-            <TlhStory />
+          <main className="space-y-10">
+            {/* Portfolio overview */}
+            <article>
+              <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>§ YOUR PORTFOLIO</div>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-[1.08] mb-4">
+                {portfolioUp ? 'Portfolio up' : 'Portfolio down'} {fmtPct(data.portfolio.overnightChangePct)} overnight.
+                {data.portfolio.vsBenchmark !== null && (
+                  <span className="text-[var(--color-text-muted)]">
+                    {' '}{data.portfolio.vsBenchmark >= 0 ? 'Beating' : 'Trailing'} the S&P by {Math.abs(data.portfolio.vsBenchmark).toFixed(2)}%.
+                  </span>
+                )}
+              </h2>
+              <div className="flex items-center gap-3 text-xs text-[var(--color-text-muted)] mb-6" style={MONO}>
+                <span>HELM ANALYST · GPT-4O-MINI</span>
+                <span>·</span>
+                <span>{data.allHoldings.length} POSITIONS</span>
+                <span>·</span>
+                <span>{fmt(data.portfolio.totalValue)} TOTAL</span>
+              </div>
+              <p className="text-base leading-relaxed text-[var(--color-text-secondary)]" style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}>
+                <span className="text-5xl float-left font-bold leading-[0.85] mr-2 mt-1 text-[var(--color-gold)]" style={{ fontFamily: 'var(--font-sans)' }}>
+                  {portfolioUp ? 'Y' : 'A'}
+                </span>
+                {portfolioUp
+                  ? `our portfolio gained ${fmt(Math.abs(data.portfolio.overnightChange))} since yesterday's close, a ${fmtPct(data.portfolio.overnightChangePct)} move.`
+                  : ` ${Math.abs(data.portfolio.overnightChangePct).toFixed(2)}% drawdown took ${fmt(Math.abs(data.portfolio.overnightChange))} off your portfolio since yesterday's close.`}
+                {' '}
+                {allMovers.length > 0 && `${allMovers[0].ticker} was the biggest mover with a ${fmtPct(allMovers[0].changePct)} move, ${allMovers[0].changePct >= 0 ? 'adding' : 'costing'} ${fmt(Math.abs(allMovers[0].dollarImpact))} to your portfolio.`}
+                {topSector && ` ${topSector.sector} remains your largest sector at ${topSector.weight.toFixed(1)}% allocation.`}
+              </p>
+            </article>
+
+            {/* Movers table */}
+            {allMovers.length > 0 && (
+              <div className="border border-white/[0.06] rounded">
+                <div className="px-4 py-2 border-b border-white/[0.06] bg-white/[0.02]">
+                  <span className="text-xs uppercase tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>YOUR TOP MOVERS</span>
+                </div>
+                {allMovers.map((m, i) => (
+                  <div key={m.ticker} className={`grid grid-cols-[60px_1fr_80px_100px] gap-3 items-center px-4 py-3 ${i > 0 ? 'border-t border-white/[0.04]' : ''}`}>
+                    <Link href={`/analyze/${m.ticker}`} className="font-mono text-sm font-bold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors">{m.ticker}</Link>
+                    <span className="text-sm text-[var(--color-text-muted)] truncate">{m.name}</span>
+                    <span className={`text-sm font-mono font-semibold text-right tabular-nums ${m.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>{fmtPct(m.changePct)}</span>
+                    <span className={`text-sm font-mono text-right tabular-nums ${m.dollarImpact >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>{m.dollarImpact >= 0 ? '+' : ''}{fmt(m.dollarImpact)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Divider */}
+            <div className="w-24 h-px mx-auto bg-gradient-to-r from-transparent via-[var(--color-gold)]/40 to-transparent" />
+
+            {/* Earnings + Dividends */}
+            {(data.earningsThisWeek.length > 0 || data.dividendsThisWeek.length > 0) && (
+              <article>
+                <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>§ THIS WEEK</div>
+                {data.earningsThisWeek.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-bold mb-3">Earnings</h3>
+                    <div className="space-y-2">
+                      {data.earningsThisWeek.map(e => (
+                        <div key={e.ticker} className="flex items-center justify-between py-2 border-b border-white/[0.04]">
+                          <div className="flex items-center gap-3">
+                            <Link href={`/analyze/${e.ticker}`} className="font-mono font-bold text-[var(--color-gold)]">{e.ticker}</Link>
+                            <span className="text-xs text-[var(--color-text-muted)]" style={MONO}>{e.reportDate}</span>
+                          </div>
+                          <span className="text-xs text-[var(--color-warning)]" style={MONO}>{e.portfolioWeight.toFixed(1)}% exposure</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {data.dividendsThisWeek.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-bold mb-3">Dividends</h3>
+                    <div className="space-y-2">
+                      {data.dividendsThisWeek.map(d => (
+                        <div key={d.ticker} className="flex items-center justify-between py-2 border-b border-white/[0.04]">
+                          <Link href={`/analyze/${d.ticker}`} className="font-mono font-bold text-[var(--color-gold)]">{d.ticker}</Link>
+                          <span className="text-xs text-[var(--color-text-muted)]" style={MONO}>Ex-date: {d.exDate}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </article>
+            )}
           </main>
 
-          {/* Sidebar -- hidden on mobile (toggle above) */}
-          <aside className="hidden lg:block flex-1 min-w-0 space-y-10">
-            <SidebarMovers />
-            <SidebarEconCalendar />
+          {/* Sidebar — collapsible on mobile */}
+          <aside>
+            <button
+              className="lg:hidden w-full flex items-center justify-between py-3 text-sm text-[var(--color-text-muted)] border-b border-white/[0.06] mb-4"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              Market Movers & Sectors
+              <ChevronDown className={`w-4 h-4 transition-transform ${sidebarOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block space-y-8`}>
+              {/* Sector heat */}
+              {data.sectorHeat.length > 0 && (
+                <div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4 pb-3 border-b border-[var(--color-gold)]/20" style={MONO}>§ SECTOR HEAT</div>
+                  {data.sectorHeat.sort((a, b) => b.weight - a.weight).map(s => (
+                    <div key={s.sector} className="py-3 border-b border-white/[0.06]">
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-sm font-medium">{s.sector}</span>
+                        <span className={`text-xs font-mono font-bold ${s.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>{fmtPct(s.changePct)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex-1 h-1 bg-white/[0.06] rounded-full overflow-hidden">
+                          <div className="h-full bg-[var(--color-gold)] rounded-full" style={{ width: `${s.weight}%` }} />
+                        </div>
+                        <span className="text-[10px] text-[var(--color-text-muted)] font-mono">{s.weight.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* All holdings by impact */}
+              {data.allHoldings.length > 0 && (
+                <div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4 pb-3 border-b border-[var(--color-gold)]/20" style={MONO}>§ ALL HOLDINGS</div>
+                  {data.allHoldings.sort((a, b) => Math.abs(b.dollarImpact) - Math.abs(a.dollarImpact)).slice(0, 10).map(h => (
+                    <div key={h.ticker} className="py-2.5 border-b border-white/[0.04] flex justify-between items-baseline">
+                      <div>
+                        <Link href={`/analyze/${h.ticker}`} className="font-mono text-sm font-bold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)]">{h.ticker}</Link>
+                        <span className="text-xs text-[var(--color-text-muted)] ml-2">{h.name}</span>
+                      </div>
+                      <span className={`text-xs font-mono font-semibold ${h.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>{fmtPct(h.changePct)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </aside>
         </div>
-
-        {/* Footer colophon */}
-        <FooterColophon />
       </div>
+
+      {/* Footer */}
+      <footer className="border-t border-white/[0.06] py-4 px-6">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.12em]" style={MONO}>
+          <span>Model GPT-4o-mini · Sources: Finnhub · Polygon</span>
+          <span>helmterminal.dev</span>
+        </div>
+      </footer>
     </div>
   );
 }
