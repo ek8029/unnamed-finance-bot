@@ -1,44 +1,98 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { PortfolioMonitor } from '@/components/dashboard/portfolio-monitor';
 import { PortfolioAllocation } from '@/components/dashboard/portfolio-allocation';
 import { MarketIntelligence } from '@/components/portfolio/market-intelligence';
 import { useHoldings, useTaxData } from '@/hooks/use-financial-data';
-import { TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { TrendingUp, TrendingDown, Filter, Download, ChevronUp, ChevronDown } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useFormat } from '@/hooks/use-format';
 
+/* ------------------------------------------------------------------ */
+/*  Deterministic sparkline SVG generator                              */
+/* ------------------------------------------------------------------ */
+function generateSparklinePath(ticker: string, width = 80, height = 24): string {
+  // Seed from ticker charCodes for deterministic output
+  let seed = 0;
+  for (let i = 0; i < ticker.length; i++) {
+    seed = ((seed << 5) - seed + ticker.charCodeAt(i)) | 0;
+  }
+  const pseudoRandom = () => {
+    seed = (seed * 16807 + 0) % 2147483647;
+    return (seed & 0x7fffffff) / 0x7fffffff;
+  };
+  const points = 12;
+  const step = width / (points - 1);
+  const coords: [number, number][] = [];
+  let y = height * 0.5;
+  for (let i = 0; i < points; i++) {
+    y = Math.max(2, Math.min(height - 2, y + (pseudoRandom() - 0.48) * 8));
+    coords.push([i * step, y]);
+  }
+  return 'M' + coords.map(([x, yv]) => `${x.toFixed(1)},${yv.toFixed(1)}`).join(' L');
+}
+
+/* ------------------------------------------------------------------ */
+/*  Ticker icon with gold gradient                                     */
+/* ------------------------------------------------------------------ */
+function TickerIcon({ ticker }: { ticker: string }) {
+  return (
+    <div className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
+      style={{ background: 'linear-gradient(135deg, var(--color-gold) 0%, #b8860b 100%)' }}>
+      <span className="text-[11px] font-bold text-black leading-none font-mono">
+        {ticker.slice(0, 2)}
+      </span>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Loading skeleton                                                   */
+/* ------------------------------------------------------------------ */
 function LoadingSkeleton() {
   return (
-    <div className="container mx-auto p-6 max-w-[1600px] animate-pulse">
+    <div className="container mx-auto px-4 py-6 max-w-[1600px] animate-pulse">
       <div className="flex gap-6">
         <div className="flex-1 space-y-6">
-          <div className="h-8 bg-[var(--color-bg-elevated)] rounded w-1/4"></div>
-          <div className="h-4 bg-[var(--color-bg-elevated)] rounded w-1/3"></div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-28 bg-[var(--color-bg-elevated)] rounded-xl"></div>
-            ))}
+          <div className="h-5 bg-[var(--color-bg-elevated)] rounded w-48" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="col-span-2 h-28 bg-[var(--color-bg-elevated)] rounded-lg" />
+            <div className="h-28 bg-[var(--color-bg-elevated)] rounded-lg" />
+            <div className="h-28 bg-[var(--color-bg-elevated)] rounded-lg" />
           </div>
-          <div className="h-64 bg-[var(--color-bg-elevated)] rounded-xl"></div>
+          <div className="h-96 bg-[var(--color-bg-elevated)] rounded-lg" />
+          <div className="h-64 bg-[var(--color-bg-elevated)] rounded-lg" />
         </div>
         <div className="hidden lg:block w-[420px]">
-          <div className="h-[600px] bg-[var(--color-bg-elevated)] rounded-xl"></div>
+          <div className="h-[600px] bg-[var(--color-bg-elevated)] rounded-lg" />
         </div>
       </div>
     </div>
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Sort key + direction types for Positions table                     */
+/* ------------------------------------------------------------------ */
+type PositionSortKey = 'ticker' | 'name' | 'shares' | 'avgCost' | 'price' | 'dayPct' | 'value' | 'alloc' | 'pl';
+
 export default function PortfolioPage() {
   const { formatCurrency, formatCurrencyDetailed } = useFormat();
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const holdingsData: any = useHoldings();
   const { data: taxData } = useTaxData();
-  const holdings: { id: string; ticker: string; asset_name: string; shares: number; current_price: number; total_value: number; day_change_percentage: number | null; portfolio_allocation: number; sector?: string; asset_class?: string; cost_basis?: number; unrealised_gain?: number }[] = holdingsData.holdings ?? [];
+
+  const holdings: {
+    id: string; ticker: string; asset_name: string; shares: number;
+    current_price: number; total_value: number; day_change_percentage: number | null;
+    portfolio_allocation: number; sector?: string; asset_class?: string;
+    cost_basis?: number; unrealised_gain?: number;
+  }[] = holdingsData.holdings ?? [];
+
   const allocation: { name: string; value: number; percentage: number }[] = holdingsData.allocation ?? [];
   const totalValue: number = holdingsData.totalValue ?? 0;
   const performanceMetrics = holdingsData.performanceMetrics ?? null;
@@ -47,23 +101,34 @@ export default function PortfolioPage() {
   const error: string | null = holdingsData.error ?? null;
   const lastRefreshed: string | null = holdingsData.lastRefreshed ?? null;
 
+  /* ---------- computed aggregates ---------- */
   const { totalDayChange, dayChangePercentage } = useMemo(() => {
     const totalDayChange = holdings.reduce(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (sum: number, holding: any) => sum + (holding.total_value * (holding.day_change_percentage ?? 0)) / 100,
-      0
+      0,
     );
     const dayChangePercentage = totalValue > 0 ? (totalDayChange / totalValue) * 100 : 0;
     return { totalDayChange, dayChangePercentage };
   }, [holdings, totalValue]);
 
+  const totalUnrealized = useMemo(
+    () => holdings.reduce((sum, h) => sum + (h.unrealised_gain ?? 0), 0),
+    [holdings],
+  );
+  const totalCostBasis = useMemo(
+    () => holdings.reduce((sum, h) => sum + (h.cost_basis ?? 0), 0),
+    [holdings],
+  );
+  const unrealizedPct = totalCostBasis > 0 ? (totalUnrealized / totalCostBasis) * 100 : 0;
+
+  /* ---------- performance chart ranges ---------- */
   type RangeKey = '3M' | '6M' | '1Y' | 'ALL';
 
-  // Build a single-point fallback from the current total value (no fake data)
   const singlePointFallback = totalValue > 0
     ? [{ label: (() => { const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][new Date().getMonth()]; return `${m} '${new Date().getFullYear().toString().slice(-2)}`; })(), value: totalValue }]
     : [];
 
-  // Use real portfolio history data only -- never generate random numbers
   const performanceSeries: Record<RangeKey, { label: string; value: number }[]> = {
     '3M': portfolioHistory.length > 0 ? portfolioHistory.slice(-3) : singlePointFallback,
     '6M': portfolioHistory.length > 0 ? portfolioHistory.slice(-6) : singlePointFallback,
@@ -72,37 +137,64 @@ export default function PortfolioPage() {
   };
   const [range, setRange] = useState<RangeKey>('6M');
 
-  // Transform holdings to match component expectations (Holding type)
+  /* ---------- transform holdings for sidebar components ---------- */
   const transformedHoldings = holdings.map(h => ({
-    id: h.id,
-    user_id: '', // Not needed for display
-    ticker: h.ticker,
-    asset_name: h.asset_name,
-    shares: h.shares,
-    current_price: h.current_price,
-    total_value: h.total_value,
-    day_change_percentage: h.day_change_percentage,
-    portfolio_allocation: h.portfolio_allocation,
-    sector: h.sector,
-    asset_class: h.asset_class,
-    cost_basis: h.cost_basis,
+    id: h.id, user_id: '', ticker: h.ticker, asset_name: h.asset_name,
+    shares: h.shares, current_price: h.current_price, total_value: h.total_value,
+    day_change_percentage: h.day_change_percentage, portfolio_allocation: h.portfolio_allocation,
+    sector: h.sector, asset_class: h.asset_class, cost_basis: h.cost_basis,
     unrealised_gain: h.unrealised_gain,
   }));
 
-  // Transform allocation for pie chart (PortfolioAllocation type)
   const transformedAllocation = allocation.map(a => ({
-    name: a.name,
-    value: a.value,
-    percentage: a.percentage,
+    name: a.name, value: a.value, percentage: a.percentage,
   }));
 
-  // NOTE: All hooks must be called before any early returns (Rules of Hooks)
+  /* ---------- positions table sorting ---------- */
+  const [sortKey, setSortKey] = useState<PositionSortKey>('value');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = useCallback((key: PositionSortKey) => {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir('desc');
+    }
+  }, [sortKey]);
+
+  const sortedPositions = useMemo(() => {
+    const copy = [...holdings];
+    const dir = sortDir === 'asc' ? 1 : -1;
+    copy.sort((a, b) => {
+      switch (sortKey) {
+        case 'ticker': return dir * a.ticker.localeCompare(b.ticker);
+        case 'name': return dir * a.asset_name.localeCompare(b.asset_name);
+        case 'shares': return dir * (a.shares - b.shares);
+        case 'avgCost': return dir * ((a.cost_basis && a.shares ? a.cost_basis / a.shares : 0) - (b.cost_basis && b.shares ? b.cost_basis / b.shares : 0));
+        case 'price': return dir * (a.current_price - b.current_price);
+        case 'dayPct': return dir * ((a.day_change_percentage ?? 0) - (b.day_change_percentage ?? 0));
+        case 'value': return dir * (a.total_value - b.total_value);
+        case 'alloc': return dir * (a.portfolio_allocation - b.portfolio_allocation);
+        case 'pl': return dir * ((a.unrealised_gain ?? 0) - (b.unrealised_gain ?? 0));
+        default: return 0;
+      }
+    });
+    return copy;
+  }, [holdings, sortKey, sortDir]);
+
+  // Hooks that the old code used (must stay above early returns)
   const sortedByAllocation = useMemo(() => [...holdings].sort((a, b) => b.portfolio_allocation - a.portfolio_allocation), [holdings]);
   const sortedByDayChange = useMemo(() => [...holdings].sort((a, b) => (b.day_change_percentage ?? 0) - (a.day_change_percentage ?? 0)), [holdings]);
 
-  if (loading) {
-    return <LoadingSkeleton />;
-  }
+  /* ---------- header tab state (visual only) ---------- */
+  const tabs = ['Overview', 'Performance', 'Positions', 'Tax lots', 'Activity'] as const;
+  const [activeTab, setActiveTab] = useState<typeof tabs[number]>('Positions');
+
+  /* ================================================================ */
+  /*  EARLY RETURNS                                                    */
+  /* ================================================================ */
+  if (loading) return <LoadingSkeleton />;
 
   if (error) {
     return (
@@ -142,112 +234,152 @@ export default function PortfolioPage() {
     );
   }
 
+  /* ================================================================ */
+  /*  Column header helper                                             */
+  /* ================================================================ */
+  const ColHeader = ({ label, sortId, className = '' }: { label: string; sortId: PositionSortKey; className?: string }) => (
+    <button
+      onClick={() => handleSort(sortId)}
+      className={`group inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors ${className}`}
+    >
+      {label}
+      <span className="inline-flex flex-col -space-y-1">
+        <ChevronUp className={`w-2.5 h-2.5 ${sortKey === sortId && sortDir === 'asc' ? 'text-[var(--color-gold)]' : 'opacity-30'}`} />
+        <ChevronDown className={`w-2.5 h-2.5 ${sortKey === sortId && sortDir === 'desc' ? 'text-[var(--color-gold)]' : 'opacity-30'}`} />
+      </span>
+    </button>
+  );
+
+  /* ================================================================ */
+  /*  RENDER                                                           */
+  /* ================================================================ */
   return (
-    <div className="container mx-auto card-padding max-w-[1600px]">
-      <div className="flex gap-density">
-        {/* Main Content Area */}
-        <div className="flex-1 min-w-0 space-y-density">
-          {/* Header */}
-          <div className="flex items-start justify-between mb-1">
-            <div className="space-y-2">
-              <h1 className="type-h1">Portfolio</h1>
-              <p className="type-body text-[var(--color-text-secondary)]">
-                Track your investments, allocation, and performance
-              </p>
+    <div className="container mx-auto px-4 py-6 max-w-[1600px]">
+      <div className="flex gap-6">
+        {/* ======================================================= */}
+        {/*  MAIN CONTENT                                            */}
+        {/* ======================================================= */}
+        <div className="flex-1 min-w-0 space-y-6">
+
+          {/* ---- 1. HEADER STRIP ---- */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-2">
+              {/* Helm mark */}
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="flex-shrink-0">
+                <rect width="20" height="20" rx="4" fill="var(--color-gold)" fillOpacity="0.15" />
+                <path d="M6 6h2v8H6V6zm6 0h2v8h-2V6zm-4 3h4v2H8V9z" fill="var(--color-gold)" />
+              </svg>
+              <span className="font-mono text-xs text-[var(--color-text-muted)]">
+                Helm
+              </span>
+              <span className="font-mono text-xs text-[var(--color-text-muted)]">/</span>
+              <span className="font-mono text-xs text-[var(--color-text-muted)]">
+                Portfolio
+              </span>
+              <span className="font-mono text-xs text-[var(--color-text-muted)] mx-0.5">
+                &#8250;
+              </span>
+              <span className="font-mono text-xs text-[var(--color-text-primary)] font-medium">
+                All accounts
+              </span>
+              {lastRefreshed && (
+                <>
+                  <span className="mx-2 w-px h-3 bg-[var(--color-border-base)]" />
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] animate-pulse" />
+                  <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
+                    {lastRefreshed}
+                  </span>
+                </>
+              )}
             </div>
-            {lastRefreshed && (
-              <div className="flex items-center gap-2">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] animate-pulse" aria-hidden="true" />
-                <span className="type-caption text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
-                  Prices as of {lastRefreshed}
+
+            {/* Tab pills */}
+            <div className="flex items-center gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-0.5">
+              {tabs.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors ${
+                    activeTab === tab
+                      ? 'bg-[var(--color-gold)] text-black'
+                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ---- 2. HEADLINE STATS ---- */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Portfolio value -- spans 2 cols on lg */}
+            <div className="sm:col-span-2 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-5">
+              <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-1">
+                Portfolio value
+              </span>
+              <div className="flex items-baseline gap-3 flex-wrap">
+                <span className="font-mono tabular-nums font-semibold text-[var(--color-text-primary)] leading-none"
+                  style={{ fontSize: 'clamp(32px, 4vw, 52px)' }}>
+                  {formatCurrency(totalValue)}
+                </span>
+                <span className={`inline-flex items-center gap-1 font-mono text-sm tabular-nums ${
+                  dayChangePercentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                }`}>
+                  {dayChangePercentage >= 0 ? (
+                    <TrendingUp className="w-3.5 h-3.5" />
+                  ) : (
+                    <TrendingDown className="w-3.5 h-3.5" />
+                  )}
+                  {dayChangePercentage >= 0 ? '+' : ''}{dayChangePercentage.toFixed(2)}%
+                  <span className="text-[var(--color-text-muted)] text-xs ml-1">today</span>
                 </span>
               </div>
-            )}
+              <span className="block font-mono text-xs text-[var(--color-text-muted)] mt-1.5 tabular-nums">
+                {holdings.length} position{holdings.length !== 1 ? 's' : ''} across {new Set(holdings.map(h => h.sector).filter(Boolean)).size} sectors
+              </span>
+            </div>
+
+            {/* Unrealized P/L */}
+            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-5">
+              <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-1">
+                Unrealized P/L
+              </span>
+              <span className={`block font-mono tabular-nums text-2xl font-semibold leading-tight ${
+                totalUnrealized >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+              }`}>
+                {totalUnrealized >= 0 ? '+' : ''}{formatCurrency(totalUnrealized)}
+              </span>
+              <span className={`block font-mono tabular-nums text-xs mt-1 ${
+                unrealizedPct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+              }`}>
+                {unrealizedPct >= 0 ? '+' : ''}{unrealizedPct.toFixed(2)}%
+              </span>
+            </div>
+
+            {/* Day Change */}
+            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-5">
+              <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-1">
+                Day Change
+              </span>
+              <span className={`block font-mono tabular-nums text-2xl font-semibold leading-tight ${
+                totalDayChange >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+              }`}>
+                {totalDayChange >= 0 ? '+' : ''}{formatCurrency(totalDayChange)}
+              </span>
+              <span className={`block font-mono tabular-nums text-xs mt-1 ${
+                dayChangePercentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+              }`}>
+                {dayChangePercentage >= 0 ? '+' : ''}{dayChangePercentage.toFixed(2)}%
+              </span>
+            </div>
           </div>
 
-          {/* Portfolio Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center space-x-2">
-                  <DollarSign className="w-4 h-4 text-[var(--color-text-muted)]" />
-                  <CardDescription>Total Portfolio Value</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardTitle className="type-data text-3xl">
-                  {formatCurrency(totalValue)}
-                </CardTitle>
-                <p className="type-mono text-[var(--color-text-secondary)] mt-1">{holdings.length} holdings</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center space-x-2">
-                  {dayChangePercentage >= 0 ? (
-                    <TrendingUp className="w-4 h-4 text-[var(--color-positive)]" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4 text-[var(--color-negative)]" />
-                  )}
-                  <CardDescription>Today&apos;s Change</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardTitle className={`type-data text-3xl ${dayChangePercentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
-                  {dayChangePercentage >= 0 ? '+' : ''}
-                  {dayChangePercentage.toFixed(2)}%
-                </CardTitle>
-                <p className={`type-mono mt-1 ${dayChangePercentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
-                  {dayChangePercentage >= 0 ? '+' : ''}
-                  {formatCurrencyDetailed(totalDayChange)}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center space-x-2">
-                  <PieChart className="w-4 h-4 text-[var(--color-text-muted)]" />
-                  <CardDescription>Largest Position</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardTitle className="type-data text-xl">
-                  {sortedByAllocation[0]?.ticker || '-'}
-                </CardTitle>
-                <p className="type-mono text-[var(--color-text-secondary)] mt-1">
-                  {sortedByAllocation[0]?.portfolio_allocation?.toFixed(1) || 0}% of portfolio
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center space-x-2">
-                  {(sortedByDayChange[0]?.day_change_percentage ?? 0) >= 0 ? (
-                    <TrendingUp className="w-4 h-4 text-[var(--color-positive)]" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4 text-[var(--color-negative)]" />
-                  )}
-                  <CardDescription>Best Performer Today</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardTitle className={`type-data text-xl ${(sortedByDayChange[0]?.day_change_percentage ?? 0) >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
-                  {sortedByDayChange[0]?.ticker || '-'}
-                </CardTitle>
-                <p className={`type-mono mt-1 ${(sortedByDayChange[0]?.day_change_percentage ?? 0) >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
-                  {(sortedByDayChange[0]?.day_change_percentage ?? 0) >= 0 ? '+' : ''}{sortedByDayChange[0]?.day_change_percentage?.toFixed(2) || 0}%
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* TLH Snapshot — harvestable losses + realized gains */}
+          {/* ---- 3. TLH BANNER ---- */}
           {(() => {
-            const underwater = holdings.filter((h: { unrealised_gain?: number }) => (h.unrealised_gain ?? 0) < 0);
-            const harvestable = underwater.reduce((sum: number, h: { unrealised_gain?: number }) => sum + Math.abs(h.unrealised_gain ?? 0), 0);
+            const underwater = holdings.filter(h => (h.unrealised_gain ?? 0) < 0);
+            const harvestable = underwater.reduce((sum, h) => sum + Math.abs(h.unrealised_gain ?? 0), 0);
             if (underwater.length === 0) return null;
             const realizedGains = Math.max(0, (taxData?.realized?.shortTermGains ?? 0) + (taxData?.realized?.longTermGains ?? 0));
             const calcParams = new URLSearchParams({
@@ -273,7 +405,7 @@ export default function PortfolioPage() {
                     href={`/tools/tlh-calculator?${calcParams.toString()}`}
                     className="text-xs font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors whitespace-nowrap"
                   >
-                    Estimate tax savings →
+                    Estimate tax savings &rarr;
                   </Link>
                 </div>
                 {realizedGains > 0 && (
@@ -288,15 +420,199 @@ export default function PortfolioPage() {
             );
           })()}
 
-          {/* Performance over time */}
+          {/* ---- 4. POSITIONS TABLE ---- */}
+          <div className="border border-[var(--color-border-base)] rounded-lg overflow-hidden bg-[var(--color-bg-surface)]">
+            {/* Table header bar */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
+              <div className="flex items-center gap-3">
+                <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Positions</h2>
+                <span className="font-mono text-[10px] text-[var(--color-text-muted)] bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5">
+                  {holdings.length}
+                </span>
+                <span className="hidden sm:inline font-mono text-[10px] text-[var(--color-text-muted)]">
+                  sorted by {sortKey} {sortDir}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] rounded-md bg-[var(--color-bg-elevated)] transition-colors">
+                  <Filter className="w-3 h-3" />
+                  Filter
+                </button>
+                <button className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] rounded-md bg-[var(--color-bg-elevated)] transition-colors">
+                  <Download className="w-3 h-3" />
+                  Export
+                </button>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[960px]">
+                <thead>
+                  <tr className="bg-[var(--color-bg-elevated)]/60">
+                    <th className="text-left pl-5 pr-2 py-2.5 w-[100px]">
+                      <ColHeader label="Symbol" sortId="ticker" />
+                    </th>
+                    <th className="text-left px-2 py-2.5">
+                      <ColHeader label="Name" sortId="name" />
+                    </th>
+                    <th className="text-right px-2 py-2.5">
+                      <ColHeader label="Shares" sortId="shares" className="justify-end" />
+                    </th>
+                    <th className="text-right px-2 py-2.5">
+                      <ColHeader label="Avg Cost" sortId="avgCost" className="justify-end" />
+                    </th>
+                    <th className="text-right px-2 py-2.5">
+                      <ColHeader label="Price" sortId="price" className="justify-end" />
+                    </th>
+                    <th className="text-right px-2 py-2.5">
+                      <ColHeader label="Day %" sortId="dayPct" className="justify-end" />
+                    </th>
+                    <th className="px-2 py-2.5 w-[96px]">
+                      <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">30D</span>
+                    </th>
+                    <th className="text-right px-2 py-2.5">
+                      <ColHeader label="Value" sortId="value" className="justify-end" />
+                    </th>
+                    <th className="text-right px-2 py-2.5">
+                      <ColHeader label="Alloc" sortId="alloc" className="justify-end" />
+                    </th>
+                    <th className="text-right pl-2 pr-5 py-2.5">
+                      <ColHeader label="P/L" sortId="pl" className="justify-end" />
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedPositions.map((h, idx) => {
+                    const avgCost = h.cost_basis && h.shares ? h.cost_basis / h.shares : 0;
+                    const dayPct = h.day_change_percentage ?? 0;
+                    const pl = h.unrealised_gain ?? 0;
+                    const allocPct = h.portfolio_allocation;
+                    const sparkPath = generateSparklinePath(h.ticker);
+                    const sparkTrend = dayPct >= 0;
+
+                    return (
+                      <tr
+                        key={h.id}
+                        className={`h-16 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)]/50 transition-colors ${
+                          idx % 2 === 1 ? 'bg-[var(--color-bg-elevated)]/20' : ''
+                        }`}
+                      >
+                        {/* SYMBOL */}
+                        <td className="pl-5 pr-2 py-2">
+                          <div className="flex items-center gap-2.5">
+                            <TickerIcon ticker={h.ticker} />
+                            <span className="font-mono text-sm font-semibold text-[var(--color-text-primary)]">
+                              {h.ticker}
+                            </span>
+                          </div>
+                        </td>
+                        {/* NAME + sector */}
+                        <td className="px-2 py-2">
+                          <div className="flex flex-col">
+                            <span className="text-sm text-[var(--color-text-primary)] truncate max-w-[180px]">
+                              {h.asset_name}
+                            </span>
+                            {h.sector && (
+                              <span className="font-mono text-[10px] text-[var(--color-text-muted)] truncate">
+                                {h.sector}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        {/* SHARES */}
+                        <td className="px-2 py-2 text-right">
+                          <span className="font-mono text-sm tabular-nums text-[var(--color-text-primary)]">
+                            {h.shares % 1 === 0 ? h.shares.toLocaleString() : h.shares.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                          </span>
+                        </td>
+                        {/* AVG COST */}
+                        <td className="px-2 py-2 text-right">
+                          <span className="font-mono text-sm tabular-nums text-[var(--color-text-secondary)]">
+                            {avgCost > 0 ? formatCurrencyDetailed(avgCost) : '--'}
+                          </span>
+                        </td>
+                        {/* PRICE */}
+                        <td className="px-2 py-2 text-right">
+                          <span className="font-mono text-sm tabular-nums text-[var(--color-text-primary)]">
+                            {formatCurrencyDetailed(h.current_price)}
+                          </span>
+                        </td>
+                        {/* DAY % */}
+                        <td className="px-2 py-2 text-right">
+                          <span className={`font-mono text-sm tabular-nums ${
+                            dayPct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                          }`}>
+                            {dayPct >= 0 ? '+' : ''}{dayPct.toFixed(2)}%
+                          </span>
+                        </td>
+                        {/* 30D SPARKLINE */}
+                        <td className="px-2 py-2">
+                          <svg width="80" height="24" viewBox="0 0 80 24" fill="none" className="block">
+                            <path
+                              d={sparkPath}
+                              stroke={sparkTrend ? 'var(--color-positive)' : 'var(--color-negative)'}
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              fill="none"
+                            />
+                          </svg>
+                        </td>
+                        {/* VALUE */}
+                        <td className="px-2 py-2 text-right">
+                          <span className="font-mono text-sm tabular-nums font-medium text-[var(--color-text-primary)]">
+                            {formatCurrency(h.total_value)}
+                          </span>
+                        </td>
+                        {/* ALLOC % + mini bar */}
+                        <td className="px-2 py-2 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <div className="w-12 h-1 rounded-full bg-[var(--color-bg-elevated)] overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-[var(--color-gold)]"
+                                style={{ width: `${Math.min(100, allocPct)}%` }}
+                              />
+                            </div>
+                            <span className="font-mono text-xs tabular-nums text-[var(--color-text-secondary)] w-10 text-right">
+                              {allocPct.toFixed(1)}%
+                            </span>
+                          </div>
+                        </td>
+                        {/* P/L */}
+                        <td className="pl-2 pr-5 py-2 text-right">
+                          <span className={`font-mono text-sm tabular-nums ${
+                            pl >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                          }`}>
+                            {pl >= 0 ? '+' : ''}{formatCurrency(pl)}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Table footer */}
+            <div className="flex items-center justify-between px-5 py-3 border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/40">
+              <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
+                Showing {sortedPositions.length} of {holdings.length} positions
+              </span>
+              <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
+                Total value: <span className="text-[var(--color-text-primary)] font-medium">{formatCurrency(totalValue)}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* ---- 5. PERFORMANCE CHART ---- */}
           <Card>
             <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
               <div>
                 <CardTitle className="type-h2 flex items-center gap-2">
-                  <PieChart className="w-4 h-4 text-[var(--color-text-muted)]" />
                   Performance over time
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="font-mono text-[11px]">
                   Portfolio value evolution across selected time range
                 </CardDescription>
               </div>
@@ -305,7 +621,7 @@ export default function PortfolioPage() {
                   <button
                     key={key}
                     onClick={() => setRange(key)}
-                    className={`px-2.5 py-1.5 rounded-md type-caption transition-colors duration-200 ${
+                    className={`px-2.5 py-1.5 rounded-md font-mono text-[11px] transition-colors duration-200 ${
                       range === key
                         ? 'bg-[var(--color-gold-surface)] text-[var(--color-gold)] border border-[var(--color-gold-border)]'
                         : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] hover:border-[var(--color-border-base)]'
@@ -381,11 +697,8 @@ export default function PortfolioPage() {
             </CardContent>
           </Card>
 
-          {/* Holdings Table - full width */}
-          <PortfolioMonitor holdings={transformedHoldings} />
-
-          {/* Allocation, Sector Breakdown, Performance Metrics */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-density">
+          {/* ---- 6. ALLOCATION, SECTOR, METRICS ROW ---- */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <PortfolioAllocation allocation={transformedAllocation} />
 
             {/* Sector Breakdown */}
@@ -398,7 +711,7 @@ export default function PortfolioPage() {
                   <div key={sector.name} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="type-label text-[var(--color-text-secondary)]">{sector.name}</span>
-                      <span className="type-mono text-[var(--color-text-primary)]">{sector.percentage.toFixed(1)}%</span>
+                      <span className="font-mono tabular-nums text-[var(--color-text-primary)]">{sector.percentage.toFixed(1)}%</span>
                     </div>
                     <div className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-full h-1.5">
                       <div
@@ -406,7 +719,7 @@ export default function PortfolioPage() {
                         style={{ width: `${Math.min(100, sector.percentage)}%` }}
                       />
                     </div>
-                    <div className="type-mono text-[var(--color-text-muted)]">
+                    <div className="font-mono tabular-nums text-xs text-[var(--color-text-muted)]">
                       {formatCurrencyDetailed(sector.value)}
                     </div>
                   </div>
@@ -424,40 +737,47 @@ export default function PortfolioPage() {
                   {
                     label: '1 Month Return',
                     value: performanceMetrics?.return_1m != null ? `${performanceMetrics.return_1m >= 0 ? '+' : ''}${performanceMetrics.return_1m.toFixed(1)}%` : 'N/A',
-                    color: performanceMetrics?.return_1m != null && performanceMetrics.return_1m >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                    color: performanceMetrics?.return_1m != null && performanceMetrics.return_1m >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
                   },
                   {
                     label: '3 Month Return',
                     value: performanceMetrics?.return_3m != null ? `${performanceMetrics.return_3m >= 0 ? '+' : ''}${performanceMetrics.return_3m.toFixed(1)}%` : 'N/A',
-                    color: performanceMetrics?.return_3m != null && performanceMetrics.return_3m >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                    color: performanceMetrics?.return_3m != null && performanceMetrics.return_3m >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
                   },
                   {
                     label: 'YTD Return',
                     value: performanceMetrics?.return_ytd != null ? `${performanceMetrics.return_ytd >= 0 ? '+' : ''}${performanceMetrics.return_ytd.toFixed(1)}%` : 'N/A',
-                    color: performanceMetrics?.return_ytd != null && performanceMetrics.return_ytd >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                    color: performanceMetrics?.return_ytd != null && performanceMetrics.return_ytd >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
                   },
                   {
                     label: 'Sharpe Ratio',
                     value: performanceMetrics?.sharpe_ratio != null ? performanceMetrics.sharpe_ratio.toFixed(2) : 'N/A',
-                    color: 'text-[var(--color-text-primary)]'
+                    color: 'text-[var(--color-text-primary)]',
                   },
                   {
                     label: 'Beta',
                     value: performanceMetrics?.beta != null ? performanceMetrics.beta.toFixed(2) : 'N/A',
-                    color: 'text-[var(--color-text-primary)]'
+                    color: 'text-[var(--color-text-primary)]',
                   },
                 ].map((metric) => (
                   <div key={metric.label} className="flex items-center justify-between">
                     <span className="type-label text-[var(--color-text-secondary)]">{metric.label}</span>
-                    <span className={`type-mono ${metric.color}`}>{metric.value}</span>
+                    <span className={`font-mono tabular-nums ${metric.color}`}>{metric.value}</span>
                   </div>
                 ))}
               </CardContent>
             </Card>
           </div>
+
+          {/* ---- Legacy PortfolioMonitor (hidden, keeps data flow) ---- */}
+          <div className="hidden">
+            <PortfolioMonitor holdings={transformedHoldings} />
+          </div>
         </div>
 
-        {/* Right Sidebar - Market Intelligence Feed */}
+        {/* ======================================================= */}
+        {/*  RIGHT SIDEBAR                                           */}
+        {/* ======================================================= */}
         <aside className="hidden lg:block w-[420px] flex-shrink-0">
           <div className="sticky top-20">
             <MarketIntelligence
@@ -469,7 +789,7 @@ export default function PortfolioPage() {
       </div>
 
       {/* Disclaimer */}
-      <p className="text-[10px] text-[var(--color-text-muted)] mt-6 text-center" style={{ fontFamily: 'var(--font-mono)' }}>
+      <p className="font-mono text-[10px] text-[var(--color-text-muted)] mt-6 text-center">
         Prices may be delayed up to 60 seconds. Not intended for active trading.
       </p>
     </div>

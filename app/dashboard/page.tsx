@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { Wallet, TrendingUp, ArrowLeftRight, Shield } from 'lucide-react';
 import { NetWorthCard } from '@/components/dashboard/net-worth-card';
@@ -11,17 +12,24 @@ import { AssetsLiabilitiesComposition } from '@/components/dashboard/assets-liab
 import { SavingsRateTimeline } from '@/components/dashboard/savings-rate-timeline';
 import { DailyBrief } from '@/components/dashboard/daily-brief';
 import { useFinancialSummary, useIntelligence } from '@/hooks/use-financial-data';
+import { useFormat } from '@/hooks/use-format';
 
 function LoadingSkeleton() {
   return (
     <div className="animate-pulse space-y-density" role="status" aria-live="polite" aria-label="Loading dashboard data">
-      <div className="h-8 bg-[var(--color-bg-elevated)] rounded w-1/3"></div>
-      <div className="h-4 bg-[var(--color-bg-elevated)] rounded w-1/2"></div>
+      {/* Hero skeleton */}
+      <div className="pt-6 pb-4 space-y-3">
+        <div className="h-4 bg-[var(--color-bg-elevated)] rounded w-48"></div>
+        <div className="h-16 bg-[var(--color-bg-elevated)] rounded w-72"></div>
+        <div className="h-8 bg-[var(--color-bg-elevated)] rounded-full w-40"></div>
+      </div>
+      {/* Cards skeleton */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-density mt-6">
         {[1, 2, 3, 4].map(i => (
           <div key={i} className="h-32 bg-[var(--color-bg-elevated)] rounded-xl"></div>
         ))}
       </div>
+      {/* Chart skeleton */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-density mt-6">
         {[1, 2, 3, 4].map(i => (
           <div key={i} className="h-40 bg-[var(--color-bg-elevated)] rounded-xl"></div>
@@ -49,6 +57,19 @@ export default function DashboardOverview() {
     loading: feedLoading,
     error: feedError,
   } = useIntelligence();
+
+  const { formatCurrency, formatPercentage } = useFormat();
+
+  // Compute dollar change from the last two net worth history points
+  const netWorthChange = useMemo(() => {
+    if (!netWorthHistory || netWorthHistory.length < 2) return null;
+    const current = netWorthHistory[netWorthHistory.length - 1];
+    const previous = netWorthHistory[netWorthHistory.length - 2];
+    if (!current || !previous) return null;
+    return current.value - previous.value;
+  }, [netWorthHistory]);
+
+  const netWorthPctChange = financialSummary?.changes?.net_worth ?? null;
 
   if (loading) {
     return (
@@ -140,45 +161,98 @@ export default function DashboardOverview() {
     portfolio_diversification: healthScore.portfolio_diversification || 0,
   } : null;
 
+  const netWorth = financialSummary?.net_worth || 0;
+  const isPositiveChange = netWorthChange !== null ? netWorthChange >= 0 : true;
+
   return (
     <div className="container mx-auto card-padding max-w-[1600px]">
       <div className="space-y-density stagger-fade-in">
-        {/* Header */}
-        <div className="space-y-2 mb-1">
-          <h1 className="type-h1">Financial Command Center</h1>
-          <p className="type-body text-[var(--color-text-secondary)]">
-            Real-time intelligence across your complete financial system
-          </p>
-        </div>
 
-        {/* Daily Brief */}
+        {/* ── HERO: Net Worth ── */}
+        <section className="pt-2 pb-2">
+          {/* Eyebrow */}
+          <div className="flex items-center gap-2 mb-3">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--color-positive)] opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--color-positive)]"></span>
+            </span>
+            <span
+              className="font-mono text-xs font-medium uppercase tracking-[0.15em] text-[var(--color-text-muted)]"
+            >
+              Net Worth &middot; All Accounts
+            </span>
+          </div>
+
+          {/* Giant number */}
+          <h1
+            className="font-mono font-bold tabular-nums text-[var(--color-text-primary)]"
+            style={{
+              fontSize: 'clamp(48px, 8vw, 96px)',
+              letterSpacing: '-0.045em',
+              lineHeight: 1.05,
+            }}
+          >
+            {formatCurrency(netWorth)}
+          </h1>
+
+          {/* Change pill */}
+          {(netWorthChange !== null || netWorthPctChange !== null) && (
+            <div className="mt-3 flex items-center gap-2">
+              <span
+                className={`
+                  inline-flex items-center gap-1.5 rounded-full px-3 py-1
+                  text-sm font-semibold tabular-nums font-mono
+                  ${isPositiveChange
+                    ? 'bg-[var(--color-positive)]/15 text-[var(--color-positive)]'
+                    : 'bg-[var(--color-negative)]/15 text-[var(--color-negative)]'
+                  }
+                `}
+              >
+                {netWorthChange !== null && (
+                  <span>
+                    {isPositiveChange ? '+' : ''}
+                    {formatCurrency(netWorthChange)}
+                  </span>
+                )}
+                {netWorthPctChange !== null && (
+                  <span>
+                    ({formatPercentage(netWorthPctChange)})
+                  </span>
+                )}
+              </span>
+              <span className="text-xs text-[var(--color-text-muted)]">
+                vs. last month
+              </span>
+            </div>
+          )}
+        </section>
+
+        {/* ── Daily Brief ── */}
         <DailyBrief />
 
-        {/* Row 1: Financial Summary Cards */}
-        <div>
-          <FinancialSummaryCards
-            totalAssets={financialSummary?.total_assets || 0}
-            totalLiabilities={financialSummary?.total_liabilities || 0}
-            monthlyCashFlow={financialSummary?.monthly_cash_flow || 0}
-            portfolioValue={financialSummary?.portfolio_value || 0}
-            changes={financialSummary?.changes}
-          />
-        </div>
+        {/* ── Summary Cards ── */}
+        <FinancialSummaryCards
+          totalAssets={financialSummary?.total_assets || 0}
+          totalLiabilities={financialSummary?.total_liabilities || 0}
+          monthlyCashFlow={financialSummary?.monthly_cash_flow || 0}
+          portfolioValue={financialSummary?.portfolio_value || 0}
+          changes={financialSummary?.changes}
+        />
 
-        {/* Row 2: Collapsible Alerts Pane */}
+        {/* ── Intelligence Feed ── */}
         <IntelligenceFeed
           insights={feedInsights}
           loading={feedLoading}
           error={feedError}
         />
 
-        {/* Row 3: Net Worth (3/5) + Health Score (2/5) */}
+        {/* ── Net Worth Chart (3/5) + Health Score (2/5) ── */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-density">
           <div className="lg:col-span-3">
             <NetWorthCard
-              currentNetWorth={financialSummary?.net_worth || 0}
+              currentNetWorth={netWorth}
               netWorthHistory={netWorthHistory}
-              changePercentage={financialSummary?.changes?.net_worth}
+              changePercentage={netWorthPctChange}
             />
           </div>
           <div className="lg:col-span-2">
@@ -188,7 +262,7 @@ export default function DashboardOverview() {
           </div>
         </div>
 
-        {/* Row 4: Cash Flow & Savings + Financial Composition */}
+        {/* ── Cash Flow & Savings (left) + Composition (right) ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-density">
           <div className="space-y-density">
             {cashFlowHistory.length > 0 && <CashFlowTrend data={cashFlowHistory} />}
