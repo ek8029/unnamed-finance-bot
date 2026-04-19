@@ -1,9 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { HelmMark } from '@/components/helm-mark';
-import { ChevronDown, ExternalLink, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import {
+  ChevronDown,
+  ExternalLink,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Calendar,
+  Scissors,
+  ArrowUpRight,
+} from 'lucide-react';
+
+/* ─── Types ─── */
 
 interface NewsItem {
   id: string;
@@ -19,7 +30,12 @@ interface NewsItem {
 
 interface BriefData {
   portfolio: { totalValue: number; overnightChange: number; overnightChangePct: number; vsBenchmark: number | null };
-  market: { spy: { price: number; changePct: number } | null; qqq: { price: number; changePct: number } | null; vix: { price: number; level: string } | null; treasury: { price: number; changePct: number } | null };
+  market: {
+    spy: { price: number; changePct: number } | null;
+    qqq: { price: number; changePct: number } | null;
+    vix: { price: number; level: string } | null;
+    treasury: { price: number; changePct: number } | null;
+  };
   movers: { ticker: string; name: string; sector: string; changePct: number; dollarImpact: number }[];
   allHoldings: { ticker: string; name: string; sector: string; changePct: number; dollarImpact: number }[];
   sectorHeat: { sector: string; weight: number; changePct: number; tickers: string[] }[];
@@ -28,6 +44,8 @@ interface BriefData {
   positionNews: NewsItem[];
   generalNews: NewsItem[];
 }
+
+/* ─── Formatters ─── */
 
 function fmt(n: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
@@ -43,15 +61,82 @@ function timeAgo(iso: string): string {
   if (hrs < 24) return `${hrs}h ago`;
   return `${Math.floor(hrs / 24)}d ago`;
 }
+function dayOfYear(): number {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  return Math.floor((now.getTime() - start.getTime()) / 86400000);
+}
+function getMarketSession(): string {
+  // Convert to US Eastern time regardless of browser timezone
+  const etStr = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', hour12: false });
+  const [, timePart] = etStr.split(', ');
+  const [hStr, mStr] = timePart.split(':');
+  const mins = parseInt(hStr) * 60 + parseInt(mStr);
+  if (mins < 570) return 'PRE-MARKET';
+  if (mins < 960) return 'MARKET OPEN';
+  return 'AFTER-HOURS';
+}
+function estimateReadTime(data: BriefData): number {
+  let sections = 2; // lead + market tape always count
+  if (data.positionNews.length > 0) sections += 1;
+  if (data.movers.length > 0) sections += 1;
+  if (data.generalNews.length > 0) sections += 1;
+  if (data.earningsThisWeek.length > 0 || data.dividendsThisWeek.length > 0) sections += 1;
+  return Math.max(3, Math.min(7, sections));
+}
+
+/* ─── Shared Styles ─── */
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 const SERIF: React.CSSProperties = { fontFamily: '"Source Serif Pro", Georgia, "Times New Roman", serif' };
+
+/* ─── Mover Reasoning ─── */
+
+function moverReason(m: { ticker: string; name: string; sector: string; changePct: number }): string {
+  const abs = Math.abs(m.changePct);
+  if (abs > 5) return m.changePct > 0 ? 'Outsized rally, check for catalyst' : 'Sharp sell-off, monitor position';
+  if (abs > 2) return m.changePct > 0 ? 'Strong session, sector momentum' : 'Pullback on elevated volume';
+  return m.changePct > 0 ? 'Modest gain, in line with market' : 'Mild weakness, no action needed';
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*  BRIEF PAGE                                                                */
+/* ═══════════════════════════════════════════════════════════════════════════ */
 
 export default function BriefPage() {
   const [data, setData] = useState<BriefData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [deliveryTime, setDeliveryTime] = useState<string | null>(null);
+  const [showDeliveryPicker, setShowDeliveryPicker] = useState(false);
+  const deliveryRef = useRef<HTMLDivElement>(null);
+
+  // Close delivery picker on click outside
+  useEffect(() => {
+    if (!showDeliveryPicker) return;
+    function handleClick(e: MouseEvent) {
+      if (deliveryRef.current && !deliveryRef.current.contains(e.target as Node)) {
+        setShowDeliveryPicker(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showDeliveryPicker]);
+
+  // Load saved delivery preference
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('helm-brief-delivery-time');
+      if (saved) setDeliveryTime(saved);
+    } catch {}
+  }, []);
+
+  const handleDeliveryTimeChange = (time: string) => {
+    setDeliveryTime(time);
+    setShowDeliveryPicker(false);
+    try { localStorage.setItem('helm-brief-delivery-time', time); } catch {}
+  };
 
   useEffect(() => {
     fetch('/api/dashboard/brief')
@@ -65,6 +150,10 @@ export default function BriefPage() {
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const dateStr = `${dayNames[now.getDay()]} · ${monthNames[now.getMonth()]} ${now.getDate()} · ${now.getFullYear()}`;
   const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+  const issueNum = dayOfYear();
+  const session = getMarketSession();
+
+  /* ─── Skeleton Loader ─── */
 
   if (loading) {
     return (
@@ -76,13 +165,23 @@ export default function BriefPage() {
           </div>
         </div>
         <div className="bg-[#080808] border-b border-white/[0.06] animate-pulse">
-          <div className="max-w-6xl mx-auto px-6 py-5 grid grid-cols-2 sm:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map(i => <div key={i}><div className="h-2 w-16 bg-white/[0.04] rounded mb-2" /><div className="h-5 w-20 bg-white/[0.06] rounded" /></div>)}
+          <div className="max-w-6xl mx-auto px-6 py-5 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i}>
+                <div className="h-2 w-16 bg-white/[0.04] rounded mb-2" />
+                <div className="h-5 w-20 bg-white/[0.06] rounded" />
+              </div>
+            ))}
           </div>
         </div>
         <div className="max-w-6xl mx-auto px-6 py-10 animate-pulse space-y-6">
           <div className="h-3 w-32 bg-[var(--color-gold)]/10 rounded" />
           <div className="h-8 w-3/4 bg-white/[0.06] rounded" />
+          <div className="space-y-3">
+            <div className="h-4 w-full bg-white/[0.04] rounded" />
+            <div className="h-4 w-5/6 bg-white/[0.04] rounded" />
+            <div className="h-4 w-4/6 bg-white/[0.04] rounded" />
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-white/[0.04] rounded" />)}
           </div>
@@ -91,35 +190,120 @@ export default function BriefPage() {
     );
   }
 
+  /* ─── Error State ─── */
+
   if (error || !data) {
     return (
       <div className="min-h-screen bg-[var(--color-bg-base)] flex items-center justify-center">
-        <div className="text-sm text-[var(--color-negative)]">Failed to load brief. <Link href="/dashboard" className="text-[var(--color-gold)]">Back to dashboard</Link></div>
+        <div className="text-sm text-[var(--color-negative)]">
+          Failed to load brief.{' '}
+          <Link href="/dashboard" className="text-[var(--color-gold)]">Back to dashboard</Link>
+        </div>
       </div>
     );
   }
 
-  const topGainers = [...data.movers].filter(m => m.changePct > 0).sort((a, b) => b.changePct - a.changePct).slice(0, 5);
-  const topLosers = [...data.movers].filter(m => m.changePct < 0).sort((a, b) => a.changePct - b.changePct).slice(0, 5);
-  const allMovers = [...topGainers, ...topLosers].sort((a, b) => Math.abs(b.dollarImpact) - Math.abs(a.dollarImpact)).slice(0, 8);
+  /* ─── Derived Data (memoized) ─── */
+
+  const topGainers = useMemo(() => [...data.movers].filter(m => m.changePct > 0).sort((a, b) => b.changePct - a.changePct).slice(0, 5), [data.movers]);
+  const topLosers = useMemo(() => [...data.movers].filter(m => m.changePct < 0).sort((a, b) => a.changePct - b.changePct).slice(0, 5), [data.movers]);
+  const allMovers = useMemo(() => [...topGainers, ...topLosers].sort((a, b) => Math.abs(b.dollarImpact) - Math.abs(a.dollarImpact)).slice(0, 8), [topGainers, topLosers]);
   const portfolioUp = data.portfolio.overnightChangePct >= 0;
-  const topSector = data.sectorHeat.length > 0 ? data.sectorHeat.sort((a, b) => b.weight - a.weight)[0] : null;
+  const topSector = data.sectorHeat.length > 0 ? [...data.sectorHeat].sort((a, b) => b.weight - a.weight)[0] : null;
   const biggestMover = allMovers[0] || null;
+  const readTime = estimateReadTime(data);
 
-  // Generate the lead headline
-  const leadHeadline = portfolioUp
-    ? `Your portfolio gained ${fmt(Math.abs(data.portfolio.overnightChange))} overnight`
-    : `Your portfolio lost ${fmt(Math.abs(data.portfolio.overnightChange))} overnight`;
+  // Tax-loss harvest candidates: positions with large single-day drops (>3%)
+  // Note: this uses daily change, not total unrealized loss from cost basis
+  // (cost-basis data isn't available in the brief API — full harvest analysis is on /dashboard/taxes)
+  const harvestCandidates = useMemo(() => data.allHoldings.filter(h => h.changePct < -3).sort((a, b) => a.changePct - b.changePct), [data.allHoldings]);
+  const showHarvestCTA = harvestCandidates.length > 0;
 
-  // Market summary sentence
+  // Generate editorial lead headline — narrative about what matters this week
+  const leadHeadline = useMemo(() => {
+    const abs = Math.abs(data.portfolio.overnightChangePct);
+    const earningsCount = data.earningsThisWeek.length;
+
+    // Big move narratives
+    if (abs > 3) {
+      return portfolioUp
+        ? `A ${abs.toFixed(1)}% surge reshapes your portfolio — here's what drove it`
+        : `Markets deliver a ${abs.toFixed(1)}% blow — what it means for your positions`;
+    }
+
+    // Earnings-heavy week
+    if (earningsCount >= 3) {
+      return `${earningsCount} of your holdings report this week — positioning matters`;
+    }
+
+    // Big single-name mover
+    if (biggestMover && Math.abs(biggestMover.changePct) > 4) {
+      return biggestMover.changePct > 0
+        ? `${biggestMover.ticker} jumps ${biggestMover.changePct.toFixed(1)}%, lifting your portfolio ${fmt(Math.abs(data.portfolio.overnightChange))}`
+        : `${biggestMover.ticker} drops ${Math.abs(biggestMover.changePct).toFixed(1)}% — your exposure and what to watch`;
+    }
+
+    // Benchmark divergence
+    if (data.portfolio.vsBenchmark !== null && Math.abs(data.portfolio.vsBenchmark) > 1.5) {
+      return data.portfolio.vsBenchmark > 0
+        ? `You're outpacing the S&P by ${data.portfolio.vsBenchmark.toFixed(1)}% — what's working`
+        : `Trailing the S&P by ${Math.abs(data.portfolio.vsBenchmark).toFixed(1)}% — where the drag is`;
+    }
+
+    // VIX elevated
+    if (data.market.vix && data.market.vix.price > 25) {
+      return `Volatility elevated at ${data.market.vix.price.toFixed(0)} — what it signals for your ${data.allHoldings.length} positions`;
+    }
+
+    // Harvest opportunity
+    if (showHarvestCTA) {
+      return `Tax-loss harvest window: ${harvestCandidates.length} position${harvestCandidates.length > 1 ? 's' : ''} down more than 5%`;
+    }
+
+    // Default — portfolio overview
+    return portfolioUp
+      ? `Your portfolio gained ${fmt(Math.abs(data.portfolio.overnightChange))} — steady course across ${data.allHoldings.length} positions`
+      : `A ${fmt(Math.abs(data.portfolio.overnightChange))} drawdown across ${data.allHoldings.length} positions — the full picture`;
+  }, [data.portfolio, data.earningsThisWeek, data.market.vix, data.allHoldings.length, biggestMover, portfolioUp, showHarvestCTA, harvestCandidates]);
+
+  // Market summary
   const spyDir = data.market.spy ? (data.market.spy.changePct >= 0 ? 'up' : 'down') : null;
   const qqqDir = data.market.qqq ? (data.market.qqq.changePct >= 0 ? 'up' : 'down') : null;
 
+  /* ─── Market tape items — only tickers with real data ─── */
+  const marketTapeItems = useMemo(() => {
+    const items: [string, string, string, boolean][] = [];
+    if (data.market.spy) items.push(['S&P 500', `$${data.market.spy.price.toFixed(2)}`, fmtPct(data.market.spy.changePct), data.market.spy.changePct >= 0]);
+    if (data.market.qqq) items.push(['NASDAQ', `$${data.market.qqq.price.toFixed(2)}`, fmtPct(data.market.qqq.changePct), data.market.qqq.changePct >= 0]);
+    if (data.market.vix) items.push(['VIX', data.market.vix.price.toFixed(2), data.market.vix.level.replace(/_/g, ' '), data.market.vix.price < 20]);
+    if (data.market.treasury) items.push(['BONDS (TLT)', `$${data.market.treasury.price.toFixed(2)}`, fmtPct(data.market.treasury.changePct), data.market.treasury.changePct >= 0]);
+    return items;
+  }, [data.market]);
+
+  /* ═══════════════════════════════════════════════════════════════════════ */
+  /*  RENDER                                                                */
+  /* ═══════════════════════════════════════════════════════════════════════ */
+
   return (
     <div className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)]">
+
       {/* ═══ Masthead ═══ */}
       <header className="border-b-2 border-[var(--color-gold)]">
         <div className="max-w-6xl mx-auto px-6 py-6 md:py-8">
+
+          {/* Top line: issue info */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.2em] text-[var(--color-text-muted)]" style={MONO}>
+              <span>ISSUE No. {issueNum}</span>
+              <span className="text-[var(--color-border-subtle)]">|</span>
+              <span>{session}</span>
+            </div>
+            <div className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>
+              {readTime} min read
+            </div>
+          </div>
+
+          {/* Masthead title + meta */}
           <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
             <div>
               <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-gold)] mb-2" style={MONO}>{dateStr}</div>
@@ -129,8 +313,38 @@ export default function BriefPage() {
               </div>
             </div>
             <div className="text-right" style={MONO}>
-              <div className="text-xs tracking-[0.15em] text-[var(--color-text-muted)]">GENERATED {timeStr}</div>
-              <div className="text-xs tracking-[0.15em] text-[var(--color-text-muted)] mt-1">{data.allHoldings.length} POSITIONS · {fmt(data.portfolio.totalValue)}</div>
+              <div className="text-[11px] tracking-[0.15em] text-[var(--color-text-muted)]">GENERATED {timeStr}</div>
+              <div className="text-[11px] tracking-[0.15em] text-[var(--color-text-muted)] mt-1">{data.allHoldings.length} POSITIONS · {fmt(data.portfolio.totalValue)}</div>
+              <div className="relative mt-2" ref={deliveryRef}>
+                <button
+                  onClick={() => setShowDeliveryPicker(!showDeliveryPicker)}
+                  aria-label="Set daily brief delivery time"
+                  className="text-[11px] tracking-[0.1em] text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] motion-safe:transition-colors"
+                >
+                  {deliveryTime ? `DELIVER DAILY AT ${deliveryTime}` : 'SET DELIVERY TIME'}
+                </button>
+                {showDeliveryPicker && (
+                  <div className="absolute right-0 top-full mt-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded shadow-xl z-50 p-3 space-y-1 min-w-[160px]">
+                    {['6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM', '9:30 AM', '12:00 PM', '5:00 PM'].map(t => (
+                      <button
+                        key={t}
+                        onClick={() => handleDeliveryTimeChange(t)}
+                        className={`block w-full text-left px-3 py-2 rounded text-xs tracking-wider motion-safe:transition-colors ${deliveryTime === t ? 'bg-[var(--color-gold)]/10 text-[var(--color-gold)]' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-overlay)] hover:text-[var(--color-text-primary)]'}`}
+                      >
+                        {t} ET
+                      </button>
+                    ))}
+                    {deliveryTime && (
+                      <button
+                        onClick={() => { setDeliveryTime(null); setShowDeliveryPicker(false); try { localStorage.removeItem('helm-brief-delivery-time'); } catch {} }}
+                        className="block w-full text-left px-3 py-2 rounded text-xs tracking-wider text-[var(--color-negative)] hover:bg-[var(--color-negative)]/5 motion-safe:transition-colors mt-1 border-t border-[var(--color-border-subtle)] pt-2"
+                      >
+                        CLEAR
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -138,49 +352,73 @@ export default function BriefPage() {
 
       {/* ═══ Market Tape ═══ */}
       <div className="bg-[#080808] border-b border-white/[0.06]">
-        <div className="max-w-6xl mx-auto px-6 py-4 grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-8">
-          {[
-            data.market.spy ? ['S&P 500', `$${data.market.spy.price.toFixed(2)}`, fmtPct(data.market.spy.changePct), data.market.spy.changePct >= 0] : ['S&P 500', '—', '—', true],
-            data.market.qqq ? ['NASDAQ', `$${data.market.qqq.price.toFixed(2)}`, fmtPct(data.market.qqq.changePct), data.market.qqq.changePct >= 0] : ['NASDAQ', '—', '—', true],
-            data.market.vix ? ['VIX', data.market.vix.price.toFixed(2), data.market.vix.level.replace(/_/g, ' '), data.market.vix.price < 20] : ['VIX', '—', '—', true],
-            data.market.treasury ? ['BONDS (TLT)', `$${data.market.treasury.price.toFixed(2)}`, fmtPct(data.market.treasury.changePct), data.market.treasury.changePct >= 0] : ['BONDS', '—', '—', true],
-          ].map(([label, value, delta, pos]) => (
-            <div key={label as string}>
-              <div className="text-[9px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]" style={MONO}>{label as string}</div>
-              <div className="text-base font-bold mt-1 tabular-nums">{value as string}</div>
-              {delta && <div className={`text-xs font-semibold mt-0.5 ${pos ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`} style={MONO}>{delta as string}</div>}
+        <div className="max-w-6xl mx-auto px-6 py-4 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          {marketTapeItems.map(([label, value, delta, pos]) => (
+            <div key={label}>
+              <div className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]" style={MONO}>{label}</div>
+              <div className="text-lg font-bold mt-1 tabular-nums">{value}</div>
+              <div
+                className={`text-[13px] font-semibold mt-0.5 ${pos ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}
+                style={MONO}
+              >
+                {delta}
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ═══ Two-column editorial ═══ */}
+      {/* ═══ Two-column editorial layout ═══ */}
       <div className="max-w-6xl mx-auto px-6 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-[2.2fr_1fr] gap-12">
 
           {/* ══ MAIN COLUMN ══ */}
           <main className="space-y-10">
 
-            {/* ── Lead story: Portfolio headline ── */}
+            {/* ── Lead Story: Editorial headline ── */}
             <article>
-              <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>§ YOUR PORTFOLIO</div>
-              <h2 className="text-3xl md:text-[2.75rem] font-bold tracking-tight leading-[1.08] mb-4">
-                {leadHeadline}.
+              <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>
+                YOUR PORTFOLIO
+              </div>
+
+              <h2 className="text-3xl md:text-[2.75rem] font-bold tracking-tight leading-[1.08] mb-4" aria-live="polite">
+                {leadHeadline}
                 {data.portfolio.vsBenchmark !== null && (
-                  <span className="text-[var(--color-text-muted)]">
-                    {' '}{data.portfolio.vsBenchmark >= 0 ? 'Beating' : 'Trailing'} the S&P by {Math.abs(data.portfolio.vsBenchmark).toFixed(2)}%.
+                  <span className={
+                    data.portfolio.vsBenchmark >= 2 ? ' text-[var(--color-positive)]'
+                    : data.portfolio.vsBenchmark >= 0.5 ? ' text-[var(--color-positive)]/70'
+                    : data.portfolio.vsBenchmark >= -0.5 ? ' text-[var(--color-text-muted)]'
+                    : data.portfolio.vsBenchmark >= -2 ? ' text-[var(--color-negative)]/70'
+                    : ' text-[var(--color-negative)]'
+                  }>
+                    {' '}
+                    {data.portfolio.vsBenchmark >= 2
+                      ? `Crushing the S&P by ${Math.abs(data.portfolio.vsBenchmark).toFixed(2)}%.`
+                      : data.portfolio.vsBenchmark >= 0.5
+                      ? `Beating the S&P by ${Math.abs(data.portfolio.vsBenchmark).toFixed(2)}%.`
+                      : data.portfolio.vsBenchmark >= -0.5
+                      ? `In line with the S&P (${data.portfolio.vsBenchmark >= 0 ? '+' : ''}${data.portfolio.vsBenchmark.toFixed(2)}%).`
+                      : data.portfolio.vsBenchmark >= -2
+                      ? `Trailing the S&P by ${Math.abs(data.portfolio.vsBenchmark).toFixed(2)}%.`
+                      : `Lagging the S&P by ${Math.abs(data.portfolio.vsBenchmark).toFixed(2)}%.`}
                   </span>
                 )}
               </h2>
-              <div className="flex items-center gap-3 text-xs text-[var(--color-text-muted)] mb-6" style={MONO}>
+
+              <div className="flex items-center gap-3 text-[11px] text-[var(--color-text-muted)] mb-6" style={MONO}>
                 <span>HELM ANALYST</span>
                 <span>·</span>
                 <span>{data.allHoldings.length} POSITIONS</span>
                 <span>·</span>
                 <span>{fmt(data.portfolio.totalValue)} TOTAL</span>
               </div>
-              <p className="text-base leading-relaxed text-[var(--color-text-secondary)]" style={SERIF}>
-                <span className="text-5xl float-left font-bold leading-[0.85] mr-2 mt-1 text-[var(--color-gold)]" style={{ fontFamily: 'var(--font-sans)' }}>
+
+              {/* Lead body text — larger serif with drop cap */}
+              <p className="text-[18px] leading-[1.7] text-[var(--color-text-secondary)]" style={SERIF}>
+                <span
+                  className="float-left text-[4rem] font-bold leading-[0.8] mr-3 mt-[0.1em] text-[var(--color-gold)]"
+                  style={{ fontFamily: 'var(--font-sans)' }}
+                >
                   {portfolioUp ? 'Y' : 'A'}
                 </span>
                 {portfolioUp
@@ -194,31 +432,40 @@ export default function BriefPage() {
               </p>
             </article>
 
-            {/* ── Position news ── */}
+            {/* ── Position News ── */}
             {data.positionNews.length > 0 && (
               <article>
-                <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>§ NEWS AFFECTING YOUR POSITIONS</div>
+                <h2 className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>
+                  NEWS AFFECTING YOUR POSITIONS
+                </h2>
                 <div className="space-y-5">
                   {data.positionNews.slice(0, 5).map((news, i) => (
                     <div key={news.id} className={i > 0 ? 'pt-5 border-t border-white/[0.06]' : ''}>
                       <div className="flex items-center gap-2 mb-1.5">
                         {news.ticker && (
-                          <Link href={`/dashboard/analyze/${news.ticker}`} className="font-mono text-xs font-bold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors px-1.5 py-0.5 bg-[var(--color-gold)]/10 rounded">
+                          <Link
+                            href={`/dashboard/analyze/${news.ticker}`}
+                            className="font-mono text-xs font-bold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] motion-safe:transition-colors px-1.5 py-0.5 bg-[var(--color-gold)]/10 rounded"
+                          >
                             {news.ticker}
                           </Link>
                         )}
                         <SentimentBadge value={news.sentiment} />
-                        <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>{news.source} · {timeAgo(news.publishedAt)}</span>
+                        <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+                          {news.source} · {timeAgo(news.publishedAt)}
+                        </span>
                       </div>
                       <h3 className="text-lg font-bold leading-snug mb-1">
                         {news.url ? (
-                          <a href={news.url} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-gold)] transition-colors">
+                          <a href={news.url} target="_blank" rel="noopener noreferrer" aria-label={`Read: ${news.title} (opens in new tab)`} className="hover:text-[var(--color-gold)] motion-safe:transition-colors">
                             {news.title}
                           </a>
                         ) : news.title}
                       </h3>
                       {news.summary && (
-                        <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed line-clamp-2" style={SERIF}>{news.summary}</p>
+                        <p className="text-[16px] text-[var(--color-text-secondary)] leading-relaxed line-clamp-2" style={SERIF}>
+                          {news.summary}
+                        </p>
                       )}
                     </div>
                   ))}
@@ -226,47 +473,57 @@ export default function BriefPage() {
               </article>
             )}
 
-            {/* ── Movers table ── */}
+            {/* ── Movers Table ── */}
             {allMovers.length > 0 && (
               <article>
-                <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>§ YOUR TOP MOVERS</div>
+                <h2 className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>
+                  YOUR TOP MOVERS
+                </h2>
                 <div className="border border-white/[0.06] rounded overflow-hidden">
-                  <div className="grid grid-cols-[60px_1fr_80px_100px] gap-3 items-center px-4 py-2 bg-white/[0.02] border-b border-white/[0.06]">
-                    <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)]" style={MONO}>Ticker</span>
-                    <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)]" style={MONO}>Name</span>
-                    <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] text-right" style={MONO}>Change</span>
-                    <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] text-right" style={MONO}>Impact</span>
+                  <div className="grid grid-cols-[70px_1fr_90px_110px] gap-3 items-center px-4 py-2.5 bg-white/[0.02] border-b border-white/[0.06]">
+                    <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-muted)]" style={MONO}>Ticker</span>
+                    <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-muted)]" style={MONO}>Name</span>
+                    <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-muted)] text-right" style={MONO}>Change</span>
+                    <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-muted)] text-right" style={MONO}>Impact</span>
                   </div>
                   {allMovers.map((m) => (
-                    <div key={m.ticker} className="grid grid-cols-[60px_1fr_80px_100px] gap-3 items-center px-4 py-3 border-t border-white/[0.04] hover:bg-white/[0.02] transition-colors">
-                      <Link href={`/dashboard/analyze/${m.ticker}`} className="font-mono text-sm font-bold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors">{m.ticker}</Link>
-                      <span className="text-sm text-[var(--color-text-muted)] truncate">{m.name}</span>
-                      <span className={`text-sm font-mono font-semibold text-right tabular-nums ${m.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>{fmtPct(m.changePct)}</span>
-                      <span className={`text-sm font-mono text-right tabular-nums ${m.dollarImpact >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>{m.dollarImpact >= 0 ? '+' : ''}{fmt(m.dollarImpact)}</span>
+                    <div key={m.ticker} className="grid grid-cols-[70px_1fr_90px_110px] gap-3 items-center px-4 py-3.5 border-t border-white/[0.04] hover:bg-white/[0.02] motion-safe:transition-colors">
+                      <Link href={`/dashboard/analyze/${m.ticker}`} className="font-mono text-[15px] font-bold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] motion-safe:transition-colors">
+                        {m.ticker}
+                      </Link>
+                      <span className="text-[15px] text-[var(--color-text-muted)] truncate">{m.name}</span>
+                      <span className={`text-[15px] font-mono font-semibold text-right tabular-nums ${m.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+                        {fmtPct(m.changePct)}
+                      </span>
+                      <span className={`text-[15px] font-mono text-right tabular-nums ${m.dollarImpact >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+                        {m.dollarImpact >= 0 ? '+' : ''}{fmt(m.dollarImpact)}
+                      </span>
                     </div>
                   ))}
                 </div>
               </article>
             )}
 
-            {/* ── General market headlines ── */}
+            {/* ── General Market Headlines ── */}
             {data.generalNews.length > 0 && (
               <article>
-                <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>§ MARKET HEADLINES</div>
+                <h2 className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>
+                  MARKET HEADLINES
+                </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   {data.generalNews.slice(0, 6).map((news) => (
                     <div key={news.id} className="group">
                       <div className="flex items-center gap-2 mb-1">
                         {news.ticker && (
-                          <span className="font-mono text-[10px] font-bold text-[var(--color-text-muted)]">{news.ticker}</span>
+                          <span className="font-mono text-[11px] font-bold text-[var(--color-text-muted)]">{news.ticker}</span>
                         )}
-                        <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>{news.source} · {timeAgo(news.publishedAt)}</span>
+                        <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>{news.source} · {timeAgo(news.publishedAt)}</span>
                       </div>
                       <h3 className="text-[15px] font-semibold leading-snug">
                         {news.url ? (
-                          <a href={news.url} target="_blank" rel="noopener noreferrer" className="group-hover:text-[var(--color-gold)] transition-colors">
+                          <a href={news.url} target="_blank" rel="noopener noreferrer" aria-label={`Read: ${news.title} (opens in new tab)`} className="group-hover:text-[var(--color-gold)] motion-safe:transition-colors">
                             {news.title}
-                            <ExternalLink className="inline-block w-3 h-3 ml-1 opacity-0 group-hover:opacity-50 transition-opacity" />
+                            <ExternalLink className="inline-block w-3 h-3 ml-1 opacity-0 group-hover:opacity-50 motion-safe:transition-opacity" />
                           </a>
                         ) : news.title}
                       </h3>
@@ -278,43 +535,101 @@ export default function BriefPage() {
 
             <div className="w-24 h-px mx-auto bg-gradient-to-r from-transparent via-[var(--color-gold)]/40 to-transparent" />
 
-            {/* ── Earnings + Dividends ── */}
-            {(data.earningsThisWeek.length > 0 || data.dividendsThisWeek.length > 0) && (
+            {/* ── Earnings Schedule (inline table) ── */}
+            {data.earningsThisWeek.length > 0 && (
               <article>
-                <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>§ THIS WEEK</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {data.earningsThisWeek.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-bold mb-3">Earnings on Deck</h3>
-                      <div className="space-y-2">
-                        {data.earningsThisWeek.map(e => (
-                          <div key={e.ticker} className="flex items-center justify-between py-2 border-b border-white/[0.04]">
-                            <div className="flex items-center gap-3">
-                              <Link href={`/dashboard/analyze/${e.ticker}`} className="font-mono font-bold text-[var(--color-gold)]">{e.ticker}</Link>
-                              <span className="text-xs text-[var(--color-text-muted)]" style={MONO}>{e.reportDate}</span>
-                            </div>
-                            <span className="text-xs text-[var(--color-warning)]" style={MONO}>{e.portfolioWeight.toFixed(1)}% exposure</span>
-                          </div>
-                        ))}
+                <h2 className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>
+                  <Calendar className="w-3.5 h-3.5" />
+                  EARNINGS THIS WEEK
+                </h2>
+                <div className="border border-white/[0.06] rounded overflow-hidden">
+                  <div className="grid grid-cols-[80px_1fr_100px] gap-3 items-center px-4 py-2.5 bg-white/[0.02] border-b border-white/[0.06]">
+                    <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-muted)]" style={MONO}>Date</span>
+                    <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-muted)]" style={MONO}>Ticker</span>
+                    <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-muted)] text-right" style={MONO}>Exposure</span>
+                  </div>
+                  {data.earningsThisWeek.map(e => {
+                    const dateObj = new Date(e.reportDate + 'T00:00:00');
+                    const dayAbbr = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dateObj.getDay()];
+                    const monthAbbr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][dateObj.getMonth()];
+                    return (
+                      <div key={e.ticker} className="grid grid-cols-[80px_1fr_100px] gap-3 items-center px-4 py-3 border-t border-white/[0.04] hover:bg-white/[0.02] motion-safe:transition-colors">
+                        <span className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>
+                          {dayAbbr} {monthAbbr} {dateObj.getDate()}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Link href={`/dashboard/analyze/${e.ticker}`} className="font-mono text-[15px] font-bold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] motion-safe:transition-colors">
+                            {e.ticker}
+                          </Link>
+                        </div>
+                        <span className={`text-[13px] font-mono text-right tabular-nums ${e.portfolioWeight >= 5 ? 'text-[var(--color-warning-text)]' : 'text-[var(--color-text-muted)]'}`}>
+                          {e.portfolioWeight.toFixed(1)}%
+                        </span>
                       </div>
+                    );
+                  })}
+                </div>
+                <p className="text-[13px] text-[var(--color-text-muted)] mt-2 italic" style={SERIF}>
+                  Earnings can move stocks 3-10%. Consider position sizing for high-exposure names.
+                </p>
+              </article>
+            )}
+
+            {/* ── Dividends This Week ── */}
+            {data.dividendsThisWeek.length > 0 && (
+              <article>
+                <h2 className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>
+                  UPCOMING DIVIDENDS
+                </h2>
+                <div className="space-y-2">
+                  {data.dividendsThisWeek.map(d => (
+                    <div key={d.ticker} className="flex items-center justify-between py-2.5 border-b border-white/[0.04]">
+                      <Link href={`/dashboard/analyze/${d.ticker}`} className="font-mono text-[15px] font-bold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)]">
+                        {d.ticker}
+                      </Link>
+                      <span className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>Ex-date: {d.exDate}</span>
                     </div>
-                  )}
-                  {data.dividendsThisWeek.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-bold mb-3">Upcoming Dividends</h3>
-                      <div className="space-y-2">
-                        {data.dividendsThisWeek.map(d => (
-                          <div key={d.ticker} className="flex items-center justify-between py-2 border-b border-white/[0.04]">
-                            <Link href={`/dashboard/analyze/${d.ticker}`} className="font-mono font-bold text-[var(--color-gold)]">{d.ticker}</Link>
-                            <span className="text-xs text-[var(--color-text-muted)]" style={MONO}>Ex-date: {d.exDate}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  ))}
                 </div>
               </article>
             )}
+
+            {/* ── Tax-Loss Harvest CTA ── */}
+            {showHarvestCTA && (
+              <article className="border border-[var(--color-border-base)] rounded-lg p-6 bg-[var(--color-bg-surface)]">
+                <h2 className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-3" style={MONO}>
+                  <Scissors className="w-3.5 h-3.5" />
+                  TAX-LOSS HARVEST OPPORTUNITY
+                </h2>
+                <h3 className="text-xl font-bold mb-2">
+                  {harvestCandidates.length} position{harvestCandidates.length > 1 ? 's' : ''} dropped more than 3% today
+                </h3>
+                <p className="text-[16px] text-[var(--color-text-secondary)] leading-relaxed mb-4" style={SERIF}>
+                  {harvestCandidates.slice(0, 3).map(h => h.ticker).join(', ')}
+                  {harvestCandidates.length > 3 ? ` and ${harvestCandidates.length - 3} more` : ''}
+                  {' '}had significant moves today. Check the Tax Center for a full harvest analysis with cost-basis and wash-sale data.
+                </p>
+                <div className="flex flex-wrap gap-3 mb-4">
+                  {harvestCandidates.slice(0, 4).map(h => (
+                    <div key={h.ticker} className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.03] rounded border border-white/[0.06]">
+                      <Link href={`/dashboard/analyze/${h.ticker}`} className="font-mono text-[13px] font-bold text-[var(--color-gold)]">
+                        {h.ticker}
+                      </Link>
+                      <span className="text-[13px] font-mono text-[var(--color-negative)]">{fmtPct(h.changePct)}</span>
+                    </div>
+                  ))}
+                </div>
+                <Link
+                  href="/dashboard/analyze"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-[var(--color-gold)]/10 text-[var(--color-gold)] text-[13px] font-semibold tracking-wider uppercase rounded hover:bg-[var(--color-gold)]/20 motion-safe:transition-colors"
+                  style={MONO}
+                >
+                  Review positions
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </Link>
+              </article>
+            )}
+
           </main>
 
           {/* ══ SIDEBAR ══ */}
@@ -322,75 +637,115 @@ export default function BriefPage() {
             <button
               className="lg:hidden w-full flex items-center justify-between py-3 text-sm text-[var(--color-text-muted)] border-b border-white/[0.06] mb-4"
               onClick={() => setSidebarOpen(!sidebarOpen)}
+              aria-label={sidebarOpen ? 'Collapse sectors and holdings sidebar' : 'Expand sectors and holdings sidebar'}
+              aria-expanded={sidebarOpen}
             >
               Sectors & Holdings
-              <ChevronDown className={`w-4 h-4 transition-transform ${sidebarOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-4 h-4 motion-safe:transition-transform ${sidebarOpen ? 'rotate-180' : ''}`} />
             </button>
 
             <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block space-y-8`}>
 
-              {/* Sector heat */}
+              {/* ── Market Movers with reasoning ── */}
+              {allMovers.length > 0 && (
+                <div>
+                  <h2 className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4 pb-3 border-b border-[var(--color-gold)]/20" style={MONO}>
+                    Market Movers
+                  </h2>
+                  {allMovers.slice(0, 5).map(m => (
+                    <div key={m.ticker} className="py-3 border-b border-white/[0.04]">
+                      <div className="flex justify-between items-baseline">
+                        <Link href={`/dashboard/analyze/${m.ticker}`} className="font-mono text-[15px] font-bold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] motion-safe:transition-colors">
+                          {m.ticker}
+                        </Link>
+                        <span className={`text-[15px] font-mono font-bold tabular-nums ${m.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+                          {fmtPct(m.changePct)}
+                        </span>
+                      </div>
+                      <div className="text-[13px] text-[var(--color-text-muted)] mt-0.5 leading-snug" style={SERIF}>
+                        {moverReason(m)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* ── Sector Heat ── */}
               {data.sectorHeat.length > 0 && (
                 <div>
-                  <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4 pb-3 border-b border-[var(--color-gold)]/20" style={MONO}>§ Sector Heat</div>
-                  {data.sectorHeat.sort((a, b) => b.weight - a.weight).map(s => (
+                  <h2 className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4 pb-3 border-b border-[var(--color-gold)]/20" style={MONO}>
+                    Sector Heat
+                  </h2>
+                  {[...data.sectorHeat].sort((a, b) => b.weight - a.weight).map(s => (
                     <div key={s.sector} className="py-3 border-b border-white/[0.06]">
                       <div className="flex justify-between items-baseline">
-                        <span className="text-sm font-medium">{s.sector}</span>
-                        <span className={`text-xs font-mono font-bold ${s.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>{fmtPct(s.changePct)}</span>
+                        <span className="text-[15px] font-medium">{s.sector}</span>
+                        <span className={`text-[15px] font-mono font-bold ${s.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+                          {fmtPct(s.changePct)}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="flex-1 h-1 bg-white/[0.06] rounded-full overflow-hidden">
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <div className="flex-1 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
                           <div className="h-full bg-[var(--color-gold)] rounded-full" style={{ width: `${s.weight}%` }} />
                         </div>
-                        <span className="text-[10px] text-[var(--color-text-muted)] font-mono">{s.weight.toFixed(1)}%</span>
+                        <span className="text-[13px] text-[var(--color-text-muted)] font-mono tabular-nums">{s.weight.toFixed(1)}%</span>
                       </div>
-                      <div className="text-[10px] text-[var(--color-text-muted)] mt-1 font-mono">{s.tickers.join(', ')}</div>
+                      <div className="text-[12px] text-[var(--color-text-muted)] mt-1 font-mono">{s.tickers.join(', ')}</div>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* All holdings by impact */}
+              {/* ── All Holdings by impact ── */}
               {data.allHoldings.length > 0 && (
                 <div>
-                  <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4 pb-3 border-b border-[var(--color-gold)]/20" style={MONO}>§ All Holdings</div>
-                  {data.allHoldings.sort((a, b) => Math.abs(b.dollarImpact) - Math.abs(a.dollarImpact)).slice(0, 15).map(h => (
-                    <div key={h.ticker} className="py-2.5 border-b border-white/[0.04] flex justify-between items-baseline">
+                  <h2 className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4 pb-3 border-b border-[var(--color-gold)]/20" style={MONO}>
+                    All Holdings
+                  </h2>
+                  {[...data.allHoldings].sort((a, b) => Math.abs(b.dollarImpact) - Math.abs(a.dollarImpact)).slice(0, 15).map(h => (
+                    <div key={h.ticker} className="py-3 border-b border-white/[0.04] flex justify-between items-baseline">
                       <div>
-                        <Link href={`/dashboard/analyze/${h.ticker}`} className="font-mono text-sm font-bold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)]">{h.ticker}</Link>
-                        <span className="text-xs text-[var(--color-text-muted)] ml-2">{h.name}</span>
+                        <Link href={`/dashboard/analyze/${h.ticker}`} className="font-mono text-[15px] font-bold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)]">
+                          {h.ticker}
+                        </Link>
+                        <span className="text-[13px] text-[var(--color-text-muted)] ml-2">{h.name}</span>
                       </div>
                       <div className="flex items-baseline gap-2">
-                        <span className={`text-xs font-mono font-semibold ${h.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>{fmtPct(h.changePct)}</span>
-                        <span className={`text-[10px] font-mono ${h.dollarImpact >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>{h.dollarImpact >= 0 ? '+' : ''}{fmt(h.dollarImpact)}</span>
+                        <span className={`text-[15px] font-mono font-semibold ${h.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+                          {fmtPct(h.changePct)}
+                        </span>
+                        <span className={`text-[13px] font-mono ${h.dollarImpact >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+                          {h.dollarImpact >= 0 ? '+' : ''}{fmt(h.dollarImpact)}
+                        </span>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Quick snapshot: biggest gainer & loser */}
+              {/* ── Day at a Glance ── */}
               {topGainers.length > 0 && topLosers.length > 0 && (
                 <div className="bg-white/[0.02] rounded p-4 border border-white/[0.06]">
-                  <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-3" style={MONO}>Day at a Glance</div>
+                  <div className="text-[12px] uppercase tracking-wider text-[var(--color-text-muted)] mb-3" style={MONO}>
+                    Day at a Glance
+                  </div>
                   <div className="space-y-3">
                     <div>
-                      <div className="text-[10px] text-[var(--color-positive)] uppercase tracking-wider" style={MONO}>Best Performer</div>
+                      <div className="text-[12px] text-[var(--color-positive)] uppercase tracking-wider" style={MONO}>Best Performer</div>
                       <div className="flex justify-between items-baseline mt-1">
-                        <span className="font-mono text-sm font-bold">{topGainers[0].ticker}</span>
-                        <span className="font-mono text-sm font-bold text-[var(--color-positive)]">{fmtPct(topGainers[0].changePct)}</span>
+                        <span className="font-mono text-[15px] font-bold">{topGainers[0].ticker}</span>
+                        <span className="font-mono text-[15px] font-bold text-[var(--color-positive)]">{fmtPct(topGainers[0].changePct)}</span>
                       </div>
-                      <div className="text-xs text-[var(--color-text-muted)]">{topGainers[0].name}</div>
+                      <div className="text-[13px] text-[var(--color-text-muted)]">{topGainers[0].name}</div>
                     </div>
                     <div className="h-px bg-white/[0.06]" />
                     <div>
-                      <div className="text-[10px] text-[var(--color-negative)] uppercase tracking-wider" style={MONO}>Worst Performer</div>
+                      <div className="text-[12px] text-[var(--color-negative)] uppercase tracking-wider" style={MONO}>Worst Performer</div>
                       <div className="flex justify-between items-baseline mt-1">
-                        <span className="font-mono text-sm font-bold">{topLosers[0].ticker}</span>
-                        <span className="font-mono text-sm font-bold text-[var(--color-negative)]">{fmtPct(topLosers[0].changePct)}</span>
+                        <span className="font-mono text-[15px] font-bold">{topLosers[0].ticker}</span>
+                        <span className="font-mono text-[15px] font-bold text-[var(--color-negative)]">{fmtPct(topLosers[0].changePct)}</span>
                       </div>
-                      <div className="text-xs text-[var(--color-text-muted)]">{topLosers[0].name}</div>
+                      <div className="text-[13px] text-[var(--color-text-muted)]">{topLosers[0].name}</div>
                     </div>
                   </div>
                 </div>
@@ -402,7 +757,7 @@ export default function BriefPage() {
 
       {/* ═══ Footer ═══ */}
       <footer className="border-t border-white/[0.06] py-4 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.12em]" style={MONO}>
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between text-[11px] text-[var(--color-text-muted)] uppercase tracking-[0.12em]" style={MONO}>
           <span>Sources: Finnhub · Polygon · Market News</span>
           <span>helmterminal.dev</span>
         </div>
@@ -411,9 +766,11 @@ export default function BriefPage() {
   );
 }
 
+/* ─── Sub-components ─── */
+
 function SentimentBadge({ value }: { value: number | null }) {
   if (value === null) return null;
-  if (value > 0.2) return <span className="flex items-center gap-0.5 text-[10px] text-[var(--color-positive)]" style={{ fontFamily: 'var(--font-mono)' }}><TrendingUp className="w-3 h-3" />Bullish</span>;
-  if (value < -0.2) return <span className="flex items-center gap-0.5 text-[10px] text-[var(--color-negative)]" style={{ fontFamily: 'var(--font-mono)' }}><TrendingDown className="w-3 h-3" />Bearish</span>;
-  return <span className="flex items-center gap-0.5 text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}><Minus className="w-3 h-3" />Neutral</span>;
+  if (value > 0.2) return <span className="flex items-center gap-0.5 text-[11px] text-[var(--color-positive)]" style={{ fontFamily: 'var(--font-mono)' }}><TrendingUp className="w-3 h-3" />Bullish</span>;
+  if (value < -0.2) return <span className="flex items-center gap-0.5 text-[11px] text-[var(--color-negative)]" style={{ fontFamily: 'var(--font-mono)' }}><TrendingDown className="w-3 h-3" />Bearish</span>;
+  return <span className="flex items-center gap-0.5 text-[11px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}><Minus className="w-3 h-3" />Neutral</span>;
 }

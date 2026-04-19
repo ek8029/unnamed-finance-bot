@@ -19,7 +19,7 @@ export default async function ActionsPage() {
   if (user) {
     const { data: insights } = await supabase
       .from('insights')
-      .select('id, insight_type, priority, title, description, recommended_action, estimated_impact_amount, source_type, created_at')
+      .select('id, insight_type, priority, title, description, recommended_action, estimated_impact_amount, source_type, created_at, snoozed_until, is_archived, is_dismissed, is_useful')
       .eq('user_id', user.id)
       .eq('is_dismissed', false)
       .eq('is_archived', false)

@@ -105,7 +105,11 @@ export default function PortfolioPage() {
   const { totalDayChange, dayChangePercentage } = useMemo(() => {
     const totalDayChange = holdings.reduce(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (sum: number, holding: any) => sum + (holding.total_value * (holding.day_change_percentage ?? 0)) / 100,
+      (sum: number, holding: any) => {
+        // Precise formula: V * p / (1 + p) where p is decimal. day_change_percentage is already * 100.
+        const pDecimal = (holding.day_change_percentage ?? 0) / 100;
+        return sum + (pDecimal !== -1 ? (holding.total_value * pDecimal) / (1 + pDecimal) : -holding.total_value);
+      },
       0,
     );
     const dayChangePercentage = totalValue > 0 ? (totalDayChange / totalValue) * 100 : 0;

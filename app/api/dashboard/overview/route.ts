@@ -55,7 +55,21 @@ export async function GET() {
       .eq('user_id', user.id)
       .eq('is_active', true);
 
-    const totalBalance = (accounts || []).reduce((sum, a) => sum + Number(a.current_balance), 0);
+    // Separate assets from liabilities (same logic as financial-summary route)
+    const LIABILITY_TYPES = new Set(['credit_card', 'loan', 'mortgage']);
+    let cashAssets = 0;
+    let totalLiabilities = 0;
+    for (const a of accounts || []) {
+      const bal = Number(a.current_balance);
+      const type = a.account_type;
+      if (LIABILITY_TYPES.has(type)) {
+        totalLiabilities += Math.abs(bal);
+      } else if (type !== 'brokerage') {
+        // Brokerage value comes from holdings, not account balance
+        cashAssets += bal;
+      }
+    }
+    const totalBalance = cashAssets - totalLiabilities;
 
     // 3. Holdings (all for accurate total, top 10 for display)
     const { data: allHoldings } = await supabase

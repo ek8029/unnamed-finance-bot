@@ -21,18 +21,30 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
     const priority = searchParams.get('priority');
+    const status = searchParams.get('status');
     const archived = searchParams.get('archived');
 
     let query = supabase
       .from('insights')
-      .select('id, insight_type, priority, title, description, recommended_action, estimated_impact_amount, source_type, created_at, expires_at, snoozed_until, is_archived')
+      .select('id, insight_type, priority, title, description, recommended_action, estimated_impact_amount, source_type, created_at, expires_at, snoozed_until, is_archived, is_dismissed, is_useful')
       .eq('user_id', user.id);
 
-    if (archived === 'true') {
-      // Show archived insights
+    if (status === 'snoozed') {
+      // Currently snoozed items
+      query = query
+        .eq('is_dismissed', false)
+        .eq('is_archived', false)
+        .gt('snoozed_until', new Date().toISOString());
+    } else if (status === 'done') {
+      // Completed/useful items (marked useful but not archived)
+      query = query
+        .eq('is_useful', true)
+        .eq('is_archived', false);
+    } else if (status === 'archived' || archived === 'true') {
+      // Archived items
       query = query.eq('is_archived', true);
     } else {
-      // Default view: non-dismissed, non-archived, and not currently snoozed
+      // Default "open" view: non-dismissed, non-archived, and not currently snoozed
       query = query
         .eq('is_dismissed', false)
         .eq('is_archived', false)
@@ -73,6 +85,8 @@ export async function GET(request: Request) {
         expires_at: insight.expires_at,
         snoozed_until: insight.snoozed_until,
         is_archived: insight.is_archived,
+        is_dismissed: insight.is_dismissed,
+        is_useful: insight.is_useful,
       }))
       .filter(insight => {
         const norm = normalizeTitle(insight.title);

@@ -549,7 +549,8 @@ export async function computeSnapshots(
 
       if (recentFlows && recentFlows.length >= 2) {
         const avgRate = recentFlows.reduce((s: number, r: { savings_rate: number }) => s + Number(r.savings_rate), 0) / recentFlows.length;
-        if (avgRate > 0) savingsRate = avgRate;
+        // Blend current month with rolling average (don't mask negative months)
+        savingsRate = avgRate;
       }
     } catch {
       // Fallback to current month
@@ -622,20 +623,11 @@ export async function computeSnapshots(
       divScore * HEALTH_SCORE_WEIGHTS.diversification
     );
 
-    // Prevent duplicate health scores when dashboard auto-sync and daily
-    // cron run concurrently — both call computeSnapshots which previously
-    // did a blind INSERT. Delete any score for this user from the same UTC
-    // day, then insert the fresh one. One health score per user per day.
-    const todayStart = new Date().toISOString().split('T')[0] + 'T00:00:00Z';
+    // Atomic upsert — avoids race condition between dashboard auto-sync and
+    // daily cron running concurrently (DELETE+INSERT was not atomic).
     await supabase
       .from('financial_health_scores')
-      .delete()
-      .eq('user_id', userId)
-      .gte('calculated_at', todayStart);
-
-    await supabase
-      .from('financial_health_scores')
-      .insert({
+      .upsert({
         user_id: userId,
         overall_score: Math.min(100, Math.max(0, overallScore)),
         debt_to_asset_ratio: debtToAssetRatio,
@@ -646,7 +638,8 @@ export async function computeSnapshots(
         savings_score: savingsScore,
         emergency_fund_score: emergencyScore,
         diversification_score: divScore,
-      });
+        calculated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
 
     // Backfill historical snapshots for new users (runs once when ≤1 snapshot exists)
     await backfillHistoricalSnapshots(supabase, userId, {

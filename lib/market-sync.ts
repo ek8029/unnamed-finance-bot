@@ -200,20 +200,10 @@ export async function refreshMarketPrices(
       });
   }
 
-  const totalPortfolioValue = holdingUpdates.reduce((sum, u) => sum + u.totalValue, 0);
-  if (totalPortfolioValue > 0) {
-    const allocResults = await Promise.allSettled(holdingUpdates.map(u =>
-      supabase.from('holdings').update({
-        portfolio_allocation_pct: Math.round((u.totalValue / totalPortfolioValue) * 10000) / 100,
-      }).eq('id', u.holdingId)
-    ));
-    const allocFailures = allocResults.filter(r =>
-      r.status === 'rejected' || (r.status === 'fulfilled' && r.value?.error)
-    );
-    if (allocFailures.length > 0) {
-      console.error(`[prices] ${allocFailures.length} allocation updates failed`);
-    }
-  }
+  // NOTE: Allocation percentages are NOT computed here because this function
+  // operates on ALL users' holdings (service-role client bypasses RLS).
+  // Per-user allocation is handled by recalcAllocations() which correctly
+  // groups by user_id before computing percentages.
 
   const updated = holdingUpdates.length;
   log.push(`[prices] Updated ${updated}/${uniqueTickers.length} ticker prices`);

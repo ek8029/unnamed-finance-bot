@@ -10,6 +10,7 @@ import {
   IDLE_CASH_MONTHS,
   IDLE_CASH_HIGH_PRIORITY,
   STRONG_SAVINGS_RATE,
+  ANNUAL_LOSS_DEDUCTION_CAP,
 } from '@/lib/financial-config';
 import { formatCategoryName } from '@/lib/utils';
 
@@ -173,7 +174,7 @@ export async function generateInsights(
       // Cap the deductible amount at $3,000 against ordinary income per IRC §1211(b).
       // Losses first offset capital gains dollar-for-dollar (no limit), then up to
       // $3,000 of ordinary income. Excess carries forward per IRC §1212(b).
-      const ANNUAL_CAP = 3_000;
+      const ANNUAL_CAP = ANNUAL_LOSS_DEDUCTION_CAP;
       const deductibleThisYear = Math.min(totalLoss, ANNUAL_CAP);
       const estimatedSavings = Math.round(deductibleThisYear * TAX_RATE);
       const carryforward = Math.max(0, totalLoss - ANNUAL_CAP);
