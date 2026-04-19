@@ -15,9 +15,9 @@ export async function GET() {
       .from('user_profiles')
       .select('*')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       console.error('Error fetching profile:', error);
       return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 });
     }

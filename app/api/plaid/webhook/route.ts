@@ -100,11 +100,9 @@ export async function POST(request: Request) {
 
     const isValid = await verifyWebhookSignature(request, rawBody);
     if (!isValid) {
-      const isProduction = process.env.PLAID_ENV === 'production';
-      if (isProduction) {
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-      }
-      console.warn('Webhook signature verification failed in non-production — allowing with warning');
+      // Fail closed in ALL environments — never process unverified webhooks
+      console.error('Webhook signature verification failed — rejecting');
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
     const body: PlaidWebhook = JSON.parse(rawBody);
@@ -117,7 +115,7 @@ export async function POST(request: Request) {
       .from('plaid_items')
       .select('id, user_id, plaid_access_token')
       .eq('plaid_item_id', item_id)
-      .single();
+      .maybeSingle();
 
     if (itemError || !plaidItem) {
       console.error('Webhook: unknown item_id', item_id);

@@ -63,7 +63,17 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/wrapped': 'Wrapped',
   '/dashboard/accounts': 'Connected Accounts',
   '/dashboard/settings': 'Settings',
+  '/analyze': 'Analyze',
 };
+
+function getPageTitle(pathname: string): string {
+  if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
+  if (pathname.startsWith('/analyze/')) {
+    const ticker = pathname.split('/')[2]?.toUpperCase();
+    return ticker ? `Analyze ${ticker}` : 'Analyze';
+  }
+  return 'Dashboard';
+}
 
 interface UserProfile {
   fullName: string;
@@ -165,7 +175,7 @@ export default function DashboardLayout({
   };
 
   const isChatPage = pathname === '/dashboard/chat';
-  const pageTitle = PAGE_TITLES[pathname] || 'Dashboard';
+  const pageTitle = getPageTitle(pathname);
 
   return (
     <div className={cn(
@@ -284,8 +294,10 @@ export default function DashboardLayout({
                 );
               }
 
-              // Regular nav items
-              const isActive = pathname === item.href;
+              // Regular nav items — /analyze uses startsWith so /analyze/AAPL highlights too
+              const isActive = item.href === '/analyze'
+                ? pathname.startsWith('/analyze')
+                : pathname === item.href;
               return (
                 <Link
                   key={item.name}
@@ -525,7 +537,7 @@ export default function DashboardLayout({
         </header>
 
         {/* ── Page Content ── */}
-        <main className={cn(
+        <main id="main-content" className={cn(
           "bg-[var(--color-bg-base)] bg-depth flex-1",
           isChatPage && "min-h-0 flex flex-col"
         )}>

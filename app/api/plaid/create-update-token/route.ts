@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       .select('plaid_access_token, institution_name')
       .eq('id', item_id)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (itemError || !plaidItem) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });

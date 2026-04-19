@@ -27,7 +27,7 @@ export async function DELETE(
       .select('id, plaid_access_token, plaid_item_id, institution_name')
       .eq('id', itemId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (itemError || !plaidItem) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
