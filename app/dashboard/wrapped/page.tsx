@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useTier } from '@/hooks/use-tier';
@@ -78,13 +78,20 @@ function TopBar({ current, year }: { current: number; year: string }) {
         ))}
       </div>
 
-      {/* Slide counter */}
+      {/* Slide counter + close */}
       <span
         className="text-[11px] text-[var(--color-text-muted)] tabular-nums shrink-0"
         style={MONO}
       >
         {String(current + 1).padStart(2, '0')} / {String(TOTAL_SLIDES).padStart(2, '0')}
       </span>
+      <a
+        href="/dashboard"
+        className="ml-2 w-8 h-8 flex items-center justify-center rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-white/50 hover:text-white transition-colors"
+        aria-label="Close Wrapped"
+      >
+        <X className="w-4 h-4" />
+      </a>
     </div>
   );
 }
@@ -166,7 +173,7 @@ function SlideCover({
         onClick={(e) => { e.stopPropagation(); onBegin(); }}
         className="group flex items-center gap-2 px-8 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[14px] rounded-full cursor-pointer transition-colors duration-200"
       >
-        Begin wrap
+        Begin Wrapped
         <ChevronRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
       </button>
     </div>
@@ -495,18 +502,32 @@ function SlideShareCard({ data }: { data: WrappedData | null }) {
           Another year of data-driven decisions. Your portfolio story, tracked.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-          <a
-            href="/dashboard"
-            className="px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[14px] rounded-full transition-colors duration-200 text-center"
+          <button
+            onClick={() => {
+              const text = `My ${year} portfolio returned ${fmtPct(pct)} 📈\n\n${positions} positions · ${trades} trades · ${fmtDollar(dividends)} in dividends\n\nSee yours at helmterminal.dev/dashboard/wrapped\n\n#HelmWrapped`;
+              if (navigator.share) {
+                navigator.share({ title: `Helm Wrapped ${year}`, text }).catch(() => {});
+              } else {
+                navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
+              }
+            }}
+            className="px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[14px] rounded-full transition-colors duration-200 text-center flex items-center justify-center gap-2 cursor-pointer"
           >
-            Back to Dashboard
-          </a>
+            <Share2 className="w-4 h-4" /> Share Wrapped
+          </button>
           <a
-            href="/dashboard/wrapped"
-            onClick={(e) => { e.preventDefault(); window.location.reload(); }}
+            href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`My ${year} portfolio returned ${fmtPct(pct)} 📈\n\n#HelmWrapped helmterminal.dev/dashboard/wrapped`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="px-6 py-3 border border-white/10 hover:border-white/20 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-medium text-[14px] rounded-full transition-colors duration-200 text-center"
           >
-            Replay
+            Post on X
+          </a>
+          <a
+            href="/dashboard"
+            className="px-6 py-3 border border-white/10 hover:border-white/20 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-medium text-[14px] rounded-full transition-colors duration-200 text-center"
+          >
+            Close
           </a>
         </div>
       </div>
@@ -655,7 +676,7 @@ export default function WrappedPage() {
       <div className="fixed inset-0 z-50 bg-[var(--color-bg-base)] flex flex-col items-center justify-center gap-4">
         <div className="w-8 h-8 border-2 border-[var(--color-gold)] border-t-transparent rounded-full animate-spin" />
         <p className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>
-          Generating your wrap...
+          Generating your Wrapped...
         </p>
       </div>
     );
@@ -664,7 +685,7 @@ export default function WrappedPage() {
   if (error) {
     return (
       <div className="fixed inset-0 z-50 bg-[var(--color-bg-base)] flex flex-col items-center justify-center">
-        <p className="text-[var(--color-text-secondary)] mb-4">Unable to generate your wrapped.</p>
+        <p className="text-[var(--color-text-secondary)] mb-4">Unable to generate your Wrapped.</p>
         <button
           onClick={() => router.push('/dashboard')}
           className="text-sm text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] cursor-pointer"
