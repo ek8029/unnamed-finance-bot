@@ -101,7 +101,7 @@ export default function SignupPage() {
         router.push('/dashboard');
         router.refresh();
       } else {
-        router.push('/login?message=Check your email to confirm your account');
+        router.push('/login?message=Check your email to confirm your account. If you don\'t see it, check your spam or promotions folder — it may take a minute to arrive.');
       }
     } catch {
       setError('Something went wrong. Please try again.');
