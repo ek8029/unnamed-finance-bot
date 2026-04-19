@@ -125,7 +125,10 @@ export async function middleware(request: NextRequest) {
   //
   // Matches /analyze/AAPL but not /analyze (index page, already static) or
   // /analyze/AAPL/summary (future, different caching policy may apply).
-  if (/^\/analyze\/[A-Za-z]{1,5}$/.test(pathname)) {
+  // Only set public cache headers for anonymous visitors — authenticated users
+  // get a different layout (dashboard sidebar) so the response must not be
+  // shared across users by the CDN.
+  if (/^\/analyze\/[A-Za-z]{1,5}$/.test(pathname) && !user) {
     response.headers.set(
       'Cache-Control',
       'public, s-maxage=1800, stale-while-revalidate=86400',
