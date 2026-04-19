@@ -625,7 +625,7 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
   }, [activeFunction, analysis, tickerData]);
 
   return (
-    <div className="space-y-0 animate-fade-in" style={{ zoom: 1.12 }}>
+    <div className="space-y-0 animate-fade-in text-[15px]">
       {/* Command bar */}
       <div className="flex items-center justify-between py-3 px-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-t-sm">
         <div className="flex items-center gap-4">

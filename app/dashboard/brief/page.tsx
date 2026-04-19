@@ -211,7 +211,7 @@ export default function BriefPage() {
               {/* Sector heat */}
               {data.sectorHeat.length > 0 && (
                 <div>
-                  <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4 pb-3 border-b border-[var(--color-gold)]/20" style={MONO}>§ SECTOR HEAT</div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4 pb-3 border-b border-[var(--color-gold)]/20" style={MONO}>§ Sector Heat</div>
                   {data.sectorHeat.sort((a, b) => b.weight - a.weight).map(s => (
                     <div key={s.sector} className="py-3 border-b border-white/[0.06]">
                       <div className="flex justify-between items-baseline">
@@ -232,7 +232,7 @@ export default function BriefPage() {
               {/* All holdings by impact */}
               {data.allHoldings.length > 0 && (
                 <div>
-                  <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4 pb-3 border-b border-[var(--color-gold)]/20" style={MONO}>§ ALL HOLDINGS</div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4 pb-3 border-b border-[var(--color-gold)]/20" style={MONO}>§ All Holdings</div>
                   {data.allHoldings.sort((a, b) => Math.abs(b.dollarImpact) - Math.abs(a.dollarImpact)).slice(0, 10).map(h => (
                     <div key={h.ticker} className="py-2.5 border-b border-white/[0.04] flex justify-between items-baseline">
                       <div>
