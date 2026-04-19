@@ -45,7 +45,7 @@ export default async function DashboardTickerAnalysisPage({ params }: Props) {
   const computedAtIso = computedAt || new Date().toISOString();
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
+    <div className="w-full px-3 sm:px-4 lg:px-6 py-4">
       <AnalysisTerminal
         analysis={analysis}
         tickerData={tickerData}
@@ -53,6 +53,7 @@ export default async function DashboardTickerAnalysisPage({ params }: Props) {
         computedAt={computedAtIso}
         dataSources={dataSources}
         methodologyVersion={methodologyVersion}
+        variant="dashboard"
       />
     </div>
   );

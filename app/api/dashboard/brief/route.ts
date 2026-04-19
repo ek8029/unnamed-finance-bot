@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getLatestPrice, getTickerSectorOverride, type PolygonPrice } from '@/lib/polygon';
+import { getQuote } from '@/lib/financial-data';
 import { rateLimit } from '@/lib/rate-limit';
 
 type VixLevel = 'extreme_fear' | 'fear' | 'neutral' | 'greed' | 'extreme_greed';
@@ -159,23 +160,27 @@ export async function GET() {
       spy: { price: number; changePct: number } | null;
       qqq: { price: number; changePct: number } | null;
       vix: { price: number; level: VixLevel } | null;
-      treasury10y: null;
-    } = { spy: null, qqq: null, vix: null, treasury10y: null };
+      treasury: { price: number; changePct: number } | null;
+    } = { spy: null, qqq: null, vix: null, treasury: null };
 
     try {
-      const [spyData, qqqData] = await Promise.allSettled([
+      const [spyData, qqqData, vixyData, tltData] = await Promise.allSettled([
         getLatestPrice('SPY'),
         getLatestPrice('QQQ'),
+        getQuote('VIXY'),  // VIX futures ETF — tracks VIX closely on Finnhub free tier
+        getQuote('TLT'),   // 20+ Year Treasury Bond ETF — Finnhub free tier
       ]);
 
       const spy = spyData.status === 'fulfilled' ? spyData.value : null;
       const qqq = qqqData.status === 'fulfilled' ? qqqData.value : null;
+      const vixy = vixyData.status === 'fulfilled' ? vixyData.value : null;
+      const tlt = tltData.status === 'fulfilled' ? tltData.value : null;
 
       market = {
         spy: formatIndex(spy),
         qqq: formatIndex(qqq),
-        vix: null,
-        treasury10y: null,
+        vix: vixy && vixy.c > 0 ? { price: vixy.c, level: classifyVix(vixy.c) } : null,
+        treasury: tlt && tlt.c > 0 ? { price: tlt.c, changePct: tlt.dp ?? 0 } : null,
       };
     } catch (err) {
       console.error('[brief] Market data fetch failed:', err);

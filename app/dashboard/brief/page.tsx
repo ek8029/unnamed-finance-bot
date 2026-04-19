@@ -19,7 +19,7 @@ interface NewsItem {
 
 interface BriefData {
   portfolio: { totalValue: number; overnightChange: number; overnightChangePct: number; vsBenchmark: number | null };
-  market: { spy: { price: number; changePct: number } | null; qqq: { price: number; changePct: number } | null; vix: { price: number; level: string } | null; treasury10y: { yield: number } | null };
+  market: { spy: { price: number; changePct: number } | null; qqq: { price: number; changePct: number } | null; vix: { price: number; level: string } | null; treasury: { price: number; changePct: number } | null };
   movers: { ticker: string; name: string; sector: string; changePct: number; dollarImpact: number }[];
   allHoldings: { ticker: string; name: string; sector: string; changePct: number; dollarImpact: number }[];
   sectorHeat: { sector: string; weight: number; changePct: number; tickers: string[] }[];
@@ -142,8 +142,8 @@ export default function BriefPage() {
           {[
             data.market.spy ? ['S&P 500', `$${data.market.spy.price.toFixed(2)}`, fmtPct(data.market.spy.changePct), data.market.spy.changePct >= 0] : ['S&P 500', '—', '—', true],
             data.market.qqq ? ['NASDAQ', `$${data.market.qqq.price.toFixed(2)}`, fmtPct(data.market.qqq.changePct), data.market.qqq.changePct >= 0] : ['NASDAQ', '—', '—', true],
-            data.market.vix ? ['VIX', data.market.vix.price.toFixed(2), data.market.vix.level.replace('_', ' '), true] : ['VIX', '—', '—', true],
-            data.market.treasury10y ? ['10Y YIELD', `${data.market.treasury10y.yield.toFixed(2)}%`, '', true] : ['10Y', '—', '—', true],
+            data.market.vix ? ['VIX', data.market.vix.price.toFixed(2), data.market.vix.level.replace(/_/g, ' '), data.market.vix.price < 20] : ['VIX', '—', '—', true],
+            data.market.treasury ? ['BONDS (TLT)', `$${data.market.treasury.price.toFixed(2)}`, fmtPct(data.market.treasury.changePct), data.market.treasury.changePct >= 0] : ['BONDS', '—', '—', true],
           ].map(([label, value, delta, pos]) => (
             <div key={label as string}>
               <div className="text-[9px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]" style={MONO}>{label as string}</div>

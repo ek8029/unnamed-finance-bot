@@ -15,7 +15,7 @@ interface BriefData {
     spy: { price: number; changePct: number } | null;
     qqq: { price: number; changePct: number } | null;
     vix: { price: number; level: string } | null;
-    treasury10y: { yield: number } | null;
+    treasury: { price: number; changePct: number } | null;
   };
   movers: {
     ticker: string;

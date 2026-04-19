@@ -73,31 +73,31 @@ export default function AnalyzePage() {
       </nav>
 
       {/* Hero */}
-      <main className="relative flex-1 flex flex-col items-center justify-center px-6 py-16">
-        <div className="max-w-xl w-full text-center space-y-6">
-          <div className="space-y-3">
-            <div className="type-eyebrow text-[var(--color-gold)]">Free Stock Analysis</div>
-            <h1 className="type-display text-[var(--color-text-primary)]">
+      <main className="relative flex-1 flex flex-col items-center justify-center px-6 py-20">
+        <div className="max-w-2xl w-full text-center space-y-10">
+          <div className="space-y-5">
+            <div className="text-sm uppercase tracking-[0.25em] font-medium text-[var(--color-gold)]" style={{ fontFamily: 'var(--font-mono)' }}>Free Stock Analysis</div>
+            <h1 className="text-5xl sm:text-7xl font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.05]">
               Institutional-grade<br />stock analysis
             </h1>
-            <p className="type-body text-[var(--color-text-secondary)] max-w-lg mx-auto">
+            <p className="text-lg text-[var(--color-text-secondary)] max-w-xl mx-auto leading-relaxed">
               AI-powered reports with real-time pricing, financial metrics, analyst consensus, earnings data, and news sentiment.
             </p>
           </div>
 
           {/* Command palette style search */}
-          <div className="sovereign-card rounded p-5">
-            <TickerSearch />
+          <div className="sovereign-card rounded-lg p-7">
+            <TickerSearch size="lg" />
           </div>
 
-          <div className="space-y-2">
-            <div className="type-eyebrow text-[var(--color-text-muted)]">Popular</div>
-            <div className="flex flex-wrap justify-center gap-2">
+          <div className="space-y-4">
+            <div className="text-xs uppercase tracking-[0.15em] font-medium text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>Popular</div>
+            <div className="flex flex-wrap justify-center gap-2.5">
               {POPULAR_TICKERS.map((ticker) => (
                 <a
                   key={ticker}
                   href={`/analyze/${ticker}`}
-                  className="px-4 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[13px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors"
+                  className="px-5 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-md text-[15px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors"
                   style={{ fontFamily: 'var(--font-mono)' }}
                 >
                   {ticker}

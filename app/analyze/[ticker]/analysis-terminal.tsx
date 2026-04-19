@@ -26,6 +26,8 @@ interface AnalysisTerminalProps {
   computedAt: string;
   dataSources: string[];
   methodologyVersion: string;
+  /** "public" = standalone SEO page with CTA. "dashboard" = inside sidebar shell, no CTA. */
+  variant?: 'public' | 'dashboard';
 }
 
 // ── Constants ──
@@ -98,7 +100,7 @@ function relativeTime(ts: number): string {
 
 // ── Inline Search ──
 
-function InlineSearch({ currentTicker }: { currentTicker: string }) {
+function InlineSearch({ currentTicker, basePath = '/analyze' }: { currentTicker: string; basePath?: string }) {
   const router = useRouter();
   const [input, setInput] = useState(currentTicker);
   const [loading, setLoading] = useState(false);
@@ -109,7 +111,7 @@ function InlineSearch({ currentTicker }: { currentTicker: string }) {
       const clean = input.trim().toUpperCase().replace(/[^A-Z]/g, '');
       if (clean && clean.length <= 5 && clean !== currentTicker) {
         setLoading(true);
-        router.push(`/analyze/${clean}`);
+        router.push(`${basePath}/${clean}`);
       }
     },
     [input, currentTicker, router],
@@ -154,7 +156,7 @@ function FunctionTree({ active, onSelect }: { active: FunctionKey; onSelect: (k:
             <button
               onClick={() => !isDisabled && onSelect(fn.key)}
               disabled={isDisabled}
-              className={`w-full text-left px-3 py-2 text-[11px] tracking-widest font-mono transition-colors flex items-center justify-between group border-l-2 ${
+              className={`w-full text-left px-3 py-2.5 text-[14px] tracking-widest font-mono transition-colors flex items-center justify-between group border-l-2 ${
                 isActive
                   ? 'border-[var(--color-gold)] text-[var(--color-gold)] bg-[var(--color-gold)]/5'
                   : isDisabled
@@ -198,9 +200,9 @@ function FunctionTree({ active, onSelect }: { active: FunctionKey; onSelect: (k:
 function MetricCell({ label, value, context }: { label: string; value: string; context?: string }) {
   return (
     <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-3 space-y-1">
-      <div className="text-[10px] font-mono tracking-wider text-[var(--color-text-muted)] uppercase">{label}</div>
-      <div className="text-[18px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{value}</div>
-      {context && <div className="text-[10px] font-mono text-[var(--color-text-muted)]">{context}</div>}
+      <div className="text-[12px] font-mono tracking-wider text-[var(--color-text-muted)] uppercase">{label}</div>
+      <div className="text-[22px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{value}</div>
+      {context && <div className="text-[12px] font-mono text-[var(--color-text-muted)]">{context}</div>}
     </div>
   );
 }
@@ -218,9 +220,9 @@ function OverviewView({ analysis, tickerData }: { analysis: StockAnalysis; ticke
       <div>
         <div className="flex items-baseline gap-3 flex-wrap">
           <span className="text-[28px] font-mono font-bold text-[var(--color-gold)] tabular-nums tracking-tight">{analysis.ticker}</span>
-          <span className="text-[16px] text-[var(--color-text-primary)] font-medium">{analysis.companyName}</span>
+          <span className="text-[18px] text-[var(--color-text-primary)] font-medium">{analysis.companyName}</span>
         </div>
-        <div className="flex items-center gap-2 mt-1 text-[11px] font-mono tracking-wider text-[var(--color-text-muted)]">
+        <div className="flex items-center gap-2 mt-1 text-[13px] font-mono tracking-wider text-[var(--color-text-muted)]">
           {profile?.exchange && <span>{profile.exchange}</span>}
           {profile?.exchange && profile?.finnhubIndustry && <span className="text-[var(--color-border-strong)]">|</span>}
           {profile?.finnhubIndustry && <span>{profile.finnhubIndustry}</span>}
@@ -238,16 +240,16 @@ function OverviewView({ analysis, tickerData }: { analysis: StockAnalysis; ticke
 
       {/* AI Verdict */}
       <div className="flex items-start gap-4">
-        <span className={`inline-flex items-center px-3 py-1.5 rounded-sm border text-[12px] font-mono font-bold tracking-wider ${verdictBg(analysis.verdict)}`}>
+        <span className={`inline-flex items-center px-3 py-1.5 rounded-sm border text-[14px] font-mono font-bold tracking-wider ${verdictBg(analysis.verdict)}`}>
           {verdictLabel.toUpperCase()}
         </span>
-        <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed flex-1">{analysis.summary}</p>
+        <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed flex-1">{analysis.summary}</p>
       </div>
 
       {/* Recommendation box */}
       <div className="border-l-2 border-[var(--color-gold)] bg-[var(--color-gold)]/5 rounded-r-sm px-4 py-3">
-        <div className="text-[10px] font-mono tracking-widest text-[var(--color-gold)] mb-1 uppercase">Recommendation</div>
-        <p className="text-[13px] text-[var(--color-text-primary)] leading-relaxed">{analysis.recommendation}</p>
+        <div className="text-[12px] font-mono tracking-widest text-[var(--color-gold)] mb-1 uppercase">Recommendation</div>
+        <p className="text-[15px] text-[var(--color-text-primary)] leading-relaxed">{analysis.recommendation}</p>
       </div>
     </div>
   );
@@ -277,7 +279,7 @@ function FundamentalsView({ tickerData, profile }: { tickerData: TickerData; pro
 
   return (
     <div className="space-y-4">
-      <div className="text-[11px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Key Financial Metrics</div>
+      <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Key Financial Metrics</div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         {cells.map((c) => (
           <MetricCell key={c.label} label={c.label} value={c.value} context={c.context} />
@@ -300,16 +302,16 @@ function EarningsView({ earnings }: { earnings: TickerData['earnings'] }) {
 
   return (
     <div className="space-y-4">
-      <div className="text-[11px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Earnings History</div>
+      <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Earnings History</div>
       <div className="overflow-x-auto">
-        <table className="w-full text-[12px] font-mono tabular-nums">
+        <table className="w-full text-[14px] font-mono tabular-nums">
           <thead>
             <tr className="border-b border-[var(--color-border-strong)]">
-              <th className="text-left py-2 px-2 text-[10px] tracking-widest text-[var(--color-text-muted)] uppercase font-normal">Quarter</th>
-              <th className="text-right py-2 px-2 text-[10px] tracking-widest text-[var(--color-text-muted)] uppercase font-normal">EPS Est.</th>
-              <th className="text-right py-2 px-2 text-[10px] tracking-widest text-[var(--color-text-muted)] uppercase font-normal">EPS Actual</th>
-              <th className="text-right py-2 px-2 text-[10px] tracking-widest text-[var(--color-text-muted)] uppercase font-normal">Surprise %</th>
-              <th className="text-right py-2 px-2 text-[10px] tracking-widest text-[var(--color-text-muted)] uppercase font-normal">Period</th>
+              <th className="text-left py-2 px-2 text-[12px] tracking-widest text-[var(--color-text-muted)] uppercase font-normal">Quarter</th>
+              <th className="text-right py-2 px-2 text-[12px] tracking-widest text-[var(--color-text-muted)] uppercase font-normal">EPS Est.</th>
+              <th className="text-right py-2 px-2 text-[12px] tracking-widest text-[var(--color-text-muted)] uppercase font-normal">EPS Actual</th>
+              <th className="text-right py-2 px-2 text-[12px] tracking-widest text-[var(--color-text-muted)] uppercase font-normal">Surprise %</th>
+              <th className="text-right py-2 px-2 text-[12px] tracking-widest text-[var(--color-text-muted)] uppercase font-normal">Period</th>
             </tr>
           </thead>
           <tbody>
@@ -345,18 +347,18 @@ function NewsView({ news, analysisNews }: { news: TickerData['news']; analysisNe
       {/* AI-flagged headlines */}
       {highlights.length > 0 && (
         <div className="space-y-3">
-          <div className="text-[11px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">AI-Flagged Headlines</div>
+          <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">AI-Flagged Headlines</div>
           <div className="space-y-2">
             {highlights.map((h, i) => (
               <div key={i} className="flex items-start gap-2.5 py-2 border-b border-[var(--color-border-subtle)]">
                 <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${sentimentDot(h.sentiment)}`} />
                 <div className="flex-1 min-w-0">
                   {h.url ? (
-                    <a href={h.url} target="_blank" rel="noopener noreferrer" className="text-[13px] text-[var(--color-text-primary)] hover:text-[var(--color-gold)] transition-colors leading-snug">
+                    <a href={h.url} target="_blank" rel="noopener noreferrer" className="text-[15px] text-[var(--color-text-primary)] hover:text-[var(--color-gold)] transition-colors leading-snug">
                       {h.headline}
                     </a>
                   ) : (
-                    <span className="text-[13px] text-[var(--color-text-primary)] leading-snug">{h.headline}</span>
+                    <span className="text-[15px] text-[var(--color-text-primary)] leading-snug">{h.headline}</span>
                   )}
                   <div className="text-[10px] font-mono text-[var(--color-text-muted)] mt-0.5">{h.date}</div>
                 </div>
@@ -368,7 +370,7 @@ function NewsView({ news, analysisNews }: { news: TickerData['news']; analysisNe
 
       {/* Full news feed */}
       <div className="space-y-3">
-        <div className="text-[11px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Recent News</div>
+        <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Recent News</div>
         {items.length === 0 ? (
           <div className="text-[13px] text-[var(--color-text-muted)] font-mono py-4 text-center">No recent news.</div>
         ) : (
@@ -405,27 +407,27 @@ function AIAnalysisView({ analysis }: { analysis: StockAnalysis }) {
       {/* Bull case */}
       <div className="border border-[var(--color-positive)]/30 rounded-sm overflow-hidden">
         <div className="bg-[var(--color-positive)]/10 px-4 py-2 border-b border-[var(--color-positive)]/20">
-          <span className="text-[11px] font-mono tracking-widest text-[var(--color-positive)] uppercase font-semibold">Bull Case</span>
+          <span className="text-[13px] font-mono tracking-widest text-[var(--color-positive)] uppercase font-semibold">Bull Case</span>
         </div>
         <div className="px-4 py-3">
-          <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">{analysis.bullCase}</p>
+          <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed">{analysis.bullCase}</p>
         </div>
       </div>
 
       {/* Bear case */}
       <div className="border border-[var(--color-negative)]/30 rounded-sm overflow-hidden">
         <div className="bg-[var(--color-negative)]/10 px-4 py-2 border-b border-[var(--color-negative)]/20">
-          <span className="text-[11px] font-mono tracking-widest text-[var(--color-negative)] uppercase font-semibold">Bear Case</span>
+          <span className="text-[13px] font-mono tracking-widest text-[var(--color-negative)] uppercase font-semibold">Bear Case</span>
         </div>
         <div className="px-4 py-3">
-          <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">{analysis.bearCase}</p>
+          <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed">{analysis.bearCase}</p>
         </div>
       </div>
 
       {/* AI Metrics grid */}
       {analysis.metrics.length > 0 && (
         <div className="space-y-3">
-          <div className="text-[11px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">AI-Extracted Metrics</div>
+          <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">AI-Extracted Metrics</div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
             {analysis.metrics.map((m: AnalysisMetric, i: number) => (
               <div key={i} className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-3 space-y-1">
@@ -452,12 +454,14 @@ function RightSidebar({
   computedAt,
   dataSources,
   methodologyVersion,
+  isDashboard = false,
 }: {
   analysis: StockAnalysis;
   tickerData: TickerData;
   computedAt: string;
   dataSources: string[];
   methodologyVersion: string;
+  isDashboard?: boolean;
 }) {
   const { quote, recommendations, news } = tickerData;
   const verdictLabel = analysis.verdict.charAt(0).toUpperCase() + analysis.verdict.slice(1);
@@ -470,24 +474,24 @@ function RightSidebar({
     <div className="space-y-5">
       {/* AI Verdict */}
       <div className="space-y-2">
-        <div className="text-[10px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">AI Verdict</div>
+        <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">AI Verdict</div>
         <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center px-2.5 py-1 rounded-sm border text-[11px] font-mono font-bold tracking-wider ${verdictBg(analysis.verdict)}`}>
+          <span className={`inline-flex items-center px-2.5 py-1 rounded-sm border text-[14px] font-mono font-bold tracking-wider ${verdictBg(analysis.verdict)}`}>
             {verdictLabel.toUpperCase()}
           </span>
         </div>
-        <p className="text-[12px] text-[var(--color-text-secondary)] leading-relaxed">{analysis.recommendation}</p>
+        <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed">{analysis.recommendation}</p>
       </div>
 
       {/* Quick metrics */}
       {analysis.metrics.length > 0 && (
         <div className="space-y-2">
-          <div className="text-[10px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Quick Metrics</div>
+          <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Quick Metrics</div>
           <div className="space-y-1.5">
-            {analysis.metrics.slice(0, 4).map((m: AnalysisMetric, i: number) => (
-              <div key={i} className="flex items-center justify-between py-1 border-b border-[var(--color-border-subtle)]">
-                <span className="text-[11px] font-mono text-[var(--color-text-muted)]">{m.label}</span>
-                <span className="text-[12px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{m.value}</span>
+            {analysis.metrics.slice(0, isDashboard ? 6 : 4).map((m: AnalysisMetric, i: number) => (
+              <div key={i} className="flex items-center justify-between py-1.5 border-b border-[var(--color-border-subtle)]">
+                <span className="text-[14px] font-mono text-[var(--color-text-muted)]">{m.label}</span>
+                <span className="text-[15px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{m.value}</span>
               </div>
             ))}
           </div>
@@ -497,18 +501,18 @@ function RightSidebar({
       {/* Analyst Ratings */}
       {latestRec && totalRatings > 0 && (
         <div className="space-y-2">
-          <div className="text-[10px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Analyst Consensus</div>
+          <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Analyst Consensus</div>
           <div className="space-y-2">
             {/* Stacked bar */}
-            <div className="flex h-3 rounded-sm overflow-hidden bg-[var(--color-bg-elevated)]">
-              {latestRec.strongBuy > 0 && <div className="bg-[var(--color-positive)]" style={{ width: `${(latestRec.strongBuy / totalRatings) * 100}%` }} />}
-              {latestRec.buy > 0 && <div className="bg-[var(--color-positive)]/60" style={{ width: `${(latestRec.buy / totalRatings) * 100}%` }} />}
-              {latestRec.hold > 0 && <div className="bg-[var(--color-text-muted)]/40" style={{ width: `${(latestRec.hold / totalRatings) * 100}%` }} />}
-              {latestRec.sell > 0 && <div className="bg-[var(--color-negative)]/60" style={{ width: `${(latestRec.sell / totalRatings) * 100}%` }} />}
-              {latestRec.strongSell > 0 && <div className="bg-[var(--color-negative)]" style={{ width: `${(latestRec.strongSell / totalRatings) * 100}%` }} />}
+            <div className="flex h-4 rounded-sm overflow-hidden bg-[var(--color-bg-elevated)]">
+              {latestRec.strongBuy > 0 && <div style={{ width: `${(latestRec.strongBuy / totalRatings) * 100}%`, backgroundColor: 'var(--color-positive)' }} />}
+              {latestRec.buy > 0 && <div style={{ width: `${(latestRec.buy / totalRatings) * 100}%`, backgroundColor: 'var(--color-positive)', opacity: 0.6 }} />}
+              {latestRec.hold > 0 && <div style={{ width: `${(latestRec.hold / totalRatings) * 100}%`, backgroundColor: 'var(--color-text-muted)', opacity: 0.4 }} />}
+              {latestRec.sell > 0 && <div style={{ width: `${(latestRec.sell / totalRatings) * 100}%`, backgroundColor: 'var(--color-negative)', opacity: 0.6 }} />}
+              {latestRec.strongSell > 0 && <div style={{ width: `${(latestRec.strongSell / totalRatings) * 100}%`, backgroundColor: 'var(--color-negative)' }} />}
             </div>
             {/* Labels */}
-            <div className="flex justify-between text-[10px] font-mono text-[var(--color-text-muted)]">
+            <div className="flex justify-between text-[13px] font-mono text-[var(--color-text-muted)]">
               <span className="text-[var(--color-positive)]">Buy {latestRec.strongBuy + latestRec.buy}</span>
               <span>Hold {latestRec.hold}</span>
               <span className="text-[var(--color-negative)]">Sell {latestRec.sell + latestRec.strongSell}</span>
@@ -517,23 +521,23 @@ function RightSidebar({
         </div>
       )}
 
-      {/* Recent news */}
-      {news && news.length > 0 && (
+      {/* Recent news — always hidden from sidebar (shown in center pane instead) */}
+      {false && news && news.length > 0 && (
         <div className="space-y-2">
-          <div className="text-[10px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Recent Headlines</div>
+          <div className="text-[12px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Recent Headlines</div>
           <div className="space-y-1.5">
-            {news.slice(0, 4).map((item) => (
+            {news.slice(0, isDashboard ? 8 : 4).map((item) => (
               <a
                 key={item.id}
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-start gap-2 py-1.5 group"
+                className="flex items-start gap-2 py-2 group"
               >
                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 bg-[var(--color-text-muted)]" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-[11px] text-[var(--color-text-secondary)] group-hover:text-[var(--color-gold)] transition-colors leading-snug line-clamp-2">{item.headline}</div>
-                  <div className="text-[9px] font-mono text-[var(--color-text-muted)] mt-0.5">{item.source} {relativeTime(item.datetime)}</div>
+                  <div className="text-[13px] text-[var(--color-text-secondary)] group-hover:text-[var(--color-gold)] transition-colors leading-snug line-clamp-2">{item.headline}</div>
+                  <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-0.5">{item.source} {relativeTime(item.datetime)}</div>
                 </div>
               </a>
             ))}
@@ -543,11 +547,11 @@ function RightSidebar({
 
       {/* Data provenance */}
       <div className="space-y-1.5 pt-3 border-t border-[var(--color-border-subtle)]">
-        <div className="text-[10px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Data Sources</div>
-        <div className="text-[10px] font-mono text-[var(--color-text-muted)] space-y-0.5">
+        <div className="text-[12px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Data Sources</div>
+        <div className="text-[11px] font-mono text-[var(--color-text-muted)] space-y-0.5">
           {dataSources.map((s, i) => <div key={i}>{s}</div>)}
         </div>
-        <div className="flex items-center justify-between text-[9px] font-mono text-[var(--color-text-muted)] pt-1">
+        <div className="flex items-center justify-between text-[11px] font-mono text-[var(--color-text-muted)] pt-1">
           <span>v{methodologyVersion}</span>
           <span>{new Date(computedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
         </div>
@@ -597,7 +601,9 @@ function ShareBar({ ticker, analysis }: { ticker: string; analysis: StockAnalysi
 
 // ── Main Export ──
 
-export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dataSources, methodologyVersion }: AnalysisTerminalProps) {
+export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dataSources, methodologyVersion, variant = 'public' }: AnalysisTerminalProps) {
+  const isDashboard = variant === 'dashboard';
+  const analyzePath = isDashboard ? '/dashboard/analyze' : '/analyze';
   const [activeFunction, setActiveFunction] = useState<FunctionKey>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { quote } = tickerData;
@@ -639,16 +645,16 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
           </button>
 
           <div className="flex items-center gap-3">
-            <span className="text-[16px] font-mono font-bold text-[var(--color-gold)] tabular-nums tracking-tight">{ticker}</span>
-            <span className="text-[12px] text-[var(--color-text-secondary)] hidden sm:inline">{analysis.companyName}</span>
+            <span className="text-[20px] font-mono font-bold text-[var(--color-gold)] tabular-nums tracking-tight">{ticker}</span>
+            <span className="text-[15px] text-[var(--color-text-secondary)] hidden sm:inline">{analysis.companyName}</span>
           </div>
           <div className="hidden sm:block">
-            <InlineSearch currentTicker={ticker} />
+            <InlineSearch currentTicker={ticker} basePath={analyzePath} />
           </div>
         </div>
         <div className="flex items-center gap-4">
           <ShareBar ticker={ticker} analysis={analysis} />
-          <div className="hidden sm:flex items-center gap-3 font-mono tabular-nums text-[12px]">
+          <div className="hidden sm:flex items-center gap-3 font-mono tabular-nums text-[15px]">
             <span className="text-[var(--color-text-primary)] font-semibold">{fmtPrice(quote?.c)}</span>
             <span className={changeColor(quote?.dp)}>{fmtPct(quote?.dp)}</span>
           </div>
@@ -661,11 +667,11 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
 
       {/* Mobile search */}
       <div className="sm:hidden px-4 py-2 bg-[var(--color-bg-elevated)] border-x border-[var(--color-border-base)]">
-        <InlineSearch currentTicker={ticker} />
+        <InlineSearch currentTicker={ticker} basePath={analyzePath} />
       </div>
 
       {/* 3-pane grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_320px] border border-t-0 border-[var(--color-border-base)] rounded-b-sm overflow-hidden min-h-[600px]">
+      <div className={`grid grid-cols-1 border border-t-0 border-[var(--color-border-base)] rounded-b-sm overflow-hidden min-h-[600px] ${isDashboard ? 'lg:grid-cols-[240px_1fr_300px]' : 'lg:grid-cols-[260px_1fr_340px]'}`}>
         {/* LEFT PANE */}
         {/* Desktop: always visible. Mobile: toggle */}
         <aside className={`bg-[var(--color-bg-base)] border-r border-[var(--color-border-subtle)] py-3 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
@@ -682,7 +688,7 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
                 {POPULAR_TICKERS.filter((t) => t !== ticker).slice(0, 6).map((t) => (
                   <a
                     key={t}
-                    href={`/analyze/${t}`}
+                    href={`${analyzePath}/${t}`}
                     className="px-2 py-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm text-[10px] font-mono font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:border-[var(--color-gold-border)] transition-colors"
                   >
                     {t}
@@ -697,21 +703,47 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
         <main className="bg-[var(--color-bg-base)] p-5 sm:p-6 overflow-y-auto">
           {centerContent}
 
-          {/* CTA */}
-          <div className="mt-8 border border-[var(--color-border-base)] rounded-sm p-5 text-center space-y-2.5 bg-[var(--color-bg-elevated)]">
-            <p className="text-[13px] font-medium text-[var(--color-text-primary)]">
-              Want AI analysis of your entire portfolio?
-            </p>
-            <p className="text-[12px] text-[var(--color-text-secondary)] leading-relaxed max-w-md mx-auto">
-              Helm Terminal connects to your brokerage, analyzes every holding, and delivers actionable intelligence weekly.
-            </p>
-            <a
-              href="/signup"
-              className="inline-block px-5 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[12px] font-semibold rounded-sm transition-colors"
-            >
-              Get started free
-            </a>
-          </div>
+          {/* CTA — public only */}
+          {!isDashboard && (
+            <div className="mt-8 border border-[var(--color-border-base)] rounded-sm p-5 text-center space-y-2.5 bg-[var(--color-bg-elevated)]">
+              <p className="text-[15px] font-medium text-[var(--color-text-primary)]">
+                Want AI analysis of your entire portfolio?
+              </p>
+              <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed max-w-md mx-auto">
+                Helm Terminal connects to your brokerage, analyzes every holding, and delivers actionable intelligence weekly.
+              </p>
+              <a
+                href="/signup"
+                className="inline-block px-5 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[14px] font-semibold rounded-sm transition-colors"
+              >
+                Get started free
+              </a>
+            </div>
+          )}
+
+          {/* Headlines in center pane — both variants */}
+          {tickerData.news && tickerData.news.length > 0 && (
+            <div className="mt-8 space-y-4">
+              <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Recent Headlines</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {tickerData.news.slice(0, 8).map((item) => (
+                  <a
+                    key={item.id}
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start gap-2.5 py-3 px-3 border border-[var(--color-border-subtle)] rounded-sm hover:bg-[var(--color-bg-elevated)] hover:border-[var(--color-border-base)] transition-colors group"
+                  >
+                    <span className="mt-1.5 w-2 h-2 rounded-full shrink-0 bg-[var(--color-text-muted)]" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[14px] text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors leading-snug line-clamp-2">{item.headline}</div>
+                      <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-1">{item.source} · {relativeTime(item.datetime)}</div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="mt-4">
             <FinancialDisclaimer />
@@ -727,6 +759,7 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
               computedAt={computedAt}
               dataSources={dataSources}
               methodologyVersion={methodologyVersion}
+              isDashboard={isDashboard}
             />
           </div>
         </aside>

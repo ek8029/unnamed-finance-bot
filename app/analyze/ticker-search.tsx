@@ -4,7 +4,8 @@ import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Loader2 } from 'lucide-react';
 
-export function TickerSearch({ basePath = '/analyze' }: { basePath?: string }) {
+export function TickerSearch({ basePath = '/analyze', size = 'md' }: { basePath?: string; size?: 'md' | 'lg' }) {
+  const isLg = size === 'lg';
   const router = useRouter();
   const [ticker, setTicker] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,9 +23,9 @@ export function TickerSearch({ basePath = '/analyze' }: { basePath?: string }) {
   );
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 w-full">
+    <form onSubmit={handleSubmit} className="flex gap-3 w-full">
       <div className="flex-1 relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-text-muted)]" />
+        <Search className={`absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] ${isLg ? 'w-6 h-6' : 'w-5 h-5'}`} />
         <input
           type="text"
           value={ticker}
@@ -32,7 +33,7 @@ export function TickerSearch({ basePath = '/analyze' }: { basePath?: string }) {
           placeholder="Enter ticker symbol (e.g. AAPL)"
           maxLength={5}
           disabled={loading}
-          className="w-full pl-12 pr-4 py-3.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors text-base tracking-wider disabled:opacity-60"
+          className={`w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-md text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors tracking-wider disabled:opacity-60 ${isLg ? 'pl-14 pr-5 py-5 text-xl' : 'pl-12 pr-4 py-3.5 text-base'}`}
           style={{ fontFamily: 'var(--font-mono)' }}
           autoFocus
         />
@@ -40,7 +41,7 @@ export function TickerSearch({ basePath = '/analyze' }: { basePath?: string }) {
       <button
         type="submit"
         disabled={!ticker.trim() || loading}
-        className="px-8 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded transition-colors text-sm whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+        className={`bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded-md transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 ${isLg ? 'px-10 py-5 text-lg' : 'px-8 py-3.5 text-sm'}`}
       >
         {loading ? (
           <>

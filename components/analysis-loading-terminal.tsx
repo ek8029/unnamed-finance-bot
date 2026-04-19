@@ -19,7 +19,7 @@ export function AnalysisLoadingTerminal() {
 
   // Extract ticker from URL
   useEffect(() => {
-    const match = window.location.pathname.match(/\/analyze\/([A-Za-z]+)/);
+    const match = window.location.pathname.match(/\/analyze\/([A-Za-z]{1,5})$/);
     if (match) setTicker(match[1].toUpperCase());
   }, []);
 

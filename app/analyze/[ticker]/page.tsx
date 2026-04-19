@@ -210,7 +210,7 @@ export default async function TickerAnalysisPage({ params }: Props) {
       <CinematicBg />
       <AnalysisNav />
 
-      <main className="relative z-10 flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 py-6">
+      <main className="relative z-10 flex-1 w-full max-w-[1800px] mx-auto px-3 sm:px-4 lg:px-6 py-6">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -276,7 +276,7 @@ export default async function TickerAnalysisPage({ params }: Props) {
       </main>
 
       <footer className="relative z-10 border-t border-[var(--color-border-subtle)] py-6">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 flex items-center justify-between">
+        <div className="max-w-[1800px] mx-auto px-3 sm:px-4 lg:px-6 flex items-center justify-between">
           <span className="type-eyebrow text-[var(--color-text-muted)]">helmterminal.dev</span>
           <div className="flex gap-4">
             <a href="/privacy" className="type-eyebrow text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors">Privacy</a>
@@ -291,7 +291,7 @@ export default async function TickerAnalysisPage({ params }: Props) {
 function AnalysisNav() {
   return (
     <header className="relative z-10 glass-nav">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
+      <div className="max-w-[1800px] mx-auto px-3 sm:px-4 lg:px-6 h-12 flex items-center justify-between">
         <a href="/" className="flex items-center gap-2.5">
           <HelmMark size={24} />
           <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
