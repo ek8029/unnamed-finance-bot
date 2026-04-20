@@ -7,7 +7,7 @@
 
 ALTER TABLE insights DROP CONSTRAINT IF EXISTS insights_insight_type_check;
 ALTER TABLE insights ADD CONSTRAINT insights_insight_type_check
-  CHECK (insight_type IN ('spending', 'portfolio', 'market', 'tax', 'credit', 'subscription'));
+  CHECK (insight_type IN ('spending', 'portfolio', 'market', 'tax', 'credit', 'subscription', 'cash_flow', 'performance', 'concentration'));
 
 -- =================================================================
 -- RECURRING_TRANSACTIONS: Add price_change_pct column
