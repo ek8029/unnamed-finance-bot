@@ -49,7 +49,7 @@ const FEATURES = [
     icon: Shield,
     title: 'Institutional-Grade Security',
     description:
-      'Bank-level encryption, SOC 2 practices, read-only account access via Plaid. We never store credentials and never execute trades.',
+      'Bank-level encryption, read-only account access via Plaid, and row-level security on all data. We never store credentials and never execute trades.',
   },
 ];
 
