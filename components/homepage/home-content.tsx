@@ -578,6 +578,45 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
         </motion.section>
 
         {/* ══════════════════════════════════════════════════════════════════
+            BUILT FOR — ICP segment selector
+            ══════════════════════════════════════════════════════════════════ */}
+        <motion.section
+          className="py-24 border-b border-white/[0.04]"
+          {...sectionReveal}
+        >
+          <div className="max-w-7xl mx-auto px-6">
+            <FadeIn>
+              <div className="text-center mb-16">
+                <span className="font-mono text-xs text-white/30 tracking-wider">— Built for</span>
+                <h2 className="text-[clamp(28px,3.5vw,44px)] font-bold leading-[1.1] tracking-tight text-white mt-4">
+                  One platform. Every type of investor.
+                </h2>
+              </div>
+            </FadeIn>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { title: 'Engineers', desc: 'RSU vesting, concentrated positions, multi-account chaos.', href: '/for/engineers', icon: '⌘' },
+                { title: 'Founders', desc: 'Equity events, angel checks, zero time to manage it all.', href: '/for/founders', icon: '◆' },
+                { title: 'Self-Directed', desc: '5 tools stitched together. One terminal to replace them.', href: '/for/investors', icon: '◈' },
+                { title: 'High Net Worth', desc: 'Your advisor charges 1% AUM. Helm charges $14.99/mo.', href: '/for/high-net-worth', icon: '◉' },
+              ].map((segment, i) => (
+                <FadeIn key={segment.title} delay={i * 80}>
+                  <Link
+                    href={segment.href}
+                    className="block p-6 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:border-[var(--color-gold)]/30 hover:bg-[var(--color-gold)]/[0.03] transition-all group"
+                  >
+                    <span className="text-2xl mb-3 block">{segment.icon}</span>
+                    <h3 className="text-lg font-bold text-white group-hover:text-[var(--color-gold)] transition-colors mb-2">{segment.title}</h3>
+                    <p className="text-sm text-white/50 leading-relaxed">{segment.desc}</p>
+                    <span className="inline-block mt-4 text-xs font-mono text-[var(--color-gold)] tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">Learn more →</span>
+                  </Link>
+                </FadeIn>
+              ))}
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ══════════════════════════════════════════════════════════════════
             PRICING — section 03
             ══════════════════════════════════════════════════════════════════ */}
         <motion.section
@@ -611,12 +650,12 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                 <div className="w-full max-w-sm ml-auto">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-mono text-xs text-white/40">Lifetime seats</span>
-                    <span className="font-mono text-xs text-[var(--color-gold)]">53 remaining</span>
+                    <span className="font-mono text-xs text-[var(--color-gold)]">187 remaining</span>
                   </div>
                   <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
                     <div
                       className="h-full bg-[var(--color-gold)] rounded-full"
-                      style={{ width: '47%' }}
+                      style={{ width: '7%' }}
                     />
                   </div>
                 </div>
