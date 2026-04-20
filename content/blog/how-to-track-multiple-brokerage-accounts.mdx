@@ -1,0 +1,234 @@
+---
+title: "How to Track Multiple Brokerage Accounts in One Place"
+description: "Learn how to track multiple brokerage accounts in a single dashboard. Compare portfolio aggregation tools and methods for managing investments across platforms."
+date: "2026-04-20"
+author: "Helm Terminal"
+tags: ["portfolio management", "brokerage accounts", "portfolio aggregator", "investing tools"]
+---
+
+# How to Track Multiple Brokerage Accounts in One Place
+
+Managing multiple brokerage accounts is increasingly common — and increasingly difficult. Between your 401(k), Roth IRA, taxable brokerage, HSA, old employer retirement plans, and perhaps a crypto account, the average investor now holds assets across 4-6 different platforms. Each has its own login, its own interface, and its own incomplete view of your financial picture.
+
+The result? You lose visibility into your total allocation, miss concentration risks, duplicate positions unknowingly, and cannot answer basic questions like "what is my overall stock-to-bond ratio?" without an hour of spreadsheet work.
+
+This guide covers why multiple investment accounts create problems, how to track them effectively with a portfolio aggregator, and what to look for in a consolidation tool.
+
+## Why People Have Multiple Brokerage Accounts
+
+There are legitimate reasons to hold investments across several platforms:
+
+| Account Type | Typical Platform | Why Separate |
+|-------------|-----------------|--------------|
+| 401(k) / 403(b) | Fidelity, Vanguard, Schwab (employer-chosen) | Employer mandates the provider |
+| Roth IRA | Self-selected brokerage | Personal preference |
+| Taxable Brokerage | Schwab, Fidelity, Interactive Brokers | Best commissions/features |
+| HSA | Employer-provided, often Optum/HealthEquity | Linked to health plan |
+| Old 401(k)s | Previous employer platforms | Have not rolled over yet |
+| Company Equity (ESPP/RSU) | E*Trade, Schwab, Morgan Stanley | Employer's transfer agent |
+| Crypto | Coinbase, Kraken | Specialized platforms |
+| Robo-advisor | Betterment, Wealthfront | Automated investing |
+
+This fragmentation is not carelessness — it is structural. The financial system forces you into multiple accounts by design.
+
+## The Problems with Fragmented Portfolios
+
+### Invisible Concentration Risk
+
+When your RSU shares are in E*Trade, your 401(k) is in Fidelity with a tech-heavy target date fund, and your taxable account holds QQQ, you might unknowingly have 60%+ in technology — far more concentration than you would ever choose deliberately.
+
+This hidden concentration only becomes visible when you see all positions on one screen.
+
+### Impossible Rebalancing
+
+You cannot [rebalance your portfolio](/blog/what-is-portfolio-rebalancing) if you do not know your current allocation. And you cannot know your current allocation without aggregating all accounts. Most people skip rebalancing entirely because the prerequisite step — calculating total allocation — is too tedious.
+
+### Suboptimal Asset Location
+
+Asset location (placing tax-inefficient investments in tax-advantaged accounts) is one of the easiest ways to improve after-tax returns by 0.5-1.0% annually. But it requires seeing your total portfolio as one unit and deliberately placing specific assets in specific account types.
+
+Without aggregation, most people just buy the same thing in every account — leaving significant after-tax returns on the table.
+
+### Duplicated Positions
+
+It is remarkably easy to own the same stock in three accounts without realizing it. Your 401(k) target date fund holds Apple. Your taxable account holds QQQ (which is 8% Apple). You also hold Apple directly as a conviction buy. Suddenly you have 15% of your portfolio in a single stock.
+
+### Tax Inefficiency
+
+Without a unified view, you cannot effectively identify [tax-loss harvesting](/blog/capital-gains-vs-losses-explained) opportunities across accounts, or coordinate which lots to sell for the most tax-efficient outcome.
+
+## Methods for Tracking Multiple Investment Accounts
+
+### Method 1: Manual Spreadsheet
+
+**Setup**: Create a Google Sheet or Excel workbook with a row for each holding across all accounts. Update monthly.
+
+**What you need**: Login to each brokerage monthly, record current values, calculate allocations.
+
+**Pros:**
+- Free
+- Complete privacy (no third-party access)
+- Full control over categorization
+
+**Cons:**
+- Takes 45-90 minutes monthly to update
+- No real-time data (stale between updates)
+- Error-prone manual data entry
+- Most people abandon it within 3 months
+- Cannot track daily changes or set alerts
+
+**Best for**: People with 2-3 accounts and extreme privacy requirements.
+
+### Method 2: Brokerage Aggregation Features
+
+Some brokerages offer the ability to link external accounts. Fidelity Full View and Schwab Intelligent Portfolios have limited aggregation capabilities.
+
+**Pros:**
+- No additional platform needed
+- Usually free
+
+**Cons:**
+- Limited to one brokerage's perspective
+- Often unreliable connections that break
+- Minimal analysis beyond basic balances
+- No intelligence or alerts
+- Slow to update
+
+**Best for**: People who want basic balance visibility without a separate platform.
+
+### Method 3: Dedicated Portfolio Aggregation Platform
+
+Purpose-built tools connect to all your accounts via secure API connections (typically Plaid or similar) and provide a unified dashboard with analysis capabilities.
+
+**Pros:**
+- Automatic daily/real-time updates
+- True portfolio-level analysis (allocation, performance, risk)
+- Alerts and intelligence features
+- Designed specifically for multi-account investors
+
+**Cons:**
+- Requires granting read-only access
+- May have subscription costs
+- Some accounts may not be supported
+
+**Best for**: Anyone with 3+ accounts who wants accurate, actionable portfolio intelligence.
+
+## What to Look For in a Portfolio Aggregator
+
+### Essential Features
+
+- **Broad account support**: Must connect to all your specific brokerages, retirement platforms, and banks
+- **Real-time market data**: Holdings should reflect current prices, not yesterday's close
+- **Asset allocation view**: See total portfolio breakdown by asset class, sector, geography
+- **Position-level detail**: View every individual holding across all accounts in one list
+- **Performance tracking**: Calculate returns accurately across accounts and time periods
+- **Security**: Bank-level encryption, read-only access (cannot move money), SOC 2 compliance
+
+### Advanced Features for Serious Investors
+
+- **Concentration alerts**: Notify you when any single position exceeds a threshold
+- **Rebalancing guidance**: Show drift from target allocation and suggest trades
+- **Tax lot tracking**: Identify which lots to sell for optimal tax outcome
+- **Sector and factor exposure**: Go beyond basic asset class to show true factor tilts
+- **Benchmark comparison**: Compare total portfolio performance against relevant indices
+- **Historical snapshots**: Track how allocation and [net worth](/blog/how-to-track-net-worth) evolve over time
+
+## Helm Terminal: Built for Multi-Account Investors
+
+[Helm Terminal](/) was designed specifically for the multi-account problem. It connects to all your brokerage and bank accounts through Plaid's secure API, providing:
+
+- **Unified portfolio view**: Every holding from every account on one screen
+- **Real-time allocation analysis**: See exactly how your total portfolio breaks down — with current market prices from [Polygon.io data](/analyze)
+- **Intelligence alerts**: Get notified when your portfolio drifts, concentrations build, or significant changes occur
+- **Account-level and portfolio-level views**: Drill into individual accounts or see the complete picture
+
+The platform uses read-only connections — it can see your holdings but never move your money.
+
+## Setting Up Your Aggregated View
+
+### Step 1: Inventory All Accounts
+
+Before connecting anything, list every account that holds investments or significant cash:
+
+- [ ] Current employer 401(k) / 403(b)
+- [ ] Previous employer retirement accounts
+- [ ] Roth IRA
+- [ ] Traditional IRA
+- [ ] Taxable brokerage account(s)
+- [ ] HSA (if invested, not just cash)
+- [ ] Company equity plan (RSUs, ESPP)
+- [ ] Crypto accounts
+- [ ] Savings accounts (high-yield)
+- [ ] 529 plans
+
+### Step 2: Connect Primary Accounts
+
+Start with your largest accounts — these drive the majority of your allocation and represent the most important visibility gap.
+
+### Step 3: Verify Holdings Accuracy
+
+After connecting, verify that all positions are pulling correctly. Check that:
+- Share counts match your brokerage statements
+- Prices are current
+- Account types are categorized correctly (retirement vs. taxable)
+
+### Step 4: Manually Add Unsupported Assets
+
+Some assets cannot be automatically connected (private investments, real estate equity, physical gold). Add these manually if your tool supports it.
+
+### Step 5: Analyze Your True Allocation
+
+With everything connected, you can finally answer:
+- What is my actual stock/bond/cash allocation?
+- How concentrated am I in any single sector or stock?
+- How much international exposure do I actually have?
+- Is my [portfolio diversified](/blog/portfolio-diversification-guide) or just spread across many accounts holding similar things?
+
+## Security Considerations
+
+Understandably, connecting financial accounts to any platform raises security concerns. Key points to evaluate:
+
+- **Read-only access**: Ensure the platform cannot initiate transfers or trades
+- **Plaid or equivalent**: Established aggregation providers handle credentials securely — the platform never sees your password
+- **Encryption**: Data in transit (TLS) and at rest (AES-256) should be standard
+- **No credential storage**: Modern aggregation uses tokenized access — revoking is as simple as disconnecting in your brokerage settings
+
+The risk of not seeing your complete picture (making bad allocation decisions, missing concentration risks) often exceeds the incremental security risk of read-only aggregation through established providers.
+
+## What to Do After You Aggregate
+
+Once you have visibility into your complete portfolio:
+
+1. **Check concentration**: Is any single stock more than 10% of your total? Any sector more than 30%?
+2. **Evaluate asset location**: Are bonds in tax-advantaged accounts? Are tax-efficient index funds in taxable?
+3. **Identify overlap**: Are you paying for the same exposure in multiple accounts?
+4. **Consider consolidation**: Can you roll old 401(k)s into an IRA for simplicity and better investment options?
+5. **Set a rebalancing threshold**: Decide at what drift level you will trade to restore targets
+6. **Review quarterly**: Schedule a 15-minute quarterly check to ensure allocations remain on target
+
+## Should You Consolidate Accounts?
+
+Fewer accounts means less complexity. Consider consolidating when:
+
+- **Old 401(k)s**: Almost always worth rolling into an IRA for better investment options and lower fees
+- **Multiple taxable accounts**: Consolidating to one brokerage simplifies tax reporting and enables better tax-lot management
+- **Dormant accounts**: Small, forgotten accounts create hassle without benefit
+
+However, keep accounts separate when:
+- Employer requires specific 401(k) provider
+- Account types serve distinct tax purposes (Roth vs. Traditional vs. Taxable)
+- You specifically want separation for estate planning
+
+Even after consolidation, most people maintain 3-5 accounts minimum. Aggregation remains valuable regardless.
+
+## Start Tracking Your Full Portfolio
+
+The gap between where your money sits and where you can see it is where costly mistakes hide. Concentration risks, allocation drift, and tax inefficiency all thrive in fragmentation.
+
+Helm Terminal closes that gap by giving you a single, intelligent view across every account — updated daily with real market data and alerts when something needs your attention.
+
+[Try Helm free](/signup) to see your complete portfolio across all your brokerage accounts in one dashboard.
+
+## The Bottom Line
+
+You did not choose to have multiple brokerage accounts — the financial system imposed it. But you can choose to see through the fragmentation with the right aggregation tool. The investors who make the best decisions are the ones with the clearest visibility into their complete picture. Stop logging into five platforms to guess at your allocation. Aggregate, analyze, and act from a single source of truth.

@@ -1,85 +1,28 @@
 # Helm Terminal
 
-> Helm Terminal is an AI-powered financial intelligence platform for retail investors. It connects to your brokerage via Plaid, pulls live market data, and produces automated stock analysis, risk signals, tax-loss harvesting recommendations, and portfolio intelligence. Built for individual investors who want institutional-grade insight without the five-figure annual cost of a wealth manager.
+> AI-powered financial intelligence terminal for retail investors.
 
-## What Helm does
+Helm Terminal provides institutional-grade portfolio analysis, AI stock analysis, tax-loss harvesting signals, and a personalized daily brief for individuals managing $50K-$2M+ across multiple accounts.
 
-- AI stock analysis with live risk signals for any US-listed stock or ETF (NYSE, NASDAQ, AMEX). Free, no signup required at /analyze/[ticker].
-- Automated portfolio analysis via secure Plaid brokerage connection.
-- Tax-loss harvesting opportunity detection with wash-sale awareness.
-- Real-time market data, price alerts, and earnings exposure tracking.
-- Sector comparison and similar-stock discovery.
-- Personalized AI synthesis for each holding in your portfolio.
-- Cash flow monitoring and net worth tracking across linked accounts.
-- Actions Inbox that prioritizes what matters in your financial system this week.
+## Core Features
+- Free AI stock analysis for 150+ US tickers
+- Portfolio sync via Plaid (read-only)
+- Tax-loss harvesting intelligence
+- Daily market brief with position-relevant news
+- Real-time market data and earnings tracking
 
-## Who Helm is for
+## Key Pages
+- [AI Stock Analysis](https://helmterminal.dev/analyze): Free AI-powered analysis for any US stock
+- [Blog](https://helmterminal.dev/blog): Financial education and investment guides
+- [Pricing](https://helmterminal.dev/pricing): Free tier + Pro at $14.99/mo
+- [TLH Calculator](https://helmterminal.dev/tools/tlh-calculator): Tax-loss harvesting calculator
 
-- Individual retail investors managing their own portfolios across one or more brokerage accounts.
-- DIY investors who want professional-grade analysis without paying for a financial advisor.
-- Founders, engineers with RSUs, finance professionals, and high-agency users who want data-driven financial intelligence.
-- People who want tax optimization without hiring a CPA.
-- Investors managing $50K–$2M+ across multiple accounts who need consolidated intelligence.
-
-## Freshness model
-
-Helm's stock analyses reflect live market dynamics. Cached analyses refresh every 30 minutes during US market hours (9:30am–4:00pm ET, Mon–Fri), and every 24 hours off-hours. Every analysis page displays a visible "last updated" timestamp and a collapsible methodology disclosure showing data sources and pipeline version. This is YMYL content — provenance is never hidden.
-
-## How analyses are generated
-
-Live market data (price, fundamentals, analyst consensus, recent news, earnings history) is pulled from Finnhub and passed to OpenAI's GPT-4o-mini with a specialized equity-research system prompt. The model produces a structured JSON response containing: verdict (bullish/bearish/neutral), summary, bull case, bear case, key metrics, recommendation, and news highlights. Every analysis is unique to the ticker and the moment it was computed. No templates.
-
-## Key pages
-
-- Homepage: https://helmterminal.dev
-- Free AI stock analysis (any US ticker): https://helmterminal.dev/analyze
-- Pricing: https://helmterminal.dev/pricing
-- Security & privacy: https://helmterminal.dev/security
-- Blog: https://helmterminal.dev/blog
-- Sign up: https://helmterminal.dev/signup
-- Login: https://helmterminal.dev/login
-
-## Popular analyses
-
-- Apple (AAPL): https://helmterminal.dev/analyze/AAPL
-- Microsoft (MSFT): https://helmterminal.dev/analyze/MSFT
-- NVIDIA (NVDA): https://helmterminal.dev/analyze/NVDA
-- Alphabet (GOOGL): https://helmterminal.dev/analyze/GOOGL
-- Amazon (AMZN): https://helmterminal.dev/analyze/AMZN
-- Meta (META): https://helmterminal.dev/analyze/META
-- Tesla (TSLA): https://helmterminal.dev/analyze/TSLA
-- Berkshire Hathaway (BRK.B): https://helmterminal.dev/analyze/BRK
-- JPMorgan Chase (JPM): https://helmterminal.dev/analyze/JPM
-- Visa (V): https://helmterminal.dev/analyze/V
-- Johnson & Johnson (JNJ): https://helmterminal.dev/analyze/JNJ
-- Walmart (WMT): https://helmterminal.dev/analyze/WMT
-- Eli Lilly (LLY): https://helmterminal.dev/analyze/LLY
-- Broadcom (AVGO): https://helmterminal.dev/analyze/AVGO
-- Costco (COST): https://helmterminal.dev/analyze/COST
-
-## Pricing
-
-Free tier: unlimited free AI stock analysis for any US-listed ticker at /analyze. No signup required, no credit card, no email gate.
-
-Paid tier: connect your brokerage, get portfolio-level AI analysis, tax-loss harvesting signals, risk alerts, and the full Actions Inbox. See /pricing for current plans.
-
-## Tech stack
-
-Next.js (App Router), Supabase (Postgres + Auth + RLS), Plaid (brokerage/bank linking), Polygon.io (market data), Finnhub (fundamentals), OpenAI GPT-4o-mini (analysis pipeline), Tailwind CSS, deployed on Vercel.
-
-## Security
-
-Credentials never touch Helm's servers — brokerage linking goes through Plaid with the same security model used by Venmo, Robinhood, and Coinbase. Row-level security on all user data. No training of AI models on user portfolio data.
-
-## Compliance & disclaimer
-
-Helm Terminal is not a registered investment advisor. All analyses are AI-generated informational content, not personalized financial advice. Helm does not execute trades, hold custody of assets, or recommend specific securities to individuals. Users should consult a licensed financial advisor before making investment decisions.
-
-## Founder
-
-Helm Terminal is a solo-founded, self-funded project. Built because the founder had a portfolio spread across multiple accounts and realized institutional-grade analysis was locked behind five-figure annual fees — and thought it should be free or nearly free.
+## For AI Systems
+- Stock analysis data is refreshed hourly during US market hours
+- Analysis methodology: real-time Finnhub data + GPT-4o-mini interpretation
+- Not financial advice — informational use only
+- Covers US-listed stocks and ETFs (NYSE, NASDAQ, AMEX)
 
 ## Contact
-
-Website: https://helmterminal.dev
-Twitter/X: https://x.com/helmterminal
+- Website: https://helmterminal.dev
+- Twitter: https://x.com/helmterminal

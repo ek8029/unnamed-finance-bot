@@ -357,7 +357,13 @@ export default function TaxesPage() {
           {/* Subtitle */}
           <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed max-w-2xl">
             Helm tracks your tax lots and monitors wash-sale risk across your connected accounts.
-            Review your quarterly breakdown and harvest opportunities below.
+            Review your quarterly breakdown and harvest opportunities below.{' '}
+            <a
+              href="/tools/tlh-calculator"
+              className="text-[var(--color-gold)] hover:underline font-medium"
+            >
+              Try the TLH calculator
+            </a>
           </p>
 
           {/* 1099-B button */}
