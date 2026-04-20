@@ -153,6 +153,66 @@ export default function BriefPage() {
   const issueNum = dayOfYear();
   const session = getMarketSession();
 
+  /* ─── Derived Data (memoized) — MUST be before early returns to satisfy React hook rules ─── */
+
+  const topGainers = useMemo(() => data ? [...data.movers].filter(m => m.changePct > 0).sort((a, b) => b.changePct - a.changePct).slice(0, 5) : [], [data]);
+  const topLosers = useMemo(() => data ? [...data.movers].filter(m => m.changePct < 0).sort((a, b) => a.changePct - b.changePct).slice(0, 5) : [], [data]);
+  const allMovers = useMemo(() => [...topGainers, ...topLosers].sort((a, b) => Math.abs(b.dollarImpact) - Math.abs(a.dollarImpact)).slice(0, 8), [topGainers, topLosers]);
+  const portfolioUp = data ? data.portfolio.overnightChangePct >= 0 : true;
+  const topSector = data && data.sectorHeat.length > 0 ? [...data.sectorHeat].sort((a, b) => b.weight - a.weight)[0] : null;
+  const biggestMover = allMovers[0] || null;
+  const readTime = data ? estimateReadTime(data) : 3;
+
+  const harvestCandidates = useMemo(() => data ? data.allHoldings.filter(h => h.changePct < -3).sort((a, b) => a.changePct - b.changePct) : [], [data]);
+  const showHarvestCTA = harvestCandidates.length > 0;
+
+  const leadHeadline = useMemo(() => {
+    if (!data) return '';
+    const abs = Math.abs(data.portfolio.overnightChangePct);
+    const earningsCount = data.earningsThisWeek.length;
+
+    if (abs > 3) {
+      return portfolioUp
+        ? `A ${abs.toFixed(1)}% surge reshapes your portfolio — here's what drove it`
+        : `Markets deliver a ${abs.toFixed(1)}% blow — what it means for your positions`;
+    }
+    if (earningsCount >= 3) {
+      return `${earningsCount} of your holdings report this week — positioning matters`;
+    }
+    if (biggestMover && Math.abs(biggestMover.changePct) > 4) {
+      return biggestMover.changePct > 0
+        ? `${biggestMover.ticker} jumps ${biggestMover.changePct.toFixed(1)}%, lifting your portfolio ${fmt(Math.abs(data.portfolio.overnightChange))}`
+        : `${biggestMover.ticker} drops ${Math.abs(biggestMover.changePct).toFixed(1)}% — your exposure and what to watch`;
+    }
+    if (data.portfolio.vsBenchmark !== null && Math.abs(data.portfolio.vsBenchmark) > 1.5) {
+      return data.portfolio.vsBenchmark > 0
+        ? `You're outpacing the S&P by ${data.portfolio.vsBenchmark.toFixed(1)}% — what's working`
+        : `Trailing the S&P by ${Math.abs(data.portfolio.vsBenchmark).toFixed(1)}% — where the drag is`;
+    }
+    if (data.market.vix && data.market.vix.price > 25) {
+      return `Volatility elevated at ${data.market.vix.price.toFixed(0)} — what it signals for your ${data.allHoldings.length} positions`;
+    }
+    if (showHarvestCTA) {
+      return `Tax-loss harvest window: ${harvestCandidates.length} position${harvestCandidates.length > 1 ? 's' : ''} down more than 3%`;
+    }
+    return portfolioUp
+      ? `Your portfolio gained ${fmt(Math.abs(data.portfolio.overnightChange))} — steady course across ${data.allHoldings.length} positions`
+      : `A ${fmt(Math.abs(data.portfolio.overnightChange))} drawdown across ${data.allHoldings.length} positions — the full picture`;
+  }, [data, portfolioUp, biggestMover, showHarvestCTA, harvestCandidates]);
+
+  const spyDir = data?.market.spy ? (data.market.spy.changePct >= 0 ? 'up' : 'down') : null;
+  const qqqDir = data?.market.qqq ? (data.market.qqq.changePct >= 0 ? 'up' : 'down') : null;
+
+  const marketTapeItems = useMemo(() => {
+    if (!data) return [];
+    const items: [string, string, string, boolean][] = [];
+    if (data.market.spy) items.push(['S&P 500', `$${data.market.spy.price.toFixed(2)}`, fmtPct(data.market.spy.changePct), data.market.spy.changePct >= 0]);
+    if (data.market.qqq) items.push(['NASDAQ', `$${data.market.qqq.price.toFixed(2)}`, fmtPct(data.market.qqq.changePct), data.market.qqq.changePct >= 0]);
+    if (data.market.vix) items.push(['VIX', data.market.vix.price.toFixed(2), data.market.vix.level.replace(/_/g, ' '), data.market.vix.price < 20]);
+    if (data.market.treasury) items.push(['BONDS (TLT)', `$${data.market.treasury.price.toFixed(2)}`, fmtPct(data.market.treasury.changePct), data.market.treasury.changePct >= 0]);
+    return items;
+  }, [data]);
+
   /* ─── Skeleton Loader ─── */
 
   if (loading) {
@@ -203,84 +263,7 @@ export default function BriefPage() {
     );
   }
 
-  /* ─── Derived Data (memoized) ─── */
-
-  const topGainers = useMemo(() => [...data.movers].filter(m => m.changePct > 0).sort((a, b) => b.changePct - a.changePct).slice(0, 5), [data.movers]);
-  const topLosers = useMemo(() => [...data.movers].filter(m => m.changePct < 0).sort((a, b) => a.changePct - b.changePct).slice(0, 5), [data.movers]);
-  const allMovers = useMemo(() => [...topGainers, ...topLosers].sort((a, b) => Math.abs(b.dollarImpact) - Math.abs(a.dollarImpact)).slice(0, 8), [topGainers, topLosers]);
-  const portfolioUp = data.portfolio.overnightChangePct >= 0;
-  const topSector = data.sectorHeat.length > 0 ? [...data.sectorHeat].sort((a, b) => b.weight - a.weight)[0] : null;
-  const biggestMover = allMovers[0] || null;
-  const readTime = estimateReadTime(data);
-
-  // Tax-loss harvest candidates: positions with large single-day drops (>3%)
-  // Note: this uses daily change, not total unrealized loss from cost basis
-  // (cost-basis data isn't available in the brief API — full harvest analysis is on /dashboard/taxes)
-  const harvestCandidates = useMemo(() => data.allHoldings.filter(h => h.changePct < -3).sort((a, b) => a.changePct - b.changePct), [data.allHoldings]);
-  const showHarvestCTA = harvestCandidates.length > 0;
-
-  // Generate editorial lead headline — narrative about what matters this week
-  const leadHeadline = useMemo(() => {
-    const abs = Math.abs(data.portfolio.overnightChangePct);
-    const earningsCount = data.earningsThisWeek.length;
-
-    // Big move narratives
-    if (abs > 3) {
-      return portfolioUp
-        ? `A ${abs.toFixed(1)}% surge reshapes your portfolio — here's what drove it`
-        : `Markets deliver a ${abs.toFixed(1)}% blow — what it means for your positions`;
-    }
-
-    // Earnings-heavy week
-    if (earningsCount >= 3) {
-      return `${earningsCount} of your holdings report this week — positioning matters`;
-    }
-
-    // Big single-name mover
-    if (biggestMover && Math.abs(biggestMover.changePct) > 4) {
-      return biggestMover.changePct > 0
-        ? `${biggestMover.ticker} jumps ${biggestMover.changePct.toFixed(1)}%, lifting your portfolio ${fmt(Math.abs(data.portfolio.overnightChange))}`
-        : `${biggestMover.ticker} drops ${Math.abs(biggestMover.changePct).toFixed(1)}% — your exposure and what to watch`;
-    }
-
-    // Benchmark divergence
-    if (data.portfolio.vsBenchmark !== null && Math.abs(data.portfolio.vsBenchmark) > 1.5) {
-      return data.portfolio.vsBenchmark > 0
-        ? `You're outpacing the S&P by ${data.portfolio.vsBenchmark.toFixed(1)}% — what's working`
-        : `Trailing the S&P by ${Math.abs(data.portfolio.vsBenchmark).toFixed(1)}% — where the drag is`;
-    }
-
-    // VIX elevated
-    if (data.market.vix && data.market.vix.price > 25) {
-      return `Volatility elevated at ${data.market.vix.price.toFixed(0)} — what it signals for your ${data.allHoldings.length} positions`;
-    }
-
-    // Harvest opportunity
-    if (showHarvestCTA) {
-      return `Tax-loss harvest window: ${harvestCandidates.length} position${harvestCandidates.length > 1 ? 's' : ''} down more than 5%`;
-    }
-
-    // Default — portfolio overview
-    return portfolioUp
-      ? `Your portfolio gained ${fmt(Math.abs(data.portfolio.overnightChange))} — steady course across ${data.allHoldings.length} positions`
-      : `A ${fmt(Math.abs(data.portfolio.overnightChange))} drawdown across ${data.allHoldings.length} positions — the full picture`;
-  }, [data.portfolio, data.earningsThisWeek, data.market.vix, data.allHoldings.length, biggestMover, portfolioUp, showHarvestCTA, harvestCandidates]);
-
-  // Market summary
-  const spyDir = data.market.spy ? (data.market.spy.changePct >= 0 ? 'up' : 'down') : null;
-  const qqqDir = data.market.qqq ? (data.market.qqq.changePct >= 0 ? 'up' : 'down') : null;
-
-  /* ─── Market tape items — only tickers with real data ─── */
-  const marketTapeItems = useMemo(() => {
-    const items: [string, string, string, boolean][] = [];
-    if (data.market.spy) items.push(['S&P 500', `$${data.market.spy.price.toFixed(2)}`, fmtPct(data.market.spy.changePct), data.market.spy.changePct >= 0]);
-    if (data.market.qqq) items.push(['NASDAQ', `$${data.market.qqq.price.toFixed(2)}`, fmtPct(data.market.qqq.changePct), data.market.qqq.changePct >= 0]);
-    if (data.market.vix) items.push(['VIX', data.market.vix.price.toFixed(2), data.market.vix.level.replace(/_/g, ' '), data.market.vix.price < 20]);
-    if (data.market.treasury) items.push(['BONDS (TLT)', `$${data.market.treasury.price.toFixed(2)}`, fmtPct(data.market.treasury.changePct), data.market.treasury.changePct >= 0]);
-    return items;
-  }, [data.market]);
-
-  /* ═══════════════════════════════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════════════════════════════════ */
   /*  RENDER                                                                */
   /* ═══════════════════════════════════════════════════════════════════════ */
 
