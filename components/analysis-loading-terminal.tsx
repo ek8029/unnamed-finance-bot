@@ -19,7 +19,10 @@ export function AnalysisLoadingTerminal() {
 
   // Extract ticker from URL
   useEffect(() => {
-    const match = window.location.pathname.match(/\/analyze\/([A-Za-z]{1,5})$/);
+    // Match /analyze/AAPL, /dashboard/analyze/AAPL, or /compare/AAPL-vs-MSFT
+    const analyzeMatch = window.location.pathname.match(/\/analyze\/([A-Za-z]{1,5})$/);
+    const compareMatch = window.location.pathname.match(/\/compare\/([A-Za-z]{1,5})-vs-([A-Za-z]{1,5})$/);
+    const match = analyzeMatch || (compareMatch ? [null, `${compareMatch[1]} vs ${compareMatch[2]}`] : null);
     if (match) setTicker(match[1].toUpperCase());
   }, []);
 
