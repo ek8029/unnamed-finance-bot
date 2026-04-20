@@ -8,7 +8,7 @@ import { Search, Wallet, LineChart, FileText } from 'lucide-react';
 export const metadata: Metadata = {
   title: 'The Terminal for Self-Directed Investors | Helm Terminal',
   description:
-    'Bloomberg-grade stock analysis for free. AI-powered verdicts on 150+ tickers, portfolio tracking, tax intelligence, and a daily brief that tells you what matters.',
+    'Bloomberg-grade stock analysis for free. AI-powered verdicts on 500+ tickers, portfolio tracking, tax intelligence, and a daily brief that tells you what matters.',
   openGraph: {
     title: 'The Terminal for Self-Directed Investors | Helm Terminal',
     description: 'Bloomberg-grade analysis. Free.',
@@ -29,7 +29,7 @@ const PAIN_POINTS = [
 const FEATURES = [
   {
     icon: Search,
-    title: 'AI Analysis for 150+ Tickers',
+    title: 'AI Analysis for 500+ Tickers',
     description:
       'Deep fundamental analysis with bull/bear cases, valuation metrics, analyst consensus, and opinionated AI verdicts. Updated during market hours. No subscription required.',
   },
@@ -63,7 +63,7 @@ export default function InvestorsPage() {
         <div className="max-w-[1200px] mx-auto px-3 sm:px-4 lg:px-6 h-12 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <HelmMark size={24} />
-            <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
+            <span className="text-[17px] font-bold tracking-tight uppercase">Helm</span>
           </Link>
           <div className="flex items-center gap-4">
             <Link
@@ -96,7 +96,7 @@ export default function InvestorsPage() {
             Bloomberg-grade analysis.<br className="hidden sm:block" />
             Free.
           </h1>
-          <p className="text-[15px] text-[var(--color-text-secondary)] max-w-lg mx-auto">
+          <p className="text-[17px] text-[var(--color-text-secondary)] max-w-lg mx-auto">
             Stop paying for 5 different tools. Helm combines AI-powered stock analysis, portfolio tracking,
             tax intelligence, and daily briefings into one terminal. No subscription required to start.
           </p>
@@ -105,7 +105,7 @@ export default function InvestorsPage() {
         {/* Pain Points */}
         <section className="mb-14">
           <h2
-            className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-5"
+            className="text-[17px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-5"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             The Self-Directed Problem
@@ -116,10 +116,10 @@ export default function InvestorsPage() {
                 key={i}
                 className="flex items-start gap-3 border border-[var(--color-border-base)] rounded-lg px-5 py-3.5"
               >
-                <span className="text-red-400 text-[14px] mt-0.5 shrink-0" style={{ fontFamily: 'var(--font-mono)' }}>
+                <span className="text-red-400 text-[18px] mt-0.5 shrink-0" style={{ fontFamily: 'var(--font-mono)' }}>
                   !!
                 </span>
-                <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">{point}</p>
+                <p className="text-[17px] text-[var(--color-text-secondary)] leading-relaxed">{point}</p>
               </div>
             ))}
           </div>
@@ -128,7 +128,7 @@ export default function InvestorsPage() {
         {/* Features */}
         <section className="mb-14">
           <h2
-            className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-6"
+            className="text-[17px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-6"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             One Terminal. Everything You Need.
@@ -144,10 +144,10 @@ export default function InvestorsPage() {
                   <div className="w-9 h-9 rounded-lg bg-[var(--color-gold)]/10 flex items-center justify-center mb-3">
                     <Icon className="w-4.5 h-4.5 text-[var(--color-gold)]" />
                   </div>
-                  <h3 className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1.5">
+                  <h3 className="text-[17px] font-semibold text-[var(--color-text-primary)] mb-1.5">
                     {feat.title}
                   </h3>
-                  <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                  <p className="text-[17px] text-[var(--color-text-secondary)] leading-relaxed">
                     {feat.description}
                   </p>
                 </div>
@@ -160,7 +160,7 @@ export default function InvestorsPage() {
         <section className="mb-14 text-center py-8 border-y border-[var(--color-border-subtle)]">
           <div className="grid grid-cols-3 gap-6 max-w-md mx-auto mb-6">
             <div>
-              <p className="text-[24px] font-bold text-[var(--color-gold)]" style={{ fontFamily: 'var(--font-mono)' }}>150+</p>
+              <p className="text-[24px] font-bold text-[var(--color-gold)]" style={{ fontFamily: 'var(--font-mono)' }}>500+</p>
               <p className="text-[11px] text-[var(--color-text-muted)]">Tickers Analyzed</p>
             </div>
             <div>
@@ -172,7 +172,7 @@ export default function InvestorsPage() {
               <p className="text-[11px] text-[var(--color-text-muted)]">Portfolio Monitoring</p>
             </div>
           </div>
-          <p className="text-[13px] text-[var(--color-text-secondary)]">
+          <p className="text-[17px] text-[var(--color-text-secondary)]">
             Institutional-grade intelligence. Retail-friendly pricing.
           </p>
         </section>
@@ -182,20 +182,20 @@ export default function InvestorsPage() {
           <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-3">
             Your edge starts here
           </h2>
-          <p className="text-[14px] text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">
+          <p className="text-[18px] text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">
             Free AI stock analysis. Free portfolio sync. Free daily briefs.
             Pro features available when you need them.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/signup"
-              className="px-6 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[13px] font-semibold rounded transition-colors"
+              className="px-6 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[17px] font-semibold rounded transition-colors"
             >
               Sign Up Free
             </Link>
             <Link
               href="/analyze"
-              className="px-5 py-2.5 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] text-[13px] font-medium rounded transition-colors"
+              className="px-5 py-2.5 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] text-[17px] font-medium rounded transition-colors"
             >
               Try AI Analysis
             </Link>

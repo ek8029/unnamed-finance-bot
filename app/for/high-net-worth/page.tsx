@@ -63,7 +63,7 @@ export default function HighNetWorthPage() {
         <div className="max-w-[1200px] mx-auto px-3 sm:px-4 lg:px-6 h-12 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <HelmMark size={24} />
-            <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
+            <span className="text-[17px] font-bold tracking-tight uppercase">Helm</span>
           </Link>
           <div className="flex items-center gap-4">
             <Link
@@ -96,7 +96,7 @@ export default function HighNetWorthPage() {
             Your advisor charges 1% AUM.<br className="hidden sm:block" />
             Helm charges $14.99/month.
           </h1>
-          <p className="text-[15px] text-[var(--color-text-secondary)] max-w-lg mx-auto">
+          <p className="text-[17px] text-[var(--color-text-secondary)] max-w-lg mx-auto">
             Institutional-grade portfolio intelligence without the institutional price.
             Real-time monitoring, AI analysis, and a daily brief tailored to your holdings.
           </p>
@@ -128,9 +128,9 @@ export default function HighNetWorthPage() {
                 key={row.feature}
                 className={`grid grid-cols-3 border-b border-[var(--color-border-subtle)] last:border-b-0 ${i % 2 === 0 ? '' : 'bg-white/[0.015]'}`}
               >
-                <div className="px-4 py-2.5 text-[13px] text-[var(--color-text-secondary)]">{row.feature}</div>
-                <div className="px-4 py-2.5 text-[13px] text-[var(--color-text-muted)] text-center">{row.advisor}</div>
-                <div className="px-4 py-2.5 text-[13px] text-[var(--color-text-primary)] text-center font-medium">{row.helm}</div>
+                <div className="px-4 py-2.5 text-[17px] text-[var(--color-text-secondary)]">{row.feature}</div>
+                <div className="px-4 py-2.5 text-[17px] text-[var(--color-text-muted)] text-center">{row.advisor}</div>
+                <div className="px-4 py-2.5 text-[17px] text-[var(--color-text-primary)] text-center font-medium">{row.helm}</div>
               </div>
             ))}
           </div>
@@ -139,7 +139,7 @@ export default function HighNetWorthPage() {
         {/* Pain Points */}
         <section className="mb-14">
           <h2
-            className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-5"
+            className="text-[17px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-5"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             The Wealth Management Gap
@@ -150,10 +150,10 @@ export default function HighNetWorthPage() {
                 key={i}
                 className="flex items-start gap-3 border border-[var(--color-border-base)] rounded-lg px-5 py-3.5"
               >
-                <span className="text-red-400 text-[14px] mt-0.5 shrink-0" style={{ fontFamily: 'var(--font-mono)' }}>
+                <span className="text-red-400 text-[18px] mt-0.5 shrink-0" style={{ fontFamily: 'var(--font-mono)' }}>
                   !!
                 </span>
-                <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">{point}</p>
+                <p className="text-[17px] text-[var(--color-text-secondary)] leading-relaxed">{point}</p>
               </div>
             ))}
           </div>
@@ -162,7 +162,7 @@ export default function HighNetWorthPage() {
         {/* Features */}
         <section className="mb-14">
           <h2
-            className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-6"
+            className="text-[17px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-6"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             What You Get
@@ -178,10 +178,10 @@ export default function HighNetWorthPage() {
                   <div className="w-9 h-9 rounded-lg bg-[var(--color-gold)]/10 flex items-center justify-center mb-3">
                     <Icon className="w-4.5 h-4.5 text-[var(--color-gold)]" />
                   </div>
-                  <h3 className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1.5">
+                  <h3 className="text-[17px] font-semibold text-[var(--color-text-primary)] mb-1.5">
                     {feat.title}
                   </h3>
-                  <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                  <p className="text-[17px] text-[var(--color-text-secondary)] leading-relaxed">
                     {feat.description}
                   </p>
                 </div>
@@ -198,7 +198,7 @@ export default function HighNetWorthPage() {
           >
             Security First
           </p>
-          <p className="text-[14px] text-[var(--color-text-secondary)] max-w-lg mx-auto leading-relaxed">
+          <p className="text-[18px] text-[var(--color-text-secondary)] max-w-lg mx-auto leading-relaxed">
             Helm uses Plaid for bank-level encrypted, read-only account access. We never store your bank credentials,
             never execute trades, and never share your data. Your financial information is yours.
           </p>
@@ -216,19 +216,19 @@ export default function HighNetWorthPage() {
           <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-3">
             See what your advisor is not showing you
           </h2>
-          <p className="text-[14px] text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">
+          <p className="text-[18px] text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">
             Start with the free tier. Connect your accounts and see your portfolio like never before.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/signup"
-              className="px-6 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[13px] font-semibold rounded transition-colors"
+              className="px-6 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[17px] font-semibold rounded transition-colors"
             >
               Sign Up Free
             </Link>
             <Link
               href="/pricing"
-              className="px-5 py-2.5 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] text-[13px] font-medium rounded transition-colors"
+              className="px-5 py-2.5 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] text-[17px] font-medium rounded transition-colors"
             >
               View Pricing
             </Link>

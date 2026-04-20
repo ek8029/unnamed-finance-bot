@@ -37,7 +37,7 @@ const FEATURES = [
     icon: Brain,
     title: 'AI Stock Analysis',
     description:
-      'Deep analysis for 150+ tickers with bull/bear cases, valuation metrics, and opinionated verdicts. Due diligence in seconds, not hours.',
+      'Deep analysis for 500+ tickers with bull/bear cases, valuation metrics, and opinionated verdicts. Due diligence in seconds, not hours.',
   },
   {
     icon: Eye,
@@ -63,7 +63,7 @@ export default function FoundersPage() {
         <div className="max-w-[1200px] mx-auto px-3 sm:px-4 lg:px-6 h-12 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <HelmMark size={24} />
-            <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
+            <span className="text-[17px] font-bold tracking-tight uppercase">Helm</span>
           </Link>
           <div className="flex items-center gap-4">
             <Link
@@ -96,7 +96,7 @@ export default function FoundersPage() {
             You raised capital for your company.<br className="hidden sm:block" />
             Who&apos;s managing yours?
           </h1>
-          <p className="text-[15px] text-[var(--color-text-secondary)] max-w-lg mx-auto">
+          <p className="text-[17px] text-[var(--color-text-secondary)] max-w-lg mx-auto">
             Building a company is a full-time obsession. Helm monitors your personal portfolio
             so your finances don&apos;t become the thing that falls through the cracks.
           </p>
@@ -105,7 +105,7 @@ export default function FoundersPage() {
         {/* Pain Points */}
         <section className="mb-14">
           <h2
-            className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-5"
+            className="text-[17px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-5"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             The Founder Problem
@@ -116,10 +116,10 @@ export default function FoundersPage() {
                 key={i}
                 className="flex items-start gap-3 border border-[var(--color-border-base)] rounded-lg px-5 py-3.5"
               >
-                <span className="text-red-400 text-[14px] mt-0.5 shrink-0" style={{ fontFamily: 'var(--font-mono)' }}>
+                <span className="text-red-400 text-[18px] mt-0.5 shrink-0" style={{ fontFamily: 'var(--font-mono)' }}>
                   !!
                 </span>
-                <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">{point}</p>
+                <p className="text-[17px] text-[var(--color-text-secondary)] leading-relaxed">{point}</p>
               </div>
             ))}
           </div>
@@ -128,7 +128,7 @@ export default function FoundersPage() {
         {/* Features */}
         <section className="mb-14">
           <h2
-            className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-6"
+            className="text-[17px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-6"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             Helm Does the Work
@@ -144,10 +144,10 @@ export default function FoundersPage() {
                   <div className="w-9 h-9 rounded-lg bg-[var(--color-gold)]/10 flex items-center justify-center mb-3">
                     <Icon className="w-4.5 h-4.5 text-[var(--color-gold)]" />
                   </div>
-                  <h3 className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1.5">
+                  <h3 className="text-[17px] font-semibold text-[var(--color-text-primary)] mb-1.5">
                     {feat.title}
                   </h3>
-                  <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                  <p className="text-[17px] text-[var(--color-text-secondary)] leading-relaxed">
                     {feat.description}
                   </p>
                 </div>
@@ -158,7 +158,7 @@ export default function FoundersPage() {
 
         {/* Social Proof */}
         <section className="mb-14 text-center py-8 border-y border-[var(--color-border-subtle)]">
-          <blockquote className="text-[16px] italic text-[var(--color-text-secondary)] leading-relaxed max-w-lg mx-auto mb-3">
+          <blockquote className="text-[18px] italic text-[var(--color-text-secondary)] leading-relaxed max-w-lg mx-auto mb-3">
             &ldquo;As a founder, I needed something that would just tell me what matters in my portfolio this week
             without me having to dig. Helm is exactly that.&rdquo;
           </blockquote>
@@ -172,12 +172,12 @@ export default function FoundersPage() {
           <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-3">
             Your company has a dashboard. Your money should too.
           </h2>
-          <p className="text-[14px] text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">
+          <p className="text-[18px] text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">
             Free tier includes portfolio sync, daily briefs, and AI analysis. Set up in under 3 minutes.
           </p>
           <Link
             href="/signup"
-            className="inline-block px-6 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[13px] font-semibold rounded transition-colors"
+            className="inline-block px-6 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[17px] font-semibold rounded transition-colors"
           >
             Sign Up Free
           </Link>

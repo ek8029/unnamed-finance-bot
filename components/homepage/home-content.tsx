@@ -23,6 +23,8 @@ const NAV_LINKS = [
     { label: 'Stock Analyzer', href: '/analyze', desc: 'AI-powered stock analysis' },
     { label: 'Stock Comparison', href: '/compare', desc: 'Side-by-side ticker comparison' },
     { label: 'TLH Calculator', href: '/tools/tlh-calculator', desc: 'Tax-loss harvesting estimator' },
+    { label: 'For Engineers', href: '/for/engineers', desc: 'RSU tracking & portfolio intelligence' },
+    { label: 'For Investors', href: '/for/investors', desc: 'Bloomberg-grade analysis, free' },
   ]},
   { label: 'Blog', href: '/blog' },
 ];
@@ -93,15 +95,18 @@ const FOOTER_PRODUCT = [
 
 const FOOTER_TOOLS = [
   { label: 'Stock Analyzer', href: '/analyze' },
-  { label: 'Portfolio View', href: '/dashboard/portfolio' },
-  { label: 'Net Worth', href: '/dashboard' },
-  { label: 'Actions Inbox', href: '/dashboard/actions' },
+  { label: 'Stock Comparison', href: '/compare' },
+  { label: 'TLH Calculator', href: '/tools/tlh-calculator' },
+  { label: 'For Engineers', href: '/for/engineers' },
+  { label: 'For Investors', href: '/for/investors' },
+  { label: 'For Founders', href: '/for/founders' },
 ];
 
 const FOOTER_COMPANY = [
+  { label: 'Twitter / X', href: 'https://x.com/helmterminal' },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/company/helmfintech' },
   { label: 'Blog', href: '/blog' },
-  { label: 'About', href: '/about' },
-  { label: 'Contact', href: 'mailto:hello@helmterminal.dev' },
+  { label: 'helmterminal@gmail.com', href: 'mailto:helmterminal@gmail.com' },
 ];
 
 const FOOTER_LEGAL = [

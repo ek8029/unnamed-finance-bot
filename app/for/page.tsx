@@ -40,7 +40,7 @@ const SEGMENTS = [
     href: '/for/investors',
     icon: TrendingUp,
     title: 'Self-Directed Investors',
-    subtitle: '150+ ticker analysis, portfolio tracking, tax intelligence',
+    subtitle: '500+ ticker analysis, portfolio tracking, tax intelligence',
     description:
       'Bloomberg-grade analysis without the Bloomberg price. AI-powered verdicts, real-time data, and actionable insights.',
   },
@@ -64,7 +64,7 @@ export default function ForHubPage() {
         <div className="max-w-[1200px] mx-auto px-3 sm:px-4 lg:px-6 h-12 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <HelmMark size={24} />
-            <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
+            <span className="text-[17px] font-bold tracking-tight uppercase">Helm</span>
           </Link>
           <div className="flex items-center gap-4">
             <Link
@@ -96,7 +96,7 @@ export default function ForHubPage() {
           <h1 className="text-[32px] sm:text-[42px] font-bold text-[var(--color-text-primary)] leading-tight mb-4">
             Financial intelligence,<br className="hidden sm:block" /> tailored to your world
           </h1>
-          <p className="text-[15px] text-[var(--color-text-secondary)] max-w-lg mx-auto">
+          <p className="text-[17px] text-[var(--color-text-secondary)] max-w-lg mx-auto">
             Helm adapts to your financial complexity. Whether you hold RSUs, manage angel portfolios,
             or just want Bloomberg without the price tag.
           </p>
@@ -126,7 +126,7 @@ export default function ForHubPage() {
                     >
                       {seg.subtitle}
                     </p>
-                    <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                    <p className="text-[17px] text-[var(--color-text-secondary)] leading-relaxed">
                       {seg.description}
                     </p>
                   </div>
@@ -144,12 +144,12 @@ export default function ForHubPage() {
           <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-3">
             Ready to take the helm?
           </h2>
-          <p className="text-[14px] text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">
+          <p className="text-[18px] text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">
             Institutional-grade financial intelligence. Free to start.
           </p>
           <Link
             href="/signup"
-            className="inline-block px-6 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[13px] font-semibold rounded transition-colors"
+            className="inline-block px-6 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[17px] font-semibold rounded transition-colors"
           >
             Sign Up Free
           </Link>

@@ -63,7 +63,7 @@ export default function EngineersPage() {
         <div className="max-w-[1200px] mx-auto px-3 sm:px-4 lg:px-6 h-12 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <HelmMark size={24} />
-            <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
+            <span className="text-[17px] font-bold tracking-tight uppercase">Helm</span>
           </Link>
           <div className="flex items-center gap-4">
             <Link
@@ -96,7 +96,7 @@ export default function EngineersPage() {
             You optimize systems for a living.<br className="hidden sm:block" />
             Why is your portfolio still a spreadsheet?
           </h1>
-          <p className="text-[15px] text-[var(--color-text-secondary)] max-w-lg mx-auto">
+          <p className="text-[17px] text-[var(--color-text-secondary)] max-w-lg mx-auto">
             Helm brings the same rigor you apply to production systems to your financial infrastructure.
             Automated monitoring, intelligent alerts, and zero manual reconciliation.
           </p>
@@ -105,7 +105,7 @@ export default function EngineersPage() {
         {/* Pain Points */}
         <section className="mb-14">
           <h2
-            className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-5"
+            className="text-[17px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-5"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             Sound Familiar?
@@ -116,10 +116,10 @@ export default function EngineersPage() {
                 key={i}
                 className="flex items-start gap-3 border border-[var(--color-border-base)] rounded-lg px-5 py-3.5"
               >
-                <span className="text-red-400 text-[14px] mt-0.5 shrink-0" style={{ fontFamily: 'var(--font-mono)' }}>
+                <span className="text-red-400 text-[18px] mt-0.5 shrink-0" style={{ fontFamily: 'var(--font-mono)' }}>
                   !!
                 </span>
-                <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">{point}</p>
+                <p className="text-[17px] text-[var(--color-text-secondary)] leading-relaxed">{point}</p>
               </div>
             ))}
           </div>
@@ -128,7 +128,7 @@ export default function EngineersPage() {
         {/* Features */}
         <section className="mb-14">
           <h2
-            className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-6"
+            className="text-[17px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-6"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             How Helm Fixes It
@@ -144,10 +144,10 @@ export default function EngineersPage() {
                   <div className="w-9 h-9 rounded-lg bg-[var(--color-gold)]/10 flex items-center justify-center mb-3">
                     <Icon className="w-4.5 h-4.5 text-[var(--color-gold)]" />
                   </div>
-                  <h3 className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1.5">
+                  <h3 className="text-[17px] font-semibold text-[var(--color-text-primary)] mb-1.5">
                     {feat.title}
                   </h3>
-                  <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                  <p className="text-[17px] text-[var(--color-text-secondary)] leading-relaxed">
                     {feat.description}
                   </p>
                 </div>
@@ -158,7 +158,7 @@ export default function EngineersPage() {
 
         {/* Social Proof */}
         <section className="mb-14 text-center py-8 border-y border-[var(--color-border-subtle)]">
-          <blockquote className="text-[16px] italic text-[var(--color-text-secondary)] leading-relaxed max-w-lg mx-auto mb-3">
+          <blockquote className="text-[18px] italic text-[var(--color-text-secondary)] leading-relaxed max-w-lg mx-auto mb-3">
             &ldquo;I built Helm because I was tired of checking 4 different apps to understand my own financial picture.
             Engineers deserve infrastructure-grade tools for their money.&rdquo;
           </blockquote>
@@ -172,12 +172,12 @@ export default function EngineersPage() {
           <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-3">
             Stop manually reconciling. Start monitoring.
           </h2>
-          <p className="text-[14px] text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">
-            Free tier includes portfolio sync, daily briefs, and AI analysis for 150+ tickers.
+          <p className="text-[18px] text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">
+            Free tier includes portfolio sync, daily briefs, and AI analysis for 500+ tickers.
           </p>
           <Link
             href="/signup"
-            className="inline-block px-6 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[13px] font-semibold rounded transition-colors"
+            className="inline-block px-6 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[17px] font-semibold rounded transition-colors"
           >
             Sign Up Free
           </Link>
