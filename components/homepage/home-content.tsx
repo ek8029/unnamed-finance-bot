@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { ArrowRight, Search, Loader2, Check } from 'lucide-react';
+import { ArrowRight, Search, Loader2, Check, ChevronDown } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
 import { InteractiveGrid, FadeIn } from '@/app/landing-effects';
 import { HeroAnalysisDemo } from './hero-analysis-demo';
@@ -19,7 +19,11 @@ const NAV_LINKS = [
   { label: 'Analyze', href: '/analyze' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'Security', href: '/security' },
-  { label: 'Tools', href: '/tools/tlh-calculator' },
+  { label: 'Tools', href: '#', children: [
+    { label: 'Stock Analyzer', href: '/analyze', desc: 'AI-powered stock analysis' },
+    { label: 'Stock Comparison', href: '/compare', desc: 'Side-by-side ticker comparison' },
+    { label: 'TLH Calculator', href: '/tools/tlh-calculator', desc: 'Tax-loss harvesting estimator' },
+  ]},
   { label: 'Blog', href: '/blog' },
 ];
 
@@ -167,6 +171,47 @@ function HeroSearch() {
    HomeContent
    ═══════════════════════════════════════════════════════════════════════════ */
 
+function ToolsDropdown({ items }: { items: { label: string; href: string; desc: string }[] }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="text-[13px] text-white/50 hover:text-white/90 transition-colors flex items-center gap-1"
+      >
+        Tools
+        <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-2 w-[240px] bg-[#0a0a0a] border border-white/[0.08] rounded-lg shadow-2xl py-2 z-50">
+          {items.map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              onClick={() => setOpen(false)}
+              className="block px-4 py-2.5 hover:bg-white/[0.04] transition-colors"
+            >
+              <div className="text-[13px] text-white/80 font-medium">{item.label}</div>
+              <div className="text-[11px] text-white/35 mt-0.5">{item.desc}</div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAnalyses: DemoAnalysis[]; tickerTape?: TickerTapeItem[] }) {
   const router = useRouter();
   const { scrollY } = useScroll();
@@ -213,13 +258,17 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
           {/* Center: Nav links — hidden on mobile */}
           <div className="hidden md:flex items-center gap-8">
             {NAV_LINKS.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className="text-[13px] text-white/50 hover:text-white/90 transition-colors"
-              >
-                {link.label}
-              </Link>
+              'children' in link && link.children ? (
+                <ToolsDropdown key={link.label} items={link.children} />
+              ) : (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className="text-[13px] text-white/50 hover:text-white/90 transition-colors"
+                >
+                  {link.label}
+                </Link>
+              )
             ))}
           </div>
 
@@ -268,6 +317,21 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             className="md:hidden border-b border-white/[0.06] bg-[#080808]/95 backdrop-blur-xl px-6 pb-4 pt-2"
           >
             {NAV_LINKS.map((link) => (
+              'children' in link && link.children ? (
+                <div key={link.label}>
+                  <span className="block py-2.5 text-sm text-white/40 font-medium">{link.label}</span>
+                  {link.children.map((child: { label: string; href: string; desc: string }) => (
+                    <Link
+                      key={child.label}
+                      href={child.href}
+                      className="block py-2 pl-4 text-sm text-white/60 hover:text-white transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+              ) : (
               <Link
                 key={link.label}
                 href={link.href}
@@ -276,6 +340,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               >
                 {link.label}
               </Link>
+              )
             ))}
             <Link
               href="/login"
