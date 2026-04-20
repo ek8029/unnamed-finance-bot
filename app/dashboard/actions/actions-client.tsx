@@ -325,7 +325,7 @@ export function ActionsClient({ initialActions }: { initialActions: ActionItem[]
                 onClick={() => handleTabChange(tab.key)}
                 role="tab"
                 aria-selected={activeTab === tab.key}
-                className={`px-3 py-1.5 text-[13px] font-medium rounded-md motion-safe:transition-all motion-safe:duration-150 ${
+                className={`px-3 py-1.5 text-[14px] font-medium rounded-md motion-safe:transition-all motion-safe:duration-150 ${
                   activeTab === tab.key
                     ? 'bg-[var(--color-bg-elevated)] text-[var(--color-text-primary)] shadow-sm'
                     : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
@@ -340,7 +340,7 @@ export function ActionsClient({ initialActions }: { initialActions: ActionItem[]
           onClick={handleGenerate}
           disabled={generating}
           aria-label="Analyze now - refresh actions"
-          className="flex items-center gap-2 px-3 md:px-4 py-2 text-[13px] font-medium bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black rounded-lg motion-safe:transition-colors disabled:opacity-50 flex-shrink-0"
+          className="flex items-center gap-2 px-3 md:px-4 py-2 text-[14px] font-medium bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black rounded-lg motion-safe:transition-colors disabled:opacity-50 flex-shrink-0"
         >
           {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
           <span className="hidden sm:inline">Analyze Now</span>
@@ -362,7 +362,7 @@ export function ActionsClient({ initialActions }: { initialActions: ActionItem[]
                 onClick={() => setActiveCategory(cat)}
                 aria-label={`Filter by ${cfg.label}`}
                 aria-current={isActive ? 'true' : undefined}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-full whitespace-nowrap flex-shrink-0 motion-safe:transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium rounded-full whitespace-nowrap flex-shrink-0 motion-safe:transition-colors ${
                   isActive
                     ? 'bg-[var(--color-gold-surface)] text-[var(--color-gold)] border border-[var(--color-gold-border)]'
                     : 'bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border border-[var(--color-border-subtle)] hover:text-[var(--color-text-secondary)]'
@@ -371,7 +371,7 @@ export function ActionsClient({ initialActions }: { initialActions: ActionItem[]
                 <Icon className="w-3.5 h-3.5 flex-shrink-0" />
                 <span>{cfg.label}</span>
                 {count > 0 && (
-                  <span className={`text-[10px] font-mono min-w-[16px] text-center rounded-full px-1 ${
+                  <span className={`text-[11px] font-mono min-w-[16px] text-center rounded-full px-1 ${
                     isActive
                       ? 'text-[var(--color-gold)]'
                       : 'text-[var(--color-text-muted)]'
@@ -414,9 +414,9 @@ export function ActionsClient({ initialActions }: { initialActions: ActionItem[]
                 }`}
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
-                <span className="text-[13px] font-medium flex-1 truncate">{cfg.label}</span>
+                <span className="text-[14px] font-medium flex-1 truncate">{cfg.label}</span>
                 {count > 0 && (
-                  <span className={`text-[11px] font-mono min-w-[20px] text-center rounded-full px-1.5 py-0.5 ${
+                  <span className={`text-[12px] font-mono min-w-[20px] text-center rounded-full px-1.5 py-0.5 ${
                     isActive
                       ? 'bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
                       : 'bg-[var(--color-bg-surface)] text-[var(--color-text-muted)]'
@@ -434,11 +434,11 @@ export function ActionsClient({ initialActions }: { initialActions: ActionItem[]
           aria-label="Action items"
           className={`${
             mobileView === 'detail' ? 'hidden' : 'flex'
-          } md:flex w-full md:w-[380px] flex-shrink-0 border-r border-[var(--color-border-base)] bg-[var(--color-bg-base)] flex-col min-h-0`}
+          } md:flex w-full md:w-[440px] flex-shrink-0 border-r border-[var(--color-border-base)] bg-[var(--color-bg-base)] flex-col min-h-0`}
         >
           {/* List Header */}
           <div className="px-4 py-3 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
-            <h2 className="text-[12px] font-mono text-[var(--color-text-muted)] uppercase tracking-wider">
+            <h2 className="text-[13px] font-mono text-[var(--color-text-muted)] uppercase tracking-wider">
               {filteredActions.length} {filteredActions.length === 1 ? 'action' : 'actions'}
             </h2>
             {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--color-text-muted)]" />}
@@ -449,11 +449,11 @@ export function ActionsClient({ initialActions }: { initialActions: ActionItem[]
             {filteredActions.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full px-6 text-center">
                 <Lightbulb className="w-8 h-8 text-[var(--color-text-muted)] mb-3 opacity-40" />
-                <p className="text-[13px] text-[var(--color-text-muted)]">
+                <p className="text-[14px] text-[var(--color-text-muted)]">
                   {activeTab === 'open' ? 'No open actions' : `No ${activeTab} actions`}
                 </p>
                 {activeTab === 'open' && (
-                  <p className="text-[12px] text-[var(--color-text-muted)] mt-1 opacity-60">
+                  <p className="text-[13px] text-[var(--color-text-muted)] mt-1 opacity-60">
                     Click Analyze Now to scan your data
                   </p>
                 )}
@@ -467,7 +467,7 @@ export function ActionsClient({ initialActions }: { initialActions: ActionItem[]
                   <button
                     key={action.id}
                     onClick={() => handleSelectAction(action.id)}
-                    className={`w-full text-left px-4 py-3 border-b border-[var(--color-border-subtle)] motion-safe:transition-all motion-safe:duration-100 relative ${
+                    className={`w-full text-left px-5 py-4 border-b border-[var(--color-border-subtle)] motion-safe:transition-all motion-safe:duration-100 relative ${
                       isSelected
                         ? 'bg-[var(--color-gold-surface)]'
                         : 'hover:bg-[var(--color-bg-surface)]'
@@ -479,30 +479,30 @@ export function ActionsClient({ initialActions }: { initialActions: ActionItem[]
                     )}
 
                     {/* Row 1: Priority badge + Category + Timestamp */}
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className={`text-[10px] font-bold px-1.5 py-[1px] rounded border uppercase tracking-wide ${pCfg.className}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`text-[12px] font-bold px-2 py-[2px] rounded border uppercase tracking-wide ${pCfg.className}`}>
                         {pCfg.label}
                       </span>
-                      <span className="text-[11px] font-mono text-[var(--color-text-muted)]">
+                      <span className="text-[13px] font-mono text-[var(--color-text-muted)]">
                         {categoryLabels[action.type] || action.type}
                       </span>
-                      <span className="text-[11px] text-[var(--color-text-muted)] ml-auto">
+                      <span className="text-[13px] text-[var(--color-text-muted)] ml-auto">
                         {relativeTime(action.created_at)}
                       </span>
                     </div>
 
                     {/* Row 2: Title */}
-                    <h3 className="text-[14px] font-semibold text-[var(--color-text-primary)] leading-snug line-clamp-2">
+                    <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)] leading-snug line-clamp-2">
                       {action.title}
                     </h3>
 
                     {/* Row 3: Summary + Impact */}
-                    <div className="flex items-center gap-2 mt-1">
-                      <p className="text-[12px] text-[var(--color-text-muted)] truncate flex-1 leading-relaxed">
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <p className="text-[14px] text-[var(--color-text-muted)] truncate flex-1 leading-relaxed">
                         {action.description}
                       </p>
                       {action.estimated_impact && action.estimated_impact > 0 && (
-                        <span className="text-[12px] font-semibold text-[var(--color-positive)] font-tabular whitespace-nowrap">
+                        <span className="text-[15px] font-semibold text-[var(--color-positive)] font-tabular whitespace-nowrap">
                           {formatCurrency(action.estimated_impact)}
                         </span>
                       )}
@@ -584,7 +584,7 @@ function DetailPane({
       <button
         onClick={onMobileBack}
         aria-label="Back to action list"
-        className="md:hidden flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] mb-4 motion-safe:transition-colors"
+        className="md:hidden flex items-center gap-1.5 text-[14px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] mb-4 motion-safe:transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Back
@@ -592,20 +592,20 @@ function DetailPane({
 
       {/* Header: Priority + Category + ID */}
       <div className="flex items-center gap-3 mb-4">
-        <span className={`text-[11px] font-bold px-2 py-[2px] rounded border uppercase tracking-wide ${pCfg.className}`}>
+        <span className={`text-[12px] font-bold px-2 py-[2px] rounded border uppercase tracking-wide ${pCfg.className}`}>
           {pCfg.label}
         </span>
-        <div className="flex items-center gap-1.5 text-[12px] text-[var(--color-text-muted)]">
+        <div className="flex items-center gap-1.5 text-[13px] text-[var(--color-text-muted)]">
           <Icon className="w-3.5 h-3.5" />
           <span className="font-mono">{categoryLabels[action.type] || action.type}</span>
         </div>
-        <span className="text-[11px] font-mono text-[var(--color-text-muted)] ml-auto">
+        <span className="text-[12px] font-mono text-[var(--color-text-muted)] ml-auto">
           {actionIdShort(action.id)}
         </span>
       </div>
 
       {/* Title */}
-      <h2 className="text-[24px] md:text-[32px] font-bold tracking-tight leading-[1.1] text-[var(--color-text-primary)] mb-4">
+      <h2 className="text-[28px] md:text-[36px] font-bold tracking-tight leading-[1.1] text-[var(--color-text-primary)] mb-4">
         {action.title}
       </h2>
 
@@ -621,7 +621,7 @@ function DetailPane({
             onClick={() => onAction(action.id, 'unarchive')}
             disabled={isLoading}
             aria-label="Restore this action from archive"
-            className="flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black rounded-lg motion-safe:transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-5 py-2.5 text-[14px] font-semibold bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black rounded-lg motion-safe:transition-colors disabled:opacity-50"
           >
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
             Restore Action
@@ -633,7 +633,7 @@ function DetailPane({
               onClick={() => onAction(action.id, 'useful')}
               disabled={isLoading}
               aria-label="Mark this action as complete"
-              className="flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black rounded-lg motion-safe:transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2.5 text-[14px] font-semibold bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black rounded-lg motion-safe:transition-colors disabled:opacity-50"
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               Mark Complete
@@ -645,7 +645,7 @@ function DetailPane({
                 onClick={() => setShowSnoozeMenu(!showSnoozeMenu)}
                 disabled={isLoading}
                 aria-label="Snooze this action"
-                className="flex items-center gap-2 px-4 py-2.5 text-[13px] font-medium text-[var(--color-text-secondary)] bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] motion-safe:transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2.5 text-[14px] font-medium text-[var(--color-text-secondary)] bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] motion-safe:transition-colors disabled:opacity-50"
               >
                 <Clock className="w-4 h-4" />
                 Snooze 7d
@@ -662,7 +662,7 @@ function DetailPane({
                     <button
                       key={opt.days}
                       onClick={() => onAction(action.id, 'snooze', { snooze_days: opt.days })}
-                      className="w-full text-left px-4 py-2 text-[13px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] motion-safe:transition-colors"
+                      className="w-full text-left px-4 py-2 text-[14px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] motion-safe:transition-colors"
                     >
                       {opt.label}
                     </button>
@@ -676,7 +676,7 @@ function DetailPane({
               onClick={() => onAction(action.id, 'dismiss')}
               disabled={isLoading}
               aria-label="Dismiss this action"
-              className="flex items-center gap-2 px-4 py-2.5 text-[13px] font-medium text-[var(--color-text-muted)] bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] motion-safe:transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2.5 text-[14px] font-medium text-[var(--color-text-muted)] bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] motion-safe:transition-colors disabled:opacity-50"
             >
               <X className="w-4 h-4" />
               Dismiss
@@ -696,10 +696,10 @@ function DetailPane({
                 i < contextPairs.length - 1 ? 'border-b border-[var(--color-border-subtle)]' : ''
               }`}
             >
-              <span className="text-[12px] font-mono text-[var(--color-text-muted)] sm:w-[140px] flex-shrink-0">
+              <span className="text-[13px] font-mono text-[var(--color-text-muted)] sm:w-[140px] flex-shrink-0">
                 {pair.label}
               </span>
-              <span className="text-[13px] text-[var(--color-text-primary)] font-medium">
+              <span className="text-[14px] text-[var(--color-text-primary)] font-medium">
                 {pair.value}
               </span>
             </div>
@@ -733,8 +733,8 @@ function DetailPane({
           <div className="relative mb-4">
             <div className="absolute left-[-19px] top-1.5 w-[11px] h-[11px] rounded-full border-2 border-[var(--color-border-strong)] bg-[var(--color-bg-base)]" />
             <div>
-              <p className="text-[13px] text-[var(--color-text-primary)]">Action created</p>
-              <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+              <p className="text-[14px] text-[var(--color-text-primary)]">Action created</p>
+              <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">
                 {new Date(action.created_at).toLocaleDateString('en-US', {
                   weekday: 'short',
                   month: 'short',
@@ -751,8 +751,8 @@ function DetailPane({
             <div className="relative mb-4">
               <div className="absolute left-[-19px] top-1.5 w-[11px] h-[11px] rounded-full border-2 border-[var(--color-warning-border)] bg-[var(--color-warning-muted)]" />
               <div>
-                <p className="text-[13px] text-[var(--color-text-primary)]">Snoozed</p>
-                <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+                <p className="text-[14px] text-[var(--color-text-primary)]">Snoozed</p>
+                <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">
                   Until {new Date(action.snoozed_until).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -767,10 +767,10 @@ function DetailPane({
           <div className="relative">
             <div className="absolute left-[-19px] top-1.5 w-[11px] h-[11px] rounded-full border-2 border-[var(--color-gold-border)] bg-[var(--color-gold-surface)]" />
             <div>
-              <p className="text-[13px] text-[var(--color-gold)]">
+              <p className="text-[14px] text-[var(--color-gold)]">
                 {activeTab === 'done' ? 'Completed' : activeTab === 'archived' ? 'Archived' : 'Awaiting action'}
               </p>
-              <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">Now</p>
+              <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">Now</p>
             </div>
           </div>
         </div>
