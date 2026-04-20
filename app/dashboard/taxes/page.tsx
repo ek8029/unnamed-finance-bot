@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useCallback } from 'react';
 import {
-  AlertTriangle, CheckCircle2, ChevronRight, FileText,
+  AlertTriangle, CheckCircle2, ChevronRight,
   Sparkles, Eye,
 } from 'lucide-react';
 import { useFormat } from '@/hooks/use-format';
@@ -12,6 +12,7 @@ import type { TaxOpportunity, RealizedTransaction } from '@/hooks/use-financial-
 import { cn } from '@/lib/utils';
 import { useTier } from '@/hooks/use-tier';
 import { ProGate } from '@/components/pro-gate';
+import { Form8949Preview } from '@/components/dashboard/form-8949-preview';
 
 // ── Constants ──
 
@@ -287,11 +288,7 @@ export default function TaxesPage() {
       .reduce((sum, o) => sum + o.estimatedSavings, 0);
   }, [harvestReport, selectedOpps]);
 
-  // ── 1099-B preview placeholder ──
-
-  const handle1099Preview = useCallback(() => {
-    alert('1099-B preview generation is coming soon. This feature will compile your realized gains and losses into a downloadable preview document.');
-  }, []);
+  // (Form 8949 preview is now a separate component below)
 
   // ── Tier loading / ProGate ──
 
@@ -366,17 +363,17 @@ export default function TaxesPage() {
             </a>
           </p>
 
-          {/* 1099-B button */}
+          {/* Scroll to Form 8949 */}
           <button
-            onClick={handle1099Preview}
+            onClick={() => document.getElementById('form-8949-section')?.scrollIntoView({ behavior: 'smooth' })}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-[13px] font-semibold motion-safe:transition-colors motion-safe:duration-150 cursor-pointer"
             style={{
               background: 'var(--color-gold)',
               color: 'var(--color-bg-base)',
             }}
           >
-            <FileText className="w-3.5 h-3.5" />
-            Generate 1099-B preview
+            Preview Form 8949
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
@@ -699,6 +696,13 @@ export default function TaxesPage() {
           <p className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
             All positions are currently at a gain. Tax-loss harvesting opportunities will appear when positions decline below cost basis.
           </p>
+        </div>
+      )}
+
+      {/* ─── 5. Form 8949 Preview ─── */}
+      {!loading && (
+        <div id="form-8949-section">
+          <Form8949Preview />
         </div>
       )}
 

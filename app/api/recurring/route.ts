@@ -1,11 +1,16 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { rateLimit } from '@/lib/rate-limit';
+import {
+  detectRecurringCharges,
+  persistRecurringCharges,
+  toMonthlyAmount,
+} from '@/lib/recurring-detection';
 
 /**
- * GET: Fetch detected recurring transactions
- * POST: Run detection algorithm on user's transaction history
+ * GET /api/recurring
+ * Returns persisted recurring transactions for the authenticated user.
  */
-
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -13,6 +18,14 @@ export async function GET() {
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { allowed } = rateLimit(`recurring-get:${user.id}`, 30, 60);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 },
+      );
     }
 
     const { data: recurring, error } = await supabase
@@ -23,11 +36,26 @@ export async function GET() {
       .order('average_amount', { ascending: true });
 
     if (error) {
-      console.error('Error fetching recurring:', error);
-      return NextResponse.json({ error: 'Failed to fetch recurring transactions' }, { status: 500 });
+      console.error('[recurring] Error fetching:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch recurring transactions' },
+        { status: 500 },
+      );
     }
 
-    const items = (recurring || []).map(r => ({
+    const items = (recurring || []).map((r: {
+      id: string;
+      merchant_name: string;
+      description: string;
+      average_amount: number;
+      frequency: string;
+      category_name: string | null;
+      last_date: string;
+      next_expected_date: string;
+      occurrence_count: number;
+      is_subscription: boolean;
+      price_change_pct: number | null;
+    }) => ({
       id: r.id,
       merchant: r.merchant_name,
       description: r.description,
@@ -38,10 +66,11 @@ export async function GET() {
       nextExpected: r.next_expected_date,
       occurrences: r.occurrence_count,
       isSubscription: r.is_subscription,
+      priceChangePct: r.price_change_pct !== null ? Number(r.price_change_pct) : null,
     }));
 
-    const monthlyTotal = items.reduce((sum, r) => {
-      return sum + toMonthly(r.amount, r.frequency);
+    const monthlyTotal = items.reduce((sum: number, r: { amount: number; frequency: string }) => {
+      return sum + toMonthlyAmount(r.amount, r.frequency as Parameters<typeof toMonthlyAmount>[1]);
     }, 0);
 
     return NextResponse.json({
@@ -53,11 +82,16 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('Error in recurring route:', error);
+    console.error('[recurring] GET error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
+/**
+ * POST /api/recurring
+ * Run the detection algorithm on the user's transaction history.
+ * Clears stale entries and persists newly detected recurring charges.
+ */
 export async function POST() {
   try {
     const supabase = await createClient();
@@ -67,189 +101,30 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Clear old detected recurring before re-detecting
+    const { allowed } = rateLimit(`recurring-detect:${user.id}`, 5, 600);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 },
+      );
+    }
+
+    // Mark all existing detections as inactive before re-detecting
     await supabase
       .from('recurring_transactions')
-      .delete()
+      .update({ is_active: false })
       .eq('user_id', user.id);
 
-    // Fetch last 6 months of transactions
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-    const { data: transactions, error: txError } = await supabase
-      .from('transactions')
-      .select('id, amount, merchant_name, description, category_name, transaction_date')
-      .eq('user_id', user.id)
-      .gte('transaction_date', sixMonthsAgo.toISOString().split('T')[0])
-      .order('transaction_date', { ascending: true });
-
-    if (txError) {
-      console.error('Error fetching transactions:', txError);
-      return NextResponse.json({ error: 'Failed to analyze transactions' }, { status: 500 });
-    }
-
-    if (!transactions || transactions.length === 0) {
-      return NextResponse.json({ success: true, detected: 0 });
-    }
-
-    // Only detect expenses (negative amounts) as recurring subscriptions
-    const expenseTransactions = transactions.filter(t => Number(t.amount) < 0);
-
-    // Group expense transactions by merchant
-    const merchantGroups = new Map<string, {
-      amounts: number[];
-      dates: Date[];
-      category: string | null;
-      description: string;
-    }>();
-
-    for (const t of expenseTransactions) {
-      const merchant = t.merchant_name || t.description;
-      if (!merchant) continue;
-
-      const amount = Number(t.amount);
-      const key = normalizeMerchant(merchant);
-
-      const existing = merchantGroups.get(key);
-      if (existing) {
-        existing.amounts.push(Math.abs(amount));
-        existing.dates.push(new Date(t.transaction_date));
-        if (!existing.category && t.category_name) existing.category = t.category_name;
-      } else {
-        merchantGroups.set(key, {
-          amounts: [Math.abs(amount)],
-          dates: [new Date(t.transaction_date)],
-          category: t.category_name,
-          description: merchant,
-        });
-      }
-    }
-
-    // Detect recurring patterns
-    const detected: {
-      merchant_name: string;
-      description: string;
-      average_amount: number;
-      frequency: string;
-      category_name: string | null;
-      last_date: string;
-      next_expected_date: string;
-      occurrence_count: number;
-    }[] = [];
-
-    for (const [, group] of merchantGroups) {
-      // Need at least 2 occurrences
-      if (group.dates.length < 2) continue;
-
-      // Check if amounts are consistent (within 25% of average)
-      const avgAmount = group.amounts.reduce((s, a) => s + a, 0) / group.amounts.length;
-      if (avgAmount < 1) continue;
-
-      const amountConsistent = group.amounts.every(a =>
-        Math.abs(a - avgAmount) / avgAmount < 0.25
-      );
-      if (!amountConsistent && avgAmount > 5) continue;
-
-      // Detect frequency from date intervals
-      const sortedDates = [...group.dates].sort((a, b) => a.getTime() - b.getTime());
-      const intervals: number[] = [];
-      for (let i = 1; i < sortedDates.length; i++) {
-        const days = Math.round(
-          (sortedDates[i].getTime() - sortedDates[i - 1].getTime()) / (1000 * 60 * 60 * 24)
-        );
-        intervals.push(days);
-      }
-
-      if (intervals.length === 0) continue;
-
-      const avgInterval = intervals.reduce((s, i) => s + i, 0) / intervals.length;
-      const frequency = detectFrequency(avgInterval, intervals);
-      if (!frequency) continue;
-
-      const lastDate = sortedDates[sortedDates.length - 1];
-      const nextDate = computeNextDate(lastDate, frequency);
-
-      detected.push({
-        merchant_name: group.description,
-        description: group.description,
-        average_amount: Math.round(avgAmount * 100) / 100,
-        frequency,
-        category_name: group.category,
-        last_date: lastDate.toISOString().split('T')[0],
-        next_expected_date: nextDate.toISOString().split('T')[0],
-        occurrence_count: group.dates.length,
-      });
-    }
-
-    // Insert detected recurring transactions
-    if (detected.length > 0) {
-      for (const r of detected) {
-        await supabase
-          .from('recurring_transactions')
-          .upsert({
-            user_id: user.id,
-            ...r,
-            is_active: true,
-          }, {
-            onConflict: 'user_id,merchant_name,frequency',
-          });
-      }
-    }
+    const charges = await detectRecurringCharges(supabase, user.id);
+    const persisted = await persistRecurringCharges(supabase, user.id, charges);
 
     return NextResponse.json({
       success: true,
-      detected: detected.length,
+      detected: charges.length,
+      persisted,
     });
   } catch (error) {
-    console.error('Error detecting recurring transactions:', error);
+    console.error('[recurring] POST error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-// --- Helper functions ---
-
-function normalizeMerchant(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function detectFrequency(avgDays: number, intervals: number[]): string | null {
-  // Check consistency: intervals should be within 35% of average
-  const consistent = intervals.every(i => Math.abs(i - avgDays) / Math.max(avgDays, 1) < 0.35);
-  if (!consistent && intervals.length > 2) return null;
-
-  if (avgDays >= 5 && avgDays <= 10) return 'weekly';
-  if (avgDays >= 12 && avgDays <= 18) return 'biweekly';
-  if (avgDays >= 25 && avgDays <= 38) return 'monthly';
-  if (avgDays >= 80 && avgDays <= 110) return 'quarterly';
-  if (avgDays >= 340 && avgDays <= 400) return 'annual';
-
-  return null;
-}
-
-function computeNextDate(lastDate: Date, frequency: string): Date {
-  const next = new Date(lastDate);
-  switch (frequency) {
-    case 'weekly': next.setDate(next.getDate() + 7); break;
-    case 'biweekly': next.setDate(next.getDate() + 14); break;
-    case 'monthly': next.setMonth(next.getMonth() + 1); break;
-    case 'quarterly': next.setMonth(next.getMonth() + 3); break;
-    case 'annual': next.setFullYear(next.getFullYear() + 1); break;
-  }
-  return next;
-}
-
-function toMonthly(amount: number, frequency: string): number {
-  switch (frequency) {
-    case 'weekly': return amount * 4.33;
-    case 'biweekly': return amount * 2.17;
-    case 'monthly': return amount;
-    case 'quarterly': return amount / 3;
-    case 'annual': return amount / 12;
-    default: return amount;
   }
 }

@@ -13,12 +13,13 @@ import {
   ANNUAL_LOSS_DEDUCTION_CAP,
 } from '@/lib/financial-config';
 import { formatCategoryName } from '@/lib/utils';
+import { detectRecurringCharges, persistRecurringCharges, toMonthlyAmount } from '@/lib/recurring-detection';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyClient = any;
 
 interface InsightCandidate {
-  insight_type: 'spending' | 'portfolio' | 'market' | 'tax' | 'credit';
+  insight_type: 'spending' | 'portfolio' | 'market' | 'tax' | 'credit' | 'subscription';
   priority: 'critical' | 'high' | 'medium' | 'low';
   title: string;
   description: string;
@@ -299,6 +300,72 @@ export async function generateInsights(
           source_type: 'rule_based',
         });
       }
+    }
+
+    // Rule 8: Recurring charge / subscription insights
+    try {
+      const recurringCharges = await detectRecurringCharges(supabase, userId);
+
+      if (recurringCharges.length > 0) {
+        // Persist detected charges to recurring_transactions table
+        await persistRecurringCharges(supabase, userId, recurringCharges);
+      }
+
+      for (const charge of recurringCharges) {
+        // 8a: Price increase alert
+        if (charge.price_increased && charge.previous_amount !== null) {
+          candidates.push({
+            insight_type: 'subscription',
+            priority: 'medium',
+            title: `${charge.merchant_name} raised from $${charge.previous_amount.toFixed(2)} to $${charge.latest_amount.toFixed(2)}`,
+            description: `${charge.merchant_name} increased by ${charge.price_change_pct}% — from $${charge.previous_amount.toFixed(2)} to $${charge.latest_amount.toFixed(2)} per ${charge.frequency === 'biweekly' ? 'cycle' : charge.frequency.replace('ly', '')}. This adds ~$${(toMonthlyAmount(charge.latest_amount - charge.previous_amount, charge.frequency) * 12).toFixed(0)}/year to your recurring costs.`,
+            recommended_action: `Review whether ${charge.merchant_name} still provides enough value at the new price, or consider alternatives.`,
+            estimated_impact_amount: Math.round(toMonthlyAmount(charge.latest_amount - charge.previous_amount, charge.frequency) * 12),
+            confidence_score: 0.85,
+            source_type: 'rule_based',
+          });
+        }
+
+        // 8b: New recurring charge detected (exactly 2 occurrences = just confirmed as recurring)
+        if (charge.is_new) {
+          candidates.push({
+            insight_type: 'subscription',
+            priority: 'low',
+            title: `New ${charge.frequency} charge: $${charge.average_amount.toFixed(2)} to ${charge.merchant_name}`,
+            description: `A new ${charge.frequency} charge of $${charge.average_amount.toFixed(2)} to ${charge.merchant_name} has been detected. That's ~$${(toMonthlyAmount(charge.average_amount, charge.frequency) * 12).toFixed(0)}/year.`,
+            recommended_action: `Verify this is a subscription you intended to keep.`,
+            estimated_impact_amount: Math.round(toMonthlyAmount(charge.average_amount, charge.frequency) * 12),
+            confidence_score: 0.75,
+            source_type: 'rule_based',
+          });
+        }
+
+        // 8c: Upcoming large recurring charge (annual/quarterly, amount > $50, due within 7 days)
+        const nextDate = new Date(charge.next_expected_date);
+        const today = new Date();
+        const daysUntil = Math.round((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (
+          daysUntil >= 0 &&
+          daysUntil <= 7 &&
+          charge.average_amount > 50 &&
+          (charge.frequency === 'annual' || charge.frequency === 'quarterly')
+        ) {
+          candidates.push({
+            insight_type: 'subscription',
+            priority: 'medium',
+            title: `${charge.frequency === 'annual' ? 'Annual' : 'Quarterly'} charge of $${charge.average_amount.toFixed(0)} from ${charge.merchant_name} expected ${daysUntil === 0 ? 'today' : `in ~${daysUntil} day${daysUntil === 1 ? '' : 's'}`}`,
+            description: `Your ${charge.frequency} charge of $${charge.average_amount.toFixed(2)} from ${charge.merchant_name} is expected ${daysUntil === 0 ? 'today' : `in approximately ${daysUntil} day${daysUntil === 1 ? '' : 's'}`}. Make sure the funds are available.`,
+            recommended_action: `Review whether you still need ${charge.merchant_name}. If not, cancel before the charge hits.`,
+            estimated_impact_amount: Math.round(charge.average_amount),
+            confidence_score: 0.8,
+            source_type: 'rule_based',
+          });
+        }
+      }
+    } catch (recurringError) {
+      console.error('[insights-engine] Rule 8 (recurring detection) error:', recurringError);
+      // Non-fatal: other rules still produce insights
     }
 
     const newInsights: InsightCandidate[] = [];
