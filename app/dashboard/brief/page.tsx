@@ -206,9 +206,9 @@ export default function BriefPage() {
   const marketTapeItems = useMemo(() => {
     if (!data) return [];
     const items: [string, string, string, boolean][] = [];
-    if (data.market.spy) items.push(['S&P 500', `$${data.market.spy.price.toFixed(2)}`, fmtPct(data.market.spy.changePct), data.market.spy.changePct >= 0]);
-    if (data.market.qqq) items.push(['NASDAQ', `$${data.market.qqq.price.toFixed(2)}`, fmtPct(data.market.qqq.changePct), data.market.qqq.changePct >= 0]);
-    if (data.market.vix) items.push(['VIX', data.market.vix.price.toFixed(2), data.market.vix.level.replace(/_/g, ' '), data.market.vix.price < 20]);
+    if (data.market.spy) items.push(['SPY', `$${data.market.spy.price.toFixed(2)}`, fmtPct(data.market.spy.changePct), data.market.spy.changePct >= 0]);
+    if (data.market.qqq) items.push(['QQQ', `$${data.market.qqq.price.toFixed(2)}`, fmtPct(data.market.qqq.changePct), data.market.qqq.changePct >= 0]);
+    if (data.market.vix) items.push(['VIXY', data.market.vix.price.toFixed(2), data.market.vix.level.replace(/_/g, ' '), data.market.vix.price < 20]);
     if (data.market.treasury) items.push(['BONDS (TLT)', `$${data.market.treasury.price.toFixed(2)}`, fmtPct(data.market.treasury.changePct), data.market.treasury.changePct >= 0]);
     return items;
   }, [data]);
@@ -408,7 +408,7 @@ export default function BriefPage() {
                   ? `our portfolio gained ${fmt(Math.abs(data.portfolio.overnightChange))} since yesterday's close, a ${fmtPct(data.portfolio.overnightChangePct)} move that puts your total at ${fmt(data.portfolio.totalValue)}.`
                   : ` ${Math.abs(data.portfolio.overnightChangePct).toFixed(2)}% drawdown took ${fmt(Math.abs(data.portfolio.overnightChange))} off your portfolio since yesterday's close.`}
                 {' '}
-                {data.market.spy && `The broader market (S&P 500) was ${spyDir} ${fmtPct(data.market.spy.changePct)}`}
+                {data.market.spy && `The broader market (SPY) was ${spyDir} ${fmtPct(data.market.spy.changePct)}`}
                 {data.market.qqq && ` while the Nasdaq moved ${qqqDir} ${fmtPct(data.market.qqq.changePct)}.`}
                 {biggestMover && ` ${biggestMover.name} (${biggestMover.ticker}) was your biggest mover at ${fmtPct(biggestMover.changePct)}, ${biggestMover.changePct >= 0 ? 'adding' : 'costing'} ${fmt(Math.abs(biggestMover.dollarImpact))} to your portfolio.`}
                 {topSector && ` ${topSector.sector} remains your largest sector exposure at ${topSector.weight.toFixed(1)}%.`}
