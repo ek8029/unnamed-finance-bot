@@ -17,12 +17,20 @@ export async function GET(request: Request) {
     const userTickers = tickersParam ? tickersParam.split(',') : null;
 
     // Fetch market news and events in parallel
+    // When user tickers provided, fetch holding-specific news + general (no primary_ticker)
+    // When no tickers, fetch all recent news
+    const newsQuery = supabase
+      .from('market_news')
+      .select('*')
+      .order('published_at', { ascending: false });
+
+    if (userTickers && userTickers.length > 0) {
+      // Only news about user's holdings OR general market news (null primary_ticker)
+      newsQuery.or(`primary_ticker.in.(${userTickers.join(',')}),primary_ticker.is.null`);
+    }
+
     const [newsResult, eventsResult] = await Promise.all([
-      supabase
-        .from('market_news')
-        .select('*')
-        .order('published_at', { ascending: false })
-        .limit(20),
+      newsQuery.limit(20),
       supabase
         .from('market_events')
         .select('*')
