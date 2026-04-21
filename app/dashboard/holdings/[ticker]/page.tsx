@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { getFullTickerData } from '@/lib/financial-data';
+import { getQuote } from '@/lib/financial-data';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { HoldingDetailClient } from './holding-detail-client';
@@ -17,14 +17,14 @@ export default async function HoldingDetailPage({ params }: Props) {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) notFound();
 
-  // Fetch holding, market data, news, and recent transactions in parallel
-  const [holdingsResult, tickerData, newsResult, txResult, pricesResult] = await Promise.all([
+  // Fetch holding, quote (single Finnhub call), news, transactions, prices in parallel
+  const [holdingsResult, quoteResult, newsResult, txResult, pricesResult] = await Promise.all([
     supabase
       .from('holdings')
       .select('*, security:securities(security_name, sector, asset_class, exchange)')
       .eq('user_id', user.id)
       .eq('ticker', symbol),
-    getFullTickerData(symbol),
+    getQuote(symbol),
     supabase
       .from('market_news')
       .select('id, title, summary, source, url, published_at, sentiment')
@@ -109,7 +109,7 @@ export default async function HoldingDetailPage({ params }: Props) {
     merchantName: t.merchant_name,
   }));
 
-  const quote = tickerData.quote;
+  const quote = quoteResult;
 
   return (
     <HoldingDetailClient
