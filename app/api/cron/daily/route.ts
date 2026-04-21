@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { syncPlaidItem, computeSnapshots, type PlaidItemForSync, type SyncResult } from '@/lib/plaid-sync';
-import { refreshMarketPrices, enrichMarketData, refreshMarketNews, updatePortfolioPerformance } from '@/lib/market-sync';
+import { refreshMarketPrices, enrichMarketData, refreshMarketNews, refreshMarketNewsFinnhub, updatePortfolioPerformance } from '@/lib/market-sync';
 import { generateInsights } from '@/lib/insights-engine';
 
 export const dynamic = 'force-dynamic';
@@ -127,9 +127,10 @@ export async function GET(request: Request) {
         refreshMarketPrices(serviceClient, log),
         enrichMarketData(serviceClient, log),
         refreshMarketNews(serviceClient, log),
+        refreshMarketNewsFinnhub(serviceClient, log),
       ]);
 
-      const marketNames = ['prices', 'enrich', 'news'] as const;
+      const marketNames = ['prices', 'enrich', 'news', 'finnhub-news'] as const;
       marketResults.forEach((result, i) => {
         if (result.status === 'fulfilled') {
           if (i === 0 && typeof result.value === 'number') {

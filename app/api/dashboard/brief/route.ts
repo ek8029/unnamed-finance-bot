@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getTickerSectorOverride } from '@/lib/polygon';
 import { getQuote } from '@/lib/financial-data';
 import { rateLimit } from '@/lib/rate-limit';
+import { getSourceTier } from '@/lib/news-quality';
 
 type VixLevel = 'extreme_fear' | 'fear' | 'neutral' | 'greed' | 'extreme_greed';
 
@@ -250,6 +251,22 @@ export async function GET() {
         .limit(10),
     ]);
 
+    // Build holdings lookup for "Impact on You" context on news items
+    const holdingsLookup = new Map<string, { totalValue: number; portfolioWeight: number }>();
+    for (const h of holdings) {
+      const upper = h.ticker.toUpperCase();
+      const existing = holdingsLookup.get(upper);
+      if (existing) {
+        existing.totalValue += h.total_value;
+        existing.portfolioWeight += h.portfolio_allocation_pct;
+      } else {
+        holdingsLookup.set(upper, {
+          totalValue: h.total_value,
+          portfolioWeight: h.portfolio_allocation_pct,
+        });
+      }
+    }
+
     // Deduplicate by URL
     const seenUrls = new Set<string>();
     const positionNews = (positionNewsResult.data || []).filter(n => {
@@ -257,17 +274,27 @@ export async function GET() {
       if (seenUrls.has(key)) return false;
       seenUrls.add(key);
       return true;
-    }).map(n => ({
-      id: n.id,
-      title: n.title,
-      summary: n.summary,
-      source: n.source,
-      url: n.url,
-      publishedAt: n.published_at,
-      ticker: n.primary_ticker,
-      sentiment: n.sentiment,
-      isHolding: true,
-    }));
+    }).map(n => {
+      const ticker = n.primary_ticker;
+      const holding = ticker ? holdingsLookup.get(ticker.toUpperCase()) : null;
+      return {
+        id: n.id,
+        title: n.title,
+        summary: n.summary,
+        source: n.source,
+        url: n.url,
+        publishedAt: n.published_at,
+        ticker,
+        sentiment: n.sentiment,
+        isHolding: true,
+        sourceTier: getSourceTier(n.source),
+        positionValue: holding?.totalValue ?? null,
+        portfolioWeight: holding?.portfolioWeight ?? null,
+        impactNote: holding
+          ? `You hold $${Math.round(holding.totalValue).toLocaleString()} of ${ticker} (${holding.portfolioWeight.toFixed(1)}% of portfolio)`
+          : null,
+      };
+    });
 
     // General news: exclude articles already in position news
     const positionNewsIds = new Set(positionNews.map(n => n.id));
@@ -279,17 +306,27 @@ export async function GET() {
     })
       .filter(n => !positionNewsIds.has(n.id))
       .slice(0, 6)
-      .map(n => ({
-        id: n.id,
-        title: n.title,
-        summary: n.summary,
-        source: n.source,
-        url: n.url,
-        publishedAt: n.published_at,
-        ticker: n.primary_ticker,
-        sentiment: n.sentiment,
-        isHolding: false,
-      }));
+      .map(n => {
+        const ticker = n.primary_ticker;
+        const holding = ticker ? holdingsLookup.get(ticker.toUpperCase()) : null;
+        return {
+          id: n.id,
+          title: n.title,
+          summary: n.summary,
+          source: n.source,
+          url: n.url,
+          publishedAt: n.published_at,
+          ticker,
+          sentiment: n.sentiment,
+          isHolding: false,
+          sourceTier: getSourceTier(n.source),
+          positionValue: holding?.totalValue ?? null,
+          portfolioWeight: holding?.portfolioWeight ?? null,
+          impactNote: holding
+            ? `You hold $${Math.round(holding.totalValue).toLocaleString()} of ${ticker} (${holding.portfolioWeight.toFixed(1)}% of portfolio)`
+            : null,
+        };
+      });
 
     return NextResponse.json(
       {

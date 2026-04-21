@@ -1,5 +1,6 @@
 import { getBatchPrices, getBatchTickerDetails, getUpcomingDividends, getRecentSplits, getTickerNews, scoreSentiment, mapSicToSector, getTickerSectorOverride } from '@/lib/polygon';
 import { detectPrimaryTicker } from '@/lib/news-primary-ticker';
+import { refreshFinnhubNews as _refreshFinnhubNews } from '@/lib/finnhub-news';
 import { RISK_FREE_RATE, TRADING_DAYS_PER_YEAR } from '@/lib/financial-config';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -642,4 +643,26 @@ export async function refreshMarketNews(supabase: AnyClient, log: string[]) {
   } else {
     log.push(`[news] Inserted ${newArticles.length} new articles (${articles.length - newArticles.length} duplicates skipped)`);
   }
+}
+
+/**
+ * Refresh news from Finnhub for all tickers held across all users.
+ * Complements refreshMarketNews (Polygon) as a second news source.
+ */
+export async function refreshMarketNewsFinnhub(supabase: AnyClient, log: string[]) {
+  const { data: holdingRows } = await supabase
+    .from('holdings')
+    .select('ticker')
+    .neq('ticker', 'UNKNOWN');
+
+  if (!holdingRows || holdingRows.length === 0) {
+    log.push('[finnhub-news] No holdings for news fetch');
+    return;
+  }
+
+  const tickers = [...new Set(
+    holdingRows.map((h: { ticker: string }) => h.ticker).filter(Boolean)
+  )] as string[];
+
+  await _refreshFinnhubNews(supabase, tickers, log);
 }

@@ -26,6 +26,10 @@ interface NewsItem {
   ticker: string | null;
   sentiment: number | null;
   isHolding: boolean;
+  sourceTier?: 'tier1' | 'tier2' | 'other';
+  positionValue?: number | null;
+  portfolioWeight?: number | null;
+  impactNote?: string | null;
 }
 
 interface BriefData {
@@ -434,7 +438,13 @@ export default function BriefPage() {
                           </Link>
                         )}
                         <SentimentBadge value={news.sentiment} />
-                        <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+                        <span className="text-[11px] text-[var(--color-text-muted)] flex items-center gap-1" style={MONO}>
+                          {news.sourceTier === 'tier1' && (
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-gold)]" title="Tier 1 Source" />
+                          )}
+                          {news.sourceTier === 'tier2' && (
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-text-muted)]" title="Tier 2 Source" />
+                          )}
                           {news.source} · {timeAgo(news.publishedAt)}
                         </span>
                       </div>
@@ -448,6 +458,11 @@ export default function BriefPage() {
                       {news.summary && (
                         <p className="text-[16px] text-[var(--color-text-secondary)] leading-relaxed line-clamp-2" style={SERIF}>
                           {news.summary}
+                        </p>
+                      )}
+                      {news.impactNote && (
+                        <p className="text-[12px] text-[var(--color-gold)] mt-1.5" style={MONO}>
+                          {news.impactNote}
                         </p>
                       )}
                     </div>
@@ -500,7 +515,15 @@ export default function BriefPage() {
                         {news.ticker && (
                           <span className="font-mono text-[11px] font-bold text-[var(--color-text-muted)]">{news.ticker}</span>
                         )}
-                        <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>{news.source} · {timeAgo(news.publishedAt)}</span>
+                        <span className="text-[11px] text-[var(--color-text-muted)] flex items-center gap-1" style={MONO}>
+                          {news.sourceTier === 'tier1' && (
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-gold)]" title="Tier 1 Source" />
+                          )}
+                          {news.sourceTier === 'tier2' && (
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-text-muted)]" title="Tier 2 Source" />
+                          )}
+                          {news.source} · {timeAgo(news.publishedAt)}
+                        </span>
                       </div>
                       <h3 className="text-[15px] font-semibold leading-snug">
                         {news.url ? (

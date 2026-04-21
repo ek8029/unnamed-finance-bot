@@ -40,6 +40,14 @@ interface MarketNewsItem {
   sectors: string[];
   publishedAt: string;
   relevance: string;
+  /** Source quality tier: tier1 (gold), tier2 (silver), or other */
+  sourceTier?: 'tier1' | 'tier2' | 'other';
+  /** User's position value for this ticker */
+  positionValue?: number | null;
+  /** User's portfolio weight for this ticker */
+  portfolioWeight?: number | null;
+  /** Human-readable impact note, e.g. "You hold $12,400 of AAPL (8.2% of portfolio)" */
+  impactNote?: string | null;
 }
 
 interface MarketEventItem {
@@ -591,7 +599,13 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
                             <Badge variant={sentimentStyle.badge} className="text-[9px] px-1.5 py-0 capitalize">
                               {newsItem.sentiment}
                             </Badge>
-                            <span className="type-eyebrow text-[var(--color-text-muted)]">
+                            <span className="type-eyebrow text-[var(--color-text-muted)] flex items-center gap-1">
+                              {newsItem.sourceTier === 'tier1' && (
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-gold)]" title="Tier 1 Source" />
+                              )}
+                              {newsItem.sourceTier === 'tier2' && (
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-text-muted)]" title="Tier 2 Source" />
+                              )}
                               {newsItem.source}
                             </span>
                             {hasPortfolioLink && (
@@ -631,6 +645,14 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
                   )}>
                     {item.description}
                   </p>
+
+                  {/* Impact Note — shown inline for news about user holdings */}
+                  {isNews && newsItem.impactNote && (
+                    <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-[var(--color-gold)]">
+                      <Wallet className="h-3 w-3 flex-shrink-0" />
+                      <span className="type-mono">{newsItem.impactNote}</span>
+                    </div>
+                  )}
 
                   {/* Expanded Content */}
                   {isExpanded && (
