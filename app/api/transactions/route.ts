@@ -117,7 +117,7 @@ export async function GET(request: Request) {
       .from('transactions')
       .select(`
         *,
-        account:linked_accounts(id, account_name, institution:institutions(name)),
+        account:linked_accounts(id, account_name, account_type, institution:institutions(name)),
         category:transaction_categories(id, name, category_group, icon, color)
       `, { count: 'exact' })
       .eq('user_id', user.id)
@@ -240,6 +240,7 @@ export async function GET(request: Request) {
       category_group: t.category?.category_group || (t.category_name ? guessCategoryGroup(t.category_name) : null),
       category_color: t.category?.color || null,
       account_name: t.account?.account_name || null,
+      account_type: t.account?.account_type || null,
       institution_name: t.account?.institution?.name || null,
       is_pending: t.is_pending,
     }));

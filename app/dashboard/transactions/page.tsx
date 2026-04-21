@@ -327,7 +327,9 @@ export default function TransactionsPage() {
       result = result.filter((tx) => tx.kind === chipFilter);
     }
     if (accountChip) {
-      result = result.filter((tx) => tx.account_name === accountChip);
+      // Find the account_type key that maps to this label
+      const typeKey = Object.entries(ACCOUNT_TYPE_LABELS).find(([, v]) => v === accountChip)?.[0] || accountChip.toLowerCase().replace(/ /g, '_');
+      result = result.filter((tx) => (tx as Record<string, unknown>).account_type === typeKey);
     }
     return result;
   }, [enriched, chipFilter, accountChip]);
@@ -383,13 +385,26 @@ export default function TransactionsPage() {
     return { bought, sold, dividends, fees, buyCount, sellCount, divCount, feeCount };
   }, [enriched]);
 
-  /* ─── Unique account names for chip filters ─── */
+  /* ─── Account type labels for chip filters ─── */
+  const ACCOUNT_TYPE_LABELS: Record<string, string> = {
+    checking: 'Checking',
+    savings: 'Savings',
+    credit_card: 'Credit Cards',
+    brokerage: 'Brokerage',
+    loan: 'Loans',
+    mortgage: 'Mortgage',
+    crypto: 'Crypto',
+    investment: 'Investment',
+    depository: 'Depository',
+  };
+
   const accountNames = useMemo(() => {
-    const set = new Set<string>();
+    const typeSet = new Set<string>();
     for (const tx of enriched) {
-      if (tx.account_name) set.add(tx.account_name);
+      const acctType = (tx as Record<string, unknown>).account_type as string | null;
+      if (acctType) typeSet.add(acctType);
     }
-    return Array.from(set).sort();
+    return Array.from(typeSet).sort().map(t => ACCOUNT_TYPE_LABELS[t] || t.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
   }, [enriched]);
 
   /* ─── Active filter detection ─── */
