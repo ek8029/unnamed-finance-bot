@@ -599,19 +599,7 @@ export default function TaxesPage() {
                 {harvestReport.opportunityCount}
               </span>
             </div>
-            <button
-              onClick={() => {
-                if (selectedOpps.size === 0) {
-                  toggleAllOpps();
-                }
-                // Placeholder action — in future, opens a harvest review flow
-              }}
-              className="text-[12px] font-semibold text-[var(--color-gold)] hover:text-[var(--color-text-primary)] motion-safe:transition-colors cursor-pointer flex items-center gap-1"
-              style={MONO}
-            >
-              Review selected
-              <ChevronRight className="w-3 h-3" />
-            </button>
+            {/* Review action removed — Form 8949 preview handles this */}
           </div>
 
           {/* Table column headers */}

@@ -192,8 +192,8 @@ export default function PortfolioPage() {
   const sortedByDayChange = useMemo(() => [...holdings].sort((a, b) => (b.day_change_percentage ?? 0) - (a.day_change_percentage ?? 0)), [holdings]);
 
   /* ---------- header tab state (visual only) ---------- */
-  const tabs = ['Overview', 'Performance', 'Positions', 'Tax lots', 'Activity'] as const;
-  const [activeTab, setActiveTab] = useState<typeof tabs[number]>('Positions');
+  const tabs = ['Overview', 'Positions', 'Concentration'] as const;
+  const [activeTab, setActiveTab] = useState<typeof tabs[number]>('Overview');
 
   /* ================================================================ */
   /*  EARLY RETURNS                                                    */
@@ -507,7 +507,7 @@ export default function PortfolioPage() {
                       >
                         {/* SYMBOL */}
                         <td className="pl-5 pr-2 py-2">
-                          <Link href={`/analyze/${h.ticker}`} className="flex items-center gap-2.5 group">
+                          <Link href={`/dashboard/holdings/${h.ticker}`} className="flex items-center gap-2.5 group">
                             <TickerIcon ticker={h.ticker} />
                             <span className="font-mono text-sm font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors">
                               {h.ticker}
@@ -615,7 +615,7 @@ export default function PortfolioPage() {
           </>
           )}
 
-          {(activeTab === 'Performance' || activeTab === 'Overview') && (
+          {(activeTab === 'Overview') && (
           <>
           {/* ---- 5. PERFORMANCE CHART ---- */}
           <Card>
@@ -712,7 +712,7 @@ export default function PortfolioPage() {
           </>
           )}
 
-          {(activeTab === 'Overview' || activeTab === 'Performance') && (
+          {(activeTab === 'Overview') && (
           <>
           {/* ---- 6. ALLOCATION, SECTOR, METRICS ROW ---- */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -789,20 +789,136 @@ export default function PortfolioPage() {
           </>
           )}
 
-          {activeTab === 'Tax lots' && (
-            <div className="border border-white/[0.06] rounded-lg p-12 text-center">
-              <div className="font-mono text-xs uppercase tracking-[0.15em] text-[var(--color-text-muted)] mb-3">Tax Lots</div>
-              <p className="text-sm text-[var(--color-text-muted)]">Tax lot tracking requires lot-level position data. Connect your brokerage to enable per-lot cost basis, holding period, and wash-sale detection.</p>
-              <a href="/dashboard/taxes" className="inline-block mt-4 text-sm text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors">View tax page →</a>
-            </div>
-          )}
+          {/* ---- CONCENTRATION TAB ---- */}
+          {activeTab === 'Concentration' && (
+          <>
+            {/* HHI / Diversification Score */}
+            {(() => {
+              const totalVal = holdings.reduce((s, h) => s + h.total_value, 0);
+              if (totalVal <= 0) return null;
+              const weights = holdings.map(h => h.total_value / totalVal);
+              const hhi = weights.reduce((s, w) => s + w * w, 0);
+              const diversificationScore = Math.round((1 - hhi) * 100);
+              const effectivePositions = Math.round(1 / (hhi || 1));
+              const scoreColor = diversificationScore >= 70 ? 'var(--color-positive)' : diversificationScore >= 40 ? 'var(--color-warning-text)' : 'var(--color-negative)';
 
-          {activeTab === 'Activity' && (
-            <div className="border border-white/[0.06] rounded-lg p-12 text-center">
-              <div className="font-mono text-xs uppercase tracking-[0.15em] text-[var(--color-text-muted)] mb-3">Activity</div>
-              <p className="text-sm text-[var(--color-text-muted)]">Recent trades, dividends received, and account activity.</p>
-              <a href="/dashboard/transactions" className="inline-block mt-4 text-sm text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors">View transactions →</a>
-            </div>
+              return (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                  <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5">
+                    <div className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2">Diversification Score</div>
+                    <div className="text-[40px] font-bold tabular-nums" style={{ color: scoreColor, fontFamily: 'var(--font-mono)' }}>{diversificationScore}</div>
+                    <div className="text-[13px] text-[var(--color-text-muted)] mt-1">out of 100</div>
+                    <div className="mt-3 h-2 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${diversificationScore}%`, backgroundColor: scoreColor }} />
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5">
+                    <div className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2">Effective Positions</div>
+                    <div className="text-[40px] font-bold tabular-nums text-[var(--color-text-primary)]" style={{ fontFamily: 'var(--font-mono)' }}>{effectivePositions}</div>
+                    <div className="text-[13px] text-[var(--color-text-muted)] mt-1">of {holdings.length} actual holdings</div>
+                    <div className="text-[12px] text-[var(--color-text-muted)] mt-2" style={{ fontFamily: 'var(--font-mono)' }}>
+                      HHI: {(hhi * 10000).toFixed(0)} / 10,000
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5">
+                    <div className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2">Top Holding Weight</div>
+                    <div className="text-[40px] font-bold tabular-nums" style={{ color: (weights[0] ?? 0) > 0.25 ? 'var(--color-negative)' : 'var(--color-text-primary)', fontFamily: 'var(--font-mono)' }}>
+                      {((weights[0] ?? 0) * 100).toFixed(1)}%
+                    </div>
+                    <div className="text-[13px] text-[var(--color-text-muted)] mt-1">{holdings[0]?.ticker ?? '—'}</div>
+                    <div className="text-[12px] text-[var(--color-text-muted)] mt-2">
+                      {(weights[0] ?? 0) > 0.25 ? '⚠ Exceeds 25% single-name threshold' : '✓ Within concentration limits'}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Single-Name Concentration Table with Search + Pagination */}
+            <ConcentrationTable holdings={holdings} formatCurrency={formatCurrency} />
+
+            {/* Sector Concentration vs S&P Benchmark */}
+            <Card className="mb-6">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-[15px]">Sector Concentration</CardTitle>
+                <p className="text-[12px] text-[var(--color-text-muted)] font-mono">Your sector weights vs typical S&P 500 allocation</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {(() => {
+                    const spBenchmark: Record<string, number> = {
+                      'Technology': 31, 'Healthcare': 12, 'Financials': 13, 'Consumer Discretionary': 10,
+                      'Communication Services': 9, 'Industrials': 8, 'Consumer Staples': 6, 'Energy': 4,
+                      'Utilities': 2, 'Real Estate': 2, 'Materials': 2, 'Other': 1,
+                    };
+                    return allocation.map((sector) => {
+                      const benchmark = spBenchmark[sector.name] ?? 3;
+                      const diff = sector.percentage - benchmark;
+                      const diffColor = Math.abs(diff) > 10 ? 'var(--color-warning-text)' : 'var(--color-text-muted)';
+                      return (
+                        <div key={sector.name} className="flex items-center gap-3">
+                          <span className="text-[13px] text-[var(--color-text-secondary)] w-40 shrink-0">{sector.name}</span>
+                          <div className="flex-1 flex items-center gap-2">
+                            <div className="flex-1 h-2 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden relative">
+                              <div className="h-full bg-[var(--color-gold)] rounded-full" style={{ width: `${Math.min(100, sector.percentage)}%` }} />
+                              <div className="absolute top-0 bottom-0 w-0.5 bg-white/30" style={{ left: `${Math.min(100, benchmark)}%` }} title={`S&P: ${benchmark}%`} />
+                            </div>
+                          </div>
+                          <span className="font-mono text-[13px] font-bold tabular-nums w-14 text-right text-[var(--color-text-primary)]">
+                            {sector.percentage.toFixed(1)}%
+                          </span>
+                          <span className="font-mono text-[11px] tabular-nums w-16 text-right" style={{ color: diffColor }}>
+                            {diff >= 0 ? '+' : ''}{diff.toFixed(1)}pp
+                          </span>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+                <div className="flex items-center gap-2 mt-4 text-[11px] text-[var(--color-text-muted)]">
+                  <div className="w-3 h-0.5 bg-[var(--color-gold)] rounded" /> Your allocation
+                  <div className="w-3 h-0.5 bg-white/30 rounded ml-3" /> S&P 500 benchmark
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* What-If Scenario */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-[15px]">Stress Test — What if your top holding drops 20%?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const top = holdings[0];
+                  if (!top) return <p className="text-sm text-[var(--color-text-muted)]">No holdings</p>;
+                  const dropPct = 0.20;
+                  const loss = top.total_value * dropPct;
+                  const portfolioImpact = totalValue > 0 ? (loss / totalValue) * 100 : 0;
+                  const newTotal = totalValue - loss;
+                  return (
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="rounded-lg border border-[var(--color-border-subtle)] p-4">
+                        <div className="font-mono text-[10px] tracking-wider text-[var(--color-text-muted)] uppercase">Position</div>
+                        <div className="text-[18px] font-bold text-[var(--color-gold)] mt-1" style={{ fontFamily: 'var(--font-mono)' }}>{top.ticker}</div>
+                      </div>
+                      <div className="rounded-lg border border-[var(--color-negative)]/20 bg-[var(--color-negative)]/[0.03] p-4">
+                        <div className="font-mono text-[10px] tracking-wider text-[var(--color-text-muted)] uppercase">Loss at -20%</div>
+                        <div className="text-[18px] font-bold text-[var(--color-negative)] mt-1" style={{ fontFamily: 'var(--font-mono)' }}>-{formatCurrency(loss)}</div>
+                      </div>
+                      <div className="rounded-lg border border-[var(--color-negative)]/20 bg-[var(--color-negative)]/[0.03] p-4">
+                        <div className="font-mono text-[10px] tracking-wider text-[var(--color-text-muted)] uppercase">Portfolio Impact</div>
+                        <div className="text-[18px] font-bold text-[var(--color-negative)] mt-1" style={{ fontFamily: 'var(--font-mono)' }}>-{portfolioImpact.toFixed(1)}%</div>
+                      </div>
+                      <div className="rounded-lg border border-[var(--color-border-subtle)] p-4">
+                        <div className="font-mono text-[10px] tracking-wider text-[var(--color-text-muted)] uppercase">New Total</div>
+                        <div className="text-[18px] font-bold text-[var(--color-text-primary)] mt-1" style={{ fontFamily: 'var(--font-mono)' }}>{formatCurrency(newTotal)}</div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+          </>
           )}
 
           {/* ---- Legacy PortfolioMonitor (hidden, keeps data flow) ---- */}
@@ -829,5 +945,110 @@ export default function PortfolioPage() {
         Prices may be delayed up to 60 seconds. Not intended for active trading.
       </p>
     </div>
+  );
+}
+
+/* ── Concentration Table with Search + Pagination ── */
+
+function ConcentrationTable({ holdings, formatCurrency }: {
+  holdings: { id: string; ticker: string; portfolio_allocation: number; total_value: number; asset_name: string }[];
+  formatCurrency: (n: number) => string;
+}) {
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
+  const PER_PAGE = 10;
+
+  const sorted = useMemo(() =>
+    [...holdings].sort((a, b) => b.portfolio_allocation - a.portfolio_allocation),
+    [holdings]
+  );
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return sorted;
+    const terms = search.toUpperCase().split(',').map(s => s.trim()).filter(Boolean);
+    return sorted.filter(h => terms.some(t => h.ticker.includes(t) || h.asset_name.toUpperCase().includes(t)));
+  }, [sorted, search]);
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE);
+  const pageItems = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
+
+  return (
+    <Card className="mb-6">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-[15px]">Single-Name Risk</CardTitle>
+            <p className="text-[12px] text-[var(--color-text-muted)] font-mono mt-1">
+              Red {'>'} 25% · Yellow {'>'} 10% · Search by ticker (comma-separated)
+            </p>
+          </div>
+          <input
+            type="text"
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(0); }}
+            placeholder="AAPL, NVDA, MSFT..."
+            className="w-48 px-3 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[13px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors"
+            style={{ fontFamily: 'var(--font-mono)' }}
+          />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-1">
+          {pageItems.map((h) => {
+            const alloc = h.portfolio_allocation;
+            const barColor = alloc > 25 ? 'var(--color-negative)' : alloc > 10 ? 'var(--color-warning-text)' : 'var(--color-gold)';
+            const textColor = alloc > 25 ? 'text-[var(--color-negative)]' : alloc > 10 ? 'text-[var(--color-warning-text)]' : 'text-[var(--color-text-primary)]';
+            return (
+              <Link
+                key={h.id}
+                href={`/dashboard/holdings/${h.ticker}`}
+                className="flex items-center gap-3 py-2.5 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-overlay)] transition-colors rounded px-1 -mx-1 group"
+              >
+                <span className="font-mono text-[14px] font-bold text-[var(--color-gold)] group-hover:text-[var(--color-gold-hi)] w-16 shrink-0">{h.ticker}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="h-2.5 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, alloc)}%`, backgroundColor: barColor }} />
+                  </div>
+                </div>
+                <span className={`font-mono text-[14px] font-bold tabular-nums w-16 text-right ${textColor}`}>
+                  {alloc.toFixed(1)}%
+                </span>
+                <span className="font-mono text-[12px] text-[var(--color-text-muted)] tabular-nums w-24 text-right">
+                  {formatCurrency(h.total_value)}
+                </span>
+              </Link>
+            );
+          })}
+          {pageItems.length === 0 && (
+            <p className="text-[13px] text-[var(--color-text-muted)] py-4 text-center">No holdings match &quot;{search}&quot;</p>
+          )}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-4 pt-3 border-t border-[var(--color-border-subtle)]">
+            <span className="text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+              {filtered.length} holdings · page {page + 1}/{totalPages}
+            </span>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="px-3 py-1 text-[12px] rounded border border-[var(--color-border-base)] text-[var(--color-text-secondary)] disabled:opacity-30 hover:border-[var(--color-border-strong)] transition-colors"
+              >
+                Prev
+              </button>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+                className="px-3 py-1 text-[12px] rounded border border-[var(--color-border-base)] text-[var(--color-text-secondary)] disabled:opacity-30 hover:border-[var(--color-border-strong)] transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

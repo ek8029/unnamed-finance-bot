@@ -43,7 +43,7 @@ const navigation = [
   { name: 'Analyze', href: '/dashboard/analyze', icon: Search },
   { name: 'Daily Brief', href: '/dashboard/brief', icon: BookOpen },
   { name: 'Actions', href: '/dashboard/actions', icon: Zap },
-  { name: 'Transactions', href: '/dashboard/transactions', icon: ArrowLeftRight },
+  { name: 'Activity', href: '/dashboard/transactions', icon: ArrowLeftRight },
   { name: 'Taxes', href: '/dashboard/taxes', icon: FileText, pro: true },
   { name: 'Wrapped', href: '/dashboard/wrapped', icon: Sparkles, pro: true },
 ];
@@ -58,7 +58,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/earnings': 'Earnings',
   '/dashboard/brief': 'Daily Brief',
   '/dashboard/actions': 'Actions',
-  '/dashboard/transactions': 'Transactions',
+  '/dashboard/transactions': 'Activity',
   '/dashboard/taxes': 'Taxes',
   '/dashboard/wrapped': 'Wrapped',
   '/dashboard/accounts': 'Connected Accounts',
@@ -71,6 +71,10 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/dashboard/analyze/')) {
     const ticker = pathname.split('/')[3]?.toUpperCase();
     return ticker ? `Analyze ${ticker}` : 'Analyze';
+  }
+  if (pathname.startsWith('/dashboard/holdings/')) {
+    const ticker = pathname.split('/')[3]?.toUpperCase();
+    return ticker ? `${ticker} Position` : 'Holdings';
   }
   return 'Dashboard';
 }

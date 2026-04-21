@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getLatestPrice, getTickerSectorOverride, type PolygonPrice } from '@/lib/polygon';
+import { getTickerSectorOverride } from '@/lib/polygon';
 import { getQuote } from '@/lib/financial-data';
 import { rateLimit } from '@/lib/rate-limit';
 
@@ -24,11 +24,7 @@ function classifyVix(price: number): VixLevel {
   return 'extreme_greed';
 }
 
-function formatIndex(data: PolygonPrice | null) {
-  if (!data) return null;
-  const changePct = data.open > 0 ? ((data.close - data.open) / data.open) * 100 : 0;
-  return { price: data.close, changePct: Math.round(changePct * 100) / 100 };
-}
+// formatIndex removed — all market data now uses Finnhub getQuote() for real-time prices
 
 function resolveSector(ticker: string): string {
   return getTickerSectorOverride(ticker) || 'Diversified';
@@ -164,21 +160,23 @@ export async function GET() {
     } = { spy: null, qqq: null, vix: null, treasury: null };
 
     try {
+      // All 4 use Finnhub getQuote() for real-time intraday data
+      // (getLatestPrice from Polygon only returns previous day close)
       const [spyData, qqqData, vixyData, tltData] = await Promise.allSettled([
-        getLatestPrice('SPY'),
-        getLatestPrice('QQQ'),
-        getQuote('VIXY'),  // VIX futures ETF — tracks VIX closely on Finnhub free tier
-        getQuote('TLT'),   // 20+ Year Treasury Bond ETF — Finnhub free tier
+        getQuote('SPY'),
+        getQuote('QQQ'),
+        getQuote('VIXY'),
+        getQuote('TLT'),
       ]);
 
-      const spy = spyData.status === 'fulfilled' ? spyData.value : null;
-      const qqq = qqqData.status === 'fulfilled' ? qqqData.value : null;
+      const spyQ = spyData.status === 'fulfilled' ? spyData.value : null;
+      const qqqQ = qqqData.status === 'fulfilled' ? qqqData.value : null;
       const vixy = vixyData.status === 'fulfilled' ? vixyData.value : null;
       const tlt = tltData.status === 'fulfilled' ? tltData.value : null;
 
       market = {
-        spy: formatIndex(spy),
-        qqq: formatIndex(qqq),
+        spy: spyQ && spyQ.c > 0 ? { price: spyQ.c, changePct: spyQ.dp ?? 0 } : null,
+        qqq: qqqQ && qqqQ.c > 0 ? { price: qqqQ.c, changePct: qqqQ.dp ?? 0 } : null,
         vix: vixy && vixy.c > 0 ? { price: vixy.c, level: classifyVix(vixy.c) } : null,
         treasury: tlt && tlt.c > 0 ? { price: tlt.c, changePct: tlt.dp ?? 0 } : null,
       };
