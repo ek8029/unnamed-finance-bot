@@ -250,7 +250,14 @@ export async function GET() {
         .limit(10),
     ]);
 
-    const positionNews = (positionNewsResult.data || []).map(n => ({
+    // Deduplicate by URL
+    const seenUrls = new Set<string>();
+    const positionNews = (positionNewsResult.data || []).filter(n => {
+      const key = n.url || n.id;
+      if (seenUrls.has(key)) return false;
+      seenUrls.add(key);
+      return true;
+    }).map(n => ({
       id: n.id,
       title: n.title,
       summary: n.summary,
@@ -264,7 +271,12 @@ export async function GET() {
 
     // General news: exclude articles already in position news
     const positionNewsIds = new Set(positionNews.map(n => n.id));
-    const generalNews = (generalNewsResult.data || [])
+    const generalNews = (generalNewsResult.data || []).filter(n => {
+      const key = n.url || n.id;
+      if (seenUrls.has(key)) return false;
+      seenUrls.add(key);
+      return true;
+    })
       .filter(n => !positionNewsIds.has(n.id))
       .slice(0, 6)
       .map(n => ({

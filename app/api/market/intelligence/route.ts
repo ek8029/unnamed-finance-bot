@@ -47,7 +47,16 @@ export async function GET(request: Request) {
     }
 
     // Transform news for frontend
-    const news = (newsResult.data || []).map(article => {
+    // Deduplicate by URL (articles with multiple tickers can appear multiple times)
+    const seenUrls = new Set<string>();
+    const dedupedNews = (newsResult.data || []).filter(article => {
+      const key = article.url || article.id;
+      if (seenUrls.has(key)) return false;
+      seenUrls.add(key);
+      return true;
+    });
+
+    const news = dedupedNews.map(article => {
       // Use primary_ticker for relevance — the article's actual subject,
       // not a tangentially mentioned ticker from Polygon's full tag array
       const primary = article.primary_ticker || (article.tickers || [])[0] || null;
