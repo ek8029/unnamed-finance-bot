@@ -192,8 +192,8 @@ export default function PortfolioPage() {
   const sortedByDayChange = useMemo(() => [...holdings].sort((a, b) => (b.day_change_percentage ?? 0) - (a.day_change_percentage ?? 0)), [holdings]);
 
   /* ---------- header tab state (visual only) ---------- */
-  const tabs = ['Overview', 'Positions', 'Concentration'] as const;
-  const [activeTab, setActiveTab] = useState<typeof tabs[number]>('Overview');
+  const tabs = ['Portfolio', 'Concentration'] as const;
+  const [activeTab, setActiveTab] = useState<typeof tabs[number]>('Portfolio');
 
   /* ================================================================ */
   /*  EARLY RETURNS                                                    */
@@ -381,7 +381,7 @@ export default function PortfolioPage() {
           </div>
 
           {/* ---- TAB CONTENT ---- */}
-          {(activeTab === 'Positions' || activeTab === 'Overview') && (
+          {(activeTab === 'Portfolio') && (
           <>
           {/* ---- 3. TLH BANNER ---- */}
           {(() => {
@@ -615,7 +615,7 @@ export default function PortfolioPage() {
           </>
           )}
 
-          {(activeTab === 'Overview') && (
+          {(activeTab === 'Portfolio') && (
           <>
           {/* ---- 5. PERFORMANCE CHART ---- */}
           <Card>
@@ -712,7 +712,7 @@ export default function PortfolioPage() {
           </>
           )}
 
-          {(activeTab === 'Overview') && (
+          {(activeTab === 'Portfolio') && (
           <>
           {/* ---- 6. ALLOCATION, SECTOR, METRICS ROW ---- */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
