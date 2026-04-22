@@ -127,7 +127,8 @@ export async function logAuthEvent(params: {
       metadata,
     });
   } catch (err) {
-    // Non-fatal - never break the auth flow for logging
+    // Non-fatal - never break the auth flow for logging, but DO log the error
+    console.error('[logAuthEvent] Failed to log event:', params.eventType, err);
     console.error('Failed to log auth event:', err);
   }
 }
