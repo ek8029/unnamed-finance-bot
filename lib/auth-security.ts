@@ -1,4 +1,4 @@
-import { createServiceClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { headers } from 'next/headers';
 
 // ── Password Strength ──────────────────────────────────────────────
@@ -33,7 +33,11 @@ export async function checkRateLimit(
   maxAttempts: number,
   windowMinutes: number,
 ): Promise<{ allowed: boolean; remaining: number; retryAfterSeconds?: number }> {
-  const supabase = await createServiceClient();
+  const supabase = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    );
   const windowStart = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
 
   const { count } = await supabase
@@ -92,7 +96,13 @@ export async function logAuthEvent(params: {
   metadata?: Record<string, unknown>;
 }) {
   try {
-    const supabase = await createServiceClient();
+    // Use direct client — NOT createServiceClient() which calls cookies()
+    // and can silently fail when called after signInWithPassword modifies the cookie jar
+    const supabase = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    );
     const headersList = await headers();
     const forwarded = headersList.get('x-forwarded-for');
     const ip = forwarded?.split(',')[0]?.trim() || headersList.get('x-real-ip') || 'unknown';
