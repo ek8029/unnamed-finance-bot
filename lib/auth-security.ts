@@ -103,10 +103,16 @@ export async function logAuthEvent(params: {
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { autoRefreshToken: false, persistSession: false } },
     );
-    const headersList = await headers();
-    const forwarded = headersList.get('x-forwarded-for');
-    const ip = forwarded?.split(',')[0]?.trim() || headersList.get('x-real-ip') || 'unknown';
-    const userAgent = headersList.get('user-agent') || 'unknown';
+    let ip = 'unknown';
+    let userAgent = 'unknown';
+    try {
+      const headersList = await headers();
+      const forwarded = headersList.get('x-forwarded-for');
+      ip = forwarded?.split(',')[0]?.trim() || headersList.get('x-real-ip') || 'unknown';
+      userAgent = headersList.get('user-agent') || 'unknown';
+    } catch {
+      // headers() can fail in certain execution contexts — log with unknown IP/UA rather than failing
+    }
 
     // Pull reason out of metadata if the caller stuffed it there — they
     // shouldn't but it's a cheap safety net
