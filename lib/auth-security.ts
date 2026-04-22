@@ -116,7 +116,7 @@ export async function logAuthEvent(params: {
     delete metadata.reason;
     delete metadata.emailDomain;
 
-    await supabase.from('auth_events').insert({
+    const { error: insertError } = await supabase.from('auth_events').insert({
       user_id: params.userId || null,
       email: params.email || null,
       email_domain: params.emailDomain ?? metadataDomain ?? deriveEmailDomain(params.email),
@@ -126,10 +126,11 @@ export async function logAuthEvent(params: {
       user_agent: userAgent,
       metadata,
     });
+    if (insertError) {
+      console.error('[logAuthEvent] Insert failed:', params.eventType, insertError.message, insertError.code, insertError.details);
+    }
   } catch (err) {
-    // Non-fatal - never break the auth flow for logging, but DO log the error
-    console.error('[logAuthEvent] Failed to log event:', params.eventType, err);
-    console.error('Failed to log auth event:', err);
+    console.error('[logAuthEvent] Exception:', params.eventType, err);
   }
 }
 
