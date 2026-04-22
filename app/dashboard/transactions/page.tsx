@@ -62,6 +62,18 @@ const KIND_CONFIG: Record<TxKind, { label: string; color: string; bg: string }> 
 
 /* ─── Filter chip types ─── */
 type ChipFilter = 'ALL' | 'BUY' | 'SELL' | 'DIV' | 'DEPOSIT' | 'FEE';
+const ACCOUNT_TYPE_LABELS: Record<string, string> = {
+  checking: 'Checking',
+  savings: 'Savings',
+  credit_card: 'Credit Cards',
+  brokerage: 'Brokerage',
+  loan: 'Loans',
+  mortgage: 'Mortgage',
+  crypto: 'Crypto',
+  investment: 'Investment',
+  depository: 'Depository',
+};
+
 const CHIP_FILTERS: { key: ChipFilter; label: string }[] = [
   { key: 'ALL', label: 'All' },
   { key: 'BUY', label: 'Buys' },
@@ -385,18 +397,7 @@ export default function TransactionsPage() {
     return { bought, sold, dividends, fees, buyCount, sellCount, divCount, feeCount };
   }, [enriched]);
 
-  /* ─── Account type labels for chip filters ─── */
-  const ACCOUNT_TYPE_LABELS: Record<string, string> = {
-    checking: 'Checking',
-    savings: 'Savings',
-    credit_card: 'Credit Cards',
-    brokerage: 'Brokerage',
-    loan: 'Loans',
-    mortgage: 'Mortgage',
-    crypto: 'Crypto',
-    investment: 'Investment',
-    depository: 'Depository',
-  };
+  /* ─── Account type labels — defined above component, see ACCOUNT_TYPE_LABELS ─── */
 
   const accountNames = useMemo(() => {
     const typeSet = new Set<string>();
