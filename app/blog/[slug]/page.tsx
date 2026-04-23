@@ -192,6 +192,9 @@ export default async function BlogPost({ params }: PageProps) {
                 components={mdxComponents}
                 options={{
                   scope: {},
+                  mdxOptions: {
+                    remarkPlugins: [(await import('remark-gfm')).default],
+                  },
                 }}
               />
             </div>

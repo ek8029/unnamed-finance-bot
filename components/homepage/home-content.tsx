@@ -23,8 +23,6 @@ const NAV_LINKS = [
     { label: 'Stock Analyzer', href: '/analyze', desc: 'AI-powered stock analysis' },
     { label: 'Stock Comparison', href: '/compare', desc: 'Side-by-side ticker comparison' },
     { label: 'TLH Calculator', href: '/tools/tlh-calculator', desc: 'Tax-loss harvesting estimator' },
-    { label: 'For Engineers', href: '/for/engineers', desc: 'RSU tracking & portfolio intelligence' },
-    { label: 'For Investors', href: '/for/investors', desc: 'Bloomberg-grade analysis, free' },
   ]},
   { label: 'Blog', href: '/blog' },
 ];
@@ -97,9 +95,6 @@ const FOOTER_TOOLS = [
   { label: 'Stock Analyzer', href: '/analyze' },
   { label: 'Stock Comparison', href: '/compare' },
   { label: 'TLH Calculator', href: '/tools/tlh-calculator' },
-  { label: 'For Engineers', href: '/for/engineers' },
-  { label: 'For Investors', href: '/for/investors' },
-  { label: 'For Founders', href: '/for/founders' },
 ];
 
 const FOOTER_COMPANY = [
