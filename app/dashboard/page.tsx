@@ -99,55 +99,63 @@ export default function DashboardOverview() {
   if (hasNoData) {
     return (
       <div className="container mx-auto card-padding max-w-[1600px]">
-        <div className="max-w-2xl mx-auto py-16">
-          <div className="text-center space-y-6">
-            <div className="w-16 h-16 rounded-2xl bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center mx-auto">
-              <Wallet className="w-8 h-8 text-[var(--color-gold)]" />
-            </div>
-            <div>
-              <h1 className="type-h1 mb-2">Welcome to Helm</h1>
-              <p className="type-body text-[var(--color-text-secondary)] max-w-md mx-auto">
-                Connect your first financial account to unlock your personalized command center with real-time intelligence.
-              </p>
-            </div>
+        <div className="max-w-3xl mx-auto py-12">
 
+          {/* Hero — big, clear, specific */}
+          <div className="text-center space-y-5 mb-12">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[var(--color-text-primary)]">
+              Your financial command center is one connection away.
+            </h1>
+            <p className="text-lg text-[var(--color-text-secondary)] max-w-xl mx-auto leading-relaxed">
+              Link a brokerage or bank account to see your net worth, portfolio performance, tax opportunities, and AI-powered insights — all in real time.
+            </p>
             <Link
               href="/dashboard/accounts"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-semibold rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black text-base font-bold rounded-lg transition-colors"
             >
-              <Wallet className="w-4 h-4" />
-              Connect Your First Account
+              <Wallet className="w-5 h-5" />
+              Connect Your Account
             </Link>
+            <p className="text-xs text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+              Read-only access via Plaid · 12,000+ institutions · Takes 30 seconds
+            </p>
           </div>
 
-          {/* Steps */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16">
+          {/* What you'll unlock — specific, tangible */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
             {[
-              {
-                icon: Shield,
-                title: 'Connect securely',
-                description: 'Link your bank accounts, credit cards, and brokerages through Plaid. Your credentials never touch our servers.',
-              },
-              {
-                icon: TrendingUp,
-                title: 'See the full picture',
-                description: 'Your net worth, cash flow, portfolio, and health score update automatically after each sync.',
-              },
-              {
-                icon: ArrowLeftRight,
-                title: 'Get intelligence',
-                description: 'Helm analyzes your financial data and surfaces actionable insights tailored to your situation.',
-              },
-            ].map((step, i) => (
-              <div key={i} className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl p-6 text-center">
-                <div className="w-10 h-10 rounded-lg bg-[var(--color-bg-overlay)] flex items-center justify-center mx-auto mb-4">
-                  <step.icon className="w-5 h-5 text-[var(--color-text-secondary)]" />
+              { icon: TrendingUp, title: 'Portfolio Intelligence', desc: 'See every holding, sector allocation, concentration risk, and unrealized P&L across all accounts in one view.' },
+              { icon: Shield, title: 'Tax-Loss Harvesting', desc: 'Helm automatically detects harvestable positions and wash-sale conflicts. Pro users get Form 8949 exports.' },
+              { icon: ArrowLeftRight, title: 'Daily Brief', desc: 'Every morning, a personalized newspaper-style brief with what moved, what matters, and what to do.' },
+              { icon: Wallet, title: 'Net Worth Tracking', desc: 'Real-time net worth across banks, brokerages, crypto, and credit cards with month-over-month trends.' },
+            ].map((feature, i) => (
+              <div key={i} className="flex gap-4 p-5 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg">
+                <div className="w-10 h-10 rounded-lg bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center shrink-0">
+                  <feature.icon className="w-5 h-5 text-[var(--color-gold)]" />
                 </div>
-                <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-2">{step.title}</h3>
-                <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">{step.description}</p>
+                <div>
+                  <h3 className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1">{feature.title}</h3>
+                  <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">{feature.desc}</p>
+                </div>
               </div>
             ))}
           </div>
+
+          {/* Trust bar */}
+          <div className="rounded-lg border border-[var(--color-positive)]/15 bg-[var(--color-positive)]/[0.03] p-5">
+            <div className="flex items-start gap-3">
+              <Shield className="w-5 h-5 text-[var(--color-positive)] shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1">Bank-level security, read-only access</h3>
+                <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
+                  Helm connects through Plaid, the same infrastructure used by Venmo, Robinhood, and Coinbase.
+                  We can see your balances and transactions — we can never move money, place trades, or access your login credentials.
+                  Your data is encrypted at rest and in transit. You can disconnect any account at any time.
+                </p>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     );
