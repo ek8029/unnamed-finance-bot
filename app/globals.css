@@ -57,6 +57,8 @@ html { scroll-behavior: smooth; }
     --color-negative-muted: rgba(239, 68, 68, 0.10);
     --color-negative-border: rgba(239, 68, 68, 0.20);
     --color-negative-text: #f87171;
+    --color-positive-muted: rgba(74, 222, 128, 0.10);
+    --color-positive-border: rgba(74, 222, 128, 0.20);
     --color-neutral:       #525252;
     --color-warning:       #f59e0b;
     --color-warning-muted: rgba(245, 158, 11, 0.10);

@@ -64,7 +64,7 @@ export function AuthShell({ subtitle, children }: AuthShellProps) {
           className="relative"
         >
           <div className="absolute -inset-px rounded-xl bg-gradient-to-b from-[var(--color-gold)]/20 via-[var(--color-gold)]/5 to-transparent opacity-60" />
-          <div className="relative bg-[rgba(10,10,10,0.7)] backdrop-blur-xl border border-white/[0.08] rounded-xl p-8">
+          <div className="relative bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] rounded-xl p-8">
             {children}
           </div>
         </motion.div>
