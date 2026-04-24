@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
@@ -21,10 +21,13 @@ function getPasswordStrength(password: string) {
   return { score, label: labels[score], color: colors[score], requirements };
 }
 
-export default function SignupPage() {
-  const router = useRouter();
+import { Suspense } from 'react';
 
-  const [email, setEmail] = useState('');
+function SignupForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [email, setEmail] = useState(searchParams.get('email') || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -270,5 +273,13 @@ export default function SignupPage() {
         </p>
       </div>
     </AuthShell>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
   );
 }

@@ -171,6 +171,43 @@ function HeroSearch() {
    HomeContent
    ═══════════════════════════════════════════════════════════════════════════ */
 
+function InlineSignup() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = email.trim();
+    if (!trimmed) {
+      router.push('/signup');
+      return;
+    }
+    setSubmitting(true);
+    router.push(`/signup?email=${encodeURIComponent(trimmed)}`);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex gap-2">
+      <input
+        type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        placeholder="you@email.com"
+        className="flex-1 px-4 py-3 bg-white/[0.06] border border-white/[0.1] rounded-lg text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors min-w-0"
+      />
+      <button
+        type="submit"
+        disabled={submitting}
+        className="px-5 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black text-[13px] font-bold rounded-lg transition-colors whitespace-nowrap disabled:opacity-50 flex items-center gap-1.5"
+      >
+        {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
+        Start free
+      </button>
+    </form>
+  );
+}
+
 function ToolsDropdown({ items }: { items: { label: string; href: string; desc: string }[] }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -460,9 +497,12 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                   AI stock analysis, tax-loss harvesting, earnings exposure, portfolio
                   intelligence — the tools Wall Street pays $24,000 a year for.
                 </p>
-                <p className="text-[15px] font-semibold text-white/90">
+                <p className="text-[15px] font-semibold text-white/90 mb-6">
                   Most of it is free.
                 </p>
+
+                {/* Inline signup — email capture without leaving page */}
+                <InlineSignup />
               </FadeIn>
             </div>
           </div>
