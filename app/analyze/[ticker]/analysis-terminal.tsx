@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { StockAnalysis, AnalysisMetric } from '@/components/analysis/types';
 import type { TickerData } from '@/lib/financial-data';
-import { Search, Loader2, Link2, Check, ChevronRight, Menu, X } from 'lucide-react';
+import { Search, Loader2, Link2, Check, ChevronRight, Menu, X, Calendar } from 'lucide-react';
 import { FinancialDisclaimer } from '@/components/financial-disclaimer';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from 'recharts';
 
 // ── Types ──
 
@@ -38,7 +39,7 @@ const FUNCTIONS: FunctionItem[] = [
   { key: 'earnings', label: 'EARNINGS', children: ['History'] },
   { key: 'news', label: 'NEWS', children: ['Recent', 'Sentiment'] },
   { key: 'ai-analysis', label: 'AI ANALYSIS', children: ['Bull', 'Bear'] },
-  { key: 'compare', label: 'COMPARE', badge: 'SOON' },
+  { key: 'compare', label: 'COMPARE', children: ['Side-by-Side'] },
   { key: 'options', label: 'OPTIONS', badge: 'PRO' },
 ];
 
@@ -207,12 +208,122 @@ function MetricCell({ label, value, context }: { label: string; value: string; c
   );
 }
 
+// ── Price Chart ──
+
+function PriceChart({ ticker }: { ticker: string }) {
+  const [prices, setPrices] = useState<{ price_date: string; close: number }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/market/history?ticker=${ticker}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.prices) setPrices(data.prices); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [ticker]);
+
+  if (loading) return <div className="h-[200px] flex items-center justify-center text-[12px] font-mono text-[var(--color-text-muted)]">Loading chart...</div>;
+  if (prices.length < 2) return null;
+
+  const min = Math.min(...prices.map(p => p.close));
+  const max = Math.max(...prices.map(p => p.close));
+  const first = prices[0].close;
+  const last = prices[prices.length - 1].close;
+  const isUp = last >= first;
+  const color = isUp ? 'var(--color-positive)' : 'var(--color-negative)';
+
+  return (
+    <div className="h-[200px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={prices} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id={`gradient-${ticker}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity={0.2} />
+              <stop offset="100%" stopColor={color} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <XAxis dataKey="price_date" tick={{ fontSize: 10, fill: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }} tickFormatter={(v: string) => { const d = new Date(v + 'T00:00:00'); return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }} interval="preserveStartEnd" axisLine={false} tickLine={false} />
+          <YAxis domain={[min * 0.995, max * 1.005]} tick={{ fontSize: 10, fill: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }} tickFormatter={(v: number) => `$${v.toFixed(0)}`} axisLine={false} tickLine={false} width={50} />
+          <Tooltip content={({ active, payload }) => {
+            if (!active || !payload?.[0]) return null;
+            const d = payload[0].payload;
+            return (
+              <div className="bg-[var(--color-bg-overlay)] border border-[var(--color-border-strong)] rounded-sm px-3 py-2 text-[12px] font-mono shadow-lg">
+                <div className="text-[var(--color-text-muted)]">{d.price_date}</div>
+                <div className="text-[var(--color-text-primary)] font-semibold">${d.close.toFixed(2)}</div>
+              </div>
+            );
+          }} />
+          <Area type="monotone" dataKey="close" stroke={color} strokeWidth={1.5} fill={`url(#gradient-${ticker})`} dot={false} />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// ── EPS Chart (from earnings history) ──
+
+function EPSChart({ earnings }: { earnings: TickerData['earnings'] }) {
+  const data = useMemo(() => {
+    if (!earnings) return [];
+    return [...earnings]
+      .filter(e => e.actual != null)
+      .reverse()
+      .slice(-8)
+      .map(e => ({
+        quarter: `Q${e.quarter} ${e.year}`,
+        actual: e.actual!,
+        estimate: e.estimate,
+        beat: e.actual != null && e.estimate != null ? e.actual > e.estimate : null,
+      }));
+  }, [earnings]);
+
+  if (data.length < 2) return null;
+
+  return (
+    <div className="space-y-2">
+      <div className="text-[12px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">EPS History (Actual vs Estimate)</div>
+      <div className="h-[160px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-subtle)" />
+            <XAxis dataKey="quarter" tick={{ fontSize: 9, fill: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 10, fill: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }} tickFormatter={(v: number) => `$${v.toFixed(2)}`} axisLine={false} tickLine={false} width={50} />
+            <Tooltip content={({ active, payload }) => {
+              if (!active || !payload?.[0]) return null;
+              const d = payload[0].payload;
+              return (
+                <div className="bg-[var(--color-bg-overlay)] border border-[var(--color-border-strong)] rounded-sm px-3 py-2 text-[12px] font-mono shadow-lg">
+                  <div className="text-[var(--color-text-muted)]">{d.quarter}</div>
+                  <div className={`font-semibold ${d.beat ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>Actual: ${d.actual.toFixed(2)}</div>
+                  {d.estimate != null && <div className="text-[var(--color-text-muted)]">Est: ${d.estimate.toFixed(2)}</div>}
+                </div>
+              );
+            }} />
+            <Bar dataKey="estimate" fill="var(--color-text-muted)" radius={[2, 2, 0, 0]} opacity={0.3} />
+            <Bar dataKey="actual" fill="var(--color-positive)" radius={[2, 2, 0, 0]} opacity={0.8} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
 // ── Center Pane Views ──
 
 function OverviewView({ analysis, tickerData }: { analysis: StockAnalysis; tickerData: TickerData }) {
-  const { quote, profile, financials } = tickerData;
+  const { quote, profile, financials, earnings } = tickerData;
   const m = financials?.metric || {};
   const verdictLabel = analysis.verdict.charAt(0).toUpperCase() + analysis.verdict.slice(1);
+
+  // Next earnings date
+  const nextEarnings = useMemo(() => {
+    if (!earnings) return null;
+    const now = new Date();
+    const future = earnings.find(e => new Date(e.period) > now);
+    if (future) return future;
+    return earnings[0]; // most recent
+  }, [earnings]);
 
   return (
     <div className="space-y-6">
@@ -238,18 +349,59 @@ function OverviewView({ analysis, tickerData }: { analysis: StockAnalysis; ticke
         <MetricCell label="52W Range" value={m['52WeekLow'] != null && m['52WeekHigh'] != null ? `${fmt(m['52WeekLow'])} - ${fmt(m['52WeekHigh'])}` : '--'} />
       </div>
 
+      {/* Company description (AI summary) */}
+      <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-4">
+        <div className="text-[12px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase mb-2">Company Overview</div>
+        <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed">{analysis.summary}</p>
+      </div>
+
+      {/* Price chart */}
+      <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-[12px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Price — 45 Day</div>
+          <div className="flex items-baseline gap-2 font-mono tabular-nums">
+            <span className="text-[18px] font-semibold text-[var(--color-text-primary)]">{fmtPrice(quote?.c)}</span>
+            <span className={`text-[13px] ${changeColor(quote?.dp)}`}>{fmtPct(quote?.dp)}</span>
+          </div>
+        </div>
+        <PriceChart ticker={analysis.ticker} />
+      </div>
+
+      {/* Revenue chart + Earnings date side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4">
+        <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-4">
+          <EPSChart earnings={earnings} />
+        </div>
+        {nextEarnings && (
+          <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-4 flex flex-col items-center justify-center min-w-[160px]">
+            <Calendar className="w-5 h-5 text-[var(--color-gold)] mb-2" />
+            <div className="text-[11px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase mb-1">Earnings</div>
+            <div className="text-[16px] font-mono font-semibold text-[var(--color-text-primary)]">
+              {new Date(nextEarnings.period).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </div>
+            <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-0.5">Q{nextEarnings.quarter} {nextEarnings.year}</div>
+          </div>
+        )}
+      </div>
+
       {/* AI Verdict */}
       <div className="flex items-start gap-4">
         <span className={`inline-flex items-center px-3 py-1.5 rounded-sm border text-[14px] font-mono font-bold tracking-wider ${verdictBg(analysis.verdict)}`}>
           {verdictLabel.toUpperCase()}
         </span>
-        <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed flex-1">{analysis.summary}</p>
+        <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed flex-1">{analysis.recommendation}</p>
       </div>
 
-      {/* Recommendation box */}
-      <div className="border-l-2 border-[var(--color-gold)] bg-[var(--color-gold)]/5 rounded-r-sm px-4 py-3">
-        <div className="text-[12px] font-mono tracking-widest text-[var(--color-gold)] mb-1 uppercase">Recommendation</div>
-        <p className="text-[15px] text-[var(--color-text-primary)] leading-relaxed">{analysis.recommendation}</p>
+      {/* Bull/Bear summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="border border-[var(--color-positive)]/20 rounded-sm p-3">
+          <div className="text-[11px] font-mono tracking-widest text-[var(--color-positive)] uppercase font-semibold mb-1.5">Bull Case</div>
+          <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed line-clamp-3">{analysis.bullCase}</p>
+        </div>
+        <div className="border border-[var(--color-negative)]/20 rounded-sm p-3">
+          <div className="text-[11px] font-mono tracking-widest text-[var(--color-negative)] uppercase font-semibold mb-1.5">Bear Case</div>
+          <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed line-clamp-3">{analysis.bearCase}</p>
+        </div>
       </div>
     </div>
   );
@@ -446,6 +598,185 @@ function AIAnalysisView({ analysis }: { analysis: StockAnalysis }) {
   );
 }
 
+// ── Compare View ──
+
+function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: {
+  currentTicker: string;
+  currentData: TickerData;
+  currentAnalysis: StockAnalysis;
+  basePath: string;
+}) {
+  const [compareTicker, setCompareTicker] = useState('');
+  const [compareData, setCompareData] = useState<TickerData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleCompare = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    const symbol = compareTicker.trim().toUpperCase().replace(/[^A-Z]/g, '');
+    if (!symbol || symbol === currentTicker) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/market/ticker-data?symbol=${symbol}`);
+      if (!res.ok) { setError(res.status === 404 ? `${symbol} not found` : 'Failed to load'); return; }
+      setCompareData(await res.json());
+    } catch { setError('Network error'); } finally { setLoading(false); }
+  }, [compareTicker, currentTicker]);
+
+  const SUGGESTIONS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META', 'JPM'].filter(t => t !== currentTicker);
+
+  // Metric row helper
+  const row = (label: string, aVal: string, bVal: string, highlight?: 'higher' | 'lower') => {
+    const aNum = parseFloat(aVal.replace(/[^0-9.\-]/g, ''));
+    const bNum = parseFloat(bVal.replace(/[^0-9.\-]/g, ''));
+    const aWins = highlight === 'higher' ? aNum > bNum : highlight === 'lower' ? aNum < bNum : false;
+    const bWins = highlight === 'higher' ? bNum > aNum : highlight === 'lower' ? bNum < aNum : false;
+    return (
+      <tr key={label} className="border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors">
+        <td className="py-2 px-3 text-[13px] font-mono text-[var(--color-text-muted)]">{label}</td>
+        <td className={`py-2 px-3 text-right text-[14px] font-mono tabular-nums font-semibold ${aWins ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-primary)]'}`}>{aVal}</td>
+        <td className={`py-2 px-3 text-right text-[14px] font-mono tabular-nums font-semibold ${bWins ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-primary)]'}`}>{bVal}</td>
+      </tr>
+    );
+  };
+
+  if (!compareData) {
+    return (
+      <div className="space-y-5">
+        <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Compare {currentTicker} against</div>
+        <form onSubmit={handleCompare} className="flex gap-2 max-w-sm">
+          <div className="flex-1 relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--color-text-muted)]" />
+            <input
+              type="text" value={compareTicker} onChange={(e) => setCompareTicker(e.target.value.toUpperCase())}
+              placeholder="Enter ticker" maxLength={5} disabled={loading}
+              className="w-full pl-7 pr-2 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-[13px] tracking-wider font-mono tabular-nums"
+            />
+          </div>
+          <button type="submit" disabled={!compareTicker.trim() || loading}
+            className="px-4 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded-sm transition-colors text-[12px] disabled:opacity-40 flex items-center gap-1.5">
+            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Compare'}
+          </button>
+        </form>
+        {error && <div className="text-[13px] text-[var(--color-negative)] font-mono">{error}</div>}
+        <div className="flex flex-wrap gap-2 pt-2">
+          {SUGGESTIONS.slice(0, 6).map(t => (
+            <button key={t} onClick={() => { setCompareTicker(t); }}
+              className="px-3 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm text-[11px] font-mono font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:border-[var(--color-gold-border)] transition-colors">
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Side-by-side comparison
+  const a = currentData;
+  const b = compareData;
+  const am = a.financials?.metric || {} as Record<string, number>;
+  const bm = b.financials?.metric || {} as Record<string, number>;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">
+          {currentTicker} vs {compareData.symbol}
+        </div>
+        <button onClick={() => { setCompareData(null); setCompareTicker(''); }}
+          className="text-[11px] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors">
+          Change ticker
+        </button>
+      </div>
+
+      {/* Company cards */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-4">
+          <div className="text-[18px] font-mono font-bold text-[var(--color-gold)] tabular-nums">{currentTicker}</div>
+          <div className="text-[13px] text-[var(--color-text-secondary)] mt-0.5">{currentAnalysis.companyName}</div>
+          <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-1">{a.profile?.finnhubIndustry || '--'}</div>
+          <div className="flex items-baseline gap-2 mt-2">
+            <span className="text-[20px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{fmtPrice(a.quote?.c)}</span>
+            <span className={`text-[13px] font-mono tabular-nums ${changeColor(a.quote?.dp)}`}>{fmtPct(a.quote?.dp)}</span>
+          </div>
+        </div>
+        <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-4">
+          <div className="text-[18px] font-mono font-bold text-[var(--color-text-primary)] tabular-nums">{b.symbol}</div>
+          <div className="text-[13px] text-[var(--color-text-secondary)] mt-0.5">{b.profile?.name || b.symbol}</div>
+          <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-1">{b.profile?.finnhubIndustry || '--'}</div>
+          <div className="flex items-baseline gap-2 mt-2">
+            <span className="text-[20px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{fmtPrice(b.quote?.c)}</span>
+            <span className={`text-[13px] font-mono tabular-nums ${changeColor(b.quote?.dp)}`}>{fmtPct(b.quote?.dp)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Comparison table */}
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-[var(--color-border-strong)]">
+              <th className="text-left py-2 px-3 text-[11px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase font-normal w-1/3">Metric</th>
+              <th className="text-right py-2 px-3 text-[11px] font-mono tracking-widest text-[var(--color-gold)] uppercase font-semibold w-1/3">{currentTicker}</th>
+              <th className="text-right py-2 px-3 text-[11px] font-mono tracking-widest text-[var(--color-text-secondary)] uppercase font-semibold w-1/3">{b.symbol}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {row('Market Cap', a.profile?.marketCapitalization != null ? fmtCompact(a.profile.marketCapitalization * 1e6) : '--', b.profile?.marketCapitalization != null ? fmtCompact(b.profile.marketCapitalization * 1e6) : '--', 'higher')}
+            {row('P/E Ratio', am.peBasicExclExtraTTM != null ? fmt(am.peBasicExclExtraTTM) : '--', bm.peBasicExclExtraTTM != null ? fmt(bm.peBasicExclExtraTTM) : '--', 'lower')}
+            {row('EPS (TTM)', am.epsBasicExclExtraTTM != null ? fmtPrice(am.epsBasicExclExtraTTM) : '--', bm.epsBasicExclExtraTTM != null ? fmtPrice(bm.epsBasicExclExtraTTM) : '--', 'higher')}
+            {row('Revenue/Share', am.revenuePerShareTTM != null ? fmtPrice(am.revenuePerShareTTM) : '--', bm.revenuePerShareTTM != null ? fmtPrice(bm.revenuePerShareTTM) : '--', 'higher')}
+            {row('Gross Margin', am.grossMarginTTM != null ? `${fmt(am.grossMarginTTM)}%` : '--', bm.grossMarginTTM != null ? `${fmt(bm.grossMarginTTM)}%` : '--', 'higher')}
+            {row('Operating Margin', am.operatingMarginTTM != null ? `${fmt(am.operatingMarginTTM)}%` : '--', bm.operatingMarginTTM != null ? `${fmt(bm.operatingMarginTTM)}%` : '--', 'higher')}
+            {row('Net Margin', am.netProfitMarginTTM != null ? `${fmt(am.netProfitMarginTTM)}%` : '--', bm.netProfitMarginTTM != null ? `${fmt(bm.netProfitMarginTTM)}%` : '--', 'higher')}
+            {row('ROE', am.roeTTM != null ? `${fmt(am.roeTTM)}%` : '--', bm.roeTTM != null ? `${fmt(bm.roeTTM)}%` : '--', 'higher')}
+            {row('Debt/Equity', am.totalDebtToEquityQuarterly != null ? fmt(am.totalDebtToEquityQuarterly) : '--', bm.totalDebtToEquityQuarterly != null ? fmt(bm.totalDebtToEquityQuarterly) : '--', 'lower')}
+            {row('Current Ratio', am.currentRatioQuarterly != null ? fmt(am.currentRatioQuarterly) : '--', bm.currentRatioQuarterly != null ? fmt(bm.currentRatioQuarterly) : '--', 'higher')}
+            {row('Dividend Yield', am.dividendYieldIndicatedAnnual != null ? `${fmt(am.dividendYieldIndicatedAnnual)}%` : '--', bm.dividendYieldIndicatedAnnual != null ? `${fmt(bm.dividendYieldIndicatedAnnual)}%` : '--', 'higher')}
+            {row('Beta', am.beta != null ? fmt(am.beta) : '--', bm.beta != null ? fmt(bm.beta) : '--')}
+            {row('52W High', am['52WeekHigh'] != null ? fmtPrice(am['52WeekHigh']) : '--', bm['52WeekHigh'] != null ? fmtPrice(bm['52WeekHigh']) : '--')}
+            {row('52W Low', am['52WeekLow'] != null ? fmtPrice(am['52WeekLow']) : '--', bm['52WeekLow'] != null ? fmtPrice(bm['52WeekLow']) : '--')}
+            {row('Day Change', fmtPct(a.quote?.dp), fmtPct(b.quote?.dp), 'higher')}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Analyst consensus side by side */}
+      {(a.recommendations?.[0] || b.recommendations?.[0]) && (
+        <div className="space-y-3">
+          <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Analyst Consensus</div>
+          <div className="grid grid-cols-2 gap-3">
+            {[{ ticker: currentTicker, rec: a.recommendations?.[0] }, { ticker: b.symbol, rec: b.recommendations?.[0] }].map(({ ticker: t, rec }) => {
+              if (!rec) return <div key={t} className="text-[13px] text-[var(--color-text-muted)] font-mono py-4 text-center">No data</div>;
+              const total = rec.strongBuy + rec.buy + rec.hold + rec.sell + rec.strongSell;
+              if (total === 0) return null;
+              return (
+                <div key={t} className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-3 space-y-2">
+                  <div className="text-[12px] font-mono tracking-wider text-[var(--color-text-muted)]">{t}</div>
+                  <div className="flex h-3 rounded-sm overflow-hidden bg-[var(--color-bg-base)]">
+                    {rec.strongBuy > 0 && <div style={{ width: `${(rec.strongBuy / total) * 100}%`, backgroundColor: 'var(--color-positive)' }} />}
+                    {rec.buy > 0 && <div style={{ width: `${(rec.buy / total) * 100}%`, backgroundColor: 'var(--color-positive)', opacity: 0.6 }} />}
+                    {rec.hold > 0 && <div style={{ width: `${(rec.hold / total) * 100}%`, backgroundColor: 'var(--color-text-muted)', opacity: 0.4 }} />}
+                    {rec.sell > 0 && <div style={{ width: `${(rec.sell / total) * 100}%`, backgroundColor: 'var(--color-negative)', opacity: 0.6 }} />}
+                    {rec.strongSell > 0 && <div style={{ width: `${(rec.strongSell / total) * 100}%`, backgroundColor: 'var(--color-negative)' }} />}
+                  </div>
+                  <div className="flex justify-between text-[11px] font-mono text-[var(--color-text-muted)]">
+                    <span className="text-[var(--color-positive)]">Buy {rec.strongBuy + rec.buy}</span>
+                    <span>Hold {rec.hold}</span>
+                    <span className="text-[var(--color-negative)]">Sell {rec.sell + rec.strongSell}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Right Pane: Sidebar ──
 
 function RightSidebar({
@@ -521,7 +852,18 @@ function RightSidebar({
         </div>
       )}
 
-      {/* Recent news moved to center pane for both variants */}
+      {/* Earnings date */}
+      {tickerData.earnings?.[0] && (
+        <div className="space-y-2">
+          <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Next Earnings</div>
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-[var(--color-gold)]" />
+            <span className="text-[15px] font-mono font-semibold text-[var(--color-text-primary)]">
+              {new Date(tickerData.earnings[0].period).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Data provenance */}
       <div className="space-y-1.5 pt-3 border-t border-[var(--color-border-subtle)]">
@@ -603,6 +945,8 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
         return <NewsView news={tickerData.news} analysisNews={analysis.newsHighlights} />;
       case 'ai-analysis':
         return <AIAnalysisView analysis={analysis} />;
+      case 'compare':
+        return <CompareView currentTicker={ticker} currentData={tickerData} currentAnalysis={analysis} basePath={analyzePath} />;
       default:
         return <OverviewView analysis={analysis} tickerData={tickerData} />;
     }
