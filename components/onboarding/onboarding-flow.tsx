@@ -115,7 +115,7 @@ function ConnectStep({ onSuccess, onSkip }: { onSuccess: () => void; onSkip: () 
               One connection<br />unlocks everything.
             </h1>
             <p className="text-[17px] text-[var(--color-text-muted)] leading-relaxed max-w-[380px]">
-              Link a brokerage or bank. Helm does the rest — portfolio tracking, tax optimization, daily intelligence.
+              Link a brokerage or bank. Helm does the rest. Portfolio tracking, tax optimization, daily intelligence.
             </p>
           </div>
 
