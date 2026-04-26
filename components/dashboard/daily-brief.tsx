@@ -194,6 +194,9 @@ export function DailyBrief() {
 
   const brief = data!;
 
+  // No holdings = no brief. Don't show market data to users with nothing connected.
+  if (brief.allHoldings.length === 0 && brief.portfolio.totalValue === 0) return null;
+
   if (collapsed) {
     return (
       <div

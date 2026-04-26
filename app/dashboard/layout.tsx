@@ -28,6 +28,7 @@ import { useSettings } from '@/contexts/settings-context';
 import { LegalFooter } from '@/components/legal-footer';
 import { FinancialDisclaimer } from '@/components/financial-disclaimer';
 import { useTier } from '@/hooks/use-tier';
+import { OnboardingFlow } from '@/components/onboarding/onboarding-flow';
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -182,6 +183,8 @@ export default function DashboardLayout({
   const pageTitle = getPageTitle(pathname);
 
   return (
+    <>
+    <OnboardingFlow />
     <div className={cn(
       "bg-[var(--color-bg-base)] flex max-w-[100vw] overflow-x-hidden",
       isChatPage ? "h-screen overflow-hidden" : "min-h-screen"
@@ -560,5 +563,6 @@ export default function DashboardLayout({
         {!isChatPage && <LegalFooter variant="minimal" />}
       </div>
     </div>
+    </>
   );
 }

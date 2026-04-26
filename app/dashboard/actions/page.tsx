@@ -17,6 +17,17 @@ export default async function ActionsPage() {
   let initialActions: ActionItem[] = [];
 
   if (user) {
+    // No Plaid connections = no actions
+    const { data: plaidItems } = await supabase
+      .from('plaid_items')
+      .select('id')
+      .eq('user_id', user.id)
+      .limit(1);
+
+    if (!plaidItems || plaidItems.length === 0) {
+      return <ActionsClient initialActions={[]} />;
+    }
+
     const { data: insights } = await supabase
       .from('insights')
       .select('id, insight_type, priority, title, description, recommended_action, estimated_impact_amount, source_type, created_at, snoozed_until, is_archived, is_dismissed, is_useful')

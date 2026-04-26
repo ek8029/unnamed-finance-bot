@@ -48,6 +48,8 @@ export default function DashboardOverview() {
     assetsComposition,
     liabilitiesComposition,
     savingsRateTimeline,
+    accounts,
+    hasPlaidConnection,
     loading,
     error
   } = useFinancialSummary();
@@ -90,11 +92,8 @@ export default function DashboardOverview() {
     );
   }
 
-  // New user, no accounts connected
-  const hasNoData = !financialSummary ||
-    (financialSummary.total_assets === 0 &&
-     financialSummary.total_liabilities === 0 &&
-     financialSummary.portfolio_value === 0);
+  // No Plaid connection = show empty state, regardless of stale data
+  const hasNoData = !financialSummary || !hasPlaidConnection;
 
   if (hasNoData) {
     return (
@@ -236,7 +235,7 @@ export default function DashboardOverview() {
         </section>
 
         {/* ── Daily Brief ── */}
-        <DailyBrief />
+        {hasPlaidConnection && <DailyBrief />}
 
         {/* ── Summary Cards ── */}
         <FinancialSummaryCards
@@ -248,11 +247,11 @@ export default function DashboardOverview() {
         />
 
         {/* ── Intelligence Feed ── */}
-        <IntelligenceFeed
+        {hasPlaidConnection && <IntelligenceFeed
           insights={feedInsights}
           loading={feedLoading}
           error={feedError}
-        />
+        />}
 
         {/* ── Net Worth Chart (3/5) + Health Score (2/5) ── */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-density">

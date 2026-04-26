@@ -217,6 +217,22 @@ export default function BriefPage() {
     return items;
   }, [data]);
 
+  /* ─── No data guard ─── */
+
+  if (!loading && data && data.allHoldings.length === 0 && data.portfolio.totalValue === 0) {
+    return (
+      <div className="min-h-screen bg-[var(--color-bg-base)] flex items-center justify-center px-6">
+        <div className="text-center space-y-4 max-w-md">
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">No portfolio data yet</h1>
+          <p className="text-[var(--color-text-secondary)]">Connect a brokerage account to see your daily brief with portfolio performance, sector analysis, and market intelligence.</p>
+          <a href="/dashboard/accounts" className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold rounded-lg transition-colors">
+            Connect Account
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   /* ─── Skeleton Loader ─── */
 
   if (loading) {

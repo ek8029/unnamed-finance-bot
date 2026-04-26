@@ -22,6 +22,7 @@ export async function GET() {
       cashFlowHistoryResult,
       healthScoreResult,
       insightsResult,
+      plaidItemsResult,
     ] = await Promise.all([
       supabase
         .from('linked_accounts')
@@ -60,6 +61,10 @@ export async function GET() {
         .eq('is_dismissed', false)
         .order('created_at', { ascending: false })
         .limit(10),
+      supabase
+        .from('plaid_items')
+        .select('id')
+        .eq('user_id', user.id),
     ]);
 
     // Calculate totals from accounts
@@ -327,6 +332,7 @@ export async function GET() {
         portfolio_diversification: healthScore.portfolio_diversification,
       },
       accounts: transformedAccounts,
+      hasPlaidConnection: (plaidItemsResult.data?.length ?? 0) > 0,
       holdings,
       insights: transformedInsights,
       netWorthHistory: transformedNetWorthHistory,

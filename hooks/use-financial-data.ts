@@ -102,6 +102,7 @@ interface FinancialDataState {
   assetsComposition: CompositionItem[];
   liabilitiesComposition: CompositionItem[];
   savingsRateTimeline: SavingsRatePoint[];
+  hasPlaidConnection: boolean;
   loading: boolean;
   error: string | null;
 }
@@ -118,6 +119,7 @@ export function useFinancialSummary() {
     assetsComposition: [],
     liabilitiesComposition: [],
     savingsRateTimeline: [],
+    hasPlaidConnection: false,
     loading: true,
     error: null,
   });
@@ -140,6 +142,7 @@ export function useFinancialSummary() {
           assetsComposition: data.assetsComposition || [],
           liabilitiesComposition: data.liabilitiesComposition || [],
           savingsRateTimeline: data.savingsRateTimeline || [],
+          hasPlaidConnection: data.hasPlaidConnection ?? false,
           loading: false,
           error: null,
         });
