@@ -52,7 +52,7 @@
     "react-dom": "^19.2.4",
     "react-plaid-link": "^4.1.1",
     "reading-time": "^1.5.0",
-    "recharts": "^3.8.0",
+    "recharts": "^3.8.1",
     "remark-gfm": "^4.0.1",
     "resend": "^6.12.2",
     "stripe": "^17.7.0",
