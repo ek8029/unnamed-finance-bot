@@ -58,12 +58,16 @@ export async function GET(request: Request) {
 
     const [newsResult, eventsResult] = await Promise.all([
       newsQuery.limit(20),
-      supabase
-        .from('market_events')
-        .select('*')
-        .gte('event_date', new Date().toISOString().split('T')[0])
-        .order('event_date', { ascending: true })
-        .limit(10),
+      (userTickers && userTickers.length > 0
+        ? supabase
+            .from('market_events')
+            .select('*')
+            .in('ticker', userTickers)
+            .gte('event_date', new Date().toISOString().split('T')[0])
+            .order('event_date', { ascending: true })
+            .limit(10)
+        : Promise.resolve({ data: [], error: null })
+      ),
     ]);
 
     if (newsResult.error) {

@@ -261,14 +261,10 @@ export function ActionsClient({ initialActions }: { initialActions: ActionItem[]
         body: JSON.stringify({ id, action, ...extra }),
       });
       if (res.ok) {
-        // Remove from current list for dismiss/archive/snooze/not_useful/unarchive
-        if (['dismiss', 'archive', 'snooze', 'not_useful', 'unarchive'].includes(action)) {
+        // Remove from current list for dismiss/archive/snooze/not_useful/unarchive/useful(done)
+        if (['dismiss', 'archive', 'snooze', 'not_useful', 'unarchive', 'useful'].includes(action)) {
           setActions(prev => prev.filter(a => a.id !== id));
           if (selectedId === id) setSelectedId(null);
-        }
-        // For "useful" mark, just update in place
-        if (action === 'useful') {
-          setActions(prev => prev.map(a => a.id === id ? { ...a, is_useful: true } : a));
         }
       }
     } finally {
