@@ -1,10 +1,11 @@
 /**
  * Post-signup drip email templates.
- * Plain text + minimal HTML. No heavy templates.
+ * Matches Helm confirmation email style: dark card on white bg, gold accents.
  */
 
 const DASHBOARD_URL = 'https://helmterminal.dev/dashboard';
 const ACCOUNTS_URL = 'https://helmterminal.dev/dashboard/accounts';
+const LOGO_URL = 'https://helmterminal.dev/helm-logo-transparent.png';
 
 interface EmailTemplate {
   subject: string;
@@ -12,31 +13,116 @@ interface EmailTemplate {
   text: string;
 }
 
+/* ── Shared wrapper matching confirmation email ── */
+
 function wrap(body: string): string {
-  return `
-<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
-<body style="margin:0;padding:0;background:#0A0A0A;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-<div style="max-width:560px;margin:0 auto;padding:40px 24px;">
-<div style="margin-bottom:32px;">
-  <span style="color:#E6B94D;font-size:20px;font-weight:bold;letter-spacing:1px;">HELM</span>
-</div>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+</head>
+<body bgcolor="#FFFFFF" style="margin:0;padding:0;background-color:#FFFFFF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#FFFFFF" style="background-color:#FFFFFF;">
+<tr>
+<td align="center" valign="top" bgcolor="#FFFFFF" style="background-color:#FFFFFF;padding:40px 16px 48px;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width:500px;">
+<tr>
+<td>
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#1E1E1E" style="background-color:#1E1E1E;border-radius:8px;">
+
+<!-- Gold accent bar -->
+<tr><td height="2" bgcolor="#E6B94D" style="height:2px;line-height:2px;font-size:0;background-color:#E6B94D;border-radius:8px 8px 0 0;">&nbsp;</td></tr>
+
+<!-- Logo -->
+<tr><td align="center" bgcolor="#1E1E1E" style="background-color:#1E1E1E;padding:36px 40px 24px;">
+<img src="${LOGO_URL}" width="120" height="120" alt="Helm Terminal" border="0" style="display:block;margin:0 auto;border:0;outline:none;text-decoration:none;">
+</td></tr>
+
+<!-- Content -->
+<tr><td bgcolor="#1E1E1E" style="background-color:#1E1E1E;padding:0 40px 36px;">
 ${body}
-<div style="margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06);">
-  <p style="color:rgba(255,255,255,0.25);font-size:11px;margin:0;">
-    Helm Financial Intelligence · <a href="https://helmterminal.dev" style="color:rgba(255,255,255,0.25);">helmterminal.dev</a><br>
-    <a href="https://helmterminal.dev/dashboard/settings" style="color:rgba(255,255,255,0.25);">Manage email preferences</a>
-  </p>
-</div>
-</div>
+</td></tr>
+
+<!-- Fallback link -->
+<tr><td bgcolor="#1E1E1E" style="background-color:#1E1E1E;padding:0 40px 24px;text-align:center;">
+<p style="margin:0;font-size:10px;color:#8A8A8A;line-height:1.5;">Button not working? Go directly to</p>
+<p style="margin:4px 0 0;font-size:9px;color:#8A8A8A;word-break:break-all;line-height:1.4;"><a href="${DASHBOARD_URL}" style="color:#8A8A8A;">${DASHBOARD_URL}</a></p>
+</td></tr>
+
+</table>
+</td>
+</tr>
+
+<!-- Footer -->
+<tr><td style="padding:24px 0 0;text-align:center;">
+<p style="margin:0 0 6px;font-size:10px;color:#999999;line-height:1.5;">Sent by Helm Terminal</p>
+<p style="margin:0;font-size:9px;">
+<a href="https://helmterminal.dev/privacy" style="color:#999999;text-decoration:none;">Privacy</a>
+<span style="color:#CCCCCC;">&ensp;&#183;&ensp;</span>
+<a href="https://helmterminal.dev/terms" style="color:#999999;text-decoration:none;">Terms</a>
+<span style="color:#CCCCCC;">&ensp;&#183;&ensp;</span>
+<a href="https://helmterminal.dev/dashboard/settings" style="color:#999999;text-decoration:none;">Unsubscribe</a>
+</p>
+</td></tr>
+
+</table>
+</td>
+</tr>
+</table>
 </body>
 </html>`;
 }
 
 function cta(text: string, url: string): string {
-  return `<a href="${url}" style="display:inline-block;background:#E6B94D;color:#0A0A0A;padding:14px 28px;font-size:15px;font-weight:700;text-decoration:none;margin:8px 0;">${text}</a>`;
+  return `<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin:4px 0 8px;">
+<tr><td align="center" bgcolor="#E6B94D" style="background-color:#E6B94D;border-radius:3px;">
+<a href="${url}" target="_blank" style="display:block;text-align:center;background-color:#E6B94D;color:#0A0A0A;font-size:12px;font-weight:800;text-decoration:none;padding:16px 32px;text-transform:uppercase;letter-spacing:2.5px;border-radius:3px;">${text}</a>
+</td></tr>
+</table>`;
 }
+
+function heading(text: string): string {
+  return `<h1 style="margin:0 0 14px;font-size:28px;font-weight:300;color:#F5F5F5;line-height:1.25;letter-spacing:-0.3px;text-align:center;">${text}</h1>`;
+}
+
+function subtext(text: string): string {
+  return `<p style="margin:0 0 24px;font-size:14px;color:#A0A0A0;line-height:1.65;text-align:center;max-width:360px;display:inline-block;">${text}</p>`;
+}
+
+function dividerLine(): string {
+  return `<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin:4px 0;">
+<tr><td height="1" bgcolor="#2A2A2A" style="height:1px;line-height:1px;font-size:0;background-color:#2A2A2A;">&nbsp;</td></tr>
+</table>`;
+}
+
+function sectionLabel(text: string): string {
+  return `<p style="margin:24px 0 12px;font-size:9px;font-weight:700;color:#8A8A8A;text-transform:uppercase;letter-spacing:2px;">${text}</p>`;
+}
+
+function bulletItem(title: string, desc: string): string {
+  return `<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom:2px;">
+<tr>
+<td width="24" valign="top"><div style="width:4px;height:4px;border-radius:50%;background-color:#E6B94D;margin-top:7px;"></div></td>
+<td><p style="margin:0;font-size:13px;color:#E0E0E0;line-height:1.5;padding:6px 0;"><strong>${title}</strong><span style="color:#9A9A9A;"> &#8212; ${desc}</span></p></td>
+</tr>
+</table>`;
+}
+
+function trustBar(): string {
+  return `<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#161616" style="background-color:#161616;margin:8px 0 0;">
+<tr><td style="padding:10px 16px;text-align:center;">
+<span style="font-size:10px;color:#8A8A8A;letter-spacing:0.3px;">
+<span style="color:#4ADE80;">&#9679;</span>&ensp;Read-only&emsp;
+<span style="color:#4ADE80;">&#9679;</span>&ensp;AES-256&emsp;
+<span style="color:#4ADE80;">&#9679;</span>&ensp;Delete anytime
+</span>
+</td></tr>
+</table>`;
+}
+
+/* ── Templates ── */
 
 export function getTemplate(dayIndex: number, userName?: string): EmailTemplate | null {
   const name = userName || 'there';
@@ -44,81 +130,77 @@ export function getTemplate(dayIndex: number, userName?: string): EmailTemplate 
   switch (dayIndex) {
     case 0: return {
       subject: 'Welcome to Helm',
-      text: `Hey ${name},\n\nWelcome to Helm. You now have access to institutional-grade financial intelligence.\n\nNext step: connect your first account. It takes 30 seconds and unlocks your full dashboard.\n\n${ACCOUNTS_URL}\n\nRead-only access via Plaid. We can never move money.\n\n- The Helm Team`,
+      text: `Hey ${name},\n\nWelcome to Helm. You now have access to institutional-grade financial intelligence.\n\nNext step: connect your first account. It takes 30 seconds and unlocks your full dashboard.\n\n${ACCOUNTS_URL}\n\nRead-only access via Plaid. We can never move money.\n\n- Helm Terminal`,
       html: wrap(`
-        <h1 style="color:#FAFAFA;font-size:24px;font-weight:700;margin:0 0 16px;">Welcome to Helm, ${name}.</h1>
-        <p style="color:rgba(255,255,255,0.6);font-size:15px;line-height:1.6;margin:0 0 24px;">
-          You now have access to institutional-grade financial intelligence. Portfolio tracking, tax-loss harvesting, daily briefs, and AI-powered insights.
-        </p>
-        <p style="color:rgba(255,255,255,0.6);font-size:15px;line-height:1.6;margin:0 0 24px;">
-          One step left: connect your first financial account.
-        </p>
-        ${cta('Connect Account — 30 seconds', ACCOUNTS_URL)}
-        <p style="color:rgba(255,255,255,0.3);font-size:13px;margin:16px 0 0;">
-          Read-only access via Plaid. We can never move money or place trades.
-        </p>
+        <div style="text-align:center;">
+        ${heading(`Welcome aboard, <span style="font-weight:700;color:#E6B94D;">${name}.</span>`)}
+        ${subtext('Your terminal is live. Connect your first account to unlock portfolio intelligence that runs while you sleep.')}
+        </div>
+        ${cta('Connect Account', ACCOUNTS_URL)}
+        ${dividerLine()}
+        ${sectionLabel("What's waiting")}
+        ${bulletItem('Portfolio tracking', 'Every holding, every account, one view.')}
+        ${bulletItem('Daily scans', 'Concentration risk, tax-loss harvesting, earnings exposure.')}
+        ${bulletItem('Actions inbox', 'Not just data. What to do with it, prioritized.')}
+        ${bulletItem('AI stock analysis', 'Free for any US ticker. No paywall.')}
+        ${trustBar()}
       `),
     };
 
     case 1: return {
       subject: 'Your dashboard is waiting',
-      text: `Hey ${name},\n\nYou signed up for Helm but haven't connected an account yet.\n\nOnce you link a brokerage or bank, Helm immediately shows you:\n- Your net worth across all accounts\n- Portfolio concentration risks\n- Tax-loss harvesting opportunities\n- A personalized daily brief\n\nTakes 30 seconds: ${ACCOUNTS_URL}\n\n- The Helm Team`,
+      text: `Hey ${name},\n\nYou signed up for Helm but haven't connected an account yet.\n\nOnce you link a brokerage or bank, Helm immediately shows you:\n- Your net worth across all accounts\n- Portfolio concentration risks\n- Tax-loss harvesting opportunities\n- A personalized daily brief\n\nTakes 30 seconds: ${ACCOUNTS_URL}\n\n- Helm Terminal`,
       html: wrap(`
-        <h1 style="color:#FAFAFA;font-size:22px;font-weight:700;margin:0 0 16px;">Your dashboard is waiting.</h1>
-        <p style="color:rgba(255,255,255,0.6);font-size:15px;line-height:1.6;margin:0 0 20px;">
-          You signed up for Helm but haven't connected an account yet. Here's what lights up the moment you do:
-        </p>
-        <table style="width:100%;border-collapse:collapse;margin:0 0 24px;">
-          ${['Net worth across all accounts', 'Portfolio concentration risks', 'Tax-loss harvesting opportunities', 'Personalized daily market brief'].map(item =>
-            `<tr><td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);font-size:14px;">
-              <span style="color:#4ADE80;margin-right:8px;">&#9679;</span>${item}
-            </td></tr>`
-          ).join('')}
-        </table>
+        <div style="text-align:center;">
+        ${heading('Your dashboard is <span style="font-weight:700;color:#E6B94D;">empty.</span>')}
+        ${subtext("You signed up but haven't connected an account yet. Here's what lights up the moment you do:")}
+        </div>
+        ${dividerLine()}
+        ${sectionLabel('Unlocks immediately')}
+        ${bulletItem('Net worth', 'Real-time across all linked accounts.')}
+        ${bulletItem('Concentration alerts', 'Know when one position dominates your portfolio.')}
+        ${bulletItem('Tax-loss harvesting', 'Automated detection of harvestable losses.')}
+        ${bulletItem('Daily brief', 'What moved overnight. What to do about it.')}
+        <div style="height:12px;"></div>
         ${cta('Connect Account', ACCOUNTS_URL)}
+        ${trustBar()}
       `),
     };
 
     case 3: return {
       subject: 'How Helm keeps your data safe',
-      text: `Hey ${name},\n\nWe get it. Connecting financial accounts to a new platform takes trust.\n\nHere's how Helm protects your data:\n\n1. Read-only access. We see balances and transactions. We can never move money, place trades, or access your login credentials.\n\n2. Plaid infrastructure. Same system used by Venmo, Robinhood, and Coinbase. SOC 2 compliant.\n\n3. AES-256 encryption. Your data is encrypted in transit and at rest.\n\n4. You're in control. Disconnect any account at any time from Settings.\n\nReady to try it? ${ACCOUNTS_URL}\n\n- The Helm Team`,
+      text: `Hey ${name},\n\nWe get it. Connecting financial accounts to a new platform takes trust.\n\nHere's how Helm protects your data:\n\n1. Read-only access. We can never move money or access credentials.\n2. Plaid infrastructure. Same as Venmo, Robinhood, Coinbase.\n3. AES-256 encryption. In transit and at rest.\n4. You control everything. Disconnect anytime.\n\nReady? ${ACCOUNTS_URL}\n\n- Helm Terminal`,
       html: wrap(`
-        <h1 style="color:#FAFAFA;font-size:22px;font-weight:700;margin:0 0 16px;">How Helm keeps your data safe.</h1>
-        <p style="color:rgba(255,255,255,0.6);font-size:15px;line-height:1.6;margin:0 0 24px;">
-          Connecting financial accounts to a new platform takes trust. Here's exactly how we protect yours.
-        </p>
-        ${[
-          ['Read-only access', 'We see balances and transactions. We can never move money, place trades, or access your credentials.'],
-          ['Plaid infrastructure', 'Same system used by Venmo, Robinhood, and Coinbase. SOC 2 Type II compliant.'],
-          ['AES-256 encryption', 'Your data is encrypted in transit and at rest. Always.'],
-          ['You control everything', 'Disconnect any account at any time from your settings page.'],
-        ].map(([title, desc]) =>
-          `<div style="margin-bottom:16px;padding-left:16px;border-left:2px solid #E6B94D;">
-            <p style="color:#FAFAFA;font-size:14px;font-weight:600;margin:0 0 4px;">${title}</p>
-            <p style="color:rgba(255,255,255,0.5);font-size:13px;line-height:1.5;margin:0;">${desc}</p>
-          </div>`
-        ).join('')}
-        <div style="margin-top:24px;">
-          ${cta('Connect Your Account', ACCOUNTS_URL)}
+        <div style="text-align:center;">
+        ${heading('Your data, <span style="font-weight:700;color:#E6B94D;">protected.</span>')}
+        ${subtext('Connecting financial accounts to a new platform takes trust. Here is exactly how we earn yours.')}
         </div>
+        ${dividerLine()}
+        ${sectionLabel('Security model')}
+        ${bulletItem('Read-only access', 'We can never move money, place trades, or access your credentials.')}
+        ${bulletItem('Plaid infrastructure', 'Same system used by Venmo, Robinhood, and Coinbase.')}
+        ${bulletItem('AES-256 encryption', 'Your data is encrypted in transit and at rest. Always.')}
+        ${bulletItem('Full control', 'Disconnect any account at any time from settings.')}
+        <div style="height:12px;"></div>
+        ${cta('Connect Your Account', ACCOUNTS_URL)}
+        ${trustBar()}
       `),
     };
 
     case 7: return {
-      subject: 'Last nudge: your Helm dashboard',
-      text: `Hey ${name},\n\nJust one more note. You signed up for Helm a week ago, and your dashboard is still empty.\n\nIf you're not ready to connect a real account, you can try demo mode to see the dashboard with sample data: ${DASHBOARD_URL}\n\nWhen you're ready for real data, connecting takes 30 seconds: ${ACCOUNTS_URL}\n\nNo more emails about this. We'll be here when you're ready.\n\n- The Helm Team`,
+      subject: 'One last thing',
+      text: `Hey ${name},\n\nYou signed up a week ago, and your dashboard is still empty.\n\nIf you're not ready, try demo mode to see sample data: ${DASHBOARD_URL}\n\nWhen ready, connecting takes 30 seconds: ${ACCOUNTS_URL}\n\nNo more emails about this.\n\n- Helm Terminal`,
       html: wrap(`
-        <h1 style="color:#FAFAFA;font-size:22px;font-weight:700;margin:0 0 16px;">Last nudge.</h1>
-        <p style="color:rgba(255,255,255,0.6);font-size:15px;line-height:1.6;margin:0 0 20px;">
-          You signed up a week ago, and your dashboard is still empty. No pressure.
+        <div style="text-align:center;">
+        ${heading('One last <span style="font-weight:700;color:#E6B94D;">thing.</span>')}
+        ${subtext("You signed up a week ago and your dashboard is still empty. No pressure.")}
+        <p style="margin:0 0 24px;font-size:14px;color:#A0A0A0;line-height:1.65;text-align:center;">
+          Not ready? <a href="${DASHBOARD_URL}" style="color:#E6B94D;text-decoration:underline;">Try demo mode</a> to explore with sample data.
         </p>
-        <p style="color:rgba(255,255,255,0.6);font-size:15px;line-height:1.6;margin:0 0 24px;">
-          If you're not ready to connect a real account, try <a href="${DASHBOARD_URL}" style="color:#E6B94D;">demo mode</a> to see the dashboard with sample data.
-        </p>
+        </div>
         ${cta('Connect Account', ACCOUNTS_URL)}
-        <p style="color:rgba(255,255,255,0.3);font-size:13px;margin:16px 0 0;">
-          No more emails about this. We'll be here when you're ready.
-        </p>
+        ${dividerLine()}
+        <p style="margin:16px 0 0;font-size:10px;color:#8A8A8A;text-align:center;letter-spacing:0.3px;">No more emails about this. We'll be here when you're ready.</p>
       `),
     };
 
