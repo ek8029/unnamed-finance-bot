@@ -156,6 +156,13 @@ export function DailyBrief() {
   const [sectorFilter, setSectorFilter] = useState<string | null>(null);
 
   useEffect(() => {
+    // Demo mode: use sample data
+    const isDemo = sessionStorage.getItem('helm_demo_mode') === '1';
+    if (isDemo) {
+      import('@/lib/demo-data').then(d => { setData(d.DEMO_BRIEF as BriefData); setLoading(false); });
+      return;
+    }
+
     const controller = new AbortController();
 
     async function fetchBrief() {

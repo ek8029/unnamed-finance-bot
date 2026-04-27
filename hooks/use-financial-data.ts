@@ -108,6 +108,9 @@ interface FinancialDataState {
 }
 
 export function useFinancialSummary() {
+  // Demo mode check
+  const isDemo = typeof window !== 'undefined' && sessionStorage.getItem('helm_demo_mode') === '1';
+
   const [state, setState] = useState<FinancialDataState>({
     financialSummary: null,
     healthScore: null,
@@ -203,6 +206,26 @@ export function useFinancialSummary() {
     fetchData();
     autoSync();
   }, []);
+
+  if (isDemo) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const d = require('@/lib/demo-data');
+    return {
+      financialSummary: d.DEMO_FINANCIAL_SUMMARY,
+      healthScore: d.DEMO_HEALTH_SCORE,
+      insights: d.DEMO_INSIGHTS,
+      accounts: d.DEMO_ACCOUNTS,
+      holdings: d.DEMO_HOLDINGS,
+      netWorthHistory: d.DEMO_NET_WORTH_HISTORY,
+      cashFlowHistory: d.DEMO_CASH_FLOW_HISTORY,
+      assetsComposition: d.DEMO_ASSETS_COMPOSITION,
+      liabilitiesComposition: d.DEMO_LIABILITIES_COMPOSITION,
+      savingsRateTimeline: d.DEMO_SAVINGS_RATE,
+      hasPlaidConnection: true,
+      loading: false,
+      error: null,
+    } as FinancialDataState;
+  }
 
   return state;
 }

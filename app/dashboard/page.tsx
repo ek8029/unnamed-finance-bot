@@ -13,6 +13,7 @@ import { SavingsRateTimeline } from '@/components/dashboard/savings-rate-timelin
 import { DailyBrief } from '@/components/dashboard/daily-brief';
 import { useFinancialSummary, useIntelligence } from '@/hooks/use-financial-data';
 import { useFormat } from '@/hooks/use-format';
+import { useDemo } from '@/contexts/demo-context';
 
 function LoadingSkeleton() {
   return (
@@ -61,6 +62,7 @@ export default function DashboardOverview() {
   } = useIntelligence();
 
   const { formatCurrency, formatPercentage } = useFormat();
+  const { isDemo, disableDemo } = useDemo();
 
   // Compute dollar change from the last two net worth history points
   const netWorthChange = useMemo(() => {
@@ -174,6 +176,22 @@ export default function DashboardOverview() {
   return (
     <div className="container mx-auto card-padding max-w-[1600px]">
       <div className="space-y-density stagger-fade-in">
+        {isDemo && (
+          <div className="flex items-center justify-between bg-[var(--color-gold)]/10 border border-[var(--color-gold)]/20 px-4 py-3 rounded-lg">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[11px] tracking-wider uppercase text-[var(--color-gold)] font-semibold">Demo Mode</span>
+              <span className="text-[13px] text-[var(--color-text-muted)]">Viewing sample data. Connect an account to see your real finances.</span>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <a href="/dashboard/accounts" className="text-[12px] font-semibold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors">
+                Connect Account
+              </a>
+              <button onClick={disableDemo} className="text-[11px] text-[var(--color-text-muted)]/50 hover:text-[var(--color-text-muted)] transition-colors">
+                Exit Demo
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── HERO: Net Worth ── */}
         <section className="pt-2 pb-2">

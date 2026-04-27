@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { usePlaidLink } from 'react-plaid-link';
 import { HelmMark } from '@/components/helm-mark';
 import { Loader2 } from 'lucide-react';
+import { useDemo } from '@/contexts/demo-context';
 
 const ONBOARDING_KEY = 'helm_onboarding_dismissed';
 
@@ -64,7 +65,7 @@ function CountUp({ target, duration = 1200 }: { target: number; duration?: numbe
 }
 
 /* ── Connect Step ── */
-function ConnectStep({ onSuccess, onSkip }: { onSuccess: () => void; onSkip: () => void }) {
+function ConnectStep({ onSuccess, onSkip, onDemo }: { onSuccess: () => void; onSkip: () => void; onDemo: () => void }) {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [exchanging, setExchanging] = useState(false);
   const [error, setError] = useState('');
@@ -200,11 +201,17 @@ function ConnectStep({ onSuccess, onSkip }: { onSuccess: () => void; onSkip: () 
             ))}
           </div>
 
-          {/* Skip */}
-          <button onClick={onSkip}
-            className="text-[11px] text-[var(--color-text-muted)]/30 hover:text-[var(--color-text-muted)]/60 transition-colors font-mono">
-            explore without data →
-          </button>
+          {/* Demo + Skip */}
+          <div className="flex items-center justify-between">
+            <button onClick={onDemo}
+              className="text-[12px] text-[var(--color-gold)]/60 hover:text-[var(--color-gold)] transition-colors font-mono font-medium">
+              try with demo data →
+            </button>
+            <button onClick={onSkip}
+              className="text-[11px] text-[var(--color-text-muted)]/30 hover:text-[var(--color-text-muted)]/60 transition-colors font-mono">
+              skip
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -217,6 +224,7 @@ function ConnectStep({ onSuccess, onSkip }: { onSuccess: () => void; onSkip: () 
 
 export function OnboardingFlow() {
   const router = useRouter();
+  const { enableDemo } = useDemo();
   const [step, setStep] = useState<'welcome' | 'connect' | 'syncing' | 'done'>('welcome');
   const [dismissed, setDismissed] = useState(true);
   const [hasPlaid, setHasPlaid] = useState<boolean | null>(null);
@@ -249,7 +257,12 @@ export function OnboardingFlow() {
   }, [step]);
 
   const handleSkip = () => {
-    // Session-only dismiss — shows again next visit until they connect Plaid
+    sessionStorage.setItem(ONBOARDING_KEY, '1');
+    setDismissed(true);
+  };
+
+  const handleDemo = () => {
+    enableDemo();
     sessionStorage.setItem(ONBOARDING_KEY, '1');
     setDismissed(true);
   };
@@ -363,7 +376,7 @@ export function OnboardingFlow() {
 
         {/* ── CONNECT ── */}
         <StepTransition active={step === 'connect'}>
-          <ConnectStep onSuccess={handleSuccess} onSkip={handleSkip} />
+          <ConnectStep onSuccess={handleSuccess} onSkip={handleSkip} onDemo={handleDemo} />
         </StepTransition>
 
         {/* ── SYNCING ── */}

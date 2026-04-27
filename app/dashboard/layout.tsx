@@ -25,6 +25,7 @@ import {
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
 import { useSettings } from '@/contexts/settings-context';
+import { DemoProvider } from '@/contexts/demo-context';
 import { LegalFooter } from '@/components/legal-footer';
 import { FinancialDisclaimer } from '@/components/financial-disclaimer';
 import { useTier } from '@/hooks/use-tier';
@@ -183,6 +184,7 @@ export default function DashboardLayout({
   const pageTitle = getPageTitle(pathname);
 
   return (
+    <DemoProvider>
     <>
     <OnboardingFlow />
     <div className={cn(
@@ -564,5 +566,6 @@ export default function DashboardLayout({
       </div>
     </div>
     </>
+    </DemoProvider>
   );
 }

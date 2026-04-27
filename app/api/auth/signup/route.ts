@@ -284,6 +284,27 @@ export async function POST(request: Request) {
       metadata: { ip: clientIp, emailDomain, userAgent },
     });
 
+    // Send Day 0 welcome email (fire-and-forget)
+    try {
+      const { resend: resendClient, FROM_EMAIL } = await import('@/lib/emails/resend');
+      const { getTemplate } = await import('@/lib/emails/templates');
+      if (resendClient) {
+        const firstName = full_name ? full_name.split(' ')[0] : undefined;
+        const template = getTemplate(0, firstName);
+        if (template) {
+          await resendClient.emails.send({
+            from: FROM_EMAIL,
+            to: data.user.email || email,
+            subject: template.subject,
+            html: template.html,
+            text: template.text,
+          });
+        }
+      }
+    } catch (emailErr) {
+      console.error('Welcome email failed:', emailErr);
+    }
+
     return NextResponse.json({
       user: { id: data.user.id, email: data.user.email },
       message: data.session

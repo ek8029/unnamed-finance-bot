@@ -199,6 +199,20 @@ export async function GET(request: Request) {
       }
     }
 
+    // Drip emails for users without Plaid
+    let dripResult = { sent: 0 };
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
+      const dripRes = await fetch(`${baseUrl}/api/emails/drip`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+      });
+      if (dripRes.ok) dripResult = await dripRes.json();
+      log.push(`[drip] Sent ${dripResult.sent} emails`);
+    } catch (err) {
+      log.push(`[drip] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
+    }
+
     const summary = {
       success: true,
       duration_ms: Date.now() - startTime,
@@ -207,6 +221,7 @@ export async function GET(request: Request) {
       users_processed: userItemMap.size,
       prices_refreshed: pricesRefreshed,
       insights_generated: insightsGenerated,
+      drip_emails_sent: dripResult.sent,
       log,
     };
 
