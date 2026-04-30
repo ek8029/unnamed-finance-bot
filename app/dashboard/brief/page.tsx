@@ -500,29 +500,28 @@ export default function BriefPage() {
                 YOUR PORTFOLIO
               </div>
 
-              <h2 className="text-3xl md:text-[2.75rem] font-bold tracking-tight leading-[1.08] mb-4" aria-live="polite">
+              <h2 className="text-3xl md:text-[2.75rem] font-bold tracking-tight leading-[1.08] mb-2" aria-live="polite">
                 {leadHeadline}
-                {data.portfolio.vsBenchmark !== null && (
-                  <span className={
-                    data.portfolio.vsBenchmark >= 2 ? ' text-[var(--color-positive)]'
-                    : data.portfolio.vsBenchmark >= 0.5 ? ' text-[var(--color-positive)]/70'
-                    : data.portfolio.vsBenchmark >= -0.5 ? ' text-[var(--color-text-muted)]'
-                    : data.portfolio.vsBenchmark >= -2 ? ' text-[var(--color-negative)]/70'
-                    : ' text-[var(--color-negative)]'
-                  }>
-                    {' '}
-                    {data.portfolio.vsBenchmark >= 2
-                      ? `Crushing the S&P by ${Math.abs(data.portfolio.vsBenchmark).toFixed(2)}%.`
-                      : data.portfolio.vsBenchmark >= 0.5
-                      ? `Beating the S&P by ${Math.abs(data.portfolio.vsBenchmark).toFixed(2)}%.`
-                      : data.portfolio.vsBenchmark >= -0.5
-                      ? `In line with the S&P (${data.portfolio.vsBenchmark >= 0 ? '+' : ''}${data.portfolio.vsBenchmark.toFixed(2)}%).`
-                      : data.portfolio.vsBenchmark >= -2
-                      ? `Trailing the S&P by ${Math.abs(data.portfolio.vsBenchmark).toFixed(2)}%.`
-                      : `Lagging the S&P by ${Math.abs(data.portfolio.vsBenchmark).toFixed(2)}%.`}
-                  </span>
-                )}
               </h2>
+              {data.portfolio.vsBenchmark !== null && (
+                <div className={`text-base md:text-lg font-medium mb-4 ${
+                  data.portfolio.vsBenchmark >= 2 ? 'text-[var(--color-positive)]'
+                  : data.portfolio.vsBenchmark >= 0.5 ? 'text-[var(--color-positive)]/70'
+                  : data.portfolio.vsBenchmark >= -0.5 ? 'text-[var(--color-text-muted)]'
+                  : data.portfolio.vsBenchmark >= -2 ? 'text-[var(--color-negative)]/70'
+                  : 'text-[var(--color-negative)]'
+                }`}>
+                  {data.portfolio.vsBenchmark >= 2
+                    ? `Crushing the S&P by ${Math.abs(data.portfolio.vsBenchmark).toFixed(2)}%.`
+                    : data.portfolio.vsBenchmark >= 0.5
+                    ? `Beating the S&P by ${Math.abs(data.portfolio.vsBenchmark).toFixed(2)}%.`
+                    : data.portfolio.vsBenchmark >= -0.5
+                    ? `In line with the S&P (${data.portfolio.vsBenchmark >= 0 ? '+' : ''}${data.portfolio.vsBenchmark.toFixed(2)}%).`
+                    : data.portfolio.vsBenchmark >= -2
+                    ? `Trailing the S&P by ${Math.abs(data.portfolio.vsBenchmark).toFixed(2)}%.`
+                    : `Lagging the S&P by ${Math.abs(data.portfolio.vsBenchmark).toFixed(2)}%.`}
+                </div>
+              )}
 
               <div className="flex items-center gap-3 text-[11px] text-[var(--color-text-muted)] mb-6" style={MONO}>
                 <span>HELM ANALYST</span>
