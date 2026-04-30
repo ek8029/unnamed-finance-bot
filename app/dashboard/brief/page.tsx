@@ -115,6 +115,10 @@ export default function BriefPage() {
   const [deliveryTime, setDeliveryTime] = useState<string | null>(null);
   const [showDeliveryPicker, setShowDeliveryPicker] = useState(false);
   const deliveryRef = useRef<HTMLDivElement>(null);
+  const [watchlist, setWatchlist] = useState<{ ticker: string; price: number; changePct: number; changeAmt: number; isDefault: boolean }[]>([]);
+  const [watchlistInput, setWatchlistInput] = useState('');
+  const [showWatchlistAdd, setShowWatchlistAdd] = useState(false);
+  const [watchlistLoading, setWatchlistLoading] = useState(false);
 
   // Close delivery picker on click outside
   useEffect(() => {
@@ -128,18 +132,83 @@ export default function BriefPage() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showDeliveryPicker]);
 
-  // Load saved delivery preference
+  // Load delivery preference from DB
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('helm-brief-delivery-time');
-      if (saved) setDeliveryTime(saved);
-    } catch {}
+    fetch('/api/dashboard/brief-preferences')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.deliveryTime) setDeliveryTime(d.deliveryTime); })
+      .catch(() => {});
+  }, []);
+
+  // Load watchlist
+  useEffect(() => {
+    fetch('/api/dashboard/watchlist')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.tickers) setWatchlist(d.tickers); })
+      .catch(() => {});
   }, []);
 
   const handleDeliveryTimeChange = (time: string) => {
     setDeliveryTime(time);
     setShowDeliveryPicker(false);
-    try { localStorage.setItem('helm-brief-delivery-time', time); } catch {}
+    // Convert display time to 24h for DB: "7:00 AM" → "07:00", "12:00 PM" → "12:00"
+    const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (match) {
+      let h = parseInt(match[1]);
+      const m = match[2];
+      const ampm = match[3].toUpperCase();
+      if (ampm === 'PM' && h !== 12) h += 12;
+      if (ampm === 'AM' && h === 12) h = 0;
+      const db24 = `${String(h).padStart(2, '0')}:${m}`;
+      fetch('/api/dashboard/brief-preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deliveryTime: db24 }),
+      }).catch(() => {});
+    }
+  };
+
+  const handleClearDeliveryTime = () => {
+    setDeliveryTime(null);
+    setShowDeliveryPicker(false);
+    fetch('/api/dashboard/brief-preferences', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deliveryTime: null }),
+    }).catch(() => {});
+  };
+
+  const handleAddWatchlistTicker = async () => {
+    const ticker = watchlistInput.trim().toUpperCase();
+    if (!ticker || !/^[A-Z]{1,5}$/.test(ticker)) return;
+    setWatchlistLoading(true);
+    try {
+      const res = await fetch('/api/dashboard/watchlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticker }),
+      });
+      if (res.ok) {
+        setWatchlistInput('');
+        setShowWatchlistAdd(false);
+        // Refresh watchlist
+        const updated = await fetch('/api/dashboard/watchlist').then(r => r.json());
+        if (updated?.tickers) setWatchlist(updated.tickers);
+      }
+    } catch {} finally { setWatchlistLoading(false); }
+  };
+
+  const handleRemoveWatchlistTicker = async (ticker: string) => {
+    try {
+      const res = await fetch('/api/dashboard/watchlist', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticker }),
+      });
+      if (res.ok) {
+        setWatchlist(prev => prev.filter(w => w.ticker !== ticker));
+      }
+    } catch {}
   };
 
   useEffect(() => {
@@ -339,7 +408,7 @@ export default function BriefPage() {
                     ))}
                     {deliveryTime && (
                       <button
-                        onClick={() => { setDeliveryTime(null); setShowDeliveryPicker(false); try { localStorage.removeItem('helm-brief-delivery-time'); } catch {} }}
+                        onClick={handleClearDeliveryTime}
                         className="block w-full text-left px-3 py-2 rounded text-xs tracking-wider text-[var(--color-negative)] hover:bg-[var(--color-negative)]/5 motion-safe:transition-colors mt-1 border-t border-[var(--color-border-subtle)] pt-2"
                       >
                         CLEAR
@@ -353,11 +422,38 @@ export default function BriefPage() {
         </div>
       </header>
 
-      {/* ═══ Market Tape ═══ */}
+      {/* ═══ Market Tape (watchlist-driven) ═══ */}
       <div className="bg-[#080808] border-b border-white/[0.06]">
-        <div className="max-w-6xl mx-auto px-6 py-4 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {marketTapeItems.map(([label, value, delta, pos]) => (
-            <div key={label}>
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)]" style={MONO}>WATCHLIST</span>
+            <button
+              onClick={() => setShowWatchlistAdd(!showWatchlistAdd)}
+              className="text-[10px] text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors"
+              aria-label="Add ticker to watchlist"
+            >
+              + ADD
+            </button>
+            {showWatchlistAdd && (
+              <form onSubmit={(e) => { e.preventDefault(); handleAddWatchlistTicker(); }} className="flex items-center gap-1 ml-2">
+                <input
+                  type="text"
+                  value={watchlistInput}
+                  onChange={(e) => setWatchlistInput(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5))}
+                  placeholder="AAPL"
+                  className="w-16 px-2 py-0.5 text-xs bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
+                  autoFocus
+                  maxLength={5}
+                />
+                <button type="submit" disabled={watchlistLoading} className="text-[10px] px-2 py-0.5 bg-[var(--color-gold)] text-black rounded font-semibold disabled:opacity-50">
+                  {watchlistLoading ? '...' : 'ADD'}
+                </button>
+              </form>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          {(watchlist.length > 0 ? watchlist.map(w => [w.ticker, `$${w.price.toFixed(2)}`, fmtPct(w.changePct), w.changePct >= 0] as [string, string, string, boolean]) : marketTapeItems).map(([label, value, delta, pos]) => (
+            <div key={label} className="group relative">
               <div className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]" style={MONO}>{label}</div>
               <div className="text-lg font-bold mt-1 tabular-nums">{value}</div>
               <div
@@ -366,8 +462,18 @@ export default function BriefPage() {
               >
                 {delta}
               </div>
+              {watchlist.length > 0 && (
+                <button
+                  onClick={() => handleRemoveWatchlistTicker(label)}
+                  className="absolute top-0 right-0 text-[var(--color-text-muted)] hover:text-[var(--color-negative)] opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                  aria-label={`Remove ${label} from watchlist`}
+                >
+                  ×
+                </button>
+              )}
             </div>
           ))}
+          </div>
         </div>
       </div>
 

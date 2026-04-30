@@ -346,7 +346,7 @@ export async function GET() {
         generalNews,
       },
       {
-        headers: { 'Cache-Control': 'private, max-age=300' },
+        headers: { 'Cache-Control': 'private, max-age=60' },
       },
     );
   } catch (error) {

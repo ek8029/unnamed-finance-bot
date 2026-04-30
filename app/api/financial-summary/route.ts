@@ -14,6 +14,14 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Update last_seen_at (fire-and-forget, throttled to 1/hour via DB)
+    supabase
+      .from('user_profiles')
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq('id', user.id)
+      .lt('last_seen_at', new Date(Date.now() - 3600000).toISOString())
+      .then(() => {});
+
     // Fetch all data in parallel
     const [
       accountsResult,

@@ -118,6 +118,8 @@ export const CACHE_TTL = {
   portfolioAnalysis: 5 * 60 * 1000,       // 5 min
   /** Financial data API (Finnhub profiles). */
   financialData: 15 * 60 * 1000,           // 15 min
+  /** Live quotes (Finnhub /quote). Short TTL for intraday freshness. */
+  quoteData: 60 * 1000,                   // 1 min (already used in financial-data.ts)
   /** Intelligence feed generation. */
   intelligenceFeed: 60 * 60 * 1000,        // 1 hr
   /** Portfolio Wrapped computation. */
