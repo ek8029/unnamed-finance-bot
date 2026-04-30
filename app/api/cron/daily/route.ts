@@ -63,9 +63,24 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch plaid items' }, { status: 500 });
     }
 
+    // Drip emails for users without Plaid — run BEFORE Plaid gate so
+    // non-connected users still receive nurture emails
+    let dripResult = { sent: 0 };
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
+      const dripRes = await fetch(`${baseUrl}/api/emails/drip`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+      });
+      if (dripRes.ok) dripResult = await dripRes.json();
+      log.push(`[drip] Sent ${dripResult.sent} emails`);
+    } catch (err) {
+      log.push(`[drip] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
+    }
+
     if (!plaidItems || plaidItems.length === 0) {
       log.push('No active Plaid items found - nothing to sync');
-      return NextResponse.json({ success: true, log, duration_ms: Date.now() - startTime });
+      return NextResponse.json({ success: true, log, drip_emails_sent: dripResult.sent, duration_ms: Date.now() - startTime });
     }
 
     log.push(`Found ${plaidItems.length} active Plaid item(s)`);
@@ -199,19 +214,6 @@ export async function GET(request: Request) {
       }
     }
 
-    // Drip emails for users without Plaid
-    let dripResult = { sent: 0 };
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
-      const dripRes = await fetch(`${baseUrl}/api/emails/drip`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
-      });
-      if (dripRes.ok) dripResult = await dripRes.json();
-      log.push(`[drip] Sent ${dripResult.sent} emails`);
-    } catch (err) {
-      log.push(`[drip] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
-    }
 
     const summary = {
       success: true,
