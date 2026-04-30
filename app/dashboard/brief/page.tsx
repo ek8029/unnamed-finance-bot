@@ -391,7 +391,7 @@ export default function BriefPage() {
               <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-gold)] mb-2" style={MONO}>{dateStr}</div>
               <div className="flex items-center gap-3">
                 <HelmMark size={28} />
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight">The Helm Brief</h1>
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight">The Current</h1>
               </div>
             </div>
             <div className="text-right" style={MONO}>
