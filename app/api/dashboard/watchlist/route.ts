@@ -56,7 +56,7 @@ export async function GET() {
     });
 
     return NextResponse.json(
-      { data: watchlist },
+      { tickers: watchlist },
       {
         headers: {
           'Cache-Control': 'private, max-age=60',

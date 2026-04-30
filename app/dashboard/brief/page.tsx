@@ -136,7 +136,17 @@ export default function BriefPage() {
   useEffect(() => {
     fetch('/api/dashboard/brief-preferences')
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.deliveryTime) setDeliveryTime(d.deliveryTime); })
+      .then(d => {
+        if (d?.deliveryTime) {
+          // Convert 24h DB format ("07:00") to display format ("7:00 AM")
+          const [hStr, mStr] = d.deliveryTime.split(':');
+          let h = parseInt(hStr);
+          const ampm = h >= 12 ? 'PM' : 'AM';
+          if (h > 12) h -= 12;
+          if (h === 0) h = 12;
+          setDeliveryTime(`${h}:${mStr} ${ampm}`);
+        }
+      })
       .catch(() => {});
   }, []);
 
