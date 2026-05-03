@@ -19,7 +19,7 @@ export async function GET() {
       .from('user_profiles')
       .update({ last_seen_at: new Date().toISOString() })
       .eq('id', user.id)
-      .lt('last_seen_at', new Date(Date.now() - 3600000).toISOString())
+      .or(`last_seen_at.is.null,last_seen_at.lt.${new Date(Date.now() - 3600000).toISOString()}`)
       .then(() => {});
 
     // Fetch all data in parallel
