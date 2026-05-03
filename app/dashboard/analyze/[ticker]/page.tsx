@@ -3,6 +3,9 @@ import { analyzeStock } from '@/lib/analyze-stock';
 import { getFullTickerData } from '@/lib/financial-data';
 import { AnalysisTerminal } from '@/app/analyze/[ticker]/analysis-terminal';
 
+// Force dynamic rendering — quote prices must be fresh on every request
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: Promise<{ ticker: string }>;
 }

@@ -6,6 +6,9 @@ import { AnalysisTerminal } from './analysis-terminal';
 import { HelmMark } from '@/components/helm-mark';
 import { CinematicBg } from '@/components/cinematic-bg';
 
+// Force dynamic rendering — quote prices must be fresh on every request
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: Promise<{ ticker: string }>;
 }
