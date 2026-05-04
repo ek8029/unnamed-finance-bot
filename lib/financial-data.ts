@@ -148,23 +148,33 @@ export async function getQuote(symbol: string): Promise<FinnhubQuote | null> {
   const cached = getCached<FinnhubQuote>(cacheKey);
   if (cached) return cached;
 
-  try {
-    const url = new URL(`${FINNHUB_BASE}/quote`);
-    url.searchParams.set('token', getApiKey());
-    url.searchParams.set('symbol', symbol.toUpperCase());
+  const url = new URL(`${FINNHUB_BASE}/quote`);
+  url.searchParams.set('token', getApiKey());
+  url.searchParams.set('symbol', symbol.toUpperCase());
 
-    const res = await fetch(url.toString(), {
-      headers: { Accept: 'application/json' },
-      cache: 'no-store',
-    });
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(url.toString(), {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      });
 
-    if (!res.ok) return null;
-    const data = await res.json();
-    setCache(cacheKey, data, QUOTE_CACHE_TTL);
-    return data as FinnhubQuote;
-  } catch {
-    return null;
+      if (res.status === 429) {
+        // Rate limited — wait 1s and retry once
+        await new Promise(r => setTimeout(r, 1000));
+        continue;
+      }
+      if (!res.ok) return null;
+      const data = await res.json();
+      // Finnhub returns c:0 when no data — treat as null
+      if (!data || data.c === 0) return null;
+      setCache(cacheKey, data, QUOTE_CACHE_TTL);
+      return data as FinnhubQuote;
+    } catch {
+      return null;
+    }
   }
+  return null;
 }
 
 /**
