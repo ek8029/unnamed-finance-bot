@@ -77,7 +77,7 @@ export default function AboutPage() {
           </div>
         </nav>
 
-        <main className="max-w-3xl mx-auto px-6 py-20">
+        <main id="main-content" className="max-w-3xl mx-auto px-6 py-20">
           {/* Eyebrow */}
           <div className="flex items-center gap-3 mb-8">
             <div className="w-8 h-px bg-[var(--color-gold)]" />
@@ -104,25 +104,6 @@ export default function AboutPage() {
               Most of it is free. No black boxes, no vague AI summaries. Every insight
               shows its data sources, timestamps, and methodology. You can verify
               everything Helm tells you.
-            </p>
-
-            <h2 className="text-[var(--color-text-primary)] text-xl font-semibold pt-4">
-              The builder
-            </h2>
-
-            <p>
-              {/* TODO: Expand with full name, specific credentials, professional background */}
-              Helm was built by Evan, a software engineer and Penn State alum who got
-              frustrated by how fragmented personal finance tools were. Brokerage apps
-              show you positions but not risk. Budgeting apps track spending but ignore
-              your portfolio. Nothing connected the dots across accounts.
-            </p>
-
-            <p>
-              So he built Helm — a single command center that aggregates every account
-              via Plaid, runs rule-based intelligence over your full financial picture,
-              and surfaces the 3-5 things that actually matter each week. No subscriptions
-              required for the core experience.
             </p>
 
             <h2 className="text-[var(--color-text-primary)] text-xl font-semibold pt-4">
@@ -156,7 +137,7 @@ export default function AboutPage() {
               The philosophy
             </h2>
 
-            <ul className="space-y-3 list-none">
+            <ul className="space-y-3 list-none" role="list">
               <li className="flex gap-3">
                 <span className="text-[var(--color-gold)] font-mono text-sm mt-0.5">01</span>
                 <span><strong className="text-[var(--color-text-primary)]">Transparency over polish.</strong> Show the data, the source, the timestamp. Let users verify.</span>

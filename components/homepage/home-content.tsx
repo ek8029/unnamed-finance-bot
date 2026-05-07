@@ -139,13 +139,13 @@ function HeroSearch() {
   return (
     <form onSubmit={handleSubmit} className="flex items-stretch w-full max-w-md">
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value.toUpperCase())}
           placeholder="Enter ticker..."
-          className="w-full h-11 pl-10 pr-3 bg-[#0A0A0A] border border-white/[0.08] rounded-l-md font-mono text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-[var(--color-gold)]/40 transition-colors"
+          className="w-full h-11 pl-10 pr-3 bg-[var(--color-bg-base)] border border-[var(--color-border-base)] rounded-l-md font-mono text-sm text-[var(--color-text-primary)]placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)]/40 transition-colors"
           maxLength={10}
           autoComplete="off"
           spellCheck={false}
@@ -196,7 +196,7 @@ function InlineSignup() {
         value={email}
         onChange={e => setEmail(e.target.value)}
         placeholder="you@email.com"
-        className="flex-1 px-4 py-3 bg-white/[0.06] border border-white/[0.1] rounded-lg text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors min-w-0"
+        className="flex-1 px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-lg text-[14px] text-[var(--color-text-primary)]placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors min-w-0"
       />
       <button
         type="submit"
@@ -212,7 +212,9 @@ function InlineSignup() {
 
 function ToolsDropdown({ items }: { items: { label: string; href: string; desc: string }[] }) {
   const [open, setOpen] = useState(false);
+  const [focusIdx, setFocusIdx] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -223,26 +225,45 @@ function ToolsDropdown({ items }: { items: { label: string; href: string; desc: 
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
+  useEffect(() => {
+    if (open && focusIdx >= 0) itemRefs.current[focusIdx]?.focus();
+  }, [open, focusIdx]);
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Escape') { setOpen(false); setFocusIdx(-1); return; }
+    if (!open && (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown')) {
+      e.preventDefault(); setOpen(true); setFocusIdx(0); return;
+    }
+    if (!open) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); setFocusIdx((i) => Math.min(i + 1, items.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setFocusIdx((i) => Math.max(i - 1, 0)); }
+  }
+
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative" ref={ref} onKeyDown={handleKeyDown}>
       <button
-        onClick={() => setOpen(!open)}
-        className="text-[13px] text-white/50 hover:text-white/90 transition-colors flex items-center gap-1"
+        onClick={() => { setOpen(!open); if (!open) setFocusIdx(0); }}
+        aria-expanded={open}
+        aria-haspopup="true"
+        className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors flex items-center gap-1"
       >
         Tools
         <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-2 w-[240px] bg-[#0a0a0a] border border-white/[0.08] rounded-lg shadow-2xl py-2 z-50">
-          {items.map((item) => (
+        <div role="menu" aria-label="Tools" className="absolute top-full left-0 mt-2 w-[240px] bg-[var(--color-bg-base)] border border-[var(--color-border-base)] rounded-lg shadow-2xl py-2 z-50">
+          {items.map((item, i) => (
             <Link
               key={item.label}
               href={item.href}
+              ref={(el) => { itemRefs.current[i] = el; }}
+              role="menuitem"
+              tabIndex={focusIdx === i ? 0 : -1}
               onClick={() => setOpen(false)}
-              className="block px-4 py-2.5 hover:bg-white/[0.04] transition-colors"
+              className="block px-4 py-2.5 hover:bg-[var(--color-bg-elevated)] focus:bg-[var(--color-bg-elevated)] transition-colors outline-none"
             >
-              <div className="text-[13px] text-white/80 font-medium">{item.label}</div>
-              <div className="text-[11px] text-white/35 mt-0.5">{item.desc}</div>
+              <div className="text-[13px] text-[var(--color-text-secondary)] font-medium">{item.label}</div>
+              <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5">{item.desc}</div>
             </Link>
           ))}
         </div>
@@ -282,14 +303,14 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
           ════════════════════════════════════════════════════════════════════ */}
       <nav className="fixed top-0 left-0 right-0 z-50">
         <div
-          className="absolute inset-0 backdrop-blur-xl border-b border-white/[0.06] transition-opacity duration-300"
+          className="absolute inset-0 backdrop-blur-xl border-b border-[var(--color-border-subtle)] transition-opacity duration-300"
           style={{ opacity: navOpacity, backgroundColor: `rgba(8,8,8,${navOpacity * 0.85})` }}
         />
         <div className="relative max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           {/* Left: Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
             <HelmMark size={28} />
-            <span className="font-semibold text-sm tracking-[0.12em] text-white/90 group-hover:text-white transition-colors">
+            <span className="font-semibold text-sm tracking-[0.12em] text-[var(--color-text-primary)] group-hover:text-[var(--color-text-primary)]transition-colors">
               HELM
             </span>
           </Link>
@@ -303,7 +324,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                 <Link
                   key={link.label}
                   href={link.href}
-                  className="text-[13px] text-white/50 hover:text-white/90 transition-colors"
+                  className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
                 >
                   {link.label}
                 </Link>
@@ -315,7 +336,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
           <div className="flex items-center gap-4">
             <Link
               href="/login"
-              className="text-[13px] text-white/50 hover:text-white/90 transition-colors hidden sm:block"
+              className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors hidden sm:block"
             >
               Log in
             </Link>
@@ -330,7 +351,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
 
           {/* Mobile hamburger */}
           <button
-            className="md:hidden ml-3 p-1.5 text-white/50 hover:text-white/90"
+            className="md:hidden ml-3 p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -353,17 +374,17 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="md:hidden border-b border-white/[0.06] bg-[#080808]/95 backdrop-blur-xl px-6 pb-4 pt-2"
+            className="md:hidden border-b border-[var(--color-border-subtle)] bg-[#080808]/95 backdrop-blur-xl px-6 pb-4 pt-2"
           >
             {NAV_LINKS.map((link) => (
               'children' in link && link.children ? (
                 <div key={link.label}>
-                  <span className="block py-2.5 text-sm text-white/40 font-medium">{link.label}</span>
+                  <span className="block py-2.5 text-sm text-[var(--color-text-muted)] font-medium">{link.label}</span>
                   {link.children.map((child: { label: string; href: string; desc: string }) => (
                     <Link
                       key={child.label}
                       href={child.href}
-                      className="block py-2 pl-4 text-sm text-white/60 hover:text-white transition-colors"
+                      className="block py-2 pl-4 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       {child.label}
@@ -374,7 +395,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               <Link
                 key={link.label}
                 href={link.href}
-                className="block py-2.5 text-sm text-white/60 hover:text-white transition-colors"
+                className="block py-2.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {link.label}
@@ -383,7 +404,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             ))}
             <Link
               href="/login"
-              className="block py-2.5 text-sm text-white/60 hover:text-white transition-colors"
+              className="block py-2.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Log in
@@ -396,12 +417,12 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
           TICKER TAPE — directly under nav, hidden on mobile
           ════════════════════════════════════════════════════════════════════ */}
       <div
-        className="fixed top-16 left-0 right-0 z-40 bg-[#080808] border-b border-white/[0.04] overflow-hidden hidden md:block"
+        className="fixed top-16 left-0 right-0 z-40 bg-[#080808] border-b border-[var(--color-border-subtle)] overflow-hidden hidden md:block"
         style={{ height: '38px' }}
       >
         <div
           className="flex items-center h-full whitespace-nowrap"
-          style={{ animation: 'tickerScroll 60s linear infinite', width: 'max-content' }}
+          style={{ animation: 'tickerScroll 60s linear infinite', width: 'max-content', willChange: 'transform' }}
         >
           {tickerItems.map((t, i) => (
             <div
@@ -410,8 +431,8 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               style={{ fontSize: '11px' }}
             >
               <span className="text-[var(--color-gold)] font-semibold">{t.symbol}</span>
-              <span className="text-white/80">{t.price}</span>
-              <span className={t.positive ? 'text-emerald-400' : 'text-red-400'}>
+              <span className="text-[var(--color-text-secondary)]">{t.price}</span>
+              <span className={t.positive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}>
                 {t.change}
               </span>
             </div>
@@ -451,7 +472,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
 
             {/* Massive headline */}
             <FadeIn delay={100}>
-              <h1 className="text-[clamp(48px,10vw,120px)] font-bold leading-[1.05] tracking-[-0.045em] text-white mb-16">
+              <h1 className="text-[clamp(48px,10vw,120px)] font-bold leading-[1.05] tracking-[-0.045em] text-[var(--color-text-primary)]mb-16">
                 See your portfolio<br />
                 the way{' '}
                 <span
@@ -471,7 +492,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               <FadeIn delay={250} className="pr-0 lg:pr-12">
                 <div className="flex items-center gap-2 mb-5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="font-mono text-[11px] tracking-[0.15em] text-white/50 uppercase">
+                  <span className="font-mono text-[11px] tracking-[0.15em] text-[var(--color-text-muted)] uppercase">
                     Live &middot; Free for anyone
                   </span>
                 </div>
@@ -485,7 +506,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                     <button
                       key={ticker}
                       onClick={() => router.push(`/analyze/${ticker}`)}
-                      className="px-3.5 py-1.5 rounded-full border border-white/[0.08] text-white/50 font-mono text-xs hover:border-[var(--color-gold)]/30 hover:text-[var(--color-gold)] transition-all"
+                      className="px-3.5 py-1.5 rounded-full border border-[var(--color-border-base)] text-[var(--color-text-muted)] font-mono text-xs hover:border-[var(--color-gold)]/30 hover:text-[var(--color-gold)] transition-all"
                     >
                       {ticker}
                     </button>
@@ -494,12 +515,12 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               </FadeIn>
 
               {/* RIGHT: Copy block with left border */}
-              <FadeIn delay={400} className="lg:border-l lg:border-white/[0.08] lg:pl-12">
-                <p className="text-[15px] leading-relaxed text-white/60 mb-4">
+              <FadeIn delay={400} className="lg:border-l lg:border-[var(--color-border-base)] lg:pl-12">
+                <p className="text-[15px] leading-relaxed text-[var(--color-text-secondary)] mb-4">
                   AI stock analysis, tax-loss harvesting, earnings exposure, portfolio
                   intelligence — the tools Wall Street pays $24,000 a year for.
                 </p>
-                <p className="text-[15px] font-semibold text-white/90 mb-6">
+                <p className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-6">
                   Most of it is free.
                 </p>
 
@@ -513,10 +534,10 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
         {/* ══════════════════════════════════════════════════════════════════
             DEFINITION BLOCK — citable by AI search engines
             ══════════════════════════════════════════════════════════════════ */}
-        <section className="py-16 border-t border-white/[0.04]">
+        <section className="py-16 border-t border-[var(--color-border-subtle)]">
           <div className="max-w-3xl mx-auto px-6">
-            <p className="text-[15px] leading-relaxed text-white/60" id="what-is-helm">
-              <strong className="text-white/90">Helm Terminal</strong> is a free,
+            <p className="text-[15px] leading-relaxed text-[var(--color-text-secondary)]" id="what-is-helm">
+              <strong className="text-[var(--color-text-primary)]">Helm Terminal</strong> is a free,
               institutional-grade financial intelligence platform for individual investors.
               It aggregates brokerage and bank accounts via Plaid (read-only), runs
               deterministic rule-based analysis over your full portfolio, and surfaces
@@ -533,7 +554,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             ══════════════════════════════════════════════════════════════════ */}
         <motion.section
           id="product"
-          className="py-32 border-t border-white/[0.04]"
+          className="py-32 border-t border-[var(--color-border-subtle)]"
           {...sectionReveal}
         >
           <div className="max-w-7xl mx-auto px-6">
@@ -543,7 +564,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                 <span className="font-mono text-xs text-[var(--color-gold)] tracking-wider">
                   &sect; 01
                 </span>
-                <span className="font-mono text-xs text-white/30 tracking-wider">
+                <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">
                   — Inside
                 </span>
               </div>
@@ -552,11 +573,11 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
               {/* LEFT: Sticky headline + description */}
               <FadeIn className="lg:sticky lg:top-32 lg:self-start">
-                <h2 className="text-[clamp(32px,4vw,52px)] font-bold leading-[1.1] tracking-tight text-white mb-6">
+                <h2 className="text-[clamp(32px,4vw,52px)] font-bold leading-[1.1] tracking-tight text-[var(--color-text-primary)]mb-6">
                   The full terminal.<br />
                   <span className="text-[var(--color-gold)]">Free.</span>
                 </h2>
-                <p className="text-[15px] leading-relaxed text-white/50 max-w-md">
+                <p className="text-[15px] leading-relaxed text-[var(--color-text-muted)] max-w-md">
                   Everything you need to understand your portfolio, track your net worth,
                   and make better decisions — without paying for a Bloomberg seat.
                 </p>
@@ -566,19 +587,19 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               <div className="space-y-0">
                 {TERMINAL_FEATURES.map((feature, idx) => (
                   <FadeIn key={feature.num} delay={idx * 100}>
-                    <div className="group py-8 border-b border-white/[0.06] first:border-t first:border-white/[0.06] cursor-default">
+                    <div className="group py-8 border-b border-[var(--color-border-subtle)] first:border-t first:border-[var(--color-border-subtle)] cursor-default">
                       <div className="flex items-start gap-5">
                         <span className="font-mono text-sm text-[var(--color-gold)] mt-1 shrink-0 w-6">
                           {feature.num}
                         </span>
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-[clamp(18px,2vw,24px)] font-semibold text-white group-hover:text-[var(--color-gold)] transition-colors">
+                            <h3 className="text-[clamp(18px,2vw,24px)] font-semibold text-[var(--color-text-primary)]group-hover:text-[var(--color-gold)] transition-colors">
                               {feature.title}
                             </h3>
-                            <ArrowRight className="w-4 h-4 text-white/20 group-hover:text-[var(--color-gold)] group-hover:translate-x-1 transition-all" />
+                            <ArrowRight className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-gold)] group-hover:translate-x-1 transition-all" />
                           </div>
-                          <p className="text-sm text-white/40 leading-relaxed">
+                          <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
                             {feature.desc}
                           </p>
                         </div>
@@ -595,7 +616,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             PULL QUOTE — section 02
             ══════════════════════════════════════════════════════════════════ */}
         <motion.section
-          className="bg-[#080808] border-y border-white/[0.06] py-32"
+          className="bg-[#080808] border-y border-[var(--color-border-subtle)] py-32"
           {...sectionReveal}
         >
           <div className="max-w-5xl mx-auto px-6">
@@ -604,7 +625,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                 <span className="font-mono text-xs text-[var(--color-gold)] tracking-wider">
                   &sect; 02
                 </span>
-                <span className="font-mono text-xs text-white/30 tracking-wider">
+                <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">
                   — On method
                 </span>
               </div>
@@ -612,7 +633,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
 
             <FadeIn delay={150}>
               <blockquote
-                className="text-[clamp(28px,5vw,56px)] leading-[1.15] tracking-tight mb-10 italic text-white/90"
+                className="text-[clamp(28px,5vw,56px)] leading-[1.15] tracking-tight mb-10 italic text-[var(--color-text-primary)]"
                 style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
               >
                 No black boxes. Every analysis shows the model, the sources,
@@ -624,7 +645,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             <FadeIn delay={300}>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-px bg-white/20" />
-                <span className="font-mono text-xs text-white/30 tracking-wider">
+                <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">
                   Helm design principle
                 </span>
               </div>
@@ -636,14 +657,14 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             BUILT FOR — ICP segment selector
             ══════════════════════════════════════════════════════════════════ */}
         <motion.section
-          className="py-24 border-b border-white/[0.04]"
+          className="py-24 border-b border-[var(--color-border-subtle)]"
           {...sectionReveal}
         >
           <div className="max-w-7xl mx-auto px-6">
             <FadeIn>
               <div className="text-center mb-16">
-                <span className="font-mono text-xs text-white/30 tracking-wider">— Built for</span>
-                <h2 className="text-[clamp(28px,3.5vw,44px)] font-bold leading-[1.1] tracking-tight text-white mt-4">
+                <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">— Built for</span>
+                <h2 className="text-[clamp(28px,3.5vw,44px)] font-bold leading-[1.1] tracking-tight text-[var(--color-text-primary)]mt-4">
                   One platform. Every type of investor.
                 </h2>
               </div>
@@ -658,11 +679,11 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                 <FadeIn key={segment.title} delay={i * 80}>
                   <Link
                     href={segment.href}
-                    className="block p-6 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:border-[var(--color-gold)]/30 hover:bg-[var(--color-gold)]/[0.03] transition-all group"
+                    className="block p-6 rounded-lg border border-[var(--color-border-subtle)] bg-white/[0.02] hover:border-[var(--color-gold)]/30 hover:bg-[var(--color-gold)]/[0.03] transition-all group"
                   >
                     <span className="text-2xl mb-3 block">{segment.icon}</span>
-                    <h3 className="text-lg font-bold text-white group-hover:text-[var(--color-gold)] transition-colors mb-2">{segment.title}</h3>
-                    <p className="text-sm text-white/50 leading-relaxed">{segment.desc}</p>
+                    <h3 className="text-lg font-bold text-[var(--color-text-primary)]group-hover:text-[var(--color-gold)] transition-colors mb-2">{segment.title}</h3>
+                    <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">{segment.desc}</p>
                     <span className="inline-block mt-4 text-xs font-mono text-[var(--color-gold)] tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">Learn more →</span>
                   </Link>
                 </FadeIn>
@@ -676,7 +697,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             ══════════════════════════════════════════════════════════════════ */}
         <motion.section
           id="pricing"
-          className="py-32 border-b border-white/[0.04]"
+          className="py-32 border-b border-[var(--color-border-subtle)]"
           {...sectionReveal}
         >
           <div className="max-w-7xl mx-auto px-6">
@@ -686,7 +707,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                 <span className="font-mono text-xs text-[var(--color-gold)] tracking-wider">
                   &sect; 03
                 </span>
-                <span className="font-mono text-xs text-white/30 tracking-wider">
+                <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">
                   — Pricing
                 </span>
               </div>
@@ -704,10 +725,10 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               <FadeIn delay={100} className="flex items-end">
                 <div className="w-full max-w-sm ml-auto">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono text-xs text-white/40">Lifetime seats</span>
+                    <span className="font-mono text-xs text-[var(--color-text-muted)]">Lifetime seats</span>
                     <span className="font-mono text-xs text-[var(--color-gold)]">187 remaining</span>
                   </div>
-                  <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
                     <div
                       className="h-full bg-[var(--color-gold)] rounded-full"
                       style={{ width: '7%' }}
@@ -718,29 +739,29 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             </div>
 
             {/* Pricing cards — 1-col mobile, 2-col sm, 4-col lg */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" role="list" aria-label="Pricing plans">
 
               {/* ── Free ── */}
               <FadeIn delay={0}>
-                <div className="bg-[#0C0C0C] border border-white/[0.06] rounded-md p-7 flex flex-col h-full">
+                <div role="listitem" aria-label="Free plan" className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-md p-7 flex flex-col h-full">
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-1">Free</h3>
+                    <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">Free</h3>
                     <div className="flex items-baseline gap-1">
                       <span className="text-3xl font-bold text-white">$0</span>
                     </div>
-                    <p className="text-xs text-white/40 mt-1">Forever. No card required.</p>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-1">Forever. No card required.</p>
                   </div>
                   <ul className="space-y-3 mb-8 flex-1">
                     {FREE_FEATURES.map((f) => (
                       <li key={f} className="flex items-start gap-2.5">
                         <Check className="w-3.5 h-3.5 text-[var(--color-gold)] mt-0.5 shrink-0" />
-                        <span className="text-sm text-white/50">{f}</span>
+                        <span className="text-sm text-[var(--color-text-muted)]">{f}</span>
                       </li>
                     ))}
                   </ul>
                   <Link
                     href="/signup"
-                    className="w-full h-10 border border-white/[0.1] rounded-md text-sm text-white/70 hover:text-white hover:border-white/20 transition-all flex items-center justify-center"
+                    className="w-full h-10 border border-[var(--color-border-strong)] rounded-md text-sm text-white/70 hover:text-[var(--color-text-primary)]hover:border-white/20 transition-all flex items-center justify-center"
                   >
                     Start free
                   </Link>
@@ -749,26 +770,26 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
 
               {/* ── Pro Monthly ── */}
               <FadeIn delay={80}>
-                <div className="bg-[#0C0C0C] border border-white/[0.06] rounded-md p-7 flex flex-col h-full">
+                <div role="listitem" aria-label="Pro Monthly plan" className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-md p-7 flex flex-col h-full">
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-1">Pro Monthly</h3>
+                    <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">Pro Monthly</h3>
                     <div className="flex items-baseline gap-1">
                       <span className="text-3xl font-bold text-white">$14.99</span>
-                      <span className="text-sm text-white/40">/mo</span>
+                      <span className="text-sm text-[var(--color-text-muted)]">/mo</span>
                     </div>
-                    <p className="text-xs text-white/40 mt-1">Cancel anytime.</p>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-1">Cancel anytime.</p>
                   </div>
                   <ul className="space-y-3 mb-8 flex-1">
                     {PRO_FEATURES.map((f) => (
                       <li key={f} className="flex items-start gap-2.5">
                         <Check className="w-3.5 h-3.5 text-[var(--color-gold)] mt-0.5 shrink-0" />
-                        <span className="text-sm text-white/50">{f}</span>
+                        <span className="text-sm text-[var(--color-text-muted)]">{f}</span>
                       </li>
                     ))}
                   </ul>
                   <Link
                     href="/signup"
-                    className="w-full h-10 border border-white/[0.1] rounded-md text-sm text-white/70 hover:text-white hover:border-white/20 transition-all flex items-center justify-center"
+                    className="w-full h-10 border border-[var(--color-border-strong)] rounded-md text-sm text-white/70 hover:text-[var(--color-text-primary)]hover:border-white/20 transition-all flex items-center justify-center"
                   >
                     Start monthly
                   </Link>
@@ -777,7 +798,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
 
               {/* ── Pro Annual — FEATURED ── */}
               <FadeIn delay={160}>
-                <div className="bg-[#0C0C0C] border border-[var(--color-gold)]/30 rounded-md p-7 flex flex-col h-full relative">
+                <div role="listitem" aria-label="Pro Annual plan — best value" className="bg-[var(--color-bg-surface)] border border-[var(--color-gold)]/30 rounded-md p-7 flex flex-col h-full relative">
                   {/* Best value badge */}
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="px-3 py-1 bg-[var(--color-gold)] text-black font-mono text-[10px] font-bold tracking-wider rounded-full uppercase">
@@ -785,12 +806,12 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                     </span>
                   </div>
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-1">Pro Annual</h3>
+                    <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">Pro Annual</h3>
                     <div className="flex items-baseline gap-1">
                       <span className="text-3xl font-bold text-white">$119</span>
-                      <span className="text-sm text-white/40">/yr</span>
+                      <span className="text-sm text-[var(--color-text-muted)]">/yr</span>
                     </div>
-                    <p className="text-xs text-white/40 mt-1">
+                    <p className="text-xs text-[var(--color-text-muted)] mt-1">
                       $9.92/mo &middot; Save 34%
                     </p>
                   </div>
@@ -798,7 +819,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                     {PRO_FEATURES.map((f) => (
                       <li key={f} className="flex items-start gap-2.5">
                         <Check className="w-3.5 h-3.5 text-[var(--color-gold)] mt-0.5 shrink-0" />
-                        <span className="text-sm text-white/50">{f}</span>
+                        <span className="text-sm text-[var(--color-text-muted)]">{f}</span>
                       </li>
                     ))}
                   </ul>
@@ -814,25 +835,25 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
 
               {/* ── Lifetime ── */}
               <FadeIn delay={240}>
-                <div className="bg-[#0C0C0C] border border-white/[0.06] rounded-md p-7 flex flex-col h-full">
+                <div role="listitem" aria-label="Lifetime plan" className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-md p-7 flex flex-col h-full">
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-1">Lifetime</h3>
+                    <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">Lifetime</h3>
                     <div className="flex items-baseline gap-1">
                       <span className="text-3xl font-bold text-white">$249</span>
                     </div>
-                    <p className="text-xs text-white/40 mt-1">One-time. 53 seats left.</p>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-1">One-time. 53 seats left.</p>
                   </div>
                   <ul className="space-y-3 mb-8 flex-1">
                     {LIFETIME_FEATURES.map((f) => (
                       <li key={f} className="flex items-start gap-2.5">
                         <Check className="w-3.5 h-3.5 text-[var(--color-gold)] mt-0.5 shrink-0" />
-                        <span className="text-sm text-white/50">{f}</span>
+                        <span className="text-sm text-[var(--color-text-muted)]">{f}</span>
                       </li>
                     ))}
                   </ul>
                   <Link
                     href="/signup"
-                    className="w-full h-10 border border-white/[0.1] rounded-md text-sm text-white/70 hover:text-white hover:border-white/20 transition-all flex items-center justify-center"
+                    className="w-full h-10 border border-[var(--color-border-strong)] rounded-md text-sm text-white/70 hover:text-[var(--color-text-primary)]hover:border-white/20 transition-all flex items-center justify-center"
                   >
                     Claim a seat
                   </Link>
@@ -845,7 +866,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
         {/* ══════════════════════════════════════════════════════════════════
             FOOTER
             ══════════════════════════════════════════════════════════════════ */}
-        <footer className="bg-[#080808] border-t border-white/[0.06] pt-20 pb-8">
+        <footer className="bg-[#080808] border-t border-[var(--color-border-subtle)] pt-20 pb-8">
           <div className="max-w-7xl mx-auto px-6">
             {/* 5-column footer grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-10 mb-16">
@@ -853,14 +874,14 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               <div className="col-span-2 sm:col-span-3 lg:col-span-1">
                 <Link href="/" className="flex items-center gap-2.5 mb-4">
                   <HelmMark size={24} />
-                  <span className="font-semibold text-sm tracking-[0.12em] text-white/90">
+                  <span className="font-semibold text-sm tracking-[0.12em] text-[var(--color-text-primary)]">
                     HELM
                   </span>
                 </Link>
-                <p className="text-xs text-white/30 leading-relaxed mb-4 max-w-[200px]">
+                <p className="text-xs text-[var(--color-text-muted)] leading-relaxed mb-4 max-w-[200px]">
                   Institutional-grade financial intelligence for individual investors.
                 </p>
-                <p className="text-[10px] text-white/20 leading-relaxed max-w-[220px]">
+                <p className="text-[10px] text-[var(--color-text-muted)] leading-relaxed max-w-[220px]">
                   Helm is not a financial advisor. All data is provided for informational
                   purposes only.
                 </p>
@@ -868,7 +889,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
 
               {/* Product */}
               <div>
-                <h4 className="font-mono text-[11px] tracking-wider text-white/40 uppercase mb-4">
+                <h4 className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-4">
                   Product
                 </h4>
                 <ul className="space-y-2.5">
@@ -876,7 +897,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="text-sm text-white/30 hover:text-white/70 transition-colors"
+                        className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]/70 transition-colors"
                       >
                         {link.label}
                       </Link>
@@ -887,7 +908,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
 
               {/* Tools */}
               <div>
-                <h4 className="font-mono text-[11px] tracking-wider text-white/40 uppercase mb-4">
+                <h4 className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-4">
                   Tools
                 </h4>
                 <ul className="space-y-2.5">
@@ -895,7 +916,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="text-sm text-white/30 hover:text-white/70 transition-colors"
+                        className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]/70 transition-colors"
                       >
                         {link.label}
                       </Link>
@@ -906,7 +927,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
 
               {/* Company */}
               <div>
-                <h4 className="font-mono text-[11px] tracking-wider text-white/40 uppercase mb-4">
+                <h4 className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-4">
                   Company
                 </h4>
                 <ul className="space-y-2.5">
@@ -914,7 +935,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="text-sm text-white/30 hover:text-white/70 transition-colors"
+                        className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]/70 transition-colors"
                       >
                         {link.label}
                       </Link>
@@ -925,7 +946,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
 
               {/* Legal */}
               <div>
-                <h4 className="font-mono text-[11px] tracking-wider text-white/40 uppercase mb-4">
+                <h4 className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-4">
                   Legal
                 </h4>
                 <ul className="space-y-2.5">
@@ -933,7 +954,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="text-sm text-white/30 hover:text-white/70 transition-colors"
+                        className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]/70 transition-colors"
                       >
                         {link.label}
                       </Link>
@@ -944,13 +965,13 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             </div>
 
             {/* Bottom bar */}
-            <div className="border-t border-white/[0.06] pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-[11px] text-white/20">
+            <div className="border-t border-[var(--color-border-subtle)] pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-[11px] text-[var(--color-text-muted)]">
                 &copy; {new Date().getFullYear()} Helm Terminal. All rights reserved.
               </p>
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <span className="text-[11px] text-white/30">
+                <span className="text-[11px] text-[var(--color-text-muted)]">
                   All systems operational &middot; 99.98% uptime
                 </span>
               </div>
