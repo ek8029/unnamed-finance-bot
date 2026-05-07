@@ -1,5 +1,13 @@
 {
   "buildCommand": "next build",
+  "redirects": [
+    {
+      "source": "/:path(.*)",
+      "has": [{ "type": "host", "value": "www.helmterminal.dev" }],
+      "destination": "https://helmterminal.dev/:path",
+      "permanent": true
+    }
+  ],
   "crons": [
     {
       "path": "/api/cron/daily",

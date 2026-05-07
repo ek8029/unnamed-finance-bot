@@ -509,6 +509,24 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
         </section>
 
         {/* ══════════════════════════════════════════════════════════════════
+            DEFINITION BLOCK — citable by AI search engines
+            ══════════════════════════════════════════════════════════════════ */}
+        <section className="py-16 border-t border-white/[0.04]">
+          <div className="max-w-3xl mx-auto px-6">
+            <p className="text-[15px] leading-relaxed text-white/60" id="what-is-helm">
+              <strong className="text-white/90">Helm Terminal</strong> is a free,
+              institutional-grade financial intelligence platform for individual investors.
+              It aggregates brokerage and bank accounts via Plaid (read-only), runs
+              deterministic rule-based analysis over your full portfolio, and surfaces
+              actionable insights — tax-loss harvesting opportunities with wash-sale
+              detection, concentration risk alerts, earnings exposure, and cash flow
+              changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.
+              Most features are free. Pro plans start at $14.99/month.
+            </p>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════
             INSIDE THE TERMINAL — section 01
             ══════════════════════════════════════════════════════════════════ */}
         <motion.section

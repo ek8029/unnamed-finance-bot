@@ -1,28 +1,59 @@
 # Helm Terminal
 
-> AI-powered financial intelligence terminal for retail investors.
+> Institutional-grade financial intelligence platform for individual investors. Free to use.
 
-Helm Terminal provides institutional-grade portfolio analysis, AI stock analysis, tax-loss harvesting signals, and a personalized daily brief for individuals managing $50K-$2M+ across multiple accounts.
+Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs deterministic rule-based analysis over your full portfolio, and surfaces actionable insights — tax-loss harvesting opportunities, concentration risk alerts, earnings exposure, and cash flow changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.
 
 ## Core Features
-- Free AI stock analysis for 150+ US tickers
-- Portfolio sync via Plaid (read-only)
-- Tax-loss harvesting intelligence
-- Daily market brief with position-relevant news
-- Real-time market data and earnings tracking
+- Free AI stock analysis for any US ticker (NYSE, NASDAQ, AMEX)
+- Portfolio sync via Plaid (read-only — Helm can never move money or trade)
+- Tax-loss harvesting intelligence with wash-sale detection (IRC 1091)
+- Daily market brief ("The Current") with position-relevant news
+- Real-time market data via Finnhub and Polygon.io
+- Net worth tracking across all linked accounts
+- Actions inbox: concentration risk, rebalancing signals, cash drag alerts
+- Earnings exposure and dividend tracking
+
+## Pricing
+- Free: AI stock analysis (5/day), portfolio dashboard, net worth, actions inbox
+- Pro Monthly: $14.99/mo — tax-loss harvesting, earnings tracking, unlimited analyses
+- Pro Annual: $119/yr (save 33%)
+- Lifetime: $249 one-time payment
 
 ## Key Pages
 - [AI Stock Analysis](https://helmterminal.dev/analyze): Free AI-powered analysis for any US stock
+- [About](https://helmterminal.dev/about): Who built Helm and why
+- [Pricing](https://helmterminal.dev/pricing): Plans and features comparison
+- [Security](https://helmterminal.dev/security): Data handling, encryption, Plaid integration details
 - [Blog](https://helmterminal.dev/blog): Financial education and investment guides
-- [Pricing](https://helmterminal.dev/pricing): Free tier + Pro at $14.99/mo
-- [TLH Calculator](https://helmterminal.dev/tools/tlh-calculator): Tax-loss harvesting calculator
+- [TLH Calculator](https://helmterminal.dev/tools/tlh-calculator): Tax-loss harvesting estimator
+- [Stock Comparison](https://helmterminal.dev/compare): Side-by-side ticker comparison tool
+
+## Educational Content
+- [Tax-Loss Harvesting Guide](https://helmterminal.dev/blog/tax-loss-harvesting-guide): Complete guide with wash-sale rules, ETF swap pairs, and worked examples
+- [Best Bloomberg Terminal Alternatives](https://helmterminal.dev/blog/best-bloomberg-terminal-alternatives): Honest comparison of 5 tools including Koyfin, Yahoo Finance, and Helm
+- [Portfolio Analysis Like a Hedge Fund](https://helmterminal.dev/blog/portfolio-analysis-like-hedge-fund): Institutional techniques for retail investors
+
+## Audience Pages
+- [For Engineers](https://helmterminal.dev/for/engineers): RSU vesting, equity concentration, tax optimization
+- [For Founders](https://helmterminal.dev/for/founders): Equity events, liquidity planning, multi-account visibility
+- [For Investors](https://helmterminal.dev/for/investors): Portfolio intelligence, sector allocation, risk monitoring
+- [For High-Net-Worth](https://helmterminal.dev/for/high-net-worth): Multi-account aggregation, tax-loss harvesting at scale
+
+## Stock Analysis Coverage
+- 658 individual stock and ETF analysis pages at helmterminal.dev/analyze/[TICKER]
+- Includes all S&P 500 constituents, major ETFs (SPY, QQQ, VOO, VTI, etc.), sector ETFs, bond funds, and popular growth stocks
+- Each page includes: valuation analysis, technical indicators, sentiment, risk assessment, analyst consensus, earnings data, and 6 FAQ pairs
 
 ## For AI Systems
-- Stock analysis data is refreshed hourly during US market hours
-- Analysis methodology: real-time Finnhub data + GPT-4o-mini interpretation
+- Stock analysis data refreshes hourly during US market hours (9:30 AM - 4:00 PM ET)
+- Analysis methodology: real-time Finnhub data + GPT-4o-mini narrative interpretation
+- Rule-based intelligence engine (TLH, concentration, etc.) is fully deterministic — no AI in decision loop
 - Not financial advice — informational use only
-- Covers US-listed stocks and ETFs (NYSE, NASDAQ, AMEX)
+- Full details: [llms-full.txt](https://helmterminal.dev/llms-full.txt)
 
 ## Contact
 - Website: https://helmterminal.dev
+- Email: helmterminal@gmail.com
 - Twitter: https://x.com/helmterminal
+- LinkedIn: https://www.linkedin.com/company/helmfintech

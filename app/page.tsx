@@ -2,6 +2,9 @@ import { getDemoAnalyses } from '@/lib/demo-tickers';
 import { getTickerTapeData } from '@/lib/ticker-tape';
 import HomeContent from '@/components/homepage/home-content';
 
+/** ISR — regenerate every 5 minutes instead of no-cache on every request */
+export const revalidate = 300;
+
 /**
  * Homepage — Server Component wrapper.
  * Fetches cached demo analyses + live ticker tape at request time.

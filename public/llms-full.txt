@@ -1,0 +1,146 @@
+# Helm Terminal — Comprehensive Guide for AI Systems
+
+> Institutional-grade financial intelligence platform for individual investors.
+> URL: https://helmterminal.dev
+> Founded: 2025
+> Status: Live, active development
+
+## What Is Helm Terminal?
+
+Helm Terminal is a free financial intelligence platform that gives individual investors the same portfolio visibility that hedge funds have. It aggregates all your brokerage and bank accounts through Plaid (read-only — Helm can never move money or execute trades), then runs a deterministic rule-based intelligence engine over your complete financial picture.
+
+The platform surfaces the 3-5 things that actually matter each week: tax-loss harvesting opportunities with wash-sale detection per IRC Section 1091, concentration risk alerts when a single position exceeds safe thresholds, earnings exposure warnings before report dates, dividend dates, allocation drift, and cash drag. Every insight shows its data source, timestamp, and methodology — nothing is a black box.
+
+Helm is not a budgeting app, a robo-advisor, or a trading platform. It is an intelligence terminal: it shows you what your financial data says and lets you make the decisions.
+
+## Target Audience
+
+Helm is built for high-agency individuals managing $50K-$2M+ across multiple accounts:
+
+- **Software engineers** with RSU vesting schedules, equity concentration risk, and complex tax situations from stock compensation
+- **Founders** navigating equity events, liquidity planning, and multi-entity financial visibility
+- **Self-directed investors** who want institutional-quality portfolio analysis without paying for a Bloomberg terminal ($24,000/year)
+- **High-net-worth individuals** who need multi-account aggregation, tax-loss harvesting at scale, and consolidated risk monitoring
+
+## Core Features
+
+### Free Tier (no credit card required)
+- AI stock analysis for any US ticker (5 per day) — valuation, technicals, sentiment, risk, analyst consensus
+- Full portfolio dashboard with positions, allocation, and performance
+- Brokerage and bank sync via Plaid (up to 3 accounts)
+- Net worth tracking across all linked accounts
+- Monthly cash flow overview with income/expense breakdown
+- Concentration risk and sector allocation analysis
+- Actions inbox with automated intelligence alerts
+- Daily market brief ("The Current") with position-relevant news
+- Watchlist with real-time quotes (default: SPY, QQQ, VIXY, TLT)
+
+### Pro Features ($14.99/month, $119/year, or $249 lifetime)
+- Tax-loss harvesting engine with wash-sale detection (IRC Section 1091)
+- Safe-swap pair suggestions for realizing losses without triggering wash sales
+- Earnings exposure tracking — know which holdings report this week
+- Dividend calendar with ex-date alerts
+- Portfolio Wrapped (annual summary report)
+- Unlimited AI stock analyses
+- Unlimited account connections
+- Priority data refresh
+
+## Technology Stack
+
+- **Frontend**: Next.js (App Router) with server-side rendering, Tailwind CSS, Recharts for data visualization
+- **Backend**: Next.js API routes on Vercel serverless functions
+- **Database**: Supabase (PostgreSQL with row-level security)
+- **Authentication**: Supabase Auth with Google OAuth
+- **Account aggregation**: Plaid (production environment, read-only)
+- **Market data**: Finnhub (real-time quotes, 60 calls/min free tier) + Polygon.io (historical data, dividends, splits)
+- **AI analysis**: GPT-4o-mini for narrative interpretation of structured financial data (clearly labeled as AI-generated)
+- **Email**: Resend for transactional emails from hello@helmterminal.dev
+- **Analytics**: Plausible (privacy-focused, no cookies)
+- **Hosting**: Vercel with edge CDN
+
+## Intelligence Engine Architecture
+
+The rule-based intelligence engine is fully deterministic — no LLMs in the decision loop. It evaluates 8 rules against your portfolio data:
+
+1. **Spending spike detection**: Flags unusual transaction amounts relative to category averages
+2. **Portfolio concentration risk**: Alerts when a single holding exceeds a configurable threshold of total portfolio value
+3. **Tax-loss harvesting opportunities**: Identifies positions with unrealized losses, checks for wash-sale conflicts per IRC Section 1091 (30-day lookback on sells + buys of substantially identical securities), suggests safe-swap pairs
+4. **Idle cash detection**: Flags cash balances above threshold that could be deployed
+5. **Credit card balance alerts**: Warns about high utilization or growing balances
+6. **Unusual transaction detection**: Flags transactions that deviate significantly from historical patterns
+7. **Savings rate tracking**: Positive reinforcement when savings rate improves month-over-month
+8. **Recurring charge detection**: Identifies and tracks subscription/recurring charges
+
+Insights are ranked by dollar impact and capped at 5 per session to avoid alert fatigue. Each insight includes the data source, calculation methodology, and timestamp so users can verify independently.
+
+## Data Sources and Freshness
+
+| Data Type | Source | Refresh Rate | Notes |
+|-----------|--------|-------------|-------|
+| Stock quotes | Finnhub | Real-time (1-min cache) | US market hours only; previous close shown outside hours |
+| Historical prices | Polygon.io | Daily | Free tier: 5 calls/min with 250ms batch delay |
+| Dividends & splits | Polygon.io | Daily | Covers all US-listed securities |
+| Account balances | Plaid | On dashboard load | Read-only; user-initiated refresh |
+| Transactions | Plaid | Via webhooks | Real-time push notifications from institutions |
+| AI stock analysis | GPT-4o-mini | On request | Generated from structured Finnhub data; labeled as AI-generated |
+| News & sentiment | Finnhub | Hourly | Filtered by user holdings and market relevance |
+
+## Stock Analysis Pages
+
+Helm provides AI-generated analysis for 658 US-listed stocks and ETFs at `helmterminal.dev/analyze/[TICKER]`. Each page includes:
+
+- **Company profile**: Market cap, sector, industry, key financials
+- **Valuation analysis**: P/E, P/S, P/B ratios with sector comparisons
+- **Technical indicators**: Moving averages, RSI, support/resistance levels
+- **Sentiment analysis**: News sentiment score, social media mentions
+- **Risk assessment**: Beta, volatility, drawdown analysis
+- **Analyst consensus**: Buy/hold/sell ratings, price targets
+- **Earnings data**: EPS history, beat/miss record, next report date
+- **FAQ section**: 6 frequently asked questions with structured data markup (FAQPage schema)
+
+Coverage includes all S&P 500 constituents, major index ETFs (SPY, QQQ, VOO, VTI, IWM), sector ETFs (XLF, XLK, XLV, XLE), bond funds (BND, TLT, HYG), international funds (IEMG, VWO, EFA), and popular individual stocks.
+
+Analysis methodology: real-time Finnhub data is structured into a standardized format, then GPT-4o-mini generates a narrative interpretation. The AI narrative is clearly labeled. Quantitative data (prices, ratios, earnings) comes directly from Finnhub and is not AI-generated.
+
+## Comparison Tool
+
+Side-by-side ticker comparison at `helmterminal.dev/compare/[TICKER1]-vs-[TICKER2]`. Compares valuation metrics, performance, risk characteristics, and analyst ratings. 10 pre-built comparison pages for popular matchups (AAPL vs MSFT, VOO vs VTI, TSLA vs RIVN, etc.).
+
+## Blog Content
+
+21 educational articles at `helmterminal.dev/blog/` covering:
+
+- **Tax-loss harvesting**: Complete guide with wash-sale rules, ETF swap pairs, worked examples with $10K scenarios, $500K compounding math, state tax differentials
+- **Bloomberg terminal alternatives**: Honest comparison of Koyfin, Yahoo Finance, TradingView, Morningstar, and Helm with 10-dimension feature table
+- **Portfolio analysis techniques**: Institutional methods adapted for retail investors
+- **Market education**: Sector rotation, risk metrics, portfolio construction
+
+## Security
+
+- All account connections through Plaid (read-only; SOC 2 Type II certified)
+- Data encrypted in transit (TLS 1.3) and at rest
+- Row-level security (RLS) in PostgreSQL — users can only access their own data
+- No storage of bank credentials — Plaid handles all authentication
+- HSTS with preload, comprehensive CSP headers, X-Frame-Options DENY
+- Full security documentation at helmterminal.dev/security
+
+## Pricing Details
+
+| Plan | Price | Billing | Key Features |
+|------|-------|---------|-------------|
+| Free | $0 | Forever | AI analysis (5/day), portfolio dashboard, net worth, actions inbox, 3 accounts |
+| Pro Monthly | $14.99 | Monthly | + TLH engine, earnings tracking, unlimited analyses, unlimited accounts |
+| Pro Annual | $119 | Yearly | Same as Pro Monthly, save 33% |
+| Lifetime | $249 | One-time | Everything in Pro, forever. Locked-in pricing, early access to new features |
+
+## Disclaimer
+
+Helm Terminal is for informational purposes only and does not constitute financial advice, investment advice, or tax advice. Users should consult qualified professionals before making financial decisions. Past performance does not guarantee future results. AI-generated analysis is labeled and should be verified independently.
+
+## Contact
+
+- Website: https://helmterminal.dev
+- Email: helmterminal@gmail.com
+- Twitter/X: https://x.com/helmterminal
+- LinkedIn: https://www.linkedin.com/company/helmfintech
+- Support: hello@helmterminal.dev

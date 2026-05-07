@@ -81,6 +81,7 @@ export default function RootLayout({
               sameAs: [
                 'https://x.com/helmterminal',
                 'https://www.linkedin.com/company/helmfintech',
+                // TODO: Add Wikidata, GitHub org, Crunchbase, YouTube when created
               ],
               knowsAbout: [
                 'Portfolio Analysis',
@@ -105,12 +106,44 @@ export default function RootLayout({
               url: 'https://helmterminal.dev',
               description:
                 'AI-powered stock analysis, portfolio intelligence, and tax-loss harvesting for retail investors. Live-refreshed analysis based on real-time market data.',
-              offers: {
-                '@type': 'Offer',
-                price: '0',
-                priceCurrency: 'USD',
-                description: 'Free AI stock analysis for any US ticker. Paid plans available for portfolio features.',
-              },
+              offers: [
+                {
+                  '@type': 'Offer',
+                  price: '0',
+                  priceCurrency: 'USD',
+                  description: 'Free — AI stock analysis, portfolio dashboard, net worth tracking, actions inbox',
+                },
+                {
+                  '@type': 'Offer',
+                  price: '14.99',
+                  priceCurrency: 'USD',
+                  description: 'Pro Monthly — tax-loss harvesting, earnings tracking, unlimited analyses',
+                  priceSpecification: {
+                    '@type': 'UnitPriceSpecification',
+                    price: '14.99',
+                    priceCurrency: 'USD',
+                    billingDuration: 'P1M',
+                  },
+                },
+                {
+                  '@type': 'Offer',
+                  price: '119',
+                  priceCurrency: 'USD',
+                  description: 'Pro Annual — everything in Pro, billed yearly (save 33%)',
+                  priceSpecification: {
+                    '@type': 'UnitPriceSpecification',
+                    price: '119',
+                    priceCurrency: 'USD',
+                    billingDuration: 'P1Y',
+                  },
+                },
+                {
+                  '@type': 'Offer',
+                  price: '249',
+                  priceCurrency: 'USD',
+                  description: 'Lifetime — one-time payment, locked-in forever',
+                },
+              ],
               featureList: [
                 'Live AI stock analysis',
                 'Portfolio sync via Plaid',
@@ -126,6 +159,76 @@ export default function RootLayout({
                 name: 'Helm Terminal',
                 url: 'https://helmterminal.dev',
               },
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'Helm Terminal',
+              url: 'https://helmterminal.dev',
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: {
+                  '@type': 'EntryPoint',
+                  urlTemplate: 'https://helmterminal.dev/analyze/{search_term_string}',
+                },
+                'query-input': 'required name=search_term_string',
+              },
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'FAQPage',
+              mainEntity: [
+                {
+                  '@type': 'Question',
+                  name: 'What is Helm Terminal?',
+                  acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Helm Terminal is a free, institutional-grade financial intelligence platform for individual investors. It aggregates brokerage and bank accounts via Plaid, runs deterministic rule-based analysis over your portfolio, and surfaces actionable insights like tax-loss harvesting opportunities, concentration risk, earnings exposure, and cash flow changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.',
+                  },
+                },
+                {
+                  '@type': 'Question',
+                  name: 'Is Helm Terminal free?',
+                  acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Yes. Helm Terminal offers a free tier that includes AI stock analysis (5 per day), a full portfolio dashboard with Plaid sync, net worth tracking, cash flow overview, concentration risk analysis, sector allocation, and an actions inbox. Pro plans starting at $14.99/month add tax-loss harvesting with wash-sale detection, earnings exposure tracking, and unlimited analyses.',
+                  },
+                },
+                {
+                  '@type': 'Question',
+                  name: 'How does Helm Terminal compare to Bloomberg Terminal?',
+                  acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Bloomberg Terminal costs approximately $24,000 per year and is designed for institutional traders. Helm Terminal provides a subset of similar capabilities — portfolio analysis, real-time market data, AI-powered stock analysis, and risk alerts — for individual investors, starting at $0. It is not a Bloomberg replacement for professional trading desks, but it gives retail investors access to institutional-quality portfolio intelligence.',
+                  },
+                },
+                {
+                  '@type': 'Question',
+                  name: 'Is Helm Terminal safe to use with my financial accounts?',
+                  acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Helm Terminal connects to your accounts through Plaid, a bank-grade financial data provider used by Venmo, Coinbase, and thousands of other apps. The connection is read-only — Helm can never move money, execute trades, or modify your accounts. All data is encrypted in transit (TLS 1.3) and at rest, with row-level security in the database.',
+                  },
+                },
+                {
+                  '@type': 'Question',
+                  name: 'What data sources does Helm Terminal use?',
+                  acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Helm Terminal uses Finnhub for real-time stock quotes, Polygon.io for historical prices, dividends, and splits, and Plaid for account aggregation. AI stock analysis pages use GPT-4o-mini for narrative interpretation of structured financial data, clearly labeled as AI-generated. The rule-based intelligence engine (tax-loss harvesting, concentration alerts, etc.) uses no AI — it is fully deterministic and auditable.',
+                  },
+                },
+              ],
             }),
           }}
         />
