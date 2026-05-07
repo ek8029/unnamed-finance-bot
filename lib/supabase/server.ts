@@ -73,3 +73,22 @@ export async function createServiceClient() {
     }
   );
 }
+
+/**
+ * Cookie-free service client for public read-only queries.
+ * Does NOT call cookies() so pages using it can be statically generated / ISR.
+ * Use for homepage data fetches, public API routes, etc.
+ */
+export function createStaticServiceClient() {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      cookies: {
+        get() { return undefined; },
+        set() {},
+        remove() {},
+      },
+    }
+  );
+}

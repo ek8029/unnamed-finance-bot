@@ -2,7 +2,7 @@
  * Server-side helper to fetch pre-cached analyses for homepage demo.
  * Uses the analysis_cache table (publicly readable via RLS).
  */
-import { createServiceClient } from '@/lib/supabase/server';
+import { createStaticServiceClient } from '@/lib/supabase/server';
 import type { StockAnalysis } from '@/components/analysis/types';
 
 // Curated tickers: large-caps with clear verdicts and good metric spreads
@@ -21,7 +21,7 @@ export interface DemoAnalysis {
  */
 export async function getDemoAnalyses(): Promise<DemoAnalysis[]> {
   try {
-    const supabase = await createServiceClient();
+    const supabase = createStaticServiceClient();
 
     const { data, error } = await supabase
       .from('analysis_cache')

@@ -3,7 +3,7 @@
  * Mixes staple tickers with recently-analyzed "trending" tickers.
  */
 import { getBatchQuotes } from '@/lib/financial-data';
-import { createServiceClient } from '@/lib/supabase/server';
+import { createStaticServiceClient } from '@/lib/supabase/server';
 
 const STAPLE_TICKERS = ['NVDA', 'AAPL', 'TSLA', 'MSFT', 'GOOGL', 'META', 'AMZN', 'SPY', 'QQQ', 'JPM'];
 
@@ -19,7 +19,7 @@ export async function getTickerTapeData(): Promise<TickerTapeItem[]> {
     // Get trending tickers from recent analysis cache
     let trendingTickers: string[] = [];
     try {
-      const supabase = await createServiceClient();
+      const supabase = createStaticServiceClient();
       const { data } = await supabase
         .from('analysis_cache')
         .select('ticker')
