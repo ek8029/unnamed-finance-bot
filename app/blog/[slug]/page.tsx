@@ -86,7 +86,7 @@ export default async function BlogPost({ params }: PageProps) {
       headline: post.title,
       description: post.description,
       datePublished: post.date,
-      author: { '@type': 'Person', name: post.author || 'Evan', url: 'https://helmterminal.dev' },
+      author: { '@type': 'Person', name: post.author || 'Evan', url: 'https://helmterminal.dev/about', jobTitle: 'Founder' },
       publisher: {
         '@type': 'Organization',
         name: 'Helm Terminal',
@@ -199,8 +199,29 @@ export default async function BlogPost({ params }: PageProps) {
               />
             </div>
 
+            {/* ── Author Box ── */}
+            <div className="mt-12 p-5 rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)]">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center shrink-0">
+                  <span className="text-[var(--color-gold)] font-semibold text-sm">E</span>
+                </div>
+                <div>
+                  <Link href="/about" className="text-[14px] font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-gold)] transition-colors">
+                    {post.author || 'Evan'} · Founder
+                  </Link>
+                  <p className="text-[13px] text-[var(--color-text-muted)] mt-1 leading-relaxed">
+                    Software engineer and Penn State alum. Built Helm to give individual investors
+                    institutional-grade portfolio intelligence — free and transparent.{' '}
+                    <Link href="/about" className="text-[var(--color-gold)] hover:underline">
+                      More about Helm →
+                    </Link>
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* ── Post Footer ── */}
-            <footer className="mt-16 space-y-6">
+            <footer className="mt-8 space-y-6">
               {/* Share + Back */}
               <div className="flex items-center justify-between pt-4 border-t border-[var(--color-border-base)]">
                 <Link

@@ -25,6 +25,7 @@ const NAV_LINKS = [
     { label: 'TLH Calculator', href: '/tools/tlh-calculator', desc: 'Tax-loss harvesting estimator' },
   ]},
   { label: 'Blog', href: '/blog' },
+  { label: 'About', href: '/about' },
 ];
 
 const TERMINAL_FEATURES = [
@@ -98,6 +99,7 @@ const FOOTER_TOOLS = [
 ];
 
 const FOOTER_COMPANY = [
+  { label: 'About', href: '/about' },
   { label: 'Twitter / X', href: 'https://x.com/helmterminal' },
   { label: 'LinkedIn', href: 'https://www.linkedin.com/company/helmfintech' },
   { label: 'Blog', href: '/blog' },

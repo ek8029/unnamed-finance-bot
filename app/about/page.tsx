@@ -22,9 +22,10 @@ export const metadata: Metadata = {
 const PERSON_SCHEMA = {
   '@context': 'https://schema.org',
   '@type': 'Person',
-  name: 'Evan',
-  // TODO: Add full name, jobTitle, image, sameAs links
+  name: 'Evan', // TODO: Add full name (first + last) for entity resolution
+  jobTitle: 'Founder',
   url: 'https://helmterminal.dev/about',
+  // TODO: Add image: 'https://helmterminal.dev/images/evan-headshot.jpg'
   worksFor: {
     '@type': 'Organization',
     name: 'Helm Terminal',
@@ -41,9 +42,10 @@ const PERSON_SCHEMA = {
     name: 'The Pennsylvania State University',
   },
   sameAs: [
-    'https://x.com/helmterminal',
-    'https://www.linkedin.com/company/helmfintech',
-    // TODO: Add personal LinkedIn, GitHub, etc.
+    // TODO: Replace with PERSONAL profiles (not company profiles)
+    // e.g. 'https://www.linkedin.com/in/your-profile',
+    // 'https://github.com/your-username',
+    // 'https://x.com/your-handle',
   ],
 };
 

@@ -172,6 +172,8 @@ export default async function TickerAnalysisPage({ params }: Props) {
       '@type': 'AnalysisNewsArticle',
       headline: `${analysis.companyName} (${symbol}) Stock Analysis`,
       description: analysis.summary,
+      image: `https://helmterminal.dev/analyze/${symbol}/opengraph-image`,
+      articleSection: 'Stock Analysis',
       author: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
       publisher: {
         '@type': 'Organization',

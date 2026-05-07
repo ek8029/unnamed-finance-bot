@@ -25,9 +25,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/compare`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
     { url: `${base}/for`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/pricing`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${base}/about`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/blog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${base}/login`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
-    { url: `${base}/signup`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
     { url: `${base}/privacy`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/terms`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/security`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
@@ -39,6 +38,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/for/investors`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/for/high-net-worth`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/llms.txt`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.2 },
+    { url: `${base}/llms-full.txt`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.2 },
   ];
 
   const blogPosts: MetadataRoute.Sitemap = getAllPosts().map((post) => ({
