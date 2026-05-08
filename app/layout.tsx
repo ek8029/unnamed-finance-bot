@@ -87,7 +87,7 @@ export default function RootLayout({
               sameAs: [
                 'https://x.com/helmterminal',
                 'https://www.linkedin.com/company/helmfintech',
-                // TODO: Add Wikidata, GitHub org, Crunchbase, YouTube when created
+                'https://www.wikidata.org/wiki/Q139714123',
               ],
               knowsAbout: [
                 'Portfolio Analysis',
