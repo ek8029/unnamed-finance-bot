@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { analyzeStock } from '@/lib/analyze-stock';
 import { getFullTickerData } from '@/lib/financial-data';
+import { INDEXABLE_TICKERS } from '@/lib/indexable-tickers';
 import { AnalysisTerminal } from './analysis-terminal';
 import { HelmMark } from '@/components/helm-mark';
 import { CinematicBg } from '@/components/cinematic-bg';
@@ -81,6 +82,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: `https://helmterminal.dev/analyze/${symbol}`,
     },
+    robots: INDEXABLE_TICKERS.has(symbol)
+      ? { index: true, follow: true }
+      : { index: false, follow: true },
     other: {
       'article:published_time': computedAt || '',
       'article:modified_time': computedAt || '',

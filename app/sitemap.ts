@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { getAllPosts } from '@/lib/blog';
-import { TOP_TICKERS } from '@/lib/top-tickers';
+import { INDEXABLE_TICKERS } from '@/lib/indexable-tickers';
 
 /** Popular comparison pairs for programmatic SEO. */
 const COMPARISON_PAIRS = [
@@ -48,7 +48,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  const tickerPages: MetadataRoute.Sitemap = TOP_TICKERS.map((ticker) => ({
+  const tickerPages: MetadataRoute.Sitemap = [...INDEXABLE_TICKERS].map((ticker) => ({
     url: `${base}/analyze/${ticker}`,
     lastModified: new Date(),
     changeFrequency: 'daily' as const,
