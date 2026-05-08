@@ -86,7 +86,7 @@ export default async function BlogPost({ params }: PageProps) {
       headline: post.title,
       description: post.description,
       datePublished: post.date,
-      author: { '@type': 'Person', name: post.author || 'Evan', url: 'https://helmterminal.dev/about', jobTitle: 'Founder' },
+      author: { '@type': 'Person', name: post.author || 'Evan Kim', url: 'https://helmterminal.dev/about', jobTitle: 'Founder' },
       publisher: {
         '@type': 'Organization',
         name: 'Helm Terminal',
@@ -207,11 +207,11 @@ export default async function BlogPost({ params }: PageProps) {
                 </div>
                 <div>
                   <Link href="/about" className="text-[14px] font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-gold)] transition-colors">
-                    {post.author || 'Evan'} · Founder
+                    {post.author || 'Evan Kim'} · Founder
                   </Link>
                   <p className="text-[13px] text-[var(--color-text-muted)] mt-1 leading-relaxed">
-                    Software engineer and Penn State alum. Built Helm to give individual investors
-                    institutional-grade portfolio intelligence — free and transparent.{' '}
+                    Penn State economics graduate. Former derivatives hedging intern. Built Helm
+                    to give individual investors institutional-grade portfolio intelligence.{' '}
                     <Link href="/about" className="text-[var(--color-gold)] hover:underline">
                       More about Helm →
                     </Link>

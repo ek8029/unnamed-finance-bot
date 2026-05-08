@@ -78,6 +78,12 @@ export default function RootLayout({
               description:
                 'Institutional-grade financial intelligence terminal. AI-powered portfolio analysis, tax optimization, and wealth monitoring for individuals managing $50K–$2M+ across multiple accounts.',
               foundingDate: '2025',
+              founder: {
+                '@type': 'Person',
+                name: 'Evan Kim',
+                jobTitle: 'Founder',
+                url: 'https://helmterminal.dev/about',
+              },
               sameAs: [
                 'https://x.com/helmterminal',
                 'https://www.linkedin.com/company/helmfintech',

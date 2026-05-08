@@ -7,7 +7,7 @@ import { LegalFooter } from '@/components/legal-footer';
 export const metadata: Metadata = {
   title: 'About | Helm Terminal',
   description:
-    'Helm Terminal was built by Evan to give individual investors the same portfolio intelligence tools that hedge funds use — free and transparent.',
+    'Helm Terminal was built by Evan Kim — Penn State economics graduate and former derivatives hedging intern — to give individual investors institutional-grade portfolio intelligence, free and transparent.',
   alternates: {
     canonical: 'https://helmterminal.dev/about',
   },
@@ -22,10 +22,10 @@ export const metadata: Metadata = {
 const PERSON_SCHEMA = {
   '@context': 'https://schema.org',
   '@type': 'Person',
-  name: 'Evan', // TODO: Add full name (first + last) for entity resolution
+  name: 'Evan Kim',
   jobTitle: 'Founder',
+  description: 'Economics graduate from Penn State and former derivatives hedging intern. Built Helm Terminal to bring institutional-grade portfolio intelligence to individual investors.',
   url: 'https://helmterminal.dev/about',
-  // TODO: Add image: 'https://helmterminal.dev/images/evan-headshot.jpg'
   worksFor: {
     '@type': 'Organization',
     name: 'Helm Terminal',
@@ -40,12 +40,10 @@ const PERSON_SCHEMA = {
   alumniOf: {
     '@type': 'CollegeOrUniversity',
     name: 'The Pennsylvania State University',
+    department: 'Economics',
   },
   sameAs: [
-    // TODO: Replace with PERSONAL profiles (not company profiles)
-    // e.g. 'https://www.linkedin.com/in/your-profile',
-    // 'https://github.com/your-username',
-    // 'https://x.com/your-handle',
+    // TODO: Add personal LinkedIn, GitHub, X when ready
   ],
 };
 
