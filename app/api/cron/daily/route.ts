@@ -53,18 +53,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const { data: plaidItems, error: itemsError } = await serviceClient
-      .from('plaid_items')
-      .select('*')
-      .eq('status', 'active');
-
-    if (itemsError) {
-      console.error('[cron/daily] Error fetching plaid items:', itemsError);
-      return NextResponse.json({ error: 'Failed to fetch plaid items' }, { status: 500 });
-    }
-
-    // Drip emails for users without Plaid — run BEFORE Plaid gate so
-    // non-connected users still receive nurture emails
+    // Drip emails — run FIRST, before anything that could early-return
     let dripResult = { sent: 0 };
     try {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
@@ -76,6 +65,16 @@ export async function GET(request: Request) {
       log.push(`[drip] Sent ${dripResult.sent} emails`);
     } catch (err) {
       log.push(`[drip] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
+    }
+
+    const { data: plaidItems, error: itemsError } = await serviceClient
+      .from('plaid_items')
+      .select('*')
+      .eq('status', 'active');
+
+    if (itemsError) {
+      console.error('[cron/daily] Error fetching plaid items:', itemsError);
+      return NextResponse.json({ error: 'Failed to fetch plaid items', drip_emails_sent: dripResult.sent }, { status: 500 });
     }
 
     if (!plaidItems || plaidItems.length === 0) {

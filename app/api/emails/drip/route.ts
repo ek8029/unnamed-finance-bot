@@ -54,33 +54,48 @@ export async function POST(request: NextRequest) {
       const signupDate = new Date(user.created_at);
       const daysSinceSignup = Math.floor((now.getTime() - signupDate.getTime()) / (1000 * 60 * 60 * 24));
 
-      // Check which drip email matches today
-      const matchingDay = DRIP_DAYS.find(d => d === daysSinceSignup);
-      if (matchingDay === undefined) {
-        skipped++;
-        continue;
-      }
-
-      // Check if already sent this drip
-      const { data: alreadySent } = await supabase
+      // Get all drip days already sent to this user
+      const { data: sentRows } = await supabase
         .from('email_drip_log')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('drip_day', matchingDay)
-        .limit(1);
+        .select('drip_day')
+        .eq('user_id', user.id);
 
-      if (alreadySent && alreadySent.length > 0) {
+      const sentDays = new Set((sentRows ?? []).map(r => r.drip_day));
+
+      // Find latest applicable unsent drip (highest day <= daysSinceSignup)
+      // This catches users who missed earlier windows — they get the most
+      // relevant email, not a stale "welcome" 20 days late.
+      const applicableDays = [...DRIP_DAYS]
+        .filter(d => d <= daysSinceSignup && !sentDays.has(d))
+        .sort((a, b) => b - a); // descending — latest first
+
+      if (applicableDays.length === 0) {
         skipped++;
         continue;
       }
+
+      const targetDay = applicableDays[0];
 
       // Get template
       const fullName = user.user_metadata?.full_name;
       const firstName = fullName ? fullName.split(' ')[0] : undefined;
-      const template = getTemplate(matchingDay, firstName);
+      const template = getTemplate(targetDay, firstName);
       if (!template) {
         skipped++;
         continue;
+      }
+
+      // Mark all earlier skipped days so they don't fire in future runs
+      const skippedDays = applicableDays.slice(1);
+      if (skippedDays.length > 0) {
+        await supabase.from('email_drip_log').insert(
+          skippedDays.map(d => ({
+            user_id: user.id,
+            drip_day: d,
+            email_subject: `[skipped — user was day ${daysSinceSignup}]`,
+            sent_at: now.toISOString(),
+          }))
+        );
       }
 
       // Send
@@ -96,7 +111,7 @@ export async function POST(request: NextRequest) {
         // Log it
         await supabase.from('email_drip_log').insert({
           user_id: user.id,
-          drip_day: matchingDay,
+          drip_day: targetDay,
           email_subject: template.subject,
           sent_at: now.toISOString(),
         });
