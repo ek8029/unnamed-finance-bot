@@ -67,6 +67,19 @@ export async function GET(request: Request) {
       log.push(`[drip] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
     }
 
+    // AI digest generation for The Current — runs for all users
+    let digestResult = { generated: 0 };
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
+      const digestRes = await fetch(`${baseUrl}/api/cron/digest?force=true`, {
+        headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+      });
+      if (digestRes.ok) digestResult = await digestRes.json();
+      log.push(`[digest] Generated ${digestResult.generated} digests`);
+    } catch (err) {
+      log.push(`[digest] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
+    }
+
     const { data: plaidItems, error: itemsError } = await serviceClient
       .from('plaid_items')
       .select('*')
@@ -223,6 +236,7 @@ export async function GET(request: Request) {
       prices_refreshed: pricesRefreshed,
       insights_generated: insightsGenerated,
       drip_emails_sent: dripResult.sent,
+      digests_generated: digestResult.generated,
       log,
     };
 
