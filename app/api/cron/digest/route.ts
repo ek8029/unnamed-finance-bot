@@ -78,7 +78,9 @@ export async function GET(request: Request) {
         preferredHour = parseInt(deliveryTime.split(':')[0], 10);
       }
 
-      if (currentHourET !== preferredHour) { skipped++; continue; }
+      // Skip hour check if ?force=true (for testing)
+      const forceAll = new URL(request.url).searchParams.get('force') === 'true';
+      if (!forceAll && currentHourET !== preferredHour) { skipped++; continue; }
 
       // Get user's holdings
       const { data: holdings } = await serviceClient
