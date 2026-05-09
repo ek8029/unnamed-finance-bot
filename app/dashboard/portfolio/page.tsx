@@ -1113,66 +1113,67 @@ function StressTest({ holdings, totalValue, formatCurrency }: {
   }, [mode, selectedTicker, selectedSector, dropPct, holdings, sectors, totalValue]);
 
   return (
-    <Card>
-      <CardHeader className="cursor-pointer" onClick={() => setOpen(!open)}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-sm">Scenario Analysis</CardTitle>
-            <span className="font-mono text-[10px] text-[var(--color-gold)] tracking-wider uppercase">Beta</span>
-          </div>
-          <ChevronDown className={`w-4 h-4 text-[var(--color-text-muted)] transition-transform ${open ? 'rotate-180' : ''}`} />
+    <div className="border border-[var(--color-border-base)] rounded-md bg-[var(--color-bg-surface)] overflow-hidden">
+      {/* Header — collapsible */}
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full px-4 py-3 flex items-center justify-between hover:bg-[var(--color-bg-elevated)] transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-[var(--color-text-primary)]">Scenario Analysis</span>
+          <span className="font-mono text-[9px] text-[var(--color-gold)] tracking-wider uppercase">Beta</span>
         </div>
-        <CardDescription className="text-xs">What happens to your portfolio if a stock or sector drops?</CardDescription>
-      </CardHeader>
+        <ChevronDown className={`w-3.5 h-3.5 text-[var(--color-text-muted)] transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
       {open && (
-        <CardContent className="space-y-4">
+        <div className="px-4 pb-4 space-y-3 border-t border-[var(--color-border-subtle)]">
           {/* Mode toggle */}
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 pt-3">
             <button
               onClick={() => setMode('ticker')}
-              className={`px-3 py-1.5 rounded text-xs font-mono transition-colors ${mode === 'ticker' ? 'bg-[var(--color-gold)] text-black' : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)]'}`}
+              className={`px-2.5 py-1 rounded text-[11px] font-mono transition-colors ${mode === 'ticker' ? 'bg-[var(--color-gold)] text-black' : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)]'}`}
             >
-              By Ticker
+              Ticker
             </button>
             <button
               onClick={() => setMode('sector')}
-              className={`px-3 py-1.5 rounded text-xs font-mono transition-colors ${mode === 'sector' ? 'bg-[var(--color-gold)] text-black' : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)]'}`}
+              className={`px-2.5 py-1 rounded text-[11px] font-mono transition-colors ${mode === 'sector' ? 'bg-[var(--color-gold)] text-black' : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)]'}`}
             >
-              By Sector
+              Sector
             </button>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Target selector */}
+          {/* Selectors — stacked for sidebar */}
+          <div className="space-y-2">
             {mode === 'ticker' ? (
               <select
                 value={selectedTicker}
                 onChange={e => setSelectedTicker(e.target.value)}
-                className="flex-1 px-3 py-2 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-sm text-[var(--color-text-primary)] font-mono"
+                className="w-full px-2.5 py-1.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-[12px] text-[var(--color-text-primary)] font-mono"
               >
                 {holdings.sort((a, b) => b.total_value - a.total_value).map(h => (
-                  <option key={h.ticker} value={h.ticker}>{h.ticker} — {formatCurrency(h.total_value)}</option>
+                  <option key={h.ticker} value={h.ticker}>{h.ticker}</option>
                 ))}
               </select>
             ) : (
               <select
                 value={selectedSector}
                 onChange={e => setSelectedSector(e.target.value)}
-                className="flex-1 px-3 py-2 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-sm text-[var(--color-text-primary)] font-mono"
+                className="w-full px-2.5 py-1.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-[12px] text-[var(--color-text-primary)] font-mono"
               >
-                {sectors.map(([s, data]) => (
-                  <option key={s} value={s}>{s} — {formatCurrency(data.value)} ({data.tickers.length} holdings)</option>
+                {sectors.map(([s]) => (
+                  <option key={s} value={s}>{s}</option>
                 ))}
               </select>
             )}
 
-            {/* Drop percentage */}
             <div className="flex items-center gap-2">
-              <span className="text-xs text-[var(--color-text-muted)] font-mono whitespace-nowrap">drops</span>
+              <span className="text-[11px] text-[var(--color-text-muted)] font-mono">if it drops</span>
               <select
                 value={dropPct}
                 onChange={e => setDropPct(Number(e.target.value))}
-                className="px-3 py-2 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-sm text-[var(--color-negative)] font-mono font-bold"
+                className="flex-1 px-2.5 py-1.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-[12px] text-[var(--color-negative)] font-mono font-bold"
               >
                 {[5, 10, 15, 20, 25, 30, 40, 50].map(p => (
                   <option key={p} value={p}>-{p}%</option>
@@ -1181,34 +1182,33 @@ function StressTest({ holdings, totalValue, formatCurrency }: {
             </div>
           </div>
 
-          {/* Results */}
+          {/* Results — vertical rows for sidebar */}
           {impact && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-              <div className="p-3 rounded bg-[var(--color-bg-elevated)]">
-                <div className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Portfolio Impact</div>
-                <div className="text-lg font-bold text-[var(--color-negative)] font-mono">-{impact.portfolioImpactPct.toFixed(2)}%</div>
+            <div className="space-y-1 pt-1">
+              <div className="flex justify-between items-baseline py-1.5 border-b border-[var(--color-border-subtle)]">
+                <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">Impact</span>
+                <span className="font-mono text-[14px] font-bold text-[var(--color-negative)]">-{impact.portfolioImpactPct.toFixed(2)}%</span>
               </div>
-              <div className="p-3 rounded bg-[var(--color-bg-elevated)]">
-                <div className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Dollar Loss</div>
-                <div className="text-lg font-bold text-[var(--color-negative)] font-mono">-{formatCurrency(impact.loss)}</div>
+              <div className="flex justify-between items-baseline py-1.5 border-b border-[var(--color-border-subtle)]">
+                <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">Loss</span>
+                <span className="font-mono text-[14px] font-bold text-[var(--color-negative)]">-{formatCurrency(impact.loss)}</span>
               </div>
-              <div className="p-3 rounded bg-[var(--color-bg-elevated)]">
-                <div className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">New Total</div>
-                <div className="text-lg font-bold text-[var(--color-text-primary)] font-mono">{formatCurrency(impact.newTotal)}</div>
+              <div className="flex justify-between items-baseline py-1.5 border-b border-[var(--color-border-subtle)]">
+                <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">New Total</span>
+                <span className="font-mono text-[14px] font-bold text-[var(--color-text-primary)]">{formatCurrency(impact.newTotal)}</span>
               </div>
-              <div className="p-3 rounded bg-[var(--color-bg-elevated)]">
-                <div className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Position Weight</div>
-                <div className="text-lg font-bold text-[var(--color-text-primary)] font-mono">{impact.weight.toFixed(1)}%</div>
+              <div className="flex justify-between items-baseline py-1.5">
+                <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">Weight</span>
+                <span className="font-mono text-[14px] font-bold text-[var(--color-text-primary)]">{impact.weight.toFixed(1)}%</span>
               </div>
             </div>
           )}
 
-          {/* Context note */}
-          <p className="font-mono text-[10px] text-[var(--color-text-muted)] pt-1">
-            Hypothetical scenario only. Does not account for correlations between holdings.
+          <p className="font-mono text-[9px] text-[var(--color-text-muted)]">
+            Hypothetical. Does not account for correlations.
           </p>
-        </CardContent>
+        </div>
       )}
-    </Card>
+    </div>
   );
 }
