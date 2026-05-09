@@ -99,6 +99,43 @@ export interface PolygonSplit {
   split_to: number;
 }
 
+// ----- Historical Price Function -----
+
+/**
+ * Fetch daily OHLCV bars for a ticker over a date range.
+ * Uses /v2/aggs/ticker/{ticker}/range/1/day/{from}/{to}
+ * Polygon free tier: 5 calls/min, up to 2 years of history.
+ */
+export async function getHistoricalPrices(
+  ticker: string,
+  from: string,
+  to: string,
+): Promise<{ date: string; close: number }[]> {
+  try {
+    const apiKey = getApiKey();
+    const polygonTicker = toPolygonTicker(ticker);
+    const url = `${POLYGON_BASE_URL}/v2/aggs/ticker/${encodeURIComponent(polygonTicker)}/range/1/day/${from}/${to}?adjusted=true&sort=asc&limit=5000&apiKey=${apiKey}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    if (!data.results || data.results.length === 0) return [];
+
+    return data.results.map((r: { t: number; c: number }) => ({
+      date: new Date(r.t).toISOString().split('T')[0],
+      close: r.c,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 // ----- Price Functions -----
 
 /**

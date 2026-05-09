@@ -921,11 +921,6 @@ export default function PortfolioPage() {
           </>
           )}
 
-          {/* ---- STRESS TEST / SCENARIO ANALYSIS ---- */}
-          {holdings.length > 0 && (
-            <StressTest holdings={holdings} totalValue={totalValue} formatCurrency={formatCurrency} />
-          )}
-
           {/* ---- Legacy PortfolioMonitor (hidden, keeps data flow) ---- */}
           <div className="hidden">
             <PortfolioMonitor holdings={transformedHoldings} />
@@ -936,11 +931,14 @@ export default function PortfolioPage() {
         {/*  RIGHT SIDEBAR                                           */}
         {/* ======================================================= */}
         <aside className="hidden lg:block w-[420px] flex-shrink-0">
-          <div className="sticky top-20">
+          <div className="sticky top-20 space-y-4">
             <MarketIntelligence
               holdings={transformedHoldings}
-              className="max-h-[calc(100vh-6rem)] flex flex-col"
+              className="max-h-[calc(100vh-12rem)] flex flex-col"
             />
+            {holdings.length > 0 && (
+              <StressTest holdings={holdings} totalValue={totalValue} formatCurrency={formatCurrency} />
+            )}
           </div>
         </aside>
       </div>

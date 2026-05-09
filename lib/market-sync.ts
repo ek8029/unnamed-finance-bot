@@ -402,6 +402,70 @@ export async function updatePortfolioPerformance(
     }
   }
 
+  // Beta: covariance(portfolio, SPY) / variance(SPY)
+  let betaValue: number | null = null;
+  if (sortedDates.length >= 20) {
+    // Find SPY security_id
+    const { data: spySec } = await supabase
+      .from('securities')
+      .select('id')
+      .eq('ticker_symbol', 'SPY')
+      .maybeSingle();
+
+    if (spySec?.id) {
+      const { data: spyPrices } = await supabase
+        .from('market_prices')
+        .select('price_date, close')
+        .eq('security_id', spySec.id)
+        .gte('price_date', sortedDates[0])
+        .order('price_date', { ascending: true });
+
+      if (spyPrices && spyPrices.length >= 20) {
+        const spyMap = new Map<string, number>();
+        for (const p of spyPrices) spyMap.set(p.price_date, Number(p.close));
+
+        // Build aligned daily returns for portfolio + SPY
+        const portfolioReturns: number[] = [];
+        const spyReturns: number[] = [];
+        let prevPortfolio: number | null = null;
+        let prevSpy: number | null = null;
+
+        for (const date of sortedDates) {
+          let pv = 0;
+          let allFound = true;
+          for (const h of holdings) {
+            const history = priceHistory.get(h.security_id);
+            if (!history) { allFound = false; break; }
+            const entry = history.find(p => p.date === date);
+            if (!entry) { allFound = false; break; }
+            pv += Number(h.shares) * entry.close;
+          }
+          const spyClose = spyMap.get(date);
+          if (!allFound || pv <= 0 || !spyClose) { prevPortfolio = null; prevSpy = null; continue; }
+
+          if (prevPortfolio !== null && prevSpy !== null) {
+            portfolioReturns.push((pv - prevPortfolio) / prevPortfolio);
+            spyReturns.push((spyClose - prevSpy) / prevSpy);
+          }
+          prevPortfolio = pv;
+          prevSpy = spyClose;
+        }
+
+        if (portfolioReturns.length >= 15) {
+          const meanP = portfolioReturns.reduce((s, r) => s + r, 0) / portfolioReturns.length;
+          const meanS = spyReturns.reduce((s, r) => s + r, 0) / spyReturns.length;
+          let cov = 0;
+          let varS = 0;
+          for (let i = 0; i < portfolioReturns.length; i++) {
+            cov += (portfolioReturns[i] - meanP) * (spyReturns[i] - meanS);
+            varS += (spyReturns[i] - meanS) ** 2;
+          }
+          betaValue = varS > 0 ? cov / varS : null;
+        }
+      }
+    }
+  }
+
   const { error: perfError } = await supabase.from('portfolio_performance').insert({
     user_id: userId,
     return_1d_pct: return1d,
@@ -412,7 +476,7 @@ export async function updatePortfolioPerformance(
     return_ytd_pct: returnYtd,
     return_1y_pct: return1y,
     sharpe_ratio: sharpeRatio,
-    beta: null,
+    beta: betaValue,
     volatility,
     diversification_score: diversificationScore,
     asset_class_allocation: assetClassAllocation,
