@@ -65,7 +65,7 @@ function CountUp({ target, duration = 1200 }: { target: number; duration?: numbe
 }
 
 /* ── Connect Step ── */
-function ConnectStep({ onSuccess, onSkip, onDemo }: { onSuccess: () => void; onSkip: () => void; onDemo: () => void }) {
+function ConnectStep({ onSuccess, onDemo }: { onSuccess: () => void; onDemo: () => void }) {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [exchanging, setExchanging] = useState(false);
   const [error, setError] = useState('');
@@ -190,28 +190,46 @@ function ConnectStep({ onSuccess, onSkip, onDemo }: { onSuccess: () => void; onS
             </div>
           </button>
 
-          {/* Security */}
-          <div className="space-y-3">
-            {['Read-only access — can never move money', 'AES-256 encryption in transit and at rest', 'Same infrastructure as Venmo & Robinhood'].map((line, i) => (
-              <div key={i} className="flex items-start gap-3"
-                style={{ opacity: 0, animation: `onb-line-in 0.4s ease-out ${0.6 + i * 0.1}s forwards` }}>
-                <span className="w-1 h-1 rounded-full bg-[var(--color-positive)] mt-2 shrink-0" />
-                <span className="text-[12px] text-[var(--color-text-muted)]/60 leading-relaxed">{line}</span>
-              </div>
-            ))}
+          {/* Trust & Security */}
+          <div className="border border-[var(--color-border-base)] rounded-md p-5 space-y-4"
+            style={{ opacity: 0, animation: 'onb-line-in 0.5s ease-out 0.5s forwards' }}>
+            <h3 className="text-[13px] font-semibold text-[var(--color-text-primary)]">
+              Your data stays yours
+            </h3>
+            <div className="space-y-3">
+              {[
+                ['Read-only', 'Helm can see your balances and transactions, but can never move money, place trades, or make changes to your accounts.'],
+                ['Bank-grade security', 'Powered by Plaid — the same system used by Venmo, Coinbase, and Robinhood. Your credentials go directly to your bank, never to us.'],
+                ['Delete anytime', 'Disconnect or delete your data with one click. We don\'t keep anything after you leave.'],
+              ].map(([title, detail], i) => (
+                <div key={i} className="flex items-start gap-3"
+                  style={{ opacity: 0, animation: `onb-line-in 0.4s ease-out ${0.7 + i * 0.12}s forwards` }}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] mt-1.5 shrink-0" />
+                  <div>
+                    <span className="text-[13px] font-medium text-[var(--color-text-primary)]">{title}. </span>
+                    <span className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">{detail}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Demo + Skip */}
-          <div className="flex items-center justify-between">
-            <button onClick={onDemo}
-              className="text-[12px] text-[var(--color-gold)]/60 hover:text-[var(--color-gold)] transition-colors font-mono font-medium">
-              try with demo data →
-            </button>
-            <button onClick={onSkip}
-              className="text-[11px] text-[var(--color-text-muted)]/30 hover:text-[var(--color-text-muted)]/60 transition-colors font-mono">
-              skip
-            </button>
-          </div>
+          {/* Demo data — prominent */}
+          <button onClick={onDemo}
+            className="w-full border border-[var(--color-border-strong)] hover:border-[var(--color-gold)]/40 rounded-md p-5 text-left transition-all duration-300 group"
+            style={{ opacity: 0, animation: 'onb-line-in 0.4s ease-out 1.1s forwards' }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[15px] font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors">
+                  Explore with demo data
+                </span>
+                <p className="text-[13px] text-[var(--color-text-muted)] mt-1">
+                  See the full dashboard with sample portfolio data. No account needed.
+                </p>
+              </div>
+              <span className="text-[var(--color-text-muted)] group-hover:text-[var(--color-gold)] group-hover:translate-x-1 transition-all text-lg">→</span>
+            </div>
+          </button>
         </div>
       </div>
     </div>
@@ -255,11 +273,6 @@ export function OnboardingFlow() {
       return () => clearTimeout(timer);
     }
   }, [step]);
-
-  const handleSkip = () => {
-    sessionStorage.setItem(ONBOARDING_KEY, '1');
-    setDismissed(true);
-  };
 
   const handleDemo = () => {
     enableDemo();
@@ -376,7 +389,7 @@ export function OnboardingFlow() {
 
         {/* ── CONNECT ── */}
         <StepTransition active={step === 'connect'}>
-          <ConnectStep onSuccess={handleSuccess} onSkip={handleSkip} onDemo={handleDemo} />
+          <ConnectStep onSuccess={handleSuccess} onDemo={handleDemo} />
         </StepTransition>
 
         {/* ── SYNCING ── */}
