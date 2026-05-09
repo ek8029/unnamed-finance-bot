@@ -228,6 +228,13 @@ export async function GET() {
       ? Math.round((overnightChangePct - spyChangePct) * 100) / 100
       : null;
 
+        // ── Fetch pre-generated AI digest ──
+    const { data: digestRow } = await supabase
+      .from('brief_digests')
+      .select('digest, generated_at')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
     // ── Fetch market news: position-relevant + general ──
     const oneDayAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
@@ -344,6 +351,8 @@ export async function GET() {
         dividendsThisWeek,
         positionNews,
         generalNews,
+        digest: digestRow?.digest ?? null,
+        digestGeneratedAt: digestRow?.generated_at ?? null,
       },
       {
         headers: { 'Cache-Control': 'private, max-age=60' },
