@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { PortfolioMonitor } from '@/components/dashboard/portfolio-monitor';
 import { PortfolioAllocation } from '@/components/dashboard/portfolio-allocation';
@@ -921,6 +921,11 @@ export default function PortfolioPage() {
           </>
           )}
 
+          {/* ---- STRESS TEST / SCENARIO ANALYSIS ---- */}
+          {holdings.length > 0 && (
+            <StressTest holdings={holdings} totalValue={totalValue} formatCurrency={formatCurrency} />
+          )}
+
           {/* ---- Legacy PortfolioMonitor (hidden, keeps data flow) ---- */}
           <div className="hidden">
             <PortfolioMonitor holdings={transformedHoldings} />
@@ -1049,6 +1054,163 @@ function ConcentrationTable({ holdings, formatCurrency }: {
           </div>
         )}
       </CardContent>
+    </Card>
+  );
+}
+
+/* ── Stress Test / Scenario Analysis ── */
+
+function StressTest({ holdings, totalValue, formatCurrency }: {
+  holdings: { ticker: string; total_value: number; portfolio_allocation: number; asset_name: string; sector?: string }[];
+  totalValue: number;
+  formatCurrency: (n: number) => string;
+}) {
+  const [mode, setMode] = useState<'ticker' | 'sector'>('ticker');
+  const [selectedTicker, setSelectedTicker] = useState(holdings[0]?.ticker ?? '');
+  const [selectedSector, setSelectedSector] = useState('');
+  const [dropPct, setDropPct] = useState(10);
+  const [open, setOpen] = useState(false);
+
+  const sectors = useMemo(() => {
+    const map = new Map<string, { value: number; tickers: string[] }>();
+    for (const h of holdings) {
+      const s = h.sector || 'Other';
+      const existing = map.get(s) || { value: 0, tickers: [] };
+      existing.value += h.total_value;
+      existing.tickers.push(h.ticker);
+      map.set(s, existing);
+    }
+    return Array.from(map.entries()).sort((a, b) => b[1].value - a[1].value);
+  }, [holdings]);
+
+  useEffect(() => {
+    if (sectors.length > 0 && !selectedSector) setSelectedSector(sectors[0][0]);
+  }, [sectors, selectedSector]);
+
+  const impact = useMemo(() => {
+    if (mode === 'ticker') {
+      const h = holdings.find(x => x.ticker === selectedTicker);
+      if (!h) return null;
+      const loss = h.total_value * (dropPct / 100);
+      return {
+        label: `${selectedTicker} drops ${dropPct}%`,
+        loss,
+        newTotal: totalValue - loss,
+        portfolioImpactPct: (loss / totalValue) * 100,
+        weight: h.portfolio_allocation,
+      };
+    } else {
+      const sector = sectors.find(([s]) => s === selectedSector);
+      if (!sector) return null;
+      const loss = sector[1].value * (dropPct / 100);
+      return {
+        label: `${selectedSector} sector drops ${dropPct}%`,
+        loss,
+        newTotal: totalValue - loss,
+        portfolioImpactPct: (loss / totalValue) * 100,
+        weight: (sector[1].value / totalValue) * 100,
+        tickers: sector[1].tickers,
+      };
+    }
+  }, [mode, selectedTicker, selectedSector, dropPct, holdings, sectors, totalValue]);
+
+  return (
+    <Card>
+      <CardHeader className="cursor-pointer" onClick={() => setOpen(!open)}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-sm">Scenario Analysis</CardTitle>
+            <span className="font-mono text-[10px] text-[var(--color-gold)] tracking-wider uppercase">Beta</span>
+          </div>
+          <ChevronDown className={`w-4 h-4 text-[var(--color-text-muted)] transition-transform ${open ? 'rotate-180' : ''}`} />
+        </div>
+        <CardDescription className="text-xs">What happens to your portfolio if a stock or sector drops?</CardDescription>
+      </CardHeader>
+      {open && (
+        <CardContent className="space-y-4">
+          {/* Mode toggle */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setMode('ticker')}
+              className={`px-3 py-1.5 rounded text-xs font-mono transition-colors ${mode === 'ticker' ? 'bg-[var(--color-gold)] text-black' : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)]'}`}
+            >
+              By Ticker
+            </button>
+            <button
+              onClick={() => setMode('sector')}
+              className={`px-3 py-1.5 rounded text-xs font-mono transition-colors ${mode === 'sector' ? 'bg-[var(--color-gold)] text-black' : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)]'}`}
+            >
+              By Sector
+            </button>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Target selector */}
+            {mode === 'ticker' ? (
+              <select
+                value={selectedTicker}
+                onChange={e => setSelectedTicker(e.target.value)}
+                className="flex-1 px-3 py-2 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-sm text-[var(--color-text-primary)] font-mono"
+              >
+                {holdings.sort((a, b) => b.total_value - a.total_value).map(h => (
+                  <option key={h.ticker} value={h.ticker}>{h.ticker} — {formatCurrency(h.total_value)}</option>
+                ))}
+              </select>
+            ) : (
+              <select
+                value={selectedSector}
+                onChange={e => setSelectedSector(e.target.value)}
+                className="flex-1 px-3 py-2 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-sm text-[var(--color-text-primary)] font-mono"
+              >
+                {sectors.map(([s, data]) => (
+                  <option key={s} value={s}>{s} — {formatCurrency(data.value)} ({data.tickers.length} holdings)</option>
+                ))}
+              </select>
+            )}
+
+            {/* Drop percentage */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[var(--color-text-muted)] font-mono whitespace-nowrap">drops</span>
+              <select
+                value={dropPct}
+                onChange={e => setDropPct(Number(e.target.value))}
+                className="px-3 py-2 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-sm text-[var(--color-negative)] font-mono font-bold"
+              >
+                {[5, 10, 15, 20, 25, 30, 40, 50].map(p => (
+                  <option key={p} value={p}>-{p}%</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Results */}
+          {impact && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              <div className="p-3 rounded bg-[var(--color-bg-elevated)]">
+                <div className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Portfolio Impact</div>
+                <div className="text-lg font-bold text-[var(--color-negative)] font-mono">-{impact.portfolioImpactPct.toFixed(2)}%</div>
+              </div>
+              <div className="p-3 rounded bg-[var(--color-bg-elevated)]">
+                <div className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Dollar Loss</div>
+                <div className="text-lg font-bold text-[var(--color-negative)] font-mono">-{formatCurrency(impact.loss)}</div>
+              </div>
+              <div className="p-3 rounded bg-[var(--color-bg-elevated)]">
+                <div className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">New Total</div>
+                <div className="text-lg font-bold text-[var(--color-text-primary)] font-mono">{formatCurrency(impact.newTotal)}</div>
+              </div>
+              <div className="p-3 rounded bg-[var(--color-bg-elevated)]">
+                <div className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Position Weight</div>
+                <div className="text-lg font-bold text-[var(--color-text-primary)] font-mono">{impact.weight.toFixed(1)}%</div>
+              </div>
+            </div>
+          )}
+
+          {/* Context note */}
+          <p className="font-mono text-[10px] text-[var(--color-text-muted)] pt-1">
+            Hypothetical scenario only. Does not account for correlations between holdings.
+          </p>
+        </CardContent>
+      )}
     </Card>
   );
 }

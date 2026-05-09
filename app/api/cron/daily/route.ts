@@ -80,6 +80,19 @@ export async function GET(request: Request) {
       log.push(`[digest] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
     }
 
+    // Watchlist price alerts — email users about big movers (>=3%)
+    let watchlistResult = { sent: 0 };
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
+      const watchlistRes = await fetch(`${baseUrl}/api/cron/watchlist-alerts`, {
+        headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+      });
+      if (watchlistRes.ok) watchlistResult = await watchlistRes.json();
+      log.push(`[watchlist] Sent ${watchlistResult.sent} alerts`);
+    } catch (err) {
+      log.push(`[watchlist] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
+    }
+
     const { data: plaidItems, error: itemsError } = await serviceClient
       .from('plaid_items')
       .select('*')

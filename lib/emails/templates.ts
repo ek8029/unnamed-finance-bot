@@ -210,3 +210,49 @@ export function getTemplate(dayIndex: number, userName?: string): EmailTemplate 
 
 /** Which day indices to send */
 export const DRIP_DAYS = [0, 1, 3, 7] as const;
+
+/* ── Watchlist Alert Email ── */
+
+export interface WatchlistMover {
+  ticker: string;
+  price: number;
+  changePct: number;
+}
+
+export function getWatchlistAlertTemplate(movers: WatchlistMover[], userName?: string): EmailTemplate | null {
+  if (movers.length === 0) return null;
+  const name = userName || 'there';
+
+  const moverRows = movers.map(m => {
+    const dir = m.changePct >= 0 ? '↑' : '↓';
+    const color = m.changePct >= 0 ? '#4ADE80' : '#F87171';
+    return `<tr>
+      <td style="padding:8px 12px;font-family:monospace;font-size:14px;font-weight:700;color:#FAFAFA;border-bottom:1px solid rgba(255,255,255,0.06);">${m.ticker}</td>
+      <td style="padding:8px 12px;font-family:monospace;font-size:14px;color:#8A8A8A;border-bottom:1px solid rgba(255,255,255,0.06);text-align:right;">$${m.price.toFixed(2)}</td>
+      <td style="padding:8px 12px;font-family:monospace;font-size:14px;font-weight:700;color:${color};border-bottom:1px solid rgba(255,255,255,0.06);text-align:right;">${dir} ${Math.abs(m.changePct).toFixed(2)}%</td>
+    </tr>`;
+  }).join('');
+
+  const biggest = movers.reduce((a, b) => Math.abs(b.changePct) > Math.abs(a.changePct) ? b : a);
+  const subjectTicker = biggest.ticker;
+  const subjectDir = biggest.changePct >= 0 ? 'up' : 'down';
+  const subjectPct = Math.abs(biggest.changePct).toFixed(1);
+
+  return {
+    subject: `${subjectTicker} is ${subjectDir} ${subjectPct}% — Watchlist Alert`,
+    text: `Hey ${name},\n\n${movers.length} ticker${movers.length > 1 ? 's' : ''} on your watchlist moved significantly today:\n\n${movers.map(m => `${m.ticker}: $${m.price.toFixed(2)} (${m.changePct >= 0 ? '+' : ''}${m.changePct.toFixed(2)}%)`).join('\n')}\n\nView details: ${DASHBOARD_URL}\n\n- Helm Terminal`,
+    html: wrap(`
+      ${heading(`Watchlist alert, ${name}.`)}
+      ${subtext(`${movers.length} ticker${movers.length > 1 ? 's' : ''} on your watchlist moved more than 3% today.`)}
+      <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin:16px 0;">
+        <tr>
+          <td style="padding:8px 12px;font-family:monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#525252;border-bottom:1px solid rgba(255,255,255,0.1);">Ticker</td>
+          <td style="padding:8px 12px;font-family:monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#525252;border-bottom:1px solid rgba(255,255,255,0.1);text-align:right;">Price</td>
+          <td style="padding:8px 12px;font-family:monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#525252;border-bottom:1px solid rgba(255,255,255,0.1);text-align:right;">Change</td>
+        </tr>
+        ${moverRows}
+      </table>
+      ${cta('Open Dashboard', DASHBOARD_URL)}
+    `),
+  };
+}
