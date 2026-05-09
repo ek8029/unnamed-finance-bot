@@ -502,7 +502,7 @@ export default function BriefPage() {
             )}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {(watchlist.length > 0 ? watchlist.map(w => [w.ticker, `$${w.price.toFixed(2)}`, fmtPct(w.changePct), w.changePct >= 0] as [string, string, string, boolean]) : marketTapeItems).map(([label, value, delta, pos]) => (
+          {(watchlist.length > 0 ? watchlist.filter(w => w.price != null && w.changePct != null).map(w => [w.ticker, `$${w.price.toFixed(2)}`, fmtPct(w.changePct), w.changePct >= 0] as [string, string, string, boolean]) : marketTapeItems).map(([label, value, delta, pos]) => (
             <div key={label} className="group relative">
               <div className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]" style={MONO}>{label}</div>
               <div className="text-lg font-bold mt-1 tabular-nums">{value}</div>
