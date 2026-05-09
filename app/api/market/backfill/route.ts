@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
 
       const rows = prices.map(p => ({
         security_id: securityId,
+        ticker,
         price_date: p.date,
         close: p.close,
         open: p.close,
