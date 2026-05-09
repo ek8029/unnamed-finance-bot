@@ -156,12 +156,23 @@ function matchesCategory(action: ActionItem, category: CategoryFilter): boolean 
    Component
    ────────────────────────────────────────────────── */
 
+const DEMO_ACTIONS: ActionItem[] = [
+  { id: 'da-1', type: 'tax_loss_harvest', priority: 'high', title: 'Tax-loss harvesting opportunity: AMZN', description: 'AMZN is down 12% from your cost basis. Harvesting this $1,793 unrealized loss could save ~$580 in taxes this year. Consider replacing with VTI to maintain broad market exposure without triggering a wash sale.', recommended_action: 'Sell AMZN, buy VTI as a replacement', estimated_impact: 580, source: 'portfolio', created_at: new Date().toISOString() },
+  { id: 'da-2', type: 'concentration_risk', priority: 'medium', title: 'Technology sector concentration at 43%', description: 'Technology stocks (AAPL, MSFT, NVDA, GOOGL) make up 43% of your portfolio. A sector-specific downturn could significantly impact your returns. Consider rebalancing into healthcare, energy, or international exposure.', recommended_action: 'Diversify 5-10% into non-tech sectors', source: 'portfolio', created_at: new Date().toISOString() },
+  { id: 'da-3', type: 'earnings_exposure', priority: 'medium', title: 'NVDA earnings report in 3 days', description: 'NVIDIA reports earnings this week and represents 12.5% of your portfolio ($23,120). High concentration in a single stock heading into earnings creates binary risk. Your position is large enough that a 10% post-earnings move would shift your portfolio by 1.25%.', recommended_action: 'Review position size before earnings', source: 'portfolio', created_at: new Date().toISOString() },
+  { id: 'da-4', type: 'savings_positive', priority: 'low', title: 'Strong savings rate: 24% this month', description: 'You saved $3,420 this month, beating your 6-month average of $2,950 by 16%. Consistent savings at this rate compounds significantly over time.', source: 'cash_flow', created_at: new Date().toISOString() },
+];
+
 export function ActionsClient({ initialActions }: { initialActions: ActionItem[] }) {
   const { formatCurrency, formatDate } = useFormat();
 
+  // Demo mode
+  const isDemo = typeof window !== 'undefined' && sessionStorage.getItem('helm_demo_mode') === '1';
+  const effectiveActions = isDemo && initialActions.length === 0 ? DEMO_ACTIONS : initialActions;
+
   // State
   const [actions, setActions] = useState<ActionItem[]>(
-    [...initialActions].sort((a, b) => (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3))
+    [...effectiveActions].sort((a, b) => (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3))
   );
   const [activeTab, setActiveTab] = useState<StatusTab>('open');
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');

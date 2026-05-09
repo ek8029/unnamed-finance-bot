@@ -416,6 +416,27 @@ export function useHoldings() {
     return () => clearInterval(pollId);
   }, [applyHoldingsData]);
 
+  // Demo mode — return sample holdings without API calls
+  const isDemoHoldings = typeof window !== 'undefined' && sessionStorage.getItem('helm_demo_mode') === '1';
+  if (isDemoHoldings) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const d = require('@/lib/demo-data');
+    const demoHoldings = d.DEMO_HOLDINGS as Holding[];
+    const demoTotal = demoHoldings.reduce((s: number, h: Holding) => s + h.total_value, 0);
+    return {
+      holdings: demoHoldings,
+      allocation: demoHoldings.map((h: Holding) => ({ name: h.ticker, value: h.total_value, percentage: h.portfolio_allocation })),
+      totalValue: demoTotal,
+      performanceMetrics: { dayChangePct: 0.64, dayChangeAmt: 1180, totalReturnPct: 15.2, totalReturnAmt: 24363 } as unknown as PerformanceMetrics,
+      portfolioHistory: [] as PortfolioHistoryPoint[],
+      loading: false,
+      error: null,
+      refreshing: false,
+      refreshPrices: async () => {},
+      lastRefreshed: null,
+    };
+  }
+
   return { holdings, allocation, totalValue, performanceMetrics, portfolioHistory, loading, error, refreshing, refreshPrices, lastRefreshed };
 }
 

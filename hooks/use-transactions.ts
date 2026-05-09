@@ -127,6 +127,37 @@ export function useTransactions() {
     setPage(Math.max(1, Math.min(newPage, pagination.totalPages)));
   };
 
+  const isDemoTx = typeof window !== 'undefined' && sessionStorage.getItem('helm_demo_mode') === '1';
+  if (isDemoTx) {
+    const now = new Date();
+    const demoTx: Transaction[] = [
+      { id: 'dt-1', name: 'Whole Foods Market', amount: -87.42, date: new Date(now.getTime() - 86400000).toISOString().split('T')[0], category: 'Groceries', category_group: 'Food & Drink', account_name: 'Chase Checking', merchant_name: 'Whole Foods', pending: false },
+      { id: 'dt-2', name: 'Direct Deposit - Payroll', amount: 4250.00, date: new Date(now.getTime() - 86400000 * 2).toISOString().split('T')[0], category: 'Income', category_group: 'Income', account_name: 'Chase Checking', merchant_name: null, pending: false },
+      { id: 'dt-3', name: 'Netflix', amount: -15.99, date: new Date(now.getTime() - 86400000 * 3).toISOString().split('T')[0], category: 'Subscription', category_group: 'Entertainment', account_name: 'Amex Platinum', merchant_name: 'Netflix', pending: false },
+      { id: 'dt-4', name: 'Uber', amount: -24.50, date: new Date(now.getTime() - 86400000 * 3).toISOString().split('T')[0], category: 'Transportation', category_group: 'Transportation', account_name: 'Amex Platinum', merchant_name: 'Uber', pending: false },
+      { id: 'dt-5', name: 'Vanguard - VOO Purchase', amount: -2500.00, date: new Date(now.getTime() - 86400000 * 5).toISOString().split('T')[0], category: 'Investment', category_group: 'Transfer', account_name: 'Fidelity Brokerage', merchant_name: 'Vanguard', pending: false },
+      { id: 'dt-6', name: 'Starbucks', amount: -6.75, date: new Date(now.getTime() - 86400000 * 5).toISOString().split('T')[0], category: 'Coffee Shops', category_group: 'Food & Drink', account_name: 'Chase Checking', merchant_name: 'Starbucks', pending: false },
+      { id: 'dt-7', name: 'Amazon.com', amount: -142.30, date: new Date(now.getTime() - 86400000 * 6).toISOString().split('T')[0], category: 'Shopping', category_group: 'Shopping', account_name: 'Amex Platinum', merchant_name: 'Amazon', pending: false },
+      { id: 'dt-8', name: 'Con Edison', amount: -178.50, date: new Date(now.getTime() - 86400000 * 7).toISOString().split('T')[0], category: 'Utilities', category_group: 'Bills', account_name: 'Chase Checking', merchant_name: 'Con Edison', pending: false },
+      { id: 'dt-9', name: 'Dividend - AAPL', amount: 42.50, date: new Date(now.getTime() - 86400000 * 8).toISOString().split('T')[0], category: 'Dividend', category_group: 'Income', account_name: 'Fidelity Brokerage', merchant_name: null, pending: false },
+      { id: 'dt-10', name: 'Rent Payment', amount: -2200.00, date: new Date(now.getTime() - 86400000 * 10).toISOString().split('T')[0], category: 'Rent', category_group: 'Bills', account_name: 'Chase Checking', merchant_name: null, pending: false },
+    ] as unknown as Transaction[];
+    return {
+      transactions: demoTx,
+      pagination: { page: 1, limit: 50, total: 10, totalPages: 1 },
+      summary: { totalIncome: 4292.50, totalExpenses: 5155.46, netFlow: -862.96, transactionCount: 10 },
+      accountOptions: [{ value: 'chase', label: 'Chase Checking' }, { value: 'amex', label: 'Amex Platinum' }, { value: 'fidelity', label: 'Fidelity Brokerage' }],
+      categoryOptions: [] as CategoryOption[],
+      groupOptions: [] as GroupOption[],
+      filters,
+      loading: false,
+      error: null,
+      updateFilters,
+      goToPage,
+      refetch: fetchData,
+    };
+  }
+
   return {
     transactions,
     pagination,
