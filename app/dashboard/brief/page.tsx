@@ -134,8 +134,10 @@ export default function BriefPage() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showDeliveryPicker]);
 
-  // Load delivery preference from DB
+  // Load delivery preference from DB (skip in demo mode)
   useEffect(() => {
+    const isDemo = typeof window !== 'undefined' && sessionStorage.getItem('helm_demo_mode') === '1';
+    if (isDemo) { setDeliveryTime('9:00 AM'); return; }
     fetch('/api/dashboard/brief-preferences')
       .then(r => r.ok ? r.json() : null)
       .then(d => {
@@ -152,8 +154,18 @@ export default function BriefPage() {
       .catch(() => {});
   }, []);
 
-  // Load watchlist
+  // Load watchlist (skip in demo mode)
   useEffect(() => {
+    const isDemo = typeof window !== 'undefined' && sessionStorage.getItem('helm_demo_mode') === '1';
+    if (isDemo) {
+      setWatchlist([
+        { ticker: 'SPY', price: 528.40, changePct: 0.35, changeAmt: 1.85, isDefault: true },
+        { ticker: 'QQQ', price: 452.15, changePct: 0.52, changeAmt: 2.34, isDefault: true },
+        { ticker: 'VIXY', price: 14.20, changePct: -1.8, changeAmt: -0.26, isDefault: true },
+        { ticker: 'TLT', price: 92.80, changePct: -0.18, changeAmt: -0.17, isDefault: true },
+      ]);
+      return;
+    }
     fetch('/api/dashboard/watchlist')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.tickers) setWatchlist(d.tickers); })
