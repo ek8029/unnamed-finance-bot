@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
   if (authHeader !== `Bearer ${cronSecret}`) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const offset = parseInt(new URL(request.url).searchParams.get('offset') ?? '0', 10);
-  const BATCH_SIZE = 4;
+  const BATCH_SIZE = 2;
 
   const supabase = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
