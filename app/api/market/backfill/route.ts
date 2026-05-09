@@ -8,11 +8,11 @@ export const maxDuration = 120;
 /**
  * POST /api/market/backfill
  *
- * Backfills market_prices with 1 year of daily close prices
- * for all tickers in the user's holdings. Skips tickers that
- * already have 90+ days of data. Rate-limited to stay under
- * Polygon free tier (5 calls/min).
+ * Backfills market_prices with 1 year of daily close prices.
+ * Processes 4 tickers per call (4 × 13s = 52s, under 120s limit).
+ * Tracks progress via ?offset=N query param. Upsert handles dupes.
  *
+ * Usage: POST /api/market/backfill?offset=0 (then ?offset=4, ?offset=8, etc.)
  * Protected by CRON_SECRET.
  */
 export async function POST(request: NextRequest) {
@@ -21,13 +21,15 @@ export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   if (authHeader !== `Bearer ${cronSecret}`) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const offset = parseInt(new URL(request.url).searchParams.get('offset') ?? '0', 10);
+  const BATCH_SIZE = 4;
+
   const supabase = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } },
   );
 
-  // Get all unique tickers + security_ids from holdings
   const { data: holdings } = await supabase
     .from('holdings')
     .select('ticker, security_id')
@@ -37,21 +39,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'No holdings to backfill' });
   }
 
-  const tickerMap = new Map<string, string>();
+  // Deduplicate by ticker
+  const tickerList: [string, string][] = [];
+  const seen = new Set<string>();
   for (const h of holdings) {
-    if (h.ticker && h.security_id) {
-      tickerMap.set(h.ticker.toUpperCase(), h.security_id);
-    }
+    const t = h.ticker?.toUpperCase();
+    if (!t || !h.security_id || seen.has(t)) continue;
+    // Skip crypto (no Polygon data for X: tickers)
+    if (t.includes('-USD') || t.includes('CUR:')) continue;
+    seen.add(t);
+    tickerList.push([t, h.security_id]);
   }
 
-  // Check which tickers already have sufficient history
-  const countMap = new Map<string, number>();
-  for (const secId of new Set(tickerMap.values())) {
-    const { count } = await supabase
-      .from('market_prices')
-      .select('*', { count: 'exact', head: true })
-      .eq('security_id', secId);
-    countMap.set(secId, count ?? 0);
+  const batch = tickerList.slice(offset, offset + BATCH_SIZE);
+  if (batch.length === 0) {
+    return NextResponse.json({ done: true, message: 'All tickers processed', total: tickerList.length });
   }
 
   const oneYearAgo = new Date();
@@ -60,71 +62,57 @@ export async function POST(request: NextRequest) {
   const toDate = new Date().toISOString().split('T')[0];
 
   let backfilled = 0;
-  let skipped = 0;
   const errors: string[] = [];
 
-  for (const [ticker, securityId] of tickerMap) {
-    const existing = countMap.get(securityId) ?? 0;
-    if (existing >= 90) {
-      skipped++;
-      continue;
-    }
-
+  for (const [ticker, securityId] of batch) {
     try {
       const prices = await getHistoricalPrices(ticker, fromDate, toDate);
       if (prices.length === 0) {
-        errors.push(`${ticker}: no data from Polygon`);
+        errors.push(`${ticker}: no data`);
         continue;
       }
 
-      // Upsert all historical prices
       const rows = prices.map(p => ({
         security_id: securityId,
         price_date: p.date,
         close: p.close,
-        open: p.close, // Polygon range endpoint returns close; open not critical for returns
+        open: p.close,
         high: p.close,
         low: p.close,
         volume: 0,
       }));
 
-      // Batch upsert in chunks of 100
       for (let i = 0; i < rows.length; i += 100) {
-        const chunk = rows.slice(i, i + 100);
         const { error } = await supabase
           .from('market_prices')
-          .upsert(chunk, { onConflict: 'security_id,price_date' });
+          .upsert(rows.slice(i, i + 100), { onConflict: 'security_id,price_date' });
         if (error) {
-          errors.push(`${ticker}: upsert error — ${error.message}`);
+          errors.push(`${ticker}: ${error.message}`);
           break;
         }
       }
 
       backfilled++;
-
-      // Rate limit: 13s delay between Polygon calls (free tier = 5/min)
-      await new Promise(r => setTimeout(r, 13000));
-
-      // Cap at 8 tickers per invocation to stay under Vercel 120s timeout
-      if (backfilled >= 8) {
-        return NextResponse.json({
-          backfilled,
-          skipped,
-          total: tickerMap.size,
-          partial: true,
-          message: `Processed 8 tickers. Run again to continue (${tickerMap.size - skipped - backfilled - errors.length} remaining).`,
-          errors: errors.length > 0 ? errors : undefined,
-        });
-      }
     } catch (err) {
       errors.push(`${ticker}: ${err instanceof Error ? err.message : 'unknown'}`);
     }
+
+    // 13s delay between Polygon calls (free tier = 5/min)
+    if (batch.indexOf([ticker, securityId]) < batch.length - 1) {
+      await new Promise(r => setTimeout(r, 13000));
+    }
   }
+
+  const nextOffset = offset + BATCH_SIZE;
+  const remaining = Math.max(0, tickerList.length - nextOffset);
 
   return NextResponse.json({
     backfilled,
-    skipped,
-    total: tickerMap.size,
+    offset,
+    nextOffset: remaining > 0 ? nextOffset : null,
+    remaining,
+    total: tickerList.length,
     errors: errors.length > 0 ? errors : undefined,
+    ...(remaining > 0 ? { next: `/api/market/backfill?offset=${nextOffset}` } : { done: true }),
   });
 }
