@@ -45,17 +45,13 @@ export async function POST(request: NextRequest) {
   }
 
   // Check which tickers already have sufficient history
-  const securityIds = [...new Set(tickerMap.values())];
-  const { data: existingCounts } = await supabase
-    .rpc('count_prices_per_security', { security_ids: securityIds })
-    .select('*');
-
-  // Fallback: count manually if RPC doesn't exist
   const countMap = new Map<string, number>();
-  if (existingCounts) {
-    for (const row of existingCounts) {
-      countMap.set(row.security_id, row.count);
-    }
+  for (const secId of new Set(tickerMap.values())) {
+    const { count } = await supabase
+      .from('market_prices')
+      .select('*', { count: 'exact', head: true })
+      .eq('security_id', secId);
+    countMap.set(secId, count ?? 0);
   }
 
   const oneYearAgo = new Date();
@@ -106,8 +102,20 @@ export async function POST(request: NextRequest) {
 
       backfilled++;
 
-      // Rate limit: 250ms delay between Polygon calls (stays under 5/min with processing time)
-      await new Promise(r => setTimeout(r, 250));
+      // Rate limit: 13s delay between Polygon calls (free tier = 5/min)
+      await new Promise(r => setTimeout(r, 13000));
+
+      // Cap at 8 tickers per invocation to stay under Vercel 120s timeout
+      if (backfilled >= 8) {
+        return NextResponse.json({
+          backfilled,
+          skipped,
+          total: tickerMap.size,
+          partial: true,
+          message: `Processed 8 tickers. Run again to continue (${tickerMap.size - skipped - backfilled - errors.length} remaining).`,
+          errors: errors.length > 0 ? errors : undefined,
+        });
+      }
     } catch (err) {
       errors.push(`${ticker}: ${err instanceof Error ? err.message : 'unknown'}`);
     }
