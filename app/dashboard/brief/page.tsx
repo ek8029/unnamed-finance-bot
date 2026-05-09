@@ -224,6 +224,44 @@ export default function BriefPage() {
   };
 
   useEffect(() => {
+    const isDemo = typeof window !== 'undefined' && sessionStorage.getItem('helm_demo_mode') === '1';
+
+    if (isDemo) {
+      setData({
+        portfolio: { totalValue: 284750, overnightChange: 1820, overnightChangePct: 0.64, vsBenchmark: 0.12 },
+        market: {
+          spy: { price: 528.40, changePct: 0.35 },
+          qqq: { price: 452.15, changePct: 0.52 },
+          vix: { price: 14.20, level: 'greed' },
+          treasury: { price: 92.80, changePct: -0.18 },
+        },
+        movers: [
+          { ticker: 'NVDA', name: 'NVIDIA', sector: 'Technology', changePct: 3.2, dollarImpact: 960 },
+          { ticker: 'AAPL', name: 'Apple', sector: 'Technology', changePct: -0.8, dollarImpact: -320 },
+          { ticker: 'MSFT', name: 'Microsoft', sector: 'Technology', changePct: 0.4, dollarImpact: 180 },
+        ],
+        allHoldings: [
+          { ticker: 'NVDA', name: 'NVIDIA', sector: 'Technology', changePct: 3.2, dollarImpact: 960 },
+          { ticker: 'AAPL', name: 'Apple', sector: 'Technology', changePct: -0.8, dollarImpact: -320 },
+          { ticker: 'MSFT', name: 'Microsoft', sector: 'Technology', changePct: 0.4, dollarImpact: 180 },
+          { ticker: 'VOO', name: 'Vanguard S&P 500', sector: 'ETF', changePct: 0.35, dollarImpact: 245 },
+          { ticker: 'GOOGL', name: 'Alphabet', sector: 'Technology', changePct: 0.6, dollarImpact: 150 },
+        ],
+        sectorHeat: [
+          { sector: 'Technology', weight: 62, changePct: 1.1, tickers: ['NVDA', 'AAPL', 'MSFT', 'GOOGL'] },
+          { sector: 'ETF', weight: 25, changePct: 0.35, tickers: ['VOO'] },
+        ],
+        earningsThisWeek: [{ ticker: 'NVDA', reportDate: new Date(Date.now() + 86400000 * 3).toISOString(), portfolioWeight: 18.5 }],
+        dividendsThisWeek: [{ ticker: 'VOO', exDate: new Date(Date.now() + 86400000 * 2).toISOString() }],
+        positionNews: [],
+        generalNews: [],
+        digest: 'NVIDIA is the story this morning. The stock is up 3.2% pre-market after reporting data center revenue that beat estimates by 12%, pushing your largest holding to a $960 gain overnight. Demand for Blackwell GPUs continues to outstrip supply, and management raised full-year guidance for the third consecutive quarter.\n\nApple slipped 0.8% on reports of slower iPhone 16 sales in China, trimming $320 from your position. The weakness is contained to the China market — North American and European sales remain on track. Microsoft edged up 0.4% on steady Azure growth.\n\nThe broader market is calm. SPY is up 0.35% with the VIX sitting at 14.2, firmly in the greed zone. Treasury yields ticked up slightly, pulling TLT down 0.18%. No major macro catalysts today, but keep an eye on NVDA earnings exposure — your 18.5% portfolio weight means any post-earnings reversal hits hard.',
+        digestGeneratedAt: new Date().toISOString(),
+      });
+      setLoading(false);
+      return;
+    }
+
     fetch('/api/dashboard/brief')
       .then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); })
       .then(d => { setData(d); setLoading(false); })
