@@ -25,11 +25,45 @@ import {
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
 import { useSettings } from '@/contexts/settings-context';
-import { DemoProvider } from '@/contexts/demo-context';
+import { DemoProvider, useDemo } from '@/contexts/demo-context';
 import { LegalFooter } from '@/components/legal-footer';
 import { FinancialDisclaimer } from '@/components/financial-disclaimer';
 import { useTier } from '@/hooks/use-tier';
 import { OnboardingFlow } from '@/components/onboarding/onboarding-flow';
+
+/* ── Connect Banner — shown in demo mode ── */
+function ConnectBanner() {
+  const { isDemo } = useDemo();
+  const [dismissed, setDismissed] = useState(false);
+
+  if (!isDemo || dismissed) return null;
+
+  return (
+    <div className="bg-[var(--color-gold-surface)] border-b border-[var(--color-gold-border)]">
+      <div className="max-w-[1600px] mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)] shrink-0" />
+          <span className="text-[13px] text-[var(--color-text-primary)] truncate">
+            You&apos;re viewing <strong>sample data</strong>.
+          </span>
+          <Link
+            href="/dashboard/accounts"
+            className="text-[13px] font-semibold text-[var(--color-gold)] hover:underline whitespace-nowrap"
+          >
+            Connect your account to see your real portfolio →
+          </Link>
+        </div>
+        <button
+          onClick={() => setDismissed(true)}
+          className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors shrink-0"
+          aria-label="Dismiss banner"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -550,6 +584,7 @@ export default function DashboardLayout({
           "bg-[var(--color-bg-base)] bg-depth flex-1",
           isChatPage && "min-h-0 flex flex-col"
         )}>
+          <ConnectBanner />
           <div
             key={pathname}
             className={cn(
