@@ -30,6 +30,7 @@ import { LegalFooter } from '@/components/legal-footer';
 import { FinancialDisclaimer } from '@/components/financial-disclaimer';
 import { useTier } from '@/hooks/use-tier';
 import { OnboardingFlow } from '@/components/onboarding/onboarding-flow';
+import { GuidedTour } from '@/components/onboarding/guided-tour';
 
 /* ── Connect Banner — shown in demo mode ── */
 function ConnectBanner() {
@@ -221,6 +222,7 @@ export default function DashboardLayout({
     <DemoProvider>
     <>
     <OnboardingFlow />
+    <GuidedTour />
     <div className={cn(
       "bg-[var(--color-bg-base)] flex max-w-[100vw] overflow-x-hidden",
       isChatPage ? "h-screen overflow-hidden" : "min-h-screen"
@@ -276,6 +278,7 @@ export default function DashboardLayout({
                     <div className="flex items-center">
                       <Link
                         href={item.href}
+                        data-tour={item.name.toLowerCase().replace(/\s+/g, '-')}
                         className={cn(
                           'flex-1 flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded transition-colors duration-200',
                           isExactActive
@@ -345,6 +348,7 @@ export default function DashboardLayout({
                 <Link
                   key={item.name}
                   href={item.href}
+                  data-tour={item.name === 'Daily Brief' ? 'brief' : item.name === 'Activity' ? 'transactions' : item.name.toLowerCase().replace(/\s+/g, '-')}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
                     'flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded transition-colors duration-200',
@@ -376,6 +380,7 @@ export default function DashboardLayout({
           <div className="space-y-0.5">
             <Link
               href="/dashboard/accounts"
+              data-tour="accounts"
               className={cn(
                 'flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded transition-colors duration-200',
                 pathname === '/dashboard/accounts'
