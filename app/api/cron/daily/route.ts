@@ -48,7 +48,8 @@ export async function GET(request: Request) {
 
     if (lastRun?.calculated_at) {
       const hoursSince = (Date.now() - new Date(lastRun.calculated_at).getTime()) / (1000 * 60 * 60);
-      if (hoursSince < 20) {
+      const forceRun = new URL(request.url).searchParams.get('force') === 'true';
+      if (hoursSince < 20 && !forceRun) {
         return NextResponse.json({ message: 'Cron already ran recently', skipped: true });
       }
     }
