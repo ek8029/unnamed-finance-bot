@@ -72,18 +72,26 @@ export function GuidedTour() {
     const el = document.querySelector(STEPS[step].target);
     if (el) {
       setRect(el.getBoundingClientRect());
-      // Scroll into view if needed
-      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    } else {
-      setRect(null);
     }
   }, [active, step]);
 
+  // Poll for element until found, then listen for resize
   useEffect(() => {
+    if (!active) return;
+    // Try immediately
     updateRect();
+    // Poll every 200ms in case element isn't ready
+    const poll = setInterval(updateRect, 200);
+    const stopPoll = setTimeout(() => clearInterval(poll), 3000);
     window.addEventListener('resize', updateRect);
-    return () => window.removeEventListener('resize', updateRect);
-  }, [updateRect]);
+    window.addEventListener('scroll', updateRect, true);
+    return () => {
+      clearInterval(poll);
+      clearTimeout(stopPoll);
+      window.removeEventListener('resize', updateRect);
+      window.removeEventListener('scroll', updateRect, true);
+    };
+  }, [active, step, updateRect]);
 
   function next() {
     if (step < STEPS.length - 1) {
