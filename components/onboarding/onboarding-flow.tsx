@@ -132,20 +132,22 @@ export function OnboardingFlow() {
 
         {/* ═══ WELCOME PHASE ═══ */}
         {phase === 'welcome' && (
-          <div className="relative text-center space-y-8 px-8 max-w-lg" style={{ animation: 'onb-fade-up 0.7s ease-out' }}>
-            <HelmMark size={56} />
+          <div className="relative text-center space-y-10 px-8 max-w-2xl" style={{ animation: 'onb-fade-up 0.7s ease-out' }}>
+            <div className="flex justify-center">
+              <HelmMark size={80} />
+            </div>
             <div>
-              <h1 className="text-[clamp(32px,6vw,48px)] font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.08]">
+              <h1 className="text-[clamp(44px,8vw,72px)] font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.05]">
                 Welcome to Helm
               </h1>
-              <p className="text-[16px] text-[var(--color-text-muted)] mt-3 leading-relaxed">
+              <p className="text-[20px] text-[var(--color-text-muted)] mt-4 leading-relaxed">
                 Your financial intelligence terminal
               </p>
             </div>
 
             {/* Progress bar */}
-            <div className="max-w-[200px] mx-auto">
-              <div className="h-[2px] bg-[var(--color-border-base)] rounded-full overflow-hidden">
+            <div className="max-w-[280px] mx-auto">
+              <div className="h-[3px] bg-[var(--color-border-base)] rounded-full overflow-hidden">
                 <div className="h-full bg-[var(--color-gold)] rounded-full"
                   style={{ transformOrigin: 'left', animation: 'onb-progress 2.2s ease-in-out forwards' }} />
               </div>
@@ -155,29 +157,29 @@ export function OnboardingFlow() {
 
         {/* ═══ TOUR PHASE ═══ */}
         {phase === 'tour' && (
-          <div className="relative w-full max-w-2xl mx-auto px-8" style={{ animation: 'onb-fade-up 0.5s ease-out' }}>
+          <div className="relative w-full max-w-3xl mx-auto px-8" style={{ animation: 'onb-fade-up 0.5s ease-out' }}>
             {/* Header */}
-            <div className="text-center mb-10">
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)]" />
-                <span className="font-mono text-[10px] tracking-[0.2em] text-[var(--color-gold)] uppercase">
+            <div className="text-center mb-12">
+              <div className="flex items-center justify-center gap-2.5 mb-4">
+                <div className="w-2 h-2 rounded-full bg-[var(--color-gold)]" />
+                <span className="font-mono text-[12px] tracking-[0.2em] text-[var(--color-gold)] uppercase">
                   Demo Mode
                 </span>
               </div>
-              <h2 className="text-[clamp(24px,4vw,36px)] font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.1]">
+              <h2 className="text-[clamp(32px,5vw,48px)] font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.1]">
                 Here&apos;s what you&apos;ll explore
               </h2>
-              <p className="text-[14px] text-[var(--color-text-muted)] mt-2">
+              <p className="text-[17px] text-[var(--color-text-muted)] mt-3 max-w-lg mx-auto">
                 We&apos;ve loaded a sample portfolio. Everything you see is what your real dashboard will look like.
               </p>
             </div>
 
             {/* Steps */}
-            <div className="space-y-3 max-w-md mx-auto">
+            <div className="space-y-3 max-w-xl mx-auto">
               {TOUR_STEPS.map((step, i) => (
                 <div
                   key={step.num}
-                  className={`flex gap-4 p-4 rounded-md border transition-all duration-300 ${
+                  className={`flex gap-5 p-5 rounded-lg border transition-all duration-300 ${
                     i === tourStep
                       ? 'border-[var(--color-gold)]/30 bg-[var(--color-gold-surface)]'
                       : i < tourStep
@@ -186,17 +188,17 @@ export function OnboardingFlow() {
                   }`}
                   style={i === tourStep ? { animation: 'onb-slide-in 0.4s ease-out' } : undefined}
                 >
-                  <span className={`font-mono text-[13px] font-bold mt-0.5 shrink-0 ${
+                  <span className={`font-mono text-[16px] font-bold mt-0.5 shrink-0 ${
                     i === tourStep ? 'text-[var(--color-gold)]' : 'text-[var(--color-text-muted)]'
                   }`}>
                     {step.num}
                   </span>
                   <div className="min-w-0">
-                    <div className="text-[14px] font-semibold text-[var(--color-text-primary)]">
+                    <div className="text-[17px] font-semibold text-[var(--color-text-primary)]">
                       {step.title}
                     </div>
                     {i === tourStep && (
-                      <p className="text-[13px] text-[var(--color-text-muted)] mt-1 leading-relaxed"
+                      <p className="text-[15px] text-[var(--color-text-muted)] mt-1.5 leading-relaxed"
                         style={{ animation: 'onb-fade-in 0.3s ease-out' }}>
                         {step.desc}
                       </p>
@@ -207,22 +209,22 @@ export function OnboardingFlow() {
             </div>
 
             {/* Tour navigation */}
-            <div className="flex items-center justify-between mt-8 max-w-md mx-auto">
+            <div className="flex items-center justify-between mt-10 max-w-xl mx-auto">
               <button
                 onClick={handleSkipTour}
-                className="text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors font-mono"
+                className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors font-mono"
               >
                 Skip tour
               </button>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-5">
                 {/* Step dots */}
-                <div className="flex gap-1.5">
+                <div className="flex gap-2">
                   {TOUR_STEPS.map((_, i) => (
                     <div
                       key={i}
-                      className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                        i === tourStep ? 'bg-[var(--color-gold)] w-4' : i < tourStep ? 'bg-[var(--color-gold)]/40' : 'bg-[var(--color-border-strong)]'
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        i === tourStep ? 'bg-[var(--color-gold)] w-6' : i < tourStep ? 'bg-[var(--color-gold)]/40 w-2' : 'bg-[var(--color-border-strong)] w-2'
                       }`}
                     />
                   ))}
@@ -230,10 +232,10 @@ export function OnboardingFlow() {
 
                 <button
                   onClick={handleNextStep}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-[var(--color-gold)] text-black text-[13px] font-semibold rounded-md hover:brightness-110 transition-all"
+                  className="flex items-center gap-2.5 px-7 py-3 bg-[var(--color-gold)] text-black text-[15px] font-semibold rounded-md hover:brightness-110 transition-all"
                 >
                   {tourStep < TOUR_STEPS.length - 1 ? 'Next' : 'Enter Terminal'}
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -242,28 +244,30 @@ export function OnboardingFlow() {
 
         {/* ═══ LAUNCH PHASE ═══ */}
         {phase === 'launch' && (
-          <div className="relative text-center space-y-8 px-8 max-w-lg" style={{ animation: 'onb-fade-up 0.5s ease-out' }}>
-            <HelmMark size={48} />
+          <div className="relative text-center space-y-10 px-8 max-w-2xl" style={{ animation: 'onb-fade-up 0.5s ease-out' }}>
+            <div className="flex justify-center">
+              <HelmMark size={72} />
+            </div>
             <div>
-              <h2 className="text-[28px] font-bold tracking-tight text-[var(--color-text-primary)]">
+              <h2 className="text-[clamp(32px,5vw,44px)] font-bold tracking-tight text-[var(--color-text-primary)]">
                 Ready to explore
               </h2>
-              <p className="text-[14px] text-[var(--color-text-muted)] mt-2 leading-relaxed max-w-sm mx-auto">
+              <p className="text-[17px] text-[var(--color-text-muted)] mt-3 leading-relaxed max-w-md mx-auto">
                 You&apos;ll see a sample portfolio with real market data. When you&apos;re ready for your own data, connect an account from the sidebar.
               </p>
             </div>
 
             <button
               onClick={handleLaunchDemo}
-              className="inline-flex items-center gap-2 px-8 py-3 bg-[var(--color-gold)] text-black text-[14px] font-bold rounded-md hover:brightness-110 transition-all"
+              className="inline-flex items-center gap-3 px-10 py-4 bg-[var(--color-gold)] text-black text-[17px] font-bold rounded-md hover:brightness-110 transition-all"
             >
               Open Terminal
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center justify-center gap-6 pt-2">
+            <div className="flex items-center justify-center gap-8 pt-2">
               {['Read-only', 'No card required', 'Delete anytime'].map((line) => (
-                <span key={line} className="font-mono text-[9px] tracking-[0.1em] text-[var(--color-text-muted)]/40 uppercase">
+                <span key={line} className="font-mono text-[11px] tracking-[0.1em] text-[var(--color-text-muted)]/40 uppercase">
                   {line}
                 </span>
               ))}
@@ -274,11 +278,11 @@ export function OnboardingFlow() {
         {/* ═══ DONE PHASE ═══ */}
         {phase === 'done' && (
           <div className="relative text-center" style={{ animation: 'onb-fade-up 0.4s ease-out' }}>
-            <svg className="w-12 h-12 text-[var(--color-positive)] mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="w-16 h-16 text-[var(--color-positive)] mx-auto mb-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"
                 style={{ strokeDasharray: 30, strokeDashoffset: 30, animation: 'onb-check 0.4s ease-out 0.1s forwards' }} />
             </svg>
-            <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">You&apos;re in</h1>
+            <h1 className="text-[36px] font-bold text-[var(--color-text-primary)]">You&apos;re in</h1>
           </div>
         )}
 
