@@ -4,16 +4,16 @@ import { INDEXABLE_TICKERS } from '@/lib/indexable-tickers';
 
 /** Popular comparison pairs for programmatic SEO. */
 const COMPARISON_PAIRS = [
-  'AAPL-vs-MSFT',
-  'GOOGL-vs-META',
-  'VOO-vs-VTI',
-  'NVDA-vs-AMD',
-  'TSLA-vs-RIVN',
-  'JPM-vs-GS',
-  'AMZN-vs-GOOGL',
-  'SPY-vs-QQQ',
-  'NFLX-vs-DIS',
-  'CRM-vs-ADBE',
+  // Original 10
+  'AAPL-vs-MSFT', 'GOOGL-vs-META', 'VOO-vs-VTI', 'NVDA-vs-AMD',
+  'TSLA-vs-RIVN', 'JPM-vs-GS', 'AMZN-vs-GOOGL', 'SPY-vs-QQQ',
+  'NFLX-vs-DIS', 'CRM-vs-ADBE',
+  // High-search additions
+  'NVDA-vs-MSFT', 'AAPL-vs-GOOGL', 'AMZN-vs-MSFT', 'META-vs-GOOGL',
+  'SCHD-vs-VYM', 'VOO-vs-SPY', 'VTI-vs-SPY', 'QQQ-vs-VOO',
+  'NVDA-vs-AAPL', 'TSLA-vs-NVDA', 'AMD-vs-INTC', 'SOFI-vs-HOOD',
+  'PLTR-vs-SNOW', 'COIN-vs-MARA', 'BA-vs-RTX', 'V-vs-MA',
+  'UNH-vs-JNJ', 'XOM-vs-CVX', 'BND-vs-AGG', 'GLD-vs-SLV',
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

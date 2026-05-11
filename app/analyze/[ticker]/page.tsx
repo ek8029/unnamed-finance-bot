@@ -57,9 +57,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  // Dynamic description from real analysis — every ticker gets unique meta
+  // Dynamic description — lead with verdict for CTR, not truncated mid-sentence
+  const verdict = analysis.verdict || 'Neutral';
   const dynamicDesc = truncateForMeta(
-    `${analysis.companyName} (${symbol}) — ${analysis.summary} ${analysis.recommendation}`,
+    `${symbol} is rated ${verdict} by Helm AI. ${analysis.companyName} — ${analysis.recommendation || analysis.summary}`,
   );
 
   return {

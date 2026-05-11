@@ -22,11 +22,11 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://helmterminal.dev'),
-  title: 'Helm Terminal - AI-Powered Financial Intelligence',
-  description: 'AI-powered, institutional-grade financial analysis with portfolio intelligence. Helm Terminal is your personal command center for modern investors. Free to start.',
+  title: 'Helm Terminal — Free Portfolio Intelligence for Investors',
+  description: 'See your portfolio the way hedge funds see theirs. Concentration risk, tax-loss harvesting, earnings exposure, and AI stock analysis — free. No Bloomberg required.',
   openGraph: {
-    title: 'Helm Terminal - AI-Powered Financial Intelligence',
-    description: 'AI-powered, institutional-grade financial analysis with portfolio intelligence. Helm Terminal is your personal command center for modern investors. Free to start.',
+    title: 'Helm Terminal — Free Portfolio Intelligence for Investors',
+    description: 'See your portfolio the way hedge funds see theirs. Concentration risk, tax-loss harvesting, earnings exposure, and AI stock analysis — free.',
     url: 'https://helmterminal.dev',
     siteName: 'Helm Terminal',
     type: 'website',
@@ -41,8 +41,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Helm Terminal - AI-Powered Financial Intelligence',
-    description: 'Institutional-grade financial analysis powered by AI.',
+    title: 'Helm Terminal — Free Portfolio Intelligence for Investors',
+    description: 'Concentration risk, tax-loss harvesting, earnings exposure, and AI stock analysis — free.',
     images: ['/opengraph-image'],
   },
   alternates: {
