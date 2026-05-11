@@ -107,6 +107,12 @@ export default async function TickerAnalysisPage({ params }: Props) {
   ]);
 
   if (!analysis) {
+    notFound();
+    return null; // unreachable but satisfies TypeScript
+  }
+
+  /* Old inline not-found UI removed — Next.js not-found.tsx handles this now */
+  if (false as boolean) {
     return (
       <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col relative overflow-hidden">
         <CinematicBg />
@@ -189,6 +195,10 @@ export default async function TickerAnalysisPage({ params }: Props) {
       datePublished: computedAtIso,
       dateModified: computedAtIso,
       mainEntityOfPage: `https://helmterminal.dev/analyze/${symbol}`,
+      speakable: {
+        '@type': 'SpeakableSpecification',
+        cssSelector: ['h1', '[data-speakable="verdict"]', '[data-speakable="summary"]'],
+      },
       about: {
         '@type': 'Corporation',
         name: analysis.companyName,

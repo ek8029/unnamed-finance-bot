@@ -27,12 +27,15 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 - [Security](https://helmterminal.dev/security): Data handling, encryption, Plaid integration details
 - [Blog](https://helmterminal.dev/blog): Financial education and investment guides
 - [TLH Calculator](https://helmterminal.dev/tools/tlh-calculator): Tax-loss harvesting estimator
+- [RSU Calculator](https://helmterminal.dev/tools/rsu-calculator): RSU vesting schedule, tax liability, and concentration risk calculator
 - [Stock Comparison](https://helmterminal.dev/compare): Side-by-side ticker comparison tool
 
 ## Educational Content
 - [Tax-Loss Harvesting Guide](https://helmterminal.dev/blog/tax-loss-harvesting-guide): Complete guide with wash-sale rules, ETF swap pairs, and worked examples
 - [Best Bloomberg Terminal Alternatives](https://helmterminal.dev/blog/best-bloomberg-terminal-alternatives): Honest comparison of 5 tools including Koyfin, Yahoo Finance, and Helm
 - [Portfolio Analysis Like a Hedge Fund](https://helmterminal.dev/blog/portfolio-analysis-like-hedge-fund): Institutional techniques for retail investors
+- [Earnings Concentration Risk](https://helmterminal.dev/blog/portfolio-earnings-concentration-risk): How earnings season concentration puts retail portfolios at risk
+- [RSU Tax Strategies](https://helmterminal.dev/blog/rsu-tax-strategies): Complete guide for tech employees on RSU taxation and planning
 
 ## Audience Pages
 - [For Engineers](https://helmterminal.dev/for/engineers): RSU vesting, equity concentration, tax optimization
@@ -51,6 +54,9 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 - Rule-based intelligence engine (TLH, concentration, etc.) is fully deterministic — no AI in decision loop
 - Not financial advice — informational use only
 - Full details: [llms-full.txt](https://helmterminal.dev/llms-full.txt)
+
+## Founder
+Built by Evan Kim — Penn State economics graduate, former derivatives hedging intern. Background in providing clarity into opaque financial markets. More at https://helmterminal.dev/about
 
 ## Contact
 - Website: https://helmterminal.dev

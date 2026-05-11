@@ -94,9 +94,11 @@ export default async function BlogPost({ params }: PageProps) {
         url: 'https://helmterminal.dev',
       },
       url: `https://helmterminal.dev/blog/${slug}`,
-      ...(post.image && {
-        image: `https://helmterminal.dev${post.image}`,
-      }),
+      image: `https://helmterminal.dev/blog/${slug}/opengraph-image`,
+      speakable: {
+        '@type': 'SpeakableSpecification',
+        cssSelector: ['h1', '.blog-content p:first-of-type'],
+      },
     },
     {
       '@context': 'https://schema.org',
