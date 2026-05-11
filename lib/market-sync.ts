@@ -369,14 +369,19 @@ export async function updatePortfolioPerformance(
   }
   const sortedDates = [...allDates].sort();
 
-  if (sortedDates.length >= 20) {
+  // Filter to holdings with price history (skip crypto, etc.)
+  const pricedHoldings = holdings.filter((h: { security_id: string }) => {
+    const hist = priceHistory.get(h.security_id);
+    return hist && hist.length >= 20;
+  });
+
+  if (sortedDates.length >= 20 && pricedHoldings.length > 0) {
     const dailyValues: number[] = [];
     for (const date of sortedDates) {
       let pv = 0;
       let allFound = true;
-      for (const h of holdings) {
-        const history = priceHistory.get(h.security_id);
-        if (!history) { allFound = false; break; }
+      for (const h of pricedHoldings) {
+        const history = priceHistory.get(h.security_id)!;
         const entry = history.find(p => p.date === date);
         if (!entry) { allFound = false; break; }
         pv += Number(h.shares) * entry.close;
@@ -433,9 +438,8 @@ export async function updatePortfolioPerformance(
         for (const date of sortedDates) {
           let pv = 0;
           let allFound = true;
-          for (const h of holdings) {
-            const history = priceHistory.get(h.security_id);
-            if (!history) { allFound = false; break; }
+          for (const h of pricedHoldings) {
+            const history = priceHistory.get(h.security_id)!;
             const entry = history.find(p => p.date === date);
             if (!entry) { allFound = false; break; }
             pv += Number(h.shares) * entry.close;
