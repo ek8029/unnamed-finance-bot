@@ -1,0 +1,249 @@
+---
+title: "Multi-Asset Portfolio Tracking: How to See Stocks, ETFs, Bonds, and Crypto in One View"
+description: "Your portfolio is split across 3 brokerages and 5 asset classes. Here are the tools that actually aggregate everything into one dashboard."
+date: "2026-05-12"
+author: "Evan Kim"
+tags: ["portfolio", "tracking", "multi-asset", "brokerage", "investing"]
+published: true
+---
+
+# Multi-Asset Portfolio Tracking: How to See Stocks, ETFs, Bonds, and Crypto in One View
+
+Open your Schwab app and you see your stocks. Open Coinbase and you see your crypto. Open Vanguard and you see your 401(k). Open Fundrise and you see your real estate allocation. Each app is perfectly accurate about what it holds. None of them can tell you what your actual portfolio looks like.
+
+This is the multi-asset problem. Your wealth is spread across different platforms, different asset classes, and different interfaces. No single brokerage shows the full picture because no single brokerage holds the full picture. And the decisions that matter most (am I too concentrated? is my risk balanced? should I rebalance?) require seeing everything at once.
+
+This guide covers what "multi-asset" actually means, why it is so hard to track, and which tools in 2026 do the best job of pulling it all together.
+
+## What "Multi-Asset" Actually Means
+
+A multi-asset portfolio includes holdings across two or more distinct asset classes. Here are the six that matter for most individual investors:
+
+**Equities (stocks and ETFs)**: Individual stocks, index funds, sector ETFs. This is what most brokerage apps show well because it is their core business.
+
+**Fixed income (bonds)**: Treasury bonds, corporate bonds, municipal bonds, bond ETFs like BND or AGG, I-bonds, CDs. Often held in retirement accounts and frequently invisible in portfolio trackers that focus on equities.
+
+**Crypto**: Bitcoin, Ethereum, and other digital assets held on exchanges like Coinbase or Kraken, in self-custody wallets, or through ETFs like IBIT and ETHA.
+
+**Real estate**: REITs held in brokerage accounts, crowdfunded real estate through Fundrise or CrowdStreet, rental property equity, or simply your primary residence.
+
+**Alternatives**: Private equity, venture capital, hedge fund allocations, art (Masterworks), wine, collectibles, private credit. Typically illiquid and hard to price accurately.
+
+**Cash and cash equivalents**: High-yield savings, money market funds, Treasury bills, checking accounts. Often ignored in portfolio tracking but critical for understanding your true allocation.
+
+A portfolio with $200K in stocks and $50K in a high-yield savings account has 20% in cash. That is a meaningful allocation decision, whether you made it intentionally or not.
+
+## The Core Problem: Every App Shows a Silo
+
+The financial system was not designed for you to see everything at once. It was designed for each institution to show you their piece.
+
+Your 401(k) provider shows your retirement holdings but has no idea about your taxable brokerage. Coinbase shows your crypto but cannot see your bond allocation. Your bank shows your cash but not your investment accounts. Even Fidelity's "Full View" feature, which tries to aggregate external accounts, only gives you balances without meaningful analysis.
+
+This creates three specific problems:
+
+**You cannot calculate your real allocation.** If you have $300K in equities across three brokerages, $80K in bonds in your 401(k), $40K in crypto on Coinbase, and $60K in cash across two banks, your allocation is roughly 63/17/8/12 stocks/bonds/crypto/cash. But you would need to log into six different apps and do the math yourself to know that.
+
+**You miss concentration risk.** Your Schwab account might look perfectly diversified. But when combined with your 401(k) target-date fund and your crypto holdings, you might have 75% in risk assets and 25% correlated to tech sector performance. You would never know unless you see the combined view.
+
+**You cannot rebalance intelligently.** Rebalancing requires knowing where you are versus where you want to be. If "where you are" is scattered across half a dozen apps, you skip rebalancing entirely. Most people do. For more on why [portfolio rebalancing](/blog/what-is-portfolio-rebalancing) matters, we have a separate guide.
+
+## Multi-Asset Tracker Comparison: 8 Tools Tested
+
+I tested eight platforms on how well they handle true multi-asset tracking: connecting accounts, pulling in different asset types, showing combined allocation, and surfacing risk you cannot see in any single app.
+
+### Quick Comparison Table
+
+| Tool | Stocks | Bonds | Crypto | Real Estate | Alternatives | Auto-Sync | Free Tier | Risk Analysis |
+|------|--------|-------|--------|-------------|-------------|-----------|-----------|---------------|
+| **Helm Terminal** | Yes | Via ETFs | Yes | No | No | Plaid | Yes | Yes (7 rules) |
+| **Kubera** | Yes | Yes | Yes (wallets) | Yes (Zillow) | Yes | Plaid + API | No ($15/mo) | No |
+| **Empower** | Yes | Yes | Limited | Yes (Zillow) | Manual | Plaid | Yes | Basic |
+| **Sharesight** | Yes | Yes | Limited | No | No | Broker feeds | Yes (10 holdings) | Tax reports |
+| **Wealthfront** | Yes | Yes | No | No | No | Internal only | No ($500 min) | Automated |
+| **Yahoo Finance** | Yes | Yes | Yes | No | No | Manual only | Yes | No |
+| **Delta** | Yes | Limited | Yes (wallets) | No | NFTs | Broker linking | Yes | Basic |
+| **getquin** | Yes | Yes | Yes | Yes (manual) | Manual | Some brokers | Yes | Basic |
+
+### 1. Helm Terminal
+
+**Best for: Investors who want intelligence across connected accounts, not just balances**
+
+[Helm Terminal](/) connects to hundreds of brokerages and banks through Plaid and provides a unified portfolio view with real-time pricing from Polygon.io. Where it differs from most trackers is the intelligence layer: seven automated detection rules that scan your combined portfolio for concentration risk, unusual price movements, sector drift, dividend events, and other signals that require seeing all your accounts together.
+
+**What it tracks well**: US-listed stocks, ETFs (including bond ETFs like BND, AGG, TLT), crypto held through brokerages, and cash positions across all connected accounts. The [stock analysis tool](/analyze) provides deep dives on any individual holding.
+
+**What it does not track**: Direct crypto wallet connections (you need brokerage-held crypto), physical real estate, or alternative investments like art or private equity. International equities are not yet supported.
+
+**Pricing**: Free. Pro tier is coming but the core intelligence features are available now.
+
+**The honest take**: Helm is strong if your portfolio is primarily US equities, ETFs, and cash across multiple brokerages. It is weaker than Kubera for exotic asset classes. The differentiator is the intelligence layer: Helm does not just show you balances, it tells you when your combined allocation has drifted into risky territory.
+
+### 2. Kubera
+
+**Best for: Complex wealth spanning crypto wallets, real estate, and alternative assets**
+
+Kubera is the broadest multi-asset tracker available. It connects to bank and brokerage accounts via Plaid, syncs directly with crypto wallets and exchanges (including DeFi protocols), pulls Zillow Zestimates for real estate, and lets you manually add any asset with a custom valuation. If you own art through Masterworks, a rental property, private equity stakes, and a hardware wallet full of Ethereum, Kubera is one of the few tools that puts all of it on one screen.
+
+**What it tracks well**: Everything. Stocks, bonds, crypto (including self-custody wallets and DeFi), real estate, vehicles, domains, precious metals, private equity, and truly arbitrary assets.
+
+**What it does not track**: Nothing is inherently excluded. The trade-off is that it does not analyze any of it deeply. No concentration alerts, no rebalancing suggestions, no risk scoring.
+
+**Pricing**: $15/month individual, $22/month family. No free tier.
+
+**The honest take**: Kubera is an inventory system for wealth. It tells you what you own and what it is worth today. It does not tell you what to do about it. If your main need is "I want one number that represents everything I own," Kubera is the best option. If you want portfolio intelligence, you will need something else alongside it.
+
+### 3. Empower (formerly Personal Capital)
+
+**Best for: Free net worth tracking with a broad asset view**
+
+Empower remains the most widely used free portfolio aggregator. It connects to banks, brokerages, and retirement accounts via Plaid and shows a combined net worth dashboard with basic allocation charts. It handles bonds, stocks, ETFs, and cash well. Real estate tracking via Zillow integration is available. Crypto support exists but is limited.
+
+**What it tracks well**: Traditional investment accounts, bank accounts, credit cards, loans, and property values. The retirement planner is genuinely useful for long-term projections.
+
+**What it does not track**: Crypto wallets, alternative investments, or anything that requires manual valuation beyond a basic entry. No real-time pricing.
+
+**Pricing**: Free (funded by upselling advisory services, especially once you cross $100K).
+
+**The honest take**: Empower is solid for basic aggregation and net worth tracking. The advisory upselling is persistent and the dashboard has not evolved much since the rebrand. It will show you your multi-asset allocation, but it will not proactively tell you when something looks wrong. For more detail, see our [Empower alternatives](/blog/best-personal-capital-alternatives) guide.
+
+### 4. Sharesight
+
+**Best for: Tax reporting across international equity portfolios**
+
+Sharesight is built around performance tracking and tax reporting. It connects to brokers via data feeds and CSV import, calculates time-weighted and money-weighted returns accurately, and generates tax reports that map directly to what you need at filing time. It supports stocks, ETFs, and bonds across multiple global exchanges.
+
+**What it tracks well**: Stocks and ETFs across US, Australian, UK, Canadian, and other international exchanges. Bond positions. Dividend income tracking and reinvestment. Capital gains reports with cost basis methods.
+
+**What it does not track**: Crypto (very limited), real estate, alternatives, or cash positions. No bank account connections.
+
+**Pricing**: Free for up to 10 holdings. Paid plans start at $10/month.
+
+**The honest take**: Sharesight is the best option if your primary need is accurate tax reporting across a multi-country equity portfolio. It is not a multi-asset tracker in the broad sense. If you hold bonds and stocks and need clean tax documents, it delivers. If you also hold crypto and real estate, you will need to supplement it.
+
+### 5. Wealthfront
+
+**Best for: Automated investing with built-in multi-asset allocation**
+
+Wealthfront is a robo-advisor, not a tracker. But it deserves mention because it handles multi-asset allocation automatically within its own platform: stocks, bonds, REITs, and risk parity portfolios. If you consolidate your taxable investing into Wealthfront, you get multi-asset exposure without needing to track it yourself.
+
+**What it tracks well**: Everything within Wealthfront's own platform. Automated rebalancing, tax-loss harvesting, and risk-adjusted allocation across asset classes.
+
+**What it does not track**: External accounts. Wealthfront only manages and tracks money held on its platform. It cannot see your 401(k), your crypto, or your other brokerage accounts.
+
+**Pricing**: 0.25% annual management fee, $500 minimum.
+
+**The honest take**: Wealthfront solves multi-asset allocation within its walls but creates another silo outside them. If Wealthfront is your only investment platform, this is great. If you also have a 401(k) at Fidelity and crypto on Coinbase, you still have the fragmentation problem.
+
+### 6. Yahoo Finance
+
+**Best for: Free manual tracking with real-time quotes**
+
+Yahoo Finance lets you create portfolios manually by entering your positions. It supports stocks, ETFs, bonds, crypto, and indices. Real-time pricing is solid. The premium tier ($25/month) adds advanced charting and research tools.
+
+**What it tracks well**: Any publicly traded security. The breadth of coverage is excellent across asset classes.
+
+**What it does not track**: It does not connect to your accounts at all. Every position must be entered and updated manually. No bank accounts, no Plaid integration, no automatic sync. You are building a mirror of your portfolio by hand.
+
+**Pricing**: Free (with ads). Premium at $25/month.
+
+**The honest take**: Yahoo Finance is a price-checking tool, not a portfolio tracker. If you are disciplined enough to manually enter every trade across every account and keep it current, it works. Most people are not, and the portfolio drifts out of sync within weeks. There is no intelligence, no alerts, and no risk analysis.
+
+### 7. Delta
+
+**Best for: Crypto-heavy portfolios with some equity holdings**
+
+Delta started as a crypto tracker and expanded into stocks. It connects to some brokers and many crypto exchanges, supports manual entry, and provides a combined view. The interface is polished and the crypto coverage is among the best of any multi-asset tool.
+
+**What it tracks well**: Crypto (including exchange connections and DeFi tracking), stocks, and ETFs. NFT tracking is available. The mobile app is well-designed.
+
+**What it does not track**: Bonds are limited. No real estate. No bank account connections for cash tracking. No meaningful risk analysis or portfolio intelligence beyond basic performance metrics.
+
+**Pricing**: Free tier available. Pro at roughly $10/month.
+
+**The honest take**: If your portfolio is 60% crypto and 40% stocks, Delta is a strong fit. If you hold bonds, real estate, or alternatives alongside equities, it falls short. The intelligence layer is thin compared to purpose-built portfolio analysis tools.
+
+### 8. getquin
+
+**Best for: European investors wanting a social portfolio tracking experience**
+
+getquin is a portfolio tracker with a social layer, popular in Europe. It supports stocks, ETFs, bonds, crypto, and manual real estate entries. Broker connections are available for some European and US brokerages. The community feature lets you compare your allocation against other users.
+
+**What it tracks well**: Stocks, ETFs, and bonds across European and US exchanges. Dividend tracking. Basic allocation breakdowns.
+
+**What it does not track**: Alternative assets beyond manual entry. Limited US brokerage connections compared to Plaid-based tools. No real-time risk analysis or concentration alerts.
+
+**Pricing**: Free with premium features available.
+
+**The honest take**: getquin is solid for European investors who want to see their full portfolio and compare it to peers. For US-based investors with accounts at Schwab, Fidelity, or Vanguard, Plaid-based tools like Helm or Empower provide more reliable account connections.
+
+## What to Look for in a Multi-Asset Tracker
+
+Not every tracker handles multi-asset portfolios well. Here is what separates the useful ones from the ones that just list your balances:
+
+### 1. Actual account connections, not just manual entry
+
+If you have to manually enter every trade, you will stop updating within a month. Look for Plaid integration (for US banks and brokerages), direct exchange connections (for crypto), and API feeds (for alternative platforms). The fewer manual steps, the more likely you will actually use the tool.
+
+### 2. Combined allocation view
+
+This is the whole point. The tracker needs to show your total allocation across all accounts as one portfolio. Not account-by-account views. Not separate dashboards. One pie chart (or table) that says: you are 65% equities, 15% bonds, 10% crypto, 10% cash. If it cannot do this, it is just a dashboard of dashboards.
+
+### 3. Asset class normalization
+
+A good tracker should recognize that your BND holding is a bond ETF and your AGG is also a bond ETF, even though they sit in different accounts. It should categorize holdings by asset class, not just show a flat list of tickers. This is harder than it sounds, and most tools do it poorly.
+
+### 4. Risk and concentration analysis
+
+Seeing your allocation is step one. Knowing whether that allocation is dangerous is step two. Does the tracker flag when a single position is 20% of your total portfolio? Does it show your sector exposure across all accounts combined? Does it alert you when your allocation drifts from your target? These features separate trackers from intelligence tools. For a deeper look at why this matters, see our piece on [portfolio concentration risk](/blog/portfolio-concentration-problem).
+
+### 5. Current pricing
+
+If your stock positions show yesterday's close and your crypto shows a price from three hours ago, your allocation math is wrong. During volatile markets, it can be meaningfully wrong. Look for trackers that pull real-time or near-real-time pricing across all asset classes they support.
+
+### 6. Reasonable cost
+
+The tools that charge $15-25/month can be worth it if you have a complex portfolio. But if your assets are primarily US equities and cash across a few brokerages, a free tool with Plaid integration covers 90% of what you need.
+
+## Why Seeing Everything in One Place Actually Matters
+
+This is not an abstract organizational preference. Fragmented visibility leads to specific, measurable mistakes:
+
+**You hold more risk than you realize.** An investor I know had "diversified" across four accounts: a 401(k) in a target-date fund, a Roth IRA in QQQ, a taxable account in individual tech stocks, and a Coinbase account with Bitcoin and Ethereum. When we combined everything, 72% of their portfolio was correlated to tech sector performance. They thought they were diversified because each account looked different. They were not.
+
+**You keep too much cash without knowing it.** Another common pattern: $30K in a checking account earning 0.01%, $15K in a savings account at 4.5%, and $10K in a money market inside a brokerage account. That is $55K in cash, which might be 15-20% of a total portfolio. Is that intentional? Maybe. But you cannot make that decision if you do not know the number.
+
+**You miss [tax-loss harvesting](/blog/tax-loss-harvesting-guide) opportunities.** A losing position in one account might offset gains in another. But if you only look at each account individually, you see a loss in one and a gain in another without connecting them. Cross-account tax optimization requires a unified view.
+
+**You duplicate positions accidentally.** Your 401(k) target-date fund holds the S&P 500. Your Roth IRA holds VOO (which tracks the S&P 500). Your taxable account holds individual stocks that are also top holdings in the S&P 500. You might have 40% of your total portfolio in the same 10 companies without realizing it.
+
+The investors who make the best decisions are the ones who see the complete picture. Not because they have better judgment, but because they have better information.
+
+<CTACard title="See your full portfolio in one terminal" description="Helm connects every brokerage and bank via Plaid, then shows concentration risk, tax-loss harvesting, and earnings exposure across all your holdings." buttonText="Connect your accounts" buttonLink="/signup" />
+
+## Building Your Multi-Asset View: A Practical Approach
+
+If you are starting from scratch, here is a simple framework:
+
+**Step 1: Inventory every account.** Write down every brokerage, bank, retirement account, crypto exchange, and alternative investment platform where you hold assets. Most people discover 1-2 accounts they had forgotten about.
+
+**Step 2: Choose a primary tracker.** Pick one tool from the comparison above and connect everything you can. For most US-based investors with primarily stocks, ETFs, bonds (via ETFs), and cash, a Plaid-based tool like Helm or Empower covers the majority of your portfolio.
+
+**Step 3: Supplement for gaps.** If you hold crypto in self-custody wallets, add Kubera or Delta for those positions. If you own real estate or alternatives, use Kubera or a manual entry in your primary tracker.
+
+**Step 4: Check your combined allocation.** Once everything is connected, look at your total allocation by asset class. The number you see will probably surprise you. Most people are more concentrated than they think.
+
+**Step 5: Set a review cadence.** Monthly is enough for most people. The point of a tracker is that you do not need to check it daily. You need it to tell you when something changes enough to warrant your attention.
+
+## The Bottom Line
+
+Your portfolio is not what any single brokerage app shows you. It is the sum of everything, across every account and every asset class. The tools that help you see that complete picture are the ones that prevent the mistakes you cannot see from inside a silo.
+
+No single tracker is perfect across every asset class. Kubera is the broadest. Helm is the most intelligent for US equities. Empower is the most accessible for free. Pick the one that covers the majority of your assets, supplement for the rest, and start making decisions based on your actual allocation instead of your assumed one.
+
+---
+
+## Related Reading
+
+- [Best Portfolio Trackers for Multiple Accounts](/blog/best-portfolio-trackers)
+- [How to Track Your Net Worth](/blog/how-to-track-net-worth)
+- [Portfolio Concentration Risk](/blog/portfolio-concentration-problem)
