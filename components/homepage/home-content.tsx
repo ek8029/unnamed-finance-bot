@@ -550,6 +550,65 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
         </section>
 
         {/* ══════════════════════════════════════════════════════════════════
+            FAQPage schema — homepage only (removed from layout.tsx)
+            ══════════════════════════════════════════════════════════════════ */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'FAQPage',
+              mainEntity: [
+                { '@type': 'Question', name: 'What is Helm Terminal?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal is a free, institutional-grade financial intelligence platform for individual investors. It aggregates brokerage and bank accounts via Plaid, runs deterministic rule-based analysis over your portfolio, and surfaces actionable insights like tax-loss harvesting opportunities, concentration risk, earnings exposure, and cash flow changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.' } },
+                { '@type': 'Question', name: 'Is Helm Terminal free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Helm Terminal offers a free tier that includes AI stock analysis (5 per day), a full portfolio dashboard with Plaid sync, net worth tracking, cash flow overview, concentration risk analysis, sector allocation, and an actions inbox. Pro plans starting at $14.99/month add tax-loss harvesting with wash-sale detection, earnings exposure tracking, and unlimited analyses.' } },
+                { '@type': 'Question', name: 'How does Helm Terminal compare to Bloomberg Terminal?', acceptedAnswer: { '@type': 'Answer', text: 'Bloomberg Terminal costs approximately $24,000 per year and is designed for institutional traders. Helm Terminal provides a subset of similar capabilities — portfolio analysis, real-time market data, AI-powered stock analysis, and risk alerts — for individual investors, starting at $0.' } },
+                { '@type': 'Question', name: 'Is Helm Terminal safe to use with my financial accounts?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal connects to your accounts through Plaid, a bank-grade financial data provider used by Venmo, Coinbase, and thousands of other apps. The connection is read-only — Helm can never move money, execute trades, or modify your accounts. All data is encrypted in transit (TLS 1.3) and at rest, with row-level security in the database.' } },
+                { '@type': 'Question', name: 'What data sources does Helm Terminal use?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal uses Finnhub for real-time stock quotes, Polygon.io for historical prices, dividends, and splits, and Plaid for account aggregation. AI stock analysis pages use GPT-4o-mini for narrative interpretation of structured financial data, clearly labeled as AI-generated.' } },
+              ],
+            }),
+          }}
+        />
+
+        {/* ══════════════════════════════════════════════════════════════════
+            FEATURED GUIDES — passes PageRank to blog posts
+            ══════════════════════════════════════════════════════════════════ */}
+        <section className="py-16 border-t border-[var(--color-border-subtle)]">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex items-center gap-3 mb-8">
+              <span className="font-mono text-xs text-[var(--color-gold)] tracking-wider">
+                &sect; 00
+              </span>
+              <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">
+                — Guides &amp; Tools
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { title: 'Bloomberg Terminal Alternatives', desc: 'Honest comparison of 7 tools for retail investors', href: '/blog/best-bloomberg-terminal-alternatives' },
+                { title: 'Tax-Loss Harvesting Guide', desc: 'Wash-sale rules, ETF swap pairs, worked examples', href: '/blog/tax-loss-harvesting-guide' },
+                { title: 'RSU Tax Strategies', desc: 'The withholding gap, vesting schedules, sell-to-cover', href: '/blog/rsu-tax-strategies' },
+                { title: 'TLH Calculator', desc: 'Estimate annual tax savings from loss harvesting', href: '/tools/tlh-calculator' },
+                { title: 'RSU Vesting Calculator', desc: 'Vesting timeline, tax liability, concentration risk', href: '/tools/rsu-calculator' },
+                { title: 'Earnings Concentration Risk', desc: 'When 40% of your portfolio reports in one week', href: '/blog/portfolio-earnings-concentration-risk' },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="group p-5 border border-[var(--color-border-subtle)] rounded-md hover:border-[var(--color-gold)]/20 transition-colors"
+                >
+                  <div className="text-[14px] font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors mb-1">
+                    {item.title}
+                  </div>
+                  <div className="text-[13px] text-[var(--color-text-muted)]">
+                    {item.desc}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════
             INSIDE THE TERMINAL — section 01
             ══════════════════════════════════════════════════════════════════ */}
         <motion.section

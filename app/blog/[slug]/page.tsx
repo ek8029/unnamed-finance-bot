@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Share2 } from 'lucide-react';
 import { MDXRemote } from 'next-mdx-remote/rsc';
@@ -61,6 +62,11 @@ export default async function BlogPost({ params }: PageProps) {
   const post = getPostBySlug(slug);
 
   if (!post) {
+    notFound();
+  }
+
+  /* dead code kept for reference */
+  if (false as boolean) {
     return (
       <main className="min-h-screen bg-[var(--color-bg-base)] flex items-center justify-center">
         <div className="text-center">
