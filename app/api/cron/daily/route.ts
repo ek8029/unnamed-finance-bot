@@ -68,17 +68,16 @@ export async function GET(request: Request) {
       log.push(`[drip] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
     }
 
-    // AI digest generation for The Current — runs for all users
-    let digestResult = { generated: 0 };
+    // AI digest generation for The Current — fire-and-forget
+    // Digest takes ~100s for all users. Don't await — let it run independently.
     try {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
-      const digestRes = await fetch(`${baseUrl}/api/cron/digest?force=true`, {
+      fetch(`${baseUrl}/api/cron/digest?force=true`, {
         headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
-      });
-      if (digestRes.ok) digestResult = await digestRes.json();
-      log.push(`[digest] Generated ${digestResult.generated} digests`);
+      }).catch(() => {}); // fire-and-forget
+      log.push(`[digest] Triggered (fire-and-forget)`);
     } catch (err) {
-      log.push(`[digest] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
+      log.push(`[digest] Failed to trigger: ${err instanceof Error ? err.message : 'unknown'}`);
     }
 
     // Watchlist price alerts — email users about big movers (>=3%)
@@ -250,7 +249,7 @@ export async function GET(request: Request) {
       prices_refreshed: pricesRefreshed,
       insights_generated: insightsGenerated,
       drip_emails_sent: dripResult.sent,
-      digests_generated: digestResult.generated,
+      digests_generated: 'fire-and-forget',
       log,
     };
 
