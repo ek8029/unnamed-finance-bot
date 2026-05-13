@@ -161,7 +161,7 @@ function MoverRow({ ticker, name, value, changePct, prices }: {
       <div className="text-right">
         <div className="font-mono text-[12px] font-bold text-[var(--color-text-primary)]">{value}</div>
         <div className={`font-mono text-[11px] font-bold ${isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
-          {changePct !== null ? `${isPositive ? '+' : ''}${changePct.toFixed(2)}%` : '--'}
+          {changePct != null ? `${isPositive ? '+' : ''}${changePct.toFixed(2)}%` : '--'}
         </div>
       </div>
     </div>
@@ -388,7 +388,7 @@ export default function DashboardOverview() {
                   {is30dPositive ? '\u25B2' : '\u25BC'} {is30dPositive ? '+' : ''}{formatCurrency(netWorth30dChange.dollar)}
                 </span>
                 <span className={`font-mono text-[11px] ${is30dPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
-                  {is30dPositive ? '+' : ''}{netWorth30dChange.pct.toFixed(2)}% &middot; 30d
+                  {is30dPositive ? '+' : ''}{(netWorth30dChange.pct ?? 0).toFixed(2)}% &middot; 30d
                 </span>
               </span>
             </div>

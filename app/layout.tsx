@@ -20,6 +20,14 @@ const spaceGrotesk = Space_Grotesk({
   display: 'swap',
 });
 
+import type { Viewport } from "next";
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://helmterminal.dev'),
   title: 'Helm Terminal — Free Portfolio Intelligence for Investors',

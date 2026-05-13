@@ -24,15 +24,20 @@ export function MobileBottomNav() {
   return (
     <nav
       aria-label="Mobile navigation"
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
-      style={{
-        background: 'rgba(10,10,10,0.78)',
-        backdropFilter: 'blur(24px) saturate(1.4)',
-        WebkitBackdropFilter: 'blur(24px) saturate(1.4)',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-      }}
+      className={cn(
+        'fixed bottom-0 left-0 right-0 z-50 md:hidden',
+        // Solid bg fallback + glass blur overlay
+        'bg-[#0A0A0A] supports-[backdrop-filter]:bg-[rgba(10,10,10,0.78)]',
+        'supports-[backdrop-filter]:backdrop-blur-[24px] supports-[backdrop-filter]:backdrop-saturate-[1.4]',
+        'border-t border-white/[0.06]',
+      )}
     >
-      <div className="grid grid-cols-5 pb-[env(safe-area-inset-bottom,8px)] pt-2">
+      {/*
+        Two-part padding strategy for iOS:
+        1. The grid has normal pt-2 for tap targets
+        2. Below the grid, a separate div fills the safe area with matching bg
+      */}
+      <div className="grid grid-cols-5 pt-2 pb-1.5">
         {tabs.map((tab) => {
           const active = isActive(tab);
           const Icon = tab.icon;
@@ -45,11 +50,8 @@ export function MobileBottomNav() {
                 className="flex flex-col items-center justify-center gap-1 py-1"
               >
                 <div
-                  className="w-10 h-10 -mt-3 rounded-full flex items-center justify-center"
-                  style={{
-                    background: '#E6B94D',
-                    boxShadow: '0 6px 14px rgba(230,185,77,0.35)',
-                  }}
+                  className="w-10 h-10 -mt-3 rounded-full flex items-center justify-center bg-[var(--color-gold)]"
+                  style={{ boxShadow: '0 6px 14px rgba(230,185,77,0.35)' }}
                 >
                   <Icon className="w-5 h-5 text-black" strokeWidth={2.5} />
                 </div>
@@ -83,6 +85,11 @@ export function MobileBottomNav() {
           );
         })}
       </div>
+      {/* Safe area fill — extends the nav bg into the home indicator area on iOS */}
+      <div
+        className="bg-[#0A0A0A] supports-[backdrop-filter]:bg-transparent"
+        style={{ height: 'env(safe-area-inset-bottom, 0px)' }}
+      />
     </nav>
   );
 }

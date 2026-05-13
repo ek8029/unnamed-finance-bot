@@ -23,7 +23,7 @@ export function TickerSearch({ basePath = '/analyze', size = 'md' }: { basePath?
   );
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-3 w-full">
+    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
       <div className="flex-1 relative">
         <Search className={`absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] ${isLg ? 'w-6 h-6' : 'w-5 h-5'}`} />
         <input
