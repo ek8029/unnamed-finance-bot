@@ -16,9 +16,16 @@ export default function WrappedConnectPage() {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) {
         router.replace('/signup?flow=wrapped');
-      } else {
-        setAuthed(true);
+        return;
       }
+      setAuthed(true);
+      // If user already has Plaid connected, skip straight to Wrapped
+      fetch('/api/financial-summary')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d?.hasPlaidConnection) router.replace('/dashboard/wrapped');
+        })
+        .catch(() => {});
     });
   }, [router]);
 
@@ -66,6 +73,15 @@ export default function WrappedConnectPage() {
           Helm reads your portfolio history to create your personalized year in
           review. Read-only — we can never trade or transfer.
         </p>
+
+        {/* Already connected shortcut */}
+        <button
+          onClick={() => router.push('/dashboard/wrapped')}
+          className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors mt-3 cursor-pointer"
+          style={{ fontFamily: 'var(--font-mono)' }}
+        >
+          Already connected? Skip to Wrapped &rarr;
+        </button>
 
         {/* Plaid connect button */}
         <div className="flex justify-center mt-8">
