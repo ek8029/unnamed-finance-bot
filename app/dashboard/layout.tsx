@@ -31,6 +31,7 @@ import { FinancialDisclaimer } from '@/components/financial-disclaimer';
 import { useTier } from '@/hooks/use-tier';
 import { OnboardingFlow } from '@/components/onboarding/onboarding-flow';
 import { GuidedTour } from '@/components/onboarding/guided-tour';
+import { MobileBottomNav } from '@/components/mobile-bottom-nav';
 
 /* ── Connect Banner — shown in demo mode ── */
 function ConnectBanner() {
@@ -497,19 +498,31 @@ export default function DashboardLayout({
         isChatPage ? "h-screen overflow-hidden" : "min-h-screen"
       )}>
 
-        {/* ── Mobile Top Bar (hamburger + logo) ── */}
-        <div className="sticky top-0 z-30 bg-[var(--color-bg-base)] border-b border-[var(--color-border-base)] px-4 py-3 flex items-center gap-3 md:hidden">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-            aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-          >
-            {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-          <HelmMark size={22} />
-          <span className="text-sm font-semibold text-[var(--color-text-primary)] tracking-tight">
-            {pageTitle}
-          </span>
+        {/* ── Mobile Top Bar ── */}
+        <div
+          className="sticky top-0 z-30 px-4 py-3 flex items-center justify-between md:hidden"
+          style={{
+            background: 'rgba(10,10,10,0.78)',
+            backdropFilter: 'blur(20px) saturate(1.4)',
+            WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+          }}
+        >
+          <div className="flex items-center gap-2.5">
+            <HelmMark size={20} />
+            <span className="text-[13px] font-bold tracking-tight uppercase">
+              Helm
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+              aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
+            >
+              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
 
         {/* ── Glassmorphic Top Bar (desktop only) ── */}
@@ -603,7 +616,13 @@ export default function DashboardLayout({
 
         {!isChatPage && <FinancialDisclaimer />}
         {!isChatPage && <LegalFooter variant="minimal" />}
+
+        {/* Spacer for mobile bottom nav */}
+        <div className="h-20 md:hidden shrink-0" />
       </div>
+
+      {/* ── Mobile Bottom Tab Bar ── */}
+      <MobileBottomNav />
     </div>
     </>
     </DemoProvider>

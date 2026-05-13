@@ -421,8 +421,53 @@ export default function BriefPage() {
   return (
     <div className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)]">
 
-      {/* ═══ Masthead ═══ */}
-      <header className="border-b-2 border-[var(--color-gold)]">
+      {/* ═══ Mobile Masthead ═══ */}
+      <div className="md:hidden border-t-2 border-[var(--color-gold)]" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: '14px' }}>
+        <div className="text-center px-4 pt-4">
+          <div className="font-mono text-[9px] tracking-[0.3em] uppercase text-[var(--color-gold)] mb-2">
+            {(() => {
+              const d = new Date();
+              const dayAbbrs = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+              const monthAbbrs = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+              return `${dayAbbrs[d.getDay()]} \u00B7 ${monthAbbrs[d.getMonth()]} ${d.getDate()} \u00B7 ${d.getFullYear()}`;
+            })()}
+          </div>
+          <h1 className="text-[30px] font-bold" style={{ letterSpacing: '-0.03em' }}>
+            The Helm Brief
+          </h1>
+          <div className="font-mono text-[9px] tracking-[0.18em] text-[var(--color-text-muted)] mt-1 uppercase">
+            &#8470; {issueNum} &middot; {session} &middot; {readTime} MIN READ
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ Mobile Market Strip ═══ */}
+      {data && (
+        <div className="md:hidden grid grid-cols-3 border-b border-[var(--color-border-base)]" style={{ padding: '12px 18px', backgroundColor: '#060606' }}>
+          {[
+            { label: 'S&P 500', value: data.market.spy ? `$${data.market.spy.price.toFixed(2)}` : '--', change: data.market.spy ? fmtPct(data.market.spy.changePct) : '--', pos: data.market.spy ? data.market.spy.changePct >= 0 : true },
+            { label: 'NASDAQ', value: data.market.qqq ? `$${data.market.qqq.price.toFixed(2)}` : '--', change: data.market.qqq ? fmtPct(data.market.qqq.changePct) : '--', pos: data.market.qqq ? data.market.qqq.changePct >= 0 : true },
+            { label: 'VIX', value: data.market.vix ? data.market.vix.price.toFixed(2) : '--', change: data.market.vix ? data.market.vix.level.replace(/_/g, ' ').toUpperCase() : '--', pos: data.market.vix ? data.market.vix.price < 20 : true },
+          ].map((item) => (
+            <div key={item.label} className="text-center">
+              <div className="font-mono text-[8px] uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+                {item.label}
+              </div>
+              <div className="text-[14px] font-bold tabular-nums text-[var(--color-text-primary)] mt-0.5">
+                {item.value}
+              </div>
+              <div className={`font-mono text-[10px] tabular-nums mt-0.5 ${
+                item.pos ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+              }`}>
+                {item.change}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ═══ Masthead (Desktop) ═══ */}
+      <header className="hidden md:block border-b-2 border-[var(--color-gold)]">
         <div className="max-w-6xl mx-auto px-6 py-6 md:py-8">
 
           {/* Top line: issue info */}

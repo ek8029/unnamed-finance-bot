@@ -427,8 +427,156 @@ export default function PortfolioPage() {
             );
           })()}
 
-          {/* ---- 4. POSITIONS TABLE ---- */}
-          <div className="border border-[var(--color-border-base)] rounded-lg overflow-hidden bg-[var(--color-bg-surface)]">
+          {/* ---- 4. POSITIONS ---- */}
+
+          {/* ── Mobile: Card view ── */}
+          <div className="md:hidden space-y-4">
+
+            {/* ── Mobile Value Header ── */}
+            <div className="px-1">
+              <div className="flex items-baseline gap-1">
+                <span className="text-[34px] font-bold tabular-nums text-[var(--color-text-primary)] leading-none">
+                  {formatCurrency(totalValue).replace(/\.\d+$/, '')}
+                </span>
+                <span className="text-[20px] text-[var(--color-text-muted)] tabular-nums leading-none">
+                  .{(totalValue % 1).toFixed(2).slice(2)}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className={`font-mono text-[13px] font-bold tabular-nums ${
+                  totalDayChange >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                }`}>
+                  {totalDayChange >= 0 ? '+' : ''}{formatCurrency(totalDayChange)} ({dayChangePercentage >= 0 ? '+' : ''}{dayChangePercentage.toFixed(2)}%)
+                </span>
+                <span className="font-mono text-[11px] text-[var(--color-text-muted)] uppercase tracking-wider">YTD</span>
+              </div>
+            </div>
+
+            {/* ── Mobile Sector Allocation Strip ── */}
+            {allocation.length > 0 && (() => {
+              const sectorColors = [
+                'var(--color-gold)', '#6366f1', '#22c55e', '#ef4444', '#f59e0b',
+                '#8b5cf6', '#06b6d4', '#ec4899', '#64748b', '#14b8a6',
+              ];
+              const topSectorPct = allocation[0]?.percentage ?? 0;
+              return (
+                <div className="px-1 space-y-2">
+                  <div className="flex gap-[2px] h-[7px] rounded-full overflow-hidden">
+                    {allocation.slice(0, 8).map((sector, i) => (
+                      <div
+                        key={sector.name}
+                        style={{
+                          flex: sector.percentage,
+                          backgroundColor: sectorColors[i % sectorColors.length],
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex justify-between">
+                    {allocation.slice(0, 4).map((sector, i) => (
+                      <div key={sector.name} className="flex items-center gap-1">
+                        <div
+                          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: sectorColors[i % sectorColors.length] }}
+                        />
+                        <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
+                          {sector.name.length > 10 ? sector.name.slice(0, 10) + '.' : sector.name} {sector.percentage.toFixed(0)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  {topSectorPct > 35 && (
+                    <div className="flex items-center gap-1.5 text-[11px] font-mono text-[var(--color-warning-text,var(--color-gold))]">
+                      <span>&#9888;</span>
+                      <span>Concentrated &mdash; top sector is {topSectorPct.toFixed(0)}%</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* ── Mobile Filter Pills ── */}
+            <div className="flex gap-1.5 overflow-x-auto px-1 pb-1 -mx-1 scrollbar-none">
+              {['All', 'Equities', 'ETFs', 'Crypto', 'Cash'].map((label, i) => (
+                <button
+                  key={label}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full font-mono text-[11px] border transition-colors ${
+                    i === 0
+                      ? 'bg-[rgba(230,185,77,0.1)] text-[var(--color-gold)] border-[var(--color-gold-border)]'
+                      : 'bg-transparent text-[var(--color-text-muted)] border-[var(--color-border-subtle)]'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* ── Mobile Positions Header ── */}
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Positions</h2>
+                <span className="font-mono text-[10px] text-[var(--color-text-muted)] bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5">
+                  {holdings.length}
+                </span>
+              </div>
+            </div>
+
+            {/* ── Mobile Position Cards ── */}
+            <div className="space-y-2">
+            {sortedPositions.map((h) => {
+              const dayPct = h.day_change_percentage ?? 0;
+              const sparkPath = generateSparklinePath(h.ticker);
+              const sparkTrend = dayPct >= 0;
+              return (
+                <Link
+                  key={h.id}
+                  href={`/dashboard/holdings/${h.ticker}`}
+                  className="block p-3.5 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl active:bg-[var(--color-bg-elevated)] transition-colors"
+                >
+                  <div className="grid grid-cols-[40px_1fr_auto] gap-3 items-center">
+                    <TickerIcon ticker={h.ticker} />
+                    <div className="min-w-0">
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-mono text-[14px] font-bold tracking-wide text-[var(--color-text-primary)]">
+                          {h.ticker}
+                        </span>
+                        <span className="text-[11px] text-[var(--color-text-muted)] truncate">
+                          {h.shares} sh &middot; ${h.current_price.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="text-[12px] text-[var(--color-text-muted)] mt-0.5 truncate">
+                        {h.asset_name}
+                      </div>
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-1">
+                      <div className="font-mono text-[13px] font-bold tabular-nums text-[var(--color-text-primary)]">
+                        {h.total_value >= 1000 ? `$${(h.total_value / 1000).toFixed(1)}k` : formatCurrency(h.total_value)}
+                      </div>
+                      <svg width="48" height="16" viewBox="0 0 80 24" fill="none" className="block">
+                        <path
+                          d={sparkPath}
+                          stroke={sparkTrend ? 'var(--color-positive)' : 'var(--color-negative)'}
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          fill="none"
+                        />
+                      </svg>
+                      <div className={`font-mono text-[11px] font-bold tabular-nums ${
+                        dayPct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                      }`}>
+                        {dayPct >= 0 ? '+' : ''}{dayPct.toFixed(2)}%
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+            </div>
+          </div>
+
+          {/* ── Desktop: Table view ── */}
+          <div className="hidden md:block border border-[var(--color-border-base)] rounded-lg overflow-hidden bg-[var(--color-bg-surface)]">
             {/* Table header bar */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
               <div className="flex items-center gap-3">
@@ -436,7 +584,7 @@ export default function PortfolioPage() {
                 <span className="font-mono text-[10px] text-[var(--color-text-muted)] bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5">
                   {holdings.length}
                 </span>
-                <span className="hidden sm:inline font-mono text-[10px] text-[var(--color-text-muted)]">
+                <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
                   sorted by {sortKey} {sortDir}
                 </span>
               </div>

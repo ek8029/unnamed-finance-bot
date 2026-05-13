@@ -140,15 +140,15 @@ function HeroSearch() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-stretch w-full max-w-md">
+    <form onSubmit={handleSubmit} className="flex flex-col md:flex-row md:items-stretch w-full max-w-md gap-2 md:gap-0">
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+        <Search className="absolute left-4 md:left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value.toUpperCase())}
           placeholder="Enter ticker..."
-          className="w-full h-11 pl-10 pr-3 bg-[var(--color-bg-base)] border border-[var(--color-border-base)] rounded-l-md font-mono text-sm text-[var(--color-text-primary)]placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)]/40 transition-colors"
+          className="w-full h-12 md:h-11 pl-11 md:pl-10 pr-4 md:pr-3 bg-[var(--color-bg-base)] border border-[var(--color-border-strong)] md:border-[var(--color-border-base)] rounded-xl md:rounded-l-md md:rounded-r-none font-mono text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)]/40 transition-colors"
           maxLength={10}
           autoComplete="off"
           spellCheck={false}
@@ -157,7 +157,8 @@ function HeroSearch() {
       <button
         type="submit"
         disabled={loading || !query.trim()}
-        className="h-11 px-5 bg-[var(--color-gold)] text-black font-mono text-xs font-semibold tracking-wider rounded-r-md hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2 whitespace-nowrap"
+        className="h-12 md:h-11 px-5 bg-[var(--color-gold)] text-black font-mono text-[12px] md:text-xs font-bold md:font-semibold tracking-[0.2em] md:tracking-wider uppercase rounded-xl md:rounded-l-none md:rounded-r-md hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+        style={{ boxShadow: '0 6px 18px rgba(230,185,77,0.25)' }}
       >
         {loading ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -306,14 +307,19 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
           ════════════════════════════════════════════════════════════════════ */}
       <nav className="fixed top-0 left-0 right-0 z-50">
         <div
-          className="absolute inset-0 backdrop-blur-xl border-b border-[var(--color-border-subtle)] transition-opacity duration-300"
-          style={{ opacity: navOpacity, backgroundColor: `rgba(8,8,8,${navOpacity * 0.85})` }}
+          className="absolute inset-0 border-b border-[var(--color-border-subtle)] transition-opacity duration-300"
+          style={{
+            opacity: navOpacity,
+            backgroundColor: `rgba(10,10,10,${navOpacity * 0.78})`,
+            backdropFilter: `blur(20px) saturate(1.4)`,
+            WebkitBackdropFilter: `blur(20px) saturate(1.4)`,
+          }}
         />
-        <div className="relative max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="relative max-w-7xl mx-auto px-4 md:px-6 h-14 md:h-16 flex items-center justify-between">
           {/* Left: Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <HelmMark size={28} />
-            <span className="font-semibold text-sm tracking-[0.12em] text-[var(--color-text-primary)] group-hover:text-[var(--color-text-primary)]transition-colors">
+          <Link href="/" className="flex items-center gap-2 md:gap-2.5 group">
+            <HelmMark size={20} className="md:w-7 md:h-7" />
+            <span className="font-bold text-[13px] md:text-sm tracking-[0.12em] text-[var(--color-text-primary)] uppercase group-hover:text-[var(--color-text-primary)] transition-colors">
               HELM
             </span>
           </Link>
@@ -336,19 +342,20 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
           </div>
 
           {/* Right: Auth actions */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 md:gap-4">
             <Link
               href="/login"
-              className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors hidden sm:block"
+              className="font-mono text-[10px] md:text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               Log in
             </Link>
             <Link
               href="/signup"
-              className="h-9 px-5 rounded-full bg-[var(--color-gold)] text-black text-[13px] font-semibold flex items-center gap-1.5 hover:brightness-110 transition-all"
+              className="h-8 md:h-9 px-3.5 md:px-5 rounded-full bg-[var(--color-gold)] text-black font-mono text-[9px] md:text-[13px] font-bold md:font-semibold flex items-center gap-1 md:gap-1.5 hover:brightness-110 transition-all tracking-wide md:tracking-normal"
             >
-              Open terminal
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span className="md:hidden">Open</span>
+              <span className="hidden md:inline">Open terminal</span>
+              <ArrowRight className="w-3 h-3 md:w-3.5 md:h-3.5" />
             </Link>
           </div>
 
@@ -420,8 +427,8 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
           TICKER TAPE — directly under nav, hidden on mobile
           ════════════════════════════════════════════════════════════════════ */}
       <div
-        className="fixed top-16 left-0 right-0 z-40 bg-[#080808] border-b border-[var(--color-border-subtle)] overflow-hidden hidden md:block"
-        style={{ height: '38px' }}
+        className="fixed top-14 md:top-16 left-0 right-0 z-40 bg-[#080808] border-b border-[var(--color-border-subtle)] overflow-hidden"
+        style={{ height: '30px' }}
       >
         <div
           className="flex items-center h-full whitespace-nowrap"
@@ -444,38 +451,39 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
       </div>
 
       {/* Spacer: push content below fixed nav + ticker */}
-      <div className="h-16 md:h-[calc(4rem+38px)]" />
+      {/* Spacer: nav height (56px mobile / 64px desktop) + ticker (30px) */}
+      <div className="h-[calc(3.5rem+30px)] md:h-[calc(4rem+30px)]" />
 
       <main className="relative z-10">
 
         {/* ══════════════════════════════════════════════════════════════════
             HERO SECTION
             ══════════════════════════════════════════════════════════════════ */}
-        <section className="relative pt-[120px] pb-[100px] overflow-hidden">
-          {/* Ambient glow blobs */}
+        <section className="relative pt-10 pb-10 md:pt-[120px] md:pb-[100px] overflow-hidden">
+          {/* Ambient glow blobs — hidden on mobile for perf */}
           <div
-            className="absolute top-20 left-1/4 w-[600px] h-[600px] rounded-full opacity-[0.07] blur-[120px] pointer-events-none"
+            className="absolute top-20 left-1/4 w-[600px] h-[600px] rounded-full opacity-[0.07] blur-[120px] pointer-events-none hidden md:block"
             style={{ background: 'radial-gradient(circle, var(--color-gold), transparent 70%)' }}
           />
           <div
-            className="absolute bottom-10 right-1/4 w-[500px] h-[500px] rounded-full opacity-[0.05] blur-[100px] pointer-events-none"
+            className="absolute bottom-10 right-1/4 w-[500px] h-[500px] rounded-full opacity-[0.05] blur-[100px] pointer-events-none hidden md:block"
             style={{ background: 'radial-gradient(circle, #22c55e, transparent 70%)' }}
           />
 
-          <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-7xl mx-auto px-5 md:px-6">
             {/* Eyebrow */}
             <FadeIn delay={0}>
-              <div className="flex items-center gap-3 mb-10">
-                <div className="w-8 h-px bg-[var(--color-gold)]" />
-                <span className="font-mono text-[10px] tracking-[0.2em] text-[var(--color-gold)] uppercase">
-                  The Investment Terminal &middot; V2026
+              <div className="flex items-center gap-3 mb-6 md:mb-10">
+                <div className="w-6 md:w-8 h-px bg-[var(--color-gold)]" />
+                <span className="font-mono text-[9px] md:text-[10px] tracking-[0.2em] text-[var(--color-gold)] uppercase">
+                  The Investment Terminal
                 </span>
               </div>
             </FadeIn>
 
             {/* Massive headline */}
             <FadeIn delay={100}>
-              <h1 className="text-[clamp(48px,10vw,120px)] font-bold leading-[1.05] tracking-[-0.045em] text-[var(--color-text-primary)]mb-16">
+              <h1 className="text-[48px] md:text-[clamp(48px,10vw,120px)] font-bold leading-[1.04] tracking-[-0.04em] text-[var(--color-text-primary)] mb-8 md:mb-16">
                 See your portfolio<br />
                 the way{' '}
                 <span
@@ -504,12 +512,12 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                   <HeroSearch />
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 md:gap-2 mt-4 md:mt-0">
                   {TICKER_CHIPS.map((ticker) => (
                     <button
                       key={ticker}
                       onClick={() => router.push(`/analyze/${ticker}`)}
-                      className="px-3.5 py-1.5 rounded-full border border-[var(--color-border-base)] text-[var(--color-text-muted)] font-mono text-xs hover:border-[var(--color-gold)]/30 hover:text-[var(--color-gold)] transition-all"
+                      className="px-2.5 md:px-3.5 py-1.5 rounded-full border border-[var(--color-border-base)] text-[var(--color-text-muted)] font-mono text-[10px] md:text-xs hover:border-[var(--color-gold)]/30 hover:text-[var(--color-gold)] transition-all"
                     >
                       {ticker}
                     </button>
@@ -519,11 +527,11 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
 
               {/* RIGHT: Copy block with left border */}
               <FadeIn delay={400} className="lg:border-l lg:border-[var(--color-border-base)] lg:pl-12">
-                <p className="text-[15px] leading-relaxed text-[var(--color-text-secondary)] mb-4">
+                <p className="text-[15px] leading-[1.55] text-[var(--color-text-muted)] md:text-[var(--color-text-secondary)] mb-4 max-w-[340px] md:max-w-none">
                   AI stock analysis, tax-loss harvesting, earnings exposure, portfolio
                   intelligence — the tools Wall Street pays $24,000 a year for.
                 </p>
-                <p className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-6">
+                <p className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-6 mt-3.5 md:mt-0">
                   Most of it is free.
                 </p>
 
@@ -537,9 +545,9 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
         {/* ══════════════════════════════════════════════════════════════════
             DEFINITION BLOCK — citable by AI search engines
             ══════════════════════════════════════════════════════════════════ */}
-        <section className="py-16 border-t border-[var(--color-border-subtle)]">
-          <div className="max-w-3xl mx-auto px-6">
-            <p className="text-[15px] leading-relaxed text-[var(--color-text-secondary)]" id="what-is-helm">
+        <section className="py-12 md:py-16 border-t border-[var(--color-border-subtle)]">
+          <div className="max-w-3xl mx-auto px-5 md:px-6">
+            <p className="text-[14px] md:text-[15px] leading-relaxed text-[var(--color-text-secondary)]" id="what-is-helm">
               <strong className="text-[var(--color-text-primary)]">Helm Terminal</strong> is a free,
               institutional-grade financial intelligence platform for individual investors.
               It aggregates brokerage and bank accounts via Plaid (read-only), runs
@@ -575,9 +583,9 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
         {/* ══════════════════════════════════════════════════════════════════
             FEATURED GUIDES — passes PageRank to blog posts
             ══════════════════════════════════════════════════════════════════ */}
-        <section className="py-16 border-t border-[var(--color-border-subtle)]">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="flex items-center gap-3 mb-8">
+        <section className="py-12 md:py-16 border-t border-[var(--color-border-subtle)]">
+          <div className="max-w-7xl mx-auto px-5 md:px-6">
+            <div className="flex items-center gap-3 mb-6 md:mb-8">
               <span className="font-mono text-xs text-[var(--color-gold)] tracking-wider">
                 &sect; 00
               </span>
@@ -616,13 +624,13 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             ══════════════════════════════════════════════════════════════════ */}
         <motion.section
           id="product"
-          className="py-32 border-t border-[var(--color-border-subtle)]"
+          className="py-16 md:py-32 border-t border-[var(--color-border-subtle)]"
           {...sectionReveal}
         >
-          <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-7xl mx-auto px-5 md:px-6">
             {/* Section eyebrow */}
             <FadeIn>
-              <div className="flex items-center gap-3 mb-16">
+              <div className="flex items-center gap-3 mb-8 md:mb-16">
                 <span className="font-mono text-xs text-[var(--color-gold)] tracking-wider">
                   &sect; 01
                 </span>
@@ -635,11 +643,11 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
               {/* LEFT: Sticky headline + description */}
               <FadeIn className="lg:sticky lg:top-32 lg:self-start">
-                <h2 className="text-[clamp(32px,4vw,52px)] font-bold leading-[1.1] tracking-tight text-[var(--color-text-primary)]mb-6">
+                <h2 className="text-[28px] md:text-[clamp(32px,4vw,52px)] font-bold leading-[1.1] tracking-tight text-[var(--color-text-primary)] mb-4 md:mb-6">
                   The full terminal.<br />
                   <span className="text-[var(--color-gold)]">Free.</span>
                 </h2>
-                <p className="text-[15px] leading-relaxed text-[var(--color-text-muted)] max-w-md">
+                <p className="text-[14px] md:text-[15px] leading-relaxed text-[var(--color-text-muted)] max-w-md">
                   Everything you need to understand your portfolio, track your net worth,
                   and make better decisions — without paying for a Bloomberg seat.
                 </p>
@@ -649,22 +657,20 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               <div className="space-y-0">
                 {TERMINAL_FEATURES.map((feature, idx) => (
                   <FadeIn key={feature.num} delay={idx * 100}>
-                    <div className="group py-8 border-b border-[var(--color-border-subtle)] first:border-t first:border-[var(--color-border-subtle)] cursor-default">
-                      <div className="flex items-start gap-5">
-                        <span className="font-mono text-sm text-[var(--color-gold)] mt-1 shrink-0 w-6">
+                    <div className="group py-5 md:py-8 border-t border-[var(--color-border-subtle)] last:border-b cursor-default">
+                      <div className="grid grid-cols-[30px_1fr_16px] md:flex md:items-start gap-2 md:gap-5">
+                        <span className="font-mono text-[10px] md:text-sm text-[var(--color-gold)] mt-1 shrink-0 md:w-6">
                           {feature.num}
                         </span>
                         <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-[clamp(18px,2vw,24px)] font-semibold text-[var(--color-text-primary)]group-hover:text-[var(--color-gold)] transition-colors">
-                              {feature.title}
-                            </h3>
-                            <ArrowRight className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-gold)] group-hover:translate-x-1 transition-all" />
-                          </div>
-                          <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
+                          <h3 className="text-[17px] md:text-[clamp(18px,2vw,24px)] font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors mb-1 md:mb-2">
+                            {feature.title}
+                          </h3>
+                          <p className="text-[13px] md:text-sm text-[var(--color-text-muted)] leading-relaxed">
                             {feature.desc}
                           </p>
                         </div>
+                        <ArrowRight className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-gold)] group-hover:translate-x-1 transition-all mt-1 shrink-0" />
                       </div>
                     </div>
                   </FadeIn>
@@ -678,12 +684,12 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             PULL QUOTE — section 02
             ══════════════════════════════════════════════════════════════════ */}
         <motion.section
-          className="bg-[#080808] border-y border-[var(--color-border-subtle)] py-32"
+          className="bg-[#080808] border-y border-[var(--color-border-subtle)] py-16 md:py-32"
           {...sectionReveal}
         >
-          <div className="max-w-5xl mx-auto px-6">
+          <div className="max-w-5xl mx-auto px-5 md:px-6">
             <FadeIn>
-              <div className="flex items-center gap-3 mb-16">
+              <div className="flex items-center gap-3 mb-8 md:mb-16">
                 <span className="font-mono text-xs text-[var(--color-gold)] tracking-wider">
                   &sect; 02
                 </span>
@@ -695,19 +701,23 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
 
             <FadeIn delay={150}>
               <blockquote
-                className="text-[clamp(28px,5vw,56px)] leading-[1.15] tracking-tight mb-10 italic text-[var(--color-text-primary)]"
+                className="text-[24px] md:text-[clamp(28px,5vw,56px)] leading-[1.15] tracking-tight mb-6 md:mb-10 italic text-[var(--color-text-primary)]"
                 style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
               >
                 No black boxes. Every analysis shows the model, the sources,
-                and the timestamp. If we can&apos;t show our work, we don&apos;t
+                and the{' '}
+                <span className="not-italic font-semibold text-[var(--color-gold)]" style={{ fontFamily: 'inherit' }}>
+                  conviction score
+                </span>
+                . If we can&apos;t show our work, we don&apos;t
                 show the answer.
               </blockquote>
             </FadeIn>
 
             <FadeIn delay={300}>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 mt-6 md:mt-0">
                 <div className="w-8 h-px bg-white/20" />
-                <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">
+                <span className="font-mono text-[10px] md:text-xs text-[var(--color-text-muted)] tracking-[0.14em] md:tracking-wider uppercase">
                   Helm design principle
                 </span>
               </div>
@@ -719,10 +729,10 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             BUILT FOR — ICP segment selector
             ══════════════════════════════════════════════════════════════════ */}
         <motion.section
-          className="py-24 border-b border-[var(--color-border-subtle)]"
+          className="py-16 md:py-24 border-b border-[var(--color-border-subtle)]"
           {...sectionReveal}
         >
-          <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-7xl mx-auto px-5 md:px-6">
             <FadeIn>
               <div className="text-center mb-16">
                 <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">— Built for</span>
@@ -759,13 +769,13 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             ══════════════════════════════════════════════════════════════════ */}
         <motion.section
           id="pricing"
-          className="py-32 border-b border-[var(--color-border-subtle)]"
+          className="py-16 md:py-32 border-b border-[var(--color-border-subtle)]"
           {...sectionReveal}
         >
-          <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-7xl mx-auto px-5 md:px-6">
             {/* Eyebrow */}
             <FadeIn>
-              <div className="flex items-center gap-3 mb-16">
+              <div className="flex items-center gap-3 mb-8 md:mb-16">
                 <span className="font-mono text-xs text-[var(--color-gold)] tracking-wider">
                   &sect; 03
                 </span>
@@ -776,7 +786,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             </FadeIn>
 
             {/* Header row: headline left, lifetime bar right */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-8 md:mb-16">
               <FadeIn>
                 <h2 className="text-[clamp(32px,4vw,52px)] font-bold leading-[1.1] tracking-tight text-white">
                   Three tiers.<br />
@@ -785,15 +795,15 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               </FadeIn>
 
               <FadeIn delay={100} className="flex items-end">
-                <div className="w-full max-w-sm ml-auto">
+                <div className="w-full max-w-sm lg:ml-auto">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono text-xs text-[var(--color-text-muted)]">Lifetime seats</span>
-                    <span className="font-mono text-xs text-[var(--color-gold)]">187 remaining</span>
+                    <span className="font-mono text-[10px] md:text-xs text-[var(--color-text-muted)]">Lifetime seats</span>
+                    <span className="font-mono text-[10px] md:text-xs text-[var(--color-gold)]">147 / 200 claimed</span>
                   </div>
-                  <div className="h-1.5 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
+                  <div className="h-1 md:h-1.5 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-[var(--color-gold)] rounded-full"
-                      style={{ width: '7%' }}
+                      className="h-full bg-[var(--color-gold)] rounded-full transition-all"
+                      style={{ width: '73.5%' }}
                     />
                   </div>
                 </div>
@@ -805,11 +815,11 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
 
               {/* ── Free ── */}
               <FadeIn delay={0}>
-                <div role="listitem" aria-label="Free plan" className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-md p-7 flex flex-col h-full">
+                <div role="listitem" aria-label="Free plan" className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-[14px] md:rounded-md p-5 md:p-7 flex flex-col h-full">
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">Free</h3>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-white">$0</span>
+                      <span className="text-4xl md:text-3xl font-bold text-white">$0</span>
                     </div>
                     <p className="text-xs text-[var(--color-text-muted)] mt-1">Forever. No card required.</p>
                   </div>
@@ -817,13 +827,13 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                     {FREE_FEATURES.map((f) => (
                       <li key={f} className="flex items-start gap-2.5">
                         <Check className="w-3.5 h-3.5 text-[var(--color-gold)] mt-0.5 shrink-0" />
-                        <span className="text-sm text-[var(--color-text-muted)]">{f}</span>
+                        <span className="text-[12px] md:text-sm text-[var(--color-text-muted)]">{f}</span>
                       </li>
                     ))}
                   </ul>
                   <Link
                     href="/signup"
-                    className="w-full h-10 border border-[var(--color-border-strong)] rounded-md text-sm text-white/70 hover:text-[var(--color-text-primary)]hover:border-white/20 transition-all flex items-center justify-center"
+                    className="w-full h-10 border border-[var(--color-border-strong)] rounded-md text-sm text-white/70 hover:text-[var(--color-text-primary)] hover:border-white/20 transition-all flex items-center justify-center"
                   >
                     Start free
                   </Link>
@@ -832,11 +842,11 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
 
               {/* ── Pro Monthly ── */}
               <FadeIn delay={80}>
-                <div role="listitem" aria-label="Pro Monthly plan" className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-md p-7 flex flex-col h-full">
+                <div role="listitem" aria-label="Pro Monthly plan" className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-[14px] md:rounded-md p-5 md:p-7 flex flex-col h-full">
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">Pro Monthly</h3>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-white">$14.99</span>
+                      <span className="text-4xl md:text-3xl font-bold text-white">$14.99</span>
                       <span className="text-sm text-[var(--color-text-muted)]">/mo</span>
                     </div>
                     <p className="text-xs text-[var(--color-text-muted)] mt-1">Cancel anytime.</p>
@@ -845,13 +855,13 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                     {PRO_FEATURES.map((f) => (
                       <li key={f} className="flex items-start gap-2.5">
                         <Check className="w-3.5 h-3.5 text-[var(--color-gold)] mt-0.5 shrink-0" />
-                        <span className="text-sm text-[var(--color-text-muted)]">{f}</span>
+                        <span className="text-[12px] md:text-sm text-[var(--color-text-muted)]">{f}</span>
                       </li>
                     ))}
                   </ul>
                   <Link
                     href="/signup"
-                    className="w-full h-10 border border-[var(--color-border-strong)] rounded-md text-sm text-white/70 hover:text-[var(--color-text-primary)]hover:border-white/20 transition-all flex items-center justify-center"
+                    className="w-full h-10 border border-[var(--color-border-strong)] rounded-md text-sm text-white/70 hover:text-[var(--color-text-primary)] hover:border-white/20 transition-all flex items-center justify-center"
                   >
                     Start monthly
                   </Link>
@@ -860,17 +870,25 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
 
               {/* ── Pro Annual — FEATURED ── */}
               <FadeIn delay={160}>
-                <div role="listitem" aria-label="Pro Annual plan — best value" className="bg-[var(--color-bg-surface)] border border-[var(--color-gold)]/30 rounded-md p-7 flex flex-col h-full relative">
+                <div
+                  role="listitem"
+                  aria-label="Pro Annual plan — best value"
+                  className="border rounded-[14px] md:rounded-md p-5 md:p-7 flex flex-col h-full relative"
+                  style={{
+                    borderColor: 'rgba(230,185,77,0.35)',
+                    background: 'linear-gradient(180deg, rgba(230,185,77,0.06) 0%, var(--color-bg-surface) 40%)',
+                  }}
+                >
                   {/* Best value badge */}
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="px-3 py-1 bg-[var(--color-gold)] text-black font-mono text-[10px] font-bold tracking-wider rounded-full uppercase">
+                    <span className="px-3 py-1 bg-[var(--color-gold)] text-black font-mono text-[10px] font-bold tracking-wider rounded-full uppercase whitespace-nowrap">
                       Best Value
                     </span>
                   </div>
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">Pro Annual</h3>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-white">$119</span>
+                      <span className="text-4xl md:text-3xl font-bold text-white">$119</span>
                       <span className="text-sm text-[var(--color-text-muted)]">/yr</span>
                     </div>
                     <p className="text-xs text-[var(--color-text-muted)] mt-1">
@@ -881,13 +899,14 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                     {PRO_FEATURES.map((f) => (
                       <li key={f} className="flex items-start gap-2.5">
                         <Check className="w-3.5 h-3.5 text-[var(--color-gold)] mt-0.5 shrink-0" />
-                        <span className="text-sm text-[var(--color-text-muted)]">{f}</span>
+                        <span className="text-[12px] md:text-sm text-[var(--color-text-muted)]">{f}</span>
                       </li>
                     ))}
                   </ul>
                   <Link
                     href="/signup"
                     className="w-full h-10 bg-[var(--color-gold)] rounded-md text-sm text-black font-semibold hover:brightness-110 transition-all flex items-center justify-center gap-1.5"
+                    style={{ boxShadow: '0 6px 18px rgba(230,185,77,0.25)' }}
                   >
                     Go Pro
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -897,11 +916,11 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
 
               {/* ── Lifetime ── */}
               <FadeIn delay={240}>
-                <div role="listitem" aria-label="Lifetime plan" className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-md p-7 flex flex-col h-full">
+                <div role="listitem" aria-label="Lifetime plan" className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-[14px] md:rounded-md p-5 md:p-7 flex flex-col h-full">
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">Lifetime</h3>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-white">$249</span>
+                      <span className="text-4xl md:text-3xl font-bold text-white">$249</span>
                     </div>
                     <p className="text-xs text-[var(--color-text-muted)] mt-1">One-time. 53 seats left.</p>
                   </div>
@@ -909,13 +928,13 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                     {LIFETIME_FEATURES.map((f) => (
                       <li key={f} className="flex items-start gap-2.5">
                         <Check className="w-3.5 h-3.5 text-[var(--color-gold)] mt-0.5 shrink-0" />
-                        <span className="text-sm text-[var(--color-text-muted)]">{f}</span>
+                        <span className="text-[12px] md:text-sm text-[var(--color-text-muted)]">{f}</span>
                       </li>
                     ))}
                   </ul>
                   <Link
                     href="/signup"
-                    className="w-full h-10 border border-[var(--color-border-strong)] rounded-md text-sm text-white/70 hover:text-[var(--color-text-primary)]hover:border-white/20 transition-all flex items-center justify-center"
+                    className="w-full h-10 border border-[var(--color-border-strong)] rounded-md text-sm text-white/70 hover:text-[var(--color-text-primary)] hover:border-white/20 transition-all flex items-center justify-center"
                   >
                     Claim a seat
                   </Link>
@@ -928,22 +947,22 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
         {/* ══════════════════════════════════════════════════════════════════
             FOOTER
             ══════════════════════════════════════════════════════════════════ */}
-        <footer className="bg-[#080808] border-t border-[var(--color-border-subtle)] pt-20 pb-8">
-          <div className="max-w-7xl mx-auto px-6">
+        <footer className="bg-[#080808] border-t border-[var(--color-border-subtle)] pt-12 md:pt-20 pb-6 md:pb-8">
+          <div className="max-w-7xl mx-auto px-5 md:px-6">
             {/* 5-column footer grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-10 mb-16">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 md:gap-10 mb-10 md:mb-16">
               {/* Brand column */}
               <div className="col-span-2 sm:col-span-3 lg:col-span-1">
-                <Link href="/" className="flex items-center gap-2.5 mb-4">
-                  <HelmMark size={24} />
+                <Link href="/" className="flex items-center gap-2 md:gap-2.5 mb-3 md:mb-4">
+                  <HelmMark size={20} className="md:w-6 md:h-6" />
                   <span className="font-semibold text-sm tracking-[0.12em] text-[var(--color-text-primary)]">
                     HELM
                   </span>
                 </Link>
-                <p className="text-xs text-[var(--color-text-muted)] leading-relaxed mb-4 max-w-[200px]">
-                  Institutional-grade financial intelligence for individual investors.
+                <p className="text-[12px] md:text-xs text-[var(--color-text-muted)] leading-relaxed mb-3 md:mb-4 max-w-[200px]">
+                  Steer. Don&apos;t drift. Take the Helm.
                 </p>
-                <p className="text-[10px] text-[var(--color-text-muted)] leading-relaxed max-w-[220px]">
+                <p className="font-mono text-[9px] md:text-[10px] leading-relaxed max-w-[220px]" style={{ color: '#5a5a5a' }}>
                   Helm is not a financial advisor. All data is provided for informational
                   purposes only.
                 </p>
@@ -1027,14 +1046,14 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             </div>
 
             {/* Bottom bar */}
-            <div className="border-t border-[var(--color-border-subtle)] pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-[11px] text-[var(--color-text-muted)]">
-                &copy; {new Date().getFullYear()} Helm Terminal. All rights reserved.
+            <div className="border-t border-[var(--color-border-subtle)] pt-5 md:pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 md:gap-4">
+              <p className="font-mono text-[9px] md:text-[11px] text-[var(--color-text-muted)]">
+                &copy; {new Date().getFullYear()} Helm
               </p>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 md:gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <span className="text-[11px] text-[var(--color-text-muted)]">
-                  All systems operational &middot; 99.98% uptime
+                <span className="font-mono text-[9px] md:text-[11px] text-[var(--color-text-muted)]">
+                  99.98% uptime
                 </span>
               </div>
             </div>
