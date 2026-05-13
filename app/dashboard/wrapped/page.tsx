@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useWrapped, type WrappedData } from '@/hooks/use-financial-data';
 import { HelmMark } from '@/components/helm-mark';
-import { generateShareCard, type ShareCardData, type SlideType } from '@/components/wrapped/share-card-canvas';
 
 // ═══════════════════════════════════════════
 // Helpers
@@ -30,30 +29,6 @@ const fmtPct = (n: number) =>
 
 const TOTAL_SLIDES = 7;
 
-// Slide index → share card type mapping
-const slideTypes: SlideType[] = ['summary', 'return', 'bestWorst', 'habits', 'sectors', 'personality', 'summary'];
-
-function buildCardData(data: WrappedData, slideIdx: number): ShareCardData {
-  const year = data.periodLabel ?? new Date().getFullYear().toString();
-  return {
-    slideType: slideTypes[slideIdx] || 'summary',
-    year,
-    returnPct: data.totalReturn.pct,
-    returnDollars: data.totalReturn.dollars,
-    spyPct: data.spyComparison.spyReturn ?? undefined,
-    beat: data.spyComparison.beat ?? undefined,
-    bestTicker: data.bestPosition?.ticker,
-    bestReturnPct: data.bestPosition?.returnPct,
-    worstTicker: data.worstPosition?.ticker,
-    worstReturnPct: data.worstPosition?.returnPct,
-    personality: data.investorPersonality?.title ?? undefined,
-    tradeCount: data.tradeCount,
-    totalDividends: data.totalDividends,
-    positionCount: data.positionCount ?? data.topHoldings?.length ?? 0,
-    topSector: data.sectorBreakdown?.[0]?.sector,
-    topSectorPct: data.sectorBreakdown?.[0]?.pct,
-  };
-}
 
 // ═══════════════════════════════════════════
 // Ambient glow blobs
@@ -517,7 +492,7 @@ function SlideShareCard({ data, onShareImage, onShareTwitter }: { data: WrappedD
             className="px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[14px] rounded-full transition-colors duration-200 text-center flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
           >
             <Share2 className="w-4 h-4" />
-            {shareStatus === 'generating' ? 'Generating...' : shareStatus === 'copied' ? 'Copied!' : 'Share Wrapped'}
+            {shareStatus === 'generating' ? 'Sharing...' : shareStatus === 'copied' ? 'Copied!' : 'Share Wrapped'}
           </button>
           <button
             onClick={onShareTwitter}
@@ -656,39 +631,39 @@ export default function WrappedPage() {
 
   const handleShareImage = useCallback(async () => {
     if (!data) return;
-    const cardData = buildCardData(data, currentSlide);
-    const blob = await generateShareCard(cardData);
-    const file = new File([blob], 'helm-wrapped.png', { type: 'image/png' });
+    // Build shareable text summary
+    const lines = [
+      `My ${data.periodLabel ?? new Date().getFullYear()} Wrapped — Helm Terminal`,
+      '',
+      `Return: ${fmtPct(data.totalReturn.pct)} (${fmtDollar(data.totalReturn.dollars)})`,
+      data.spyComparison.beat ? `Beat the S&P 500 by ${(data.totalReturn.pct - (data.spyComparison.spyReturn ?? 0)).toFixed(1)}%` : null,
+      '',
+      `MVP: ${data.bestPosition?.ticker ?? '---'} (${fmtPct(data.bestPosition?.returnPct ?? 0)})`,
+      `Villain: ${data.worstPosition?.ticker ?? '---'} (${fmtPct(data.worstPosition?.returnPct ?? 0)})`,
+      '',
+      `${data.tradeCount} trades · ${data.positionCount ?? 0} positions`,
+      data.totalDividends > 0 ? `${fmtDollar(data.totalDividends)} in dividends` : null,
+      data.investorPersonality?.title ? `Type: ${data.investorPersonality.title}` : null,
+      data.sectorBreakdown?.[0] ? `Top sector: ${data.sectorBreakdown[0].sector} (${data.sectorBreakdown[0].pct.toFixed(0)}%)` : null,
+      '',
+      'Get yours free → helmterminal.dev/wrapped',
+    ].filter(Boolean).join('\n');
 
     // Try native share (mobile)
-    if (navigator.share && navigator.canShare?.({ files: [file] })) {
-      await navigator.share({
-        title: 'My Helm Wrapped',
-        text: 'Check out my investment year in review',
-        url: 'https://helmterminal.dev/wrapped',
-        files: [file],
-      });
-      return;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'My Helm Wrapped',
+          text: lines,
+          url: 'https://helmterminal.dev/wrapped',
+        });
+        return;
+      } catch { /* user cancelled */ }
     }
 
-    // Try clipboard (desktop, requires HTTPS)
-    try {
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': blob }),
-      ]);
-      return;
-    } catch {
-      // Clipboard failed — fallback to download
-    }
-
-    // Fallback: trigger download
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'helm-wrapped.png';
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [data, currentSlide]);
+    // Fallback: copy text to clipboard
+    await navigator.clipboard.writeText(lines);
+  }, [data]);
 
   const handleShareTwitter = useCallback(() => {
     if (!data) return;
