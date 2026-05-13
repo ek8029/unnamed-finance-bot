@@ -28,10 +28,10 @@ const fmtDollar = (n: number) =>
 const fmtPct = (n: number) =>
   `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
 
-const TOTAL_SLIDES = 6;
+const TOTAL_SLIDES = 7;
 
 // Slide index → share card type mapping
-const slideTypes: SlideType[] = ['summary', 'return', 'bestWorst', 'habits', 'sectors', 'summary'];
+const slideTypes: SlideType[] = ['summary', 'return', 'bestWorst', 'habits', 'sectors', 'personality', 'summary'];
 
 function buildCardData(data: WrappedData, slideIdx: number): ShareCardData {
   const year = data.periodLabel ?? new Date().getFullYear().toString();
@@ -420,7 +420,55 @@ function SlideSectors({ data }: { data: WrappedData | null }) {
 }
 
 // ═══════════════════════════════════════════
-// Slide 6: SHARE CARD
+// Slide 6: INVESTOR PERSONALITY
+// ═══════════════════════════════════════════
+
+function SlidePersonality({ data }: { data: WrappedData | null }) {
+  const personality = data?.investorPersonality ?? 'The Investor';
+
+  const descriptions: Record<string, string> = {
+    'Concentrator': 'High conviction. Few positions. Maximum exposure to your best ideas.',
+    'Active Trader': 'Always moving. The market is your canvas and you paint in real-time.',
+    'Income Investor': 'Cash flow is king. You let dividends compound while others chase gains.',
+    'Diversifier': 'Broad exposure, risk-managed, disciplined. You play the long game.',
+    'Growth Hunter': 'Chasing alpha in tech and innovation. The future is your edge.',
+    'Tax Optimizer': 'Every dollar counts. You harvest losses and offset gains like a pro.',
+    'Steady Hand': 'Buy and hold. You let time and compounding do the heavy lifting.',
+    'Momentum Rider': 'You ride the wave. When something moves, you\'re already on it.',
+    'Balanced Navigator': 'No extremes. A measured, deliberate approach to building wealth.',
+  };
+
+  const desc = descriptions[personality] ?? 'A unique approach to building wealth.';
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full px-6 text-center">
+      <p className="text-[10px] tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
+        &sect; 05 &mdash; YOUR TYPE
+      </p>
+
+      <p className="text-[14px] text-[var(--color-text-muted)] mb-4">You invest like a</p>
+
+      {/* Big personality name */}
+      <h2
+        className="text-[clamp(36px,9vw,64px)] font-bold tracking-[-0.04em] leading-none mb-4"
+        style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}
+      >
+        <span className="text-[var(--color-gold)]">{personality}</span>
+      </h2>
+
+      {/* Gold underline */}
+      <div className="w-16 h-1 bg-[var(--color-gold)] rounded-full mb-6" />
+
+      {/* Description */}
+      <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed max-w-sm">
+        {desc}
+      </p>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════
+// Slide 7: SHARE CARD
 // ═══════════════════════════════════════════
 
 function SlideShareCard({ data, onShareImage, onShareTwitter }: { data: WrappedData | null; onShareImage: () => void; onShareTwitter: () => void }) {
@@ -693,7 +741,8 @@ export default function WrappedPage() {
       case 2: return <SlideBestWorst data={data} />;
       case 3: return <SlideTradingHabits data={data} />;
       case 4: return <SlideSectors data={data} />;
-      case 5: return <SlideShareCard data={data} onShareImage={handleShareImage} onShareTwitter={handleShareTwitter} />;
+      case 5: return <SlidePersonality data={data} />;
+      case 6: return <SlideShareCard data={data} onShareImage={handleShareImage} onShareTwitter={handleShareTwitter} />;
       default: return null;
     }
   }

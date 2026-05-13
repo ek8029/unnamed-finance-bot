@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════
 // Canvas share card generator for Helm Wrapped
-// Generates 1080x1080 PNG cards per slide
+// Generates 1080x1080 PNG share cards
 // ═══════════════════════════════════════════
 
 export type SlideType = 'return' | 'bestWorst' | 'personality' | 'habits' | 'sectors' | 'summary';
@@ -8,202 +8,259 @@ export type SlideType = 'return' | 'bestWorst' | 'personality' | 'habits' | 'sec
 export interface ShareCardData {
   slideType: SlideType;
   year: string;
-  // Return slide
   returnPct?: number;
   returnDollars?: number;
   spyPct?: number;
   beat?: boolean;
-  // Best/worst
   bestTicker?: string;
   bestReturnPct?: number;
   worstTicker?: string;
   worstReturnPct?: number;
-  // Personality
   personality?: string;
-  // Habits
   tradeCount?: number;
   totalDividends?: number;
   positionCount?: number;
-  // Sectors
   topSector?: string;
   topSectorPct?: number;
 }
 
 // ── Colors ──
-
-const GOLD   = '#E6B94D';
-const GREEN  = '#4ADE80';
-const RED    = '#F87171';
-const WHITE  = '#FAFAFA';
-const MUTED  = '#8A8A8A';
-const BG     = '#0A0A0A';
+const GOLD  = '#E6B94D';
+const GREEN = '#4ADE80';
+const RED   = '#F87171';
+const WHITE = '#FAFAFA';
+const MUTED = '#8A8A8A';
+const BG    = '#0A0A0A';
+const SURFACE = '#131313';
 
 // ── Helpers ──
-
 function signedPct(n: number): string {
   return `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
 }
 
 function fmtDollars(n: number): string {
   const abs = Math.abs(n);
-  const formatted = abs >= 1000
-    ? `$${abs.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+  const str = abs >= 1000
+    ? `$${abs.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
     : `$${abs.toFixed(0)}`;
-  return n < 0 ? `-${formatted}` : formatted;
+  return n < 0 ? `-${str}` : str;
 }
 
-// ── Draw functions ──
+// ── Drawing primitives ──
+function drawText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number, y: number,
+  { color = WHITE, size = 14, weight = '600', align = 'center' as CanvasTextAlign, maxWidth }: {
+    color?: string; size?: number; weight?: string; align?: CanvasTextAlign; maxWidth?: number;
+  } = {}
+) {
+  ctx.fillStyle = color;
+  ctx.font = `${weight} ${size}px system-ui, -apple-system, sans-serif`;
+  ctx.textAlign = align;
+  ctx.textBaseline = 'middle';
+  if (maxWidth) {
+    ctx.fillText(text, x, y, maxWidth);
+  } else {
+    ctx.fillText(text, x, y);
+  }
+}
 
-function drawReturn(ctx: CanvasRenderingContext2D, W: number, _H: number, data: ShareCardData) {
+function drawLabel(ctx: CanvasRenderingContext2D, text: string, x: number, y: number) {
+  drawText(ctx, text, x, y, { color: GOLD, size: 16, weight: '700' });
+}
+
+function drawGlow(ctx: CanvasRenderingContext2D, W: number, H: number, color: string, opacity: number) {
+  const glow = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, 450);
+  glow.addColorStop(0, color);
+  glow.addColorStop(1, 'transparent');
+  ctx.globalAlpha = opacity;
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha = 1;
+}
+
+function drawBranding(ctx: CanvasRenderingContext2D, W: number, H: number, year: string) {
+  // Top: HELM WRAPPED · YEAR
+  drawText(ctx, `HELM WRAPPED  ·  ${year}`, W / 2, 60, { color: GOLD, size: 16, weight: '700' });
+
+  // Bottom: gold dot + URL
+  ctx.beginPath();
+  ctx.arc(W / 2, H - 70, 5, 0, Math.PI * 2);
+  ctx.fillStyle = GOLD;
+  ctx.fill();
+  drawText(ctx, 'helmterminal.dev/wrapped', W / 2, H - 38, { color: MUTED, size: 16, weight: '500' });
+}
+
+// ══════════════════════════════════════════
+// Slide renderers — BIG, bold, shareable
+// ══════════════════════════════════════════
+
+function drawReturn(ctx: CanvasRenderingContext2D, W: number, H: number, data: ShareCardData) {
   const pct = data.returnPct ?? 0;
   const positive = pct >= 0;
 
-  // Label
-  ctx.fillStyle = GOLD;
-  ctx.font = '600 14px system-ui, -apple-system, sans-serif';
-  ctx.fillText('YOUR PORTFOLIO RETURNED', W / 2, 340);
+  drawText(ctx, 'YOUR PORTFOLIO RETURNED', W / 2, 320, { color: MUTED, size: 20, weight: '600' });
 
-  // Giant return number
-  ctx.fillStyle = positive ? GREEN : RED;
-  ctx.font = 'bold 120px system-ui, -apple-system, sans-serif';
-  ctx.fillText(signedPct(pct), W / 2, 460);
+  // Giant return — the hero
+  drawText(ctx, signedPct(pct), W / 2, 490, {
+    color: positive ? GREEN : RED,
+    size: 180,
+    weight: '800',
+  });
 
   // S&P comparison
   if (data.spyPct != null) {
-    ctx.fillStyle = MUTED;
-    ctx.font = '500 18px system-ui, -apple-system, sans-serif';
-    ctx.fillText(`vs S&P 500 ${signedPct(data.spyPct)}`, W / 2, 520);
+    drawText(ctx, `vs S&P 500 ${signedPct(data.spyPct)}`, W / 2, 620, { color: MUTED, size: 22, weight: '500' });
   }
 
   // Beat badge
   if (data.beat) {
-    ctx.fillStyle = GOLD;
-    ctx.font = 'bold 16px system-ui, -apple-system, sans-serif';
-    ctx.fillText('BEAT THE MARKET', W / 2, 570);
+    // Pill background
+    const badgeText = 'BEAT THE MARKET';
+    ctx.font = 'bold 20px system-ui';
+    const tw = ctx.measureText(badgeText).width;
+    const bx = W / 2 - tw / 2 - 20;
+    const by = 660;
+    ctx.fillStyle = 'rgba(230, 185, 77, 0.15)';
+    ctx.beginPath();
+    ctx.roundRect(bx, by, tw + 40, 40, 20);
+    ctx.fill();
+    drawText(ctx, badgeText, W / 2, 680, { color: GOLD, size: 20, weight: '800' });
   }
 }
 
-function drawBestWorst(ctx: CanvasRenderingContext2D, W: number, _H: number, data: ShareCardData) {
-  // MVP section
+function drawBestWorst(ctx: CanvasRenderingContext2D, W: number, H: number, data: ShareCardData) {
+  // MVP
+  drawText(ctx, 'YOUR MVP', W / 2, 240, { color: GOLD, size: 18, weight: '700' });
+  drawText(ctx, data.bestTicker ?? '---', W / 2, 320, { color: GOLD, size: 72, weight: '800' });
+  drawText(ctx, data.bestReturnPct != null ? signedPct(data.bestReturnPct) : '---', W / 2, 400, {
+    color: GREEN, size: 48, weight: '800',
+  });
+
+  // Separator
   ctx.fillStyle = GOLD;
-  ctx.font = '600 14px system-ui, -apple-system, sans-serif';
-  ctx.fillText('YOUR MVP', W / 2, 280);
+  ctx.globalAlpha = 0.4;
+  ctx.fillRect(W / 2 - 40, 470, 80, 2);
+  ctx.globalAlpha = 1;
 
-  ctx.fillStyle = GOLD;
-  ctx.font = 'bold 48px system-ui, -apple-system, sans-serif';
-  ctx.fillText(data.bestTicker ?? '---', W / 2, 340);
-
-  ctx.fillStyle = GREEN;
-  ctx.font = 'bold 36px system-ui, -apple-system, sans-serif';
-  ctx.fillText(data.bestReturnPct != null ? signedPct(data.bestReturnPct) : '---', W / 2, 400);
-
-  // Gold separator line
-  ctx.beginPath();
-  ctx.moveTo(W / 2 - 30, 480);
-  ctx.lineTo(W / 2 + 30, 480);
-  ctx.strokeStyle = GOLD;
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  // Villain section
-  ctx.fillStyle = RED;
-  ctx.font = '600 14px system-ui, -apple-system, sans-serif';
-  ctx.fillText('YOUR VILLAIN', W / 2, 560);
-
-  ctx.fillStyle = RED;
-  ctx.font = 'bold 48px system-ui, -apple-system, sans-serif';
-  ctx.fillText(data.worstTicker ?? '---', W / 2, 620);
-
-  ctx.fillStyle = RED;
-  ctx.font = 'bold 36px system-ui, -apple-system, sans-serif';
-  ctx.fillText(data.worstReturnPct != null ? signedPct(data.worstReturnPct) : '---', W / 2, 680);
+  // Villain
+  drawText(ctx, 'YOUR VILLAIN', W / 2, 540, { color: RED, size: 18, weight: '700' });
+  drawText(ctx, data.worstTicker ?? '---', W / 2, 620, { color: RED, size: 72, weight: '800' });
+  drawText(ctx, data.worstReturnPct != null ? signedPct(data.worstReturnPct) : '---', W / 2, 700, {
+    color: RED, size: 48, weight: '800',
+  });
 }
 
-function drawPersonality(ctx: CanvasRenderingContext2D, W: number, _H: number, data: ShareCardData) {
-  ctx.fillStyle = GOLD;
-  ctx.font = '600 14px system-ui, -apple-system, sans-serif';
-  ctx.fillText('YOUR INVESTOR TYPE', W / 2, 380);
+function drawPersonality(ctx: CanvasRenderingContext2D, W: number, H: number, data: ShareCardData) {
+  drawText(ctx, 'YOUR INVESTOR TYPE', W / 2, 340, { color: GOLD, size: 18, weight: '700' });
 
-  ctx.fillStyle = WHITE;
-  ctx.font = 'bold 56px system-ui, -apple-system, sans-serif';
-  ctx.fillText(data.personality ?? 'The Investor', W / 2, 480);
+  // Big personality name
+  const name = data.personality ?? 'The Investor';
+  drawText(ctx, name, W / 2, 480, { color: WHITE, size: 72, weight: '800' });
 
   // Gold underline
   ctx.fillStyle = GOLD;
-  ctx.fillRect(W / 2 - 30, 510, 60, 3);
+  const metrics = ctx.measureText(name);
+  ctx.font = 'bold 72px system-ui';
+  const textW = ctx.measureText(name).width;
+  ctx.fillRect(W / 2 - Math.min(textW, 400) / 2, 530, Math.min(textW, 400), 4);
+
+  // Personality description
+  const descriptions: Record<string, string> = {
+    'Concentrator': 'High conviction. Few positions. Maximum exposure.',
+    'Active Trader': 'Always moving. The market is your canvas.',
+    'Income Investor': 'Cash flow is king. Dividends compound.',
+    'Diversifier': 'Broad exposure. Risk-managed. Disciplined.',
+    'Growth Hunter': 'Chasing alpha. Tech-heavy. Future-focused.',
+    'Tax Optimizer': 'Every dollar counts. Loss harvest. Offset gains.',
+    'Steady Hand': 'Buy and hold. Let time do the work.',
+    'Momentum Rider': 'Ride the wave. Trend is your friend.',
+    'Balanced Navigator': 'Measured approach. No extremes.',
+  };
+  const desc = descriptions[name] ?? 'A unique approach to the market.';
+  drawText(ctx, desc, W / 2, 600, { color: MUTED, size: 20, weight: '500', maxWidth: 800 });
 }
 
-function drawHabits(ctx: CanvasRenderingContext2D, W: number, _H: number, data: ShareCardData) {
-  ctx.fillStyle = GOLD;
-  ctx.font = '600 14px system-ui, -apple-system, sans-serif';
-  ctx.fillText('YOUR YEAR IN NUMBERS', W / 2, 300);
+function drawHabits(ctx: CanvasRenderingContext2D, W: number, H: number, data: ShareCardData) {
+  drawText(ctx, 'YOUR YEAR IN NUMBERS', W / 2, 240, { color: GOLD, size: 18, weight: '700' });
 
-  // 2x2 grid
+  // 2x2 grid — big numbers
   const cells = [
-    { value: String(data.tradeCount ?? 0), label: 'TRADES', x: 340, y: 430 },
-    { value: fmtDollars(data.totalDividends ?? 0), label: 'DIVIDENDS', x: 740, y: 430 },
-    { value: String(data.positionCount ?? 0), label: 'POSITIONS', x: 340, y: 600 },
-    { value: data.personality ?? '---', label: 'TYPE', x: 740, y: 600 },
+    { value: String(data.tradeCount ?? 0), label: 'TRADES', x: 330, y: 420 },
+    { value: fmtDollars(data.totalDividends ?? 0), label: 'DIVIDENDS', x: 750, y: 420 },
+    { value: String(data.positionCount ?? 0), label: 'POSITIONS', x: 330, y: 640 },
+    { value: data.personality ?? '---', label: 'TYPE', x: 750, y: 640 },
   ];
 
   for (const cell of cells) {
+    // Card background
+    ctx.fillStyle = SURFACE;
+    ctx.beginPath();
+    ctx.roundRect(cell.x - 160, cell.y - 60, 320, 140, 16);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
     // Value
-    ctx.fillStyle = WHITE;
-    ctx.font = cell.label === 'TYPE' ? 'bold 24px system-ui, -apple-system, sans-serif' : 'bold 48px system-ui, -apple-system, sans-serif';
-    ctx.fillText(cell.value, cell.x, cell.y);
+    const isType = cell.label === 'TYPE';
+    drawText(ctx, cell.value, cell.x, cell.y, {
+      color: WHITE,
+      size: isType ? 28 : 56,
+      weight: '800',
+    });
 
     // Label
-    ctx.fillStyle = GOLD;
-    ctx.font = '600 12px system-ui, -apple-system, sans-serif';
-    ctx.fillText(cell.label, cell.x, cell.y + 30);
+    drawText(ctx, cell.label, cell.x, cell.y + 50, { color: GOLD, size: 14, weight: '700' });
   }
 }
 
-function drawSectors(ctx: CanvasRenderingContext2D, W: number, _H: number, data: ShareCardData) {
-  ctx.fillStyle = GOLD;
-  ctx.font = '600 14px system-ui, -apple-system, sans-serif';
-  ctx.fillText('YOUR CONVICTION', W / 2, 380);
+function drawSectors(ctx: CanvasRenderingContext2D, W: number, H: number, data: ShareCardData) {
+  drawText(ctx, 'YOUR CONVICTION', W / 2, 340, { color: GOLD, size: 18, weight: '700' });
 
   // Big percentage
-  ctx.fillStyle = WHITE;
-  ctx.font = 'bold 80px system-ui, -apple-system, sans-serif';
   const pctText = data.topSectorPct != null ? `${data.topSectorPct.toFixed(0)}%` : '---';
-  ctx.fillText(pctText, W / 2, 480);
+  drawText(ctx, pctText, W / 2, 490, { color: WHITE, size: 120, weight: '800' });
 
   // Sector name
-  ctx.fillStyle = GOLD;
-  ctx.font = '500 24px system-ui, -apple-system, sans-serif';
-  ctx.fillText(data.topSector ?? 'Diversified', W / 2, 540);
+  drawText(ctx, data.topSector ?? 'Diversified', W / 2, 580, { color: GOLD, size: 32, weight: '600' });
 }
 
-function drawSummary(ctx: CanvasRenderingContext2D, W: number, _H: number, data: ShareCardData) {
-  ctx.fillStyle = GOLD;
-  ctx.font = '600 14px system-ui, -apple-system, sans-serif';
-  ctx.fillText(`MY ${data.year} WRAPPED`, W / 2, 200);
+function drawSummary(ctx: CanvasRenderingContext2D, W: number, H: number, data: ShareCardData) {
+  drawText(ctx, `MY ${data.year} WRAPPED`, W / 2, 180, { color: GOLD, size: 20, weight: '800' });
 
-  // Return
+  // Return — hero
   const pct = data.returnPct ?? 0;
-  ctx.fillStyle = pct >= 0 ? GREEN : RED;
-  ctx.font = 'bold 64px system-ui, -apple-system, sans-serif';
-  ctx.fillText(signedPct(pct), W / 2, 340);
+  drawText(ctx, signedPct(pct), W / 2, 340, {
+    color: pct >= 0 ? GREEN : RED,
+    size: 100,
+    weight: '800',
+  });
 
-  // MVP line
-  ctx.fillStyle = WHITE;
-  ctx.font = '500 20px system-ui, -apple-system, sans-serif';
-  ctx.fillText(`${data.bestTicker ?? '---'} was my MVP`, W / 2, 420);
+  // Stats stack
+  drawText(ctx, `${data.bestTicker ?? '---'} was my MVP`, W / 2, 460, { color: WHITE, size: 26, weight: '600' });
+  drawText(ctx, `${data.tradeCount ?? 0} trades this year`, W / 2, 520, { color: MUTED, size: 24, weight: '500' });
 
-  // Trades line
-  ctx.fillStyle = MUTED;
-  ctx.font = '500 20px system-ui, -apple-system, sans-serif';
-  ctx.fillText(`${data.tradeCount ?? 0} trades`, W / 2, 470);
+  if (data.personality) {
+    // Personality pill
+    ctx.font = '700 22px system-ui';
+    const tw = ctx.measureText(data.personality).width;
+    ctx.fillStyle = 'rgba(230, 185, 77, 0.12)';
+    ctx.beginPath();
+    ctx.roundRect(W / 2 - tw / 2 - 20, 565, tw + 40, 44, 22);
+    ctx.fill();
+    drawText(ctx, data.personality, W / 2, 587, { color: GOLD, size: 22, weight: '700' });
+  }
 
-  // Personality
-  ctx.fillStyle = GOLD;
-  ctx.font = '500 20px system-ui, -apple-system, sans-serif';
-  ctx.fillText(data.personality ?? '', W / 2, 520);
+  if (data.beat) {
+    drawText(ctx, 'BEAT THE S&P 500', W / 2, 660, { color: GREEN, size: 20, weight: '700' });
+  }
 }
 
-// ── Main generator ──
+// ══════════════════════════════════════════
+// Main generator
+// ══════════════════════════════════════════
 
 export async function generateShareCard(data: ShareCardData): Promise<Blob> {
   const W = 1080, H = 1080;
@@ -212,55 +269,28 @@ export async function generateShareCard(data: ShareCardData): Promise<Blob> {
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
 
-  // --- Background ---
+  // Background
   ctx.fillStyle = BG;
   ctx.fillRect(0, 0, W, H);
 
-  // Gold radial glow (subtle)
-  const glow = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, 450);
-  glow.addColorStop(0, 'rgba(230, 185, 77, 0.07)');
-  glow.addColorStop(1, 'transparent');
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, W, H);
+  // Glow
+  const glowColor = data.slideType === 'return'
+    ? ((data.returnPct ?? 0) >= 0 ? 'rgba(74,222,128,1)' : 'rgba(248,113,113,1)')
+    : 'rgba(230,185,77,1)';
+  drawGlow(ctx, W, H, glowColor, 0.06);
 
-  // --- Top branding ---
-  ctx.textAlign = 'center';
-  ctx.fillStyle = GOLD;
-  ctx.font = '600 14px system-ui, -apple-system, sans-serif';
-  ctx.fillText(`HELM WRAPPED  \u00B7  ${data.year}`, W / 2, 80);
+  // Branding
+  drawBranding(ctx, W, H, data.year);
 
-  // --- Slide-specific content ---
+  // Slide content
   switch (data.slideType) {
-    case 'return':
-      drawReturn(ctx, W, H, data);
-      break;
-    case 'bestWorst':
-      drawBestWorst(ctx, W, H, data);
-      break;
-    case 'personality':
-      drawPersonality(ctx, W, H, data);
-      break;
-    case 'habits':
-      drawHabits(ctx, W, H, data);
-      break;
-    case 'sectors':
-      drawSectors(ctx, W, H, data);
-      break;
-    case 'summary':
-      drawSummary(ctx, W, H, data);
-      break;
+    case 'return': drawReturn(ctx, W, H, data); break;
+    case 'bestWorst': drawBestWorst(ctx, W, H, data); break;
+    case 'personality': drawPersonality(ctx, W, H, data); break;
+    case 'habits': drawHabits(ctx, W, H, data); break;
+    case 'sectors': drawSectors(ctx, W, H, data); break;
+    case 'summary': drawSummary(ctx, W, H, data); break;
   }
-
-  // --- Bottom branding ---
-  // Gold dot
-  ctx.beginPath();
-  ctx.arc(W / 2, H - 60, 4, 0, Math.PI * 2);
-  ctx.fillStyle = GOLD;
-  ctx.fill();
-  // URL
-  ctx.fillStyle = MUTED;
-  ctx.font = '500 14px system-ui, -apple-system, sans-serif';
-  ctx.fillText('helmterminal.dev/wrapped', W / 2, H - 30);
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob!), 'image/png');
