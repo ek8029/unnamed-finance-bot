@@ -46,10 +46,10 @@ function buildCardData(data: WrappedData, slideIdx: number): ShareCardData {
     bestReturnPct: data.bestPosition?.returnPct,
     worstTicker: data.worstPosition?.ticker,
     worstReturnPct: data.worstPosition?.returnPct,
-    personality: undefined,
+    personality: data.investorPersonality ?? undefined,
     tradeCount: data.tradeCount,
     totalDividends: data.totalDividends,
-    positionCount: data.positionCount ?? 0,
+    positionCount: data.positionCount ?? data.topHoldings?.length ?? 0,
     topSector: data.sectorBreakdown?.[0]?.sector,
     topSectorPct: data.sectorBreakdown?.[0]?.pct,
   };
@@ -687,6 +687,7 @@ export default function WrappedPage() {
     const blob = await generateShareCard(cardData);
     const file = new File([blob], 'helm-wrapped.png', { type: 'image/png' });
 
+    // Try native share (mobile)
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       await navigator.share({
         title: 'My Helm Wrapped',
@@ -694,11 +695,26 @@ export default function WrappedPage() {
         url: 'https://helmterminal.dev/wrapped',
         files: [file],
       });
-    } else {
+      return;
+    }
+
+    // Try clipboard (desktop, requires HTTPS)
+    try {
       await navigator.clipboard.write([
         new ClipboardItem({ 'image/png': blob }),
       ]);
+      return;
+    } catch {
+      // Clipboard failed — fallback to download
     }
+
+    // Fallback: trigger download
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'helm-wrapped.png';
+    a.click();
+    URL.revokeObjectURL(url);
   }, [data, currentSlide]);
 
   const handleShareTwitter = useCallback(() => {

@@ -764,6 +764,8 @@ export interface WrappedData {
   netWorthChange: { start: number; end: number; change: number; changePct: number };
   positionCount: number;
   portfolioValue: number;
+  investorPersonality?: string;
+  topHoldings?: { ticker: string; value: number; pct: number }[];
 }
 
 export function useWrapped(period: 'quarter' | 'year' = 'quarter') {
