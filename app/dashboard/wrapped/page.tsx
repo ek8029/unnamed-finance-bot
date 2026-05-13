@@ -760,9 +760,13 @@ export default function WrappedPage() {
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-50 bg-[var(--color-bg-base)] select-none overflow-hidden"
+      className="fixed inset-0 z-50 bg-[var(--color-bg-base)] select-none overflow-hidden cursor-pointer"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      onClick={(e) => {
+        const tag = (e.target as HTMLElement).closest('button, a, [role="button"], input');
+        if (!tag && currentSlide < TOTAL_SLIDES - 1) next();
+      }}
     >
       <AmbientGlow />
       <TopBar current={currentSlide} year={year} />

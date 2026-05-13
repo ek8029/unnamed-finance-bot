@@ -93,7 +93,7 @@ export function WrappedLanding() {
           }}
         />
 
-        <div className="relative max-w-5xl mx-auto px-5 md:px-6">
+        <div className="relative z-10 max-w-5xl mx-auto px-5 md:px-6">
           {/* Eyebrow */}
           <div className="flex items-center gap-3 mb-10">
             <span className="block w-8 h-px bg-[var(--color-gold)]" />
