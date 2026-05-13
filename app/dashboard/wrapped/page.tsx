@@ -46,7 +46,7 @@ function buildCardData(data: WrappedData, slideIdx: number): ShareCardData {
     bestReturnPct: data.bestPosition?.returnPct,
     worstTicker: data.worstPosition?.ticker,
     worstReturnPct: data.worstPosition?.returnPct,
-    personality: data.investorPersonality ?? undefined,
+    personality: data.investorPersonality?.title ?? undefined,
     tradeCount: data.tradeCount,
     totalDividends: data.totalDividends,
     positionCount: data.positionCount ?? data.topHoldings?.length ?? 0,
@@ -177,7 +177,7 @@ function SlideCover({
         </h1>
 
         {/* Subtitle */}
-        <p className="text-[14px] text-[var(--color-text-muted)] leading-relaxed mb-10">
+        <p className="text-[17px] text-[var(--color-text-muted)] leading-relaxed mb-10">
           {positions > 0
             ? `${positions} positions. ${trades} trades. One portfolio.`
             : `${trades > 0 ? `${trades} trades.` : ''} One portfolio.`}
@@ -212,12 +212,12 @@ function SlideReturn({ data }: { data: WrappedData | null }) {
         &sect; 01 &mdash; THE RETURN
       </p>
 
-      <p className="text-[13px] text-[var(--color-text-muted)] mb-4">Your portfolio returned</p>
+      <p className="text-[18px] text-[var(--color-text-muted)] mb-6">Your portfolio returned</p>
 
       {/* Giant number with glow */}
       <div
         className={cn(
-          'text-[clamp(72px,22vw,160px)] font-bold leading-none tabular-nums tracking-[-0.05em]',
+          'text-[clamp(88px,25vw,200px)] font-bold leading-none tabular-nums tracking-[-0.05em]',
           positive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
         )}
         style={{
@@ -272,7 +272,7 @@ function SlideBestWorst({ data }: { data: WrappedData | null }) {
       </p>
 
       {/* Statement headline */}
-      <h2 className="text-[clamp(22px,5vw,32px)] font-bold tracking-[-0.025em] leading-[1.2] mb-8 text-center max-w-lg">
+      <h2 className="text-[clamp(26px,6vw,40px)] font-bold tracking-[-0.025em] leading-[1.2] mb-8 text-center max-w-lg">
         Your MVP was <span className="text-[var(--color-gold)]">{best?.ticker ?? '---'}</span>.<br />
         Your villain was <span className="text-[var(--color-negative)]">{worst?.ticker ?? '---'}</span>.
       </h2>
@@ -282,10 +282,10 @@ function SlideBestWorst({ data }: { data: WrappedData | null }) {
         {/* MVP card */}
         <div className="rounded-xl border border-[var(--color-positive)]/20 bg-[var(--color-positive)]/[0.04] p-5 grid grid-cols-[1fr_auto] gap-4 items-center">
           <div>
-            <p className="text-lg font-bold text-[var(--color-positive)] tracking-wide" style={MONO}>{best?.ticker ?? '---'}</p>
-            <p className="text-[11px] text-[var(--color-text-muted)] mt-1">{best?.name ?? ''} &middot; {best ? fmtDollar(best.returnDollars) : ''}</p>
+            <p className="text-2xl font-bold text-[var(--color-positive)] tracking-wide" style={MONO}>{best?.ticker ?? '---'}</p>
+            <p className="text-[13px] text-[var(--color-text-muted)] mt-1">{best?.name ?? ''} &middot; {best ? fmtDollar(best.returnDollars) : ''}</p>
           </div>
-          <p className="text-[32px] font-bold tabular-nums text-[var(--color-positive)] tracking-[-0.025em]">
+          <p className="text-[36px] font-bold tabular-nums text-[var(--color-positive)] tracking-[-0.025em]">
             {best ? fmtPct(best.returnPct) : '---'}
           </p>
         </div>
@@ -293,10 +293,10 @@ function SlideBestWorst({ data }: { data: WrappedData | null }) {
         {/* Villain card */}
         <div className="rounded-xl border border-[var(--color-negative)]/20 bg-[var(--color-negative)]/[0.04] p-5 grid grid-cols-[1fr_auto] gap-4 items-center">
           <div>
-            <p className="text-lg font-bold text-[var(--color-negative)] tracking-wide" style={MONO}>{worst?.ticker ?? '---'}</p>
-            <p className="text-[11px] text-[var(--color-text-muted)] mt-1">{worst?.name ?? ''} &middot; {worst ? fmtDollar(worst.returnDollars) : ''}</p>
+            <p className="text-2xl font-bold text-[var(--color-negative)] tracking-wide" style={MONO}>{worst?.ticker ?? '---'}</p>
+            <p className="text-[13px] text-[var(--color-text-muted)] mt-1">{worst?.name ?? ''} &middot; {worst ? fmtDollar(worst.returnDollars) : ''}</p>
           </div>
-          <p className="text-[32px] font-bold tabular-nums text-[var(--color-negative)] tracking-[-0.025em]">
+          <p className="text-[36px] font-bold tabular-nums text-[var(--color-negative)] tracking-[-0.025em]">
             {worst ? fmtPct(worst.returnPct) : '---'}
           </p>
         </div>
@@ -327,7 +327,7 @@ function SlideTradingHabits({ data }: { data: WrappedData | null }) {
       </p>
 
       {/* Statement */}
-      <h2 className="text-[clamp(20px,5vw,28px)] font-bold tracking-[-0.025em] leading-[1.3] mb-8 text-center max-w-lg">
+      <h2 className="text-[clamp(24px,6vw,36px)] font-bold tracking-[-0.025em] leading-[1.3] mb-8 text-center max-w-lg">
         You traded <span className="text-[var(--color-gold)]">{trades} times</span>
         {activeDayLabel ? <>, mostly on {activeDayLabel}s.</> : '.'}
       </h2>
@@ -341,8 +341,8 @@ function SlideTradingHabits({ data }: { data: WrappedData | null }) {
           { value: fmtDollar(portfolioVal), label: 'VALUE' },
         ].map((s) => (
           <div key={s.label} className="p-4 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl">
-            <p className="text-[24px] font-bold tabular-nums tracking-[-0.02em]">{s.value}</p>
-            <p className="text-[9px] tracking-[0.14em] text-[var(--color-gold)] mt-2" style={MONO}>{s.label}</p>
+            <p className="text-[28px] font-bold tabular-nums tracking-[-0.02em]">{s.value}</p>
+            <p className="text-[11px] tracking-[0.14em] text-[var(--color-gold)] mt-2" style={MONO}>{s.label}</p>
           </div>
         ))}
       </div>
@@ -368,7 +368,7 @@ function SlideSectors({ data }: { data: WrappedData | null }) {
       </p>
 
       {/* Statement */}
-      <h2 className="text-[clamp(20px,4.5vw,28px)] font-bold tracking-[-0.025em] leading-[1.3] mb-8 text-center max-w-lg">
+      <h2 className="text-[clamp(24px,6vw,36px)] font-bold tracking-[-0.025em] leading-[1.3] mb-8 text-center max-w-lg">
         {topSector && topSector.pct >= 35
           ? <>You were <span className="text-[var(--color-gold)]">{topSector.pct.toFixed(0)}% {topSector.sector}</span>. Conviction paid.</>
           : topSector
@@ -424,45 +424,45 @@ function SlideSectors({ data }: { data: WrappedData | null }) {
 // ═══════════════════════════════════════════
 
 function SlidePersonality({ data }: { data: WrappedData | null }) {
-  const personality = data?.investorPersonality ?? 'The Investor';
-
-  const descriptions: Record<string, string> = {
-    'Concentrator': 'High conviction. Few positions. Maximum exposure to your best ideas.',
-    'Active Trader': 'Always moving. The market is your canvas and you paint in real-time.',
-    'Income Investor': 'Cash flow is king. You let dividends compound while others chase gains.',
-    'Diversifier': 'Broad exposure, risk-managed, disciplined. You play the long game.',
-    'Growth Hunter': 'Chasing alpha in tech and innovation. The future is your edge.',
-    'Tax Optimizer': 'Every dollar counts. You harvest losses and offset gains like a pro.',
-    'Steady Hand': 'Buy and hold. You let time and compounding do the heavy lifting.',
-    'Momentum Rider': 'You ride the wave. When something moves, you\'re already on it.',
-    'Balanced Navigator': 'No extremes. A measured, deliberate approach to building wealth.',
-  };
-
-  const desc = descriptions[personality] ?? 'A unique approach to building wealth.';
+  const p = data?.investorPersonality;
+  const title = p?.title ?? 'The Investor';
+  const desc = p?.description ?? 'A unique approach to building wealth.';
+  const traits = p?.traits ?? [];
 
   return (
     <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-      <p className="text-[10px] tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
+      <p className="text-[12px] tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
         &sect; 05 &mdash; YOUR TYPE
       </p>
 
-      <p className="text-[14px] text-[var(--color-text-muted)] mb-4">You invest like a</p>
+      <p className="text-[18px] text-[var(--color-text-muted)] mb-6">You invest like a</p>
 
       {/* Big personality name */}
       <h2
-        className="text-[clamp(36px,9vw,64px)] font-bold tracking-[-0.04em] leading-none mb-4"
+        className="text-[clamp(44px,11vw,80px)] font-bold tracking-[-0.04em] leading-none mb-5"
         style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}
       >
-        <span className="text-[var(--color-gold)]">{personality}</span>
+        <span className="text-[var(--color-gold)]">{title}</span>
       </h2>
 
       {/* Gold underline */}
-      <div className="w-16 h-1 bg-[var(--color-gold)] rounded-full mb-6" />
+      <div className="w-20 h-1 bg-[var(--color-gold)] rounded-full mb-8" />
 
       {/* Description */}
-      <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed max-w-sm">
+      <p className="text-[17px] text-[var(--color-text-muted)] leading-relaxed max-w-md mb-6">
         {desc}
       </p>
+
+      {/* Traits */}
+      {traits.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-2 max-w-md">
+          {traits.map((t) => (
+            <span key={t} className="px-4 py-2 rounded-full border border-[var(--color-gold)]/20 bg-[var(--color-gold)]/[0.06] text-[13px] text-[var(--color-gold)]" style={MONO}>
+              {t}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
