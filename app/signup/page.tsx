@@ -77,7 +77,7 @@ function SignupForm() {
         return;
       }
       if (data.session) {
-        router.push(isWrappedFlow ? '/wrapped/connect' : '/dashboard');
+        router.push(isWrappedFlow ? '/wrapped' : '/dashboard');
         router.refresh();
       } else {
         router.push('/login?message=Check your email to confirm your account. If you don\'t see it, check your spam or promotions folder — it may take a minute to arrive.');
@@ -92,7 +92,7 @@ function SignupForm() {
   };
 
   const handleGoogleSignIn = async () => {
-    const nextPath = isWrappedFlow ? '/wrapped/connect' : '/dashboard';
+    const nextPath = isWrappedFlow ? '/wrapped' : '/dashboard';
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}` },

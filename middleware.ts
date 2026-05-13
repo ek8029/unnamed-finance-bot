@@ -101,10 +101,10 @@ export async function middleware(request: NextRequest) {
   );
 
   if (isAuthPath && user && !needsMFA) {
-    // Wrapped flow: authenticated user on signup → send to Plaid connect, not dashboard
+    // Wrapped flow: authenticated user on signup → back to /wrapped (handles everything)
     const flow = request.nextUrl.searchParams.get('flow');
     if (flow === 'wrapped') {
-      return NextResponse.redirect(new URL('/wrapped/connect', request.url));
+      return NextResponse.redirect(new URL('/wrapped', request.url));
     }
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
