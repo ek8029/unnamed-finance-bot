@@ -59,26 +59,22 @@ type MobileView = 'list' | 'detail';
 
 const priorityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
-const priorityConfig: Record<string, { label: string; className: string; mobileClassName: string }> = {
+const priorityConfig: Record<string, { label: string; className: string }> = {
   critical: {
     label: 'HIGH',
     className: 'bg-[var(--color-negative-muted)] text-[var(--color-negative-text)] border-[var(--color-negative-border)]',
-    mobileClassName: 'text-[#F87171] border-[rgba(248,113,113,0.4)]',
   },
   high: {
     label: 'HIGH',
     className: 'bg-[var(--color-negative-muted)] text-[var(--color-negative-text)] border-[var(--color-negative-border)]',
-    mobileClassName: 'text-[#F87171] border-[rgba(248,113,113,0.4)]',
   },
   medium: {
     label: 'MED',
     className: 'bg-[var(--color-warning-muted)] text-[var(--color-warning-text)] border-[var(--color-warning-border)]',
-    mobileClassName: 'text-[#FBBF24] border-[rgba(251,191,36,0.4)]',
   },
   low: {
     label: 'LOW',
     className: 'bg-[var(--color-info-muted)] text-[var(--color-info-text)] border-[var(--color-info-border)]',
-    mobileClassName: 'text-[var(--color-text-muted)] border-[var(--color-border-strong)]',
   },
 };
 
@@ -475,124 +471,50 @@ export function ActionsClient({ initialActions }: { initialActions: ActionItem[]
                 const pCfg = priorityConfig[action.priority] || priorityConfig.medium;
 
                 return (
-                  <div key={action.id} className="border-b border-[var(--color-border-subtle)]">
-                    {/* ── Desktop list item (click to select) ── */}
-                    <button
-                      onClick={() => handleSelectAction(action.id)}
-                      className={`hidden md:block w-full text-left px-5 py-4 motion-safe:transition-all motion-safe:duration-100 relative ${
-                        isSelected
-                          ? 'bg-[var(--color-gold-surface)]'
-                          : 'hover:bg-[var(--color-bg-surface)]'
-                      }`}
-                    >
-                      {/* Gold left accent for selected */}
-                      {isSelected && (
-                        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[var(--color-gold)] rounded-r-full" />
-                      )}
+                  <button
+                    key={action.id}
+                    onClick={() => handleSelectAction(action.id)}
+                    className={`w-full text-left px-5 py-4 border-b border-[var(--color-border-subtle)] motion-safe:transition-all motion-safe:duration-100 relative ${
+                      isSelected
+                        ? 'bg-[var(--color-gold-surface)]'
+                        : 'hover:bg-[var(--color-bg-surface)]'
+                    }`}
+                  >
+                    {/* Gold left accent for selected */}
+                    {isSelected && (
+                      <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[var(--color-gold)] rounded-r-full" />
+                    )}
 
-                      {/* Row 1: Priority badge + Category + Timestamp */}
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`text-[12px] font-bold px-2 py-[2px] rounded border uppercase tracking-wide ${pCfg.className}`}>
-                          {pCfg.label}
-                        </span>
-                        <span className="text-[13px] font-mono text-[var(--color-text-muted)]">
-                          {categoryLabels[action.type] || action.type}
-                        </span>
-                        <span className="text-[13px] text-[var(--color-text-muted)] ml-auto">
-                          {relativeTime(action.created_at)}
-                        </span>
-                      </div>
+                    {/* Row 1: Priority badge + Category + Timestamp */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`text-[12px] font-bold px-2 py-[2px] rounded border uppercase tracking-wide ${pCfg.className}`}>
+                        {pCfg.label}
+                      </span>
+                      <span className="text-[13px] font-mono text-[var(--color-text-muted)]">
+                        {categoryLabels[action.type] || action.type}
+                      </span>
+                      <span className="text-[13px] text-[var(--color-text-muted)] ml-auto">
+                        {relativeTime(action.created_at)}
+                      </span>
+                    </div>
 
-                      {/* Row 2: Title */}
-                      <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)] leading-snug line-clamp-2">
-                        {action.title}
-                      </h3>
+                    {/* Row 2: Title */}
+                    <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)] leading-snug line-clamp-2">
+                      {action.title}
+                    </h3>
 
-                      {/* Row 3: Summary + Impact */}
-                      <div className="flex items-center gap-2 mt-1.5">
-                        <p className="text-[14px] text-[var(--color-text-muted)] truncate flex-1 leading-relaxed">
-                          {action.description}
-                        </p>
-                        {action.estimated_impact && action.estimated_impact > 0 && (
-                          <span className="text-[15px] font-semibold text-[var(--color-positive)] font-tabular whitespace-nowrap">
-                            {formatCurrency(action.estimated_impact)}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-
-                    {/* ── Mobile card (richer layout with inline actions) ── */}
-                    <div
-                      className={`md:hidden px-4 py-4 relative ${
-                        isSelected ? 'bg-[var(--color-gold-surface)]' : ''
-                      }`}
-                    >
-                      {isSelected && (
-                        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[var(--color-gold)] rounded-r-full" />
-                      )}
-
-                      {/* Top row: priority badge + category | impact */}
-                      <div className="flex items-center gap-2 mb-2">
-                        <span
-                          className={`font-mono font-bold uppercase border ${pCfg.mobileClassName}`}
-                          style={{ fontSize: '9px', letterSpacing: '0.16em', padding: '2px 7px', borderRadius: '2px' }}
-                        >
-                          {pCfg.label}
-                        </span>
-                        <span className="font-mono uppercase text-[var(--color-text-muted)]" style={{ fontSize: '10px' }}>
-                          {categoryLabels[action.type] || action.type}
-                        </span>
-                        {action.estimated_impact && action.estimated_impact > 0 && (
-                          <span className="font-mono font-bold text-[var(--color-gold)] ml-auto" style={{ fontSize: '10px' }}>
-                            {formatCurrency(action.estimated_impact)}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Title */}
-                      <button
-                        onClick={() => handleSelectAction(action.id)}
-                        className="text-left w-full"
-                      >
-                        <h3
-                          className="font-semibold text-[var(--color-text-primary)] leading-snug line-clamp-2 tracking-tight"
-                          style={{ fontSize: '15px' }}
-                        >
-                          {action.title}
-                        </h3>
-                      </button>
-
-                      {/* Body */}
-                      <p
-                        className="text-[var(--color-text-muted)] mt-1.5 line-clamp-3"
-                        style={{ fontSize: '12px', lineHeight: '1.55' }}
-                      >
+                    {/* Row 3: Summary + Impact */}
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <p className="text-[14px] text-[var(--color-text-muted)] truncate flex-1 leading-relaxed">
                         {action.description}
                       </p>
-
-                      {/* Bottom: CTA buttons */}
-                      {activeTab === 'open' && (
-                        <div className="flex items-center gap-2 mt-3">
-                          <button
-                            onClick={() => handleAction(action.id, 'useful')}
-                            disabled={actionLoading.has(action.id)}
-                            className="font-mono font-bold uppercase bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black disabled:opacity-50 motion-safe:transition-colors"
-                            style={{ fontSize: '10px', padding: '6px 12px', borderRadius: '4px', letterSpacing: '0.05em' }}
-                          >
-                            {actionLoading.has(action.id) ? 'Working...' : (action.recommended_action ? action.recommended_action.split(',')[0].slice(0, 20) + ' \u2192' : 'Mark Complete \u2192')}
-                          </button>
-                          <button
-                            onClick={() => handleAction(action.id, 'snooze', { snooze_days: 7 })}
-                            disabled={actionLoading.has(action.id)}
-                            className="font-mono font-bold uppercase text-[var(--color-text-primary)] bg-transparent border border-[var(--color-border-strong)] hover:border-[var(--color-text-muted)] disabled:opacity-50 motion-safe:transition-colors"
-                            style={{ fontSize: '10px', padding: '6px 12px', borderRadius: '4px', letterSpacing: '0.05em' }}
-                          >
-                            Snooze
-                          </button>
-                        </div>
+                      {action.estimated_impact && action.estimated_impact > 0 && (
+                        <span className="text-[15px] font-semibold text-[var(--color-positive)] font-tabular whitespace-nowrap">
+                          {formatCurrency(action.estimated_impact)}
+                        </span>
                       )}
                     </div>
-                  </div>
+                  </button>
                 );
               })
             )}
@@ -677,15 +599,7 @@ function DetailPane({
 
       {/* Header: Priority + Category + ID */}
       <div className="flex items-center gap-3 mb-4">
-        {/* Desktop badge */}
-        <span className={`hidden md:inline text-[12px] font-bold px-2 py-[2px] rounded border uppercase tracking-wide ${pCfg.className}`}>
-          {pCfg.label}
-        </span>
-        {/* Mobile badge */}
-        <span
-          className={`md:hidden inline font-mono font-bold uppercase border ${pCfg.mobileClassName}`}
-          style={{ fontSize: '9px', letterSpacing: '0.16em', padding: '2px 7px', borderRadius: '2px' }}
-        >
+        <span className={`text-[12px] font-bold px-2 py-[2px] rounded border uppercase tracking-wide ${pCfg.className}`}>
           {pCfg.label}
         </span>
         <div className="flex items-center gap-1.5 text-[13px] text-[var(--color-text-muted)]">

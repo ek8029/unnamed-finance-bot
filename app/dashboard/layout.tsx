@@ -617,8 +617,8 @@ export default function DashboardLayout({
         {!isChatPage && <FinancialDisclaimer />}
         {!isChatPage && <LegalFooter variant="minimal" />}
 
-        {/* Spacer for mobile bottom nav — matches nav height + safe area */}
-        <div className="md:hidden shrink-0" style={{ height: 'calc(72px + env(safe-area-inset-bottom, 0px))' }} />
+        {/* Spacer for mobile bottom nav — nav grid (~56px) + safe area */}
+        <div className="md:hidden shrink-0" style={{ height: 'calc(64px + env(safe-area-inset-bottom, 0px))' }} />
       </div>
 
       {/* ── Mobile Bottom Tab Bar ── */}

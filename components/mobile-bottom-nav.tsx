@@ -24,19 +24,15 @@ export function MobileBottomNav() {
   return (
     <nav
       aria-label="Mobile navigation"
-      className={cn(
-        'fixed bottom-0 left-0 right-0 z-50 md:hidden',
-        // Solid bg fallback + glass blur overlay
-        'bg-[#0A0A0A] supports-[backdrop-filter]:bg-[rgba(10,10,10,0.78)]',
-        'supports-[backdrop-filter]:backdrop-blur-[24px] supports-[backdrop-filter]:backdrop-saturate-[1.4]',
-        'border-t border-white/[0.06]',
-      )}
+      className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#0A0A0A] border-t border-white/[0.06]"
+      style={{
+        /* Force GPU compositing layer — prevents iOS scroll float */
+        transform: 'translate3d(0,0,0)',
+        WebkitTransform: 'translate3d(0,0,0)',
+        /* Extend into safe area */
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}
     >
-      {/*
-        Two-part padding strategy for iOS:
-        1. The grid has normal pt-2 for tap targets
-        2. Below the grid, a separate div fills the safe area with matching bg
-      */}
       <div className="grid grid-cols-5 pt-2 pb-1.5">
         {tabs.map((tab) => {
           const active = isActive(tab);
@@ -85,11 +81,6 @@ export function MobileBottomNav() {
           );
         })}
       </div>
-      {/* Safe area fill — extends the nav bg into the home indicator area on iOS */}
-      <div
-        className="bg-[#0A0A0A] supports-[backdrop-filter]:bg-transparent"
-        style={{ height: 'env(safe-area-inset-bottom, 0px)' }}
-      />
     </nav>
   );
 }

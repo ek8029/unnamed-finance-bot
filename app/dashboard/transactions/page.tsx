@@ -210,22 +210,12 @@ function DateDropdown({
 function KindBadge({ kind }: { kind: TxKind }) {
   const cfg = KIND_CONFIG[kind];
   return (
-    <>
-      {/* Desktop badge */}
-      <span
-        className="hidden sm:inline-flex items-center justify-center rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold tracking-wide leading-none whitespace-nowrap"
-        style={{ color: cfg.color, backgroundColor: cfg.bg }}
-      >
-        {cfg.label}
-      </span>
-      {/* Mobile badge — 9px bold, tighter padding, 3px radius */}
-      <span
-        className="sm:hidden inline-flex items-center justify-center font-mono font-bold tracking-wide leading-none whitespace-nowrap"
-        style={{ color: cfg.color, backgroundColor: cfg.bg, fontSize: '9px', padding: '4px 6px', borderRadius: '3px' }}
-      >
-        {cfg.label}
-      </span>
-    </>
+    <span
+      className="inline-flex items-center justify-center rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold tracking-wide leading-none whitespace-nowrap"
+      style={{ color: cfg.color, backgroundColor: cfg.bg }}
+    >
+      {cfg.label}
+    </span>
   );
 }
 
@@ -609,64 +599,8 @@ export default function TransactionsPage() {
 
       {/* ─── Main Content ─── */}
       <main className="space-y-6">
-        {/* ─── Mobile Net Flow Tile (md:hidden) ─── */}
-        <div className="md:hidden p-4 border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] rounded-xl">
-          {/* Header row */}
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-mono uppercase text-[var(--color-text-muted)]" style={{ fontSize: '9px', letterSpacing: '0.08em' }}>
-              NET FLOW &middot; {datePreset === 'all' ? 'ALL' : datePreset.toUpperCase()}
-            </span>
-            <span className="font-mono text-[var(--color-text-muted)]" style={{ fontSize: '9px' }}>
-              {loading ? '...' : `${pagination.total} events`}
-            </span>
-          </div>
-          {/* Big number */}
-          {loading ? (
-            <Skeleton className="h-8 w-32 mb-3" />
-          ) : (
-            <p
-              className={`font-bold leading-none mb-3 ${
-                summary.netFlow >= 0
-                  ? 'text-[var(--color-positive)]'
-                  : 'text-[var(--color-negative)]'
-              }`}
-              style={{ fontSize: '28px', fontVariantNumeric: 'tabular-nums' }}
-            >
-              {summary.netFlow >= 0 ? '+' : ''}
-              {formatCurrency(summary.netFlow)}
-            </p>
-          )}
-          {/* 4-col breakdown */}
-          <div className="grid grid-cols-4 gap-2">
-            <div>
-              <p className="font-mono uppercase text-[var(--color-text-muted)] mb-0.5" style={{ fontSize: '9px' }}>Bought</p>
-              <p className="font-mono font-bold text-[#7AA3C7]" style={{ fontSize: '12px', fontVariantNumeric: 'tabular-nums' }}>
-                {loading ? '—' : formatCurrency(tileSummary.bought)}
-              </p>
-            </div>
-            <div>
-              <p className="font-mono uppercase text-[var(--color-text-muted)] mb-0.5" style={{ fontSize: '9px' }}>Sold</p>
-              <p className="font-mono font-bold text-[#E89A7F]" style={{ fontSize: '12px', fontVariantNumeric: 'tabular-nums' }}>
-                {loading ? '—' : formatCurrency(tileSummary.sold)}
-              </p>
-            </div>
-            <div>
-              <p className="font-mono uppercase text-[var(--color-text-muted)] mb-0.5" style={{ fontSize: '9px' }}>Div</p>
-              <p className="font-mono font-bold text-[var(--color-positive)]" style={{ fontSize: '12px', fontVariantNumeric: 'tabular-nums' }}>
-                {loading ? '—' : formatCurrency(tileSummary.dividends)}
-              </p>
-            </div>
-            <div>
-              <p className="font-mono uppercase text-[var(--color-text-muted)] mb-0.5" style={{ fontSize: '9px' }}>Fees</p>
-              <p className="font-mono font-bold text-[var(--color-text-muted)]" style={{ fontSize: '12px', fontVariantNumeric: 'tabular-nums' }}>
-                {loading ? '—' : formatCurrency(tileSummary.fees)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* ─── Summary Tiles (hidden on mobile, shown md+) ─── */}
-        <div className="hidden md:grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {/* ─── Summary Tiles ─── */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {/* Net Flow */}
           <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded-lg px-4 py-3.5">
             <p className="text-[11px] font-mono uppercase tracking-[0.06em] text-[var(--color-text-muted)] mb-1">
@@ -848,8 +782,8 @@ export default function TransactionsPage() {
             <div>
               {grouped.map((group) => (
                 <div key={group.dateStr}>
-                  {/* Date header row — desktop */}
-                  <div className="hidden sm:flex items-center gap-3 px-5 py-2.5 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
+                  {/* Date header row */}
+                  <div className="flex items-center gap-3 px-4 sm:px-5 py-2.5 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
                     <h3 className="text-[13px] font-semibold text-[var(--color-gold)] font-sans m-0">
                       {formatGroupDate(group.dateStr)}
                     </h3>
@@ -863,27 +797,6 @@ export default function TransactionsPage() {
                           ? 'text-[var(--color-positive)]'
                           : 'text-[var(--color-negative)]'
                       }`}
-                    >
-                      {group.dailyNet >= 0 ? '+' : ''}
-                      {formatCurrencyDetailed(group.dailyNet)}
-                    </span>
-                  </div>
-                  {/* Date header row — mobile */}
-                  <div className="sm:hidden flex items-center gap-2 px-4 py-2.5 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
-                    <h3
-                      className="font-mono font-bold text-[var(--color-gold)] uppercase m-0"
-                      style={{ fontSize: '11px', letterSpacing: '0.18em' }}
-                    >
-                      {formatGroupDate(group.dateStr)}
-                    </h3>
-                    <div className="flex-1" />
-                    <span
-                      className={`font-mono font-bold ${
-                        group.dailyNet >= 0
-                          ? 'text-[var(--color-positive)]'
-                          : 'text-[var(--color-negative)]'
-                      }`}
-                      style={{ fontSize: '11px', fontVariantNumeric: 'tabular-nums' }}
                     >
                       {group.dailyNet >= 0 ? '+' : ''}
                       {formatCurrencyDetailed(group.dailyNet)}
