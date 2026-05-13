@@ -363,12 +363,12 @@ function SlideSectors({ data }: { data: WrappedData | null }) {
 
   return (
     <div className="flex flex-col items-center justify-center h-full px-6">
-      <p className="text-[10px] tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
+      <p className="text-[12px] tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
         &sect; 04 &mdash; CONVICTION
       </p>
 
       {/* Statement */}
-      <h2 className="text-[clamp(24px,6vw,36px)] font-bold tracking-[-0.025em] leading-[1.3] mb-8 text-center max-w-lg">
+      <h2 className="text-[clamp(28px,7vw,44px)] font-bold tracking-[-0.025em] leading-[1.2] mb-10 text-center max-w-lg">
         {topSector && topSector.pct >= 35
           ? <>You were <span className="text-[var(--color-gold)]">{topSector.pct.toFixed(0)}% {topSector.sector}</span>. Conviction paid.</>
           : topSector
@@ -378,8 +378,8 @@ function SlideSectors({ data }: { data: WrappedData | null }) {
 
       {/* Allocation bar */}
       {sectors.length > 0 && (
-        <div className="w-full max-w-md mb-6">
-          <div className="flex gap-[2px] h-2 rounded-full overflow-hidden">
+        <div className="w-full max-w-lg mb-8">
+          <div className="flex gap-[2px] h-3 rounded-full overflow-hidden">
             {sectors.map((s, i) => (
               <div
                 key={s.sector}
@@ -387,10 +387,10 @@ function SlideSectors({ data }: { data: WrappedData | null }) {
               />
             ))}
           </div>
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4">
+          <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 mt-5">
             {sectors.slice(0, 5).map((s, i) => (
-              <span key={s.sector} className="flex items-center gap-1.5 text-[10px] text-[var(--color-text-muted)]" style={MONO}>
-                <span className="w-2 h-2 rounded-full" style={{ background: sectorColors[i % sectorColors.length] }} />
+              <span key={s.sector} className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]" style={MONO}>
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: sectorColors[i % sectorColors.length] }} />
                 {s.sector} {s.pct.toFixed(0)}%
               </span>
             ))}
@@ -400,16 +400,16 @@ function SlideSectors({ data }: { data: WrappedData | null }) {
 
       {/* Net worth change */}
       {nwChange && nwChange.change !== 0 && (
-        <div className="grid grid-cols-2 gap-6 mt-4 text-center max-w-xs">
+        <div className="grid grid-cols-2 gap-8 mt-4 text-center max-w-sm">
           <div>
-            <p className="text-[8px] tracking-[0.14em] text-[var(--color-text-muted)]" style={MONO}>NET WORTH</p>
-            <p className={cn('text-lg font-bold mt-1 tabular-nums', nwChange.change >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]')}>
+            <p className="text-[11px] tracking-[0.14em] text-[var(--color-text-muted)]" style={MONO}>NET WORTH</p>
+            <p className={cn('text-2xl font-bold mt-2 tabular-nums', nwChange.change >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]')}>
               {fmtDollar(nwChange.change)}
             </p>
           </div>
           <div>
-            <p className="text-[8px] tracking-[0.14em] text-[var(--color-text-muted)]" style={MONO}>CHANGE</p>
-            <p className={cn('text-lg font-bold mt-1 tabular-nums', nwChange.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]')}>
+            <p className="text-[11px] tracking-[0.14em] text-[var(--color-text-muted)]" style={MONO}>CHANGE</p>
+            <p className={cn('text-2xl font-bold mt-2 tabular-nums', nwChange.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]')}>
               {fmtPct(nwChange.changePct)}
             </p>
           </div>
@@ -435,7 +435,7 @@ function SlidePersonality({ data }: { data: WrappedData | null }) {
         &sect; 05 &mdash; YOUR TYPE
       </p>
 
-      <p className="text-[18px] text-[var(--color-text-muted)] mb-6">You invest like a</p>
+      <p className="text-[18px] text-[var(--color-text-muted)] mb-6">You invest like</p>
 
       {/* Big personality name */}
       <h2
