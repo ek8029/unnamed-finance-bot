@@ -5,10 +5,9 @@ import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, X, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { useTier } from '@/hooks/use-tier';
-import { ProGate } from '@/components/pro-gate';
 import { useWrapped, type WrappedData } from '@/hooks/use-financial-data';
 import { HelmMark } from '@/components/helm-mark';
+import { generateShareCard, type ShareCardData, type SlideType } from '@/components/wrapped/share-card-canvas';
 
 // ═══════════════════════════════════════════
 // Helpers
@@ -30,6 +29,31 @@ const fmtPct = (n: number) =>
   `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
 
 const TOTAL_SLIDES = 6;
+
+// Slide index → share card type mapping
+const slideTypes: SlideType[] = ['summary', 'return', 'bestWorst', 'habits', 'sectors', 'summary'];
+
+function buildCardData(data: WrappedData, slideIdx: number): ShareCardData {
+  const year = data.periodLabel ?? new Date().getFullYear().toString();
+  return {
+    slideType: slideTypes[slideIdx] || 'summary',
+    year,
+    returnPct: data.totalReturn.pct,
+    returnDollars: data.totalReturn.dollars,
+    spyPct: data.spyComparison.spyReturn ?? undefined,
+    beat: data.spyComparison.beat ?? undefined,
+    bestTicker: data.bestPosition?.ticker,
+    bestReturnPct: data.bestPosition?.returnPct,
+    worstTicker: data.worstPosition?.ticker,
+    worstReturnPct: data.worstPosition?.returnPct,
+    personality: undefined,
+    tradeCount: data.tradeCount,
+    totalDividends: data.totalDividends,
+    positionCount: data.positionCount ?? 0,
+    topSector: data.sectorBreakdown?.[0]?.sector,
+    topSectorPct: data.sectorBreakdown?.[0]?.pct,
+  };
+}
 
 // ═══════════════════════════════════════════
 // Ambient glow blobs
@@ -474,14 +498,25 @@ function SlideSectors({ data }: { data: WrappedData | null }) {
 // Slide 6: SHARE CARD
 // ═══════════════════════════════════════════
 
-function SlideShareCard({ data }: { data: WrappedData | null }) {
+function SlideShareCard({ data, onShareImage, onShareTwitter }: { data: WrappedData | null; onShareImage: () => void; onShareTwitter: () => void }) {
   const pct = data?.totalReturn.pct ?? 0;
-  const dollars = data?.totalReturn.dollars ?? 0;
   const positive = pct >= 0;
   const positions = data?.positionCount ?? 0;
   const trades = data?.tradeCount ?? 0;
   const dividends = data?.totalDividends ?? 0;
   const year = data?.periodLabel ?? new Date().getFullYear().toString();
+  const [shareStatus, setShareStatus] = useState<'idle' | 'generating' | 'copied'>('idle');
+
+  const handleShareImage = async () => {
+    setShareStatus('generating');
+    try {
+      await onShareImage();
+      setShareStatus('copied');
+      setTimeout(() => setShareStatus('idle'), 2500);
+    } catch {
+      setShareStatus('idle');
+    }
+  };
 
   return (
     <div className="flex flex-col lg:flex-row items-center justify-center h-full px-6 gap-10 lg:gap-16">
@@ -504,26 +539,19 @@ function SlideShareCard({ data }: { data: WrappedData | null }) {
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
           <button
-            onClick={() => {
-              const text = `My ${year} portfolio returned ${fmtPct(pct)} 📈\n\n${positions} positions · ${trades} trades · ${fmtDollar(dividends)} in dividends\n\nSee yours at helmterminal.dev/dashboard/wrapped\n\n#HelmWrapped`;
-              if (navigator.share) {
-                navigator.share({ title: `Helm Wrapped ${year}`, text }).catch(() => {});
-              } else {
-                navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
-              }
-            }}
-            className="px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[14px] rounded-full transition-colors duration-200 text-center flex items-center justify-center gap-2 cursor-pointer"
+            onClick={handleShareImage}
+            disabled={shareStatus === 'generating'}
+            className="px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[14px] rounded-full transition-colors duration-200 text-center flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
           >
-            <Share2 className="w-4 h-4" /> Share Wrapped
+            <Share2 className="w-4 h-4" />
+            {shareStatus === 'generating' ? 'Generating...' : shareStatus === 'copied' ? 'Copied!' : 'Share Wrapped'}
           </button>
-          <a
-            href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`My ${year} portfolio returned ${fmtPct(pct)} (${fmtDollar(dollars)}) 📈\n\n${positions} positions · ${trades} trades\n\n#HelmWrapped helmterminal.dev`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-6 py-3 border border-white/10 hover:border-white/20 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-medium text-[14px] rounded-full transition-colors duration-200 text-center"
+          <button
+            onClick={onShareTwitter}
+            className="px-6 py-3 border border-white/10 hover:border-white/20 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-medium text-[14px] rounded-full transition-colors duration-200 text-center cursor-pointer"
           >
             Post on X
-          </a>
+          </button>
           <a
             href="/dashboard"
             className="px-6 py-3 border border-white/10 hover:border-white/20 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-medium text-[14px] rounded-full transition-colors duration-200 text-center"
@@ -603,14 +631,12 @@ function SlideShareCard({ data }: { data: WrappedData | null }) {
 
 export default function WrappedPage() {
   const router = useRouter();
-  const { isPro, loading: tierLoading } = useTier();
   const [period, setPeriod] = useState<'quarter' | 'year'>('year');
   const { data, loading, error } = useWrapped(period);
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(0);
   const [touchStartX, setTouchStartX] = useState(0);
-  const [proRequired, setProRequired] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -653,24 +679,44 @@ export default function WrappedPage() {
     if (diff < -60) prev();
   };
 
-  // ── Gating ──
+  // ── Share handlers ──
 
-  if (tierLoading) {
-    return (
-      <div className="fixed inset-0 z-50 bg-[var(--color-bg-base)] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[var(--color-gold)] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  const handleShareImage = useCallback(async () => {
+    if (!data) return;
+    const cardData = buildCardData(data, currentSlide);
+    const blob = await generateShareCard(cardData);
+    const file = new File([blob], 'helm-wrapped.png', { type: 'image/png' });
 
-  if (!isPro || proRequired) {
-    return (
-      <ProGate
-        feature="Portfolio Wrapped"
-        description="Your personalized portfolio recap — returns, top performers, investor personality, and more. Available on the Pro plan."
-      />
-    );
-  }
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      await navigator.share({
+        title: 'My Helm Wrapped',
+        text: 'Check out my investment year in review',
+        url: 'https://helmterminal.dev/wrapped',
+        files: [file],
+      });
+    } else {
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob }),
+      ]);
+    }
+  }, [data, currentSlide]);
+
+  const handleShareTwitter = useCallback(() => {
+    if (!data) return;
+    const captions: Record<number, string> = {
+      0: `My investment year in review is ready.\n\nGet yours free`,
+      1: `My portfolio returned ${fmtPct(data.totalReturn.pct)} this year${data.spyComparison.beat ? ` — beat the S&P 500 by ${(data.totalReturn.pct - (data.spyComparison.spyReturn ?? 0)).toFixed(1)}%` : ''}.\n\nGet your Wrapped free`,
+      2: `Best trade: ${data.bestPosition?.ticker ?? '---'} at ${fmtPct(data.bestPosition?.returnPct ?? 0)}.\nWorst: ${data.worstPosition?.ticker ?? '---'} at ${fmtPct(data.worstPosition?.returnPct ?? 0)}.\n\nEvery investor has both.`,
+      3: `${data.tradeCount} trades this year.${data.totalDividends > 0 ? ` $${Math.round(data.totalDividends).toLocaleString()} in dividends.` : ''}\n\nMy Helm Wrapped`,
+      4: `My portfolio conviction: ${data.sectorBreakdown?.[0]?.sector ?? 'diversified'}.\n\nWhat's yours?`,
+      5: `${fmtPct(data.totalReturn.pct)} return\n${data.bestPosition?.ticker ?? '---'} was my MVP\n${data.tradeCount} trades\n\nGet yours free`,
+    };
+    const text = captions[currentSlide] ?? captions[5]!;
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent('https://helmterminal.dev/wrapped')}`;
+    window.open(url, '_blank', 'width=550,height=420');
+  }, [data, currentSlide]);
+
+  // ── Loading / Error ──
 
   if (loading) {
     return (
@@ -706,7 +752,7 @@ export default function WrappedPage() {
       case 2: return <SlideBestWorst data={data} />;
       case 3: return <SlideTradingHabits data={data} />;
       case 4: return <SlideSectors data={data} />;
-      case 5: return <SlideShareCard data={data} />;
+      case 5: return <SlideShareCard data={data} onShareImage={handleShareImage} onShareTwitter={handleShareTwitter} />;
       default: return null;
     }
   }
