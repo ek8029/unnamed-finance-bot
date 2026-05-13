@@ -18,14 +18,17 @@ const TICKER_CHIPS = ['AAPL', 'NVDA', 'TSLA', 'GOOGL', 'AMZN', 'META', 'MSFT'];
 const NAV_LINKS = [
   { label: 'Analyze', href: '/analyze' },
   { label: 'Pricing', href: '/pricing' },
-  { label: 'Security', href: '/security' },
   { label: 'Tools', href: '#', children: [
     { label: 'Stock Analyzer', href: '/analyze', desc: 'AI-powered stock analysis' },
     { label: 'Stock Comparison', href: '/compare', desc: 'Side-by-side ticker comparison' },
     { label: 'TLH Calculator', href: '/tools/tlh-calculator', desc: 'Tax-loss harvesting estimator' },
+    { label: 'RSU Calculator', href: '/tools/rsu-calculator', desc: 'RSU vesting & tax estimator' },
   ]},
-  { label: 'Blog', href: '/blog' },
-  { label: 'About', href: '/about' },
+  { label: 'About', href: '#', children: [
+    { label: 'About Helm', href: '/about', desc: 'Our story and philosophy' },
+    { label: 'Blog', href: '/blog', desc: 'Guides and investment insights' },
+    { label: 'Security', href: '/security', desc: 'How we protect your data' },
+  ]},
 ];
 
 const TERMINAL_FEATURES = [
