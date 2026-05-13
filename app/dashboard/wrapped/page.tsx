@@ -140,7 +140,7 @@ const slideVariants = {
 };
 
 // ═══════════════════════════════════════════
-// Slide 1: COVER
+// Slide 1: COVER — cinematic opener
 // ═══════════════════════════════════════════
 
 function SlideCover({
@@ -152,60 +152,52 @@ function SlideCover({
 }) {
   const year = data?.periodLabel ?? new Date().getFullYear().toString();
   const trades = data?.tradeCount ?? 0;
-  const range = data?.periodRange ?? '';
+  const positions = data?.positionCount ?? 0;
 
   return (
-    <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-      {/* Eyebrow */}
-      <p
-        className="text-[11px] uppercase tracking-[0.25em] text-[var(--color-text-muted)] mb-6"
-        style={MONO}
-      >
-        Your Portfolio &middot; {year} in Review
-      </p>
+    <div className="flex flex-col items-center justify-center h-full px-6 md:px-10 overflow-hidden">
+      <div className="max-w-xl text-center md:text-left">
+        {/* Name eyebrow */}
+        <p className="text-[10px] tracking-[0.3em] text-[var(--color-gold)] mb-6 md:mb-8" style={MONO}>
+          HELM WRAPPED
+        </p>
 
-      {/* Headline */}
-      <h1 className="text-[clamp(40px,8vw,72px)] font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.05] mb-5">
-        {data?.totalReturn?.pct != null && data.totalReturn.pct > 0 ? (
-          <>Your portfolio grew{' '}
-            <span className="italic text-[var(--color-gold)]" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
-              {Math.abs(data.totalReturn.pct).toFixed(1)}%.
-            </span>
-          </>
-        ) : data?.totalReturn?.pct != null ? (
-          <>A tough {year}.{' '}
-            <span className="italic text-[var(--color-negative)]" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
-              Let&apos;s review.
-            </span>
-          </>
-        ) : (
-          <>Your {year}{' '}
-            <span className="italic text-[var(--color-gold)]" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
-              in review.
-            </span>
-          </>
-        )}
-      </h1>
+        {/* Massive serif headline */}
+        <h1
+          className="text-[clamp(52px,12vw,80px)] font-bold leading-[0.9] tracking-[-0.05em] mb-8"
+        >
+          Your<br />
+          <span
+            className="italic font-normal text-[var(--color-gold)]"
+            style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
+          >
+            {year}
+          </span>
+          <br />wrapped.
+        </h1>
 
-      {/* Subtitle */}
-      <p className="text-[15px] text-[var(--color-text-secondary)] mb-10 max-w-md" style={MONO}>
-        {trades > 0 ? `${trades} trades` : 'Your portfolio'} &middot; {range || year}
-      </p>
+        {/* Subtitle */}
+        <p className="text-[14px] text-[var(--color-text-muted)] leading-relaxed mb-10">
+          {positions > 0
+            ? `${positions} positions. ${trades} trades. One portfolio.`
+            : `${trades > 0 ? `${trades} trades.` : ''} One portfolio.`}
+        </p>
 
-      {/* CTA */}
-      <button
-        onClick={(e) => { e.stopPropagation(); onBegin(); }}
-        className="group flex items-center gap-2 px-8 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[14px] rounded-full cursor-pointer transition-colors duration-200"
-      >
-        Begin Wrapped
-        <ChevronRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-      </button>
+        {/* CTA */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onBegin(); }}
+          className="group inline-flex items-center gap-2 px-8 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-semibold text-[14px] rounded-full cursor-pointer transition-colors"
+        >
+          Begin Wrapped
+          <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+        </button>
+      </div>
     </div>
   );
 }
 
 // ═══════════════════════════════════════════
-// Slide 2: TOTAL RETURN
+// Slide 2: THE RETURN — hero number
 // ═══════════════════════════════════════════
 
 function SlideReturn({ data }: { data: WrappedData | null }) {
@@ -216,45 +208,49 @@ function SlideReturn({ data }: { data: WrappedData | null }) {
 
   return (
     <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-      {/* Eyebrow */}
-      <p
-        className="text-[11px] uppercase tracking-[0.25em] text-[var(--color-text-muted)] mb-8"
-        style={MONO}
-      >
-        &sect; 01 &mdash; The Return
+      <p className="text-[10px] tracking-[0.3em] text-[var(--color-gold)] mb-4" style={MONO}>
+        &sect; 01 &mdash; THE RETURN
       </p>
 
-      {/* Giant percentage */}
+      <p className="text-[13px] text-[var(--color-text-muted)] mb-4">Your portfolio returned</p>
+
+      {/* Giant number with glow */}
       <div
         className={cn(
-          'text-[clamp(80px,25vw,260px)] font-bold leading-none tabular-nums tracking-tighter mb-6',
-          positive ? 'text-emerald-400' : 'text-red-400',
+          'text-[clamp(72px,22vw,160px)] font-bold leading-none tabular-nums tracking-[-0.05em]',
+          positive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
         )}
         style={{
           textShadow: positive
-            ? '0 0 80px rgba(52,211,153,0.3), 0 0 160px rgba(52,211,153,0.1)'
-            : '0 0 80px rgba(248,113,113,0.3), 0 0 160px rgba(248,113,113,0.1)',
+            ? '0 0 40px rgba(74,222,128,0.3)'
+            : '0 0 40px rgba(248,113,113,0.3)',
+          fontVariantNumeric: 'tabular-nums',
         }}
       >
         {fmtPct(pct)}
       </div>
 
-      {/* Comparison row */}
-      <div className="flex items-center gap-6 text-[13px]" style={MONO}>
+      {/* 3-col comparison */}
+      <div className="grid grid-cols-3 gap-6 md:gap-14 mt-10 max-w-sm">
         {spyReturn != null && (
-          <span className="text-[var(--color-text-muted)]">
-            S&amp;P 500: {fmtPct(spyReturn)}
-          </span>
+          <div>
+            <p className="text-[8px] tracking-[0.14em] text-[var(--color-text-muted)]" style={MONO}>S&amp;P 500</p>
+            <p className="text-base font-bold mt-1" style={MONO}>{fmtPct(spyReturn)}</p>
+          </div>
         )}
         {alpha != null && (
-          <span className={cn(
-            'px-3 py-1 rounded-full text-[12px] font-medium',
-            alpha >= 0
-              ? 'bg-emerald-500/10 text-emerald-400'
-              : 'bg-red-500/10 text-red-400',
-          )}>
-            Alpha: {fmtPct(alpha)}
-          </span>
+          <div>
+            <p className="text-[8px] tracking-[0.14em] text-[var(--color-text-muted)]" style={MONO}>ALPHA</p>
+            <p className={cn('text-base font-bold mt-1', alpha >= 0 ? 'text-[var(--color-gold)]' : 'text-[var(--color-negative)]')} style={MONO}>{fmtPct(alpha)}</p>
+          </div>
+        )}
+        {data?.spyComparison.beat != null && (
+          <div>
+            <p className="text-[8px] tracking-[0.14em] text-[var(--color-text-muted)]" style={MONO}>MARKET</p>
+            <p className={cn('text-base font-bold mt-1', data.spyComparison.beat ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]')} style={MONO}>
+              {data.spyComparison.beat ? 'BEAT' : 'MISSED'}
+            </p>
+          </div>
         )}
       </div>
     </div>
@@ -262,7 +258,7 @@ function SlideReturn({ data }: { data: WrappedData | null }) {
 }
 
 // ═══════════════════════════════════════════
-// Slide 3: BEST & WORST
+// Slide 3: MVP & VILLAIN
 // ═══════════════════════════════════════════
 
 function SlideBestWorst({ data }: { data: WrappedData | null }) {
@@ -270,60 +266,38 @@ function SlideBestWorst({ data }: { data: WrappedData | null }) {
   const worst = data?.worstPosition;
 
   return (
-    <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-      {/* Eyebrow */}
-      <p
-        className="text-[11px] uppercase tracking-[0.25em] text-[var(--color-text-muted)] mb-6"
-        style={MONO}
-      >
-        &sect; 02 &mdash; Winners &amp; Losers
+    <div className="flex flex-col items-center justify-center h-full px-6">
+      <p className="text-[10px] tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
+        &sect; 02 &mdash; MVP &amp; VILLAIN
       </p>
 
-      {/* Headline */}
-      <h2 className="text-[clamp(22px,4vw,36px)] font-bold tracking-tight text-[var(--color-text-primary)] leading-tight mb-10 max-w-2xl">
-        Your MVP was{' '}
-        <span className="text-emerald-400">{best?.ticker ?? '---'}</span>.{' '}
-        Your villain was{' '}
-        <span className="text-red-400">{worst?.ticker ?? '---'}</span>.
+      {/* Statement headline */}
+      <h2 className="text-[clamp(22px,5vw,32px)] font-bold tracking-[-0.025em] leading-[1.2] mb-8 text-center max-w-lg">
+        Your MVP was <span className="text-[var(--color-gold)]">{best?.ticker ?? '---'}</span>.<br />
+        Your villain was <span className="text-[var(--color-negative)]">{worst?.ticker ?? '---'}</span>.
       </h2>
 
-      {/* Two cards */}
-      <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xl">
-        {/* Best card */}
-        <div className="flex-1 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.04] p-6">
-          <p className="text-[11px] uppercase tracking-widest text-emerald-400 mb-3" style={MONO}>
-            Best
-          </p>
-          <p className="text-[20px] font-bold text-[var(--color-text-primary)] mb-1">
-            {best?.ticker ?? '---'}
-          </p>
-          <p className="text-[13px] text-[var(--color-text-muted)] mb-4 truncate">
-            {best?.name ?? 'No position data'}
-          </p>
-          <p className="text-[28px] font-bold text-emerald-400 tabular-nums">
+      {/* Two cards stacked */}
+      <div className="flex flex-col gap-3 w-full max-w-md">
+        {/* MVP card */}
+        <div className="rounded-xl border border-[var(--color-positive)]/20 bg-[var(--color-positive)]/[0.04] p-5 grid grid-cols-[1fr_auto] gap-4 items-center">
+          <div>
+            <p className="text-lg font-bold text-[var(--color-positive)] tracking-wide" style={MONO}>{best?.ticker ?? '---'}</p>
+            <p className="text-[11px] text-[var(--color-text-muted)] mt-1">{best?.name ?? ''} &middot; {best ? fmtDollar(best.returnDollars) : ''}</p>
+          </div>
+          <p className="text-[32px] font-bold tabular-nums text-[var(--color-positive)] tracking-[-0.025em]">
             {best ? fmtPct(best.returnPct) : '---'}
-          </p>
-          <p className="text-[13px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>
-            {best ? fmtDollar(best.returnDollars) : ''}
           </p>
         </div>
 
-        {/* Worst card */}
-        <div className="flex-1 rounded-xl border border-red-500/30 bg-red-500/[0.04] p-6">
-          <p className="text-[11px] uppercase tracking-widest text-red-400 mb-3" style={MONO}>
-            Worst
-          </p>
-          <p className="text-[20px] font-bold text-[var(--color-text-primary)] mb-1">
-            {worst?.ticker ?? '---'}
-          </p>
-          <p className="text-[13px] text-[var(--color-text-muted)] mb-4 truncate">
-            {worst?.name ?? 'No position data'}
-          </p>
-          <p className="text-[28px] font-bold text-red-400 tabular-nums">
+        {/* Villain card */}
+        <div className="rounded-xl border border-[var(--color-negative)]/20 bg-[var(--color-negative)]/[0.04] p-5 grid grid-cols-[1fr_auto] gap-4 items-center">
+          <div>
+            <p className="text-lg font-bold text-[var(--color-negative)] tracking-wide" style={MONO}>{worst?.ticker ?? '---'}</p>
+            <p className="text-[11px] text-[var(--color-text-muted)] mt-1">{worst?.name ?? ''} &middot; {worst ? fmtDollar(worst.returnDollars) : ''}</p>
+          </div>
+          <p className="text-[32px] font-bold tabular-nums text-[var(--color-negative)] tracking-[-0.025em]">
             {worst ? fmtPct(worst.returnPct) : '---'}
-          </p>
-          <p className="text-[13px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>
-            {worst ? fmtDollar(worst.returnDollars) : ''}
           </p>
         </div>
       </div>
@@ -332,7 +306,7 @@ function SlideBestWorst({ data }: { data: WrappedData | null }) {
 }
 
 // ═══════════════════════════════════════════
-// Slide 4: TRADING HABITS
+// Slide 4: HABITS
 // ═══════════════════════════════════════════
 
 function SlideTradingHabits({ data }: { data: WrappedData | null }) {
@@ -342,59 +316,33 @@ function SlideTradingHabits({ data }: { data: WrappedData | null }) {
   const positions = data?.positionCount ?? 0;
   const portfolioVal = data?.portfolioValue ?? 0;
 
-  // Format the most active day nicely
   const activeDayLabel = activeDay
-    ? new Date(activeDay.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    ? new Date(activeDay.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', hour: 'numeric', minute: '2-digit' })
     : null;
 
-  const stats = [
-    { label: 'Trades', value: trades.toString() },
-    { label: 'Dividends', value: fmtDollar(dividends) },
-    { label: 'Positions', value: positions.toString() },
-    { label: 'Portfolio', value: fmtDollar(portfolioVal) },
-  ];
-
   return (
-    <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-      {/* Eyebrow */}
-      <p
-        className="text-[11px] uppercase tracking-[0.25em] text-[var(--color-text-muted)] mb-6"
-        style={MONO}
-      >
-        &sect; 03 &mdash; How You Traded
+    <div className="flex flex-col items-center justify-center h-full px-6">
+      <p className="text-[10px] tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
+        &sect; 03 &mdash; HABITS
       </p>
 
-      {/* Headline */}
-      <h2 className="text-[clamp(22px,4vw,36px)] font-bold tracking-tight text-[var(--color-text-primary)] leading-tight mb-4 max-w-2xl">
-        {trades} trade{trades !== 1 ? 's' : ''}.{' '}
-        {activeDayLabel ? (
-          <>
-            Busiest day: <span className="text-[var(--color-gold)]">{activeDayLabel}</span>.
-          </>
-        ) : (
-          <span className="text-[var(--color-gold)]">Steady hands.</span>
-        )}
+      {/* Statement */}
+      <h2 className="text-[clamp(20px,5vw,28px)] font-bold tracking-[-0.025em] leading-[1.3] mb-8 text-center max-w-lg">
+        You traded <span className="text-[var(--color-gold)]">{trades} times</span>
+        {activeDayLabel ? <>, mostly on {activeDayLabel}s.</> : '.'}
       </h2>
 
-      {activeDay && (
-        <p className="text-[13px] text-[var(--color-text-muted)] mb-10" style={MONO}>
-          {activeDay.trades} trades on your most active day
-        </p>
-      )}
-
-      {/* 4 stat cards */}
-      <div className="grid grid-cols-2 gap-3 w-full max-w-md">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5"
-          >
-            <p className="text-[11px] uppercase tracking-widest text-[var(--color-text-muted)] mb-2" style={MONO}>
-              {s.label}
-            </p>
-            <p className="text-[22px] font-bold text-[var(--color-text-primary)] tabular-nums">
-              {s.value}
-            </p>
+      {/* 2x2 stat grid */}
+      <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
+        {[
+          { value: trades.toString(), label: 'TRADES' },
+          { value: dividends > 0 ? fmtDollar(dividends) : '$0', label: 'DIVIDENDS' },
+          { value: positions.toString(), label: 'POSITIONS' },
+          { value: fmtDollar(portfolioVal), label: 'VALUE' },
+        ].map((s) => (
+          <div key={s.label} className="p-4 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl">
+            <p className="text-[24px] font-bold tabular-nums tracking-[-0.02em]">{s.value}</p>
+            <p className="text-[9px] tracking-[0.14em] text-[var(--color-gold)] mt-2" style={MONO}>{s.label}</p>
           </div>
         ))}
       </div>
@@ -403,93 +351,70 @@ function SlideTradingHabits({ data }: { data: WrappedData | null }) {
 }
 
 // ═══════════════════════════════════════════
-// Slide 5: SECTORS
+// Slide 5: CONVICTION (sectors)
 // ═══════════════════════════════════════════
 
 function SlideSectors({ data }: { data: WrappedData | null }) {
   const sectors = data?.sectorBreakdown ?? [];
   const nwChange = data?.netWorthChange;
-  const healthTrend = data?.healthScoreTrend;
 
-  // Color palette for sector bar
-  const sectorColors = [
-    'bg-[var(--color-gold)]',
-    'bg-emerald-400',
-    'bg-sky-400',
-    'bg-purple-400',
-    'bg-orange-400',
-    'bg-pink-400',
-  ];
-
+  const sectorColors = ['#E6B94D', '#4ADE80', '#7AA3C7', '#A78BFA', '#C8A165', '#5A6070'];
   const topSector = sectors.length > 0 ? sectors[0] : null;
 
   return (
-    <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-      {/* Eyebrow */}
-      <p
-        className="text-[11px] uppercase tracking-[0.25em] text-[var(--color-text-muted)] mb-6"
-        style={MONO}
-      >
-        &sect; 04 &mdash; Your Bets
+    <div className="flex flex-col items-center justify-center h-full px-6">
+      <p className="text-[10px] tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
+        &sect; 04 &mdash; CONVICTION
       </p>
 
-      {/* Headline */}
-      <h2 className="text-[clamp(20px,3.5vw,32px)] font-bold tracking-tight text-[var(--color-text-primary)] leading-tight mb-10 max-w-xl">
-        {topSector && topSector.pct >= 40
-          ? `Nearly half your portfolio is in ${topSector.sector}.`
+      {/* Statement */}
+      <h2 className="text-[clamp(20px,4.5vw,28px)] font-bold tracking-[-0.025em] leading-[1.3] mb-8 text-center max-w-lg">
+        {topSector && topSector.pct >= 35
+          ? <>You were <span className="text-[var(--color-gold)]">{topSector.pct.toFixed(0)}% {topSector.sector}</span>. Conviction paid.</>
           : topSector
-            ? `${topSector.sector} leads your portfolio at ${topSector.pct.toFixed(0)}%.`
-            : 'Your sector allocation.'}
+            ? <><span className="text-[var(--color-gold)]">{topSector.sector}</span> led at {topSector.pct.toFixed(0)}%.</>
+            : 'Your allocation.'}
       </h2>
 
-      {/* Horizontal stacked bar */}
+      {/* Allocation bar */}
       {sectors.length > 0 && (
-        <div className="w-full max-w-lg mb-4">
-          <div className="flex h-8 rounded-lg overflow-hidden">
+        <div className="w-full max-w-md mb-6">
+          <div className="flex gap-[2px] h-2 rounded-full overflow-hidden">
             {sectors.map((s, i) => (
               <div
                 key={s.sector}
-                className={cn('transition-all duration-500', sectorColors[i % sectorColors.length])}
-                style={{ width: `${Math.max(s.pct, 2)}%` }}
-                title={`${s.sector}: ${s.pct.toFixed(1)}%`}
+                style={{ flex: Math.max(s.pct, 2), background: sectorColors[i % sectorColors.length] }}
               />
             ))}
           </div>
-          {/* Legend */}
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 mt-3">
-            {sectors.map((s, i) => (
-              <div key={s.sector} className="flex items-center gap-1.5">
-                <div className={cn('w-2 h-2 rounded-full', sectorColors[i % sectorColors.length])} />
-                <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
-                  {s.sector} {s.pct.toFixed(0)}%
-                </span>
-              </div>
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4">
+            {sectors.slice(0, 5).map((s, i) => (
+              <span key={s.sector} className="flex items-center gap-1.5 text-[10px] text-[var(--color-text-muted)]" style={MONO}>
+                <span className="w-2 h-2 rounded-full" style={{ background: sectorColors[i % sectorColors.length] }} />
+                {s.sector} {s.pct.toFixed(0)}%
+              </span>
             ))}
           </div>
         </div>
       )}
 
-      {/* Stats below */}
-      <div className="flex items-center gap-6 mt-6 text-[13px]" style={MONO}>
-        {nwChange && nwChange.change !== 0 && (
-          <span className="text-[var(--color-text-secondary)]">
-            Net worth: {fmtDollar(nwChange.change)} ({fmtPct(nwChange.changePct)})
-          </span>
-        )}
-        {healthTrend && healthTrend.end != null && (
-          <span className="text-[var(--color-text-secondary)]">
-            Health: {healthTrend.end}/100
-            {healthTrend.change !== 0 && (
-              <span className={cn(
-                'ml-1',
-                healthTrend.change > 0 ? 'text-emerald-400' : 'text-red-400',
-              )}>
-                ({healthTrend.change > 0 ? '+' : ''}{healthTrend.change})
-              </span>
-            )}
-          </span>
-        )}
-      </div>
+      {/* Net worth change */}
+      {nwChange && nwChange.change !== 0 && (
+        <div className="grid grid-cols-2 gap-6 mt-4 text-center max-w-xs">
+          <div>
+            <p className="text-[8px] tracking-[0.14em] text-[var(--color-text-muted)]" style={MONO}>NET WORTH</p>
+            <p className={cn('text-lg font-bold mt-1 tabular-nums', nwChange.change >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]')}>
+              {fmtDollar(nwChange.change)}
+            </p>
+          </div>
+          <div>
+            <p className="text-[8px] tracking-[0.14em] text-[var(--color-text-muted)]" style={MONO}>CHANGE</p>
+            <p className={cn('text-lg font-bold mt-1 tabular-nums', nwChange.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]')}>
+              {fmtPct(nwChange.changePct)}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
