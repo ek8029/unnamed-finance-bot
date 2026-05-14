@@ -198,12 +198,12 @@ export function WrappedLanding() {
             </p>
 
             <h1 className="text-[clamp(44px,9vw,80px)] font-bold leading-[0.92] tracking-[-0.04em] mb-8">
-              You had a year.<br />
+              Your portfolio.<br />
               <span
                 className="text-[#E6B94D] italic font-normal"
                 style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
               >
-                Do you know<br />how it went?
+                Your year<br />in review.
               </span>
             </h1>
 
@@ -355,7 +355,7 @@ export function WrappedLanding() {
           <h2
             className="text-[clamp(36px,8vw,72px)] font-bold tracking-[-0.04em] leading-[0.92] mb-12"
           >
-            Your year happened.<br />
+            See what your<br />portfolio did.<br />
             <span
               className="text-[#E6B94D] italic font-normal"
               style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
