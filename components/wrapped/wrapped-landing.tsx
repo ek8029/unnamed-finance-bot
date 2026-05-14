@@ -431,139 +431,119 @@ export function WrappedLanding() {
 
   // ── Landing state (not logged in) ──
   return (
-    <div className="min-h-screen bg-[#060606] text-[var(--color-text-primary)] overflow-hidden">
-      {/* Nav — minimal, transparent */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 md:px-10 py-5 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5 opacity-60 hover:opacity-100 transition-opacity">
-          <HelmMark size={18} />
-          <span className="text-[12px] font-bold uppercase tracking-[0.08em]">Helm</span>
+    <div className="min-h-screen bg-[#060606] text-white overflow-hidden">
+      {/* Nav */}
+      <nav className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 py-5 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2.5 opacity-70 hover:opacity-100 transition-opacity">
+          <HelmMark size={20} />
+          <span className="text-[13px] font-bold uppercase tracking-[0.06em]">Helm</span>
         </Link>
-        <div className="flex items-center gap-5">
-          <Link
-            href="/login?redirect=/wrapped"
-            className="text-[12px] text-white/40 hover:text-white/80 transition-colors"
-            style={MONO}
-          >
+        <div className="flex items-center gap-6">
+          <Link href="/login?redirect=/wrapped" className="text-[13px] text-white/50 hover:text-white transition-colors" style={MONO}>
             Log in
           </Link>
-          <Link
-            href="/signup?flow=wrapped"
-            className="text-[12px] text-[#E6B94D] hover:text-[#FFD67A] transition-colors font-semibold"
+          <button
+            onClick={() => setFlowState('signup')}
+            className="text-[13px] text-[#E6B94D] hover:text-[#FFD67A] font-bold transition-colors cursor-pointer"
             style={MONO}
           >
             Get yours &rarr;
-          </Link>
+          </button>
         </div>
       </nav>
 
-      {/* ═══════════════════════════════════════════
-          HERO — full viewport, two-column on desktop
-          Left: editorial text. Right: physical card artifact.
-          ═══════════════════════════════════════════ */}
-      <section className="relative min-h-screen flex items-center">
-        {/* Ambient glow — visible, warm */}
-        <div
-          className="pointer-events-none absolute top-[15%] right-[5%] w-[800px] h-[800px] opacity-[0.08] blur-[140px]"
-          style={{ background: 'radial-gradient(circle, #E6B94D, transparent 65%)' }}
-        />
-        <div
-          className="pointer-events-none absolute bottom-[10%] left-[10%] w-[400px] h-[400px] opacity-[0.04] blur-[100px]"
-          style={{ background: 'radial-gradient(circle, #4ADE80, transparent 70%)' }}
-        />
+      {/* ══════════════════════════════════════
+          HERO — viewport-filling, oversized type
+          ══════════════════════════════════════ */}
+      <section className="relative min-h-screen flex items-center overflow-hidden">
+        {/* Glow */}
+        <div className="pointer-events-none absolute top-[10%] right-0 w-[1000px] h-[1000px] opacity-[0.1] blur-[160px]" style={{ background: 'radial-gradient(circle, #E6B94D, transparent 60%)' }} />
+        <div className="pointer-events-none absolute bottom-0 left-[5%] w-[600px] h-[600px] opacity-[0.06] blur-[120px]" style={{ background: 'radial-gradient(circle, #4ADE80, transparent 65%)' }} />
 
-        <div className="w-full max-w-6xl mx-auto px-6 md:px-10 grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-12 lg:gap-20 items-center pt-28 pb-20 lg:pt-0 lg:pb-0">
-          {/* LEFT — text */}
+        <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-[1fr_480px] gap-10 lg:gap-16 items-center pt-28 pb-16 lg:pt-0 lg:pb-0">
+          {/* LEFT — massive headline */}
           <div>
-            <p className="text-[12px] tracking-[0.3em] text-[#E6B94D] uppercase mb-8" style={MONO}>
+            <p className="text-[14px] tracking-[0.3em] text-[#E6B94D] uppercase mb-10" style={MONO}>
               Helm Wrapped &middot; 2025
             </p>
 
-            <h1 className="text-[clamp(44px,9vw,80px)] font-bold leading-[0.92] tracking-[-0.04em] mb-8">
-              Your portfolio.<br />
+            <h1
+              className="font-bold leading-[0.88] tracking-[-0.05em] mb-10"
+              style={{ fontSize: 'clamp(56px, 10vw, 130px)' }}
+            >
+              Your<br />portfolio.<br />
               <span
                 className="text-[#E6B94D] italic font-normal"
                 style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
               >
-                Your year<br />in review.
+                Wrapped.
               </span>
             </h1>
 
-            <p className="text-[17px] text-white/60 leading-[1.7] max-w-[440px] mb-12">
-              Your portfolio return, best trade, worst trade, investor personality — everything you need to brag or learn from. Connect any brokerage. 30 seconds. Free.
+            <p className="text-[20px] md:text-[22px] text-white/60 leading-[1.6] max-w-[520px] mb-14">
+              Return. Best trade. Worst trade. Investor personality. Everything you need to brag — or learn from.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
               <button
                 onClick={() => setFlowState('signup')}
-                className="inline-flex items-center gap-2.5 px-10 py-4 bg-[#E6B94D] text-black text-[14px] font-bold tracking-[0.02em] rounded-sm transition-all hover:bg-[#FFD67A] cursor-pointer"
-                style={{ boxShadow: '0 0 0 1px rgba(230,185,77,0.4), 0 16px 48px rgba(230,185,77,0.25)' }}
+                className="inline-flex items-center gap-3 px-12 py-5 bg-[#E6B94D] text-black text-[16px] font-bold tracking-[0.02em] rounded transition-all hover:bg-[#FFD67A] cursor-pointer"
+                style={{ boxShadow: '0 0 0 1px rgba(230,185,77,0.5), 0 20px 60px rgba(230,185,77,0.3)' }}
               >
                 See my Wrapped
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-5 h-5" />
               </button>
-              <Link
-                href="/login?redirect=/wrapped"
-                className="text-[14px] text-white/50 hover:text-white/80 transition-colors"
-              >
-                Already have an account?
+              <Link href="/login?redirect=/wrapped" className="text-[15px] text-white/50 hover:text-white transition-colors">
+                I have an account
               </Link>
             </div>
+
+            <p className="text-[13px] text-white/30 mt-6" style={MONO}>Free &middot; 30 seconds &middot; Any brokerage</p>
           </div>
 
-          {/* RIGHT — the card */}
+          {/* RIGHT — sample card, larger */}
           <div className="relative flex justify-center lg:justify-end">
-            <div className="w-full max-w-[360px] relative">
-              {/* Gold glow behind card */}
-              <div className="absolute -inset-4 rounded-2xl opacity-[0.12] blur-[40px] pointer-events-none" style={{ background: '#E6B94D' }} />
+            <div className="w-full max-w-[420px] relative">
+              <div className="absolute -inset-6 rounded-3xl opacity-[0.15] blur-[50px] pointer-events-none" style={{ background: '#E6B94D' }} />
               <div
-                className="relative rounded-xl overflow-hidden p-8 pb-10"
+                className="relative rounded-2xl overflow-hidden p-10 pb-12"
                 style={{
-                  background: 'linear-gradient(160deg, #141414 0%, #0A0A0A 100%)',
-                  border: '1px solid rgba(230,185,77,0.2)',
-                  boxShadow: '0 40px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.03)',
+                  background: 'linear-gradient(160deg, #161616 0%, #0A0A0A 100%)',
+                  border: '1px solid rgba(230,185,77,0.25)',
+                  boxShadow: '0 50px 120px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.04)',
                   aspectRatio: '3/4',
                 }}
               >
-                {/* Card top */}
                 <div className="flex items-center justify-between">
-                  <HelmMark size={20} />
-                  <span className="text-[10px] tracking-[0.2em] text-[#E6B94D] uppercase font-semibold" style={MONO}>Wrapped 2025</span>
+                  <HelmMark size={24} />
+                  <span className="text-[12px] tracking-[0.2em] text-[#E6B94D] uppercase font-bold" style={MONO}>2025</span>
                 </div>
 
-                {/* Card hero number */}
-                <div className="mt-10">
-                  <p className="text-[10px] tracking-[0.2em] text-white/40 uppercase mb-3" style={MONO}>Your return</p>
+                <div className="mt-12">
+                  <p className="text-[12px] tracking-[0.25em] text-white/40 uppercase mb-4" style={MONO}>Your return</p>
                   <p
-                    className="text-[80px] font-bold leading-none tabular-nums tracking-[-0.04em] text-[#4ADE80]"
-                    style={{ textShadow: '0 0 80px rgba(74,222,128,0.25)' }}
+                    className="font-bold leading-none tabular-nums tracking-[-0.04em] text-[#4ADE80]"
+                    style={{ fontSize: 'clamp(64px, 12vw, 100px)', textShadow: '0 0 100px rgba(74,222,128,0.3)' }}
                   >
                     +28.4%
                   </p>
-                  <p className="text-[12px] text-white/40 mt-3 font-medium" style={MONO}>Beat S&amp;P 500 by 8.6%</p>
+                  <p className="text-[14px] text-white/45 mt-4 font-medium" style={MONO}>Beat S&amp;P 500 by 8.6%</p>
                 </div>
 
-                {/* Card divider */}
-                <div className="h-px my-6" style={{ background: 'linear-gradient(to right, transparent, rgba(230,185,77,0.3), transparent)' }} />
+                <div className="h-px my-8" style={{ background: 'linear-gradient(to right, transparent, rgba(230,185,77,0.35), transparent)' }} />
 
-                {/* Card stats */}
-                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                  {[
-                    ['MVP', 'NVDA'],
-                    ['TYPE', 'Growth Hunter'],
-                    ['TRADES', '287'],
-                    ['ALPHA', '+8.6%'],
-                  ].map(([label, value]) => (
-                    <div key={label}>
-                      <p className="text-[9px] tracking-[0.18em] text-white/35 uppercase" style={MONO}>{label}</p>
-                      <p className="text-[16px] font-bold text-[#E6B94D] mt-1" style={MONO}>{value}</p>
+                <div className="grid grid-cols-2 gap-x-10 gap-y-5">
+                  {[['MVP', 'NVDA'], ['TYPE', 'Growth Hunter'], ['TRADES', '287'], ['ALPHA', '+8.6%']].map(([l, v]) => (
+                    <div key={l}>
+                      <p className="text-[10px] tracking-[0.2em] text-white/35 uppercase" style={MONO}>{l}</p>
+                      <p className="text-[18px] font-bold text-[#E6B94D] mt-1.5" style={MONO}>{v}</p>
                     </div>
                   ))}
                 </div>
 
-                {/* Card footer */}
-                <div className="absolute bottom-5 left-8 right-8 flex justify-between">
-                  <span className="text-[9px] tracking-[0.15em] text-white/25 uppercase" style={MONO}>helmterminal.dev</span>
-                  <span className="text-[9px] tracking-[0.15em] text-white/25 uppercase" style={MONO}>#HelmWrapped</span>
+                <div className="absolute bottom-6 left-10 right-10 flex justify-between">
+                  <span className="text-[10px] tracking-[0.15em] text-white/25 uppercase" style={MONO}>helmterminal.dev</span>
+                  <span className="text-[10px] tracking-[0.15em] text-white/25 uppercase" style={MONO}>#HelmWrapped</span>
                 </div>
               </div>
             </div>
@@ -571,97 +551,93 @@ export function WrappedLanding() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════
-          WHAT'S INSIDE — numbered list with presence
-          ═══════════════════════════════════════════ */}
-      <section className="py-24 md:py-32 border-t border-white/[0.06]">
-        <div className="max-w-6xl mx-auto px-6 md:px-10">
-          <p className="text-[12px] tracking-[0.3em] text-[#E6B94D] uppercase mb-14" style={MONO}>
+      {/* ══════════════════════════════════════
+          WHAT'S INSIDE — oversized numbered list
+          ══════════════════════════════════════ */}
+      <section className="py-32 md:py-44 border-t border-white/[0.06]">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-12">
+          <p className="text-[14px] tracking-[0.3em] text-[#E6B94D] uppercase mb-16" style={MONO}>
             Seven slides. One portfolio.
           </p>
 
-          <div className="space-y-0">
-            {[
-              { n: '01', label: 'Total return vs S&P 500', accent: true },
-              { n: '02', label: 'Your best and worst trade' },
-              { n: '03', label: 'How you traded — habits, volume, timing' },
-              { n: '04', label: 'Sector conviction and allocation' },
-              { n: '05', label: 'Your investor personality type', accent: true },
-              { n: '06', label: 'Shareable card with your stats' },
-            ].map((item) => (
-              <div
-                key={item.n}
-                className="flex items-baseline gap-6 md:gap-8 py-6 border-b border-white/[0.06] group cursor-default"
+          {[
+            { n: '01', label: 'Total return vs the S&P 500', accent: true },
+            { n: '02', label: 'Your best and worst trade' },
+            { n: '03', label: 'How you traded — habits, timing, volume' },
+            { n: '04', label: 'Sector conviction and allocation' },
+            { n: '05', label: 'Your investor personality type', accent: true },
+            { n: '06', label: 'A shareable card with your stats' },
+          ].map((item) => (
+            <div
+              key={item.n}
+              className="flex items-baseline gap-6 md:gap-10 py-7 md:py-8 border-b border-white/[0.06] group cursor-default"
+            >
+              <span className="text-[18px] md:text-[22px] text-[#E6B94D] tabular-nums shrink-0 font-bold" style={MONO}>{item.n}</span>
+              <span
+                className={`font-semibold tracking-[-0.025em] transition-colors duration-300 ${item.accent ? 'text-white' : 'text-white/55'} group-hover:text-white`}
+                style={{ fontSize: 'clamp(24px, 5vw, 44px)' }}
               >
-                <span className="text-[14px] text-[#E6B94D] tabular-nums shrink-0 font-semibold" style={MONO}>{item.n}</span>
-                <span className={`text-[clamp(20px,4vw,32px)] font-semibold tracking-[-0.02em] transition-colors duration-300 ${item.accent ? 'text-white' : 'text-white/60'} group-hover:text-white`}>
-                  {item.label}
-                </span>
-                <ArrowRight className="w-4 h-4 text-[#E6B94D] opacity-0 group-hover:opacity-100 transition-opacity ml-auto shrink-0 hidden md:block" />
-              </div>
-            ))}
-          </div>
+                {item.label}
+              </span>
+              <ArrowRight className="w-5 h-5 text-[#E6B94D] opacity-0 group-hover:opacity-100 transition-opacity ml-auto shrink-0 hidden md:block" />
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════
-          HOW IT WORKS
-          ═══════════════════════════════════════════ */}
-      <section className="py-24 md:py-32 border-t border-white/[0.06]">
-        <div className="max-w-6xl mx-auto px-6 md:px-10">
-          <p className="text-[12px] tracking-[0.3em] text-[#E6B94D] uppercase mb-14" style={MONO}>
+      {/* ══════════════════════════════════════
+          HOW IT WORKS — big numbers
+          ══════════════════════════════════════ */}
+      <section className="py-32 md:py-44 border-t border-white/[0.06]">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-12">
+          <p className="text-[14px] tracking-[0.3em] text-[#E6B94D] uppercase mb-16" style={MONO}>
             Three steps. Thirty seconds.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-14 md:gap-20">
             {[
               { n: '01', title: 'Create account', desc: 'Free. No credit card. Takes 10 seconds.' },
               { n: '02', title: 'Connect brokerage', desc: 'Read-only via Plaid. We can never trade or move money.' },
               { n: '03', title: 'See your Wrapped', desc: 'Personalized slides you can share anywhere.' },
             ].map((step) => (
-              <div key={step.n} className="border-t border-white/[0.08] pt-8">
-                <p className="text-[24px] text-[#E6B94D] font-bold mb-4 tabular-nums" style={MONO}>{step.n}</p>
-                <h3 className="text-[20px] font-semibold tracking-[-0.01em] mb-3">{step.title}</h3>
-                <p className="text-[15px] text-white/50 leading-relaxed">{step.desc}</p>
+              <div key={step.n} className="border-t border-white/[0.08] pt-10">
+                <p className="text-[40px] md:text-[56px] text-[#E6B94D] font-bold mb-5 tabular-nums leading-none" style={MONO}>{step.n}</p>
+                <h3 className="text-[24px] md:text-[28px] font-bold tracking-[-0.02em] mb-4">{step.title}</h3>
+                <p className="text-[17px] text-white/50 leading-relaxed">{step.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════
-          FINAL CTA
-          ═══════════════════════════════════════════ */}
-      <section className="py-32 md:py-40 border-t border-white/[0.06]">
-        <div className="max-w-6xl mx-auto px-6 md:px-10">
+      {/* ══════════════════════════════════════
+          FINAL CTA — massive
+          ══════════════════════════════════════ */}
+      <section className="py-40 md:py-52 border-t border-white/[0.06]">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-12">
           <h2
-            className="text-[clamp(36px,8vw,72px)] font-bold tracking-[-0.04em] leading-[0.92] mb-12"
+            className="font-bold tracking-[-0.05em] leading-[0.88] mb-14"
+            style={{ fontSize: 'clamp(44px, 9vw, 100px)' }}
           >
-            See what your<br />portfolio did.<br />
-            <span
-              className="text-[#E6B94D] italic font-normal"
-              style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
-            >
-              See how it went.
-            </span>
+            See what your<br />portfolio did.
           </h2>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-            <Link
-              href="/signup?flow=wrapped"
-              className="inline-flex items-center gap-2.5 px-10 py-4 bg-[#E6B94D] text-black text-[14px] font-bold tracking-[0.02em] rounded-sm transition-all hover:bg-[#FFD67A]"
-              style={{ boxShadow: '0 0 0 1px rgba(230,185,77,0.4), 0 16px 48px rgba(230,185,77,0.25)' }}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+            <button
+              onClick={() => setFlowState('signup')}
+              className="inline-flex items-center gap-3 px-14 py-6 bg-[#E6B94D] text-black text-[18px] font-bold tracking-[0.02em] rounded transition-all hover:bg-[#FFD67A] cursor-pointer"
+              style={{ boxShadow: '0 0 0 1px rgba(230,185,77,0.5), 0 24px 64px rgba(230,185,77,0.35)' }}
             >
               Get my Wrapped
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <span className="text-[13px] text-white/40" style={MONO}>Free &middot; 30 seconds &middot; No card required</span>
+              <ArrowRight className="w-5 h-5" />
+            </button>
+            <span className="text-[15px] text-white/40" style={MONO}>Free &middot; 30 seconds &middot; No card required</span>
           </div>
         </div>
       </section>
 
-      {/* Footer — barely there */}
-      <footer className="py-6 px-6 md:px-10 flex items-center justify-between">
-        <span className="text-[9px] tracking-[0.15em] text-white/15 uppercase" style={MONO}>&copy; 2026 Helm</span>
-        <span className="text-[9px] tracking-[0.15em] text-white/15 uppercase" style={MONO}>helmterminal.dev</span>
+      {/* Footer */}
+      <footer className="py-8 px-6 md:px-12 flex items-center justify-between border-t border-white/[0.04]">
+        <span className="text-[10px] tracking-[0.15em] text-white/20 uppercase" style={MONO}>&copy; 2026 Helm</span>
+        <span className="text-[10px] tracking-[0.15em] text-white/20 uppercase" style={MONO}>helmterminal.dev</span>
       </footer>
     </div>
   );
