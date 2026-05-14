@@ -135,25 +135,25 @@ function SlideCover({
       <div className="absolute -top-[30%] -left-[20%] w-[80vw] h-[80vw] rounded-full opacity-[0.08] blur-[140px] pointer-events-none" style={{ background: 'radial-gradient(circle, #E6B94D, transparent 65%)' }} />
 
       <div className="relative z-10 max-w-lg">
-        <p className="text-[12px] tracking-[0.3em] text-[var(--color-gold)] mb-8" style={MONO}>HELM WRAPPED</p>
+        <p className="text-[14px] tracking-[0.3em] text-[var(--color-gold)] mb-10" style={MONO}>HELM WRAPPED</p>
 
-        <h1 className="text-[clamp(60px,15vw,100px)] font-bold leading-[0.88] tracking-[-0.05em] mb-10">
+        <h1 className="font-bold leading-[0.88] tracking-[-0.05em] mb-12" style={{ fontSize: 'clamp(72px, 18vw, 160px)' }}>
           Your<br />
           <span className="italic font-normal text-[var(--color-gold)]" style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}>{year}</span>
           <br />wrapped.
         </h1>
 
-        <p className="text-[18px] text-[var(--color-text-muted)] leading-relaxed mb-12">
+        <p className="text-[20px] md:text-[24px] text-[var(--color-text-muted)] leading-relaxed mb-14">
           {positions > 0 ? `${positions} positions. ${trades} trades. One portfolio.` : `${trades > 0 ? `${trades} trades.` : ''} One portfolio.`}
         </p>
 
         <button
           onClick={(e) => { e.stopPropagation(); onBegin(); }}
-          className="group inline-flex items-center gap-2.5 px-10 py-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[15px] rounded-full cursor-pointer transition-all"
-          style={{ boxShadow: '0 8px 32px rgba(230,185,77,0.3)' }}
+          className="group inline-flex items-center gap-3 px-12 py-5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[17px] rounded-full cursor-pointer transition-all"
+          style={{ boxShadow: '0 12px 40px rgba(230,185,77,0.35)' }}
         >
           Begin Wrapped
-          <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+          <ChevronRight className="w-6 h-6 transition-transform group-hover:translate-x-1" />
         </button>
       </div>
     </div>

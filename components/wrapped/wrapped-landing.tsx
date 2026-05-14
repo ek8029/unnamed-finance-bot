@@ -468,10 +468,10 @@ export function WrappedLanding() {
             </p>
 
             <h1
-              className="font-bold leading-[0.88] tracking-[-0.05em] mb-10"
-              style={{ fontSize: 'clamp(56px, 10vw, 130px)' }}
+              className="font-bold leading-[1.05] tracking-[-0.05em] mb-10"
+              style={{ fontSize: 'clamp(52px, 10vw, 120px)' }}
             >
-              Your<br />portfolio.<br />
+              Your portfolio.<br />
               <span
                 className="text-[#E6B94D] italic font-normal"
                 style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
