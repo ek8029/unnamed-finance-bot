@@ -37,6 +37,7 @@ export function WrappedLanding() {
   const [showPassword, setShowPassword] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
   const [signupLoading, setSignupLoading] = useState(false);
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const captchaRef = useRef<HCaptcha | null>(null);
   const captchaSiteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
@@ -116,7 +117,8 @@ export function WrappedLanding() {
         // Auto-confirmed — go straight to Plaid
         setFlowState('connect');
       } else {
-        // Email confirmation required — poll for session
+        // Email confirmation required — save userId, poll for confirmation
+        if (data.user?.id) setPendingUserId(data.user.id);
         setFlowState('confirming');
       }
     } catch {
@@ -135,18 +137,34 @@ export function WrappedLanding() {
     });
   };
 
-  // ── Poll for email confirmation (must be before early returns) ──
+  // ── Poll for email confirmation via lightweight server check ──
+  // Works cross-device: confirms on phone, desktop detects via admin API check
   useEffect(() => {
     if (flowState !== 'confirming') return;
+    if (!pendingUserId) return;
     const interval = setInterval(async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        clearInterval(interval);
-        setFlowState('connect');
+      try {
+        const res = await fetch(`/api/auth/check-confirmed?userId=${pendingUserId}`);
+        if (!res.ok) return;
+        const { confirmed } = await res.json();
+        if (confirmed) {
+          clearInterval(interval);
+          // One sign-in attempt to establish session
+          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+          if (data.session && !error) {
+            setFlowState('connect');
+          } else {
+            // Confirmed but sign-in failed — send to login
+            setSignupError('Email confirmed. Please log in to continue.');
+            setFlowState('signup');
+          }
+        }
+      } catch {
+        // Network error, keep polling
       }
     }, 3000);
     return () => clearInterval(interval);
-  }, [flowState]);
+  }, [flowState, pendingUserId, email, password]);
 
   // ── Loading state ──
   if (flowState === 'loading') {
