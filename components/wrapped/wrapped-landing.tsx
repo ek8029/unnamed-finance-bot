@@ -1,22 +1,22 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Shield } from 'lucide-react';
+import { ArrowRight, Shield, Loader2, Eye, EyeOff } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
 import { supabase } from '@/lib/supabase/client';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
-import { useWrapped, type WrappedData } from '@/hooks/use-financial-data';
 
 /* ═══════════════════════════════════════════════════════════
-   WRAPPED FUNNEL — single page, 3 states:
-   1. Not logged in → marketing landing + CTA to signup
-   2. Logged in, no Plaid → inline Plaid connect
-   3. Logged in, has Plaid → redirect to /dashboard/wrapped
+   WRAPPED FUNNEL — single page, 4 states:
+   1. Not logged in → marketing landing
+   2. Signup → inline form (no redirect)
+   3. Logged in, no Plaid → inline Plaid connect
+   4. Logged in, has Plaid → redirect to /dashboard/wrapped
    ═══════════════════════════════════════════════════════════ */
 
-type FlowState = 'loading' | 'landing' | 'connect' | 'generating' | 'ready';
+type FlowState = 'loading' | 'landing' | 'signup' | 'connect' | 'generating';
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 
@@ -28,6 +28,15 @@ export function WrappedLanding() {
   const router = useRouter();
   const [flowState, setFlowState] = useState<FlowState>('loading');
   const [plaidError, setPlaidError] = useState<string | null>(null);
+
+  // Signup form state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [signupError, setSignupError] = useState<string | null>(null);
+  const [signupLoading, setSignupLoading] = useState(false);
+  const formRenderedAt = useRef(Date.now());
 
   // Check auth + Plaid on mount
   useEffect(() => {
@@ -63,6 +72,56 @@ export function WrappedLanding() {
     }, 1500);
   }, [router]);
 
+  // ── Signup handler ──
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSignupError(null);
+    if (!email.trim() || !password.trim()) {
+      setSignupError('Email and password required.');
+      return;
+    }
+    if (password.length < 8) {
+      setSignupError('Password must be at least 8 characters.');
+      return;
+    }
+    setSignupLoading(true);
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          full_name: fullName.trim() || undefined,
+          form_rendered_at: formRenderedAt.current,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSignupError(data.error || 'Signup failed.');
+        return;
+      }
+      if (data.session) {
+        // Logged in — go to Plaid connect
+        setFlowState('connect');
+      } else {
+        // Email confirmation required
+        setSignupError('Check your email to confirm, then come back to this page.');
+      }
+    } catch {
+      setSignupError('Something went wrong. Try again.');
+    } finally {
+      setSignupLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=/wrapped` },
+    });
+  };
+
   // ── Loading state ──
   if (flowState === 'loading') {
     return (
@@ -80,6 +139,114 @@ export function WrappedLanding() {
         <p className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>
           Generating your Wrapped...
         </p>
+      </div>
+    );
+  }
+
+  // ── Signup state (inline, no redirect) ──
+  if (flowState === 'signup') {
+    return (
+      <div className="min-h-screen bg-[#060606] text-[var(--color-text-primary)]">
+        <nav className="fixed top-0 left-0 right-0 z-50 px-6 md:px-10 py-5 flex items-center justify-between">
+          <button onClick={() => setFlowState('landing')} className="flex items-center gap-2.5 opacity-60 hover:opacity-100 transition-opacity">
+            <HelmMark size={18} />
+            <span className="text-[12px] font-bold uppercase tracking-[0.08em]">Helm</span>
+          </button>
+        </nav>
+
+        <div className="flex flex-col items-center justify-center min-h-screen px-5">
+          <div className="w-full max-w-sm">
+            {/* Progress */}
+            <div className="flex items-center justify-center gap-2 mb-10">
+              <div className="w-8 h-1 rounded-full bg-[#E6B94D]" />
+              <div className="w-8 h-1 rounded-full bg-white/10" />
+              <div className="w-8 h-1 rounded-full bg-white/10" />
+            </div>
+
+            <div className="text-center mb-8">
+              <h2 className="text-[28px] font-bold tracking-tight mb-2">Create your account</h2>
+              <p className="text-[15px] text-white/50">to see your Wrapped</p>
+            </div>
+
+            {/* Google OAuth */}
+            <button
+              onClick={handleGoogleSignIn}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3.5 bg-white text-black text-[14px] font-semibold rounded-md hover:bg-white/90 transition-colors mb-4 cursor-pointer"
+            >
+              <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+              Continue with Google
+            </button>
+
+            <div className="flex items-center gap-3 my-5">
+              <div className="flex-1 h-px bg-white/[0.08]" />
+              <span className="text-[12px] text-white/30" style={MONO}>or</span>
+              <div className="flex-1 h-px bg-white/[0.08]" />
+            </div>
+
+            {/* Email/password form */}
+            <form onSubmit={handleSignup} className="space-y-3">
+              <input
+                type="text"
+                placeholder="Full name (optional)"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[#E6B94D]/50 transition-colors"
+                autoComplete="name"
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[#E6B94D]/50 transition-colors"
+                autoComplete="email"
+                required
+              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Password (8+ characters)"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[#E6B94D]/50 transition-colors pr-11"
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+
+              {signupError && (
+                <p className="text-[13px] text-[#F87171]">{signupError}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={signupLoading}
+                className="w-full px-4 py-3.5 bg-[#E6B94D] text-black text-[14px] font-bold rounded-md hover:bg-[#FFD67A] transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+              >
+                {signupLoading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Creating account...</>
+                ) : (
+                  'Continue'
+                )}
+              </button>
+            </form>
+
+            <p className="text-[12px] text-white/30 text-center mt-6">
+              Already have an account?{' '}
+              <Link href="/login?redirect=/wrapped" className="text-[#E6B94D] hover:text-[#FFD67A] transition-colors">
+                Log in
+              </Link>
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -212,14 +379,14 @@ export function WrappedLanding() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <Link
-                href="/signup?flow=wrapped"
-                className="inline-flex items-center gap-2.5 px-10 py-4 bg-[#E6B94D] text-black text-[14px] font-bold tracking-[0.02em] rounded-sm transition-all hover:bg-[#FFD67A]"
+              <button
+                onClick={() => setFlowState('signup')}
+                className="inline-flex items-center gap-2.5 px-10 py-4 bg-[#E6B94D] text-black text-[14px] font-bold tracking-[0.02em] rounded-sm transition-all hover:bg-[#FFD67A] cursor-pointer"
                 style={{ boxShadow: '0 0 0 1px rgba(230,185,77,0.4), 0 16px 48px rgba(230,185,77,0.25)' }}
               >
                 See my Wrapped
                 <ArrowRight className="w-4 h-4" />
-              </Link>
+              </button>
               <Link
                 href="/login?redirect=/wrapped"
                 className="text-[14px] text-white/50 hover:text-white/80 transition-colors"
