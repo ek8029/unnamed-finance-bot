@@ -180,20 +180,24 @@ export function WrappedLanding() {
           Left: editorial text. Right: physical card artifact.
           ═══════════════════════════════════════════ */}
       <section className="relative min-h-screen flex items-center">
-        {/* Ambient — single warm glow, off-center */}
+        {/* Ambient glow — visible, warm */}
         <div
-          className="pointer-events-none absolute top-[20%] right-[10%] w-[600px] h-[600px] opacity-[0.04] blur-[100px]"
-          style={{ background: 'radial-gradient(circle, #E6B94D, transparent 70%)' }}
+          className="pointer-events-none absolute top-[15%] right-[5%] w-[800px] h-[800px] opacity-[0.08] blur-[140px]"
+          style={{ background: 'radial-gradient(circle, #E6B94D, transparent 65%)' }}
+        />
+        <div
+          className="pointer-events-none absolute bottom-[10%] left-[10%] w-[400px] h-[400px] opacity-[0.04] blur-[100px]"
+          style={{ background: 'radial-gradient(circle, #4ADE80, transparent 70%)' }}
         />
 
-        <div className="w-full max-w-6xl mx-auto px-6 md:px-10 grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-16 lg:gap-24 items-center pt-24 pb-16 lg:pt-0 lg:pb-0">
+        <div className="w-full max-w-6xl mx-auto px-6 md:px-10 grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-12 lg:gap-20 items-center pt-28 pb-20 lg:pt-0 lg:pb-0">
           {/* LEFT — text */}
           <div>
-            <p className="text-[11px] tracking-[0.3em] text-[#E6B94D] uppercase mb-8" style={MONO}>
+            <p className="text-[12px] tracking-[0.3em] text-[#E6B94D] uppercase mb-8" style={MONO}>
               Helm Wrapped &middot; 2025
             </p>
 
-            <h1 className="text-[clamp(40px,8vw,72px)] font-bold leading-[0.92] tracking-[-0.04em] mb-6">
+            <h1 className="text-[clamp(44px,9vw,80px)] font-bold leading-[0.92] tracking-[-0.04em] mb-8">
               You had a year.<br />
               <span
                 className="text-[#E6B94D] italic font-normal"
@@ -203,67 +207,65 @@ export function WrappedLanding() {
               </span>
             </h1>
 
-            <p className="text-[16px] text-white/40 leading-[1.7] max-w-[420px] mb-10">
-              Your portfolio return, best trade, worst trade, investor personality — everything you need to brag (or learn from). Connect any brokerage. 30 seconds. Free.
+            <p className="text-[17px] text-white/60 leading-[1.7] max-w-[440px] mb-12">
+              Your portfolio return, best trade, worst trade, investor personality — everything you need to brag or learn from. Connect any brokerage. 30 seconds. Free.
             </p>
 
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <Link
                 href="/signup?flow=wrapped"
-                className="inline-flex items-center gap-2.5 px-8 py-3.5 bg-[#E6B94D] text-black text-[13px] font-bold tracking-[0.04em] transition-all hover:bg-[#FFD67A]"
-                style={{ boxShadow: '0 0 0 1px rgba(230,185,77,0.3), 0 12px 40px rgba(230,185,77,0.2)' }}
+                className="inline-flex items-center gap-2.5 px-10 py-4 bg-[#E6B94D] text-black text-[14px] font-bold tracking-[0.02em] rounded-sm transition-all hover:bg-[#FFD67A]"
+                style={{ boxShadow: '0 0 0 1px rgba(230,185,77,0.4), 0 16px 48px rgba(230,185,77,0.25)' }}
               >
                 See my Wrapped
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 href="/login?redirect=/wrapped"
-                className="text-[13px] text-white/30 hover:text-white/60 transition-colors"
+                className="text-[14px] text-white/50 hover:text-white/80 transition-colors"
               >
-                Log in
+                Already have an account?
               </Link>
             </div>
           </div>
 
-          {/* RIGHT — the card (physical artifact feel) */}
+          {/* RIGHT — the card */}
           <div className="relative flex justify-center lg:justify-end">
-            {/* Card shadow/depth */}
-            <div
-              className="w-full max-w-[340px] relative"
-              style={{ perspective: '1200px' }}
-            >
+            <div className="w-full max-w-[360px] relative">
+              {/* Gold glow behind card */}
+              <div className="absolute -inset-4 rounded-2xl opacity-[0.12] blur-[40px] pointer-events-none" style={{ background: '#E6B94D' }} />
               <div
-                className="relative rounded-lg overflow-hidden border border-white/[0.08] p-8 pb-10"
+                className="relative rounded-xl overflow-hidden p-8 pb-10"
                 style={{
-                  background: 'linear-gradient(160deg, #111 0%, #090909 100%)',
-                  boxShadow: '0 60px 120px rgba(0,0,0,0.7), 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.03)',
-                  transform: 'rotateY(-2deg) rotateX(1deg)',
+                  background: 'linear-gradient(160deg, #141414 0%, #0A0A0A 100%)',
+                  border: '1px solid rgba(230,185,77,0.2)',
+                  boxShadow: '0 40px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.03)',
                   aspectRatio: '3/4',
                 }}
               >
                 {/* Card top */}
-                <div className="flex items-center justify-between mb-auto">
-                  <HelmMark size={18} />
-                  <span className="text-[9px] tracking-[0.2em] text-[#E6B94D]/60 uppercase" style={MONO}>2025</span>
+                <div className="flex items-center justify-between">
+                  <HelmMark size={20} />
+                  <span className="text-[10px] tracking-[0.2em] text-[#E6B94D] uppercase font-semibold" style={MONO}>Wrapped 2025</span>
                 </div>
 
                 {/* Card hero number */}
-                <div className="mt-12">
-                  <p className="text-[9px] tracking-[0.2em] text-white/30 uppercase mb-3" style={MONO}>Your return</p>
+                <div className="mt-10">
+                  <p className="text-[10px] tracking-[0.2em] text-white/40 uppercase mb-3" style={MONO}>Your return</p>
                   <p
-                    className="text-[72px] font-bold leading-none tabular-nums tracking-[-0.04em] text-[#4ADE80]"
-                    style={{ textShadow: '0 0 60px rgba(74,222,128,0.2)' }}
+                    className="text-[80px] font-bold leading-none tabular-nums tracking-[-0.04em] text-[#4ADE80]"
+                    style={{ textShadow: '0 0 80px rgba(74,222,128,0.25)' }}
                   >
                     +28.4%
                   </p>
-                  <p className="text-[11px] text-white/25 mt-3" style={MONO}>Beat S&amp;P 500 by 8.6%</p>
+                  <p className="text-[12px] text-white/40 mt-3 font-medium" style={MONO}>Beat S&amp;P 500 by 8.6%</p>
                 </div>
 
                 {/* Card divider */}
-                <div className="h-px bg-white/[0.06] my-7" />
+                <div className="h-px my-6" style={{ background: 'linear-gradient(to right, transparent, rgba(230,185,77,0.3), transparent)' }} />
 
                 {/* Card stats */}
-                <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
                   {[
                     ['MVP', 'NVDA'],
                     ['TYPE', 'Growth Hunter'],
@@ -271,16 +273,16 @@ export function WrappedLanding() {
                     ['ALPHA', '+8.6%'],
                   ].map(([label, value]) => (
                     <div key={label}>
-                      <p className="text-[8px] tracking-[0.18em] text-white/20 uppercase" style={MONO}>{label}</p>
-                      <p className="text-[15px] font-bold text-[#E6B94D] mt-1" style={MONO}>{value}</p>
+                      <p className="text-[9px] tracking-[0.18em] text-white/35 uppercase" style={MONO}>{label}</p>
+                      <p className="text-[16px] font-bold text-[#E6B94D] mt-1" style={MONO}>{value}</p>
                     </div>
                   ))}
                 </div>
 
                 {/* Card footer */}
                 <div className="absolute bottom-5 left-8 right-8 flex justify-between">
-                  <span className="text-[8px] tracking-[0.15em] text-white/15 uppercase" style={MONO}>helmterminal.dev</span>
-                  <span className="text-[8px] tracking-[0.15em] text-white/15 uppercase" style={MONO}>#HelmWrapped</span>
+                  <span className="text-[9px] tracking-[0.15em] text-white/25 uppercase" style={MONO}>helmterminal.dev</span>
+                  <span className="text-[9px] tracking-[0.15em] text-white/25 uppercase" style={MONO}>#HelmWrapped</span>
                 </div>
               </div>
             </div>
@@ -289,11 +291,11 @@ export function WrappedLanding() {
       </section>
 
       {/* ═══════════════════════════════════════════
-          WHAT'S INSIDE — not cards, a numbered list
+          WHAT'S INSIDE — numbered list with presence
           ═══════════════════════════════════════════ */}
-      <section className="py-24 md:py-32">
+      <section className="py-24 md:py-32 border-t border-white/[0.06]">
         <div className="max-w-6xl mx-auto px-6 md:px-10">
-          <p className="text-[11px] tracking-[0.3em] text-[#E6B94D] uppercase mb-16" style={MONO}>
+          <p className="text-[12px] tracking-[0.3em] text-[#E6B94D] uppercase mb-14" style={MONO}>
             Seven slides. One portfolio.
           </p>
 
@@ -308,12 +310,13 @@ export function WrappedLanding() {
             ].map((item) => (
               <div
                 key={item.n}
-                className="flex items-baseline gap-6 py-5 border-b border-white/[0.04] group"
+                className="flex items-baseline gap-6 md:gap-8 py-6 border-b border-white/[0.06] group cursor-default"
               >
-                <span className="text-[13px] text-[#E6B94D] tabular-nums shrink-0" style={MONO}>{item.n}</span>
-                <span className={`text-[clamp(18px,3vw,28px)] font-medium tracking-[-0.02em] ${item.accent ? 'text-white/90' : 'text-white/50'} group-hover:text-white/90 transition-colors`}>
+                <span className="text-[14px] text-[#E6B94D] tabular-nums shrink-0 font-semibold" style={MONO}>{item.n}</span>
+                <span className={`text-[clamp(20px,4vw,32px)] font-semibold tracking-[-0.02em] transition-colors duration-300 ${item.accent ? 'text-white' : 'text-white/60'} group-hover:text-white`}>
                   {item.label}
                 </span>
+                <ArrowRight className="w-4 h-4 text-[#E6B94D] opacity-0 group-hover:opacity-100 transition-opacity ml-auto shrink-0 hidden md:block" />
               </div>
             ))}
           </div>
@@ -321,20 +324,23 @@ export function WrappedLanding() {
       </section>
 
       {/* ═══════════════════════════════════════════
-          HOW IT WORKS — horizontal, not cards
+          HOW IT WORKS
           ═══════════════════════════════════════════ */}
-      <section className="py-24 md:py-32 border-t border-white/[0.04]">
+      <section className="py-24 md:py-32 border-t border-white/[0.06]">
         <div className="max-w-6xl mx-auto px-6 md:px-10">
+          <p className="text-[12px] tracking-[0.3em] text-[#E6B94D] uppercase mb-14" style={MONO}>
+            Three steps. Thirty seconds.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16">
             {[
-              { n: '01', title: 'Create account', desc: 'Free. No card. 10 seconds.' },
-              { n: '02', title: 'Connect brokerage', desc: 'Read-only via Plaid. We never trade.' },
-              { n: '03', title: 'See your Wrapped', desc: 'Personalized. Shareable. Yours.' },
+              { n: '01', title: 'Create account', desc: 'Free. No credit card. Takes 10 seconds.' },
+              { n: '02', title: 'Connect brokerage', desc: 'Read-only via Plaid. We can never trade or move money.' },
+              { n: '03', title: 'See your Wrapped', desc: 'Personalized slides you can share anywhere.' },
             ].map((step) => (
-              <div key={step.n} className="border-t border-white/[0.08] pt-6">
-                <p className="text-[11px] text-[#E6B94D] mb-4 tabular-nums" style={MONO}>{step.n}</p>
-                <h3 className="text-[20px] font-semibold tracking-[-0.01em] mb-2">{step.title}</h3>
-                <p className="text-[14px] text-white/35 leading-relaxed">{step.desc}</p>
+              <div key={step.n} className="border-t border-white/[0.08] pt-8">
+                <p className="text-[24px] text-[#E6B94D] font-bold mb-4 tabular-nums" style={MONO}>{step.n}</p>
+                <h3 className="text-[20px] font-semibold tracking-[-0.01em] mb-3">{step.title}</h3>
+                <p className="text-[15px] text-white/50 leading-relaxed">{step.desc}</p>
               </div>
             ))}
           </div>
@@ -342,12 +348,12 @@ export function WrappedLanding() {
       </section>
 
       {/* ═══════════════════════════════════════════
-          FINAL CTA — quiet, confident
+          FINAL CTA
           ═══════════════════════════════════════════ */}
-      <section className="py-32 md:py-40">
+      <section className="py-32 md:py-40 border-t border-white/[0.06]">
         <div className="max-w-6xl mx-auto px-6 md:px-10">
           <h2
-            className="text-[clamp(36px,7vw,64px)] font-bold tracking-[-0.04em] leading-[0.92] mb-10"
+            className="text-[clamp(36px,8vw,72px)] font-bold tracking-[-0.04em] leading-[0.92] mb-12"
           >
             Your year happened.<br />
             <span
@@ -357,16 +363,16 @@ export function WrappedLanding() {
               See how it went.
             </span>
           </h2>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             <Link
               href="/signup?flow=wrapped"
-              className="inline-flex items-center gap-2.5 px-8 py-3.5 bg-[#E6B94D] text-black text-[13px] font-bold tracking-[0.04em] transition-all hover:bg-[#FFD67A]"
-              style={{ boxShadow: '0 0 0 1px rgba(230,185,77,0.3), 0 12px 40px rgba(230,185,77,0.2)' }}
+              className="inline-flex items-center gap-2.5 px-10 py-4 bg-[#E6B94D] text-black text-[14px] font-bold tracking-[0.02em] rounded-sm transition-all hover:bg-[#FFD67A]"
+              style={{ boxShadow: '0 0 0 1px rgba(230,185,77,0.4), 0 16px 48px rgba(230,185,77,0.25)' }}
             >
               Get my Wrapped
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <span className="text-[12px] text-white/20" style={MONO}>Free &middot; 30 seconds &middot; No card</span>
+            <span className="text-[13px] text-white/40" style={MONO}>Free &middot; 30 seconds &middot; No card required</span>
           </div>
         </div>
       </section>
