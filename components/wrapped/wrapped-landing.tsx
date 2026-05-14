@@ -150,217 +150,231 @@ export function WrappedLanding() {
 
   // ── Landing state (not logged in) ──
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)]">
-      {/* Nav */}
-      <nav className="sticky top-0 z-50 h-14 px-5 md:px-6 flex items-center justify-between border-b border-white/[0.06] bg-[var(--color-bg-base)]/60 backdrop-blur-xl supports-[backdrop-filter]:bg-[var(--color-bg-base)]/40">
-        <Link href="/" className="flex items-center gap-2">
-          <HelmMark size={20} />
-          <span className="text-[13px] font-bold uppercase tracking-tight">Helm</span>
+    <div className="min-h-screen bg-[#060606] text-[var(--color-text-primary)] overflow-hidden">
+      {/* Nav — minimal, transparent */}
+      <nav className="fixed top-0 left-0 right-0 z-50 px-6 md:px-10 py-5 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2.5 opacity-60 hover:opacity-100 transition-opacity">
+          <HelmMark size={18} />
+          <span className="text-[12px] font-bold uppercase tracking-[0.08em]">Helm</span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-5">
           <Link
             href="/login?redirect=/wrapped"
-            className="text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+            className="text-[12px] text-white/40 hover:text-white/80 transition-colors"
             style={MONO}
           >
             Log in
           </Link>
           <Link
             href="/signup?flow=wrapped"
-            className="inline-flex items-center px-5 py-2 bg-[var(--color-gold)] text-black text-[11px] font-bold tracking-wider rounded-md hover:brightness-110 transition-all"
+            className="text-[12px] text-[#E6B94D] hover:text-[#FFD67A] transition-colors font-semibold"
             style={MONO}
           >
-            Get Wrapped&nbsp;&rarr;
+            Get yours &rarr;
           </Link>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="relative pt-24 md:pt-36 pb-20 md:pb-32 overflow-hidden">
-        {/* Glow */}
+      {/* ═══════════════════════════════════════════
+          HERO — full viewport, two-column on desktop
+          Left: editorial text. Right: physical card artifact.
+          ═══════════════════════════════════════════ */}
+      <section className="relative min-h-screen flex items-center">
+        {/* Ambient — single warm glow, off-center */}
         <div
-          className="pointer-events-none absolute left-1/2 top-1/4 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] opacity-[0.07] blur-[120px]"
-          style={{ background: 'radial-gradient(circle, rgba(230,185,77,1) 0%, transparent 70%)' }}
+          className="pointer-events-none absolute top-[20%] right-[10%] w-[600px] h-[600px] opacity-[0.04] blur-[100px]"
+          style={{ background: 'radial-gradient(circle, #E6B94D, transparent 70%)' }}
         />
 
-        <div className="relative z-10 max-w-5xl mx-auto px-5 md:px-6">
-          {/* Eyebrow */}
-          <div className="flex items-center gap-3 mb-10">
-            <span className="block w-8 h-px bg-[var(--color-gold)]" />
-            <span className="text-[12px] tracking-[0.25em] text-[var(--color-gold)] uppercase" style={MONO}>
+        <div className="w-full max-w-6xl mx-auto px-6 md:px-10 grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-16 lg:gap-24 items-center pt-24 pb-16 lg:pt-0 lg:pb-0">
+          {/* LEFT — text */}
+          <div>
+            <p className="text-[11px] tracking-[0.3em] text-[#E6B94D] uppercase mb-8" style={MONO}>
               Helm Wrapped &middot; 2025
-            </span>
+            </p>
+
+            <h1 className="text-[clamp(40px,8vw,72px)] font-bold leading-[0.92] tracking-[-0.04em] mb-6">
+              You had a year.<br />
+              <span
+                className="text-[#E6B94D] italic font-normal"
+                style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
+              >
+                Do you know<br />how it went?
+              </span>
+            </h1>
+
+            <p className="text-[16px] text-white/40 leading-[1.7] max-w-[420px] mb-10">
+              Your portfolio return, best trade, worst trade, investor personality — everything you need to brag (or learn from). Connect any brokerage. 30 seconds. Free.
+            </p>
+
+            <div className="flex items-center gap-4">
+              <Link
+                href="/signup?flow=wrapped"
+                className="inline-flex items-center gap-2.5 px-8 py-3.5 bg-[#E6B94D] text-black text-[13px] font-bold tracking-[0.04em] transition-all hover:bg-[#FFD67A]"
+                style={{ boxShadow: '0 0 0 1px rgba(230,185,77,0.3), 0 12px 40px rgba(230,185,77,0.2)' }}
+              >
+                See my Wrapped
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                href="/login?redirect=/wrapped"
+                className="text-[13px] text-white/30 hover:text-white/60 transition-colors"
+              >
+                Log in
+              </Link>
+            </div>
           </div>
 
-          {/* Headline */}
-          <h1 className="text-[clamp(52px,12vw,96px)] font-bold leading-[0.88] tracking-[-0.05em] mb-8">
-            See your<br />
-            <span
-              className="italic font-normal text-[var(--color-gold)]"
-              style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
+          {/* RIGHT — the card (physical artifact feel) */}
+          <div className="relative flex justify-center lg:justify-end">
+            {/* Card shadow/depth */}
+            <div
+              className="w-full max-w-[340px] relative"
+              style={{ perspective: '1200px' }}
             >
-              investment year.
-            </span>
-          </h1>
+              <div
+                className="relative rounded-lg overflow-hidden border border-white/[0.08] p-8 pb-10"
+                style={{
+                  background: 'linear-gradient(160deg, #111 0%, #090909 100%)',
+                  boxShadow: '0 60px 120px rgba(0,0,0,0.7), 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.03)',
+                  transform: 'rotateY(-2deg) rotateX(1deg)',
+                  aspectRatio: '3/4',
+                }}
+              >
+                {/* Card top */}
+                <div className="flex items-center justify-between mb-auto">
+                  <HelmMark size={18} />
+                  <span className="text-[9px] tracking-[0.2em] text-[#E6B94D]/60 uppercase" style={MONO}>2025</span>
+                </div>
 
-          {/* Subtext */}
-          <p className="text-[18px] text-[var(--color-text-muted)] leading-relaxed max-w-lg mb-10">
-            Your return. Your best trade. Your investor personality. All in 30 seconds.
+                {/* Card hero number */}
+                <div className="mt-12">
+                  <p className="text-[9px] tracking-[0.2em] text-white/30 uppercase mb-3" style={MONO}>Your return</p>
+                  <p
+                    className="text-[72px] font-bold leading-none tabular-nums tracking-[-0.04em] text-[#4ADE80]"
+                    style={{ textShadow: '0 0 60px rgba(74,222,128,0.2)' }}
+                  >
+                    +28.4%
+                  </p>
+                  <p className="text-[11px] text-white/25 mt-3" style={MONO}>Beat S&amp;P 500 by 8.6%</p>
+                </div>
+
+                {/* Card divider */}
+                <div className="h-px bg-white/[0.06] my-7" />
+
+                {/* Card stats */}
+                <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+                  {[
+                    ['MVP', 'NVDA'],
+                    ['TYPE', 'Growth Hunter'],
+                    ['TRADES', '287'],
+                    ['ALPHA', '+8.6%'],
+                  ].map(([label, value]) => (
+                    <div key={label}>
+                      <p className="text-[8px] tracking-[0.18em] text-white/20 uppercase" style={MONO}>{label}</p>
+                      <p className="text-[15px] font-bold text-[#E6B94D] mt-1" style={MONO}>{value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Card footer */}
+                <div className="absolute bottom-5 left-8 right-8 flex justify-between">
+                  <span className="text-[8px] tracking-[0.15em] text-white/15 uppercase" style={MONO}>helmterminal.dev</span>
+                  <span className="text-[8px] tracking-[0.15em] text-white/15 uppercase" style={MONO}>#HelmWrapped</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════
+          WHAT'S INSIDE — not cards, a numbered list
+          ═══════════════════════════════════════════ */}
+      <section className="py-24 md:py-32">
+        <div className="max-w-6xl mx-auto px-6 md:px-10">
+          <p className="text-[11px] tracking-[0.3em] text-[#E6B94D] uppercase mb-16" style={MONO}>
+            Seven slides. One portfolio.
           </p>
 
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-start gap-4">
+          <div className="space-y-0">
+            {[
+              { n: '01', label: 'Total return vs S&P 500', accent: true },
+              { n: '02', label: 'Your best and worst trade' },
+              { n: '03', label: 'How you traded — habits, volume, timing' },
+              { n: '04', label: 'Sector conviction and allocation' },
+              { n: '05', label: 'Your investor personality type', accent: true },
+              { n: '06', label: 'Shareable card with your stats' },
+            ].map((item) => (
+              <div
+                key={item.n}
+                className="flex items-baseline gap-6 py-5 border-b border-white/[0.04] group"
+              >
+                <span className="text-[13px] text-[#E6B94D] tabular-nums shrink-0" style={MONO}>{item.n}</span>
+                <span className={`text-[clamp(18px,3vw,28px)] font-medium tracking-[-0.02em] ${item.accent ? 'text-white/90' : 'text-white/50'} group-hover:text-white/90 transition-colors`}>
+                  {item.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════
+          HOW IT WORKS — horizontal, not cards
+          ═══════════════════════════════════════════ */}
+      <section className="py-24 md:py-32 border-t border-white/[0.04]">
+        <div className="max-w-6xl mx-auto px-6 md:px-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16">
+            {[
+              { n: '01', title: 'Create account', desc: 'Free. No card. 10 seconds.' },
+              { n: '02', title: 'Connect brokerage', desc: 'Read-only via Plaid. We never trade.' },
+              { n: '03', title: 'See your Wrapped', desc: 'Personalized. Shareable. Yours.' },
+            ].map((step) => (
+              <div key={step.n} className="border-t border-white/[0.08] pt-6">
+                <p className="text-[11px] text-[#E6B94D] mb-4 tabular-nums" style={MONO}>{step.n}</p>
+                <h3 className="text-[20px] font-semibold tracking-[-0.01em] mb-2">{step.title}</h3>
+                <p className="text-[14px] text-white/35 leading-relaxed">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════
+          FINAL CTA — quiet, confident
+          ═══════════════════════════════════════════ */}
+      <section className="py-32 md:py-40">
+        <div className="max-w-6xl mx-auto px-6 md:px-10">
+          <h2
+            className="text-[clamp(36px,7vw,64px)] font-bold tracking-[-0.04em] leading-[0.92] mb-10"
+          >
+            Your year happened.<br />
+            <span
+              className="text-[#E6B94D] italic font-normal"
+              style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
+            >
+              See how it went.
+            </span>
+          </h2>
+          <div className="flex items-center gap-5">
             <Link
               href="/signup?flow=wrapped"
-              className="inline-flex items-center gap-2 px-10 py-4 bg-[var(--color-gold)] text-black text-[15px] font-bold tracking-wide rounded-lg hover:brightness-110 transition-all"
-              style={{ boxShadow: '0 8px 32px rgba(230,185,77,0.35)' }}
+              className="inline-flex items-center gap-2.5 px-8 py-3.5 bg-[#E6B94D] text-black text-[13px] font-bold tracking-[0.04em] transition-all hover:bg-[#FFD67A]"
+              style={{ boxShadow: '0 0 0 1px rgba(230,185,77,0.3), 0 12px 40px rgba(230,185,77,0.2)' }}
             >
               Get my Wrapped
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link
-              href="/login?redirect=/wrapped"
-              className="inline-flex items-center gap-1 px-4 py-4 text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-            >
-              I have an account
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            <span className="text-[12px] text-white/20" style={MONO}>Free &middot; 30 seconds &middot; No card</span>
           </div>
         </div>
       </section>
 
-      {/* Preview cards */}
-      <section className="py-20 md:py-24 border-t border-[var(--color-border-subtle)]">
-        <div className="max-w-5xl mx-auto px-5 md:px-6">
-          <div className="flex items-center gap-3 mb-12">
-            <span className="block w-8 h-px bg-[var(--color-gold)]" />
-            <span className="text-[12px] tracking-[0.25em] text-[var(--color-gold)] uppercase" style={MONO}>
-              What you&apos;ll see
-            </span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            {/* Card 1: Return */}
-            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl p-10 text-center">
-              <p className="text-[11px] tracking-[0.2em] text-[var(--color-gold)] uppercase mb-5" style={MONO}>
-                Your Return
-              </p>
-              <p className="text-[64px] font-bold tabular-nums tracking-tight leading-none text-[var(--color-positive)]">
-                +28.4%
-              </p>
-              <p className="text-[13px] text-[var(--color-text-muted)] mt-4" style={MONO}>
-                vs S&amp;P 500 +19.8%
-              </p>
-            </div>
-            {/* Card 2: Investor Type */}
-            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl p-10 text-center">
-              <p className="text-[11px] tracking-[0.2em] text-[var(--color-gold)] uppercase mb-5" style={MONO}>
-                Your Type
-              </p>
-              <p
-                className="text-[36px] font-bold tracking-tight leading-tight text-[var(--color-gold)] italic"
-                style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
-              >
-                The Growth<br />Hunter
-              </p>
-              <p className="text-[13px] text-[var(--color-text-muted)] mt-4" style={MONO}>
-                Based on trading patterns
-              </p>
-            </div>
-            {/* Card 3: MVP */}
-            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl p-10 text-center">
-              <p className="text-[11px] tracking-[0.2em] text-[var(--color-gold)] uppercase mb-5" style={MONO}>
-                Your MVP
-              </p>
-              <p className="text-[48px] font-bold tabular-nums tracking-tight leading-none text-[var(--color-gold)]" style={MONO}>
-                NVDA
-              </p>
-              <p className="text-[13px] text-[var(--color-text-muted)] mt-4" style={MONO}>
-                +187% best position
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="py-20 md:py-24 border-t border-[var(--color-border-subtle)]">
-        <div className="max-w-5xl mx-auto px-5 md:px-6">
-          <div className="flex items-center gap-3 mb-12">
-            <span className="block w-8 h-px bg-[var(--color-gold)]" />
-            <span className="text-[12px] tracking-[0.25em] text-[var(--color-gold)] uppercase" style={MONO}>
-              Three steps
-            </span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            {[
-              { n: '01', title: 'Create account', desc: 'Free. No credit card. Takes 10 seconds.' },
-              { n: '02', title: 'Connect brokerage', desc: 'Read-only via Plaid. We can never trade or move money.' },
-              { n: '03', title: 'See your Wrapped', desc: 'Personalized slides. Shareable. Yours forever.' },
-            ].map((step) => (
-              <div key={step.n}>
-                <p className="text-[32px] text-[var(--color-gold)] font-bold mb-3" style={MONO}>{step.n}</p>
-                <h3 className="text-[22px] font-bold mb-2">{step.title}</h3>
-                <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Social proof */}
-      <section className="py-20 md:py-24 border-t border-[var(--color-border-subtle)]">
-        <div className="max-w-5xl mx-auto px-5 md:px-6">
-          <h2 className="text-[clamp(24px,5vw,36px)] font-bold tracking-tight text-center mb-12">
-            Join investors who know their numbers
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            {[
-              { stat: '14,000+', label: 'Users' },
-              { stat: '4.2M+', label: 'Trades analyzed' },
-              { stat: 'Free', label: 'Forever' },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="border border-[var(--color-gold)]/20 rounded-xl p-8 text-center"
-              >
-                <p className="text-[36px] font-bold text-[var(--color-gold)] tabular-nums tracking-tight" style={MONO}>
-                  {item.stat}
-                </p>
-                <p className="text-[14px] text-[var(--color-text-muted)] mt-2 uppercase tracking-wider" style={MONO}>
-                  {item.label}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="py-24 md:py-32 border-t border-[var(--color-border-subtle)] text-center">
-        <div className="max-w-3xl mx-auto px-5">
-          <h2 className="text-[clamp(36px,7vw,56px)] font-bold tracking-tight mb-8">
-            Ready to see<br />your year?
-          </h2>
-          <Link
-            href="/signup?flow=wrapped"
-            className="inline-flex items-center gap-2 px-10 py-4 bg-[var(--color-gold)] text-black text-[15px] font-bold tracking-wide rounded-lg hover:brightness-110 transition-all"
-            style={{ boxShadow: '0 8px 32px rgba(230,185,77,0.35)' }}
-          >
-            Get my Wrapped
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-          <p className="text-[14px] text-[var(--color-text-muted)] mt-5">
-            Free for everyone. No credit card required.
-          </p>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-6 border-t border-[var(--color-border-subtle)]">
-        <div className="max-w-5xl mx-auto px-5 flex items-center justify-between text-[9px] tracking-widest uppercase" style={{ ...MONO, color: '#5a5a5a' }}>
-          <span>&copy; 2026 Helm</span>
-          <span>helmterminal.dev</span>
-        </div>
+      {/* Footer — barely there */}
+      <footer className="py-6 px-6 md:px-10 flex items-center justify-between">
+        <span className="text-[9px] tracking-[0.15em] text-white/15 uppercase" style={MONO}>&copy; 2026 Helm</span>
+        <span className="text-[9px] tracking-[0.15em] text-white/15 uppercase" style={MONO}>helmterminal.dev</span>
       </footer>
     </div>
   );
