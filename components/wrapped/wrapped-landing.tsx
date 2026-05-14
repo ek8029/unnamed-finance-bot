@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Shield, Loader2, Eye, EyeOff } from 'lucide-react';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { HelmMark } from '@/components/helm-mark';
 import { supabase } from '@/lib/supabase/client';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
@@ -36,6 +37,9 @@ export function WrappedLanding() {
   const [showPassword, setShowPassword] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
   const [signupLoading, setSignupLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<HCaptcha | null>(null);
+  const captchaSiteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
   const formRenderedAt = useRef(Date.now());
 
   // Check auth + Plaid on mount
@@ -84,6 +88,10 @@ export function WrappedLanding() {
       setSignupError('Password must be at least 8 characters.');
       return;
     }
+    if (captchaSiteKey && !captchaToken) {
+      setSignupError('Please complete the captcha.');
+      return;
+    }
     setSignupLoading(true);
     try {
       const res = await fetch('/api/auth/signup', {
@@ -93,12 +101,15 @@ export function WrappedLanding() {
           email: email.trim(),
           password,
           full_name: fullName.trim() || undefined,
+          captchaToken,
           form_rendered_at: formRenderedAt.current,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
         setSignupError(data.error || 'Signup failed.');
+        captchaRef.current?.resetCaptcha();
+        setCaptchaToken(null);
         return;
       }
       if (data.session) {
@@ -110,6 +121,8 @@ export function WrappedLanding() {
       }
     } catch {
       setSignupError('Something went wrong. Try again.');
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
     } finally {
       setSignupLoading(false);
     }
@@ -292,13 +305,26 @@ export function WrappedLanding() {
                 </button>
               </div>
 
+              {captchaSiteKey && (
+                <div className="flex justify-center">
+                  <HCaptcha
+                    ref={captchaRef}
+                    sitekey={captchaSiteKey}
+                    onVerify={setCaptchaToken}
+                    onExpire={() => setCaptchaToken(null)}
+                    onError={() => setCaptchaToken(null)}
+                    theme="dark"
+                  />
+                </div>
+              )}
+
               {signupError && (
                 <p className="text-[13px] text-[#F87171]">{signupError}</p>
               )}
 
               <button
                 type="submit"
-                disabled={signupLoading}
+                disabled={signupLoading || (!!captchaSiteKey && !captchaToken)}
                 className="w-full px-4 py-3.5 bg-[#E6B94D] text-black text-[14px] font-bold rounded-md hover:bg-[#FFD67A] transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
                 {signupLoading ? (
