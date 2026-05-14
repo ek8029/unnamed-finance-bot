@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Shield, ChevronRight } from 'lucide-react';
+import { ArrowRight, Shield } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
 import { supabase } from '@/lib/supabase/client';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
@@ -19,13 +19,6 @@ import { useWrapped, type WrappedData } from '@/hooks/use-financial-data';
 type FlowState = 'loading' | 'landing' | 'connect' | 'generating' | 'ready';
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
-
-/* ── Preview cards for landing ── */
-const PREVIEWS = [
-  { label: 'YOUR RETURN', value: '+28.4%', color: 'text-[var(--color-positive)]', sub: 'vs S&P +19.8%' },
-  { label: 'INVESTOR TYPE', value: 'Growth Hunter', color: 'text-[var(--color-text-primary)]', sub: 'Based on your trading patterns' },
-  { label: 'YOUR MVP', value: 'NVDA +187%', color: 'text-[var(--color-gold)]', sub: 'Best position of the year' },
-] as const;
 
 /* ══════════════════════════════════════════
    Main component
@@ -159,7 +152,7 @@ export function WrappedLanding() {
   return (
     <div className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)]">
       {/* Nav */}
-      <nav className="sticky top-0 z-50 h-14 px-5 md:px-6 flex items-center justify-between border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-base)]/80 backdrop-blur-xl">
+      <nav className="sticky top-0 z-50 h-14 px-5 md:px-6 flex items-center justify-between border-b border-white/[0.06] bg-[var(--color-bg-base)]/60 backdrop-blur-xl supports-[backdrop-filter]:bg-[var(--color-bg-base)]/40">
         <Link href="/" className="flex items-center gap-2">
           <HelmMark size={20} />
           <span className="text-[13px] font-bold uppercase tracking-tight">Helm</span>
@@ -174,7 +167,7 @@ export function WrappedLanding() {
           </Link>
           <Link
             href="/signup?flow=wrapped"
-            className="inline-flex items-center px-4 py-2 bg-[var(--color-gold)] text-black text-[11px] font-bold tracking-wider rounded-md hover:brightness-110 transition-all"
+            className="inline-flex items-center px-5 py-2 bg-[var(--color-gold)] text-black text-[11px] font-bold tracking-wider rounded-md hover:brightness-110 transition-all"
             style={MONO}
           >
             Get Wrapped&nbsp;&rarr;
@@ -183,102 +176,159 @@ export function WrappedLanding() {
       </nav>
 
       {/* Hero */}
-      <section className="relative pt-16 md:pt-28 pb-16 md:pb-24 overflow-hidden">
+      <section className="relative pt-24 md:pt-36 pb-20 md:pb-32 overflow-hidden">
         {/* Glow */}
         <div
-          className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] opacity-[0.06] blur-[100px]"
+          className="pointer-events-none absolute left-1/2 top-1/4 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] opacity-[0.07] blur-[120px]"
           style={{ background: 'radial-gradient(circle, rgba(230,185,77,1) 0%, transparent 70%)' }}
         />
 
-        <div className="relative z-10 max-w-4xl mx-auto px-5 md:px-6">
+        <div className="relative z-10 max-w-5xl mx-auto px-5 md:px-6">
           {/* Eyebrow */}
-          <div className="flex items-center gap-3 mb-8">
-            <span className="block w-6 h-px bg-[var(--color-gold)]" />
-            <span className="text-[10px] tracking-[0.25em] text-[var(--color-gold)] uppercase" style={MONO}>
+          <div className="flex items-center gap-3 mb-10">
+            <span className="block w-8 h-px bg-[var(--color-gold)]" />
+            <span className="text-[12px] tracking-[0.25em] text-[var(--color-gold)] uppercase" style={MONO}>
               Helm Wrapped &middot; 2025
             </span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-[clamp(44px,9vw,80px)] font-bold leading-[0.95] tracking-[-0.045em] mb-6">
-            See your year.<br />
+          <h1 className="text-[clamp(52px,12vw,96px)] font-bold leading-[0.88] tracking-[-0.05em] mb-8">
+            See your<br />
             <span
               className="italic font-normal text-[var(--color-gold)]"
               style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
             >
-              Share your story.
+              investment year.
             </span>
           </h1>
 
           {/* Subtext */}
-          <p className="text-[16px] text-[var(--color-text-muted)] leading-relaxed max-w-md mb-8">
-            Your portfolio return, best trade, investor personality, and more — in 30 seconds. Free.
+          <p className="text-[18px] text-[var(--color-text-muted)] leading-relaxed max-w-lg mb-10">
+            Your return. Your best trade. Your investor personality. All in 30 seconds.
           </p>
 
-          {/* CTA */}
-          <div className="flex flex-col sm:flex-row items-start gap-3">
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row items-start gap-4">
             <Link
               href="/signup?flow=wrapped"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-[var(--color-gold)] text-black text-[14px] font-bold tracking-wide rounded-lg hover:brightness-110 transition-all"
-              style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.3)' }}
+              className="inline-flex items-center gap-2 px-10 py-4 bg-[var(--color-gold)] text-black text-[15px] font-bold tracking-wide rounded-lg hover:brightness-110 transition-all"
+              style={{ boxShadow: '0 8px 32px rgba(230,185,77,0.35)' }}
             >
               Get my Wrapped
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/login?redirect=/wrapped"
-              className="inline-flex items-center gap-1 px-4 py-4 text-[14px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+              className="inline-flex items-center gap-1 px-4 py-4 text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               I have an account
-              <ChevronRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
       </section>
 
       {/* Preview cards */}
-      <section className="py-16 border-t border-[var(--color-border-subtle)]">
-        <div className="max-w-4xl mx-auto px-5 md:px-6">
-          <p className="text-[11px] tracking-[0.2em] text-[var(--color-gold)] uppercase mb-8" style={MONO}>
-            What you&apos;ll see
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {PREVIEWS.map((card) => (
-              <div
-                key={card.label}
-                className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl p-7 text-center"
+      <section className="py-20 md:py-24 border-t border-[var(--color-border-subtle)]">
+        <div className="max-w-5xl mx-auto px-5 md:px-6">
+          <div className="flex items-center gap-3 mb-12">
+            <span className="block w-8 h-px bg-[var(--color-gold)]" />
+            <span className="text-[12px] tracking-[0.25em] text-[var(--color-gold)] uppercase" style={MONO}>
+              What you&apos;ll see
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            {/* Card 1: Return */}
+            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl p-10 text-center">
+              <p className="text-[11px] tracking-[0.2em] text-[var(--color-gold)] uppercase mb-5" style={MONO}>
+                Your Return
+              </p>
+              <p className="text-[64px] font-bold tabular-nums tracking-tight leading-none text-[var(--color-positive)]">
+                +28.4%
+              </p>
+              <p className="text-[13px] text-[var(--color-text-muted)] mt-4" style={MONO}>
+                vs S&amp;P 500 +19.8%
+              </p>
+            </div>
+            {/* Card 2: Investor Type */}
+            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl p-10 text-center">
+              <p className="text-[11px] tracking-[0.2em] text-[var(--color-gold)] uppercase mb-5" style={MONO}>
+                Your Type
+              </p>
+              <p
+                className="text-[36px] font-bold tracking-tight leading-tight text-[var(--color-gold)] italic"
+                style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
               >
-                <p className="text-[10px] tracking-[0.2em] text-[var(--color-gold)] uppercase mb-4" style={MONO}>
-                  {card.label}
-                </p>
-                <p className={`text-[36px] font-bold tabular-nums tracking-tight ${card.color}`}>
-                  {card.value}
-                </p>
-                <p className="text-[12px] text-[var(--color-text-muted)] mt-3" style={MONO}>
-                  {card.sub}
-                </p>
+                The Growth<br />Hunter
+              </p>
+              <p className="text-[13px] text-[var(--color-text-muted)] mt-4" style={MONO}>
+                Based on trading patterns
+              </p>
+            </div>
+            {/* Card 3: MVP */}
+            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl p-10 text-center">
+              <p className="text-[11px] tracking-[0.2em] text-[var(--color-gold)] uppercase mb-5" style={MONO}>
+                Your MVP
+              </p>
+              <p className="text-[48px] font-bold tabular-nums tracking-tight leading-none text-[var(--color-gold)]" style={MONO}>
+                NVDA
+              </p>
+              <p className="text-[13px] text-[var(--color-text-muted)] mt-4" style={MONO}>
+                +187% best position
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="py-20 md:py-24 border-t border-[var(--color-border-subtle)]">
+        <div className="max-w-5xl mx-auto px-5 md:px-6">
+          <div className="flex items-center gap-3 mb-12">
+            <span className="block w-8 h-px bg-[var(--color-gold)]" />
+            <span className="text-[12px] tracking-[0.25em] text-[var(--color-gold)] uppercase" style={MONO}>
+              Three steps
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            {[
+              { n: '01', title: 'Create account', desc: 'Free. No credit card. Takes 10 seconds.' },
+              { n: '02', title: 'Connect brokerage', desc: 'Read-only via Plaid. We can never trade or move money.' },
+              { n: '03', title: 'See your Wrapped', desc: 'Personalized slides. Shareable. Yours forever.' },
+            ].map((step) => (
+              <div key={step.n}>
+                <p className="text-[32px] text-[var(--color-gold)] font-bold mb-3" style={MONO}>{step.n}</p>
+                <h3 className="text-[22px] font-bold mb-2">{step.title}</h3>
+                <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed">{step.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="py-16 border-t border-[var(--color-border-subtle)]">
-        <div className="max-w-4xl mx-auto px-5 md:px-6">
-          <p className="text-[11px] tracking-[0.2em] text-[var(--color-gold)] uppercase mb-8" style={MONO}>
-            Three steps
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {/* Social proof */}
+      <section className="py-20 md:py-24 border-t border-[var(--color-border-subtle)]">
+        <div className="max-w-5xl mx-auto px-5 md:px-6">
+          <h2 className="text-[clamp(24px,5vw,36px)] font-bold tracking-tight text-center mb-12">
+            Join investors who know their numbers
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {[
-              { n: '01', title: 'Create account', desc: 'Free. No card. 10 seconds.' },
-              { n: '02', title: 'Connect brokerage', desc: 'Read-only via Plaid. We never trade.' },
-              { n: '03', title: 'See your Wrapped', desc: 'Personalized. Shareable. Yours.' },
-            ].map((step) => (
-              <div key={step.n}>
-                <p className="text-[var(--color-gold)] text-[20px] font-bold mb-2" style={MONO}>{step.n}</p>
-                <h3 className="text-[18px] font-bold mb-1">{step.title}</h3>
-                <p className="text-[14px] text-[var(--color-text-muted)] leading-relaxed">{step.desc}</p>
+              { stat: '14,000+', label: 'Users' },
+              { stat: '4.2M+', label: 'Trades analyzed' },
+              { stat: 'Free', label: 'Forever' },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="border border-[var(--color-gold)]/20 rounded-xl p-8 text-center"
+              >
+                <p className="text-[36px] font-bold text-[var(--color-gold)] tabular-nums tracking-tight" style={MONO}>
+                  {item.stat}
+                </p>
+                <p className="text-[14px] text-[var(--color-text-muted)] mt-2 uppercase tracking-wider" style={MONO}>
+                  {item.label}
+                </p>
               </div>
             ))}
           </div>
@@ -286,22 +336,28 @@ export function WrappedLanding() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 border-t border-[var(--color-border-subtle)] text-center">
-        <h2 className="text-[clamp(32px,6vw,48px)] font-bold tracking-tight mb-6">Ready?</h2>
-        <Link
-          href="/signup?flow=wrapped"
-          className="inline-flex items-center gap-2 px-8 py-4 bg-[var(--color-gold)] text-black text-[14px] font-bold tracking-wide rounded-lg hover:brightness-110 transition-all"
-          style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.3)' }}
-        >
-          Get my Wrapped
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-        <p className="text-[13px] text-[var(--color-text-muted)] mt-4">Free for everyone.</p>
+      <section className="py-24 md:py-32 border-t border-[var(--color-border-subtle)] text-center">
+        <div className="max-w-3xl mx-auto px-5">
+          <h2 className="text-[clamp(36px,7vw,56px)] font-bold tracking-tight mb-8">
+            Ready to see<br />your year?
+          </h2>
+          <Link
+            href="/signup?flow=wrapped"
+            className="inline-flex items-center gap-2 px-10 py-4 bg-[var(--color-gold)] text-black text-[15px] font-bold tracking-wide rounded-lg hover:brightness-110 transition-all"
+            style={{ boxShadow: '0 8px 32px rgba(230,185,77,0.35)' }}
+          >
+            Get my Wrapped
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+          <p className="text-[14px] text-[var(--color-text-muted)] mt-5">
+            Free for everyone. No credit card required.
+          </p>
+        </div>
       </section>
 
       {/* Footer */}
       <footer className="py-6 border-t border-[var(--color-border-subtle)]">
-        <div className="max-w-4xl mx-auto px-5 flex items-center justify-between text-[9px] tracking-widest uppercase" style={{ ...MONO, color: '#5a5a5a' }}>
+        <div className="max-w-5xl mx-auto px-5 flex items-center justify-between text-[9px] tracking-widest uppercase" style={{ ...MONO, color: '#5a5a5a' }}>
           <span>&copy; 2026 Helm</span>
           <span>helmterminal.dev</span>
         </div>
