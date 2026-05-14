@@ -16,7 +16,7 @@ import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
    4. Logged in, has Plaid → redirect to /dashboard/wrapped
    ═══════════════════════════════════════════════════════════ */
 
-type FlowState = 'loading' | 'landing' | 'signup' | 'connect' | 'generating';
+type FlowState = 'loading' | 'landing' | 'signup' | 'confirming' | 'connect' | 'generating';
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 
@@ -102,11 +102,11 @@ export function WrappedLanding() {
         return;
       }
       if (data.session) {
-        // Logged in — go to Plaid connect
+        // Auto-confirmed — go straight to Plaid
         setFlowState('connect');
       } else {
-        // Email confirmation required
-        setSignupError('Check your email to confirm, then come back to this page.');
+        // Email confirmation required — poll for session
+        setFlowState('confirming');
       }
     } catch {
       setSignupError('Something went wrong. Try again.');
@@ -139,6 +139,76 @@ export function WrappedLanding() {
         <p className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>
           Generating your Wrapped...
         </p>
+      </div>
+    );
+  }
+
+  // ── Poll for email confirmation ──
+  useEffect(() => {
+    if (flowState !== 'confirming') return;
+    const interval = setInterval(async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        clearInterval(interval);
+        setFlowState('connect');
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [flowState]);
+
+  // ── Confirming state (waiting for email confirmation) ──
+  if (flowState === 'confirming') {
+    return (
+      <div className="min-h-screen bg-[#060606] text-[var(--color-text-primary)]">
+        <nav className="fixed top-0 left-0 right-0 z-50 px-6 md:px-10 py-5 flex items-center">
+          <div className="flex items-center gap-2.5 opacity-60">
+            <HelmMark size={18} />
+            <span className="text-[12px] font-bold uppercase tracking-[0.08em]">Helm</span>
+          </div>
+        </nav>
+
+        <div className="flex flex-col items-center justify-center min-h-screen px-5">
+          <div className="w-full max-w-sm text-center">
+            {/* Progress */}
+            <div className="flex items-center justify-center gap-2 mb-10">
+              <div className="w-8 h-1 rounded-full bg-[#E6B94D]" />
+              <div className="w-8 h-1 rounded-full bg-[#E6B94D]/40 animate-pulse" />
+              <div className="w-8 h-1 rounded-full bg-white/10" />
+            </div>
+
+            {/* Email icon */}
+            <div className="w-16 h-16 mx-auto mb-8 rounded-full border border-[#E6B94D]/20 bg-[#E6B94D]/[0.06] flex items-center justify-center">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E6B94D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              </svg>
+            </div>
+
+            <h2 className="text-[24px] font-bold tracking-tight mb-3">Check your email</h2>
+            <p className="text-[15px] text-white/50 leading-relaxed mb-2">
+              We sent a confirmation link to <span className="text-white/80 font-medium">{email}</span>
+            </p>
+            <p className="text-[14px] text-white/35 leading-relaxed mb-8">
+              Click the link, then this page will automatically continue to the next step.
+            </p>
+
+            {/* Polling indicator */}
+            <div className="flex items-center justify-center gap-2 text-[12px] text-white/30" style={MONO}>
+              <div className="w-1.5 h-1.5 rounded-full bg-[#E6B94D] animate-pulse" />
+              Waiting for confirmation...
+            </div>
+
+            <p className="text-[12px] text-white/25 mt-8">
+              Didn&apos;t get it? Check spam, or{' '}
+              <button
+                onClick={() => setFlowState('signup')}
+                className="text-[#E6B94D] hover:text-[#FFD67A] transition-colors cursor-pointer"
+              >
+                try a different email
+              </button>
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
