@@ -122,6 +122,19 @@ export function WrappedLanding() {
     });
   };
 
+  // ── Poll for email confirmation (must be before early returns) ──
+  useEffect(() => {
+    if (flowState !== 'confirming') return;
+    const interval = setInterval(async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        clearInterval(interval);
+        setFlowState('connect');
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [flowState]);
+
   // ── Loading state ──
   if (flowState === 'loading') {
     return (
@@ -142,19 +155,6 @@ export function WrappedLanding() {
       </div>
     );
   }
-
-  // ── Poll for email confirmation ──
-  useEffect(() => {
-    if (flowState !== 'confirming') return;
-    const interval = setInterval(async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        clearInterval(interval);
-        setFlowState('connect');
-      }
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [flowState]);
 
   // ── Confirming state (waiting for email confirmation) ──
   if (flowState === 'confirming') {
