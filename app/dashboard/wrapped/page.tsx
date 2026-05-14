@@ -116,6 +116,7 @@ const slideVariants = {
 
 // ═══════════════════════════════════════════
 // Slide 1: COVER — cinematic opener
+// Dark with gold glow. Massive serif headline.
 // ═══════════════════════════════════════════
 
 function SlideCover({
@@ -130,41 +131,29 @@ function SlideCover({
   const positions = data?.positionCount ?? 0;
 
   return (
-    <div className="flex flex-col items-center justify-center h-full px-6 md:px-10 overflow-hidden">
-      <div className="max-w-xl text-center md:text-left">
-        {/* Name eyebrow */}
-        <p className="text-[10px] tracking-[0.3em] text-[var(--color-gold)] mb-6 md:mb-8" style={MONO}>
-          HELM WRAPPED
-        </p>
+    <div className="relative flex flex-col items-center justify-center h-full px-8 overflow-hidden">
+      <div className="absolute -top-[30%] -left-[20%] w-[80vw] h-[80vw] rounded-full opacity-[0.08] blur-[140px] pointer-events-none" style={{ background: 'radial-gradient(circle, #E6B94D, transparent 65%)' }} />
 
-        {/* Massive serif headline */}
-        <h1
-          className="text-[clamp(52px,12vw,80px)] font-bold leading-[0.9] tracking-[-0.05em] mb-8"
-        >
+      <div className="relative z-10 max-w-lg">
+        <p className="text-[12px] tracking-[0.3em] text-[var(--color-gold)] mb-8" style={MONO}>HELM WRAPPED</p>
+
+        <h1 className="text-[clamp(60px,15vw,100px)] font-bold leading-[0.88] tracking-[-0.05em] mb-10">
           Your<br />
-          <span
-            className="italic font-normal text-[var(--color-gold)]"
-            style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
-          >
-            {year}
-          </span>
+          <span className="italic font-normal text-[var(--color-gold)]" style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}>{year}</span>
           <br />wrapped.
         </h1>
 
-        {/* Subtitle */}
-        <p className="text-[17px] text-[var(--color-text-muted)] leading-relaxed mb-10">
-          {positions > 0
-            ? `${positions} positions. ${trades} trades. One portfolio.`
-            : `${trades > 0 ? `${trades} trades.` : ''} One portfolio.`}
+        <p className="text-[18px] text-[var(--color-text-muted)] leading-relaxed mb-12">
+          {positions > 0 ? `${positions} positions. ${trades} trades. One portfolio.` : `${trades > 0 ? `${trades} trades.` : ''} One portfolio.`}
         </p>
 
-        {/* CTA */}
         <button
           onClick={(e) => { e.stopPropagation(); onBegin(); }}
-          className="group inline-flex items-center gap-2 px-8 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-semibold text-[14px] rounded-full cursor-pointer transition-colors"
+          className="group inline-flex items-center gap-2.5 px-10 py-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[15px] rounded-full cursor-pointer transition-all"
+          style={{ boxShadow: '0 8px 32px rgba(230,185,77,0.3)' }}
         >
           Begin Wrapped
-          <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+          <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
         </button>
       </div>
     </div>
@@ -172,7 +161,8 @@ function SlideCover({
 }
 
 // ═══════════════════════════════════════════
-// Slide 2: THE RETURN — hero number
+// Slide 2: THE RETURN
+// Green/red tinted bg. Number fills screen.
 // ═══════════════════════════════════════════
 
 function SlideReturn({ data }: { data: WrappedData | null }) {
@@ -182,51 +172,38 @@ function SlideReturn({ data }: { data: WrappedData | null }) {
   const alpha = spyReturn != null ? pct - spyReturn : null;
 
   return (
-    <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-      <p className="text-[10px] tracking-[0.3em] text-[var(--color-gold)] mb-4" style={MONO}>
-        &sect; 01 &mdash; THE RETURN
-      </p>
+    <div className="relative flex flex-col items-center justify-center h-full px-6 text-center overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] h-[90vw] rounded-full opacity-[0.07] blur-[150px] pointer-events-none" style={{ background: `radial-gradient(circle, ${positive ? '#4ADE80' : '#F87171'}, transparent 60%)` }} />
 
-      <p className="text-[18px] text-[var(--color-text-muted)] mb-6">Your portfolio returned</p>
+      <div className="relative z-10">
+        <p className="text-[14px] text-[var(--color-text-muted)] mb-3">Your portfolio returned</p>
 
-      {/* Giant number with glow */}
-      <div
-        className={cn(
-          'text-[clamp(88px,25vw,200px)] font-bold leading-none tabular-nums tracking-[-0.05em]',
-          positive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
-        )}
-        style={{
-          textShadow: positive
-            ? '0 0 40px rgba(74,222,128,0.3)'
-            : '0 0 40px rgba(248,113,113,0.3)',
-          fontVariantNumeric: 'tabular-nums',
-        }}
-      >
-        {fmtPct(pct)}
-      </div>
+        <div
+          className={cn('text-[clamp(100px,30vw,240px)] font-bold leading-none tabular-nums tracking-[-0.05em]', positive ? 'text-[#4ADE80]' : 'text-[#F87171]')}
+          style={{ textShadow: positive ? '0 0 60px rgba(74,222,128,0.35), 0 0 120px rgba(74,222,128,0.15)' : '0 0 60px rgba(248,113,113,0.35), 0 0 120px rgba(248,113,113,0.15)' }}
+        >
+          {fmtPct(pct)}
+        </div>
 
-      {/* 3-col comparison */}
-      <div className="grid grid-cols-3 gap-6 md:gap-14 mt-10 max-w-sm">
-        {spyReturn != null && (
-          <div>
-            <p className="text-[8px] tracking-[0.14em] text-[var(--color-text-muted)]" style={MONO}>S&amp;P 500</p>
-            <p className="text-base font-bold mt-1" style={MONO}>{fmtPct(spyReturn)}</p>
-          </div>
-        )}
-        {alpha != null && (
-          <div>
-            <p className="text-[8px] tracking-[0.14em] text-[var(--color-text-muted)]" style={MONO}>ALPHA</p>
-            <p className={cn('text-base font-bold mt-1', alpha >= 0 ? 'text-[var(--color-gold)]' : 'text-[var(--color-negative)]')} style={MONO}>{fmtPct(alpha)}</p>
-          </div>
-        )}
-        {data?.spyComparison.beat != null && (
-          <div>
-            <p className="text-[8px] tracking-[0.14em] text-[var(--color-text-muted)]" style={MONO}>MARKET</p>
-            <p className={cn('text-base font-bold mt-1', data.spyComparison.beat ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]')} style={MONO}>
-              {data.spyComparison.beat ? 'BEAT' : 'MISSED'}
-            </p>
-          </div>
-        )}
+        <div className="flex items-center justify-center gap-8 mt-8">
+          {spyReturn != null && (
+            <div className="text-center">
+              <p className="text-[11px] tracking-[0.15em] text-[var(--color-text-muted)] mb-1" style={MONO}>S&amp;P 500</p>
+              <p className="text-[20px] font-bold" style={MONO}>{fmtPct(spyReturn)}</p>
+            </div>
+          )}
+          {alpha != null && (
+            <div className="text-center">
+              <p className="text-[11px] tracking-[0.15em] text-[var(--color-text-muted)] mb-1" style={MONO}>ALPHA</p>
+              <p className={cn('text-[20px] font-bold', alpha >= 0 ? 'text-[var(--color-gold)]' : 'text-[#F87171]')} style={MONO}>{fmtPct(alpha)}</p>
+            </div>
+          )}
+          {data?.spyComparison.beat && (
+            <div className="px-5 py-2 rounded-full bg-[#4ADE80]/10 border border-[#4ADE80]/20">
+              <p className="text-[14px] font-bold text-[#4ADE80]" style={MONO}>BEAT THE MARKET</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -234,6 +211,7 @@ function SlideReturn({ data }: { data: WrappedData | null }) {
 
 // ═══════════════════════════════════════════
 // Slide 3: MVP & VILLAIN
+// Green glow top, red glow bottom
 // ═══════════════════════════════════════════
 
 function SlideBestWorst({ data }: { data: WrappedData | null }) {
@@ -241,39 +219,25 @@ function SlideBestWorst({ data }: { data: WrappedData | null }) {
   const worst = data?.worstPosition;
 
   return (
-    <div className="flex flex-col items-center justify-center h-full px-6">
-      <p className="text-[10px] tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
-        &sect; 02 &mdash; MVP &amp; VILLAIN
-      </p>
+    <div className="relative flex flex-col items-center justify-center h-full px-6 overflow-hidden">
+      <div className="absolute -top-[20%] -right-[20%] w-[50vw] h-[50vw] rounded-full opacity-[0.06] blur-[120px] pointer-events-none" style={{ background: '#4ADE80' }} />
+      <div className="absolute -bottom-[20%] -left-[20%] w-[50vw] h-[50vw] rounded-full opacity-[0.05] blur-[120px] pointer-events-none" style={{ background: '#F87171' }} />
 
-      {/* Statement headline */}
-      <h2 className="text-[clamp(26px,6vw,40px)] font-bold tracking-[-0.025em] leading-[1.2] mb-8 text-center max-w-lg">
-        Your MVP was <span className="text-[var(--color-gold)]">{best?.ticker ?? '---'}</span>.<br />
-        Your villain was <span className="text-[var(--color-negative)]">{worst?.ticker ?? '---'}</span>.
-      </h2>
-
-      {/* Two cards stacked */}
-      <div className="flex flex-col gap-3 w-full max-w-md">
-        {/* MVP card */}
-        <div className="rounded-xl border border-[var(--color-positive)]/20 bg-[var(--color-positive)]/[0.04] p-5 grid grid-cols-[1fr_auto] gap-4 items-center">
-          <div>
-            <p className="text-2xl font-bold text-[var(--color-positive)] tracking-wide" style={MONO}>{best?.ticker ?? '---'}</p>
-            <p className="text-[13px] text-[var(--color-text-muted)] mt-1">{best?.name ?? ''} &middot; {best ? fmtDollar(best.returnDollars) : ''}</p>
-          </div>
-          <p className="text-[36px] font-bold tabular-nums text-[var(--color-positive)] tracking-[-0.025em]">
-            {best ? fmtPct(best.returnPct) : '---'}
-          </p>
+      <div className="relative z-10 w-full max-w-lg">
+        <div className="text-center mb-8">
+          <p className="text-[13px] tracking-[0.2em] text-[#4ADE80] mb-3" style={MONO}>YOUR MVP</p>
+          <p className="text-[clamp(48px,12vw,80px)] font-bold text-[var(--color-gold)] tracking-tight leading-none" style={MONO}>{best?.ticker ?? '---'}</p>
+          <p className="text-[clamp(32px,8vw,56px)] font-bold text-[#4ADE80] tabular-nums mt-2">{best ? fmtPct(best.returnPct) : '---'}</p>
+          <p className="text-[14px] text-[var(--color-text-muted)] mt-2">{best?.name ?? ''} &middot; {best ? fmtDollar(best.returnDollars) : ''}</p>
         </div>
 
-        {/* Villain card */}
-        <div className="rounded-xl border border-[var(--color-negative)]/20 bg-[var(--color-negative)]/[0.04] p-5 grid grid-cols-[1fr_auto] gap-4 items-center">
-          <div>
-            <p className="text-2xl font-bold text-[var(--color-negative)] tracking-wide" style={MONO}>{worst?.ticker ?? '---'}</p>
-            <p className="text-[13px] text-[var(--color-text-muted)] mt-1">{worst?.name ?? ''} &middot; {worst ? fmtDollar(worst.returnDollars) : ''}</p>
-          </div>
-          <p className="text-[36px] font-bold tabular-nums text-[var(--color-negative)] tracking-[-0.025em]">
-            {worst ? fmtPct(worst.returnPct) : '---'}
-          </p>
+        <div className="w-16 h-px bg-white/10 mx-auto my-6" />
+
+        <div className="text-center">
+          <p className="text-[13px] tracking-[0.2em] text-[#F87171] mb-3" style={MONO}>YOUR VILLAIN</p>
+          <p className="text-[clamp(48px,12vw,80px)] font-bold text-[#F87171] tracking-tight leading-none" style={MONO}>{worst?.ticker ?? '---'}</p>
+          <p className="text-[clamp(32px,8vw,56px)] font-bold text-[#F87171] tabular-nums mt-2">{worst ? fmtPct(worst.returnPct) : '---'}</p>
+          <p className="text-[14px] text-[var(--color-text-muted)] mt-2">{worst?.name ?? ''} &middot; {worst ? fmtDollar(worst.returnDollars) : ''}</p>
         </div>
       </div>
     </div>
@@ -282,6 +246,7 @@ function SlideBestWorst({ data }: { data: WrappedData | null }) {
 
 // ═══════════════════════════════════════════
 // Slide 4: HABITS
+// Gold tint. Trade count hero number.
 // ═══════════════════════════════════════════
 
 function SlideTradingHabits({ data }: { data: WrappedData | null }) {
@@ -292,110 +257,100 @@ function SlideTradingHabits({ data }: { data: WrappedData | null }) {
   const portfolioVal = data?.portfolioValue ?? 0;
 
   const activeDayLabel = activeDay
-    ? new Date(activeDay.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', hour: 'numeric', minute: '2-digit' })
+    ? new Date(activeDay.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' })
     : null;
 
   return (
-    <div className="flex flex-col items-center justify-center h-full px-6">
-      <p className="text-[10px] tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
-        &sect; 03 &mdash; HABITS
-      </p>
+    <div className="relative flex flex-col items-center justify-center h-full px-6 overflow-hidden">
+      <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[70vw] h-[70vw] rounded-full opacity-[0.05] blur-[120px] pointer-events-none" style={{ background: '#E6B94D' }} />
 
-      {/* Statement */}
-      <h2 className="text-[clamp(24px,6vw,36px)] font-bold tracking-[-0.025em] leading-[1.3] mb-8 text-center max-w-lg">
-        You traded <span className="text-[var(--color-gold)]">{trades} times</span>
-        {activeDayLabel ? <>, mostly on {activeDayLabel}s.</> : '.'}
-      </h2>
+      <div className="relative z-10 text-center">
+        <p className="text-[clamp(80px,22vw,160px)] font-bold text-[var(--color-gold)] leading-none tabular-nums tracking-tight">{trades}</p>
+        <p className="text-[18px] text-[var(--color-text-muted)] mt-2 mb-2">trades this year</p>
+        {activeDayLabel && (
+          <p className="text-[15px] text-[var(--color-text-muted)] mb-10">Mostly on <span className="text-[var(--color-gold)] font-semibold">{activeDayLabel}s</span></p>
+        )}
 
-      {/* 2x2 stat grid */}
-      <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
-        {[
-          { value: trades.toString(), label: 'TRADES' },
-          { value: dividends > 0 ? fmtDollar(dividends) : '$0', label: 'DIVIDENDS' },
-          { value: positions.toString(), label: 'POSITIONS' },
-          { value: fmtDollar(portfolioVal), label: 'VALUE' },
-        ].map((s) => (
-          <div key={s.label} className="p-4 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl">
-            <p className="text-[28px] font-bold tabular-nums tracking-[-0.02em]">{s.value}</p>
-            <p className="text-[11px] tracking-[0.14em] text-[var(--color-gold)] mt-2" style={MONO}>{s.label}</p>
-          </div>
-        ))}
+        <div className="grid grid-cols-2 gap-3 w-full max-w-sm mx-auto">
+          {[
+            { value: fmtDollar(dividends), label: 'DIVIDENDS' },
+            { value: positions.toString(), label: 'POSITIONS' },
+            { value: fmtDollar(portfolioVal), label: 'PORTFOLIO' },
+            { value: activeDay ? `${activeDay.trades}` : '—', label: 'BUSIEST DAY' },
+          ].map((s) => (
+            <div key={s.label} className="p-5 bg-white/[0.03] border border-white/[0.06] rounded-2xl">
+              <p className="text-[clamp(24px,5vw,32px)] font-bold tabular-nums">{s.value}</p>
+              <p className="text-[11px] tracking-[0.15em] text-[var(--color-gold)] mt-2" style={MONO}>{s.label}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
 // ═══════════════════════════════════════════
-// Slide 5: CONVICTION (sectors)
+// Slide 5: CONVICTION
+// Blue/purple tint. Big sector % hero.
 // ═══════════════════════════════════════════
 
 function SlideSectors({ data }: { data: WrappedData | null }) {
   const sectors = data?.sectorBreakdown ?? [];
   const nwChange = data?.netWorthChange;
-
   const sectorColors = ['#E6B94D', '#4ADE80', '#7AA3C7', '#A78BFA', '#C8A165', '#5A6070'];
   const topSector = sectors.length > 0 ? sectors[0] : null;
 
   return (
-    <div className="flex flex-col items-center justify-center h-full px-6">
-      <p className="text-[12px] tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
-        &sect; 04 &mdash; CONVICTION
-      </p>
+    <div className="relative flex flex-col items-center justify-center h-full px-6 overflow-hidden">
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[70vw] h-[70vw] rounded-full opacity-[0.06] blur-[120px] pointer-events-none" style={{ background: '#7AA3C7' }} />
 
-      {/* Statement */}
-      <h2 className="text-[clamp(28px,7vw,44px)] font-bold tracking-[-0.025em] leading-[1.2] mb-10 text-center max-w-lg">
-        {topSector && topSector.pct >= 35
-          ? <>You were <span className="text-[var(--color-gold)]">{topSector.pct.toFixed(0)}% {topSector.sector}</span>. Conviction paid.</>
-          : topSector
-            ? <><span className="text-[var(--color-gold)]">{topSector.sector}</span> led at {topSector.pct.toFixed(0)}%.</>
-            : 'Your allocation.'}
-      </h2>
+      <div className="relative z-10 text-center w-full max-w-lg">
+        {topSector && (
+          <>
+            <p className="text-[clamp(80px,22vw,160px)] font-bold leading-none tabular-nums tracking-tight">{topSector.pct.toFixed(0)}%</p>
+            <p className="text-[clamp(20px,5vw,32px)] font-bold text-[var(--color-gold)] mt-2 mb-2" style={MONO}>{topSector.sector}</p>
+            <p className="text-[16px] text-[var(--color-text-muted)] mb-10">{topSector.pct >= 40 ? 'Concentrated conviction.' : 'Your biggest bet.'}</p>
+          </>
+        )}
 
-      {/* Allocation bar */}
-      {sectors.length > 0 && (
-        <div className="w-full max-w-lg mb-8">
-          <div className="flex gap-[2px] h-3 rounded-full overflow-hidden">
-            {sectors.map((s, i) => (
-              <div
-                key={s.sector}
-                style={{ flex: Math.max(s.pct, 2), background: sectorColors[i % sectorColors.length] }}
-              />
-            ))}
+        {sectors.length > 0 && (
+          <div className="mb-8">
+            <div className="flex gap-1 h-4 rounded-full overflow-hidden">
+              {sectors.map((s, i) => (
+                <div key={s.sector} style={{ flex: Math.max(s.pct, 2), background: sectorColors[i % sectorColors.length] }} className="rounded-sm" />
+              ))}
+            </div>
+            <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 mt-5">
+              {sectors.slice(0, 5).map((s, i) => (
+                <span key={s.sector} className="flex items-center gap-2 text-[14px] text-[var(--color-text-muted)]" style={MONO}>
+                  <span className="w-3 h-3 rounded-full" style={{ background: sectorColors[i % sectorColors.length] }} />
+                  {s.sector} {s.pct.toFixed(0)}%
+                </span>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 mt-5">
-            {sectors.slice(0, 5).map((s, i) => (
-              <span key={s.sector} className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]" style={MONO}>
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: sectorColors[i % sectorColors.length] }} />
-                {s.sector} {s.pct.toFixed(0)}%
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* Net worth change */}
-      {nwChange && nwChange.change !== 0 && (
-        <div className="grid grid-cols-2 gap-8 mt-4 text-center max-w-sm">
-          <div>
-            <p className="text-[11px] tracking-[0.14em] text-[var(--color-text-muted)]" style={MONO}>NET WORTH</p>
-            <p className={cn('text-2xl font-bold mt-2 tabular-nums', nwChange.change >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]')}>
-              {fmtDollar(nwChange.change)}
-            </p>
+        {nwChange && nwChange.change !== 0 && (
+          <div className="flex items-center justify-center gap-10 mt-4">
+            <div>
+              <p className="text-[12px] tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>NET WORTH</p>
+              <p className={cn('text-[28px] font-bold mt-1 tabular-nums', nwChange.change >= 0 ? 'text-[#4ADE80]' : 'text-[#F87171]')}>{fmtDollar(nwChange.change)}</p>
+            </div>
+            <div>
+              <p className="text-[12px] tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>CHANGE</p>
+              <p className={cn('text-[28px] font-bold mt-1 tabular-nums', nwChange.changePct >= 0 ? 'text-[#4ADE80]' : 'text-[#F87171]')}>{fmtPct(nwChange.changePct)}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-[11px] tracking-[0.14em] text-[var(--color-text-muted)]" style={MONO}>CHANGE</p>
-            <p className={cn('text-2xl font-bold mt-2 tabular-nums', nwChange.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]')}>
-              {fmtPct(nwChange.changePct)}
-            </p>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
 
 // ═══════════════════════════════════════════
 // Slide 6: INVESTOR PERSONALITY
+// Warm gold atmosphere. Serif italic hero.
 // ═══════════════════════════════════════════
 
 function SlidePersonality({ data }: { data: WrappedData | null }) {
@@ -405,39 +360,28 @@ function SlidePersonality({ data }: { data: WrappedData | null }) {
   const traits = p?.traits ?? [];
 
   return (
-    <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-      <p className="text-[12px] tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
-        &sect; 05 &mdash; YOUR TYPE
-      </p>
+    <div className="relative flex flex-col items-center justify-center h-full px-6 text-center overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] rounded-full opacity-[0.08] blur-[140px] pointer-events-none" style={{ background: '#E6B94D' }} />
 
-      <p className="text-[18px] text-[var(--color-text-muted)] mb-6">You invest like</p>
+      <div className="relative z-10">
+        <p className="text-[16px] text-[var(--color-text-muted)] mb-6">You invest like</p>
 
-      {/* Big personality name */}
-      <h2
-        className="text-[clamp(44px,11vw,80px)] font-bold tracking-[-0.04em] leading-none mb-5"
-        style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}
-      >
-        <span className="text-[var(--color-gold)]">{title}</span>
-      </h2>
+        <h2 className="text-[clamp(48px,13vw,96px)] font-bold tracking-[-0.04em] leading-[0.9] mb-6" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>
+          <span className="text-[var(--color-gold)]">{title}</span>
+        </h2>
 
-      {/* Gold underline */}
-      <div className="w-20 h-1 bg-[var(--color-gold)] rounded-full mb-8" />
+        <div className="w-20 h-1 bg-[var(--color-gold)] rounded-full mx-auto mb-8" />
 
-      {/* Description */}
-      <p className="text-[17px] text-[var(--color-text-muted)] leading-relaxed max-w-md mb-6">
-        {desc}
-      </p>
+        <p className="text-[18px] text-[var(--color-text-muted)] leading-relaxed max-w-md mx-auto mb-8">{desc}</p>
 
-      {/* Traits */}
-      {traits.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-2 max-w-md">
-          {traits.map((t) => (
-            <span key={t} className="px-4 py-2 rounded-full border border-[var(--color-gold)]/20 bg-[var(--color-gold)]/[0.06] text-[13px] text-[var(--color-gold)]" style={MONO}>
-              {t}
-            </span>
-          ))}
-        </div>
-      )}
+        {traits.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-2.5 max-w-md mx-auto">
+            {traits.map((t) => (
+              <span key={t} className="px-5 py-2.5 rounded-full border border-[var(--color-gold)]/25 bg-[var(--color-gold)]/[0.08] text-[14px] font-medium text-[var(--color-gold)]" style={MONO}>{t}</span>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
