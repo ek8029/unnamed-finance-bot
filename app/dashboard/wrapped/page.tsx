@@ -393,11 +393,19 @@ function SlidePersonality({ data }: { data: WrappedData | null }) {
 function SlideShareCard({ data, onShareImage, onShareTwitter }: { data: WrappedData | null; onShareImage: () => void; onShareTwitter: () => void }) {
   const pct = data?.totalReturn.pct ?? 0;
   const positive = pct >= 0;
-  const positions = data?.positionCount ?? 0;
   const trades = data?.tradeCount ?? 0;
   const dividends = data?.totalDividends ?? 0;
+  const portfolioVal = data?.portfolioValue ?? 0;
   const year = data?.periodLabel ?? new Date().getFullYear().toString();
+  const best = data?.bestPosition;
+  const worst = data?.worstPosition;
+  const personality = data?.investorPersonality;
+  const spyReturn = data?.spyComparison?.spyReturn;
+  const alpha = spyReturn != null ? pct - spyReturn : null;
+  const sectors = data?.sectorBreakdown ?? [];
   const [shareStatus, setShareStatus] = useState<'idle' | 'generating' | 'copied'>('idle');
+
+  const sectorColors = ['#E6B94D', '#7AA3C7', '#9FB89D', '#C8A165', '#8E7DC7', '#5A6070'];
 
   const handleShareImage = async () => {
     setShareStatus('generating');
@@ -411,106 +419,146 @@ function SlideShareCard({ data, onShareImage, onShareTwitter }: { data: WrappedD
   };
 
   return (
-    <div className="flex flex-col lg:flex-row items-center justify-center h-full px-6 gap-10 lg:gap-16">
+    <div className="flex flex-col lg:flex-row items-center justify-center h-full px-4 md:px-6 gap-8 lg:gap-12 overflow-y-auto">
       {/* Left: CTA */}
-      <div className="text-center lg:text-left max-w-sm">
-        <p
-          className="text-[11px] uppercase tracking-[0.25em] text-[var(--color-text-muted)] mb-6"
-          style={MONO}
-        >
-          &sect; 05 &mdash; Your Card
+      <div className="text-center lg:text-left max-w-sm shrink-0">
+        <p className="text-[12px] uppercase tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
+          &sect; 06 &mdash; Your Card
         </p>
-        <h2 className="text-[clamp(28px,5vw,48px)] font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.1] mb-4">
+        <h2 className="text-[clamp(32px,6vw,56px)] font-bold tracking-[-0.03em] leading-[1.05] mb-4">
           Take the Helm.{' '}
-          <span className="italic text-[var(--color-gold)]" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+          <span className="italic text-[var(--color-gold)]" style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}>
             Again.
           </span>
         </h2>
-        <p className="text-[15px] text-[var(--color-text-secondary)] mb-8">
-          Another year of data-driven decisions. Your portfolio story, tracked.
+        <p className="text-[16px] text-white/50 mb-8">
+          Share your year. Flex your numbers.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
           <button
             onClick={handleShareImage}
             disabled={shareStatus === 'generating'}
-            className="px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[14px] rounded-full transition-colors duration-200 text-center flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+            className="px-8 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[14px] rounded-sm transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
           >
-            <Share2 className="w-4 h-4" />
             {shareStatus === 'generating' ? 'Sharing...' : shareStatus === 'copied' ? 'Copied!' : 'Share Wrapped'}
           </button>
           <button
             onClick={onShareTwitter}
-            className="px-6 py-3 border border-white/10 hover:border-white/20 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-medium text-[14px] rounded-full transition-colors duration-200 text-center cursor-pointer"
+            className="px-6 py-3.5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white font-medium text-[14px] rounded-sm transition-colors cursor-pointer"
           >
             Post on X
           </button>
-          <a
-            href="/dashboard"
-            className="px-6 py-3 border border-white/10 hover:border-white/20 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-medium text-[14px] rounded-full transition-colors duration-200 text-center"
-          >
-            Close
-          </a>
         </div>
       </div>
 
-      {/* Right: Share card mock */}
-      <div className="w-full max-w-[320px] rounded-2xl border border-white/10 bg-[var(--color-bg-base)] p-8 shadow-2xl">
-        {/* Card header */}
-        <div className="flex items-center gap-2 mb-6">
-          <HelmMark size={16} />
-          <span className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]" style={MONO}>
-            Helm Wrapped {year}
-          </span>
-        </div>
-
-        {/* Return */}
-        <p
-          className={cn(
-            'text-[48px] font-bold tabular-nums leading-none mb-6',
-            positive ? 'text-emerald-400' : 'text-red-400',
-          )}
+      {/* Right: V4 Share Card */}
+      <div className="w-full max-w-[380px] shrink-0">
+        <div
+          className="relative rounded-2xl overflow-hidden"
+          style={{
+            background: '#0A0A0A',
+            border: '2px solid rgba(230,185,77,0.25)',
+            padding: '28px 32px',
+            aspectRatio: '4/5',
+            boxShadow: '0 40px 100px rgba(0,0,0,0.8)',
+          }}
         >
-          {fmtPct(pct)}
-        </p>
+          {/* Gold glow */}
+          <div className="absolute top-[25%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full opacity-[0.04] blur-[80px] pointer-events-none" style={{ background: '#E6B94D' }} />
 
-        {/* Stats grid */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div>
-            <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1" style={MONO}>
-              Positions
-            </p>
-            <p className="text-[18px] font-bold text-[var(--color-text-primary)] tabular-nums">{positions}</p>
+          {/* Top bar */}
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <HelmMark size={16} />
+              <span className="text-[10px] font-bold tracking-[0.12em] text-[var(--color-gold)]" style={MONO}>
+                HELM <span style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic', fontWeight: 400, letterSpacing: '0.03em' }}>Wrapped</span>
+              </span>
+            </div>
+            <span className="text-[9px] text-white/40 tracking-[0.2em]" style={MONO}>{year}</span>
           </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1" style={MONO}>
-              Trades
-            </p>
-            <p className="text-[18px] font-bold text-[var(--color-text-primary)] tabular-nums">{trades}</p>
-          </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1" style={MONO}>
-              Dividends
-            </p>
-            <p className="text-[18px] font-bold text-[var(--color-text-primary)] tabular-nums">{fmtDollar(dividends)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1" style={MONO}>
-              Return
-            </p>
-            <p className={cn(
-              'text-[18px] font-bold tabular-nums',
-              positive ? 'text-emerald-400' : 'text-red-400',
-            )}>
-              {fmtDollar(data?.totalReturn.dollars ?? 0)}
-            </p>
-          </div>
-        </div>
 
-        {/* Hashtag */}
-        <div className="pt-4 border-t border-white/[0.06]">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--color-gold)] font-medium text-center" style={MONO}>
-            #HELMWRAPPED
-          </p>
+          {/* Hero return */}
+          <div className="relative z-10 text-center my-4">
+            <p
+              className={cn('font-bold leading-[0.82] tabular-nums tracking-[-0.04em]', positive ? 'text-[#4ADE80]' : 'text-[#F87171]')}
+              style={{ fontSize: 'clamp(56px, 14vw, 88px)', textShadow: positive ? '0 0 60px rgba(74,222,128,0.2)' : '0 0 60px rgba(248,113,113,0.2)' }}
+            >
+              {fmtPct(pct)}
+            </p>
+            <div className="flex items-baseline justify-center gap-3 mt-2">
+              <span style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }} className="text-[14px] text-[var(--color-gold)]">
+                {positive ? 'beat the market' : 'tough year'}
+              </span>
+              {alpha != null && (
+                <span className="text-[12px] text-[var(--color-gold)] font-bold" style={MONO}>ALPHA {fmtPct(alpha)}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Sector bar */}
+          {sectors.length > 0 && (
+            <div className="relative z-10 mb-3">
+              <div className="flex gap-[2px] h-[6px] rounded-full overflow-hidden mb-1.5">
+                {sectors.map((s, i) => (
+                  <div key={s.sector} style={{ flex: Math.max(s.pct, 2), background: sectorColors[i % sectorColors.length] }} className="rounded-sm" />
+                ))}
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {sectors.slice(0, 4).map((s, i) => (
+                  <span key={s.sector} className="text-[8px] font-medium" style={{ ...MONO, color: sectorColors[i % sectorColors.length] }}>
+                    {s.pct.toFixed(0)}% {s.sector}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Gold divider */}
+          <div className="relative z-10 h-px my-3" style={{ background: 'linear-gradient(to right, transparent, rgba(230,185,77,0.3), transparent)' }} />
+
+          {/* 2x3 stat grid */}
+          <div className="relative z-10 grid grid-cols-3 gap-2">
+            {/* MVP */}
+            <div className="p-2.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
+              <p className="text-[7px] text-white/40 tracking-[0.15em]" style={MONO}>MVP</p>
+              <p className="text-[22px] font-bold text-[var(--color-gold)] mt-0.5" style={MONO}>{best?.ticker ?? '---'}</p>
+              <p className="text-[10px] font-semibold text-[#4ADE80]" style={MONO}>{best ? fmtPct(best.returnPct) : ''}</p>
+            </div>
+            {/* Type */}
+            <div className="p-2.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
+              <p className="text-[7px] text-white/40 tracking-[0.15em]" style={MONO}>TYPE</p>
+              <p className="text-[14px] font-bold text-[var(--color-gold)] mt-0.5 leading-tight" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>
+                {personality?.title ?? 'Investor'}
+              </p>
+            </div>
+            {/* Trades */}
+            <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+              <p className="text-[7px] text-white/40 tracking-[0.15em]" style={MONO}>TRADES</p>
+              <p className="text-[22px] font-bold text-white mt-0.5 tabular-nums" style={MONO}>{trades}</p>
+            </div>
+            {/* Dividends */}
+            <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+              <p className="text-[7px] text-white/40 tracking-[0.15em]" style={MONO}>DIVIDENDS</p>
+              <p className="text-[22px] font-bold text-white mt-0.5 tabular-nums" style={MONO}>{fmtDollar(dividends)}</p>
+            </div>
+            {/* Portfolio */}
+            <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+              <p className="text-[7px] text-white/40 tracking-[0.15em]" style={MONO}>PORTFOLIO</p>
+              <p className="text-[22px] font-bold text-white mt-0.5 tabular-nums" style={MONO}>{fmt(portfolioVal, 0)}k</p>
+            </div>
+            {/* Villain */}
+            <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+              <p className="text-[7px] text-white/40 tracking-[0.15em]" style={MONO}>VILLAIN</p>
+              <p className="text-[22px] font-bold text-[#F87171] mt-0.5" style={MONO}>{worst?.ticker ?? '---'}</p>
+              <p className="text-[10px] font-semibold text-[#F87171]" style={MONO}>{worst ? fmtPct(worst.returnPct) : ''}</p>
+            </div>
+          </div>
+
+          {/* Footer CTA */}
+          <div className="relative z-10 mt-3 flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'rgba(230,185,77,0.05)', border: '1px solid rgba(230,185,77,0.12)' }}>
+            <span className="text-[8px] text-white/60 tracking-[0.1em] font-semibold" style={MONO}>HELMTERMINAL.DEV/WRAPPED</span>
+            <span className="text-[9px] text-[var(--color-gold)] font-bold" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>Get yours free &rarr;</span>
+          </div>
         </div>
       </div>
     </div>
@@ -575,38 +623,50 @@ export default function WrappedPage() {
 
   const handleShareImage = useCallback(async () => {
     if (!data) return;
-    // Build shareable text summary
-    const lines = [
-      `My ${data.periodLabel ?? new Date().getFullYear()} Wrapped — Helm Terminal`,
-      '',
-      `Return: ${fmtPct(data.totalReturn.pct)} (${fmtDollar(data.totalReturn.dollars)})`,
-      data.spyComparison.beat ? `Beat the S&P 500 by ${(data.totalReturn.pct - (data.spyComparison.spyReturn ?? 0)).toFixed(1)}%` : null,
-      '',
-      `MVP: ${data.bestPosition?.ticker ?? '---'} (${fmtPct(data.bestPosition?.returnPct ?? 0)})`,
-      `Villain: ${data.worstPosition?.ticker ?? '---'} (${fmtPct(data.worstPosition?.returnPct ?? 0)})`,
-      '',
-      `${data.tradeCount} trades · ${data.positionCount ?? 0} positions`,
-      data.totalDividends > 0 ? `${fmtDollar(data.totalDividends)} in dividends` : null,
-      data.investorPersonality?.title ? `Type: ${data.investorPersonality.title}` : null,
-      data.sectorBreakdown?.[0] ? `Top sector: ${data.sectorBreakdown[0].sector} (${data.sectorBreakdown[0].pct.toFixed(0)}%)` : null,
-      '',
-      'Get yours free → helmterminal.dev/wrapped',
-    ].filter(Boolean).join('\n');
+    const { generateShareCard } = await import('@/components/wrapped/share-card-canvas');
+    const blob = await generateShareCard({
+      year: data.periodLabel ?? new Date().getFullYear().toString(),
+      returnPct: data.totalReturn.pct,
+      returnDollars: data.totalReturn.dollars,
+      spyReturn: data.spyComparison.spyReturn,
+      beat: data.spyComparison.beat ?? false,
+      bestTicker: data.bestPosition?.ticker ?? '---',
+      bestReturnPct: data.bestPosition?.returnPct ?? 0,
+      worstTicker: data.worstPosition?.ticker ?? '---',
+      worstReturnPct: data.worstPosition?.returnPct ?? 0,
+      personality: data.investorPersonality?.title ?? 'Investor',
+      tradeCount: data.tradeCount,
+      totalDividends: data.totalDividends,
+      portfolioValue: data.portfolioValue,
+      sectors: data.sectorBreakdown ?? [],
+    });
+    const file = new File([blob], 'helm-wrapped.png', { type: 'image/png' });
 
-    // Try native share (mobile)
-    if (navigator.share) {
+    // Try native share with image (mobile)
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
       try {
         await navigator.share({
           title: 'My Helm Wrapped',
-          text: lines,
           url: 'https://helmterminal.dev/wrapped',
+          files: [file],
         });
         return;
-      } catch { /* user cancelled */ }
+      } catch { /* cancelled */ }
     }
 
-    // Fallback: copy text to clipboard
-    await navigator.clipboard.writeText(lines);
+    // Try clipboard image
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      return;
+    } catch { /* not supported */ }
+
+    // Fallback: download
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'helm-wrapped.png';
+    a.click();
+    URL.revokeObjectURL(url);
   }, [data]);
 
   const handleShareTwitter = useCallback(() => {

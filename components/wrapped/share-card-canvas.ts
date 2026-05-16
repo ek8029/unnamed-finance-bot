@@ -1,332 +1,224 @@
 // ═══════════════════════════════════════════
-// Canvas share card generator for Helm Wrapped
-// 1080x1080 PNG — IN YOUR FACE, Spotify-scale
+// V4 Share Card — 1080x1350 canvas renderer
+// Matches share-card-drafts.html V4 design
 // ═══════════════════════════════════════════
 
-export type SlideType = 'return' | 'bestWorst' | 'personality' | 'habits' | 'sectors' | 'summary';
-
-export interface ShareCardData {
-  slideType: SlideType;
+export interface ShareCardInput {
   year: string;
-  returnPct?: number;
-  returnDollars?: number;
-  spyPct?: number;
-  beat?: boolean;
-  bestTicker?: string;
-  bestReturnPct?: number;
-  worstTicker?: string;
-  worstReturnPct?: number;
-  personality?: string;
-  tradeCount?: number;
-  totalDividends?: number;
-  positionCount?: number;
-  topSector?: string;
-  topSectorPct?: number;
+  returnPct: number;
+  returnDollars: number;
+  spyReturn: number | null;
+  beat: boolean;
+  bestTicker: string;
+  bestReturnPct: number;
+  worstTicker: string;
+  worstReturnPct: number;
+  personality: string;
+  tradeCount: number;
+  totalDividends: number;
+  portfolioValue: number;
+  sectors: { sector: string; pct: number }[];
 }
 
-const GOLD  = '#E6B94D';
+const GOLD = '#E6B94D';
 const GREEN = '#4ADE80';
-const RED   = '#F87171';
+const RED = '#F87171';
 const WHITE = '#FAFAFA';
-const MUTED = '#999999';
-const BG    = '#0A0A0A';
-const SURFACE = '#151515';
-
-function signedPct(n: number): string {
-  return `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
-}
-
-function fmtK(n: number): string {
-  const abs = Math.abs(n);
-  const str = abs >= 1_000_000 ? `$${(abs / 1_000_000).toFixed(1)}M`
-    : abs >= 1000 ? `$${(abs / 1000).toFixed(0)}K`
-    : `$${abs.toFixed(0)}`;
-  return n < 0 ? `-${str}` : str;
-}
-
-// ── Drawing helpers ──
+const BG = '#0A0A0A';
 
 function txt(
-  ctx: CanvasRenderingContext2D, text: string, x: number, y: number,
-  color: string, size: number, weight = '800',
+  ctx: CanvasRenderingContext2D, text: string,
+  x: number, y: number, color: string, size: number,
+  weight = '700', align: CanvasTextAlign = 'left',
+  font = 'system-ui, -apple-system, sans-serif',
 ) {
   ctx.fillStyle = color;
-  ctx.font = `${weight} ${size}px system-ui, -apple-system, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  ctx.font = `${weight} ${size}px ${font}`;
+  ctx.textAlign = align;
+  ctx.textBaseline = 'top';
   ctx.fillText(text, x, y);
 }
 
-function drawHelmLogo(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number) {
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number, fill: string, stroke?: string) {
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, r);
+  ctx.fillStyle = fill;
+  ctx.fill();
+  if (stroke) {
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+
+// Helm mark — simplified SVG as canvas drawing
+function drawMark(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number) {
+  const s = size / 56;
+  ctx.save();
+  ctx.translate(cx - size / 2, cy - size / 2);
   // Gold arc
   ctx.beginPath();
-  ctx.arc(cx, cy, size * 0.39, Math.PI * 1.17, Math.PI * -0.17);
+  ctx.arc(28 * s, 28 * s, 22 * s, Math.PI * 1.17, Math.PI * -0.17);
   ctx.strokeStyle = GOLD;
-  ctx.lineWidth = size * 0.06;
+  ctx.lineWidth = 1.8 * s;
   ctx.lineCap = 'round';
   ctx.stroke();
   // Crosshair
   ctx.beginPath();
-  ctx.moveTo(cx, cy - size * 0.38);
-  ctx.lineTo(cx, cy + size * 0.38);
-  ctx.moveTo(cx - size * 0.38, cy);
-  ctx.lineTo(cx + size * 0.38, cy);
+  ctx.moveTo(28 * s, 7 * s); ctx.lineTo(28 * s, 49 * s);
+  ctx.moveTo(7 * s, 28 * s); ctx.lineTo(49 * s, 28 * s);
   ctx.strokeStyle = '#E8ECF1';
-  ctx.lineWidth = size * 0.05;
+  ctx.lineWidth = 1.5 * s;
   ctx.stroke();
-  // Top dot
-  ctx.beginPath();
-  ctx.arc(cx, cy - size * 0.38, size * 0.09, 0, Math.PI * 2);
-  ctx.fillStyle = GOLD;
-  ctx.fill();
-  // Center circle
-  ctx.beginPath();
-  ctx.arc(cx, cy, size * 0.12, 0, Math.PI * 2);
-  ctx.fillStyle = '#E8ECF1';
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(cx, cy, size * 0.06, 0, Math.PI * 2);
-  ctx.fillStyle = GOLD;
-  ctx.fill();
+  // Dots
+  ctx.beginPath(); ctx.arc(28 * s, 7 * s, 3 * s, 0, Math.PI * 2); ctx.fillStyle = GOLD; ctx.fill();
+  ctx.beginPath(); ctx.arc(28 * s, 28 * s, 4.2 * s, 0, Math.PI * 2); ctx.fillStyle = '#E8ECF1'; ctx.fill();
+  ctx.beginPath(); ctx.arc(28 * s, 28 * s, 2 * s, 0, Math.PI * 2); ctx.fillStyle = GOLD; ctx.fill();
+  ctx.restore();
 }
 
-function drawBg(ctx: CanvasRenderingContext2D, W: number, H: number, glowColor: string) {
-  ctx.fillStyle = BG;
-  ctx.fillRect(0, 0, W, H);
-  const glow = ctx.createRadialGradient(W / 2, H * 0.4, 0, W / 2, H * 0.4, 500);
-  glow.addColorStop(0, glowColor);
-  glow.addColorStop(1, 'transparent');
-  ctx.globalAlpha = 0.1;
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, W, H);
-  ctx.globalAlpha = 1;
+function fmtPct(n: number): string {
+  return `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
 }
 
-function drawBranding(ctx: CanvasRenderingContext2D, W: number, H: number, year: string) {
-  // Logo top-center
-  drawHelmLogo(ctx, W / 2, 55, 60);
-  // "HELM WRAPPED · YEAR" below logo
-  txt(ctx, `HELM WRAPPED  ·  ${year}`, W / 2, 110, GOLD, 18, '700');
-  // CTA at bottom
-  // Gold pill
-  ctx.fillStyle = GOLD;
-  ctx.beginPath();
-  ctx.roundRect(W / 2 - 180, H - 120, 360, 50, 25);
-  ctx.fill();
-  txt(ctx, 'Get yours free  →  helmterminal.dev/wrapped', W / 2, H - 95, '#000', 16, '700');
-  // Fine print
-  txt(ctx, 'HELM TERMINAL  ·  FREE FOR EVERYONE', W / 2, H - 50, MUTED, 13, '600');
+function fmtK(n: number): string {
+  if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(n) >= 1000) return `$${Math.round(n / 1000)}K`;
+  return `$${Math.round(n)}`;
 }
 
-// ══════════════════════════════════════════
-// RETURN — the hero card
-// ══════════════════════════════════════════
-
-function drawReturn(ctx: CanvasRenderingContext2D, W: number, H: number, d: ShareCardData) {
-  const pct = d.returnPct ?? 0;
-  const pos = pct >= 0;
-  drawBg(ctx, W, H, pos ? 'rgba(74,222,128,1)' : 'rgba(248,113,113,1)');
-  drawBranding(ctx, W, H, d.year);
-
-  txt(ctx, 'MY PORTFOLIO RETURNED', W / 2, 220, MUTED, 22, '600');
-
-  // MASSIVE number
-  txt(ctx, signedPct(pct), W / 2, 420, pos ? GREEN : RED, 220, '800');
-
-  // S&P comparison
-  if (d.spyPct != null) {
-    txt(ctx, `S&P 500: ${signedPct(d.spyPct)}`, W / 2, 580, MUTED, 24, '600');
-  }
-  if (d.beat) {
-    ctx.fillStyle = 'rgba(74,222,128,0.15)';
-    ctx.beginPath();
-    ctx.roundRect(W / 2 - 150, 620, 300, 50, 25);
-    ctx.fill();
-    txt(ctx, 'BEAT THE MARKET', W / 2, 645, GREEN, 22, '800');
-  }
-}
-
-// ══════════════════════════════════════════
-// BEST & WORST
-// ══════════════════════════════════════════
-
-function drawBestWorst(ctx: CanvasRenderingContext2D, W: number, H: number, d: ShareCardData) {
-  drawBg(ctx, W, H, 'rgba(230,185,77,1)');
-  drawBranding(ctx, W, H, d.year);
-
-  // MVP
-  txt(ctx, 'MY MVP', W / 2, 210, GOLD, 20, '700');
-  txt(ctx, d.bestTicker ?? '---', W / 2, 300, GOLD, 90, '800');
-  txt(ctx, d.bestReturnPct != null ? signedPct(d.bestReturnPct) : '---', W / 2, 390, GREEN, 56, '800');
-
-  // Separator
-  ctx.fillStyle = GOLD;
-  ctx.globalAlpha = 0.3;
-  ctx.fillRect(W / 2 - 50, 450, 100, 2);
-  ctx.globalAlpha = 1;
-
-  // Villain
-  txt(ctx, 'MY VILLAIN', W / 2, 510, RED, 20, '700');
-  txt(ctx, d.worstTicker ?? '---', W / 2, 600, RED, 90, '800');
-  txt(ctx, d.worstReturnPct != null ? signedPct(d.worstReturnPct) : '---', W / 2, 690, RED, 56, '800');
-}
-
-// ══════════════════════════════════════════
-// PERSONALITY
-// ══════════════════════════════════════════
-
-function drawPersonality(ctx: CanvasRenderingContext2D, W: number, H: number, d: ShareCardData) {
-  drawBg(ctx, W, H, 'rgba(230,185,77,1)');
-  drawBranding(ctx, W, H, d.year);
-
-  txt(ctx, 'I INVEST LIKE', W / 2, 300, MUTED, 24, '600');
-
-  // Big personality name
-  const name = d.personality ?? 'The Investor';
-  txt(ctx, name, W / 2, 450, GOLD, 80, '800');
-
-  // Gold underline
-  ctx.fillStyle = GOLD;
-  ctx.fillRect(W / 2 - 60, 510, 120, 4);
-
-  // Description
-  const descs: Record<string, string> = {
-    'The Concentrator': 'High conviction. Few positions. Maximum exposure.',
-    'The Active Trader': 'Always moving. The market is my canvas.',
-    'The Income Investor': 'Cash flow is king. Dividends compound.',
-    'The Diversifier': 'Broad exposure. Risk-managed. Disciplined.',
-    'The Growth Hunter': 'Chasing alpha. Tech-heavy. Future-focused.',
-    'The Tax Optimizer': 'Every dollar counts. Harvest losses. Offset gains.',
-    'The Steady Hand': 'Buy and hold. Let time do the work.',
-    'The Momentum Rider': 'Ride the wave. Trend is friend.',
-    'The Balanced Navigator': 'Measured approach. No extremes.',
-  };
-  txt(ctx, descs[name] ?? 'A unique approach to the market.', W / 2, 580, MUTED, 22, '500');
-}
-
-// ══════════════════════════════════════════
-// HABITS
-// ══════════════════════════════════════════
-
-function drawHabits(ctx: CanvasRenderingContext2D, W: number, H: number, d: ShareCardData) {
-  drawBg(ctx, W, H, 'rgba(230,185,77,1)');
-  drawBranding(ctx, W, H, d.year);
-
-  txt(ctx, 'MY YEAR IN NUMBERS', W / 2, 210, GOLD, 22, '700');
-
-  // 2x2 grid with card backgrounds
-  const cells = [
-    { value: String(d.tradeCount ?? 0), label: 'TRADES', x: 310, y: 400 },
-    { value: fmtK(d.totalDividends ?? 0), label: 'DIVIDENDS', x: 770, y: 400 },
-    { value: String(d.positionCount ?? 0), label: 'POSITIONS', x: 310, y: 600 },
-    { value: d.personality ?? '---', label: 'TYPE', x: 770, y: 600 },
-  ];
-
-  for (const c of cells) {
-    // Card bg
-    ctx.fillStyle = SURFACE;
-    ctx.beginPath();
-    ctx.roundRect(c.x - 190, c.y - 70, 380, 160, 20);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    const isType = c.label === 'TYPE';
-    txt(ctx, c.value, c.x, c.y, WHITE, isType ? 32 : 64, '800');
-    txt(ctx, c.label, c.x, c.y + 55, GOLD, 16, '700');
-  }
-}
-
-// ══════════════════════════════════════════
-// SECTORS
-// ══════════════════════════════════════════
-
-function drawSectors(ctx: CanvasRenderingContext2D, W: number, H: number, d: ShareCardData) {
-  drawBg(ctx, W, H, 'rgba(230,185,77,1)');
-  drawBranding(ctx, W, H, d.year);
-
-  txt(ctx, 'MY CONVICTION', W / 2, 300, GOLD, 22, '700');
-
-  const pctText = d.topSectorPct != null ? `${d.topSectorPct.toFixed(0)}%` : '---';
-  txt(ctx, pctText, W / 2, 460, WHITE, 160, '800');
-
-  txt(ctx, d.topSector ?? 'Diversified', W / 2, 580, GOLD, 36, '700');
-}
-
-// ══════════════════════════════════════════
-// SUMMARY — the ultimate share card
-// ══════════════════════════════════════════
-
-function drawSummary(ctx: CanvasRenderingContext2D, W: number, H: number, d: ShareCardData) {
-  const pct = d.returnPct ?? 0;
-  const pos = pct >= 0;
-  drawBg(ctx, W, H, pos ? 'rgba(74,222,128,1)' : 'rgba(248,113,113,1)');
-  drawBranding(ctx, W, H, d.year);
-
-  txt(ctx, `MY ${d.year} WRAPPED`, W / 2, 200, GOLD, 22, '800');
-
-  // Hero return
-  txt(ctx, signedPct(pct), W / 2, 340, pos ? GREEN : RED, 130, '800');
-
-  // Dollar P&L
-  if (d.returnDollars != null) {
-    txt(ctx, fmtK(d.returnDollars), W / 2, 430, pos ? GREEN : RED, 36, '700');
-  }
-
-  // Stats row — 3 cards
-  const stats = [
-    { label: 'MVP', value: d.bestTicker ?? '---', color: GOLD },
-    { label: 'TRADES', value: String(d.tradeCount ?? 0), color: WHITE },
-    { label: 'TYPE', value: d.personality ?? '---', color: GOLD },
-  ];
-
-  const cardW = 300;
-  const startX = (W - cardW * 3 - 30) / 2;
-  stats.forEach((s, i) => {
-    const cx = startX + i * (cardW + 15) + cardW / 2;
-    const cy = 570;
-    ctx.fillStyle = SURFACE;
-    ctx.beginPath();
-    ctx.roundRect(cx - cardW / 2, cy - 50, cardW, 120, 16);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    txt(ctx, s.value, cx, cy, s.color, s.label === 'TYPE' ? 22 : 32, '800');
-    txt(ctx, s.label, cx, cy + 40, MUTED, 14, '700');
-  });
-
-  // Beat badge
-  if (d.beat) {
-    ctx.fillStyle = 'rgba(74,222,128,0.12)';
-    ctx.beginPath();
-    ctx.roundRect(W / 2 - 130, 700, 260, 44, 22);
-    ctx.fill();
-    txt(ctx, 'BEAT THE S&P 500', W / 2, 722, GREEN, 18, '800');
-  }
-}
-
-// ══════════════════════════════════════════
-// Main
-// ══════════════════════════════════════════
-
-export async function generateShareCard(data: ShareCardData): Promise<Blob> {
-  const W = 1080, H = 1080;
+export async function generateShareCard(d: ShareCardInput): Promise<Blob> {
+  const W = 1080, H = 1350;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
 
-  switch (data.slideType) {
-    case 'return': drawReturn(ctx, W, H, data); break;
-    case 'bestWorst': drawBestWorst(ctx, W, H, data); break;
-    case 'personality': drawPersonality(ctx, W, H, data); break;
-    case 'habits': drawHabits(ctx, W, H, data); break;
-    case 'sectors': drawSectors(ctx, W, H, data); break;
-    case 'summary': drawSummary(ctx, W, H, data); break;
+  const P = 72; // padding
+
+  // ── Background ──
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+
+  // Gold border
+  ctx.strokeStyle = 'rgba(230,185,77,0.25)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(1, 1, W - 2, H - 2, 16);
+  ctx.stroke();
+
+  // Subtle gold glow
+  const glow = ctx.createRadialGradient(W / 2, H * 0.25, 0, W / 2, H * 0.25, 400);
+  glow.addColorStop(0, 'rgba(230,185,77,0.04)');
+  glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Top bar ──
+  drawMark(ctx, P + 16, P + 16, 32);
+  txt(ctx, 'HELM', P + 40, P + 4, GOLD, 15, '700', 'left', 'system-ui');
+  txt(ctx, 'Wrapped', P + 100, P + 2, GOLD, 15, '400', 'left', 'Georgia, serif');
+  txt(ctx, d.year, W - P, P + 4, '#8A8A8A', 14, '500', 'right', 'system-ui');
+
+  // ── Hero return ──
+  const heroY = 180;
+  const pos = d.returnPct >= 0;
+  const pctStr = fmtPct(d.returnPct);
+
+  // Glow behind number
+  if (pos) {
+    const ng = ctx.createRadialGradient(W / 2, heroY + 80, 0, W / 2, heroY + 80, 300);
+    ng.addColorStop(0, 'rgba(74,222,128,0.08)');
+    ng.addColorStop(1, 'transparent');
+    ctx.fillStyle = ng;
+    ctx.fillRect(0, heroY - 40, W, 260);
   }
+
+  txt(ctx, pctStr, W / 2, heroY, pos ? GREEN : RED, 200, '800', 'center');
+
+  // "beat the market" + alpha
+  const beatY = heroY + 210;
+  txt(ctx, pos ? 'beat the market' : 'tough year', W / 2 - 80, beatY, GOLD, 28, '400', 'center', 'Georgia, serif');
+  if (d.spyReturn != null) {
+    const alpha = d.returnPct - d.spyReturn;
+    txt(ctx, `ALPHA ${fmtPct(alpha)}`, W / 2 + 140, beatY + 4, GOLD, 24, '700', 'center', 'system-ui');
+  }
+
+  // ── Sector bar ──
+  const sectorY = beatY + 60;
+  const sectorColors = ['#E6B94D', '#7AA3C7', '#9FB89D', '#C8A165', '#8E7DC7', '#5A6070'];
+  txt(ctx, 'SECTOR ALLOCATION', P, sectorY, '#666666', 13, '600', 'left', 'system-ui');
+
+  const barY = sectorY + 28;
+  const barW = W - P * 2;
+  let barX = P;
+  const totalPct = d.sectors.reduce((s, sec) => s + sec.pct, 0) || 100;
+  for (let i = 0; i < d.sectors.length; i++) {
+    const segW = Math.max((d.sectors[i].pct / totalPct) * barW, 4);
+    roundRect(ctx, barX, barY, segW - 2, 14, 3, sectorColors[i % sectorColors.length]);
+    barX += segW;
+  }
+
+  // Sector legend
+  let legX = P;
+  const legY = barY + 28;
+  for (let i = 0; i < Math.min(d.sectors.length, 4); i++) {
+    const label = `${d.sectors[i].pct.toFixed(0)}% ${d.sectors[i].sector}`;
+    txt(ctx, label, legX, legY, sectorColors[i % sectorColors.length], 14, '600', 'left', 'system-ui');
+    legX += ctx.measureText(label).width + 24;
+  }
+
+  // ── Gold divider ──
+  const divY = legY + 40;
+  const grad = ctx.createLinearGradient(P, divY, W - P, divY);
+  grad.addColorStop(0, 'transparent');
+  grad.addColorStop(0.5, 'rgba(230,185,77,0.25)');
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.fillRect(P, divY, W - P * 2, 1);
+
+  // ── 2x3 Stat grid ──
+  const gridY = divY + 20;
+  const cellW = (W - P * 2 - 32) / 3; // 3 cols, 16px gaps
+  const cellH = 120;
+  const gap = 16;
+
+  const cells = [
+    { label: 'MVP', value: d.bestTicker, sub: fmtPct(d.bestReturnPct), valColor: GOLD, subColor: GREEN, gold: true },
+    { label: 'INVESTOR TYPE', value: d.personality, sub: '', valColor: GOLD, subColor: GOLD, gold: true, serif: true, smallVal: true },
+    { label: 'TRADES', value: String(d.tradeCount), sub: '', valColor: WHITE, subColor: GOLD, gold: false },
+    { label: 'DIVIDENDS', value: fmtK(d.totalDividends), sub: '', valColor: WHITE, subColor: '#555', gold: false },
+    { label: 'PORTFOLIO', value: fmtK(d.portfolioValue), sub: '', valColor: WHITE, subColor: '#555', gold: false },
+    { label: 'VILLAIN', value: d.worstTicker, sub: fmtPct(d.worstReturnPct), valColor: RED, subColor: RED, gold: false },
+  ];
+
+  cells.forEach((cell, i) => {
+    const col = i % 3;
+    const row = Math.floor(i / 3);
+    const cx = P + col * (cellW + gap);
+    const cy = gridY + row * (cellH + gap);
+
+    const bg = cell.gold ? 'rgba(230,185,77,0.03)' : 'rgba(255,255,255,0.02)';
+    const border = cell.gold ? 'rgba(230,185,77,0.12)' : 'rgba(255,255,255,0.05)';
+    roundRect(ctx, cx, cy, cellW, cellH, 10, bg, border);
+
+    txt(ctx, cell.label, cx + 20, cy + 16, '#666666', 12, '600', 'left', 'system-ui');
+
+    const valSize = cell.smallVal ? 28 : 44;
+    const valFont = cell.serif ? 'Georgia, serif' : 'system-ui, sans-serif';
+    const valWeight = cell.serif ? '700' : '700';
+    txt(ctx, cell.value, cx + 20, cy + 40, cell.valColor, valSize, valWeight, 'left', valFont);
+
+    if (cell.sub) {
+      txt(ctx, cell.sub, cx + 20, cy + 40 + valSize + 4, cell.subColor, 18, '600', 'left', 'system-ui');
+    }
+  });
+
+  // ── Footer CTA ──
+  const footY = gridY + 2 * (cellH + gap) + 24;
+  roundRect(ctx, P, footY, W - P * 2, 52, 10, 'rgba(230,185,77,0.05)', 'rgba(230,185,77,0.12)');
+  txt(ctx, 'HELMTERMINAL.DEV/WRAPPED', P + 24, footY + 16, '#AAAAAA', 16, '600', 'left', 'system-ui');
+  txt(ctx, 'Get yours free →', W - P - 24, footY + 14, GOLD, 18, '700', 'right', 'Georgia, serif');
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob!), 'image/png');
