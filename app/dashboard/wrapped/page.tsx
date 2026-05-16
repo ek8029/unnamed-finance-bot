@@ -824,7 +824,7 @@ export default function WrappedPage() {
       <TopBar current={currentSlide} year={year} />
 
       {/* Slide content */}
-      <div className="absolute inset-0 pt-14">
+      <div className="absolute inset-0 pt-14 overflow-y-auto">
         <AnimatePresence initial={false} custom={direction} mode="wait">
           <motion.div
             key={currentSlide}
@@ -834,7 +834,7 @@ export default function WrappedPage() {
             animate={reduceMotion ? { opacity: 1 } : 'center'}
             exit={reduceMotion ? { opacity: 0 } : 'exit'}
             transition={{ duration: reduceMotion ? 0.15 : 0.5, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute inset-0"
+            className="min-h-full"
           >
             {renderSlide(currentSlide)}
           </motion.div>
