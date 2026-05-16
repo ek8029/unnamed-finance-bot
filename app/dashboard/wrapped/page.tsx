@@ -452,7 +452,7 @@ function SlideShareCard({ data, onShareImage, onShareTwitter }: { data: WrappedD
       </div>
 
       {/* Right: V4 Share Card */}
-      <div className="w-full max-w-[380px] shrink-0">
+      <div className="w-full max-w-[480px] shrink-0">
         <div
           className="relative rounded-2xl overflow-hidden"
           style={{
@@ -517,40 +517,40 @@ function SlideShareCard({ data, onShareImage, onShareTwitter }: { data: WrappedD
           <div className="relative z-10 h-px my-3" style={{ background: 'linear-gradient(to right, transparent, rgba(230,185,77,0.3), transparent)' }} />
 
           {/* 2x3 stat grid */}
-          <div className="relative z-10 grid grid-cols-3 gap-2">
+          <div className="relative z-10 grid grid-cols-3 gap-2.5">
             {/* MVP */}
-            <div className="p-2.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
-              <p className="text-[7px] text-white/40 tracking-[0.15em]" style={MONO}>MVP</p>
-              <p className="text-[22px] font-bold text-[var(--color-gold)] mt-0.5" style={MONO}>{best?.ticker ?? '---'}</p>
-              <p className="text-[10px] font-semibold text-[#4ADE80]" style={MONO}>{best ? fmtPct(best.returnPct) : ''}</p>
+            <div className="p-3.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
+              <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>MVP</p>
+              <p className="text-[28px] font-bold text-[var(--color-gold)] mt-1" style={MONO}>{best?.ticker ?? '---'}</p>
+              <p className="text-[13px] font-semibold text-[#4ADE80]" style={MONO}>{best ? fmtPct(best.returnPct) : ''}</p>
             </div>
             {/* Type */}
-            <div className="p-2.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
-              <p className="text-[7px] text-white/40 tracking-[0.15em]" style={MONO}>TYPE</p>
-              <p className="text-[14px] font-bold text-[var(--color-gold)] mt-0.5 leading-tight" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>
+            <div className="p-3.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
+              <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>TYPE</p>
+              <p className="text-[18px] font-bold text-[var(--color-gold)] mt-1 leading-tight" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>
                 {personality?.title ?? 'Investor'}
               </p>
             </div>
             {/* Trades */}
-            <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
-              <p className="text-[7px] text-white/40 tracking-[0.15em]" style={MONO}>TRADES</p>
-              <p className="text-[22px] font-bold text-white mt-0.5 tabular-nums" style={MONO}>{trades}</p>
+            <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+              <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>TRADES</p>
+              <p className="text-[28px] font-bold text-white mt-1 tabular-nums" style={MONO}>{trades}</p>
             </div>
             {/* Dividends */}
-            <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
-              <p className="text-[7px] text-white/40 tracking-[0.15em]" style={MONO}>DIVIDENDS</p>
-              <p className="text-[22px] font-bold text-white mt-0.5 tabular-nums" style={MONO}>{fmtDollar(dividends)}</p>
+            <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+              <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>DIVIDENDS</p>
+              <p className="text-[28px] font-bold text-white mt-1 tabular-nums" style={MONO}>{fmtDollar(dividends)}</p>
             </div>
             {/* Portfolio */}
-            <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
-              <p className="text-[7px] text-white/40 tracking-[0.15em]" style={MONO}>PORTFOLIO</p>
-              <p className="text-[22px] font-bold text-white mt-0.5 tabular-nums" style={MONO}>{fmt(portfolioVal, 0)}k</p>
+            <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+              <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>PORTFOLIO</p>
+              <p className="text-[28px] font-bold text-white mt-1 tabular-nums" style={MONO}>{fmtDollar(portfolioVal)}</p>
             </div>
             {/* Villain */}
-            <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
-              <p className="text-[7px] text-white/40 tracking-[0.15em]" style={MONO}>VILLAIN</p>
-              <p className="text-[22px] font-bold text-[#F87171] mt-0.5" style={MONO}>{worst?.ticker ?? '---'}</p>
-              <p className="text-[10px] font-semibold text-[#F87171]" style={MONO}>{worst ? fmtPct(worst.returnPct) : ''}</p>
+            <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+              <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>VILLAIN</p>
+              <p className="text-[28px] font-bold text-[#F87171] mt-1" style={MONO}>{worst?.ticker ?? '---'}</p>
+              <p className="text-[13px] font-semibold text-[#F87171]" style={MONO}>{worst ? fmtPct(worst.returnPct) : ''}</p>
             </div>
           </div>
 

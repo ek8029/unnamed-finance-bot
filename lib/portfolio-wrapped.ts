@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getPortfolioSummary } from '@/lib/portfolio-analysis';
 import { generateTaxReport } from '@/lib/tax-analysis';
 import { getQuote } from '@/lib/financial-data';
+import { getHistoricalPrices } from '@/lib/polygon';
 import { CACHE_TTL as GLOBAL_CACHE_TTL } from '@/lib/financial-config';
 
 // ── Types ──
@@ -209,7 +210,7 @@ export async function generateWrapped(
   ] = await Promise.all([
     getPortfolioSummary(userId),
     generateTaxReport(userId),
-    getQuote('SPY'),
+    getHistoricalPrices('SPY', start, end),
     // Portfolio snapshots: earliest and latest in period
     supabase
       .from('portfolio_snapshots')
@@ -351,10 +352,14 @@ export async function generateWrapped(
     }
   }
 
-  // ── SPY Comparison ──
+  // ── SPY Comparison (YTD, not daily) ──
   let spyReturn: number | null = null;
-  if (spyQuote && spyQuote.pc > 0) {
-    spyReturn = spyQuote.dp;
+  if (spyQuote && spyQuote.length >= 2) {
+    const firstClose = spyQuote[0].close;
+    const lastClose = spyQuote[spyQuote.length - 1].close;
+    if (firstClose > 0) {
+      spyReturn = ((lastClose - firstClose) / firstClose) * 100;
+    }
   }
 
   const spyComparison = {
