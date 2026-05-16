@@ -428,6 +428,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
       const dataUrl = await toPng(cardRef.current, {
         pixelRatio: 2,
         backgroundColor: '#0A0A0A',
+        filter: (node: HTMLElement) => node.dataset?.htmlToImageIgnore === undefined,
       });
       // Convert data URL to blob without fetch (CSP blocks data: URIs)
       const base64 = dataUrl.split(',')[1];
@@ -470,9 +471,9 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row items-center lg:justify-center min-h-full px-4 md:px-6 gap-6 lg:gap-12 overflow-y-auto py-20 lg:py-0">
-      {/* Left: CTA */}
-      <div className="text-center lg:text-left max-w-sm shrink-0">
+    <div className="flex flex-col lg:flex-row items-center justify-center h-full px-4 md:px-6 gap-6 lg:gap-12">
+      {/* Left: CTA — hidden on mobile, shown on desktop */}
+      <div className="hidden lg:block text-left max-w-sm shrink-0">
         <p className="text-[12px] uppercase tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
           &sect; 06 &mdash; Your Card
         </p>
@@ -485,17 +486,17 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
         <p className="text-[16px] text-white/50 mb-8">
           Share your year. Flex your numbers.
         </p>
-        <div className="flex flex-row gap-2 md:gap-3 justify-center lg:justify-start">
+        <div className="flex flex-row gap-3">
           <button
             onClick={handleShareImage}
             disabled={shareStatus === 'generating'}
-            className="px-5 md:px-8 py-3 md:py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[13px] md:text-[14px] rounded-sm transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+            className="px-8 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[14px] rounded-sm transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {shareStatus === 'generating' ? 'Sharing...' : shareStatus === 'copied' ? 'Copied!' : 'Share Wrapped'}
           </button>
           <button
             onClick={onShareTwitter}
-            className="px-4 md:px-6 py-3 md:py-3.5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white font-medium text-[13px] md:text-[14px] rounded-sm transition-colors cursor-pointer"
+            className="px-6 py-3.5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white font-medium text-[14px] rounded-sm transition-colors cursor-pointer"
           >
             Post on X
           </button>
@@ -511,7 +512,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
             if (!cardRef.current) return;
             try {
               const { toPng } = await import('html-to-image');
-              const dataUrl = await toPng(cardRef.current, { pixelRatio: 2, backgroundColor: '#0A0A0A' });
+              const dataUrl = await toPng(cardRef.current, { pixelRatio: 2, backgroundColor: '#0A0A0A', filter: (node: HTMLElement) => node.dataset?.htmlToImageIgnore === undefined });
               const base64 = dataUrl.split(',')[1];
               const binary = atob(base64);
               const bytes = new Uint8Array(binary.length);
@@ -631,8 +632,8 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
             <span className="text-[9px] text-[var(--color-gold)] font-bold" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>Get yours free &rarr;</span>
           </div>
 
-          {/* Hover hint */}
-          <div className="absolute inset-0 z-20 rounded-2xl bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
+          {/* Hover hint — excluded from screenshot via class, hidden on mobile */}
+          <div data-html-to-image-ignore="" className="absolute inset-0 z-20 rounded-2xl bg-black/0 group-hover:bg-black/20 transition-colors items-center justify-center pointer-events-none hidden md:flex">
             <span className={cn(
               'text-[14px] font-bold tracking-wide px-5 py-2.5 rounded-full transition-all',
               shareStatus === 'copied'
@@ -642,6 +643,34 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
               {shareStatus === 'copied' ? 'Copied!' : 'Click to copy'}
             </span>
           </div>
+        </div>
+
+        {/* Mobile: "Copied" feedback */}
+        {shareStatus === 'copied' && (
+          <p className="lg:hidden text-center text-[13px] text-[#4ADE80] font-bold mt-2" style={MONO}>Copied to clipboard!</p>
+        )}
+
+        {/* Mobile: buttons below card */}
+        <div className="flex lg:hidden flex-row gap-2 justify-center mt-4">
+          <button
+            onClick={handleShareImage}
+            disabled={shareStatus === 'generating'}
+            className="px-5 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[13px] rounded-sm transition-colors cursor-pointer disabled:opacity-60"
+          >
+            {shareStatus === 'generating' ? 'Sharing...' : 'Share Wrapped'}
+          </button>
+          <button
+            onClick={onShareTwitter}
+            className="px-4 py-3 border border-white/10 text-white/60 font-medium text-[13px] rounded-sm cursor-pointer"
+          >
+            Post on X
+          </button>
+          <a
+            href="/dashboard"
+            className="px-4 py-3 border border-white/10 text-white/60 font-medium text-[13px] rounded-sm text-center"
+          >
+            Close
+          </a>
         </div>
       </div>
     </div>
@@ -824,10 +853,7 @@ export default function WrappedPage() {
       <TopBar current={currentSlide} year={year} />
 
       {/* Slide content */}
-      <div className={cn(
-        "absolute inset-0 pt-14",
-        currentSlide === TOTAL_SLIDES - 1 ? "overflow-y-auto" : "overflow-hidden"
-      )}>
+      <div className="absolute inset-0 pt-14 overflow-hidden">
         <AnimatePresence initial={false} custom={direction} mode="wait">
           <motion.div
             key={currentSlide}
@@ -837,7 +863,7 @@ export default function WrappedPage() {
             animate={reduceMotion ? { opacity: 1 } : 'center'}
             exit={reduceMotion ? { opacity: 0 } : 'exit'}
             transition={{ duration: reduceMotion ? 0.15 : 0.5, ease: [0.32, 0.72, 0, 1] }}
-            className={currentSlide === TOTAL_SLIDES - 1 ? "min-h-full" : "absolute inset-0"}
+            className="absolute inset-0"
           >
             {renderSlide(currentSlide)}
           </motion.div>
