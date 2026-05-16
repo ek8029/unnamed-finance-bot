@@ -502,11 +502,30 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
         </div>
       </div>
 
-      {/* Right: V4 Share Card */}
+      {/* Right: V4 Share Card — click to copy */}
       <div className="w-full max-w-[480px] shrink-0">
         <div
           ref={cardRef}
-          className="relative rounded-2xl overflow-hidden"
+          onClick={async (e) => {
+            e.stopPropagation();
+            if (!cardRef.current) return;
+            try {
+              const { toPng } = await import('html-to-image');
+              const dataUrl = await toPng(cardRef.current, { pixelRatio: 2, backgroundColor: '#0A0A0A' });
+              const base64 = dataUrl.split(',')[1];
+              const binary = atob(base64);
+              const bytes = new Uint8Array(binary.length);
+              for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+              const blob = new Blob([bytes], { type: 'image/png' });
+              await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+              setShareStatus('copied');
+              setTimeout(() => setShareStatus('idle'), 2000);
+            } catch {
+              // Fallback — trigger share button
+              handleShareImage();
+            }
+          }}
+          className="relative rounded-2xl overflow-hidden cursor-pointer group"
           style={{
             background: '#0A0A0A',
             border: '2px solid rgba(230,185,77,0.25)',
@@ -610,6 +629,18 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
           <div className="relative z-10 mt-3 flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'rgba(230,185,77,0.05)', border: '1px solid rgba(230,185,77,0.12)' }}>
             <span className="text-[8px] text-white/60 tracking-[0.1em] font-semibold" style={MONO}>HELMTERMINAL.DEV/WRAPPED</span>
             <span className="text-[9px] text-[var(--color-gold)] font-bold" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>Get yours free &rarr;</span>
+          </div>
+
+          {/* Hover hint */}
+          <div className="absolute inset-0 z-20 rounded-2xl bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
+            <span className={cn(
+              'text-[14px] font-bold tracking-wide px-5 py-2.5 rounded-full transition-all',
+              shareStatus === 'copied'
+                ? 'bg-[#4ADE80] text-black opacity-100'
+                : 'bg-white/90 text-black opacity-0 group-hover:opacity-100',
+            )} style={MONO}>
+              {shareStatus === 'copied' ? 'Copied!' : 'Click to copy'}
+            </span>
           </div>
         </div>
       </div>
