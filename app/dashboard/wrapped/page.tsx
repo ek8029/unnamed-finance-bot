@@ -470,7 +470,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row items-center justify-center h-full px-4 md:px-6 gap-6 lg:gap-12 overflow-y-auto py-16 lg:py-0">
+    <div className="flex flex-col lg:flex-row items-center lg:justify-center min-h-full px-4 md:px-6 gap-6 lg:gap-12 overflow-y-auto py-20 lg:py-0">
       {/* Left: CTA */}
       <div className="text-center lg:text-left max-w-sm shrink-0">
         <p className="text-[12px] uppercase tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>

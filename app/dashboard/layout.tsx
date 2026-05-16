@@ -217,6 +217,7 @@ export default function DashboardLayout({
   };
 
   const isChatPage = pathname === '/dashboard/chat';
+  const isWrappedPage = pathname === '/dashboard/wrapped';
   const pageTitle = getPageTitle(pathname);
 
   return (
@@ -498,8 +499,8 @@ export default function DashboardLayout({
         isChatPage ? "h-screen overflow-hidden" : "min-h-screen"
       )}>
 
-        {/* ── Mobile Top Bar ── */}
-        <div
+        {/* ── Mobile Top Bar (hidden on wrapped) ── */}
+        {!isWrappedPage && <div
           className="sticky top-0 z-30 px-4 py-3 flex items-center justify-between md:hidden"
           style={{
             background: 'rgba(10,10,10,0.78)',
@@ -523,7 +524,7 @@ export default function DashboardLayout({
               {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
-        </div>
+        </div>}
 
         {/* ── Glassmorphic Top Bar (desktop only) ── */}
         <header className="shrink-0 glass-nav sticky top-0 z-30 hidden md:block">
@@ -618,11 +619,13 @@ export default function DashboardLayout({
         {!isChatPage && <LegalFooter variant="minimal" />}
 
         {/* Spacer for mobile bottom nav — nav grid (~56px) + safe area */}
-        <div className="md:hidden shrink-0" style={{ height: 'calc(64px + env(safe-area-inset-bottom, 0px))' }} />
+        {!isWrappedPage && (
+          <div className="md:hidden shrink-0" style={{ height: 'calc(64px + env(safe-area-inset-bottom, 0px))' }} />
+        )}
       </div>
 
-      {/* ── Mobile Bottom Tab Bar ── */}
-      <MobileBottomNav />
+      {/* ── Mobile Bottom Tab Bar (hidden on wrapped — full-screen experience) ── */}
+      {!isWrappedPage && <MobileBottomNav />}
     </div>
     </>
     </DemoProvider>
