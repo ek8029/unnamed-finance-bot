@@ -27,6 +27,14 @@ const fmtDollar = (n: number) =>
 const fmtPct = (n: number) =>
   `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
 
+const fmtCompact = (n: number) => {
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`;
+  return `${sign}$${Math.round(abs)}`;
+};
+
 const TOTAL_SLIDES = 7;
 
 
@@ -390,7 +398,8 @@ function SlidePersonality({ data }: { data: WrappedData | null }) {
 // Slide 7: SHARE CARD
 // ═══════════════════════════════════════════
 
-function SlideShareCard({ data, onShareImage, onShareTwitter }: { data: WrappedData | null; onShareImage: () => void; onShareTwitter: () => void }) {
+function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: { data: WrappedData | null; onShareImage: () => void; onShareTwitter: () => void }) {
+  const cardRef = useRef<HTMLDivElement>(null);
   const pct = data?.totalReturn.pct ?? 0;
   const positive = pct >= 0;
   const trades = data?.tradeCount ?? 0;
@@ -408,9 +417,44 @@ function SlideShareCard({ data, onShareImage, onShareTwitter }: { data: WrappedD
   const sectorColors = ['#E6B94D', '#7AA3C7', '#9FB89D', '#C8A165', '#8E7DC7', '#5A6070'];
 
   const handleShareImage = async () => {
+    if (!cardRef.current) return;
     setShareStatus('generating');
     try {
-      await onShareImage();
+      const { toPng } = await import('html-to-image');
+      const dataUrl = await toPng(cardRef.current, {
+        pixelRatio: 2,
+        backgroundColor: '#0A0A0A',
+      });
+      // Convert data URL to blob
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], 'helm-wrapped.png', { type: 'image/png' });
+
+      // Try native share with image
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          title: 'My Helm Wrapped',
+          url: 'https://helmterminal.dev/wrapped',
+          files: [file],
+        });
+        setShareStatus('copied');
+        setTimeout(() => setShareStatus('idle'), 2500);
+        return;
+      }
+
+      // Try clipboard
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        setShareStatus('copied');
+        setTimeout(() => setShareStatus('idle'), 2500);
+        return;
+      } catch { /* not supported */ }
+
+      // Fallback: download
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = 'helm-wrapped.png';
+      a.click();
       setShareStatus('copied');
       setTimeout(() => setShareStatus('idle'), 2500);
     } catch {
@@ -454,6 +498,7 @@ function SlideShareCard({ data, onShareImage, onShareTwitter }: { data: WrappedD
       {/* Right: V4 Share Card */}
       <div className="w-full max-w-[480px] shrink-0">
         <div
+          ref={cardRef}
           className="relative rounded-2xl overflow-hidden"
           style={{
             background: '#0A0A0A',
@@ -539,12 +584,12 @@ function SlideShareCard({ data, onShareImage, onShareTwitter }: { data: WrappedD
             {/* Dividends */}
             <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05] overflow-hidden">
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>DIVIDENDS</p>
-              <p className="text-[24px] font-bold text-white mt-1 tabular-nums truncate" style={MONO}>{fmtDollar(dividends)}</p>
+              <p className="text-[28px] font-bold text-white mt-1 tabular-nums" style={MONO}>{fmtCompact(dividends)}</p>
             </div>
             {/* Portfolio */}
-            <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05] overflow-hidden">
+            <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>PORTFOLIO</p>
-              <p className="text-[24px] font-bold text-white mt-1 tabular-nums truncate" style={MONO}>{fmtDollar(portfolioVal)}</p>
+              <p className="text-[28px] font-bold text-white mt-1 tabular-nums" style={MONO}>{fmtCompact(portfolioVal)}</p>
             </div>
             {/* Villain */}
             <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
