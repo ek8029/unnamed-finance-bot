@@ -263,21 +263,24 @@ export async function generateWrapped(
       .eq('user_id', userId),
   ]);
 
-  // ── Total Return ──
+  // ── Total Return (cost-basis, not inflated by deposits/withdrawals) ──
   const snapshots = snapshotsResult.data || [];
   let totalReturnPct = 0;
   let totalReturnDollars = 0;
 
-  if (snapshots.length >= 2) {
+  // Always prefer cost-basis return — it's true investment return.
+  // Snapshot-based (value change) gets inflated by deposits/withdrawals.
+  if (portfolioSummary.totalValue > 0 && portfolioSummary.totalCostBasis > 0) {
+    totalReturnDollars = portfolioSummary.totalUnrealizedGainLoss;
+    totalReturnPct = portfolioSummary.totalUnrealizedGainLossPct;
+  } else if (snapshots.length >= 2) {
+    // Fallback: snapshot-based if no cost basis data
     const first = snapshots[0];
     const last = snapshots[snapshots.length - 1];
     totalReturnDollars = (last.total_value || 0) - (first.total_value || 0);
     totalReturnPct = first.total_value > 0
       ? (totalReturnDollars / first.total_value) * 100
       : 0;
-  } else if (portfolioSummary.totalValue > 0 && portfolioSummary.totalCostBasis > 0) {
-    totalReturnDollars = portfolioSummary.totalUnrealizedGainLoss;
-    totalReturnPct = portfolioSummary.totalUnrealizedGainLossPct;
   }
 
   // ── Best / Worst position ──

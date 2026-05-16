@@ -212,6 +212,10 @@ function SlideReturn({ data }: { data: WrappedData | null }) {
             </div>
           )}
         </div>
+
+        <p className="text-[11px] text-white/20 mt-6" style={MONO}>
+          Return based on cost basis. MVP &amp; villain reflect total gain since purchase.
+        </p>
       </div>
     </div>
   );
