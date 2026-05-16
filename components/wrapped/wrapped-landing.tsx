@@ -514,12 +514,23 @@ export function WrappedLanding() {
                 See my Wrapped
                 <ArrowRight className="w-5 h-5" />
               </button>
-              <Link href="/login?redirect=/wrapped" className="text-[15px] text-white/50 hover:text-white transition-colors">
-                I have an account
+              <span className="text-[14px] text-white/30" style={MONO}>or</span>
+              <Link
+                href="/wrapped/demo"
+                className="text-[15px] text-white/50 hover:text-[var(--color-gold)] transition-colors font-medium"
+              >
+                See a Demo Wrapped
               </Link>
             </div>
 
-            <p className="text-[13px] text-white/40 mt-6" style={MONO}>Free &middot; 30 seconds &middot; Any brokerage</p>
+            <Link href="/login?redirect=/wrapped" className="block text-[13px] text-white/40 hover:text-white transition-colors mt-6" style={MONO}>
+              I have an account &rarr;
+            </Link>
+
+            <p className="text-[13px] text-white/40 mt-3" style={MONO}>Free &middot; 30 seconds &middot; Any brokerage</p>
+            <Link href="/wrapped/demo" className="block text-[13px] text-white/40 hover:text-[var(--color-gold)] transition-colors mt-3" style={MONO}>
+              See a demo first &rarr;
+            </Link>
           </div>
 
           {/* RIGHT — sample card, larger */}
