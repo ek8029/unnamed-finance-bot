@@ -58,7 +58,7 @@ function AmbientGlow() {
 
 function TopBar({ current, year }: { current: number; year: string }) {
   return (
-    <div className="absolute top-0 left-0 right-0 z-30 flex items-center gap-4 px-6 py-4 md:px-10">
+    <div className="absolute top-0 left-0 right-0 z-30 flex items-center gap-3 px-4 py-3 md:px-10 md:py-4">
       {/* HELM branding */}
       <div className="flex items-center gap-2.5 shrink-0">
         <HelmMark size={18} />
@@ -139,10 +139,10 @@ function SlideCover({
   const positions = data?.positionCount ?? 0;
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full px-8 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-8 overflow-hidden">
       <div className="absolute -top-[30%] -left-[20%] w-[80vw] h-[80vw] rounded-full opacity-[0.08] blur-[140px] pointer-events-none" style={{ background: 'radial-gradient(circle, #E6B94D, transparent 65%)' }} />
 
-      <div className="relative z-10 max-w-lg">
+      <div className="relative z-10 max-w-lg w-full">
         <p className="text-[14px] tracking-[0.3em] text-[var(--color-gold)] mb-10" style={MONO}>HELM WRAPPED</p>
 
         <h1 className="font-bold leading-[0.88] tracking-[-0.05em] mb-12" style={{ fontSize: 'clamp(72px, 18vw, 160px)' }}>
@@ -180,7 +180,7 @@ function SlideReturn({ data }: { data: WrappedData | null }) {
   const alpha = spyReturn != null ? pct - spyReturn : null;
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full px-6 text-center overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 text-center overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] h-[90vw] rounded-full opacity-[0.07] blur-[150px] pointer-events-none" style={{ background: `radial-gradient(circle, ${positive ? '#4ADE80' : '#F87171'}, transparent 60%)` }} />
 
       <div className="relative z-10">
@@ -231,7 +231,7 @@ function SlideBestWorst({ data }: { data: WrappedData | null }) {
   const worst = data?.worstPosition;
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full px-6 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 overflow-hidden">
       <div className="absolute -top-[20%] -right-[20%] w-[50vw] h-[50vw] rounded-full opacity-[0.06] blur-[120px] pointer-events-none" style={{ background: '#4ADE80' }} />
       <div className="absolute -bottom-[20%] -left-[20%] w-[50vw] h-[50vw] rounded-full opacity-[0.05] blur-[120px] pointer-events-none" style={{ background: '#F87171' }} />
 
@@ -273,7 +273,7 @@ function SlideTradingHabits({ data }: { data: WrappedData | null }) {
     : null;
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full px-6 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 overflow-hidden">
       <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[70vw] h-[70vw] rounded-full opacity-[0.05] blur-[120px] pointer-events-none" style={{ background: '#E6B94D' }} />
 
       <div className="relative z-10 text-center">
@@ -283,7 +283,7 @@ function SlideTradingHabits({ data }: { data: WrappedData | null }) {
           <p className="text-[15px] text-[var(--color-text-muted)] mb-10">Mostly on <span className="text-[var(--color-gold)] font-semibold">{activeDayLabel}s</span></p>
         )}
 
-        <div className="grid grid-cols-2 gap-3 w-full max-w-sm mx-auto">
+        <div className="grid grid-cols-2 gap-2 md:gap-3 w-full max-w-sm mx-auto">
           {[
             { value: fmtDollar(dividends), label: 'DIVIDENDS' },
             { value: positions.toString(), label: 'POSITIONS' },
@@ -313,7 +313,7 @@ function SlideSectors({ data }: { data: WrappedData | null }) {
   const topSector = sectors.length > 0 ? sectors[0] : null;
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full px-6 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 overflow-hidden">
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[70vw] h-[70vw] rounded-full opacity-[0.06] blur-[120px] pointer-events-none" style={{ background: '#7AA3C7' }} />
 
       <div className="relative z-10 text-center w-full max-w-lg">
@@ -332,9 +332,9 @@ function SlideSectors({ data }: { data: WrappedData | null }) {
                 <div key={s.sector} style={{ flex: Math.max(s.pct, 2), background: sectorColors[i % sectorColors.length] }} className="rounded-sm" />
               ))}
             </div>
-            <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 mt-5">
+            <div className="flex flex-wrap justify-center gap-x-3 md:gap-x-5 gap-y-1.5 mt-4 md:mt-5">
               {sectors.slice(0, 5).map((s, i) => (
-                <span key={s.sector} className="flex items-center gap-2 text-[14px] text-[var(--color-text-muted)]" style={MONO}>
+                <span key={s.sector} className="flex items-center gap-1.5 text-[11px] md:text-[14px] text-[var(--color-text-muted)]" style={MONO}>
                   <span className="w-3 h-3 rounded-full" style={{ background: sectorColors[i % sectorColors.length] }} />
                   {s.sector} {s.pct.toFixed(0)}%
                 </span>
@@ -372,7 +372,7 @@ function SlidePersonality({ data }: { data: WrappedData | null }) {
   const traits = p?.traits ?? [];
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full px-6 text-center overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 text-center overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] rounded-full opacity-[0.08] blur-[140px] pointer-events-none" style={{ background: '#E6B94D' }} />
 
       <div className="relative z-10">
@@ -470,7 +470,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row items-center justify-center h-full px-4 md:px-6 gap-8 lg:gap-12 overflow-y-auto">
+    <div className="flex flex-col lg:flex-row items-center justify-center h-full px-4 md:px-6 gap-6 lg:gap-12 overflow-y-auto py-16 lg:py-0">
       {/* Left: CTA */}
       <div className="text-center lg:text-left max-w-sm shrink-0">
         <p className="text-[12px] uppercase tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
@@ -485,17 +485,17 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
         <p className="text-[16px] text-white/50 mb-8">
           Share your year. Flex your numbers.
         </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+        <div className="flex flex-row gap-2 md:gap-3 justify-center lg:justify-start">
           <button
             onClick={handleShareImage}
             disabled={shareStatus === 'generating'}
-            className="px-8 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[14px] rounded-sm transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+            className="px-5 md:px-8 py-3 md:py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[13px] md:text-[14px] rounded-sm transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {shareStatus === 'generating' ? 'Sharing...' : shareStatus === 'copied' ? 'Copied!' : 'Share Wrapped'}
           </button>
           <button
             onClick={onShareTwitter}
-            className="px-6 py-3.5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white font-medium text-[14px] rounded-sm transition-colors cursor-pointer"
+            className="px-4 md:px-6 py-3 md:py-3.5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white font-medium text-[13px] md:text-[14px] rounded-sm transition-colors cursor-pointer"
           >
             Post on X
           </button>
@@ -503,7 +503,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
       </div>
 
       {/* Right: V4 Share Card — click to copy */}
-      <div className="w-full max-w-[480px] shrink-0">
+      <div className="w-full max-w-[340px] md:max-w-[480px] shrink-0">
         <div
           ref={cardRef}
           onClick={async (e) => {
