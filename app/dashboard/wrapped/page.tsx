@@ -537,14 +537,14 @@ function SlideShareCard({ data, onShareImage, onShareTwitter }: { data: WrappedD
               <p className="text-[28px] font-bold text-white mt-1 tabular-nums" style={MONO}>{trades}</p>
             </div>
             {/* Dividends */}
-            <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+            <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05] overflow-hidden">
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>DIVIDENDS</p>
-              <p className="text-[28px] font-bold text-white mt-1 tabular-nums" style={MONO}>{fmtDollar(dividends)}</p>
+              <p className="text-[24px] font-bold text-white mt-1 tabular-nums truncate" style={MONO}>{fmtDollar(dividends)}</p>
             </div>
             {/* Portfolio */}
-            <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+            <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05] overflow-hidden">
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>PORTFOLIO</p>
-              <p className="text-[28px] font-bold text-white mt-1 tabular-nums" style={MONO}>{fmtDollar(portfolioVal)}</p>
+              <p className="text-[24px] font-bold text-white mt-1 tabular-nums truncate" style={MONO}>{fmtDollar(portfolioVal)}</p>
             </div>
             {/* Villain */}
             <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
