@@ -190,7 +190,7 @@ export function WrappedLanding() {
   // ── Confirming state (waiting for email confirmation) ──
   if (flowState === 'confirming') {
     return (
-      <div className="min-h-screen bg-[#060606] text-[var(--color-text-primary)]">
+      <div className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)]">
         <nav className="fixed top-0 left-0 right-0 z-50 px-6 md:px-10 py-5 flex items-center">
           <div className="flex items-center gap-2.5 opacity-60">
             <HelmMark size={18} />
@@ -202,14 +202,14 @@ export function WrappedLanding() {
           <div className="w-full max-w-sm text-center">
             {/* Progress */}
             <div className="flex items-center justify-center gap-2 mb-10">
-              <div className="w-8 h-1 rounded-full bg-[#E6B94D]" />
-              <div className="w-8 h-1 rounded-full bg-[#E6B94D]/40 animate-pulse" />
+              <div className="w-8 h-1 rounded-full bg-[var(--color-gold)]" />
+              <div className="w-8 h-1 rounded-full bg-[var(--color-gold)]/40 animate-pulse" />
               <div className="w-8 h-1 rounded-full bg-white/10" />
             </div>
 
             {/* Email icon */}
-            <div className="w-16 h-16 mx-auto mb-8 rounded-full border border-[#E6B94D]/20 bg-[#E6B94D]/[0.06] flex items-center justify-center">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E6B94D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <div className="w-16 h-16 mx-auto mb-8 rounded-full border border-[var(--color-gold)]/20 bg-[var(--color-gold)]/[0.06] flex items-center justify-center">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <rect x="2" y="4" width="20" height="16" rx="2" />
                 <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
               </svg>
@@ -224,16 +224,16 @@ export function WrappedLanding() {
             </p>
 
             {/* Polling indicator */}
-            <div className="flex items-center justify-center gap-2 text-[12px] text-white/30" style={MONO}>
-              <div className="w-1.5 h-1.5 rounded-full bg-[#E6B94D] animate-pulse" />
+            <div className="flex items-center justify-center gap-2 text-[12px] text-white/40" style={MONO}>
+              <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)] animate-pulse" />
               Waiting for confirmation...
             </div>
 
-            <p className="text-[12px] text-white/25 mt-8">
+            <p className="text-[12px] text-white/40 mt-8">
               Didn&apos;t get it? Check spam, or{' '}
               <button
                 onClick={() => setFlowState('signup')}
-                className="text-[#E6B94D] hover:text-[#FFD67A] transition-colors cursor-pointer"
+                className="text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors cursor-pointer"
               >
                 try a different email
               </button>
@@ -247,7 +247,7 @@ export function WrappedLanding() {
   // ── Signup state (inline, no redirect) ──
   if (flowState === 'signup') {
     return (
-      <div className="min-h-screen bg-[#060606] text-[var(--color-text-primary)]">
+      <div className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)]">
         <nav className="fixed top-0 left-0 right-0 z-50 px-6 md:px-10 py-5 flex items-center justify-between">
           <button onClick={() => setFlowState('landing')} className="flex items-center gap-2.5 opacity-60 hover:opacity-100 transition-opacity">
             <HelmMark size={18} />
@@ -259,7 +259,7 @@ export function WrappedLanding() {
           <div className="w-full max-w-sm">
             {/* Progress */}
             <div className="flex items-center justify-center gap-2 mb-10">
-              <div className="w-8 h-1 rounded-full bg-[#E6B94D]" />
+              <div className="w-8 h-1 rounded-full bg-[var(--color-gold)]" />
               <div className="w-8 h-1 rounded-full bg-white/10" />
               <div className="w-8 h-1 rounded-full bg-white/10" />
             </div>
@@ -286,30 +286,36 @@ export function WrappedLanding() {
 
             {/* Email/password form */}
             <form onSubmit={handleSignup} className="space-y-3">
+              <label className="sr-only" htmlFor="wrapped-name">Full name</label>
               <input
+                id="wrapped-name"
                 type="text"
                 placeholder="Full name (optional)"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[#E6B94D]/50 transition-colors"
+                className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors"
                 autoComplete="name"
               />
+              <label className="sr-only" htmlFor="wrapped-email">Email</label>
               <input
+                id="wrapped-email"
                 type="email"
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[#E6B94D]/50 transition-colors"
+                className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors"
                 autoComplete="email"
                 required
               />
               <div className="relative">
+                <label className="sr-only" htmlFor="wrapped-password">Password</label>
                 <input
+                  id="wrapped-password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Password (8+ characters)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[#E6B94D]/50 transition-colors pr-11"
+                  className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors pr-11"
                   autoComplete="new-password"
                   minLength={8}
                   required
@@ -317,6 +323,7 @@ export function WrappedLanding() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -343,7 +350,7 @@ export function WrappedLanding() {
               <button
                 type="submit"
                 disabled={signupLoading || (!!captchaSiteKey && !captchaToken)}
-                className="w-full px-4 py-3.5 bg-[#E6B94D] text-black text-[14px] font-bold rounded-md hover:bg-[#FFD67A] transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                className="w-full px-4 py-3.5 bg-[var(--color-gold)] text-black text-[14px] font-bold rounded-md hover:bg-[var(--color-gold-hi)] transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
                 {signupLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Creating account...</>
@@ -353,9 +360,9 @@ export function WrappedLanding() {
               </button>
             </form>
 
-            <p className="text-[12px] text-white/30 text-center mt-6">
+            <p className="text-[12px] text-white/40 text-center mt-6">
               Already have an account?{' '}
-              <Link href="/login?redirect=/wrapped" className="text-[#E6B94D] hover:text-[#FFD67A] transition-colors">
+              <Link href="/login?redirect=/wrapped" className="text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors">
                 Log in
               </Link>
             </p>
@@ -431,7 +438,7 @@ export function WrappedLanding() {
 
   // ── Landing state (not logged in) ──
   return (
-    <div className="min-h-screen bg-[#060606] text-white overflow-hidden">
+    <div className="min-h-screen bg-[var(--color-bg-base)] text-white overflow-hidden">
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 py-5 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 opacity-70 hover:opacity-100 transition-opacity">
@@ -444,7 +451,7 @@ export function WrappedLanding() {
           </Link>
           <button
             onClick={() => setFlowState('signup')}
-            className="text-[13px] text-[#E6B94D] hover:text-[#FFD67A] font-bold transition-colors cursor-pointer"
+            className="text-[13px] text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] font-bold transition-colors cursor-pointer"
             style={MONO}
           >
             Get yours &rarr;
@@ -457,13 +464,13 @@ export function WrappedLanding() {
           ══════════════════════════════════════ */}
       <section className="relative min-h-screen flex items-center overflow-hidden">
         {/* Glow */}
-        <div className="pointer-events-none absolute top-[10%] right-0 w-[1000px] h-[1000px] opacity-[0.1] blur-[160px]" style={{ background: 'radial-gradient(circle, #E6B94D, transparent 60%)' }} />
+        <div className="pointer-events-none absolute top-[10%] right-0 w-[1000px] h-[1000px] opacity-[0.1] blur-[160px]" style={{ background: 'radial-gradient(circle, var(--color-gold), transparent 60%)' }} />
         <div className="pointer-events-none absolute bottom-0 left-[5%] w-[600px] h-[600px] opacity-[0.06] blur-[120px]" style={{ background: 'radial-gradient(circle, #4ADE80, transparent 65%)' }} />
 
         <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-[1fr_480px] gap-10 lg:gap-16 items-center pt-28 pb-16 lg:pt-0 lg:pb-0">
           {/* LEFT — massive headline */}
           <div>
-            <p className="text-[14px] tracking-[0.3em] text-[#E6B94D] uppercase mb-10" style={MONO}>
+            <p className="text-[14px] tracking-[0.3em] text-[var(--color-gold)] uppercase mb-10" style={MONO}>
               Helm Wrapped &middot; 2025
             </p>
 
@@ -473,7 +480,7 @@ export function WrappedLanding() {
             >
               Your portfolio.<br />
               <span
-                className="text-[#E6B94D] italic font-normal"
+                className="text-[var(--color-gold)] italic font-normal"
                 style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
               >
                 Wrapped.
@@ -487,7 +494,7 @@ export function WrappedLanding() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
               <button
                 onClick={() => setFlowState('signup')}
-                className="inline-flex items-center gap-3 px-12 py-5 bg-[#E6B94D] text-black text-[16px] font-bold tracking-[0.02em] rounded transition-all hover:bg-[#FFD67A] cursor-pointer"
+                className="inline-flex items-center gap-3 px-12 py-5 bg-[var(--color-gold)] text-black text-[16px] font-bold tracking-[0.02em] rounded transition-all hover:bg-[var(--color-gold-hi)] cursor-pointer"
                 style={{ boxShadow: '0 0 0 1px rgba(230,185,77,0.5), 0 20px 60px rgba(230,185,77,0.3)' }}
               >
                 See my Wrapped
@@ -498,13 +505,13 @@ export function WrappedLanding() {
               </Link>
             </div>
 
-            <p className="text-[13px] text-white/30 mt-6" style={MONO}>Free &middot; 30 seconds &middot; Any brokerage</p>
+            <p className="text-[13px] text-white/40 mt-6" style={MONO}>Free &middot; 30 seconds &middot; Any brokerage</p>
           </div>
 
           {/* RIGHT — sample card, larger */}
           <div className="relative flex justify-center lg:justify-end">
             <div className="w-full max-w-[420px] relative">
-              <div className="absolute -inset-6 rounded-3xl opacity-[0.15] blur-[50px] pointer-events-none" style={{ background: '#E6B94D' }} />
+              <div className="absolute -inset-6 rounded-3xl opacity-[0.15] blur-[50px] pointer-events-none" style={{ background: 'var(--color-gold)' }} />
               <div
                 className="relative rounded-2xl overflow-hidden p-10 pb-12"
                 style={{
@@ -516,7 +523,7 @@ export function WrappedLanding() {
               >
                 <div className="flex items-center justify-between">
                   <HelmMark size={24} />
-                  <span className="text-[12px] tracking-[0.2em] text-[#E6B94D] uppercase font-bold" style={MONO}>2025</span>
+                  <span className="text-[12px] tracking-[0.2em] text-[var(--color-gold)] uppercase font-bold" style={MONO}>2025</span>
                 </div>
 
                 <div className="mt-12">
@@ -536,14 +543,14 @@ export function WrappedLanding() {
                   {[['MVP', 'NVDA'], ['TYPE', 'Growth Hunter'], ['TRADES', '287'], ['ALPHA', '+8.6%']].map(([l, v]) => (
                     <div key={l}>
                       <p className="text-[10px] tracking-[0.2em] text-white/35 uppercase" style={MONO}>{l}</p>
-                      <p className="text-[18px] font-bold text-[#E6B94D] mt-1.5" style={MONO}>{v}</p>
+                      <p className="text-[18px] font-bold text-[var(--color-gold)] mt-1.5" style={MONO}>{v}</p>
                     </div>
                   ))}
                 </div>
 
                 <div className="absolute bottom-6 left-10 right-10 flex justify-between">
-                  <span className="text-[10px] tracking-[0.15em] text-white/25 uppercase" style={MONO}>helmterminal.dev</span>
-                  <span className="text-[10px] tracking-[0.15em] text-white/25 uppercase" style={MONO}>#HelmWrapped</span>
+                  <span className="text-[10px] tracking-[0.15em] text-white/30 uppercase" style={MONO}>helmterminal.dev</span>
+                  <span className="text-[10px] tracking-[0.15em] text-white/30 uppercase" style={MONO}>#HelmWrapped</span>
                 </div>
               </div>
             </div>
@@ -556,7 +563,7 @@ export function WrappedLanding() {
           ══════════════════════════════════════ */}
       <section className="py-32 md:py-44 border-t border-white/[0.06]">
         <div className="max-w-[1400px] mx-auto px-6 md:px-12">
-          <p className="text-[14px] tracking-[0.3em] text-[#E6B94D] uppercase mb-16" style={MONO}>
+          <p className="text-[14px] tracking-[0.3em] text-[var(--color-gold)] uppercase mb-16" style={MONO}>
             Seven slides. One portfolio.
           </p>
 
@@ -572,14 +579,14 @@ export function WrappedLanding() {
               key={item.n}
               className="flex items-baseline gap-6 md:gap-10 py-7 md:py-8 border-b border-white/[0.06] group cursor-default"
             >
-              <span className="text-[18px] md:text-[22px] text-[#E6B94D] tabular-nums shrink-0 font-bold" style={MONO}>{item.n}</span>
+              <span className="text-[18px] md:text-[22px] text-[var(--color-gold)] tabular-nums shrink-0 font-bold" style={MONO}>{item.n}</span>
               <span
                 className={`font-semibold tracking-[-0.025em] transition-colors duration-300 ${item.accent ? 'text-white' : 'text-white/55'} group-hover:text-white`}
                 style={{ fontSize: 'clamp(24px, 5vw, 44px)' }}
               >
                 {item.label}
               </span>
-              <ArrowRight className="w-5 h-5 text-[#E6B94D] opacity-0 group-hover:opacity-100 transition-opacity ml-auto shrink-0 hidden md:block" />
+              <ArrowRight className="w-5 h-5 text-[var(--color-gold)] opacity-0 group-hover:opacity-100 transition-opacity ml-auto shrink-0 hidden md:block" />
             </div>
           ))}
         </div>
@@ -590,7 +597,7 @@ export function WrappedLanding() {
           ══════════════════════════════════════ */}
       <section className="py-32 md:py-44 border-t border-white/[0.06]">
         <div className="max-w-[1400px] mx-auto px-6 md:px-12">
-          <p className="text-[14px] tracking-[0.3em] text-[#E6B94D] uppercase mb-16" style={MONO}>
+          <p className="text-[14px] tracking-[0.3em] text-[var(--color-gold)] uppercase mb-16" style={MONO}>
             Three steps. Thirty seconds.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-14 md:gap-20">
@@ -600,7 +607,7 @@ export function WrappedLanding() {
               { n: '03', title: 'See your Wrapped', desc: 'Personalized slides you can share anywhere.' },
             ].map((step) => (
               <div key={step.n} className="border-t border-white/[0.08] pt-10">
-                <p className="text-[40px] md:text-[56px] text-[#E6B94D] font-bold mb-5 tabular-nums leading-none" style={MONO}>{step.n}</p>
+                <p className="text-[40px] md:text-[56px] text-[var(--color-gold)] font-bold mb-5 tabular-nums leading-none" style={MONO}>{step.n}</p>
                 <h3 className="text-[24px] md:text-[28px] font-bold tracking-[-0.02em] mb-4">{step.title}</h3>
                 <p className="text-[17px] text-white/50 leading-relaxed">{step.desc}</p>
               </div>
@@ -623,7 +630,7 @@ export function WrappedLanding() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
             <button
               onClick={() => setFlowState('signup')}
-              className="inline-flex items-center gap-3 px-14 py-6 bg-[#E6B94D] text-black text-[18px] font-bold tracking-[0.02em] rounded transition-all hover:bg-[#FFD67A] cursor-pointer"
+              className="inline-flex items-center gap-3 px-14 py-6 bg-[var(--color-gold)] text-black text-[18px] font-bold tracking-[0.02em] rounded transition-all hover:bg-[var(--color-gold-hi)] cursor-pointer"
               style={{ boxShadow: '0 0 0 1px rgba(230,185,77,0.5), 0 24px 64px rgba(230,185,77,0.35)' }}
             >
               Get my Wrapped
@@ -636,8 +643,8 @@ export function WrappedLanding() {
 
       {/* Footer */}
       <footer className="py-8 px-6 md:px-12 flex items-center justify-between border-t border-white/[0.04]">
-        <span className="text-[10px] tracking-[0.15em] text-white/20 uppercase" style={MONO}>&copy; 2026 Helm</span>
-        <span className="text-[10px] tracking-[0.15em] text-white/20 uppercase" style={MONO}>helmterminal.dev</span>
+        <span className="text-[10px] tracking-[0.15em] text-white/30 uppercase" style={MONO}>&copy; 2026 Helm</span>
+        <span className="text-[10px] tracking-[0.15em] text-white/30 uppercase" style={MONO}>helmterminal.dev</span>
       </footer>
     </div>
   );

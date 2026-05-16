@@ -213,7 +213,7 @@ function SlideReturn({ data }: { data: WrappedData | null }) {
           )}
         </div>
 
-        <p className="text-[11px] text-white/20 mt-6" style={MONO}>
+        <p className="text-[11px] text-white/40 mt-6" style={MONO}>
           Return based on cost basis. MVP &amp; villain reflect total gain since purchase.
         </p>
       </div>
@@ -402,6 +402,20 @@ function SlidePersonality({ data }: { data: WrappedData | null }) {
 // Slide 7: SHARE CARD
 // ═══════════════════════════════════════════
 
+async function captureCardAsBlob(element: HTMLElement): Promise<Blob> {
+  const { toPng } = await import('html-to-image');
+  const dataUrl = await toPng(element, {
+    pixelRatio: 2,
+    backgroundColor: '#0A0A0A',
+    filter: (node: HTMLElement) => node.dataset?.htmlToImageIgnore === undefined,
+  });
+  const base64 = dataUrl.split(',')[1];
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: 'image/png' });
+}
+
 function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: { data: WrappedData | null; onShareImage: () => void; onShareTwitter: () => void }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const pct = data?.totalReturn.pct ?? 0;
@@ -424,18 +438,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
     if (!cardRef.current) return;
     setShareStatus('generating');
     try {
-      const { toPng } = await import('html-to-image');
-      const dataUrl = await toPng(cardRef.current, {
-        pixelRatio: 2,
-        backgroundColor: '#0A0A0A',
-        filter: (node: HTMLElement) => node.dataset?.htmlToImageIgnore === undefined,
-      });
-      // Convert data URL to blob without fetch (CSP blocks data: URIs)
-      const base64 = dataUrl.split(',')[1];
-      const binary = atob(base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      const blob = new Blob([bytes], { type: 'image/png' });
+      const blob = await captureCardAsBlob(cardRef.current);
       const file = new File([blob], 'helm-wrapped.png', { type: 'image/png' });
 
       // Try native share with image
@@ -459,10 +462,12 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
       } catch { /* not supported */ }
 
       // Fallback: download
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = dataUrl;
+      a.href = url;
       a.download = 'helm-wrapped.png';
       a.click();
+      URL.revokeObjectURL(url);
       setShareStatus('copied');
       setTimeout(() => setShareStatus('idle'), 2500);
     } catch {
@@ -510,18 +515,11 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
             e.stopPropagation();
             if (!cardRef.current) return;
             try {
-              const { toPng } = await import('html-to-image');
-              const dataUrl = await toPng(cardRef.current, { pixelRatio: 2, backgroundColor: '#0A0A0A', filter: (node: HTMLElement) => node.dataset?.htmlToImageIgnore === undefined });
-              const base64 = dataUrl.split(',')[1];
-              const binary = atob(base64);
-              const bytes = new Uint8Array(binary.length);
-              for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-              const blob = new Blob([bytes], { type: 'image/png' });
+              const blob = await captureCardAsBlob(cardRef.current);
               await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
               setShareStatus('copied');
               setTimeout(() => setShareStatus('idle'), 2000);
             } catch {
-              // Fallback — trigger share button
               handleShareImage();
             }
           }}
@@ -656,19 +654,19 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
           <button
             onClick={handleShareImage}
             disabled={shareStatus === 'generating'}
-            className="px-5 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[13px] rounded-sm transition-colors cursor-pointer disabled:opacity-60"
+            className="px-5 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[13px] rounded-sm transition-colors cursor-pointer disabled:opacity-60"
           >
             {shareStatus === 'generating' ? 'Sharing...' : 'Share Wrapped'}
           </button>
           <button
             onClick={onShareTwitter}
-            className="px-4 py-3 border border-white/10 text-white/60 font-medium text-[13px] rounded-sm cursor-pointer"
+            className="px-4 py-3.5 border border-white/10 text-white/60 font-medium text-[13px] rounded-sm cursor-pointer"
           >
             Post on X
           </button>
           <a
             href="/dashboard"
-            className="px-4 py-3 border border-white/10 text-white/60 font-medium text-[13px] rounded-sm text-center"
+            className="px-4 py-3.5 border border-white/10 text-white/60 font-medium text-[13px] rounded-sm text-center"
           >
             Close
           </a>
@@ -852,6 +850,11 @@ export default function WrappedPage() {
     >
       <AmbientGlow />
       <TopBar current={currentSlide} year={year} />
+
+      {/* Screen reader announcement for slide changes */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        Slide {currentSlide + 1} of {TOTAL_SLIDES}
+      </div>
 
       {/* Slide content */}
       <div className="absolute inset-0 pt-14 overflow-hidden">
