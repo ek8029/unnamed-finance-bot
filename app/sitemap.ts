@@ -33,6 +33,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/security/isp`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/data-deletion`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
     { url: `${base}/wrapped`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${base}/wrapped/demo`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/tools/tlh-calculator`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/tools/rsu-calculator`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/for/engineers`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
