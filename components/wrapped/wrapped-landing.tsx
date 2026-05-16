@@ -502,7 +502,7 @@ export function WrappedLanding() {
             </h1>
 
             <p className="text-[20px] md:text-[22px] text-white/60 leading-[1.6] max-w-[520px] mb-14">
-              Return. Best trade. Worst trade. Investor personality. Everything you need to brag — or learn from.
+              Spotify Wrapped, but for your investments. Return vs the S&amp;P, best trade, worst trade, and your investor personality type.
             </p>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
