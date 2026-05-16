@@ -504,10 +504,9 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
       </div>
 
       {/* Right: V4 Share Card — click to copy */}
-      <div className="w-full max-w-[340px] md:max-w-[480px] shrink-0">
-        <div
-          ref={cardRef}
-          onClick={async (e) => {
+      <div
+        className="w-full max-w-[340px] md:max-w-[480px] shrink-0 relative group cursor-pointer"
+        onClick={async (e) => {
             e.stopPropagation();
             if (!cardRef.current) return;
             try {
@@ -526,7 +525,10 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
               handleShareImage();
             }
           }}
-          className="relative rounded-2xl overflow-hidden cursor-pointer group"
+        >
+        <div
+          ref={cardRef}
+          className="relative rounded-2xl overflow-hidden"
           style={{
             background: '#0A0A0A',
             border: '2px solid rgba(230,185,77,0.25)',
@@ -632,17 +634,17 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
             <span className="text-[9px] text-[var(--color-gold)] font-bold" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>Get yours free &rarr;</span>
           </div>
 
-          {/* Hover hint — excluded from screenshot via class, hidden on mobile */}
-          <div data-html-to-image-ignore="" className="absolute inset-0 z-20 rounded-2xl bg-black/0 group-hover:bg-black/20 transition-colors items-center justify-center pointer-events-none hidden md:flex">
-            <span className={cn(
-              'text-[14px] font-bold tracking-wide px-5 py-2.5 rounded-full transition-all',
-              shareStatus === 'copied'
-                ? 'bg-[#4ADE80] text-black opacity-100'
-                : 'bg-white/90 text-black opacity-0 group-hover:opacity-100',
-            )} style={MONO}>
-              {shareStatus === 'copied' ? 'Copied!' : 'Click to copy'}
-            </span>
-          </div>
+        </div>
+        {/* Hover hint — OUTSIDE cardRef, won't appear in screenshot */}
+        <div className="absolute inset-0 z-20 rounded-2xl bg-black/0 group-hover:bg-black/20 transition-colors items-center justify-center pointer-events-none hidden md:flex">
+          <span className={cn(
+            'text-[14px] font-bold tracking-wide px-5 py-2.5 rounded-full transition-all',
+            shareStatus === 'copied'
+              ? 'bg-[#4ADE80] text-black opacity-100'
+              : 'bg-white/90 text-black opacity-0 group-hover:opacity-100',
+          )} style={MONO}>
+            {shareStatus === 'copied' ? 'Copied!' : 'Click to copy'}
+          </span>
         </div>
 
         {/* Mobile: "Copied" feedback */}
