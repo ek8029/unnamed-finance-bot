@@ -187,7 +187,7 @@ function SlideReturn({ data }: { data: WrappedData | null }) {
         <p className="text-[14px] text-[var(--color-text-muted)] mb-3">Your portfolio returned</p>
 
         <div
-          className={cn('text-[clamp(100px,30vw,240px)] font-bold leading-none tabular-nums tracking-[-0.05em]', positive ? 'text-[#4ADE80]' : 'text-[#F87171]')}
+          className={cn('text-[clamp(60px,18vw,240px)] font-bold leading-none tabular-nums tracking-[-0.05em]', positive ? 'text-[#4ADE80]' : 'text-[#F87171]')}
           style={{ textShadow: positive ? '0 0 60px rgba(74,222,128,0.35), 0 0 120px rgba(74,222,128,0.15)' : '0 0 60px rgba(248,113,113,0.35), 0 0 120px rgba(248,113,113,0.15)' }}
         >
           {fmtPct(pct)}
@@ -529,7 +529,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
           style={{
             background: '#0A0A0A',
             border: '2px solid rgba(230,185,77,0.25)',
-            padding: '28px 32px',
+            padding: '20px 24px',
             aspectRatio: '4/5',
             boxShadow: '0 40px 100px rgba(0,0,0,0.8)',
           }}
@@ -552,7 +552,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
           <div className="relative z-10 text-center my-4">
             <p
               className={cn('font-bold leading-[0.82] tabular-nums tracking-[-0.04em]', positive ? 'text-[#4ADE80]' : 'text-[#F87171]')}
-              style={{ fontSize: 'clamp(56px, 14vw, 88px)', textShadow: positive ? '0 0 60px rgba(74,222,128,0.2)' : '0 0 60px rgba(248,113,113,0.2)' }}
+              style={{ fontSize: 'clamp(40px, 11vw, 88px)', textShadow: positive ? '0 0 60px rgba(74,222,128,0.2)' : '0 0 60px rgba(248,113,113,0.2)' }}
             >
               {fmtPct(pct)}
             </p>
@@ -588,39 +588,39 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
           <div className="relative z-10 h-px my-3" style={{ background: 'linear-gradient(to right, transparent, rgba(230,185,77,0.3), transparent)' }} />
 
           {/* 2x3 stat grid */}
-          <div className="relative z-10 grid grid-cols-3 gap-2.5">
+          <div className="relative z-10 grid grid-cols-3 gap-1.5 md:gap-2.5">
             {/* MVP */}
-            <div className="p-3.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
+            <div className="p-2.5 md:p-3.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>MVP</p>
-              <p className="text-[28px] font-bold text-[var(--color-gold)] mt-1" style={MONO}>{best?.ticker ?? '---'}</p>
+              <p className="text-[20px] md:text-[28px] font-bold text-[var(--color-gold)] mt-1" style={MONO}>{best?.ticker ?? '---'}</p>
               <p className="text-[13px] font-semibold text-[#4ADE80]" style={MONO}>{best ? fmtPct(best.returnPct) : ''}</p>
             </div>
             {/* Type */}
-            <div className="p-3.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
+            <div className="p-2.5 md:p-3.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>TYPE</p>
-              <p className="text-[18px] font-bold text-[var(--color-gold)] mt-1 leading-tight" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>
+              <p className="text-[13px] md:text-[18px] font-bold text-[var(--color-gold)] mt-1 leading-tight" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>
                 {personality?.title ?? 'Investor'}
               </p>
             </div>
             {/* Trades */}
-            <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+            <div className="p-2.5 md:p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>TRADES</p>
-              <p className="text-[28px] font-bold text-white mt-1 tabular-nums" style={MONO}>{trades}</p>
+              <p className="text-[18px] md:text-[28px] font-bold text-white mt-1 tabular-nums" style={MONO}>{trades}</p>
             </div>
             {/* Dividends */}
-            <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05] overflow-hidden">
+            <div className="p-2.5 md:p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05] overflow-hidden">
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>DIVIDENDS</p>
-              <p className="text-[28px] font-bold text-white mt-1 tabular-nums" style={MONO}>{fmtCompact(dividends)}</p>
+              <p className="text-[18px] md:text-[28px] font-bold text-white mt-1 tabular-nums" style={MONO}>{fmtCompact(dividends)}</p>
             </div>
             {/* Portfolio */}
-            <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+            <div className="p-2.5 md:p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>PORTFOLIO</p>
-              <p className="text-[28px] font-bold text-white mt-1 tabular-nums" style={MONO}>{fmtCompact(portfolioVal)}</p>
+              <p className="text-[18px] md:text-[28px] font-bold text-white mt-1 tabular-nums" style={MONO}>{fmtCompact(portfolioVal)}</p>
             </div>
             {/* Villain */}
-            <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+            <div className="p-2.5 md:p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>VILLAIN</p>
-              <p className="text-[28px] font-bold text-[#F87171] mt-1" style={MONO}>{worst?.ticker ?? '---'}</p>
+              <p className="text-[20px] md:text-[28px] font-bold text-[#F87171] mt-1" style={MONO}>{worst?.ticker ?? '---'}</p>
               <p className="text-[13px] font-semibold text-[#F87171]" style={MONO}>{worst ? fmtPct(worst.returnPct) : ''}</p>
             </div>
           </div>
