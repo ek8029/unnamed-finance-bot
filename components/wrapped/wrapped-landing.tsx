@@ -43,6 +43,17 @@ export function WrappedLanding() {
   const captchaSiteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
   const formRenderedAt = useRef(Date.now());
 
+  // Capture UTM params on landing (persist through signup flow)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const source = params.get('utm_source');
+    const medium = params.get('utm_medium');
+    const campaign = params.get('utm_campaign');
+    if (source) sessionStorage.setItem('utm_source', source);
+    if (medium) sessionStorage.setItem('utm_medium', medium);
+    if (campaign) sessionStorage.setItem('utm_campaign', campaign);
+  }, []);
+
   // Check auth + Plaid on mount
   useEffect(() => {
     async function check() {
@@ -104,6 +115,9 @@ export function WrappedLanding() {
           full_name: fullName.trim() || undefined,
           captchaToken,
           form_rendered_at: formRenderedAt.current,
+          utm_source: sessionStorage.getItem('utm_source') || undefined,
+          utm_medium: sessionStorage.getItem('utm_medium') || undefined,
+          utm_campaign: sessionStorage.getItem('utm_campaign') || undefined,
         }),
       });
       const data = await res.json();

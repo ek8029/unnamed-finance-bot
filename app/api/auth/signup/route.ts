@@ -99,6 +99,10 @@ export async function POST(request: Request) {
     const honeypot = typeof body.website === 'string' ? body.website : '';
     const formRenderedAt = typeof body.form_rendered_at === 'number' ? body.form_rendered_at : 0;
 
+    const utm_source = typeof body.utm_source === 'string' ? body.utm_source : null;
+    const utm_medium = typeof body.utm_medium === 'string' ? body.utm_medium : null;
+    const utm_campaign = typeof body.utm_campaign === 'string' ? body.utm_campaign : null;
+
     const emailDomain = extractEmailDomain(email) || 'unknown';
     const logBase = { email, emailDomain, ip: clientIp, userAgent };
 
@@ -247,13 +251,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
     }
 
-    // Create user profile
+    // Create user profile (with UTM attribution if present)
     const { error: profileError } = await supabase
       .from('user_profiles')
       .insert({
         id: data.user.id,
         email: data.user.email,
         full_name: full_name || null,
+        ...(utm_source && { utm_source }),
+        ...(utm_medium && { utm_medium }),
+        ...(utm_campaign && { utm_campaign }),
       });
     if (profileError) console.error('Error creating profile:', profileError);
 
@@ -281,7 +288,7 @@ export async function POST(request: Request) {
       userId: data.user.id,
       email: data.user.email || email,
       eventType: 'signup_success',
-      metadata: { ip: clientIp, emailDomain, userAgent },
+      metadata: { ip: clientIp, emailDomain, userAgent, utm_source, utm_medium, utm_campaign },
     });
 
     // Send Day 0 welcome email (fire-and-forget)
