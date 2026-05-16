@@ -533,7 +533,6 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
             background: '#0A0A0A',
             border: '2px solid rgba(230,185,77,0.25)',
             padding: '20px 24px',
-            aspectRatio: '4/5',
             boxShadow: '0 40px 100px rgba(0,0,0,0.8)',
           }}
         >
