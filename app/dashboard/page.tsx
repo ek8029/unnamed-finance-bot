@@ -105,8 +105,8 @@ export default function DashboardOverview() {
       <div className="container mx-auto px-4 md:card-padding max-w-[1600px]">
         <div className="flex flex-col min-h-[calc(100vh-200px)]">
 
-          {/* Main content — vertically centered */}
-          <div className="flex-1 flex flex-col justify-center max-w-[580px] py-16">
+          {/* Main content — vertically centered, readable width */}
+          <div className="flex-1 flex flex-col justify-center max-w-[580px] mx-auto md:mx-0 md:ml-[8%] py-16">
 
             <h1
               className="font-bold tracking-[-0.04em] leading-[1.1] text-[var(--color-text-primary)] mb-5"
@@ -133,7 +133,7 @@ export default function DashboardOverview() {
             {/* Plaid trust section */}
             <div className="mt-9 pt-6 border-t border-[var(--color-border-subtle)] max-w-[500px]">
               <p className="text-[15px] font-bold text-[var(--color-text-primary)] mb-4">Plaid</p>
-              <p className="text-[13px] text-[var(--color-text-muted)] leading-[1.7] mb-5">
+              <p className="text-[14px] text-[var(--color-text-muted)] leading-[1.7] mb-5">
                 Plaid is the infrastructure layer between your bank and apps like Venmo, Robinhood, Coinbase, and Wealthfront. Over 12,000 financial institutions are supported.
               </p>
 
@@ -144,8 +144,8 @@ export default function DashboardOverview() {
                   { label: 'Encryption', text: 'AES-256', detail: ' in transit and at rest. Same standard used by major banks.' },
                   { label: 'Control', text: 'Disconnect anytime', detail: ' from Settings. Your data is deleted immediately.' },
                 ].map((fact) => (
-                  <div key={fact.label} className="flex items-baseline gap-3 py-2.5 border-b border-[var(--color-border-subtle)] last:border-b-0 text-[13px]">
-                    <span className="shrink-0 w-[100px] text-[9px] tracking-[0.15em] uppercase text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+                  <div key={fact.label} className="flex items-baseline gap-3 py-2.5 border-b border-[var(--color-border-subtle)] last:border-b-0 text-[14px]">
+                    <span className="shrink-0 w-[100px] text-[11px] tracking-[0.12em] uppercase text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
                       {fact.label}
                     </span>
                     <span className="text-[#888]">
@@ -165,14 +165,14 @@ export default function DashboardOverview() {
               >
                 Explore with sample data
               </button>
-              <p className="text-[12px] text-[#444] mt-2.5" style={{ fontFamily: 'var(--font-mono)' }}>
+              <p className="text-[13px] text-[#555] mt-2.5" style={{ fontFamily: 'var(--font-mono)' }}>
                 See the full dashboard with a fictional portfolio. No account needed.
               </p>
             </div>
           </div>
 
           {/* Status log — bottom */}
-          <div className="pb-9 text-[10px] leading-[2.2]" style={{ fontFamily: 'var(--font-mono)' }}>
+          <div className="pb-9 text-[11px] leading-[2.2]" style={{ fontFamily: 'var(--font-mono)' }}>
             <span className="text-[var(--color-positive)] opacity-40">ready</span><span className="text-[#333]">&ensp;market-data-pipeline</span><br />
             <span className="text-[var(--color-positive)] opacity-40">ready</span><span className="text-[#333]">&ensp;portfolio-engine</span><br />
             <span className="text-[var(--color-positive)] opacity-40">ready</span><span className="text-[#333]">&ensp;pattern-detection</span><br />
@@ -206,9 +206,9 @@ export default function DashboardOverview() {
               <span className="text-[13px] text-[var(--color-text-muted)] hidden sm:inline">Viewing sample data.</span>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-              <Link href="/dashboard/accounts" className="text-[12px] font-semibold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors">
+              <button onClick={disableDemo} className="text-[12px] font-semibold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors cursor-pointer">
                 Connect Account
-              </Link>
+              </button>
               <button onClick={disableDemo} className="text-[11px] text-[var(--color-text-muted)]/50 hover:text-[var(--color-text-muted)] transition-colors">
                 Exit Demo
               </button>
