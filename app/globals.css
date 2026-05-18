@@ -502,7 +502,6 @@ html { scroll-behavior: smooth; }
   .bg-depth {
     background:
       radial-gradient(ellipse 60% 40% at 50% 0%, rgba(230, 185, 77, 0.02) 0%, transparent 60%),
-      radial-gradient(ellipse 80% 50% at 20% 80%, rgba(19, 19, 19, 0.5) 0%, transparent 60%),
       var(--color-bg-base);
   }
 

@@ -171,14 +171,6 @@ export default function DashboardOverview() {
             </div>
           </div>
 
-          {/* Status log — bottom */}
-          <div className="pb-9 text-[11px] leading-[2.2]" style={{ fontFamily: 'var(--font-mono)' }}>
-            <span className="text-[var(--color-positive)] opacity-40">ready</span><span className="text-[#333]">&ensp;market-data-pipeline</span><br />
-            <span className="text-[var(--color-positive)] opacity-40">ready</span><span className="text-[#333]">&ensp;portfolio-engine</span><br />
-            <span className="text-[var(--color-positive)] opacity-40">ready</span><span className="text-[#333]">&ensp;pattern-detection</span><br />
-            <span className="text-[var(--color-positive)] opacity-40">ready</span><span className="text-[#333]">&ensp;daily-brief-generator</span><br />
-            <span className="text-[var(--color-gold)] opacity-40">waiting</span><span className="text-[#333]">&ensp;brokerage-connection</span>
-          </div>
 
         </div>
       </div>
