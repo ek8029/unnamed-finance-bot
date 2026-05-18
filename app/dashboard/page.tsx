@@ -112,7 +112,7 @@ export default function DashboardOverview() {
               className="font-bold tracking-[-0.04em] leading-[1.1] text-[var(--color-text-primary)] mb-5"
               style={{ fontSize: 'clamp(32px, 5vw, 48px)' }}
             >
-              Nothing to report.
+              Your dashboard is ready.
             </h1>
 
             <p className="text-[15px] text-[var(--color-text-muted)] leading-[1.7] mb-10 max-w-[480px]">
