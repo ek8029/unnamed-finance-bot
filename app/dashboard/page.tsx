@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Shield } from 'lucide-react';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
 import { NetWorthCard } from '@/components/dashboard/net-worth-card';
 import { FinancialSummaryCards } from '@/components/dashboard/financial-summary-cards';
@@ -104,60 +103,81 @@ export default function DashboardOverview() {
   if (hasNoData) {
     return (
       <div className="container mx-auto px-4 md:card-padding max-w-[1600px]">
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] py-16">
+        <div className="flex flex-col min-h-[calc(100vh-200px)]">
 
-          {/* Minimal — one message, one action */}
-          <div className="max-w-lg w-full">
-            <p
-              className="text-[11px] tracking-[0.25em] uppercase text-[var(--color-gold)] mb-8"
-              style={{ fontFamily: 'var(--font-mono)' }}
-            >
-              Getting Started
-            </p>
+          {/* Main content — vertically centered */}
+          <div className="flex-1 flex flex-col justify-center max-w-[580px] py-16">
 
             <h1
-              className="font-bold tracking-[-0.04em] leading-[1.05] text-[var(--color-text-primary)] mb-5"
-              style={{ fontSize: 'clamp(32px, 6vw, 48px)' }}
+              className="font-bold tracking-[-0.04em] leading-[1.1] text-[var(--color-text-primary)] mb-5"
+              style={{ fontSize: 'clamp(32px, 5vw, 48px)' }}
             >
-              Connect your brokerage to see your real numbers.
+              Nothing to report.
             </h1>
 
-            <p className="text-[16px] text-[var(--color-text-muted)] leading-relaxed mb-10 max-w-md">
-              Net worth, holdings, performance, tax opportunities, and a daily brief — all from one connection.
+            <p className="text-[15px] text-[var(--color-text-muted)] leading-[1.7] mb-10 max-w-[480px]">
+              Your dashboard runs on real data. Connect a brokerage and Helm pulls your holdings, runs them against live market data, and tells you what matters this week.
             </p>
 
-            {/* CTA + trust at decision point */}
-            <div className="space-y-4 mb-10">
-              <PlaidLinkButton
-                className="px-10 py-4 text-[15px] font-bold rounded-md"
-                onSuccess={() => router.refresh()}
-                onError={(msg) => setPlaidError(msg)}
-              >
-                Connect with Plaid
-              </PlaidLinkButton>
-              {plaidError && (
-                <p className="text-[13px] text-[var(--color-negative)]">{plaidError}</p>
-              )}
-              <div className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
-                <Shield className="w-3.5 h-3.5 text-[var(--color-positive)] shrink-0" />
-                <span>Read-only access &middot; We can never move money or see your password</span>
-              </div>
-              <p className="text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
-                Same infrastructure behind Venmo, Robinhood, and Coinbase &middot; 12,000+ institutions
+            <PlaidLinkButton
+              className="px-9 py-4 text-[14px] font-bold rounded-[3px] w-fit"
+              onSuccess={() => router.refresh()}
+              onError={(msg) => setPlaidError(msg)}
+            >
+              Connect via Plaid
+            </PlaidLinkButton>
+            {plaidError && (
+              <p className="text-[13px] text-[var(--color-negative)] mt-3">{plaidError}</p>
+            )}
+
+            {/* Plaid trust section */}
+            <div className="mt-9 pt-6 border-t border-[var(--color-border-subtle)] max-w-[500px]">
+              <p className="text-[15px] font-bold text-[var(--color-text-primary)] mb-4">Plaid</p>
+              <p className="text-[13px] text-[var(--color-text-muted)] leading-[1.7] mb-5">
+                Plaid is the infrastructure layer between your bank and apps like Venmo, Robinhood, Coinbase, and Wealthfront. Over 12,000 financial institutions are supported.
               </p>
+
+              <div className="flex flex-col">
+                {[
+                  { label: 'Access', text: 'Read-only.', detail: ' Helm can view balances and transactions. It cannot move money, place trades, or modify your accounts.' },
+                  { label: 'Credentials', text: 'Never shared.', detail: ' Your login is entered directly in Plaid\'s secure window. Helm never sees your username or password.' },
+                  { label: 'Encryption', text: 'AES-256', detail: ' in transit and at rest. Same standard used by major banks.' },
+                  { label: 'Control', text: 'Disconnect anytime', detail: ' from Settings. Your data is deleted immediately.' },
+                ].map((fact) => (
+                  <div key={fact.label} className="flex items-baseline gap-3 py-2.5 border-b border-[var(--color-border-subtle)] last:border-b-0 text-[13px]">
+                    <span className="shrink-0 w-[100px] text-[9px] tracking-[0.15em] uppercase text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+                      {fact.label}
+                    </span>
+                    <span className="text-[#888]">
+                      <strong className="text-[var(--color-text-primary)] font-semibold">{fact.text}</strong>
+                      {fact.detail}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Divider */}
-            <div className="h-px bg-[var(--color-border-subtle)] mb-6" />
+            {/* Demo escape */}
+            <div className="mt-9 pt-5 border-t border-[var(--color-border-subtle)] max-w-[500px]">
+              <button
+                onClick={() => { enableDemo(); router.refresh(); }}
+                className="px-6 py-3 border border-[var(--color-border-base)] rounded-[3px] text-[13px] font-semibold text-[var(--color-text-muted)] hover:border-[var(--color-gold)] hover:text-[var(--color-gold)] transition-colors cursor-pointer bg-transparent"
+              >
+                Explore with sample data
+              </button>
+              <p className="text-[12px] text-[#444] mt-2.5" style={{ fontFamily: 'var(--font-mono)' }}>
+                See the full dashboard with a fictional portfolio. No account needed.
+              </p>
+            </div>
+          </div>
 
-            {/* Demo option */}
-            <button
-              onClick={() => { enableDemo(); router.refresh(); }}
-              className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors cursor-pointer"
-              style={{ fontFamily: 'var(--font-mono)' }}
-            >
-              Explore with sample data instead &rarr;
-            </button>
+          {/* Status log — bottom */}
+          <div className="pb-9 text-[10px] leading-[2.2]" style={{ fontFamily: 'var(--font-mono)' }}>
+            <span className="text-[var(--color-positive)] opacity-40">ready</span><span className="text-[#333]">&ensp;market-data-pipeline</span><br />
+            <span className="text-[var(--color-positive)] opacity-40">ready</span><span className="text-[#333]">&ensp;portfolio-engine</span><br />
+            <span className="text-[var(--color-positive)] opacity-40">ready</span><span className="text-[#333]">&ensp;pattern-detection</span><br />
+            <span className="text-[var(--color-positive)] opacity-40">ready</span><span className="text-[#333]">&ensp;daily-brief-generator</span><br />
+            <span className="text-[var(--color-gold)] opacity-40">waiting</span><span className="text-[#333]">&ensp;brokerage-connection</span>
           </div>
 
         </div>
