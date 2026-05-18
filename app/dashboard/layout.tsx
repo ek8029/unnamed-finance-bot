@@ -28,7 +28,6 @@ import { useSettings } from '@/contexts/settings-context';
 import { DemoProvider, useDemo } from '@/contexts/demo-context';
 import { LegalFooter } from '@/components/legal-footer';
 import { FinancialDisclaimer } from '@/components/financial-disclaimer';
-import { useTier } from '@/hooks/use-tier';
 import { OnboardingFlow } from '@/components/onboarding/onboarding-flow';
 import { GuidedTour } from '@/components/onboarding/guided-tour';
 import { MobileBottomNav } from '@/components/mobile-bottom-nav';
@@ -75,15 +74,15 @@ const navigation = [
     icon: TrendingUp,
     children: [
       { name: 'Research', href: '/dashboard/chat', icon: MessageSquare },
-      { name: 'Earnings', href: '/dashboard/earnings', icon: BarChart3, pro: true },
+      { name: 'Earnings', href: '/dashboard/earnings', icon: BarChart3 },
     ],
   },
   { name: 'Analyze', href: '/dashboard/analyze', icon: Search },
   { name: 'Daily Brief', href: '/dashboard/brief', icon: BookOpen },
   { name: 'Actions', href: '/dashboard/actions', icon: Zap },
   { name: 'Activity', href: '/dashboard/transactions', icon: ArrowLeftRight },
-  { name: 'Taxes', href: '/dashboard/taxes', icon: FileText, pro: true },
-  { name: 'Wrapped', href: '/dashboard/wrapped', icon: Sparkles, pro: true },
+  { name: 'Taxes', href: '/dashboard/taxes', icon: FileText },
+  { name: 'Wrapped', href: '/dashboard/wrapped', icon: Sparkles },
 ];
 
 const PORTFOLIO_HREFS = ['/dashboard/portfolio', '/dashboard/chat', '/dashboard/earnings'];
@@ -131,7 +130,6 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { settings } = useSettings();
-  const { isPro } = useTier();
   const reduceMotion = settings.accessibility.reduceMotion;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -330,9 +328,6 @@ export default function DashboardLayout({
                                 !isChildActive && 'opacity-60'
                               )} />
                               <span>{child.name}</span>
-                              {'pro' in child && child.pro && !isPro && (
-                                <span className="ml-auto text-[9px] uppercase tracking-wider font-semibold text-[var(--color-gold)] bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] px-1.5 py-0.5 rounded" style={{ fontFamily: 'var(--font-mono)' }}>Pro</span>
-                              )}
                             </Link>
                           );
                         })}
@@ -364,9 +359,6 @@ export default function DashboardLayout({
                     !isActive && 'opacity-60'
                   )} />
                   <span>{item.name}</span>
-                  {'pro' in item && item.pro && !isPro && (
-                    <span className="ml-auto text-[9px] uppercase tracking-wider font-semibold text-[var(--color-gold)] bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] px-1.5 py-0.5 rounded" style={{ fontFamily: 'var(--font-mono)' }}>Pro</span>
-                  )}
                 </Link>
               );
             })}

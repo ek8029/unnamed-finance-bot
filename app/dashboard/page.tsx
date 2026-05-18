@@ -1,8 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Wallet, TrendingUp, ArrowLeftRight, Shield } from 'lucide-react';
+import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
 import { NetWorthCard } from '@/components/dashboard/net-worth-card';
 import { FinancialSummaryCards } from '@/components/dashboard/financial-summary-cards';
 import { FinancialHealthScore } from '@/components/dashboard/financial-health-score';
@@ -63,6 +65,8 @@ export default function DashboardOverview() {
 
   const { formatCurrency, formatPercentage } = useFormat();
   const { isDemo, disableDemo } = useDemo();
+  const router = useRouter();
+  const [plaidError, setPlaidError] = useState<string | null>(null);
 
   // Compute dollar change from the last two net worth history points
   const netWorthChange = useMemo(() => {
@@ -102,7 +106,7 @@ export default function DashboardOverview() {
       <div className="container mx-auto card-padding max-w-[1600px]">
         <div className="max-w-3xl mx-auto py-12">
 
-          {/* Hero — big, clear, specific */}
+          {/* Hero — big, clear, direct to Plaid */}
           <div className="text-center space-y-5 mb-12">
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[var(--color-text-primary)]">
               Your financial command center is one connection away.
@@ -110,15 +114,23 @@ export default function DashboardOverview() {
             <p className="text-lg text-[var(--color-text-secondary)] max-w-xl mx-auto leading-relaxed">
               Link a brokerage or bank account to see your net worth, portfolio performance, tax opportunities, and AI-powered insights — all in real time.
             </p>
-            <Link
-              href="/dashboard/accounts"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black text-base font-bold rounded-lg transition-colors"
-            >
-              <Wallet className="w-5 h-5" />
-              Connect Your Account
-            </Link>
+            <div className="flex flex-col items-center gap-3">
+              <PlaidLinkButton
+                className="px-8 py-4 text-base font-bold rounded-lg"
+                onSuccess={() => router.refresh()}
+                onError={(msg) => setPlaidError(msg)}
+              >
+                Connect Your Account
+              </PlaidLinkButton>
+              {plaidError && (
+                <p className="text-[13px] text-[var(--color-negative)]">{plaidError}</p>
+              )}
+            </div>
+            <p className="text-[13px] text-[var(--color-text-muted)] max-w-md mx-auto leading-relaxed">
+              Read-only via Plaid — the same infrastructure behind Venmo, Robinhood, and Coinbase. We can never move money or see your password.
+            </p>
             <p className="text-xs text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
-              Read-only access via Plaid · 12,000+ institutions · Takes 30 seconds
+              12,000+ institutions · Takes 30 seconds
             </p>
           </div>
 
@@ -183,9 +195,9 @@ export default function DashboardOverview() {
               <span className="text-[13px] text-[var(--color-text-muted)] hidden sm:inline">Viewing sample data.</span>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-              <a href="/dashboard/accounts" className="text-[12px] font-semibold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors">
+              <Link href="/dashboard/accounts" className="text-[12px] font-semibold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors">
                 Connect Account
-              </a>
+              </Link>
               <button onClick={disableDemo} className="text-[11px] text-[var(--color-text-muted)]/50 hover:text-[var(--color-text-muted)] transition-colors">
                 Exit Demo
               </button>
