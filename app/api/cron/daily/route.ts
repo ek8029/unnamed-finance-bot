@@ -39,22 +39,8 @@ export async function GET(request: Request) {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: lastRun } = await serviceClient
-      .from('portfolio_performance')
-      .select('calculated_at')
-      .order('calculated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // ── Email jobs FIRST — must run before dedup can early-return ──
 
-    if (lastRun?.calculated_at) {
-      const hoursSince = (Date.now() - new Date(lastRun.calculated_at).getTime()) / (1000 * 60 * 60);
-      const forceRun = new URL(request.url).searchParams.get('force') === 'true';
-      if (hoursSince < 20 && !forceRun) {
-        return NextResponse.json({ message: 'Cron already ran recently', skipped: true });
-      }
-    }
-
-    // Drip emails — run FIRST, before anything that could early-return
     let dripResult = { sent: 0 };
     try {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
@@ -68,19 +54,18 @@ export async function GET(request: Request) {
       log.push(`[drip] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
     }
 
-    // AI digest generation for The Current — fire-and-forget
-    // Digest takes ~100s for all users. Don't await — let it run independently.
+    // AI digest — fire-and-forget
     try {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
       fetch(`${baseUrl}/api/cron/digest?force=true`, {
         headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
-      }).catch(() => {}); // fire-and-forget
+      }).catch(() => {});
       log.push(`[digest] Triggered (fire-and-forget)`);
     } catch (err) {
       log.push(`[digest] Failed to trigger: ${err instanceof Error ? err.message : 'unknown'}`);
     }
 
-    // Watchlist price alerts — email users about big movers (>=3%)
+    // Watchlist price alerts
     let watchlistResult = { sent: 0 };
     try {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
@@ -91,6 +76,23 @@ export async function GET(request: Request) {
       log.push(`[watchlist] Sent ${watchlistResult.sent} alerts`);
     } catch (err) {
       log.push(`[watchlist] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
+    }
+
+    // ── Dedup — only gates Plaid sync + market data, never emails ──
+
+    const { data: lastRun } = await serviceClient
+      .from('portfolio_performance')
+      .select('calculated_at')
+      .order('calculated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (lastRun?.calculated_at) {
+      const hoursSince = (Date.now() - new Date(lastRun.calculated_at).getTime()) / (1000 * 60 * 60);
+      const forceRun = new URL(request.url).searchParams.get('force') === 'true';
+      if (hoursSince < 20 && !forceRun) {
+        return NextResponse.json({ message: 'Cron already ran recently', skipped: true, drip_emails_sent: dripResult.sent, watchlist_alerts_sent: watchlistResult.sent });
+      }
     }
 
     const { data: plaidItems, error: itemsError } = await serviceClient
