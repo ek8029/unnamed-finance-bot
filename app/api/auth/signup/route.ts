@@ -291,7 +291,7 @@ export async function POST(request: Request) {
       metadata: { ip: clientIp, emailDomain, userAgent, utm_source, utm_medium, utm_campaign },
     });
 
-    // Send Day 0 welcome email (fire-and-forget)
+    // Send Day 0 welcome email (fire-and-forget) + log to drip table so cron skips it
     try {
       const { resend: resendClient, FROM_EMAIL } = await import('@/lib/emails/resend');
       const { getTemplate } = await import('@/lib/emails/templates');
@@ -305,6 +305,13 @@ export async function POST(request: Request) {
             subject: template.subject,
             html: template.html,
             text: template.text,
+          });
+          // Log to email_drip_log so drip cron never re-sends Day 0
+          await supabase.from('email_drip_log').insert({
+            user_id: data.user.id,
+            drip_day: 0,
+            email_subject: template.subject,
+            sent_at: new Date().toISOString(),
           });
         }
       }

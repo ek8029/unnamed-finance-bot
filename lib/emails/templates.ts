@@ -209,7 +209,8 @@ export function getTemplate(dayIndex: number, userName?: string): EmailTemplate 
 }
 
 /** Which day indices to send */
-export const DRIP_DAYS = [0, 1, 3, 7] as const;
+// Day 0 welcome sent by signup route directly — not via drip
+export const DRIP_DAYS = [1, 3, 7] as const;
 
 /* ── Watchlist Alert Email ── */
 
