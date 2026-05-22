@@ -477,9 +477,8 @@ export function WrappedLanding() {
           HERO — viewport-filling, oversized type
           ══════════════════════════════════════ */}
       <section className="relative min-h-screen flex items-center overflow-hidden">
-        {/* Glow */}
-        <div className="pointer-events-none absolute top-[10%] right-0 w-[1000px] h-[1000px] opacity-[0.1] blur-[160px]" style={{ background: 'radial-gradient(circle, var(--color-gold), transparent 60%)' }} />
-        <div className="pointer-events-none absolute bottom-0 left-[5%] w-[600px] h-[600px] opacity-[0.06] blur-[120px]" style={{ background: 'radial-gradient(circle, #4ADE80, transparent 65%)' }} />
+        {/* Subtle glow — reduced to prevent splotchy banding on monitors */}
+        <div className="pointer-events-none absolute top-[10%] right-0 w-[800px] h-[800px] opacity-[0.04] blur-[200px]" style={{ background: 'var(--color-gold)' }} />
 
         <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-[1fr_480px] gap-10 lg:gap-16 items-center pt-28 pb-16 lg:pt-0 lg:pb-0">
           {/* LEFT — massive headline */}
@@ -533,49 +532,109 @@ export function WrappedLanding() {
             </Link>
           </div>
 
-          {/* RIGHT — sample card, larger */}
+          {/* RIGHT — V4 share card preview */}
           <div className="relative flex justify-center lg:justify-end">
             <div className="w-full max-w-[420px] relative">
-              <div className="absolute -inset-6 rounded-3xl opacity-[0.15] blur-[50px] pointer-events-none" style={{ background: 'var(--color-gold)' }} />
+              <div className="absolute -inset-6 rounded-3xl opacity-[0.08] blur-[60px] pointer-events-none" style={{ background: 'var(--color-gold)' }} />
               <div
-                className="relative rounded-2xl overflow-hidden p-10 pb-12"
+                className="relative rounded-2xl overflow-hidden"
                 style={{
-                  background: 'linear-gradient(160deg, #161616 0%, #0A0A0A 100%)',
-                  border: '1px solid rgba(230,185,77,0.25)',
-                  boxShadow: '0 50px 120px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.04)',
-                  aspectRatio: '3/4',
+                  background: '#0A0A0A',
+                  border: '2px solid rgba(230,185,77,0.25)',
+                  padding: '20px 24px',
+                  boxShadow: '0 50px 120px rgba(0,0,0,0.9)',
                 }}
               >
+                {/* Top bar */}
                 <div className="flex items-center justify-between">
-                  <HelmMark size={24} />
-                  <span className="text-[12px] tracking-[0.2em] text-[var(--color-gold)] uppercase font-bold" style={MONO}>2025</span>
+                  <div className="flex items-center gap-2">
+                    <HelmMark size={16} />
+                    <span className="text-[10px] font-bold tracking-[0.12em] text-[var(--color-gold)]" style={MONO}>
+                      HELM <span style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic', fontWeight: 400, letterSpacing: '0.03em' }}>Wrapped</span>
+                    </span>
+                  </div>
+                  <span className="text-[9px] text-white/40 tracking-[0.2em]" style={MONO}>2025</span>
                 </div>
 
-                <div className="mt-12">
-                  <p className="text-[12px] tracking-[0.25em] text-white/40 uppercase mb-4" style={MONO}>Your return</p>
-                  <p
-                    className="font-bold leading-none tabular-nums tracking-[-0.04em] text-[#4ADE80]"
-                    style={{ fontSize: 'clamp(64px, 12vw, 100px)', textShadow: '0 0 100px rgba(74,222,128,0.3)' }}
-                  >
-                    +28.4%
+                {/* Hero return */}
+                <div className="text-center my-4">
+                  <p className="text-[clamp(48px,11vw,72px)] font-bold leading-[0.82] tabular-nums tracking-[-0.04em] text-[#4ADE80]">
+                    +28.41%
                   </p>
-                  <p className="text-[14px] text-white/45 mt-4 font-medium" style={MONO}>Beat S&amp;P 500 by 8.6%</p>
+                  <div className="flex items-baseline justify-center gap-3 mt-2">
+                    <span style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }} className="text-[14px] text-[var(--color-gold)]">
+                      beat the market
+                    </span>
+                    <span className="text-[12px] text-[var(--color-gold)] font-bold" style={MONO}>ALPHA +8.59%</span>
+                  </div>
                 </div>
 
-                <div className="h-px my-8" style={{ background: 'linear-gradient(to right, transparent, rgba(230,185,77,0.35), transparent)' }} />
-
-                <div className="grid grid-cols-2 gap-x-10 gap-y-5">
-                  {[['MVP', 'NVDA'], ['TYPE', 'Growth Hunter'], ['TRADES', '287'], ['ALPHA', '+8.6%']].map(([l, v]) => (
-                    <div key={l}>
-                      <p className="text-[10px] tracking-[0.2em] text-white/35 uppercase" style={MONO}>{l}</p>
-                      <p className="text-[18px] font-bold text-[var(--color-gold)] mt-1.5" style={MONO}>{v}</p>
-                    </div>
-                  ))}
+                {/* Sector bar */}
+                <div className="mb-3">
+                  <div className="flex gap-[2px] h-[6px] rounded-full overflow-hidden mb-1.5">
+                    {[
+                      { pct: 48, color: '#E6B94D' },
+                      { pct: 18, color: '#7AA3C7' },
+                      { pct: 14, color: '#9FB89D' },
+                      { pct: 11, color: '#C8A165' },
+                      { pct: 9, color: '#8E7DC7' },
+                    ].map((s, i) => (
+                      <div key={i} style={{ flex: s.pct, background: s.color }} className="rounded-sm" />
+                    ))}
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    {[
+                      { pct: 48, label: 'Tech', color: '#E6B94D' },
+                      { pct: 18, label: 'Health', color: '#7AA3C7' },
+                      { pct: 14, label: 'Finance', color: '#9FB89D' },
+                      { pct: 11, label: 'Energy', color: '#C8A165' },
+                    ].map((s) => (
+                      <span key={s.label} className="text-[8px] font-medium" style={{ ...MONO, color: s.color }}>
+                        {s.pct}% {s.label}
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="absolute bottom-6 left-10 right-10 flex justify-between">
-                  <span className="text-[10px] tracking-[0.15em] text-white/30 uppercase" style={MONO}>helmterminal.dev</span>
-                  <span className="text-[10px] tracking-[0.15em] text-white/30 uppercase" style={MONO}>#HelmWrapped</span>
+                {/* Gold divider */}
+                <div className="h-px my-3" style={{ background: 'linear-gradient(to right, transparent, rgba(230,185,77,0.3), transparent)' }} />
+
+                {/* 2x3 stat grid */}
+                <div className="grid grid-cols-3 gap-1.5">
+                  <div className="p-2.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
+                    <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>MVP</p>
+                    <p className="text-[20px] font-bold text-[var(--color-gold)] mt-1" style={MONO}>NVDA</p>
+                    <p className="text-[12px] font-semibold text-[#4ADE80]" style={MONO}>+87.30%</p>
+                  </div>
+                  <div className="p-2.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
+                    <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>TYPE</p>
+                    <p className="text-[13px] font-bold text-[var(--color-gold)] mt-1 leading-tight" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>
+                      Active Trader
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                    <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>TRADES</p>
+                    <p className="text-[20px] font-bold text-white mt-1 tabular-nums" style={MONO}>214</p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                    <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>DIVIDENDS</p>
+                    <p className="text-[20px] font-bold text-white mt-1 tabular-nums" style={MONO}>$2K</p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                    <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>PORTFOLIO</p>
+                    <p className="text-[20px] font-bold text-white mt-1 tabular-nums" style={MONO}>$155K</p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                    <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>VILLAIN</p>
+                    <p className="text-[20px] font-bold text-[#F87171] mt-1" style={MONO}>INTC</p>
+                    <p className="text-[12px] font-semibold text-[#F87171]" style={MONO}>-41.20%</p>
+                  </div>
+                </div>
+
+                {/* Footer CTA */}
+                <div className="mt-3 flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'rgba(230,185,77,0.05)', border: '1px solid rgba(230,185,77,0.12)' }}>
+                  <span className="text-[8px] text-white/60 tracking-[0.1em] font-semibold" style={MONO}>HELMTERMINAL.DEV/WRAPPED</span>
+                  <span className="text-[9px] text-[var(--color-gold)] font-bold" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>Get yours free &rarr;</span>
                 </div>
               </div>
             </div>

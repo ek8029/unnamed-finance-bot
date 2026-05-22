@@ -45,8 +45,7 @@ const TOTAL_SLIDES = 7;
 function AmbientGlow() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      <div className="absolute -top-[30%] -left-[20%] w-[60vw] h-[60vw] rounded-full bg-[var(--color-gold)] opacity-[0.03] blur-[120px]" />
-      <div className="absolute -bottom-[20%] -right-[15%] w-[50vw] h-[50vw] rounded-full bg-emerald-500 opacity-[0.025] blur-[100px]" />
+      <div className="absolute -top-[30%] -left-[20%] w-[60vw] h-[60vw] rounded-full bg-[var(--color-gold)] opacity-[0.02] blur-[200px]" />
       <div className="absolute top-[40%] left-[60%] w-[30vw] h-[30vw] rounded-full bg-[var(--color-gold)] opacity-[0.02] blur-[80px]" />
     </div>
   );
@@ -140,7 +139,7 @@ function SlideCover({
 
   return (
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-8 overflow-hidden">
-      <div className="absolute -top-[30%] -left-[20%] w-[80vw] h-[80vw] rounded-full opacity-[0.08] blur-[140px] pointer-events-none" style={{ background: 'radial-gradient(circle, #E6B94D, transparent 65%)' }} />
+      <div className="absolute -top-[30%] -left-[20%] w-[60vw] h-[60vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: '#E6B94D' }} />
 
       <div className="relative z-10 max-w-lg w-full">
         <p className="text-[14px] tracking-[0.3em] text-[var(--color-gold)] mb-10" style={MONO}>HELM WRAPPED</p>
@@ -181,7 +180,7 @@ function SlideReturn({ data }: { data: WrappedData | null }) {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 text-center overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] h-[90vw] rounded-full opacity-[0.07] blur-[150px] pointer-events-none" style={{ background: `radial-gradient(circle, ${positive ? '#4ADE80' : '#F87171'}, transparent 60%)` }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: positive ? '#4ADE80' : '#F87171' }} />
 
       <div className="relative z-10">
         <p className="text-[14px] text-[var(--color-text-muted)] mb-3">Your portfolio returned</p>
@@ -232,8 +231,8 @@ function SlideBestWorst({ data }: { data: WrappedData | null }) {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 overflow-hidden">
-      <div className="absolute -top-[20%] -right-[20%] w-[50vw] h-[50vw] rounded-full opacity-[0.06] blur-[120px] pointer-events-none" style={{ background: '#4ADE80' }} />
-      <div className="absolute -bottom-[20%] -left-[20%] w-[50vw] h-[50vw] rounded-full opacity-[0.05] blur-[120px] pointer-events-none" style={{ background: '#F87171' }} />
+      <div className="absolute -top-[20%] -right-[20%] w-[40vw] h-[40vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: '#4ADE80' }} />
+      <div className="absolute -bottom-[20%] -left-[20%] w-[40vw] h-[40vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: '#F87171' }} />
 
       <div className="relative z-10 w-full max-w-lg">
         <div className="text-center mb-8">
@@ -274,7 +273,7 @@ function SlideTradingHabits({ data }: { data: WrappedData | null }) {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 overflow-hidden">
-      <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[70vw] h-[70vw] rounded-full opacity-[0.05] blur-[120px] pointer-events-none" style={{ background: '#E6B94D' }} />
+      <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[50vw] h-[50vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: '#E6B94D' }} />
 
       <div className="relative z-10 text-center">
         <p className="text-[clamp(80px,22vw,160px)] font-bold text-[var(--color-gold)] leading-none tabular-nums tracking-tight">{trades}</p>
@@ -314,7 +313,7 @@ function SlideSectors({ data }: { data: WrappedData | null }) {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 overflow-hidden">
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[70vw] h-[70vw] rounded-full opacity-[0.06] blur-[120px] pointer-events-none" style={{ background: '#7AA3C7' }} />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[50vw] h-[50vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: '#7AA3C7' }} />
 
       <div className="relative z-10 text-center w-full max-w-lg">
         {topSector && (
@@ -373,7 +372,7 @@ function SlidePersonality({ data }: { data: WrappedData | null }) {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 text-center overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] rounded-full opacity-[0.08] blur-[140px] pointer-events-none" style={{ background: '#E6B94D' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: '#E6B94D' }} />
 
       <div className="relative z-10">
         <p className="text-[16px] text-[var(--color-text-muted)] mb-6">You invest like</p>
