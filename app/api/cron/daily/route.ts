@@ -54,15 +54,17 @@ export async function GET(request: Request) {
       log.push(`[drip] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
     }
 
-    // AI digest — fire-and-forget
+    // AI digest
+    let digestResult = { generated: 0, skipped: 0 };
     try {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
-      fetch(`${baseUrl}/api/cron/digest?force=true`, {
+      const digestRes = await fetch(`${baseUrl}/api/cron/digest?force=true`, {
         headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
-      }).catch(() => {});
-      log.push(`[digest] Triggered (fire-and-forget)`);
+      });
+      if (digestRes.ok) digestResult = await digestRes.json();
+      log.push(`[digest] Generated ${digestResult.generated}, skipped ${digestResult.skipped}`);
     } catch (err) {
-      log.push(`[digest] Failed to trigger: ${err instanceof Error ? err.message : 'unknown'}`);
+      log.push(`[digest] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
     }
 
     // Watchlist price alerts
@@ -251,7 +253,7 @@ export async function GET(request: Request) {
       prices_refreshed: pricesRefreshed,
       insights_generated: insightsGenerated,
       drip_emails_sent: dripResult.sent,
-      digests_generated: 'fire-and-forget',
+      digests_generated: digestResult.generated,
       log,
     };
 

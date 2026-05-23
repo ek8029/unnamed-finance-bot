@@ -1,9 +1,17 @@
 import OpenAI from 'openai';
-import { createServiceClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getQuote } from '@/lib/financial-data';
 import { getSourceTier } from '@/lib/news-quality';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+function createCronServiceClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+}
 
 interface DigestResult {
   digest: string;
@@ -19,7 +27,7 @@ interface DigestResult {
 export async function generateDigest(
   userHoldings: string[],
 ): Promise<DigestResult> {
-  const supabase = await createServiceClient();
+  const supabase = createCronServiceClient();
   const oneDayAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
   const [positionNewsResult, generalNewsResult, spyQuote, vixQuote] =
