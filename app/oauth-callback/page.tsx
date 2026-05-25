@@ -60,8 +60,14 @@ export default function OAuthCallbackPage() {
         throw new Error(data.error || 'Failed to link account');
       }
 
+      // Sync transactions + holdings + market prices (matches PlaidLinkButton behavior)
+      sessionStorage.removeItem('helm_last_auto_sync');
+      sessionStorage.removeItem('helm_last_price_refresh');
+      await fetch('/api/plaid/sync', { method: 'POST' }).catch(() => {});
+      await fetch('/api/market/prices/refresh', { method: 'POST' }).catch(() => {});
+
       setStatus('success');
-      router.push('/dashboard/accounts');
+      router.push('/dashboard');
     } catch (err) {
       setStatus('error');
       setErrorMessage(err instanceof Error ? err.message : 'Failed to complete account linking');

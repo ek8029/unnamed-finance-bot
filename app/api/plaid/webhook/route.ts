@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { plaidClient } from '@/lib/plaid';
+import { syncPlaidItem, type PlaidItemForSync } from '@/lib/plaid-sync';
 import * as jose from 'jose';
 import { createHash } from 'crypto';
+
+export const maxDuration = 60;
 
 type WebhookType =
   | 'TRANSACTIONS'
@@ -108,7 +111,11 @@ export async function POST(request: Request) {
     const body: PlaidWebhook = JSON.parse(rawBody);
     const { webhook_type, webhook_code, item_id } = body;
 
-    const supabase = await createServiceClient();
+    const supabase = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
 
     // Look up the plaid item
     const { data: plaidItem, error: itemError } = await supabase
@@ -150,6 +157,31 @@ export async function POST(request: Request) {
       }
       case 'HOLDINGS':
       case 'INVESTMENTS_TRANSACTIONS': {
+        // Sync holdings data when Plaid notifies of changes
+        const { data: fullItem } = await supabase
+          .from('plaid_items')
+          .select('*')
+          .eq('id', plaidItem.id)
+          .maybeSingle();
+
+        if (fullItem) {
+          try {
+            const syncItem: PlaidItemForSync = {
+              id: fullItem.id,
+              plaid_access_token: fullItem.plaid_access_token,
+              transactions_cursor: fullItem.transactions_cursor,
+              institution_name: fullItem.institution_name,
+              available_products: fullItem.available_products || [],
+              billed_products: fullItem.billed_products || [],
+              consented_products: fullItem.consented_products || [],
+            };
+            await syncPlaidItem(supabase, fullItem.user_id, syncItem);
+            console.log(`[webhook] Synced ${webhook_type} for item ${plaidItem.id}`);
+          } catch (err) {
+            console.error(`[webhook] Sync failed for ${webhook_type}:`, err);
+          }
+        }
+
         await supabase
           .from('plaid_items')
           .update({ updated_at: new Date().toISOString() })
@@ -168,7 +200,8 @@ export async function POST(request: Request) {
 }
 
 async function handleTransactionsWebhook(
-  supabase: Awaited<ReturnType<typeof createServiceClient>>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
   plaidItem: { id: string; user_id: string; plaid_access_token: string },
   webhookCode: string,
   body: PlaidWebhook
@@ -178,11 +211,34 @@ async function handleTransactionsWebhook(
     case 'INITIAL_UPDATE':
     case 'HISTORICAL_UPDATE':
     case 'DEFAULT_UPDATE': {
+      // Fetch full item data for sync
+      const { data: fullItem } = await supabase
+        .from('plaid_items')
+        .select('*')
+        .eq('id', plaidItem.id)
+        .maybeSingle();
+
+      if (fullItem) {
+        try {
+          const syncItem: PlaidItemForSync = {
+            id: fullItem.id,
+            plaid_access_token: fullItem.plaid_access_token,
+            transactions_cursor: fullItem.transactions_cursor,
+            institution_name: fullItem.institution_name,
+            available_products: fullItem.available_products || [],
+            billed_products: fullItem.billed_products || [],
+            consented_products: fullItem.consented_products || [],
+          };
+          await syncPlaidItem(supabase, fullItem.user_id, syncItem);
+          console.log(`[webhook] Synced ${webhookCode} for item ${plaidItem.id}`);
+        } catch (err) {
+          console.error(`[webhook] Sync failed for ${webhookCode}:`, err);
+        }
+      }
+
       await supabase
         .from('plaid_items')
-        .update({
-          updated_at: new Date().toISOString(),
-        })
+        .update({ updated_at: new Date().toISOString() })
         .eq('id', plaidItem.id);
       break;
     }
@@ -190,7 +246,8 @@ async function handleTransactionsWebhook(
 }
 
 async function handleItemWebhook(
-  supabase: Awaited<ReturnType<typeof createServiceClient>>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
   plaidItem: { id: string; user_id: string; plaid_access_token: string },
   webhookCode: string,
   body: PlaidWebhook

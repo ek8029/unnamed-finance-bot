@@ -153,17 +153,124 @@ Rules:
 }
 
 /**
- * Generate digest for users with no holdings — generic market brief.
+ * Generate a market-level digest for users who haven't connected accounts.
+ * Frames content as a general market brief, never referencing "your portfolio."
  */
 export async function generateGenericDigest(): Promise<DigestResult> {
-  return generateDigest([
-    'SPY',
-    'QQQ',
-    'AAPL',
-    'NVDA',
-    'MSFT',
-    'TSLA',
-    'GOOGL',
-    'META',
-  ]);
+  const supabase = createCronServiceClient();
+  const oneDayAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+
+  const keyTickers = ['SPY', 'QQQ', 'AAPL', 'NVDA', 'MSFT', 'TSLA', 'GOOGL', 'META'];
+
+  const [tickerNewsResult, generalNewsResult, spyQuote, vixQuote] =
+    await Promise.all([
+      supabase
+        .from('market_news')
+        .select(
+          'title, summary, source, published_at, primary_ticker, sentiment',
+        )
+        .in('primary_ticker', keyTickers)
+        .gte('published_at', oneDayAgo)
+        .order('published_at', { ascending: false })
+        .limit(10),
+      supabase
+        .from('market_news')
+        .select(
+          'title, summary, source, published_at, primary_ticker, sentiment',
+        )
+        .gte('published_at', oneDayAgo)
+        .order('published_at', { ascending: false })
+        .limit(10),
+      getQuote('SPY'),
+      getQuote('VIXY'),
+    ]);
+
+  // Deduplicate
+  const seenTitles = new Set<string>();
+  const tickerNews = (tickerNewsResult.data || []).filter((n) => {
+    if (seenTitles.has(n.title)) return false;
+    seenTitles.add(n.title);
+    return true;
+  });
+
+  const generalNews = (generalNewsResult.data || [])
+    .filter((n) => !seenTitles.has(n.title))
+    .filter((n) => {
+      if (seenTitles.has(n.title)) return false;
+      seenTitles.add(n.title);
+      return true;
+    })
+    .slice(0, 6);
+
+  const marketContext = [
+    spyQuote
+      ? `SPY: $${spyQuote.c.toFixed(2)} (${spyQuote.dp >= 0 ? '+' : ''}${spyQuote.dp.toFixed(2)}%)`
+      : null,
+    vixQuote
+      ? `VIX proxy (VIXY): $${vixQuote.c.toFixed(2)} (${vixQuote.dp >= 0 ? '+' : ''}${vixQuote.dp.toFixed(2)}%)`
+      : null,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const tickerNewsStr =
+    tickerNews
+      .map(
+        (n) =>
+          `- [${n.primary_ticker}] ${n.title} (${getSourceTier(n.source) === 'tier1' ? 'Major' : 'Standard'} source: ${n.source}, sentiment: ${n.sentiment ?? 'neutral'})`,
+      )
+      .join('\n') || 'No ticker-specific news';
+
+  const generalNewsStr =
+    generalNews
+      .map(
+        (n) =>
+          `- ${n.title} (${n.source}, sentiment: ${n.sentiment ?? 'neutral'})`,
+      )
+      .join('\n') || 'No general news';
+
+  const prompt = `You are writing a daily market brief for Helm Terminal's "The Current." This goes to users who have not yet connected a brokerage account, so this is a general market overview — not a portfolio brief. Never say "your portfolio," "your holdings," or "your positions." The tone is concise, direct, and informed — like a sharp analyst note. No greetings, no sign-offs.
+
+MARKET SNAPSHOT:
+${marketContext || 'Market data unavailable'}
+
+KEY MARKET MOVERS (${keyTickers.join(', ')}):
+${tickerNewsStr}
+
+GENERAL MARKET NEWS:
+${generalNewsStr}
+
+Write a 3-4 paragraph market brief (150-250 words total):
+
+1. LEAD: What is the single most important market story right now? Start with it. No throat-clearing.
+
+2. KEY MOVERS: Cover 2-3 of the biggest names moving today. Use ticker symbols. Mention sentiment direction. Be specific about what happened ("NVDA supply chain concerns per Reuters report" not "some stocks had news").
+
+3. BROADER CONTEXT: One paragraph on market conditions — what the VIX is signaling, where SPY is trending, any macro themes from the news.
+
+4. WATCHLIST (optional, only if warranted): One sentence on something to watch today — an earnings report, a Fed speaker, a technical level.
+
+Rules:
+- No bullet points. Flowing prose paragraphs only.
+- No hedging language ("could potentially", "may or may not"). Be direct.
+- Cite specific sources when quality is high (WSJ, Reuters, Bloomberg).
+- If news is thin, say so honestly — "Light news day across major names."
+- Never give financial advice. You are summarizing and connecting dots, not recommending action.
+- Never reference a user's portfolio, holdings, or positions. This is a market brief.`;
+
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    max_tokens: 500,
+    temperature: 0.7,
+  });
+
+  const digest =
+    completion.choices[0]?.message?.content ?? 'Digest generation failed.';
+
+  return {
+    digest,
+    holdings: [],
+    tokens: completion.usage?.total_tokens ?? 0,
+  };
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePlaidLink } from 'react-plaid-link';
 import { Loader2, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,8 +27,10 @@ export function PlaidLinkButton({
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [exchanging, setExchanging] = useState(false);
   const [tokenError, setTokenError] = useState(false);
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
 
-  // Fetch link token when the component mounts
+  // Fetch link token once on mount
   useEffect(() => {
     let cancelled = false;
 
@@ -47,14 +49,14 @@ export function PlaidLinkButton({
         if (!cancelled) {
           setTokenError(true);
           const message = err instanceof Error ? err.message : 'Failed to initialize Plaid';
-          onError?.(message);
+          onErrorRef.current?.(message);
         }
       }
     }
 
     fetchToken();
     return () => { cancelled = true; };
-  }, [onError]);
+  }, []);
 
   const handleSuccess = useCallback(async (publicToken: string, metadata: unknown) => {
     setExchanging(true);
