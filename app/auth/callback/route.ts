@@ -46,6 +46,11 @@ export async function GET(request: NextRequest) {
           if (!existingDrip) {
             // New OAuth user — create missing records
             await Promise.allSettled([
+              serviceClient.from('user_profiles').upsert({
+                id: user.id,
+                email: user.email,
+                full_name: user.user_metadata?.full_name || null,
+              }, { onConflict: 'id' }),
               serviceClient.from('user_preferences').upsert({
                 user_id: user.id,
                 theme: 'dark',

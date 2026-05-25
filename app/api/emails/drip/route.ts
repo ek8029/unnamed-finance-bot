@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { resend, FROM_EMAIL } from '@/lib/emails/resend';
 import { getTemplate, DRIP_DAYS } from '@/lib/emails/templates';
 
@@ -14,9 +14,12 @@ import { getTemplate, DRIP_DAYS } from '@/lib/emails/templates';
  */
 export async function POST(request: NextRequest) {
   // Verify cron secret
-  const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret) {
+    return NextResponse.json({ error: 'CRON_SECRET not configured' }, { status: 500 });
+  }
+  const authHeader = request.headers.get('authorization');
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -24,7 +27,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'RESEND_API_KEY not configured' }, { status: 503 });
   }
 
-  const supabase = await createServiceClient();
+  const supabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
   const now = new Date();
   let sent = 0;
   let skipped = 0;

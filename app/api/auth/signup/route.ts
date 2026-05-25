@@ -39,6 +39,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { checkPasswordStrength, logAuthEvent } from '@/lib/auth-security';
 import {
@@ -251,8 +252,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
     }
 
+    // Use service client for post-signup inserts — anon client has no session
+    // yet (email confirmation pending), so RLS blocks all writes
+    const serviceClient = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
     // Create user profile (with UTM attribution if present)
-    const { error: profileError } = await supabase
+    const { error: profileError } = await serviceClient
       .from('user_profiles')
       .insert({
         id: data.user.id,
@@ -265,7 +274,7 @@ export async function POST(request: Request) {
     if (profileError) console.error('Error creating profile:', profileError);
 
     // Create default preferences
-    const { error: prefsError } = await supabase
+    const { error: prefsError } = await serviceClient
       .from('user_preferences')
       .insert({
         user_id: data.user.id,
@@ -275,7 +284,7 @@ export async function POST(request: Request) {
     if (prefsError) console.error('Error creating preferences:', prefsError);
 
     // Create free tier subscription
-    const { error: subError } = await supabase
+    const { error: subError } = await serviceClient
       .from('user_subscriptions')
       .insert({
         user_id: data.user.id,
@@ -291,7 +300,7 @@ export async function POST(request: Request) {
       metadata: { ip: clientIp, emailDomain, userAgent, utm_source, utm_medium, utm_campaign },
     });
 
-    // Send Day 0 welcome email (fire-and-forget) + log to drip table so cron skips it
+    // Send Day 0 welcome email + log to drip table so cron skips it
     try {
       const { resend: resendClient, FROM_EMAIL } = await import('@/lib/emails/resend');
       const { getTemplate } = await import('@/lib/emails/templates');
@@ -307,7 +316,7 @@ export async function POST(request: Request) {
             text: template.text,
           });
           // Log to email_drip_log so drip cron never re-sends Day 0
-          await supabase.from('email_drip_log').insert({
+          await serviceClient.from('email_drip_log').insert({
             user_id: data.user.id,
             drip_day: 0,
             email_subject: template.subject,

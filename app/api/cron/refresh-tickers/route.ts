@@ -36,7 +36,7 @@ import { analyzeStock } from '@/lib/analyze-stock';
 import { POPULAR_TICKERS } from '@/lib/popular-tickers';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // 5 minutes — enough for 50 tickers @ 1.2s each
+export const maxDuration = 60; // Hobby plan cap
 
 /** Delay helper for throttling between Finnhub calls. */
 function sleep(ms: number): Promise<void> {
