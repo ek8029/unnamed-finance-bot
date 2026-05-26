@@ -6,6 +6,7 @@ import { generateInsights } from '@/lib/insights-engine';
 import { runDigestCron } from '@/lib/digest-cron';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 export const maxDuration = 60;
 
 interface CronSyncResult extends SyncResult {
