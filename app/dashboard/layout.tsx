@@ -49,9 +49,10 @@ function ConnectBanner() {
           </span>
           <Link
             href="/dashboard/accounts"
-            className="text-[13px] font-semibold text-[var(--color-gold)] hover:underline whitespace-nowrap"
+            className="text-[13px] font-semibold text-[var(--color-gold)] hover:underline shrink-0"
           >
-            Connect your account to see your real portfolio →
+            <span className="hidden sm:inline">Connect your account to see your real portfolio →</span>
+            <span className="sm:hidden">Connect account →</span>
           </Link>
         </div>
         <button
@@ -537,7 +538,7 @@ export default function DashboardLayout({
 
                 {/* Top-right dropdown (opens downward) */}
                 {topMenuOpen && (
-                  <div className="absolute top-full right-0 mt-2 w-56 bg-[var(--color-bg-elevated)] rounded-lg shadow-xl z-50 overflow-hidden border border-[var(--color-border-base)]">
+                  <div className="absolute top-full right-0 mt-2 w-56 max-w-[calc(100vw-16px)] bg-[var(--color-bg-elevated)] rounded-lg shadow-xl z-50 overflow-hidden border border-[var(--color-border-base)]">
                     <div className="px-4 py-3 border-b border-[var(--color-border-base)]">
                       <p className="text-sm font-medium text-[var(--color-text-primary)]">
                         {profile?.fullName || 'User'}

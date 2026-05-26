@@ -315,8 +315,8 @@ export function ActionsClient({ initialActions }: { initialActions: ActionItem[]
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
       {/* Top Bar: Title + Status Tabs + Generate */}
-      <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-[var(--color-border-base)]">
-        <div className="flex items-center gap-4 md:gap-6 overflow-x-auto min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 md:px-6 py-4 gap-3 border-b border-[var(--color-border-base)]">
+        <div className="flex items-center gap-4 md:gap-6 min-w-0">
           <h1 className="text-[18px] md:text-[20px] font-semibold tracking-tight text-[var(--color-text-primary)] flex-shrink-0">
             Actions Inbox
           </h1>

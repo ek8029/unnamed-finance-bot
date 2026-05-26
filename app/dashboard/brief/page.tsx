@@ -446,7 +446,7 @@ export default function BriefPage() {
                 <h1 className="text-4xl md:text-5xl font-bold tracking-tight">The Current</h1>
               </div>
             </div>
-            <div className="text-right" style={MONO}>
+            <div className="text-left md:text-right" style={MONO}>
               <div className="text-[11px] tracking-[0.15em] text-[var(--color-text-muted)]">GENERATED {timeStr}</div>
               <div className="text-[11px] tracking-[0.15em] text-[var(--color-text-muted)] mt-1">{data.allHoldings.length} POSITIONS · {fmt(data.portfolio.totalValue)}</div>
               <div className="relative mt-2" ref={deliveryRef}>
@@ -458,7 +458,7 @@ export default function BriefPage() {
                   {deliveryTime ? `DELIVER DAILY AT ${deliveryTime}` : 'SET DELIVERY TIME'}
                 </button>
                 {showDeliveryPicker && (
-                  <div className="absolute right-0 top-full mt-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded shadow-xl z-50 p-3 space-y-1 min-w-[160px]">
+                  <div className="absolute left-0 md:left-auto md:right-0 top-full mt-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded shadow-xl z-50 p-3 space-y-1 min-w-[160px] max-w-[calc(100vw-32px)]">
                     {['6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM', '9:30 AM', '12:00 PM', '5:00 PM'].map(t => (
                       <button
                         key={t}
