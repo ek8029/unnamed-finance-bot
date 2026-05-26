@@ -61,7 +61,12 @@ export async function GET(request: Request) {
       const digestRes = await fetch(`${baseUrl}/api/cron/digest?force=true`, {
         headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
       });
-      if (digestRes.ok) digestResult = await digestRes.json();
+      if (digestRes.ok) {
+        digestResult = await digestRes.json();
+      } else {
+        const errBody = await digestRes.text().catch(() => 'no body');
+        log.push(`[digest] HTTP ${digestRes.status}: ${errBody.slice(0, 200)}`);
+      }
       log.push(`[digest] Generated ${digestResult.generated}, skipped ${digestResult.skipped}`);
     } catch (err) {
       log.push(`[digest] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
