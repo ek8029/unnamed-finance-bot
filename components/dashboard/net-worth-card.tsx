@@ -133,18 +133,18 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentag
             </div>
 
             {/* Bottom: Large Metric Display */}
-            <div className="flex items-center justify-between pt-2 border-t border-[var(--color-border-subtle)]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 pt-2 border-t border-[var(--color-border-subtle)]">
               <div>
-                <div className="type-statement font-tabular text-[var(--color-text-primary)] glow-gold">
+                <div className="text-2xl sm:text-3xl font-bold font-tabular text-[var(--color-text-primary)] glow-gold">
                   {formatCurrency(isVisible ? animatedNetWorth : currentNetWorth)}
                 </div>
-                <div className="text-[10px] uppercase tracking-widest text-[var(--color-gold-hi)] font-mono mt-1">Total Net Worth</div>
+                <div className="text-[10px] uppercase tracking-widest text-[var(--color-gold-hi)] font-mono mt-0.5">Total Net Worth</div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <span className={`font-tabular text-sm font-medium ${isPositiveChange ? 'text-[var(--color-positive)] glow-positive' : 'text-[var(--color-negative)] glow-negative'}`}>
                   {isPositiveChange ? '+' : '-'}{formatCurrency(isVisible ? animatedChange : Math.abs(change))}
                 </span>
-                <span className="type-mono text-[var(--color-text-muted)]">this month</span>
+                <span className="text-xs text-[var(--color-text-muted)]">this mo</span>
               </div>
             </div>
           </div>

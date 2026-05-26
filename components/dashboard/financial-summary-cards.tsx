@@ -1,11 +1,5 @@
 'use client';
 
-import {
-  DataPanel,
-  DataPanelContent,
-  DataPanelHeader,
-  DataPanelTitle,
-} from '@/components/ui/data-panel';
 import { useFormat } from '@/hooks/use-format';
 import { useCountUp } from '@/hooks/use-count-up';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal';
@@ -45,37 +39,37 @@ function SummaryCard({ item, index }: { item: SummaryItem; index: number }) {
         transitionDelay: `${index * 80}ms`,
       }}
     >
-      <DataPanel variant="metric">
-        <DataPanelHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-3 md:p-4">
-          <DataPanelTitle className="text-[10px] md:text-xs leading-tight">{item.title}</DataPanelTitle>
-          <div className={`rounded p-1.5 md:p-2.5 ${item.iconBg} ${index === 0 ? 'shadow-glow-gold' : ''}`}>
+      <div className="sovereign-card rounded border overflow-hidden p-3 md:p-5">
+        <div className="flex items-center justify-between mb-1.5 md:mb-2">
+          <h3 className="text-[10px] md:text-xs uppercase tracking-widest text-[var(--color-text-muted)] font-mono leading-tight">
+            {item.title}
+          </h3>
+          <div className={`rounded p-1 md:p-2 ${item.iconBg} ${index === 0 ? 'shadow-glow-gold' : ''}`}>
             <Icon className={`h-3 w-3 md:h-3.5 md:w-3.5 ${item.iconColor}`} />
           </div>
-        </DataPanelHeader>
-        <DataPanelContent className="p-3 md:p-4 pt-0">
-          <div className="text-lg md:text-xl font-bold font-tabular text-[var(--color-text-primary)] glow-white">
-            {formatCurrency(displayValue)}
-          </div>
-          <div className="flex items-center gap-1 mt-0.5 whitespace-nowrap overflow-hidden">
-            {item.change !== null ? (
-              <>
-                {isPositive ? (
-                  <ArrowUpRight className="h-3 w-3 shrink-0 text-[var(--color-positive)]" aria-hidden="true" />
-                ) : (
-                  <ArrowDownRight className="h-3 w-3 shrink-0 text-[var(--color-negative)]" aria-hidden="true" />
-                )}
-                <span className="sr-only">{isPositive ? 'Up' : 'Down'}</span>
-                <span className={`type-label font-tabular ${isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
-                  {formatPercentage(item.change)}
-                </span>
-                <span className="type-label text-[var(--color-text-muted)]">vs last mo</span>
-              </>
-            ) : (
-              <span className="type-label text-[var(--color-text-muted)]" aria-label="No change data available">--</span>
-            )}
-          </div>
-        </DataPanelContent>
-      </DataPanel>
+        </div>
+        <div className="text-[17px] md:text-xl font-bold font-tabular text-[var(--color-text-primary)]">
+          {formatCurrency(displayValue)}
+        </div>
+        <div className="flex items-center gap-1 mt-0.5 whitespace-nowrap overflow-hidden">
+          {item.change !== null ? (
+            <>
+              {isPositive ? (
+                <ArrowUpRight className="h-3 w-3 shrink-0 text-[var(--color-positive)]" aria-hidden="true" />
+              ) : (
+                <ArrowDownRight className="h-3 w-3 shrink-0 text-[var(--color-negative)]" aria-hidden="true" />
+              )}
+              <span className="sr-only">{isPositive ? 'Up' : 'Down'}</span>
+              <span className={`text-[11px] font-tabular ${isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+                {formatPercentage(item.change)}
+              </span>
+              <span className="text-[11px] text-[var(--color-text-muted)]">vs last mo</span>
+            </>
+          ) : (
+            <span className="text-[11px] text-[var(--color-text-muted)]" aria-label="No change data available">--</span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -113,7 +107,7 @@ export function FinancialSummaryCards({
       iconBg: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)]',
     },
     {
-      title: 'Monthly Cash Flow',
+      title: 'Cash Flow',
       value: monthlyCashFlow,
       change: changes?.cash_flow ?? null,
       icon: TrendingUp,
@@ -121,7 +115,7 @@ export function FinancialSummaryCards({
       iconBg: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)]',
     },
     {
-      title: 'Portfolio Value',
+      title: 'Portfolio',
       value: portfolioValue,
       change: changes?.portfolio ?? null,
       icon: DollarSign,
