@@ -87,7 +87,7 @@ interface ConnectionHealthItem {
 
 const NAV_ITEMS: NavItem[] = [
   { id: 'profile', label: 'Profile', icon: User },
-  { id: 'accounts', label: 'Connected accounts', icon: Link },
+  { id: 'accounts', label: 'Accounts', icon: Link },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'tax', label: 'Tax settings', icon: Calculator },
   { id: 'privacy', label: 'Data & privacy', icon: Shield },
