@@ -77,7 +77,7 @@ export default function AnalyzePage() {
         <div className="max-w-2xl w-full text-center space-y-10">
           <div className="space-y-5">
             <div className="text-sm uppercase tracking-[0.25em] font-medium text-[var(--color-gold)]" style={{ fontFamily: 'var(--font-mono)' }}>Free Stock Analysis</div>
-            <h1 className="text-5xl sm:text-7xl font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.05]">
+            <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.05]">
               Institutional-grade<br />stock analysis
             </h1>
             <p className="text-lg text-[var(--color-text-secondary)] max-w-xl mx-auto leading-relaxed">
