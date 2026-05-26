@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     if (subError) {
       console.error('[checkout] Failed to read subscription:', subError);
       return NextResponse.json(
-        { error: 'Internal server error' },
+        { error: 'Internal server error', debug: 'step3_read_subscription: ' + subError.message },
         { status: 500 },
       );
     }
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       if (upsertError) {
         console.error('[checkout] Failed to upsert free-tier row:', upsertError);
         return NextResponse.json(
-          { error: 'Internal server error' },
+          { error: 'Internal server error', debug: 'step4_upsert_free: ' + upsertError.message },
           { status: 500 },
         );
       }
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       if (updateError) {
         console.error('[checkout] Failed to save stripe_customer_id:', updateError);
         return NextResponse.json(
-          { error: 'Internal server error' },
+          { error: 'Internal server error', debug: 'step4_save_customer: ' + updateError.message },
           { status: 500 },
         );
       }
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
       if (countError) {
         console.error('[checkout] Failed to count lifetime subs:', countError);
         return NextResponse.json(
-          { error: 'Internal server error' },
+          { error: 'Internal server error', debug: 'step5_lifetime_count: ' + countError.message },
           { status: 500 },
         );
       }
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
     if (!priceId) {
       console.error(`[checkout] No price ID configured for billingPeriod: ${billingPeriod}`);
       return NextResponse.json(
-        { error: 'Internal server error' },
+        { error: 'Internal server error', debug: 'step6_no_price_id: ' + billingPeriod },
         { status: 500 },
       );
     }
