@@ -78,6 +78,7 @@ export async function PATCH(request: Request) {
       'notification_weekly_digest', 'notification_monthly_report',
       'reduce_motion', 'high_contrast', 'large_text', 'screen_reader_optimized',
       'analytics_enabled', 'crash_reporting_enabled',
+      'filing_status', 'tax_bracket', 'tax_state',
     ];
     const sanitized: Record<string, unknown> = {};
     for (const field of allowedFields) {

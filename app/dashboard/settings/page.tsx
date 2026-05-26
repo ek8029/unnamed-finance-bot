@@ -230,6 +230,13 @@ export default function SettingsPage() {
     items: ConnectionHealthItem[]
   }>({ lastSync: null, itemCount: 0, errorCount: 0, items: [] })
 
+  // ── Tax settings state ──
+  const [filingStatus, setFilingStatus] = useState<string>('')
+  const [taxBracket, setTaxBracket] = useState<string>('')
+  const [taxState, setTaxState] = useState<string>('')
+  const [savingTax, setSavingTax] = useState(false)
+  const [taxLoaded, setTaxLoaded] = useState(false)
+
   // ── Sync preferences (local state) ──
   const [syncPrefs, setSyncPrefs] = useState({
     autoSync: true,
@@ -311,6 +318,29 @@ export default function SettingsPage() {
   useEffect(() => {
     fetchConnectionHealth()
   }, [fetchConnectionHealth, syncing])
+
+  // Load tax settings from API
+  useEffect(() => {
+    async function loadTaxSettings() {
+      try {
+        const res = await fetch('/api/user/preferences')
+        if (res.ok) {
+          const data = await res.json()
+          const prefs = data.preferences
+          if (prefs) {
+            setFilingStatus(prefs.filing_status || '')
+            setTaxBracket(prefs.tax_bracket || '')
+            setTaxState(prefs.tax_state || '')
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load tax settings:', err)
+      } finally {
+        setTaxLoaded(true)
+      }
+    }
+    loadTaxSettings()
+  }, [])
 
   // Check for hash-based section selection (e.g. /settings#accounts)
   useEffect(() => {
@@ -555,9 +585,43 @@ export default function SettingsPage() {
   }
 
   const handleManageBilling = async () => {
-    const res = await fetch('/api/stripe/portal', { method: 'POST' })
-    const data = await res.json()
-    if (data.url) window.location.href = data.url
+    try {
+      const res = await fetch('/api/stripe/portal', { method: 'POST' })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else if (data.message) {
+        info('Billing', data.message)
+      } else {
+        showError('Billing error', data.error || 'Could not open billing portal.')
+      }
+    } catch {
+      showError('Billing error', 'Could not connect to billing service.')
+    }
+  }
+
+  const handleSaveTaxSettings = async () => {
+    setSavingTax(true)
+    try {
+      const res = await fetch('/api/user/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filing_status: filingStatus || null,
+          tax_bracket: taxBracket || null,
+          tax_state: taxState || null,
+        }),
+      })
+      if (res.ok) {
+        success('Tax settings saved', 'Your tax configuration has been updated')
+      } else {
+        showError('Save failed', 'Could not save tax settings. Please try again.')
+      }
+    } catch {
+      showError('Save failed', 'An error occurred while saving tax settings.')
+    } finally {
+      setSavingTax(false)
+    }
   }
 
   const handleNotificationChange = (key: keyof typeof settings.notifications) => {
@@ -1251,7 +1315,12 @@ export default function SettingsPage() {
             {(['Single', 'Married Filing Jointly', 'Married Filing Separately', 'Head of Household'] as const).map((status) => (
               <button
                 key={status}
-                className="p-3 rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] text-[13px] text-left hover:border-[var(--color-gold)]/50 motion-safe:transition-colors"
+                onClick={() => setFilingStatus(status)}
+                className={`p-3 rounded-lg border text-[13px] text-left motion-safe:transition-colors ${
+                  filingStatus === status
+                    ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/10 text-[var(--color-gold)]'
+                    : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold)]/50'
+                }`}
               >
                 {status}
               </button>
@@ -1265,7 +1334,12 @@ export default function SettingsPage() {
             {['10%', '12%', '22%', '24%', '32%', '35%', '37%'].map((bracket) => (
               <button
                 key={bracket}
-                className="p-2 rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] text-[13px] text-center hover:border-[var(--color-gold)]/50 motion-safe:transition-colors"
+                onClick={() => setTaxBracket(bracket)}
+                className={`p-2 rounded-lg border text-[13px] text-center motion-safe:transition-colors ${
+                  taxBracket === bracket
+                    ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/10 text-[var(--color-gold)]'
+                    : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold)]/50'
+                }`}
                 style={{ fontFamily: 'var(--font-mono)' }}
               >
                 {bracket}
@@ -1277,6 +1351,8 @@ export default function SettingsPage() {
         <div className="space-y-2">
           <Label className="text-[14px]">State</Label>
           <Input
+            value={taxState}
+            onChange={(e) => setTaxState(e.target.value)}
             placeholder="e.g. California, New York"
             className="bg-[var(--color-bg-elevated)] border-[var(--color-border-base)]"
           />
@@ -1287,6 +1363,21 @@ export default function SettingsPage() {
             Tax settings are used to estimate tax-loss harvesting opportunities and projected tax liability. This is not tax advice. Consult a qualified tax professional for your specific situation.
           </p>
         </div>
+
+        <Button
+          onClick={handleSaveTaxSettings}
+          disabled={savingTax}
+          className="bg-[var(--color-gold)] hover:bg-[var(--color-gold)]/90 text-black font-medium"
+        >
+          {savingTax ? (
+            <>
+              <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            'Save tax settings'
+          )}
+        </Button>
       </div>
     </div>
   )
@@ -1499,9 +1590,9 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-base)]">
-      <div className="flex max-w-[1200px] mx-auto">
+      <div className="flex max-w-[1400px] mx-auto">
         {/* ── Side Navigation (desktop) ── */}
-        <aside className="hidden lg:block w-[260px] flex-shrink-0 border-r border-[var(--color-border-subtle)] min-h-screen sticky top-0">
+        <aside className="hidden lg:block w-[220px] flex-shrink-0 border-r border-[var(--color-border-subtle)] min-h-screen sticky top-0">
           <div className="p-6 pb-4">
             <div className="flex items-center gap-2 mb-1">
               <span
