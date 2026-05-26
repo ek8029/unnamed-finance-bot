@@ -47,6 +47,7 @@ export async function GET(request: Request) {
       const dripRes = await fetch(`${baseUrl}/api/emails/drip`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+        cache: 'no-store',
       });
       if (dripRes.ok) dripResult = await dripRes.json();
       log.push(`[drip] Sent ${dripResult.sent} emails`);
@@ -60,6 +61,7 @@ export async function GET(request: Request) {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
       const digestRes = await fetch(`${baseUrl}/api/cron/digest?force=true`, {
         headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+        cache: 'no-store',
       });
       if (digestRes.ok) {
         digestResult = await digestRes.json();
@@ -78,6 +80,7 @@ export async function GET(request: Request) {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
       const watchlistRes = await fetch(`${baseUrl}/api/cron/watchlist-alerts`, {
         headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+        cache: 'no-store',
       });
       if (watchlistRes.ok) watchlistResult = await watchlistRes.json();
       log.push(`[watchlist] Sent ${watchlistResult.sent} alerts`);
