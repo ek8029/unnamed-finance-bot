@@ -3,6 +3,7 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { syncPlaidItem, computeSnapshots, type PlaidItemForSync, type SyncResult } from '@/lib/plaid-sync';
 import { refreshMarketPrices, enrichMarketData, refreshMarketNews, refreshMarketNewsFinnhub, updatePortfolioPerformance } from '@/lib/market-sync';
 import { generateInsights } from '@/lib/insights-engine';
+import { runDigestCron } from '@/lib/digest-cron';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -57,20 +58,11 @@ export async function GET(request: Request) {
       log.push(`[drip] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
     }
 
-    // AI digest
-    let digestResult = { generated: 0, skipped: 0 };
+    // AI digest — called directly, no HTTP self-call
+    let digestResult = { generated: 0, skipped: 0, log: [] as string[] };
     try {
-      const digestRes = await fetch(`${baseUrl}/api/cron/digest?force=true&${cacheBust}`, {
-        headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
-        cache: 'no-store',
-      });
-      if (digestRes.ok) {
-        digestResult = await digestRes.json();
-      } else {
-        const errBody = await digestRes.text().catch(() => 'no body');
-        log.push(`[digest] HTTP ${digestRes.status}: ${errBody.slice(0, 200)}`);
-      }
-      log.push(`[digest] Generated ${digestResult.generated}, skipped ${digestResult.skipped}`);
+      digestResult = await runDigestCron({ force: true });
+      log.push(...digestResult.log);
     } catch (err) {
       log.push(`[digest] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
     }
