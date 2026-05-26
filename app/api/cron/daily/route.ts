@@ -41,10 +41,12 @@ export async function GET(request: Request) {
 
     // ── Email jobs FIRST — must run before dedup can early-return ──
 
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
+    const cacheBust = `_t=${Date.now()}`;
+
     let dripResult = { sent: 0 };
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
-      const dripRes = await fetch(`${baseUrl}/api/emails/drip`, {
+      const dripRes = await fetch(`${baseUrl}/api/emails/drip?${cacheBust}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
         cache: 'no-store',
@@ -58,8 +60,7 @@ export async function GET(request: Request) {
     // AI digest
     let digestResult = { generated: 0, skipped: 0 };
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
-      const digestRes = await fetch(`${baseUrl}/api/cron/digest?force=true`, {
+      const digestRes = await fetch(`${baseUrl}/api/cron/digest?force=true&${cacheBust}`, {
         headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
         cache: 'no-store',
       });
@@ -77,8 +78,7 @@ export async function GET(request: Request) {
     // Watchlist price alerts
     let watchlistResult = { sent: 0 };
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
-      const watchlistRes = await fetch(`${baseUrl}/api/cron/watchlist-alerts`, {
+      const watchlistRes = await fetch(`${baseUrl}/api/cron/watchlist-alerts?${cacheBust}`, {
         headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
         cache: 'no-store',
       });
