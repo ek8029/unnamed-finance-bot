@@ -447,7 +447,7 @@ export default function BriefPage() {
               </div>
             </div>
             <div className="text-left md:text-right" style={MONO}>
-              <div className="text-[11px] tracking-[0.15em] text-[var(--color-text-muted)]">GENERATED {timeStr}</div>
+              <div className="text-[11px] tracking-[0.15em] text-[var(--color-text-muted)]">PRICES AS OF {timeStr}</div>
               <div className="text-[11px] tracking-[0.15em] text-[var(--color-text-muted)] mt-1">{data.allHoldings.length} POSITIONS · {fmt(data.portfolio.totalValue)}</div>
               <div className="relative mt-2" ref={deliveryRef}>
                 <button
@@ -614,7 +614,7 @@ export default function BriefPage() {
                   </div>
                   {data.digestGeneratedAt && (
                     <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>
-                      {timeAgo(data.digestGeneratedAt)}
+                      GENERATED {new Date(data.digestGeneratedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}
                     </span>
                   )}
                 </div>
