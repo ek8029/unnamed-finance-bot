@@ -85,7 +85,7 @@ export default function BlogIndex() {
           Blog
         </h1>
         <p className="text-[16px] text-[var(--color-text-secondary)] max-w-xl leading-relaxed">
-          Financial intelligence insights, market analysis, and product updates.
+          The Helm Terminal blog covers portfolio intelligence, tax optimization strategies, and stock analysis for self-directed investors managing $50K–$2M+ across multiple accounts.
         </p>
       </section>
 

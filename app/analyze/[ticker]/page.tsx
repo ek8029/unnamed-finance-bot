@@ -236,9 +236,9 @@ export default async function TickerAnalysisPage({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
 
-        {/* Answer-first H1 — matches LLM prompt patterns */}
-        <h1 className="sr-only">
-          {symbol} Stock Analysis — {analysis.companyName}. Helm&apos;s AI verdict: {verdictLabel}. {analysis.recommendation}
+        {/* Answer-first H1 — visible for SEO + accessibility */}
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[var(--color-text-primary)] mb-4">
+          {symbol} Stock Analysis — {analysis.companyName}
         </h1>
 
         {/* Bloomberg-style 3-pane terminal */}

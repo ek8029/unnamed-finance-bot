@@ -30,17 +30,48 @@ export default function TLHCalculatorPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'WebApplication',
-            name: 'Tax-Loss Harvesting Calculator',
-            description: 'Free calculator to estimate annual tax savings from tax-loss harvesting.',
-            url: 'https://helmterminal.dev/tools/tlh-calculator',
-            applicationCategory: 'FinanceApplication',
-            operatingSystem: 'Web',
-            offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-            creator: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
-          }),
+          __html: JSON.stringify([
+            {
+              '@context': 'https://schema.org',
+              '@type': 'WebApplication',
+              name: 'Tax-Loss Harvesting Calculator',
+              description: 'Free calculator to estimate annual tax savings from tax-loss harvesting.',
+              url: 'https://helmterminal.dev/tools/tlh-calculator',
+              applicationCategory: 'FinanceApplication',
+              operatingSystem: 'Web',
+              offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+              creator: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
+            },
+            {
+              '@context': 'https://schema.org',
+              '@type': 'HowTo',
+              name: 'How to Calculate Tax-Loss Harvesting Savings',
+              description: 'Use the Helm Terminal calculator to estimate how much you could save by harvesting investment losses for tax purposes.',
+              tool: { '@type': 'HowToTool', name: 'Helm Terminal Calculator' },
+              step: [
+                {
+                  '@type': 'HowToStep',
+                  name: 'Enter your unrealized losses',
+                  text: 'Input the total dollar amount of unrealized losses across your taxable brokerage accounts.',
+                },
+                {
+                  '@type': 'HowToStep',
+                  name: 'Select your tax bracket',
+                  text: 'Choose your federal income tax bracket (22%–37%) and optionally add your state tax rate.',
+                },
+                {
+                  '@type': 'HowToStep',
+                  name: 'Specify short-term vs long-term',
+                  text: 'Indicate whether losses are short-term (held < 1 year) or long-term, as they offset gains at different rates.',
+                },
+                {
+                  '@type': 'HowToStep',
+                  name: 'Review estimated savings',
+                  text: 'The calculator shows your estimated annual tax savings, including the $3,000 ordinary income deduction and capital gains offsets.',
+                },
+              ],
+            },
+          ]),
         }}
       />
 

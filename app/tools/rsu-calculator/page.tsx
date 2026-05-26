@@ -228,6 +228,40 @@ export default function RSUCalculatorPage() {
 
   return (
     <main className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: 'How to Calculate RSU Tax Impact',
+            description: 'Use the Helm Terminal RSU calculator to estimate your tax liability, vesting schedule, and post-tax take-home for restricted stock units.',
+            tool: { '@type': 'HowToTool', name: 'Helm Terminal Calculator' },
+            step: [
+              {
+                '@type': 'HowToStep',
+                name: 'Enter your RSU grant details',
+                text: 'Input the total number of RSUs granted, your company ticker symbol, and the current stock price (auto-fetched if ticker provided).',
+              },
+              {
+                '@type': 'HowToStep',
+                name: 'Select your vesting schedule',
+                text: 'Choose from standard 4-year with 1-year cliff, 4-year quarterly, 3-year monthly, or enter a custom schedule.',
+              },
+              {
+                '@type': 'HowToStep',
+                name: 'Choose your tax bracket',
+                text: 'Select your federal income tax bracket (22%–37%). RSUs are taxed as ordinary income at vesting.',
+              },
+              {
+                '@type': 'HowToStep',
+                name: 'Review your vesting timeline and tax estimates',
+                text: 'See each vest date with pre-tax value, estimated tax withholding, and post-tax take-home amount. Review concentration risk if RSUs exceed 10% of net worth.',
+              },
+            ],
+          }),
+        }}
+      />
       <title>RSU Vesting Calculator | Helm Terminal</title>
       <meta name="description" content="Free RSU vesting calculator. Estimate your RSU tax liability across vesting schedules, model concentration risk, and see your post-tax take-home at each vest date." />
       <link rel="canonical" href="https://helmterminal.dev/tools/rsu-calculator" />

@@ -229,6 +229,13 @@ export default async function BlogPost({ params }: PageProps) {
               </div>
             </div>
 
+            {/* ── Disclaimer ── */}
+            <div className="mt-8 pt-6 border-t border-[var(--color-border-subtle)]">
+              <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+                This content is for educational purposes only and does not constitute financial, tax, or investment advice. Consult a licensed professional before making financial decisions. Helm Terminal is not a registered investment advisor.
+              </p>
+            </div>
+
             {/* ── Post Footer ── */}
             <footer className="mt-8 space-y-6">
               {/* Share + Back */}

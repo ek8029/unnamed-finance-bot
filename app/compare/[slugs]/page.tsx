@@ -150,6 +150,22 @@ export default async function ComparePage({ params }: Props) {
   const jsonLd = [
     {
       '@context': 'https://schema.org',
+      '@type': 'AnalysisNewsArticle',
+      headline: `${name1} vs ${name2} — Stock Comparison`,
+      description: `Side-by-side comparison of ${ticker1} and ${ticker2}. Compare price, P/E ratio, market cap, margins, dividends, and AI verdicts.`,
+      articleSection: 'Stock Comparison',
+      datePublished: new Date().toISOString(),
+      author: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
+      publisher: {
+        '@type': 'Organization',
+        name: 'Helm Terminal',
+        url: 'https://helmterminal.dev',
+        logo: { '@type': 'ImageObject', url: 'https://helmterminal.dev/icon' },
+      },
+      mainEntityOfPage: `https://helmterminal.dev/compare/${ticker1}-vs-${ticker2}`,
+    },
+    {
+      '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://helmterminal.dev' },
