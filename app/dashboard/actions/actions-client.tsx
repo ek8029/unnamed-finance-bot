@@ -315,43 +315,43 @@ export function ActionsClient({ initialActions }: { initialActions: ActionItem[]
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
       {/* Top Bar: Title + Status Tabs + Generate */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 md:px-6 py-4 gap-3 border-b border-[var(--color-border-base)]">
-        <div className="flex items-center gap-4 md:gap-6 min-w-0">
-          <h1 className="text-[18px] md:text-[20px] font-semibold tracking-tight text-[var(--color-text-primary)] flex-shrink-0">
+      <div className="px-4 md:px-6 py-3 md:py-4 border-b border-[var(--color-border-base)]">
+        <div className="flex items-center justify-between mb-2 md:mb-0">
+          <h1 className="text-[17px] md:text-[20px] font-semibold tracking-tight text-[var(--color-text-primary)]">
             Actions Inbox
           </h1>
-          {/* Status Tabs */}
-          <div
-            className="flex items-center gap-1 bg-[var(--color-bg-surface)] rounded-lg p-0.5 border border-[var(--color-border-subtle)] flex-shrink-0"
-            role="tablist"
-            aria-label="Action status"
+          <button
+            onClick={handleGenerate}
+            disabled={generating}
+            aria-label="Analyze now - refresh actions"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 md:px-4 md:py-2 text-[12px] md:text-[14px] font-medium bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black rounded-md md:rounded-lg motion-safe:transition-colors disabled:opacity-50"
           >
-            {statusTabs.map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => handleTabChange(tab.key)}
-                role="tab"
-                aria-selected={activeTab === tab.key}
-                className={`px-3 py-1.5 text-[14px] font-medium rounded-md motion-safe:transition-all motion-safe:duration-150 ${
-                  activeTab === tab.key
-                    ? 'bg-[var(--color-bg-elevated)] text-[var(--color-text-primary)] shadow-sm'
-                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+            {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">Analyze Now</span>
+          </button>
         </div>
-        <button
-          onClick={handleGenerate}
-          disabled={generating}
-          aria-label="Analyze now - refresh actions"
-          className="flex items-center gap-2 px-3 md:px-4 py-2 text-[14px] font-medium bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black rounded-lg motion-safe:transition-colors disabled:opacity-50 flex-shrink-0"
+        {/* Status Tabs */}
+        <div
+          className="flex items-center gap-1 bg-[var(--color-bg-surface)] rounded-lg p-0.5 border border-[var(--color-border-subtle)] w-fit"
+          role="tablist"
+          aria-label="Action status"
         >
-          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-          <span className="hidden sm:inline">Analyze Now</span>
-        </button>
+          {statusTabs.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => handleTabChange(tab.key)}
+              role="tab"
+              aria-selected={activeTab === tab.key}
+              className={`px-2.5 md:px-3 py-1 md:py-1.5 text-[12px] md:text-[14px] font-medium rounded-md motion-safe:transition-all motion-safe:duration-150 ${
+                activeTab === tab.key
+                  ? 'bg-[var(--color-bg-elevated)] text-[var(--color-text-primary)] shadow-sm'
+                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Mobile: Horizontal Category Pills */}

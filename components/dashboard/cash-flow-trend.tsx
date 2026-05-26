@@ -61,27 +61,22 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
       </DataPanelHeader>
       <DataPanelContent>
         {/* Multi-Metric Display */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-          {/* Net Flow */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3">
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-1">Net Flow</div>
-            <div className="type-data text-xl font-tabular text-[var(--color-text-primary)] glow-white">
+            <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-0.5">Net Flow</div>
+            <div className="text-sm sm:text-xl font-bold font-tabular text-[var(--color-text-primary)]">
               {formatCurrency(currentMonth.netFlow)}
             </div>
           </div>
-
-          {/* Income */}
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-1">Income</div>
-            <div className="type-data text-xl font-tabular text-[var(--color-positive)] glow-positive">
+            <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-0.5">Income</div>
+            <div className="text-sm sm:text-xl font-bold font-tabular text-[var(--color-positive)]">
               {formatCurrency(currentMonth.income)}
             </div>
           </div>
-
-          {/* Expenses */}
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-1">Expenses</div>
-            <div className="type-data text-xl font-tabular text-[var(--color-negative)] glow-negative">
+            <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-0.5">Expenses</div>
+            <div className="text-sm sm:text-xl font-bold font-tabular text-[var(--color-negative)]">
               {formatCurrency(currentMonth.expenses)}
             </div>
           </div>

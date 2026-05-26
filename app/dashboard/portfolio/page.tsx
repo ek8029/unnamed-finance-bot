@@ -267,9 +267,8 @@ export default function PortfolioPage() {
 
           {/* ---- 1. HEADER STRIP ---- */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            {/* Breadcrumb */}
-            <div className="flex items-center gap-2">
-              {/* Helm mark */}
+            {/* Breadcrumb — hidden on mobile, redundant with sidebar */}
+            <div className="hidden sm:flex items-center gap-2">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="flex-shrink-0">
                 <rect width="20" height="20" rx="4" fill="var(--color-gold)" fillOpacity="0.15" />
                 <path d="M6 6h2v8H6V6zm6 0h2v8h-2V6zm-4 3h4v2H8V9z" fill="var(--color-gold)" />
@@ -299,7 +298,7 @@ export default function PortfolioPage() {
             </div>
 
             {/* Tab pills */}
-            <div className="flex items-center gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-0.5">
+            <div className="flex items-center gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-0.5 w-fit">
               {tabs.map((tab) => (
                 <button
                   key={tab}

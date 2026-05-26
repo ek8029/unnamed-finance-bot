@@ -57,27 +57,22 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
       </DataPanelHeader>
       <DataPanelContent>
         {/* Multi-Metric Display */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-          {/* Current Rate */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3">
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-1">Current</div>
-            <div className="type-data text-xl font-tabular text-[var(--color-text-primary)] glow-white">
+            <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-0.5">Current</div>
+            <div className="text-sm sm:text-xl font-bold font-tabular text-[var(--color-text-primary)]">
               {currentMonth.rate.toFixed(1)}%
             </div>
           </div>
-
-          {/* 12-Mo Average */}
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-1">12-Mo Avg</div>
-            <div className="type-data text-xl font-tabular text-[var(--color-text-secondary)]">
+            <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-0.5">12-Mo Avg</div>
+            <div className="text-sm sm:text-xl font-bold font-tabular text-[var(--color-text-secondary)]">
               {avgRate.toFixed(1)}%
             </div>
           </div>
-
-          {/* This Month Saved */}
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-1">This Month</div>
-            <div className="type-data text-xl font-tabular text-[var(--color-positive)] glow-positive">
+            <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-0.5">Saved</div>
+            <div className="text-sm sm:text-xl font-bold font-tabular text-[var(--color-positive)]">
               {formatCurrency(currentMonth.saved)}
             </div>
           </div>
