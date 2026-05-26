@@ -1,7 +1,7 @@
 /**
  * User tier & quota utilities.
  *
- * Free tier: 3 AI analyses per day, basic alerts, core dashboard.
+ * Free tier: 5 AI analyses per day, basic alerts, core dashboard.
  * Pro tier:  Unlimited analyses, full intelligence feed,
  *            tax-loss harvesting, earnings impact, Portfolio Wrapped.
  */
@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase/server';
 
 export type Tier = 'free' | 'pro';
 
-const FREE_DAILY_ANALYSIS_LIMIT = 3;
+const FREE_DAILY_ANALYSIS_LIMIT = 5;
 
 // ── Features gated behind Pro ──
 export const PRO_FEATURES = [

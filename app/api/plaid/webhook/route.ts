@@ -125,11 +125,16 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (itemError || !plaidItem) {
-      console.error('Webhook: unknown item_id', item_id);
+      console.error('Webhook: unknown item_id', item_id, '— item not found in plaid_items table');
       return NextResponse.json({ received: true });
     }
 
-    console.log(`Webhook received: ${webhook_type}.${webhook_code} for item ${item_id}`);
+    if (!plaidItem.user_id) {
+      console.error('Webhook: plaid_item has no user_id', item_id, plaidItem.id);
+      return NextResponse.json({ received: true });
+    }
+
+    console.log(`Webhook received: ${webhook_type}.${webhook_code} for item ${item_id} (user ${plaidItem.user_id})`);
 
     // Log the webhook event
     await supabase.from('audit_logs').insert({

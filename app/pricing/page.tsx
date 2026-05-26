@@ -25,30 +25,32 @@ const PLANS: {
 ];
 
 const freeFeatures = [
-  'AI stock analysis on any US ticker',
-  'Full portfolio dashboard',
+  '5 AI stock analyses per day',
+  'Basic portfolio dashboard',
   'Brokerage sync via Plaid',
-  'Net worth & cash flow tracking',
-  'Concentration risk & sector allocation',
-  'Actions inbox',
+  'Portfolio Wrapped (annual summary)',
+  'Actions inbox (basic alerts)',
 ];
 
 const proFeatures = [
+  'Unlimited AI stock analyses',
   'Tax-loss harvesting with wash-sale detection',
   'Earnings exposure tracking',
-  'Portfolio Wrapped (annual summary)',
+  'Full intelligence feed',
+  'Priority data refresh',
+  'Everything in Free',
 ];
 
 const faqItems = [
   {
     question: "What's included in the Free plan?",
     answer:
-      'Most of Helm is free. You get AI-powered stock analysis on any US ticker, a full portfolio dashboard with brokerage sync via Plaid, net worth tracking, cash flow overview, concentration risk analysis, sector allocation, watchlist, and the actions inbox. No credit card required.',
+      'You get 5 AI stock analyses per day, a portfolio dashboard with brokerage sync via Plaid, Portfolio Wrapped (your annual investment summary), and basic action alerts. No credit card required.',
   },
   {
     question: 'What does Pro add?',
     answer:
-      'Pro unlocks three advanced features: tax-loss harvesting with wash-sale rule detection (typical savings: $500\u2013$3,000/year), earnings exposure tracking so you know when your holdings report, and Portfolio Wrapped \u2014 your annual investment summary.',
+      'Pro removes the analysis limit (unlimited AI stock analyses), adds tax-loss harvesting with wash-sale detection (typical savings: $500\u2013$3,000/year), earnings exposure tracking, the full intelligence feed, and priority data refresh.',
   },
   {
     question: 'What are the pricing options for Pro?',
@@ -138,10 +140,10 @@ export default function PricingPage() {
         <AnimatedSection delay={0}>
           <p className="type-eyebrow text-[var(--color-gold)] mb-3">Pricing</p>
           <h1 className="type-h1 text-[var(--color-text-primary)] mb-3">
-            Most of Helm is free.
+            Start free. Upgrade when you need more.
           </h1>
           <p className="type-body text-[var(--color-text-secondary)] max-w-lg mx-auto">
-            The full terminal — AI analysis, portfolio dashboard, brokerage sync, actions inbox — is free forever. Pro adds three advanced tools.
+            Portfolio dashboard, brokerage sync, Wrapped, and 5 AI analyses per day — free forever. Pro unlocks unlimited analyses and advanced intelligence.
           </p>
         </AnimatedSection>
       </section>
@@ -193,7 +195,7 @@ export default function PricingPage() {
                 Unlock advanced intelligence
               </h2>
               <p className="text-[16px] text-[var(--color-text-secondary)] leading-relaxed mb-4">
-                Everything in Free, plus three features built for serious investors.
+                No limits, deeper intelligence, and tools built for serious investors.
               </p>
 
               {/* Pro feature list */}

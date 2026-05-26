@@ -6,6 +6,7 @@ import { INDEXABLE_TICKERS } from '@/lib/indexable-tickers';
 import { AnalysisTerminal } from './analysis-terminal';
 import { HelmMark } from '@/components/helm-mark';
 import { CinematicBg } from '@/components/cinematic-bg';
+import { AnalysisGate } from '@/components/analysis-gate';
 
 // Force dynamic rendering — quote prices must be fresh on every request
 export const dynamic = 'force-dynamic';
@@ -227,6 +228,7 @@ export default async function TickerAnalysisPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col relative overflow-hidden">
+      <AnalysisGate />
       <CinematicBg />
       <AnalysisNav />
 

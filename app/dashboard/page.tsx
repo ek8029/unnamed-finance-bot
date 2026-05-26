@@ -3,7 +3,9 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Lock } from 'lucide-react';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
+import { useToast } from '@/contexts/toast-context';
 import { NetWorthCard } from '@/components/dashboard/net-worth-card';
 import { FinancialSummaryCards } from '@/components/dashboard/financial-summary-cards';
 import { FinancialHealthScore } from '@/components/dashboard/financial-health-score';
@@ -65,6 +67,7 @@ export default function DashboardOverview() {
   const { formatCurrency, formatPercentage } = useFormat();
   const { isDemo, enableDemo, disableDemo } = useDemo();
   const router = useRouter();
+  const toast = useToast();
   const [plaidError, setPlaidError] = useState<string | null>(null);
 
   // Compute dollar change from the last two net worth history points
@@ -123,12 +126,26 @@ export default function DashboardOverview() {
               className="px-9 py-4 text-[14px] font-bold rounded-[3px] w-fit"
               onSuccess={() => router.refresh()}
               onError={(msg) => setPlaidError(msg)}
+              onLinkError={(_code, message) => {
+                toast.error('Connection failed', message);
+              }}
             >
               Connect via Plaid
             </PlaidLinkButton>
             {plaidError && (
               <p className="text-[13px] text-[var(--color-negative)] mt-3">{plaidError}</p>
             )}
+
+            {/* Trust strip */}
+            <div className="mt-4 flex flex-col gap-1.5 max-w-[480px]">
+              <div className="flex items-center gap-1.5 text-[12px] text-[var(--color-text-muted)]">
+                <Lock className="w-3 h-3 shrink-0" />
+                <span>Read-only access — Helm can never move your money</span>
+              </div>
+              <p className="text-[11px] text-[#555] pl-[18px]">
+                Secured by Plaid · 256-bit encryption · 12,000+ institutions
+              </p>
+            </div>
 
             {/* Plaid trust section */}
             <div className="mt-9 pt-6 border-t border-[var(--color-border-subtle)] max-w-[500px]">

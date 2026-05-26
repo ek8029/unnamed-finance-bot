@@ -5,9 +5,26 @@ import { usePlaidLink } from 'react-plaid-link';
 import { Loader2, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+// User-friendly messages for common Plaid Link error codes
+const PLAID_ERROR_MESSAGES: Record<string, string> = {
+  INSTITUTION_REGISTRATION_REQUIRED:
+    'Your bank requires online banking to be set up. Please enable online banking with your institution and try again.',
+  INSTITUTION_NO_LONGER_SUPPORTED:
+    'This institution is no longer supported by Plaid. Try connecting a different account.',
+  INSTITUTION_NOT_FOUND:
+    'Institution not found. Try searching with a different name.',
+  INSTITUTION_DOWN:
+    'This institution is temporarily unavailable. Please try again later.',
+  INVALID_CREDENTIALS:
+    'The credentials you entered were incorrect. Please try again.',
+  ITEM_LOCKED:
+    'Your account is locked. Please unlock it with your institution and try again.',
+};
+
 interface PlaidLinkButtonProps {
   onSuccess: () => void;
   onError?: (error: string) => void;
+  onLinkError?: (errorCode: string, message: string) => void;
   onExit?: () => void;
   onWarning?: (message: string) => void;
   className?: string;
@@ -18,6 +35,7 @@ interface PlaidLinkButtonProps {
 export function PlaidLinkButton({
   onSuccess,
   onError,
+  onLinkError,
   onExit,
   onWarning,
   className,
@@ -101,6 +119,12 @@ export function PlaidLinkButton({
     onExit: (err) => {
       if (err) {
         console.error('Plaid Link exit error:', err);
+        const code = err.error_code || '';
+        const friendlyMessage =
+          PLAID_ERROR_MESSAGES[code] ||
+          err.display_message ||
+          'Something went wrong connecting your account. Please try again.';
+        onLinkError?.(code, friendlyMessage);
       }
       onExit?.();
     },
