@@ -162,9 +162,10 @@ export async function POST(req: NextRequest) {
     // 8. Return client secret
     return NextResponse.json({ clientSecret: session.client_secret });
   } catch (error) {
-    console.error('[checkout] Unexpected error:', error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[checkout] Unexpected error:', msg);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', debug: msg },
       { status: 500 },
     );
   }
