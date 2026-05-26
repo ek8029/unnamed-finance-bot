@@ -46,17 +46,17 @@ function SummaryCard({ item, index }: { item: SummaryItem; index: number }) {
       }}
     >
       <DataPanel variant="metric">
-        <DataPanelHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 p-2.5">
-          <DataPanelTitle className="text-xs">{item.title}</DataPanelTitle>
-          <div className={`rounded p-2.5 ${item.iconBg} ${index === 0 ? 'shadow-glow-gold' : ''}`}>
-            <Icon className={`h-3.5 w-3.5 ${item.iconColor}`} />
+        <DataPanelHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-3 md:p-4">
+          <DataPanelTitle className="text-[10px] md:text-xs leading-tight">{item.title}</DataPanelTitle>
+          <div className={`rounded p-1.5 md:p-2.5 ${item.iconBg} ${index === 0 ? 'shadow-glow-gold' : ''}`}>
+            <Icon className={`h-3 w-3 md:h-3.5 md:w-3.5 ${item.iconColor}`} />
           </div>
         </DataPanelHeader>
-        <DataPanelContent className="p-2.5 pt-0">
-          <div className="type-data-sm font-tabular text-[var(--color-text-primary)] glow-white">
+        <DataPanelContent className="p-3 md:p-4 pt-0">
+          <div className="text-lg md:text-xl font-bold font-tabular text-[var(--color-text-primary)] glow-white">
             {formatCurrency(displayValue)}
           </div>
-          <div className="flex items-center gap-1 mt-1 whitespace-nowrap overflow-hidden">
+          <div className="flex items-center gap-1 mt-0.5 whitespace-nowrap overflow-hidden">
             {item.change !== null ? (
               <>
                 {isPositive ? (

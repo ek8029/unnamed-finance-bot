@@ -344,10 +344,10 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
           {/* Right: Auth actions */}
           <div className="flex items-center gap-3 md:gap-4">
             <Link
-              href="/login"
+              href="/signup"
               className="font-mono text-[10px] md:text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
             >
-              Log in
+              Sign up
             </Link>
             <Link
               href="/signup"
@@ -413,11 +413,11 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               )
             ))}
             <Link
-              href="/login"
-              className="block py-2.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]transition-colors"
+              href="/signup"
+              className="block py-2.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Log in
+              Sign up
             </Link>
           </motion.div>
         )}
