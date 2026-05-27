@@ -61,7 +61,6 @@ let initialized = false
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   if (!initialized && typeof window !== 'undefined') {
     const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
-    console.log('[posthog] key:', token ? `${token.slice(0, 8)}...` : 'MISSING')
     if (token) {
       posthog.init(token, {
         api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
@@ -70,7 +69,6 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
         capture_pageleave: true,
       })
       initialized = true
-      console.log('[posthog] initialized')
     }
   }
 
