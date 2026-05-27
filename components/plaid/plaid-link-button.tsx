@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePlaidLink } from 'react-plaid-link';
 import { Loader2, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import posthog from 'posthog-js';
 
 // User-friendly messages for common Plaid Link error codes
 const PLAID_ERROR_MESSAGES: Record<string, string> = {
@@ -104,6 +105,7 @@ export function PlaidLinkButton({
       // Refresh market prices so holdings have real prices (Plaid sandbox doesn't provide them)
       await fetch('/api/market/prices/refresh', { method: 'POST' }).catch(() => {});
 
+      posthog.capture('plaid_link_completed');
       onSuccess();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to link account';
@@ -145,7 +147,7 @@ export function PlaidLinkButton({
     <Button
       variant={variant}
       className={className}
-      onClick={() => { if (!exchanging) open(); }}
+      onClick={() => { if (!exchanging) { posthog.capture('plaid_link_started'); open(); } }}
       disabled={isDisabled}
     >
       {(isLoading || exchanging) ? (

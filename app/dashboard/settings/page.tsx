@@ -16,6 +16,7 @@ import { PlaidLinkButton } from '@/components/plaid/plaid-link-button'
 import { PlaidUpdateLink } from '@/components/plaid/plaid-update-link'
 import { PasswordSection } from './password-section'
 import { ProWaitlistButton } from '@/components/pro-waitlist-button'
+import posthog from 'posthog-js'
 import {
   User,
   Link,
@@ -585,6 +586,7 @@ export default function SettingsPage() {
   }
 
   const handleManageBilling = async () => {
+    posthog.capture('billing_clicked');
     try {
       const res = await fetch('/api/stripe/portal', { method: 'POST' })
       const data = await res.json()

@@ -7,6 +7,7 @@ import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { AuthShell } from '@/components/auth-shell';
 import { supabase } from '@/lib/supabase/client';
+import posthog from 'posthog-js';
 
 function getPasswordStrength(password: string) {
   const requirements = [
@@ -77,9 +78,11 @@ function SignupForm() {
         return;
       }
       if (data.session) {
+        posthog.capture('signup_completed', { method: 'email', flow: isWrappedFlow ? 'wrapped' : 'default' });
         router.push(isWrappedFlow ? '/wrapped' : '/dashboard');
         router.refresh();
       } else {
+        posthog.capture('signup_completed', { method: 'email', flow: isWrappedFlow ? 'wrapped' : 'default', needs_confirmation: true });
         router.push('/login?message=Check your email to confirm your account. If you don\'t see it, check your spam or promotions folder — it may take a minute to arrive.');
       }
     } catch {
@@ -92,6 +95,7 @@ function SignupForm() {
   };
 
   const handleGoogleSignIn = async () => {
+    posthog.capture('signup_started', { method: 'google', flow: isWrappedFlow ? 'wrapped' : 'default' });
     const nextPath = isWrappedFlow ? '/wrapped' : '/dashboard';
     await supabase.auth.signInWithOAuth({
       provider: 'google',

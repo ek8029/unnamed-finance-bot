@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
+import posthog from 'posthog-js';
 
 type GateState = 'loading' | 'allowed' | 'anon-blocked' | 'free-blocked';
 
@@ -45,6 +46,7 @@ export function AnalysisGate() {
           const todayCount = usage.date === today ? usage.count : 0;
 
           if (todayCount > ANON_DAILY_LIMIT) {
+            posthog.capture('analyze_gate_hit', { gate: 'anon' });
             if (!cancelled) setState('anon-blocked');
           } else {
             incrementAnonUsage();
@@ -69,10 +71,12 @@ export function AnalysisGate() {
         // Free tier — check quota
         const remaining = data.quota?.remaining ?? 1;
         if (remaining <= 0) {
+          posthog.capture('analyze_gate_hit', { gate: 'free' });
           if (!cancelled) setState('free-blocked');
         } else {
           // Record this usage server-side
           fetch('/api/analyze/record-usage', { method: 'POST' }).catch(() => {});
+          posthog.capture('analyze_used', { tier: data.tier, remaining: remaining - 1 });
           if (!cancelled) setState('allowed');
         }
       } catch {
