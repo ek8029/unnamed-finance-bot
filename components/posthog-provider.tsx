@@ -56,23 +56,24 @@ function PostHogIdentify() {
   return null
 }
 
-if (typeof window !== 'undefined') {
-  const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
-  console.log('[posthog] key:', token ? `${token.slice(0, 8)}...` : 'MISSING')
-  if (token) {
-    posthog.init(token, {
-      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-      person_profiles: 'identified_only',
-      capture_pageview: false,
-      capture_pageleave: true,
-    })
-  } else if (process.env.NODE_ENV === 'development') {
-    console.warn('[posthog] NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN not set — analytics disabled')
-  }
-}
+let initialized = false
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
-  console.log('[posthog] provider mounting')
+  if (!initialized && typeof window !== 'undefined') {
+    const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
+    console.log('[posthog] key:', token ? `${token.slice(0, 8)}...` : 'MISSING')
+    if (token) {
+      posthog.init(token, {
+        api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+        person_profiles: 'identified_only',
+        capture_pageview: false,
+        capture_pageleave: true,
+      })
+      initialized = true
+      console.log('[posthog] initialized')
+    }
+  }
+
   return (
     <PHProvider client={posthog}>
       <Suspense fallback={null}>
