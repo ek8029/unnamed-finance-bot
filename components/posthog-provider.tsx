@@ -58,6 +58,7 @@ function PostHogIdentify() {
 
 if (typeof window !== 'undefined') {
   const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
+  console.log('[posthog] key:', token ? `${token.slice(0, 8)}...` : 'MISSING')
   if (token) {
     posthog.init(token, {
       api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
@@ -71,6 +72,7 @@ if (typeof window !== 'undefined') {
 }
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
+  console.log('[posthog] provider mounting')
   return (
     <PHProvider client={posthog}>
       <Suspense fallback={null}>
