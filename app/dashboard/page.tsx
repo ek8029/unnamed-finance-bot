@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Lock } from 'lucide-react';
@@ -17,6 +17,7 @@ import { DailyBrief } from '@/components/dashboard/daily-brief';
 import { useFinancialSummary, useIntelligence } from '@/hooks/use-financial-data';
 import { useFormat } from '@/hooks/use-format';
 import { useDemo } from '@/contexts/demo-context';
+import posthog from 'posthog-js';
 
 function LoadingSkeleton() {
   return (
@@ -69,6 +70,10 @@ export default function DashboardOverview() {
   const router = useRouter();
   const toast = useToast();
   const [plaidError, setPlaidError] = useState<string | null>(null);
+
+  useEffect(() => {
+    posthog.capture('dashboard_viewed', { has_plaid: hasPlaidConnection, is_demo: isDemo });
+  }, [hasPlaidConnection, isDemo]);
 
   // Compute dollar change from the last two net worth history points
   const netWorthChange = useMemo(() => {

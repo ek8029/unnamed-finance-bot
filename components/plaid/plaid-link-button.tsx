@@ -118,7 +118,13 @@ export function PlaidLinkButton({
   const { open, ready } = usePlaidLink({
     token: linkToken ?? '',
     onSuccess: handleSuccess,
-    onExit: (err) => {
+    onExit: (err, metadata) => {
+      posthog.capture('plaid_link_exit', {
+        exit_status: metadata?.status ?? null,
+        error_type: err?.error_type ?? null,
+        error_code: err?.error_code ?? null,
+        institution_name: metadata?.institution?.name ?? null,
+      });
       if (err) {
         console.error('Plaid Link exit error:', err);
         const code = err.error_code || '';
