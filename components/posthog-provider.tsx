@@ -29,11 +29,20 @@ function PostHogIdentify() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        ph.identify(session.user.id, {
-          email: session.user.email,
-          name: session.user.user_metadata?.full_name,
-          auth_provider: session.user.app_metadata?.provider,
+        const user = session.user
+        ph.identify(user.id, {
+          email: user.email,
+          name: user.user_metadata?.full_name,
+          auth_provider: user.app_metadata?.provider,
         })
+        // New OAuth user: created_at within last 60s → fire signup_completed
+        const createdAt = new Date(user.created_at).getTime()
+        if (Date.now() - createdAt < 60_000) {
+          ph.capture('signup_completed', {
+            method: user.app_metadata?.provider || 'google',
+            flow: window.location.pathname.includes('wrapped') ? 'wrapped' : 'default',
+          })
+        }
       } else if (event === 'SIGNED_OUT') {
         ph.reset()
       }
