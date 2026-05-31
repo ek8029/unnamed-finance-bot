@@ -9,7 +9,7 @@ import { AnimatedSection } from '@/components/ui/animated-section';
 import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 
-type BillingPeriod = 'monthly' | 'annual' | 'lifetime';
+type BillingPeriod = 'monthly' | 'annual' | 'lifetime' | 'founding';
 
 const PLANS: {
   period: BillingPeriod;
@@ -18,10 +18,12 @@ const PLANS: {
   unit: string;
   note: string | null;
   save: string | null;
+  badge: string | null;
 }[] = [
-  { period: 'monthly',  label: 'Monthly',  price: '$14.99', unit: '/mo',   note: null,                save: null },
-  { period: 'annual',   label: 'Annual',   price: '$9.99',  unit: '/mo',   note: 'Billed $119/year',  save: 'Save 33%' },
-  { period: 'lifetime', label: 'Lifetime', price: '$249',   unit: '',      note: 'One-time payment',  save: null },
+  { period: 'founding', label: 'Founding Member', price: '$5', unit: '/mo', note: 'Locked at $5/mo forever', save: 'Save 67%', badge: '50 spots' },
+  { period: 'monthly',  label: 'Monthly',  price: '$14.99', unit: '/mo',   note: null,                save: null, badge: null },
+  { period: 'annual',   label: 'Annual',   price: '$9.99',  unit: '/mo',   note: 'Billed $119/year',  save: 'Save 33%', badge: null },
+  { period: 'lifetime', label: 'Lifetime', price: '$249',   unit: '',      note: 'One-time payment',  save: null, badge: null },
 ];
 
 const freeFeatures = [
@@ -55,7 +57,12 @@ const faqItems = [
   {
     question: 'What are the pricing options for Pro?',
     answer:
-      'Monthly at $14.99/mo, Annual at $119/yr (save 33% \u2014 works out to $9.99/mo), or Lifetime at $249 one-time. All options include the same Pro features.',
+      'Founding Member at $5/mo (locked forever, 50 spots only), Monthly at $14.99/mo, Annual at $119/yr (save 33%), or Lifetime at $249 one-time. All options include the same Pro features.',
+  },
+  {
+    question: 'What is the Founding Member plan?',
+    answer:
+      'Early supporters get Pro for $5/mo \u2014 locked at that price forever, even when regular pricing increases. Only 50 spots available. Once they\u2019re gone, they\u2019re gone.',
   },
   {
     question: 'Can I cancel anytime?',
@@ -84,7 +91,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 }
 
 export default function PricingPage() {
-  const [selected, setSelected] = useState<BillingPeriod>('annual');
+  const [selected, setSelected] = useState<BillingPeriod>('founding');
   const [showCheckout, setShowCheckout] = useState(false);
 
   const plan = PLANS.find(p => p.period === selected)!;
@@ -236,6 +243,11 @@ export default function PricingPage() {
                             {p.save && (
                               <span className="text-[10px] uppercase tracking-wider font-semibold text-[var(--color-positive)] px-2 py-0.5 rounded-sm bg-[rgba(74,222,128,0.08)]" style={{ fontFamily: 'var(--font-mono)' }}>
                                 {p.save}
+                              </span>
+                            )}
+                            {p.badge && (
+                              <span className="text-[10px] uppercase tracking-wider font-semibold text-[var(--color-gold)] px-2 py-0.5 rounded-sm bg-[rgba(230,185,77,0.08)]" style={{ fontFamily: 'var(--font-mono)' }}>
+                                {p.badge}
                               </span>
                             )}
                           </div>

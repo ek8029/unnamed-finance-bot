@@ -30,12 +30,13 @@ export function getStripe(): Stripe {
 /** @deprecated Use getStripe() instead — this crashes at build time if key is missing */
 export const stripe = null as unknown as Stripe;
 
-export type BillingPeriod = 'monthly' | 'annual' | 'lifetime';
+export type BillingPeriod = 'monthly' | 'annual' | 'lifetime' | 'founding';
 
 const BILLING_PERIOD_TO_PRICE: Record<BillingPeriod, string | undefined> = {
   monthly: process.env.STRIPE_PRICE_MONTHLY,
   annual: process.env.STRIPE_PRICE_ANNUAL,
   lifetime: process.env.STRIPE_PRICE_LIFETIME,
+  founding: process.env.STRIPE_PRICE_FOUNDING,
 };
 
 /** Map a billing period to its Stripe Price ID. Returns null for invalid input. */
@@ -46,10 +47,13 @@ export function getPriceId(billingPeriod: string): string | null {
 
 /** Validate a billing period string. */
 export function isValidBillingPeriod(value: string): value is BillingPeriod {
-  return value === 'monthly' || value === 'annual' || value === 'lifetime';
+  return value === 'monthly' || value === 'annual' || value === 'lifetime' || value === 'founding';
 }
 
 /** Whether this billing period uses Stripe 'payment' mode (one-time) vs 'subscription'. */
 export function getCheckoutMode(billingPeriod: BillingPeriod): 'payment' | 'subscription' {
   return billingPeriod === 'lifetime' ? 'payment' : 'subscription';
 }
+
+/** Maximum number of founding member seats available. */
+export const FOUNDING_MEMBER_CAP = 50;

@@ -5,6 +5,7 @@ import {
   getPriceId,
   isValidBillingPeriod,
   getCheckoutMode,
+  FOUNDING_MEMBER_CAP,
 } from '@/lib/stripe';
 
 /**
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
     // 2. Validate billingPeriod
     if (!billingPeriod || !isValidBillingPeriod(billingPeriod)) {
       return NextResponse.json(
-        { error: 'Invalid billing period. Must be monthly, annual, or lifetime.' },
+        { error: 'Invalid billing period.' },
         { status: 400 },
       );
     }
@@ -113,24 +114,27 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 5. Lifetime cap enforcement
-    if (billingPeriod === 'lifetime') {
+    // 5. Seat cap enforcement (lifetime: 200, founding: 50)
+    if (billingPeriod === 'lifetime' || billingPeriod === 'founding') {
+      const cap = billingPeriod === 'founding' ? FOUNDING_MEMBER_CAP : 200;
+      const label = billingPeriod === 'founding' ? 'Founding member' : 'Lifetime';
+
       const { count, error: countError } = await serviceClient
         .from('user_subscriptions')
         .select('*', { count: 'exact', head: true })
-        .eq('billing_period', 'lifetime');
+        .eq('billing_period', billingPeriod);
 
       if (countError) {
-        console.error('[checkout] Failed to count lifetime subs:', countError);
+        console.error(`[checkout] Failed to count ${billingPeriod} subs:`, countError);
         return NextResponse.json(
           { error: 'Internal server error' },
           { status: 500 },
         );
       }
 
-      if ((count ?? 0) >= 200) {
+      if ((count ?? 0) >= cap) {
         return NextResponse.json(
-          { error: 'Lifetime deal is sold out.' },
+          { error: `${label} spots are sold out.` },
           { status: 400 },
         );
       }
