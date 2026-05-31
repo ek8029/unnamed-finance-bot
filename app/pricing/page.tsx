@@ -20,7 +20,7 @@ const PLANS: {
   save: string | null;
   badge: string | null;
 }[] = [
-  { period: 'founding', label: 'Founding Member', price: '$5', unit: '/mo', note: 'Locked at $5/mo forever', save: 'Save 67%', badge: '50 spots' },
+  { period: 'founding', label: 'Founding Member', price: '$4.99', unit: '/mo', note: 'Locked at $4.99/mo forever', save: 'Save 67%', badge: '50 spots' },
   { period: 'monthly',  label: 'Monthly',  price: '$14.99', unit: '/mo',   note: null,                save: null, badge: null },
   { period: 'annual',   label: 'Annual',   price: '$9.99',  unit: '/mo',   note: 'Billed $119/year',  save: 'Save 33%', badge: null },
   { period: 'lifetime', label: 'Lifetime', price: '$249',   unit: '',      note: 'One-time payment',  save: null, badge: null },
@@ -57,12 +57,12 @@ const faqItems = [
   {
     question: 'What are the pricing options for Pro?',
     answer:
-      'Founding Member at $5/mo (locked forever, 50 spots only), Monthly at $14.99/mo, Annual at $119/yr (save 33%), or Lifetime at $249 one-time. All options include the same Pro features.',
+      'Founding Member at $4.99/mo (locked forever, 50 spots only), Monthly at $14.99/mo, Annual at $119/yr (save 33%), or Lifetime at $249 one-time. All options include the same Pro features.',
   },
   {
     question: 'What is the Founding Member plan?',
     answer:
-      'Early supporters get Pro for $5/mo \u2014 locked at that price forever, even when regular pricing increases. Only 50 spots available. Once they\u2019re gone, they\u2019re gone.',
+      'Early supporters get Pro for $4.99/mo \u2014 locked at that price forever, even when regular pricing increases. Only 50 spots available. Once they\u2019re gone, they\u2019re gone.',
   },
   {
     question: 'Can I cancel anytime?',
