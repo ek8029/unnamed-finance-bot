@@ -6,11 +6,11 @@ import { CinematicBg } from '@/components/cinematic-bg';
 import { TickerSearch } from './ticker-search';
 
 export const metadata: Metadata = {
-  title: 'Free AI Stock Analysis Tool — Analyze 150+ US Stocks | Helm Terminal',
+  title: 'Free AI Stock Analysis Tool — Analyze 500+ US Stocks | Helm Terminal',
   description:
     'Get free AI-powered analysis for any US stock. Real-time prices, financial metrics, and intelligent insights for AAPL, TSLA, MSFT, and 150+ more tickers.',
   openGraph: {
-    title: 'Free AI Stock Analysis Tool — Analyze 150+ US Stocks | Helm Terminal',
+    title: 'Free AI Stock Analysis Tool — Analyze 500+ US Stocks | Helm Terminal',
     description:
       'Get free AI-powered analysis for any US stock. Real-time prices, financial metrics, and intelligent insights for AAPL, TSLA, MSFT, and 150+ more tickers.',
     url: 'https://helmterminal.dev/analyze',
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Free AI Stock Analysis Tool — Analyze 150+ US Stocks | Helm Terminal',
+    title: 'Free AI Stock Analysis Tool — Analyze 500+ US Stocks | Helm Terminal',
     description:
       'Get free AI-powered analysis for any US stock. Real-time prices, financial metrics, and intelligent insights for AAPL, TSLA, MSFT, and 150+ more tickers.',
   },

@@ -6,11 +6,11 @@ import { LegalFooter } from '@/components/legal-footer';
 import { RefreshCw, ShieldAlert, Calculator, BarChart3 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Portfolio Intelligence for Engineers | Helm Terminal',
+  title: 'RSU Portfolio Tracker for Software Engineers | Helm Terminal',
   description:
     'RSU tracking, concentration alerts, tax-loss harvesting, and multi-account sync. Built by an engineer, for engineers who optimize everything except their portfolio.',
   openGraph: {
-    title: 'Portfolio Intelligence for Engineers | Helm Terminal',
+    title: 'RSU Portfolio Tracker for Software Engineers | Helm Terminal',
     description: 'You optimize systems for a living. Why is your portfolio still a spreadsheet?',
     url: 'https://helmterminal.dev/for/engineers',
     siteName: 'Helm Terminal',
