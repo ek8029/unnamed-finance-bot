@@ -555,7 +555,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               actionable insights — tax-loss harvesting opportunities with wash-sale
               detection, concentration risk alerts, earnings exposure, and cash flow
               changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.
-              Most features are free. Pro plans start at $14.99/month.
+              Most features are free. Pro plans start at $4.99/month.
             </p>
           </div>
         </section>
@@ -571,7 +571,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               '@type': 'FAQPage',
               mainEntity: [
                 { '@type': 'Question', name: 'What is Helm Terminal?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal is a free, institutional-grade financial intelligence platform for individual investors. It aggregates brokerage and bank accounts via Plaid, runs deterministic rule-based analysis over your portfolio, and surfaces actionable insights like tax-loss harvesting opportunities, concentration risk, earnings exposure, and cash flow changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.' } },
-                { '@type': 'Question', name: 'Is Helm Terminal free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Helm Terminal offers a free tier that includes AI stock analysis (5 per day), a full portfolio dashboard with Plaid sync, net worth tracking, cash flow overview, concentration risk analysis, sector allocation, and an actions inbox. Pro plans starting at $14.99/month add tax-loss harvesting with wash-sale detection, earnings exposure tracking, and unlimited analyses.' } },
+                { '@type': 'Question', name: 'Is Helm Terminal free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Helm Terminal offers a free tier that includes AI stock analysis (5 per day), a full portfolio dashboard with Plaid sync, net worth tracking, cash flow overview, concentration risk analysis, sector allocation, and an actions inbox. Pro plans starting at $4.99/month add tax-loss harvesting with wash-sale detection, earnings exposure tracking, and unlimited analyses.' } },
                 { '@type': 'Question', name: 'How does Helm Terminal compare to Bloomberg Terminal?', acceptedAnswer: { '@type': 'Answer', text: 'Bloomberg Terminal costs approximately $24,000 per year and is designed for institutional traders. Helm Terminal provides a subset of similar capabilities — portfolio analysis, real-time market data, AI-powered stock analysis, and risk alerts — for individual investors, starting at $0.' } },
                 { '@type': 'Question', name: 'Is Helm Terminal safe to use with my financial accounts?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal connects to your accounts through Plaid, a bank-grade financial data provider used by Venmo, Coinbase, and thousands of other apps. The connection is read-only — Helm can never move money, execute trades, or modify your accounts. All data is encrypted in transit (TLS 1.3) and at rest, with row-level security in the database.' } },
                 { '@type': 'Question', name: 'What data sources does Helm Terminal use?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal uses Finnhub for real-time stock quotes, Polygon.io for historical prices, dividends, and splits, and Plaid for account aggregation. AI stock analysis pages use GPT-4o-mini for narrative interpretation of structured financial data, clearly labeled as AI-generated.' } },
@@ -746,7 +746,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                 { title: 'Engineers', desc: 'RSU vesting, concentrated positions, multi-account chaos.', href: '/for/engineers', icon: '⌘' },
                 { title: 'Founders', desc: 'Equity events, angel checks, zero time to manage it all.', href: '/for/founders', icon: '◆' },
                 { title: 'Self-Directed', desc: '5 tools stitched together. One terminal to replace them.', href: '/for/investors', icon: '◈' },
-                { title: 'High Net Worth', desc: 'Your advisor charges 1% AUM. Helm charges $14.99/mo.', href: '/for/high-net-worth', icon: '◉' },
+                { title: 'High Net Worth', desc: 'Your advisor charges 1% AUM. Helm charges $4.99/mo.', href: '/for/high-net-worth', icon: '◉' },
               ].map((segment, i) => (
                 <FadeIn key={segment.title} delay={i * 80}>
                   <Link
@@ -846,7 +846,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">Pro Monthly</h3>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl md:text-3xl font-bold text-white">$14.99</span>
+                      <span className="text-4xl md:text-3xl font-bold text-white">$4.99</span>
                       <span className="text-sm text-[var(--color-text-muted)]">/mo</span>
                     </div>
                     <p className="text-xs text-[var(--color-text-muted)] mt-1">Cancel anytime.</p>

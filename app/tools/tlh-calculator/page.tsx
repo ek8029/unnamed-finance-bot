@@ -111,7 +111,7 @@ export default function TLHCalculatorPage() {
           </div>
           <div>
             <h2 className="text-base font-bold text-[var(--color-text-primary)] mb-2">How Helm automates this</h2>
-            <p>Helm Pro connects to your brokerage via Plaid and continuously scans for tax-loss harvesting opportunities with wash-sale rule awareness. Instead of spreadsheets with 200+ tax lots, Helm surfaces harvestable losses, flags risks, and suggests replacements — for <span className="font-mono text-[var(--color-text-primary)]">$14.99/mo</span>.</p>
+            <p>Helm Pro connects to your brokerage via Plaid and continuously scans for tax-loss harvesting opportunities with wash-sale rule awareness. Instead of spreadsheets with 200+ tax lots, Helm surfaces harvestable losses, flags risks, and suggests replacements — for <span className="font-mono text-[var(--color-text-primary)]">$4.99/mo</span>.</p>
           </div>
         </div>
       </section>

@@ -11,7 +11,7 @@ interface ProGateProps {
   description: string;
 }
 
-type BillingPeriod = 'monthly' | 'annual' | 'lifetime';
+type BillingPeriod = 'monthly' | 'annual' | 'lifetime' | 'founding';
 
 const PLANS: {
   period: BillingPeriod;
@@ -20,15 +20,17 @@ const PLANS: {
   unit: string;
   note: string | null;
   save: string | null;
+  badge: string | null;
 }[] = [
-  { period: 'monthly',  label: 'Monthly',  price: '$14.99', unit: '/mo',   note: null,                save: null },
-  { period: 'annual',   label: 'Annual',   price: '$9.99',  unit: '/mo',   note: 'Billed $119/year',  save: 'Save 33%' },
-  { period: 'lifetime', label: 'Lifetime', price: '$249',   unit: '',      note: 'One-time payment',  save: null },
+  { period: 'founding', label: 'Founding Member', price: '$4.99', unit: '/mo', note: 'Locked at $4.99/mo forever', save: 'Save 67%', badge: '50 spots' },
+  { period: 'monthly',  label: 'Monthly',  price: '$14.99', unit: '/mo',   note: null,                save: null, badge: null },
+  { period: 'annual',   label: 'Annual',   price: '$9.99',  unit: '/mo',   note: 'Billed $119/year',  save: 'Save 33%', badge: null },
+  { period: 'lifetime', label: 'Lifetime', price: '$249',   unit: '',      note: 'One-time payment',  save: null, badge: null },
 ];
 
 export function ProGate({ feature, description }: ProGateProps) {
   const [showCheckout, setShowCheckout] = useState(false);
-  const [selected, setSelected] = useState<BillingPeriod>('annual');
+  const [selected, setSelected] = useState<BillingPeriod>('founding');
 
   const plan = PLANS.find(p => p.period === selected)!;
 
@@ -95,6 +97,14 @@ export function ProGate({ feature, description }: ProGateProps) {
                           style={{ fontFamily: 'var(--font-mono)' }}
                         >
                           {p.save}
+                        </span>
+                      )}
+                      {p.badge && (
+                        <span
+                          className="text-[10px] uppercase tracking-wider font-semibold text-[var(--color-gold)] px-2 py-0.5 rounded-sm bg-[rgba(230,185,77,0.08)]"
+                          style={{ fontFamily: 'var(--font-mono)' }}
+                        >
+                          {p.badge}
                         </span>
                       )}
                     </div>

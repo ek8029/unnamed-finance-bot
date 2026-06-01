@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     'Your advisor charges 1% AUM. Helm delivers real-time portfolio intelligence, AI-powered analysis, and multi-account aggregation for a fraction of the cost.',
   openGraph: {
     title: 'Institutional Analysis Without the Institutional Price | Helm Terminal',
-    description: 'Your advisor charges 1% AUM. Helm charges $14.99/month.',
+    description: 'Your advisor charges 1% AUM. Helm charges $4.99/month.',
     url: 'https://helmterminal.dev/for/high-net-worth',
     siteName: 'Helm Terminal',
     type: 'website',
@@ -94,7 +94,7 @@ export default function HighNetWorthPage() {
           </p>
           <h1 className="text-[28px] sm:text-[40px] font-bold text-[var(--color-text-primary)] leading-tight mb-4">
             Your advisor charges 1% AUM.<br className="hidden sm:block" />
-            Helm charges $14.99/month.
+            Helm charges $4.99/month.
           </h1>
           <p className="text-[17px] text-[var(--color-text-secondary)] max-w-lg mx-auto">
             Institutional-grade portfolio intelligence without the institutional price.
