@@ -4,6 +4,7 @@ import { getTickerSectorOverride } from '@/lib/polygon';
 import { getQuote } from '@/lib/financial-data';
 import { rateLimit } from '@/lib/rate-limit';
 import { getSourceTier } from '@/lib/news-quality';
+import { getUserTier } from '@/lib/tier';
 
 type VixLevel = 'extreme_fear' | 'fear' | 'neutral' | 'greed' | 'extreme_greed';
 
@@ -335,6 +336,9 @@ export async function GET() {
         };
       });
 
+    const tier = await getUserTier(user.id);
+    const isPro = tier === 'pro';
+
     return NextResponse.json(
       {
         portfolio: {
@@ -344,15 +348,20 @@ export async function GET() {
           vsBenchmark,
         },
         market,
-        movers,
-        allHoldings,
+        // Free: show movers without dollar impact details
+        movers: isPro ? movers : movers.map((m: Record<string, unknown>) => ({ ...m, dollarImpact: 0 })),
+        // Free: hide individual holdings breakdown
+        allHoldings: isPro ? allHoldings : [],
         sectorHeat,
         earningsThisWeek,
         dividendsThisWeek,
-        positionNews,
+        // Free: hide position-specific news
+        positionNews: isPro ? positionNews : [],
         generalNews,
-        digest: digestRow?.digest ?? null,
-        digestGeneratedAt: digestRow?.generated_at ?? null,
+        // Free: hide AI digest
+        digest: isPro ? (digestRow?.digest ?? null) : null,
+        digestGeneratedAt: isPro ? (digestRow?.generated_at ?? null) : null,
+        isPro,
       },
       {
         headers: { 'Cache-Control': 'private, max-age=60' },

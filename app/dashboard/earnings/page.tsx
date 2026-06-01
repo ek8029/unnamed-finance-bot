@@ -14,12 +14,11 @@ import {
   BarChart3,
   AlertTriangle,
 } from 'lucide-react';
-import { useTier } from '@/hooks/use-tier';
-import { ProGate } from '@/components/pro-gate';
+import { ProBlur } from '@/components/pro-blur';
 
 // ── Upcoming Earnings Card ──
 
-function UpcomingCard({ event, formatCurrency }: { event: UpcomingEarning; formatCurrency: (n: number) => string }) {
+function UpcomingCard({ event, formatCurrency, isPro }: { event: UpcomingEarning; formatCurrency: (n: number) => string; isPro: boolean }) {
   const dateObj = new Date(event.date + 'T12:00:00');
   const month = dateObj.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
   const day = dateObj.getDate();
@@ -74,26 +73,41 @@ function UpcomingCard({ event, formatCurrency }: { event: UpcomingEarning; forma
           </div>
 
           {/* Scenario analysis */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-sm" style={{ background: 'rgba(56, 211, 159, 0.06)', border: '1px solid rgba(56, 211, 159, 0.15)' }}>
-              <TrendingUp className="w-3 h-3 text-[var(--color-positive)] shrink-0" />
-              <div>
-                <div className="text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>If beats by 5%</div>
-                <div className="text-[13px] font-bold text-[var(--color-positive)] font-tabular">
-                  +{formatCurrency(event.beatImpact5pct)}
+          {isPro ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-sm" style={{ background: 'rgba(56, 211, 159, 0.06)', border: '1px solid rgba(56, 211, 159, 0.15)' }}>
+                <TrendingUp className="w-3 h-3 text-[var(--color-positive)] shrink-0" />
+                <div>
+                  <div className="text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>If beats by 5%</div>
+                  <div className="text-[13px] font-bold text-[var(--color-positive)] font-tabular">
+                    +{formatCurrency(event.beatImpact5pct)}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-sm" style={{ background: 'rgba(248, 113, 113, 0.06)', border: '1px solid rgba(248, 113, 113, 0.15)' }}>
+                <TrendingDown className="w-3 h-3 text-[var(--color-negative)] shrink-0" />
+                <div>
+                  <div className="text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>If misses by 5%</div>
+                  <div className="text-[13px] font-bold text-[var(--color-negative)] font-tabular">
+                    {formatCurrency(event.missImpact5pct)}
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-sm" style={{ background: 'rgba(248, 113, 113, 0.06)', border: '1px solid rgba(248, 113, 113, 0.15)' }}>
-              <TrendingDown className="w-3 h-3 text-[var(--color-negative)] shrink-0" />
-              <div>
-                <div className="text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>If misses by 5%</div>
-                <div className="text-[13px] font-bold text-[var(--color-negative)] font-tabular">
-                  {formatCurrency(event.missImpact5pct)}
+          ) : (
+            <ProBlur label="Unlock scenario analysis" description="See estimated portfolio impact if this stock beats or misses earnings." variant="overlay" minHeight="56px">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-sm" style={{ background: 'rgba(56, 211, 159, 0.06)' }}>
+                  <TrendingUp className="w-3 h-3 text-[var(--color-positive)]" />
+                  <div className="text-[13px] font-bold text-[var(--color-positive)]">+$X,XXX</div>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-sm" style={{ background: 'rgba(248, 113, 113, 0.06)' }}>
+                  <TrendingDown className="w-3 h-3 text-[var(--color-negative)]" />
+                  <div className="text-[13px] font-bold text-[var(--color-negative)]">-$X,XXX</div>
                 </div>
               </div>
-            </div>
-          </div>
+            </ProBlur>
+          )}
         </div>
       </div>
     </div>
@@ -102,7 +116,7 @@ function UpcomingCard({ event, formatCurrency }: { event: UpcomingEarning; forma
 
 // ── Recent Earnings Card ──
 
-function RecentCard({ result, formatCurrency }: { result: RecentEarning; formatCurrency: (n: number) => string }) {
+function RecentCard({ result, formatCurrency, isPro }: { result: RecentEarning; formatCurrency: (n: number) => string; isPro: boolean }) {
   const borderColor = result.beat ? 'rgba(56, 211, 159, 0.25)' : 'rgba(248, 113, 113, 0.25)';
   const StatusIcon = result.beat ? CheckCircle2 : XCircle;
   const statusColor = result.beat ? 'var(--color-positive)' : 'var(--color-negative)';
@@ -162,35 +176,43 @@ function RecentCard({ result, formatCurrency }: { result: RecentEarning; formatC
               {formatCurrency(result.position.totalValue)}
             </div>
           </div>
-          <div className="bg-[var(--color-bg-surface)] px-4 py-3">
-            <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Est. Impact</div>
-            <div
-              className="text-[15px] font-bold font-tabular"
-              style={{ color: result.estimatedImpact >= 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
-            >
-              {result.estimatedImpact >= 0 ? '+' : ''}{formatCurrency(result.estimatedImpact)}
-            </div>
-          </div>
-          {result.actualPostEarningsMove != null && (
-            <div className="bg-[var(--color-bg-surface)] px-4 py-3">
-              <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Post-Earnings Move</div>
-              <div
-                className="text-[15px] font-bold font-tabular"
-                style={{ color: result.actualPostEarningsMove >= 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
-              >
-                {result.actualPostEarningsMove >= 0 ? '+' : ''}{result.actualPostEarningsMove.toFixed(2)}%
+          {isPro ? (
+            <>
+              <div className="bg-[var(--color-bg-surface)] px-4 py-3">
+                <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Est. Impact</div>
+                <div
+                  className="text-[15px] font-bold font-tabular"
+                  style={{ color: (result.estimatedImpact ?? 0) >= 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
+                >
+                  {(result.estimatedImpact ?? 0) >= 0 ? '+' : ''}{formatCurrency(result.estimatedImpact ?? 0)}
+                </div>
               </div>
-            </div>
-          )}
-          {result.actualDollarImpact != null && (
-            <div className="bg-[var(--color-bg-surface)] px-4 py-3">
-              <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Your Gain/Loss</div>
-              <div
-                className="text-[15px] font-bold font-tabular"
-                style={{ color: result.actualDollarImpact >= 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
-              >
-                {result.actualDollarImpact >= 0 ? '+' : ''}{formatCurrency(result.actualDollarImpact)}
-              </div>
+              {result.actualPostEarningsMove != null && (
+                <div className="bg-[var(--color-bg-surface)] px-4 py-3">
+                  <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Post-Earnings Move</div>
+                  <div
+                    className="text-[15px] font-bold font-tabular"
+                    style={{ color: result.actualPostEarningsMove >= 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
+                  >
+                    {result.actualPostEarningsMove >= 0 ? '+' : ''}{result.actualPostEarningsMove.toFixed(2)}%
+                  </div>
+                </div>
+              )}
+              {result.actualDollarImpact != null && (
+                <div className="bg-[var(--color-bg-surface)] px-4 py-3">
+                  <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Your Gain/Loss</div>
+                  <div
+                    className="text-[15px] font-bold font-tabular"
+                    style={{ color: result.actualDollarImpact >= 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
+                  >
+                    {result.actualDollarImpact >= 0 ? '+' : ''}{formatCurrency(result.actualDollarImpact)}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="bg-[var(--color-bg-surface)] px-4 py-3 col-span-1 sm:col-span-1">
+              <ProBlur label="Unlock impact analysis" variant="inline" />
             </div>
           )}
         </div>
@@ -203,27 +225,7 @@ function RecentCard({ result, formatCurrency }: { result: RecentEarning; formatC
 
 export default function EarningsPage() {
   const { formatCurrency } = useFormat();
-  const { isPro, loading: tierLoading } = useTier();
-  const { report, loading, error, proRequired } = useEarnings();
-
-  // Block rendering while tier is loading — prevents flash of Pro content
-  if (tierLoading) {
-    return (
-      <div className="container mx-auto p-6 max-w-5xl animate-pulse">
-        <div className="h-8 bg-[var(--color-bg-elevated)] rounded w-1/4 mb-4" />
-        <div className="h-64 bg-[var(--color-bg-elevated)] rounded-xl" />
-      </div>
-    );
-  }
-
-  if (!isPro || proRequired) {
-    return (
-      <ProGate
-        feature="Earnings Impact"
-        description="See how upcoming and recent earnings reports affect your portfolio with specific dollar amounts. Available on the Pro plan."
-      />
-    );
-  }
+  const { report, loading, error, isPro } = useEarnings();
 
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-5xl">
@@ -270,27 +272,42 @@ export default function EarningsPage() {
             className="rounded-sm px-5 py-4"
             style={{
               background: 'var(--color-bg-surface)',
-              border: report.recentNetImpact >= 0
-                ? '1px solid rgba(56, 211, 159, 0.20)'
-                : '1px solid rgba(248, 113, 113, 0.20)',
+              border: isPro && report.recentNetImpact != null
+                ? (report.recentNetImpact >= 0
+                  ? '1px solid rgba(56, 211, 159, 0.20)'
+                  : '1px solid rgba(248, 113, 113, 0.20)')
+                : '1px solid var(--color-border-base)',
             }}
           >
             <div className="flex items-center gap-2 mb-2">
-              {report.recentNetImpact >= 0
-                ? <TrendingUp className="w-3.5 h-3.5 text-[var(--color-positive)]" />
-                : <TrendingDown className="w-3.5 h-3.5 text-[var(--color-negative)]" />
+              {isPro && report.recentNetImpact != null
+                ? (report.recentNetImpact >= 0
+                  ? <TrendingUp className="w-3.5 h-3.5 text-[var(--color-positive)]" />
+                  : <TrendingDown className="w-3.5 h-3.5 text-[var(--color-negative)]" />)
+                : <BarChart3 className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
               }
               <span className="type-eyebrow text-[var(--color-text-muted)]">Recent Net Impact</span>
             </div>
-            <div
-              className="type-data text-2xl"
-              style={{ color: report.recentNetImpact >= 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
-            >
-              {report.recentNetImpact >= 0 ? '+' : ''}{formatCurrency(report.recentNetImpact)}
-            </div>
-            <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
-              from recent earnings
-            </div>
+            {isPro && report.recentNetImpact != null ? (
+              <>
+                <div
+                  className="type-data text-2xl"
+                  style={{ color: report.recentNetImpact >= 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
+                >
+                  {report.recentNetImpact >= 0 ? '+' : ''}{formatCurrency(report.recentNetImpact)}
+                </div>
+                <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
+                  from recent earnings
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="type-data text-2xl text-[var(--color-text-muted)]">—</div>
+                <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
+                  Pro feature
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -334,7 +351,7 @@ export default function EarningsPage() {
             <h2 className="type-h2">Recent Earnings Results</h2>
           </div>
           {report.recent.map((result, i) => (
-            <RecentCard key={`${result.ticker}-${i}`} result={result} formatCurrency={formatCurrency} />
+            <RecentCard key={`${result.ticker}-${i}`} result={result} formatCurrency={formatCurrency} isPro={isPro} />
           ))}
         </div>
       )}
@@ -347,7 +364,7 @@ export default function EarningsPage() {
             <h2 className="type-h2">Upcoming Earnings (Next 14 Days)</h2>
           </div>
           {report.upcoming.map((event, i) => (
-            <UpcomingCard key={`${event.ticker}-${i}`} event={event} formatCurrency={formatCurrency} />
+            <UpcomingCard key={`${event.ticker}-${i}`} event={event} formatCurrency={formatCurrency} isPro={isPro} />
           ))}
         </div>
       )}

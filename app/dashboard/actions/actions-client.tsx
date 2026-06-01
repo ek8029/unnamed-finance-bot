@@ -28,6 +28,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { useFormat } from '@/hooks/use-format';
+import { ProBlur } from '@/components/pro-blur';
 
 /* ──────────────────────────────────────────────────
    Types
@@ -163,7 +164,7 @@ const DEMO_ACTIONS: ActionItem[] = [
   { id: 'da-4', type: 'savings_positive', priority: 'low', title: 'Strong savings rate: 24% this month', description: 'You saved $3,420 this month, beating your 6-month average of $2,950 by 16%. Consistent savings at this rate compounds significantly over time.', source: 'cash_flow', created_at: new Date().toISOString() },
 ];
 
-export function ActionsClient({ initialActions }: { initialActions: ActionItem[] }) {
+export function ActionsClient({ initialActions, isPro }: { initialActions: ActionItem[]; isPro: boolean }) {
   const { formatCurrency, formatDate } = useFormat();
 
   // Demo mode
@@ -539,6 +540,7 @@ export function ActionsClient({ initialActions }: { initialActions: ActionItem[]
               onAction={handleAction}
               formatCurrency={formatCurrency}
               onMobileBack={handleMobileBack}
+              isPro={isPro}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center px-8">
@@ -568,6 +570,7 @@ interface DetailPaneProps {
   onAction: (id: string, action: string, extra?: Record<string, unknown>) => void;
   formatCurrency: (amount: number) => string;
   onMobileBack: () => void;
+  isPro: boolean;
 }
 
 function DetailPane({
@@ -580,6 +583,7 @@ function DetailPane({
   onAction,
   formatCurrency,
   onMobileBack,
+  isPro,
 }: DetailPaneProps) {
   const isLoading = actionLoading.has(action.id);
   const pCfg = priorityConfig[action.priority] || priorityConfig.medium;
@@ -718,14 +722,31 @@ function DetailPane({
       {action.recommended_action && (
         <div className="mb-8">
           <h3 className="type-eyebrow mb-3">Helm Reasoning</h3>
-          <div className="border border-[var(--color-gold-border)] rounded-lg p-5 bg-[var(--color-gold-surface)]">
-            <div className="flex items-start gap-3">
-              <Sparkles className="w-4 h-4 text-[var(--color-gold)] mt-0.5 flex-shrink-0" />
-              <p className="text-[14px] leading-relaxed text-[var(--color-text-primary)]">
-                {action.recommended_action}
-              </p>
+          {isPro ? (
+            <div className="border border-[var(--color-gold-border)] rounded-lg p-5 bg-[var(--color-gold-surface)]">
+              <div className="flex items-start gap-3">
+                <Sparkles className="w-4 h-4 text-[var(--color-gold)] mt-0.5 flex-shrink-0" />
+                <p className="text-[14px] leading-relaxed text-[var(--color-text-primary)]">
+                  {action.recommended_action}
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <ProBlur
+              label="Unlock recommendations"
+              description="See specific action steps and reasoning for this insight."
+              minHeight="80px"
+            >
+              <div className="border border-[var(--color-gold-border)] rounded-lg p-5 bg-[var(--color-gold-surface)]">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="w-4 h-4 text-[var(--color-gold)] mt-0.5 flex-shrink-0" />
+                  <p className="text-[14px] leading-relaxed text-[var(--color-text-primary)]">
+                    Upgrade to Pro to see specific recommendations and reasoning for this insight.
+                  </p>
+                </div>
+              </div>
+            </ProBlur>
+          )}
         </div>
       )}
 

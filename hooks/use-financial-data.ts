@@ -632,21 +632,15 @@ export function useEarnings() {
   const [report, setReport] = useState<EarningsReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [proRequired, setProRequired] = useState(false);
+  const [isPro, setIsPro] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
       try {
         const res = await fetch('/api/dashboard/earnings');
-        if (res.status === 403) {
-          const body = await res.json().catch(() => ({}));
-          if (body.code === 'PRO_REQUIRED') {
-            setProRequired(true);
-            return;
-          }
-        }
         if (!res.ok) throw new Error('Failed to fetch earnings data');
         const data = await res.json();
+        setIsPro(data.isPro ?? false);
         setReport(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -657,7 +651,7 @@ export function useEarnings() {
     fetchData();
   }, []);
 
-  return { report, loading, error, proRequired };
+  return { report, loading, error, isPro };
 }
 
 // ── Tax-loss harvesting opportunities ──

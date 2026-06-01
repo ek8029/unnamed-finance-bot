@@ -11,7 +11,7 @@ import { useTaxData, useTaxOpportunities } from '@/hooks/use-financial-data';
 import type { TaxOpportunity, RealizedTransaction } from '@/hooks/use-financial-data';
 import { cn } from '@/lib/utils';
 import { useTier } from '@/hooks/use-tier';
-import { ProGate } from '@/components/pro-gate';
+import { ProBlur } from '@/components/pro-blur';
 import { Form8949Preview } from '@/components/dashboard/form-8949-preview';
 
 // ── Constants ──
@@ -233,10 +233,18 @@ export default function TaxesPage() {
     return taxData.realized.netRealized;
   }, [taxData]);
 
+  // Derive harvestable totals: use pro data if available, else estimate from free taxData
   const totalHarvestable = useMemo(() => {
-    if (!harvestReport) return 0;
-    return harvestReport.totalHarvestableLoss;
-  }, [harvestReport]);
+    if (harvestReport) return harvestReport.totalHarvestableLoss;
+    if (!taxData) return 0;
+    return Math.abs(taxData.unrealized.totalLosses);
+  }, [harvestReport, taxData]);
+
+  const lossPositionCount = useMemo(() => {
+    if (harvestReport) return harvestReport.opportunityCount;
+    if (!taxData) return 0;
+    return taxData.unrealized.positions.filter((p) => p.gainLoss < 0).length;
+  }, [harvestReport, taxData]);
 
   const washSafeCount = useMemo(() => {
     if (!harvestReport) return 0;
@@ -301,14 +309,7 @@ export default function TaxesPage() {
     );
   }
 
-  if (!isPro || proRequired) {
-    return (
-      <ProGate
-        feature="Tax Center"
-        description="Tax-loss harvesting intelligence, unrealized P&L tracking, and tax-efficient sell ordering are available on the Pro plan."
-      />
-    );
-  }
+  const showProContent = isPro && !proRequired;
 
   return (
     <main className="container mx-auto p-6 space-y-8 max-w-6xl" aria-label="Tax Center">
@@ -364,17 +365,19 @@ export default function TaxesPage() {
           </p>
 
           {/* Scroll to Form 8949 */}
-          <button
-            onClick={() => document.getElementById('form-8949-section')?.scrollIntoView({ behavior: 'smooth' })}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-[13px] font-semibold motion-safe:transition-colors motion-safe:duration-150 cursor-pointer"
-            style={{
-              background: 'var(--color-gold)',
-              color: 'var(--color-bg-base)',
-            }}
-          >
-            Preview Form 8949
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+          {showProContent && (
+            <button
+              onClick={() => document.getElementById('form-8949-section')?.scrollIntoView({ behavior: 'smooth' })}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-[13px] font-semibold motion-safe:transition-colors motion-safe:duration-150 cursor-pointer"
+              style={{
+                background: 'var(--color-gold)',
+                color: 'var(--color-bg-base)',
+              }}
+            >
+              Preview Form 8949
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       )}
 
@@ -461,7 +464,9 @@ export default function TaxesPage() {
               {formatCurrency(Math.abs(totalHarvestable))}
             </p>
             <p className="text-[12px] text-[var(--color-text-muted)] mt-2" style={MONO}>
-              {washSafeCount} wash-safe lot{washSafeCount !== 1 ? 's' : ''}
+              {showProContent
+                ? `${washSafeCount} wash-safe lot${washSafeCount !== 1 ? 's' : ''}`
+                : `${lossPositionCount} position${lossPositionCount !== 1 ? 's' : ''} at a loss`}
             </p>
           </div>
 
@@ -479,15 +484,31 @@ export default function TaxesPage() {
             >
               Carryover loss
             </span>
-            <p
-              className="text-[28px] font-bold tracking-tight text-[var(--color-text-primary)] leading-none mt-2"
-              style={{ ...TNUM, ...MONO }}
-            >
-              {formatCurrency(carryoverLoss)}
-            </p>
-            <p className="text-[12px] text-[var(--color-text-muted)] mt-2" style={MONO}>
-              from TY {CURRENT_YEAR - 1}
-            </p>
+            {showProContent ? (
+              <>
+                <p
+                  className="text-[28px] font-bold tracking-tight text-[var(--color-text-primary)] leading-none mt-2"
+                  style={{ ...TNUM, ...MONO }}
+                >
+                  {formatCurrency(carryoverLoss)}
+                </p>
+                <p className="text-[12px] text-[var(--color-text-muted)] mt-2" style={MONO}>
+                  from TY {CURRENT_YEAR - 1}
+                </p>
+              </>
+            ) : (
+              <>
+                <p
+                  className="text-[22px] font-bold tracking-tight text-[var(--color-text-muted)] leading-none mt-2"
+                  style={{ ...TNUM, ...MONO }}
+                >
+                  —
+                </p>
+                <p className="text-[12px] text-[var(--color-text-muted)] mt-2" style={MONO}>
+                  Pro feature
+                </p>
+              </>
+            )}
           </div>
         </section>
       )}
@@ -573,6 +594,34 @@ export default function TaxesPage() {
       {/* ─── 4. Harvest Opportunity Table ─── */}
       {loading ? (
         <TableSkeleton />
+      ) : !showProContent ? (
+        <ProBlur
+          label="Unlock harvest recommendations"
+          description={`${lossPositionCount} position${lossPositionCount !== 1 ? 's' : ''} with ${formatCurrency(totalHarvestable)} in harvestable losses found. Upgrade to see specific lots, wash-sale flags, replacement securities, and estimated tax savings.`}
+          minHeight="280px"
+        >
+          {/* Placeholder rows for blur effect */}
+          <div className="rounded-md overflow-hidden" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}>
+            <div className="px-5 py-4 flex items-center gap-2.5 border-b border-[var(--color-border-subtle)]">
+              <Sparkles className="w-4 h-4 text-[var(--color-gold)]" />
+              <span className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-gold)]" style={MONO}>
+                Harvest Opportunity
+              </span>
+              <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/5 text-[var(--color-text-secondary)]" style={MONO}>
+                {lossPositionCount}
+              </span>
+            </div>
+            {Array.from({ length: Math.min(lossPositionCount, 4) }).map((_, i) => (
+              <div key={i} className="px-5 py-4 border-b border-[var(--color-border-subtle)] flex items-center gap-4">
+                <div className="w-10 h-4 bg-[var(--color-bg-elevated)] rounded" />
+                <div className="flex-1 h-4 bg-[var(--color-bg-elevated)] rounded" />
+                <div className="w-20 h-4 bg-[var(--color-bg-elevated)] rounded" />
+                <div className="w-20 h-4 bg-[var(--color-bg-elevated)] rounded" />
+                <div className="w-16 h-4 bg-[var(--color-bg-elevated)] rounded" />
+              </div>
+            ))}
+          </div>
+        </ProBlur>
       ) : harvestReport && harvestReport.opportunityCount > 0 ? (
         <section
           aria-label="Harvest opportunities"
@@ -690,7 +739,31 @@ export default function TaxesPage() {
       {/* ─── 5. Form 8949 Preview ─── */}
       {!loading && (
         <div id="form-8949-section">
-          <Form8949Preview />
+          {showProContent ? (
+            <Form8949Preview />
+          ) : (
+            <ProBlur
+              label="Unlock Form 8949 preview"
+              description="See your IRS-ready short-term and long-term capital gains breakdown with CSV export."
+              minHeight="200px"
+            >
+              <div className="rounded-md p-6" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}>
+                <div className="flex items-center gap-2.5 mb-4">
+                  <Eye className="w-4 h-4 text-[var(--color-gold)]" />
+                  <span className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-gold)]" style={MONO}>Form 8949 Preview</span>
+                </div>
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="flex gap-4">
+                      <div className="w-16 h-4 bg-[var(--color-bg-elevated)] rounded" />
+                      <div className="flex-1 h-4 bg-[var(--color-bg-elevated)] rounded" />
+                      <div className="w-24 h-4 bg-[var(--color-bg-elevated)] rounded" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </ProBlur>
+          )}
         </div>
       )}
 

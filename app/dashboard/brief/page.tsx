@@ -13,6 +13,8 @@ import {
   Scissors,
   ArrowUpRight,
 } from 'lucide-react';
+import { useTier } from '@/hooks/use-tier';
+import { ProBlur } from '@/components/pro-blur';
 
 /* ─── Types ─── */
 
@@ -110,6 +112,7 @@ function moverReason(m: { ticker: string; name: string; sector: string; changePc
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
 export default function BriefPage() {
+  const { isPro } = useTier();
   const [data, setData] = useState<BriefData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -602,8 +605,30 @@ export default function BriefPage() {
               </p>
             </article>
 
-            {/* ── AI Digest ── */}
-            {data.digest && (
+            {/* ── AI Digest + Portfolio Intelligence (Pro) ── */}
+            {!isPro && data.digest && (
+              <ProBlur
+                label="Unlock your daily intelligence brief"
+                description="AI-generated portfolio digest, news affecting your positions, and your top movers — personalized to your holdings."
+                minHeight="200px"
+              >
+                <article className="border border-[var(--color-border-base)] rounded-md bg-[var(--color-bg-surface)] overflow-hidden">
+                  <div className="px-5 py-2.5 border-b border-[var(--color-border-subtle)] flex items-center gap-2.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)]" />
+                    <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>AI Digest</span>
+                  </div>
+                  <div className="px-5 py-4 space-y-3">
+                    <div className="h-4 bg-[var(--color-bg-elevated)] rounded w-full" />
+                    <div className="h-4 bg-[var(--color-bg-elevated)] rounded w-5/6" />
+                    <div className="h-4 bg-[var(--color-bg-elevated)] rounded w-4/6" />
+                    <div className="h-4 bg-[var(--color-bg-elevated)] rounded w-full" />
+                    <div className="h-4 bg-[var(--color-bg-elevated)] rounded w-3/4" />
+                  </div>
+                </article>
+              </ProBlur>
+            )}
+
+            {isPro && data.digest && (
               <article className="border border-[var(--color-border-base)] rounded-md bg-[var(--color-bg-surface)] overflow-hidden">
                 <div className="px-5 py-2.5 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
@@ -638,7 +663,7 @@ export default function BriefPage() {
             )}
 
             {/* ── Position News ── */}
-            {data.positionNews.length > 0 && (
+            {isPro && data.positionNews.length > 0 && (
               <article>
                 <h2 className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>
                   NEWS AFFECTING YOUR POSITIONS
@@ -690,7 +715,7 @@ export default function BriefPage() {
             )}
 
             {/* ── Movers Table ── */}
-            {allMovers.length > 0 && (
+            {isPro && allMovers.length > 0 && (
               <article>
                 <h2 className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>
                   YOUR TOP MOVERS
@@ -921,7 +946,7 @@ export default function BriefPage() {
               )}
 
               {/* ── All Holdings by impact ── */}
-              {data.allHoldings.length > 0 && (
+              {isPro && data.allHoldings.length > 0 && (
                 <div>
                   <h2 className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4 pb-3 border-b border-[var(--color-gold)]/20" style={MONO}>
                     All Holdings
@@ -948,7 +973,7 @@ export default function BriefPage() {
               )}
 
               {/* ── Day at a Glance ── */}
-              {topGainers.length > 0 && topLosers.length > 0 && (
+              {isPro && topGainers.length > 0 && topLosers.length > 0 && (
                 <div className="bg-white/[0.02] rounded p-4 border border-white/[0.06]">
                   <div className="text-[12px] uppercase tracking-wider text-[var(--color-text-muted)] mb-3" style={MONO}>
                     Day at a Glance

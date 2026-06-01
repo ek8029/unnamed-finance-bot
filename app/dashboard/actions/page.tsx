@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getUserTier } from '@/lib/tier';
 import { ActionsClient, type ActionItem } from './actions-client';
 
 /** Strip volatile dollar amounts and percentages for stable dedup */
@@ -15,8 +16,11 @@ export default async function ActionsPage() {
   } = await supabase.auth.getUser();
 
   let initialActions: ActionItem[] = [];
+  let isPro = false;
 
   if (user) {
+    const tier = await getUserTier(user.id);
+    isPro = tier === 'pro';
     // No Plaid connections = no actions
     const { data: plaidItems } = await supabase
       .from('plaid_items')
@@ -25,7 +29,7 @@ export default async function ActionsPage() {
       .limit(1);
 
     if (!plaidItems || plaidItems.length === 0) {
-      return <ActionsClient initialActions={[]} />;
+      return <ActionsClient initialActions={[]} isPro={isPro} />;
     }
 
     const { data: insights } = await supabase
@@ -61,5 +65,11 @@ export default async function ActionsPage() {
       });
   }
 
-  return <ActionsClient initialActions={initialActions} />;
+  // Strip recommended_action for free users — client-side blur is UX only,
+  // server-side stripping prevents data leaks via dev tools
+  const safeActions = isPro
+    ? initialActions
+    : initialActions.map(a => ({ ...a, recommended_action: undefined }));
+
+  return <ActionsClient initialActions={safeActions} isPro={isPro} />;
 }

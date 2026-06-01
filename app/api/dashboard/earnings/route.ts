@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { generateEarningsReport } from '@/lib/earnings-analysis';
-import { requirePro } from '@/lib/tier';
+import { getUserTier } from '@/lib/tier';
 
 export async function GET() {
   const supabase = await createClient();
@@ -14,17 +14,32 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { allowed } = await requirePro(user.id);
-  if (!allowed) {
-    return NextResponse.json(
-      { error: 'Earnings impact analysis is a Pro feature.', code: 'PRO_REQUIRED' },
-      { status: 403 },
-    );
-  }
-
   try {
+    const tier = await getUserTier(user.id);
     const report = await generateEarningsReport(user.id);
-    return NextResponse.json(report);
+
+    // Free users: return observation data only (dates, tickers, exposure, EPS)
+    // Strip impact/scenario fields that constitute Pro recommendations
+    if (tier !== 'pro') {
+      return NextResponse.json({
+        ...report,
+        isPro: false,
+        upcoming: report.upcoming.map((e) => ({
+          ...e,
+          beatImpact5pct: null,
+          missImpact5pct: null,
+        })),
+        recent: report.recent.map((r) => ({
+          ...r,
+          estimatedImpact: null,
+          actualPostEarningsMove: null,
+          actualDollarImpact: null,
+        })),
+        recentNetImpact: null,
+      });
+    }
+
+    return NextResponse.json({ ...report, isPro: true });
   } catch (error) {
     console.error('Earnings report failed:', error);
     return NextResponse.json({ error: 'Failed to generate earnings report' }, { status: 500 });
