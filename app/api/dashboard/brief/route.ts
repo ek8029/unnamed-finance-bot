@@ -275,6 +275,9 @@ export async function GET() {
       }
     }
 
+    const tier = await getUserTier(user.id);
+    const isPro = tier === 'pro';
+
     // Deduplicate by URL
     const seenUrls = new Set<string>();
     const positionNews = (positionNewsResult.data || []).filter(n => {
@@ -304,15 +307,17 @@ export async function GET() {
       };
     });
 
-    // General news: exclude articles already in position news
+    // General news: exclude articles already in position news (only for Pro,
+    // since free users don't see positionNews and would otherwise lose articles)
     const positionNewsIds = new Set(positionNews.map(n => n.id));
+    const generalSeenUrls = isPro ? seenUrls : new Set<string>();
     const generalNews = (generalNewsResult.data || []).filter(n => {
       const key = n.url || n.id;
-      if (seenUrls.has(key)) return false;
-      seenUrls.add(key);
+      if (generalSeenUrls.has(key)) return false;
+      generalSeenUrls.add(key);
       return true;
     })
-      .filter(n => !positionNewsIds.has(n.id))
+      .filter(n => isPro ? !positionNewsIds.has(n.id) : true)
       .slice(0, 6)
       .map(n => {
         const ticker = n.primary_ticker;
@@ -335,9 +340,6 @@ export async function GET() {
             : null,
         };
       });
-
-    const tier = await getUserTier(user.id);
-    const isPro = tier === 'pro';
 
     return NextResponse.json(
       {
