@@ -28,6 +28,7 @@ import { useSettings } from '@/contexts/settings-context';
 import { DemoProvider, useDemo } from '@/contexts/demo-context';
 import { LegalFooter } from '@/components/legal-footer';
 import { FinancialDisclaimer } from '@/components/financial-disclaimer';
+import { FoundingMemberBanner } from '@/components/founding-member-banner';
 import { OnboardingFlow } from '@/components/onboarding/onboarding-flow';
 import { GuidedTour } from '@/components/onboarding/guided-tour';
 import { MobileBottomNav } from '@/components/mobile-bottom-nav';
@@ -597,6 +598,7 @@ export default function DashboardLayout({
           isChatPage && "min-h-0 flex flex-col"
         )}>
           <ConnectBanner />
+          <FoundingMemberBanner />
           <div
             key={pathname}
             className={cn(
