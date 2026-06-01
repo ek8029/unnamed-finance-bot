@@ -90,15 +90,20 @@ const LIFETIME_FEATURES = [
 const FOOTER_PRODUCT = [
   { label: 'Dashboard', href: '/dashboard' },
   { label: 'AI Analysis', href: '/analyze' },
-  { label: 'Pricing', href: '#pricing' },
+  { label: 'Pricing', href: '/pricing' },
   { label: 'Security', href: '/security' },
-  { label: 'Changelog', href: '/blog' },
+  { label: 'For Engineers', href: '/for/engineers' },
+  { label: 'For Founders', href: '/for/founders' },
+  { label: 'For Investors', href: '/for/investors' },
+  { label: 'For HNW', href: '/for/high-net-worth' },
 ];
 
 const FOOTER_TOOLS = [
   { label: 'Stock Analyzer', href: '/analyze' },
   { label: 'Stock Comparison', href: '/compare' },
   { label: 'TLH Calculator', href: '/tools/tlh-calculator' },
+  { label: 'RSU Calculator', href: '/tools/rsu-calculator' },
+  { label: 'Portfolio Wrapped', href: '/wrapped' },
 ];
 
 const FOOTER_COMPANY = [
@@ -476,7 +481,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               <div className="flex items-center gap-3 mb-6 md:mb-10">
                 <div className="w-6 md:w-8 h-px bg-[var(--color-gold)]" />
                 <span className="font-mono text-[9px] md:text-[10px] tracking-[0.2em] text-[var(--color-gold)] uppercase">
-                  The Investment Terminal
+                  The Free Bloomberg Alternative
                 </span>
               </div>
             </FadeIn>

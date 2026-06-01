@@ -297,6 +297,11 @@ export default async function TickerAnalysisPage({ params }: Props) {
         </section>
       </main>
 
+      {/* Related analyses + comparisons */}
+      <section className="relative z-10 max-w-[1800px] mx-auto px-3 sm:px-4 lg:px-6 py-8">
+        <RelatedTickers ticker={symbol} />
+      </section>
+
       <footer className="relative z-10 border-t border-[var(--color-border-subtle)] py-6">
         <div className="max-w-[1800px] mx-auto px-3 sm:px-4 lg:px-6 flex items-center justify-between">
           <span className="type-eyebrow text-[var(--color-text-muted)]">helmterminal.dev</span>
@@ -306,6 +311,67 @@ export default async function TickerAnalysisPage({ params }: Props) {
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+const RELATED_MAP: Record<string, string[]> = {
+  AAPL: ['MSFT', 'GOOGL', 'AMZN'], MSFT: ['AAPL', 'GOOGL', 'CRM'], GOOGL: ['META', 'MSFT', 'AMZN'],
+  AMZN: ['GOOGL', 'MSFT', 'NFLX'], META: ['GOOGL', 'NFLX', 'SNAP'], NVDA: ['AMD', 'INTC', 'AVGO'],
+  AMD: ['NVDA', 'INTC', 'QCOM'], TSLA: ['RIVN', 'F', 'GM'], NFLX: ['DIS', 'AMZN', 'META'],
+  JPM: ['GS', 'BAC', 'MS'], GS: ['JPM', 'MS', 'BAC'], V: ['MA', 'PYPL', 'SQ'],
+  SPY: ['VOO', 'QQQ', 'VTI'], QQQ: ['SPY', 'VGT', 'TQQQ'], VOO: ['VTI', 'SPY', 'IVV'],
+  VTI: ['VOO', 'SPY', 'SCHB'], BND: ['AGG', 'TLT', 'VCIT'], GLD: ['SLV', 'IAU', 'GDX'],
+};
+
+const COMPARE_PAIRS: Record<string, string[]> = {
+  AAPL: ['MSFT', 'GOOGL'], MSFT: ['AAPL', 'GOOGL'], GOOGL: ['META', 'AAPL'], AMZN: ['GOOGL', 'MSFT'],
+  META: ['GOOGL'], NVDA: ['AMD', 'MSFT', 'AAPL'], AMD: ['INTC', 'NVDA'], TSLA: ['RIVN', 'NVDA'],
+  SPY: ['QQQ', 'VOO'], QQQ: ['VOO', 'SPY'], VOO: ['VTI', 'SPY'], VTI: ['SPY', 'VOO'],
+  BND: ['AGG'], GLD: ['SLV'], SCHD: ['VYM'], JPM: ['GS'], V: ['MA'], XOM: ['CVX'],
+  BA: ['RTX'], PLTR: ['SNOW'], COIN: ['MARA'], SOFI: ['HOOD'], UNH: ['JNJ'],
+};
+
+function RelatedTickers({ ticker }: { ticker: string }) {
+  const related = RELATED_MAP[ticker] || [];
+  const comparePairs = (COMPARE_PAIRS[ticker] || []).map(t => `${ticker}-vs-${t}`);
+
+  if (related.length === 0 && comparePairs.length === 0) return null;
+
+  return (
+    <div className="border-t border-[var(--color-border-subtle)] pt-6">
+      {related.length > 0 && (
+        <div className="mb-5">
+          <h3 className="type-eyebrow text-[var(--color-text-muted)] mb-3">Related analyses</h3>
+          <div className="flex flex-wrap gap-2">
+            {related.map(t => (
+              <a
+                key={t}
+                href={`/analyze/${t}`}
+                className="px-3 py-1.5 text-[12px] font-mono font-medium text-[var(--color-text-secondary)] border border-[var(--color-border-base)] rounded hover:border-[var(--color-gold)] hover:text-[var(--color-gold)] transition-colors"
+              >
+                {t}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+      {comparePairs.length > 0 && (
+        <div>
+          <h3 className="type-eyebrow text-[var(--color-text-muted)] mb-3">Compare</h3>
+          <div className="flex flex-wrap gap-2">
+            {comparePairs.map(pair => (
+              <a
+                key={pair}
+                href={`/compare/${pair}`}
+                className="px-3 py-1.5 text-[12px] font-mono font-medium text-[var(--color-text-secondary)] border border-[var(--color-border-base)] rounded hover:border-[var(--color-gold)] hover:text-[var(--color-gold)] transition-colors"
+              >
+                {pair.replace('-', ' ').replace('-', ' ')}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
