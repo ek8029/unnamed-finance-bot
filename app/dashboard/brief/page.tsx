@@ -606,7 +606,7 @@ export default function BriefPage() {
             </article>
 
             {/* ── AI Digest + Portfolio Intelligence (Pro) ── */}
-            {!isPro && data.digest && (
+            {!isPro && (
               <ProBlur
                 label="Unlock your daily intelligence brief"
                 description="AI-generated portfolio digest, news affecting your positions, and your top movers — personalized to your holdings."
@@ -715,7 +715,7 @@ export default function BriefPage() {
             )}
 
             {/* ── Movers Table ── */}
-            {isPro && allMovers.length > 0 && (
+            {allMovers.length > 0 && (
               <article>
                 <h2 className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>
                   YOUR TOP MOVERS
