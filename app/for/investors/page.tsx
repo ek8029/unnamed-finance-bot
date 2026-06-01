@@ -6,11 +6,11 @@ import { LegalFooter } from '@/components/legal-footer';
 import { Search, Wallet, LineChart, FileText } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'The Terminal for Self-Directed Investors | Helm Terminal',
+  title: 'Free Bloomberg Alternative for Self-Directed Investors | Helm Terminal',
   description:
     'Bloomberg-grade stock analysis for free. AI-powered verdicts on 500+ tickers, portfolio tracking, tax intelligence, and a daily brief that tells you what matters.',
   openGraph: {
-    title: 'The Terminal for Self-Directed Investors | Helm Terminal',
+    title: 'Free Bloomberg Alternative for Self-Directed Investors | Helm Terminal',
     description: 'Bloomberg-grade analysis. Free.',
     url: 'https://helmterminal.dev/for/investors',
     siteName: 'Helm Terminal',
