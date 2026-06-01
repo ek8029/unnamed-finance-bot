@@ -6,6 +6,7 @@ import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import { HelmMark } from '@/components/helm-mark';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { LegalFooter } from '@/components/legal-footer';
+import { CompareGate } from '@/components/compare-gate';
 
 interface Props {
   params: Promise<{ slugs: string }>;
@@ -213,6 +214,7 @@ export default async function ComparePage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col relative overflow-hidden">
+      <CompareGate />
       <CinematicBg />
 
       {/* Nav */}
