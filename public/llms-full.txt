@@ -35,7 +35,7 @@ Helm is built for high-agency individuals managing $50K-$2M+ across multiple acc
 - Daily market brief ("The Current") with position-relevant news
 - Watchlist with real-time quotes (default: SPY, QQQ, VIXY, TLT)
 
-### Pro Features ($14.99/month, $119/year, or $249 lifetime)
+### Pro Features (Founding Member: $4.99/month locked forever — 50 spots; or $14.99/month, $119/year, $249 lifetime)
 - Tax-loss harvesting engine with wash-sale detection (IRC Section 1091)
 - Safe-swap pair suggestions for realizing losses without triggering wash sales
 - Earnings exposure tracking — know which holdings report this week
@@ -129,6 +129,7 @@ Side-by-side ticker comparison at `helmterminal.dev/compare/[TICKER1]-vs-[TICKER
 | Plan | Price | Billing | Key Features |
 |------|-------|---------|-------------|
 | Free | $0 | Forever | AI analysis (5/day), portfolio dashboard, net worth, actions inbox, 3 accounts |
+| Founding Member | $4.99 | Monthly (locked forever) | Everything in Pro. Limited to 50 spots, price locked permanently |
 | Pro Monthly | $14.99 | Monthly | + TLH engine, earnings tracking, unlimited analyses, unlimited accounts |
 | Pro Annual | $119 | Yearly | Same as Pro Monthly, save 33% |
 | Lifetime | $249 | One-time | Everything in Pro, forever. Locked-in pricing, early access to new features |

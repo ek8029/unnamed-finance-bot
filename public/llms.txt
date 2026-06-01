@@ -18,6 +18,7 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 
 ## Pricing
 - Free: AI stock analysis (5/day), portfolio dashboard, net worth, actions inbox
+- Founding Member: $4.99/mo locked forever (50 spots) — everything in Pro
 - Pro Monthly: $14.99/mo — tax-loss harvesting, earnings tracking, unlimited analyses
 - Pro Annual: $119/yr (save 33%)
 - Lifetime: $249 one-time payment
