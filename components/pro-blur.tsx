@@ -64,17 +64,17 @@ export function ProBlur({
 
         {/* Overlay */}
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--color-bg-base)]/60 backdrop-blur-[2px]">
-          <div className="flex flex-col items-center gap-3 max-w-xs text-center">
+          <div className="flex flex-col items-center gap-3 max-w-sm text-center">
             <div className="w-8 h-8 rounded-full bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center">
               <Lock className="w-3.5 h-3.5 text-[var(--color-gold)]" />
             </div>
 
             <div>
-              <p className="text-[14px] font-semibold text-[var(--color-text-primary)] mb-1">
+              <p className="text-[17px] font-semibold text-[var(--color-text-primary)] mb-1.5">
                 {label}
               </p>
               {description && (
-                <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed">
+                <p className="text-[14px] text-[var(--color-text-muted)] leading-relaxed">
                   {description}
                 </p>
               )}
@@ -82,9 +82,9 @@ export function ProBlur({
 
             <button
               onClick={() => setShowCheckout(true)}
-              className="flex items-center gap-2 px-5 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[13px] rounded-[var(--radius-md)] cursor-pointer transition-colors"
+              className="flex items-center gap-2 px-5 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[14px] rounded-[var(--radius-md)] cursor-pointer transition-colors"
             >
-              Upgrade — $4.99/mo
+              Upgrade for $4.99/mo
             </button>
 
             <Link

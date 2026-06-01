@@ -233,7 +233,7 @@ export default function EarningsPage() {
       <div className="space-y-2">
         <h1 className="type-h1">Earnings Impact</h1>
         <p className="type-body text-[var(--color-text-secondary)]">
-          How earnings results affect your portfolio — with specific dollar amounts
+          How earnings results affect your portfolio, with specific dollar amounts
         </p>
       </div>
 

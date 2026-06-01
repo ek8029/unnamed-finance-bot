@@ -311,31 +311,31 @@ export default function BriefPage() {
 
     if (abs > 3) {
       return portfolioUp
-        ? `A ${abs.toFixed(1)}% surge reshapes your portfolio — here's what drove it`
-        : `Markets deliver a ${abs.toFixed(1)}% blow — what it means for your positions`;
+        ? `A ${abs.toFixed(1)}% surge reshapes your portfolio. Here's what drove it`
+        : `Markets deliver a ${abs.toFixed(1)}% blow. What it means for your positions`;
     }
     if (earningsCount >= 3) {
-      return `${earningsCount} of your holdings report this week — positioning matters`;
+      return `${earningsCount} of your holdings report this week. Positioning matters`;
     }
     if (biggestMover && Math.abs(biggestMover.changePct) > 4) {
       return biggestMover.changePct > 0
         ? `${biggestMover.ticker} jumps ${biggestMover.changePct.toFixed(1)}%, lifting your portfolio ${fmt(Math.abs(data.portfolio.overnightChange))}`
-        : `${biggestMover.ticker} drops ${Math.abs(biggestMover.changePct).toFixed(1)}% — your exposure and what to watch`;
+        : `${biggestMover.ticker} drops ${Math.abs(biggestMover.changePct).toFixed(1)}%. Your exposure and what to watch`;
     }
     if (data.portfolio.vsBenchmark !== null && Math.abs(data.portfolio.vsBenchmark) > 1.5) {
       return data.portfolio.vsBenchmark > 0
-        ? `You're outpacing the S&P by ${data.portfolio.vsBenchmark.toFixed(1)}% — what's working`
-        : `Trailing the S&P by ${Math.abs(data.portfolio.vsBenchmark).toFixed(1)}% — where the drag is`;
+        ? `You're outpacing the S&P by ${data.portfolio.vsBenchmark.toFixed(1)}%. What's working`
+        : `Trailing the S&P by ${Math.abs(data.portfolio.vsBenchmark).toFixed(1)}%. Where the drag is`;
     }
     if (data.market.vix && data.market.vix.price > 25) {
-      return `Volatility elevated at ${data.market.vix.price.toFixed(0)} — what it signals for your ${data.allHoldings.length} positions`;
+      return `Volatility elevated at ${data.market.vix.price.toFixed(0)}. What it signals for your ${data.allHoldings.length} positions`;
     }
     if (showHarvestCTA) {
       return `Tax-loss harvest window: ${harvestCandidates.length} position${harvestCandidates.length > 1 ? 's' : ''} down more than 3%`;
     }
     return portfolioUp
-      ? `Your portfolio gained ${fmt(Math.abs(data.portfolio.overnightChange))} — steady course across ${data.allHoldings.length} positions`
-      : `A ${fmt(Math.abs(data.portfolio.overnightChange))} drawdown across ${data.allHoldings.length} positions — the full picture`;
+      ? `Your portfolio gained ${fmt(Math.abs(data.portfolio.overnightChange))}. Steady course across ${data.allHoldings.length} positions`
+      : `A ${fmt(Math.abs(data.portfolio.overnightChange))} drawdown across ${data.allHoldings.length} positions. The full picture`;
   }, [data, portfolioUp, biggestMover, showHarvestCTA, harvestCandidates]);
 
   const spyDir = data?.market.spy ? (data.market.spy.changePct >= 0 ? 'up' : 'down') : null;
@@ -609,7 +609,7 @@ export default function BriefPage() {
             {!isPro && (
               <ProBlur
                 label="Unlock your daily intelligence brief"
-                description="AI-generated portfolio digest, news affecting your positions, and your top movers — personalized to your holdings."
+                description="AI-generated portfolio digest, news affecting your positions, and your top movers. Personalized to your holdings."
                 minHeight="200px"
               >
                 <article className="border border-[var(--color-border-base)] rounded-md bg-[var(--color-bg-surface)] overflow-hidden">
