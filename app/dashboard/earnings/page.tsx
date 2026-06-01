@@ -80,7 +80,7 @@ function UpcomingCard({ event, formatCurrency, isPro }: { event: UpcomingEarning
                 <div>
                   <div className="text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>If beats by 5%</div>
                   <div className="text-[13px] font-bold text-[var(--color-positive)] font-tabular">
-                    +{formatCurrency(event.beatImpact5pct)}
+                    +{formatCurrency(event.beatImpact5pct ?? 0)}
                   </div>
                 </div>
               </div>
@@ -89,7 +89,7 @@ function UpcomingCard({ event, formatCurrency, isPro }: { event: UpcomingEarning
                 <div>
                   <div className="text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>If misses by 5%</div>
                   <div className="text-[13px] font-bold text-[var(--color-negative)] font-tabular">
-                    {formatCurrency(event.missImpact5pct)}
+                    {formatCurrency(event.missImpact5pct ?? 0)}
                   </div>
                 </div>
               </div>

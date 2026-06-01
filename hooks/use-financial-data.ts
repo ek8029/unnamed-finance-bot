@@ -603,8 +603,8 @@ export interface UpcomingEarning {
   epsEstimate: number | null;
   revenueEstimate: number | null;
   position: EarningsPosition;
-  beatImpact5pct: number;
-  missImpact5pct: number;
+  beatImpact5pct: number | null;
+  missImpact5pct: number | null;
 }
 
 export interface RecentEarning {
@@ -616,7 +616,7 @@ export interface RecentEarning {
   surprisePct: number | null;
   beat: boolean;
   position: EarningsPosition;
-  estimatedImpact: number;
+  estimatedImpact: number | null;
   actualPostEarningsMove: number | null;
   actualDollarImpact: number | null;
 }

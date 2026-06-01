@@ -130,6 +130,18 @@ export default function RootLayout({
                 },
                 {
                   '@type': 'Offer',
+                  price: '4.99',
+                  priceCurrency: 'USD',
+                  description: 'Founding Member — locked at $4.99/mo forever, 50 spots only',
+                  priceSpecification: {
+                    '@type': 'UnitPriceSpecification',
+                    price: '4.99',
+                    priceCurrency: 'USD',
+                    billingDuration: 'P1M',
+                  },
+                },
+                {
+                  '@type': 'Offer',
                   price: '14.99',
                   priceCurrency: 'USD',
                   description: 'Pro Monthly — tax-loss harvesting, earnings tracking, unlimited analyses',
