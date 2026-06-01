@@ -13,12 +13,12 @@ import { cn } from '@/lib/utils';
 import { useTier } from '@/hooks/use-tier';
 import { ProBlur } from '@/components/pro-blur';
 import { Form8949Preview } from '@/components/dashboard/form-8949-preview';
+import { TAX_RATE } from '@/lib/financial-config';
 
 // ── Constants ──
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 const TNUM: React.CSSProperties = { fontFeatureSettings: "'tnum' 1" };
-const TAX_RATE = 0.37;
 const CURRENT_YEAR = new Date().getFullYear();
 
 // ── Quarter helpers ──
@@ -877,18 +877,6 @@ function HarvestRow({
           )}
         </div>
 
-        {/* View lots link */}
-        <button
-          className="text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-gold)] motion-safe:transition-colors flex items-center gap-1 cursor-pointer"
-          style={MONO}
-          onClick={(e) => {
-            e.stopPropagation();
-            // Placeholder — future lot-level detail view
-          }}
-        >
-          <Eye className="w-3 h-3" />
-          VIEW LOTS
-        </button>
       </div>
 
       {/* Mobile card */}
