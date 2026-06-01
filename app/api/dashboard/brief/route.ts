@@ -348,10 +348,8 @@ export async function GET() {
           vsBenchmark,
         },
         market,
-        // Free: show movers without dollar impact details
-        movers: isPro ? movers : movers.map((m: Record<string, unknown>) => ({ ...m, dollarImpact: 0 })),
-        // Free: hide individual holdings breakdown
-        allHoldings: isPro ? allHoldings : [],
+        movers,
+        allHoldings,
         sectorHeat,
         earningsThisWeek,
         dividendsThisWeek,
