@@ -162,7 +162,7 @@ export default function DashboardOverview() {
 
             {/* Plaid trust section */}
             <div className="mt-9 pt-6 border-t border-[var(--color-border-subtle)] max-w-[500px]">
-              <p className="text-[15px] font-bold text-[var(--color-text-primary)] mb-4">Plaid</p>
+              <p className="text-[15px] font-bold text-[var(--color-text-primary)] mb-4">What is Plaid?</p>
               <p className="text-[14px] text-[var(--color-text-muted)] leading-[1.7] mb-5">
                 Plaid is the infrastructure layer between your bank and apps like Venmo, Robinhood, Coinbase, and Wealthfront. Over 12,000 financial institutions are supported.
               </p>
