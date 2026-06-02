@@ -21,6 +21,7 @@ import {
   Menu,
   X,
   Search,
+  PenLine,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
@@ -75,6 +76,7 @@ const navigation = [
     href: '/dashboard/portfolio',
     icon: TrendingUp,
     children: [
+      { name: 'Add Holdings', href: '/dashboard/portfolio/add', icon: PenLine },
       { name: 'Research', href: '/dashboard/chat', icon: MessageSquare },
       { name: 'Earnings', href: '/dashboard/earnings', icon: BarChart3 },
     ],
@@ -87,7 +89,7 @@ const navigation = [
   { name: 'Wrapped', href: '/dashboard/wrapped', icon: Sparkles },
 ];
 
-const PORTFOLIO_HREFS = ['/dashboard/portfolio', '/dashboard/chat', '/dashboard/earnings'];
+const PORTFOLIO_HREFS = ['/dashboard/portfolio', '/dashboard/portfolio/add', '/dashboard/chat', '/dashboard/earnings'];
 
 /* Map pathnames to page titles for the top bar */
 const PAGE_TITLES: Record<string, string> = {
