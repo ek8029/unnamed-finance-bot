@@ -293,7 +293,11 @@ export default function BriefPage() {
       <div className="min-h-screen bg-[var(--color-bg-base)] flex items-center justify-center px-6">
         <div className="text-center space-y-4 max-w-md">
           <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">No portfolio data yet</h1>
-          <p className="text-[var(--color-text-secondary)]">Connect a brokerage account to see your daily brief with portfolio performance, sector analysis, and market intelligence.</p>
+          <p className="text-[var(--color-text-secondary)] mb-4">Add your holdings to see a personalized daily brief with portfolio performance, sector analysis, and market intelligence.</p>
+          <div className="flex gap-3">
+            <a href="/dashboard/portfolio/add" className="px-5 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[14px] rounded transition-colors">Add holdings</a>
+            <a href="/dashboard/accounts" className="px-5 py-2.5 border border-[var(--color-border-strong)] text-[var(--color-text-primary)] font-semibold text-[14px] rounded hover:bg-[var(--color-bg-overlay)] transition-colors">Connect brokerage</a>
+          </div>
           <a href="/dashboard/accounts" className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold rounded-lg transition-colors">
             Connect Account
           </a>

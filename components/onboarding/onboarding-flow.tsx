@@ -77,7 +77,7 @@ export function OnboardingFlow() {
   }
 
   function handleSkipTour() {
-    handleLaunchDemo();
+    setPhase('launch');
   }
 
   function handleNextStep() {

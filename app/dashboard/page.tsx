@@ -124,10 +124,17 @@ export default function DashboardOverview() {
             </h1>
 
             <p className="text-[15px] text-[var(--color-text-muted)] leading-[1.7] mb-10 max-w-[480px]">
-              Your dashboard runs on real data. Connect a brokerage and Helm pulls your holdings, runs them against live market data, and tells you what matters this week.
+              Your dashboard runs on real data. Connect a brokerage for automatic sync, or add your holdings manually to get started in 15 seconds.
             </p>
 
-            <PlaidLinkButton
+            <div className="flex flex-col sm:flex-row gap-3 mb-3">
+              <a
+                href="/dashboard/portfolio/add"
+                className="px-9 py-4 text-[14px] font-bold rounded-[3px] bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] transition-colors text-center"
+              >
+                Add holdings manually
+              </a>
+              <PlaidLinkButton
               className="px-9 py-4 text-[14px] font-bold rounded-[3px] w-fit"
               onSuccess={() => router.refresh()}
               onError={(msg) => setPlaidError(msg)}
@@ -137,6 +144,7 @@ export default function DashboardOverview() {
             >
               Connect via Plaid
             </PlaidLinkButton>
+            </div>
             {plaidError && (
               <p className="text-[13px] text-[var(--color-negative)] mt-3">{plaidError}</p>
             )}

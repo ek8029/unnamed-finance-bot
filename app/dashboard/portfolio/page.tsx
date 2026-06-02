@@ -222,16 +222,23 @@ export default function PortfolioPage() {
             <div>
               <h1 className="type-h1 mb-2">No holdings yet</h1>
               <p className="type-body text-[var(--color-text-secondary)] max-w-md mx-auto">
-                Connect a brokerage account to see your portfolio holdings, allocation, and performance tracked in real time.
+                Add your holdings manually in 15 seconds, or connect a brokerage for automatic sync.
               </p>
             </div>
-            <Link
-              href="/dashboard/accounts"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-semibold rounded-lg transition-colors"
-            >
-              <TrendingUp className="w-4 h-4" />
-              Connect a Brokerage Account
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link
+                href="/dashboard/portfolio/add"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-semibold rounded-lg transition-colors"
+              >
+                Add holdings manually
+              </Link>
+              <Link
+                href="/dashboard/accounts"
+                className="inline-flex items-center gap-2 px-6 py-3 border border-[var(--color-border-strong)] text-[var(--color-text-primary)] font-semibold rounded-lg hover:bg-[var(--color-bg-overlay)] transition-colors"
+              >
+                Connect brokerage
+              </Link>
+            </div>
           </div>
         </div>
       </div>
