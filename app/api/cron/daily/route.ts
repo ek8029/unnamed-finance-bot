@@ -41,7 +41,17 @@ export async function GET(request: Request) {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // ── Email jobs FIRST — must run before dedup can early-return ──
+    // ── AI digest FIRST — highest user-facing priority ──
+
+    let digestResult = { generated: 0, skipped: 0, log: [] as string[] };
+    try {
+      digestResult = await runDigestCron({ force: true });
+      log.push(...digestResult.log);
+    } catch (err) {
+      log.push(`[digest] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
+    }
+
+    // ── Email jobs — must run before dedup can early-return ──
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
     const cacheBust = `_t=${Date.now()}`;
@@ -57,15 +67,6 @@ export async function GET(request: Request) {
       log.push(`[drip] Sent ${dripResult.sent} emails`);
     } catch (err) {
       log.push(`[drip] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
-    }
-
-    // AI digest — called directly, no HTTP self-call
-    let digestResult = { generated: 0, skipped: 0, log: [] as string[] };
-    try {
-      digestResult = await runDigestCron({ force: true });
-      log.push(...digestResult.log);
-    } catch (err) {
-      log.push(`[digest] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
     }
 
     // Watchlist price alerts
