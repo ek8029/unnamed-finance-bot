@@ -260,21 +260,21 @@ export function OnboardingFlow() {
 
             <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
               <button
-                onClick={() => setPhase('manual')}
+                onClick={handleLaunchDemo}
                 className="flex-1 flex flex-col items-center gap-3 px-6 py-6 rounded-md border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] hover:bg-[rgba(230,185,77,0.08)] transition-colors cursor-pointer"
               >
-                <PenLine className="w-6 h-6 text-[var(--color-gold)]" />
-                <span className="text-[15px] font-semibold text-[var(--color-text-primary)]">Add holdings</span>
-                <span className="text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>Type tickers + shares</span>
+                <Link2 className="w-6 h-6 text-[var(--color-gold)]" />
+                <span className="text-[15px] font-semibold text-[var(--color-text-primary)]">Connect brokerage</span>
+                <span className="text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>Auto-sync via Plaid</span>
               </button>
 
               <button
-                onClick={handleLaunchDemo}
+                onClick={() => setPhase('manual')}
                 className="flex-1 flex flex-col items-center gap-3 px-6 py-6 rounded-md border border-[var(--color-border-base)] hover:border-[var(--color-border-strong)] transition-colors cursor-pointer"
               >
-                <Link2 className="w-6 h-6 text-[var(--color-text-muted)]" />
-                <span className="text-[15px] font-semibold text-[var(--color-text-primary)]">Connect brokerage</span>
-                <span className="text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>Auto-sync via Plaid</span>
+                <PenLine className="w-6 h-6 text-[var(--color-text-muted)]" />
+                <span className="text-[15px] font-semibold text-[var(--color-text-primary)]">Add holdings</span>
+                <span className="text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>Type tickers + shares</span>
               </button>
             </div>
 

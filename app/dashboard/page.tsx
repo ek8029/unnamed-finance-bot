@@ -127,14 +127,7 @@ export default function DashboardOverview() {
               Your dashboard runs on real data. Connect a brokerage for automatic sync, or add your holdings manually to get started in 15 seconds.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 mb-3">
-              <a
-                href="/dashboard/portfolio/add"
-                className="px-9 py-4 text-[14px] font-bold rounded-[3px] bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] transition-colors text-center"
-              >
-                Add holdings manually
-              </a>
-              <PlaidLinkButton
+            <PlaidLinkButton
               className="px-9 py-4 text-[14px] font-bold rounded-[3px] w-fit"
               onSuccess={() => router.refresh()}
               onError={(msg) => setPlaidError(msg)}
@@ -144,7 +137,13 @@ export default function DashboardOverview() {
             >
               Connect via Plaid
             </PlaidLinkButton>
-            </div>
+            <a
+              href="/dashboard/portfolio/add"
+              className="mt-3 inline-block text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors"
+              style={{ fontFamily: 'var(--font-mono)' }}
+            >
+              Or add holdings manually
+            </a>
             {plaidError && (
               <p className="text-[13px] text-[var(--color-negative)] mt-3">{plaidError}</p>
             )}
