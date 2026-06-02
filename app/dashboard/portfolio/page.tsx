@@ -225,19 +225,19 @@ export default function PortfolioPage() {
                 Add your holdings manually in 15 seconds, or connect a brokerage for automatic sync.
               </p>
             </div>
-            <div className="flex flex-col items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-center gap-3">
               <Link
                 href="/dashboard/accounts"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-semibold rounded-lg transition-colors"
               >
                 <TrendingUp className="w-4 h-4" />
-                Connect a brokerage account
+                Connect brokerage
               </Link>
               <Link
                 href="/dashboard/portfolio/add"
-                className="text-[13px] text-[var(--color-text-secondary)] hover:text-[var(--color-gold)] transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 border border-[var(--color-border-strong)] text-[var(--color-text-primary)] font-semibold rounded-lg hover:border-[var(--color-gold)] hover:text-[var(--color-gold)] transition-colors"
               >
-                Or add holdings manually
+                Add holdings manually
               </Link>
             </div>
           </div>

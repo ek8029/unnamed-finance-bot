@@ -127,23 +127,24 @@ export default function DashboardOverview() {
               Your dashboard runs on real data. Connect a brokerage for automatic sync, or add your holdings manually to get started in 15 seconds.
             </p>
 
-            <PlaidLinkButton
-              className="px-9 py-4 text-[14px] font-bold rounded-[3px] w-fit"
-              onSuccess={() => router.refresh()}
-              onError={(msg) => setPlaidError(msg)}
-              onLinkError={(_code, message) => {
-                toast.error('Connection failed', message);
-              }}
-            >
-              Connect via Plaid
-            </PlaidLinkButton>
-            <a
-              href="/dashboard/portfolio/add"
-              className="mt-3 inline-block text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors"
-              style={{ fontFamily: 'var(--font-mono)' }}
-            >
-              Or add holdings manually
-            </a>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <PlaidLinkButton
+                className="px-9 py-4 text-[14px] font-bold rounded-[3px]"
+                onSuccess={() => router.refresh()}
+                onError={(msg) => setPlaidError(msg)}
+                onLinkError={(_code, message) => {
+                  toast.error('Connection failed', message);
+                }}
+              >
+                Connect via Plaid
+              </PlaidLinkButton>
+              <a
+                href="/dashboard/portfolio/add"
+                className="inline-flex items-center justify-center px-9 py-4 text-[14px] font-bold rounded-[3px] border border-[var(--color-border-strong)] text-[var(--color-text-primary)] hover:border-[var(--color-gold)] hover:text-[var(--color-gold)] transition-colors"
+              >
+                Add holdings manually
+              </a>
+            </div>
             {plaidError && (
               <p className="text-[13px] text-[var(--color-negative)] mt-3">{plaidError}</p>
             )}
