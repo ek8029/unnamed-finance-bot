@@ -43,6 +43,16 @@ function SignupForm() {
 
   useEffect(() => { formRenderedAt.current = Date.now(); }, []);
 
+  // Capture UTM params into sessionStorage on mount
+  useEffect(() => {
+    const source = searchParams.get('utm_source');
+    const medium = searchParams.get('utm_medium');
+    const campaign = searchParams.get('utm_campaign');
+    if (source) sessionStorage.setItem('utm_source', source);
+    if (medium) sessionStorage.setItem('utm_medium', medium);
+    if (campaign) sessionStorage.setItem('utm_campaign', campaign);
+  }, [searchParams]);
+
   const captchaSiteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
   const captchaConfigured = Boolean(captchaSiteKey);
   const strength = useMemo(() => getPasswordStrength(password), [password]);
@@ -68,6 +78,9 @@ function SignupForm() {
         body: JSON.stringify({
           email, password, full_name: fullName, captchaToken,
           website: honeypot, form_rendered_at: formRenderedAt.current,
+          utm_source: sessionStorage.getItem('utm_source') || undefined,
+          utm_medium: sessionStorage.getItem('utm_medium') || undefined,
+          utm_campaign: sessionStorage.getItem('utm_campaign') || undefined,
         }),
       });
       const data = await res.json();

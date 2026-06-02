@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { HelmMark } from '@/components/helm-mark';
 import { useDemo } from '@/contexts/demo-context';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, PenLine, Link2 } from 'lucide-react';
+import { ManualPortfolioForm } from '@/components/manual-portfolio-form';
 
 const ONBOARDING_KEY = 'helm_onboarding_dismissed';
 
@@ -38,7 +39,7 @@ const TOUR_STEPS = [
 export function OnboardingFlow() {
   const { enableDemo } = useDemo();
   const [show, setShow] = useState(false);
-  const [phase, setPhase] = useState<'welcome' | 'tour' | 'launch' | 'done'>('welcome');
+  const [phase, setPhase] = useState<'welcome' | 'tour' | 'launch' | 'manual' | 'done'>('welcome');
   const [tourStep, setTourStep] = useState(0);
   const [hasPlaid, setHasPlaid] = useState<boolean | null>(null);
 
@@ -244,33 +245,75 @@ export function OnboardingFlow() {
 
         {/* ═══ LAUNCH PHASE ═══ */}
         {phase === 'launch' && (
-          <div className="relative text-center space-y-10 px-8 max-w-2xl" style={{ animation: 'onb-fade-up 0.5s ease-out' }}>
+          <div className="relative text-center space-y-8 px-8 max-w-2xl" style={{ animation: 'onb-fade-up 0.5s ease-out' }}>
             <div className="flex justify-center">
               <HelmMark size={72} />
             </div>
             <div>
-              <h2 className="text-[clamp(32px,5vw,44px)] font-bold tracking-tight text-[var(--color-text-primary)]">
-                Ready to explore
+              <h2 className="text-[clamp(28px,5vw,40px)] font-bold tracking-tight text-[var(--color-text-primary)]">
+                How do you want to start?
               </h2>
-              <p className="text-[17px] text-[var(--color-text-muted)] mt-3 leading-relaxed max-w-md mx-auto">
-                You&apos;ll see a sample portfolio with real market data. When you&apos;re ready for your own data, connect an account from the sidebar.
+              <p className="text-[16px] text-[var(--color-text-muted)] mt-3 leading-relaxed max-w-md mx-auto">
+                Add your holdings manually in 15 seconds, or connect your brokerage for automatic sync.
               </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+              <button
+                onClick={() => setPhase('manual')}
+                className="flex-1 flex flex-col items-center gap-3 px-6 py-6 rounded-md border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] hover:bg-[rgba(230,185,77,0.08)] transition-colors cursor-pointer"
+              >
+                <PenLine className="w-6 h-6 text-[var(--color-gold)]" />
+                <span className="text-[15px] font-semibold text-[var(--color-text-primary)]">Add holdings</span>
+                <span className="text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>Type tickers + shares</span>
+              </button>
+
+              <button
+                onClick={handleLaunchDemo}
+                className="flex-1 flex flex-col items-center gap-3 px-6 py-6 rounded-md border border-[var(--color-border-base)] hover:border-[var(--color-border-strong)] transition-colors cursor-pointer"
+              >
+                <Link2 className="w-6 h-6 text-[var(--color-text-muted)]" />
+                <span className="text-[15px] font-semibold text-[var(--color-text-primary)]">Connect brokerage</span>
+                <span className="text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>Auto-sync via Plaid</span>
+              </button>
             </div>
 
             <button
               onClick={handleLaunchDemo}
-              className="inline-flex items-center gap-3 px-10 py-4 bg-[var(--color-gold)] text-black text-[17px] font-bold rounded-md hover:brightness-110 transition-all"
+              className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer"
+              style={{ fontFamily: 'var(--font-mono)' }}
             >
-              Open Terminal
-              <ArrowRight className="w-5 h-5" />
+              Skip for now
             </button>
+          </div>
+        )}
 
-            <div className="flex items-center justify-center gap-8 pt-2">
-              {['Read-only', 'No card required', 'Delete anytime'].map((line) => (
-                <span key={line} className="font-mono text-[11px] tracking-[0.1em] text-[var(--color-text-muted)]/40 uppercase">
-                  {line}
-                </span>
-              ))}
+        {phase === 'manual' && (
+          <div className="relative w-full max-w-lg px-8" style={{ animation: 'onb-fade-up 0.5s ease-out' }}>
+            <div className="text-center mb-8">
+              <h2 className="text-[28px] font-bold tracking-tight text-[var(--color-text-primary)]">
+                Add your holdings
+              </h2>
+              <p className="text-[14px] text-[var(--color-text-muted)] mt-2">
+                Enter your positions below. Cost basis is optional but unlocks tax insights.
+              </p>
+            </div>
+            <ManualPortfolioForm
+              compact
+              onComplete={() => {
+                setPhase('done');
+                localStorage.setItem(ONBOARDING_KEY, '1');
+                setTimeout(() => setShow(false), 1200);
+              }}
+            />
+            <div className="text-center mt-4">
+              <button
+                onClick={() => setPhase('launch')}
+                className="text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer"
+                style={{ fontFamily: 'var(--font-mono)' }}
+              >
+                Back
+              </button>
             </div>
           </div>
         )}
