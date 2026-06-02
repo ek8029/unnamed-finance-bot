@@ -489,16 +489,16 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
             {/* Massive headline */}
             <FadeIn delay={100}>
               <h1 className="text-[48px] md:text-[clamp(48px,10vw,120px)] font-bold leading-[1.04] tracking-[-0.04em] text-[var(--color-text-primary)] mb-8 md:mb-16">
-                See your portfolio<br />
-                the way{' '}
+                See what your<br />
+                brokerage app{' '}
                 <span
                   className="text-[var(--color-gold)] italic"
                   style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
                 >
-                  hedge funds
+                  won&apos;t
                 </span>
                 <br />
-                see theirs.
+                show you.
               </h1>
             </FadeIn>
 

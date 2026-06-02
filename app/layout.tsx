@@ -31,7 +31,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://helmterminal.dev'),
   title: 'Helm Terminal | Free Bloomberg Terminal Alternative for Individual Investors',
-  description: 'The free Bloomberg alternative built for retail investors. AI stock analysis, tax-loss harvesting, earnings tracking, and portfolio intelligence across all your accounts. Pro from $4.99/mo.',
+  description: 'See what your brokerage app won\'t show you. Concentration risk, tax-loss harvesting, earnings exposure, and AI stock analysis across all your accounts. Free.',
   openGraph: {
     title: 'Helm Terminal | Free Bloomberg Terminal Alternative for Individual Investors',
     description: 'The free Bloomberg alternative built for retail investors. AI stock analysis, tax-loss harvesting, earnings tracking, and portfolio intelligence across all your accounts.',
