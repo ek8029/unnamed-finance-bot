@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { HelmMark } from '@/components/helm-mark';
 import {
@@ -117,45 +117,10 @@ export default function BriefPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [deliveryTime, setDeliveryTime] = useState<string | null>(null);
-  const [showDeliveryPicker, setShowDeliveryPicker] = useState(false);
-  const deliveryRef = useRef<HTMLDivElement>(null);
   const [watchlist, setWatchlist] = useState<{ ticker: string; price: number; changePct: number; changeAmt: number; isDefault: boolean }[]>([]);
   const [watchlistInput, setWatchlistInput] = useState('');
   const [showWatchlistAdd, setShowWatchlistAdd] = useState(false);
   const [watchlistLoading, setWatchlistLoading] = useState(false);
-
-  // Close delivery picker on click outside
-  useEffect(() => {
-    if (!showDeliveryPicker) return;
-    function handleClick(e: MouseEvent) {
-      if (deliveryRef.current && !deliveryRef.current.contains(e.target as Node)) {
-        setShowDeliveryPicker(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [showDeliveryPicker]);
-
-  // Load delivery preference from DB (skip in demo mode)
-  useEffect(() => {
-    const isDemo = typeof window !== 'undefined' && sessionStorage.getItem('helm_demo_mode') === '1';
-    if (isDemo) { setDeliveryTime('9:00 AM'); return; }
-    fetch('/api/dashboard/brief-preferences')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => {
-        if (d?.deliveryTime) {
-          // Convert 24h DB format ("07:00") to display format ("7:00 AM")
-          const [hStr, mStr] = d.deliveryTime.split(':');
-          let h = parseInt(hStr);
-          const ampm = h >= 12 ? 'PM' : 'AM';
-          if (h > 12) h -= 12;
-          if (h === 0) h = 12;
-          setDeliveryTime(`${h}:${mStr} ${ampm}`);
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   // Load watchlist (skip in demo mode)
   useEffect(() => {
@@ -174,36 +139,6 @@ export default function BriefPage() {
       .then(d => { if (d?.tickers) setWatchlist(d.tickers); })
       .catch(() => {});
   }, []);
-
-  const handleDeliveryTimeChange = (time: string) => {
-    setDeliveryTime(time);
-    setShowDeliveryPicker(false);
-    // Convert display time to 24h for DB: "7:00 AM" → "07:00", "12:00 PM" → "12:00"
-    const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-    if (match) {
-      let h = parseInt(match[1]);
-      const m = match[2];
-      const ampm = match[3].toUpperCase();
-      if (ampm === 'PM' && h !== 12) h += 12;
-      if (ampm === 'AM' && h === 12) h = 0;
-      const db24 = `${String(h).padStart(2, '0')}:${m}`;
-      fetch('/api/dashboard/brief-preferences', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deliveryTime: db24 }),
-      }).catch(() => {});
-    }
-  };
-
-  const handleClearDeliveryTime = () => {
-    setDeliveryTime(null);
-    setShowDeliveryPicker(false);
-    fetch('/api/dashboard/brief-preferences', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ deliveryTime: null }),
-    }).catch(() => {});
-  };
 
   const handleAddWatchlistTicker = async () => {
     const ticker = watchlistInput.trim().toUpperCase();
@@ -452,35 +387,8 @@ export default function BriefPage() {
             <div className="text-left md:text-right" style={MONO}>
               <div className="text-[11px] tracking-[0.15em] text-[var(--color-text-muted)]">PRICES AS OF {timeStr}</div>
               <div className="text-[11px] tracking-[0.15em] text-[var(--color-text-muted)] mt-1">{data.allHoldings.length} POSITIONS · {fmt(data.portfolio.totalValue)}</div>
-              <div className="relative mt-2" ref={deliveryRef}>
-                <button
-                  onClick={() => setShowDeliveryPicker(!showDeliveryPicker)}
-                  aria-label="Set daily brief delivery time"
-                  className="text-[11px] tracking-[0.1em] text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] motion-safe:transition-colors"
-                >
-                  {deliveryTime ? `DELIVER DAILY AT ${deliveryTime}` : 'SET DELIVERY TIME'}
-                </button>
-                {showDeliveryPicker && (
-                  <div className="absolute left-0 md:left-auto md:right-0 top-full mt-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded shadow-xl z-50 p-3 space-y-1 min-w-[160px] max-w-[calc(100vw-32px)]">
-                    {['6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM', '9:30 AM', '12:00 PM', '5:00 PM'].map(t => (
-                      <button
-                        key={t}
-                        onClick={() => handleDeliveryTimeChange(t)}
-                        className={`block w-full text-left px-3 py-2 rounded text-xs tracking-wider motion-safe:transition-colors ${deliveryTime === t ? 'bg-[var(--color-gold)]/10 text-[var(--color-gold)]' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-overlay)] hover:text-[var(--color-text-primary)]'}`}
-                      >
-                        {t} ET
-                      </button>
-                    ))}
-                    {deliveryTime && (
-                      <button
-                        onClick={handleClearDeliveryTime}
-                        className="block w-full text-left px-3 py-2 rounded text-xs tracking-wider text-[var(--color-negative)] hover:bg-[var(--color-negative)]/5 motion-safe:transition-colors mt-1 border-t border-[var(--color-border-subtle)] pt-2"
-                      >
-                        CLEAR
-                      </button>
-                    )}
-                  </div>
-                )}
+              <div className="mt-2 text-[11px] tracking-[0.1em] text-[var(--color-gold)]">
+                GENERATED DAILY AT 9:15 AM ET
               </div>
             </div>
           </div>
