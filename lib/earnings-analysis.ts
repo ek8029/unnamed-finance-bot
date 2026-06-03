@@ -176,7 +176,7 @@ async function getUpcomingEarnings(
 
     // Use live price if available, recalculate exposure
     let livePosition = pos;
-    if (quote && quote.c > 0) {
+    if (quote && quote.c > 0 && pos.shares > 0) {
       const liveValue = pos.shares * quote.c;
       livePosition = {
         ...pos,
@@ -185,13 +185,24 @@ async function getUpcomingEarnings(
       };
     }
 
+    // Add indirect exposure (from ETFs/leveraged products) to total value
+    const indirectValue = indirect?.exposureValue ?? 0;
+    const totalExposureValue = livePosition.totalValue + indirectValue;
+
     const companyName = profile?.name || pos.securityName;
 
-    // Calculate scenario impacts
-    // 5% EPS beat → stock moves ~5%, applied to live position value
+    // Calculate scenario impacts on TOTAL exposure (direct + indirect)
+    // Leveraged products already have amplified effectiveWeight in indirectValue
     const beatMove = 0.05 * SURPRISE_MOVE_FACTOR;
-    const beatImpact = livePosition.totalValue * beatMove;
-    const missImpact = -(livePosition.totalValue * beatMove);
+    const beatImpact = totalExposureValue * beatMove;
+    const missImpact = -(totalExposureValue * beatMove);
+
+    // Position reflects total exposure (direct + indirect via ETFs/leveraged)
+    const exposurePosition = {
+      ...livePosition,
+      totalValue: totalExposureValue,
+      allocationPct: totalValue > 0 ? (totalExposureValue / totalValue) * 100 : 0,
+    };
 
     upcoming.push({
       ticker: event.symbol,
@@ -200,7 +211,7 @@ async function getUpcomingEarnings(
       time: event.hour === 'bmo' ? 'before_open' : event.hour === 'amc' ? 'after_close' : 'unknown',
       epsEstimate: event.epsEstimate,
       revenueEstimate: event.revenueEstimate,
-      position: livePosition,
+      position: exposurePosition,
       beatImpact5pct: beatImpact,
       missImpact5pct: missImpact,
     });
