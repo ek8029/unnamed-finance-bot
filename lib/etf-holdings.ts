@@ -19,52 +19,94 @@ export interface SingleStockProduct {
 }
 
 export const SINGLE_STOCK_MAP: Record<string, SingleStockProduct> = {
-  // Microsoft
-  MSFL: { underlying: 'MSFT', leverage: 1.5, name: 'GraniteShares 1.5x Long MSFT' },
-  MSFD: { underlying: 'MSFT', leverage: -1, name: 'GraniteShares 1x Short MSFT' },
-  // Apple
+  // ── GraniteShares 2x Long ──
   AAPB: { underlying: 'AAPL', leverage: 2, name: 'GraniteShares 2x Long AAPL' },
-  AAPD: { underlying: 'AAPL', leverage: -1, name: 'Direxion Daily AAPL Bear 1X' },
-  AAPU: { underlying: 'AAPL', leverage: 1.5, name: 'Direxion Daily AAPL Bull 1.5X' },
-  // NVIDIA
-  NVDL: { underlying: 'NVDA', leverage: 2, name: 'GraniteShares 2x Long NVDA' },
-  NVDS: { underlying: 'NVDA', leverage: -1, name: 'GraniteShares 1x Short NVDA' },
-  NVDU: { underlying: 'NVDA', leverage: 1.5, name: 'Direxion Daily NVDA Bull 1.5X' },
-  NVDD: { underlying: 'NVDA', leverage: -1, name: 'Direxion Daily NVDA Bear 1X' },
-  // Tesla
-  TSLL: { underlying: 'TSLA', leverage: 2, name: 'Direxion Daily TSLA Bull 2X' },
-  TSLS: { underlying: 'TSLA', leverage: -1, name: 'Direxion Daily TSLA Bear 1X' },
-  // Amazon
+  AMDL: { underlying: 'AMD', leverage: 2, name: 'GraniteShares 2x Long AMD' },
   AMZZ: { underlying: 'AMZN', leverage: 2, name: 'GraniteShares 2x Long AMZN' },
-  AMZD: { underlying: 'AMZN', leverage: -1, name: 'Direxion Daily AMZN Bear 1X' },
-  AMZU: { underlying: 'AMZN', leverage: 2, name: 'Direxion Daily AMZN Bull 2X' },
-  // Alphabet/Google
-  GGLL: { underlying: 'GOOGL', leverage: 2, name: 'GraniteShares 2x Long GOOGL' },
-  GOOGD: { underlying: 'GOOGL', leverage: -1, name: 'Direxion Daily GOOGL Bear 1X' },
-  GOOGU: { underlying: 'GOOGL', leverage: 1.5, name: 'Direxion Daily GOOGL Bull 1.5X' },
-  // Meta
-  METD: { underlying: 'META', leverage: -1, name: 'Direxion Daily META Bear 1X' },
-  METU: { underlying: 'META', leverage: 2, name: 'Direxion Daily META Bull 2X' },
-  FBL: { underlying: 'META', leverage: 2, name: 'GraniteShares 2x Long META' },
-  // AMD
-  AMDY: { underlying: 'AMD', leverage: 1.5, name: 'GraniteShares 1.5x Long AMD' },
-  // Coinbase
+  AVGU: { underlying: 'AVGO', leverage: 2, name: 'GraniteShares 2x Long AVGO' },
+  BABX: { underlying: 'BABA', leverage: 2, name: 'GraniteShares 2x Long BABA' },
   CONL: { underlying: 'COIN', leverage: 2, name: 'GraniteShares 2x Long COIN' },
-  // Netflix
-  NFLX2: { underlying: 'NFLX', leverage: 2, name: 'GraniteShares 2x Long NFLX' },
-  // MicroStrategy / Bitcoin proxy
-  MSTX: { underlying: 'MSTR', leverage: 2, name: 'Defiance Daily MSTR 2X Long' },
-  SMST: { underlying: 'MSTR', leverage: -1, name: 'Defiance Daily MSTR 1X Short' },
-  // Palantir
+  CRWL: { underlying: 'CRWD', leverage: 2, name: 'GraniteShares 2x Long CRWD' },
+  DLLL: { underlying: 'DELL', leverage: 2, name: 'GraniteShares 2x Long DELL' },
+  FBL: { underlying: 'META', leverage: 2, name: 'GraniteShares 2x Long META' },
+  GOU: { underlying: 'GOOGL', leverage: 2, name: 'GraniteShares 2x Long GOOGL' },
+  INTW: { underlying: 'INTC', leverage: 2, name: 'GraniteShares 2x Long INTC' },
+  IONL: { underlying: 'IONQ', leverage: 2, name: 'GraniteShares 2x Long IONQ' },
+  ISUL: { underlying: 'ISRG', leverage: 2, name: 'GraniteShares 2x Long ISRG' },
+  LCDL: { underlying: 'LCID', leverage: 2, name: 'GraniteShares 2x Long LCID' },
+  MRAL: { underlying: 'MARA', leverage: 2, name: 'GraniteShares 2x Long MARA' },
+  MSFL: { underlying: 'MSFT', leverage: 2, name: 'GraniteShares 2x Long MSFT' },
+  MSTP: { underlying: 'MSTR', leverage: 2, name: 'GraniteShares 2x Long MSTR' },
+  MULL: { underlying: 'MU', leverage: 2, name: 'GraniteShares 2x Long MU' },
+  MVLL: { underlying: 'MRVL', leverage: 2, name: 'GraniteShares 2x Long MRVL' },
+  NBIL: { underlying: 'NBIS', leverage: 2, name: 'GraniteShares 2x Long NBIS' },
+  NOWL: { underlying: 'NOW', leverage: 2, name: 'GraniteShares 2x Long NOW' },
+  NVDL: { underlying: 'NVDA', leverage: 2, name: 'GraniteShares 2x Long NVDA' },
+  PDDL: { underlying: 'PDD', leverage: 2, name: 'GraniteShares 2x Long PDD' },
   PTIR: { underlying: 'PLTR', leverage: 2, name: 'GraniteShares 2x Long PLTR' },
-  // JPMorgan
-  JPML: { underlying: 'JPM', leverage: 2, name: 'GraniteShares 2x Long JPM' },
-  // Disney
-  DISL: { underlying: 'DIS', leverage: 2, name: 'GraniteShares 2x Long DIS' },
-  // Uber
+  QCML: { underlying: 'QCOM', leverage: 2, name: 'GraniteShares 2x Long QCOM' },
+  RDTL: { underlying: 'RDDT', leverage: 2, name: 'GraniteShares 2x Long RDDT' },
+  RVNL: { underlying: 'RIVN', leverage: 2, name: 'GraniteShares 2x Long RIVN' },
+  SMCL: { underlying: 'SMCI', leverage: 2, name: 'GraniteShares 2x Long SMCI' },
+  TSLR: { underlying: 'TSLA', leverage: 2, name: 'GraniteShares 2x Long TSLA' },
+  TSMU: { underlying: 'TSM', leverage: 2, name: 'GraniteShares 2x Long TSM' },
   UBRL: { underlying: 'UBER', leverage: 2, name: 'GraniteShares 2x Long UBER' },
-  // PayPal
+  VRTL: { underlying: 'VRT', leverage: 2, name: 'GraniteShares 2x Long VRT' },
+  JPML: { underlying: 'JPM', leverage: 2, name: 'GraniteShares 2x Long JPM' },
+  DISL: { underlying: 'DIS', leverage: 2, name: 'GraniteShares 2x Long DIS' },
   PYPS: { underlying: 'PYPL', leverage: 2, name: 'GraniteShares 2x Long PYPL' },
+
+  // ── GraniteShares 1.25x Long ──
+  TSL: { underlying: 'TSLA', leverage: 1.25, name: 'GraniteShares 1.25x Long TSLA' },
+
+  // ── GraniteShares 2x Short (Inverse) ──
+  CONI: { underlying: 'COIN', leverage: -2, name: 'GraniteShares 2x Short COIN' },
+  MSDD: { underlying: 'MSTR', leverage: -2, name: 'GraniteShares 2x Short MSTR' },
+  NVD: { underlying: 'NVDA', leverage: -2, name: 'GraniteShares 2x Short NVDA' },
+  TSDD: { underlying: 'TSLA', leverage: -2, name: 'GraniteShares 2x Short TSLA' },
+
+  // ── Direxion Daily Single-Stock Bull ──
+  AAPU: { underlying: 'AAPL', leverage: 1.5, name: 'Direxion Daily AAPL Bull 1.5X' },
+  AMZU: { underlying: 'AMZN', leverage: 2, name: 'Direxion Daily AMZN Bull 2X' },
+  GGLL: { underlying: 'GOOGL', leverage: 2, name: 'Direxion Daily GOOGL Bull 2X' },
+  GOOGU: { underlying: 'GOOGL', leverage: 1.5, name: 'Direxion Daily GOOGL Bull 1.5X' },
+  METU: { underlying: 'META', leverage: 2, name: 'Direxion Daily META Bull 2X' },
+  MSFU: { underlying: 'MSFT', leverage: 2, name: 'Direxion Daily MSFT Bull 2X' },
+  NVDU: { underlying: 'NVDA', leverage: 1.5, name: 'Direxion Daily NVDA Bull 1.5X' },
+  TSLL: { underlying: 'TSLA', leverage: 2, name: 'Direxion Daily TSLA Bull 2X' },
+  TSMX: { underlying: 'TSM', leverage: 2, name: 'Direxion Daily TSM Bull 2X' },
+
+  // ── Direxion Daily Single-Stock Bear ──
+  AAPD: { underlying: 'AAPL', leverage: -1, name: 'Direxion Daily AAPL Bear 1X' },
+  AMZD: { underlying: 'AMZN', leverage: -1, name: 'Direxion Daily AMZN Bear 1X' },
+  GOOGD: { underlying: 'GOOGL', leverage: -1, name: 'Direxion Daily GOOGL Bear 1X' },
+  METD: { underlying: 'META', leverage: -1, name: 'Direxion Daily META Bear 1X' },
+  MSFD: { underlying: 'MSFT', leverage: -1, name: 'Direxion Daily MSFT Bear 1X' },
+  NVDD: { underlying: 'NVDA', leverage: -1, name: 'Direxion Daily NVDA Bear 1X' },
+  TSLS: { underlying: 'TSLA', leverage: -1, name: 'Direxion Daily TSLA Bear 1X' },
+
+  // ── Defiance Daily Target 2x Long ──
+  MSTX: { underlying: 'MSTR', leverage: 2, name: 'Defiance Daily MSTR 2X Long' },
+  AVGX: { underlying: 'AVGO', leverage: 2, name: 'Defiance Daily AVGO 2X Long' },
+  STXL: { underlying: 'STX', leverage: 2, name: 'Defiance Daily STX 2X Long' },
+
+  // ── Defiance Daily Target Short/Inverse ──
+  SMST: { underlying: 'MSTR', leverage: -1, name: 'Defiance Daily MSTR 1X Short' },
+
+  // ── Tradr 2x Long ──
+  SNXX: { underlying: 'SNDK', leverage: 2, name: 'Tradr 2X Long SNDK Daily' },
+  WDCX: { underlying: 'WDC', leverage: 2, name: 'Tradr 2X Long WDC Daily' },
+  LRCU: { underlying: 'LRCX', leverage: 2, name: 'Tradr 2X Long LRCX Daily' },
+
+  // ── Leverage Shares 2x Long ──
+  CRWG: { underlying: 'CRWV', leverage: 2, name: 'Leverage Shares 2x Long CoreWeave' },
+  ASMG: { underlying: 'ASML', leverage: 2, name: 'Leverage Shares 2x Long ASML' },
+
+  // ── REX / T-REX ──
+  FEBL: { underlying: 'META', leverage: 2, name: 'T-Rex 2X Long META Daily' },
+  FLYL: { underlying: 'UBER', leverage: 2, name: 'T-Rex 2X Long UBER Daily' },
+  NFLL: { underlying: 'NFLX', leverage: 2, name: 'T-Rex 2X Long NFLX Daily' },
+  BIRL: { underlying: 'COIN', leverage: 2, name: 'T-Rex 2X Long Coinbase Daily' },
 };
 
 // ── Leveraged/Inverse Index ETFs → Underlying Index ETF ──
