@@ -125,7 +125,7 @@ export async function GET(request: Request) {
       .range(offset, offset + limit - 1);
 
     // Apply filters
-    const sanitizedSearch = search.replace(/[^a-zA-Z0-9 \-']/g, '').trim();
+    const sanitizedSearch = search.replace(/[^a-zA-Z0-9 \-]/g, '').trim();
     if (sanitizedSearch) {
       query = query.or(`description.ilike.%${sanitizedSearch}%,merchant_name.ilike.%${sanitizedSearch}%`);
     }

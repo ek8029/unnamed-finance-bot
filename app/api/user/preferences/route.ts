@@ -95,9 +95,9 @@ export async function PATCH(request: Request) {
         onConflict: 'user_id',
       })
       .select()
-      .single();
+      .maybeSingle();
 
-    if (error) {
+    if (error || !data) {
       console.error('Error updating preferences:', error);
       return NextResponse.json({ error: 'Failed to update preferences' }, { status: 500 });
     }

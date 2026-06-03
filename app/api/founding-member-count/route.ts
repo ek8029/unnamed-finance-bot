@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET() {
   try {
-    const supabase = await createServiceClient();
+    const supabase = await createClient();
     const { count, error } = await supabase
       .from('user_subscriptions')
       .select('*', { count: 'exact', head: true })

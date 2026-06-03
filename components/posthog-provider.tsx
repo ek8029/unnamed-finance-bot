@@ -76,7 +76,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
         person_profiles: 'identified_only',
         capture_pageview: false,
         capture_pageleave: true,
-        enable_recording_console_log: true,
+        enable_recording_console_log: false,
       })
       initialized = true
     }

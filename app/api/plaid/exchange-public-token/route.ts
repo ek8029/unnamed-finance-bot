@@ -69,19 +69,28 @@ export async function POST(request: Request) {
     // Try to find existing institution by plaid ID or slug
     let institutionId: string;
 
-    const safeInstitutionId = plaidInstitutionId?.replace(/[^a-zA-Z0-9_-]/g, '') || '';
-    const safeSlug = slug.replace(/[^a-z0-9-]/g, '');
+    // Look up existing institution by plaid ID first, then fall back to slug
+    let existingInstitution: { id: string } | null = null;
 
-    const { data: existingInstitution } = await supabase
-      .from('institutions')
-      .select('id')
-      .or(
-        safeInstitutionId
-          ? `plaid_institution_id.eq.${safeInstitutionId},slug.eq.${safeSlug}`
-          : `slug.eq.${safeSlug}`
-      )
-      .limit(1)
-      .maybeSingle();
+    if (plaidInstitutionId) {
+      const { data: byPlaidId } = await supabase
+        .from('institutions')
+        .select('id')
+        .eq('plaid_institution_id', plaidInstitutionId)
+        .limit(1)
+        .maybeSingle();
+      existingInstitution = byPlaidId;
+    }
+
+    if (!existingInstitution) {
+      const { data: bySlug } = await supabase
+        .from('institutions')
+        .select('id')
+        .eq('slug', slug)
+        .limit(1)
+        .maybeSingle();
+      existingInstitution = bySlug;
+    }
 
     if (existingInstitution) {
       institutionId = existingInstitution.id;
@@ -98,7 +107,7 @@ export async function POST(request: Request) {
           institution_type: 'bank',
         })
         .select('id')
-        .single();
+        .maybeSingle();
 
       if (instError || !newInstitution) {
         console.error('Error creating institution:', instError);

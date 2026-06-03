@@ -90,11 +90,11 @@ export async function POST(request: Request) {
         referred_by: validReferrer,
       })
       .select('id')
-      .single();
+      .maybeSingle();
 
-    if (insertError) {
+    if (insertError || !inserted) {
       console.error('Waitlist insert error:', JSON.stringify(insertError));
-      if (insertError.code === '23505') {
+      if (insertError?.code === '23505') {
         return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
       }
       return NextResponse.json({ error: 'Failed to join waitlist' }, { status: 500 });

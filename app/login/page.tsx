@@ -7,11 +7,25 @@ import { ArrowRight } from 'lucide-react';
 import { AuthShell } from '@/components/auth-shell';
 import { supabase } from '@/lib/supabase/client';
 
+const MESSAGES: Record<string, string> = {
+  'check-email': 'Check your email to confirm your account.',
+  'password-reset': 'Password reset link sent.',
+  'password-updated': 'Password updated successfully. Please sign in.',
+  'session-expired': 'Your session expired. Please sign in again.',
+};
+
+function sanitizeRedirect(next: string | null): string {
+  if (!next) return '/dashboard';
+  if (!next.startsWith('/') || next.startsWith('//')) return '/dashboard';
+  if (next.includes('://')) return '/dashboard';
+  return next;
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/dashboard';
-  const message = searchParams.get('message');
+  const redirect = sanitizeRedirect(searchParams.get('redirect'));
+  const message = MESSAGES[searchParams.get('message') ?? ''] ?? null;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

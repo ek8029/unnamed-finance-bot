@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       .from('institutions')
       .select('id')
       .eq('slug', 'manual-portfolio')
-      .single();
+      .maybeSingle();
 
     if (!institution) {
       return NextResponse.json({ error: 'Manual portfolio institution not found. Run migration 037.' }, { status: 500 });
@@ -75,9 +75,9 @@ export async function POST(req: NextRequest) {
           sync_status: 'healthy',
         })
         .select('id')
-        .single();
+        .maybeSingle();
 
-      if (accountError) {
+      if (accountError || !newAccount) {
         console.error('[manual-portfolio] Failed to create account:', accountError);
         return NextResponse.json({ error: 'Failed to create manual account' }, { status: 500 });
       }
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
         .from('securities')
         .select('id')
         .eq('ticker', ticker)
-        .single();
+        .maybeSingle();
 
       if (!security) {
         results.push({ ticker, error: 'Failed to create security' });

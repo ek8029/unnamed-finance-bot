@@ -16,10 +16,17 @@ import { NextRequest, NextResponse } from 'next/server';
  * - Send Day 0 welcome email
  * - Log to email_drip_log so drip cron skips Day 0
  */
+function sanitizeRedirect(next: string | null): string {
+  if (!next) return '/dashboard';
+  if (!next.startsWith('/') || next.startsWith('//')) return '/dashboard';
+  if (next.includes('://')) return '/dashboard';
+  return next;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/dashboard';
+  const next = sanitizeRedirect(searchParams.get('next'));
 
   if (code) {
     const supabase = await createClient();

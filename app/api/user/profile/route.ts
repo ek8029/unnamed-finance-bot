@@ -69,9 +69,9 @@ export async function PATCH(request: Request) {
         updated_at: new Date().toISOString(),
       })
       .select()
-      .single();
+      .maybeSingle();
 
-    if (error) {
+    if (error || !data) {
       console.error('Error updating profile:', error);
       return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 });
     }

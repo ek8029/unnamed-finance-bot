@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const INDEXNOW_KEY = 'f5faae6f4dba980a7b2a4f8daa5076ca';
 const HOST = 'https://helmterminal.dev';
 
 /**
@@ -10,10 +9,21 @@ const HOST = 'https://helmterminal.dev';
  * Protected by CRON_SECRET.
  */
 export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret) {
+    console.error('[indexnow] CRON_SECRET not configured');
+    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+  }
+
+  const authHeader = request.headers.get('authorization');
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const INDEXNOW_KEY = process.env.INDEXNOW_KEY;
+  if (!INDEXNOW_KEY) {
+    console.error('[indexnow] INDEXNOW_KEY not configured');
+    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
   }
 
   const body = await request.json();
