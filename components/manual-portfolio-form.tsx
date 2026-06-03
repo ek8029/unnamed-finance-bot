@@ -116,7 +116,7 @@ export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortf
     <div className={compact ? '' : 'max-w-lg mx-auto'}>
       <div className="space-y-2">
         {/* Header row */}
-        <div className="grid gap-1.5 sm:gap-2" style={{ gridTemplateColumns: '1fr 60px 80px 28px' }}>
+        <div className="grid gap-1.5 sm:gap-2" style={{ gridTemplateColumns: '1fr 56px 72px 28px' }}>
           <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-medium" style={{ fontFamily: 'var(--font-mono)' }}>Ticker</span>
           <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-medium" style={{ fontFamily: 'var(--font-mono)' }}>Shares</span>
           <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-medium" style={{ fontFamily: 'var(--font-mono)' }}>
@@ -128,14 +128,14 @@ export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortf
 
         {/* Holding rows */}
         {rows.map((row) => (
-          <div key={row.id} className="grid gap-1.5 sm:gap-2" style={{ gridTemplateColumns: '1fr 60px 80px 28px' }}>
+          <div key={row.id} className="grid gap-1.5 sm:gap-2" style={{ gridTemplateColumns: '1fr 56px 72px 28px' }}>
             <input
               type="text"
               placeholder="AAPL"
               value={row.ticker}
               onChange={(e) => updateRow(row.id, 'ticker', e.target.value)}
               maxLength={6}
-              className="px-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[13px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors"
+              className="px-2 sm:px-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[12px] sm:text-[13px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors"
               style={{ fontFamily: 'var(--font-mono)' }}
             />
             <input
@@ -145,7 +145,7 @@ export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortf
               onChange={(e) => updateRow(row.id, 'shares', e.target.value)}
               min="0"
               step="any"
-              className="px-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[13px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors tabular-nums"
+              className="px-2 sm:px-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[12px] sm:text-[13px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors tabular-nums"
               style={{ fontFamily: 'var(--font-mono)' }}
             />
             <input
@@ -155,7 +155,7 @@ export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortf
               onChange={(e) => updateRow(row.id, 'costBasis', e.target.value)}
               min="0"
               step="any"
-              className="px-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[13px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors tabular-nums"
+              className="px-2 sm:px-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[12px] sm:text-[13px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors tabular-nums"
               style={{ fontFamily: 'var(--font-mono)' }}
             />
             <button

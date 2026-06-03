@@ -24,7 +24,7 @@ export default function AddHoldingsPage() {
             ADD HOLDINGS
           </span>
         </div>
-        <h1 className="text-[28px] font-bold tracking-tight text-[var(--color-text-primary)]">
+        <h1 className="text-[22px] sm:text-[28px] font-bold tracking-tight text-[var(--color-text-primary)]">
           Add your holdings
         </h1>
         <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed">

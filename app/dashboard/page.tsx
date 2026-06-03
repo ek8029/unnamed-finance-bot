@@ -123,7 +123,7 @@ export default function DashboardOverview() {
               Your dashboard is ready.
             </h1>
 
-            <p className="text-[15px] text-[var(--color-text-muted)] leading-[1.7] mb-10 max-w-[480px]">
+            <p className="text-[14px] sm:text-[15px] text-[var(--color-text-muted)] leading-[1.7] mb-8 sm:mb-10 max-w-[480px]">
               Your dashboard runs on real data. Connect a brokerage for automatic sync, or add your holdings manually to get started in 15 seconds.
             </p>
 
@@ -151,19 +151,19 @@ export default function DashboardOverview() {
 
             {/* Trust strip */}
             <div className="mt-4 flex flex-col gap-1.5 max-w-[480px]">
-              <div className="flex items-center gap-1.5 text-[12px] text-[var(--color-text-muted)]">
+              <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] text-[var(--color-text-muted)]">
                 <Lock className="w-3 h-3 shrink-0" />
                 <span>Read-only access — Helm can never move your money</span>
               </div>
-              <p className="text-[11px] text-[#555] pl-[18px]">
+              <p className="text-[10px] sm:text-[11px] text-[#555] pl-[18px]">
                 Secured by Plaid · 256-bit encryption · 12,000+ institutions
               </p>
             </div>
 
             {/* Plaid trust section */}
-            <div className="mt-9 pt-6 border-t border-[var(--color-border-subtle)] max-w-[500px]">
-              <p className="text-[15px] font-bold text-[var(--color-text-primary)] mb-4">What is Plaid?</p>
-              <p className="text-[14px] text-[var(--color-text-muted)] leading-[1.7] mb-5">
+            <div className="mt-7 sm:mt-9 pt-5 sm:pt-6 border-t border-[var(--color-border-subtle)] max-w-[500px]">
+              <p className="text-[14px] sm:text-[15px] font-bold text-[var(--color-text-primary)] mb-3 sm:mb-4">What is Plaid?</p>
+              <p className="text-[13px] sm:text-[14px] text-[var(--color-text-muted)] leading-[1.7] mb-4 sm:mb-5">
                 Plaid is the infrastructure layer between your bank and apps like Venmo, Robinhood, Coinbase, and Wealthfront. Over 12,000 financial institutions are supported.
               </p>
 
@@ -174,8 +174,8 @@ export default function DashboardOverview() {
                   { label: 'Encryption', text: 'AES-256', detail: ' in transit and at rest. Same standard used by major banks.' },
                   { label: 'Control', text: 'Disconnect anytime', detail: ' from Settings. Your data is deleted immediately.' },
                 ].map((fact) => (
-                  <div key={fact.label} className="flex items-baseline gap-3 py-2.5 border-b border-[var(--color-border-subtle)] last:border-b-0 text-[14px]">
-                    <span className="shrink-0 w-[100px] text-[11px] tracking-[0.12em] uppercase text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+                  <div key={fact.label} className="flex items-baseline gap-2 sm:gap-3 py-2 sm:py-2.5 border-b border-[var(--color-border-subtle)] last:border-b-0 text-[13px] sm:text-[14px]">
+                    <span className="shrink-0 w-[80px] sm:w-[100px] text-[10px] sm:text-[11px] tracking-[0.12em] uppercase text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
                       {fact.label}
                     </span>
                     <span className="text-[#888]">
@@ -188,7 +188,7 @@ export default function DashboardOverview() {
             </div>
 
             {/* Demo escape */}
-            <div className="mt-9 pt-5 border-t border-[var(--color-border-subtle)] max-w-[500px]">
+            <div className="mt-7 sm:mt-9 pt-4 sm:pt-5 border-t border-[var(--color-border-subtle)] max-w-[500px]">
               <button
                 onClick={() => { enableDemo(); router.refresh(); }}
                 className="px-6 py-3 border border-[var(--color-border-base)] rounded-[3px] text-[13px] font-semibold text-[var(--color-text-muted)] hover:border-[var(--color-gold)] hover:text-[var(--color-gold)] transition-colors cursor-pointer bg-transparent"

@@ -302,7 +302,7 @@ export default function TaxesPage() {
 
   if (tierLoading) {
     return (
-      <div className="container mx-auto p-6 max-w-6xl animate-pulse">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 max-w-6xl animate-pulse">
         <div className="h-8 bg-[var(--color-bg-elevated)] rounded w-1/4 mb-4" />
         <div className="h-64 bg-[var(--color-bg-elevated)] rounded-xl" />
       </div>
@@ -312,7 +312,7 @@ export default function TaxesPage() {
   const showProContent = isPro && !proRequired;
 
   return (
-    <main className="container mx-auto p-6 space-y-8 max-w-6xl" aria-label="Tax Center">
+    <main className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6 sm:space-y-8 max-w-6xl" aria-label="Tax Center">
 
       {/* ─── 1. Header ─── */}
       {loading ? (
@@ -344,7 +344,7 @@ export default function TaxesPage() {
           </div>
 
           {/* Giant headline */}
-          <h1 className="text-[28px] sm:text-[36px] font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.1]">
+          <h1 className="text-[20px] sm:text-[28px] md:text-[36px] font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.1]">
             You owe an estimated{' '}
             <span className="text-[var(--color-warning-text)]" style={TNUM}>
               {formatCurrency(estimatedTaxDue)}
@@ -401,7 +401,7 @@ export default function TaxesPage() {
               Estimated tax due
             </span>
             <p
-              className="text-[28px] sm:text-[42px] md:text-[48px] font-bold tracking-tight text-[var(--color-warning-text)] leading-none mt-2 mb-4"
+              className="text-[20px] sm:text-[28px] md:text-[48px] font-bold tracking-tight text-[var(--color-warning-text)] leading-none mt-2 mb-4"
               style={{ ...TNUM, ...MONO }}
             >
               {formatCurrency(estimatedTaxDue)}
@@ -430,7 +430,7 @@ export default function TaxesPage() {
             </span>
             <p
               className={cn(
-                'text-[28px] font-bold tracking-tight leading-none mt-2',
+                'text-[20px] sm:text-[28px] font-bold tracking-tight leading-none mt-2',
                 realizedYTD >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
               )}
               style={{ ...TNUM, ...MONO }}
@@ -458,7 +458,7 @@ export default function TaxesPage() {
               Harvestable
             </span>
             <p
-              className="text-[28px] font-bold tracking-tight text-[var(--color-warning-text)] leading-none mt-2"
+              className="text-[20px] sm:text-[28px] font-bold tracking-tight text-[var(--color-warning-text)] leading-none mt-2"
               style={{ ...TNUM, ...MONO }}
             >
               {formatCurrency(Math.abs(totalHarvestable))}
@@ -487,7 +487,7 @@ export default function TaxesPage() {
             {showProContent ? (
               <>
                 <p
-                  className="text-[28px] font-bold tracking-tight text-[var(--color-text-primary)] leading-none mt-2"
+                  className="text-[20px] sm:text-[28px] font-bold tracking-tight text-[var(--color-text-primary)] leading-none mt-2"
                   style={{ ...TNUM, ...MONO }}
                 >
                   {formatCurrency(carryoverLoss)}

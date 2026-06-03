@@ -52,9 +52,9 @@ export function FoundingMemberBanner() {
           >
             Founding Member
           </span>
-          <span className="text-[13px] text-[var(--color-text-secondary)] truncate">
+          <span className="text-[12px] sm:text-[13px] text-[var(--color-text-secondary)] truncate">
             $4.99/mo locked forever.{' '}
-            <span className="font-semibold text-[var(--color-text-primary)]">
+            <span className="hidden sm:inline font-semibold text-[var(--color-text-primary)]">
               {spotsRemaining} of {FOUNDING_CAP} spots remaining.
             </span>
           </span>

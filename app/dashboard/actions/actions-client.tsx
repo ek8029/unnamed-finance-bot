@@ -314,7 +314,7 @@ export function ActionsClient({ initialActions, isPro }: { initialActions: Actio
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)]">
+    <div className="flex flex-col h-[calc(100dvh-64px)]">
       {/* Top Bar: Title + Status Tabs + Generate */}
       <div className="px-4 md:px-6 py-3 md:py-4 border-b border-[var(--color-border-base)]">
         <div className="flex items-center justify-between mb-2 md:mb-0">
@@ -500,17 +500,17 @@ export function ActionsClient({ initialActions, isPro }: { initialActions: Actio
                     </div>
 
                     {/* Row 2: Title */}
-                    <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)] leading-snug line-clamp-2">
+                    <h3 className="text-[14px] sm:text-[16px] font-semibold text-[var(--color-text-primary)] leading-snug line-clamp-2">
                       {action.title}
                     </h3>
 
                     {/* Row 3: Summary + Impact */}
                     <div className="flex items-center gap-2 mt-1.5">
-                      <p className="text-[14px] text-[var(--color-text-muted)] truncate flex-1 leading-relaxed">
+                      <p className="text-[13px] sm:text-[14px] text-[var(--color-text-muted)] truncate flex-1 leading-relaxed">
                         {action.description}
                       </p>
                       {action.estimated_impact && action.estimated_impact > 0 && (
-                        <span className="text-[15px] font-semibold text-[var(--color-positive)] font-tabular whitespace-nowrap">
+                        <span className="text-[13px] sm:text-[15px] font-semibold text-[var(--color-positive)] font-tabular whitespace-nowrap">
                           {formatCurrency(action.estimated_impact)}
                         </span>
                       )}
@@ -590,7 +590,7 @@ function DetailPane({
   const Icon = typeIcons[action.type] || Lightbulb;
 
   return (
-    <div className="max-w-[740px] mx-auto px-5 md:px-8 py-6 md:py-8">
+    <div className="max-w-[740px] mx-auto px-4 sm:px-5 md:px-8 py-4 sm:py-6 md:py-8">
       {/* Mobile back button */}
       <button
         onClick={onMobileBack}
@@ -616,17 +616,17 @@ function DetailPane({
       </div>
 
       {/* Title */}
-      <h2 className="text-[28px] md:text-[36px] font-bold tracking-tight leading-[1.1] text-[var(--color-text-primary)] mb-4">
+      <h2 className="text-[20px] sm:text-[28px] md:text-[36px] font-bold tracking-tight leading-[1.1] text-[var(--color-text-primary)] mb-4">
         {action.title}
       </h2>
 
       {/* Summary */}
-      <p className="text-[15px] leading-relaxed text-[var(--color-text-secondary)] mb-8">
+      <p className="text-[14px] sm:text-[15px] leading-relaxed text-[var(--color-text-secondary)] mb-6 sm:mb-8">
         {action.description}
       </p>
 
       {/* Action Buttons */}
-      <div className="flex flex-wrap items-center gap-3 mb-8">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6 sm:mb-8">
         {activeTab === 'archived' ? (
           <button
             onClick={() => onAction(action.id, 'unarchive')}
@@ -697,7 +697,7 @@ function DetailPane({
       </div>
 
       {/* Context Grid */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <h3 className="type-eyebrow mb-3">Context</h3>
         <div className="border border-[var(--color-border-base)] rounded-lg overflow-hidden">
           {contextPairs.map((pair, i) => (
@@ -720,7 +720,7 @@ function DetailPane({
 
       {/* Helm Reasoning */}
       {action.recommended_action && (
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <h3 className="type-eyebrow mb-3">Helm Reasoning</h3>
           {isPro ? (
             <div className="border border-[var(--color-gold-border)] rounded-lg p-5 bg-[var(--color-gold-surface)]">

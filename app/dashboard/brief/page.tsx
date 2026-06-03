@@ -290,7 +290,7 @@ export default function BriefPage() {
 
   if (!loading && data && data.allHoldings.length === 0 && data.portfolio.totalValue === 0) {
     return (
-      <div className="min-h-screen bg-[var(--color-bg-base)] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-[var(--color-bg-base)] flex items-center justify-center px-4 sm:px-6">
         <div className="text-center space-y-4 max-w-md">
           <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">No portfolio data yet</h1>
           <p className="text-[var(--color-text-secondary)] mb-4">Add your holdings to see a personalized daily brief with portfolio performance, sector analysis, and market intelligence.</p>
@@ -310,13 +310,13 @@ export default function BriefPage() {
     return (
       <div className="min-h-screen bg-[var(--color-bg-base)]">
         <div className="border-b-2 border-[var(--color-gold)]/30 animate-pulse">
-          <div className="max-w-6xl mx-auto px-6 py-8">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
             <div className="h-3 w-48 bg-white/[0.06] rounded mb-3" />
             <div className="h-10 w-96 bg-white/[0.06] rounded" />
           </div>
         </div>
         <div className="bg-[#080808] border-b border-white/[0.06] animate-pulse">
-          <div className="max-w-6xl mx-auto px-6 py-5 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-5 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {[1, 2, 3, 4].map(i => (
               <div key={i}>
                 <div className="h-2 w-16 bg-white/[0.04] rounded mb-2" />
@@ -325,7 +325,7 @@ export default function BriefPage() {
             ))}
           </div>
         </div>
-        <div className="max-w-6xl mx-auto px-6 py-10 animate-pulse space-y-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10 animate-pulse space-y-6">
           <div className="h-3 w-32 bg-[var(--color-gold)]/10 rounded" />
           <div className="h-8 w-3/4 bg-white/[0.06] rounded" />
           <div className="space-y-3">
@@ -363,7 +363,7 @@ export default function BriefPage() {
 
       {/* ═══ Masthead ═══ */}
       <header className="border-b-2 border-[var(--color-gold)]">
-        <div className="max-w-6xl mx-auto px-6 py-6 md:py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 md:py-8">
 
           {/* Top line: issue info */}
           <div className="flex items-center justify-between mb-4">
@@ -399,7 +399,7 @@ export default function BriefPage() {
 
       {/* ═══ Market Tape (watchlist-driven) ═══ */}
       <div className="bg-[#080808] border-b border-white/[0.06]">
-        <div className="max-w-6xl mx-auto px-6 py-4">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)]" style={MONO}>WATCHLIST</span>
             <button
@@ -426,11 +426,11 @@ export default function BriefPage() {
               </form>
             )}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 md:gap-6">
           {(watchlist.length > 0 ? watchlist.filter(w => w.price != null && w.changePct != null).map(w => [w.ticker, `$${w.price.toFixed(2)}`, fmtPct(w.changePct), w.changePct >= 0] as [string, string, string, boolean]) : marketTapeItems).map(([label, value, delta, pos]) => (
             <div key={label} className="group relative">
               <div className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]" style={MONO}>{label}</div>
-              <div className="text-lg font-bold mt-1 tabular-nums">{value}</div>
+              <div className="text-sm sm:text-lg font-bold mt-1 tabular-nums">{value}</div>
               <div
                 className={`text-[13px] font-semibold mt-0.5 ${pos ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}
                 style={MONO}
@@ -453,11 +453,11 @@ export default function BriefPage() {
       </div>
 
       {/* ═══ Two-column editorial layout ═══ */}
-      <div className="max-w-6xl mx-auto px-6 py-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-[2.2fr_1fr] gap-4 md:gap-8 lg:gap-12">
 
           {/* ══ MAIN COLUMN ══ */}
-          <main className="space-y-10">
+          <main className="space-y-6 sm:space-y-10">
 
             {/* ── Lead Story: Editorial headline ── */}
             <article>
@@ -465,7 +465,7 @@ export default function BriefPage() {
                 YOUR PORTFOLIO
               </div>
 
-              <h2 className="text-3xl md:text-[2.75rem] font-bold tracking-tight leading-[1.08] mb-2" aria-live="polite">
+              <h2 className="text-2xl sm:text-3xl md:text-[2.75rem] font-bold tracking-tight leading-[1.08] mb-2" aria-live="polite">
                 {leadHeadline}
               </h2>
               {data.portfolio.vsBenchmark !== null && (
@@ -527,7 +527,7 @@ export default function BriefPage() {
                     <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)]" />
                     <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>AI Digest</span>
                   </div>
-                  <div className="px-5 py-4 space-y-3">
+                  <div className="px-3 sm:px-5 py-3 sm:py-4 space-y-3">
                     <div className="h-4 bg-[var(--color-bg-elevated)] rounded w-full" />
                     <div className="h-4 bg-[var(--color-bg-elevated)] rounded w-5/6" />
                     <div className="h-4 bg-[var(--color-bg-elevated)] rounded w-4/6" />
@@ -553,7 +553,7 @@ export default function BriefPage() {
                     </span>
                   )}
                 </div>
-                <div className="px-5 py-4">
+                <div className="px-3 sm:px-5 py-3 sm:py-4">
                   {data.digest.split('\n\n').map((para, i) => (
                     <p
                       key={i}
@@ -601,7 +601,7 @@ export default function BriefPage() {
                           {news.source} · {timeAgo(news.publishedAt)}
                         </span>
                       </div>
-                      <h3 className="text-lg font-bold leading-snug mb-1">
+                      <h3 className="text-base sm:text-lg font-bold leading-snug mb-1">
                         {news.url ? (
                           <a href={news.url} target="_blank" rel="noopener noreferrer" aria-label={`Read: ${news.title} (opens in new tab)`} className="hover:text-[var(--color-gold)] motion-safe:transition-colors">
                             {news.title}
@@ -609,7 +609,7 @@ export default function BriefPage() {
                         ) : news.title}
                       </h3>
                       {news.summary && (
-                        <p className="text-[16px] text-[var(--color-text-secondary)] leading-relaxed line-clamp-2" style={SERIF}>
+                        <p className="text-[14px] sm:text-[16px] text-[var(--color-text-secondary)] leading-relaxed line-clamp-2" style={SERIF}>
                           {news.summary}
                         </p>
                       )}
@@ -661,7 +661,7 @@ export default function BriefPage() {
                 <h2 className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>
                   MARKET HEADLINES
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
                   {data.generalNews.slice(0, 6).map((news) => (
                     <div key={news.id} className="group">
                       <div className="flex items-center gap-2 mb-1">
@@ -702,7 +702,7 @@ export default function BriefPage() {
                   EARNINGS THIS WEEK
                 </h2>
                 <div className="border border-white/[0.06] rounded overflow-hidden">
-                  <div className="grid grid-cols-[80px_1fr_100px] gap-3 items-center px-4 py-2.5 bg-white/[0.02] border-b border-white/[0.06]">
+                  <div className="grid grid-cols-[60px_1fr_80px] sm:grid-cols-[80px_1fr_100px] gap-2 sm:gap-3 items-center px-3 sm:px-4 py-2.5 bg-white/[0.02] border-b border-white/[0.06]">
                     <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-muted)]" style={MONO}>Date</span>
                     <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-muted)]" style={MONO}>Ticker</span>
                     <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-muted)] text-right" style={MONO}>Exposure</span>
@@ -712,7 +712,7 @@ export default function BriefPage() {
                     const dayAbbr = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dateObj.getDay()];
                     const monthAbbr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][dateObj.getMonth()];
                     return (
-                      <div key={e.ticker} className="grid grid-cols-[80px_1fr_100px] gap-3 items-center px-4 py-3 border-t border-white/[0.04] hover:bg-white/[0.02] motion-safe:transition-colors">
+                      <div key={e.ticker} className="grid grid-cols-[60px_1fr_80px] sm:grid-cols-[80px_1fr_100px] gap-2 sm:gap-3 items-center px-3 sm:px-4 py-3 border-t border-white/[0.04] hover:bg-white/[0.02] motion-safe:transition-colors">
                         <span className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>
                           {dayAbbr} {monthAbbr} {dateObj.getDate()}
                         </span>
@@ -763,7 +763,7 @@ export default function BriefPage() {
                 <h3 className="text-xl font-bold mb-2">
                   {harvestCandidates.length} position{harvestCandidates.length > 1 ? 's' : ''} dropped more than 3% today
                 </h3>
-                <p className="text-[16px] text-[var(--color-text-secondary)] leading-relaxed mb-4" style={SERIF}>
+                <p className="text-[14px] sm:text-[16px] text-[var(--color-text-secondary)] leading-relaxed mb-4" style={SERIF}>
                   {harvestCandidates.slice(0, 3).map(h => h.ticker).join(', ')}
                   {harvestCandidates.length > 3 ? ` and ${harvestCandidates.length - 3} more` : ''}
                   {' '}had significant moves today. Check the Tax Center for a full harvest analysis with cost-basis and wash-sale data.
@@ -915,7 +915,7 @@ export default function BriefPage() {
       </div>
 
       {/* ═══ Footer ═══ */}
-      <footer className="border-t border-white/[0.06] py-4 px-6">
+      <footer className="border-t border-white/[0.06] py-4 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between text-[11px] text-[var(--color-text-muted)] uppercase tracking-[0.12em]" style={MONO}>
           <span>Sources: Finnhub · Polygon · Market News</span>
           <span>helmterminal.dev</span>

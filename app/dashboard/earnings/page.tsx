@@ -41,10 +41,10 @@ function UpcomingCard({ event, formatCurrency, isPro }: { event: UpcomingEarning
         </div>
 
         {/* Content */}
-        <div className="flex-1 px-5 py-3.5">
+        <div className="flex-1 px-3 sm:px-5 py-3 sm:py-3.5">
           <div className="flex items-baseline justify-between mb-1">
             <div>
-              <span className="text-lg font-bold tracking-tight text-[var(--color-text-primary)]">{event.ticker}</span>
+              <span className="text-base sm:text-lg font-bold tracking-tight text-[var(--color-text-primary)]">{event.ticker}</span>
               <span className="text-[11px] text-[var(--color-text-muted)] ml-2" style={{ fontFamily: 'var(--font-mono)' }}>
                 {event.companyName}
               </span>
@@ -130,7 +130,7 @@ function RecentCard({ result, formatCurrency, isPro }: { result: RecentEarning; 
       style={{ background: 'var(--color-bg-surface)', border: `1px solid ${borderColor}` }}
     >
       {/* Status header */}
-      <div className="px-5 py-2.5 flex items-center gap-2 border-b border-[var(--color-border-subtle)]" style={{ background: result.beat ? 'rgba(56, 211, 159, 0.04)' : 'rgba(248, 113, 113, 0.04)' }}>
+      <div className="px-3 sm:px-5 py-2 sm:py-2.5 flex items-center gap-2 border-b border-[var(--color-border-subtle)]" style={{ background: result.beat ? 'rgba(56, 211, 159, 0.04)' : 'rgba(248, 113, 113, 0.04)' }}>
         <StatusIcon className="w-3.5 h-3.5" style={{ color: statusColor }} />
         <span className="text-[12px] font-semibold" style={{ color: statusColor, fontFamily: 'var(--font-mono)' }}>
           {result.ticker} {statusText}
@@ -138,9 +138,9 @@ function RecentCard({ result, formatCurrency, isPro }: { result: RecentEarning; 
       </div>
 
       {/* Details */}
-      <div className="px-5 py-3.5">
+      <div className="px-3 sm:px-5 py-3 sm:py-3.5">
         <div className="flex items-baseline gap-2 mb-3">
-          <span className="text-lg font-bold tracking-tight text-[var(--color-text-primary)]">{result.ticker}</span>
+          <span className="text-base sm:text-lg font-bold tracking-tight text-[var(--color-text-primary)]">{result.ticker}</span>
           <span className="text-[11px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
             {result.companyName}
           </span>
@@ -170,7 +170,7 @@ function RecentCard({ result, formatCurrency, isPro }: { result: RecentEarning; 
 
         {/* Impact grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-[var(--color-border-subtle)] rounded-sm overflow-hidden">
-          <div className="bg-[var(--color-bg-surface)] px-4 py-3">
+          <div className="bg-[var(--color-bg-surface)] px-3 sm:px-4 py-2 sm:py-3">
             <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Your Position</div>
             <div className="text-[15px] font-bold text-[var(--color-text-primary)] font-tabular">
               {formatCurrency(result.position.totalValue)}
@@ -178,7 +178,7 @@ function RecentCard({ result, formatCurrency, isPro }: { result: RecentEarning; 
           </div>
           {isPro ? (
             <>
-              <div className="bg-[var(--color-bg-surface)] px-4 py-3">
+              <div className="bg-[var(--color-bg-surface)] px-3 sm:px-4 py-2 sm:py-3">
                 <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Est. Impact</div>
                 <div
                   className="text-[15px] font-bold font-tabular"
@@ -188,7 +188,7 @@ function RecentCard({ result, formatCurrency, isPro }: { result: RecentEarning; 
                 </div>
               </div>
               {result.actualPostEarningsMove != null && (
-                <div className="bg-[var(--color-bg-surface)] px-4 py-3">
+                <div className="bg-[var(--color-bg-surface)] px-3 sm:px-4 py-2 sm:py-3">
                   <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Post-Earnings Move</div>
                   <div
                     className="text-[15px] font-bold font-tabular"
@@ -199,7 +199,7 @@ function RecentCard({ result, formatCurrency, isPro }: { result: RecentEarning; 
                 </div>
               )}
               {result.actualDollarImpact != null && (
-                <div className="bg-[var(--color-bg-surface)] px-4 py-3">
+                <div className="bg-[var(--color-bg-surface)] px-3 sm:px-4 py-2 sm:py-3">
                   <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Your Gain/Loss</div>
                   <div
                     className="text-[15px] font-bold font-tabular"
@@ -211,7 +211,7 @@ function RecentCard({ result, formatCurrency, isPro }: { result: RecentEarning; 
               )}
             </>
           ) : (
-            <div className="bg-[var(--color-bg-surface)] px-4 py-3 col-span-1 sm:col-span-1">
+            <div className="bg-[var(--color-bg-surface)] px-3 sm:px-4 py-2 sm:py-3 col-span-1 sm:col-span-1">
               <ProBlur label="Unlock impact analysis" variant="inline" />
             </div>
           )}
@@ -228,7 +228,7 @@ export default function EarningsPage() {
   const { report, loading, error, isPro } = useEarnings();
 
   return (
-    <div className="container mx-auto p-6 space-y-6 max-w-5xl">
+    <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-5xl">
       {/* Header */}
       <div className="space-y-2">
         <h1 className="type-h1">Earnings Impact</h1>
@@ -239,9 +239,9 @@ export default function EarningsPage() {
 
       {/* Summary cards */}
       {!loading && report && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
           <div
-            className="rounded-sm px-5 py-4"
+            className="rounded-sm px-3 sm:px-5 py-3 sm:py-4"
             style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
           >
             <div className="flex items-center gap-2 mb-2">
@@ -255,7 +255,7 @@ export default function EarningsPage() {
           </div>
 
           <div
-            className="rounded-sm px-5 py-4"
+            className="rounded-sm px-3 sm:px-5 py-3 sm:py-4"
             style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
           >
             <div className="flex items-center gap-2 mb-2">
@@ -269,7 +269,7 @@ export default function EarningsPage() {
           </div>
 
           <div
-            className="rounded-sm px-5 py-4"
+            className="rounded-sm px-3 sm:px-5 py-3 sm:py-4"
             style={{
               background: 'var(--color-bg-surface)',
               border: isPro && report.recentNetImpact != null
@@ -371,7 +371,7 @@ export default function EarningsPage() {
 
       {/* Empty state */}
       {!loading && report && report.upcoming.length === 0 && report.recent.length === 0 && (
-        <div className="rounded-sm px-8 py-12 text-center" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}>
+        <div className="rounded-sm px-4 sm:px-8 py-8 sm:py-12 text-center" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}>
           <div className="w-12 h-12 rounded-sm mx-auto mb-4 flex items-center justify-center" style={{ background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-base)' }}>
             <Calendar className="w-5 h-5 text-[var(--color-text-muted)]" />
           </div>
