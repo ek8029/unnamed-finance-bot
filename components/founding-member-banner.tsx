@@ -44,7 +44,7 @@ export function FoundingMemberBanner() {
 
   return (
     <>
-      <div className="relative mx-4 mt-4 mb-2 rounded-[var(--radius-md)] border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] px-4 py-3 flex items-center justify-between gap-4">
+      <div className="relative mx-3 sm:mx-4 mt-4 mb-2 rounded-[var(--radius-md)] border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] px-3 sm:px-4 py-3 flex items-center justify-between gap-2 sm:gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <span
             className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-gold)] shrink-0"

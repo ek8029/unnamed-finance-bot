@@ -64,7 +64,7 @@ export function ProBlur({
 
         {/* Overlay */}
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--color-bg-base)]/60 backdrop-blur-[2px]">
-          <div className="flex flex-col items-center gap-3 max-w-sm text-center">
+          <div className="flex flex-col items-center gap-3 max-w-[85vw] sm:max-w-sm text-center px-4">
             <div className="w-8 h-8 rounded-full bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center">
               <Lock className="w-3.5 h-3.5 text-[var(--color-gold)]" />
             </div>

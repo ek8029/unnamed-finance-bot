@@ -383,7 +383,7 @@ export default function BriefPage() {
               <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-gold)] mb-2" style={MONO}>{dateStr}</div>
               <div className="flex items-center gap-3">
                 <HelmMark size={28} />
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight">The Current</h1>
+                <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight">The Current</h1>
               </div>
             </div>
             <div className="text-left md:text-right" style={MONO}>
@@ -454,7 +454,7 @@ export default function BriefPage() {
 
       {/* ═══ Two-column editorial layout ═══ */}
       <div className="max-w-6xl mx-auto px-6 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-[2.2fr_1fr] gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-[2.2fr_1fr] gap-4 md:gap-8 lg:gap-12">
 
           {/* ══ MAIN COLUMN ══ */}
           <main className="space-y-10">

@@ -401,7 +401,7 @@ export default function TaxesPage() {
               Estimated tax due
             </span>
             <p
-              className="text-[42px] sm:text-[48px] font-bold tracking-tight text-[var(--color-warning-text)] leading-none mt-2 mb-4"
+              className="text-[28px] sm:text-[42px] md:text-[48px] font-bold tracking-tight text-[var(--color-warning-text)] leading-none mt-2 mb-4"
               style={{ ...TNUM, ...MONO }}
             >
               {formatCurrency(estimatedTaxDue)}
@@ -517,7 +517,7 @@ export default function TaxesPage() {
       {loading ? (
         <GridSkeleton />
       ) : (
-        <section aria-label="Quarterly breakdown" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <section aria-label="Quarterly breakdown" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {quarters.map((q) => {
             const isActive = q.status === 'in-progress';
             const statusColor =
