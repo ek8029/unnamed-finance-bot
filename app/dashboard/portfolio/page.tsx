@@ -442,15 +442,15 @@ export default function PortfolioPage() {
             {/* ── Mobile Value Header ── */}
             <div className="px-1">
               <div className="flex items-baseline gap-1">
-                <span className="text-[34px] font-bold tabular-nums text-[var(--color-text-primary)] leading-none">
+                <span className="text-[26px] sm:text-[34px] font-bold tabular-nums text-[var(--color-text-primary)] leading-none">
                   {formatCurrency(totalValue).replace(/\.\d+$/, '')}
                 </span>
-                <span className="text-[20px] text-[var(--color-text-muted)] tabular-nums leading-none">
+                <span className="text-[16px] sm:text-[20px] text-[var(--color-text-muted)] tabular-nums leading-none">
                   .{(totalValue % 1).toFixed(2).slice(2)}
                 </span>
               </div>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className={`font-mono text-[13px] font-bold tabular-nums ${
+                <span className={`font-mono text-[11px] sm:text-[13px] font-bold tabular-nums ${
                   totalDayChange >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                 }`}>
                   {totalDayChange >= 0 ? '+' : ''}{formatCurrency(totalDayChange)} ({dayChangePercentage >= 0 ? '+' : ''}{dayChangePercentage.toFixed(2)}%)
@@ -540,7 +540,7 @@ export default function PortfolioPage() {
                   href={`/dashboard/holdings/${h.ticker}`}
                   className="block p-3.5 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl active:bg-[var(--color-bg-elevated)] transition-colors"
                 >
-                  <div className="grid grid-cols-[40px_1fr_auto] gap-3 items-center">
+                  <div className="grid grid-cols-[36px_1fr_auto] gap-2 sm:gap-3 items-center">
                     <TickerIcon ticker={h.ticker} />
                     <div className="min-w-0">
                       <div className="flex items-baseline gap-2">
@@ -556,7 +556,7 @@ export default function PortfolioPage() {
                       </div>
                     </div>
                     <div className="text-right flex flex-col items-end gap-1">
-                      <div className="font-mono text-[13px] font-bold tabular-nums text-[var(--color-text-primary)]">
+                      <div className="font-mono text-[12px] sm:text-[13px] font-bold tabular-nums text-[var(--color-text-primary)]">
                         {h.total_value >= 1000 ? `$${(h.total_value / 1000).toFixed(1)}k` : formatCurrency(h.total_value)}
                       </div>
                       <svg width="48" height="16" viewBox="0 0 80 24" fill="none" className="block">
@@ -580,6 +580,17 @@ export default function PortfolioPage() {
               );
             })}
             </div>
+
+            {/* ── Mobile Market Intelligence ── */}
+            {holdings.length > 0 && (
+              <div className="mt-4 space-y-4">
+                <MarketIntelligence
+                  holdings={transformedHoldings}
+                  className="max-h-none"
+                />
+                <StressTest holdings={holdings} totalValue={totalValue} formatCurrency={formatCurrency} />
+              </div>
+            )}
           </div>
 
           {/* ── Desktop: Table view ── */}
