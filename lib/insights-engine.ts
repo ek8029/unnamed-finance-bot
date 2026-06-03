@@ -1,3 +1,4 @@
+import { computePortfolioLookthrough } from '@/lib/etf-holdings';
 import {
   TAX_RATE,
   TAX_INSIGHT_HIGH_PRIORITY_LOSS,
@@ -138,24 +139,56 @@ export async function generateInsights(
       }
     }
 
-    // Rule 2: Portfolio concentration
+    // Rule 2: Portfolio concentration (with ETF look-through)
     const totalPortfolio = holdings.reduce(
       (s: number, h: { total_value: number }) => s + Number(h.total_value), 0,
     );
     if (totalPortfolio > 0) {
+      // Compute look-through: aggregate direct + indirect exposure via ETFs/leveraged products
+      const lookthrough = computePortfolioLookthrough(
+        holdings.map((h: { ticker: string; total_value: number }) => ({ ticker: h.ticker, totalValue: Number(h.total_value) })),
+        totalPortfolio,
+      );
+
+      // Check direct holdings (original behavior)
       for (const h of holdings) {
-        const weight = Number(h.total_value) / totalPortfolio;
-        if (weight > CONCENTRATION_THRESHOLDS.critical / 100 && holdings.length > 1) {
+        const directWeight = Number(h.total_value) / totalPortfolio;
+        const ltEntry = lookthrough.get(h.ticker.toUpperCase());
+        const totalWeight = ltEntry ? ltEntry.totalWeight / 100 : directWeight;
+        const hasIndirect = ltEntry && ltEntry.indirectWeight > 0;
+
+        if (totalWeight > CONCENTRATION_THRESHOLDS.critical / 100 && holdings.length > 1) {
+          const pctDisplay = Math.round(totalWeight * 100);
+          const sources = hasIndirect ? ` (${ltEntry.sources.join(', ')})` : '';
           candidates.push({
             insight_type: 'portfolio',
-            priority: weight > 0.5 ? 'high' : 'medium',
-            title: `${h.ticker} is ${Math.round(weight * 100)}% of your portfolio`,
-            description: `A single position making up more than ${CONCENTRATION_THRESHOLDS.critical}% of your portfolio increases risk. ${h.ticker} currently represents $${Number(h.total_value).toLocaleString()} of your $${totalPortfolio.toLocaleString()} portfolio.`,
-            recommended_action: `Consider diversifying by reducing your ${h.ticker} position or adding to other holdings.`,
+            priority: totalWeight > 0.5 ? 'high' : 'medium',
+            title: `${h.ticker} is ${pctDisplay}% of your portfolio${hasIndirect ? ' (including ETF exposure)' : ''}`,
+            description: hasIndirect
+              ? `Your total ${h.ticker} exposure is ${pctDisplay}% when including indirect holdings through ETFs and leveraged products${sources}. Direct position: $${Number(h.total_value).toLocaleString()}.`
+              : `A single position making up more than ${CONCENTRATION_THRESHOLDS.critical}% of your portfolio increases risk. ${h.ticker} currently represents $${Number(h.total_value).toLocaleString()} of your $${totalPortfolio.toLocaleString()} portfolio.`,
+            recommended_action: `Consider diversifying by reducing your ${h.ticker} exposure${hasIndirect ? ' across direct and ETF holdings' : ''}.`,
             confidence_score: 0.95,
             source_type: 'rule_based',
             related_entity_type: 'holding',
             related_entity_ids: [h.id],
+          });
+        }
+      }
+
+      // Check for hidden concentration: stocks only exposed via ETFs (not held directly)
+      for (const [ticker, entry] of lookthrough) {
+        const isDirectlyHeld = holdings.some((h: { ticker: string }) => h.ticker.toUpperCase() === ticker);
+        if (!isDirectlyHeld && entry.totalWeight > CONCENTRATION_THRESHOLDS.critical) {
+          candidates.push({
+            insight_type: 'portfolio',
+            priority: entry.totalWeight > 40 ? 'high' : 'medium',
+            title: `Hidden ${ticker} exposure: ${Math.round(entry.totalWeight)}% via ETFs`,
+            description: `You don't hold ${ticker} directly, but your ETF holdings give you ${Math.round(entry.totalWeight)}% effective exposure through ${entry.sources.join(', ')}.`,
+            recommended_action: `Review whether your combined ETF exposure to ${ticker} aligns with your risk tolerance.`,
+            confidence_score: 0.90,
+            source_type: 'rule_based',
+            related_entity_type: 'holding',
           });
         }
       }

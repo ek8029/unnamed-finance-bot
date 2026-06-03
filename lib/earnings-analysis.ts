@@ -5,6 +5,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
+import { getUnderlyingExposure } from '@/lib/etf-holdings';
 import {
   getEarningsCalendar,
   getEarnings,
@@ -128,31 +129,63 @@ async function getUpcomingEarnings(
   // Fetch earnings calendar from Finnhub
   const calendar = await getEarningsCalendar(from, to);
 
-  // Cross-reference with user holdings
+  // Build indirect exposure map: ticker → total exposure from ETFs
+  const totalValue = Array.from(holdingsMap.values()).reduce((s, p) => s + p.totalValue, 0);
+  const indirectExposure = new Map<string, { exposureValue: number; sources: string[] }>();
+  for (const [hTicker, pos] of holdingsMap) {
+    const underlyings = getUnderlyingExposure(hTicker, pos.totalValue, totalValue);
+    for (const u of underlyings) {
+      const existing = indirectExposure.get(u.ticker) || { exposureValue: 0, sources: [] };
+      existing.exposureValue += (u.effectiveWeight / 100) * totalValue;
+      if (!existing.sources.includes(u.source)) existing.sources.push(u.source);
+      indirectExposure.set(u.ticker, existing);
+    }
+  }
+
+  // Cross-reference with user holdings (direct + indirect via ETFs)
   const upcoming: UpcomingEarningsEvent[] = [];
 
   for (const event of calendar) {
-    const position = holdingsMap.get(event.symbol);
-    if (!position) continue;
+    let position = holdingsMap.get(event.symbol);
+    const indirect = indirectExposure.get(event.symbol);
+
+    // Skip if no direct or indirect exposure
+    if (!position && !indirect) continue;
+
+    // If only indirect exposure, create a synthetic position
+    if (!position && indirect) {
+      position = {
+        ticker: event.symbol,
+        securityName: event.symbol,
+        shares: 0,
+        currentPrice: 0,
+        totalValue: indirect.exposureValue,
+        allocationPct: totalValue > 0 ? (indirect.exposureValue / totalValue) * 100 : 0,
+        sector: 'Unknown',
+      };
+    }
+
+    // position is guaranteed non-undefined after the guards above
+    const pos = position!;
 
     // Refresh position with live price + company data
     const [quote, profile] = await Promise.all([
       getQuote(event.symbol),
-      position.securityName === event.symbol ? getCompanyProfile(event.symbol) : null,
+      pos.securityName === event.symbol ? getCompanyProfile(event.symbol) : null,
     ]);
 
     // Use live price if available, recalculate exposure
-    let livePosition = position;
+    let livePosition = pos;
     if (quote && quote.c > 0) {
-      const liveValue = position.shares * quote.c;
+      const liveValue = pos.shares * quote.c;
       livePosition = {
-        ...position,
+        ...pos,
         currentPrice: quote.c,
         totalValue: liveValue,
       };
     }
 
-    const companyName = profile?.name || position.securityName;
+    const companyName = profile?.name || pos.securityName;
 
     // Calculate scenario impacts
     // 5% EPS beat → stock moves ~5%, applied to live position value
