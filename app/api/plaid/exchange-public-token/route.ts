@@ -60,6 +60,9 @@ export async function POST(request: Request) {
 
       if (existing) {
         duplicateItem = existing;
+        // Remove old plaid_item to prevent duplicate holdings.
+        // Linked accounts + holdings cascade-delete via FK.
+        await supabase.from('plaid_items').delete().eq('id', existing.id);
       }
     }
 
