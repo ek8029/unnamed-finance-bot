@@ -102,11 +102,57 @@ export const SINGLE_STOCK_MAP: Record<string, SingleStockProduct> = {
   CRWG: { underlying: 'CRWV', leverage: 2, name: 'Leverage Shares 2x Long CoreWeave' },
   ASMG: { underlying: 'ASML', leverage: 2, name: 'Leverage Shares 2x Long ASML' },
 
-  // ── REX / T-REX ──
+  // ── REX / T-REX 2x Long ──
   FEBL: { underlying: 'META', leverage: 2, name: 'T-Rex 2X Long META Daily' },
   FLYL: { underlying: 'UBER', leverage: 2, name: 'T-Rex 2X Long UBER Daily' },
   NFLL: { underlying: 'NFLX', leverage: 2, name: 'T-Rex 2X Long NFLX Daily' },
   BIRL: { underlying: 'COIN', leverage: 2, name: 'T-Rex 2X Long Coinbase Daily' },
+
+  // ── YieldMax Option Income (1x exposure, covered call strategy) ──
+  // These have ~1x underlying exposure with capped upside
+  TSLY: { underlying: 'TSLA', leverage: 1, name: 'YieldMax TSLA Option Income' },
+  NVDY: { underlying: 'NVDA', leverage: 1, name: 'YieldMax NVDA Option Income' },
+  CONY: { underlying: 'COIN', leverage: 1, name: 'YieldMax COIN Option Income' },
+  MSTY: { underlying: 'MSTR', leverage: 1, name: 'YieldMax MSTR Option Income' },
+  PLTY: { underlying: 'PLTR', leverage: 1, name: 'YieldMax PLTR Option Income' },
+  AMZY: { underlying: 'AMZN', leverage: 1, name: 'YieldMax AMZN Option Income' },
+  APLY: { underlying: 'AAPL', leverage: 1, name: 'YieldMax AAPL Option Income' },
+  GOOY: { underlying: 'GOOGL', leverage: 1, name: 'YieldMax GOOGL Option Income' },
+  MSFO: { underlying: 'MSFT', leverage: 1, name: 'YieldMax MSFT Option Income' },
+  JPMO: { underlying: 'JPM', leverage: 1, name: 'YieldMax JPM Option Income' },
+  MRNY: { underlying: 'MRNA', leverage: 1, name: 'YieldMax MRNA Option Income' },
+  DISO: { underlying: 'DIS', leverage: 1, name: 'YieldMax DIS Option Income' },
+  NFLY: { underlying: 'NFLX', leverage: 1, name: 'YieldMax NFLX Option Income' },
+  SQY: { underlying: 'SQ', leverage: 1, name: 'YieldMax SQ Option Income' },
+  SNOY: { underlying: 'SNOW', leverage: 1, name: 'YieldMax SNOW Option Income' },
+  AMDY: { underlying: 'AMD', leverage: 1, name: 'YieldMax AMD Option Income' },
+  FBY: { underlying: 'META', leverage: 1, name: 'YieldMax META Option Income' },
+  BABO: { underlying: 'BABA', leverage: 1, name: 'YieldMax BABA Option Income' },
+  XOMO: { underlying: 'XOM', leverage: 1, name: 'YieldMax XOM Option Income' },
+  ABNY: { underlying: 'ABNB', leverage: 1, name: 'YieldMax ABNB Option Income' },
+  CRSH: { underlying: 'CRWD', leverage: 1, name: 'YieldMax CRWD Option Income' },
+  PYPY: { underlying: 'PYPL', leverage: 1, name: 'YieldMax PYPL Option Income' },
+  ULTY: { underlying: 'UBER', leverage: 1, name: 'YieldMax UBER Option Income' },
+
+  // ── Innovator / Buffer ETFs (1x exposure with downside buffer) ──
+  // These still have underlying equity exposure
+  BAPR: { underlying: 'SPY', leverage: 1, name: 'Innovator S&P 500 Buffer Apr' },
+  BJUL: { underlying: 'SPY', leverage: 1, name: 'Innovator S&P 500 Buffer Jul' },
+  BOCT: { underlying: 'SPY', leverage: 1, name: 'Innovator S&P 500 Buffer Oct' },
+  BJAN: { underlying: 'SPY', leverage: 1, name: 'Innovator S&P 500 Buffer Jan' },
+
+  // ── Additional Direxion Single-Stock ──
+  AAMD: { underlying: 'AMD', leverage: 2, name: 'Direxion Daily AMD Bull 2X' },
+  APTS: { underlying: 'APT', leverage: 2, name: 'Direxion Daily APTS Bull 2X' },
+  CORU: { underlying: 'COIN', leverage: 2, name: 'Direxion Daily COIN Bull 2X' },
+
+  // ── Kurv (Yield Premium Strategy — 1x with options) ──
+  AAPY: { underlying: 'AAPL', leverage: 1, name: 'Kurv AAPL Yield Premium' },
+  NVDX: { underlying: 'NVDA', leverage: 1, name: 'Kurv NVDA Yield Premium' },
+  TSLP: { underlying: 'TSLA', leverage: 1, name: 'Kurv TSLA Yield Premium' },
+  MSFP: { underlying: 'MSFT', leverage: 1, name: 'Kurv MSFT Yield Premium' },
+  AMZP: { underlying: 'AMZN', leverage: 1, name: 'Kurv AMZN Yield Premium' },
+  GOGP: { underlying: 'GOOGL', leverage: 1, name: 'Kurv GOOGL Yield Premium' },
 };
 
 // ── Leveraged/Inverse Index ETFs → Underlying Index ETF ──
