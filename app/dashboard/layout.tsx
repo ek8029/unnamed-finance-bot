@@ -59,7 +59,7 @@ function ConnectBanner() {
         </div>
         <button
           onClick={() => setDismissed(true)}
-          className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors shrink-0"
+          className="grid place-items-center min-w-[44px] min-h-[44px] -m-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors shrink-0"
           aria-label="Dismiss banner"
         >
           <X className="w-3.5 h-3.5" />
@@ -229,7 +229,7 @@ export default function DashboardLayout({
     <GuidedTour />
     <div className={cn(
       "bg-[var(--color-bg-base)] flex max-w-[100vw] overflow-x-hidden",
-      isChatPage ? "h-screen overflow-hidden" : "min-h-screen"
+      isChatPage ? "h-dvh overflow-hidden" : "min-h-dvh"
     )}>
 
       {/* ═══════════════════════════════════════════════
@@ -492,7 +492,7 @@ export default function DashboardLayout({
           ═══════════════════════════════════════════════ */}
       <div className={cn(
         "ml-0 md:ml-64 flex flex-col flex-1 min-w-0",
-        isChatPage ? "h-screen overflow-hidden" : "min-h-screen"
+        isChatPage ? "h-dvh overflow-hidden" : "min-h-dvh"
       )}>
 
         {/* ── Mobile Top Bar (hidden on wrapped) ── */}
@@ -514,7 +514,7 @@ export default function DashboardLayout({
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+              className="grid place-items-center min-w-[44px] min-h-[44px] -m-2.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
               aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
             >
               {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -617,7 +617,7 @@ export default function DashboardLayout({
 
         {/* Spacer for mobile bottom nav — nav grid (~56px) + safe area */}
         {!isWrappedPage && (
-          <div className="md:hidden shrink-0" style={{ height: 'calc(64px + env(safe-area-inset-bottom, 0px))' }} />
+          <div className="md:hidden shrink-0" style={{ height: 'calc(var(--mobile-nav-h, 56px) + env(safe-area-inset-bottom, 0px))' }} />
         )}
       </div>
 

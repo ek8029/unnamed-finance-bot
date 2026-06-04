@@ -43,7 +43,7 @@ export function MobileBottomNav() {
               <Link
                 key={tab.id}
                 href={tab.href}
-                className="flex flex-col items-center justify-center gap-1 py-1"
+                className="flex flex-col items-center justify-center gap-1 py-1 min-h-[44px]"
               >
                 <div
                   className="w-10 h-10 -mt-3 rounded-full flex items-center justify-center bg-[var(--color-gold)]"

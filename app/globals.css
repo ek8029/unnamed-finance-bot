@@ -4,6 +4,9 @@
 
 /* ── Selection & scroll ── */
 html { scroll-behavior: smooth; }
+@media (max-width: 767px) {
+  html { scroll-padding-bottom: calc(var(--mobile-nav-h, 56px) + env(safe-area-inset-bottom, 0px) + 16px); }
+}
 ::selection { background: rgba(230, 185, 77, 0.25); color: inherit; }
 
 /* Custom scrollbar — thin, dark, matches theme */
@@ -184,6 +187,19 @@ html { scroll-behavior: smooth; }
     --density-multiplier: 1.25;
     --card-padding: 28px;
     --section-spacing: 28px;
+  }
+
+  /* ── Mobile nav height ── */
+  :root {
+    --mobile-nav-h: 56px;
+  }
+
+  /* ── MOBILE DENSITY OVERRIDES — tighter cards on small screens ── */
+  @media (max-width: 767px) {
+    :root,
+    :root[data-density="comfortable"] { --card-padding: 12px; --section-spacing: 12px; }
+    :root[data-density="spacious"]    { --card-padding: 16px; --section-spacing: 16px; }
+    :root[data-density="compact"]     { --card-padding: 10px; --section-spacing: 10px; }
   }
 
   body {

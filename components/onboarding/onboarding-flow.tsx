@@ -121,7 +121,7 @@ export function OnboardingFlow() {
         }
       `}</style>
 
-      <div className="fixed inset-0 z-[100] bg-[#050505] flex items-center justify-center overflow-hidden">
+      <div className="fixed inset-0 z-[100] bg-[#050505] flex items-center justify-center overflow-y-auto overflow-x-hidden">
         {/* Dot grid */}
         <div className="absolute inset-0 opacity-[0.03]" style={{
           backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(230,185,77,0.4) 0.5px, transparent 0)',
@@ -158,9 +158,9 @@ export function OnboardingFlow() {
 
         {/* ═══ TOUR PHASE ═══ */}
         {phase === 'tour' && (
-          <div className="relative w-full max-w-3xl mx-auto px-8" style={{ animation: 'onb-fade-up 0.5s ease-out' }}>
+          <div className="relative w-full max-w-3xl mx-auto px-4 sm:px-8 py-8 sm:py-0" style={{ animation: 'onb-fade-up 0.5s ease-out' }}>
             {/* Header */}
-            <div className="text-center mb-12">
+            <div className="text-center mb-6 sm:mb-12">
               <div className="flex items-center justify-center gap-2.5 mb-4">
                 <div className="w-2 h-2 rounded-full bg-[var(--color-gold)]" />
                 <span className="font-mono text-[12px] tracking-[0.2em] text-[var(--color-gold)] uppercase">
@@ -180,7 +180,7 @@ export function OnboardingFlow() {
               {TOUR_STEPS.map((step, i) => (
                 <div
                   key={step.num}
-                  className={`flex gap-5 p-5 rounded-lg border transition-all duration-300 ${
+                  className={`flex gap-3 sm:gap-5 p-3.5 sm:p-5 rounded-lg border transition-all duration-300 ${
                     i === tourStep
                       ? 'border-[var(--color-gold)]/30 bg-[var(--color-gold-surface)]'
                       : i < tourStep
@@ -210,15 +210,15 @@ export function OnboardingFlow() {
             </div>
 
             {/* Tour navigation */}
-            <div className="flex items-center justify-between mt-10 max-w-xl mx-auto">
+            <div className="flex items-center justify-between mt-6 sm:mt-10 mb-4 sm:mb-0 max-w-xl mx-auto">
               <button
                 onClick={handleSkipTour}
-                className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors font-mono"
+                className="text-[13px] py-3 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors font-mono"
               >
                 Skip tour
               </button>
 
-              <div className="flex items-center gap-5">
+              <div className="flex items-center gap-3 sm:gap-5">
                 {/* Step dots */}
                 <div className="flex gap-2">
                   {TOUR_STEPS.map((_, i) => (
@@ -233,7 +233,7 @@ export function OnboardingFlow() {
 
                 <button
                   onClick={handleNextStep}
-                  className="flex items-center gap-2.5 px-7 py-3 bg-[var(--color-gold)] text-black text-[15px] font-semibold rounded-md hover:brightness-110 transition-all"
+                  className="flex items-center gap-2.5 px-5 sm:px-7 py-3.5 sm:py-3 bg-[var(--color-gold)] text-black text-[15px] font-semibold rounded-md hover:brightness-110 transition-all"
                 >
                   {tourStep < TOUR_STEPS.length - 1 ? 'Next' : 'Enter Terminal'}
                   <ArrowRight className="w-4 h-4" />
@@ -245,7 +245,7 @@ export function OnboardingFlow() {
 
         {/* ═══ LAUNCH PHASE ═══ */}
         {phase === 'launch' && (
-          <div className="relative text-center space-y-8 px-8 max-w-2xl" style={{ animation: 'onb-fade-up 0.5s ease-out' }}>
+          <div className="relative text-center space-y-6 sm:space-y-8 px-4 sm:px-8 py-8 sm:py-0 max-w-2xl" style={{ animation: 'onb-fade-up 0.5s ease-out' }}>
             <div className="flex justify-center">
               <HelmMark size={72} />
             </div>
@@ -261,7 +261,7 @@ export function OnboardingFlow() {
             <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
               <button
                 onClick={handleLaunchDemo}
-                className="flex-1 flex flex-col items-center gap-3 px-6 py-6 rounded-md border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] hover:bg-[rgba(230,185,77,0.08)] transition-colors cursor-pointer"
+                className="flex-1 flex flex-col items-center gap-3 px-4 sm:px-6 py-5 sm:py-6 rounded-md border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] hover:bg-[rgba(230,185,77,0.08)] transition-colors cursor-pointer"
               >
                 <Link2 className="w-6 h-6 text-[var(--color-gold)]" />
                 <span className="text-[15px] font-semibold text-[var(--color-text-primary)]">Connect brokerage</span>
@@ -270,7 +270,7 @@ export function OnboardingFlow() {
 
               <button
                 onClick={() => setPhase('manual')}
-                className="flex-1 flex flex-col items-center gap-3 px-6 py-6 rounded-md border border-[var(--color-border-base)] hover:border-[var(--color-border-strong)] transition-colors cursor-pointer"
+                className="flex-1 flex flex-col items-center gap-3 px-4 sm:px-6 py-5 sm:py-6 rounded-md border border-[var(--color-border-base)] hover:border-[var(--color-border-strong)] transition-colors cursor-pointer"
               >
                 <PenLine className="w-6 h-6 text-[var(--color-text-muted)]" />
                 <span className="text-[15px] font-semibold text-[var(--color-text-primary)]">Add holdings</span>
@@ -280,7 +280,7 @@ export function OnboardingFlow() {
 
             <button
               onClick={handleLaunchDemo}
-              className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer"
+              className="text-[13px] py-3 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer"
               style={{ fontFamily: 'var(--font-mono)' }}
             >
               Skip for now
@@ -289,8 +289,8 @@ export function OnboardingFlow() {
         )}
 
         {phase === 'manual' && (
-          <div className="relative w-full max-w-lg px-8" style={{ animation: 'onb-fade-up 0.5s ease-out' }}>
-            <div className="text-center mb-8">
+          <div className="relative w-full max-w-lg px-4 sm:px-8 py-8 sm:py-0" style={{ animation: 'onb-fade-up 0.5s ease-out' }}>
+            <div className="text-center mb-6 sm:mb-8">
               <h2 className="text-[28px] font-bold tracking-tight text-[var(--color-text-primary)]">
                 Add your holdings
               </h2>
@@ -309,7 +309,7 @@ export function OnboardingFlow() {
             <div className="text-center mt-4">
               <button
                 onClick={() => setPhase('launch')}
-                className="text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer"
+                className="text-[12px] py-3 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer"
                 style={{ fontFamily: 'var(--font-mono)' }}
               >
                 Back

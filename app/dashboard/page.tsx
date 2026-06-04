@@ -255,9 +255,9 @@ export default function DashboardOverview() {
 
           {/* Giant number */}
           <h1
-            className="font-mono font-bold tabular-nums text-[var(--color-text-primary)]"
+            className="font-mono font-bold tabular-nums text-[var(--color-text-primary)] max-w-full"
             style={{
-              fontSize: 'clamp(36px, 8vw, 96px)',
+              fontSize: 'clamp(40px, 7vw, 96px)',
               letterSpacing: '-0.04em',
               lineHeight: 1.05,
             }}

@@ -88,7 +88,8 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentag
                     tickLine={false}
                     axisLine={false}
                     fontFamily="var(--font-mono)"
-                    interval={0}
+                    interval="preserveStartEnd"
+                    minTickGap={24}
                     tick={{ dy: 6 }}
                   />
                   <YAxis
@@ -99,7 +100,7 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentag
                     tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                     fontFamily="var(--font-mono)"
                     domain={[yMin, yMax]}
-                    width={52}
+                    width={36}
                   />
                   <Tooltip
                     formatter={(value) => [formatCurrency(Number(value)), 'Net Worth']}
