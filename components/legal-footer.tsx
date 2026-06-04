@@ -11,7 +11,7 @@ const links = [
   { label: 'Terms', href: '/terms' },
   { label: 'Security', href: '/security' },
   { label: 'Data Deletion', href: '/data-deletion' },
-  { label: 'Contact', href: 'mailto:support@helmterminal.dev' },
+  { label: 'Contact', href: '/contact' },
 ];
 
 function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
