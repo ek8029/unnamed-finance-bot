@@ -7,7 +7,7 @@ export default function AddHoldingsPage() {
   const router = useRouter();
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 max-w-[90vw] sm:max-w-lg">
+    <div className="container mx-auto p-4 sm:p-6 max-w-[90vw] sm:max-w-xl lg:max-w-2xl">
       <div className="space-y-2 mb-8">
         <div className="flex items-center gap-2">
           <span
