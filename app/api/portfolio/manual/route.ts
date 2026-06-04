@@ -100,16 +100,16 @@ export async function POST(req: NextRequest) {
       const shares = Number(h.shares);
       const costBasis = h.costBasis ? Number(h.costBasis) : null;
 
-      // Fetch live quote (retry once after 1.5s if rate limited)
+      // Fetch live quote — retry up to 3 times with increasing delay
       let currentPrice = 0;
-      for (let attempt = 0; attempt < 2; attempt++) {
+      for (let attempt = 0; attempt < 3; attempt++) {
         try {
+          if (attempt > 0) await new Promise(r => setTimeout(r, attempt * 3000));
           const quote = await getQuote(ticker);
           currentPrice = quote?.c || 0;
           if (currentPrice > 0) break;
-          if (attempt === 0) await new Promise(r => setTimeout(r, 1500));
         } catch {
-          if (attempt === 0) await new Promise(r => setTimeout(r, 1500));
+          // Rate limited or network error — retry
         }
       }
 
