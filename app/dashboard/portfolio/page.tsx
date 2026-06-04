@@ -540,19 +540,23 @@ export default function PortfolioPage() {
             {/* ── Mobile Positions Header with Toggle ── */}
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setPositionsView('positions')}
-                  className={`text-sm font-semibold transition-colors cursor-pointer ${positionsView === 'positions' ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
-                >
-                  Positions
-                </button>
-                {hasIndirectExposure && (
-                  <button
-                    onClick={() => setPositionsView('exposure')}
-                    className={`text-sm font-semibold transition-colors cursor-pointer ${positionsView === 'exposure' ? 'text-[var(--color-gold)]' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
-                  >
-                    True Exposure
-                  </button>
+                {hasIndirectExposure ? (
+                  <div className="flex items-center gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-0.5">
+                    <button
+                      onClick={() => setPositionsView('positions')}
+                      className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${positionsView === 'positions' ? 'bg-[var(--color-gold)] text-black' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
+                    >
+                      Positions
+                    </button>
+                    <button
+                      onClick={() => setPositionsView('exposure')}
+                      className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${positionsView === 'exposure' ? 'bg-[var(--color-gold)] text-black' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
+                    >
+                      True Exposure
+                    </button>
+                  </div>
+                ) : (
+                  <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Positions</h2>
                 )}
                 <span className="font-mono text-[10px] text-[var(--color-text-muted)] bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5">
                   {positionsView === 'positions' ? holdings.length : lookthrough.length}
@@ -639,19 +643,23 @@ export default function PortfolioPage() {
             {/* Table header bar */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setPositionsView('positions')}
-                  className={`text-sm font-semibold transition-colors cursor-pointer ${positionsView === 'positions' ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
-                >
-                  Positions
-                </button>
-                {hasIndirectExposure && (
-                  <button
-                    onClick={() => setPositionsView('exposure')}
-                    className={`text-sm font-semibold transition-colors cursor-pointer ${positionsView === 'exposure' ? 'text-[var(--color-gold)]' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
-                  >
-                    True Exposure
-                  </button>
+                {hasIndirectExposure ? (
+                  <div className="flex items-center gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-0.5">
+                    <button
+                      onClick={() => setPositionsView('positions')}
+                      className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${positionsView === 'positions' ? 'bg-[var(--color-gold)] text-black' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
+                    >
+                      Positions
+                    </button>
+                    <button
+                      onClick={() => setPositionsView('exposure')}
+                      className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${positionsView === 'exposure' ? 'bg-[var(--color-gold)] text-black' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
+                    >
+                      True Exposure
+                    </button>
+                  </div>
+                ) : (
+                  <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Positions</h2>
                 )}
                 <span className="font-mono text-[10px] text-[var(--color-text-muted)] bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5">
                   {positionsView === 'positions' ? holdings.length : lookthrough.length}
