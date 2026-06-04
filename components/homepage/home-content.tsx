@@ -111,7 +111,7 @@ const FOOTER_COMPANY = [
   { label: 'Twitter / X', href: 'https://x.com/helmterminal' },
   { label: 'LinkedIn', href: 'https://www.linkedin.com/company/helmfintech' },
   { label: 'Blog', href: '/blog' },
-  { label: 'support@helmterminal.dev', href: 'mailto:support@helmterminal.dev' },
+  { label: 'Contact', href: '/contact' },
 ];
 
 const FOOTER_LEGAL = [
@@ -219,21 +219,6 @@ function InlineSignup() {
   );
 }
 
-function CopyEmail({ email }: { email: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      onClick={() => {
-        navigator.clipboard.writeText(email);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }}
-      className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]/70 transition-colors cursor-pointer"
-    >
-      {copied ? 'Copied!' : email}
-    </button>
-  );
-}
 
 function ToolsDropdown({ items }: { items: { label: string; href: string; desc: string }[] }) {
   const [open, setOpen] = useState(false);
@@ -1035,16 +1020,12 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                 <ul className="space-y-2.5">
                   {FOOTER_COMPANY.map((link) => (
                     <li key={link.label}>
-                      {link.href.startsWith('mailto:') ? (
-                        <CopyEmail email={link.label} />
-                      ) : (
-                        <Link
-                          href={link.href}
-                          className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]/70 transition-colors"
-                        >
-                          {link.label}
-                        </Link>
-                      )}
+                      <Link
+                        href={link.href}
+                        className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]/70 transition-colors"
+                      >
+                        {link.label}
+                      </Link>
                     </li>
                   ))}
                 </ul>

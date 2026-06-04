@@ -982,7 +982,12 @@ export default function TaxesPage() {
                 {harvestReport.opportunityCount}
               </span>
             </div>
-            {/* Review action removed — Form 8949 preview handles this */}
+            {/* Wash sale legend */}
+            <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>
+              <span className="text-[var(--color-positive)]">Clear</span> = safe to harvest
+              <span className="mx-1.5">|</span>
+              <span className="text-[var(--color-warning-text)]">Conflict</span> = wash sale risk detected
+            </span>
           </div>
 
           {/* Table column headers */}
@@ -1125,6 +1130,17 @@ function HarvestRow({
   formatCurrency: (n: number) => string;
 }) {
   const isWashSafe = !opp.washSaleRisk;
+  const [expanded, setExpanded] = useState(false);
+
+  const washSaleDetailText = opp.washSaleDetail
+    ?? (isWashSafe
+      ? 'No substantially identical securities detected in your portfolio or recent transactions. Safe to harvest per IRC \u00a71091.'
+      : null);
+
+  const handleExpandToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpanded((v) => !v);
+  };
 
   return (
     <>
@@ -1182,8 +1198,14 @@ function HarvestRow({
           {formatCurrency(opp.unrealizedLoss)}
         </span>
 
-        {/* Wash sale status pill */}
-        <div>
+        {/* Wash sale status — clickable to expand detail */}
+        <button
+          type="button"
+          onClick={handleExpandToggle}
+          className="flex items-center gap-1 cursor-pointer"
+          aria-expanded={expanded}
+          aria-label={`${isWashSafe ? 'Clear' : 'Conflict'} — show wash sale detail for ${opp.ticker}`}
+        >
           {isWashSafe ? (
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-semibold"
@@ -1193,8 +1215,8 @@ function HarvestRow({
                 ...MONO,
               }}
             >
-              <CheckCircle2 className="w-2.5 h-2.5" />
-              Safe
+              <CheckCircle2 className="w-3 h-3" />
+              Clear
             </span>
           ) : (
             <span
@@ -1205,11 +1227,17 @@ function HarvestRow({
                 ...MONO,
               }}
             >
-              <AlertTriangle className="w-2.5 h-2.5" />
+              <AlertTriangle className="w-3 h-3" />
               Conflict
             </span>
           )}
-        </div>
+          <ChevronDown
+            className={cn(
+              'w-3 h-3 text-[var(--color-text-muted)] motion-safe:transition-transform motion-safe:duration-150',
+              expanded ? 'rotate-180' : '',
+            )}
+          />
+        </button>
 
         {/* Holding period badge (IRC §1222) */}
         <div>
@@ -1250,6 +1278,23 @@ function HarvestRow({
         </div>
 
       </div>
+
+      {/* Expandable wash sale detail banner (desktop) */}
+      {expanded && washSaleDetailText && (
+        <div
+          className="hidden md:block px-5 py-3 border-b border-[var(--color-border-subtle)]"
+          style={{
+            borderLeft: `3px solid ${opp.washSaleRisk ? 'var(--color-warning-text)' : 'var(--color-positive)'}`,
+            background: opp.washSaleRisk ? 'rgba(251, 191, 36, 0.03)' : 'rgba(74, 222, 128, 0.03)',
+            marginLeft: '32px',
+          }}
+        >
+          <p className="text-[11px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
+            <span className="font-semibold text-[var(--color-text-primary)]">What this means: </span>
+            {washSaleDetailText}
+          </p>
+        </div>
+      )}
 
       {/* Mobile card */}
       <div
@@ -1298,29 +1343,46 @@ function HarvestRow({
               LT
             </span>
           ) : null}
-          {isWashSafe ? (
-            <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-semibold shrink-0"
-              style={{
-                background: 'rgba(74, 222, 128, 0.08)',
-                color: 'var(--color-positive)',
-                ...MONO,
-              }}
-            >
-              Safe
-            </span>
-          ) : (
-            <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-semibold shrink-0"
-              style={{
-                background: 'rgba(251, 191, 36, 0.08)',
-                color: 'var(--color-warning-text)',
-                ...MONO,
-              }}
-            >
-              Conflict
-            </span>
-          )}
+          {/* Wash sale status pill — clickable to expand (mobile) */}
+          <button
+            type="button"
+            onClick={handleExpandToggle}
+            className="inline-flex items-center gap-0.5 shrink-0 cursor-pointer"
+            aria-expanded={expanded}
+            aria-label={`${isWashSafe ? 'Clear' : 'Conflict'} — show wash sale detail for ${opp.ticker}`}
+          >
+            {isWashSafe ? (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-semibold"
+                style={{
+                  background: 'rgba(74, 222, 128, 0.08)',
+                  color: 'var(--color-positive)',
+                  ...MONO,
+                }}
+              >
+                <CheckCircle2 className="w-2.5 h-2.5" />
+                Clear
+              </span>
+            ) : (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-semibold"
+                style={{
+                  background: 'rgba(251, 191, 36, 0.08)',
+                  color: 'var(--color-warning-text)',
+                  ...MONO,
+                }}
+              >
+                <AlertTriangle className="w-2.5 h-2.5" />
+                Conflict
+              </span>
+            )}
+            <ChevronDown
+              className={cn(
+                'w-2.5 h-2.5 text-[var(--color-text-muted)] motion-safe:transition-transform motion-safe:duration-150',
+                expanded ? 'rotate-180' : '',
+              )}
+            />
+          </button>
         </div>
         <div className="grid grid-cols-2 gap-y-1.5 gap-x-4 pl-[26px]">
           <div className="flex items-center justify-between">
@@ -1348,6 +1410,22 @@ function HarvestRow({
             </span>
           </div>
         </div>
+
+        {/* Expandable wash sale detail banner (mobile) */}
+        {expanded && washSaleDetailText && (
+          <div
+            className="mt-2.5 ml-[26px] px-3 py-2.5 rounded-sm"
+            style={{
+              borderLeft: `3px solid ${opp.washSaleRisk ? 'var(--color-warning-text)' : 'var(--color-positive)'}`,
+              background: opp.washSaleRisk ? 'rgba(251, 191, 36, 0.03)' : 'rgba(74, 222, 128, 0.03)',
+            }}
+          >
+            <p className="text-[10px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
+              <span className="font-semibold text-[var(--color-text-primary)]">What this means: </span>
+              {washSaleDetailText}
+            </p>
+          </div>
+        )}
       </div>
     </>
   );
