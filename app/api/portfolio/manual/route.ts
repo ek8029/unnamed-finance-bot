@@ -108,8 +108,8 @@ export async function POST(req: NextRequest) {
           const quote = await getQuote(ticker);
           currentPrice = quote?.c || 0;
           if (currentPrice > 0) break;
-        } catch {
-          // Rate limited or network error — retry
+        } catch (err) {
+          console.error(`[manual-portfolio] Quote attempt ${attempt + 1} failed for ${ticker}:`, err instanceof Error ? err.message : err);
         }
       }
 
