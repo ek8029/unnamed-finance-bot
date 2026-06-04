@@ -228,14 +228,50 @@ async function getRecentEarnings(
   holdingsMap: Map<string, UserPosition>,
 ): Promise<RecentEarningsResult[]> {
   const results: RecentEarningsResult[] = [];
-  const tickers = [...holdingsMap.keys()];
+
+  // Build indirect exposure map (same pattern as getUpcomingEarnings)
+  const totalValue = Array.from(holdingsMap.values()).reduce((s, p) => s + p.totalValue, 0);
+  const indirectExposure = new Map<string, { exposureValue: number; sources: string[] }>();
+  for (const [hTicker, pos] of holdingsMap) {
+    const underlyings = getUnderlyingExposure(hTicker, pos.totalValue, totalValue);
+    for (const u of underlyings) {
+      const existing = indirectExposure.get(u.ticker) || { exposureValue: 0, sources: [] };
+      existing.exposureValue += (u.effectiveWeight / 100) * totalValue;
+      if (!existing.sources.includes(u.source)) existing.sources.push(u.source);
+      indirectExposure.set(u.ticker, existing);
+    }
+  }
+
+  // Expand tickers to include indirect exposure tickers
+  const allTickers = new Set([...holdingsMap.keys()]);
+  for (const t of indirectExposure.keys()) {
+    allTickers.add(t);
+  }
+  const tickers = [...allTickers];
 
   // Fetch recent earnings for each holding (limited to avoid rate limits)
   const batch = tickers.slice(0, 10);
 
   await Promise.allSettled(
     batch.map(async (ticker) => {
-      const position = holdingsMap.get(ticker)!;
+      let position = holdingsMap.get(ticker);
+      const indirect = indirectExposure.get(ticker);
+
+      // Skip if no direct or indirect exposure
+      if (!position && !indirect) return;
+
+      // If only indirect exposure, create a synthetic position
+      if (!position && indirect) {
+        position = {
+          ticker,
+          securityName: ticker,
+          shares: 0,
+          currentPrice: 0,
+          totalValue: indirect.exposureValue,
+          allocationPct: totalValue > 0 ? (indirect.exposureValue / totalValue) * 100 : 0,
+          sector: 'Unknown',
+        };
+      }
 
       // Get historical earnings
       const earnings = await getEarnings(ticker);
@@ -261,20 +297,34 @@ async function getRecentEarnings(
         }
       }
 
+      // position is guaranteed non-undefined after the guards above
+      const pos = position!;
+
       // Fetch live quote + profile once per ticker
       const [quote, profile] = await Promise.all([
         getQuote(ticker),
-        position.securityName === ticker ? getCompanyProfile(ticker) : null,
+        pos.securityName === ticker ? getCompanyProfile(ticker) : null,
       ]);
 
       // Use live price for position value
-      let livePosition = position;
-      if (quote && quote.c > 0) {
-        const liveValue = position.shares * quote.c;
-        livePosition = { ...position, currentPrice: quote.c, totalValue: liveValue };
+      let livePosition = pos;
+      if (quote && quote.c > 0 && pos.shares > 0) {
+        const liveValue = pos.shares * quote.c;
+        livePosition = { ...pos, currentPrice: quote.c, totalValue: liveValue };
       }
 
-      const companyName = profile?.name || position.securityName;
+      // Add indirect exposure (from ETFs/leveraged products) to total value
+      const indirectValue = indirect?.exposureValue ?? 0;
+      const totalExposureValue = livePosition.totalValue + indirectValue;
+
+      // Position reflects total exposure (direct + indirect via ETFs/leveraged)
+      const exposurePosition = {
+        ...livePosition,
+        totalValue: totalExposureValue,
+        allocationPct: totalValue > 0 ? (totalExposureValue / totalValue) * 100 : 0,
+      };
+
+      const companyName = profile?.name || pos.securityName;
 
       for (const e of recent) {
         if (e.actual == null || e.estimate == null) continue;
@@ -282,16 +332,16 @@ async function getRecentEarnings(
         const surprisePct = e.estimate !== 0 ? ((e.actual - e.estimate) / Math.abs(e.estimate)) * 100 : 0;
         const beat = e.actual > e.estimate;
 
-        // Estimate stock move from surprise
+        // Estimate stock move from surprise using total exposure (direct + indirect)
         const estimatedStockMove = (surprisePct / 100) * SURPRISE_MOVE_FACTOR;
-        const estimatedImpact = livePosition.totalValue * estimatedStockMove;
+        const estimatedImpact = totalExposureValue * estimatedStockMove;
 
         // Actual post-earnings move from quote (day change)
         let actualMove: number | null = null;
         let actualDollarImpact: number | null = null;
         if (quote && quote.dp != null) {
           actualMove = quote.dp;
-          actualDollarImpact = livePosition.totalValue * (quote.dp / 100);
+          actualDollarImpact = totalExposureValue * (quote.dp / 100);
         }
 
         results.push({
@@ -302,7 +352,7 @@ async function getRecentEarnings(
           epsEstimate: e.estimate,
           surprisePct,
           beat,
-          position: livePosition,
+          position: exposurePosition,
           estimatedImpact,
           actualPostEarningsMove: actualMove,
           actualDollarImpact,

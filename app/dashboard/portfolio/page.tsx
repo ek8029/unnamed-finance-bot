@@ -10,6 +10,8 @@ import { TrendingUp, TrendingDown, Filter, Download, ChevronUp, ChevronDown } fr
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useFormat } from '@/hooks/use-format';
+import { computePortfolioLookthrough } from '@/lib/etf-holdings';
+import { CONCENTRATION_THRESHOLDS } from '@/lib/financial-config';
 
 /* ------------------------------------------------------------------ */
 /*  Deterministic sparkline SVG generator                              */
@@ -154,6 +156,20 @@ export default function PortfolioPage() {
     name: a.name, value: a.value, percentage: a.percentage,
   }));
 
+  /* ---------- look-through exposure ---------- */
+  const lookthrough = useMemo(() => {
+    if (holdings.length === 0 || totalValue <= 0) return [];
+    const holdingsInput = holdings.map(h => ({ ticker: h.ticker, totalValue: h.total_value }));
+    const exposureMap = computePortfolioLookthrough(holdingsInput, totalValue);
+    const entries = Array.from(exposureMap.entries())
+      .map(([ticker, data]) => ({ ticker, ...data }))
+      .filter(e => e.indirectWeight > 0 || e.totalWeight > CONCENTRATION_THRESHOLDS.medium)
+      .sort((a, b) => b.totalWeight - a.totalWeight);
+    return entries;
+  }, [holdings, totalValue]);
+
+  const hasIndirectExposure = useMemo(() => lookthrough.some(e => e.indirectWeight > 0), [lookthrough]);
+
   /* ---------- positions table sorting ---------- */
   const [sortKey, setSortKey] = useState<PositionSortKey>('value');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -190,6 +206,9 @@ export default function PortfolioPage() {
   // Hooks that the old code used (must stay above early returns)
   const sortedByAllocation = useMemo(() => [...holdings].sort((a, b) => b.portfolio_allocation - a.portfolio_allocation), [holdings]);
   const sortedByDayChange = useMemo(() => [...holdings].sort((a, b) => (b.day_change_percentage ?? 0) - (a.day_change_percentage ?? 0)), [holdings]);
+
+  /* ---------- true exposure collapsible ---------- */
+  const [trueExposureOpen, setTrueExposureOpen] = useState(false);
 
   /* ---------- header tab state (visual only) ---------- */
   const tabs = ['Portfolio', 'Concentration'] as const;
@@ -581,6 +600,16 @@ export default function PortfolioPage() {
             })}
             </div>
 
+            {/* ── Mobile True Exposure ── */}
+            {hasIndirectExposure && (
+              <TrueExposureSection
+                lookthrough={lookthrough}
+                open={trueExposureOpen}
+                onToggle={() => setTrueExposureOpen(!trueExposureOpen)}
+                formatCurrency={formatCurrency}
+              />
+            )}
+
             {/* ── Mobile Market Intelligence ── */}
             {holdings.length > 0 && (
               <div className="mt-4 space-y-4">
@@ -777,6 +806,16 @@ export default function PortfolioPage() {
               </span>
             </div>
           </div>
+
+          {/* ── Desktop True Exposure ── */}
+          {hasIndirectExposure && (
+            <TrueExposureSection
+              lookthrough={lookthrough}
+              open={trueExposureOpen}
+              onToggle={() => setTrueExposureOpen(!trueExposureOpen)}
+              formatCurrency={formatCurrency}
+            />
+          )}
 
           </>
           )}
@@ -1219,6 +1258,108 @@ function ConcentrationTable({ holdings, formatCurrency }: {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/* ── True Exposure Section ── */
+
+function TrueExposureSection({ lookthrough, open, onToggle, formatCurrency }: {
+  lookthrough: { ticker: string; directWeight: number; indirectWeight: number; totalWeight: number; sources: string[] }[];
+  open: boolean;
+  onToggle: () => void;
+  formatCurrency: (n: number) => string;
+}) {
+  return (
+    <div className="border border-[var(--color-border-base)] rounded-lg overflow-hidden bg-[var(--color-bg-surface)]">
+      <button
+        onClick={onToggle}
+        className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-[var(--color-bg-elevated)] transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[10px] uppercase tracking-[0.1em] font-semibold text-[var(--color-gold)]">
+            True Exposure
+          </span>
+          <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
+            {lookthrough.length} ticker{lookthrough.length !== 1 ? 's' : ''} with indirect exposure
+          </span>
+        </div>
+        <ChevronDown className={`w-3.5 h-3.5 text-[var(--color-text-muted)] transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="border-t border-[var(--color-border-subtle)]">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[600px]">
+              <thead>
+                <tr className="bg-[var(--color-bg-elevated)]/60">
+                  <th className="text-left pl-5 pr-2 py-2.5">
+                    <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">Ticker</span>
+                  </th>
+                  <th className="text-right px-2 py-2.5">
+                    <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">Direct %</span>
+                  </th>
+                  <th className="text-right px-2 py-2.5">
+                    <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">Indirect %</span>
+                  </th>
+                  <th className="text-right px-2 py-2.5">
+                    <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">Total %</span>
+                  </th>
+                  <th className="text-left pl-2 pr-5 py-2.5">
+                    <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">Sources</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {lookthrough.map((entry, idx) => {
+                  const totalColor = entry.totalWeight > 25
+                    ? 'text-[var(--color-negative)]'
+                    : entry.totalWeight > 10
+                      ? 'text-[var(--color-warning-text,var(--color-gold))]'
+                      : 'text-[var(--color-text-primary)]';
+                  return (
+                    <tr
+                      key={entry.ticker}
+                      className={`border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)]/50 transition-colors ${
+                        idx % 2 === 1 ? 'bg-[var(--color-bg-elevated)]/20' : ''
+                      }`}
+                    >
+                      <td className="pl-5 pr-2 py-2.5">
+                        <span className="font-mono text-sm font-semibold text-[var(--color-gold)]">{entry.ticker}</span>
+                      </td>
+                      <td className="px-2 py-2.5 text-right">
+                        <span className="font-mono text-sm tabular-nums text-[var(--color-text-secondary)]">
+                          {entry.directWeight > 0 ? `${entry.directWeight.toFixed(2)}%` : '--'}
+                        </span>
+                      </td>
+                      <td className="px-2 py-2.5 text-right">
+                        <span className="font-mono text-sm tabular-nums text-[var(--color-text-secondary)]">
+                          {entry.indirectWeight > 0 ? `${entry.indirectWeight.toFixed(2)}%` : '--'}
+                        </span>
+                      </td>
+                      <td className="px-2 py-2.5 text-right">
+                        <span className={`font-mono text-sm tabular-nums font-medium ${totalColor}`}>
+                          {entry.totalWeight.toFixed(2)}%
+                        </span>
+                      </td>
+                      <td className="pl-2 pr-5 py-2.5">
+                        <span className="font-mono text-[11px] text-[var(--color-text-muted)] truncate block max-w-[200px]">
+                          {entry.sources.join(', ')}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-5 py-2.5 border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/40">
+            <span className="font-mono text-[9px] text-[var(--color-text-muted)]">
+              Indirect exposure via ETF holdings and leveraged products. Weights approximate based on fund prospectuses.
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

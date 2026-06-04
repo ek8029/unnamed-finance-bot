@@ -25,6 +25,11 @@ import {
   ANNUAL_LOSS_DEDUCTION_CAP,
   LTCG_RATE_DEFAULT,
 } from '@/lib/financial-config';
+import {
+  SINGLE_STOCK_MAP,
+  LEVERAGED_ETF_MAP,
+  ETF_HOLDINGS,
+} from '@/lib/etf-holdings';
 
 // ── Types ──
 
@@ -193,6 +198,60 @@ async function fetchHoldingsWithLosses(userId: string): Promise<RawHolding[]> {
   return (data || []) as unknown as RawHolding[];
 }
 
+// ── Cross-product wash sale detection ──
+// Maps tickers to related tickers that could trigger wash sale concerns
+// across different product wrappers (leveraged ETFs, share classes, same-index ETFs).
+
+const SHARE_CLASSES: Record<string, string[]> = {
+  'GOOGL': ['GOOG'], 'GOOG': ['GOOGL'],
+  'BRK.A': ['BRK.B'], 'BRK.B': ['BRK.A'],
+};
+
+const INDEX_GROUPS: Record<string, string[]> = {
+  'sp500': ['SPY', 'VOO', 'IVV', 'SPLG'],
+  'nasdaq100': ['QQQ', 'QQQM'],
+  'totalmarket': ['VTI', 'ITOT', 'SCHB', 'SPTM'],
+  'russell2000': ['IWM', 'VTWO'],
+  'sp500growth': ['IVW', 'VOOG', 'SPYG'],
+  'sp500value': ['IVE', 'VOOV', 'SPYV'],
+};
+
+function getRelatedTickers(ticker: string): { ticker: string; relationship: string; confidence: 'definite' | 'likely' | 'possible' }[] {
+  const related: { ticker: string; relationship: string; confidence: 'definite' | 'likely' | 'possible' }[] = [];
+  const upper = ticker.toUpperCase();
+
+  // 1. DEFINITE: Same company different share class (GOOGL/GOOG)
+  for (const alt of SHARE_CLASSES[upper] || []) {
+    related.push({ ticker: alt, relationship: 'Same company, different share class', confidence: 'definite' });
+  }
+
+  // 2. Single-stock leveraged products <-> underlying (POSSIBLE per IRC §1091 gray area)
+  // Check if THIS ticker is a single-stock product
+  if (upper in SINGLE_STOCK_MAP) {
+    const product = SINGLE_STOCK_MAP[upper];
+    related.push({ ticker: product.underlying, relationship: `${upper} is a ${product.leverage}x leveraged product of ${product.underlying}`, confidence: 'possible' });
+  }
+  // Check if any single-stock product maps to THIS ticker
+  for (const [productTicker, product] of Object.entries(SINGLE_STOCK_MAP)) {
+    if (product.underlying === upper) {
+      related.push({ ticker: productTicker, relationship: `${productTicker} is a ${product.leverage}x leveraged product of ${upper}`, confidence: 'possible' });
+    }
+  }
+
+  // 3. Same-index ETFs (LIKELY per professional consensus)
+  for (const [, group] of Object.entries(INDEX_GROUPS)) {
+    if (group.includes(upper)) {
+      for (const t of group) {
+        if (t !== upper) {
+          related.push({ ticker: t, relationship: 'Same index, different provider', confidence: 'likely' });
+        }
+      }
+    }
+  }
+
+  return related;
+}
+
 /**
  * Wash sale detection: check for BOTH recent sells AND recent buys of the
  * same tickers within the 61-day window (30 days before + 30 days after).
@@ -206,6 +265,8 @@ async function fetchHoldingsWithLosses(userId: string): Promise<RawHolding[]> {
  *   2. Recent BUYS: if user already bought the same ticker in the last 30
  *      days, selling now would trigger a wash sale because the buy is within
  *      the 30-day window.
+ *   3. Cross-product: related tickers (same share class, leveraged products,
+ *      same-index ETFs) that could trigger wash sale concerns.
  *
  * What we CANNOT check: future purchases. If the user harvests a loss today
  * and buys the same ticker 15 days later, that's a wash sale we can only
@@ -258,6 +319,72 @@ async function checkWashSaleRisk(
   // Note: we can't reliably detect stock purchases from the transactions table
   // because Plaid categorizes them as transfers. This is a known limitation.
   // The capital_gains check above is the primary detection mechanism.
+
+  // ── Cross-product wash sale detection ──
+  // Check related tickers (share classes, leveraged products, same-index ETFs)
+  for (const ticker of tickers) {
+    // Skip if already flagged from same-ticker detection
+    if (result.has(ticker)) continue;
+
+    const relatedTickers = getRelatedTickers(ticker);
+    if (relatedTickers.length === 0) continue;
+
+    const relatedTickerList = relatedTickers.map(r => r.ticker);
+
+    // Query capital_gains for sells/buys of related tickers
+    const { data: relatedTxns } = await supabase
+      .from('capital_gains')
+      .select('ticker, transaction_date, gain_loss')
+      .eq('user_id', userId)
+      .in('ticker', relatedTickerList)
+      .gte('transaction_date', windowStart);
+
+    if (relatedTxns && relatedTxns.length > 0) {
+      for (const tx of relatedTxns) {
+        const match = relatedTickers.find(r => r.ticker === tx.ticker);
+        if (match) {
+          let washSaleDetail: string;
+          if (match.confidence === 'definite') {
+            washSaleDetail = `Wash sale triggered: ${match.relationship}. Transaction on ${tx.transaction_date}.`;
+          } else if (match.confidence === 'likely') {
+            washSaleDetail = `Likely wash sale per professional consensus (no IRS ruling): ${match.relationship}. Transaction on ${tx.transaction_date}.`;
+          } else {
+            washSaleDetail = `Potential wash sale concern: ${match.relationship}. The IRS has not ruled on whether single-stock leveraged ETFs are 'substantially identical' to the underlying stock per IRC \u00a71091. Consult a tax professional. Transaction on ${tx.transaction_date}.`;
+          }
+          result.set(ticker, { risk: true, detail: washSaleDetail });
+          break;
+        }
+      }
+    }
+
+    // Also check regular transactions (buys) for related tickers
+    if (!result.has(ticker)) {
+      const { data: relatedBuys } = await supabase
+        .from('transactions')
+        .select('name, transaction_date, amount')
+        .eq('user_id', userId)
+        .in('ticker_symbol', relatedTickerList)
+        .gte('transaction_date', windowStart)
+        .lt('amount', 0); // negative = buy
+
+      if (relatedBuys && relatedBuys.length > 0) {
+        const tx = relatedBuys[0];
+        const matchedTicker = relatedTickerList.find(t => tx.name?.includes(t));
+        const match = relatedTickers.find(r => r.ticker === matchedTicker);
+        if (match) {
+          let washSaleDetail: string;
+          if (match.confidence === 'definite') {
+            washSaleDetail = `Wash sale triggered: ${match.relationship}. Buy on ${tx.transaction_date}.`;
+          } else if (match.confidence === 'likely') {
+            washSaleDetail = `Likely wash sale per professional consensus (no IRS ruling): ${match.relationship}. Buy on ${tx.transaction_date}.`;
+          } else {
+            washSaleDetail = `Potential wash sale concern: ${match.relationship}. The IRS has not ruled on whether single-stock leveraged ETFs are 'substantially identical' to the underlying stock per IRC \u00a71091. Consult a tax professional. Buy on ${tx.transaction_date}.`;
+          }
+          result.set(ticker, { risk: true, detail: washSaleDetail });
+        }
+      }
+    }
+  }
 
   return result;
 }

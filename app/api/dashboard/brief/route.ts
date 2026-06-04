@@ -5,6 +5,7 @@ import { getQuote } from '@/lib/financial-data';
 import { rateLimit } from '@/lib/rate-limit';
 import { getSourceTier } from '@/lib/news-quality';
 import { getUserTier } from '@/lib/tier';
+import { getUnderlyingExposure } from '@/lib/etf-holdings';
 
 type VixLevel = 'extreme_fear' | 'fear' | 'neutral' | 'greed' | 'extreme_greed';
 
@@ -189,6 +190,16 @@ export async function GET() {
     const { start, end } = getWeekBounds();
     const userTickers = holdings.map((h) => h.ticker);
 
+    // Expand tickers to include ETF underlying stocks for news matching
+    const expandedTickers = new Set(userTickers);
+    for (const ticker of userTickers) {
+      const underlyings = getUnderlyingExposure(ticker, 0, 0); // weights don't matter for ticker matching
+      for (const u of underlyings) {
+        expandedTickers.add(u.ticker);
+      }
+    }
+    const expandedTickerList = [...expandedTickers];
+
     let earningsThisWeek: { ticker: string; reportDate: string; portfolioWeight: number }[] = [];
     let dividendsThisWeek: { ticker: string; exDate: string }[] = [];
 
@@ -240,12 +251,12 @@ export async function GET() {
     const oneDayAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
     const [positionNewsResult, generalNewsResult] = await Promise.all([
-      // News about tickers the user holds
-      userTickers.length > 0
+      // News about tickers the user holds (directly or via ETFs)
+      expandedTickerList.length > 0
         ? supabase
             .from('market_news')
             .select('id, title, summary, source, url, published_at, primary_ticker, sentiment')
-            .in('primary_ticker', userTickers)
+            .in('primary_ticker', expandedTickerList)
             .gte('published_at', oneDayAgo)
             .order('published_at', { ascending: false })
             .limit(8)
