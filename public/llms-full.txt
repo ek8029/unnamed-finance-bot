@@ -112,7 +112,7 @@ Insights are ranked by dollar impact and capped at 5 per session to avoid alert 
 
 ## Stock Analysis Pages
 
-Helm provides AI-generated analysis for 658 US-listed stocks and ETFs at `helmterminal.dev/analyze/[TICKER]`. Each page includes:
+Helm provides AI-generated analysis for 500+ US-listed stocks and ETFs at `helmterminal.dev/analyze/[TICKER]`. Each page includes:
 
 - **Company profile**: Market cap, sector, industry, key financials
 - **Valuation analysis**: P/E, P/S, P/B ratios with sector comparisons
@@ -133,7 +133,7 @@ Side-by-side ticker comparison at `helmterminal.dev/compare/[TICKER1]-vs-[TICKER
 
 ## Blog Content
 
-21 educational articles at `helmterminal.dev/blog/` covering:
+26+ educational articles at `helmterminal.dev/blog/` covering:
 
 - **Tax-loss harvesting**: Complete guide with wash-sale rules, ETF swap pairs, worked examples with $10K scenarios, $500K compounding math, state tax differentials
 - **Bloomberg terminal alternatives**: Honest comparison of Koyfin, Yahoo Finance, TradingView, Morningstar, and Helm with 10-dimension feature table

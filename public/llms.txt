@@ -1,6 +1,6 @@
 # Helm Terminal
 
-> Last updated: May 2026
+> Last updated: June 2026
 
 > Institutional-grade financial intelligence platform for individual investors. Free to use.
 
@@ -40,7 +40,7 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 - [RSU Calculator](https://helmterminal.dev/tools/rsu-calculator): RSU vesting schedule, tax liability, and concentration risk calculator
 - [Stock Comparison](https://helmterminal.dev/compare): Side-by-side ticker comparison tool
 
-## Educational Content (28 articles)
+## Educational Content (26+ articles)
 - [Tax-Loss Harvesting Guide](https://helmterminal.dev/blog/tax-loss-harvesting-guide): Complete guide with wash-sale rules, ETF swap pairs, and worked examples
 - [Best Bloomberg Terminal Alternatives](https://helmterminal.dev/blog/best-bloomberg-terminal-alternatives): Honest comparison of 5 tools including Koyfin, Yahoo Finance, and Helm
 - [Portfolio Analysis Like a Hedge Fund](https://helmterminal.dev/blog/portfolio-analysis-like-hedge-fund): Institutional techniques for retail investors
@@ -51,7 +51,7 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 - [AI Stock Analysis Explained](https://helmterminal.dev/blog/ai-stock-analysis-explained): How AI-powered stock analysis works
 - [Portfolio Diversification Guide](https://helmterminal.dev/blog/portfolio-diversification-guide): Diversification strategies for individual investors
 - [Self-Directed Investing Guide](https://helmterminal.dev/blog/self-directed-investing-guide): Getting started with self-directed investing
-- Browse all 28 articles at https://helmterminal.dev/blog
+- Browse all articles at https://helmterminal.dev/blog
 
 ## Audience Pages
 - [For Engineers](https://helmterminal.dev/for/engineers): RSU vesting, equity concentration, tax optimization
@@ -60,7 +60,7 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 - [For High-Net-Worth](https://helmterminal.dev/for/high-net-worth): Multi-account aggregation, tax-loss harvesting at scale
 
 ## Stock Analysis Coverage
-- 129 individual stock and ETF analysis pages at helmterminal.dev/analyze/[TICKER]
+- 500+ individual stock and ETF analysis pages at helmterminal.dev/analyze/[TICKER]
 - Includes mega-cap stocks, major ETFs (SPY, QQQ, VOO, VTI, etc.), sector ETFs, and popular growth stocks
 - Each page includes: valuation analysis, technical indicators, sentiment, risk assessment, analyst consensus, earnings data, and 6 FAQ pairs
 
