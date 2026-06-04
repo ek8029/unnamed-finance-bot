@@ -1266,7 +1266,7 @@ function ConcentrationTable({ holdings, formatCurrency }: {
           <div>
             <CardTitle className="text-[15px]">Single-Name Risk (Look-Through)</CardTitle>
             <p className="text-[12px] text-[var(--color-text-muted)] font-mono mt-1">
-              Includes ETF and leveraged product exposure · Red {'>'} 25% · Yellow {'>'} 10%
+              Includes ETF and leveraged product exposure · Red {'>'} 25% · Yellow {'>'} 10% · ETF weights as of Q2 2026
             </p>
           </div>
           <input
@@ -1372,6 +1372,9 @@ function TrueExposureSection({ lookthrough, open, onToggle, formatCurrency }: {
           </span>
           <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
             {lookthrough.length} ticker{lookthrough.length !== 1 ? 's' : ''} with indirect exposure
+          </span>
+          <span className="font-mono text-[9px] text-[var(--color-text-muted)]/60 hidden sm:inline">
+            · ETF weights as of Q2 2026
           </span>
         </div>
         <ChevronDown className={`w-3.5 h-3.5 text-[var(--color-text-muted)] transition-transform ${open ? 'rotate-180' : ''}`} />
