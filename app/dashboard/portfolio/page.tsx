@@ -1001,8 +1001,19 @@ export default function PortfolioPage() {
             {(() => {
               const totalVal = holdings.reduce((s, h) => s + h.total_value, 0);
               if (totalVal <= 0) return null;
-              const weights = holdings.map(h => h.total_value / totalVal);
-              const hhi = weights.reduce((s, w) => s + w * w, 0);
+
+              // Use look-through for true concentration metrics
+              const lt = computePortfolioLookthrough(
+                holdings.map(h => ({ ticker: h.ticker, totalValue: h.total_value })),
+                totalVal,
+              );
+              const ltEntries = [...lt.entries()].sort((a, b) => b[1].totalWeight - a[1].totalWeight);
+              const ltWeights = ltEntries.map(([, e]) => e.totalWeight / 100);
+              const topTicker = ltEntries[0]?.[0] ?? '—';
+              const topWeight = ltWeights[0] ?? 0;
+
+              // HHI on look-through weights (true diversification)
+              const hhi = ltWeights.reduce((s, w) => s + w * w, 0);
               const diversificationScore = Math.round((1 - hhi) * 100);
               const effectivePositions = Math.round(1 / (hhi || 1));
               const scoreColor = diversificationScore >= 70 ? 'var(--color-positive)' : diversificationScore >= 40 ? 'var(--color-warning-text)' : 'var(--color-negative)';
@@ -1011,28 +1022,28 @@ export default function PortfolioPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
                   <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5">
                     <div className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2">Diversification Score</div>
-                    <div className="text-[40px] font-bold tabular-nums" style={{ color: scoreColor, fontFamily: 'var(--font-mono)' }}>{diversificationScore}</div>
-                    <div className="text-[13px] text-[var(--color-text-muted)] mt-1">out of 100</div>
+                    <div className="text-[28px] sm:text-[40px] font-bold tabular-nums" style={{ color: scoreColor, fontFamily: 'var(--font-mono)' }}>{diversificationScore}</div>
+                    <div className="text-[13px] text-[var(--color-text-muted)] mt-1">out of 100 (look-through)</div>
                     <div className="mt-3 h-2 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${diversificationScore}%`, backgroundColor: scoreColor }} />
                     </div>
                   </div>
                   <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5">
                     <div className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2">Effective Positions</div>
-                    <div className="text-[40px] font-bold tabular-nums text-[var(--color-text-primary)]" style={{ fontFamily: 'var(--font-mono)' }}>{effectivePositions}</div>
-                    <div className="text-[13px] text-[var(--color-text-muted)] mt-1">of {holdings.length} actual holdings</div>
+                    <div className="text-[28px] sm:text-[40px] font-bold tabular-nums text-[var(--color-text-primary)]" style={{ fontFamily: 'var(--font-mono)' }}>{effectivePositions}</div>
+                    <div className="text-[13px] text-[var(--color-text-muted)] mt-1">of {ltEntries.length} underlying names</div>
                     <div className="text-[12px] text-[var(--color-text-muted)] mt-2" style={{ fontFamily: 'var(--font-mono)' }}>
                       HHI: {(hhi * 10000).toFixed(0)} / 10,000
                     </div>
                   </div>
                   <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5">
-                    <div className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2">Top Holding Weight</div>
-                    <div className="text-[40px] font-bold tabular-nums" style={{ color: (weights[0] ?? 0) > 0.25 ? 'var(--color-negative)' : 'var(--color-text-primary)', fontFamily: 'var(--font-mono)' }}>
-                      {((weights[0] ?? 0) * 100).toFixed(1)}%
+                    <div className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2">Top Exposure (Look-Through)</div>
+                    <div className="text-[28px] sm:text-[40px] font-bold tabular-nums" style={{ color: topWeight > 0.25 ? 'var(--color-negative)' : 'var(--color-text-primary)', fontFamily: 'var(--font-mono)' }}>
+                      {(topWeight * 100).toFixed(1)}%
                     </div>
-                    <div className="text-[13px] text-[var(--color-text-muted)] mt-1">{holdings[0]?.ticker ?? '—'}</div>
+                    <div className="text-[13px] text-[var(--color-text-muted)] mt-1">{topTicker}</div>
                     <div className="text-[12px] text-[var(--color-text-muted)] mt-2">
-                      {(weights[0] ?? 0) > 0.25 ? '⚠ Exceeds 25% single-name threshold' : '✓ Within concentration limits'}
+                      {topWeight > 0.25 ? '⚠ Exceeds 25% single-name threshold' : '✓ Within concentration limits'}
                     </div>
                   </div>
                 </div>
@@ -1166,15 +1177,47 @@ function ConcentrationTable({ holdings, formatCurrency }: {
   const [page, setPage] = useState(0);
   const PER_PAGE = 10;
 
+  // Compute look-through: aggregate direct + indirect exposure per underlying ticker
+  const totalPortfolioValue = useMemo(() => holdings.reduce((s, h) => s + h.total_value, 0), [holdings]);
+  const lookthroughData = useMemo(() => {
+    const lt = computePortfolioLookthrough(
+      holdings.map(h => ({ ticker: h.ticker, totalValue: h.total_value })),
+      totalPortfolioValue,
+    );
+    // Merge: keep direct holdings, overlay with look-through totals
+    const merged = new Map<string, { ticker: string; totalWeight: number; directWeight: number; indirectWeight: number; value: number; name: string; sources: string[] }>();
+    // Add direct holdings
+    for (const h of holdings) {
+      const upper = h.ticker.toUpperCase();
+      const ltEntry = lt.get(upper);
+      if (!ltEntry) {
+        merged.set(upper, { ticker: h.ticker, totalWeight: h.portfolio_allocation, directWeight: h.portfolio_allocation, indirectWeight: 0, value: h.total_value, name: h.asset_name, sources: ['Direct'] });
+      }
+    }
+    // Add/merge look-through entries
+    for (const [ticker, entry] of lt) {
+      const existing = merged.get(ticker);
+      if (existing) {
+        existing.totalWeight = entry.totalWeight;
+        existing.directWeight = entry.directWeight;
+        existing.indirectWeight = entry.indirectWeight;
+        existing.sources = entry.sources;
+      } else {
+        merged.set(ticker, { ticker, totalWeight: entry.totalWeight, directWeight: entry.directWeight, indirectWeight: entry.indirectWeight, value: (entry.totalWeight / 100) * totalPortfolioValue, name: ticker, sources: entry.sources });
+      }
+    }
+    return [...merged.values()];
+  }, [holdings, totalPortfolioValue]);
+
   const sorted = useMemo(() =>
-    [...holdings].sort((a, b) => b.portfolio_allocation - a.portfolio_allocation),
-    [holdings]
+    [...lookthroughData].sort((a, b) => b.totalWeight - a.totalWeight),
+    [lookthroughData]
   );
 
   const filtered = useMemo(() => {
     if (!search.trim()) return sorted;
     const terms = search.toUpperCase().split(',').map(s => s.trim()).filter(Boolean);
-    return sorted.filter(h => terms.some(t => h.ticker.includes(t) || h.asset_name.toUpperCase().includes(t)));
+    return sorted.filter(h => terms.some(t => h.ticker.toUpperCase().includes(t) || h.name.toUpperCase().includes(t)));
   }, [sorted, search]);
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
@@ -1185,9 +1228,9 @@ function ConcentrationTable({ holdings, formatCurrency }: {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-[15px]">Single-Name Risk</CardTitle>
+            <CardTitle className="text-[15px]">Single-Name Risk (Look-Through)</CardTitle>
             <p className="text-[12px] text-[var(--color-text-muted)] font-mono mt-1">
-              Red {'>'} 25% · Yellow {'>'} 10% · Search by ticker (comma-separated)
+              Includes ETF and leveraged product exposure · Red {'>'} 25% · Yellow {'>'} 10%
             </p>
           </div>
           <input
@@ -1203,28 +1246,40 @@ function ConcentrationTable({ holdings, formatCurrency }: {
       <CardContent>
         <div className="space-y-1">
           {pageItems.map((h) => {
-            const alloc = h.portfolio_allocation;
+            const alloc = h.totalWeight;
+            const hasIndirect = h.indirectWeight > 0;
             const barColor = alloc > 25 ? 'var(--color-negative)' : alloc > 10 ? 'var(--color-warning-text)' : 'var(--color-gold)';
             const textColor = alloc > 25 ? 'text-[var(--color-negative)]' : alloc > 10 ? 'text-[var(--color-warning-text)]' : 'text-[var(--color-text-primary)]';
             return (
-              <Link
-                key={h.id}
-                href={`/dashboard/holdings/${h.ticker}`}
+              <div
+                key={h.ticker}
                 className="flex items-center gap-3 py-2.5 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-overlay)] transition-colors rounded px-1 -mx-1 group"
               >
-                <span className="font-mono text-[14px] font-bold text-[var(--color-gold)] group-hover:text-[var(--color-gold-hi)] w-16 shrink-0">{h.ticker}</span>
+                <span className="font-mono text-[14px] font-bold text-[var(--color-gold)] w-16 shrink-0">{h.ticker}</span>
                 <div className="flex-1 min-w-0">
                   <div className="h-2.5 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, alloc)}%`, backgroundColor: barColor }} />
+                    {hasIndirect ? (
+                      <>
+                        <div className="h-full rounded-l-full float-left" style={{ width: `${Math.min(100, h.directWeight)}%`, backgroundColor: barColor }} />
+                        <div className="h-full rounded-r-full float-left opacity-50" style={{ width: `${Math.min(100 - h.directWeight, h.indirectWeight)}%`, backgroundColor: barColor }} />
+                      </>
+                    ) : (
+                      <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, alloc)}%`, backgroundColor: barColor }} />
+                    )}
                   </div>
+                  {hasIndirect && (
+                    <span className="text-[10px] text-[var(--color-text-muted)] font-mono mt-0.5 block">
+                      {h.directWeight.toFixed(1)}% direct + {h.indirectWeight.toFixed(1)}% via {h.sources.filter(s => s !== 'Direct').join(', ')}
+                    </span>
+                  )}
                 </div>
                 <span className={`font-mono text-[14px] font-bold tabular-nums w-16 text-right ${textColor}`}>
                   {alloc.toFixed(1)}%
                 </span>
                 <span className="font-mono text-[12px] text-[var(--color-text-muted)] tabular-nums w-24 text-right">
-                  {formatCurrency(h.total_value)}
+                  {formatCurrency(h.value)}
                 </span>
-              </Link>
+              </div>
             );
           })}
           {pageItems.length === 0 && (
