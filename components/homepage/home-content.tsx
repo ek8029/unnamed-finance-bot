@@ -111,7 +111,7 @@ const FOOTER_COMPANY = [
   { label: 'Twitter / X', href: 'https://x.com/helmterminal' },
   { label: 'LinkedIn', href: 'https://www.linkedin.com/company/helmfintech' },
   { label: 'Blog', href: '/blog' },
-  { label: 'helmterminal@gmail.com', href: 'mailto:helmterminal@gmail.com' },
+  { label: 'support@helmterminal.dev', href: 'mailto:support@helmterminal.dev' },
 ];
 
 const FOOTER_LEGAL = [
