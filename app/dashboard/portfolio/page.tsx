@@ -123,7 +123,7 @@ export default function PortfolioPage() {
     [holdings],
   );
   const totalCostBasis = useMemo(
-    () => holdings.reduce((sum, h) => sum + (h.cost_basis ?? 0), 0),
+    () => holdings.reduce((sum, h) => sum + ((h.cost_basis ?? 0) * h.shares), 0),
     [holdings],
   );
   const unrealizedPct = totalCostBasis > 0 ? (totalUnrealized / totalCostBasis) * 100 : 0;
@@ -191,7 +191,7 @@ export default function PortfolioPage() {
         case 'ticker': return dir * a.ticker.localeCompare(b.ticker);
         case 'name': return dir * a.asset_name.localeCompare(b.asset_name);
         case 'shares': return dir * (a.shares - b.shares);
-        case 'avgCost': return dir * ((a.cost_basis && a.shares ? a.cost_basis / a.shares : 0) - (b.cost_basis && b.shares ? b.cost_basis / b.shares : 0));
+        case 'avgCost': return dir * ((a.cost_basis ?? 0) - (b.cost_basis ?? 0));
         case 'price': return dir * (a.current_price - b.current_price);
         case 'dayPct': return dir * ((a.day_change_percentage ?? 0) - (b.day_change_percentage ?? 0));
         case 'value': return dir * (a.total_value - b.total_value);
@@ -221,8 +221,8 @@ export default function PortfolioPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto p-6 max-w-[1600px]">
-        <div className="bg-[var(--color-negative)]/10 border border-[var(--color-negative)]/20 text-[var(--color-negative)] p-6 rounded-xl">
+      <div className="container mx-auto px-4 py-4 sm:p-6 max-w-[1600px]">
+        <div className="bg-[var(--color-negative)]/10 border border-[var(--color-negative)]/20 text-[var(--color-negative)] p-4 sm:p-6 rounded-xl">
           <h2 className="font-semibold mb-2">Error loading portfolio</h2>
           <p>{error}</p>
         </div>
@@ -285,12 +285,12 @@ export default function PortfolioPage() {
   /*  RENDER                                                           */
   /* ================================================================ */
   return (
-    <div className="container mx-auto px-4 py-6 max-w-[1600px]">
-      <div className="flex gap-6">
+    <div className="container mx-auto px-4 py-4 sm:py-6 max-w-[1600px]">
+      <div className="flex lg:gap-6">
         {/* ======================================================= */}
         {/*  MAIN CONTENT                                            */}
         {/* ======================================================= */}
-        <div className="flex-1 min-w-0 space-y-6">
+        <div className="flex-1 min-w-0 space-y-4 sm:space-y-6">
 
           {/* ---- 1. HEADER STRIP ---- */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -474,7 +474,7 @@ export default function PortfolioPage() {
                 }`}>
                   {totalDayChange >= 0 ? '+' : ''}{formatCurrency(totalDayChange)} ({dayChangePercentage >= 0 ? '+' : ''}{dayChangePercentage.toFixed(2)}%)
                 </span>
-                <span className="font-mono text-[11px] text-[var(--color-text-muted)] uppercase tracking-wider">YTD</span>
+                <span className="font-mono text-[11px] text-[var(--color-text-muted)] uppercase tracking-wider">today</span>
               </div>
             </div>
 
@@ -731,7 +731,7 @@ export default function PortfolioPage() {
                 </thead>
                 <tbody>
                   {sortedPositions.map((h, idx) => {
-                    const avgCost = h.cost_basis && h.shares ? h.cost_basis / h.shares : 0;
+                    const avgCost = h.cost_basis ?? 0;
                     const dayPct = h.day_change_percentage ?? 0;
                     const pl = h.unrealised_gain ?? 0;
                     const allocPct = h.portfolio_allocation;

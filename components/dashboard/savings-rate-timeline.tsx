@@ -33,7 +33,7 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
   const rateChange = previousMonth ? currentMonth.rate - previousMonth.rate : 0;
   const isPositive = rateChange > 0;
 
-  // Calculate 12-month average
+  // Calculate average over available data
   const avgRate = data.reduce((sum, d) => sum + d.rate, 0) / data.length;
   const totalSaved = data.reduce((sum, d) => sum + d.saved, 0);
 
@@ -65,7 +65,7 @@ export function SavingsRateTimeline({ data, targetRate = 30 }: SavingsRateTimeli
             </div>
           </div>
           <div>
-            <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-0.5">12-Mo Avg</div>
+            <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-0.5">{data.length}-Mo Avg</div>
             <div className="text-sm sm:text-xl font-bold font-tabular text-[var(--color-text-secondary)]">
               {avgRate.toFixed(1)}%
             </div>

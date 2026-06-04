@@ -737,7 +737,7 @@ export default function SettingsPage() {
   const renderProfile = () => (
     <div className="space-y-8">
       {renderSectionHeader('Profile')}
-      <h2 className="text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
+      <h2 className="text-[24px] sm:text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
         Personal information
       </h2>
       <p className="text-[14px] text-[var(--color-text-secondary)] -mt-4">
@@ -986,7 +986,7 @@ export default function SettingsPage() {
     <div className="space-y-8">
       {renderSectionHeader('Connected Accounts')}
       <div>
-        <h2 className="text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
+        <h2 className="text-[24px] sm:text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
           Brokerages & banks
         </h2>
         <p className="text-[14px] text-[var(--color-text-secondary)] mt-2">
@@ -1264,7 +1264,7 @@ export default function SettingsPage() {
   const renderNotifications = () => (
     <div className="space-y-8">
       {renderSectionHeader('Notifications')}
-      <h2 className="text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
+      <h2 className="text-[24px] sm:text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
         Notification preferences
       </h2>
       <p className="text-[14px] text-[var(--color-text-secondary)] -mt-4">
@@ -1303,7 +1303,7 @@ export default function SettingsPage() {
   const renderTax = () => (
     <div className="space-y-8">
       {renderSectionHeader('Tax Settings')}
-      <h2 className="text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
+      <h2 className="text-[24px] sm:text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
         Tax configuration
       </h2>
       <p className="text-[14px] text-[var(--color-text-secondary)] -mt-4">
@@ -1388,7 +1388,7 @@ export default function SettingsPage() {
   const renderPrivacy = () => (
     <div className="space-y-8">
       {renderSectionHeader('Data & Privacy')}
-      <h2 className="text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
+      <h2 className="text-[24px] sm:text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
         Your data
       </h2>
       <p className="text-[14px] text-[var(--color-text-secondary)] -mt-4">
@@ -1462,7 +1462,7 @@ export default function SettingsPage() {
   const renderBilling = () => (
     <div className="space-y-8">
       {renderSectionHeader('Billing')}
-      <h2 className="text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
+      <h2 className="text-[24px] sm:text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
         Subscription
       </h2>
       <p className="text-[14px] text-[var(--color-text-secondary)] -mt-4">
@@ -1536,7 +1536,7 @@ export default function SettingsPage() {
   const renderDanger = () => (
     <div className="space-y-8">
       {renderSectionHeader('Danger Zone')}
-      <h2 className="text-[34px] font-semibold text-[var(--color-negative)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
+      <h2 className="text-[24px] sm:text-[34px] font-semibold text-[var(--color-negative)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
         Danger zone
       </h2>
       <p className="text-[14px] text-[var(--color-text-secondary)] -mt-4">
@@ -1652,8 +1652,8 @@ export default function SettingsPage() {
           </nav>
         </aside>
 
-        {/* ── Mobile Navigation ── */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-[var(--color-bg-surface)] border-t border-[var(--color-border-base)] px-2 py-2 safe-area-pb" aria-label="Settings navigation">
+        {/* ── Mobile Navigation — sticky top strip, below top bar ── */}
+        <nav className="lg:hidden sticky top-[52px] z-20 bg-[var(--color-bg-surface)] border-b border-[var(--color-border-base)] px-2 py-2" aria-label="Settings navigation">
           <div className="flex items-center justify-between overflow-x-auto gap-1 no-scrollbar" role="tablist" aria-label="Settings sections">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon
@@ -1680,7 +1680,7 @@ export default function SettingsPage() {
         </nav>
 
         {/* ── Main Content ── */}
-        <main className="flex-1 min-w-0 p-6 lg:p-10 pb-24 lg:pb-10">
+        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-10">
           {/* Mobile header */}
           <div className="lg:hidden mb-6">
             <div className="flex items-center gap-2 mb-1">

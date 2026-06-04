@@ -138,7 +138,9 @@ function buildDataContext(td: TickerData): string {
     if (m['revenueGrowthTTMYoy'] != null) ml.push(`Revenue Growth YoY: ${m['revenueGrowthTTMYoy']?.toFixed(2)}%`);
     if (m['roeTTM'] != null) ml.push(`ROE (TTM): ${m['roeTTM']?.toFixed(2)}%`);
     if (m['currentRatioQuarterly'] != null) ml.push(`Current Ratio: ${m['currentRatioQuarterly']?.toFixed(2)}`);
-    if (m['debtEquityQuarterly'] != null) ml.push(`D/E Ratio: ${m['debtEquityQuarterly']?.toFixed(2)}`);
+    if (m['totalDebtToEquityQuarterly'] != null) ml.push(`D/E Ratio: ${m['totalDebtToEquityQuarterly']?.toFixed(2)}`);
+    else if (m['totalDebt/totalEquityQuarterly'] != null) ml.push(`D/E Ratio: ${m['totalDebt/totalEquityQuarterly']?.toFixed(2)}`);
+    else if (m['debtEquityQuarterly'] != null) ml.push(`D/E Ratio: ${m['debtEquityQuarterly']?.toFixed(2)}`);
     if (m['dividendYieldIndicatedAnnual'] != null) ml.push(`Dividend Yield: ${m['dividendYieldIndicatedAnnual']?.toFixed(2)}%`);
     if (m['52WeekHigh'] != null) ml.push(`52W High: $${m['52WeekHigh']}`);
     if (m['52WeekLow'] != null) ml.push(`52W Low: $${m['52WeekLow']}`);

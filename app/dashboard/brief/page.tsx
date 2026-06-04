@@ -312,7 +312,7 @@ export default function BriefPage() {
         <div className="border-b-2 border-[var(--color-gold)]/30 animate-pulse">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
             <div className="h-3 w-48 bg-white/[0.06] rounded mb-3" />
-            <div className="h-10 w-96 bg-white/[0.06] rounded" />
+            <div className="h-10 w-full max-w-96 bg-white/[0.06] rounded" />
           </div>
         </div>
         <div className="bg-[#080808] border-b border-white/[0.06] animate-pulse">
@@ -440,7 +440,7 @@ export default function BriefPage() {
               {watchlist.length > 0 && (
                 <button
                   onClick={() => handleRemoveWatchlistTicker(label)}
-                  className="absolute top-0 right-0 text-[var(--color-text-muted)] hover:text-[var(--color-negative)] opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                  className="absolute top-0 right-0 text-[var(--color-text-muted)] hover:text-[var(--color-negative)] opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-xs p-1"
                   aria-label={`Remove ${label} from watchlist`}
                 >
                   ×
@@ -497,9 +497,9 @@ export default function BriefPage() {
               </div>
 
               {/* Lead body text — larger serif with drop cap */}
-              <p className="text-[18px] leading-[1.7] text-[var(--color-text-secondary)]" style={SERIF}>
+              <p className="text-[16px] sm:text-[18px] leading-[1.7] text-[var(--color-text-secondary)]" style={SERIF}>
                 <span
-                  className="float-left text-[4rem] font-bold leading-[0.8] mr-3 mt-[0.1em] text-[var(--color-gold)]"
+                  className="float-left text-[3rem] sm:text-[4rem] font-bold leading-[0.8] mr-2 sm:mr-3 mt-[0.1em] text-[var(--color-gold)]"
                   style={{ fontFamily: 'var(--font-sans)' }}
                 >
                   {portfolioUp ? 'Y' : 'A'}
@@ -631,22 +631,22 @@ export default function BriefPage() {
                   YOUR TOP MOVERS
                 </h2>
                 <div className="border border-white/[0.06] rounded overflow-hidden">
-                  <div className="grid grid-cols-[70px_1fr_90px_110px] gap-3 items-center px-4 py-2.5 bg-white/[0.02] border-b border-white/[0.06]">
+                  <div className="grid grid-cols-[50px_1fr_70px_80px] sm:grid-cols-[70px_1fr_90px_110px] gap-2 sm:gap-3 items-center px-3 sm:px-4 py-2.5 bg-white/[0.02] border-b border-white/[0.06]">
                     <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-muted)]" style={MONO}>Ticker</span>
                     <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-muted)]" style={MONO}>Name</span>
                     <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-muted)] text-right" style={MONO}>Change</span>
                     <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-muted)] text-right" style={MONO}>Impact</span>
                   </div>
                   {allMovers.map((m) => (
-                    <div key={m.ticker} className="grid grid-cols-[70px_1fr_90px_110px] gap-3 items-center px-4 py-3.5 border-t border-white/[0.04] hover:bg-white/[0.02] motion-safe:transition-colors">
-                      <Link href={`/dashboard/analyze/${m.ticker}`} className="font-mono text-[15px] font-bold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] motion-safe:transition-colors">
+                    <div key={m.ticker} className="grid grid-cols-[50px_1fr_70px_80px] sm:grid-cols-[70px_1fr_90px_110px] gap-2 sm:gap-3 items-center px-3 sm:px-4 py-3.5 border-t border-white/[0.04] hover:bg-white/[0.02] motion-safe:transition-colors">
+                      <Link href={`/dashboard/analyze/${m.ticker}`} className="font-mono text-[13px] sm:text-[15px] font-bold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] motion-safe:transition-colors">
                         {m.ticker}
                       </Link>
-                      <span className="text-[15px] text-[var(--color-text-muted)] truncate">{m.name}</span>
-                      <span className={`text-[15px] font-mono font-semibold text-right tabular-nums ${m.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+                      <span className="text-[13px] sm:text-[15px] text-[var(--color-text-muted)] truncate">{m.name}</span>
+                      <span className={`text-[13px] sm:text-[15px] font-mono font-semibold text-right tabular-nums ${m.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
                         {fmtPct(m.changePct)}
                       </span>
-                      <span className={`text-[15px] font-mono text-right tabular-nums ${m.dollarImpact >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+                      <span className={`text-[13px] sm:text-[15px] font-mono text-right tabular-nums ${m.dollarImpact >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
                         {m.dollarImpact >= 0 ? '+' : ''}{fmt(m.dollarImpact)}
                       </span>
                     </div>

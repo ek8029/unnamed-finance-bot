@@ -67,7 +67,7 @@ export default async function HoldingDetailPage({ params }: Props) {
   const unrealizedPct = totalCostBasis > 0 ? (unrealizedGL / totalCostBasis) * 100 : 0;
   const currentPrice = Number(holdings[0].current_price || 0);
   const dayChangePct = Number(holdings[0].day_change_pct || 0) * 100;
-  const allocPct = Number(holdings[0].portfolio_allocation_pct || 0);
+  const allocPct = holdings.reduce((s, h) => s + Number(h.portfolio_allocation_pct || 0), 0);
   const security = holdings[0].security;
 
   const holdingData = {

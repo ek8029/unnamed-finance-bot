@@ -191,7 +191,7 @@ export default function AccountsPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto p-6 max-w-7xl">
+      <div className="container mx-auto px-4 py-4 sm:p-6 max-w-7xl">
         <div className="bg-[var(--color-negative)]/10 border border-[var(--color-negative)]/20 text-[var(--color-negative)] p-6 rounded-xl">
           <h2 className="font-semibold mb-2">Error loading accounts</h2>
           <p>{error}</p>
@@ -201,16 +201,16 @@ export default function AccountsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6 max-w-7xl">
+    <div className="container mx-auto px-4 py-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="space-y-1 sm:space-y-2">
           <h1 className="type-h1">Accounts</h1>
-          <p className="type-body">
+          <p className="type-body hidden sm:block">
             Manage your connected financial accounts and institutions
           </p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2 sm:space-x-3">
           <Button
             variant="outline"
             className="flex items-center space-x-2"
@@ -222,11 +222,13 @@ export default function AccountsPage() {
             ) : (
               <RefreshCcw className="w-4 h-4" />
             )}
-            <span>{syncing ? 'Syncing...' : 'Sync All'}</span>
+            <span className="hidden sm:inline">{syncing ? 'Syncing...' : 'Sync All'}</span>
+            <span className="sm:hidden">{syncing ? '...' : 'Sync'}</span>
           </Button>
           <Button className="flex items-center space-x-2" onClick={() => setShowAddAccount(true)}>
             <Plus className="w-4 h-4" />
-            <span>Add Account</span>
+            <span className="hidden sm:inline">Add Account</span>
+            <span className="sm:hidden">Add</span>
           </Button>
         </div>
       </div>

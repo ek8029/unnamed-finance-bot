@@ -62,9 +62,9 @@ export function HoldingDetailClient({
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-[var(--color-gold)]" style={MONO}>{holding.ticker}</h1>
-              <span className="text-lg text-[var(--color-text-secondary)]">{holding.name}</span>
+            <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
+              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--color-gold)]" style={MONO}>{holding.ticker}</h1>
+              <span className="text-base sm:text-lg text-[var(--color-text-secondary)] truncate max-w-[200px] sm:max-w-none">{holding.name}</span>
             </div>
             <div className="flex items-center gap-2 mt-1 text-[13px] text-[var(--color-text-muted)]" style={MONO}>
               {holding.exchange && <span>{holding.exchange}</span>}
@@ -94,7 +94,7 @@ export function HoldingDetailClient({
         ].map(m => (
           <div key={m.label} className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-3.5">
             <div className="text-[11px] font-mono tracking-wider text-[var(--color-text-muted)] uppercase">{m.label}</div>
-            <div className="text-[18px] font-bold tabular-nums mt-1" style={{ ...MONO, color: m.color || 'var(--color-text-primary)' }}>{m.value}</div>
+            <div className="text-[15px] sm:text-[18px] font-bold tabular-nums mt-1" style={{ ...MONO, color: m.color || 'var(--color-text-primary)' }}>{m.value}</div>
           </div>
         ))}
       </div>

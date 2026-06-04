@@ -19,11 +19,13 @@ interface HoldingRow {
   security: { security_name: string; sector: string } | null;
 }
 
-function classifyVix(price: number): VixLevel {
-  if (price > 30) return 'extreme_fear';
-  if (price > 25) return 'fear';
-  if (price > 18) return 'neutral';
-  if (price > 12) return 'greed';
+// Thresholds calibrated for VIXY ETF price (not the VIX index).
+// VIXY trades lower than VIX due to contango decay in VIX futures.
+function classifyVix(vixyPrice: number): VixLevel {
+  if (vixyPrice > 25) return 'extreme_fear';
+  if (vixyPrice > 20) return 'fear';
+  if (vixyPrice > 15) return 'neutral';
+  if (vixyPrice > 10) return 'greed';
   return 'extreme_greed';
 }
 

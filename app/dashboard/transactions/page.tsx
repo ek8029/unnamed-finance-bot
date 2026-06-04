@@ -493,8 +493,7 @@ export default function TransactionsPage() {
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div className="space-y-1.5">
             <h1
-              className="font-sans font-bold tracking-tight text-[var(--color-text-primary)] leading-none"
-              style={{ fontSize: '38px' }}
+              className="font-sans font-bold tracking-tight text-[var(--color-text-primary)] leading-none text-[28px] sm:text-[38px]"
             >
               Activity
             </h1>
@@ -634,7 +633,7 @@ export default function TransactionsPage() {
             {loading ? (
               <Skeleton className="h-7 w-20 mb-1" />
             ) : (
-              <p className="font-mono font-bold text-[#7AA3C7] leading-none mb-1" style={{ fontSize: '24px' }}>
+              <p className="font-mono font-bold text-[#7AA3C7] leading-none mb-1 text-[18px] sm:text-[24px]">
                 {formatCurrency(tileSummary.bought)}
               </p>
             )}
@@ -651,7 +650,7 @@ export default function TransactionsPage() {
             {loading ? (
               <Skeleton className="h-7 w-20 mb-1" />
             ) : (
-              <p className="font-mono font-bold text-[#E89A7F] leading-none mb-1" style={{ fontSize: '24px' }}>
+              <p className="font-mono font-bold text-[#E89A7F] leading-none mb-1 text-[18px] sm:text-[24px]">
                 {formatCurrency(tileSummary.sold)}
               </p>
             )}
@@ -668,7 +667,7 @@ export default function TransactionsPage() {
             {loading ? (
               <Skeleton className="h-7 w-16 mb-1" />
             ) : (
-              <p className="font-mono font-bold text-[var(--color-positive)] leading-none mb-1" style={{ fontSize: '24px' }}>
+              <p className="font-mono font-bold text-[var(--color-positive)] leading-none mb-1 text-[18px] sm:text-[24px]">
                 {formatCurrency(tileSummary.dividends)}
               </p>
             )}
@@ -685,7 +684,7 @@ export default function TransactionsPage() {
             {loading ? (
               <Skeleton className="h-7 w-16 mb-1" />
             ) : (
-              <p className="font-mono font-bold text-[var(--color-text-muted)] leading-none mb-1" style={{ fontSize: '24px' }}>
+              <p className="font-mono font-bold text-[var(--color-text-muted)] leading-none mb-1 text-[18px] sm:text-[24px]">
                 {formatCurrency(tileSummary.fees)}
               </p>
             )}
@@ -942,7 +941,7 @@ export default function TransactionsPage() {
                   onClick={() => goToPage(pagination.page - 1)}
                   disabled={pagination.page <= 1}
                   aria-label="Previous page"
-                  className="p-1.5 rounded border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-overlay)] disabled:opacity-30 disabled:cursor-not-allowed motion-safe:transition-colors"
+                  className="p-2.5 sm:p-1.5 rounded border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-overlay)] disabled:opacity-30 disabled:cursor-not-allowed motion-safe:transition-colors"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
@@ -964,7 +963,7 @@ export default function TransactionsPage() {
                       onClick={() => goToPage(pageNum)}
                       aria-label={`Go to page ${pageNum}`}
                       aria-current={pageNum === pagination.page ? 'page' : undefined}
-                      className={`w-7 h-7 rounded text-[12px] font-mono motion-safe:transition-colors ${
+                      className={`w-9 h-9 sm:w-7 sm:h-7 rounded text-[12px] font-mono motion-safe:transition-colors ${
                         pageNum === pagination.page
                           ? 'bg-[var(--color-gold)] text-black font-semibold'
                           : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-overlay)]'
@@ -978,7 +977,7 @@ export default function TransactionsPage() {
                   onClick={() => goToPage(pagination.page + 1)}
                   disabled={pagination.page >= pagination.totalPages}
                   aria-label="Next page"
-                  className="p-1.5 rounded border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-overlay)] disabled:opacity-30 disabled:cursor-not-allowed motion-safe:transition-colors"
+                  className="p-2.5 sm:p-1.5 rounded border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-overlay)] disabled:opacity-30 disabled:cursor-not-allowed motion-safe:transition-colors"
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>

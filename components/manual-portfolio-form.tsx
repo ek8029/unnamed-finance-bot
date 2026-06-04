@@ -116,7 +116,7 @@ export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortf
     <div className={compact ? '' : 'max-w-2xl mx-auto'}>
       <div className="space-y-2">
         {/* Header row */}
-        <div className="grid gap-1.5 sm:gap-2" style={{ gridTemplateColumns: '1fr 80px 100px 32px' }}>
+        <div className="grid gap-1.5 sm:gap-2" style={{ gridTemplateColumns: '1fr 70px 85px 36px' }}>
           <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-medium" style={{ fontFamily: 'var(--font-mono)' }}>Ticker</span>
           <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-medium" style={{ fontFamily: 'var(--font-mono)' }}>Shares</span>
           <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-medium" style={{ fontFamily: 'var(--font-mono)' }}>
@@ -128,7 +128,7 @@ export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortf
 
         {/* Holding rows */}
         {rows.map((row) => (
-          <div key={row.id} className="grid gap-1.5 sm:gap-2" style={{ gridTemplateColumns: '1fr 80px 100px 32px' }}>
+          <div key={row.id} className="grid gap-1.5 sm:gap-2" style={{ gridTemplateColumns: '1fr 70px 85px 36px' }}>
             <input
               type="text"
               placeholder="AAPL"
@@ -160,7 +160,7 @@ export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortf
             />
             <button
               onClick={() => removeRow(row.id)}
-              className="flex items-center justify-center w-8 h-8 mt-0.5 rounded text-[var(--color-text-muted)] hover:text-[var(--color-negative)] hover:bg-[var(--color-negative)]/5 transition-colors cursor-pointer"
+              className="flex items-center justify-center w-9 h-9 rounded text-[var(--color-text-muted)] hover:text-[var(--color-negative)] hover:bg-[var(--color-negative)]/5 transition-colors cursor-pointer"
               aria-label="Remove"
             >
               <Trash2 className="w-3.5 h-3.5" />

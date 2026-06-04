@@ -202,7 +202,7 @@ function MetricCell({ label, value, context }: { label: string; value: string; c
   return (
     <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-3 space-y-1">
       <div className="text-[12px] font-mono tracking-wider text-[var(--color-text-muted)] uppercase">{label}</div>
-      <div className="text-[22px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{value}</div>
+      <div className="text-[16px] sm:text-[22px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{value}</div>
       {context && <div className="text-[12px] font-mono text-[var(--color-text-muted)]">{context}</div>}
     </div>
   );
@@ -341,7 +341,7 @@ function OverviewView({ analysis, tickerData }: { analysis: StockAnalysis; ticke
       </div>
 
       {/* Key stats row */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <MetricCell label="Price" value={fmtPrice(quote?.c)} />
         <MetricCell label="Day Change" value={fmtPct(quote?.dp)} context={quote?.d != null ? `${quote.d >= 0 ? '+' : ''}${fmt(quote.d)}` : undefined} />
         <MetricCell label="Market Cap" value={profile?.marketCapitalization != null ? fmtCompact(profile.marketCapitalization * 1e6) : '--'} />
@@ -732,7 +732,7 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
             {row('Operating Margin', am.operatingMarginTTM != null ? `${fmt(am.operatingMarginTTM)}%` : '--', bm.operatingMarginTTM != null ? `${fmt(bm.operatingMarginTTM)}%` : '--', 'higher')}
             {row('Net Margin', am.netProfitMarginTTM != null ? `${fmt(am.netProfitMarginTTM)}%` : '--', bm.netProfitMarginTTM != null ? `${fmt(bm.netProfitMarginTTM)}%` : '--', 'higher')}
             {row('ROE', am.roeTTM != null ? `${fmt(am.roeTTM)}%` : '--', bm.roeTTM != null ? `${fmt(bm.roeTTM)}%` : '--', 'higher')}
-            {row('Debt/Equity', am.totalDebtToEquityQuarterly != null ? fmt(am.totalDebtToEquityQuarterly) : '--', bm.totalDebtToEquityQuarterly != null ? fmt(bm.totalDebtToEquityQuarterly) : '--', 'lower')}
+            {row('Debt/Equity', am.totalDebtToEquityQuarterly != null ? fmt(am.totalDebtToEquityQuarterly) : (am['totalDebt/totalEquityQuarterly'] != null ? fmt(am['totalDebt/totalEquityQuarterly']) : '--'), bm.totalDebtToEquityQuarterly != null ? fmt(bm.totalDebtToEquityQuarterly) : (bm['totalDebt/totalEquityQuarterly'] != null ? fmt(bm['totalDebt/totalEquityQuarterly']) : '--'), 'lower')}
             {row('Current Ratio', am.currentRatioQuarterly != null ? fmt(am.currentRatioQuarterly) : '--', bm.currentRatioQuarterly != null ? fmt(bm.currentRatioQuarterly) : '--', 'higher')}
             {row('Dividend Yield', am.dividendYieldIndicatedAnnual != null ? `${fmt(am.dividendYieldIndicatedAnnual)}%` : '--', bm.dividendYieldIndicatedAnnual != null ? `${fmt(bm.dividendYieldIndicatedAnnual)}%` : '--', 'higher')}
             {row('Beta', am.beta != null ? fmt(am.beta) : '--', bm.beta != null ? fmt(bm.beta) : '--')}
@@ -853,17 +853,24 @@ function RightSidebar({
       )}
 
       {/* Earnings date */}
-      {tickerData.earnings?.[0] && (
-        <div className="space-y-2">
-          <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Next Earnings</div>
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[var(--color-gold)]" />
-            <span className="text-[15px] font-mono font-semibold text-[var(--color-text-primary)]">
-              {new Date(tickerData.earnings[0].period).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-            </span>
+      {(() => {
+        const now = new Date();
+        const upcoming = tickerData.earnings?.find(e => new Date(e.period) > now);
+        const entry = upcoming || tickerData.earnings?.[0];
+        if (!entry) return null;
+        const isFuture = new Date(entry.period) > now;
+        return (
+          <div className="space-y-2">
+            <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">{isFuture ? 'Next Earnings' : 'Last Earnings'}</div>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-[var(--color-gold)]" />
+              <span className="text-[15px] font-mono font-semibold text-[var(--color-text-primary)]">
+                {new Date(entry.period).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Data provenance */}
       <div className="space-y-1.5 pt-3 border-t border-[var(--color-border-subtle)]">
@@ -960,7 +967,7 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
           {/* Mobile menu toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+            className="lg:hidden p-2.5 -ml-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
             aria-label="Toggle navigation menu"
           >
             {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -976,9 +983,9 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
         </div>
         <div className="flex items-center gap-4">
           <ShareBar ticker={ticker} analysis={analysis} />
-          <div className="hidden sm:flex items-center gap-3 font-mono tabular-nums text-[15px]">
+          <div className="flex items-center gap-1.5 sm:gap-3 font-mono tabular-nums text-[13px] sm:text-[15px]">
             <span className="text-[var(--color-text-primary)] font-semibold">{fmtPrice(quote?.c)}</span>
-            <span className={changeColor(quote?.dp)}>{fmtPct(quote?.dp)}</span>
+            <span className={`hidden sm:inline ${changeColor(quote?.dp)}`}>{fmtPct(quote?.dp)}</span>
           </div>
           <div className="flex items-center gap-1.5 text-[10px] font-mono text-[var(--color-text-muted)]">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] animate-pulse" />
@@ -993,7 +1000,7 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
       </div>
 
       {/* 3-pane grid */}
-      <div className={`grid grid-cols-1 border border-t-0 border-[var(--color-border-base)] rounded-b-sm overflow-hidden min-h-[600px] ${isDashboard ? 'lg:grid-cols-[240px_1fr_300px]' : 'lg:grid-cols-[260px_1fr_340px]'}`}>
+      <div className={`grid grid-cols-1 border border-t-0 border-[var(--color-border-base)] rounded-b-sm overflow-hidden lg:min-h-[600px] ${isDashboard ? 'lg:grid-cols-[240px_1fr_300px]' : 'lg:grid-cols-[260px_1fr_340px]'}`}>
         {/* LEFT PANE */}
         {/* Desktop: always visible. Mobile: toggle */}
         <aside className={`bg-[var(--color-bg-base)] border-r border-[var(--color-border-subtle)] py-3 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
@@ -1072,8 +1079,8 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
           </div>
         </main>
 
-        {/* RIGHT PANE */}
-        <aside className="bg-[var(--color-bg-base)] border-l border-[var(--color-border-subtle)] p-4 overflow-y-auto">
+        {/* RIGHT PANE — hidden on mobile, data already in center OverviewView */}
+        <aside className="hidden lg:block bg-[var(--color-bg-base)] border-l border-[var(--color-border-subtle)] p-4 overflow-y-auto">
           <div className="sticky top-0">
             <RightSidebar
               analysis={analysis}

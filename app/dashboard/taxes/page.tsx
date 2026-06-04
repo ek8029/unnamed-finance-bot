@@ -29,7 +29,7 @@ interface QuarterData {
   gains: number;
   losses: number;
   net: number;
-  status: 'filed' | 'in-progress' | 'upcoming';
+  status: 'past' | 'in-progress' | 'upcoming';
 }
 
 function getQuarter(dateStr: string): number {
@@ -48,9 +48,9 @@ function getCurrentQuarter(): number {
   return 4;
 }
 
-function getQuarterStatus(q: number): 'filed' | 'in-progress' | 'upcoming' {
+function getQuarterStatus(q: number): 'past' | 'in-progress' | 'upcoming' {
   const current = getCurrentQuarter();
-  if (q < current) return 'filed';
+  if (q < current) return 'past';
   if (q === current) return 'in-progress';
   return 'upcoming';
 }
@@ -223,9 +223,19 @@ export default function TaxesPage() {
 
   const estimatedTaxDue = useMemo(() => {
     if (!taxData) return 0;
-    const netRealized = taxData.realized.netRealized;
-    if (netRealized <= 0) return 0;
-    return netRealized * TAX_RATE;
+    const stNet = taxData.realized.shortTermGains + taxData.realized.shortTermLosses;
+    const ltNet = taxData.realized.longTermGains + taxData.realized.longTermLosses;
+    // Net ST losses can offset LT gains and vice versa per IRC §1(h)
+    if (stNet + ltNet <= 0) return 0;
+    if (stNet >= 0 && ltNet >= 0) {
+      return stNet * TAX_RATE + ltNet * LTCG_RATE_DEFAULT;
+    }
+    // One category has net loss that offsets the other
+    const combined = stNet + ltNet;
+    // If ST net is positive after netting, it's taxed at ST rate; if LT is what remains, LT rate
+    return stNet > 0
+      ? Math.max(0, combined) * TAX_RATE   // LT losses ate into ST gains
+      : Math.max(0, combined) * LTCG_RATE_DEFAULT; // ST losses ate into LT gains
   }, [taxData]);
 
   const realizedYTD = useMemo(() => {
@@ -425,8 +435,8 @@ export default function TaxesPage() {
             </p>
 
             <StackedBar
-              shortTermGains={shortTermGains}
-              longTermGains={longTermGains}
+              shortTermGains={Math.max(0, shortTermNet)}
+              longTermGains={Math.max(0, longTermNet)}
               dividends={0}
             />
           </div>
@@ -693,13 +703,13 @@ export default function TaxesPage() {
           {quarters.map((q) => {
             const isActive = q.status === 'in-progress';
             const statusColor =
-              q.status === 'filed'
+              q.status === 'past'
                 ? 'text-[var(--color-positive)]'
                 : q.status === 'in-progress'
                   ? 'text-[var(--color-gold)]'
                   : 'text-[var(--color-text-muted)]';
             const statusLabel =
-              q.status === 'filed' ? 'Filed' : q.status === 'in-progress' ? 'In progress' : 'Upcoming';
+              q.status === 'past' ? 'Complete' : q.status === 'in-progress' ? 'In progress' : 'Upcoming';
 
             return (
               <div
@@ -982,8 +992,8 @@ export default function TaxesPage() {
                 {harvestReport.opportunityCount}
               </span>
             </div>
-            {/* Wash sale legend */}
-            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+            {/* Wash sale legend — hidden on mobile, badges are self-explanatory */}
+            <span className="hidden sm:inline text-[11px] text-[var(--color-text-muted)]" style={MONO}>
               <span className="text-[var(--color-positive)]">Clear</span> = safe to harvest
               <span className="mx-1.5">|</span>
               <span className="text-[var(--color-warning-text)]">Conflict</span> = wash sale risk detected

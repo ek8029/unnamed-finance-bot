@@ -189,7 +189,7 @@ function RecentCard({ result, formatCurrency, isPro }: { result: RecentEarning; 
               </div>
               {result.actualPostEarningsMove != null && (
                 <div className="bg-[var(--color-bg-surface)] px-3 sm:px-4 py-2 sm:py-3">
-                  <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Post-Earnings Move</div>
+                  <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Today&apos;s Move</div>
                   <div
                     className="text-[15px] font-bold font-tabular"
                     style={{ color: result.actualPostEarningsMove >= 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
