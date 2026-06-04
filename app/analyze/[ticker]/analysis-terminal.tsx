@@ -130,13 +130,13 @@ function InlineSearch({ currentTicker, basePath = '/analyze' }: { currentTicker:
           maxLength={5}
           disabled={loading}
           aria-label="Stock ticker symbol"
-          className="w-full pl-7 pr-2 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-[12px] tracking-wider font-mono tabular-nums disabled:opacity-60"
+          className="w-full pl-7 pr-2 py-2.5 sm:py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-[12px] tracking-wider font-mono tabular-nums disabled:opacity-60"
         />
       </div>
       <button
         type="submit"
         disabled={!input.trim() || input.trim().toUpperCase() === currentTicker || loading}
-        className="px-3 py-1.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded-sm transition-colors text-[11px] whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+        className="px-3 py-2.5 sm:py-1.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded-sm transition-colors text-[11px] whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
       >
         {loading ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : 'GO'}
       </button>
@@ -663,7 +663,7 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
         <div className="flex flex-wrap gap-2 pt-2">
           {SUGGESTIONS.slice(0, 6).map(t => (
             <button key={t} onClick={() => { setCompareTicker(t); }}
-              className="px-3 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm text-[11px] font-mono font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:border-[var(--color-gold-border)] transition-colors">
+              className="px-3 py-2.5 sm:py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm text-[11px] font-mono font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:border-[var(--color-gold-border)] transition-colors">
               {t}
             </button>
           ))}
@@ -692,23 +692,23 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
       </div>
 
       {/* Company cards */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-4">
-          <div className="text-[18px] font-mono font-bold text-[var(--color-gold)] tabular-nums">{currentTicker}</div>
-          <div className="text-[13px] text-[var(--color-text-secondary)] mt-0.5">{currentAnalysis.companyName}</div>
-          <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-1">{a.profile?.finnhubIndustry || '--'}</div>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-[20px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{fmtPrice(a.quote?.c)}</span>
-            <span className={`text-[13px] font-mono tabular-nums ${changeColor(a.quote?.dp)}`}>{fmtPct(a.quote?.dp)}</span>
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+        <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-3 sm:p-4">
+          <div className="text-[16px] sm:text-[18px] font-mono font-bold text-[var(--color-gold)] tabular-nums">{currentTicker}</div>
+          <div className="text-[12px] sm:text-[13px] text-[var(--color-text-secondary)] mt-0.5 truncate">{currentAnalysis.companyName}</div>
+          <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-1 truncate">{a.profile?.finnhubIndustry || '--'}</div>
+          <div className="flex items-baseline gap-1.5 sm:gap-2 mt-2">
+            <span className="text-[16px] sm:text-[20px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{fmtPrice(a.quote?.c)}</span>
+            <span className={`text-[11px] sm:text-[13px] font-mono tabular-nums ${changeColor(a.quote?.dp)}`}>{fmtPct(a.quote?.dp)}</span>
           </div>
         </div>
-        <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-4">
-          <div className="text-[18px] font-mono font-bold text-[var(--color-text-primary)] tabular-nums">{b.symbol}</div>
-          <div className="text-[13px] text-[var(--color-text-secondary)] mt-0.5">{b.profile?.name || b.symbol}</div>
-          <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-1">{b.profile?.finnhubIndustry || '--'}</div>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-[20px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{fmtPrice(b.quote?.c)}</span>
-            <span className={`text-[13px] font-mono tabular-nums ${changeColor(b.quote?.dp)}`}>{fmtPct(b.quote?.dp)}</span>
+        <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-3 sm:p-4">
+          <div className="text-[16px] sm:text-[18px] font-mono font-bold text-[var(--color-text-primary)] tabular-nums">{b.symbol}</div>
+          <div className="text-[12px] sm:text-[13px] text-[var(--color-text-secondary)] mt-0.5 truncate">{b.profile?.name || b.symbol}</div>
+          <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-1 truncate">{b.profile?.finnhubIndustry || '--'}</div>
+          <div className="flex items-baseline gap-1.5 sm:gap-2 mt-2">
+            <span className="text-[16px] sm:text-[20px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{fmtPrice(b.quote?.c)}</span>
+            <span className={`text-[11px] sm:text-[13px] font-mono tabular-nums ${changeColor(b.quote?.dp)}`}>{fmtPct(b.quote?.dp)}</span>
           </div>
         </div>
       </div>
@@ -908,19 +908,19 @@ function ShareBar({ ticker, analysis }: { ticker: string; analysis: StockAnalysi
     } catch { /* noop */ }
   };
 
-  const btnClass = "flex items-center gap-1.5 px-2.5 py-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm text-[10px] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] transition-colors";
+  const btnClass = "flex items-center gap-1.5 px-2.5 py-2 sm:py-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm text-[10px] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] transition-colors";
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5 sm:gap-2">
       <button onClick={shareOnX} className={btnClass} aria-label={`Share ${ticker} analysis on X`}>
         <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
         </svg>
-        Share
+        <span className="hidden sm:inline">Share</span>
       </button>
       <button onClick={copyLink} className={btnClass} aria-label="Copy analysis link">
         {copied ? <Check className="w-3 h-3 text-[var(--color-positive)]" /> : <Link2 className="w-3 h-3" />}
-        {copied ? 'Copied' : 'Copy'}
+        <span className="hidden sm:inline">{copied ? 'Copied' : 'Copy'}</span>
       </button>
     </div>
   );
@@ -1018,7 +1018,7 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
                   <a
                     key={t}
                     href={`${analyzePath}/${t}`}
-                    className="px-2 py-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm text-[10px] font-mono font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:border-[var(--color-gold-border)] transition-colors"
+                    className="px-3 py-2 sm:px-2 sm:py-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm text-[11px] sm:text-[10px] font-mono font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:border-[var(--color-gold-border)] transition-colors"
                   >
                     {t}
                   </a>

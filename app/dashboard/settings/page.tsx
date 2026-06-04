@@ -1313,7 +1313,7 @@ export default function SettingsPage() {
       <div className="space-y-5">
         <div className="space-y-2">
           <Label className="text-[14px]">Filing status</Label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {(['Single', 'Married Filing Jointly', 'Married Filing Separately', 'Head of Household'] as const).map((status) => (
               <button
                 key={status}
@@ -1332,12 +1332,12 @@ export default function SettingsPage() {
 
         <div className="space-y-2">
           <Label className="text-[14px]">Federal tax bracket</Label>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {['10%', '12%', '22%', '24%', '32%', '35%', '37%'].map((bracket) => (
               <button
                 key={bracket}
                 onClick={() => setTaxBracket(bracket)}
-                className={`p-2 rounded-lg border text-[13px] text-center motion-safe:transition-colors ${
+                className={`p-3 sm:p-2 rounded-lg border text-[13px] text-center motion-safe:transition-colors ${
                   taxBracket === bracket
                     ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/10 text-[var(--color-gold)]'
                     : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold)]/50'
@@ -1543,8 +1543,8 @@ export default function SettingsPage() {
         Irreversible actions that affect your account and data.
       </p>
 
-      <div className="p-6 bg-[var(--color-negative)]/5 border border-[var(--color-negative)]/20 rounded-lg">
-        <div className="flex items-start justify-between gap-4">
+      <div className="p-4 sm:p-6 bg-[var(--color-negative)]/5 border border-[var(--color-negative)]/20 rounded-lg">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
           <div>
             <p className="text-[16px] font-semibold text-[var(--color-negative)]">Delete account</p>
             <p className="text-[13px] text-[var(--color-text-secondary)] mt-1">
@@ -1555,7 +1555,7 @@ export default function SettingsPage() {
             variant="destructive"
             size="sm"
             onClick={() => setShowDeleteModal(true)}
-            className="flex-shrink-0"
+            className="flex-shrink-0 w-full sm:w-auto"
           >
             Delete account
           </Button>
@@ -1665,7 +1665,7 @@ export default function SettingsPage() {
                   aria-selected={isActive}
                   aria-current={isActive ? 'page' : undefined}
                   onClick={() => setActiveSection(item.id)}
-                  className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-md min-w-[56px] text-[10px] motion-safe:transition-colors ${
+                  className={`flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-md min-w-[48px] text-[10px] motion-safe:transition-colors ${
                     isActive
                       ? 'text-[var(--color-gold)]'
                       : 'text-[var(--color-text-muted)]'

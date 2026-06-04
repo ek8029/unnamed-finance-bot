@@ -314,7 +314,7 @@ export function ActionsClient({ initialActions, isPro }: { initialActions: Actio
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-64px)]">
+    <div className="flex flex-col h-[calc(100dvh-64px)] pb-16 md:pb-0">
       {/* Top Bar: Title + Status Tabs + Generate */}
       <div className="px-4 md:px-6 py-3 md:py-4 border-b border-[var(--color-border-base)]">
         <div className="flex items-center justify-between mb-2 md:mb-0">

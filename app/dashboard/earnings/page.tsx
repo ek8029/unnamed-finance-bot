@@ -42,17 +42,17 @@ function UpcomingCard({ event, formatCurrency, isPro }: { event: UpcomingEarning
 
         {/* Content */}
         <div className="flex-1 px-3 sm:px-5 py-3 sm:py-3.5">
-          <div className="flex items-baseline justify-between mb-1">
-            <div>
+          <div className="flex items-baseline justify-between gap-2 mb-1">
+            <div className="min-w-0 flex items-baseline gap-2 flex-wrap">
               <span className="text-base sm:text-lg font-bold tracking-tight text-[var(--color-text-primary)]">{event.ticker}</span>
-              <span className="text-[11px] text-[var(--color-text-muted)] ml-2" style={{ fontFamily: 'var(--font-mono)' }}>
+              <span className="text-[11px] text-[var(--color-text-muted)] truncate" style={{ fontFamily: 'var(--font-mono)' }}>
                 {event.companyName}
               </span>
             </div>
-            <span className="type-eyebrow text-[var(--color-text-muted)]">{event.position.sector}</span>
+            <span className="type-eyebrow text-[var(--color-text-muted)] shrink-0 hidden sm:inline">{event.position.sector}</span>
           </div>
 
-          <div className="flex items-center gap-4 mt-2 mb-3">
+          <div className="flex items-center gap-3 sm:gap-4 mt-2 mb-3 flex-wrap">
             <div>
               <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Your Exposure</div>
               <div className="text-[14px] font-semibold text-[var(--color-text-primary)] font-tabular">
@@ -139,19 +139,19 @@ function RecentCard({ result, formatCurrency, isPro }: { result: RecentEarning; 
 
       {/* Details */}
       <div className="px-3 sm:px-5 py-3 sm:py-3.5">
-        <div className="flex items-baseline gap-2 mb-3">
+        <div className="flex items-baseline gap-2 mb-3 flex-wrap">
           <span className="text-base sm:text-lg font-bold tracking-tight text-[var(--color-text-primary)]">{result.ticker}</span>
-          <span className="text-[11px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+          <span className="text-[11px] text-[var(--color-text-muted)] truncate max-w-[120px] sm:max-w-none" style={{ fontFamily: 'var(--font-mono)' }}>
             {result.companyName}
           </span>
           {result.date && (
-            <span className="type-eyebrow text-[var(--color-text-muted)] ml-auto">{result.date}</span>
+            <span className="type-eyebrow text-[var(--color-text-muted)] ml-auto shrink-0">{result.date}</span>
           )}
         </div>
 
         {/* EPS comparison */}
         {result.epsActual != null && result.epsEstimate != null && (
-          <div className="flex items-center gap-4 mb-3">
+          <div className="flex items-center gap-3 sm:gap-4 mb-3 flex-wrap">
             <div>
               <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">EPS Actual</div>
               <div className="text-[14px] font-semibold text-[var(--color-text-primary)] font-tabular">
@@ -315,7 +315,7 @@ export default function EarningsPage() {
       {/* Loading */}
       {loading && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[1, 2, 3].map(i => (
               <div key={i} className="rounded-sm p-5 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)]">
                 <Skeleton className="h-3 w-24 mb-2" />

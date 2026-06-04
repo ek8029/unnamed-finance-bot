@@ -552,7 +552,7 @@ export default function TransactionsPage() {
                   }}
                   placeholder="Search transactions..."
                   aria-label="Search transactions"
-                  className="w-52 pl-8 pr-8 py-2 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] text-[13px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30"
+                  className="w-full sm:w-52 pl-8 pr-8 py-2 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] text-[13px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30"
                 />
                 {searchInput && (
                   <button
@@ -705,7 +705,7 @@ export default function TransactionsPage() {
               aria-selected={chipFilter === c.key}
               aria-label={`Filter by ${c.label}`}
               onClick={() => setChipFilter(c.key)}
-              className={`px-3 py-1.5 rounded-full text-[12px] font-medium motion-safe:transition-all border ${
+              className={`px-3 py-2.5 sm:py-1.5 rounded-full text-[12px] font-medium motion-safe:transition-all border ${
                 chipFilter === c.key
                   ? 'bg-[var(--color-gold)]/15 border-[var(--color-gold)]/40 text-[var(--color-gold)]'
                   : 'bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-base)] hover:text-[var(--color-text-primary)]'
@@ -728,7 +728,7 @@ export default function TransactionsPage() {
               aria-label={`Filter by account: ${name}`}
               aria-pressed={accountChip === name}
               onClick={() => setAccountChip(accountChip === name ? '' : name)}
-              className={`px-3 py-1.5 rounded-full text-[12px] font-medium motion-safe:transition-all border ${
+              className={`px-3 py-2.5 sm:py-1.5 rounded-full text-[12px] font-medium motion-safe:transition-all border ${
                 accountChip === name
                   ? 'bg-[var(--color-gold)]/15 border-[var(--color-gold)]/40 text-[var(--color-gold)]'
                   : 'bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-base)] hover:text-[var(--color-text-primary)]'
@@ -744,7 +744,7 @@ export default function TransactionsPage() {
               type="button"
               onClick={clearAllFilters}
               aria-label="Clear all filters"
-              className="flex items-center gap-1 px-2 py-1.5 text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] motion-safe:transition-colors"
+              className="flex items-center gap-1 px-2 py-2.5 sm:py-1.5 text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] motion-safe:transition-colors"
             >
               <X className="w-3 h-3" />
               Clear

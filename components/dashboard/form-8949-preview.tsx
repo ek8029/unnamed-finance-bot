@@ -453,8 +453,8 @@ export function Form8949Preview() {
           {data && !loading && (
             <>
               {/* Action bar */}
-              <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--color-border-subtle)]">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3 border-b border-[var(--color-border-subtle)]">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span
                     className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
                     style={MONO}
@@ -462,22 +462,13 @@ export function Form8949Preview() {
                     IRS Form 8949
                   </span>
                   <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>
-                    &middot;
-                  </span>
-                  <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>
-                    TY {data.taxYear}
-                  </span>
-                  <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>
-                    &middot;
-                  </span>
-                  <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>
-                    {data.transactionCount} transaction{data.transactionCount !== 1 ? 's' : ''}
+                    &middot; TY {data.taxYear} &middot; {data.transactionCount} transaction{data.transactionCount !== 1 ? 's' : ''}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleCopy}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-medium motion-safe:transition-colors motion-safe:duration-150 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-2.5 sm:py-1.5 rounded text-[11px] font-medium motion-safe:transition-colors motion-safe:duration-150 cursor-pointer"
                     style={{
                       background: 'rgba(255,255,255,0.05)',
                       color: 'var(--color-text-secondary)',
@@ -499,7 +490,7 @@ export function Form8949Preview() {
                   </button>
                   <button
                     onClick={handleDownload}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-semibold motion-safe:transition-colors motion-safe:duration-150 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-2.5 sm:py-1.5 rounded text-[11px] font-semibold motion-safe:transition-colors motion-safe:duration-150 cursor-pointer"
                     style={{
                       background: 'var(--color-gold)',
                       color: 'var(--color-bg-base)',

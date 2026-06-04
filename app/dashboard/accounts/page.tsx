@@ -292,17 +292,17 @@ export default function AccountsPage() {
       {/* Consolidated account list with drill-down */}
       <Card variant="elevated">
         <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <CardTitle>Connected Accounts</CardTitle>
-              <CardDescription>Tap any account to see recent activity and details.</CardDescription>
+              <CardDescription className="hidden sm:block">Tap any account to see recent activity and details.</CardDescription>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {/* Filter Controls */}
               <div className="flex gap-1 p-1 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
                 <button
                   onClick={() => setFilterType('all')}
-                  className={`px-3 py-1.5 rounded type-label text-xs transition-colors ${
+                  className={`px-3 py-2.5 sm:py-1.5 rounded type-label text-xs transition-colors ${
                     filterType === 'all'
                       ? 'bg-[var(--color-gold)] text-black font-medium'
                       : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
@@ -312,7 +312,7 @@ export default function AccountsPage() {
                 </button>
                 <button
                   onClick={() => setFilterType('assets')}
-                  className={`px-3 py-1.5 rounded type-label text-xs transition-colors ${
+                  className={`px-3 py-2.5 sm:py-1.5 rounded type-label text-xs transition-colors ${
                     filterType === 'assets'
                       ? 'bg-[var(--color-positive)] text-[var(--color-text-inverse)]'
                       : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
@@ -322,7 +322,7 @@ export default function AccountsPage() {
                 </button>
                 <button
                   onClick={() => setFilterType('liabilities')}
-                  className={`px-3 py-1.5 rounded type-label text-xs transition-colors ${
+                  className={`px-3 py-2.5 sm:py-1.5 rounded type-label text-xs transition-colors ${
                     filterType === 'liabilities'
                       ? 'bg-[var(--color-negative)] text-[var(--color-text-inverse)]'
                       : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'

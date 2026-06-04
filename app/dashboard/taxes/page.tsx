@@ -550,7 +550,7 @@ export default function TaxesPage() {
               border: '1px solid var(--color-border-base)',
             }}
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-3">
               <span
                 className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
                 style={MONO}
@@ -1314,19 +1314,19 @@ function HarvestRow({
         )}
         onClick={onToggle}
       >
-        <div className="flex items-center gap-3 mb-2.5">
+        <div className="flex items-center gap-2 sm:gap-3 mb-2.5 flex-wrap">
           <input
             type="checkbox"
             checked={selected}
             onChange={onToggle}
             onClick={(e) => e.stopPropagation()}
             aria-label={`Select ${opp.ticker} for harvest`}
-            className="w-3.5 h-3.5 rounded-sm border-[var(--color-border-base)] accent-[var(--color-gold)] cursor-pointer shrink-0"
+            className="w-4 h-4 rounded-sm border-[var(--color-border-base)] accent-[var(--color-gold)] cursor-pointer shrink-0"
           />
           <span className="text-[14px] font-bold text-[var(--color-gold)]" style={MONO}>
             {opp.ticker}
           </span>
-          <span className="text-[13px] text-[var(--color-text-secondary)] truncate flex-1">
+          <span className="text-[12px] sm:text-[13px] text-[var(--color-text-secondary)] truncate flex-1 min-w-[60px]">
             {opp.securityName}
           </span>
           {/* Holding period badge (mobile) */}

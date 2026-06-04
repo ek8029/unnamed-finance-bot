@@ -195,12 +195,12 @@ export function HoldingDetailClient({
           <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-3">Recent Activity</h2>
           <div className="space-y-2">
             {transactions.map(t => (
-              <div key={t.id} className="flex items-center justify-between py-2 border-b border-[var(--color-border-subtle)]">
-                <div>
-                  <span className="text-[14px] text-[var(--color-text-primary)]">{t.description || t.merchantName || 'Transaction'}</span>
-                  <span className="text-[11px] text-[var(--color-text-muted)] ml-2" style={MONO}>{t.date}</span>
+              <div key={t.id} className="flex items-center justify-between gap-3 py-2 border-b border-[var(--color-border-subtle)]">
+                <div className="min-w-0 flex-1">
+                  <span className="text-[13px] sm:text-[14px] text-[var(--color-text-primary)] truncate block">{t.description || t.merchantName || 'Transaction'}</span>
+                  <span className="text-[11px] text-[var(--color-text-muted)] block sm:inline sm:ml-2" style={MONO}>{t.date}</span>
                 </div>
-                <span className={`text-[14px] font-bold tabular-nums ${t.amount >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-primary)]'}`} style={MONO}>
+                <span className={`text-[13px] sm:text-[14px] font-bold tabular-nums shrink-0 ${t.amount >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-primary)]'}`} style={MONO}>
                   {t.amount >= 0 ? '+' : ''}{fmt(t.amount)}
                 </span>
               </div>
