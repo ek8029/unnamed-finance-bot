@@ -207,8 +207,8 @@ export default function PortfolioPage() {
   const sortedByAllocation = useMemo(() => [...holdings].sort((a, b) => b.portfolio_allocation - a.portfolio_allocation), [holdings]);
   const sortedByDayChange = useMemo(() => [...holdings].sort((a, b) => (b.day_change_percentage ?? 0) - (a.day_change_percentage ?? 0)), [holdings]);
 
-  /* ---------- true exposure collapsible ---------- */
-  const [trueExposureOpen, setTrueExposureOpen] = useState(false);
+  /* ---------- positions sub-tab ---------- */
+  const [positionsView, setPositionsView] = useState<'positions' | 'exposure'>('positions');
 
   /* ---------- header tab state (visual only) ---------- */
   const tabs = ['Portfolio', 'Concentration'] as const;
@@ -537,17 +537,38 @@ export default function PortfolioPage() {
               ))}
             </div>
 
-            {/* ── Mobile Positions Header ── */}
+            {/* ── Mobile Positions Header with Toggle ── */}
             <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Positions</h2>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setPositionsView('positions')}
+                  className={`text-sm font-semibold transition-colors cursor-pointer ${positionsView === 'positions' ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
+                >
+                  Positions
+                </button>
+                {hasIndirectExposure && (
+                  <button
+                    onClick={() => setPositionsView('exposure')}
+                    className={`text-sm font-semibold transition-colors cursor-pointer ${positionsView === 'exposure' ? 'text-[var(--color-gold)]' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
+                  >
+                    True Exposure
+                  </button>
+                )}
                 <span className="font-mono text-[10px] text-[var(--color-text-muted)] bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5">
-                  {holdings.length}
+                  {positionsView === 'positions' ? holdings.length : lookthrough.length}
                 </span>
               </div>
             </div>
 
-            {/* ── Mobile Position Cards ── */}
+            {/* ── Mobile Position Cards / True Exposure ── */}
+            {positionsView === 'exposure' && hasIndirectExposure ? (
+              <TrueExposureSection
+                lookthrough={lookthrough}
+                open={true}
+                onToggle={() => {}}
+                formatCurrency={formatCurrency}
+              />
+            ) : (
             <div className="space-y-2">
             {sortedPositions.map((h) => {
               const dayPct = h.day_change_percentage ?? 0;
@@ -599,15 +620,6 @@ export default function PortfolioPage() {
               );
             })}
             </div>
-
-            {/* ── Mobile True Exposure ── */}
-            {hasIndirectExposure && (
-              <TrueExposureSection
-                lookthrough={lookthrough}
-                open={trueExposureOpen}
-                onToggle={() => setTrueExposureOpen(!trueExposureOpen)}
-                formatCurrency={formatCurrency}
-              />
             )}
 
             {/* ── Mobile Market Intelligence ── */}
@@ -627,13 +639,28 @@ export default function PortfolioPage() {
             {/* Table header bar */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
               <div className="flex items-center gap-3">
-                <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Positions</h2>
+                <button
+                  onClick={() => setPositionsView('positions')}
+                  className={`text-sm font-semibold transition-colors cursor-pointer ${positionsView === 'positions' ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
+                >
+                  Positions
+                </button>
+                {hasIndirectExposure && (
+                  <button
+                    onClick={() => setPositionsView('exposure')}
+                    className={`text-sm font-semibold transition-colors cursor-pointer ${positionsView === 'exposure' ? 'text-[var(--color-gold)]' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
+                  >
+                    True Exposure
+                  </button>
+                )}
                 <span className="font-mono text-[10px] text-[var(--color-text-muted)] bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5">
-                  {holdings.length}
+                  {positionsView === 'positions' ? holdings.length : lookthrough.length}
                 </span>
-                <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
-                  sorted by {sortKey} {sortDir}
-                </span>
+                {positionsView === 'positions' && (
+                  <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
+                    sorted by {sortKey} {sortDir}
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <button className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] rounded-md bg-[var(--color-bg-elevated)] transition-colors">
@@ -647,7 +674,17 @@ export default function PortfolioPage() {
               </div>
             </div>
 
-            {/* Table */}
+            {/* Table or True Exposure */}
+            {positionsView === 'exposure' && hasIndirectExposure ? (
+              <div className="p-4">
+                <TrueExposureSection
+                  lookthrough={lookthrough}
+                  open={true}
+                  onToggle={() => {}}
+                  formatCurrency={formatCurrency}
+                />
+              </div>
+            ) : (<>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[960px]">
                 <thead>
@@ -805,17 +842,8 @@ export default function PortfolioPage() {
                 Total value: <span className="text-[var(--color-text-primary)] font-medium">{formatCurrency(totalValue)}</span>
               </span>
             </div>
+            </>)}
           </div>
-
-          {/* ── Desktop True Exposure ── */}
-          {hasIndirectExposure && (
-            <TrueExposureSection
-              lookthrough={lookthrough}
-              open={trueExposureOpen}
-              onToggle={() => setTrueExposureOpen(!trueExposureOpen)}
-              formatCurrency={formatCurrency}
-            />
-          )}
 
           </>
           )}
