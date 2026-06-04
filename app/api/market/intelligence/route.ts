@@ -107,7 +107,8 @@ export async function GET(request: Request) {
     const news = dedupedNews.map(article => {
       // Use primary_ticker for relevance — the article's actual subject,
       // not a tangentially mentioned ticker from Polygon's full tag array
-      const primary = article.primary_ticker || (article.tickers || [])[0] || null;
+      // Only use primary_ticker — never fall back to tickers[0] which causes misattribution
+      const primary = article.primary_ticker || null;
       const isUserHolding = userTickers && primary && userTickers.includes(primary);
 
       // "Impact on You" context

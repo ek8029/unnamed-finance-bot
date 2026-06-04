@@ -103,6 +103,9 @@ export function detectPrimaryTicker(
     }
   }
 
-  // 5. Fallback to Polygon's first ticker (its own relevance guess)
-  return normalizedTickers[0];
+  // 5. No confident match — return null rather than guessing.
+  // Polygon/Finnhub tag articles with tangentially mentioned tickers
+  // (sidebar links, related articles, ads). Guessing tickers[0] causes
+  // misattribution (e.g., Costco article tagged as NVDA news).
+  return null;
 }

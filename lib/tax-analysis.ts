@@ -384,6 +384,33 @@ async function checkWashSaleRisk(
         }
       }
     }
+
+    // Check if user CURRENTLY HOLDS a related product
+    // Selling NVDA at a loss while holding NVDL is a wash sale concern
+    // even without any recent transactions
+    if (!result.has(ticker)) {
+      const { data: heldRelated } = await supabase
+        .from('holdings')
+        .select('ticker, total_value')
+        .eq('user_id', userId)
+        .in('ticker', relatedTickerList);
+
+      if (heldRelated && heldRelated.length > 0) {
+        const held = heldRelated[0];
+        const match = relatedTickers.find(r => r.ticker === held.ticker);
+        if (match) {
+          let washSaleDetail: string;
+          if (match.confidence === 'definite') {
+            washSaleDetail = `Wash sale risk: you currently hold ${held.ticker} (${match.relationship}). Selling ${ticker} at a loss while holding ${held.ticker} triggers a wash sale per IRC §1091.`;
+          } else if (match.confidence === 'likely') {
+            washSaleDetail = `Likely wash sale risk: you currently hold ${held.ticker} (${match.relationship}). Selling ${ticker} at a loss while holding ${held.ticker} likely triggers a wash sale per professional consensus. No definitive IRS ruling.`;
+          } else {
+            washSaleDetail = `Potential wash sale concern: you currently hold ${held.ticker} (${match.relationship}). The IRS has not ruled on whether selling ${ticker} at a loss while holding ${held.ticker} constitutes a wash sale under IRC §1091. Consult a tax professional.`;
+          }
+          result.set(ticker, { risk: true, detail: washSaleDetail });
+        }
+      }
+    }
   }
 
   return result;
