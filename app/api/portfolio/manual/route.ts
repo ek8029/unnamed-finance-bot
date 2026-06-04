@@ -100,19 +100,21 @@ export async function POST(req: NextRequest) {
       const shares = Number(h.shares);
       const costBasis = h.costBasis ? Number(h.costBasis) : null;
 
-      // Fetch live quote
+      // Fetch live quote (retry once after 1.5s if rate limited)
       let currentPrice = 0;
-      try {
-        const quote = await getQuote(ticker);
-        currentPrice = quote?.c || 0;
-      } catch {
-        // Skip tickers with no quote data
-        results.push({ ticker, error: 'Could not fetch price' });
-        continue;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const quote = await getQuote(ticker);
+          currentPrice = quote?.c || 0;
+          if (currentPrice > 0) break;
+          if (attempt === 0) await new Promise(r => setTimeout(r, 1500));
+        } catch {
+          if (attempt === 0) await new Promise(r => setTimeout(r, 1500));
+        }
       }
 
       if (currentPrice === 0) {
-        results.push({ ticker, error: 'No price data available' });
+        results.push({ ticker, error: 'Could not fetch price' });
         continue;
       }
 
