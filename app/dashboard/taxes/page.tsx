@@ -412,7 +412,7 @@ export default function TaxesPage() {
             }}
           >
             <span
-              className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+              className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
               style={MONO}
             >
               Estimated tax due
@@ -440,7 +440,7 @@ export default function TaxesPage() {
             }}
           >
             <span
-              className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+              className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
               style={MONO}
             >
               Realized YTD
@@ -469,7 +469,7 @@ export default function TaxesPage() {
             }}
           >
             <span
-              className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+              className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
               style={MONO}
             >
               Harvestable
@@ -496,7 +496,7 @@ export default function TaxesPage() {
             }}
           >
             <span
-              className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+              className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
               style={MONO}
             >
               Carryover loss
@@ -542,7 +542,7 @@ export default function TaxesPage() {
           >
             <div className="flex items-center justify-between mb-3">
               <span
-                className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+                className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
                 style={MONO}
               >
                 §1211(b) Ordinary Income Offset
@@ -563,7 +563,7 @@ export default function TaxesPage() {
                 }}
               />
             </div>
-            <p className="text-[11px] text-[var(--color-text-muted)] mt-2.5" style={MONO}>
+            <p className="text-[12px] text-[var(--color-text-muted)] mt-2.5" style={MONO}>
               {deductionUsed >= ANNUAL_LOSS_DEDUCTION_CAP
                 ? `Cap reached — excess losses carry forward to TY ${CURRENT_YEAR + 1} per IRC §1212(b).`
                 : deductionUsed > 0
@@ -588,13 +588,13 @@ export default function TaxesPage() {
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-sm" style={{ background: '#5B8DEF' }} />
               <span
-                className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+                className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
                 style={MONO}
               >
                 Short-Term Realized
               </span>
               <span
-                className="ml-auto text-[10px] text-[var(--color-text-muted)]"
+                className="ml-auto text-[12px] text-[var(--color-text-muted)]"
                 style={MONO}
               >
                 ~{(TAX_RATE * 100).toFixed(0)}% rate
@@ -602,20 +602,20 @@ export default function TaxesPage() {
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
+                <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
                 <span className="text-[12px] font-semibold text-[var(--color-positive)]" style={{ ...TNUM, ...MONO }}>
                   +{formatCurrency(shortTermGains)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
+                <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
                 <span className="text-[12px] font-semibold text-[var(--color-negative)]" style={{ ...TNUM, ...MONO }}>
                   {formatCurrency(shortTermLosses)}
                 </span>
               </div>
               <div className="pt-1.5 mt-1 border-t border-[var(--color-border-subtle)]">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
+                  <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
                   <span
                     className={cn(
                       'text-[14px] font-bold',
@@ -641,13 +641,13 @@ export default function TaxesPage() {
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-sm" style={{ background: 'var(--color-gold)' }} />
               <span
-                className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+                className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
                 style={MONO}
               >
                 Long-Term Realized
               </span>
               <span
-                className="ml-auto text-[10px] text-[var(--color-text-muted)]"
+                className="ml-auto text-[12px] text-[var(--color-text-muted)]"
                 style={MONO}
               >
                 ~{(LTCG_RATE_DEFAULT * 100).toFixed(0)}% rate
@@ -655,20 +655,20 @@ export default function TaxesPage() {
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
+                <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
                 <span className="text-[12px] font-semibold text-[var(--color-positive)]" style={{ ...TNUM, ...MONO }}>
                   +{formatCurrency(longTermGains)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
+                <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
                 <span className="text-[12px] font-semibold text-[var(--color-negative)]" style={{ ...TNUM, ...MONO }}>
                   {formatCurrency(longTermLosses)}
                 </span>
               </div>
               <div className="pt-1.5 mt-1 border-t border-[var(--color-border-subtle)]">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
+                  <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
                   <span
                     className={cn(
                       'text-[14px] font-bold',
@@ -724,26 +724,26 @@ export default function TaxesPage() {
                   </span>
                 </div>
 
-                <p className="text-[11px] text-[var(--color-text-muted)] mb-3" style={MONO}>
+                <p className="text-[12px] text-[var(--color-text-muted)] mb-3" style={MONO}>
                   {q.range}
                 </p>
 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
+                    <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
                     <span className="text-[12px] font-semibold text-[var(--color-positive)]" style={TNUM}>
                       +{formatCurrency(q.gains)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
+                    <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
                     <span className="text-[12px] font-semibold text-[var(--color-negative)]" style={TNUM}>
                       {formatCurrency(q.losses)}
                     </span>
                   </div>
                   <div className="pt-1 mt-1 border-t border-[var(--color-border-subtle)]">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
+                      <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
                       <span
                         className={cn(
                           'text-[13px] font-bold',
@@ -889,21 +889,21 @@ export default function TaxesPage() {
                               {typeLabel}
                             </span>
                           </div>
-                          <span className="text-[11px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>
+                          <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>
                             {tx.date}
                           </span>
                         </div>
                         <div className="grid grid-cols-3 gap-x-4">
                           <div>
-                            <span className="text-[10px] text-[var(--color-text-muted)] block" style={MONO}>Proceeds</span>
+                            <span className="text-[12px] text-[var(--color-text-muted)] block" style={MONO}>Proceeds</span>
                             <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>{formatCurrency(tx.proceeds)}</span>
                           </div>
                           <div>
-                            <span className="text-[10px] text-[var(--color-text-muted)] block" style={MONO}>Basis</span>
+                            <span className="text-[12px] text-[var(--color-text-muted)] block" style={MONO}>Basis</span>
                             <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>{formatCurrency(tx.costBasis)}</span>
                           </div>
                           <div>
-                            <span className="text-[10px] text-[var(--color-text-muted)] block" style={MONO}>Gain/Loss</span>
+                            <span className="text-[12px] text-[var(--color-text-muted)] block" style={MONO}>Gain/Loss</span>
                             <span
                               className={cn(
                                 'text-[12px] font-semibold tabular-nums',
@@ -983,7 +983,7 @@ export default function TaxesPage() {
               </span>
             </div>
             {/* Wash sale legend */}
-            <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>
+            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
               <span className="text-[var(--color-positive)]">Clear</span> = safe to harvest
               <span className="mx-1.5">|</span>
               <span className="text-[var(--color-warning-text)]">Conflict</span> = wash sale risk detected
@@ -1107,7 +1107,7 @@ export default function TaxesPage() {
       )}
 
       {/* Disclaimer */}
-      <p className="text-[10px] text-[var(--color-text-muted)] text-center leading-relaxed max-w-3xl mx-auto" style={MONO}>
+      <p className="text-[11px] text-[var(--color-text-muted)] text-center leading-relaxed max-w-3xl mx-auto" style={MONO}>
         All figures are estimates based on a {(TAX_RATE * 100).toFixed(0)}% blended tax rate and your connected portfolio data.
         This is not tax advice. Wash sale rules (IRC &sect;1091), the $3,000 annual deduction cap (IRC &sect;1211), and
         holding period requirements apply. Consult a qualified tax professional before making tax-related decisions.
@@ -1386,25 +1386,25 @@ function HarvestRow({
         </div>
         <div className="grid grid-cols-2 gap-y-1.5 gap-x-4 pl-[26px]">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>Shares</span>
+            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Shares</span>
             <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
               {opp.shares.toLocaleString()}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>Basis</span>
+            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Basis</span>
             <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
               {formatCurrency(opp.costBasis)}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>Mkt Value</span>
+            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Mkt Value</span>
             <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
               {formatCurrency(opp.currentValue)}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>Unrealized</span>
+            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Unrealized</span>
             <span className="text-[12px] font-semibold text-[var(--color-negative)] tabular-nums" style={MONO}>
               {formatCurrency(opp.unrealizedLoss)}
             </span>
