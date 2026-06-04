@@ -37,13 +37,38 @@ Helm is built for high-agency individuals managing $50K-$2M+ across multiple acc
 
 ### Pro Features (Founding Member: $4.99/month locked forever — 50 spots; or $14.99/month, $119/year, $249 lifetime)
 - Tax-loss harvesting engine with wash-sale detection (IRC Section 1091)
+- Cross-product wash sale detection: flags conflicts across leveraged ETFs, same-index ETFs, and share classes with three confidence tiers (definite, likely, possible) and IRC Section 1091 disclaimers
 - Safe-swap pair suggestions for realizing losses without triggering wash sales
-- Earnings exposure tracking — know which holdings report this week
+- $3,000 ordinary income deduction tracker (IRC Section 1211(b)) with progress bar
+- Short-term vs long-term capital gains breakdown with applicable tax rates
+- Realized transactions detail table with ST/LT classification
+- Earnings exposure tracking — know which holdings report this week, including indirect exposure via ETFs and leveraged products
 - Dividend calendar with ex-date alerts
 - Portfolio Wrapped (annual summary report)
 - Unlimited AI stock analyses
 - Unlimited account connections
 - Priority data refresh
+
+### ETF Look-Through / Portfolio Look-Through
+Helm's look-through engine maps 144+ financial products to their underlying exposures:
+- **Single-stock leveraged ETFs**: NVDL (2x NVDA), MSFL (2x MSFT), TSLL (2x TSLA), and 70+ more from GraniteShares, Direxion, Defiance, Tradr, T-Rex, Leverage Shares
+- **Option income ETFs**: YieldMax (TSLY, NVDY, CONY, PLTY, etc.) and Kurv products with 1x underlying exposure
+- **Leveraged/inverse index ETFs**: TQQQ (3x QQQ), SOXL (3x SOXX), SPXL (3x SPY), and 40+ more
+- **Broad and sector ETFs**: Top-10 holdings mapped for SPY, QQQ, VOO, VTI, XLK, XLF, SCHD, ARKK, and 35+ ETFs
+
+This enables:
+- **True single-name concentration**: MSFT direct holdings + MSFL (2x leveraged) + QQQ allocation = true MSFT exposure percentage
+- **Hidden concentration detection**: Alerts when stocks you don't hold directly exceed risk thresholds via ETF overlap
+- **Earnings exposure through ETFs**: If you hold TQQQ and AAPL reports earnings, Helm calculates your indirect AAPL exposure and shows the impact
+- **Cross-product wash sale warnings**: Selling NVDA at a loss while holding NVDL triggers a wash sale concern
+- **News attribution through ETFs**: News about AAPL surfaces for QQQ holders
+
+### Manual Portfolio Entry
+Users who prefer not to link brokerages via Plaid can enter holdings manually:
+- Type ticker + shares + optional cost basis
+- Live prices fetched automatically from Finnhub
+- Dashboard, intelligence engine, earnings tracking, and brief all work with manual data
+- Available during onboarding and from Portfolio > Add Holdings
 
 ## Technology Stack
 
@@ -141,7 +166,7 @@ Helm Terminal is for informational purposes only and does not constitute financi
 ## Contact
 
 - Website: https://helmterminal.dev
-- Email: helmterminal@gmail.com
+- Email: support@helmterminal.dev
+- Contact form: https://helmterminal.dev/contact
 - Twitter/X: https://x.com/helmterminal
 - LinkedIn: https://www.linkedin.com/company/helmfintech
-- Support: hello@helmterminal.dev

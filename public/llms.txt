@@ -8,13 +8,20 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 
 ## Core Features
 - Free AI stock analysis for any US ticker (NYSE, NASDAQ, AMEX)
-- Portfolio sync via Plaid (read-only — Helm can never move money or trade)
-- Tax-loss harvesting intelligence with wash-sale detection (IRC 1091)
-- Daily market brief ("The Current") with position-relevant news
+- Portfolio sync via Plaid (read-only) or manual entry (type tickers + shares)
+- Tax-loss harvesting with wash-sale detection (IRC §1091) including cross-product detection across leveraged ETFs and share classes
+- $3,000 ordinary income deduction tracker (IRC §1211(b))
+- Short-term vs long-term capital gains breakdown with tax rate display
+- ETF look-through engine: maps 144+ products (leveraged, inverse, option income ETFs) to underlying stock exposure
+- True single-name concentration risk including indirect exposure via ETFs
+- Daily market brief ("The Current") with ETF-aware news attribution
 - Real-time market data via Finnhub and Polygon.io
 - Net worth tracking across all linked accounts
 - Actions inbox: concentration risk, rebalancing signals, cash drag alerts
-- Earnings exposure and dividend tracking
+- Earnings exposure tracking with indirect ETF exposure (e.g., TQQQ holder sees AAPL earnings warning)
+- Dividend calendar with ex-date alerts
+- Stock comparison tool (side-by-side analysis)
+- Contact form at helmterminal.dev/contact
 
 ## Pricing
 - Free: AI stock analysis (5/day), portfolio dashboard, net worth, actions inbox
@@ -69,6 +76,7 @@ Built by Evan Kim — Penn State economics graduate, former derivatives hedging 
 
 ## Contact
 - Website: https://helmterminal.dev
-- Email: helmterminal@gmail.com
+- Email: support@helmterminal.dev
+- Contact: https://helmterminal.dev/contact
 - Twitter: https://x.com/helmterminal
 - LinkedIn: https://www.linkedin.com/company/helmfintech
