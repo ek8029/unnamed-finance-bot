@@ -219,6 +219,22 @@ function InlineSignup() {
   );
 }
 
+function CopyEmail({ email }: { email: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(email);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }}
+      className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]/70 transition-colors cursor-pointer"
+    >
+      {copied ? 'Copied!' : email}
+    </button>
+  );
+}
+
 function ToolsDropdown({ items }: { items: { label: string; href: string; desc: string }[] }) {
   const [open, setOpen] = useState(false);
   const [focusIdx, setFocusIdx] = useState(-1);
@@ -1019,12 +1035,16 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                 <ul className="space-y-2.5">
                   {FOOTER_COMPANY.map((link) => (
                     <li key={link.label}>
-                      <Link
-                        href={link.href}
-                        className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]/70 transition-colors"
-                      >
-                        {link.label}
-                      </Link>
+                      {link.href.startsWith('mailto:') ? (
+                        <CopyEmail email={link.label} />
+                      ) : (
+                        <Link
+                          href={link.href}
+                          className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]/70 transition-colors"
+                        >
+                          {link.label}
+                        </Link>
+                      )}
                     </li>
                   ))}
                 </ul>
