@@ -1174,27 +1174,27 @@ function HarvestRow({
         </span>
 
         {/* Name */}
-        <span className="text-[12px] text-[var(--color-text-secondary)] truncate">
+        <span className="text-[13px] text-[var(--color-text-secondary)] truncate">
           {opp.securityName}
         </span>
 
         {/* Shares */}
-        <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+        <span className="text-[13px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
           {opp.shares.toLocaleString()}
         </span>
 
         {/* Basis */}
-        <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+        <span className="text-[13px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
           {formatCurrency(opp.costBasis)}
         </span>
 
         {/* Market value */}
-        <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+        <span className="text-[13px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
           {formatCurrency(opp.currentValue)}
         </span>
 
         {/* Unrealized */}
-        <span className="text-[12px] font-semibold text-[var(--color-negative)] tabular-nums" style={MONO}>
+        <span className="text-[13px] font-semibold text-[var(--color-negative)] tabular-nums" style={MONO}>
           {formatCurrency(opp.unrealizedLoss)}
         </span>
 
@@ -1208,7 +1208,7 @@ function HarvestRow({
         >
           {isWashSafe ? (
             <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-semibold"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-semibold"
               style={{
                 background: 'rgba(74, 222, 128, 0.08)',
                 color: 'var(--color-positive)',
@@ -1220,7 +1220,7 @@ function HarvestRow({
             </span>
           ) : (
             <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-semibold"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-semibold"
               style={{
                 background: 'rgba(251, 191, 36, 0.08)',
                 color: 'var(--color-warning-text)',
@@ -1243,7 +1243,7 @@ function HarvestRow({
         <div>
           {opp.holdingPeriod === 'short_term' ? (
             <span
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold"
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold"
               style={{
                 background: 'rgba(251, 146, 60, 0.1)',
                 color: 'rgb(251, 146, 60)',
@@ -1254,7 +1254,7 @@ function HarvestRow({
             </span>
           ) : opp.holdingPeriod === 'long_term' ? (
             <span
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold"
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold"
               style={{
                 background: 'rgba(74, 222, 128, 0.1)',
                 color: 'var(--color-positive)',
@@ -1265,7 +1265,7 @@ function HarvestRow({
             </span>
           ) : (
             <span
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold"
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold"
               style={{
                 background: 'rgba(255,255,255,0.05)',
                 color: 'var(--color-text-muted)',
@@ -1289,7 +1289,7 @@ function HarvestRow({
             marginLeft: '32px',
           }}
         >
-          <p className="text-[11px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
+          <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
             <span className="font-semibold text-[var(--color-text-primary)]">What this means: </span>
             {washSaleDetailText}
           </p>
@@ -1316,13 +1316,13 @@ function HarvestRow({
           <span className="text-[14px] font-bold text-[var(--color-gold)]" style={MONO}>
             {opp.ticker}
           </span>
-          <span className="text-[12px] text-[var(--color-text-secondary)] truncate flex-1">
+          <span className="text-[13px] text-[var(--color-text-secondary)] truncate flex-1">
             {opp.securityName}
           </span>
           {/* Holding period badge (mobile) */}
           {opp.holdingPeriod === 'short_term' ? (
             <span
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold shrink-0"
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold shrink-0"
               style={{
                 background: 'rgba(251, 146, 60, 0.1)',
                 color: 'rgb(251, 146, 60)',
@@ -1333,7 +1333,7 @@ function HarvestRow({
             </span>
           ) : opp.holdingPeriod === 'long_term' ? (
             <span
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold shrink-0"
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold shrink-0"
               style={{
                 background: 'rgba(74, 222, 128, 0.1)',
                 color: 'var(--color-positive)',
@@ -1353,7 +1353,7 @@ function HarvestRow({
           >
             {isWashSafe ? (
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-semibold"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-semibold"
                 style={{
                   background: 'rgba(74, 222, 128, 0.08)',
                   color: 'var(--color-positive)',
@@ -1365,7 +1365,7 @@ function HarvestRow({
               </span>
             ) : (
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-semibold"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-semibold"
                 style={{
                   background: 'rgba(251, 191, 36, 0.08)',
                   color: 'var(--color-warning-text)',
