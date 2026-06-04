@@ -57,6 +57,9 @@ export function GuidedTour() {
   const [rect, setRect] = useState<DOMRect | null>(null);
 
   useEffect(() => {
+    // Skip on mobile — tour anchors to sidebar which is off-canvas
+    if (window.matchMedia('(max-width: 767px)').matches) return;
+
     // Only show tour once, only in demo mode
     const isDemo = sessionStorage.getItem('helm_demo_mode') === '1';
     const seen = localStorage.getItem(TOUR_SEEN_KEY) === '1';
