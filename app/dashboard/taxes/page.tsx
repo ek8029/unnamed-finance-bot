@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useCallback } from 'react';
 import {
-  AlertTriangle, CheckCircle2, ChevronRight,
+  AlertTriangle, CheckCircle2, ChevronDown, ChevronRight,
   Sparkles, Eye,
 } from 'lucide-react';
 import { useFormat } from '@/hooks/use-format';
@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { useTier } from '@/hooks/use-tier';
 import { ProBlur } from '@/components/pro-blur';
 import { Form8949Preview } from '@/components/dashboard/form-8949-preview';
-import { TAX_RATE } from '@/lib/financial-config';
+import { TAX_RATE, LTCG_RATE_DEFAULT, ANNUAL_LOSS_DEDUCTION_CAP } from '@/lib/financial-config';
 
 // ── Constants ──
 
@@ -262,8 +262,25 @@ export default function TaxesPage() {
   }, [taxData]);
 
   const shortTermGains = taxData?.realized.shortTermGains ?? 0;
+  const shortTermLosses = taxData?.realized.shortTermLosses ?? 0;
   const longTermGains = taxData?.realized.longTermGains ?? 0;
+  const longTermLosses = taxData?.realized.longTermLosses ?? 0;
   const lotCount = taxData?.realized.transactionCount ?? 0;
+
+  // IRC §1211(b): $3,000 ordinary income deduction from net capital losses
+  const deductionUsed = useMemo(() => {
+    if (!taxData) return 0;
+    const net = taxData.realized.netRealized;
+    if (net >= 0) return 0; // gains exceed losses, no ordinary income offset
+    return Math.min(Math.abs(net), ANNUAL_LOSS_DEDUCTION_CAP);
+  }, [taxData]);
+
+  // ST / LT net breakdowns
+  const shortTermNet = shortTermGains + shortTermLosses;
+  const longTermNet = longTermGains + longTermLosses;
+
+  // Realized transactions table toggle
+  const [showRealizedTx, setShowRealizedTx] = useState(false);
 
   // ── Harvest table selection ──
 
@@ -513,6 +530,161 @@ export default function TaxesPage() {
         </section>
       )}
 
+      {/* ─── 2b. $3K Deduction Tracker (IRC §1211(b)) ─── */}
+      {!loading && (
+        <section aria-label="Ordinary income deduction tracker">
+          <div
+            className="rounded-md p-5"
+            style={{
+              background: 'var(--color-bg-surface)',
+              border: '1px solid var(--color-border-base)',
+            }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span
+                className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+                style={MONO}
+              >
+                §1211(b) Ordinary Income Offset
+              </span>
+              <span
+                className="text-[12px] font-semibold text-[var(--color-text-primary)]"
+                style={{ ...TNUM, ...MONO }}
+              >
+                {formatCurrency(deductionUsed)} of {formatCurrency(ANNUAL_LOSS_DEDUCTION_CAP)}
+              </span>
+            </div>
+            <div className="w-full h-2.5 rounded-sm overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+              <div
+                className="h-full rounded-sm motion-safe:transition-all motion-safe:duration-300"
+                style={{
+                  width: `${Math.min((deductionUsed / ANNUAL_LOSS_DEDUCTION_CAP) * 100, 100)}%`,
+                  background: deductionUsed >= ANNUAL_LOSS_DEDUCTION_CAP ? 'var(--color-gold)' : 'var(--color-positive)',
+                }}
+              />
+            </div>
+            <p className="text-[11px] text-[var(--color-text-muted)] mt-2.5" style={MONO}>
+              {deductionUsed >= ANNUAL_LOSS_DEDUCTION_CAP
+                ? `Cap reached — excess losses carry forward to TY ${CURRENT_YEAR + 1} per IRC §1212(b).`
+                : deductionUsed > 0
+                  ? `Net capital losses offset up to $3,000 of ordinary income. ${formatCurrency(ANNUAL_LOSS_DEDUCTION_CAP - deductionUsed)} remaining.`
+                  : 'No net capital losses to offset ordinary income this year.'}
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* ─── 2c. Short-Term vs Long-Term Breakdown ─── */}
+      {!loading && (
+        <section aria-label="Short-term vs long-term breakdown" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Short-term card */}
+          <div
+            className="rounded-md p-5"
+            style={{
+              background: 'var(--color-bg-surface)',
+              border: '1px solid var(--color-border-base)',
+            }}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-sm" style={{ background: '#5B8DEF' }} />
+              <span
+                className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+                style={MONO}
+              >
+                Short-Term Realized
+              </span>
+              <span
+                className="ml-auto text-[10px] text-[var(--color-text-muted)]"
+                style={MONO}
+              >
+                ~{(TAX_RATE * 100).toFixed(0)}% rate
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
+                <span className="text-[12px] font-semibold text-[var(--color-positive)]" style={{ ...TNUM, ...MONO }}>
+                  +{formatCurrency(shortTermGains)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
+                <span className="text-[12px] font-semibold text-[var(--color-negative)]" style={{ ...TNUM, ...MONO }}>
+                  {formatCurrency(shortTermLosses)}
+                </span>
+              </div>
+              <div className="pt-1.5 mt-1 border-t border-[var(--color-border-subtle)]">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
+                  <span
+                    className={cn(
+                      'text-[14px] font-bold',
+                      shortTermNet >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
+                    )}
+                    style={{ ...TNUM, ...MONO }}
+                  >
+                    {shortTermNet >= 0 ? '+' : ''}{formatCurrency(shortTermNet)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Long-term card */}
+          <div
+            className="rounded-md p-5"
+            style={{
+              background: 'var(--color-bg-surface)',
+              border: '1px solid var(--color-border-base)',
+            }}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-sm" style={{ background: 'var(--color-gold)' }} />
+              <span
+                className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+                style={MONO}
+              >
+                Long-Term Realized
+              </span>
+              <span
+                className="ml-auto text-[10px] text-[var(--color-text-muted)]"
+                style={MONO}
+              >
+                ~{(LTCG_RATE_DEFAULT * 100).toFixed(0)}% rate
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
+                <span className="text-[12px] font-semibold text-[var(--color-positive)]" style={{ ...TNUM, ...MONO }}>
+                  +{formatCurrency(longTermGains)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
+                <span className="text-[12px] font-semibold text-[var(--color-negative)]" style={{ ...TNUM, ...MONO }}>
+                  {formatCurrency(longTermLosses)}
+                </span>
+              </div>
+              <div className="pt-1.5 mt-1 border-t border-[var(--color-border-subtle)]">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
+                  <span
+                    className={cn(
+                      'text-[14px] font-bold',
+                      longTermNet >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
+                    )}
+                    style={{ ...TNUM, ...MONO }}
+                  >
+                    {longTermNet >= 0 ? '+' : ''}{formatCurrency(longTermNet)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ─── 3. Quarter Strip ─── */}
       {loading ? (
         <GridSkeleton />
@@ -588,6 +760,168 @@ export default function TaxesPage() {
               </div>
             );
           })}
+        </section>
+      )}
+
+      {/* ─── 3b. Realized Transactions Detail ─── */}
+      {!loading && taxData && taxData.realized.transactions.length > 0 && (
+        <section aria-label="Realized transactions">
+          <div
+            className="rounded-md overflow-hidden"
+            style={{
+              background: 'var(--color-bg-surface)',
+              border: '1px solid var(--color-border-base)',
+            }}
+          >
+            <button
+              onClick={() => setShowRealizedTx((v) => !v)}
+              className="w-full px-5 py-4 flex items-center justify-between border-b border-[var(--color-border-subtle)] cursor-pointer hover:bg-white/[0.02] motion-safe:transition-colors motion-safe:duration-100"
+            >
+              <div className="flex items-center gap-2.5">
+                <span
+                  className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-text-primary)]"
+                  style={MONO}
+                >
+                  Realized Transactions
+                </span>
+                <span
+                  className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/5 text-[var(--color-text-secondary)]"
+                  style={MONO}
+                >
+                  {taxData.realized.transactions.length}
+                </span>
+              </div>
+              <ChevronDown
+                className={cn(
+                  'w-4 h-4 text-[var(--color-text-muted)] motion-safe:transition-transform motion-safe:duration-200',
+                  showRealizedTx ? 'rotate-180' : '',
+                )}
+              />
+            </button>
+
+            {showRealizedTx && (
+              <>
+                {/* Column headers (desktop) */}
+                <div
+                  className="hidden md:grid px-5 py-2.5 border-b border-[var(--color-border-subtle)]"
+                  style={{
+                    gridTemplateColumns: '88px 72px 1fr 96px 96px 104px 64px',
+                    gap: '8px',
+                    background: 'rgba(255,255,255,0.015)',
+                  }}
+                >
+                  {['Date', 'Ticker', '', 'Proceeds', 'Basis', 'Gain/Loss', 'Type'].map((h) => (
+                    <span
+                      key={h}
+                      className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-medium truncate"
+                      style={MONO}
+                    >
+                      {h}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Transaction rows */}
+                {taxData.realized.transactions.map((tx, i) => {
+                  const isGain = tx.gainLoss >= 0;
+                  const typeLabel = tx.gainLossType === 'short_term' ? 'ST' : 'LT';
+                  return (
+                    <div key={`${tx.ticker}-${tx.date}-${i}`}>
+                      {/* Desktop row */}
+                      <div
+                        className="hidden md:grid items-center px-5 py-3 border-b border-[var(--color-border-subtle)]"
+                        style={{
+                          gridTemplateColumns: '88px 72px 1fr 96px 96px 104px 64px',
+                          gap: '8px',
+                        }}
+                      >
+                        <span className="text-[12px] text-[var(--color-text-secondary)] tabular-nums" style={MONO}>
+                          {tx.date}
+                        </span>
+                        <span className="text-[13px] font-bold text-[var(--color-text-primary)]" style={MONO}>
+                          {tx.ticker}
+                        </span>
+                        <span />
+                        <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+                          {formatCurrency(tx.proceeds)}
+                        </span>
+                        <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+                          {formatCurrency(tx.costBasis)}
+                        </span>
+                        <span
+                          className={cn(
+                            'text-[12px] font-semibold tabular-nums',
+                            isGain ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
+                          )}
+                          style={MONO}
+                        >
+                          {isGain ? '+' : ''}{formatCurrency(tx.gainLoss)}
+                        </span>
+                        <span
+                          className={cn(
+                            'inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold',
+                            tx.gainLossType === 'short_term'
+                              ? 'bg-[rgba(91,141,239,0.1)] text-[#5B8DEF]'
+                              : 'bg-[rgba(230,185,77,0.1)] text-[var(--color-gold)]',
+                          )}
+                          style={MONO}
+                        >
+                          {typeLabel}
+                        </span>
+                      </div>
+
+                      {/* Mobile row */}
+                      <div className="md:hidden px-4 py-3.5 border-b border-[var(--color-border-subtle)]">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[13px] font-bold text-[var(--color-text-primary)]" style={MONO}>
+                              {tx.ticker}
+                            </span>
+                            <span
+                              className={cn(
+                                'inline-flex items-center px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold',
+                                tx.gainLossType === 'short_term'
+                                  ? 'bg-[rgba(91,141,239,0.1)] text-[#5B8DEF]'
+                                  : 'bg-[rgba(230,185,77,0.1)] text-[var(--color-gold)]',
+                              )}
+                              style={MONO}
+                            >
+                              {typeLabel}
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>
+                            {tx.date}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-x-4">
+                          <div>
+                            <span className="text-[10px] text-[var(--color-text-muted)] block" style={MONO}>Proceeds</span>
+                            <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>{formatCurrency(tx.proceeds)}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-[var(--color-text-muted)] block" style={MONO}>Basis</span>
+                            <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>{formatCurrency(tx.costBasis)}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-[var(--color-text-muted)] block" style={MONO}>Gain/Loss</span>
+                            <span
+                              className={cn(
+                                'text-[12px] font-semibold tabular-nums',
+                                isGain ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
+                              )}
+                              style={MONO}
+                            >
+                              {isGain ? '+' : ''}{formatCurrency(tx.gainLoss)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </div>
         </section>
       )}
 
@@ -672,7 +1006,7 @@ export default function TaxesPage() {
                 className="w-3.5 h-3.5 rounded-sm border-[var(--color-border-base)] accent-[var(--color-gold)] cursor-pointer"
               />
             </div>
-            {['Symbol', 'Name', 'Shares', 'Basis', 'Mkt Value', 'Unrealized', 'Wash Sale', ''].map(
+            {['Symbol', 'Name', 'Shares', 'Basis', 'Mkt Value', 'Unrealized', 'Wash Sale', 'Term'].map(
               (h) => (
                 <span
                   key={h}
@@ -877,6 +1211,44 @@ function HarvestRow({
           )}
         </div>
 
+        {/* Holding period badge (IRC §1222) */}
+        <div>
+          {opp.holdingPeriod === 'short_term' ? (
+            <span
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold"
+              style={{
+                background: 'rgba(251, 146, 60, 0.1)',
+                color: 'rgb(251, 146, 60)',
+                ...MONO,
+              }}
+            >
+              ST
+            </span>
+          ) : opp.holdingPeriod === 'long_term' ? (
+            <span
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold"
+              style={{
+                background: 'rgba(74, 222, 128, 0.1)',
+                color: 'var(--color-positive)',
+                ...MONO,
+              }}
+            >
+              LT
+            </span>
+          ) : (
+            <span
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold"
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                color: 'var(--color-text-muted)',
+                ...MONO,
+              }}
+            >
+              —
+            </span>
+          )}
+        </div>
+
       </div>
 
       {/* Mobile card */}
@@ -902,6 +1274,30 @@ function HarvestRow({
           <span className="text-[12px] text-[var(--color-text-secondary)] truncate flex-1">
             {opp.securityName}
           </span>
+          {/* Holding period badge (mobile) */}
+          {opp.holdingPeriod === 'short_term' ? (
+            <span
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold shrink-0"
+              style={{
+                background: 'rgba(251, 146, 60, 0.1)',
+                color: 'rgb(251, 146, 60)',
+                ...MONO,
+              }}
+            >
+              ST
+            </span>
+          ) : opp.holdingPeriod === 'long_term' ? (
+            <span
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold shrink-0"
+              style={{
+                background: 'rgba(74, 222, 128, 0.1)',
+                color: 'var(--color-positive)',
+                ...MONO,
+              }}
+            >
+              LT
+            </span>
+          ) : null}
           {isWashSafe ? (
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-semibold shrink-0"
