@@ -12,6 +12,7 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'rec
 import { useFormat } from '@/hooks/use-format';
 import { computePortfolioLookthrough } from '@/lib/etf-holdings';
 import { CONCENTRATION_THRESHOLDS } from '@/lib/financial-config';
+import { ScrollHint } from '@/components/ui/scroll-hint';
 
 /* ------------------------------------------------------------------ */
 /*  Deterministic sparkline SVG generator                              */
@@ -693,7 +694,7 @@ export default function PortfolioPage() {
                 />
               </div>
             ) : (<>
-            <div className="overflow-x-auto">
+            <ScrollHint>
               <table className="w-full min-w-[960px]">
                 <thead>
                   <tr className="bg-[var(--color-bg-elevated)]/60">
@@ -839,7 +840,7 @@ export default function PortfolioPage() {
                   })}
                 </tbody>
               </table>
-            </div>
+            </ScrollHint>
 
             {/* Table footer */}
             <div className="flex items-center justify-between px-5 py-3 border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/40">
@@ -1382,7 +1383,7 @@ function TrueExposureSection({ lookthrough, open, onToggle, formatCurrency }: {
 
       {open && (
         <div className="border-t border-[var(--color-border-subtle)]">
-          <div className="overflow-x-auto">
+          <ScrollHint>
             <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="bg-[var(--color-bg-elevated)]/60">
@@ -1445,7 +1446,7 @@ function TrueExposureSection({ lookthrough, open, onToggle, formatCurrency }: {
                 })}
               </tbody>
             </table>
-          </div>
+          </ScrollHint>
           <div className="px-5 py-2.5 border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/40">
             <span className="font-mono text-[9px] text-[var(--color-text-muted)]">
               Indirect exposure via ETF holdings and leveraged products. Weights approximate based on fund prospectuses.
