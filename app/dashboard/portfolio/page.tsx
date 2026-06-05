@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { PortfolioMonitor } from '@/components/dashboard/portfolio-monitor';
 import { PortfolioAllocation } from '@/components/dashboard/portfolio-allocation';
@@ -226,23 +226,55 @@ export default function PortfolioPage() {
 
   /* ---------- filter ---------- */
   const [filterOpen, setFilterOpen] = useState(false);
-  const [filterSector, setFilterSector] = useState<string | null>(null);
-  const [filterAssetClass, setFilterAssetClass] = useState<string | null>(null);
+  const [filterSectors, setFilterSectors] = useState<Set<string>>(new Set());
+  const [filterAssetClasses, setFilterAssetClasses] = useState<Set<string>>(new Set());
+  const [filterSources, setFilterSources] = useState<Set<string>>(new Set());
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  // Close filter on click outside
+  useEffect(() => {
+    if (!filterOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [filterOpen]);
 
   const sectors = useMemo(() => [...new Set(holdings.map(h => h.sector).filter(Boolean))].sort() as string[], [holdings]);
   const assetClasses = useMemo(() => [...new Set(holdings.map(h => h.asset_class).filter(Boolean))].sort() as string[], [holdings]);
-  const hasActiveFilter = filterSector !== null || filterAssetClass !== null;
+  const exposureSources = useMemo(() => {
+    const s = new Set<string>();
+    lookthrough.forEach(e => e.sources.forEach(src => { if (src !== 'Direct') s.add(src); }));
+    return [...s].sort();
+  }, [lookthrough]);
+
+  const hasActiveFilter = filterSectors.size > 0 || filterAssetClasses.size > 0 || filterSources.size > 0;
+  const activeFilterCount = filterSectors.size + filterAssetClasses.size + filterSources.size;
+
+  const toggleFilter = (set: Set<string>, setFn: (s: Set<string>) => void, val: string) => {
+    const next = new Set(set);
+    next.has(val) ? next.delete(val) : next.add(val);
+    setFn(next);
+  };
+
+  const clearAllFilters = () => { setFilterSectors(new Set()); setFilterAssetClasses(new Set()); setFilterSources(new Set()); };
 
   const filteredPositions = useMemo(() => {
     let result = sortedPositions;
-    if (filterSector) result = result.filter(h => h.sector === filterSector);
-    if (filterAssetClass) result = result.filter(h => h.asset_class === filterAssetClass);
+    if (filterSectors.size > 0) result = result.filter(h => h.sector && filterSectors.has(h.sector));
+    if (filterAssetClasses.size > 0) result = result.filter(h => h.asset_class && filterAssetClasses.has(h.asset_class));
     return result;
-  }, [sortedPositions, filterSector, filterAssetClass]);
+  }, [sortedPositions, filterSectors, filterAssetClasses]);
+
+  const filteredLookthrough = useMemo(() => {
+    if (filterSources.size === 0) return lookthrough;
+    return lookthrough.filter(e => e.sources.some(s => filterSources.has(s)));
+  }, [lookthrough, filterSources]);
 
   /* ---------- export CSV ---------- */
   const handleExportCSV = useCallback(() => {
-    const source = positionsView === 'exposure' && hasIndirectExposure ? lookthrough : null;
+    const source = positionsView === 'exposure' && hasIndirectExposure ? filteredLookthrough : null;
     if (source) {
       const rows = [
         ['Ticker', 'Direct %', 'Indirect %', 'Total %', 'Sources'].join(','),
@@ -252,7 +284,7 @@ export default function PortfolioPage() {
       ];
       downloadCSV(rows.join('\n'), 'helm-true-exposure.csv');
     } else {
-      const data = hasActiveFilter ? filteredPositions : sortedPositions;
+      const data = filteredPositions;
       const rows = [
         ['Ticker', 'Name', 'Shares', 'Avg Cost', 'Price', 'Day Change %', 'Value', 'Allocation %', 'Unrealized P/L', 'Sector'].join(','),
         ...data.map(h =>
@@ -272,7 +304,7 @@ export default function PortfolioPage() {
       ];
       downloadCSV(rows.join('\n'), 'helm-positions.csv');
     }
-  }, [positionsView, hasIndirectExposure, lookthrough, hasActiveFilter, filteredPositions, sortedPositions]);
+  }, [positionsView, hasIndirectExposure, filteredLookthrough, filteredPositions]);
 
   /* ---------- header tab state (visual only) ---------- */
   const tabs = ['Portfolio', 'Concentration'] as const;
@@ -735,7 +767,7 @@ export default function PortfolioPage() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <div className="relative">
+                <div className="relative" ref={filterRef}>
                   <button
                     onClick={() => setFilterOpen(f => !f)}
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium border rounded-md transition-colors cursor-pointer ${
@@ -745,42 +777,83 @@ export default function PortfolioPage() {
                     }`}
                   >
                     <Filter className="w-3 h-3" />
-                    Filter{hasActiveFilter ? ' ·' : ''}
+                    Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
                   </button>
                   {filterOpen && (
-                    <div className="absolute right-0 top-full mt-1 z-50 w-56 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-lg shadow-xl p-3 space-y-3">
-                      <div>
-                        <label className="block font-mono text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">Sector</label>
-                        <select
-                          value={filterSector ?? ''}
-                          onChange={e => setFilterSector(e.target.value || null)}
-                          className="w-full px-2 py-1.5 bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded text-[12px] text-[var(--color-text-primary)] font-mono focus:outline-none focus:border-[var(--color-gold)]"
-                        >
-                          <option value="">All sectors</option>
-                          {sectors.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
+                    <div className="absolute right-0 top-full mt-1.5 z-50 w-64 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-lg shadow-xl overflow-hidden">
+                      <div className="px-3 py-2.5 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
+                        <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-medium">Filters</span>
+                        {hasActiveFilter && (
+                          <button onClick={clearAllFilters} className="text-[10px] font-mono text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors cursor-pointer">
+                            Clear all
+                          </button>
+                        )}
                       </div>
-                      {assetClasses.length > 1 && (
-                        <div>
-                          <label className="block font-mono text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">Asset Class</label>
-                          <select
-                            value={filterAssetClass ?? ''}
-                            onChange={e => setFilterAssetClass(e.target.value || null)}
-                            className="w-full px-2 py-1.5 bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded text-[12px] text-[var(--color-text-primary)] font-mono focus:outline-none focus:border-[var(--color-gold)]"
-                          >
-                            <option value="">All classes</option>
-                            {assetClasses.map(c => <option key={c} value={c}>{c}</option>)}
-                          </select>
-                        </div>
-                      )}
-                      {hasActiveFilter && (
-                        <button
-                          onClick={() => { setFilterSector(null); setFilterAssetClass(null); }}
-                          className="w-full text-[11px] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors py-1 cursor-pointer"
-                        >
-                          Clear filters
-                        </button>
-                      )}
+                      <div className="p-3 space-y-3 max-h-[320px] overflow-y-auto">
+                        {/* Sector chips */}
+                        {sectors.length > 0 && (
+                          <div>
+                            <label className="block font-mono text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] mb-2">Sector</label>
+                            <div className="flex flex-wrap gap-1.5">
+                              {sectors.map(s => (
+                                <button
+                                  key={s}
+                                  onClick={() => toggleFilter(filterSectors, setFilterSectors, s)}
+                                  className={`px-2 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer border ${
+                                    filterSectors.has(s)
+                                      ? 'bg-[var(--color-gold)]/15 border-[var(--color-gold)]/40 text-[var(--color-gold)]'
+                                      : 'bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border-base)]'
+                                  }`}
+                                >
+                                  {s}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {/* Asset class chips */}
+                        {assetClasses.length > 1 && (
+                          <div>
+                            <label className="block font-mono text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] mb-2">Asset Class</label>
+                            <div className="flex flex-wrap gap-1.5">
+                              {assetClasses.map(c => (
+                                <button
+                                  key={c}
+                                  onClick={() => toggleFilter(filterAssetClasses, setFilterAssetClasses, c)}
+                                  className={`px-2 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer border ${
+                                    filterAssetClasses.has(c)
+                                      ? 'bg-[var(--color-gold)]/15 border-[var(--color-gold)]/40 text-[var(--color-gold)]'
+                                      : 'bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border-base)]'
+                                  }`}
+                                >
+                                  {c}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {/* Source ETF chips (True Exposure) */}
+                        {positionsView === 'exposure' && exposureSources.length > 0 && (
+                          <div>
+                            <label className="block font-mono text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] mb-2">Source ETF</label>
+                            <div className="flex flex-wrap gap-1.5">
+                              {exposureSources.map(s => (
+                                <button
+                                  key={s}
+                                  onClick={() => toggleFilter(filterSources, setFilterSources, s)}
+                                  className={`px-2 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer border ${
+                                    filterSources.has(s)
+                                      ? 'bg-[var(--color-gold)]/15 border-[var(--color-gold)]/40 text-[var(--color-gold)]'
+                                      : 'bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border-base)]'
+                                  }`}
+                                >
+                                  {s}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -794,11 +867,38 @@ export default function PortfolioPage() {
               </div>
             </div>
 
+            {/* Active filter pills */}
+            {hasActiveFilter && (
+              <div className="flex items-center gap-1.5 flex-wrap px-5 py-2 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/30">
+                {[...filterSectors].map(s => (
+                  <span key={`s-${s}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-[var(--color-gold)]/10 text-[var(--color-gold)] border border-[var(--color-gold)]/20">
+                    {s}
+                    <button onClick={() => toggleFilter(filterSectors, setFilterSectors, s)} className="hover:text-[var(--color-text-primary)] transition-colors cursor-pointer ml-0.5">×</button>
+                  </span>
+                ))}
+                {[...filterAssetClasses].map(c => (
+                  <span key={`a-${c}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-[var(--color-gold)]/10 text-[var(--color-gold)] border border-[var(--color-gold)]/20">
+                    {c}
+                    <button onClick={() => toggleFilter(filterAssetClasses, setFilterAssetClasses, c)} className="hover:text-[var(--color-text-primary)] transition-colors cursor-pointer ml-0.5">×</button>
+                  </span>
+                ))}
+                {[...filterSources].map(s => (
+                  <span key={`src-${s}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-[var(--color-gold)]/10 text-[var(--color-gold)] border border-[var(--color-gold)]/20">
+                    {s}
+                    <button onClick={() => toggleFilter(filterSources, setFilterSources, s)} className="hover:text-[var(--color-text-primary)] transition-colors cursor-pointer ml-0.5">×</button>
+                  </span>
+                ))}
+                <button onClick={clearAllFilters} className="text-[10px] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors cursor-pointer ml-1">
+                  Clear all
+                </button>
+              </div>
+            )}
+
             {/* Table or True Exposure */}
             {positionsView === 'exposure' && hasIndirectExposure ? (
               <div className="p-4">
                 <TrueExposureSection
-                  lookthrough={lookthrough}
+                  lookthrough={filteredLookthrough}
                   open={true}
                   onToggle={() => {}}
                   formatCurrency={formatCurrency}
