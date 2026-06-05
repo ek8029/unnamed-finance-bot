@@ -51,6 +51,10 @@ export interface HarvestablePosition {
   replacement: ReplacementSecurity | null;
   washSaleRisk: boolean;
   washSaleDetail: string | null;
+  /** Account context for retirement filtering */
+  accountName: string | null;
+  accountSubtype: string | null;
+  isRetirement: boolean;
 }
 
 export interface ReplacementSecurity {
@@ -79,7 +83,10 @@ export interface TaxHarvestReport {
   opportunityCount: number;
   taxRate: number;
   ltcgRate: number;
+  /** Harvestable positions in taxable accounts only */
   opportunities: HarvestablePosition[];
+  /** Positions with losses in retirement accounts — shown as ineligible */
+  retirementPositions: HarvestablePosition[];
   /** $3,000 annual deduction cap analysis */
   annualCap: AnnualCapInfo;
   /** Legal disclaimer — MUST be displayed to users */
@@ -161,6 +168,19 @@ function findReplacement(ticker: string, sector: string): ReplacementSecurity | 
 
 // ── Database queries ──
 
+// Plaid subtypes that indicate tax-advantaged retirement accounts
+const RETIREMENT_SUBTYPES = new Set([
+  '401a', '401k', '403b', '457b', 'pension',
+  'ira', 'roth', 'roth 401k', 'traditional_ira', 'roth_ira', 'sep_ira', 'simple_ira',
+  'keogh', 'profit_sharing_plan', 'thrift_savings_plan',
+  'education_savings_account', '529',
+]);
+
+function isRetirementAccount(accountSubtype: string | null): boolean {
+  if (!accountSubtype) return false;
+  return RETIREMENT_SUBTYPES.has(accountSubtype.toLowerCase());
+}
+
 interface RawHolding {
   ticker: string;
   shares: number;
@@ -171,9 +191,15 @@ interface RawHolding {
   unrealised_gain_loss_pct: number | null;
   /** Date the position was acquired — may be null if Plaid didn't provide it */
   acquired_at: string | null;
+  account_id: string;
   security: {
     security_name: string | null;
     sector: string | null;
+  } | null;
+  account: {
+    account_name: string | null;
+    account_type: string | null;
+    account_subtype: string | null;
   } | null;
 }
 
@@ -184,8 +210,9 @@ async function fetchHoldingsWithLosses(userId: string): Promise<RawHolding[]> {
     .select(`
       ticker, shares, current_price, total_value,
       total_cost_basis, unrealised_gain_loss, unrealised_gain_loss_pct,
-      acquired_at,
-      security:securities(security_name, sector)
+      acquired_at, account_id,
+      security:securities(security_name, sector),
+      account:linked_accounts(account_name, account_type, account_subtype)
     `)
     .eq('user_id', userId)
     .lt('unrealised_gain_loss', 0)
@@ -532,6 +559,7 @@ export async function generateTaxReport(
       taxRate,
       ltcgRate,
       opportunities: [],
+      retirementPositions: [],
       annualCap: {
         annualDeductionCap: ANNUAL_LOSS_DEDUCTION_CAP,
         ytdNetRealized: ytdRealized.totalNet,
@@ -548,8 +576,8 @@ export async function generateTaxReport(
   const tickers = holdings.map((h) => h.ticker);
   const washSaleMap = await checkWashSaleRisk(userId, tickers);
 
-  // Build opportunities
-  const opportunities: HarvestablePosition[] = holdings
+  // Build all positions with losses, tagged with account info
+  const allPositions: HarvestablePosition[] = holdings
     .filter((h) => h.total_cost_basis != null && h.unrealised_gain_loss != null)
     .map((h) => {
       const loss = h.unrealised_gain_loss!;
@@ -557,7 +585,11 @@ export async function generateTaxReport(
       const sector = h.security?.sector || 'Unknown';
       const washSale = washSaleMap.get(h.ticker);
       const holdingPeriod = classifyHoldingPeriod(h.acquired_at);
-      const { savings, effectiveRate } = calculateSavings(loss, holdingPeriod, taxRate, ltcgRate);
+      const retirement = isRetirementAccount(h.account?.account_subtype ?? null);
+      // Retirement accounts have zero tax savings — losses aren't deductible
+      const { savings, effectiveRate } = retirement
+        ? { savings: 0, effectiveRate: 0 }
+        : calculateSavings(loss, holdingPeriod, taxRate, ltcgRate);
 
       return {
         ticker: h.ticker,
@@ -571,17 +603,27 @@ export async function generateTaxReport(
         estimatedSavings: savings,
         holdingPeriod,
         effectiveTaxRate: effectiveRate,
-        replacement: findReplacement(h.ticker, sector),
-        washSaleRisk: washSale?.risk ?? false,
-        washSaleDetail: washSale?.detail ?? null,
+        replacement: retirement ? null : findReplacement(h.ticker, sector),
+        washSaleRisk: retirement ? false : (washSale?.risk ?? false),
+        washSaleDetail: retirement ? null : (washSale?.detail ?? null),
+        accountName: h.account?.account_name ?? null,
+        accountSubtype: h.account?.account_subtype ?? null,
+        isRetirement: retirement,
       };
-    })
-    // Sort by largest savings first, but deprioritize wash-sale-risky positions
+    });
+
+  // Split: taxable (harvestable) vs retirement (informational only)
+  const opportunities = allPositions
+    .filter((p) => !p.isRetirement)
     .sort((a, b) => {
       if (a.washSaleRisk && !b.washSaleRisk) return 1;
       if (!a.washSaleRisk && b.washSaleRisk) return -1;
       return b.estimatedSavings - a.estimatedSavings;
     });
+
+  const retirementPositions = allPositions
+    .filter((p) => p.isRetirement)
+    .sort((a, b) => a.unrealizedLoss - b.unrealizedLoss);
 
   const totalLoss = opportunities.reduce((s, o) => s + o.unrealizedLoss, 0);
   const uncappedSavings = opportunities.reduce((s, o) => s + o.estimatedSavings, 0);
@@ -634,6 +676,7 @@ export async function generateTaxReport(
     taxRate,
     ltcgRate,
     opportunities,
+    retirementPositions,
     annualCap: {
       annualDeductionCap: ANNUAL_LOSS_DEDUCTION_CAP,
       ytdNetRealized: ytdRealized.totalNet,

@@ -561,6 +561,9 @@ export interface TaxOpportunity {
   replacement: { ticker: string; name: string; reason: string } | null;
   washSaleRisk: boolean;
   washSaleDetail: string | null;
+  accountName: string | null;
+  accountSubtype: string | null;
+  isRetirement: boolean;
 }
 
 export interface AnnualCapInfo {
@@ -579,6 +582,7 @@ export interface TaxHarvestReport {
   taxRate: number;
   ltcgRate: number;
   opportunities: TaxOpportunity[];
+  retirementPositions: TaxOpportunity[];
   annualCap: AnnualCapInfo;
   disclaimer: string;
 }

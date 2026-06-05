@@ -1085,6 +1085,80 @@ export default function TaxesPage() {
         </div>
       )}
 
+      {/* ─── 4b. Retirement Account Losses (Ineligible) ─── */}
+      {!loading && harvestReport && harvestReport.retirementPositions && harvestReport.retirementPositions.length > 0 && (
+        <section
+          aria-label="Retirement account losses"
+          className="rounded-md overflow-hidden"
+          style={{
+            background: 'var(--color-bg-surface)',
+            border: '1px solid var(--color-border-base)',
+          }}
+        >
+          <div className="px-5 py-4 flex items-center justify-between border-b border-[var(--color-border-subtle)]">
+            <div className="flex items-center gap-2.5">
+              <span
+                className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-text-muted)]"
+                style={MONO}
+              >
+                Retirement Account Losses
+              </span>
+              <span
+                className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/5 text-[var(--color-text-secondary)]"
+                style={MONO}
+              >
+                {harvestReport.retirementPositions.length}
+              </span>
+            </div>
+            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+              Not eligible for tax-loss harvesting
+            </span>
+          </div>
+          <div className="px-5 py-3 bg-[var(--color-bg-elevated)]/30 border-b border-[var(--color-border-subtle)]">
+            <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed" style={MONO}>
+              These positions are in tax-advantaged accounts (IRA, 401k, Roth, etc.). Losses in retirement accounts cannot be used for tax-loss harvesting because gains and losses within these accounts are not taxable events.
+            </p>
+          </div>
+          {harvestReport.retirementPositions.map((pos) => (
+            <div
+              key={`${pos.ticker}-${pos.accountName}`}
+              className="px-4 sm:px-5 py-3.5 border-b border-[var(--color-border-subtle)] opacity-60"
+            >
+              <div className="flex items-center gap-2 sm:gap-3 mb-1.5 flex-wrap">
+                <span className="text-[14px] font-bold text-[var(--color-text-muted)]" style={MONO}>
+                  {pos.ticker}
+                </span>
+                <span className="text-[12px] sm:text-[13px] text-[var(--color-text-muted)] truncate flex-1 min-w-[60px]">
+                  {pos.securityName}
+                </span>
+                {pos.accountSubtype && (
+                  <span
+                    className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold shrink-0"
+                    style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--color-text-muted)', ...MONO }}
+                  >
+                    {pos.accountSubtype.replace(/_/g, ' ')}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-x-4">
+                <div>
+                  <span className="text-[11px] text-[var(--color-text-muted)] block" style={MONO}>Shares</span>
+                  <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>{pos.shares.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-[11px] text-[var(--color-text-muted)] block" style={MONO}>Unrealized</span>
+                  <span className="text-[12px] text-[var(--color-negative)]/60 tabular-nums" style={MONO}>{formatCurrency(pos.unrealizedLoss)}</span>
+                </div>
+                <div>
+                  <span className="text-[11px] text-[var(--color-text-muted)] block" style={MONO}>Tax Savings</span>
+                  <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>$0 (exempt)</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
       {/* ─── 5. Form 8949 Preview ─── */}
       {!loading && (
         <div id="form-8949-section">
