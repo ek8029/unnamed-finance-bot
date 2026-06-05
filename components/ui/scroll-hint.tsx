@@ -1,72 +1,102 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 /**
- * Wraps horizontally scrollable content with fade hints and arrow buttons
- * to indicate more content exists left/right.
+ * Wraps horizontally scrollable content with a visible gold scrollbar
+ * at the top so users can see and drag to scroll.
  */
 export function ScrollHint({ children, className }: { children: React.ReactNode; className?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [canLeft, setCanLeft] = useState(false);
-  const [canRight, setCanRight] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [thumbWidth, setThumbWidth] = useState(100);
+  const [thumbLeft, setThumbLeft] = useState(0);
+  const [needsScroll, setNeedsScroll] = useState(false);
+  const dragging = useRef(false);
+  const dragStartX = useRef(0);
+  const dragStartScroll = useRef(0);
 
-  const check = useCallback(() => {
-    const el = ref.current;
+  const sync = useCallback(() => {
+    const el = contentRef.current;
     if (!el) return;
-    setCanLeft(el.scrollLeft > 2);
-    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+    const { scrollWidth, clientWidth, scrollLeft } = el;
+    const overflow = scrollWidth > clientWidth + 2;
+    setNeedsScroll(overflow);
+    if (overflow) {
+      const ratio = clientWidth / scrollWidth;
+      setThumbWidth(Math.max(ratio * 100, 10));
+      setThumbLeft((scrollLeft / (scrollWidth - clientWidth)) * (100 - ratio * 100));
+    }
   }, []);
 
   useEffect(() => {
-    const el = ref.current;
+    const el = contentRef.current;
     if (!el) return;
-    check();
-    el.addEventListener('scroll', check, { passive: true });
-    const ro = new ResizeObserver(check);
+    sync();
+    el.addEventListener('scroll', sync, { passive: true });
+    const ro = new ResizeObserver(sync);
     ro.observe(el);
-    return () => { el.removeEventListener('scroll', check); ro.disconnect(); };
-  }, [check]);
+    return () => { el.removeEventListener('scroll', sync); ro.disconnect(); };
+  }, [sync]);
 
-  const scroll = (dir: 'left' | 'right') => {
-    ref.current?.scrollBy({ left: dir === 'left' ? -200 : 200, behavior: 'smooth' });
+  const handleTrackClick = (e: React.MouseEvent) => {
+    const el = contentRef.current;
+    const track = trackRef.current;
+    if (!el || !track) return;
+    const rect = track.getBoundingClientRect();
+    const clickRatio = (e.clientX - rect.left) / rect.width;
+    el.scrollLeft = clickRatio * (el.scrollWidth - el.clientWidth);
+  };
+
+  const handleThumbDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragging.current = true;
+    dragStartX.current = e.clientX;
+    dragStartScroll.current = contentRef.current?.scrollLeft ?? 0;
+
+    const onMove = (ev: MouseEvent) => {
+      if (!dragging.current || !contentRef.current || !trackRef.current) return;
+      const trackWidth = trackRef.current.clientWidth;
+      const dx = ev.clientX - dragStartX.current;
+      const scrollRange = contentRef.current.scrollWidth - contentRef.current.clientWidth;
+      contentRef.current.scrollLeft = dragStartScroll.current + (dx / trackWidth) * scrollRange;
+    };
+    const onUp = () => {
+      dragging.current = false;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
   };
 
   return (
-    <div className={`relative group ${className ?? ''}`}>
-      {/* Left fade + arrow */}
-      {canLeft && (
-        <>
-          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-r from-[var(--color-bg-surface)] to-transparent" />
-          <button
-            onClick={() => scroll('left')}
-            className="absolute left-1 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] grid place-items-center text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-            aria-label="Scroll left"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-          </button>
-        </>
+    <div className={className}>
+      {/* Gold scrollbar track — visible when content overflows */}
+      {needsScroll && (
+        <div
+          ref={trackRef}
+          onClick={handleTrackClick}
+          className="h-[6px] mx-4 mb-1 rounded-full bg-[var(--color-border-subtle)] cursor-pointer relative"
+        >
+          <div
+            onMouseDown={handleThumbDown}
+            className="absolute top-0 h-full rounded-full bg-[var(--color-gold)]/60 hover:bg-[var(--color-gold)] transition-colors cursor-grab active:cursor-grabbing"
+            style={{ width: `${thumbWidth}%`, left: `${thumbLeft}%` }}
+          />
+        </div>
       )}
 
-      {/* Scrollable content */}
-      <div ref={ref} className="overflow-x-auto">
+      {/* Scrollable content — hide native scrollbar */}
+      <div
+        ref={contentRef}
+        className="overflow-x-auto"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        <style jsx>{`div::-webkit-scrollbar { display: none; }`}</style>
         {children}
       </div>
-
-      {/* Right fade + arrow */}
-      {canRight && (
-        <>
-          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-l from-[var(--color-bg-surface)] to-transparent" />
-          <button
-            onClick={() => scroll('right')}
-            className="absolute right-1 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] grid place-items-center text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-            aria-label="Scroll right"
-          >
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </>
-      )}
     </div>
   );
 }

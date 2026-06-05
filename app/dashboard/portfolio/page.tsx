@@ -15,6 +15,19 @@ import { CONCENTRATION_THRESHOLDS } from '@/lib/financial-config';
 import { ScrollHint } from '@/components/ui/scroll-hint';
 
 /* ------------------------------------------------------------------ */
+/*  CSV download helper                                                */
+/* ------------------------------------------------------------------ */
+function downloadCSV(csv: string, filename: string) {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ------------------------------------------------------------------ */
 /*  Deterministic sparkline SVG generator                              */
 /* ------------------------------------------------------------------ */
 function generateSparklinePath(ticker: string, width = 80, height = 24): string {
@@ -210,6 +223,56 @@ export default function PortfolioPage() {
 
   /* ---------- positions sub-tab ---------- */
   const [positionsView, setPositionsView] = useState<'positions' | 'exposure'>('positions');
+
+  /* ---------- filter ---------- */
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterSector, setFilterSector] = useState<string | null>(null);
+  const [filterAssetClass, setFilterAssetClass] = useState<string | null>(null);
+
+  const sectors = useMemo(() => [...new Set(holdings.map(h => h.sector).filter(Boolean))].sort() as string[], [holdings]);
+  const assetClasses = useMemo(() => [...new Set(holdings.map(h => h.asset_class).filter(Boolean))].sort() as string[], [holdings]);
+  const hasActiveFilter = filterSector !== null || filterAssetClass !== null;
+
+  const filteredPositions = useMemo(() => {
+    let result = sortedPositions;
+    if (filterSector) result = result.filter(h => h.sector === filterSector);
+    if (filterAssetClass) result = result.filter(h => h.asset_class === filterAssetClass);
+    return result;
+  }, [sortedPositions, filterSector, filterAssetClass]);
+
+  /* ---------- export CSV ---------- */
+  const handleExportCSV = useCallback(() => {
+    const source = positionsView === 'exposure' && hasIndirectExposure ? lookthrough : null;
+    if (source) {
+      const rows = [
+        ['Ticker', 'Direct %', 'Indirect %', 'Total %', 'Sources'].join(','),
+        ...source.map(e =>
+          [e.ticker, e.directWeight.toFixed(2), e.indirectWeight.toFixed(2), e.totalWeight.toFixed(2), `"${e.sources.join('; ')}"`].join(',')
+        ),
+      ];
+      downloadCSV(rows.join('\n'), 'helm-true-exposure.csv');
+    } else {
+      const data = hasActiveFilter ? filteredPositions : sortedPositions;
+      const rows = [
+        ['Ticker', 'Name', 'Shares', 'Avg Cost', 'Price', 'Day Change %', 'Value', 'Allocation %', 'Unrealized P/L', 'Sector'].join(','),
+        ...data.map(h =>
+          [
+            h.ticker,
+            `"${h.asset_name}"`,
+            h.shares,
+            (h.cost_basis ?? 0).toFixed(2),
+            h.current_price.toFixed(2),
+            (h.day_change_percentage ?? 0).toFixed(2),
+            h.total_value.toFixed(2),
+            h.portfolio_allocation.toFixed(2),
+            (h.unrealised_gain ?? 0).toFixed(2),
+            h.sector || '',
+          ].join(',')
+        ),
+      ];
+      downloadCSV(rows.join('\n'), 'helm-positions.csv');
+    }
+  }, [positionsView, hasIndirectExposure, lookthrough, hasActiveFilter, filteredPositions, sortedPositions]);
 
   /* ---------- header tab state (visual only) ---------- */
   const tabs = ['Portfolio', 'Concentration'] as const;
@@ -575,7 +638,7 @@ export default function PortfolioPage() {
               />
             ) : (
             <div className="space-y-2">
-            {sortedPositions.map((h) => {
+            {filteredPositions.map((h) => {
               const dayPct = h.day_change_percentage ?? 0;
               const sparkPath = generateSparklinePath(h.ticker);
               const sparkTrend = dayPct >= 0;
@@ -672,11 +735,59 @@ export default function PortfolioPage() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <button className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] rounded-md bg-[var(--color-bg-elevated)] transition-colors">
-                  <Filter className="w-3 h-3" />
-                  Filter
-                </button>
-                <button className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] rounded-md bg-[var(--color-bg-elevated)] transition-colors">
+                <div className="relative">
+                  <button
+                    onClick={() => setFilterOpen(f => !f)}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium border rounded-md transition-colors cursor-pointer ${
+                      hasActiveFilter
+                        ? 'text-[var(--color-gold)] border-[var(--color-gold)]/40 bg-[var(--color-gold)]/10'
+                        : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]'
+                    }`}
+                  >
+                    <Filter className="w-3 h-3" />
+                    Filter{hasActiveFilter ? ' ·' : ''}
+                  </button>
+                  {filterOpen && (
+                    <div className="absolute right-0 top-full mt-1 z-50 w-56 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-lg shadow-xl p-3 space-y-3">
+                      <div>
+                        <label className="block font-mono text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">Sector</label>
+                        <select
+                          value={filterSector ?? ''}
+                          onChange={e => setFilterSector(e.target.value || null)}
+                          className="w-full px-2 py-1.5 bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded text-[12px] text-[var(--color-text-primary)] font-mono focus:outline-none focus:border-[var(--color-gold)]"
+                        >
+                          <option value="">All sectors</option>
+                          {sectors.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
+                      {assetClasses.length > 1 && (
+                        <div>
+                          <label className="block font-mono text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">Asset Class</label>
+                          <select
+                            value={filterAssetClass ?? ''}
+                            onChange={e => setFilterAssetClass(e.target.value || null)}
+                            className="w-full px-2 py-1.5 bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded text-[12px] text-[var(--color-text-primary)] font-mono focus:outline-none focus:border-[var(--color-gold)]"
+                          >
+                            <option value="">All classes</option>
+                            {assetClasses.map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                        </div>
+                      )}
+                      {hasActiveFilter && (
+                        <button
+                          onClick={() => { setFilterSector(null); setFilterAssetClass(null); }}
+                          className="w-full text-[11px] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors py-1 cursor-pointer"
+                        >
+                          Clear filters
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={handleExportCSV}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] rounded-md bg-[var(--color-bg-elevated)] transition-colors cursor-pointer"
+                >
                   <Download className="w-3 h-3" />
                   Export
                 </button>
@@ -731,7 +842,7 @@ export default function PortfolioPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedPositions.map((h, idx) => {
+                  {filteredPositions.map((h, idx) => {
                     const avgCost = h.cost_basis ?? 0;
                     const dayPct = h.day_change_percentage ?? 0;
                     const pl = h.unrealised_gain ?? 0;
@@ -742,13 +853,13 @@ export default function PortfolioPage() {
                     return (
                       <tr
                         key={h.id}
-                        className={`h-16 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)]/50 transition-colors ${
+                        className={`h-16 border-b border-[var(--color-border-subtle)] ${
                           idx % 2 === 1 ? 'bg-[var(--color-bg-elevated)]/20' : ''
                         }`}
                       >
                         {/* SYMBOL */}
                         <td className="pl-5 pr-2 py-2">
-                          <Link href={`/dashboard/holdings/${h.ticker}`} className="flex items-center gap-2.5 group">
+                          <Link href={`/dashboard/holdings/${h.ticker}`} className="flex items-center gap-2.5 group rounded hover:bg-[var(--color-bg-elevated)]/50 -mx-1.5 px-1.5 py-1 transition-colors">
                             <TickerIcon ticker={h.ticker} />
                             <span className="font-mono text-sm font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors">
                               {h.ticker}
@@ -757,8 +868,8 @@ export default function PortfolioPage() {
                         </td>
                         {/* NAME + sector */}
                         <td className="px-2 py-2">
-                          <div className="flex flex-col">
-                            <span className="text-sm text-[var(--color-text-primary)] truncate max-w-[180px]">
+                          <Link href={`/dashboard/holdings/${h.ticker}`} className="flex flex-col group rounded hover:bg-[var(--color-bg-elevated)]/50 -mx-1.5 px-1.5 py-1 transition-colors">
+                            <span className="text-sm text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] truncate max-w-[180px] transition-colors">
                               {h.asset_name}
                             </span>
                             {h.sector && (
@@ -766,7 +877,7 @@ export default function PortfolioPage() {
                                 {h.sector}
                               </span>
                             )}
-                          </div>
+                          </Link>
                         </td>
                         {/* SHARES */}
                         <td className="px-2 py-2 text-right">
@@ -845,7 +956,7 @@ export default function PortfolioPage() {
             {/* Table footer */}
             <div className="flex items-center justify-between px-5 py-3 border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/40">
               <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
-                Showing {sortedPositions.length} of {holdings.length} positions
+                Showing {filteredPositions.length} of {holdings.length} positions
               </span>
               <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
                 Total value: <span className="text-[var(--color-text-primary)] font-medium">{formatCurrency(totalValue)}</span>
