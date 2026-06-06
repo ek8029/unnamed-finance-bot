@@ -200,10 +200,10 @@ function FunctionTree({ active, onSelect }: { active: FunctionKey; onSelect: (k:
 
 function MetricCell({ label, value, context }: { label: string; value: string; context?: string }) {
   return (
-    <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-3 space-y-1">
-      <div className="text-[12px] font-mono tracking-wider text-[var(--color-text-muted)] uppercase">{label}</div>
-      <div className="text-[16px] sm:text-[22px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{value}</div>
-      {context && <div className="text-[12px] font-mono text-[var(--color-text-muted)]">{context}</div>}
+    <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-2.5 sm:p-3 space-y-1 min-w-0">
+      <div className="text-[11px] sm:text-[12px] font-mono tracking-wider text-[var(--color-text-muted)] uppercase">{label}</div>
+      <div className="text-[14px] sm:text-[22px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)] truncate">{value}</div>
+      {context && <div className="text-[11px] sm:text-[12px] font-mono text-[var(--color-text-muted)]">{context}</div>}
     </div>
   );
 }
@@ -1029,7 +1029,7 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
         </aside>
 
         {/* CENTER PANE */}
-        <main className="bg-[var(--color-bg-base)] p-5 sm:p-6 overflow-y-auto">
+        <main className="bg-[var(--color-bg-base)] p-3.5 sm:p-6 overflow-y-auto">
           {centerContent}
 
           {/* CTA — public only */}

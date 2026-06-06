@@ -239,14 +239,14 @@ export default function AccountsPage() {
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6">
         <Card>
           <CardHeader className="pb-3">
             <CardDescription>Total Balance</CardDescription>
             {apiLoading ? (
               <Skeleton className="h-8 w-32 mt-2" />
             ) : (
-              <CardTitle className="type-data text-3xl">
+              <CardTitle className="type-data text-2xl sm:text-3xl">
                 {formatCurrency(totalBalance)}
               </CardTitle>
             )}
@@ -262,7 +262,7 @@ export default function AccountsPage() {
             {apiLoading ? (
               <Skeleton className="h-8 w-32 mt-2" />
             ) : (
-              <CardTitle className="type-data text-3xl text-[var(--color-positive)]">
+              <CardTitle className="type-data text-2xl sm:text-3xl text-[var(--color-positive)]">
                 {formatCurrency(totalAssets)}
               </CardTitle>
             )}
@@ -278,7 +278,7 @@ export default function AccountsPage() {
             {apiLoading ? (
               <Skeleton className="h-8 w-32 mt-2" />
             ) : (
-              <CardTitle className="type-data text-3xl text-[var(--color-negative)]">
+              <CardTitle className="type-data text-2xl sm:text-3xl text-[var(--color-negative)]">
                 {formatCurrency(totalLiabilities)}
               </CardTitle>
             )}
@@ -376,21 +376,21 @@ export default function AccountsPage() {
                   key={account.id}
                   type="button"
                   onClick={() => setSelectedAccountId(account.id)}
-                  className={`w-full text-left rounded-md border px-4 py-3 flex items-center justify-between gap-4 transition-colors ${
+                  className={`w-full text-left rounded-md border px-3 sm:px-4 py-3 flex items-center justify-between gap-2 sm:gap-4 transition-colors ${
                     isPrimary
                       ? 'border-[var(--color-gold-border)] bg-[var(--color-gold-surface)]'
                       : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] hover:border-[var(--color-border-strong)]'
                   } ${isSelected ? 'ring-1 ring-[var(--color-gold)]' : ''}`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[var(--color-bg-overlay)] border border-[var(--color-border-subtle)] rounded-md flex items-center justify-center">
-                      <Building2 className="w-5 h-5 text-[var(--color-text-secondary)]" />
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[var(--color-bg-overlay)] border border-[var(--color-border-subtle)] rounded-md flex items-center justify-center shrink-0">
+                      <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-text-secondary)]" />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="type-h3">{account.institution}</h3>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <h3 className="type-h3 truncate">{account.institution}</h3>
                         {isPrimary && (
-                          <span className="type-caption text-[var(--color-gold)]">Primary</span>
+                          <span className="type-caption text-[var(--color-gold)] shrink-0">Primary</span>
                         )}
                       </div>
                       <p className="text-xs text-[var(--color-text-secondary)] capitalize">
@@ -398,9 +398,9 @@ export default function AccountsPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     <p
-                      className={`type-data text-xl ${
+                      className={`type-data text-base sm:text-xl ${
                         account.balance >= 0 ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-negative)]'
                       }`}
                     >

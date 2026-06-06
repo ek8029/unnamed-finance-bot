@@ -439,9 +439,9 @@ export default function PortfolioPage() {
           </div>
 
           {/* ---- 2. HEADLINE STATS ---- */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {/* Portfolio value -- spans 2 cols on lg */}
-            <div className="sm:col-span-2 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-5">
+            <div className="sm:col-span-2 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-4 sm:p-5">
               <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-1">
                 Portfolio value
               </span>
@@ -468,7 +468,7 @@ export default function PortfolioPage() {
             </div>
 
             {/* Unrealized P/L */}
-            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-5">
+            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-4 sm:p-5">
               <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-1">
                 Unrealized P/L
               </span>
@@ -485,7 +485,7 @@ export default function PortfolioPage() {
             </div>
 
             {/* Day Change */}
-            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-5">
+            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-4 sm:p-5">
               <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-1">
                 Day Change
               </span>
@@ -518,21 +518,21 @@ export default function PortfolioPage() {
             });
             return (
               <div className="rounded-lg border border-[var(--color-gold)]/15 bg-[var(--color-gold)]/[0.02] px-4 py-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="flex items-center gap-3">
-                    <TrendingDown className="w-4 h-4 text-[var(--color-gold)]" />
+                    <TrendingDown className="w-4 h-4 text-[var(--color-gold)] shrink-0" />
                     <div>
-                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                      <span className="text-[13px] sm:text-sm font-medium text-[var(--color-text-primary)]">
                         {formatCurrency(harvestable)} in harvestable losses
                       </span>
-                      <span className="text-xs text-[var(--color-text-muted)] ml-2">
+                      <span className="text-xs text-[var(--color-text-muted)] ml-2 hidden sm:inline">
                         across {underwater.length} position{underwater.length !== 1 ? 's' : ''}
                       </span>
                     </div>
                   </div>
                   <Link
                     href={`/tools/tlh-calculator?${calcParams.toString()}`}
-                    className="text-xs font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors whitespace-nowrap"
+                    className="text-xs font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors ml-7 sm:ml-0"
                   >
                     Estimate tax savings &rarr;
                   </Link>
@@ -680,34 +680,30 @@ export default function PortfolioPage() {
                   href={`/dashboard/holdings/${h.ticker}`}
                   className="block p-3.5 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl active:bg-[var(--color-bg-elevated)] transition-colors"
                 >
-                  <div className="grid grid-cols-[36px_1fr_auto] gap-2 sm:gap-3 items-center">
+                  <div className="grid grid-cols-[32px_1fr_auto] gap-1.5 sm:gap-3 items-center">
                     <TickerIcon ticker={h.ticker} />
                     <div className="min-w-0">
-                      <div className="flex items-baseline gap-2">
-                        <span className="font-mono text-[14px] font-bold tracking-wide text-[var(--color-text-primary)]">
+                      <div className="flex items-baseline gap-1.5 sm:gap-2">
+                        <span className="font-mono text-[13px] sm:text-[14px] font-bold tracking-wide text-[var(--color-text-primary)]">
                           {h.ticker}
                         </span>
-                        <span className="text-[11px] text-[var(--color-text-muted)] truncate">
+                        <span className="text-[10px] sm:text-[11px] text-[var(--color-text-muted)] truncate">
                           {h.shares} sh &middot; ${h.current_price.toFixed(2)}
                         </span>
                       </div>
-                      <div className="text-[12px] text-[var(--color-text-muted)] mt-0.5 truncate">
+                      <div className="text-[11px] sm:text-[12px] text-[var(--color-text-muted)] mt-0.5 truncate">
                         {h.asset_name}
                       </div>
                     </div>
-                    <div className="text-right flex flex-col items-end gap-1">
+                    <div className="text-right flex flex-col items-end gap-0.5 sm:gap-1">
                       <div className="font-mono text-[12px] sm:text-[13px] font-bold tabular-nums text-[var(--color-text-primary)]">
                         {h.total_value >= 1000 ? `$${(h.total_value / 1000).toFixed(1)}k` : formatCurrency(h.total_value)}
                       </div>
-                      <svg width="48" height="16" viewBox="0 0 80 24" fill="none" className="block">
-                        <path
-                          d={sparkPath}
-                          stroke={sparkTrend ? 'var(--color-positive)' : 'var(--color-negative)'}
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          fill="none"
-                        />
+                      <svg width="40" height="14" viewBox="0 0 80 24" fill="none" className="block sm:hidden">
+                        <path d={sparkPath} stroke={sparkTrend ? 'var(--color-positive)' : 'var(--color-negative)'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                      </svg>
+                      <svg width="48" height="16" viewBox="0 0 80 24" fill="none" className="hidden sm:block">
+                        <path d={sparkPath} stroke={sparkTrend ? 'var(--color-positive)' : 'var(--color-negative)'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                       </svg>
                       <div className={`font-mono text-[11px] font-bold tabular-nums ${
                         dayPct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
