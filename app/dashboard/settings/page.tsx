@@ -214,6 +214,7 @@ export default function SettingsPage() {
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
   const [deletePassword, setDeletePassword] = useState('')
   const [deleting, setDeleting] = useState(false)
+  const [isOAuthOnly, setIsOAuthOnly] = useState(false)
 
   // ── Export state ──
   const [exporting, setExporting] = useState(false)
@@ -259,7 +260,10 @@ export default function SettingsPage() {
   useEffect(() => {
     async function loadProfile() {
       try {
-        const res = await fetch('/api/user/profile')
+        const [res, { data: sessionData }] = await Promise.all([
+          fetch('/api/user/profile'),
+          supabaseBrowser.auth.getSession(),
+        ]);
         if (res.ok) {
           const data = await res.json()
           setProfile({
@@ -267,6 +271,12 @@ export default function SettingsPage() {
             email: data.profile?.email || '',
             phone: data.profile?.phone || '',
           })
+        }
+        // Detect OAuth-only users (no email/password provider)
+        const user = sessionData?.session?.user;
+        if (user) {
+          const providers = user.app_metadata?.providers as string[] | undefined;
+          setIsOAuthOnly(!providers?.includes('email'));
         }
       } catch (err) {
         console.error('Failed to load profile:', err)
@@ -1753,13 +1763,15 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="delete-password" className="text-[14px]">Your password</Label>
+                <Label htmlFor="delete-password" className="text-[14px]">
+                  {isOAuthOnly ? 'Type CONFIRM to verify' : 'Your password'}
+                </Label>
                 <Input
                   id="delete-password"
-                  type="password"
+                  type={isOAuthOnly ? 'text' : 'password'}
                   value={deletePassword}
                   onChange={(e) => setDeletePassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder={isOAuthOnly ? 'CONFIRM' : 'Enter your password'}
                   className="bg-[var(--color-bg-elevated)] border-[var(--color-border-base)]"
                 />
               </div>

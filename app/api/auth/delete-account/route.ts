@@ -28,14 +28,23 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Please type DELETE to confirm' }, { status: 400 });
     }
 
-    // Verify password
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: user.email!,
-      password,
-    });
+    // Verify identity — password for email users, skip for OAuth-only users
+    const isOAuthOnly = user.app_metadata?.provider !== 'email'
+      && !user.app_metadata?.providers?.includes('email');
 
-    if (signInError) {
-      return NextResponse.json({ error: 'Incorrect password' }, { status: 400 });
+    if (isOAuthOnly) {
+      // OAuth users don't have a password — confirmation text "DELETE" is sufficient
+      if (password !== 'CONFIRM') {
+        return NextResponse.json({ error: 'Please type CONFIRM as your password to verify' }, { status: 400 });
+      }
+    } else {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email!,
+        password,
+      });
+      if (signInError) {
+        return NextResponse.json({ error: 'Incorrect password' }, { status: 400 });
+      }
     }
 
     const userId = user.id;
@@ -95,12 +104,14 @@ export async function DELETE(request: Request) {
       'cash_flow_snapshots',
       'portfolio_performance',
       'portfolio_snapshots',
+      'user_watchlist',
       'holdings',
       'transactions',
       'account_balances',
       'linked_accounts',
       'plaid_items',
       'liabilities',
+      'user_subscriptions',
       'user_preferences',
       'user_profiles',
     ];
