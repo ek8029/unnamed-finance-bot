@@ -61,13 +61,13 @@ export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
         </div>
       </DataPanelHeader>
       <DataPanelContent>
-        <div className="flex gap-6">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
           {/* Left: Metrics */}
-          <div className="flex-shrink-0 w-[40%] space-y-4">
+          <div className="flex-shrink-0 md:w-[40%] space-y-4">
             {/* Current Balance */}
             <div>
               <div className="type-caption text-[var(--color-text-secondary)] mb-1">Total Balance</div>
-              <div className="type-data text-3xl font-tabular text-[var(--color-text-primary)]">
+              <div className="type-data text-2xl sm:text-3xl font-tabular text-[var(--color-text-primary)]">
                 {formatCurrency(currentMonth.balance)}
               </div>
               <div className="flex items-center gap-1 mt-1">
@@ -80,21 +80,21 @@ export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
 
             {/* Monthly Flow */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
+              <div className="p-2.5 sm:p-3 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
                 <div className="flex items-center gap-1.5 mb-1">
                   <ArrowUpRight className="h-3 w-3 text-[var(--color-positive)]" />
                   <div className="type-caption text-[var(--color-text-secondary)]">Inflows</div>
                 </div>
-                <div className="type-data text-sm font-tabular text-[var(--color-positive)]">
+                <div className="type-data text-[12px] sm:text-sm font-tabular text-[var(--color-positive)] truncate">
                   {formatCurrency(currentMonth.inflows)}
                 </div>
               </div>
-              <div className="p-3 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
+              <div className="p-2.5 sm:p-3 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
                 <div className="flex items-center gap-1.5 mb-1">
                   <ArrowDownRight className="h-3 w-3 text-[var(--color-negative)]" />
                   <div className="type-caption text-[var(--color-text-secondary)]">Outflows</div>
                 </div>
-                <div className="type-data text-sm font-tabular text-[var(--color-negative)]">
+                <div className="type-data text-[12px] sm:text-sm font-tabular text-[var(--color-negative)] truncate">
                   {formatCurrency(currentMonth.outflows)}
                 </div>
               </div>
@@ -103,7 +103,7 @@ export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
             {/* Net Flow */}
             <div className="p-3 bg-[var(--color-gold-surface)] rounded border border-[var(--color-gold)]/20">
               <div className="type-caption text-[var(--color-text-secondary)] mb-1">Net Flow</div>
-              <div className={`type-data text-xl font-tabular ${netFlow >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+              <div className={`type-data text-base sm:text-xl font-tabular ${netFlow >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
                 {netFlow >= 0 ? '+' : ''}{formatCurrency(netFlow)}
               </div>
             </div>
@@ -122,8 +122,8 @@ export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
           </div>
 
           {/* Right: Chart */}
-          <div className="flex-1">
-            <div className="h-[280px]">
+          <div className="flex-1 min-w-0">
+            <div className="h-[200px] md:h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={balanceHistory}>
                   <defs>
