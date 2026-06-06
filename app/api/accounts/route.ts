@@ -33,7 +33,7 @@ export async function GET() {
         .from('net_worth_snapshots')
         .select('*')
         .eq('user_id', user.id)
-        .order('snapshot_date', { ascending: true })
+        .order('snapshot_date', { ascending: false })
         .limit(6),
     ]);
 
@@ -44,7 +44,7 @@ export async function GET() {
 
     const accounts = accountsResult.data || [];
     const cashFlow = cashFlowResult.data || [];
-    const netWorth = netWorthResult.data || [];
+    const netWorth = (netWorthResult.data || []).reverse(); // fetched desc, reverse to chronological
 
     // Transform data to match frontend expectations
     const transformedAccounts = accounts.map(account => ({
