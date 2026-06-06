@@ -31,6 +31,12 @@ export default function AddHoldingsPage() {
           Enter your positions below. Prices update automatically via live market data.
           Cost basis is optional but unlocks tax-loss harvesting insights.
         </p>
+        <div className="flex items-start gap-2 mt-3 p-3 rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)]">
+          <span className="text-[var(--color-gold)] text-[13px] mt-0.5 shrink-0">&#9432;</span>
+          <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed" style={{ fontFamily: 'var(--font-mono)' }}>
+            Manual holdings let you see positions immediately without waiting for brokerage sync. If you connect a brokerage via Plaid that holds the same tickers, the manual entries will be automatically replaced with your real brokerage data on the next sync.
+          </p>
+        </div>
       </div>
 
       <ManualPortfolioForm

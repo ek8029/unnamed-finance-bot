@@ -367,6 +367,36 @@ export async function syncPlaidItem(
           });
 
         holdingsSynced = holdingsUpserts.length;
+
+        // ── Reconcile manual holdings ──
+        // If a ticker now exists in a Plaid-linked account, remove the
+        // duplicate from the Manual Portfolio so it doesn't double-count.
+        try {
+          const syncedTickers = (holdingsUpserts as { ticker: string }[]).map(h => h.ticker);
+          const { data: manualAccounts } = await supabase
+            .from('linked_accounts')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('account_name', 'Manual Portfolio');
+
+          if (manualAccounts && manualAccounts.length > 0) {
+            const manualAccountIds = manualAccounts.map((a: { id: string }) => a.id);
+            const { data: removed } = await supabase
+              .from('holdings')
+              .delete()
+              .eq('user_id', userId)
+              .in('account_id', manualAccountIds)
+              .in('ticker', syncedTickers)
+              .select('ticker');
+
+            if (removed && removed.length > 0) {
+              console.log(`[plaid-sync] Reconciled ${removed.length} manual holdings: ${removed.map((r: { ticker: string }) => r.ticker).join(', ')}`);
+            }
+          }
+        } catch (reconErr) {
+          console.error('[plaid-sync] Manual holdings reconciliation failed:', reconErr);
+          // Non-fatal — continue sync
+        }
       }
 
       await supabase
