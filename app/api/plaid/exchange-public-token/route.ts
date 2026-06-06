@@ -94,6 +94,11 @@ export async function POST(request: Request) {
 
     if (existingInstitution) {
       institutionId = existingInstitution.id;
+      // Keep institution name in sync with what Plaid returns —
+      // prevents stale/wrong names from seed data or prior connections
+      if (institutionName && institutionName !== 'Unknown Institution') {
+        await supabase.from('institutions').update({ name: institutionName }).eq('id', institutionId);
+      }
     } else {
       const uniqueSlug = plaidInstitutionId ? `${slug}-${plaidInstitutionId}` : `${slug}-${Date.now()}`;
 
