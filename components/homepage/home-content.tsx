@@ -535,7 +535,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               <FadeIn delay={400} className="lg:border-l lg:border-[var(--color-border-base)] lg:pl-12">
                 <p className="text-[15px] leading-[1.55] text-[var(--color-text-muted)] md:text-[var(--color-text-secondary)] mb-4 max-w-[340px] md:max-w-none">
                   AI stock analysis, tax-loss harvesting, earnings exposure, portfolio
-                  intelligence — the tools Wall Street pays $24,000 a year for.
+                  intelligence. The tools Wall Street pays $24,000 a year for.
                 </p>
                 <p className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-6 mt-3.5 md:mt-0">
                   Most of it is free.
@@ -558,7 +558,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               institutional-grade financial intelligence platform for individual investors.
               It aggregates brokerage and bank accounts via Plaid (read-only), runs
               deterministic rule-based analysis over your full portfolio, and surfaces
-              actionable insights — tax-loss harvesting opportunities with wash-sale
+              actionable insights: tax-loss harvesting opportunities with wash-sale
               detection, concentration risk alerts, earnings exposure, and cash flow
               changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.
               Most features are free. Pro plans start at $4.99/month.
@@ -578,8 +578,8 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               mainEntity: [
                 { '@type': 'Question', name: 'What is Helm Terminal?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal is a free, institutional-grade financial intelligence platform for individual investors. It aggregates brokerage and bank accounts via Plaid, runs deterministic rule-based analysis over your portfolio, and surfaces actionable insights like tax-loss harvesting opportunities, concentration risk, earnings exposure, and cash flow changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.' } },
                 { '@type': 'Question', name: 'Is Helm Terminal free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Helm Terminal offers a free tier that includes AI stock analysis (5 per day), a full portfolio dashboard with Plaid sync, net worth tracking, cash flow overview, concentration risk analysis, sector allocation, and an actions inbox. Pro plans starting at $4.99/month add tax-loss harvesting with wash-sale detection, earnings exposure tracking, and unlimited analyses.' } },
-                { '@type': 'Question', name: 'How does Helm Terminal compare to Bloomberg Terminal?', acceptedAnswer: { '@type': 'Answer', text: 'Bloomberg Terminal costs approximately $24,000 per year and is designed for institutional traders. Helm Terminal provides a subset of similar capabilities — portfolio analysis, real-time market data, AI-powered stock analysis, and risk alerts — for individual investors, starting at $0.' } },
-                { '@type': 'Question', name: 'Is Helm Terminal safe to use with my financial accounts?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal connects to your accounts through Plaid, a bank-grade financial data provider used by Venmo, Coinbase, and thousands of other apps. The connection is read-only — Helm can never move money, execute trades, or modify your accounts. All data is encrypted in transit (TLS 1.3) and at rest, with row-level security in the database.' } },
+                { '@type': 'Question', name: 'How does Helm Terminal compare to Bloomberg Terminal?', acceptedAnswer: { '@type': 'Answer', text: 'Bloomberg Terminal costs approximately $24,000 per year and is designed for institutional traders. Helm Terminal provides a subset of similar capabilities (portfolio analysis, real-time market data, AI-powered stock analysis, and risk alerts) for individual investors, starting at $0.' } },
+                { '@type': 'Question', name: 'Is Helm Terminal safe to use with my financial accounts?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal connects to your accounts through Plaid, a bank-grade financial data provider used by Venmo, Coinbase, and thousands of other apps. The connection is read-only. Helm can never move money, execute trades, or modify your accounts. All data is encrypted in transit (TLS 1.3) and at rest, with row-level security in the database.' } },
                 { '@type': 'Question', name: 'What data sources does Helm Terminal use?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal uses Finnhub for real-time stock quotes, Polygon.io for historical prices, dividends, and splits, and Plaid for account aggregation. AI stock analysis pages use GPT-4o-mini for narrative interpretation of structured financial data, clearly labeled as AI-generated.' } },
               ],
             }),
@@ -596,7 +596,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                 &sect; 00
               </span>
               <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">
-                — Guides &amp; Tools
+                Guides &amp; Tools
               </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -641,7 +641,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                   &sect; 01
                 </span>
                 <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">
-                  — Inside
+                  Inside
                 </span>
               </div>
             </FadeIn>
@@ -655,7 +655,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                 </h2>
                 <p className="text-[14px] md:text-[15px] leading-relaxed text-[var(--color-text-muted)] max-w-md">
                   Everything you need to understand your portfolio, track your net worth,
-                  and make better decisions — without paying for a Bloomberg seat.
+                  and make better decisions without paying for a Bloomberg seat.
                 </p>
               </FadeIn>
 
@@ -700,7 +700,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                   &sect; 02
                 </span>
                 <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">
-                  — On method
+                  On method
                 </span>
               </div>
             </FadeIn>
@@ -741,7 +741,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
           <div className="max-w-7xl mx-auto px-5 md:px-6">
             <FadeIn>
               <div className="text-center mb-16">
-                <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">— Built for</span>
+                <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">Built for</span>
                 <h2 className="text-[clamp(28px,3.5vw,44px)] font-bold leading-[1.1] tracking-tight text-[var(--color-text-primary)]mt-4">
                   One platform. Every type of investor.
                 </h2>
@@ -786,7 +786,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                   &sect; 03
                 </span>
                 <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">
-                  — Pricing
+                  Pricing
                 </span>
               </div>
             </FadeIn>
