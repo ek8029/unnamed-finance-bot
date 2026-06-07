@@ -220,7 +220,7 @@ function InlineSignup() {
 }
 
 
-function ToolsDropdown({ items }: { items: { label: string; href: string; desc: string }[] }) {
+function ToolsDropdown({ label, items }: { label: string; items: { label: string; href: string; desc: string }[] }) {
   const [open, setOpen] = useState(false);
   const [focusIdx, setFocusIdx] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
@@ -257,11 +257,11 @@ function ToolsDropdown({ items }: { items: { label: string; href: string; desc: 
         aria-haspopup="true"
         className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors flex items-center gap-1"
       >
-        Tools
+        {label}
         <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div role="menu" aria-label="Tools" className="absolute top-full left-0 mt-2 w-[240px] bg-[var(--color-bg-base)] border border-[var(--color-border-base)] rounded-lg shadow-2xl py-2 z-50">
+        <div role="menu" aria-label={label} className="absolute top-full left-0 mt-2 w-[240px] bg-[var(--color-bg-base)] border border-[var(--color-border-base)] rounded-lg shadow-2xl py-2 z-50">
           {items.map((item, i) => (
             <Link
               key={item.label}
@@ -334,7 +334,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
           <div className="hidden md:flex items-center gap-8">
             {NAV_LINKS.map((link) => (
               'children' in link && link.children ? (
-                <ToolsDropdown key={link.label} items={link.children} />
+                <ToolsDropdown key={link.label} label={link.label} items={link.children} />
               ) : (
                 <Link
                   key={link.label}
