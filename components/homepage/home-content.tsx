@@ -482,7 +482,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               <div className="flex items-center gap-3 mb-6 md:mb-10">
                 <div className="w-6 md:w-8 h-px bg-[var(--color-gold)]" />
                 <span className="font-mono text-[9px] md:text-[10px] tracking-[0.2em] text-[var(--color-gold)] uppercase">
-                  The Free Bloomberg Alternative
+                  What moved. What matters. What&apos;s next.
                 </span>
               </div>
             </FadeIn>
@@ -578,7 +578,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
               mainEntity: [
                 { '@type': 'Question', name: 'What is Helm Terminal?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal is a free, institutional-grade financial intelligence platform for individual investors. It aggregates brokerage and bank accounts via Plaid, runs deterministic rule-based analysis over your portfolio, and surfaces actionable insights like tax-loss harvesting opportunities, concentration risk, earnings exposure, and cash flow changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.' } },
                 { '@type': 'Question', name: 'Is Helm Terminal free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Helm Terminal offers a free tier that includes AI stock analysis (5 per day), a full portfolio dashboard with Plaid sync, net worth tracking, cash flow overview, concentration risk analysis, sector allocation, and an actions inbox. Pro plans starting at $4.99/month add tax-loss harvesting with wash-sale detection, earnings exposure tracking, and unlimited analyses.' } },
-                { '@type': 'Question', name: 'How does Helm Terminal compare to Bloomberg Terminal?', acceptedAnswer: { '@type': 'Answer', text: 'Bloomberg Terminal costs approximately $24,000 per year and is designed for institutional traders. Helm Terminal provides a subset of similar capabilities (portfolio analysis, real-time market data, AI-powered stock analysis, and risk alerts) for individual investors, starting at $0.' } },
+                { '@type': 'Question', name: 'How is Helm Terminal different from portfolio trackers?', acceptedAnswer: { '@type': 'Answer', text: 'Most portfolio trackers show you what you own. Helm tells you what matters. It writes a personalized daily brief connecting market moves to your specific holdings, surfaces tax-loss harvesting opportunities with wash-sale detection, maps ETFs and leveraged products to their true underlying exposure, and alerts you to concentration risk. Portfolio intelligence, not just portfolio tracking.' } },
                 { '@type': 'Question', name: 'Is Helm Terminal safe to use with my financial accounts?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal connects to your accounts through Plaid, a bank-grade financial data provider used by Venmo, Coinbase, and thousands of other apps. The connection is read-only. Helm can never move money, execute trades, or modify your accounts. All data is encrypted in transit (TLS 1.3) and at rest, with row-level security in the database.' } },
                 { '@type': 'Question', name: 'What data sources does Helm Terminal use?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal uses Finnhub for real-time stock quotes, Polygon.io for historical prices, dividends, and splits, and Plaid for account aggregation. AI stock analysis pages use GPT-4o-mini for narrative interpretation of structured financial data, clearly labeled as AI-generated.' } },
               ],
@@ -655,7 +655,7 @@ export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAna
                 </h2>
                 <p className="text-[14px] md:text-[15px] leading-relaxed text-[var(--color-text-muted)] max-w-md">
                   Everything you need to understand your portfolio, track your net worth,
-                  and make better decisions without paying for a Bloomberg seat.
+                  and make better decisions. Portfolio intelligence, not just portfolio tracking.
                 </p>
               </FadeIn>
 

@@ -91,11 +91,11 @@ export default function AboutPage() {
 
           <div className="space-y-6 text-[15px] leading-relaxed text-[var(--color-text-secondary)]">
             <p>
-              Helm Terminal is an institutional-grade financial intelligence platform built
-              for individuals. It gives you the same portfolio visibility that hedge funds
-              have — position-level analysis, tax-loss harvesting signals, earnings exposure
-              tracking, and a daily brief that tells you what changed and why — without
-              the $24,000/year Bloomberg terminal price tag.
+              Helm Terminal is a financial intelligence platform built for people who
+              manage their own money. It connects to your brokerage accounts, analyzes
+              your full portfolio, and tells you what actually matters: concentration risk,
+              tax-loss harvesting opportunities, earnings exposure, and a personalized
+              daily brief that connects overnight market moves to your specific holdings.
             </p>
 
             <p>

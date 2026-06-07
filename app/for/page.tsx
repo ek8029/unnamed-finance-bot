@@ -42,7 +42,7 @@ const SEGMENTS = [
     title: 'Self-Directed Investors',
     subtitle: '500+ ticker analysis, portfolio tracking, tax intelligence',
     description:
-      'Bloomberg-grade analysis without the Bloomberg price. AI-powered verdicts, real-time data, and actionable insights.',
+      'AI-powered stock analysis, real-time data, and actionable insights for every position you own.',
   },
   {
     href: '/for/high-net-worth',
@@ -98,7 +98,7 @@ export default function ForHubPage() {
           </h1>
           <p className="text-[17px] text-[var(--color-text-secondary)] max-w-lg mx-auto">
             Helm adapts to your financial complexity. Whether you hold RSUs, manage angel portfolios,
-            or just want Bloomberg without the price tag.
+            or just want one place to see everything.
           </p>
         </div>
 

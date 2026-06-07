@@ -6,12 +6,12 @@ import { LegalFooter } from '@/components/legal-footer';
 import { Search, Wallet, LineChart, FileText } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Free Bloomberg Alternative for Self-Directed Investors | Helm Terminal',
+  title: 'Portfolio Intelligence for Self-Directed Investors | Helm Terminal',
   description:
-    'Bloomberg-grade stock analysis for free. AI-powered verdicts on 500+ tickers, portfolio tracking, tax intelligence, and a daily brief that tells you what matters.',
+    'AI-powered stock analysis on 500+ tickers, portfolio tracking, tax-loss harvesting, and a daily brief that tells you what matters. Free.',
   openGraph: {
-    title: 'Free Bloomberg Alternative for Self-Directed Investors | Helm Terminal',
-    description: 'Bloomberg-grade analysis. Free.',
+    title: 'Portfolio Intelligence for Self-Directed Investors | Helm Terminal',
+    description: 'What moved. What matters. What\'s next.',
     url: 'https://helmterminal.dev/for/investors',
     siteName: 'Helm Terminal',
     type: 'website',
@@ -93,8 +93,8 @@ export default function InvestorsPage() {
             For Self-Directed Investors
           </p>
           <h1 className="text-[28px] sm:text-[40px] font-bold text-[var(--color-text-primary)] leading-tight mb-4">
-            Bloomberg-grade analysis.<br className="hidden sm:block" />
-            Free.
+            Portfolio intelligence,<br className="hidden sm:block" />
+            not just tracking.
           </h1>
           <p className="text-[17px] text-[var(--color-text-secondary)] max-w-lg mx-auto">
             Stop paying for 5 different tools. Helm combines AI-powered stock analysis, portfolio tracking,

@@ -19,7 +19,7 @@ Helm is built for high-agency individuals managing $50K-$2M+ across multiple acc
 
 - **Software engineers** with RSU vesting schedules, equity concentration risk, and complex tax situations from stock compensation
 - **Founders** navigating equity events, liquidity planning, and multi-entity financial visibility
-- **Self-directed investors** who want institutional-quality portfolio analysis without paying for a Bloomberg terminal ($24,000/year)
+- **Self-directed investors** who want portfolio intelligence that tells them what matters, not just what they own
 - **High-net-worth individuals** who need multi-account aggregation, tax-loss harvesting at scale, and consolidated risk monitoring
 
 ## Core Features
