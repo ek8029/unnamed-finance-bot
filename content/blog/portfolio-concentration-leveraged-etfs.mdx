@@ -1,0 +1,118 @@
+---
+title: "Your Portfolio Is More Concentrated Than You Think"
+description: "Leveraged ETFs, single-stock products, and index funds hide your true exposure to individual companies. Here's the math most portfolio trackers get wrong."
+date: "2026-06-09"
+author: "Evan Kim"
+tags: ["portfolio management", "leveraged ETFs", "concentration risk", "single-stock ETFs", "portfolio analysis", "risk management"]
+published: true
+---
+
+# Your Portfolio Is More Concentrated Than You Think
+
+If you hold NVDA and NVDL, most portfolio trackers show you two separate positions. One stock, one ETF. Different tickers, different prices, clean and tidy.
+
+But NVDL is GraniteShares 2x Long NVDA. It's not a different bet. It's the same bet, leveraged. Your actual NVDA exposure is your direct shares plus twice your NVDL position. If NVDA drops 20%, you're not taking two independent hits. You're taking one amplified one.
+
+This is the concentration problem that almost nobody tracks correctly.
+
+## The Rise of Single-Stock ETFs
+
+The leveraged single-stock ETF market has exploded. GraniteShares, Direxion, Defiance, and T-Rex now offer 2x leveraged products on dozens of individual stocks:
+
+- **NVDL** (2x NVDA), **TSLL** (2x TSLA), **MSFL** (2x MSFT)
+- **AMDL** (2x AMD), **CONL** (2x COIN), **AMZU** (2x AMZN)
+- Plus inverse products: **NVD** (-2x NVDA), **TSDD** (-2x TSLA)
+
+Then there's YieldMax, offering covered call ETFs like TSLY, NVDY, and CONY that still carry approximately 1x exposure to the underlying stock while generating income.
+
+A portfolio holding NVDA + NVDL + NVDY has three separate tickers but one underlying risk: NVIDIA.
+
+## The Math Most Trackers Get Wrong
+
+Say your portfolio is $200K:
+
+- $20K in NVDA (10% allocation)
+- $15K in NVDL at 2x leverage (effective $30K NVDA exposure)
+- $8K in NVDY at 1x (effective $8K NVDA exposure)
+
+Your brokerage shows 10% + 7.5% + 4% = 21.5% across three "different" positions. Looks diversified enough.
+
+Your actual NVDA concentration: ($20K + $30K + $8K) / $200K = **29%** of your portfolio riding on one stock.
+
+Now add index ETFs. If you hold QQQ, NVDA is roughly 8% of that fund. $40K in QQQ adds another $3.2K of NVDA exposure. True concentration: **30.6%**.
+
+That's a position size that most risk management frameworks would flag as critical, but no standard portfolio tracker surfaces it.
+
+## It Gets Worse With Sector ETFs
+
+The same problem compounds across sectors. Hold SOXX (or 3x semiconductors via SOXL) plus SMH plus individual AMD and AVGO positions? Your semiconductor exposure could be 40%+ of your portfolio while appearing to be spread across "different" ETFs.
+
+Leveraged index ETFs multiply the problem. TQQQ gives you 3x exposure to the entire Nasdaq 100. Every stock in QQQ gets tripled. A modest TQQQ position can make your top-5 concentrations surge without you realizing it.
+
+## What "Look-Through" Analysis Actually Means
+
+Institutional investors call this "look-through" or "transparency" analysis. It means decomposing every fund, ETF, and derivative into its underlying constituents and aggregating the true exposure per security.
+
+The process:
+
+1. **Identify single-stock products.** Map to underlying + leverage multiplier. NVDL maps to NVDA at 2x. TSLY maps to TSLA at 1x.
+2. **Identify leveraged index ETFs.** Map to base ETF + leverage multiplier. TQQQ maps to QQQ at 3x. SOXL maps to SOXX at 3x.
+3. **Decompose each ETF into top holdings** with current weights. SPY is roughly 8% NVDA, 7% AAPL, 5% MSFT, etc.
+4. **Multiply.** Position value x constituent weight x leverage factor = effective exposure.
+5. **Aggregate** across all holdings per underlying security.
+
+The result is a true concentration map: how much of your portfolio's fate depends on each individual company, regardless of which wrapper you bought it through.
+
+## A Real Example
+
+Here's a portfolio I encountered recently. The investor held positions across two brokerage accounts:
+
+| Ticker | Type | Direct Allocation |
+|--------|------|-------------------|
+| NVDA | Stock | 3.4% |
+| NVDL | 2x Long NVDA | 0.5% |
+| MULL | 2x Long MU | 6.8% |
+| AMDL | 2x Long AMD | 4.5% |
+| SOXL | 3x Semiconductors | 0.8% |
+| AMD | Stock | 4.2% |
+| MU | Stock | 4.6% |
+
+At first glance: seven different positions, semiconductor-heavy but spread across multiple companies.
+
+After look-through:
+
+- **MU true exposure:** 4.6% direct + 13.6% via MULL (2x) = **18.2%**
+- **AMD true exposure:** 4.2% direct + 9.0% via AMDL (2x) + indirect via SOXL = **~14%**
+- **NVDA true exposure:** 3.4% direct + 1.0% via NVDL (2x) + indirect via SOXL = **~5.6%**
+
+MU, which appeared to be a modest 4.6% position, was actually the portfolio's largest single-name risk at 18.2%. On a bad day for Micron, this portfolio takes nearly a fifth of the hit.
+
+## Why This Matters for Tax-Loss Harvesting
+
+If you're harvesting losses on NVDA while still holding NVDL, you may have a wash sale problem. The IRS considers "substantially identical" securities when applying the 30-day wash sale rule (IRC Section 1091).
+
+While the IRS hasn't explicitly ruled on single-stock ETFs, the economic exposure is identical. An NVDL position is a leveraged bet on the same company. Aggressive harvesting without look-through awareness is a risk that could void your intended tax benefit.
+
+Another subtlety: retirement accounts. Losses in a Roth IRA or 401(k) can't be harvested. If you hold MU in your taxable account and MULL in your IRA, only the taxable MU position is harvestable. A tool that doesn't distinguish account types will suggest harvesting losses you can't actually use.
+
+## How to Check Your Own Concentration
+
+If you want to do this manually:
+
+1. List every position in every account.
+2. For each leveraged/single-stock product, multiply its value by the leverage factor and attribute it to the underlying.
+3. For each ETF, look up the top 10 holdings and their weights. Multiply your position size by each weight.
+4. Sum all exposures per underlying company.
+5. Divide by total portfolio value.
+
+It takes about an hour if you have a spreadsheet and 3-4 accounts. The problem is keeping it updated. Weights shift daily. New positions change the math. And most people don't do it at all.
+
+## The Bottom Line
+
+If your portfolio tracker shows you a list of tickers with individual allocations, you're seeing the packaging, not the exposure. The more leveraged and derivative-heavy your portfolio, the more misleading that view becomes.
+
+True portfolio intelligence requires look-through analysis. Your actual risk is determined by the underlying companies and sectors you're exposed to, not by how many different ticker symbols you used to get there.
+
+---
+
+*Evan Kim is the founder of [Helm Terminal](https://helmterminal.dev), a portfolio intelligence platform that includes look-through analysis for leveraged ETFs and single-stock products. He studied economics at Penn State and previously interned at a derivatives hedging desk.*
