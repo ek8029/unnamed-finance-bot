@@ -50,28 +50,87 @@ export async function GET() {
     // Calculate total portfolio value first (needed for allocation)
     const totalValue = holdings?.reduce((sum, h) => sum + Number(h.total_value || 0), 0) || 0;
 
-    // Transform data to match frontend expectations
-    const transformedHoldings = holdings?.map(holding => {
+    // Aggregate lots by ticker — multiple rows for the same ticker collapse into one
+    const tickerMap = new Map<string, {
+      ids: string[];
+      user_id: string;
+      ticker: string;
+      asset_name: string;
+      totalShares: number;
+      totalValue: number;
+      totalCostBasis: number;
+      current_price: number;
+      day_change_pct: number | null;
+      sector?: string;
+      asset_class?: string;
+    }>();
+
+    for (const holding of holdings || []) {
+      const ticker = holding.ticker;
+      const existing = tickerMap.get(ticker);
+      const shares = Number(holding.shares || 0);
       const value = Number(holding.total_value || 0);
+      const costBasis = holding.average_cost_basis ? Number(holding.average_cost_basis) * shares : 0;
+
+      if (existing) {
+        existing.ids.push(holding.id);
+        existing.totalShares += shares;
+        existing.totalValue += value;
+        existing.totalCostBasis += costBasis;
+        // Use latest price
+        if (Number(holding.current_price || 0) > 0) {
+          existing.current_price = Number(holding.current_price);
+        }
+        // Use day change from any lot that has it
+        if (holding.day_change_pct != null && existing.day_change_pct === null) {
+          existing.day_change_pct = Number(holding.day_change_pct);
+        }
+      } else {
+        tickerMap.set(ticker, {
+          ids: [holding.id],
+          user_id: holding.user_id,
+          ticker,
+          asset_name: holding.security?.security_name || ticker,
+          totalShares: shares,
+          totalValue: value,
+          totalCostBasis: costBasis,
+          current_price: Number(holding.current_price || 0),
+          day_change_pct: holding.day_change_pct != null ? Number(holding.day_change_pct) : null,
+          sector: holding.security?.sector,
+          asset_class: holding.security?.asset_class,
+        });
+      }
+    }
+
+    // Transform aggregated data to match frontend expectations
+    const transformedHoldings = [...tickerMap.values()].map(agg => {
+      const weightedAvgCost = agg.totalShares > 0 && agg.totalCostBasis > 0
+        ? agg.totalCostBasis / agg.totalShares
+        : null;
+      const unrealisedGain = weightedAvgCost
+        ? agg.totalValue - agg.totalCostBasis
+        : null;
+      const unrealisedPct = agg.totalCostBasis > 0
+        ? ((agg.totalValue - agg.totalCostBasis) / agg.totalCostBasis) * 100
+        : null;
+
       return {
-        id: holding.id,
-        user_id: holding.user_id,
-        ticker: holding.ticker,
-        asset_name: holding.security?.security_name || holding.ticker,
-        shares: holding.shares,
-        current_price: Number(holding.current_price || 0),
-        total_value: value,
-        day_change_percentage: holding.day_change_pct != null ? Number(holding.day_change_pct) * 100 : null,
-        portfolio_allocation: holding.portfolio_allocation_pct != null
-          ? Number(holding.portfolio_allocation_pct)
-          : (totalValue > 0 ? (value / totalValue) * 100 : 0),
-        sector: holding.security?.sector,
-        asset_class: holding.security?.asset_class,
-        cost_basis: holding.average_cost_basis,
-        unrealised_gain: holding.unrealised_gain_loss,
-        unrealised_pct: holding.unrealised_gain_loss_pct ? Number(holding.unrealised_gain_loss_pct) * 100 : null,
+        id: agg.ids[0],
+        user_id: agg.user_id,
+        ticker: agg.ticker,
+        asset_name: agg.asset_name,
+        shares: agg.totalShares,
+        current_price: agg.current_price,
+        total_value: agg.totalValue,
+        day_change_percentage: agg.day_change_pct != null ? agg.day_change_pct * 100 : null,
+        portfolio_allocation: totalValue > 0 ? (agg.totalValue / totalValue) * 100 : 0,
+        sector: agg.sector,
+        asset_class: agg.asset_class,
+        cost_basis: weightedAvgCost,
+        unrealised_gain: unrealisedGain,
+        unrealised_pct: unrealisedPct,
       };
-    });
+    }).sort((a, b) => b.total_value - a.total_value);
 
     const allocation = holdings?.reduce((acc, h) => {
       const sector = h.security?.sector || 'Other';

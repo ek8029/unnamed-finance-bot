@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Plus, Trash2, Loader2, Check } from 'lucide-react';
 
 interface HoldingRow {
@@ -29,24 +29,6 @@ export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortf
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  // Load existing manual holdings on mount
-  useEffect(() => {
-    fetch('/api/portfolio/manual')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.holdings?.length > 0) {
-          const existingRows: HoldingRow[] = data.holdings.map((h: { ticker: string; shares: number; costBasis: number | null }) => ({
-            id: crypto.randomUUID(),
-            ticker: h.ticker,
-            shares: String(h.shares),
-            costBasis: h.costBasis ? String(h.costBasis) : '',
-          }));
-          existingRows.push(createEmptyRow(), createEmptyRow());
-          setRows(existingRows);
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   const updateRow = useCallback((id: string, field: keyof HoldingRow, value: string) => {
     setRows(prev => prev.map(r => r.id === id ? { ...r, [field]: field === 'ticker' ? value.toUpperCase() : value } : r));
