@@ -84,21 +84,16 @@ export async function POST(req: NextRequest) {
       account = newAccount;
     }
 
-    // Delete existing manual holdings for this user (replace mode)
-    await serviceClient
-      .from('holdings')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('account_id', account.id);
-
-    // Process each holding: upsert security, fetch price, insert holding
+    // Append/update mode — no longer deletes existing holdings
     const results = [];
     let totalPortfolioValue = 0;
+    const incomingTickers = new Set<string>();
 
     for (const h of holdings) {
       const ticker = h.ticker.toUpperCase().trim();
       const shares = Number(h.shares);
       const costBasis = h.costBasis ? Number(h.costBasis) : null;
+      incomingTickers.add(ticker);
 
       // Fetch live quote — retry up to 3 times with increasing delay
       let currentPrice = 0;
@@ -147,41 +142,88 @@ export async function POST(req: NextRequest) {
 
       totalPortfolioValue += totalValue;
 
-      const { error: holdingError } = await serviceClient
+      // Check if this ticker already exists in manual account
+      const { data: existing } = await serviceClient
         .from('holdings')
-        .insert({
-          user_id: user.id,
-          account_id: account.id,
-          security_id: security.id,
-          ticker,
-          shares,
-          current_price: currentPrice,
-          total_value: totalValue,
-          average_cost_basis: costBasis,
-          total_cost_basis: totalCostBasis,
-          unrealised_gain_loss: unrealisedGainLoss,
-          unrealised_gain_loss_pct: unrealisedGainLossPct,
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('account_id', account.id)
+        .eq('ticker', ticker)
+        .maybeSingle();
 
-      if (holdingError) {
-        console.error(`[manual-portfolio] Failed to insert ${ticker}:`, holdingError);
-        results.push({ ticker, error: 'Failed to save' });
-        continue;
+      if (existing) {
+        const { error: updateError } = await serviceClient
+          .from('holdings')
+          .update({
+            security_id: security.id,
+            shares,
+            current_price: currentPrice,
+            total_value: totalValue,
+            average_cost_basis: costBasis,
+            total_cost_basis: totalCostBasis,
+            unrealised_gain_loss: unrealisedGainLoss,
+            unrealised_gain_loss_pct: unrealisedGainLossPct,
+          })
+          .eq('id', existing.id);
+
+        if (updateError) {
+          console.error(`[manual-portfolio] Failed to update ${ticker}:`, updateError);
+          results.push({ ticker, error: 'Failed to update' });
+          continue;
+        }
+      } else {
+        const { error: holdingError } = await serviceClient
+          .from('holdings')
+          .insert({
+            user_id: user.id,
+            account_id: account.id,
+            security_id: security.id,
+            ticker,
+            shares,
+            current_price: currentPrice,
+            total_value: totalValue,
+            average_cost_basis: costBasis,
+            total_cost_basis: totalCostBasis,
+            unrealised_gain_loss: unrealisedGainLoss,
+            unrealised_gain_loss_pct: unrealisedGainLossPct,
+          });
+
+        if (holdingError) {
+          console.error(`[manual-portfolio] Failed to insert ${ticker}:`, holdingError);
+          results.push({ ticker, error: 'Failed to save' });
+          continue;
+        }
       }
 
       results.push({ ticker, shares, currentPrice, totalValue, success: true });
     }
 
-    // Update portfolio_allocation_pct for all manual holdings
-    if (totalPortfolioValue > 0) {
-      for (const r of results) {
-        if (r.success && r.totalValue) {
+    // Include existing holdings in total for allocation calc
+    const { data: existingHoldings } = await serviceClient
+      .from('holdings')
+      .select('ticker, total_value')
+      .eq('user_id', user.id)
+      .eq('account_id', account.id);
+
+    if (existingHoldings) {
+      for (const eh of existingHoldings) {
+        if (!incomingTickers.has(eh.ticker)) {
+          totalPortfolioValue += Number(eh.total_value) || 0;
+        }
+      }
+    }
+
+    // Update portfolio_allocation_pct for ALL manual holdings (existing + new)
+    if (totalPortfolioValue > 0 && existingHoldings) {
+      for (const eh of existingHoldings) {
+        const val = Number(eh.total_value) || 0;
+        if (val > 0) {
           await serviceClient
             .from('holdings')
-            .update({ portfolio_allocation_pct: (r.totalValue / totalPortfolioValue) * 100 })
+            .update({ portfolio_allocation_pct: (val / totalPortfolioValue) * 100 })
             .eq('user_id', user.id)
             .eq('account_id', account.id)
-            .eq('ticker', r.ticker);
+            .eq('ticker', eh.ticker);
         }
       }
     }
