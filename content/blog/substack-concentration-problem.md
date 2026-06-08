@@ -86,4 +86,3 @@ The tool doesn't matter. Helm, a spreadsheet, back-of-napkin math. What matters 
 
 ---
 
-*Evan builds [Helm Terminal](https://helmterminal.dev) — portfolio intelligence for self-directed investors. Penn State. Writes about the math behind portfolio decisions.*
