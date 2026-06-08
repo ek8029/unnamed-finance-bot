@@ -208,26 +208,6 @@ export default async function BlogPost({ params }: PageProps) {
               />
             </div>
 
-            {/* ── Author Box ── */}
-            <div className="mt-12 p-5 rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)]">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-full bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center shrink-0">
-                  <span className="text-[var(--color-gold)] font-semibold text-sm">E</span>
-                </div>
-                <div>
-                  <Link href="/about" className="text-[14px] font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-gold)] transition-colors">
-                    {post.author || 'Evan Kim'} · Founder
-                  </Link>
-                  <p className="text-[13px] text-[var(--color-text-muted)] mt-1 leading-relaxed">
-                    Penn State economics graduate. Former derivatives hedging intern. Built Helm
-                    to give individual investors institutional-grade portfolio intelligence.{' '}
-                    <Link href="/about" className="text-[var(--color-gold)] hover:underline">
-                      More about Helm →
-                    </Link>
-                  </p>
-                </div>
-              </div>
-            </div>
 
             {/* ── Disclaimer ── */}
             <div className="mt-8 pt-6 border-t border-[var(--color-border-subtle)]">
