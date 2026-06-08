@@ -238,7 +238,7 @@ export default function DashboardLayout({
       {/* Backdrop overlay for mobile sidebar */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          className="fixed inset-0 z-30 bg-black/50 min-[1025px]:hidden"
           onClick={() => setSidebarOpen(false)}
           onKeyDown={(e) => { if (e.key === 'Escape') setSidebarOpen(false); }}
           role="presentation"
@@ -248,7 +248,7 @@ export default function DashboardLayout({
       <aside className={cn(
         "fixed inset-y-0 left-0 z-40 w-64 flex flex-col bg-[var(--color-bg-surface)] border-r border-[var(--color-border-base)]",
         "transition-transform duration-300",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        sidebarOpen ? "translate-x-0" : "-translate-x-full min-[1025px]:translate-x-0"
       )}>
 
         {/* ── Logo ── */}
@@ -491,13 +491,13 @@ export default function DashboardLayout({
           MAIN AREA (offset by sidebar width)
           ═══════════════════════════════════════════════ */}
       <div className={cn(
-        "ml-0 md:ml-64 flex flex-col flex-1 min-w-0",
+        "ml-0 min-[1025px]:ml-64 flex flex-col flex-1 min-w-0",
         isChatPage ? "h-dvh overflow-hidden" : "min-h-dvh"
       )}>
 
         {/* ── Mobile Top Bar (hidden on wrapped) ── */}
         {!isWrappedPage && <div
-          className="sticky top-0 z-30 px-4 py-3 flex items-center justify-between md:hidden"
+          className="sticky top-0 z-30 px-4 py-3 flex items-center justify-between min-[1025px]:hidden"
           style={{
             background: 'rgba(10,10,10,0.78)',
             backdropFilter: 'blur(20px) saturate(1.4)',
@@ -505,25 +505,24 @@ export default function DashboardLayout({
             borderBottom: '1px solid rgba(255,255,255,0.06)',
           }}
         >
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="grid place-items-center min-w-[44px] min-h-[44px] -m-2.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+            aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
+          >
+            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
           <div className="flex items-center gap-2.5">
             <HelmMark size={20} />
             <span className="text-[13px] font-bold tracking-tight uppercase">
               Helm
             </span>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="grid place-items-center min-w-[44px] min-h-[44px] -m-2.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-              aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
-            >
-              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
+          <div className="w-[44px]" />
         </div>}
 
         {/* ── Glassmorphic Top Bar (desktop only) ── */}
-        <header className="shrink-0 glass-nav sticky top-0 z-30 hidden md:block">
+        <header className="shrink-0 glass-nav sticky top-0 z-30 hidden min-[1025px]:block">
           <div className="flex items-center justify-between px-6 py-3">
             <h1 className="text-sm font-semibold text-[var(--color-text-primary)] tracking-tight">
               {pageTitle}
@@ -617,7 +616,7 @@ export default function DashboardLayout({
 
         {/* Spacer for mobile bottom nav — nav grid (~56px) + safe area */}
         {!isWrappedPage && (
-          <div className="md:hidden shrink-0" style={{ height: 'calc(var(--mobile-nav-h, 56px) + env(safe-area-inset-bottom, 0px))' }} />
+          <div className="min-[1025px]:hidden shrink-0" style={{ height: 'calc(var(--mobile-nav-h, 56px) + env(safe-area-inset-bottom, 0px))' }} />
         )}
       </div>
 

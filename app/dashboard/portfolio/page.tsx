@@ -439,15 +439,14 @@ export default function PortfolioPage() {
           </div>
 
           {/* ---- 2. HEADLINE STATS ---- */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {/* Portfolio value -- spans 2 cols on lg */}
-            <div className="sm:col-span-2 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-4 sm:p-5">
+          <div className="space-y-3 sm:space-y-4">
+            {/* Portfolio value — always full width */}
+            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-4 sm:p-5">
               <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-1">
                 Portfolio value
               </span>
               <div className="flex items-baseline gap-3 flex-wrap">
-                <span className="font-mono tabular-nums font-semibold text-[var(--color-text-primary)] leading-none"
-                  style={{ fontSize: 'clamp(32px, 4vw, 52px)' }}>
+                <span className="font-mono tabular-nums font-semibold text-[var(--color-text-primary)] leading-none text-3xl sm:text-4xl lg:text-[52px]">
                   {formatCurrency(totalValue)}
                 </span>
                 <span className={`inline-flex items-center gap-1 font-mono text-sm tabular-nums ${
@@ -467,38 +466,39 @@ export default function PortfolioPage() {
               </span>
             </div>
 
-            {/* Unrealized P/L */}
-            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-4 sm:p-5">
-              <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-1">
-                Unrealized P/L
-              </span>
-              <span className={`block font-mono tabular-nums text-2xl font-semibold leading-tight ${
-                totalUnrealized >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-              }`}>
-                {totalUnrealized >= 0 ? '+' : ''}{formatCurrency(totalUnrealized)}
-              </span>
-              <span className={`block font-mono tabular-nums text-xs mt-1 ${
-                unrealizedPct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-              }`}>
-                {unrealizedPct >= 0 ? '+' : ''}{unrealizedPct.toFixed(2)}%
-              </span>
-            </div>
+            {/* Unrealized P/L + Day Change — side by side, each gets half */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-4 sm:p-5">
+                <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-1">
+                  Unrealized P/L
+                </span>
+                <span className={`block font-mono tabular-nums text-xl sm:text-2xl font-semibold leading-tight ${
+                  totalUnrealized >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                }`}>
+                  {totalUnrealized >= 0 ? '+' : ''}{formatCurrency(totalUnrealized)}
+                </span>
+                <span className={`block font-mono tabular-nums text-xs mt-1 ${
+                  unrealizedPct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                }`}>
+                  {unrealizedPct >= 0 ? '+' : ''}{unrealizedPct.toFixed(2)}%
+                </span>
+              </div>
 
-            {/* Day Change */}
-            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-4 sm:p-5">
-              <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-1">
-                Day Change
-              </span>
-              <span className={`block font-mono tabular-nums text-2xl font-semibold leading-tight ${
-                totalDayChange >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-              }`}>
-                {totalDayChange >= 0 ? '+' : ''}{formatCurrency(totalDayChange)}
-              </span>
-              <span className={`block font-mono tabular-nums text-xs mt-1 ${
-                dayChangePercentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-              }`}>
-                {dayChangePercentage >= 0 ? '+' : ''}{dayChangePercentage.toFixed(2)}%
-              </span>
+              <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-4 sm:p-5">
+                <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-1">
+                  Day Change
+                </span>
+                <span className={`block font-mono tabular-nums text-xl sm:text-2xl font-semibold leading-tight ${
+                  totalDayChange >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                }`}>
+                  {totalDayChange >= 0 ? '+' : ''}{formatCurrency(totalDayChange)}
+                </span>
+                <span className={`block font-mono tabular-nums text-xs mt-1 ${
+                  dayChangePercentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                }`}>
+                  {dayChangePercentage >= 0 ? '+' : ''}{dayChangePercentage.toFixed(2)}%
+                </span>
+              </div>
             </div>
           </div>
 
@@ -552,12 +552,12 @@ export default function PortfolioPage() {
           {/* ---- 4. POSITIONS ---- */}
 
           {/* ── Mobile: Card view ── */}
-          <div className="md:hidden space-y-4">
+          <div className="lg:hidden space-y-4">
 
             {/* ── Mobile Value Header ── */}
             <div className="px-1">
               <div className="flex items-baseline gap-1">
-                <span className="text-[26px] sm:text-[34px] font-bold tabular-nums text-[var(--color-text-primary)] leading-none">
+                <span className="text-[20px] sm:text-[34px] font-bold tabular-nums text-[var(--color-text-primary)] leading-none">
                   {formatCurrency(totalValue).replace(/\.\d+$/, '')}
                 </span>
                 <span className="text-[16px] sm:text-[20px] text-[var(--color-text-muted)] tabular-nums leading-none">
@@ -731,7 +731,7 @@ export default function PortfolioPage() {
           </div>
 
           {/* ── Desktop: Table view ── */}
-          <div className="hidden md:block border border-[var(--color-border-base)] rounded-lg overflow-hidden bg-[var(--color-bg-surface)]">
+          <div className="hidden lg:block border border-[var(--color-border-base)] rounded-lg overflow-hidden bg-[var(--color-bg-surface)]">
             {/* Table header bar */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
               <div className="flex items-center gap-3">
@@ -1591,22 +1591,22 @@ function TrueExposureSection({ lookthrough, open, onToggle, formatCurrency }: {
       {open && (
         <div className="border-t border-[var(--color-border-subtle)]">
           <ScrollHint>
-            <table className="w-full min-w-[600px]">
+            <table className="w-full min-w-[500px]">
               <thead>
                 <tr className="bg-[var(--color-bg-elevated)]/60">
-                  <th className="text-left pl-5 pr-2 py-2.5">
+                  <th className="text-left pl-4 pr-1 py-2 w-[70px]">
                     <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">Ticker</span>
                   </th>
-                  <th className="text-right px-2 py-2.5">
+                  <th className="text-right px-1 py-2 w-[72px]">
                     <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">Direct %</span>
                   </th>
-                  <th className="text-right px-2 py-2.5">
+                  <th className="text-right px-1 py-2 w-[72px]">
                     <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">Indirect %</span>
                   </th>
-                  <th className="text-right px-2 py-2.5">
+                  <th className="text-right px-1 py-2 w-[68px]">
                     <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">Total %</span>
                   </th>
-                  <th className="text-left pl-2 pr-5 py-2.5">
+                  <th className="text-left pl-2 pr-4 py-2">
                     <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">Sources</span>
                   </th>
                 </tr>
@@ -1625,25 +1625,25 @@ function TrueExposureSection({ lookthrough, open, onToggle, formatCurrency }: {
                         idx % 2 === 1 ? 'bg-[var(--color-bg-elevated)]/20' : ''
                       }`}
                     >
-                      <td className="pl-5 pr-2 py-2.5">
+                      <td className="pl-4 pr-1 py-2">
                         <span className="font-mono text-sm font-semibold text-[var(--color-gold)]">{entry.ticker}</span>
                       </td>
-                      <td className="px-2 py-2.5 text-right">
+                      <td className="px-1 py-2 text-right">
                         <span className="font-mono text-sm tabular-nums text-[var(--color-text-secondary)]">
                           {entry.directWeight > 0 ? `${entry.directWeight.toFixed(2)}%` : '--'}
                         </span>
                       </td>
-                      <td className="px-2 py-2.5 text-right">
+                      <td className="px-1 py-2 text-right">
                         <span className="font-mono text-sm tabular-nums text-[var(--color-text-secondary)]">
                           {entry.indirectWeight > 0 ? `${entry.indirectWeight.toFixed(2)}%` : '--'}
                         </span>
                       </td>
-                      <td className="px-2 py-2.5 text-right">
+                      <td className="px-1 py-2 text-right">
                         <span className={`font-mono text-sm tabular-nums font-medium ${totalColor}`}>
                           {entry.totalWeight.toFixed(2)}%
                         </span>
                       </td>
-                      <td className="pl-2 pr-5 py-2.5">
+                      <td className="pl-2 pr-4 py-2">
                         <span className="font-mono text-[11px] text-[var(--color-text-muted)] truncate block max-w-[200px]">
                           {entry.sources.join(', ')}
                         </span>

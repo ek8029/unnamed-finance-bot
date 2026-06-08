@@ -788,3 +788,43 @@ html.screen-reader-optimized .sr-only {
   color: var(--color-text-primary);
   font-weight: 600;
 }
+
+/* ── Homepage keyframes ── */
+@keyframes tape-scroll {
+  to { transform: translateX(-33.33%); }
+}
+.animate-tape-scroll {
+  animation: tape-scroll 60s linear infinite;
+}
+@keyframes scenePop {
+  from { transform: scale(0.97); }
+  to { transform: scale(1); }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes riseUp {
+  from { transform: translateY(16px); }
+  to { transform: none; }
+}
+@keyframes cue {
+  0% { top: -50%; }
+  60%, 100% { top: 100%; }
+}
+
+/* ── Focus visible (a11y) ── */
+a:focus-visible, button:focus-visible {
+  outline: 1px solid var(--color-gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
