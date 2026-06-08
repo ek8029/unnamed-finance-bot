@@ -2,20 +2,18 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { ChevronDown, Shield, Lock, Activity } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { ArrowRight, Search, Loader2, Check, ChevronDown } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
+import { InteractiveGrid, FadeIn } from '@/app/landing-effects';
+import { HeroAnalysisDemo } from './hero-analysis-demo';
 import type { DemoAnalysis } from '@/lib/demo-tickers';
 import type { TickerTapeItem } from '@/lib/ticker-tape';
 
-/* ─── Props ─────────────────────────────────────────────────────────────── */
+/* ─── Static data ───────────────────────────────────────────────────────── */
 
-interface HomeContentProps {
-  demoAnalyses: DemoAnalysis[];
-  tickerTape: TickerTapeItem[];
-}
-
-/* ─── Nav links ─────────────────────────────────────────────────────────── */
+const TICKER_CHIPS = ['AAPL', 'NVDA', 'TSLA', 'GOOGL', 'AMZN', 'META', 'MSFT'];
 
 const NAV_LINKS = [
   { label: 'Analyze', href: '/analyze' },
@@ -33,143 +31,200 @@ const NAV_LINKS = [
   ]},
 ];
 
-/* ─── Pricing tiers ─────────────────────────────────────────────────────── */
-
-const PRICING_TIERS = [
+const TERMINAL_FEATURES = [
   {
-    name: 'Free',
-    price: '$0',
-    sub: 'Forever, no card',
-    features: ['Full terminal access', 'AI analysis, any US ticker', 'Connected brokerages', 'Daily brief', 'Actions inbox'],
-    cta: 'Start free',
-    featured: false,
+    num: '01',
+    title: 'Connected portfolio',
+    desc: 'Link every brokerage and bank via Plaid. Positions, balances, and transactions sync automatically.',
   },
   {
-    name: 'Founding Member',
-    price: '$4.99',
-    priceSuffix: '/mo',
-    sub: 'Locked forever, 50 spots',
-    features: ['Everything in Free', 'Tax-loss harvesting', 'Earnings exposure', 'Annual Wrapped', 'Founding badge'],
-    cta: 'Claim founding rate',
-    featured: true,
-    chip: 'Limited',
+    num: '02',
+    title: 'AI analysis, any US ticker',
+    desc: 'Institutional-grade analysis on any NYSE or NASDAQ stock. Valuation, technicals, sentiment, risk -- one command.',
   },
   {
-    name: 'Pro Monthly',
-    price: '$14.99',
-    priceSuffix: '/mo',
-    sub: 'Cancel anytime',
-    features: ['Everything in Free', 'Tax-loss harvesting', 'Earnings exposure', 'Annual Wrapped', 'Priority queue'],
-    cta: 'Start monthly',
-    featured: false,
+    num: '03',
+    title: 'Daily brief',
+    desc: 'A morning briefing that tells you what changed overnight: earnings exposure, dividend dates, allocation drift.',
   },
   {
-    name: 'Pro Annual',
-    price: '$119',
-    priceSuffix: '/yr',
-    sub: '$9.92/mo, save 34%',
-    features: ['Everything in Monthly', '2 months free', 'Locked annual rate', 'Early beta access', 'Priority support'],
-    cta: 'Go Pro',
-    featured: false,
+    num: '04',
+    title: 'Actions inbox',
+    desc: 'Tax-loss harvesting opportunities, rebalancing signals, and concentration warnings surfaced automatically.',
   },
   {
-    name: 'Lifetime',
-    price: '$249',
-    sub: 'One-time, never billed again',
-    features: ['All Pro, forever', 'Founding-member badge', 'Direct line to the team', 'Early access to tools', 'Never billed again'],
-    cta: 'Claim a seat',
-    featured: false,
+    num: '05',
+    title: 'Net worth across accounts',
+    desc: 'Aggregate view across every account. Positions, cash, credit -- one number, one dashboard.',
   },
 ];
 
-/* ─── Feature showcases ─────────────────────────────────────────────────── */
-
-const SHOWCASES = [
-  {
-    kicker: 'Portfolio · True exposure',
-    title: 'See what you actually own, through every ETF.',
-    titleEm: null as string | null,
-    titleEnd: '',
-    desc: "Your brokerage shows tickers. Helm shows real exposure: it looks through SPY and VTI so you know you're 7% AAPL even when you never bought a share directly.",
-    list: ['Direct + indirect exposure for every position', 'Harvestable losses surfaced automatically', '71 positions across 8 sectors, reconciled nightly'],
-    img: '/product/portfolio.png',
-    url: 'helmterminal.dev/portfolio',
-    alt: 'Portfolio true exposure view',
-    reverse: false,
-  },
-  {
-    kicker: 'Daily Brief · The Current',
-    title: 'A morning brief written about ',
-    titleEm: 'your' as string | null,
-    titleEnd: ' portfolio.',
-    desc: "Not a generic newsfeed. Every morning Helm explains what moved your positions overnight, what's trailing the market, and what to watch, in plain English with the numbers attached.",
-    list: ['Personalized to your exact holdings', 'Market movers, sector heat, catalysts ahead', 'AI digest with sources, labeled and never hidden'],
-    img: '/product/brief.png',
-    url: 'helmterminal.dev/brief',
-    alt: 'Daily Brief intelligence digest',
-    reverse: true,
-  },
-  {
-    kicker: 'Actions · Ranked by dollar impact',
-    title: "An inbox of decisions, sorted by what they're worth.",
-    titleEm: null as string | null,
-    titleEnd: '',
-    desc: 'Idle cash, concentration risk, tax-loss opportunities, wash-sale warnings, each with the dollar figure attached and the reasoning shown. Triage your money like email.',
-    list: ['$960 in tax savings, surfaced before you\'d notice', 'Wash-sale risk flagged with IRC citations', 'High / medium / low, never a wall of noise'],
-    img: '/product/actions.png',
-    url: 'helmterminal.dev/actions',
-    alt: 'Actions inbox ranked by dollar impact',
-    reverse: false,
-  },
+const FREE_FEATURES = [
+  'Link up to 3 accounts',
+  'AI analysis, 5 per day',
+  'Daily brief',
+  'Actions inbox',
+  'Net worth dashboard',
+  'Portfolio allocation view',
 ];
 
-/* ─── Utility: count-up animation ───────────────────────────────────────── */
+const PRO_FEATURES = [
+  'Unlimited accounts',
+  'Unlimited AI analyses',
+  'Priority data refresh',
+  'Earnings calendar',
+  'Dividend tracker',
+  'Tax-loss harvesting engine',
+  'Concentration alerts',
+  'CSV / PDF export',
+];
 
-function useCountUp(target: number, inView: boolean, duration = 1300) {
-  const [value, setValue] = useState(0);
-  const rafRef = useRef<number>(0);
+const LIFETIME_FEATURES = [
+  'Everything in Pro',
+  'Lifetime access, one payment',
+  'Locked-in pricing forever',
+  'Early access to new features',
+  'Priority support',
+];
 
-  useEffect(() => {
-    if (!inView) return;
-    const t0 = performance.now();
-    function tick(now: number) {
-      const t = Math.min(1, (now - t0) / duration);
-      const e = 1 - Math.pow(1 - t, 3);
-      setValue(Math.round(target * e));
-      if (t < 1) rafRef.current = requestAnimationFrame(tick);
+const FOOTER_PRODUCT = [
+  { label: 'Dashboard', href: '/dashboard' },
+  { label: 'AI Analysis', href: '/analyze' },
+  { label: 'Pricing', href: '/pricing' },
+  { label: 'Security', href: '/security' },
+  { label: 'For Engineers', href: '/for/engineers' },
+  { label: 'For Founders', href: '/for/founders' },
+  { label: 'For Investors', href: '/for/investors' },
+  { label: 'For HNW', href: '/for/high-net-worth' },
+];
+
+const FOOTER_TOOLS = [
+  { label: 'Stock Analyzer', href: '/analyze' },
+  { label: 'Stock Comparison', href: '/compare' },
+  { label: 'TLH Calculator', href: '/tools/tlh-calculator' },
+  { label: 'RSU Calculator', href: '/tools/rsu-calculator' },
+  { label: 'Portfolio Wrapped', href: '/wrapped' },
+];
+
+const FOOTER_COMPANY = [
+  { label: 'About', href: '/about' },
+  { label: 'Twitter / X', href: 'https://x.com/helmterminal' },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/company/helmfintech' },
+  { label: 'Blog', href: '/blog' },
+  { label: 'Contact', href: '/contact' },
+];
+
+const FOOTER_LEGAL = [
+  { label: 'Privacy Policy', href: '/privacy' },
+  { label: 'Terms of Service', href: '/terms' },
+  { label: 'Disclaimer', href: '/disclaimer' },
+];
+
+/* ─── Animation configs ─────────────────────────────────────────────────── */
+
+const sectionReveal = {
+  initial: { opacity: 0, y: 48 } as const,
+  whileInView: { opacity: 1, y: 0 } as const,
+  viewport: { once: true, amount: 0.15 as const },
+  transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as const },
+};
+
+/* ─── Inline HeroSearch ─────────────────────────────────────────────────── */
+
+function HeroSearch() {
+  const router = useRouter();
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const ticker = query.trim().toUpperCase();
+    if (!ticker) return;
+    setLoading(true);
+    router.push(`/analyze/${ticker}`);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col md:flex-row md:items-stretch w-full max-w-md gap-2 md:gap-0">
+      <div className="relative flex-1">
+        <Search className="absolute left-4 md:left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value.toUpperCase())}
+          placeholder="Enter ticker..."
+          className="w-full h-12 md:h-11 pl-11 md:pl-10 pr-4 md:pr-3 bg-[var(--color-bg-base)] border border-[var(--color-border-strong)] md:border-[var(--color-border-base)] rounded-xl md:rounded-l-md md:rounded-r-none font-mono text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)]/40 transition-colors"
+          maxLength={10}
+          autoComplete="off"
+          spellCheck={false}
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={loading || !query.trim()}
+        className="h-12 md:h-11 px-5 bg-[var(--color-gold)] text-black font-mono text-[12px] md:text-xs font-bold md:font-semibold tracking-[0.2em] md:tracking-wider uppercase rounded-xl md:rounded-l-none md:rounded-r-md hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+        style={{ boxShadow: '0 6px 18px rgba(230,185,77,0.25)' }}
+      >
+        {loading ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <>
+            ANALYZE
+            <ArrowRight className="w-3.5 h-3.5" />
+          </>
+        )}
+      </button>
+    </form>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HomeContent
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function InlineSignup() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = email.trim();
+    if (!trimmed) {
+      router.push('/signup');
+      return;
     }
-    rafRef.current = requestAnimationFrame(tick);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [inView, target, duration]);
+    setSubmitting(true);
+    router.push(`/signup?email=${encodeURIComponent(trimmed)}`);
+  };
 
-  return value;
+  return (
+    <form onSubmit={handleSubmit} className="flex gap-2">
+      <input
+        type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        placeholder="you@email.com"
+        className="flex-1 px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-lg text-[14px] text-[var(--color-text-primary)]placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors min-w-0"
+      />
+      <button
+        type="submit"
+        disabled={submitting}
+        className="px-5 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black text-[13px] font-bold rounded-lg transition-colors whitespace-nowrap disabled:opacity-50 flex items-center gap-1.5"
+      >
+        {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
+        Start free
+      </button>
+    </form>
+  );
 }
 
-/* ─── Utility: intersection observer reveal ─────────────────────────────── */
 
-function useReveal(threshold = 0.12) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setInView(true); io.unobserve(el); } },
-      { threshold }
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [threshold]);
-
-  return { ref, inView };
-}
-
-/* ─── Dropdown component ────────────────────────────────────────────────── */
-
-function NavDropdown({ label, items }: { label: string; items: { label: string; href: string; desc: string }[] }) {
+function ToolsDropdown({ label, items }: { label: string; items: { label: string; href: string; desc: string }[] }) {
   const [open, setOpen] = useState(false);
+  const [focusIdx, setFocusIdx] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -180,26 +235,45 @@ function NavDropdown({ label, items }: { label: string; items: { label: string; 
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
+  useEffect(() => {
+    if (open && focusIdx >= 0) itemRefs.current[focusIdx]?.focus();
+  }, [open, focusIdx]);
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Escape') { setOpen(false); setFocusIdx(-1); return; }
+    if (!open && (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown')) {
+      e.preventDefault(); setOpen(true); setFocusIdx(0); return;
+    }
+    if (!open) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); setFocusIdx((i) => Math.min(i + 1, items.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setFocusIdx((i) => Math.max(i - 1, 0)); }
+  }
+
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative" ref={ref} onKeyDown={handleKeyDown}>
       <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 font-[family-name:var(--font-mono)] text-[11px] tracking-[0.14em] uppercase text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+        onClick={() => { setOpen(!open); if (!open) setFocusIdx(0); }}
+        aria-expanded={open}
+        aria-haspopup="true"
+        className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors flex items-center gap-1"
       >
         {label}
         <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-2 w-[240px] bg-[var(--color-bg-base)] border border-[var(--color-border-base)] rounded-lg shadow-2xl py-2 z-50">
-          {items.map((item) => (
+        <div role="menu" aria-label={label} className="absolute top-full left-0 mt-2 w-[240px] bg-[var(--color-bg-base)] border border-[var(--color-border-base)] rounded-lg shadow-2xl py-2 z-50">
+          {items.map((item, i) => (
             <Link
               key={item.label}
               href={item.href}
+              ref={(el) => { itemRefs.current[i] = el; }}
+              role="menuitem"
+              tabIndex={focusIdx === i ? 0 : -1}
               onClick={() => setOpen(false)}
-              className="block px-4 py-2.5 hover:bg-[var(--color-bg-surface)] transition-colors"
+              className="block px-4 py-2.5 hover:bg-[var(--color-bg-elevated)] focus:bg-[var(--color-bg-elevated)] transition-colors outline-none"
             >
-              <div className="text-[13px] text-[var(--color-text-primary)]">{item.label}</div>
-              <div className="text-[11px] text-[var(--color-text-muted)]">{item.desc}</div>
+              <div className="text-[13px] text-[var(--color-text-secondary)] font-medium">{item.label}</div>
+              <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5">{item.desc}</div>
             </Link>
           ))}
         </div>
@@ -208,565 +282,790 @@ function NavDropdown({ label, items }: { label: string; items: { label: string; 
   );
 }
 
-/* ─── Browser frame component ───────────────────────────────────────────── */
-
-function BrowserFrame({ src, url, alt, className = '' }: { src: string; url: string; alt: string; className?: string }) {
-  return (
-    <div className={`${className}`}>
-      {/* MacBook bezel */}
-      <div className="bg-[#1a1a1a] rounded-t-[12px] border border-b-0 border-[#333] pt-[6px] px-[6px]">
-        {/* Notch */}
-        <div className="flex justify-center mb-[6px]">
-          <div className="w-[120px] max-sm:w-[80px] h-[18px] max-sm:h-[14px] bg-[#0e0e0e] rounded-b-[10px] max-sm:rounded-b-[8px] flex items-center justify-center">
-            <div className="w-[6px] h-[6px] max-sm:w-[4px] max-sm:h-[4px] rounded-full bg-[#2a2a2a]" />
-          </div>
-        </div>
-        {/* Screen area */}
-        <div className="rounded-t-[4px] overflow-hidden">
-          {/* Title bar */}
-          <div className="flex items-center gap-[7px] max-sm:gap-[5px] px-3.5 max-sm:px-2.5 py-[9px] max-sm:py-[7px] bg-[#131313] border-b border-[rgba(255,255,255,0.04)]">
-            <span className="w-[10px] h-[10px] max-sm:w-2 max-sm:h-2 rounded-full bg-[#ff5f57]" />
-            <span className="w-[10px] h-[10px] max-sm:w-2 max-sm:h-2 rounded-full bg-[#febc2e]" />
-            <span className="w-[10px] h-[10px] max-sm:w-2 max-sm:h-2 rounded-full bg-[#28c840]" />
-            <span className="ml-3 flex-1 font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-text-muted)] tracking-[0.04em] opacity-60 truncate">{url}</span>
-          </div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} alt={alt} className="w-full block" />
-        </div>
-      </div>
-      {/* Bottom chin */}
-      <div className="h-[10px] bg-[#1a1a1a] rounded-b-[12px] border border-t-0 border-[#333]" />
-    </div>
-  );
-}
-
-/* ─── Reveal wrapper ────────────────────────────────────────────────────── */
-
-function Reveal({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  const { ref, inView } = useReveal();
-  return (
-    <div
-      ref={ref}
-      style={inView ? { opacity: 1, transition: 'opacity 0.8s cubic-bezier(0.22,1,0.36,1), transform 0.8s cubic-bezier(0.22,1,0.36,1)' } : { opacity: 0, transform: 'translateY(26px)', transition: 'opacity 0.8s cubic-bezier(0.22,1,0.36,1), transform 0.8s cubic-bezier(0.22,1,0.36,1)' }}
-      className={className}
-    >
-      {children}
-    </div>
-  );
-}
-
-/* ─── Proof stat cell ───────────────────────────────────────────────────── */
-
-function ProofCell({ target, prefix = '', comma = false, label, gold = false }: { target: number; prefix?: string; comma?: boolean; label: string; gold?: boolean }) {
-  const { ref, inView } = useReveal();
-  const value = useCountUp(target, inView);
-  const formatted = comma ? value.toLocaleString('en-US') : value.toString();
-
-  return (
-    <div ref={ref} className="py-[46px] px-[44px] max-sm:px-0 max-sm:py-8 border-l border-[var(--color-border-base)] first:border-l-0 first:pl-0 max-md:border-l-0 max-md:pl-0 max-md:border-t max-md:first:border-t-0" style={inView ? { opacity: 1, transition: 'opacity 0.8s cubic-bezier(0.22,1,0.36,1), transform 0.8s cubic-bezier(0.22,1,0.36,1)' } : { opacity: 0, transform: 'translateY(26px)', transition: 'opacity 0.8s cubic-bezier(0.22,1,0.36,1), transform 0.8s cubic-bezier(0.22,1,0.36,1)' }}>
-      <div className={`text-[48px] max-sm:text-[36px] font-bold tracking-[-0.03em] leading-none tabular-nums ${gold ? 'text-[var(--color-gold)]' : 'text-[var(--color-text-primary)]'}`}>
-        {prefix}{formatted}
-      </div>
-      <div className="mt-4 text-sm text-[var(--color-text-muted)] leading-relaxed max-w-[280px]">{label}</div>
-    </div>
-  );
-}
-
-/* ─── Ticker tape ───────────────────────────────────────────────────────── */
-
-function TickerTape({ items }: { items: TickerTapeItem[] }) {
-  const trackRef = useRef<HTMLDivElement>(null);
+export default function HomeContent({ demoAnalyses, tickerTape = [] }: { demoAnalyses: DemoAnalysis[]; tickerTape?: TickerTapeItem[] }) {
+  const router = useRouter();
+  const { scrollY } = useScroll();
+  const navBg = useTransform(scrollY, [0, 80], [0, 1]);
+  const [navOpacity, setNavOpacity] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced || !trackRef.current) return;
+    return navBg.on('change', (v) => setNavOpacity(v));
+  }, [navBg]);
 
-    const interval = setInterval(() => {
-      const tapeItems = trackRef.current?.querySelectorAll('[data-tape-item]');
-      if (!tapeItems?.length) return;
-      const idx = Math.floor(Math.random() * (tapeItems.length / 2));
-      const targets = [tapeItems[idx], tapeItems[idx + tapeItems.length / 2]];
-      const up = Math.random() > 0.46;
-      targets.forEach((el) => {
-        if (!el) return;
-        el.classList.remove('animate-flash-up', 'animate-flash-dn');
-        void (el as HTMLElement).offsetWidth;
-        el.classList.add(up ? 'animate-flash-up' : 'animate-flash-dn');
-      });
-    }, 1800);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  if (!items.length) return null;
-
-  const doubled = [...items, ...items];
+  // Tripled ticker array for seamless CSS loop
+  const tickerItems = [...tickerTape, ...tickerTape, ...tickerTape];
 
   return (
-    <div className="tape-wrap overflow-hidden border-b border-[var(--color-border-subtle)] bg-[#070707]">
-      <div ref={trackRef} className="tape-track inline-flex animate-tape-scroll whitespace-nowrap">
-        {doubled.map((item, i) => (
-          <span
-            key={`${item.symbol}-${i}`}
-            data-tape-item
-            className="inline-flex gap-2.5 items-center px-[26px] h-10 border-r border-[var(--color-border-subtle)] font-[family-name:var(--font-mono)] text-xs"
-          >
-            <span className="text-[var(--color-gold)] font-bold tracking-[0.04em]">{item.symbol}</span>
-            <span className="text-[var(--color-text-primary)] tabular-nums">{item.price}</span>
-            <span className={`tabular-nums ${item.positive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}>
-              {item.change}
+    <>
+      {/* ── Ticker tape animation keyframes ── */}
+      <style>{`
+        @keyframes tickerScroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-33.33%); }
+        }
+      `}</style>
+
+      <InteractiveGrid />
+
+      {/* ════════════════════════════════════════════════════════════════════
+          NAV — Sticky glass
+          ════════════════════════════════════════════════════════════════════ */}
+      <nav className="fixed top-0 left-0 right-0 z-50">
+        <div
+          className="absolute inset-0 border-b border-[var(--color-border-subtle)] transition-opacity duration-300"
+          style={{
+            opacity: navOpacity,
+            backgroundColor: `rgba(10,10,10,${navOpacity * 0.78})`,
+            backdropFilter: `blur(20px) saturate(1.4)`,
+            WebkitBackdropFilter: `blur(20px) saturate(1.4)`,
+          }}
+        />
+        <div className="relative max-w-7xl mx-auto px-4 md:px-6 h-14 md:h-16 flex items-center justify-between">
+          {/* Left: Logo */}
+          <Link href="/" className="flex items-center gap-2 md:gap-2.5 group">
+            <HelmMark size={20} className="md:w-7 md:h-7" />
+            <span className="font-bold text-[13px] md:text-sm tracking-[0.12em] text-[var(--color-text-primary)] uppercase group-hover:text-[var(--color-text-primary)] transition-colors">
+              HELM
             </span>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   MAIN COMPONENT
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-export default function HomeContent({ tickerTape }: HomeContentProps) {
-  // Hero tilt removed — 3D transforms blur images on high-DPI screens
-
-  return (
-    <div className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)]">
-      {/* ── NAV ── */}
-      <nav className="sticky top-0 z-50 bg-[rgba(10,10,10,0.72)] backdrop-blur-[20px] backdrop-saturate-[1.4] border-b border-[var(--color-border-base)]">
-        <div className="max-w-[1240px] mx-auto px-10 max-sm:px-5 h-[62px] flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-[11px] font-bold tracking-[0.02em] uppercase text-[15px]">
-            <HelmMark size={24} />
-            Helm
           </Link>
 
-          <div className="hidden lg:flex items-center gap-[34px]">
-            {NAV_LINKS.map((link) =>
-              link.children ? (
-                <NavDropdown key={link.label} label={link.label} items={link.children} />
+          {/* Center: Nav links — hidden on mobile */}
+          <div className="hidden md:flex items-center gap-8">
+            {NAV_LINKS.map((link) => (
+              'children' in link && link.children ? (
+                <ToolsDropdown key={link.label} label={link.label} items={link.children} />
               ) : (
                 <Link
                   key={link.label}
                   href={link.href}
-                  className="font-[family-name:var(--font-mono)] text-[11px] tracking-[0.14em] uppercase text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+                  className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
                 >
                   {link.label}
                 </Link>
               )
-            )}
+            ))}
           </div>
 
-          <div className="flex items-center gap-[18px]">
-            <Link href="/login" className="hidden sm:block font-[family-name:var(--font-mono)] text-[11px] tracking-[0.14em] uppercase text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">
-              Log in
+          {/* Right: Auth actions */}
+          <div className="flex items-center gap-3 md:gap-4">
+            <Link
+              href="/signup"
+              className="font-mono text-[10px] md:text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+            >
+              Sign up
             </Link>
-            <Link href="/signup" className="inline-flex items-center gap-2 font-[family-name:var(--font-mono)] text-[11px] font-bold tracking-[0.16em] uppercase px-[22px] py-[13px] max-sm:px-4 max-sm:py-2.5 rounded-[5px] bg-[var(--color-gold)] text-black shadow-[0_6px_22px_rgba(230,185,77,0.22)] hover:bg-[var(--color-gold-hi)] hover:shadow-[0_10px_30px_rgba(230,185,77,0.34)] transition-all">
-              Open terminal &rarr;
+            <Link
+              href="/signup"
+              className="h-8 md:h-9 px-3.5 md:px-5 rounded-full bg-[var(--color-gold)] text-black font-mono text-[9px] md:text-[13px] font-bold md:font-semibold flex items-center gap-1 md:gap-1.5 hover:brightness-110 transition-all tracking-wide md:tracking-normal"
+            >
+              <span className="md:hidden">Open</span>
+              <span className="hidden md:inline">Open terminal</span>
+              <ArrowRight className="w-3 h-3 md:w-3.5 md:h-3.5" />
             </Link>
           </div>
+
+          {/* Mobile hamburger */}
+          <button
+            className="md:hidden ml-3 p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              {mobileMenuOpen ? (
+                <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              ) : (
+                <>
+                  <line x1="3" y1="6" x2="17" y2="6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1="3" y1="14" x2="17" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </>
+              )}
+            </svg>
+          </button>
         </div>
+
+        {/* Mobile dropdown */}
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="md:hidden border-b border-[var(--color-border-subtle)] bg-[#080808]/95 backdrop-blur-xl px-6 pb-4 pt-2"
+          >
+            {NAV_LINKS.map((link) => (
+              'children' in link && link.children ? (
+                <div key={link.label}>
+                  <span className="block py-2.5 text-sm text-[var(--color-text-muted)] font-medium">{link.label}</span>
+                  {link.children.map((child: { label: string; href: string; desc: string }) => (
+                    <Link
+                      key={child.label}
+                      href={child.href}
+                      className="block py-2 pl-4 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="block py-2.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {link.label}
+              </Link>
+              )
+            ))}
+            <Link
+              href="/signup"
+              className="block py-2.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Sign up
+            </Link>
+          </motion.div>
+        )}
       </nav>
 
-      {/* ── TICKER TAPE ── */}
-      <TickerTape items={tickerTape} />
-
-      {/* ── HERO ── */}
-      <header className="relative overflow-hidden pt-[104px] max-sm:pt-16 text-center">
-        {/* Decorative glow */}
-        <div className="absolute left-1/2 -top-20 -translate-x-1/2 w-[1100px] h-[620px] pointer-events-none bg-[radial-gradient(ellipse_50%_50%_at_50%_0%,rgba(230,185,77,0.10),transparent_62%)]" />
-        {/* Grid */}
-        <div className="absolute inset-0 pointer-events-none opacity-50 bg-[linear-gradient(var(--color-border-subtle)_1px,transparent_1px),linear-gradient(90deg,var(--color-border-subtle)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_70%_55%_at_50%_28%,#000_0%,transparent_75%)]" />
-
-        <div className="relative max-w-[1240px] mx-auto px-10 max-sm:px-5">
-          <h1 className="text-[clamp(56px,10vw,110px)] font-extrabold leading-[1.0] tracking-[-0.045em] max-w-[1100px] mx-auto">
-            What moved.<br />
-            <span>What matters.</span><br />
-            What&rsquo;s <em className="font-[family-name:var(--font-display-serif)] italic font-normal text-[var(--color-gold)]">next.</em>
-          </h1>
-
-          <p className="relative max-w-[600px] mx-auto mt-[30px] text-[19px] max-sm:text-base leading-relaxed text-[var(--color-text-muted)]">
-            Helm reads your real holdings and tells you what changed, why it matters, and what to do about it.{' '}
-            <b className="text-[var(--color-text-primary)] font-semibold">Portfolio intelligence, not just another tracker.</b>{' '}
-            Most of it is free.
-          </p>
-
-          <div className="relative flex gap-3.5 justify-center mt-9 flex-wrap">
-            <Link href="/signup" className="inline-flex items-center gap-2 font-[family-name:var(--font-mono)] text-[11px] font-bold tracking-[0.16em] uppercase px-[22px] py-[13px] rounded-[5px] bg-[var(--color-gold)] text-black shadow-[0_6px_22px_rgba(230,185,77,0.22)] hover:bg-[var(--color-gold-hi)] hover:shadow-[0_10px_30px_rgba(230,185,77,0.34)] transition-all">
-              Open the terminal &rarr;
-            </Link>
-            <Link href="/brief" className="inline-flex items-center gap-2 font-[family-name:var(--font-mono)] text-[11px] font-bold tracking-[0.16em] uppercase px-[22px] py-[13px] rounded-[5px] border border-[var(--color-border-strong)] text-[var(--color-text-primary)] hover:border-[rgba(255,255,255,0.28)] hover:bg-[rgba(255,255,255,0.03)] transition-all">
-              Read today&rsquo;s brief
-            </Link>
-          </div>
-
-          <div className="relative mt-[22px] font-[family-name:var(--font-mono)] text-[11px] tracking-[0.14em] uppercase text-[var(--color-text-muted)] flex gap-2.5 items-center justify-center max-sm:flex-wrap max-sm:text-center">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] shadow-[0_0_10px_var(--color-positive)] animate-pulse" />
-            Live market data &middot; Read-only brokerage links &middot; No card required
-          </div>
-        </div>
-
-        {/* Hero screenshot */}
-        <div className="relative w-[min(1340px,calc(100vw-48px))] mx-auto mt-16">
-          <Reveal>
-            <BrowserFrame
-              src="/product/overview.png"
-              url="helmterminal.dev/overview"
-              alt="Helm overview showing net worth across all accounts"
-              className="hero-frame"
-            />
-          </Reveal>
-        </div>
-      </header>
-
-      {/* ── TRUST STRIP ── */}
-      <div className="border-t border-b border-[var(--color-border-base)] mt-24 bg-[#080808]">
-        <div className="max-w-[1240px] mx-auto px-10 max-sm:px-5 flex items-center justify-between gap-[30px] max-sm:gap-4 py-[26px] flex-wrap max-sm:justify-center">
-          <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.2em] uppercase text-[var(--color-text-muted)] whitespace-nowrap">
-            Built on institutional-grade data
-          </div>
-          <div className="flex gap-[38px] max-sm:gap-4 flex-wrap items-center max-sm:justify-center">
-            {['Plaid', 'SEC EDGAR', 'Polygon', 'Finnhub', 'Nasdaq'].map((name) => (
-              <span key={name} className="text-[17px] max-sm:text-sm font-bold tracking-[-0.01em] text-[var(--color-text-muted)] opacity-85">{name}</span>
-            ))}
-          </div>
+      {/* ════════════════════════════════════════════════════════════════════
+          TICKER TAPE — directly under nav, hidden on mobile
+          ════════════════════════════════════════════════════════════════════ */}
+      <div
+        className="fixed top-14 md:top-16 left-0 right-0 z-40 bg-[#080808] border-b border-[var(--color-border-subtle)] overflow-hidden"
+        style={{ height: '30px' }}
+      >
+        <div
+          className="flex items-center h-full whitespace-nowrap"
+          style={{ animation: 'tickerScroll 60s linear infinite', width: 'max-content', willChange: 'transform' }}
+        >
+          {tickerItems.map((t, i) => (
+            <div
+              key={`${t.symbol}-${i}`}
+              className="flex items-center gap-2 px-5 font-mono"
+              style={{ fontSize: '11px' }}
+            >
+              <span className="text-[var(--color-gold)] font-semibold">{t.symbol}</span>
+              <span className="text-[var(--color-text-secondary)]">{t.price}</span>
+              <span className={t.positive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}>
+                {t.change}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* ── PROOF STATS ── */}
-      <div className="border-b border-[var(--color-border-base)] bg-[#080808]">
-        <div className="max-w-[1240px] mx-auto px-10 max-sm:px-5 grid grid-cols-1 md:grid-cols-3">
-          <ProofCell target={23378} prefix="$" comma gold label="In harvestable losses Helm found that your brokerage never flagged" />
-          <ProofCell target={11} label="Tickers you own through ETFs, surfaced as true exposure" />
-          <ProofCell target={71} label="Positions reconciled across 8 sectors, every night" />
-        </div>
-      </div>
+      {/* Spacer: push content below fixed nav + ticker */}
+      {/* Spacer: nav height (56px mobile / 64px desktop) + ticker (30px) */}
+      <div className="h-[calc(3.5rem+30px)] md:h-[calc(4rem+30px)]" />
 
-      {/* ── FEATURE SHOWCASES ── */}
-      <section className="py-[120px] max-sm:py-16 max-w-[1240px] mx-auto px-10 max-sm:px-5">
-        <Reveal>
-          <div className="max-w-[720px] mb-16">
-            <div className="flex items-center gap-3.5 mb-[22px] font-[family-name:var(--font-mono)] text-[11px] font-medium tracking-[0.22em] uppercase text-[var(--color-gold)]">
-              <span className="w-[26px] h-px bg-[var(--color-gold)]" />
-              &#167; 01 &middot; The terminal
-            </div>
-            <h2 className="text-[clamp(32px,4vw,48px)] font-bold tracking-[-0.035em] leading-[1.05]">
-              Everything an analyst does. <span className="text-[var(--color-text-muted)]">For your money.</span>
-            </h2>
-            <p className="text-[17px] leading-relaxed text-[var(--color-text-muted)] mt-5 max-w-[560px]">
-              Connect every account once. Helm reconciles it nightly and turns raw positions into decisions, not another dashboard you have to interpret yourself.
-            </p>
-          </div>
-        </Reveal>
+      <main className="relative z-10">
 
-        {SHOWCASES.map((s, i) => (
-          <Reveal key={s.kicker}>
-            <div className={`py-[76px] max-sm:py-10 ${i > 0 ? 'border-t border-[var(--color-border-subtle)]' : 'pt-2'}`}>
-              <div className={`max-w-[780px] mb-11 ${s.reverse ? 'ml-auto' : ''}`}>
-                <div className="font-[family-name:var(--font-mono)] text-[11px] tracking-[0.18em] uppercase text-[var(--color-gold)] mb-4">
-                  {s.kicker}
-                </div>
-                <h3 className="text-[clamp(24px,3vw,34px)] font-bold tracking-[-0.025em] leading-[1.1] mb-4">
-                  {s.titleEm ? (
-                    <>{s.title}<em className="font-[family-name:var(--font-display-serif)] italic font-normal text-[var(--color-gold)]">{s.titleEm}</em>{s.titleEnd}</>
-                  ) : s.title}
-                </h3>
-                <p className="text-base leading-relaxed text-[var(--color-text-muted)] max-w-[560px] mb-5">{s.desc}</p>
-                <ul className="flex flex-wrap gap-2.5 gap-x-7 list-none max-sm:flex-col max-sm:gap-2">
-                  {s.list.map((item) => (
-                    <li key={item} className="flex gap-2.5 text-[13.5px] text-[var(--color-text-muted)] items-center">
-                      <span className="text-[var(--color-gold)] font-[family-name:var(--font-mono)]">&rarr;</span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
+        {/* ══════════════════════════════════════════════════════════════════
+            HERO SECTION
+            ══════════════════════════════════════════════════════════════════ */}
+        <section className="relative pt-10 pb-10 md:pt-[120px] md:pb-[100px] overflow-hidden">
+          {/* Ambient glow blobs — hidden on mobile for perf */}
+          <div
+            className="absolute top-20 left-1/4 w-[600px] h-[600px] rounded-full opacity-[0.07] blur-[120px] pointer-events-none hidden md:block"
+            style={{ background: 'radial-gradient(circle, var(--color-gold), transparent 70%)' }}
+          />
+          <div
+            className="absolute bottom-10 right-1/4 w-[500px] h-[500px] rounded-full opacity-[0.05] blur-[100px] pointer-events-none hidden md:block"
+            style={{ background: 'radial-gradient(circle, #22c55e, transparent 70%)' }}
+          />
+
+          <div className="max-w-7xl mx-auto px-5 md:px-6">
+            {/* Eyebrow */}
+            <FadeIn delay={0}>
+              <div className="flex items-center gap-3 mb-6 md:mb-10">
+                <div className="w-6 md:w-8 h-px bg-[var(--color-gold)]" />
+                <span className="font-mono text-[9px] md:text-[10px] tracking-[0.2em] text-[var(--color-gold)] uppercase">
+                  What moved. What matters. What&apos;s next.
+                </span>
               </div>
-              <div className="w-[min(1380px,calc(100vw-40px))] max-sm:w-[calc(100vw-32px)] ml-[50%] -translate-x-1/2">
-                <BrowserFrame src={s.img} url={s.url} alt={s.alt} />
-              </div>
-            </div>
-          </Reveal>
-        ))}
-      </section>
+            </FadeIn>
 
-      {/* ── TRANSPARENCY PULL-QUOTE ── */}
-      <div className="border-t border-[var(--color-border-base)] bg-[#070707]">
-        <Reveal>
-          <div className="max-w-[980px] mx-auto py-[110px] max-sm:py-16 px-10 max-sm:px-5">
-            <p className="font-[family-name:var(--font-display-serif)] italic font-normal text-[clamp(28px,4.5vw,46px)] leading-[1.28] tracking-[-0.01em]">
-              &ldquo;No black boxes. Every verdict shows the model, the sources, the timestamp, and a{' '}
-              <span className="not-italic font-[family-name:var(--font-sans)] font-semibold text-[var(--color-gold)] text-[clamp(26px,4vw,42px)]">conviction score</span>{' '}
-              we&rsquo;re willing to be wrong about in public.&rdquo;
-            </p>
-            <div className="mt-[34px] font-[family-name:var(--font-mono)] text-[11px] tracking-[0.16em] uppercase text-[var(--color-text-muted)]">
-              Helm analysis protocol &middot; v3.2
-            </div>
-          </div>
-        </Reveal>
-      </div>
-
-      {/* ── TRANSPARENCY RECEIPT ── */}
-      <section className="py-[120px] max-sm:py-16 max-w-[1240px] mx-auto px-10 max-sm:px-5">
-        <Reveal>
-          <div className="max-w-[720px] mb-16">
-            <div className="flex items-center gap-3.5 mb-[22px] font-[family-name:var(--font-mono)] text-[11px] font-medium tracking-[0.22em] uppercase text-[var(--color-gold)]">
-              <span className="w-[26px] h-px bg-[var(--color-gold)]" />
-              &#167; 02 &middot; Transparency
-            </div>
-            <h2 className="text-[clamp(32px,4vw,48px)] font-bold tracking-[-0.035em] leading-[1.05]">
-              Every answer comes with <span className="text-[var(--color-text-muted)]">its receipts.</span>
-            </h2>
-            <p className="text-[17px] leading-relaxed text-[var(--color-text-muted)] mt-5 max-w-[560px]">
-              AI you can audit. Each take cites the filing, the data provider, and the moment it was generated, so you can check Helm&rsquo;s work, not just trust it.
-            </p>
-          </div>
-        </Reveal>
-
-        <Reveal>
-          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-[72px] max-sm:gap-10 items-center mt-[18px]">
-            {/* Verdict card */}
-            <div className="border border-[var(--color-border-base)] rounded-[10px] bg-[var(--color-bg-surface)] overflow-hidden">
-              <div className="flex items-center justify-between px-[22px] py-[18px] border-b border-[var(--color-border-base)] flex-wrap gap-2">
-                <span className="font-[family-name:var(--font-mono)] font-bold text-[var(--color-gold)] tracking-[0.06em] text-[15px]">NVDA &middot; NVIDIA</span>
-                <span className="font-[family-name:var(--font-mono)] text-[11px] tracking-[0.1em] text-[var(--color-text-muted)]">Conviction <b className="text-[var(--color-positive)]">High &middot; 82</b></span>
-              </div>
-              <div className="p-[22px] space-y-0">
-                {[
-                  { tag: 'Bull', text: 'Data-center revenue +154% YoY; Blackwell ramp ahead of guidance per Q1 FY26 call.' },
-                  { tag: 'Bear', text: 'Forward P/E 38x prices in flawless execution; customer concentration in top 4 hyperscalers.' },
-                  { tag: 'Risk', text: 'Export-control exposure flagged in latest 10-Q risk factors.' },
-                ].map((row) => (
-                  <div key={row.tag} className="flex gap-3 py-[11px] border-b border-[var(--color-border-subtle)] last:border-b-0 text-[13px] text-[var(--color-text-muted)] items-start">
-                    <span className="font-[family-name:var(--font-mono)] text-[9px] tracking-[0.14em] uppercase text-[var(--color-gold)] border border-[var(--color-gold-border)] px-[7px] py-[3px] rounded-[3px] whitespace-nowrap">{row.tag}</span>
-                    <span>{row.text}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="px-[22px] py-3.5 bg-[#0c0c0c] border-t border-[var(--color-border-base)] font-[family-name:var(--font-mono)] text-[10px] tracking-[0.08em] text-[var(--color-text-muted)] flex gap-2 flex-wrap">
-                <b className="text-[var(--color-text-secondary)]">Sources:</b> SEC 10-Q (filed May 28) &middot; Polygon EOD &middot; Finnhub estimates &middot; generated 2h ago
-              </div>
-            </div>
-
-            {/* Copy */}
-            <div className="max-w-[780px]">
-              <div className="font-[family-name:var(--font-mono)] text-[11px] tracking-[0.18em] uppercase text-[var(--color-gold)] mb-4">How it earns trust</div>
-              <h3 className="text-[clamp(24px,3vw,34px)] font-bold tracking-[-0.025em] leading-[1.1] mb-4">Cited, timestamped, falsifiable.</h3>
-              <p className="text-base leading-relaxed text-[var(--color-text-muted)] max-w-[480px] mb-4">
-                Helm never hands you a verdict without showing its work. Pull up any bull or bear case and you&rsquo;ll see the exact filing line, the data vendor, and a conviction score that goes on the record, refreshed when the facts change, not when it&rsquo;s convenient.
-              </p>
-              <ul className="flex flex-wrap gap-2.5 gap-x-7 list-none max-sm:flex-col max-sm:gap-2">
-                {['Primary sources linked inline (SEC, Polygon, Finnhub)', 'Staleness shown, so you always know how fresh it is', 'Not investment advice, and never pretends to be'].map((item) => (
-                  <li key={item} className="flex gap-2.5 text-[13.5px] text-[var(--color-text-muted)] items-center">
-                    <span className="text-[var(--color-gold)] font-[family-name:var(--font-mono)]">&rarr;</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </Reveal>
-      </section>
-
-      {/* ── SECURITY ── */}
-      <section className="py-[120px] max-sm:py-16 max-w-[1240px] mx-auto px-10 max-sm:px-5">
-        <Reveal>
-          <div className="max-w-[720px] mb-16">
-            <div className="flex items-center gap-3.5 mb-[22px] font-[family-name:var(--font-mono)] text-[11px] font-medium tracking-[0.22em] uppercase text-[var(--color-gold)]">
-              <span className="w-[26px] h-px bg-[var(--color-gold)]" />
-              &#167; 03 &middot; Security
-            </div>
-            <h2 className="text-[clamp(32px,4vw,48px)] font-bold tracking-[-0.035em] leading-[1.05]">
-              Read-only by design. <span className="text-[var(--color-text-muted)]">We can&rsquo;t touch your money.</span>
-            </h2>
-            <p className="text-[17px] leading-relaxed text-[var(--color-text-muted)] mt-5 max-w-[560px]">
-              Helm links to your brokerages through Plaid in read-only mode. We see balances and positions to analyze them, never the keys to move a dollar.
-            </p>
-          </div>
-        </Reveal>
-
-        <Reveal>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-            {[
-              { icon: Shield, title: 'Read-only connections', desc: 'Linked via Plaid with view-only scopes. No trading, no transfers, no withdrawal access, ever.' },
-              { icon: Lock, title: 'Encrypted end to end', desc: 'Credentials are tokenized by Plaid and never stored by Helm. Data is encrypted in transit and at rest.' },
-              { icon: Activity, title: 'Yours to delete', desc: 'Unlink any account in one click. Request full data deletion and it\'s gone, with no retention games.' },
-            ].map((card) => (
-              <div key={card.title} className="border border-[var(--color-border-base)] rounded-lg bg-[var(--color-bg-surface)] p-[30px] transition-colors hover:border-[var(--color-gold-border)]">
-                <div className="w-[38px] h-[38px] rounded-lg border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] flex items-center justify-center text-[var(--color-gold)] mb-5">
-                  <card.icon size={18} strokeWidth={1.8} />
-                </div>
-                <h4 className="text-base font-bold tracking-[-0.01em] mb-2.5">{card.title}</h4>
-                <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">{card.desc}</p>
-              </div>
-            ))}
-          </div>
-        </Reveal>
-      </section>
-
-      {/* ── PRICING ── */}
-      <section className="py-[120px] max-sm:py-16 max-w-[1240px] mx-auto px-10 max-sm:px-5">
-        <Reveal>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-10">
-            <div className="max-w-[720px]">
-              <div className="flex items-center gap-3.5 mb-[22px] font-[family-name:var(--font-mono)] text-[11px] font-medium tracking-[0.22em] uppercase text-[var(--color-gold)]">
-                <span className="w-[26px] h-px bg-[var(--color-gold)]" />
-                &#167; 04 &middot; Pricing
-              </div>
-              <h2 className="text-[clamp(32px,4vw,48px)] font-bold tracking-[-0.035em] leading-[1.05]">
-                Five ways in. <span className="text-[var(--color-text-muted)]">No upsell mazes.</span>
-              </h2>
-            </div>
-            <div className="font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-text-muted)] tracking-[0.08em] text-right max-w-[300px]">
-              Founding rate limited to 50 spots
-              <div className="h-0.5 bg-[var(--color-border-base)] mt-3 relative">
-                <span className="absolute inset-0 w-[60%] bg-[var(--color-gold)]" />
-              </div>
-            </div>
-          </div>
-        </Reveal>
-
-        <Reveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            {PRICING_TIERS.map((tier) => (
-              <div
-                key={tier.name}
-                className={`relative p-[30px] border rounded-lg transition-all hover:border-[var(--color-gold-border)] hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(0,0,0,0.5)] ${
-                  tier.featured
-                    ? 'border-[var(--color-gold-border)] bg-[linear-gradient(180deg,rgba(230,185,77,0.05),rgba(230,185,77,0.01))]'
-                    : 'border-[var(--color-border-base)] bg-[#0c0c0c]'
-                }`}
-              >
-                {tier.chip && (
-                  <span className="absolute -top-2.5 left-[30px] px-2.5 py-1 bg-[var(--color-gold)] text-black font-[family-name:var(--font-mono)] text-[9px] font-bold tracking-[0.18em] uppercase rounded-[3px]">
-                    {tier.chip}
-                  </span>
-                )}
-                <div className={`font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase mb-[18px] ${tier.featured ? 'text-[var(--color-gold)]' : 'text-[var(--color-text-muted)]'}`}>
-                  {tier.name}
-                </div>
-                <div className="text-[44px] max-sm:text-[36px] font-bold tracking-[-0.03em] leading-none">
-                  {tier.price}
-                  {tier.priceSuffix && <small className="text-[15px] text-[var(--color-text-muted)] font-medium">{tier.priceSuffix}</small>}
-                </div>
-                <div className="font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-text-muted)] mt-2 tracking-[0.06em]">{tier.sub}</div>
-                <ul className="mt-[22px] pt-[22px] border-t border-[var(--color-border-base)] flex flex-col gap-[11px]">
-                  {tier.features.map((f) => (
-                    <li key={f} className="flex gap-[9px] text-[13px] text-[var(--color-text-muted)] leading-snug">
-                      <span className="text-[var(--color-gold)] font-[family-name:var(--font-mono)]">&#10003;</span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/signup"
-                  className={`block w-full mt-6 py-3 rounded-[5px] font-[family-name:var(--font-mono)] text-[10px] font-bold tracking-[0.16em] uppercase text-center transition-all ${
-                    tier.featured
-                      ? 'bg-[var(--color-gold)] text-black border border-[var(--color-gold)] shadow-[0_8px_24px_rgba(230,185,77,0.25)] hover:bg-[var(--color-gold-hi)]'
-                      : 'bg-transparent text-[var(--color-text-primary)] border border-[var(--color-border-strong)] hover:border-[rgba(255,255,255,0.3)]'
-                  }`}
+            {/* Massive headline */}
+            <FadeIn delay={100}>
+              <h1 className="text-[48px] md:text-[clamp(48px,10vw,120px)] font-bold leading-[1.04] tracking-[-0.04em] text-[var(--color-text-primary)] mb-8 md:mb-16">
+                See what your<br />
+                brokerage app{' '}
+                <span
+                  className="text-[var(--color-gold)] italic"
+                  style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
                 >
-                  {tier.cta}
+                  won&apos;t
+                </span>
+                <br />
+                show you.
+              </h1>
+            </FadeIn>
+
+            {/* Two-column sub-hero */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-0">
+              {/* LEFT: Live label + search + ticker chips */}
+              <FadeIn delay={250} className="pr-0 lg:pr-12">
+                <div className="flex items-center gap-2 mb-5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="font-mono text-[11px] tracking-[0.15em] text-[var(--color-text-muted)] uppercase">
+                    Live &middot; Free for anyone
+                  </span>
+                </div>
+
+                <div className="mb-6">
+                  <HeroSearch />
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 md:gap-2 mt-4 md:mt-0">
+                  {TICKER_CHIPS.map((ticker) => (
+                    <button
+                      key={ticker}
+                      onClick={() => router.push(`/analyze/${ticker}`)}
+                      className="px-2.5 md:px-3.5 py-1.5 rounded-full border border-[var(--color-border-base)] text-[var(--color-text-muted)] font-mono text-[10px] md:text-xs hover:border-[var(--color-gold)]/30 hover:text-[var(--color-gold)] transition-all"
+                    >
+                      {ticker}
+                    </button>
+                  ))}
+                </div>
+              </FadeIn>
+
+              {/* RIGHT: Copy block with left border */}
+              <FadeIn delay={400} className="lg:border-l lg:border-[var(--color-border-base)] lg:pl-12">
+                <p className="text-[15px] leading-[1.55] text-[var(--color-text-muted)] md:text-[var(--color-text-secondary)] mb-4 max-w-[340px] md:max-w-none">
+                  AI stock analysis, tax-loss harvesting, earnings exposure, portfolio
+                  intelligence. The tools Wall Street pays $24,000 a year for.
+                </p>
+                <p className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-6 mt-3.5 md:mt-0">
+                  Most of it is free.
+                </p>
+
+                {/* Inline signup — email capture without leaving page */}
+                <InlineSignup />
+              </FadeIn>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════
+            DEFINITION BLOCK — citable by AI search engines
+            ══════════════════════════════════════════════════════════════════ */}
+        <section className="py-12 md:py-16 border-t border-[var(--color-border-subtle)]">
+          <div className="max-w-3xl mx-auto px-5 md:px-6">
+            <p className="text-[14px] md:text-[15px] leading-relaxed text-[var(--color-text-secondary)]" id="what-is-helm">
+              <strong className="text-[var(--color-text-primary)]">Helm Terminal</strong> is a free,
+              institutional-grade financial intelligence platform for individual investors.
+              It aggregates brokerage and bank accounts via Plaid (read-only), runs
+              deterministic rule-based analysis over your full portfolio, and surfaces
+              actionable insights: tax-loss harvesting opportunities with wash-sale
+              detection, concentration risk alerts, earnings exposure, and cash flow
+              changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.
+              Most features are free. Pro plans start at $4.99/month.
+            </p>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════
+            FAQPage schema — homepage only (removed from layout.tsx)
+            ══════════════════════════════════════════════════════════════════ */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'FAQPage',
+              mainEntity: [
+                { '@type': 'Question', name: 'What is Helm Terminal?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal is a free, institutional-grade financial intelligence platform for individual investors. It aggregates brokerage and bank accounts via Plaid, runs deterministic rule-based analysis over your portfolio, and surfaces actionable insights like tax-loss harvesting opportunities, concentration risk, earnings exposure, and cash flow changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.' } },
+                { '@type': 'Question', name: 'Is Helm Terminal free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Helm Terminal offers a free tier that includes AI stock analysis (5 per day), a full portfolio dashboard with Plaid sync, net worth tracking, cash flow overview, concentration risk analysis, sector allocation, and an actions inbox. Pro plans starting at $4.99/month add tax-loss harvesting with wash-sale detection, earnings exposure tracking, and unlimited analyses.' } },
+                { '@type': 'Question', name: 'How is Helm Terminal different from portfolio trackers?', acceptedAnswer: { '@type': 'Answer', text: 'Most portfolio trackers show you what you own. Helm tells you what matters. It writes a personalized daily brief connecting market moves to your specific holdings, surfaces tax-loss harvesting opportunities with wash-sale detection, maps ETFs and leveraged products to their true underlying exposure, and alerts you to concentration risk. Portfolio intelligence, not just portfolio tracking.' } },
+                { '@type': 'Question', name: 'Is Helm Terminal safe to use with my financial accounts?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal connects to your accounts through Plaid, a bank-grade financial data provider used by Venmo, Coinbase, and thousands of other apps. The connection is read-only. Helm can never move money, execute trades, or modify your accounts. All data is encrypted in transit (TLS 1.3) and at rest, with row-level security in the database.' } },
+                { '@type': 'Question', name: 'What data sources does Helm Terminal use?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal uses Finnhub for real-time stock quotes, Polygon.io for historical prices, dividends, and splits, and Plaid for account aggregation. AI stock analysis pages use GPT-4o-mini for narrative interpretation of structured financial data, clearly labeled as AI-generated.' } },
+              ],
+            }),
+          }}
+        />
+
+        {/* ══════════════════════════════════════════════════════════════════
+            FEATURED GUIDES — passes PageRank to blog posts
+            ══════════════════════════════════════════════════════════════════ */}
+        <section className="py-12 md:py-16 border-t border-[var(--color-border-subtle)]">
+          <div className="max-w-7xl mx-auto px-5 md:px-6">
+            <div className="flex items-center gap-3 mb-6 md:mb-8">
+              <span className="font-mono text-xs text-[var(--color-gold)] tracking-wider">
+                &sect; 00
+              </span>
+              <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">
+                Guides &amp; Tools
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { title: 'Bloomberg Terminal Alternatives', desc: 'Honest comparison of 7 tools for retail investors', href: '/blog/best-bloomberg-terminal-alternatives' },
+                { title: 'Tax-Loss Harvesting Guide', desc: 'Wash-sale rules, ETF swap pairs, worked examples', href: '/blog/tax-loss-harvesting-guide' },
+                { title: 'RSU Tax Strategies', desc: 'The withholding gap, vesting schedules, sell-to-cover', href: '/blog/rsu-tax-strategies' },
+                { title: 'TLH Calculator', desc: 'Estimate annual tax savings from loss harvesting', href: '/tools/tlh-calculator' },
+                { title: 'RSU Vesting Calculator', desc: 'Vesting timeline, tax liability, concentration risk', href: '/tools/rsu-calculator' },
+                { title: 'Earnings Concentration Risk', desc: 'When 40% of your portfolio reports in one week', href: '/blog/portfolio-earnings-concentration-risk' },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="group p-5 border border-[var(--color-border-subtle)] rounded-md hover:border-[var(--color-gold)]/20 transition-colors"
+                >
+                  <div className="text-[14px] font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors mb-1">
+                    {item.title}
+                  </div>
+                  <div className="text-[13px] text-[var(--color-text-muted)]">
+                    {item.desc}
+                  </div>
                 </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════
+            INSIDE THE TERMINAL — section 01
+            ══════════════════════════════════════════════════════════════════ */}
+        <motion.section
+          id="product"
+          className="py-16 md:py-32 border-t border-[var(--color-border-subtle)]"
+          {...sectionReveal}
+        >
+          <div className="max-w-7xl mx-auto px-5 md:px-6">
+            {/* Section eyebrow */}
+            <FadeIn>
+              <div className="flex items-center gap-3 mb-8 md:mb-16">
+                <span className="font-mono text-xs text-[var(--color-gold)] tracking-wider">
+                  &sect; 01
+                </span>
+                <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">
+                  Inside
+                </span>
               </div>
-            ))}
-          </div>
-        </Reveal>
-      </section>
+            </FadeIn>
 
-      {/* ── CLOSING CTA ── */}
-      <section className="relative text-center py-[140px] max-sm:py-20 border-t border-[var(--color-border-base)] overflow-hidden">
-        <div className="absolute left-1/2 -bottom-[200px] -translate-x-1/2 w-[1000px] h-[500px] bg-[radial-gradient(ellipse_50%_50%_at_50%_100%,rgba(230,185,77,0.10),transparent_65%)] pointer-events-none" />
-        <div className="relative max-w-[1240px] mx-auto px-10 max-sm:px-5">
-          <h2 className="text-[clamp(44px,6vw,72px)] font-bold tracking-[-0.04em] leading-[1.0]">
-            Take the <em className="font-[family-name:var(--font-display-serif)] italic font-normal text-[var(--color-gold)]">HELM.</em>
-          </h2>
-          <p className="mt-[22px] mx-auto max-w-[480px] text-[var(--color-text-muted)] text-[17px] leading-relaxed">
-            Link your first account in two minutes. See your real exposure, your first brief, and your first action. Free.
-          </p>
-          <div className="flex gap-3.5 justify-center mt-9 flex-wrap">
-            <Link href="/signup" className="inline-flex items-center gap-2 font-[family-name:var(--font-mono)] text-[11px] font-bold tracking-[0.16em] uppercase px-[22px] py-[13px] rounded-[5px] bg-[var(--color-gold)] text-black shadow-[0_6px_22px_rgba(230,185,77,0.22)] hover:bg-[var(--color-gold-hi)] hover:shadow-[0_10px_30px_rgba(230,185,77,0.34)] transition-all">
-              Open the terminal &rarr;
-            </Link>
-            <Link href="/analyze" className="inline-flex items-center gap-2 font-[family-name:var(--font-mono)] text-[11px] font-bold tracking-[0.16em] uppercase px-[22px] py-[13px] rounded-[5px] border border-[var(--color-border-strong)] text-[var(--color-text-primary)] hover:border-[rgba(255,255,255,0.28)] hover:bg-[rgba(255,255,255,0.03)] transition-all">
-              Analyze a ticker
-            </Link>
-          </div>
-        </div>
-      </section>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
+              {/* LEFT: Sticky headline + description */}
+              <FadeIn className="lg:sticky lg:top-32 lg:self-start">
+                <h2 className="text-[28px] md:text-[clamp(32px,4vw,52px)] font-bold leading-[1.1] tracking-tight text-[var(--color-text-primary)] mb-4 md:mb-6">
+                  The full terminal.<br />
+                  <span className="text-[var(--color-gold)]">Free.</span>
+                </h2>
+                <p className="text-[14px] md:text-[15px] leading-relaxed text-[var(--color-text-muted)] max-w-md">
+                  Everything you need to understand your portfolio, track your net worth,
+                  and make better decisions. Portfolio intelligence, not just portfolio tracking.
+                </p>
+              </FadeIn>
 
-      {/* ── FOOTER ── */}
-      <footer className="border-t border-[var(--color-border-base)] bg-[#070707] pt-16 pb-10">
-        <div className="max-w-[1240px] mx-auto px-10 max-sm:px-5">
-          <div className="grid grid-cols-2 max-sm:grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-12 max-sm:gap-8">
-            <div className="col-span-2 max-sm:col-span-1 lg:col-span-1">
-              <Link href="/" className="flex items-center gap-[11px] font-bold tracking-[0.02em] uppercase text-[15px]">
-                <HelmMark size={24} />
-                Helm
-              </Link>
-              <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed mt-[18px] max-w-[300px]">
-                Steer. Don&rsquo;t drift. Take the HELM.
+              {/* RIGHT: Numbered feature rows */}
+              <div className="space-y-0">
+                {TERMINAL_FEATURES.map((feature, idx) => (
+                  <FadeIn key={feature.num} delay={idx * 100}>
+                    <div className="group py-5 md:py-8 border-t border-[var(--color-border-subtle)] last:border-b cursor-default">
+                      <div className="grid grid-cols-[30px_1fr_16px] md:flex md:items-start gap-2 md:gap-5">
+                        <span className="font-mono text-[10px] md:text-sm text-[var(--color-gold)] mt-1 shrink-0 md:w-6">
+                          {feature.num}
+                        </span>
+                        <div className="flex-1">
+                          <h3 className="text-[17px] md:text-[clamp(18px,2vw,24px)] font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors mb-1 md:mb-2">
+                            {feature.title}
+                          </h3>
+                          <p className="text-[13px] md:text-sm text-[var(--color-text-muted)] leading-relaxed">
+                            {feature.desc}
+                          </p>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-gold)] group-hover:translate-x-1 transition-all mt-1 shrink-0" />
+                      </div>
+                    </div>
+                  </FadeIn>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ══════════════════════════════════════════════════════════════════
+            PULL QUOTE — section 02
+            ══════════════════════════════════════════════════════════════════ */}
+        <motion.section
+          className="bg-[#080808] border-y border-[var(--color-border-subtle)] py-16 md:py-32"
+          {...sectionReveal}
+        >
+          <div className="max-w-5xl mx-auto px-5 md:px-6">
+            <FadeIn>
+              <div className="flex items-center gap-3 mb-8 md:mb-16">
+                <span className="font-mono text-xs text-[var(--color-gold)] tracking-wider">
+                  &sect; 02
+                </span>
+                <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">
+                  On method
+                </span>
+              </div>
+            </FadeIn>
+
+            <FadeIn delay={150}>
+              <blockquote
+                className="text-[24px] md:text-[clamp(28px,5vw,56px)] leading-[1.15] tracking-tight mb-6 md:mb-10 italic text-[var(--color-text-primary)]"
+                style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}
+              >
+                No black boxes. Every analysis shows the model, the sources,
+                and the{' '}
+                <span className="not-italic font-semibold text-[var(--color-gold)]" style={{ fontFamily: 'inherit' }}>
+                  conviction score
+                </span>
+                . If we can&apos;t show our work, we don&apos;t
+                show the answer.
+              </blockquote>
+            </FadeIn>
+
+            <FadeIn delay={300}>
+              <div className="flex items-center gap-3 mt-6 md:mt-0">
+                <div className="w-8 h-px bg-white/20" />
+                <span className="font-mono text-[10px] md:text-xs text-[var(--color-text-muted)] tracking-[0.14em] md:tracking-wider uppercase">
+                  Helm design principle
+                </span>
+              </div>
+            </FadeIn>
+          </div>
+        </motion.section>
+
+        {/* ══════════════════════════════════════════════════════════════════
+            BUILT FOR — ICP segment selector
+            ══════════════════════════════════════════════════════════════════ */}
+        <motion.section
+          className="py-16 md:py-24 border-b border-[var(--color-border-subtle)]"
+          {...sectionReveal}
+        >
+          <div className="max-w-7xl mx-auto px-5 md:px-6">
+            <FadeIn>
+              <div className="text-center mb-16">
+                <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">Built for</span>
+                <h2 className="text-[clamp(28px,3.5vw,44px)] font-bold leading-[1.1] tracking-tight text-[var(--color-text-primary)]mt-4">
+                  One platform. Every type of investor.
+                </h2>
+              </div>
+            </FadeIn>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { title: 'Engineers', desc: 'RSU vesting, concentrated positions, multi-account chaos.', href: '/for/engineers', icon: '⌘' },
+                { title: 'Founders', desc: 'Equity events, angel checks, zero time to manage it all.', href: '/for/founders', icon: '◆' },
+                { title: 'Self-Directed', desc: '5 tools stitched together. One terminal to replace them.', href: '/for/investors', icon: '◈' },
+                { title: 'High Net Worth', desc: 'Your advisor charges 1% AUM. Helm charges $4.99/mo.', href: '/for/high-net-worth', icon: '◉' },
+              ].map((segment, i) => (
+                <FadeIn key={segment.title} delay={i * 80}>
+                  <Link
+                    href={segment.href}
+                    className="block p-6 rounded-lg border border-[var(--color-border-subtle)] bg-white/[0.02] hover:border-[var(--color-gold)]/30 hover:bg-[var(--color-gold)]/[0.03] transition-all group"
+                  >
+                    <span className="text-2xl mb-3 block">{segment.icon}</span>
+                    <h3 className="text-lg font-bold text-[var(--color-text-primary)]group-hover:text-[var(--color-gold)] transition-colors mb-2">{segment.title}</h3>
+                    <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">{segment.desc}</p>
+                    <span className="inline-block mt-4 text-xs font-mono text-[var(--color-gold)] tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">Learn more →</span>
+                  </Link>
+                </FadeIn>
+              ))}
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ══════════════════════════════════════════════════════════════════
+            PRICING — section 03
+            ══════════════════════════════════════════════════════════════════ */}
+        <motion.section
+          id="pricing"
+          className="py-16 md:py-32 border-b border-[var(--color-border-subtle)]"
+          {...sectionReveal}
+        >
+          <div className="max-w-7xl mx-auto px-5 md:px-6">
+            {/* Eyebrow */}
+            <FadeIn>
+              <div className="flex items-center gap-3 mb-8 md:mb-16">
+                <span className="font-mono text-xs text-[var(--color-gold)] tracking-wider">
+                  &sect; 03
+                </span>
+                <span className="font-mono text-xs text-[var(--color-text-muted)] tracking-wider">
+                  Pricing
+                </span>
+              </div>
+            </FadeIn>
+
+            {/* Header row: headline left, lifetime bar right */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-8 md:mb-16">
+              <FadeIn>
+                <h2 className="text-[clamp(32px,4vw,52px)] font-bold leading-[1.1] tracking-tight text-white">
+                  Three tiers.<br />
+                  No upsell mazes.
+                </h2>
+              </FadeIn>
+
+              <FadeIn delay={100} className="flex items-end">
+                <div className="w-full max-w-sm lg:ml-auto">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-mono text-[10px] md:text-xs text-[var(--color-text-muted)]">Lifetime seats</span>
+                    <span className="font-mono text-[10px] md:text-xs text-[var(--color-gold)]">147 / 200 claimed</span>
+                  </div>
+                  <div className="h-1 md:h-1.5 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[var(--color-gold)] rounded-full transition-all"
+                      style={{ width: '73.5%' }}
+                    />
+                  </div>
+                </div>
+              </FadeIn>
+            </div>
+
+            {/* Pricing cards — 1-col mobile, 2-col sm, 4-col lg */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" role="list" aria-label="Pricing plans">
+
+              {/* ── Free ── */}
+              <FadeIn delay={0}>
+                <div role="listitem" aria-label="Free plan" className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-[14px] md:rounded-md p-5 md:p-7 flex flex-col h-full">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">Free</h3>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl md:text-3xl font-bold text-white">$0</span>
+                    </div>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-1">Forever. No card required.</p>
+                  </div>
+                  <ul className="space-y-3 mb-8 flex-1">
+                    {FREE_FEATURES.map((f) => (
+                      <li key={f} className="flex items-start gap-2.5">
+                        <Check className="w-3.5 h-3.5 text-[var(--color-gold)] mt-0.5 shrink-0" />
+                        <span className="text-[12px] md:text-sm text-[var(--color-text-muted)]">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/signup"
+                    className="w-full h-10 border border-[var(--color-border-strong)] rounded-md text-sm text-white/70 hover:text-[var(--color-text-primary)] hover:border-white/20 transition-all flex items-center justify-center"
+                  >
+                    Start free
+                  </Link>
+                </div>
+              </FadeIn>
+
+              {/* ── Pro Monthly ── */}
+              <FadeIn delay={80}>
+                <div role="listitem" aria-label="Pro Monthly plan" className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-[14px] md:rounded-md p-5 md:p-7 flex flex-col h-full">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">Pro Monthly</h3>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl md:text-3xl font-bold text-white">$4.99</span>
+                      <span className="text-sm text-[var(--color-text-muted)]">/mo</span>
+                    </div>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-1">Cancel anytime.</p>
+                  </div>
+                  <ul className="space-y-3 mb-8 flex-1">
+                    {PRO_FEATURES.map((f) => (
+                      <li key={f} className="flex items-start gap-2.5">
+                        <Check className="w-3.5 h-3.5 text-[var(--color-gold)] mt-0.5 shrink-0" />
+                        <span className="text-[12px] md:text-sm text-[var(--color-text-muted)]">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/signup"
+                    className="w-full h-10 border border-[var(--color-border-strong)] rounded-md text-sm text-white/70 hover:text-[var(--color-text-primary)] hover:border-white/20 transition-all flex items-center justify-center"
+                  >
+                    Start monthly
+                  </Link>
+                </div>
+              </FadeIn>
+
+              {/* ── Pro Annual — FEATURED ── */}
+              <FadeIn delay={160}>
+                <div
+                  role="listitem"
+                  aria-label="Pro Annual plan — best value"
+                  className="border rounded-[14px] md:rounded-md p-5 md:p-7 flex flex-col h-full relative"
+                  style={{
+                    borderColor: 'rgba(230,185,77,0.35)',
+                    background: 'linear-gradient(180deg, rgba(230,185,77,0.06) 0%, var(--color-bg-surface) 40%)',
+                  }}
+                >
+                  {/* Best value badge */}
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="px-3 py-1 bg-[var(--color-gold)] text-black font-mono text-[10px] font-bold tracking-wider rounded-full uppercase whitespace-nowrap">
+                      Best Value
+                    </span>
+                  </div>
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">Pro Annual</h3>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl md:text-3xl font-bold text-white">$119</span>
+                      <span className="text-sm text-[var(--color-text-muted)]">/yr</span>
+                    </div>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                      $9.92/mo &middot; Save 34%
+                    </p>
+                  </div>
+                  <ul className="space-y-3 mb-8 flex-1">
+                    {PRO_FEATURES.map((f) => (
+                      <li key={f} className="flex items-start gap-2.5">
+                        <Check className="w-3.5 h-3.5 text-[var(--color-gold)] mt-0.5 shrink-0" />
+                        <span className="text-[12px] md:text-sm text-[var(--color-text-muted)]">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/signup"
+                    className="w-full h-10 bg-[var(--color-gold)] rounded-md text-sm text-black font-semibold hover:brightness-110 transition-all flex items-center justify-center gap-1.5"
+                    style={{ boxShadow: '0 6px 18px rgba(230,185,77,0.25)' }}
+                  >
+                    Go Pro
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </FadeIn>
+
+              {/* ── Lifetime ── */}
+              <FadeIn delay={240}>
+                <div role="listitem" aria-label="Lifetime plan" className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-[14px] md:rounded-md p-5 md:p-7 flex flex-col h-full">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">Lifetime</h3>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl md:text-3xl font-bold text-white">$249</span>
+                    </div>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-1">One-time. 53 seats left.</p>
+                  </div>
+                  <ul className="space-y-3 mb-8 flex-1">
+                    {LIFETIME_FEATURES.map((f) => (
+                      <li key={f} className="flex items-start gap-2.5">
+                        <Check className="w-3.5 h-3.5 text-[var(--color-gold)] mt-0.5 shrink-0" />
+                        <span className="text-[12px] md:text-sm text-[var(--color-text-muted)]">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/signup"
+                    className="w-full h-10 border border-[var(--color-border-strong)] rounded-md text-sm text-white/70 hover:text-[var(--color-text-primary)] hover:border-white/20 transition-all flex items-center justify-center"
+                  >
+                    Claim a seat
+                  </Link>
+                </div>
+              </FadeIn>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ══════════════════════════════════════════════════════════════════
+            FOOTER
+            ══════════════════════════════════════════════════════════════════ */}
+        <footer className="bg-[#080808] border-t border-[var(--color-border-subtle)] pt-12 md:pt-20 pb-6 md:pb-8">
+          <div className="max-w-7xl mx-auto px-5 md:px-6">
+            {/* 5-column footer grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 md:gap-10 mb-10 md:mb-16">
+              {/* Brand column */}
+              <div className="col-span-2 sm:col-span-3 lg:col-span-1">
+                <Link href="/" className="flex items-center gap-2 md:gap-2.5 mb-3 md:mb-4">
+                  <HelmMark size={20} className="md:w-6 md:h-6" />
+                  <span className="font-semibold text-sm tracking-[0.12em] text-[var(--color-text-primary)]">
+                    HELM
+                  </span>
+                </Link>
+                <p className="text-[12px] md:text-xs text-[var(--color-text-muted)] leading-relaxed mb-3 md:mb-4 max-w-[200px]">
+                  Steer. Don&apos;t drift. Take the Helm.
+                </p>
+                <p className="font-mono text-[9px] md:text-[10px] leading-relaxed max-w-[220px]" style={{ color: '#5a5a5a' }}>
+                  Helm is not a financial advisor. All data is provided for informational
+                  purposes only.
+                </p>
+              </div>
+
+              {/* Product */}
+              <div>
+                <h4 className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-4">
+                  Product
+                </h4>
+                <ul className="space-y-2.5">
+                  {FOOTER_PRODUCT.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]/70 transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Tools */}
+              <div>
+                <h4 className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-4">
+                  Tools
+                </h4>
+                <ul className="space-y-2.5">
+                  {FOOTER_TOOLS.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]/70 transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Company */}
+              <div>
+                <h4 className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-4">
+                  Company
+                </h4>
+                <ul className="space-y-2.5">
+                  {FOOTER_COMPANY.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]/70 transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Legal */}
+              <div>
+                <h4 className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-4">
+                  Legal
+                </h4>
+                <ul className="space-y-2.5">
+                  {FOOTER_LEGAL.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]/70 transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Bottom bar */}
+            <div className="border-t border-[var(--color-border-subtle)] pt-5 md:pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 md:gap-4">
+              <p className="font-mono text-[9px] md:text-[11px] text-[var(--color-text-muted)]">
+                &copy; {new Date().getFullYear()} Helm
               </p>
-              <p className="font-[family-name:var(--font-mono)] text-[10px] text-[#555] mt-3">
-                Helm is not a registered investment advisor. Information is for educational purposes only.
-              </p>
-            </div>
-            <div>
-              <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4">Product</div>
-              {[['Terminal', '/dashboard'], ['Analyze', '/analyze'], ['Pricing', '/pricing'], ['Changelog', '/blog']].map(([label, href]) => (
-                <Link key={label} href={href} className="block text-[13px] text-[var(--color-text-secondary)] py-1.5 hover:text-[var(--color-text-primary)] transition-colors">{label}</Link>
-              ))}
-            </div>
-            <div>
-              <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4">Tools</div>
-              {[['TLH Calculator', '/tools/tlh-calculator'], ['RSU Calculator', '/tools/rsu-calculator'], ['Compare', '/compare']].map(([label, href]) => (
-                <Link key={label} href={href} className="block text-[13px] text-[var(--color-text-secondary)] py-1.5 hover:text-[var(--color-text-primary)] transition-colors">{label}</Link>
-              ))}
-            </div>
-            <div>
-              <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4">Company</div>
-              {[['About', '/about'], ['Security', '/security'], ['Blog', '/blog'], ['Contact', '/contact']].map(([label, href]) => (
-                <Link key={label} href={href} className="block text-[13px] text-[var(--color-text-secondary)] py-1.5 hover:text-[var(--color-text-primary)] transition-colors">{label}</Link>
-              ))}
-            </div>
-            <div>
-              <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4">Legal</div>
-              {[['Privacy', '/privacy'], ['Terms', '/terms'], ['Data Deletion', '/contact']].map(([label, href]) => (
-                <Link key={label} href={href} className="block text-[13px] text-[var(--color-text-secondary)] py-1.5 hover:text-[var(--color-text-primary)] transition-colors">{label}</Link>
-              ))}
+              <div className="flex items-center gap-1.5 md:gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span className="font-mono text-[9px] md:text-[11px] text-[var(--color-text-muted)]">
+                  99.98% uptime
+                </span>
+              </div>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row justify-between mt-14 pt-6 border-t border-[var(--color-border-subtle)] font-[family-name:var(--font-mono)] text-[10px] tracking-[0.12em] uppercase text-[var(--color-text-muted)]">
-            <div>&copy; 2026 Helm Terminal, Inc.</div>
-            <div>&bull; All systems operational</div>
-          </div>
-        </div>
-      </footer>
-
-      {/* ── CSS for ticker tape animation ── */}
-      <style jsx global>{`
-        @keyframes tape-scroll {
-          to { transform: translateX(-50%); }
-        }
-        .animate-tape-scroll {
-          animation: tape-scroll 60s linear infinite;
-        }
-        .tape-wrap:hover .tape-track {
-          animation-play-state: paused;
-        }
-        @keyframes flash-up {
-          0% { background: rgba(74,222,128,0.16); }
-          100% { background: transparent; }
-        }
-        @keyframes flash-dn {
-          0% { background: rgba(248,113,113,0.16); }
-          100% { background: transparent; }
-        }
-        .animate-flash-up { animation: flash-up 0.9s cubic-bezier(0.22,1,0.36,1); }
-        .animate-flash-dn { animation: flash-dn 0.9s cubic-bezier(0.22,1,0.36,1); }
-        @media (prefers-reduced-motion: reduce) {
-          .animate-tape-scroll { animation: none; }
-          .animate-flash-up, .animate-flash-dn { animation: none; }
-        }
-      `}</style>
-    </div>
+        </footer>
+      </main>
+    </>
   );
 }
