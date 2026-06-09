@@ -45,14 +45,25 @@ export async function POST(request: NextRequest) {
     for (const user of users) {
       if (!user.email) continue;
 
-      // Skip users who have Plaid connections
+      // Check Plaid connection status and subscription tier
       const { data: plaidItems } = await supabase
         .from('plaid_items')
         .select('id')
         .eq('user_id', user.id)
         .limit(1);
 
-      if (plaidItems && plaidItems.length > 0) {
+      const hasPlaid = plaidItems && plaidItems.length > 0;
+
+      const { data: sub } = await supabase
+        .from('user_subscriptions')
+        .select('tier')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const isPaid = sub && sub.tier && sub.tier !== 'free';
+
+      // Paid users don't get drip emails
+      if (isPaid) {
         skipped++;
         continue;
       }
@@ -83,9 +94,27 @@ export async function POST(request: NextRequest) {
 
       const targetDay = applicableDays[0];
 
-      // Get template
+      // Connected users: skip connection nudges (days 1,3,7), only send day 14+ emails
       const fullName = user.user_metadata?.full_name;
       const firstName = fullName ? fullName.split(' ')[0] : undefined;
+
+      if (hasPlaid && targetDay <= 7) {
+        // Mark early drip days as skipped for connected users
+        const earlyDays = [1, 3, 7].filter(d => d <= daysSinceSignup && !sentDays.has(d));
+        if (earlyDays.length > 0) {
+          await supabase.from('email_drip_log').insert(
+            earlyDays.map(d => ({
+              user_id: user.id,
+              drip_day: d,
+              email_subject: `[skipped — user has Plaid connected]`,
+              sent_at: now.toISOString(),
+            }))
+          );
+        }
+        skipped++;
+        continue;
+      }
+
       const template = getTemplate(targetDay, firstName);
       if (!template) {
         skipped++;

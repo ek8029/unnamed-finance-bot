@@ -204,13 +204,74 @@ export function getTemplate(dayIndex: number, userName?: string): EmailTemplate 
       `),
     };
 
+    case 14: return {
+      subject: 'What Helm users are finding',
+      text: `Hey ${name},\n\nHere's what Helm users discovered in their first week:\n\n- One user found $23,380 in harvestable losses across 3 accounts\n- Another realized 68% of their portfolio was concentrated in tech through ETF overlap\n- Most users see their first actionable insight within 2 minutes of connecting\n\nYour dashboard is still waiting: ${ACCOUNTS_URL}\n\n- Helm Terminal`,
+      html: wrap(`
+        <div style="text-align:center;">
+        ${heading('What users are <span style="font-weight:700;color:#E6B94D;">finding.</span>')}
+        ${subtext('Real results from Helm users in their first week.')}
+        </div>
+        ${dividerLine()}
+        ${sectionLabel('Real discoveries')}
+        ${bulletItem('$23,380 in harvestable losses', 'Found across 3 linked accounts. Brokerage never flagged it.')}
+        ${bulletItem('68% tech concentration', 'Hidden inside ETFs. Looked diversified on the surface.')}
+        ${bulletItem('2 minutes to first insight', 'Connect once. Intelligence runs every night.')}
+        <div style="height:12px;"></div>
+        ${cta('See Your Portfolio', ACCOUNTS_URL)}
+        ${trustBar()}
+      `),
+    };
+
+    case 21: return {
+      subject: 'Founding member rate: $4.99/mo, locked forever',
+      text: `Hey ${name},\n\nHelm's founding member rate is $4.99/mo, locked forever. 50 spots total.\n\nWhat you get:\n- Tax-loss harvesting with wash-sale detection\n- Earnings exposure alerts\n- Annual Portfolio Wrapped\n- Founding member badge\n\nThe free tier already includes the full terminal, AI analysis, daily brief, and actions inbox.\n\nhelmterminal.dev/pricing\n\n- Helm Terminal`,
+      html: wrap(`
+        <div style="text-align:center;">
+        ${heading('<span style="font-weight:700;color:#E6B94D;">$4.99/mo.</span> Locked forever.')}
+        ${subtext('Founding member rate. 50 spots. Once they fill, this price is gone.')}
+        </div>
+        ${dividerLine()}
+        ${sectionLabel('What founding members get')}
+        ${bulletItem('Tax-loss harvesting', 'Automated detection with wash-sale protection.')}
+        ${bulletItem('Earnings exposure', 'Know when your holdings report, before they move.')}
+        ${bulletItem('Portfolio Wrapped', 'Your year in review. Shareable.')}
+        ${bulletItem('Founding badge', 'Early supporter recognition, permanently.')}
+        <div style="height:12px;"></div>
+        ${cta('Claim Founding Rate', 'https://helmterminal.dev/pricing')}
+        ${dividerLine()}
+        <p style="margin:16px 0 0;font-size:11px;color:#8A8A8A;text-align:center;">The free tier already includes the full terminal, AI analysis, daily brief, and actions inbox. Pro adds tax intelligence.</p>
+      `),
+    };
+
+    case 30: return {
+      subject: 'Still here when you are',
+      text: `Hey ${name},\n\nIt's been a month since you signed up. No pressure.\n\nIf you want to see what Helm does without connecting accounts, try a free stock analysis on any US ticker: https://helmterminal.dev/analyze\n\nOr read today's market brief: https://helmterminal.dev/brief\n\nBoth are free, no login required.\n\n- Helm Terminal`,
+      html: wrap(`
+        <div style="text-align:center;">
+        ${heading('Still here when <span style="font-weight:700;color:#E6B94D;">you are.</span>')}
+        ${subtext("It's been a month. No pressure. Here are two ways to try Helm without connecting anything.")}
+        </div>
+        ${dividerLine()}
+        ${sectionLabel('No account needed')}
+        ${bulletItem('Free stock analysis', 'AI-powered analysis on any US ticker. No login.')}
+        ${bulletItem("Today's market brief", 'What moved, what matters, what to watch. Updated every 5 minutes.')}
+        <div style="height:12px;"></div>
+        ${cta('Analyze a Ticker', 'https://helmterminal.dev/analyze')}
+        <div style="height:8px;"></div>
+        <p style="margin:0;text-align:center;"><a href="https://helmterminal.dev/brief" style="color:#E6B94D;font-size:12px;text-decoration:underline;">Or read today's brief</a></p>
+        ${dividerLine()}
+        <p style="margin:16px 0 0;font-size:10px;color:#8A8A8A;text-align:center;letter-spacing:0.3px;">Last email from us unless you take an action. We respect your inbox.</p>
+      `),
+    };
+
     default: return null;
   }
 }
 
 /** Which day indices to send */
 // Day 0 welcome sent by signup route directly — not via drip
-export const DRIP_DAYS = [1, 3, 7] as const;
+export const DRIP_DAYS = [1, 3, 7, 14, 21, 30] as const;
 
 /* ── Watchlist Alert Email ── */
 
