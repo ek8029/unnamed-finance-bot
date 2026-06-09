@@ -120,5 +120,5 @@ export const DEMO_BRIEF = {
     { sector: 'Consumer', weight: 5.7, changePct: -1.1, tickers: ['AMZN'] },
   ],
   earningsThisWeek: [{ ticker: 'AAPL', reportDate: new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0], portfolioWeight: 9.1 }],
-  dividendsThisWeek: [{ ticker: 'VOO', exDate: new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0] }],
+  dividendsThisWeek: [{ ticker: 'VOO', exDate: new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0], cashAmount: 1.5975, payDate: new Date(Date.now() + 9 * 86400000).toISOString().split('T')[0] }],
 };

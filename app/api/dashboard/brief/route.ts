@@ -203,7 +203,7 @@ export async function GET() {
     const expandedTickerList = [...expandedTickers];
 
     let earningsThisWeek: { ticker: string; reportDate: string; portfolioWeight: number }[] = [];
-    let dividendsThisWeek: { ticker: string; exDate: string }[] = [];
+    let dividendsThisWeek: { ticker: string; exDate: string; cashAmount: number | null; payDate: string | null }[] = [];
 
     if (userTickers.length > 0) {
       const [earningsResult, dividendsResult] = await Promise.all([
@@ -216,7 +216,7 @@ export async function GET() {
           .lte('event_date', end),
         supabase
           .from('market_events')
-          .select('ticker, event_date')
+          .select('ticker, event_date, metadata')
           .eq('event_type', 'dividend')
           .in('ticker', userTickers)
           .gte('event_date', start)
@@ -234,6 +234,8 @@ export async function GET() {
       dividendsThisWeek = (dividendsResult.data || []).map((d) => ({
         ticker: d.ticker,
         exDate: d.event_date,
+        cashAmount: d.metadata?.cash_amount ?? null,
+        payDate: d.metadata?.pay_date ?? null,
       }));
     }
 

@@ -45,6 +45,8 @@ interface BriefData {
   dividendsThisWeek: {
     ticker: string;
     exDate: string;
+    cashAmount: number | null;
+    payDate: string | null;
   }[];
 }
 
@@ -399,7 +401,9 @@ export function DailyBrief() {
             ))}
             {brief.dividendsThisWeek.slice(0, 3).map((d) => (
               <span key={d.ticker} className="text-[0.6875rem] text-[var(--color-text-muted)]">
-                Ex-div {formatEventDay(d.exDate)}: <span className="font-mono font-medium text-[var(--color-text-secondary)]">{d.ticker}</span>
+                <span className="font-mono font-medium text-[var(--color-text-secondary)]">{d.ticker}</span>
+                {d.cashAmount ? ` $${d.cashAmount.toFixed(2)}/sh` : ''} ex-dividend {formatEventDay(d.exDate)}
+                {d.payDate ? `, pays ${d.payDate}` : ''}
               </span>
             ))}
           </div>

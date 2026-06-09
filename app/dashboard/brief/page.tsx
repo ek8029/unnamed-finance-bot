@@ -46,7 +46,7 @@ interface BriefData {
   allHoldings: { ticker: string; name: string; sector: string; changePct: number; dollarImpact: number }[];
   sectorHeat: { sector: string; weight: number; changePct: number; tickers: string[] }[];
   earningsThisWeek: { ticker: string; reportDate: string; portfolioWeight: number }[];
-  dividendsThisWeek: { ticker: string; exDate: string }[];
+  dividendsThisWeek: { ticker: string; exDate: string; cashAmount: number | null; payDate: string | null }[];
   positionNews: NewsItem[];
   generalNews: NewsItem[];
   digest: string | null;
@@ -202,7 +202,7 @@ export default function BriefPage() {
           { sector: 'ETF', weight: 25, changePct: 0.35, tickers: ['VOO'] },
         ],
         earningsThisWeek: [{ ticker: 'NVDA', reportDate: new Date(Date.now() + 86400000 * 3).toISOString(), portfolioWeight: 18.5 }],
-        dividendsThisWeek: [{ ticker: 'VOO', exDate: new Date(Date.now() + 86400000 * 2).toISOString() }],
+        dividendsThisWeek: [{ ticker: 'VOO', exDate: new Date(Date.now() + 86400000 * 2).toISOString(), cashAmount: 1.5975, payDate: new Date(Date.now() + 86400000 * 9).toISOString().split('T')[0] }],
         positionNews: [],
         generalNews: [],
         digest: 'NVIDIA is the story this morning. The stock is up 3.2% pre-market after reporting data center revenue that beat estimates by 12%, pushing your largest holding to a $960 gain overnight. Demand for Blackwell GPUs continues to outstrip supply, and management raised full-year guidance for the third consecutive quarter.\n\nApple slipped 0.8% on reports of slower iPhone 16 sales in China, trimming $320 from your position. The weakness is contained to the China market — North American and European sales remain on track. Microsoft edged up 0.4% on steady Azure growth.\n\nThe broader market is calm. SPY is up 0.35% with the VIX sitting at 14.2, firmly in the greed zone. Treasury yields ticked up slightly, pulling TLT down 0.18%. No major macro catalysts today, but keep an eye on NVDA earnings exposure — your 18.5% portfolio weight means any post-earnings reversal hits hard.',
@@ -742,11 +742,15 @@ export default function BriefPage() {
                 </h2>
                 <div className="space-y-2">
                   {data.dividendsThisWeek.map(d => (
-                    <div key={d.ticker} className="flex items-center justify-between py-2.5 border-b border-white/[0.04]">
+                    <div key={d.ticker} className="flex items-center justify-between py-2.5 border-b border-white/[0.04] flex-wrap gap-2">
                       <Link href={`/dashboard/analyze/${d.ticker}`} className="font-mono text-[15px] font-bold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)]">
                         {d.ticker}
                       </Link>
-                      <span className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>Ex-date: {d.exDate}</span>
+                      <div className="flex items-center gap-3 text-[13px] text-[var(--color-text-muted)]" style={MONO}>
+                        {d.cashAmount && <span>${d.cashAmount.toFixed(2)}/share</span>}
+                        <span>Ex-dividend: {d.exDate}</span>
+                        {d.payDate && <span>Pays: {d.payDate}</span>}
+                      </div>
                     </div>
                   ))}
                 </div>
