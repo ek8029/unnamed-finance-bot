@@ -290,7 +290,7 @@ export default function HomeContent({ tickerTape }: HomeContentProps) {
 
       {/* ── PINNED MACBOOK STAGE (320vh scroll distance, desktop only) ── */}
       <section ref={stageRef} className="relative hidden md:block" style={{ height: '250vh' }}>
-        <div className="sticky top-0 h-screen overflow-hidden grid grid-rows-[1fr_auto_1fr] items-center">
+        <div className="sticky top-[92px] h-[calc(100vh-92px)] overflow-hidden grid grid-rows-[1fr_auto_1fr] items-center">
           {/* Ambient backlight */}
           <div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1400px] h-[900px] max-w-[130vw] blur-[70px] opacity-50 rounded-full pointer-events-none transition-[background] duration-500"
