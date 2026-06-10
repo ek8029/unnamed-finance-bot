@@ -202,7 +202,7 @@ function MetricCell({ label, value, context }: { label: string; value: string; c
   return (
     <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-2.5 sm:p-3 space-y-1 min-w-0">
       <div className="text-[11px] sm:text-[12px] font-mono tracking-wider text-[var(--color-text-muted)] uppercase">{label}</div>
-      <div className="text-[14px] sm:text-[22px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)] truncate">{value}</div>
+      <div className="text-[14px] sm:text-[18px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)] truncate" title={value}>{value}</div>
       {context && <div className="text-[11px] sm:text-[12px] font-mono text-[var(--color-text-muted)]">{context}</div>}
     </div>
   );
@@ -341,7 +341,7 @@ function OverviewView({ analysis, tickerData }: { analysis: StockAnalysis; ticke
       </div>
 
       {/* Key stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
         <MetricCell label="Price" value={fmtPrice(quote?.c)} />
         <MetricCell label="Day Change" value={fmtPct(quote?.dp)} context={quote?.d != null ? `${quote.d >= 0 ? '+' : ''}${fmt(quote.d)}` : undefined} />
         <MetricCell label="Market Cap" value={profile?.marketCapitalization != null ? fmtCompact(profile.marketCapitalization * 1e6) : '--'} />
@@ -432,7 +432,7 @@ function FundamentalsView({ tickerData, profile }: { tickerData: TickerData; pro
   return (
     <div className="space-y-4">
       <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Key Financial Metrics</div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2.5">
         {cells.map((c) => (
           <MetricCell key={c.label} label={c.label} value={c.value} context={c.context} />
         ))}
