@@ -599,7 +599,7 @@ export default function TransactionsPage() {
       {/* ─── Main Content ─── */}
       <main className="space-y-6">
         {/* ─── Summary Tiles ─── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
           {/* Net Flow */}
           <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded-lg px-4 py-3.5">
             <p className="text-[11px] font-mono uppercase tracking-[0.06em] text-[var(--color-text-muted)] mb-1">
@@ -609,12 +609,11 @@ export default function TransactionsPage() {
               <Skeleton className="h-7 w-24 mb-1" />
             ) : (
               <p
-                className={`font-mono font-bold leading-none mb-1 ${
+                className={`font-mono font-bold leading-none mb-1 text-[18px] sm:text-[24px] ${
                   summary.netFlow >= 0
                     ? 'text-[var(--color-positive)]'
                     : 'text-[var(--color-negative)]'
                 }`}
-                style={{ fontSize: '24px' }}
               >
                 {summary.netFlow >= 0 ? '+' : ''}
                 {formatCurrency(summary.netFlow)}

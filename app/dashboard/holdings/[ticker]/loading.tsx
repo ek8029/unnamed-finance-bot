@@ -9,7 +9,7 @@ export default function HoldingLoading() {
       </div>
 
       {/* Metrics row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
         {[1,2,3,4,5,6,7].map(i => (
           <div key={i} className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-3.5">
             <div className="h-3 w-12 bg-white/[0.04] rounded mb-2" />

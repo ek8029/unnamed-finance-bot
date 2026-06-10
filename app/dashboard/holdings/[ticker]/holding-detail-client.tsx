@@ -82,7 +82,7 @@ export function HoldingDetailClient({
       </div>
 
       {/* Key Metrics Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
         {[
           { label: 'Price', value: fmt(holding.currentPrice) },
           { label: 'Day Change', value: fmtPct(holding.dayChangePct), color: up ? 'var(--color-positive)' : 'var(--color-negative)' },
@@ -170,7 +170,7 @@ export function HoldingDetailClient({
       {quote && quote.c > 0 && (
         <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5">
           <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-3">Live Quote</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
             {[
               { label: 'Last', value: `$${quote.c.toFixed(2)}` },
               { label: 'Open', value: `$${quote.o.toFixed(2)}` },
