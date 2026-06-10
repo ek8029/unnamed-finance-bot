@@ -302,3 +302,65 @@ export const getFullTickerData = reactCache(async (symbol: string): Promise<Tick
 
   return { symbol: symbol.toUpperCase(), quote, profile, financials, recommendations, earnings, news };
 });
+
+// ── Financial Statements (as reported) ──
+
+export interface StatementLineItem {
+  concept: string;
+  label: string;
+  unit: string;
+  value: number;
+}
+
+export interface ReportedFinancials {
+  year: number;
+  endDate: string;
+  form: string;
+  ic: StatementLineItem[]; // income statement
+  bs: StatementLineItem[]; // balance sheet
+  cf: StatementLineItem[]; // cash flow
+}
+
+interface FinnhubReportedResponse {
+  data?: {
+    year: number;
+    endDate: string;
+    form: string;
+    report?: {
+      ic?: StatementLineItem[];
+      bs?: StatementLineItem[];
+      cf?: StatementLineItem[];
+    };
+  }[];
+}
+
+/** 24h TTL — annual statements change once a year. */
+const STATEMENTS_CACHE_TTL = 24 * 60 * 60 * 1000;
+
+/** Latest 3 annual (10-K) reports, newest first. */
+export async function getReportedFinancials(symbol: string): Promise<ReportedFinancials[]> {
+  const cacheKey = `statements:${symbol.toUpperCase()}`;
+  const cached = getCached<ReportedFinancials[]>(cacheKey);
+  if (cached) return cached;
+
+  const res = await finnhubFetch<FinnhubReportedResponse>('/stock/financials-reported', {
+    symbol: symbol.toUpperCase(),
+    freq: 'annual',
+  });
+
+  const reports = (res?.data || [])
+    .filter((r) => r.form === '10-K' && r.report)
+    .sort((a, b) => b.year - a.year)
+    .slice(0, 3)
+    .map((r) => ({
+      year: r.year,
+      endDate: r.endDate,
+      form: r.form,
+      ic: r.report?.ic || [],
+      bs: r.report?.bs || [],
+      cf: r.report?.cf || [],
+    }));
+
+  if (reports.length > 0) setCache(cacheKey, reports, STATEMENTS_CACHE_TTL);
+  return reports;
+}

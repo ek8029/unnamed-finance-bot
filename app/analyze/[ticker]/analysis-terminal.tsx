@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { StockAnalysis, AnalysisMetric } from '@/components/analysis/types';
-import type { TickerData } from '@/lib/financial-data';
+import type { TickerData, ReportedFinancials } from '@/lib/financial-data';
 import { Search, Loader2, Link2, Check, ChevronRight, Menu, X, Calendar } from 'lucide-react';
 import { FinancialDisclaimer } from '@/components/financial-disclaimer';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from 'recharts';
@@ -429,13 +429,182 @@ function FundamentalsView({ tickerData, profile }: { tickerData: TickerData; pro
     { label: 'FCF / Share', value: m.fcfPerShareTTM != null ? fmtPrice(m.fcfPerShareTTM) : '--', context: 'TTM' },
   ];
 
+  const [tab, setTab] = useState<'metrics' | 'ic' | 'bs' | 'cf'>('metrics');
+
+  const tabs: [typeof tab, string][] = [
+    ['metrics', 'Key Metrics'],
+    ['ic', 'Income'],
+    ['bs', 'Balance Sheet'],
+    ['cf', 'Cash Flow'],
+  ];
+
   return (
     <div className="space-y-4">
-      <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Key Financial Metrics</div>
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2.5">
-        {cells.map((c) => (
-          <MetricCell key={c.label} label={c.label} value={c.value} context={c.context} />
+      <div className="flex items-center gap-1 border-b border-[var(--color-border-subtle)] overflow-x-auto">
+        {tabs.map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={`px-3 py-2 text-[12px] font-mono tracking-wider uppercase whitespace-nowrap border-b-2 -mb-px transition-colors ${
+              tab === key
+                ? 'border-[var(--color-gold)] text-[var(--color-gold)]'
+                : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
+            }`}
+          >
+            {label}
+          </button>
         ))}
+      </div>
+
+      {tab === 'metrics' ? (
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2.5">
+          {cells.map((c) => (
+            <MetricCell key={c.label} label={c.label} value={c.value} context={c.context} />
+          ))}
+        </div>
+      ) : (
+        <StatementView symbol={tickerData.symbol} statement={tab} />
+      )}
+    </div>
+  );
+}
+
+// ── Financial Statements (as reported, via /api/market/financials) ──
+
+function fmtStatementValue(value: number, unit: string): string {
+  // Finnhub unit strings vary by filer: "usd" vs "u_usd", "usd/share" vs
+  // "u_unitedstatesofamericadollarsshare", "shares" vs "u_shares".
+  const u = unit.toLowerCase().replace(/^u_/, '');
+  const sign = value < 0 ? '-' : '';
+  const abs = Math.abs(value);
+
+  // Per-share dollar amounts (EPS, dividends per share)
+  if (u.includes('/share') || u.includes('dollarsshare') || u.includes('pershare')) {
+    return `${sign}$${abs.toFixed(2)}`;
+  }
+  // USD totals
+  if (u.startsWith('usd') || u.includes('dollar')) {
+    if (abs >= 1e9) return `${sign}$${(abs / 1e9).toFixed(2)}B`;
+    if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(1)}M`;
+    if (abs >= 1e3) return `${sign}$${(abs / 1e3).toFixed(0)}K`;
+    return `${sign}$${abs.toLocaleString()}`;
+  }
+  // Share counts
+  if (u.includes('share')) {
+    if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(2)}B`;
+    if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(1)}M`;
+    return value.toLocaleString();
+  }
+  return value.toLocaleString();
+}
+
+function StatementView({ symbol, statement }: { symbol: string; statement: 'ic' | 'bs' | 'cf' }) {
+  const [reports, setReports] = useState<ReportedFinancials[] | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/market/financials?symbol=${encodeURIComponent(symbol)}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => {
+        if (!cancelled) setReports(data.reports || []);
+      })
+      .catch(() => {
+        if (!cancelled) setError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [symbol]);
+
+  if (error) {
+    return (
+      <div className="text-[13px] text-[var(--color-text-muted)] font-mono py-8 text-center">
+        Failed to load financial statements.
+      </div>
+    );
+  }
+
+  if (reports === null) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-12 text-[var(--color-text-muted)]">
+        <Loader2 className="w-4 h-4 animate-spin" />
+        <span className="text-[13px] font-mono">Loading statements...</span>
+      </div>
+    );
+  }
+
+  if (reports.length === 0) {
+    return (
+      <div className="text-[13px] text-[var(--color-text-muted)] font-mono py-8 text-center">
+        No annual filings available for {symbol}.
+      </div>
+    );
+  }
+
+  // Newest report defines row order; match older years by concept + label.
+  const newest = reports[0];
+  const rows = newest[statement];
+
+  if (rows.length === 0) {
+    return (
+      <div className="text-[13px] text-[var(--color-text-muted)] font-mono py-8 text-center">
+        No data for this statement.
+      </div>
+    );
+  }
+
+  const titles = { ic: 'Income Statement', bs: 'Balance Sheet', cf: 'Cash Flow Statement' };
+
+  return (
+    <div className="space-y-3">
+      <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">
+        {titles[statement]} — Annual (10-K)
+      </div>
+      <div className="overflow-x-auto border border-[var(--color-border-subtle)] rounded-sm">
+        <table className="w-full text-[12px] font-mono">
+          <thead>
+            <tr className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
+              <th className="text-left px-3 py-2 text-[11px] tracking-wider uppercase text-[var(--color-text-muted)] font-medium min-w-[200px]">
+                Line Item
+              </th>
+              {reports.map((r) => (
+                <th
+                  key={r.year}
+                  className="text-right px-3 py-2 text-[11px] tracking-wider uppercase text-[var(--color-text-muted)] font-medium whitespace-nowrap"
+                >
+                  FY{r.year}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, i) => (
+              <tr
+                key={`${row.concept}-${i}`}
+                className="border-b border-[var(--color-border-subtle)] last:border-b-0 hover:bg-[var(--color-bg-elevated)]/50"
+              >
+                <td className="px-3 py-1.5 text-[var(--color-text-secondary)]">{row.label}</td>
+                {reports.map((r) => {
+                  const match = r[statement].find(
+                    (item) => item.concept === row.concept && item.label === row.label,
+                  );
+                  return (
+                    <td
+                      key={r.year}
+                      className="px-3 py-1.5 text-right tabular-nums text-[var(--color-text-primary)] whitespace-nowrap"
+                    >
+                      {match != null ? fmtStatementValue(match.value, match.unit) : '--'}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="text-[11px] text-[var(--color-text-muted)] font-mono">
+        Source: SEC filings via Finnhub. Values as reported.
       </div>
     </div>
   );
