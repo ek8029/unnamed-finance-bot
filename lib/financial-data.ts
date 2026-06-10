@@ -6,6 +6,7 @@
  * In-memory cache with 15-minute TTL to avoid rate limits.
  */
 
+import { cache as reactCache } from 'react';
 import { CACHE_TTL as GLOBAL_CACHE_TTL } from '@/lib/financial-config';
 
 const FINNHUB_BASE = 'https://finnhub.io/api/v1';
@@ -287,7 +288,9 @@ export interface TickerData {
   news: FinnhubNewsItem[] | null;
 }
 
-export async function getFullTickerData(symbol: string): Promise<TickerData> {
+// React cache() dedupes calls within a single request — generateMetadata and
+// the page component share one fetch instead of each hitting Finnhub.
+export const getFullTickerData = reactCache(async (symbol: string): Promise<TickerData> => {
   const [quote, profile, financials, recommendations, earnings, news] = await Promise.all([
     getQuote(symbol),
     getCompanyProfile(symbol),
@@ -298,4 +301,4 @@ export async function getFullTickerData(symbol: string): Promise<TickerData> {
   ]);
 
   return { symbol: symbol.toUpperCase(), quote, profile, financials, recommendations, earnings, news };
-}
+});

@@ -5,6 +5,7 @@
  * (9:30am–4:00pm ET, Mon–Fri), 24 hr off-hours and weekends.
  */
 
+import { cache } from 'react';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import OpenAI from 'openai';
@@ -216,7 +217,10 @@ export interface AnalyzeStockResult {
   methodologyVersion: string;
 }
 
-export async function analyzeStock(ticker: string): Promise<AnalyzeStockResult> {
+// React cache() dedupes within a single request — generateMetadata and the
+// page component previously each ran the full Finnhub + OpenAI pipeline on a
+// cache miss, doubling latency and API usage.
+export const analyzeStock = cache(async (ticker: string): Promise<AnalyzeStockResult> => {
   const symbol = ticker.toUpperCase().replace(/[^A-Z]/g, '');
   const emptyResult: AnalyzeStockResult = {
     analysis: null,
@@ -310,4 +314,4 @@ export async function analyzeStock(ticker: string): Promise<AnalyzeStockResult> 
     console.error('Stock analysis failed:', error);
     return emptyResult;
   }
-}
+});
