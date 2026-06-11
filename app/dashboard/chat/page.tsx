@@ -378,7 +378,7 @@ function ResearchChatContent() {
           <div className="flex items-center justify-center gap-3 mt-1.5">
             <FinancialDisclaimer />
             <p className="text-[0.625rem] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
-              Powered by Finnhub + GPT-4o-mini. Not financial advice.
+              Not financial advice.
             </p>
             {!isPro && liveQuota && (
               <span

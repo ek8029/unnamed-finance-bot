@@ -15,7 +15,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /** Methodology version — bump when the analysis pipeline changes materially. */
 const METHODOLOGY_VERSION = 'v1.0';
-const DATA_SOURCES = ['finazon.io', 'sec-edgar', 'openai-gpt-4o-mini'];
+const DATA_SOURCES = ['finazon.io', 'sec-edgar', 'nasdaq-rss', 'yahoo-finance-rss'];
 
 /**
  * Cache TTL depends on US equity market hours (9:30am–4:00pm ET, Mon–Fri).

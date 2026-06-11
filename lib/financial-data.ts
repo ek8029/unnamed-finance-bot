@@ -5,13 +5,17 @@
  * display, no redistribution restrictions).
  * Company profiles and fundamentals: SEC EDGAR (public domain).
  *
- * Analyst recommendations, earnings estimates/calendar, and per-ticker
- * news have no licensed provider after the Finnhub/Polygon migration —
- * those functions return empty results until a new source is wired in.
+ * Per-ticker news: Nasdaq + Yahoo Finance RSS via lib/free-news (headline +
+ * link + attribution only).
+ *
+ * Analyst recommendations and earnings estimates/calendar have no licensed
+ * provider after the Finnhub/Polygon migration — those functions return
+ * empty results until a new source is wired in.
  */
 
 import { cache as reactCache } from 'react';
 import { getDailyBars, getIntradayQuote } from '@/lib/finazon';
+import { fetchTickerHeadlines, fetchYahooHeadlines } from '@/lib/free-news';
 import {
   getReportedFinancialsEdgar,
   getCompanyProfileEdgar,
@@ -343,8 +347,36 @@ export async function getEarnings(_symbol: string): Promise<EarningsSurprise[] |
   return null;
 }
 
-export async function getCompanyNews(_symbol: string): Promise<NewsItem[] | null> {
-  return null;
+export async function getCompanyNews(symbol: string): Promise<NewsItem[] | null> {
+  const [nasdaq, yahoo] = await Promise.all([
+    fetchTickerHeadlines(symbol),
+    fetchYahooHeadlines(symbol),
+  ]);
+
+  // Same story often appears on both feeds under different URLs
+  const normTitle = (t: string) => t.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const seen = new Set<string>();
+  const items: NewsItem[] = [];
+  for (const a of [...nasdaq, ...yahoo]) {
+    const nt = normTitle(a.title);
+    if (seen.has(nt) || seen.has(a.url)) continue;
+    seen.add(nt);
+    seen.add(a.url);
+    items.push({
+      category: 'company',
+      datetime: Math.floor(new Date(a.publishedAt).getTime() / 1000),
+      headline: a.title,
+      id: items.length + 1,
+      image: '',
+      related: symbol.toUpperCase(),
+      source: a.source || '',
+      summary: a.description,
+      url: a.url,
+    });
+  }
+
+  items.sort((a, b) => b.datetime - a.datetime);
+  return items.length > 0 ? items.slice(0, 20) : null;
 }
 
 // ── Earnings Calendar ──
@@ -383,10 +415,11 @@ export interface TickerData {
 // React cache() dedupes calls within a single request — generateMetadata and
 // the page component share one fetch instead of each hitting the providers.
 export const getFullTickerData = reactCache(async (symbol: string): Promise<TickerData> => {
-  const [quote, profile, financials] = await Promise.all([
+  const [quote, profile, financials, news] = await Promise.all([
     getQuote(symbol),
     getCompanyProfile(symbol),
     getBasicFinancials(symbol),
+    getCompanyNews(symbol),
   ]);
 
   return {
@@ -396,6 +429,6 @@ export const getFullTickerData = reactCache(async (symbol: string): Promise<Tick
     financials,
     recommendations: null,
     earnings: null,
-    news: null,
+    news,
   };
 });

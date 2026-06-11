@@ -126,9 +126,10 @@ export default function AboutPage() {
             </p>
 
             <p>
-              Market data comes from Finnhub (real-time quotes) and Polygon.io (historical
-              prices, dividends, splits). Analysis pages use GPT-4o-mini for narrative
-              interpretation of structured financial data, clearly labeled as AI-generated.
+              Market data comes from Finazon (real-time quotes and historical prices)
+              and SEC EDGAR (company fundamentals and filings). Analysis pages use AI for
+              narrative interpretation of structured financial data, clearly labeled as
+              AI-generated.
             </p>
 
             <h2 className="text-[var(--color-text-primary)] text-xl font-semibold pt-4">

@@ -129,9 +129,8 @@ export default function PrivacyPage() {
         <p>Helm integrates with the following third-party services:</p>
         <ul>
           <li><strong>Plaid</strong> - Account aggregation and transaction data</li>
-          <li><strong>Finnhub</strong> - Market data, company profiles, analyst recommendations, and earnings</li>
-          <li><strong>Polygon.io</strong> - Market prices, dividends, and corporate actions</li>
-          <li><strong>OpenAI</strong> - AI-powered financial analysis (GPT-4o-mini; your query and portfolio context are sent for analysis but never used for model training)</li>
+          <li><strong>Finazon</strong> - Market data, real-time quotes, and historical prices</li>
+          <li><strong>OpenAI</strong> - AI-powered financial analysis (your query and portfolio context are sent for analysis but never used for model training)</li>
           <li><strong>Supabase</strong> - Database and authentication infrastructure</li>
           <li><strong>Vercel</strong> - Application hosting</li>
         </ul>
