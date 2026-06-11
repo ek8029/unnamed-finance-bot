@@ -305,17 +305,64 @@ export function useHoldings() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
   const holdingsRef = useRef<Holding[]>([]);
+  const quotesInFlight = useRef(false);
 
   useEffect(() => {
     holdingsRef.current = holdings;
   }, [holdings]);
 
   const applyHoldingsData = useCallback((data: Record<string, unknown>) => {
+    // Sync the ref immediately so a quote poll fired right after this
+    // sees the new holdings without waiting for a render cycle.
+    holdingsRef.current = (data.holdings as Holding[]) || [];
     setHoldings((data.holdings as Holding[]) || []);
     setAllocation((data.allocation as { name: string; value: number; percentage: number }[]) || []);
     setTotalValue((data.totalValue as number) || 0);
     setPerformanceMetrics((data.performanceMetrics as PerformanceMetrics) || null);
     setPortfolioHistory((data.portfolioHistory as PortfolioHistoryPoint[]) || []);
+  }, []);
+
+  // Light read-only quote overlay: fetch last trades from /api/market/quotes
+  // and patch them onto current holdings. Zero DB writes.
+  const pollQuotes = useCallback(async () => {
+    if (quotesInFlight.current || document.hidden) return;
+    quotesInFlight.current = true;
+    try {
+      const tickers = [...new Set(
+        holdingsRef.current.map((h) => h.ticker).filter((t) => t && t !== 'UNKNOWN')
+      )];
+      if (tickers.length === 0) return;
+
+      const res = await fetch(`/api/market/quotes?tickers=${encodeURIComponent(tickers.join(','))}`);
+      if (!res.ok) return;
+      const data: { quotes: LiveQuote[] } = await res.json();
+      if (!data.quotes?.length) return;
+
+      const quoteMap = new Map(data.quotes.map((q) => [q.ticker, q]));
+      const patched = holdingsRef.current.map((h) => {
+        const q = quoteMap.get(h.ticker?.toUpperCase());
+        if (!q) return h;
+        const total_value = h.shares * q.price;
+        return {
+          ...h,
+          current_price: q.price,
+          total_value,
+          day_change_percentage: q.dayChangePct ?? h.day_change_percentage,
+          unrealised_gain: h.cost_basis != null ? total_value - h.cost_basis : h.unrealised_gain,
+        };
+      });
+      const total = patched.reduce((sum, h) => sum + (h.total_value || 0), 0);
+      setHoldings(patched.map((h) => ({
+        ...h,
+        portfolio_allocation: total > 0 ? ((h.total_value || 0) / total) * 100 : h.portfolio_allocation,
+      })));
+      setTotalValue(total);
+      setLastRefreshed(new Date().toLocaleTimeString());
+    } catch {
+      // Polling failure is non-fatal — next tick will retry
+    } finally {
+      quotesInFlight.current = false;
+    }
   }, []);
 
   const refreshPrices = useCallback(async () => {
@@ -394,54 +441,32 @@ export function useHoldings() {
       }
     }
 
-    fetchData();
-    autoRefreshPrices();
+    // Live overlay immediately after holdings land (covers after-hours:
+    // show last trade), and again after the heavy refresh re-fetch so the
+    // DB snapshot never stomps fresher live prices.
+    fetchData().then(() => pollQuotes());
+    autoRefreshPrices().then(() => pollQuotes());
 
     // Poll every 30s while the page is open — keeps prices live during
     // market hours without the user needing to do anything. Read-only:
     // /api/market/quotes hits Finazon /price (last trade) and writes
     // nothing to the database, so polling is cheap. The heavy persistence
     // refresh only runs on page load (autoRefreshPrices above).
-    const pollId = setInterval(async () => {
-      try {
-        if (document.hidden || !isUsMarketOpen()) return;
-        const tickers = [...new Set(
-          holdingsRef.current.map((h) => h.ticker).filter((t) => t && t !== 'UNKNOWN')
-        )];
-        if (tickers.length === 0) return;
-
-        const res = await fetch(`/api/market/quotes?tickers=${encodeURIComponent(tickers.join(','))}`);
-        if (!res.ok) return;
-        const data: { quotes: LiveQuote[] } = await res.json();
-        if (!data.quotes?.length) return;
-
-        const quoteMap = new Map(data.quotes.map((q) => [q.ticker, q]));
-        const patched = holdingsRef.current.map((h) => {
-          const q = quoteMap.get(h.ticker?.toUpperCase());
-          if (!q) return h;
-          const total_value = h.shares * q.price;
-          return {
-            ...h,
-            current_price: q.price,
-            total_value,
-            day_change_percentage: q.dayChangePct ?? h.day_change_percentage,
-            unrealised_gain: h.cost_basis != null ? total_value - h.cost_basis : h.unrealised_gain,
-          };
-        });
-        const total = patched.reduce((sum, h) => sum + (h.total_value || 0), 0);
-        setHoldings(patched.map((h) => ({
-          ...h,
-          portfolio_allocation: total > 0 ? ((h.total_value || 0) / total) * 100 : h.portfolio_allocation,
-        })));
-        setTotalValue(total);
-        setLastRefreshed(new Date().toLocaleTimeString());
-      } catch {
-        // Polling failure is non-fatal — next tick will retry
-      }
+    const pollId = setInterval(() => {
+      if (isUsMarketOpen()) pollQuotes();
     }, PRICE_POLL_INTERVAL);
 
-    return () => clearInterval(pollId);
-  }, [applyHoldingsData]);
+    // Catch up immediately when the user returns to the tab.
+    const onVisible = () => {
+      if (!document.hidden && isUsMarketOpen()) pollQuotes();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      clearInterval(pollId);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [applyHoldingsData, pollQuotes]);
 
   // Demo mode — return sample holdings without API calls
   const isDemoHoldings = typeof window !== 'undefined' && sessionStorage.getItem('helm_demo_mode') === '1';
