@@ -11,7 +11,7 @@
  */
 
 import { cache as reactCache } from 'react';
-import { getDailyBars } from '@/lib/finazon';
+import { getDailyBars, getIntradayQuote } from '@/lib/finazon';
 import {
   getReportedFinancialsEdgar,
   getCompanyProfileEdgar,
@@ -125,24 +125,37 @@ export async function getQuote(symbol: string): Promise<StockQuote | null> {
   const cached = getCached<StockQuote>(cacheKey);
   if (cached) return cached;
 
-  const bars = await getDailyBars(upper, 2);
-  if (bars.length === 0) return null;
+  // Hourly-derived quote keeps full decimal precision (the 1d bars are
+  // rounded to whole dollars). Fall back to daily bars if unavailable.
+  const intraday = await getIntradayQuote(upper);
 
-  const latest = bars[0];
-  if (!latest.close || latest.close <= 0) return null;
+  let c: number, pc: number, h: number, l: number, o: number, date: string;
+  if (intraday) {
+    ({ price: c, prevClose: pc, high: h, low: l, open: o, date } = intraday);
+  } else {
+    const bars = await getDailyBars(upper, 2);
+    if (bars.length === 0) return null;
+    const latest = bars[0];
+    if (!latest.close || latest.close <= 0) return null;
+    c = latest.close;
+    pc = bars.length > 1 && bars[1].close > 0 ? bars[1].close : latest.open;
+    h = latest.high;
+    l = latest.low;
+    o = latest.open;
+    date = latest.date;
+  }
 
-  const prevClose = bars.length > 1 && bars[1].close > 0 ? bars[1].close : latest.open;
-  const change = latest.close - prevClose;
+  const change = c - pc;
 
   const quote: StockQuote = {
-    c: latest.close,
+    c,
     d: change,
-    dp: prevClose > 0 ? (change / prevClose) * 100 : 0,
-    h: latest.high,
-    l: latest.low,
-    o: latest.open,
-    pc: prevClose,
-    t: Math.floor(new Date(latest.date).getTime() / 1000),
+    dp: pc > 0 ? (change / pc) * 100 : 0,
+    h,
+    l,
+    o,
+    pc,
+    t: Math.floor(new Date(date).getTime() / 1000),
   };
 
   setCache(cacheKey, quote, QUOTE_CACHE_TTL);

@@ -125,6 +125,75 @@ export async function getDailyBars(
   }));
 }
 
+// ── Intraday quote (from hourly bars) ──
+//
+// The us_stocks_essential 1d bars are rounded to whole dollars, which
+// destroys day-change precision (a 0.35% move on a $290 stock rounds
+// to 0%). Hourly bars keep full decimals, so quotes are derived from
+// them instead.
+
+export interface IntradayQuote {
+  price: number; // latest regular-session bar close
+  prevClose: number; // prior trading day's session close
+  open: number;
+  high: number;
+  low: number;
+  date: string; // YYYY-MM-DD (ET) of the latest session
+}
+
+const ET_DATE = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/New_York',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+const ET_HOUR = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/New_York',
+  hour: 'numeric',
+  hour12: false,
+});
+
+export async function getIntradayQuote(ticker: string): Promise<IntradayQuote | null> {
+  if (isCrypto(ticker)) return null;
+  const data = await finazonFetch<{ data: RawBar[] }>('/time_series', {
+    dataset: 'us_stocks_essential',
+    ticker: ticker.toUpperCase(),
+    interval: '1h',
+    order: 'desc',
+    page_size: '60',
+  });
+  if (!data?.data || data.data.length === 0) return null;
+
+  // Group regular-session bars (bar start 9:00–15:59 ET) by ET date,
+  // preserving newest-first order. Pre/post-market bars are thin and
+  // noisy, so they're excluded.
+  const sessions = new Map<string, RawBar[]>();
+  for (const bar of data.data) {
+    const d = new Date(bar.t * 1000);
+    const hour = Number(ET_HOUR.format(d));
+    if (hour < 9 || hour > 15) continue;
+    const date = ET_DATE.format(d);
+    const list = sessions.get(date);
+    if (list) list.push(bar);
+    else sessions.set(date, [bar]);
+  }
+
+  const dates = [...sessions.keys()]; // newest first
+  if (dates.length === 0) return null;
+
+  const todayBars = sessions.get(dates[0])!; // desc within the day
+  const price = todayBars[0].c;
+  if (!price || price <= 0) return null;
+
+  const open = todayBars[todayBars.length - 1].o;
+  const high = Math.max(...todayBars.map((b) => b.h));
+  const low = Math.min(...todayBars.map((b) => b.l));
+  const prevBars = dates.length > 1 ? sessions.get(dates[1]) : undefined;
+  const prevClose = prevBars && prevBars[0].c > 0 ? prevBars[0].c : open;
+
+  return { price, prevClose, open, high, low, date: dates[0] };
+}
+
 /**
  * Fetch daily close prices for a ticker over a date range (ascending).
  * Drop-in replacement for the old Polygon getHistoricalPrices.
