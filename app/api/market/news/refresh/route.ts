@@ -1,11 +1,13 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { refreshMarketNews } from '@/lib/market-sync';
+import { rateLimit } from '@/lib/rate-limit';
 
 /**
  * POST /api/market/news/refresh
  *
- * Disabled after the Polygon/Finnhub migration — no licensed news
- * provider. Existing market_news rows continue to serve the feed.
+ * Refreshes market_news + market_events from free, license-clean
+ * sources (Nasdaq per-ticker RSS, SEC EDGAR 8-K filings).
  */
 export async function POST() {
   try {
@@ -17,12 +19,20 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    return NextResponse.json({
-      success: true,
-      fetched: 0,
-      inserted: 0,
-      message: 'News refresh disabled — no news provider configured',
-    });
+    // Global limit — news is shared across all users, no need to refresh often
+    const { allowed } = rateLimit('news-refresh:global', 2, 3600);
+    if (!allowed) {
+      return NextResponse.json({
+        success: true,
+        message: 'News recently refreshed — serving existing articles',
+      });
+    }
+
+    const serviceClient = await createServiceClient();
+    const log: string[] = [];
+    await refreshMarketNews(serviceClient, log);
+
+    return NextResponse.json({ success: true, log });
   } catch (error) {
     console.error('Error refreshing market news:', error);
     return NextResponse.json(

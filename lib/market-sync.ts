@@ -1,4 +1,5 @@
 import { getBatchPrices } from '@/lib/finazon';
+import { refreshRssNews, refreshFilingEvents } from '@/lib/free-news';
 import { mapSicToSector, getTickerSectorOverride } from '@/lib/market-classify';
 import { getCompanyProfileEdgar } from '@/lib/edgar';
 import { RISK_FREE_RATE, TRADING_DAYS_PER_YEAR } from '@/lib/financial-config';
@@ -550,10 +551,26 @@ export async function enrichMarketData(supabase: AnyClient, log: string[]) {
 
 
 /**
- * Market news refresh.
- * Disabled after the Polygon/Finnhub migration — no licensed news provider.
- * Existing market_news rows continue to serve the intelligence feed.
+ * Market news + events refresh from free, license-clean sources:
+ * Nasdaq per-ticker RSS headlines and SEC EDGAR 8-K filings.
  */
-export async function refreshMarketNews(_supabase: AnyClient, log: string[]) {
-  log.push('[news] News refresh skipped — no news provider configured');
+export async function refreshMarketNews(supabase: AnyClient, log: string[]) {
+  const { data: holdings, error } = await supabase
+    .from('holdings')
+    .select('ticker')
+    .neq('ticker', 'UNKNOWN');
+
+  if (error || !holdings || holdings.length === 0) {
+    log.push('[news] No holdings — skipping news refresh');
+    return;
+  }
+
+  const tickers = [...new Set(
+    (holdings as { ticker: string | null }[])
+      .map(h => h.ticker)
+      .filter((t): t is string => Boolean(t)),
+  )];
+
+  await refreshRssNews(supabase, log, tickers);
+  await refreshFilingEvents(supabase, log, tickers);
 }

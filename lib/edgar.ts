@@ -283,6 +283,66 @@ export async function getReportedFinancialsEdgar(symbol: string): Promise<Report
 
 // ── Company profile (submissions endpoint) ──
 
+// ── Recent filings (8-K material events) ──
+
+export interface EdgarFiling {
+  form: string;
+  filingDate: string; // YYYY-MM-DD
+  items: string[]; // 8-K item numbers, e.g. ['2.02', '9.01']
+  url: string;
+}
+
+const FILINGS_TTL = 60 * 60 * 1000; // 1 hour
+
+/**
+ * Fetch a company's recent EDGAR filings (newest first), optionally
+ * filtered to those on/after `sinceDate` (YYYY-MM-DD).
+ */
+export async function getRecentFilings(symbol: string, sinceDate?: string): Promise<EdgarFiling[]> {
+  const cacheKey = `edgar:filings:${symbol.toUpperCase()}`;
+  let filings = getCached<EdgarFiling[]>(cacheKey);
+
+  if (!filings) {
+    const cik = await getCik(symbol);
+    if (!cik) return [];
+
+    try {
+      const res = await fetch(`https://data.sec.gov/submissions/CIK${cik}.json`, {
+        headers: { 'User-Agent': UA, Accept: 'application/json' },
+        cache: 'no-store',
+      });
+      if (!res.ok) {
+        console.error(`EDGAR submissions ${symbol} error: ${res.status}`);
+        return [];
+      }
+      const data = await res.json();
+      const recent = data.filings?.recent;
+      if (!recent?.form) return [];
+
+      const cikNum = String(Number(cik)); // strip leading zeros for archive URLs
+      filings = [];
+      for (let i = 0; i < recent.form.length && i < 100; i++) {
+        const accession = (recent.accessionNumber?.[i] || '').replace(/-/g, '');
+        const doc = recent.primaryDocument?.[i] || '';
+        filings.push({
+          form: recent.form[i],
+          filingDate: recent.filingDate?.[i] || '',
+          items: (recent.items?.[i] || '').split(',').map((s: string) => s.trim()).filter(Boolean),
+          url: accession && doc
+            ? `https://www.sec.gov/Archives/edgar/data/${cikNum}/${accession}/${doc}`
+            : `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${cik}&type=8-K`,
+        });
+      }
+      setCache(cacheKey, filings, FILINGS_TTL);
+    } catch (error) {
+      console.error(`EDGAR filings ${symbol} failed:`, error);
+      return [];
+    }
+  }
+
+  return sinceDate ? filings.filter(f => f.filingDate >= sinceDate) : filings;
+}
+
 export interface EdgarCompanyProfile {
   name: string;
   sicDescription: string | null;

@@ -83,6 +83,11 @@ async function finazonFetch<T>(
     return (await res.json()) as T;
   } catch (err) {
     clearTimeout(timeout);
+    // Next.js throws this to mark a route as dynamic during prerender —
+    // swallowing it would bake null data into a static page.
+    if (err && typeof err === 'object' && 'digest' in err && (err as { digest?: string }).digest === 'DYNAMIC_SERVER_USAGE') {
+      throw err;
+    }
     if (err instanceof Error && err.name === 'AbortError') {
       console.error(`[finazon] Request timed out: ${endpoint}`);
     } else {
