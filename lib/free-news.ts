@@ -1,11 +1,13 @@
 /**
  * Free, license-clean news + events ingestion.
  *
- * Two sources, neither requiring an API key:
+ * Three sources, none requiring an API key:
  *  1. Nasdaq per-ticker RSS — headline + link + short description with
  *     attribution. We never republish article bodies; sentiment and
  *     summaries are computed in-house.
- *  2. SEC EDGAR 8-K filings (public domain) — material corporate events
+ *  2. Yahoo Finance per-ticker RSS — broader syndication (Reuters, AP,
+ *     Barron's, Bloomberg headlines). Same headline+link+attribution posture.
+ *  3. SEC EDGAR 8-K filings (public domain) — material corporate events
  *     (earnings releases, M&A, leadership changes) into market_events.
  */
 
@@ -85,7 +87,12 @@ export async function fetchTickerHeadlines(ticker: string): Promise<RssArticle[]
       articles.push({
         title,
         url,
-        description: (tagContent(item, 'description') || '').substring(0, 500),
+        // Nasdaq strips HTML tags upstream without inserting spaces, which
+        // leaves Motley Fool's "Key Points" heading glued to the first
+        // sentence (e.g. "Key PointsApple unveiled..."). Drop the prefix.
+        description: (tagContent(item, 'description') || '')
+          .replace(/^Key Points\s*/i, '')
+          .substring(0, 500),
         source: tagContent(item, 'dc:creator') || 'Nasdaq',
         publishedAt: isNaN(published.getTime()) ? new Date().toISOString() : published.toISOString(),
         tickers: feedTickers.length > 0 ? [...new Set(feedTickers)] : [upper],
@@ -94,6 +101,77 @@ export async function fetchTickerHeadlines(ticker: string): Promise<RssArticle[]
     return articles;
   } catch (error) {
     console.error(`[free-news] RSS fetch failed for ${upper}:`, error);
+    return [];
+  }
+}
+
+/** Display source derived from an article URL's hostname. */
+function sourceFromUrl(url: string): string {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    if (host.endsWith('yahoo.com')) return 'Yahoo Finance';
+    if (host.endsWith('fool.com')) return 'The Motley Fool';
+    return host;
+  } catch {
+    return 'Yahoo Finance';
+  }
+}
+
+/**
+ * Fetch recent headlines for a ticker from Yahoo Finance's public RSS feed.
+ * Broader syndication than Nasdaq's feed, but no source/ticker metadata —
+ * source is derived from the article URL, tickers default to the requested one.
+ */
+export async function fetchYahooHeadlines(ticker: string): Promise<RssArticle[]> {
+  const upper = ticker.toUpperCase();
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    const res = await fetch(
+      `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${encodeURIComponent(upper)}&region=US&lang=en-US`,
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+          Accept: 'application/rss+xml, application/xml, text/xml',
+        },
+        cache: 'no-store',
+        signal: controller.signal,
+      },
+    );
+    clearTimeout(timeout);
+    if (!res.ok) return [];
+
+    const xml = await res.text();
+    const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
+    const articles: RssArticle[] = [];
+
+    for (const item of items.slice(0, 15)) {
+      const title = tagContent(item, 'title');
+      const rawUrl = tagContent(item, 'link');
+      if (!title || !rawUrl) continue;
+
+      // Strip Yahoo's RSS tracking param for cleaner links and dedupe
+      const url = rawUrl.replace(/\?\.tsrc=rss$/, '');
+      const pubDate = tagContent(item, 'pubDate');
+      const published = pubDate ? new Date(pubDate) : new Date();
+
+      articles.push({
+        title,
+        url,
+        // Bloomberg items glue a "Most Read from Bloomberg" link list onto
+        // the summary with no separator. Drop it.
+        description: (tagContent(item, 'description') || '')
+          .replace(/Most Read from Bloomberg[\s\S]*$/, '')
+          .substring(0, 500)
+          .trim(),
+        source: sourceFromUrl(url),
+        publishedAt: isNaN(published.getTime()) ? new Date().toISOString() : published.toISOString(),
+        tickers: [upper],
+      });
+    }
+    return articles;
+  } catch (error) {
+    console.error(`[free-news] Yahoo RSS fetch failed for ${upper}:`, error);
     return [];
   }
 }
@@ -117,16 +195,25 @@ export async function refreshRssNews(
 
   const articles: RssArticle[] = [];
   for (const ticker of unique) {
-    const fetched = await fetchTickerHeadlines(ticker);
-    articles.push(...fetched);
+    const [nasdaq, yahoo] = await Promise.all([
+      fetchTickerHeadlines(ticker),
+      fetchYahooHeadlines(ticker),
+    ]);
+    articles.push(...nasdaq, ...yahoo);
     await new Promise(r => setTimeout(r, 300)); // be polite
   }
 
-  // Dedupe within batch by URL
+  // Dedupe within batch by URL and by normalized title — the same article
+  // often appears on both feeds under different URLs (Nasdaq republish vs
+  // original publisher link via Yahoo).
+  const normTitle = (t: string) => t.toLowerCase().replace(/[^a-z0-9]/g, '');
   const seen = new Set<string>();
+  const seenTitles = new Set<string>();
   const batch = articles.filter(a => {
-    if (seen.has(a.url)) return false;
+    const nt = normTitle(a.title);
+    if (seen.has(a.url) || seenTitles.has(nt)) return false;
     seen.add(a.url);
+    seenTitles.add(nt);
     return true;
   });
 
@@ -135,14 +222,21 @@ export async function refreshRssNews(
     return 0;
   }
 
-  // Dedupe against existing rows
-  const { data: existing } = await supabase
-    .from('market_news')
-    .select('url')
-    .in('url', batch.map(a => a.url));
+  // Dedupe against existing rows — by URL, and by normalized title over the
+  // last 7 days (same story can arrive from the other feed under a new URL)
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const [{ data: existing }, { data: recentRows }] = await Promise.all([
+    supabase.from('market_news').select('url').in('url', batch.map(a => a.url)),
+    supabase.from('market_news').select('title').gte('published_at', weekAgo),
+  ]);
 
   const existingUrls = new Set((existing || []).map((a: { url: string }) => a.url));
-  const newArticles = batch.filter(a => !existingUrls.has(a.url));
+  const existingTitles = new Set(
+    (recentRows || []).map((a: { title: string }) => normTitle(a.title || '')),
+  );
+  const newArticles = batch.filter(
+    a => !existingUrls.has(a.url) && !existingTitles.has(normTitle(a.title)),
+  );
 
   if (newArticles.length === 0) {
     log.push(`[news] 0 new articles (${batch.length} duplicates skipped)`);
