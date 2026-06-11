@@ -411,7 +411,7 @@ export default function HomeContent({ tickerTape }: HomeContentProps) {
                 ))}
               </div>
               <div className="px-5 py-3.5 bg-[var(--color-bg-surface)] border-t border-[var(--color-border-base)] font-[family-name:var(--font-mono)] text-[10px] tracking-[0.08em] text-[var(--color-text-muted)] flex gap-2 flex-wrap">
-                <b className="text-[var(--color-text-secondary)]">Sources:</b> SEC 10-Q (filed May 28) &middot; Polygon EOD &middot; Finnhub estimates &middot; generated 2h ago
+                <b className="text-[var(--color-text-secondary)]">Sources:</b> SEC 10-Q (filed May 28) &middot; Finazon EOD &middot; SEC EDGAR fundamentals &middot; generated 2h ago
               </div>
             </div>
             {/* Copy */}
@@ -422,7 +422,7 @@ export default function HomeContent({ tickerTape }: HomeContentProps) {
                 Helm never hands you a verdict without showing its work. Pull up any bull or bear case and you&rsquo;ll see the exact filing line, the data vendor, and a conviction score that goes on the record.
               </p>
               <ul className="flex flex-col gap-3 list-none">
-                {['Primary sources linked inline (SEC, Polygon, Finnhub)', 'Staleness shown, so you always know how fresh it is', 'Not investment advice, and never pretends to be'].map((item) => (
+                {['Primary sources linked inline (SEC EDGAR, Finazon)', 'Staleness shown, so you always know how fresh it is', 'Not investment advice, and never pretends to be'].map((item) => (
                   <li key={item} className="flex gap-3 text-sm text-[var(--color-text-primary)] items-start">
                     <span className="text-[var(--color-gold)] font-[family-name:var(--font-mono)]">&rarr;</span>
                     {item}

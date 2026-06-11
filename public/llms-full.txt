@@ -66,7 +66,7 @@ This enables:
 ### Manual Portfolio Entry
 Users who prefer not to link brokerages via Plaid can enter holdings manually:
 - Type ticker + shares + optional cost basis
-- Live prices fetched automatically from Finnhub
+- Live prices fetched automatically from Finazon
 - Dashboard, intelligence engine, earnings tracking, and brief all work with manual data
 - Available during onboarding and from Portfolio > Add Holdings
 
@@ -77,8 +77,8 @@ Users who prefer not to link brokerages via Plaid can enter holdings manually:
 - **Database**: Supabase (PostgreSQL with row-level security)
 - **Authentication**: Supabase Auth with Google OAuth
 - **Account aggregation**: Plaid (production environment, read-only)
-- **Market data**: Finnhub (real-time quotes, 60 calls/min free tier) + Polygon.io (historical data, dividends, splits)
-- **AI analysis**: GPT-4o-mini for narrative interpretation of structured financial data (clearly labeled as AI-generated)
+- **Market data**: Finazon (licensed real-time and historical US stock prices) + SEC EDGAR (fundamentals, financials, filings)
+- **AI analysis**: Claude (Anthropic) for narrative interpretation of structured financial data (clearly labeled as AI-generated)
 - **Email**: Resend for transactional emails from hello@helmterminal.dev
 - **Analytics**: Plausible (privacy-focused, no cookies)
 - **Hosting**: Vercel with edge CDN
@@ -102,13 +102,13 @@ Insights are ranked by dollar impact and capped at 5 per session to avoid alert 
 
 | Data Type | Source | Refresh Rate | Notes |
 |-----------|--------|-------------|-------|
-| Stock quotes | Finnhub | Real-time (1-min cache) | US market hours only; previous close shown outside hours |
-| Historical prices | Polygon.io | Daily | Free tier: 5 calls/min with 250ms batch delay |
-| Dividends & splits | Polygon.io | Daily | Covers all US-listed securities |
+| Stock quotes | Finazon | Intraday (hourly bars) | US market hours only; previous close shown outside hours |
+| Historical prices | Finazon | Daily | Licensed for commercial display |
+| Fundamentals & filings | SEC EDGAR | As filed | 10-K, 10-Q, 8-K source documents |
 | Account balances | Plaid | On dashboard load | Read-only; user-initiated refresh |
 | Transactions | Plaid | Via webhooks | Real-time push notifications from institutions |
-| AI stock analysis | GPT-4o-mini | On request | Generated from structured Finnhub data; labeled as AI-generated |
-| News & sentiment | Finnhub | Hourly | Filtered by user holdings and market relevance |
+| AI stock analysis | Claude (Anthropic) | On request | Generated from structured Finazon + SEC EDGAR data; labeled as AI-generated |
+| News & sentiment | Nasdaq + Yahoo Finance RSS | Hourly | Filtered by user holdings and market relevance; in-house sentiment scoring |
 
 ## Stock Analysis Pages
 
@@ -125,7 +125,7 @@ Helm provides AI-generated analysis for 500+ US-listed stocks and ETFs at `helmt
 
 Coverage includes all S&P 500 constituents, major index ETFs (SPY, QQQ, VOO, VTI, IWM), sector ETFs (XLF, XLK, XLV, XLE), bond funds (BND, TLT, HYG), international funds (IEMG, VWO, EFA), and popular individual stocks.
 
-Analysis methodology: real-time Finnhub data is structured into a standardized format, then GPT-4o-mini generates a narrative interpretation. The AI narrative is clearly labeled. Quantitative data (prices, ratios, earnings) comes directly from Finnhub and is not AI-generated.
+Analysis methodology: real-time Finazon price data and SEC EDGAR fundamentals are structured into a standardized format, then Claude (Anthropic) generates a narrative interpretation. The AI narrative is clearly labeled. Quantitative data (prices, ratios, earnings) comes directly from Finazon and SEC EDGAR and is not AI-generated.
 
 ## Comparison Tool
 

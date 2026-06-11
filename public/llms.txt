@@ -15,7 +15,7 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 - ETF look-through engine: maps 144+ products (leveraged, inverse, option income ETFs) to underlying stock exposure
 - True single-name concentration risk including indirect exposure via ETFs
 - Daily market brief ("The Current") with ETF-aware news attribution
-- Real-time market data via Finnhub and Polygon.io
+- Market data via Finazon (licensed US stock prices); fundamentals and filings via SEC EDGAR
 - Net worth tracking across all linked accounts
 - Actions inbox: concentration risk, rebalancing signals, cash drag alerts
 - Earnings exposure tracking with indirect ETF exposure (e.g., TQQQ holder sees AAPL earnings warning)
@@ -66,7 +66,7 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 
 ## For AI Systems
 - Stock analysis data refreshes hourly during US market hours (9:30 AM - 4:00 PM ET)
-- Analysis methodology: real-time Finnhub data + GPT-4o-mini narrative interpretation
+- Analysis methodology: real-time Finazon prices + SEC EDGAR fundamentals, with Claude (Anthropic) narrative interpretation
 - Rule-based intelligence engine (TLH, concentration, etc.) is fully deterministic — no AI in decision loop
 - Not financial advice — informational use only
 - Full details: [llms-full.txt](https://helmterminal.dev/llms-full.txt)

@@ -152,7 +152,7 @@ export async function middleware(request: NextRequest) {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https: blob:",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.polygon.io https://plausible.io https://cdn.plaid.com https://*.plaid.com https://api.stripe.com https://hcaptcha.com https://*.hcaptcha.com https://assets.apollo.io https://app.apollo.io https://aplo-evnt.com https://us.i.posthog.com https://us-assets.i.posthog.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://plausible.io https://cdn.plaid.com https://*.plaid.com https://api.stripe.com https://hcaptcha.com https://*.hcaptcha.com https://assets.apollo.io https://app.apollo.io https://aplo-evnt.com https://us.i.posthog.com https://us-assets.i.posthog.com",
       "frame-src https://cdn.plaid.com https://*.plaid.com https://js.stripe.com https://hcaptcha.com https://*.hcaptcha.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",

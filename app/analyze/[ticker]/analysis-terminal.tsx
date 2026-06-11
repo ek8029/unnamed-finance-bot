@@ -604,7 +604,7 @@ function StatementView({ symbol, statement }: { symbol: string; statement: 'ic' 
         </table>
       </div>
       <div className="text-[11px] text-[var(--color-text-muted)] font-mono">
-        Source: SEC filings via Finnhub. Values as reported.
+        Source: SEC EDGAR filings. Values as reported.
       </div>
     </div>
   );

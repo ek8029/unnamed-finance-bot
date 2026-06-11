@@ -143,6 +143,7 @@ export interface IntradayQuote {
   open: number;
   high: number;
   low: number;
+  volume: number; // sum of the latest session's hourly bar volumes
   date: string; // YYYY-MM-DD (ET) of the latest session
 }
 
@@ -193,10 +194,11 @@ export async function getIntradayQuote(ticker: string): Promise<IntradayQuote | 
   const open = todayBars[todayBars.length - 1].o;
   const high = Math.max(...todayBars.map((b) => b.h));
   const low = Math.min(...todayBars.map((b) => b.l));
+  const volume = todayBars.reduce((sum, b) => sum + (b.v || 0), 0);
   const prevBars = dates.length > 1 ? sessions.get(dates[1]) : undefined;
   const prevClose = prevBars && prevBars[0].c > 0 ? prevBars[0].c : open;
 
-  return { price, prevClose, open, high, low, date: dates[0] };
+  return { price, prevClose, open, high, low, volume, date: dates[0] };
 }
 
 /**
@@ -238,9 +240,25 @@ export interface LatestPrice {
 }
 
 /**
- * Fetch the most recent daily bar for a ticker.
+ * Fetch the most recent price for a ticker. Derived from hourly bars
+ * (full decimal precision) — us_stocks_essential 1d bars are rounded
+ * to whole dollars, which destroys day-change math downstream. Falls
+ * back to the daily bar only if no hourly data is available.
  */
 export async function getLatestPrice(ticker: string): Promise<LatestPrice | null> {
+  const quote = await getIntradayQuote(ticker);
+  if (quote) {
+    return {
+      ticker: ticker.toUpperCase(),
+      close: quote.price,
+      open: quote.open,
+      high: quote.high,
+      low: quote.low,
+      volume: quote.volume,
+      date: quote.date,
+    };
+  }
+
   const bars = await getDailyBars(ticker, 1);
   if (bars.length === 0) return null;
   const b = bars[0];

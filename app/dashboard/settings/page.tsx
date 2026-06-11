@@ -1602,7 +1602,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-base)]">
-      <div className="flex max-w-[1400px] mx-auto">
+      <div className="flex flex-col lg:flex-row max-w-[1400px] mx-auto">
         {/* ── Side Navigation (desktop) ── */}
         <aside className="hidden lg:block w-[220px] flex-shrink-0 border-r border-[var(--color-border-subtle)] min-h-screen sticky top-0">
           <div className="p-6 pb-4">

@@ -462,7 +462,7 @@ export default function RSUCalculatorPage() {
                     />
                   </div>
                   {!priceOverride && fetchedPrice !== null && (
-                    <p className="text-xs text-[var(--color-text-muted)] mt-1.5">Auto-fetched from Finnhub. Overriding locks the price.</p>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-1.5">Auto-fetched from Finazon. Overriding locks the price.</p>
                   )}
                 </div>
 

@@ -921,7 +921,7 @@ export default function BriefPage() {
       {/* ═══ Footer ═══ */}
       <footer className="border-t border-white/[0.06] py-4 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between text-[11px] text-[var(--color-text-muted)] uppercase tracking-[0.12em]" style={MONO}>
-          <span>Sources: Finnhub · Polygon · Market News</span>
+          <span>Sources: Finazon · SEC EDGAR · Market News</span>
           <span>helmterminal.dev</span>
         </div>
       </footer>
