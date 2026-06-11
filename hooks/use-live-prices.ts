@@ -38,6 +38,7 @@ export function isUsMarketOpen(): boolean {
 export function useLivePrices(
   tickers: string[],
   intervalMs: number = LIVE_PRICE_INTERVAL_MS,
+  endpoint: string = '/api/market/quotes',
 ): { quotes: Record<string, LiveQuote>; lastUpdated: Date | null } {
   const [quotes, setQuotes] = useState<Record<string, LiveQuote>>({});
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -58,7 +59,7 @@ export function useLivePrices(
       if (inFlight.current || document.hidden) return;
       inFlight.current = true;
       try {
-        const res = await fetch(`/api/market/quotes?tickers=${encodeURIComponent(tickerKey)}`);
+        const res = await fetch(`${endpoint}?tickers=${encodeURIComponent(tickerKey)}`);
         if (!res.ok) return;
         const data: { quotes: LiveQuote[] } = await res.json();
         if (cancelled || !data.quotes?.length) return;
@@ -93,7 +94,7 @@ export function useLivePrices(
       clearInterval(id);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [tickerKey, intervalMs]);
+  }, [tickerKey, intervalMs, endpoint]);
 
   return { quotes, lastUpdated };
 }

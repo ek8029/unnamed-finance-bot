@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
 import type { TickerTapeItem } from '@/lib/ticker-tape';
+import { useLivePrices } from '@/hooks/use-live-prices';
 
 /* ─── Props ─────────────────────────────────────────────────────────────── */
 
@@ -120,6 +121,21 @@ export default function HomeContent({ tickerTape }: HomeContentProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
 
+  // Live overlay for the ticker tape: poll the public quotes endpoint
+  // every 60s. Non-whitelisted (trending) tickers keep their SSR values.
+  const tapeSymbols = useMemo(() => tickerTape.map((t) => t.symbol), [tickerTape]);
+  const { quotes: liveTapeQuotes } = useLivePrices(tapeSymbols, 60_000, '/api/market/quotes/public');
+  const liveTape = useMemo(() => tickerTape.map((t) => {
+    const q = liveTapeQuotes[t.symbol];
+    if (!q) return t;
+    return {
+      ...t,
+      price: q.price.toFixed(2),
+      change: q.dayChangePct != null ? `${q.dayChangePct >= 0 ? '+' : ''}${q.dayChangePct.toFixed(2)}%` : t.change,
+      positive: q.dayChangePct != null ? q.dayChangePct >= 0 : t.positive,
+    };
+  }), [tickerTape, liveTapeQuotes]);
+
   // Detect reduced motion preference
   useEffect(() => {
     setReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -176,10 +192,10 @@ export default function HomeContent({ tickerTape }: HomeContentProps) {
     <div className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)]">
 
       {/* ── TICKER TAPE (topmost) ── */}
-      {tickerTape.length > 0 && (
+      {liveTape.length > 0 && (
         <div className="fixed top-0 left-0 right-0 z-[61] overflow-hidden border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-base)] h-[32px] max-sm:hidden" aria-hidden="true">
           <div className="tape-track inline-flex items-center h-full whitespace-nowrap animate-tape-scroll">
-            {[...tickerTape, ...tickerTape, ...tickerTape].map((t, i) => (
+            {[...liveTape, ...liveTape, ...liveTape].map((t, i) => (
               <span key={`${t.symbol}-${i}`} className="inline-flex items-center gap-2.5 px-6 font-[family-name:var(--font-mono)] text-[11px]">
                 <span className="text-[var(--color-gold)] font-bold tracking-[0.04em]">{t.symbol}</span>
                 <span className="text-[var(--color-text-primary)] tabular-nums">{t.price}</span>

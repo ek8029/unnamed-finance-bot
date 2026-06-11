@@ -1,8 +1,10 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { TrendingUp, TrendingDown, Minus, Calendar } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
+import { useLivePrices } from '@/hooks/use-live-prices';
 
 interface Quote {
   symbol: string;
@@ -60,7 +62,34 @@ function moverReason(symbol: string, changePct: number, spyPct: number): string 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 const SERIF: React.CSSProperties = { fontFamily: '"Source Serif Pro", Georgia, "Times New Roman", serif' };
 
-export function PublicBrief({ quotes }: { quotes: Quote[] }) {
+export function PublicBrief({ quotes: serverQuotes }: { quotes: Quote[] }) {
+  // Live overlay: poll the public quotes endpoint every 60s and patch
+  // prices onto the server-rendered snapshot (ISR revalidates every 5 min).
+  // If the server snapshot is empty (vendor hiccup at render time), build
+  // the list client-side from the known brief tickers.
+  const symbols = useMemo(
+    () => (serverQuotes.length > 0 ? serverQuotes.map((q) => q.symbol) : Object.keys(NAMES)),
+    [serverQuotes],
+  );
+  const { quotes: liveQuotes } = useLivePrices(symbols, 60_000, '/api/market/quotes/public');
+  const quotes = useMemo(() => {
+    const base: Quote[] = serverQuotes.length > 0
+      ? serverQuotes
+      : Object.keys(NAMES).map((s) => ({ symbol: s, price: 0, changePct: 0, change: 0 }));
+    return base
+      .map((q) => {
+        const lq = liveQuotes[q.symbol];
+        if (!lq) return q;
+        return {
+          ...q,
+          price: lq.price,
+          changePct: lq.dayChangePct ?? q.changePct,
+          change: lq.prevClose != null ? lq.price - lq.prevClose : q.change,
+        };
+      })
+      .filter((q) => q.price > 0);
+  }, [serverQuotes, liveQuotes]);
+
   const now = new Date();
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
