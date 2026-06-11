@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { useMemo } from 'react';
+import { useLivePrices } from '@/hooks/use-live-prices';
 import { TrendingUp, TrendingDown, ExternalLink, ArrowLeft } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { StockQuote } from '@/lib/financial-data';
@@ -38,7 +40,7 @@ function timeAgo(iso: string): string {
 }
 
 export function HoldingDetailClient({
-  holding, priceHistory, news, transactions, quote,
+  holding: serverHolding, priceHistory, news, transactions, quote,
 }: {
   holding: HoldingData;
   priceHistory: { date: string; close: number }[];
@@ -46,6 +48,22 @@ export function HoldingDetailClient({
   transactions: Transaction[];
   quote: StockQuote | null;
 }) {
+  // Live price overlay: poll /api/market/quotes every 30s while market open.
+  const { quotes: liveQuotes } = useLivePrices(useMemo(() => [serverHolding.ticker], [serverHolding.ticker]));
+  const holding = useMemo(() => {
+    const q = liveQuotes[serverHolding.ticker?.toUpperCase()];
+    if (!q) return serverHolding;
+    const totalValue = serverHolding.shares * q.price;
+    return {
+      ...serverHolding,
+      currentPrice: q.price,
+      totalValue,
+      unrealizedGL: totalValue - serverHolding.costBasis,
+      unrealizedPct: serverHolding.costBasis > 0 ? ((totalValue - serverHolding.costBasis) / serverHolding.costBasis) * 100 : serverHolding.unrealizedPct,
+      dayChangePct: q.dayChangePct ?? serverHolding.dayChangePct,
+    };
+  }, [serverHolding, liveQuotes]);
+
   const up = holding.dayChangePct >= 0;
   const glUp = holding.unrealizedGL >= 0;
 

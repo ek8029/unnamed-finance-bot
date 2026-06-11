@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { isUsMarketOpen, type LiveQuote } from '@/hooks/use-live-prices';
 
 // Types for API responses
 interface FinancialSummary {
@@ -290,8 +291,8 @@ interface PortfolioHistoryPoint {
 }
 
 const PRICE_REFRESH_KEY = 'helm_last_price_refresh';
-const PRICE_REFRESH_INTERVAL = 60 * 1000; // 60 seconds — Finnhub real-time quotes
-const PRICE_POLL_INTERVAL = 60 * 1000;    // Poll every 60s while page is open
+const PRICE_REFRESH_INTERVAL = 10 * 60 * 1000; // Heavy DB refresh at most every 10 min (on page load)
+const PRICE_POLL_INTERVAL = 30 * 1000;         // Light read-only quote poll every 30s while page is open
 
 export function useHoldings() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
@@ -303,6 +304,11 @@ export function useHoldings() {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
+  const holdingsRef = useRef<Holding[]>([]);
+
+  useEffect(() => {
+    holdingsRef.current = holdings;
+  }, [holdings]);
 
   const applyHoldingsData = useCallback((data: Record<string, unknown>) => {
     setHoldings((data.holdings as Holding[]) || []);
@@ -391,23 +397,44 @@ export function useHoldings() {
     fetchData();
     autoRefreshPrices();
 
-    // Poll every 60s while the page is open — keeps prices live
-    // during market hours without the user needing to do anything.
-    // The API rate limiter (3 calls per 5 min) prevents abuse if
-    // multiple tabs are open.
+    // Poll every 30s while the page is open — keeps prices live during
+    // market hours without the user needing to do anything. Read-only:
+    // /api/market/quotes hits Finazon /price (last trade) and writes
+    // nothing to the database, so polling is cheap. The heavy persistence
+    // refresh only runs on page load (autoRefreshPrices above).
     const pollId = setInterval(async () => {
       try {
-        const res = await fetch('/api/market/prices/refresh', { method: 'POST' });
-        if (res.ok) {
-          sessionStorage.setItem(PRICE_REFRESH_KEY, String(Date.now()));
-          setLastRefreshed(new Date().toLocaleTimeString());
+        if (document.hidden || !isUsMarketOpen()) return;
+        const tickers = [...new Set(
+          holdingsRef.current.map((h) => h.ticker).filter((t) => t && t !== 'UNKNOWN')
+        )];
+        if (tickers.length === 0) return;
 
-          const holdingsRes = await fetch('/api/holdings');
-          if (holdingsRes.ok) {
-            const data = await holdingsRes.json();
-            applyHoldingsData(data);
-          }
-        }
+        const res = await fetch(`/api/market/quotes?tickers=${encodeURIComponent(tickers.join(','))}`);
+        if (!res.ok) return;
+        const data: { quotes: LiveQuote[] } = await res.json();
+        if (!data.quotes?.length) return;
+
+        const quoteMap = new Map(data.quotes.map((q) => [q.ticker, q]));
+        const patched = holdingsRef.current.map((h) => {
+          const q = quoteMap.get(h.ticker?.toUpperCase());
+          if (!q) return h;
+          const total_value = h.shares * q.price;
+          return {
+            ...h,
+            current_price: q.price,
+            total_value,
+            day_change_percentage: q.dayChangePct ?? h.day_change_percentage,
+            unrealised_gain: h.cost_basis != null ? total_value - h.cost_basis : h.unrealised_gain,
+          };
+        });
+        const total = patched.reduce((sum, h) => sum + (h.total_value || 0), 0);
+        setHoldings(patched.map((h) => ({
+          ...h,
+          portfolio_allocation: total > 0 ? ((h.total_value || 0) / total) * 100 : h.portfolio_allocation,
+        })));
+        setTotalValue(total);
+        setLastRefreshed(new Date().toLocaleTimeString());
       } catch {
         // Polling failure is non-fatal — next tick will retry
       }

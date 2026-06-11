@@ -12,7 +12,7 @@
  *   - price:       FINAZON_PRICE_RPM requests/min (default 50)
  */
 
-import { FINAZON_TS_RPM } from '@/lib/financial-config';
+import { FINAZON_TS_RPM, FINAZON_PRICE_RPM } from '@/lib/financial-config';
 
 const FINAZON_BASE = 'https://api.finazon.io/latest/finazon/us_stocks_essential';
 
@@ -291,6 +291,50 @@ export async function getBatchPrices(tickers: string[]): Promise<Map<string, Lat
     for (let j = 0; j < batch.length; j++) {
       const r = settled[j];
       if (r.status === 'fulfilled' && r.value) results.set(batch[j], r.value);
+    }
+    if (i + BATCH_SIZE < unique.length) {
+      await new Promise((resolve) => setTimeout(resolve, batchDelayMs));
+    }
+  }
+
+  return results;
+}
+
+// ── Last trade price (/price endpoint) ──
+
+/**
+ * Fetch the real-time last trade price for a ticker via the /price
+ * endpoint. Unlike time_series bars (hourly at best), this returns the
+ * actual last trade — seconds old during market hours. Metered
+ * separately from time_series (FINAZON_PRICE_RPM, plan: 200/min).
+ */
+export async function getLastTradePrice(ticker: string): Promise<number | null> {
+  if (isCrypto(ticker)) return null;
+  const data = await finazonFetch<{ p: number }>('/price', {
+    dataset: 'us_stocks_essential',
+    ticker: ticker.toUpperCase(),
+  });
+  if (!data || typeof data.p !== 'number' || data.p <= 0) return null;
+  return data.p;
+}
+
+/**
+ * Fetch last trade prices for multiple tickers, throttled to the
+ * /price requests-per-minute budget.
+ */
+export async function getBatchLastTradePrices(tickers: string[]): Promise<Map<string, number>> {
+  const results = new Map<string, number>();
+  const unique = [...new Set(tickers.filter(Boolean).map((t) => t.toUpperCase()))];
+
+  const BATCH_SIZE = 10;
+  const batchDelayMs = Math.ceil((BATCH_SIZE * 60_000) / FINAZON_PRICE_RPM);
+
+  for (let i = 0; i < unique.length; i += BATCH_SIZE) {
+    const batch = unique.slice(i, i + BATCH_SIZE);
+    const settled = await Promise.allSettled(batch.map((t) => getLastTradePrice(t)));
+    for (let j = 0; j < batch.length; j++) {
+      const r = settled[j];
+      if (r.status === 'fulfilled' && r.value !== null) results.set(batch[j], r.value);
     }
     if (i + BATCH_SIZE < unique.length) {
       await new Promise((resolve) => setTimeout(resolve, batchDelayMs));

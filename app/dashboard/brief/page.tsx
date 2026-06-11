@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useLivePrices } from '@/hooks/use-live-prices';
 import Link from 'next/link';
 import { HelmMark } from '@/components/helm-mark';
 import {
@@ -121,6 +122,19 @@ export default function BriefPage() {
   const [watchlistInput, setWatchlistInput] = useState('');
   const [showWatchlistAdd, setShowWatchlistAdd] = useState(false);
   const [watchlistLoading, setWatchlistLoading] = useState(false);
+
+  // Live price overlay: poll /api/market/quotes every 30s while market open.
+  const { quotes: liveQuotes } = useLivePrices(watchlist.map(w => w.ticker));
+  const liveWatchlist = useMemo(() => watchlist.map(w => {
+    const q = liveQuotes[w.ticker?.toUpperCase()];
+    if (!q) return w;
+    return {
+      ...w,
+      price: q.price,
+      changePct: q.dayChangePct ?? w.changePct,
+      changeAmt: q.prevClose != null ? q.price - q.prevClose : w.changeAmt,
+    };
+  }), [watchlist, liveQuotes]);
 
   // Load watchlist (skip in demo mode)
   useEffect(() => {
@@ -427,7 +441,7 @@ export default function BriefPage() {
             )}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 md:gap-6">
-          {(watchlist.length > 0 ? watchlist.filter(w => w.price != null && w.changePct != null).map(w => [w.ticker, `$${w.price.toFixed(2)}`, fmtPct(w.changePct), w.changePct >= 0] as [string, string, string, boolean]) : marketTapeItems).map(([label, value, delta, pos]) => (
+          {(liveWatchlist.length > 0 ? liveWatchlist.filter(w => w.price != null && w.changePct != null).map(w => [w.ticker, `$${w.price.toFixed(2)}`, fmtPct(w.changePct), w.changePct >= 0] as [string, string, string, boolean]) : marketTapeItems).map(([label, value, delta, pos]) => (
             <div key={label} className="group relative">
               <div className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]" style={MONO}>{label}</div>
               <div className="text-sm sm:text-lg font-bold mt-1 tabular-nums">{value}</div>
