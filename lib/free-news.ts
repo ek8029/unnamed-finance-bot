@@ -42,6 +42,14 @@ function decodeEntities(s: string): string {
 }
 
 /**
+ * Junk genres that pollute per-ticker feeds: templated screener listicles
+ * (Zacks "Top Growth Stock"), dividend-reminder spam, options-channel
+ * boilerplate, law-firm class action alerts. High-precision patterns only.
+ */
+const JUNK_HEADLINE =
+  /ex-dividend reminder|top (growth|value|momentum) stock|validea|noteworthy etf|pre-market most active|after-hours most active|put and call options|options trading begins|shareholder alert|class action|deadline alert/i;
+
+/**
  * Some feed summaries are promo boilerplate about the research service, not
  * the article (e.g. Zacks: "...finding strong stocks becomes easier with the
  * Zacks Style Scores, a top feature of the Zacks Premium research service").
@@ -86,6 +94,7 @@ export async function fetchTickerHeadlines(ticker: string): Promise<RssArticle[]
       const title = tagContent(item, 'title');
       const url = tagContent(item, 'link');
       if (!title || !url) continue;
+      if (JUNK_HEADLINE.test(title)) continue;
 
       const pubDate = tagContent(item, 'pubDate');
       const published = pubDate ? new Date(pubDate) : new Date();
@@ -161,6 +170,7 @@ export async function fetchYahooHeadlines(ticker: string): Promise<RssArticle[]>
       const title = tagContent(item, 'title');
       const rawUrl = tagContent(item, 'link');
       if (!title || !rawUrl) continue;
+      if (JUNK_HEADLINE.test(title)) continue;
 
       // Strip Yahoo's RSS tracking param for cleaner links and dedupe
       const url = rawUrl.replace(/\?\.tsrc=rss$/, '');
@@ -274,7 +284,7 @@ export async function refreshRssNews(
     }
   }
 
-  const inserts = newArticles.map(article => {
+  const inserts = newArticles.flatMap(article => {
     const sentiment = scoreSentiment(`${article.title} ${article.description}`);
     const sectors = [
       ...new Set(article.tickers.map(t => tickerSectorMap.get(t)).filter(Boolean)),
@@ -285,6 +295,11 @@ export async function refreshRssNews(
       article.tickers,
       tickerNameMap,
     );
+
+    // No clear subject ticker = low-signal filler unless it's a genuine
+    // broad-market piece (many tickers). Null primary_ticker rows surface
+    // for every user in the intelligence feed, so be strict here.
+    if (!primaryTicker && article.tickers.length < 10) return [];
 
     return {
       title: article.title,
@@ -302,14 +317,19 @@ export async function refreshRssNews(
     };
   });
 
+  if (inserts.length === 0) {
+    log.push(`[news] 0 articles kept (${newArticles.length} dropped as low-signal)`);
+    return 0;
+  }
+
   const { error } = await supabase.from('market_news').insert(inserts);
   if (error) {
     log.push(`[news] Insert failed: ${error.message}`);
     return 0;
   }
 
-  log.push(`[news] Inserted ${newArticles.length} new articles (${batch.length - newArticles.length} duplicates skipped)`);
-  return newArticles.length;
+  log.push(`[news] Inserted ${inserts.length} new articles (${batch.length - newArticles.length} duplicates, ${newArticles.length - inserts.length} low-signal skipped)`);
+  return inserts.length;
 }
 
 // ── SEC 8-K filing events ──
