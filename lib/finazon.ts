@@ -107,6 +107,7 @@ export async function getDailyBars(
 ): Promise<DailyBar[]> {
   if (isCrypto(ticker)) return [];
   const data = await finazonFetch<{ data: RawBar[] }>('/time_series', {
+    dataset: 'us_stocks_essential',
     ticker: ticker.toUpperCase(),
     interval: '1d',
     order: 'desc',
@@ -138,6 +139,7 @@ export async function getHistoricalPrices(
   const endAt = Math.floor(new Date(`${to}T23:59:59Z`).getTime() / 1000);
 
   const data = await finazonFetch<{ data: RawBar[] }>('/time_series', {
+    dataset: 'us_stocks_essential',
     ticker: ticker.toUpperCase(),
     interval: '1d',
     start_at: String(startAt),
