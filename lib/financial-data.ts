@@ -16,7 +16,7 @@
 import { cache as reactCache } from 'react';
 import { getDailyBars, getIntradayQuote } from '@/lib/finazon';
 import { fetchTickerHeadlines, fetchYahooHeadlines } from '@/lib/free-news';
-import { titleTargetsTicker } from '@/lib/news-primary-ticker';
+import { titleTargetsTicker, isTickerRoundup } from '@/lib/news-primary-ticker';
 import {
   getReportedFinancialsEdgar,
   getCompanyProfileEdgar,
@@ -366,6 +366,8 @@ export async function getCompanyNews(
     // including unrelated CTAs. Only keep articles whose HEADLINE targets
     // this company — precision over recall.
     if (!titleTargetsTicker(a.title, symbol, companyName)) continue;
+    // Multi-ticker roundups name the ticker without being about it
+    if (isTickerRoundup(a.title, a.tickers)) continue;
     const nt = normTitle(a.title);
     if (seen.has(nt) || seen.has(a.url)) continue;
     seen.add(nt);

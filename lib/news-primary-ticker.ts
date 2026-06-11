@@ -57,6 +57,26 @@ export function titleTargetsTicker(
 }
 
 /**
+ * True if the headline is a multi-ticker roundup ("Pre-Market Most Active:
+ * SMCI, SQQQ, NVDA...") rather than an article centered on one company.
+ * A headline naming 3+ of the article's tagged tickers is a list, and
+ * shouldn't surface as company-specific news for any of them.
+ */
+export function isTickerRoundup(title: string, tickers: string[]): boolean {
+  if (!tickers || tickers.length <= 2) return false;
+  const titleUpper = (title || '').toUpperCase();
+  let hits = 0;
+  for (const t of new Set(tickers.map((x) => x.toUpperCase()))) {
+    const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (new RegExp(`\\b${escaped}\\b`).test(titleUpper)) {
+      hits++;
+      if (hits >= 3) return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Detect the primary (subject) ticker for a news article.
  *
  * Strategy, highest confidence first:
