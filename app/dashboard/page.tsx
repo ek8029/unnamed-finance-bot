@@ -14,7 +14,7 @@ import { CashFlowTrend } from '@/components/dashboard/cash-flow-trend';
 import { AssetsLiabilitiesComposition } from '@/components/dashboard/assets-liabilities-composition';
 import { SavingsRateTimeline } from '@/components/dashboard/savings-rate-timeline';
 import { DailyBrief } from '@/components/dashboard/daily-brief';
-import { useFinancialSummary, useIntelligence } from '@/hooks/use-financial-data';
+import { useFinancialSummary, useIntelligence, useHoldings } from '@/hooks/use-financial-data';
 import { useFormat } from '@/hooks/use-format';
 import { useDemo } from '@/contexts/demo-context';
 import posthog from 'posthog-js';
@@ -64,6 +64,10 @@ export default function DashboardOverview() {
     loading: feedLoading,
     error: feedError,
   } = useIntelligence();
+
+  // Live portfolio value: useHoldings polls /api/market/quotes every 30s
+  // and recomputes totalValue client-side. Overrides the static DB aggregate.
+  const { totalValue: liveHoldingsValue } = useHoldings();
 
   const { formatCurrency, formatPercentage } = useFormat();
   const { isDemo, enableDemo, disableDemo } = useDemo();
@@ -305,7 +309,7 @@ export default function DashboardOverview() {
           totalAssets={financialSummary?.total_assets || 0}
           totalLiabilities={financialSummary?.total_liabilities || 0}
           monthlyCashFlow={financialSummary?.monthly_cash_flow || 0}
-          portfolioValue={financialSummary?.portfolio_value || 0}
+          portfolioValue={(!isDemo && liveHoldingsValue > 0) ? liveHoldingsValue : (financialSummary?.portfolio_value || 0)}
           changes={financialSummary?.changes}
         />
 
