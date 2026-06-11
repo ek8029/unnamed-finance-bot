@@ -102,14 +102,11 @@ export const SAVINGS_SCORE_MULTIPLIER = 300;
 
 // ── API & Rate Limiting ──
 
-/** Polygon.io batch size (free tier = 5 calls/min). */
-export const POLYGON_BATCH_SIZE = Number(process.env.POLYGON_BATCH_SIZE) || 5;
+/** Finazon time_series requests per minute (plan-configurable in dashboard). */
+export const FINAZON_TS_RPM = Number(process.env.FINAZON_TS_RPM) || 60;
 
-/** Delay in ms between Polygon batches. */
-export const POLYGON_BATCH_DELAY_MS = Number(process.env.POLYGON_BATCH_DELAY_MS) || 250;
-
-/** Delay in ms between individual Polygon calls. */
-export const POLYGON_CALL_DELAY_MS = Number(process.env.POLYGON_CALL_DELAY_MS) || 300;
+/** Finazon price requests per minute (plan-configurable in dashboard). */
+export const FINAZON_PRICE_RPM = Number(process.env.FINAZON_PRICE_RPM) || 50;
 
 // ── Cache TTLs (ms) ──
 

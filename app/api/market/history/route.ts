@@ -1,6 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { toPolygonTicker } from '@/lib/polygon';
+import { getHistoricalPrices } from '@/lib/finazon';
 import { rateLimit } from '@/lib/rate-limit';
 
 export async function GET(request: Request) {
@@ -38,36 +38,16 @@ export async function GET(request: Request) {
       });
     }
 
-    const apiKey = process.env.POLYGON_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ prices: dbPrices || [] });
-    }
-
-    const polyTicker = toPolygonTicker(ticker);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-
     try {
-      const res = await fetch(
-        `https://api.polygon.io/v2/aggs/ticker/${polyTicker}/range/1/day/${fromDate}/${toDate}?adjusted=true&sort=asc&apiKey=${apiKey}`,
-        { signal: controller.signal, cache: 'no-store' }
-      );
-      clearTimeout(timeout);
+      const bars = await getHistoricalPrices(ticker, fromDate, toDate);
 
-      if (!res.ok) {
+      if (bars.length === 0) {
         return NextResponse.json({ prices: dbPrices || [] });
       }
 
-      const json = await res.json();
-      const results = json.results || [];
-
-      if (results.length === 0) {
-        return NextResponse.json({ prices: dbPrices || [] });
-      }
-
-      const prices = results.map((bar: { t: number; c: number }) => ({
-        price_date: new Date(bar.t).toISOString().split('T')[0],
-        close: bar.c,
+      const prices = bars.map(bar => ({
+        price_date: bar.date,
+        close: bar.close,
       }));
 
       return NextResponse.json({
@@ -76,7 +56,6 @@ export async function GET(request: Request) {
         headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' },
       });
     } catch {
-      clearTimeout(timeout);
       return NextResponse.json({ prices: dbPrices || [] });
     }
   } catch {

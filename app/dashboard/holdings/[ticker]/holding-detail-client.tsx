@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { TrendingUp, TrendingDown, ExternalLink, ArrowLeft } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { FinnhubQuote } from '@/lib/financial-data';
+import type { StockQuote } from '@/lib/financial-data';
 
 interface HoldingData {
   ticker: string; name: string; sector: string; exchange: string;
@@ -44,7 +44,7 @@ export function HoldingDetailClient({
   priceHistory: { date: string; close: number }[];
   news: NewsItem[];
   transactions: Transaction[];
-  quote: FinnhubQuote | null;
+  quote: StockQuote | null;
 }) {
   const up = holding.dayChangePct >= 0;
   const glUp = holding.unrealizedGL >= 0;

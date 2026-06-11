@@ -1,23 +1,29 @@
 /**
- * Finnhub Financial Data Client
+ * Financial Data Layer
  *
- * Provides quote data, company profiles, financials, recommendations,
- * earnings, and news via the Finnhub free tier (60 calls/min).
- * In-memory cache with 15-minute TTL to avoid rate limits.
+ * Prices and quotes: Finazon us_stocks_essential (licensed for commercial
+ * display, no redistribution restrictions).
+ * Company profiles and fundamentals: SEC EDGAR (public domain).
+ *
+ * Analyst recommendations, earnings estimates/calendar, and per-ticker
+ * news have no licensed provider after the Finnhub/Polygon migration —
+ * those functions return empty results until a new source is wired in.
  */
 
 import { cache as reactCache } from 'react';
-import { CACHE_TTL as GLOBAL_CACHE_TTL } from '@/lib/financial-config';
+import { getDailyBars } from '@/lib/finazon';
+import {
+  getReportedFinancialsEdgar,
+  getCompanyProfileEdgar,
+  type ReportedFinancials,
+  type StatementLineItem,
+} from '@/lib/edgar';
+import { CACHE_TTL as GLOBAL_CACHE_TTL, FINAZON_TS_RPM } from '@/lib/financial-config';
 
-const FINNHUB_BASE = 'https://finnhub.io/api/v1';
+// Statement types moved to lib/edgar.ts — re-exported for existing importers.
+export type { ReportedFinancials, StatementLineItem };
 
-function getApiKey(): string {
-  const key = process.env.FINNHUB_API_KEY;
-  if (!key) throw new Error('FINNHUB_API_KEY environment variable is not set');
-  return key;
-}
-
-// ── In-memory cache (15-min TTL) ──
+// ── In-memory cache ──
 
 interface CacheEntry<T> {
   data: T;
@@ -41,40 +47,9 @@ function setCache<T>(key: string, data: T, ttlOverride?: number): void {
   cache.set(key, { data, expiresAt: Date.now() + (ttlOverride ?? CACHE_TTL) });
 }
 
-async function finnhubFetch<T>(endpoint: string, params: Record<string, string>): Promise<T | null> {
-  const cacheKey = `${endpoint}:${JSON.stringify(params)}`;
-  const cached = getCached<T>(cacheKey);
-  if (cached) return cached;
-
-  try {
-    const url = new URL(`${FINNHUB_BASE}${endpoint}`);
-    url.searchParams.set('token', getApiKey());
-    for (const [k, v] of Object.entries(params)) {
-      url.searchParams.set(k, v);
-    }
-
-    const res = await fetch(url.toString(), {
-      headers: { Accept: 'application/json' },
-      cache: 'no-store',
-    });
-
-    if (!res.ok) {
-      console.error(`Finnhub ${endpoint} error: ${res.status}`);
-      return null;
-    }
-
-    const data = await res.json();
-    setCache(cacheKey, data);
-    return data as T;
-  } catch (error) {
-    console.error(`Finnhub ${endpoint} failed:`, error);
-    return null;
-  }
-}
-
 // ── Types ──
 
-export interface FinnhubQuote {
+export interface StockQuote {
   c: number;   // current price
   d: number;   // change
   dp: number;  // percent change
@@ -85,28 +60,28 @@ export interface FinnhubQuote {
   t: number;   // timestamp
 }
 
-export interface FinnhubProfile {
+export interface CompanyProfile {
   country: string;
   currency: string;
   exchange: string;
-  finnhubIndustry: string;
+  industry: string;
   ipo: string;
   logo: string;
-  marketCapitalization: number;
+  marketCapitalization: number; // in millions
   name: string;
   phone: string;
-  shareOutstanding: number;
+  shareOutstanding: number; // in millions
   ticker: string;
   weburl: string;
 }
 
-export interface FinnhubBasicFinancials {
+export interface BasicFinancials {
   metric: Record<string, number | null>;
   metricType: string;
   symbol: string;
 }
 
-export interface FinnhubRecommendation {
+export interface RecommendationTrend {
   buy: number;
   hold: number;
   period: string;
@@ -116,7 +91,7 @@ export interface FinnhubRecommendation {
   symbol: string;
 }
 
-export interface FinnhubEarning {
+export interface EarningsSurprise {
   actual: number | null;
   estimate: number | null;
   period: string;
@@ -127,7 +102,7 @@ export interface FinnhubEarning {
   year: number;
 }
 
-export interface FinnhubNewsItem {
+export interface NewsItem {
   category: string;
   datetime: number;
   headline: string;
@@ -139,115 +114,224 @@ export interface FinnhubNewsItem {
   url: string;
 }
 
-// ── API Functions ──
+// ── Quotes (Finazon daily bars) ──
 
-/** Short TTL for quotes — 60s instead of 15min so the 60-second poll gets fresh data. */
+/** Short TTL for quotes — 60s so the 60-second poll gets fresh data. */
 const QUOTE_CACHE_TTL = 60 * 1000;
 
-export async function getQuote(symbol: string): Promise<FinnhubQuote | null> {
-  const cacheKey = `/quote:${JSON.stringify({ symbol: symbol.toUpperCase() })}`;
-  const cached = getCached<FinnhubQuote>(cacheKey);
+export async function getQuote(symbol: string): Promise<StockQuote | null> {
+  const upper = symbol.toUpperCase();
+  const cacheKey = `quote:${upper}`;
+  const cached = getCached<StockQuote>(cacheKey);
   if (cached) return cached;
 
-  const url = new URL(`${FINNHUB_BASE}/quote`);
-  url.searchParams.set('token', getApiKey());
-  url.searchParams.set('symbol', symbol.toUpperCase());
+  const bars = await getDailyBars(upper, 2);
+  if (bars.length === 0) return null;
 
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const res = await fetch(url.toString(), {
-        headers: { Accept: 'application/json' },
-        cache: 'no-store',
-      });
+  const latest = bars[0];
+  if (!latest.close || latest.close <= 0) return null;
 
-      if (res.status === 429) {
-        // Rate limited — wait 1s and retry once
-        await new Promise(r => setTimeout(r, 1000));
-        continue;
-      }
-      if (!res.ok) return null;
-      const data = await res.json();
-      // Finnhub returns c:0 when no data — treat as null
-      if (!data || data.c === 0) return null;
-      setCache(cacheKey, data, QUOTE_CACHE_TTL);
-      return data as FinnhubQuote;
-    } catch {
-      return null;
-    }
-  }
-  return null;
+  const prevClose = bars.length > 1 && bars[1].close > 0 ? bars[1].close : latest.open;
+  const change = latest.close - prevClose;
+
+  const quote: StockQuote = {
+    c: latest.close,
+    d: change,
+    dp: prevClose > 0 ? (change / prevClose) * 100 : 0,
+    h: latest.high,
+    l: latest.low,
+    o: latest.open,
+    pc: prevClose,
+    t: Math.floor(new Date(latest.date).getTime() / 1000),
+  };
+
+  setCache(cacheKey, quote, QUOTE_CACHE_TTL);
+  return quote;
 }
 
 /**
- * Fetch real-time quotes for multiple tickers from Finnhub.
- * Throttled to stay under the 60 calls/min free-tier limit.
- * Returns a Map of uppercase ticker → FinnhubQuote.
- *
- * Uses the in-memory cache (15min TTL) per ticker, so repeated calls
- * for the same ticker within the window are free.
+ * Fetch quotes for multiple tickers, throttled to the Finazon
+ * time_series requests-per-minute budget.
+ * Returns a Map of uppercase ticker → StockQuote.
  */
 export async function getBatchQuotes(
   tickers: string[],
-): Promise<Map<string, FinnhubQuote>> {
-  const results = new Map<string, FinnhubQuote>();
-  const unique = [...new Set(tickers.map(t => t.toUpperCase()))];
+): Promise<Map<string, StockQuote>> {
+  const results = new Map<string, StockQuote>();
+  const unique = [...new Set(tickers.filter(Boolean).map(t => t.toUpperCase()))];
 
-  // Process in batches of 10 with 1.2s delay between batches
-  // to stay well under 60 calls/min (10 per 1.2s = ~50/min)
-  const BATCH_SIZE = 10;
+  const BATCH_SIZE = 5;
+  const batchDelayMs = Math.ceil((BATCH_SIZE * 60_000) / FINAZON_TS_RPM);
+
   for (let i = 0; i < unique.length; i += BATCH_SIZE) {
     const batch = unique.slice(i, i + BATCH_SIZE);
-    const quotes = await Promise.all(
-      batch.map(async (ticker) => {
-        const quote = await getQuote(ticker);
-        return { ticker, quote };
-      }),
-    );
-    for (const { ticker, quote } of quotes) {
-      if (quote && quote.c > 0) {
-        results.set(ticker, quote);
+    const settled = await Promise.allSettled(batch.map(t => getQuote(t)));
+    for (let j = 0; j < batch.length; j++) {
+      const r = settled[j];
+      if (r.status === 'fulfilled' && r.value && r.value.c > 0) {
+        results.set(batch[j], r.value);
       }
     }
-    // Throttle between batches (skip delay on last batch)
     if (i + BATCH_SIZE < unique.length) {
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      await new Promise(resolve => setTimeout(resolve, batchDelayMs));
     }
   }
 
   return results;
 }
 
-export async function getCompanyProfile(symbol: string): Promise<FinnhubProfile | null> {
-  return finnhubFetch<FinnhubProfile>('/stock/profile2', { symbol: symbol.toUpperCase() });
+// ── Fundamentals helpers (EDGAR statement line items) ──
+
+function lineValue(items: StatementLineItem[], label: string): number | null {
+  const item = items.find(i => i.label === label);
+  return item != null ? item.value : null;
 }
 
-export async function getBasicFinancials(symbol: string): Promise<FinnhubBasicFinancials | null> {
-  return finnhubFetch<FinnhubBasicFinancials>('/stock/metric', {
-    symbol: symbol.toUpperCase(),
-    metric: 'all',
-  });
+function sharesFrom(report: ReportedFinancials): number | null {
+  return (
+    lineValue(report.ic, 'Shares outstanding, diluted (weighted avg)') ??
+    lineValue(report.ic, 'Shares outstanding, basic (weighted avg)')
+  );
 }
 
-export async function getRecommendationTrends(symbol: string): Promise<FinnhubRecommendation[] | null> {
-  return finnhubFetch<FinnhubRecommendation[]>('/stock/recommendation', {
-    symbol: symbol.toUpperCase(),
-  });
+// ── Company profile (EDGAR + Finazon price) ──
+
+export async function getCompanyProfile(symbol: string): Promise<CompanyProfile | null> {
+  const upper = symbol.toUpperCase();
+  const cacheKey = `profile:${upper}`;
+  const cached = getCached<CompanyProfile>(cacheKey);
+  if (cached) return cached;
+
+  const [edgarProfile, quote, reports] = await Promise.all([
+    getCompanyProfileEdgar(upper),
+    getQuote(upper),
+    getReportedFinancialsEdgar(upper),
+  ]);
+
+  if (!edgarProfile) return null;
+
+  const shares = reports.length > 0 ? sharesFrom(reports[0]) : null;
+  const marketCapM = quote && shares ? (quote.c * shares) / 1_000_000 : 0;
+
+  const profile: CompanyProfile = {
+    country: 'US',
+    currency: 'USD',
+    exchange: edgarProfile.exchange || '',
+    industry: edgarProfile.sicDescription || '',
+    ipo: '',
+    logo: '',
+    marketCapitalization: marketCapM,
+    name: edgarProfile.name,
+    phone: '',
+    shareOutstanding: shares ? shares / 1_000_000 : 0,
+    ticker: upper,
+    weburl: '',
+  };
+
+  setCache(cacheKey, profile);
+  return profile;
 }
 
-export async function getEarnings(symbol: string): Promise<FinnhubEarning[] | null> {
-  return finnhubFetch<FinnhubEarning[]>('/stock/earnings', {
-    symbol: symbol.toUpperCase(),
-  });
+// ── Basic financials (derived from EDGAR annual reports + price) ──
+
+export async function getBasicFinancials(symbol: string): Promise<BasicFinancials | null> {
+  const upper = symbol.toUpperCase();
+  const cacheKey = `fundamentals:${upper}`;
+  const cached = getCached<BasicFinancials>(cacheKey);
+  if (cached) return cached;
+
+  const [reports, quote, bars] = await Promise.all([
+    getReportedFinancialsEdgar(upper),
+    getQuote(upper),
+    getDailyBars(upper, 260),
+  ]);
+
+  const metric: Record<string, number | null> = {};
+
+  if (bars.length > 0) {
+    metric['52WeekHigh'] = Math.max(...bars.map(b => b.high));
+    metric['52WeekLow'] = Math.min(...bars.map(b => b.low));
+  }
+
+  if (reports.length > 0) {
+    const cur = reports[0];
+    const prev = reports.length > 1 ? reports[1] : null;
+    const price = quote?.c ?? null;
+
+    const revenue = lineValue(cur.ic, 'Revenue');
+    const grossProfit = lineValue(cur.ic, 'Gross profit');
+    const operatingIncome = lineValue(cur.ic, 'Operating income');
+    const netIncome = lineValue(cur.ic, 'Net income');
+    const epsBasic = lineValue(cur.ic, 'EPS, basic');
+    const epsDiluted = lineValue(cur.ic, 'EPS, diluted');
+    const eps = epsDiluted ?? epsBasic;
+    const shares = sharesFrom(cur);
+    const equity = lineValue(cur.bs, "Total stockholders' equity");
+    const currentAssets = lineValue(cur.bs, 'Total current assets');
+    const currentLiabilities = lineValue(cur.bs, 'Total current liabilities');
+    const longTermDebt = lineValue(cur.bs, 'Long-term debt');
+    const cfo = lineValue(cur.cf, 'Cash from operating activities');
+    const capex = lineValue(cur.cf, 'Capital expenditures');
+    const dividendsPaid = lineValue(cur.cf, 'Dividends paid');
+
+    const marketCap = price != null && shares ? price * shares : null;
+
+    if (price != null && eps != null && eps !== 0) metric['peBasicExclExtraTTM'] = price / eps;
+    if (epsBasic != null) metric['epsBasicExclExtraTTM'] = epsBasic;
+    if (marketCap != null && revenue) metric['psTTM'] = marketCap / revenue;
+    if (marketCap != null && equity && equity !== 0) metric['pbQuarterly'] = marketCap / equity;
+    if (grossProfit != null && revenue) metric['grossMarginTTM'] = (grossProfit / revenue) * 100;
+    if (operatingIncome != null && revenue) metric['operatingMarginTTM'] = (operatingIncome / revenue) * 100;
+    if (netIncome != null && revenue) metric['netProfitMarginTTM'] = (netIncome / revenue) * 100;
+    if (netIncome != null && equity && equity !== 0) metric['roeTTM'] = (netIncome / equity) * 100;
+    if (currentAssets != null && currentLiabilities) {
+      metric['currentRatioQuarterly'] = currentAssets / currentLiabilities;
+    }
+    if (longTermDebt != null && equity && equity !== 0) {
+      const de = longTermDebt / equity;
+      metric['totalDebtToEquityQuarterly'] = de;
+      metric['debtEquityQuarterly'] = de;
+    }
+    if (revenue != null && shares) metric['revenuePerShareTTM'] = revenue / shares;
+    if (equity != null && shares) metric['bookValuePerShareQuarterly'] = equity / shares;
+    if (cfo != null && shares) {
+      metric['fcfPerShareTTM'] = (cfo - Math.abs(capex ?? 0)) / shares;
+    }
+    if (dividendsPaid != null && marketCap) {
+      metric['dividendYieldIndicatedAnnual'] = (Math.abs(dividendsPaid) / marketCap) * 100;
+    }
+
+    if (prev) {
+      const prevRevenue = lineValue(prev.ic, 'Revenue');
+      const prevEps = lineValue(prev.ic, 'EPS, diluted') ?? lineValue(prev.ic, 'EPS, basic');
+      if (revenue != null && prevRevenue) {
+        metric['revenueGrowthTTMYoy'] = ((revenue - prevRevenue) / Math.abs(prevRevenue)) * 100;
+      }
+      if (eps != null && prevEps) {
+        metric['epsGrowthTTMYoy'] = ((eps - prevEps) / Math.abs(prevEps)) * 100;
+      }
+    }
+  }
+
+  if (Object.keys(metric).length === 0) return null;
+
+  const result: BasicFinancials = { metric, metricType: 'annual-derived', symbol: upper };
+  setCache(cacheKey, result);
+  return result;
 }
 
-export async function getCompanyNews(symbol: string): Promise<FinnhubNewsItem[] | null> {
-  const now = new Date();
-  const from = new Date(now.getTime() - 30 * 86400000); // 30 days back
-  return finnhubFetch<FinnhubNewsItem[]>('/company-news', {
-    symbol: symbol.toUpperCase(),
-    from: from.toISOString().split('T')[0],
-    to: now.toISOString().split('T')[0],
-  });
+// ── Unavailable post-migration (no licensed provider) ──
+
+export async function getRecommendationTrends(_symbol: string): Promise<RecommendationTrend[] | null> {
+  return null;
+}
+
+export async function getEarnings(_symbol: string): Promise<EarningsSurprise[] | null> {
+  return null;
+}
+
+export async function getCompanyNews(_symbol: string): Promise<NewsItem[] | null> {
+  return null;
 }
 
 // ── Earnings Calendar ──
@@ -264,103 +348,41 @@ export interface EarningsCalendarItem {
   year: number;
 }
 
-interface EarningsCalendarResponse {
-  earningsCalendar: EarningsCalendarItem[];
-}
-
 export async function getEarningsCalendar(
-  from: string,
-  to: string,
+  _from: string,
+  _to: string,
 ): Promise<EarningsCalendarItem[]> {
-  const result = await finnhubFetch<EarningsCalendarResponse>('/calendar/earnings', { from, to });
-  return result?.earningsCalendar || [];
+  return [];
 }
 
 // ── Aggregated fetch for a single ticker ──
 
 export interface TickerData {
   symbol: string;
-  quote: FinnhubQuote | null;
-  profile: FinnhubProfile | null;
-  financials: FinnhubBasicFinancials | null;
-  recommendations: FinnhubRecommendation[] | null;
-  earnings: FinnhubEarning[] | null;
-  news: FinnhubNewsItem[] | null;
+  quote: StockQuote | null;
+  profile: CompanyProfile | null;
+  financials: BasicFinancials | null;
+  recommendations: RecommendationTrend[] | null;
+  earnings: EarningsSurprise[] | null;
+  news: NewsItem[] | null;
 }
 
 // React cache() dedupes calls within a single request — generateMetadata and
-// the page component share one fetch instead of each hitting Finnhub.
+// the page component share one fetch instead of each hitting the providers.
 export const getFullTickerData = reactCache(async (symbol: string): Promise<TickerData> => {
-  const [quote, profile, financials, recommendations, earnings, news] = await Promise.all([
+  const [quote, profile, financials] = await Promise.all([
     getQuote(symbol),
     getCompanyProfile(symbol),
     getBasicFinancials(symbol),
-    getRecommendationTrends(symbol),
-    getEarnings(symbol),
-    getCompanyNews(symbol),
   ]);
 
-  return { symbol: symbol.toUpperCase(), quote, profile, financials, recommendations, earnings, news };
-});
-
-// ── Financial Statements (as reported) ──
-
-export interface StatementLineItem {
-  concept: string;
-  label: string;
-  unit: string;
-  value: number;
-}
-
-export interface ReportedFinancials {
-  year: number;
-  endDate: string;
-  form: string;
-  ic: StatementLineItem[]; // income statement
-  bs: StatementLineItem[]; // balance sheet
-  cf: StatementLineItem[]; // cash flow
-}
-
-interface FinnhubReportedResponse {
-  data?: {
-    year: number;
-    endDate: string;
-    form: string;
-    report?: {
-      ic?: StatementLineItem[];
-      bs?: StatementLineItem[];
-      cf?: StatementLineItem[];
-    };
-  }[];
-}
-
-/** 24h TTL — annual statements change once a year. */
-const STATEMENTS_CACHE_TTL = 24 * 60 * 60 * 1000;
-
-/** Latest 3 annual (10-K) reports, newest first. */
-export async function getReportedFinancials(symbol: string): Promise<ReportedFinancials[]> {
-  const cacheKey = `statements:${symbol.toUpperCase()}`;
-  const cached = getCached<ReportedFinancials[]>(cacheKey);
-  if (cached) return cached;
-
-  const res = await finnhubFetch<FinnhubReportedResponse>('/stock/financials-reported', {
+  return {
     symbol: symbol.toUpperCase(),
-    freq: 'annual',
-  });
-
-  const reports = (res?.data || [])
-    .filter((r) => r.form === '10-K' && r.report)
-    .sort((a, b) => b.year - a.year)
-    .slice(0, 3)
-    .map((r) => ({
-      year: r.year,
-      endDate: r.endDate,
-      form: r.form,
-      ic: r.report?.ic || [],
-      bs: r.report?.bs || [],
-      cf: r.report?.cf || [],
-    }));
-
-  if (reports.length > 0) setCache(cacheKey, reports, STATEMENTS_CACHE_TTL);
-  return reports;
-}
+    quote,
+    profile,
+    financials,
+    recommendations: null,
+    earnings: null,
+    news: null,
+  };
+});

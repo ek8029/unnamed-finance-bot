@@ -15,7 +15,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /** Methodology version — bump when the analysis pipeline changes materially. */
 const METHODOLOGY_VERSION = 'v1.0';
-const DATA_SOURCES = ['finnhub.io', 'openai-gpt-4o-mini'];
+const DATA_SOURCES = ['finazon.io', 'sec-edgar', 'openai-gpt-4o-mini'];
 
 /**
  * Cache TTL depends on US equity market hours (9:30am–4:00pm ET, Mon–Fri).
@@ -117,7 +117,7 @@ function buildDataContext(td: TickerData): string {
 
   if (td.profile) {
     lines.push(`Company: ${td.profile.name}`);
-    lines.push(`Industry: ${td.profile.finnhubIndustry}`);
+    lines.push(`Industry: ${td.profile.industry}`);
     lines.push(`Market Cap: $${(td.profile.marketCapitalization * 1_000_000).toLocaleString()}`);
     lines.push(`Exchange: ${td.profile.exchange}`);
   }

@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getPortfolioSummary } from '@/lib/portfolio-analysis';
 import { generateTaxReport } from '@/lib/tax-analysis';
 import { getQuote } from '@/lib/financial-data';
-import { getHistoricalPrices } from '@/lib/polygon';
+import { getHistoricalPrices } from '@/lib/finazon';
 import { CACHE_TTL as GLOBAL_CACHE_TTL } from '@/lib/financial-config';
 
 // ── Types ──

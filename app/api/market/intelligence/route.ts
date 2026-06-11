@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { getSourceTier } from '@/lib/news-quality';
-import { refreshFinnhubNews } from '@/lib/finnhub-news';
 
 export async function GET(request: Request) {
   try {
@@ -77,23 +76,6 @@ export async function GET(request: Request) {
       console.error('Error fetching market events:', eventsResult.error);
     }
 
-    // ── Hourly freshness check: background refresh if news is stale ──
-    if (userTickers && userTickers.length > 0) {
-      const latestArticle = (newsResult.data || [])[0];
-      const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
-      const latestTime = latestArticle?.published_at
-        ? new Date(latestArticle.published_at).getTime()
-        : 0;
-
-      if (latestTime < twoHoursAgo && process.env.FINNHUB_API_KEY) {
-        // Fire-and-forget background refresh — do not await
-        const bgLog: string[] = [];
-        refreshFinnhubNews(supabase, userTickers, bgLog).catch(err =>
-          console.error('[intelligence] Background Finnhub refresh failed:', err),
-        );
-      }
-    }
-
     // Transform news for frontend
     // Deduplicate by URL (articles with multiple tickers can appear multiple times)
     const seenUrls = new Set<string>();
@@ -106,7 +88,7 @@ export async function GET(request: Request) {
 
     const news = dedupedNews.map(article => {
       // Use primary_ticker for relevance — the article's actual subject,
-      // not a tangentially mentioned ticker from Polygon's full tag array
+      // not a tangentially mentioned ticker from the article's full tag array
       // Only use primary_ticker — never fall back to tickers[0] which causes misattribution
       const primary = article.primary_ticker || null;
       const isUserHolding = userTickers && primary && userTickers.includes(primary);

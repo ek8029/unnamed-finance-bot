@@ -1,8 +1,8 @@
 /**
- * Real-time price refresh via Finnhub quotes.
+ * Real-time price refresh via Finazon quotes.
  *
  * Replaces the previous Polygon-based refresh which only returned
- * end-of-day prices (previous close). Finnhub /quote returns real-time
+ * end-of-day prices (previous close). Finazon /quote returns real-time
  * data during US market hours at no cost (free tier, 60 calls/min).
  *
  * When ANY user triggers this (via dashboard load auto-sync), ALL users'
@@ -11,7 +11,7 @@
 
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { getBatchQuotes, type FinnhubQuote } from '@/lib/financial-data';
+import { getBatchQuotes, type StockQuote } from '@/lib/financial-data';
 import { updatePortfolioPerformance } from '@/lib/market-sync';
 import { rateLimit } from '@/lib/rate-limit';
 
@@ -25,7 +25,7 @@ export async function POST() {
     }
 
     // Rate limit: 8 calls per 10 min per user — enough for 60-second polling
-    // (6 calls in 6 minutes) with headroom for page reloads. The Finnhub
+    // (6 calls in 6 minutes) with headroom for page reloads. The Finazon
     // in-memory cache (60s TTL) prevents actual API calls on every poll.
     const { allowed } = rateLimit(`prices-refresh:${user.id}`, 8, 600);
     if (!allowed) {
@@ -52,13 +52,13 @@ export async function POST() {
       return NextResponse.json({ success: true, message: 'No valid tickers', updated: 0 });
     }
 
-    // 2. Fetch real-time quotes from Finnhub (not Polygon end-of-day)
+    // 2. Fetch real-time quotes from Finazon (not Polygon end-of-day)
     const quoteMap = await getBatchQuotes(uniqueTickers);
 
     if (quoteMap.size === 0) {
       return NextResponse.json({
         success: true,
-        message: 'No quotes returned from Finnhub — market may be closed',
+        message: 'No quotes returned from Finazon — market may be closed',
         updated: 0,
       });
     }
@@ -93,7 +93,7 @@ export async function POST() {
         const unrealisedGainLossPct =
           hasCostBasis && totalCostBasis > 0 ? (totalValue - totalCostBasis) / totalCostBasis : null;
 
-        // Day change from Finnhub: quote.pc = previous close, quote.c = current
+        // Day change from Finazon: quote.pc = previous close, quote.c = current
         const dayChangePct = quote.pc > 0
           ? (quote.c - quote.pc) / quote.pc
           : null;
@@ -148,7 +148,7 @@ export async function POST() {
         high: quote.h,
         low: quote.l,
         close: quote.c,
-        volume: 0, // Finnhub quote doesn't include volume
+        volume: 0, // Finazon quote doesn't include volume
       }));
 
     if (priceInserts.length > 0) {
@@ -214,7 +214,7 @@ export async function POST() {
 
     return NextResponse.json({
       success: true,
-      source: 'finnhub',
+      source: 'finazon',
       updated: [...new Set(updatedTickers)].length,
       tickers: [...new Set(updatedTickers)],
       usersUpdated: affectedUserIds.length,

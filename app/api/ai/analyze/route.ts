@@ -205,7 +205,7 @@ function buildTickerContext(dataList: TickerData[]): string {
     const lines: string[] = [`=== ${td.symbol} ===`];
     if (td.profile) {
       lines.push(`Company: ${td.profile.name}`);
-      lines.push(`Industry: ${td.profile.finnhubIndustry}`);
+      lines.push(`Industry: ${td.profile.industry}`);
       lines.push(`Market Cap: $${(td.profile.marketCapitalization * 1_000_000).toLocaleString()}`);
       lines.push(`Exchange: ${td.profile.exchange}`);
     }

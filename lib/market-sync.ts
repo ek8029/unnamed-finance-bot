@@ -1,6 +1,6 @@
-import { getBatchPrices, getBatchTickerDetails, getUpcomingDividends, getRecentSplits, getTickerNews, scoreSentiment, mapSicToSector, getTickerSectorOverride } from '@/lib/polygon';
-import { detectPrimaryTicker } from '@/lib/news-primary-ticker';
-import { refreshFinnhubNews as _refreshFinnhubNews } from '@/lib/finnhub-news';
+import { getBatchPrices } from '@/lib/finazon';
+import { mapSicToSector, getTickerSectorOverride } from '@/lib/market-classify';
+import { getCompanyProfileEdgar } from '@/lib/edgar';
 import { RISK_FREE_RATE, TRADING_DAYS_PER_YEAR } from '@/lib/financial-config';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -41,7 +41,7 @@ export async function refreshMarketPrices(
   const priceMap = await getBatchPrices(uniqueTickers);
 
   if (priceMap.size === 0) {
-    log.push('[prices] No prices returned from Polygon');
+    log.push('[prices] No prices returned from Finazon');
     return 0;
   }
 
@@ -502,10 +502,6 @@ export async function enrichMarketData(supabase: AnyClient, log: string[]) {
     return;
   }
 
-  const tickers = [...new Set(
-    holdingRows.map((h: { ticker: string }) => h.ticker).filter(Boolean)
-  )] as string[];
-
   const securityIds = [...new Set(
     holdingRows.map((h: { security_id: string }) => h.security_id).filter(Boolean)
   )] as string[];
@@ -530,20 +526,15 @@ export async function enrichMarketData(supabase: AnyClient, log: string[]) {
     );
 
     if (needsEnrichment.length > 0) {
-      const detailsMap = await getBatchTickerDetails(
-        needsEnrichment.map((s: { ticker: string }) => s.ticker)
-      );
-
       for (const sec of needsEnrichment) {
-        const details = detailsMap.get(sec.ticker.toUpperCase());
-        if (!details) continue;
+        const profile = await getCompanyProfileEdgar(sec.ticker);
+        if (!profile?.sicDescription) continue;
 
         await supabase
           .from('securities')
           .update({
-            sector: mapSicToSector(details.sic_description) || null,
-            industry: details.sic_description || null,
-            logo_url: details.icon_url || details.logo_url || null,
+            sector: mapSicToSector(profile.sicDescription) || null,
+            industry: profile.sicDescription || null,
           })
           .eq('id', sec.id);
         enriched++;
@@ -552,185 +543,17 @@ export async function enrichMarketData(supabase: AnyClient, log: string[]) {
   }
   log.push(`[enrich] Enriched ${enriched} securities with sector/industry data`);
 
-  const dividends = await getUpcomingDividends(tickers, 90);
-  let divsInserted = 0;
-  if (dividends.length > 0) {
-    const { data: existing } = await supabase
-      .from('market_events')
-      .select('ticker, event_date')
-      .eq('event_type', 'dividend')
-      .in('ticker', dividends.map(d => d.ticker));
-
-    const existingKeys = new Set(
-      (existing || []).map((e: { ticker: string; event_date: string }) => `${e.ticker}:${e.event_date}`)
-    );
-
-    const newDivs = dividends.filter(
-      d => !existingKeys.has(`${d.ticker}:${d.ex_dividend_date}`)
-    );
-
-    if (newDivs.length > 0) {
-      const inserts = newDivs.map(d => ({
-        event_type: 'dividend',
-        ticker: d.ticker,
-        event_date: d.ex_dividend_date,
-        title: `${d.ticker} ex-dividend date`,
-        description: `$${d.cash_amount.toFixed(4)}/share dividend. Pay date: ${d.pay_date || 'TBD'}.`,
-        metadata: { cash_amount: d.cash_amount, pay_date: d.pay_date, frequency: d.frequency },
-        impact_level: 'medium',
-      }));
-
-      const { error } = await supabase.from('market_events').insert(inserts);
-      if (!error) divsInserted = newDivs.length;
-    }
-  }
-  log.push(`[enrich] Found ${divsInserted} new dividend events`);
-
-  const splits = await getRecentSplits(tickers, 90);
-  let splitsInserted = 0;
-  if (splits.length > 0) {
-    const { data: existing } = await supabase
-      .from('market_events')
-      .select('ticker, event_date')
-      .eq('event_type', 'split')
-      .in('ticker', splits.map(s => s.ticker));
-
-    const existingKeys = new Set(
-      (existing || []).map((e: { ticker: string; event_date: string }) => `${e.ticker}:${e.event_date}`)
-    );
-
-    const newSplits = splits.filter(
-      s => !existingKeys.has(`${s.ticker}:${s.execution_date}`)
-    );
-
-    if (newSplits.length > 0) {
-      const inserts = newSplits.map(s => ({
-        event_type: 'split',
-        ticker: s.ticker,
-        event_date: s.execution_date,
-        title: `${s.ticker} ${s.split_to}-for-${s.split_from} stock split`,
-        description: `Each share becomes ${s.split_to / s.split_from} shares.`,
-        metadata: { split_from: s.split_from, split_to: s.split_to, ratio: s.split_to / s.split_from },
-        impact_level: 'high',
-      }));
-
-      const { error } = await supabase.from('market_events').insert(inserts);
-      if (!error) splitsInserted = newSplits.length;
-    }
-  }
-  log.push(`[enrich] Found ${splitsInserted} new split events`);
+  // Dividend/split events: no provider after the Polygon migration
+  // (Finazon us_stocks_essential has no corporate actions endpoint).
+  log.push('[enrich] Dividend/split events skipped — no corporate actions provider');
 }
 
-export async function refreshMarketNews(supabase: AnyClient, log: string[]) {
-  const { data: holdingRows } = await supabase
-    .from('holdings')
-    .select('ticker, security_id')
-    .neq('ticker', 'UNKNOWN');
-
-  if (!holdingRows || holdingRows.length === 0) {
-    log.push('[news] No holdings for news fetch');
-    return;
-  }
-
-  const tickers = [...new Set(
-    holdingRows.map((h: { ticker: string }) => h.ticker).filter(Boolean)
-  )] as string[];
-
-  const secIds = [...new Set(
-    holdingRows.map((h: { security_id: string }) => h.security_id).filter(Boolean)
-  )] as string[];
-
-  const tickerSectorMap = new Map<string, string>();
-  const tickerNameMap = new Map<string, string>();
-  if (secIds.length > 0) {
-    const { data: securities } = await supabase
-      .from('securities')
-      .select('ticker, sector, security_name')
-      .in('id', secIds);
-    for (const s of (securities || []) as { ticker: string; sector: string | null; security_name: string | null }[]) {
-      const upperTicker = s.ticker?.toUpperCase();
-      if (!upperTicker) continue;
-      if (s.sector) tickerSectorMap.set(upperTicker, s.sector);
-      if (s.security_name) tickerNameMap.set(upperTicker, s.security_name);
-    }
-  }
-
-  const articles = await getTickerNews(tickers, 30);
-  if (articles.length === 0) {
-    log.push('[news] No articles from Polygon');
-    return;
-  }
-
-  const urls = articles.map(a => a.article_url).filter(Boolean);
-  const { data: existing } = await supabase
-    .from('market_news')
-    .select('url')
-    .in('url', urls);
-
-  const existingUrls = new Set((existing || []).map((a: { url: string }) => a.url));
-  const newArticles = articles.filter(a => a.article_url && !existingUrls.has(a.article_url));
-
-  if (newArticles.length === 0) {
-    log.push(`[news] All ${articles.length} articles already exist`);
-    return;
-  }
-
-  const inserts = newArticles.map(article => {
-    const sentiment = scoreSentiment(`${article.title} ${article.description}`);
-    const sectors = [...new Set(
-      article.tickers
-        .map(t => tickerSectorMap.get(t.toUpperCase()))
-        .filter(Boolean)
-    )];
-    const primaryTicker = detectPrimaryTicker(
-      article.title,
-      article.description,
-      article.tickers,
-      tickerNameMap,
-    );
-
-    return {
-      title: article.title,
-      summary: article.description || null,
-      content: null,
-      url: article.article_url,
-      image_url: article.image_url || null,
-      source: article.source?.name || null,
-      author: article.author || null,
-      published_at: article.published_utc || new Date().toISOString(),
-      tickers: article.tickers,
-      primary_ticker: primaryTicker,
-      sectors: sectors.length > 0 ? sectors : null,
-      sentiment,
-    };
-  });
-
-  const { error } = await supabase.from('market_news').insert(inserts);
-  if (error) {
-    log.push(`[news] Insert failed: ${error.message}`);
-  } else {
-    log.push(`[news] Inserted ${newArticles.length} new articles (${articles.length - newArticles.length} duplicates skipped)`);
-  }
-}
 
 /**
- * Refresh news from Finnhub for all tickers held across all users.
- * Complements refreshMarketNews (Polygon) as a second news source.
+ * Market news refresh.
+ * Disabled after the Polygon/Finnhub migration — no licensed news provider.
+ * Existing market_news rows continue to serve the intelligence feed.
  */
-export async function refreshMarketNewsFinnhub(supabase: AnyClient, log: string[]) {
-  const { data: holdingRows } = await supabase
-    .from('holdings')
-    .select('ticker')
-    .neq('ticker', 'UNKNOWN');
-
-  if (!holdingRows || holdingRows.length === 0) {
-    log.push('[finnhub-news] No holdings for news fetch');
-    return;
-  }
-
-  const tickers = [...new Set(
-    holdingRows.map((h: { ticker: string }) => h.ticker).filter(Boolean)
-  )] as string[];
-
-  await _refreshFinnhubNews(supabase, tickers, log);
+export async function refreshMarketNews(_supabase: AnyClient, log: string[]) {
+  log.push('[news] News refresh skipped — no news provider configured');
 }

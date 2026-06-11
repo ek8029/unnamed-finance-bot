@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { getHistoricalPrices } from '@/lib/polygon';
+import { getHistoricalPrices } from '@/lib/finazon';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;

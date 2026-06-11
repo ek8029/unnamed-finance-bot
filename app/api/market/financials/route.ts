@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getReportedFinancials } from '@/lib/financial-data';
+import { getReportedFinancialsEdgar } from '@/lib/edgar';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 
 /**
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid symbol' }, { status: 400 });
   }
 
-  const reports = await getReportedFinancials(symbol);
+  const reports = await getReportedFinancialsEdgar(symbol);
   return NextResponse.json(
     { symbol, reports },
     { headers: { 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600' } },

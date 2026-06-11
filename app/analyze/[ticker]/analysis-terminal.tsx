@@ -335,8 +335,8 @@ function OverviewView({ analysis, tickerData }: { analysis: StockAnalysis; ticke
         </div>
         <div className="flex items-center gap-2 mt-1 text-[13px] font-mono tracking-wider text-[var(--color-text-muted)]">
           {profile?.exchange && <span>{profile.exchange}</span>}
-          {profile?.exchange && profile?.finnhubIndustry && <span className="text-[var(--color-border-strong)]">|</span>}
-          {profile?.finnhubIndustry && <span>{profile.finnhubIndustry}</span>}
+          {profile?.exchange && profile?.industry && <span className="text-[var(--color-border-strong)]">|</span>}
+          {profile?.industry && <span>{profile.industry}</span>}
         </div>
       </div>
 
@@ -865,7 +865,7 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
         <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-3 sm:p-4">
           <div className="text-[16px] sm:text-[18px] font-mono font-bold text-[var(--color-gold)] tabular-nums">{currentTicker}</div>
           <div className="text-[12px] sm:text-[13px] text-[var(--color-text-secondary)] mt-0.5 truncate">{currentAnalysis.companyName}</div>
-          <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-1 truncate">{a.profile?.finnhubIndustry || '--'}</div>
+          <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-1 truncate">{a.profile?.industry || '--'}</div>
           <div className="flex items-baseline gap-1.5 sm:gap-2 mt-2">
             <span className="text-[16px] sm:text-[20px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{fmtPrice(a.quote?.c)}</span>
             <span className={`text-[11px] sm:text-[13px] font-mono tabular-nums ${changeColor(a.quote?.dp)}`}>{fmtPct(a.quote?.dp)}</span>
@@ -874,7 +874,7 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
         <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-3 sm:p-4">
           <div className="text-[16px] sm:text-[18px] font-mono font-bold text-[var(--color-text-primary)] tabular-nums">{b.symbol}</div>
           <div className="text-[12px] sm:text-[13px] text-[var(--color-text-secondary)] mt-0.5 truncate">{b.profile?.name || b.symbol}</div>
-          <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-1 truncate">{b.profile?.finnhubIndustry || '--'}</div>
+          <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-1 truncate">{b.profile?.industry || '--'}</div>
           <div className="flex items-baseline gap-1.5 sm:gap-2 mt-2">
             <span className="text-[16px] sm:text-[20px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{fmtPrice(b.quote?.c)}</span>
             <span className={`text-[11px] sm:text-[13px] font-mono tabular-nums ${changeColor(b.quote?.dp)}`}>{fmtPct(b.quote?.dp)}</span>

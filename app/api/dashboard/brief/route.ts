@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getTickerSectorOverride } from '@/lib/polygon';
+import { getTickerSectorOverride } from '@/lib/market-classify';
 import { getQuote } from '@/lib/financial-data';
 import { rateLimit } from '@/lib/rate-limit';
 import { getSourceTier } from '@/lib/news-quality';

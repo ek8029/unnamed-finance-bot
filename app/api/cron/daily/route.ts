@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { syncPlaidItem, computeSnapshots, type PlaidItemForSync, type SyncResult } from '@/lib/plaid-sync';
-import { refreshMarketPrices, enrichMarketData, refreshMarketNews, refreshMarketNewsFinnhub, updatePortfolioPerformance } from '@/lib/market-sync';
+import { refreshMarketPrices, enrichMarketData, refreshMarketNews, updatePortfolioPerformance } from '@/lib/market-sync';
 import { generateInsights } from '@/lib/insights-engine';
 import { runDigestCron } from '@/lib/digest-cron';
 
@@ -168,15 +168,14 @@ export async function GET(request: Request) {
 
     let pricesRefreshed = 0;
 
-    if (process.env.POLYGON_API_KEY) {
+    if (process.env.FINAZON_API_KEY) {
       const marketResults = await Promise.allSettled([
         refreshMarketPrices(serviceClient, log),
         enrichMarketData(serviceClient, log),
         refreshMarketNews(serviceClient, log),
-        refreshMarketNewsFinnhub(serviceClient, log),
       ]);
 
-      const marketNames = ['prices', 'enrich', 'news', 'finnhub-news'] as const;
+      const marketNames = ['prices', 'enrich', 'news'] as const;
       marketResults.forEach((result, i) => {
         if (result.status === 'fulfilled') {
           if (i === 0 && typeof result.value === 'number') {
@@ -189,7 +188,7 @@ export async function GET(request: Request) {
         }
       });
     } else {
-      log.push('[prices] POLYGON_API_KEY not set - skipping all market data');
+      log.push('[prices] FINAZON_API_KEY not set - skipping all market data');
     }
 
     let insightsGenerated = 0;

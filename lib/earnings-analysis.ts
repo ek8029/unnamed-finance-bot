@@ -13,7 +13,7 @@ import {
   getQuote,
   getBasicFinancials,
   type EarningsCalendarItem,
-  type FinnhubEarning,
+  type EarningsSurprise,
 } from '@/lib/financial-data';
 
 // ── Types ──
@@ -279,7 +279,7 @@ async function getRecentEarnings(
 
       // Find earnings from the last 7 days
       const sevenDaysAgo = new Date(Date.now() - 7 * 86400000);
-      const recent = earnings.filter((e: FinnhubEarning) => {
+      const recent = earnings.filter((e: EarningsSurprise) => {
         if (!e.period) return false;
         const earningsDate = new Date(e.period);
         return earningsDate >= sevenDaysAgo;

@@ -134,7 +134,7 @@ async function enrichSectors(holdings: RawHolding[]): Promise<void> {
       try {
         const profile = await getCompanyProfile(h.ticker);
         if (profile && h.security) {
-          h.security.sector = profile.finnhubIndustry || 'Unknown';
+          h.security.sector = profile.industry || 'Unknown';
         }
       } catch {
         // Swallow — sector stays Unknown
