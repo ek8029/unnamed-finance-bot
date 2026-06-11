@@ -16,6 +16,7 @@
 import { cache as reactCache } from 'react';
 import { getDailyBars, getIntradayQuote } from '@/lib/finazon';
 import { fetchTickerHeadlines, fetchYahooHeadlines } from '@/lib/free-news';
+import { titleTargetsTicker } from '@/lib/news-primary-ticker';
 import {
   getReportedFinancialsEdgar,
   getCompanyProfileEdgar,
@@ -347,7 +348,10 @@ export async function getEarnings(_symbol: string): Promise<EarningsSurprise[] |
   return null;
 }
 
-export async function getCompanyNews(symbol: string): Promise<NewsItem[] | null> {
+export async function getCompanyNews(
+  symbol: string,
+  companyName?: string | null,
+): Promise<NewsItem[] | null> {
   const [nasdaq, yahoo] = await Promise.all([
     fetchTickerHeadlines(symbol),
     fetchYahooHeadlines(symbol),
@@ -358,6 +362,10 @@ export async function getCompanyNews(symbol: string): Promise<NewsItem[] | null>
   const seen = new Set<string>();
   const items: NewsItem[] = [];
   for (const a of [...nasdaq, ...yahoo]) {
+    // Feeds tag articles with every ticker mentioned anywhere in the body,
+    // including unrelated CTAs. Only keep articles whose HEADLINE targets
+    // this company — precision over recall.
+    if (!titleTargetsTicker(a.title, symbol, companyName)) continue;
     const nt = normTitle(a.title);
     if (seen.has(nt) || seen.has(a.url)) continue;
     seen.add(nt);
@@ -415,12 +423,15 @@ export interface TickerData {
 // React cache() dedupes calls within a single request — generateMetadata and
 // the page component share one fetch instead of each hitting the providers.
 export const getFullTickerData = reactCache(async (symbol: string): Promise<TickerData> => {
-  const [quote, profile, financials, news] = await Promise.all([
+  const [quote, profile, financials] = await Promise.all([
     getQuote(symbol),
     getCompanyProfile(symbol),
     getBasicFinancials(symbol),
-    getCompanyNews(symbol),
   ]);
+
+  // News needs the company name for headline relevance filtering, so it
+  // runs after the profile fetch.
+  const news = await getCompanyNews(symbol, profile?.name ?? null);
 
   return {
     symbol: symbol.toUpperCase(),

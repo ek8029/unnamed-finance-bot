@@ -41,6 +41,16 @@ function decodeEntities(s: string): string {
     .trim();
 }
 
+/**
+ * Some feed summaries are promo boilerplate about the research service, not
+ * the article (e.g. Zacks: "...finding strong stocks becomes easier with the
+ * Zacks Style Scores, a top feature of the Zacks Premium research service").
+ * Blank those — headline-only beats a misleading summary.
+ */
+function scrubBoilerplate(s: string): string {
+  return /zacks (style scores|premium|rank|investment research)/i.test(s) ? '' : s;
+}
+
 function tagContent(xml: string, tag: string): string | null {
   const m = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`));
   return m ? decodeEntities(m[1]) : null;
@@ -90,9 +100,11 @@ export async function fetchTickerHeadlines(ticker: string): Promise<RssArticle[]
         // Nasdaq strips HTML tags upstream without inserting spaces, which
         // leaves Motley Fool's "Key Points" heading glued to the first
         // sentence (e.g. "Key PointsApple unveiled..."). Drop the prefix.
-        description: (tagContent(item, 'description') || '')
-          .replace(/^Key Points\s*/i, '')
-          .substring(0, 500),
+        description: scrubBoilerplate(
+          (tagContent(item, 'description') || '')
+            .replace(/^Key Points\s*/i, '')
+            .substring(0, 500),
+        ),
         source: tagContent(item, 'dc:creator') || 'Nasdaq',
         publishedAt: isNaN(published.getTime()) ? new Date().toISOString() : published.toISOString(),
         tickers: feedTickers.length > 0 ? [...new Set(feedTickers)] : [upper],
@@ -160,10 +172,12 @@ export async function fetchYahooHeadlines(ticker: string): Promise<RssArticle[]>
         url,
         // Bloomberg items glue a "Most Read from Bloomberg" link list onto
         // the summary with no separator. Drop it.
-        description: (tagContent(item, 'description') || '')
-          .replace(/Most Read from Bloomberg[\s\S]*$/, '')
-          .substring(0, 500)
-          .trim(),
+        description: scrubBoilerplate(
+          (tagContent(item, 'description') || '')
+            .replace(/Most Read from Bloomberg[\s\S]*$/, '')
+            .substring(0, 500)
+            .trim(),
+        ),
         source: sourceFromUrl(url),
         publishedAt: isNaN(published.getTime()) ? new Date().toISOString() : published.toISOString(),
         tickers: [upper],

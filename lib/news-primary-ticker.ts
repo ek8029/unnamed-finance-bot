@@ -28,6 +28,35 @@ function normalizeCompanyName(name: string): string {
 }
 
 /**
+ * True if the article TITLE explicitly targets the ticker — cashtag,
+ * parenthesized or standalone ticker word, or company name. Description
+ * mentions deliberately don't count: feeds tag articles with every ticker
+ * mentioned anywhere in the body, including end-of-article CTAs ("...also
+ * consider NVDA"), which makes description matches unreliable as a
+ * relevance signal.
+ */
+export function titleTargetsTicker(
+  title: string,
+  ticker: string,
+  companyName?: string | null,
+): boolean {
+  const titleUpper = (title || '').toUpperCase();
+  if (!titleUpper) return false;
+  const escaped = ticker.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (new RegExp(`\\$${escaped}\\b`).test(titleUpper)) return true;
+  if (new RegExp(`\\(${escaped}\\)`).test(titleUpper)) return true;
+  if (new RegExp(`\\b${escaped}\\b`).test(titleUpper)) return true;
+  if (companyName) {
+    const normalized = normalizeCompanyName(companyName);
+    if (normalized) {
+      const escapedName = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (new RegExp(`\\b${escapedName}\\b`).test(titleUpper)) return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Detect the primary (subject) ticker for a news article.
  *
  * Strategy, highest confidence first:
