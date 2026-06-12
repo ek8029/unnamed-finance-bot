@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { useLivePrices } from '@/hooks/use-live-prices';
+import { PriceFlash } from '@/components/price-flash';
 import { TrendingUp, TrendingDown, ExternalLink, ArrowLeft } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { StockQuote } from '@/lib/financial-data';
@@ -102,17 +103,19 @@ export function HoldingDetailClient({
       {/* Key Metrics Row */}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
         {[
-          { label: 'Price', value: fmt(holding.currentPrice) },
+          { label: 'Price', value: fmt(holding.currentPrice), flash: holding.currentPrice },
           { label: 'Day Change', value: fmtPct(holding.dayChangePct), color: up ? 'var(--color-positive)' : 'var(--color-negative)' },
           { label: 'Shares', value: holding.shares.toLocaleString() },
-          { label: 'Market Value', value: fmt(holding.totalValue) },
+          { label: 'Market Value', value: fmt(holding.totalValue), flash: holding.totalValue },
           { label: 'Avg Cost', value: fmt(holding.avgCost) },
           { label: 'Unrealized P&L', value: `${glUp ? '+' : ''}${fmt(holding.unrealizedGL)}`, color: glUp ? 'var(--color-positive)' : 'var(--color-negative)' },
           { label: 'Allocation', value: `${holding.allocPct.toFixed(1)}%`, color: holding.allocPct > 25 ? 'var(--color-negative)' : undefined },
-        ].map(m => (
+        ].map((m: { label: string; value: string; color?: string; flash?: number }) => (
           <div key={m.label} className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-3.5">
             <div className="text-[11px] font-mono tracking-wider text-[var(--color-text-muted)] uppercase">{m.label}</div>
-            <div className="text-[15px] sm:text-[18px] font-bold tabular-nums mt-1" style={{ ...MONO, color: m.color || 'var(--color-text-primary)' }}>{m.value}</div>
+            <div className="text-[15px] sm:text-[18px] font-bold tabular-nums mt-1" style={{ ...MONO, color: m.color || 'var(--color-text-primary)' }}>
+              {m.flash !== undefined ? <PriceFlash value={m.flash}>{m.value}</PriceFlash> : m.value}
+            </div>
           </div>
         ))}
       </div>

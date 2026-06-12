@@ -813,6 +813,24 @@ html.screen-reader-optimized .sr-only {
   60%, 100% { top: 100%; }
 }
 
+/* ── Live price flash (tick up/down) ── */
+@keyframes price-flash-up {
+  0% { background-color: rgba(74, 222, 128, 0.28); }
+  100% { background-color: transparent; }
+}
+@keyframes price-flash-down {
+  0% { background-color: rgba(248, 113, 113, 0.28); }
+  100% { background-color: transparent; }
+}
+.price-flash-up {
+  animation: price-flash-up 1.1s ease-out;
+  border-radius: 4px;
+}
+.price-flash-down {
+  animation: price-flash-down 1.1s ease-out;
+  border-radius: 4px;
+}
+
 /* ── Focus visible (a11y) ── */
 a:focus-visible, button:focus-visible {
   outline: 1px solid var(--color-gold);

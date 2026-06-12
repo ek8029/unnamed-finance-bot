@@ -13,6 +13,7 @@ import { useFormat } from '@/hooks/use-format';
 import { computePortfolioLookthrough } from '@/lib/etf-holdings';
 import { CONCENTRATION_THRESHOLDS } from '@/lib/financial-config';
 import { ScrollHint } from '@/components/ui/scroll-hint';
+import { PriceFlash } from '@/components/price-flash';
 
 /* ------------------------------------------------------------------ */
 /*  CSV download helper                                                */
@@ -688,7 +689,7 @@ export default function PortfolioPage() {
                           {h.ticker}
                         </span>
                         <span className="text-[10px] sm:text-[11px] text-[var(--color-text-muted)] truncate">
-                          {h.shares} sh &middot; ${h.current_price.toFixed(2)}
+                          {h.shares} sh &middot; <PriceFlash value={h.current_price}>${h.current_price.toFixed(2)}</PriceFlash>
                         </span>
                       </div>
                       <div className="text-[11px] sm:text-[12px] text-[var(--color-text-muted)] mt-0.5 truncate">
@@ -989,9 +990,9 @@ export default function PortfolioPage() {
                         </td>
                         {/* PRICE */}
                         <td className="px-2 py-2 text-right">
-                          <span className="font-mono text-sm tabular-nums text-[var(--color-text-primary)]">
+                          <PriceFlash value={h.current_price} className="font-mono text-sm tabular-nums text-[var(--color-text-primary)]">
                             {formatCurrencyDetailed(h.current_price)}
-                          </span>
+                          </PriceFlash>
                         </td>
                         {/* DAY % */}
                         <td className="px-2 py-2 text-right">

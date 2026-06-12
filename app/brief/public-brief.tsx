@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { TrendingUp, TrendingDown, Minus, Calendar } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
 import { useLivePrices } from '@/hooks/use-live-prices';
+import { PriceFlash } from '@/components/price-flash';
 
 interface Quote {
   symbol: string;
@@ -202,7 +203,7 @@ export function PublicBrief({ quotes: serverQuotes }: { quotes: Quote[] }) {
             {[spy, qqq].filter(Boolean).map((q) => (
               <div key={q!.symbol}>
                 <div className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]" style={MONO}>{q!.symbol}</div>
-                <div className="text-lg font-bold mt-1 tabular-nums">${fmtPrice(q!.price)}</div>
+                <div className="text-lg font-bold mt-1 tabular-nums"><PriceFlash value={q!.price}>${fmtPrice(q!.price)}</PriceFlash></div>
                 <div className={`text-[13px] font-semibold mt-0.5 tabular-nums ${q!.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`} style={MONO}>
                   {fmtPct(q!.changePct)}
                 </div>

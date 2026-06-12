@@ -292,7 +292,7 @@ interface PortfolioHistoryPoint {
 
 const PRICE_REFRESH_KEY = 'helm_last_price_refresh';
 const PRICE_REFRESH_INTERVAL = 10 * 60 * 1000; // Heavy DB refresh at most every 10 min (on page load)
-const PRICE_POLL_INTERVAL = 30 * 1000;         // Light read-only quote poll every 30s while page is open
+const PRICE_POLL_INTERVAL = 15 * 1000;         // Light read-only quote poll every 15s while page is open
 
 export function useHoldings() {
   const [holdings, setHoldings] = useState<Holding[]>([]);

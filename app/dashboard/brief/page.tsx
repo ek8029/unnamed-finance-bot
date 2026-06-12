@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useLivePrices } from '@/hooks/use-live-prices';
+import { PriceFlash } from '@/components/price-flash';
 import Link from 'next/link';
 import { HelmMark } from '@/components/helm-mark';
 import {
@@ -441,10 +442,13 @@ export default function BriefPage() {
             )}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 md:gap-6">
-          {(liveWatchlist.length > 0 ? liveWatchlist.filter(w => w.price != null && w.changePct != null).map(w => [w.ticker, `$${w.price.toFixed(2)}`, fmtPct(w.changePct), w.changePct >= 0] as [string, string, string, boolean]) : marketTapeItems).map(([label, value, delta, pos]) => (
+          {(liveWatchlist.length > 0
+            ? liveWatchlist.filter(w => w.price != null && w.changePct != null).map(w => [w.ticker, `$${w.price.toFixed(2)}`, fmtPct(w.changePct), w.changePct >= 0, w.price] as [string, string, string, boolean, number | undefined])
+            : marketTapeItems.map(m => [m[0], m[1], m[2], m[3], undefined] as [string, string, string, boolean, number | undefined])
+          ).map(([label, value, delta, pos, rawPrice]) => (
             <div key={label} className="group relative">
               <div className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]" style={MONO}>{label}</div>
-              <div className="text-sm sm:text-lg font-bold mt-1 tabular-nums">{value}</div>
+              <div className="text-sm sm:text-lg font-bold mt-1 tabular-nums"><PriceFlash value={rawPrice}>{value}</PriceFlash></div>
               <div
                 className={`text-[13px] font-semibold mt-0.5 ${pos ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}
                 style={MONO}

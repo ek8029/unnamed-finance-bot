@@ -18,7 +18,7 @@ export interface LiveQuote {
   asOf: number;
 }
 
-export const LIVE_PRICE_INTERVAL_MS = 30_000;
+export const LIVE_PRICE_INTERVAL_MS = 15_000;
 
 export function isUsMarketOpen(): boolean {
   const parts = new Intl.DateTimeFormat('en-US', {

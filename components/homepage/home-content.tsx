@@ -6,6 +6,7 @@ import { Menu, X } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
 import type { TickerTapeItem } from '@/lib/ticker-tape';
 import { useLivePrices } from '@/hooks/use-live-prices';
+import { PriceFlash } from '@/components/price-flash';
 
 /* ─── Props ─────────────────────────────────────────────────────────────── */
 
@@ -198,7 +199,7 @@ export default function HomeContent({ tickerTape }: HomeContentProps) {
             {[...liveTape, ...liveTape, ...liveTape].map((t, i) => (
               <span key={`${t.symbol}-${i}`} className="inline-flex items-center gap-2.5 px-6 font-[family-name:var(--font-mono)] text-[11px]">
                 <span className="text-[var(--color-gold)] font-bold tracking-[0.04em]">{t.symbol}</span>
-                <span className="text-[var(--color-text-primary)] tabular-nums">{t.price}</span>
+                <span className="text-[var(--color-text-primary)] tabular-nums"><PriceFlash value={Number(t.price)}>{t.price}</PriceFlash></span>
                 <span className={`tabular-nums font-medium ${t.positive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}>{t.change}</span>
               </span>
             ))}

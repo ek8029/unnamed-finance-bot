@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 
 const MAX_TICKERS = 50;
 const TICKER_RE = /^[A-Z][A-Z0-9.\-]{0,9}$/;
-const PRICE_TTL_MS = 25_000;
+const PRICE_TTL_MS = 12_000;
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // 30s polling = 20 calls/10min per page; allow several open surfaces.
-  const { allowed } = rateLimit(`market-quotes:${user.id}`, 80, 600);
+  // 15s polling = 40 calls/10min per page; allow several open surfaces.
+  const { allowed } = rateLimit(`market-quotes:${user.id}`, 160, 600);
   if (!allowed) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
