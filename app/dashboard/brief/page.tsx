@@ -7,16 +7,15 @@ import Link from 'next/link';
 import { HelmMark } from '@/components/helm-mark';
 import {
   ChevronDown,
-  ExternalLink,
-  TrendingUp,
-  TrendingDown,
-  Minus,
   Calendar,
   Scissors,
   ArrowUpRight,
 } from 'lucide-react';
 import { useTier } from '@/hooks/use-tier';
 import { ProBlur } from '@/components/pro-blur';
+import { VerdictCard, type ThesisIntelligenceItem } from '@/components/thesis/verdict-card';
+import { MacroStrip, type MacroItem } from '@/components/thesis/macro-strip';
+import { QuietState, type PillarSummary } from '@/components/thesis/quiet-state';
 
 /* ─── Types ─── */
 
@@ -51,6 +50,9 @@ interface BriefData {
   dividendsThisWeek: { ticker: string; exDate: string; cashAmount: number | null; payDate: string | null }[];
   positionNews: NewsItem[];
   generalNews: NewsItem[];
+  pillarSummary: PillarSummary;
+  thesisIntelligence: ThesisIntelligenceItem[];
+  macroStrip: MacroItem[];
   digest: string | null;
   digestGeneratedAt: string | null;
 }
@@ -62,14 +64,6 @@ function fmt(n: number): string {
 }
 function fmtPct(n: number): string {
   return `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
-}
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
 }
 function dayOfYear(): number {
   const now = new Date();
@@ -88,9 +82,7 @@ function getMarketSession(): string {
 }
 function estimateReadTime(data: BriefData): number {
   let sections = 2; // lead + market tape always count
-  if (data.positionNews.length > 0) sections += 1;
   if (data.movers.length > 0) sections += 1;
-  if (data.generalNews.length > 0) sections += 1;
   if (data.earningsThisWeek.length > 0 || data.dividendsThisWeek.length > 0) sections += 1;
   return Math.max(3, Math.min(7, sections));
 }
@@ -220,6 +212,9 @@ export default function BriefPage() {
         dividendsThisWeek: [{ ticker: 'VOO', exDate: new Date(Date.now() + 86400000 * 2).toISOString(), cashAmount: 1.5975, payDate: new Date(Date.now() + 86400000 * 9).toISOString().split('T')[0] }],
         positionNews: [],
         generalNews: [],
+        pillarSummary: { intact: 0, weakening: 0, broken: 0, unverified: 0, positions: 0, lastScannedAt: null },
+        thesisIntelligence: [],
+        macroStrip: [],
         digest: 'NVIDIA is the story this morning. The stock is up 3.2% pre-market after reporting data center revenue that beat estimates by 12%, pushing your largest holding to a $960 gain overnight. Demand for Blackwell GPUs continues to outstrip supply, and management raised full-year guidance for the third consecutive quarter.\n\nApple slipped 0.8% on reports of slower iPhone 16 sales in China, trimming $320 from your position. The weakness is contained to the China market — North American and European sales remain on track. Microsoft edged up 0.4% on steady Azure growth.\n\nThe broader market is calm. SPY is up 0.35% with the VIX sitting at 14.2, firmly in the greed zone. Treasury yields ticked up slightly, pulling TLT down 0.18%. No major macro catalysts today, but keep an eye on NVDA earnings exposure — your 18.5% portfolio weight means any post-earnings reversal hits hard.',
         digestGeneratedAt: new Date().toISOString(),
       });
@@ -533,6 +528,24 @@ export default function BriefPage() {
               </p>
             </article>
 
+            <MacroStrip items={data.macroStrip} />
+            {data.thesisIntelligence.length > 0 && (
+              <section className="space-y-3">
+                <div className="flex items-baseline justify-between">
+                  <h2 className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#E6B94D]">Thesis Intelligence</h2>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#6A6A6A]">{data.thesisIntelligence.length} of 3 max today</span>
+                </div>
+                <div className="space-y-3">
+                  {data.thesisIntelligence.map((item, i) => (
+                    <VerdictCard key={`${item.ticker}-${i}`} item={item} />
+                  ))}
+                </div>
+              </section>
+            )}
+            {data.thesisIntelligence.length === 0 && data.macroStrip.length === 0 && (
+              <QuietState summary={data.pillarSummary} />
+            )}
+
             {/* ── AI Digest + Portfolio Intelligence (Pro) ── */}
             {!isPro && (
               <ProBlur
@@ -590,58 +603,6 @@ export default function BriefPage() {
               </article>
             )}
 
-            {/* ── Position News ── */}
-            {isPro && data.positionNews.length > 0 && (
-              <article>
-                <h2 className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>
-                  NEWS AFFECTING YOUR POSITIONS
-                </h2>
-                <div className="space-y-5">
-                  {data.positionNews.slice(0, 5).map((news, i) => (
-                    <div key={news.id} className={i > 0 ? 'pt-5 border-t border-white/[0.06]' : ''}>
-                      <div className="flex items-center gap-2 mb-1.5">
-                        {news.ticker && (
-                          <Link
-                            href={`/dashboard/analyze/${news.ticker}`}
-                            className="font-mono text-xs font-bold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] motion-safe:transition-colors px-1.5 py-0.5 bg-[var(--color-gold)]/10 rounded"
-                          >
-                            {news.ticker}
-                          </Link>
-                        )}
-                        <SentimentBadge value={news.sentiment} />
-                        <span className="text-[11px] text-[var(--color-text-muted)] flex items-center gap-1" style={MONO}>
-                          {news.sourceTier === 'tier1' && (
-                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-gold)]" title="Tier 1 Source" />
-                          )}
-                          {news.sourceTier === 'tier2' && (
-                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-text-muted)]" title="Tier 2 Source" />
-                          )}
-                          {news.source} · {timeAgo(news.publishedAt)}
-                        </span>
-                      </div>
-                      <h3 className="text-base sm:text-lg font-bold leading-snug mb-1">
-                        {news.url ? (
-                          <a href={news.url} target="_blank" rel="noopener noreferrer" aria-label={`Read: ${news.title} (opens in new tab)`} className="hover:text-[var(--color-gold)] motion-safe:transition-colors">
-                            {news.title}
-                          </a>
-                        ) : news.title}
-                      </h3>
-                      {news.summary && (
-                        <p className="text-[14px] sm:text-[16px] text-[var(--color-text-secondary)] leading-relaxed line-clamp-2" style={SERIF}>
-                          {news.summary}
-                        </p>
-                      )}
-                      {news.impactNote && (
-                        <p className="text-[12px] text-[var(--color-gold)] mt-1.5" style={MONO}>
-                          {news.impactNote}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </article>
-            )}
-
             {/* ── Movers Table ── */}
             {allMovers.length > 0 && (
               <article>
@@ -667,43 +628,6 @@ export default function BriefPage() {
                       <span className={`text-[13px] sm:text-[15px] font-mono text-right tabular-nums ${m.dollarImpact >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
                         {m.dollarImpact >= 0 ? '+' : ''}{fmt(m.dollarImpact)}
                       </span>
-                    </div>
-                  ))}
-                </div>
-              </article>
-            )}
-
-            {/* ── General Market Headlines ── */}
-            {data.generalNews.length > 0 && (
-              <article>
-                <h2 className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>
-                  MARKET HEADLINES
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
-                  {data.generalNews.slice(0, 6).map((news) => (
-                    <div key={news.id} className="group">
-                      <div className="flex items-center gap-2 mb-1">
-                        {news.ticker && (
-                          <span className="font-mono text-[11px] font-bold text-[var(--color-text-muted)]">{news.ticker}</span>
-                        )}
-                        <span className="text-[11px] text-[var(--color-text-muted)] flex items-center gap-1" style={MONO}>
-                          {news.sourceTier === 'tier1' && (
-                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-gold)]" title="Tier 1 Source" />
-                          )}
-                          {news.sourceTier === 'tier2' && (
-                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-text-muted)]" title="Tier 2 Source" />
-                          )}
-                          {news.source} · {timeAgo(news.publishedAt)}
-                        </span>
-                      </div>
-                      <h3 className="text-[15px] font-semibold leading-snug">
-                        {news.url ? (
-                          <a href={news.url} target="_blank" rel="noopener noreferrer" aria-label={`Read: ${news.title} (opens in new tab)`} className="group-hover:text-[var(--color-gold)] motion-safe:transition-colors">
-                            {news.title}
-                            <ExternalLink className="inline-block w-3 h-3 ml-1 opacity-0 group-hover:opacity-50 motion-safe:transition-opacity" />
-                          </a>
-                        ) : news.title}
-                      </h3>
                     </div>
                   ))}
                 </div>
@@ -945,13 +869,4 @@ export default function BriefPage() {
       </footer>
     </div>
   );
-}
-
-/* ─── Sub-components ─── */
-
-function SentimentBadge({ value }: { value: number | null }) {
-  if (value === null) return null;
-  if (value > 0.2) return <span className="flex items-center gap-0.5 text-[11px] text-[var(--color-positive)]" style={{ fontFamily: 'var(--font-mono)' }}><TrendingUp className="w-3 h-3" />Bullish</span>;
-  if (value < -0.2) return <span className="flex items-center gap-0.5 text-[11px] text-[var(--color-negative)]" style={{ fontFamily: 'var(--font-mono)' }}><TrendingDown className="w-3 h-3" />Bearish</span>;
-  return <span className="flex items-center gap-0.5 text-[11px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}><Minus className="w-3 h-3" />Neutral</span>;
 }
