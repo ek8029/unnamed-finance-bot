@@ -381,3 +381,214 @@ export async function getCompanyProfileEdgar(symbol: string): Promise<EdgarCompa
     return null;
   }
 }
+
+// ── Form 4 (insider transactions) ──
+
+export interface Form4Transaction {
+  code: string;           // S, P, A, M, F, G...
+  shares: number;
+  pricePerShare: number | null;
+  value: number | null;   // shares * price when price present
+  date: string;           // YYYY-MM-DD
+  isDisposition: boolean; // transactionAcquiredDisposedCode === 'D'
+}
+
+export interface ParsedForm4 {
+  ownerName: string;
+  ownerRole: string;      // "CEO", "Director", "10% owner", or "" — from officerTitle/relationship flags
+  is10b51: boolean;
+  transactions: Form4Transaction[];
+}
+
+export interface Form4Summary extends ParsedForm4 {
+  accessionNumber: string;  // dedupe key (source_key)
+  filedAt: string;
+  url: string;              // human-viewable filing index URL
+  totalSaleValue: number;   // sum of disposition S-code values
+}
+
+/** Extract the text content of a simple XML element, e.g. <foo>bar</foo> → "bar". */
+function xmlText(xml: string, tag: string): string {
+  const m = xml.match(new RegExp(`<${tag}[^>]*>([^<]*)<\\/${tag}>`, 's'));
+  return m ? m[1].trim() : '';
+}
+
+/**
+ * Extract all occurrences of a repeating block between <tag> and </tag>.
+ * Used to pull individual <nonDerivativeTransaction> blocks.
+ */
+function xmlBlocks(xml: string, tag: string): string[] {
+  const re = new RegExp(`<${tag}[\\s\\S]*?<\\/${tag}>`, 'g');
+  return xml.match(re) ?? [];
+}
+
+/**
+ * Within a <transactionAmounts> block, get the first <value> child inside
+ * <transactionPricePerShare> (may be absent when only footnoteId children exist).
+ */
+function xmlChildValue(block: string, outerTag: string): string {
+  // Find the outer tag's inner content, then grab the first <value> inside it
+  const outerMatch = block.match(new RegExp(`<${outerTag}[\\s\\S]*?<\\/${outerTag}>`));
+  if (!outerMatch) return '';
+  const innerMatch = outerMatch[0].match(/<value>([^<]*)<\/value>/);
+  return innerMatch ? innerMatch[1].trim() : '';
+}
+
+/**
+ * Parse a Form 4 ownershipDocument XML string into a structured object.
+ * Uses regex/string extraction only — no XML parser dependency.
+ */
+export function parseForm4Xml(xml: string): ParsedForm4 {
+  // Owner name
+  const ownerName = xmlText(xml, 'rptOwnerName');
+
+  // Owner role: prefer officerTitle, fall back to relationship flags
+  let ownerRole = xmlText(xml, 'officerTitle');
+  if (!ownerRole) {
+    const isDirector = xmlText(xml, 'isDirector');
+    const isTenPct = xmlText(xml, 'isTenPercentOwner');
+    if (isDirector === '1' || isDirector === 'true') ownerRole = 'Director';
+    else if (isTenPct === '1' || isTenPct === 'true') ownerRole = '10% owner';
+  }
+
+  // 10b5-1 detection: aff10b5One === 1/true OR any footnote text matches /10b5-1/i
+  const aff = xmlText(xml, 'aff10b5One').toLowerCase();
+  const hasAffFlag = aff === '1' || aff === 'true';
+  const hasFootnote = /10b5-1/i.test(xml);
+  const is10b51 = hasAffFlag || hasFootnote;
+
+  // Parse nonDerivativeTransaction blocks only (derivative table is separate)
+  // Isolate the nonDerivativeTable to avoid matching derivative transactions
+  const ndTableMatch = xml.match(/<nonDerivativeTable[\s\S]*?<\/nonDerivativeTable>/);
+  const ndXml = ndTableMatch ? ndTableMatch[0] : '';
+  const txBlocks = xmlBlocks(ndXml, 'nonDerivativeTransaction');
+
+  const transactions: Form4Transaction[] = [];
+  for (const block of txBlocks) {
+    const code = xmlText(block, 'transactionCode');
+    if (!code) continue;
+
+    const sharesStr = xmlChildValue(block, 'transactionShares');
+    const shares = sharesStr ? parseFloat(sharesStr) : 0;
+    if (!(shares > 0)) continue;
+
+    const priceStr = xmlChildValue(block, 'transactionPricePerShare');
+    const priceRaw = priceStr ? parseFloat(priceStr) : null;
+    // Price of 0 is typically used for awards/gifts — treat as null (no dollar value)
+    const pricePerShare = priceRaw != null && priceRaw > 0 ? priceRaw : null;
+    const value = pricePerShare != null ? shares * pricePerShare : null;
+
+    const dateStr = xmlChildValue(block, 'transactionDate');
+    const date = dateStr || xmlText(block, 'transactionDate');
+
+    const adCode = xmlChildValue(block, 'transactionAcquiredDisposedCode');
+    const isDisposition = adCode === 'D';
+
+    transactions.push({ code, shares, pricePerShare, value, date, isDisposition });
+  }
+
+  return { ownerName, ownerRole, is10b51, transactions };
+}
+
+const FORM4_TTL = 60 * 60 * 1000; // 1 hour
+
+/**
+ * Fetch up to 25 most recent Form 4 filings for a symbol since sinceDate.
+ * Serializes document fetches to stay under EDGAR's 10 req/s limit.
+ */
+export async function getForm4Filings(symbol: string, sinceDate: string): Promise<Form4Summary[]> {
+  const cik = await getCik(symbol);
+  if (!cik) return [];
+
+  const cikNum = String(Number(cik)); // strip leading zeros for archive URLs
+
+  let submissionsData: { filings?: { recent?: Record<string, unknown[]> } };
+  try {
+    const res = await fetch(`https://data.sec.gov/submissions/CIK${cik}.json`, {
+      headers: { 'User-Agent': UA, Accept: 'application/json' },
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      console.error(`EDGAR submissions ${symbol} error: ${res.status}`);
+      return [];
+    }
+    submissionsData = await res.json();
+  } catch (error) {
+    console.error(`EDGAR submissions ${symbol} failed:`, error);
+    return [];
+  }
+
+  const recent = submissionsData.filings?.recent;
+  if (!recent?.form) return [];
+
+  const forms = recent.form as string[];
+  const dates = recent.filingDate as string[];
+  const accessions = recent.accessionNumber as string[];
+
+  // Collect Form 4s on/after sinceDate, newest first, cap at 25
+  const candidates: Array<{ accDashed: string; accNoDashes: string; filedAt: string }> = [];
+  for (let i = 0; i < forms.length && candidates.length < 25; i++) {
+    if (forms[i] !== '4') continue;
+    const filedAt = dates[i] || '';
+    if (filedAt < sinceDate) continue;
+    candidates.push({
+      accDashed: accessions[i],
+      accNoDashes: accessions[i].replace(/-/g, ''),
+      filedAt,
+    });
+  }
+
+  const results: Form4Summary[] = [];
+
+  for (const { accDashed, accNoDashes, filedAt } of candidates) {
+    try {
+      // Fetch the filing index to find the raw XML file
+      const indexUrl = `https://www.sec.gov/Archives/edgar/data/${cikNum}/${accNoDashes}/index.json`;
+      const indexRes = await fetch(indexUrl, {
+        headers: { 'User-Agent': UA, Accept: 'application/json' },
+        cache: 'no-store',
+      });
+      if (!indexRes.ok) continue;
+
+      const indexData = await indexRes.json();
+      const items: Array<{ name: string }> = indexData.directory?.item ?? [];
+
+      // Pick the .xml file not under xslF345X*/ path (that's the rendered stylesheet version)
+      const xmlFile = items.find(
+        (it) => it.name.endsWith('.xml') && !it.name.startsWith('xslF345X'),
+      );
+      if (!xmlFile) continue;
+
+      const xmlUrl = `https://www.sec.gov/Archives/edgar/data/${cikNum}/${accNoDashes}/${xmlFile.name}`;
+      const xmlRes = await fetch(xmlUrl, {
+        headers: { 'User-Agent': UA, Accept: 'application/json' },
+        cache: 'no-store',
+      });
+      if (!xmlRes.ok) continue;
+
+      const xml = await xmlRes.text();
+      const parsed = parseForm4Xml(xml);
+
+      // Skip filings with no transactions (holdings-only filings)
+      if (parsed.transactions.length === 0) continue;
+
+      const totalSaleValue = parsed.transactions
+        .filter((t) => t.code === 'S' && t.isDisposition && t.value != null)
+        .reduce((sum, t) => sum + (t.value ?? 0), 0);
+
+      const url = `https://www.sec.gov/Archives/edgar/data/${cikNum}/${accNoDashes}/${accDashed}-index.htm`;
+
+      results.push({
+        ...parsed,
+        accessionNumber: accDashed,
+        filedAt,
+        url,
+        totalSaleValue,
+      });
+    } catch (err) {
+      console.warn(`Form4 parse failed for ${accDashed}:`, err);
+    }
+  }
+
+  return results;
+}
