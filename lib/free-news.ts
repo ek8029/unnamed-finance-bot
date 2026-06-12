@@ -14,9 +14,13 @@
 import { scoreSentiment } from '@/lib/market-classify';
 import { detectPrimaryTicker } from '@/lib/news-primary-ticker';
 import { getRecentFilings } from '@/lib/edgar';
+import OpenAI from 'openai';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyClient = any;
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const MACRO_MODEL = 'gpt-4o-mini';
 
 // ── RSS parsing ──
 
@@ -328,8 +332,92 @@ export async function refreshRssNews(
     return 0;
   }
 
+
+  const macroCandidates = inserts
+    .filter((ins: { primary_ticker: string | null }) => ins.primary_ticker === null)
+    .map((ins: { url: string; title: string }) => ({ url: ins.url, title: ins.title }));
+  await classifyMacroMovers(supabase, log, macroCandidates);
   log.push(`[news] Inserted ${inserts.length} new articles (${batch.length - newArticles.length} duplicates, ${newArticles.length - inserts.length} low-signal skipped)`);
   return inserts.length;
+}
+
+// ── Macro-mover classifier ──
+
+async function classifyMacroMovers(
+  supabase: AnyClient,
+  log: string[],
+  candidates: { url: string; title: string }[],
+): Promise<void> {
+  if (candidates.length === 0) return;
+
+  try {
+    const numberedList = candidates
+      .map((c, idx) => `${idx}: ${c.title}`)
+      .join('\n');
+
+    const response = await openai.chat.completions.create({
+      model: MACRO_MODEL,
+      response_format: { type: 'json_object' },
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are a strict macro news classifier. A true market-mover is ONLY one of: ' +
+            'a Federal Reserve rate decision or emergency action, a CPI or inflation data release ' +
+            'that shocks consensus expectations, an outbreak of war or major geopolitical escalation, ' +
+            'or a sovereign default or major-issuer credit event. ' +
+            'Almost always the answer is none. ' +
+            'Ordinary market commentary, earnings roundups, analyst opinions, stock lists, ' +
+            'sector rotations, and corporate news never qualify. ' +
+            'Return JSON exactly: { "movers": [indices] } where indices are integers from the list below. ' +
+            'If nothing qualifies return { "movers": [] }.',
+        },
+        {
+          role: 'user',
+          content: numberedList,
+        },
+      ],
+    });
+
+    const raw = response.choices[0]?.message?.content ?? '';
+    let parsed: { movers?: unknown };
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      log.push('[news] Macro classification failed: invalid JSON from model');
+      return;
+    }
+
+    if (!Array.isArray(parsed.movers)) {
+      log.push('[news] Macro classification failed: movers field missing or not array');
+      return;
+    }
+
+    const validIndices = [...new Set(
+      (parsed.movers as unknown[])
+        .filter((v): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 0 && v < candidates.length)
+    )].slice(0, 2);
+
+    if (validIndices.length === 0) {
+      log.push('[news] Macro scan: 0 movers (expected)');
+      return;
+    }
+
+    const selectedUrls = validIndices.map(i => candidates[i].url);
+    const { error: updateError } = await supabase
+      .from('market_news')
+      .update({ macro_tier: 'mover' })
+      .in('url', selectedUrls);
+
+    if (updateError) {
+      log.push(`[news] Macro classification failed: ${updateError.message}`);
+      return;
+    }
+
+    log.push(`[news] Macro movers flagged: ${validIndices.length}`);
+  } catch (err) {
+    log.push(`[news] Macro classification failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
 }
 
 // ── SEC 8-K filing events ──
