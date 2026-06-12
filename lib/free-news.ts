@@ -19,7 +19,13 @@ import OpenAI from 'openai';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyClient = any;
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Lazy-init: a module-scope `new OpenAI()` throws at import time when
+// OPENAI_API_KEY is unset (breaks tests and any non-LLM import of this module).
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  return _openai;
+}
 const MACRO_MODEL = 'gpt-4o-mini';
 
 // ── RSS parsing ──
@@ -359,7 +365,7 @@ async function classifyMacroMovers(
       .map((c, idx) => `${idx}: ${c.title}`)
       .join('\n');
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: MACRO_MODEL,
       response_format: { type: 'json_object' },
       messages: [
