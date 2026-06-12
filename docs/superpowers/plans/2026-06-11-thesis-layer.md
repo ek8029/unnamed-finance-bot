@@ -567,7 +567,7 @@ Note: the "pre-draft for Plaid-connected users" batch job (spec §4.2) is just a
 **Files:**
 - Create: `lib/score-theses.ts`
 - Create: `app/api/cron/score-theses/route.ts`
-- Modify: `app/api/cron/daily/route.ts` (add trigger fetch, same pattern as the existing drip/watchlist fetches at :60-83)
+- Modify: `vercel.json` (add second cron entry — Vercel Pro)
 - Test: extend `tests/thesis-evidence.test.ts` with the candidate-gathering filter if any pure logic emerges (e.g. price-move threshold helper)
 
 Spec §4.3. Route skeleton mirrors `app/api/cron/daily/route.ts`: `export const maxDuration = 300;` (Vercel Pro), CRON_SECRET bearer check, service-role client.
@@ -599,27 +599,15 @@ Per tracked thesis (free tier: only the 1 allowed tracked thesis is ever tracked
 
 GET, CRON_SECRET bearer (copy auth block from daily cron :21-28), `maxDuration = 300`, builds service client, calls `scoreAllTheses`, returns the summary JSON. Support `?ticker=NVDA` to scope to one thesis for local testing.
 
-- [ ] **Step 3: Trigger from daily cron**
+- [ ] **Step 3: Schedule via dedicated cron entry**
 
-In `app/api/cron/daily/route.ts`, after the watchlist-alerts block, add a fire-and-forget trigger reusing the same `baseUrl` and `cacheBust` variables the drip/watchlist trigger fetches already use, with a short abort so the 60s budget is untouched:
+Account is on Vercel Pro (40 cron jobs, any schedule). Do NOT trigger from the daily cron route — add a second cron entry to `vercel.json` (or `vercel.ts` if the project uses it; check which exists) scheduled 10 minutes after the existing 9:15 ET daily cron, so ingestion (filings/news/prices) lands first:
 
-```typescript
-// Thesis scoring — separate route, own maxDuration. Fire and move on.
-try {
-  const ac = new AbortController();
-  const t = setTimeout(() => ac.abort(), 3000);
-  fetch(`${baseUrl}/api/cron/score-theses?${cacheBust}`, {
-    headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
-    cache: 'no-store',
-    signal: ac.signal,
-  }).catch(() => {}).finally(() => clearTimeout(t));
-  log.push('[theses] scoring triggered');
-} catch (err) {
-  log.push(`[theses] trigger failed: ${err instanceof Error ? err.message : 'unknown'}`);
-}
+```json
+{ "path": "/api/cron/score-theses", "schedule": "25 13 * * *" }
 ```
 
-Risk note for reviewer: if the aborted invocation gets killed platform-side before completing, switch to a second `vercel.json` cron entry at 9:25 ET instead (Vercel Pro supports multiple crons). Verify behavior during local/preview testing; do not block on it locally (local Next dev does not kill on disconnect).
+Match the UTC convention of the existing daily cron entry (9:15 ET = 13:15 UTC during EDT; copy whatever offset the existing entry uses, same DST caveat). Vercel calls cron routes with the CRON_SECRET-style auth already handled by the route's bearer check — confirm the existing daily entry's auth mechanism and mirror it. `app/api/cron/daily/route.ts` is NOT modified.
 
 - [ ] **Step 4: Manual local run**
 
