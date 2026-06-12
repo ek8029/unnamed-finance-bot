@@ -185,6 +185,28 @@ export async function PATCH(
       return NextResponse.json({ error: 'Failed to update thesis' }, { status: 500 });
     }
 
+    // Fire-and-forget backfill on track enable. Aborts after 3s; the backfill
+    // route continues processing server-side. Silently skipped if it fails
+    // (backfill re-triggers on next track toggle or manual call).
+    if (body.tracked === true && thesis.tracked === false) {
+      try {
+        const backfillUrl = new URL('/api/thesis/backfill', request.url);
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), 3000);
+        fetch(backfillUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            cookie: request.headers.get('cookie') ?? '',
+          },
+          body: JSON.stringify({ ticker }),
+          signal: controller.signal,
+        }).catch(() => {});
+      } catch {
+        // never block the PATCH response on backfill
+      }
+    }
+
     return NextResponse.json({ thesis: updated });
   } catch (err) {
     console.error('[thesis/ticker] PATCH unhandled error:', err);

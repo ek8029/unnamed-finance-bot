@@ -23,7 +23,7 @@ const CANDIDATE_TEXT_TRUNCATE = 2000;
 // Types
 // ---------------------------------------------------------------------------
 
-interface Thesis {
+export interface Thesis {
   id: string;
   user_id: string;
   ticker: string;
@@ -170,7 +170,7 @@ export async function scoreAllTheses(
 
   for (const thesis of theses as Thesis[]) {
     try {
-      const result = await scoreThesis(serviceClient, thesis, log);
+      const result = await scoreOneThesis(serviceClient, thesis, log);
       evidenceAdded += result.evidenceAdded;
       statusChanges += result.statusChanges;
       scanned++;
@@ -186,13 +186,16 @@ export async function scoreAllTheses(
 // Per-thesis scoring
 // ---------------------------------------------------------------------------
 
-async function scoreThesis(
+export async function scoreOneThesis(
   db: SupabaseClient,
   thesis: Thesis,
-  log: string[]
+  log: string[],
+  options?: { since?: string; isBackfill?: boolean; maxCandidates?: number }
 ): Promise<{ evidenceAdded: number; statusChanges: number }> {
   const { ticker, id: thesisId, user_id, last_scanned_at } = thesis;
-  const since = sinceDate(last_scanned_at);
+  const since = options?.since ?? sinceDate(last_scanned_at);
+  const isBackfill = options?.isBackfill ?? false;
+  const maxCandidates = options?.maxCandidates ?? MAX_CANDIDATES;
   let evidenceAdded = 0;
   let statusChanges = 0;
 
@@ -389,7 +392,7 @@ async function scoreThesis(
       const db2 = b.source_published_at ?? '';
       return db2 > da ? 1 : db2 < da ? -1 : 0;
     })
-    .slice(0, MAX_CANDIDATES);
+    .slice(0, maxCandidates);
 
   // Lazily fetch filing text for filings
   for (const c of sortedCandidates) {
@@ -513,7 +516,7 @@ Respond with JSON: { "evidence": [...] }`;
       why: row.why,
       what_it_means: row.what_it_means,
       consider: row.consider ?? null,
-      is_backfill: false,
+      is_backfill: isBackfill,
     });
   }
 
