@@ -3,7 +3,12 @@
   "redirects": [
     {
       "source": "/:path(.*)",
-      "has": [{ "type": "host", "value": "www.helmterminal.dev" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "www.helmterminal.dev"
+        }
+      ],
       "destination": "https://helmterminal.dev/:path",
       "permanent": true
     }
@@ -12,6 +17,10 @@
     {
       "path": "/api/cron/daily",
       "schedule": "15 13 * * *"
+    },
+    {
+      "path": "/api/cron/score-theses",
+      "schedule": "25 13 * * *"
     }
   ]
 }
