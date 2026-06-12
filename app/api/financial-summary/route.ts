@@ -153,7 +153,7 @@ export async function GET() {
 
     let prevSnapshot = (await supabase
       .from('net_worth_snapshots')
-      .select('total_assets, total_liabilities, net_worth, investment_balance')
+      .select('total_assets, total_liabilities, net_worth, investment_balance, snapshot_date')
       .eq('user_id', user.id)
       .gte('snapshot_date', prevMonthDate.toISOString().split('T')[0])
       .lte('snapshot_date', prevMonthEnd.toISOString().split('T')[0])
@@ -165,7 +165,7 @@ export async function GET() {
     if (!prevSnapshot) {
       prevSnapshot = (await supabase
         .from('net_worth_snapshots')
-        .select('total_assets, total_liabilities, net_worth, investment_balance')
+        .select('total_assets, total_liabilities, net_worth, investment_balance, snapshot_date')
         .eq('user_id', user.id)
         .lt('snapshot_date', today)
         .order('snapshot_date', { ascending: true })
@@ -219,6 +219,15 @@ export async function GET() {
         cash_flow: calcChange(monthlyCashFlow, prevCashFlowVal),
         portfolio: calcChange(portfolioValue, prevPortfolio),
         net_worth: calcChange(netWorth, prevNetWorth),
+        // Dollar change against the same snapshot baseline as the % change.
+        // Null when there is no meaningful baseline (e.g. brand-new account
+        // whose first snapshot is $0) so the UI hides the badge instead of
+        // showing the entire balance as a "monthly gain".
+        net_worth_dollar:
+          prevNetWorth !== null && prevNetWorth !== 0
+            ? Math.round((netWorth - prevNetWorth) * 100) / 100
+            : null,
+        net_worth_baseline_date: prevSnapshot?.snapshot_date ?? null,
       },
     };
 

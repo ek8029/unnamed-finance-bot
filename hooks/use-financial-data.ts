@@ -16,6 +16,8 @@ interface FinancialSummary {
     cash_flow: number | null;
     portfolio: number | null;
     net_worth: number | null;
+    net_worth_dollar?: number | null;
+    net_worth_baseline_date?: string | null;
   };
 }
 

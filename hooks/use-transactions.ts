@@ -16,6 +16,12 @@ interface Transaction {
   account_name: string | null;
   institution_name: string | null;
   is_pending: boolean;
+  // Investment rows (kind === 'investment') carry trade details
+  kind?: 'investment';
+  ticker?: string | null;
+  transaction_type?: string | null;
+  quantity?: number | null;
+  price?: number | null;
 }
 
 interface Pagination {

@@ -102,6 +102,14 @@ const TICKER_SECTOR_OVERRIDE: Record<string, string> = {
   ICLN: 'Energy', TAN: 'Energy', XLC: 'Communication Services',
   ARKW: 'Technology', ARKG: 'Healthcare', ARKF: 'Financial Services',
   SOXL: 'Technology', TQQQ: 'Technology', SQQQ: 'Technology', UVXY: 'Diversified',
+  // Underlyings of single-stock / leveraged products (lib/etf-holdings.ts)
+  MU: 'Technology', LRCX: 'Technology', SNDK: 'Technology', STX: 'Technology',
+  WDC: 'Technology', TSM: 'Technology', SMCI: 'Technology', MRVL: 'Technology',
+  ASML: 'Technology', DELL: 'Technology', NOW: 'Technology', CRWV: 'Technology',
+  NBIS: 'Technology', IONQ: 'Technology', MSTR: 'Technology', UBER: 'Technology',
+  RDDT: 'Communication Services', ABNB: 'Consumer Cyclical', BABA: 'Consumer Cyclical',
+  PDD: 'Consumer Cyclical', PYPL: 'Financial Services', MARA: 'Financial Services',
+  MRNA: 'Healthcare', VRT: 'Industrials', GDX: 'Basic Materials', VIXY: 'Diversified',
 };
 
 const SIC_TO_SECTOR: Record<string, string> = {

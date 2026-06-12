@@ -41,6 +41,18 @@ function inferKind(tx: {
   return 'OTHER';
 }
 
+/* Investment rows carry Plaid's transaction_type, so no inference needed */
+function investmentKind(type: string | null | undefined): TxKind {
+  const t = (type || '').toLowerCase();
+  if (t.includes('dividend')) return 'DIV';
+  if (t.includes('buy')) return 'BUY';
+  if (t.includes('sell')) return 'SELL';
+  if (t.includes('fee') || t.includes('tax')) return 'FEE';
+  if (t.includes('transfer') || t.includes('withdrawal')) return 'TRANSFER';
+  if (t.includes('deposit') || t.includes('contribution') || t.includes('cash')) return 'DEPOSIT';
+  return 'OTHER';
+}
+
 /*
  * KIND_CONFIG color rationale:
  * BUY (#7AA3C7) and SELL (#E89A7F) use hardcoded hex values because they are
@@ -327,7 +339,7 @@ export default function TransactionsPage() {
     () =>
       transactions.map((tx) => ({
         ...tx,
-        kind: inferKind(tx),
+        kind: tx.kind === 'investment' ? investmentKind(tx.transaction_type) : inferKind(tx),
       })),
     [transactions]
   );
@@ -852,6 +864,11 @@ export default function TransactionsPage() {
                                 {tx.description}
                               </p>
                             )}
+                            {tx.quantity != null && tx.price != null && (
+                              <p className="text-[11px] text-[var(--color-text-muted)] font-mono truncate mt-0.5">
+                                {Math.abs(tx.quantity).toLocaleString()} @ {formatCurrencyDetailed(tx.price)}
+                              </p>
+                            )}
                           </div>
 
                           {/* Account + status */}
@@ -899,6 +916,9 @@ export default function TransactionsPage() {
                             </span>
                             <span className="block text-[11px] text-[var(--color-text-muted)] truncate mt-0.5">
                               {tx.is_pending ? 'Pending' : displayTime}
+                              {tx.quantity != null && tx.price != null
+                                ? ` \u00B7 ${Math.abs(tx.quantity).toLocaleString()} @ ${formatCurrencyDetailed(tx.price)}`
+                                : ''}
                               {tx.account_name ? ` \u00B7 ${tx.account_name}` : ''}
                             </span>
                           </div>

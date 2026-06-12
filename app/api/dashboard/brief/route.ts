@@ -408,6 +408,15 @@ export async function GET() {
           overnightChange: Math.round(overnightChange * 100) / 100,
           overnightChangePct: Math.round(overnightChangePct * 100) / 100,
           vsBenchmark,
+          // Honest framing: before the 9:30 ET open (and on weekends) the
+          // day_change_pct values describe the PREVIOUS trading session,
+          // not an overnight move.
+          changeLabel: (() => {
+            const et = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+            const day = et.getDay();
+            const beforeOpen = et.getHours() < 9 || (et.getHours() === 9 && et.getMinutes() < 30);
+            return day === 0 || day === 6 || beforeOpen ? 'Last session' : 'Portfolio today';
+          })(),
         },
         market,
         movers,

@@ -11,6 +11,7 @@
  */
 
 import { getBatchLastTradePrices, getIntradayQuote } from '@/lib/finazon';
+import { createServiceClient } from '@/lib/supabase/server';
 
 export interface LiveQuote {
   ticker: string;
@@ -70,14 +71,41 @@ export async function getLiveQuotes(tickers: string[], ttlMs: number): Promise<L
     }
   }
 
-  // 3. Backfill previous close (one time_series call per ticker per day).
+  // 3. Backfill previous close from our own market_prices table (one batched
+  // DB read instead of one Finazon /time_series call per ticker per instance
+  // per day — that burn rate-limited the shared budget and froze day %s).
+  // Falls back to Finazon only for tickers with no DB history.
   const needPrevClose = tickers.filter((t) => {
     if (!priceCache.has(t)) return false;
     const hit = prevCloseCache.get(t);
     return !hit || hit.etDay !== today;
   });
 
+  if (needPrevClose.length > 0) {
+    try {
+      const supabase = await createServiceClient();
+      const { data } = await supabase
+        .from('market_prices')
+        .select('ticker, close, price_date')
+        .in('ticker', needPrevClose)
+        .lt('price_date', today)
+        .order('price_date', { ascending: false });
+      // Rows are newest-first; first row per ticker is the previous session close.
+      for (const row of data ?? []) {
+        const t = row.ticker as string;
+        if (!prevCloseCache.has(t) || prevCloseCache.get(t)!.etDay !== today) {
+          const close = Number(row.close);
+          if (close > 0) prevCloseCache.set(t, { prevClose: close, etDay: today });
+        }
+      }
+    } catch {
+      // DB read failure is non-fatal — fall through to Finazon below
+    }
+  }
+
   for (const ticker of needPrevClose) {
+    const hit = prevCloseCache.get(ticker);
+    if (hit && hit.etDay === today) continue; // resolved from DB
     const quote = await getIntradayQuote(ticker);
     if (quote && quote.prevClose > 0) {
       prevCloseCache.set(ticker, { prevClose: quote.prevClose, etDay: today });

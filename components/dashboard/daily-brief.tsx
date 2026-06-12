@@ -10,6 +10,7 @@ interface BriefData {
     overnightChange: number;
     overnightChangePct: number;
     vsBenchmark: number | null;
+    changeLabel?: string;
   };
   market: {
     spy: { price: number; changePct: number } | null;
@@ -261,7 +262,7 @@ export function DailyBrief() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="text-[0.8125rem] text-[var(--color-text-secondary)]">Portfolio overnight</span>
+              <span className="text-[0.8125rem] text-[var(--color-text-secondary)]">{brief.portfolio.changeLabel ?? 'Portfolio today'}</span>
               <span className={cn('text-[1.25rem] font-mono tabular-nums font-bold', colorClass(brief.portfolio.overnightChange))}>
                 {formatCurrency(brief.portfolio.overnightChange)}
               </span>

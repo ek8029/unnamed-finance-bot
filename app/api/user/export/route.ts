@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/rate-limit';
+import { resolveSector } from '@/lib/portfolio-analysis';
 
 export async function GET() {
   try {
@@ -65,7 +66,7 @@ export async function GET() {
         totalValue: holding.total_value,
         costBasis: holding.total_cost_basis,
         unrealizedGain: holding.unrealised_gain_loss,
-        sector: holding.security?.sector,
+        sector: resolveSector(holding.ticker, holding.security?.sector, holdingsResult.data || []),
         assetClass: holding.security?.asset_class,
       })),
       transactions: transactionsResult.data?.map(tx => ({

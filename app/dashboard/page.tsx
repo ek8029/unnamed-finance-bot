@@ -79,16 +79,19 @@ export default function DashboardOverview() {
     posthog.capture('dashboard_viewed', { has_plaid: hasPlaidConnection, is_demo: isDemo });
   }, [hasPlaidConnection, isDemo]);
 
-  // Compute dollar change from the last two net worth history points
-  const netWorthChange = useMemo(() => {
-    if (!netWorthHistory || netWorthHistory.length < 2) return null;
-    const current = netWorthHistory[netWorthHistory.length - 1];
-    const previous = netWorthHistory[netWorthHistory.length - 2];
-    if (!current || !previous) return null;
-    return current.value - previous.value;
-  }, [netWorthHistory]);
-
+  // Snapshot-based dollar change from the API (same baseline as the % change).
+  // Null when there is no meaningful baseline (new account) — badge stays hidden.
+  const netWorthChange = financialSummary?.changes?.net_worth_dollar ?? null;
   const netWorthPctChange = financialSummary?.changes?.net_worth ?? null;
+
+  // Honest label: only claim "vs. last month" when the baseline is ~a month old.
+  const netWorthChangeLabel = useMemo(() => {
+    const baseline = financialSummary?.changes?.net_worth_baseline_date;
+    if (!baseline) return 'vs. last month';
+    const ageDays = (Date.now() - new Date(`${baseline}T12:00:00`).getTime()) / 86400000;
+    if (ageDays >= 25) return 'vs. last month';
+    return `since ${new Date(`${baseline}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+  }, [financialSummary]);
 
   if (loading) {
     return (
@@ -295,7 +298,7 @@ export default function DashboardOverview() {
                 )}
               </span>
               <span className="text-xs text-[var(--color-text-muted)]">
-                vs. last month
+                {netWorthChangeLabel}
               </span>
             </div>
           )}
