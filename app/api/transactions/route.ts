@@ -168,6 +168,49 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch transactions' }, { status: 500 });
     }
 
+    // --- Investment transactions (trades, dividends, fees) ---
+    // Skipped when category filters are active — investment rows have no categories.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let investmentTx: any[] = [];
+    let investmentCount = 0;
+    if (!category && !categoryGroup) {
+      let invQuery = supabase
+        .from('investment_transactions')
+        .select(`
+          *,
+          account:linked_accounts(id, account_name, account_type, institution:institutions(name))
+        `, { count: 'exact' })
+        .eq('user_id', user.id)
+        .order('transaction_date', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (sanitizedSearch) {
+        invQuery = invQuery.or(`name.ilike.%${sanitizedSearch}%,ticker.ilike.%${sanitizedSearch}%`);
+      }
+      if (accountId) {
+        invQuery = invQuery.eq('account_id', accountId);
+      }
+      if (dateFrom) {
+        invQuery = invQuery.gte('transaction_date', dateFrom);
+      }
+      if (dateTo) {
+        invQuery = invQuery.lte('transaction_date', dateTo);
+      }
+      if (type === 'income') {
+        invQuery = invQuery.gt('amount', 0);
+      } else if (type === 'expense') {
+        invQuery = invQuery.lt('amount', 0);
+      }
+
+      const { data: invData, error: invError, count: invCount } = await invQuery;
+      if (invError) {
+        console.error('Error fetching investment transactions:', invError);
+      } else {
+        investmentTx = invData || [];
+        investmentCount = invCount || 0;
+      }
+    }
+
     // --- Summary stats (with same filters) ---
     let summaryQuery = supabase
       .from('transactions')
@@ -245,19 +288,49 @@ export async function GET(request: Request) {
       is_pending: t.is_pending,
     }));
 
+    // Transform investment transactions into the same shape the UI consumes
+    const investmentTransformed = investmentTx.map(t => ({
+      id: t.id,
+      kind: 'investment' as const,
+      amount: Number(t.amount),
+      date: t.transaction_date,
+      posted_date: null,
+      description: t.name || t.ticker || 'Investment transaction',
+      merchant_name: t.ticker || null,
+      category_name: null,
+      category_raw: null,
+      category_group: null,
+      category_color: null,
+      account_name: t.account?.account_name || null,
+      account_type: t.account?.account_type || null,
+      institution_name: t.account?.institution?.name || null,
+      is_pending: false,
+      ticker: t.ticker || null,
+      transaction_type: t.transaction_type || null,
+      quantity: t.quantity != null ? Number(t.quantity) : null,
+      price: t.price != null ? Number(t.price) : null,
+    }));
+
+    // Merge bank + investment rows, newest first, keep the page size
+    const merged = [...transformed, ...investmentTransformed]
+      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+      .slice(0, limit);
+
+    const totalCount = (count || 0) + investmentCount;
+
     return NextResponse.json({
-      transactions: transformed,
+      transactions: merged,
       pagination: {
         page,
         limit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit),
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
       },
       summary: {
         totalIncome,
         totalExpenses,
         netFlow: totalIncome - totalExpenses,
-        transactionCount: count || 0,
+        transactionCount: totalCount,
       },
       filters: {
         accounts: accountsData || [],

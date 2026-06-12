@@ -6,7 +6,7 @@
 import { plaidClient, mapPlaidAccountType } from '@/lib/plaid';
 import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
 import { extractPlaidError } from '@/lib/plaid-errors';
-import { RemovedTransaction, Transaction } from 'plaid';
+import { InvestmentTransaction, RemovedTransaction, Transaction } from 'plaid';
 import {
   EMERGENCY_FUND_MONTHS,
   SAVINGS_SCORE_MULTIPLIER,
@@ -412,6 +412,14 @@ export async function syncPlaidItem(
       // Investments may not be available - that's OK
       console.log('Holdings sync skipped or failed:', error instanceof Error ? error.message : error);
     }
+
+    // --- 4. Sync investment transactions (trades, dividends, fees) ---
+    try {
+      await syncInvestmentTransactions(supabase, userId, item, accessToken);
+    } catch (error) {
+      // Non-fatal — must never break the holdings sync above
+      console.log('Investment transactions sync skipped or failed:', error instanceof Error ? error.message : error);
+    }
   }
 
   return {
@@ -421,6 +429,128 @@ export async function syncPlaidItem(
     transactions: { added: transactionsAdded, modified: transactionsModified, removed: transactionsRemoved },
     holdings_synced: holdingsSynced,
   };
+}
+
+/**
+ * Sync investment transactions (buys, sells, dividends, fees) for an item.
+ * Fetches the last 24 months from Plaid and upserts into investment_transactions.
+ */
+async function syncInvestmentTransactions(
+  supabase: AnyClient,
+  userId: string,
+  item: PlaidItemForSync,
+  accessToken: string
+): Promise<void> {
+  const endDate = new Date().toISOString().split('T')[0];
+  const startWindow = new Date();
+  startWindow.setMonth(startWindow.getMonth() - 24);
+  const startDate = startWindow.toISOString().split('T')[0];
+
+  // Paginate through all investment transactions (500/page)
+  const allInvestmentTx: InvestmentTransaction[] = [];
+  const plaidSecurityMap = new Map<string, { ticker_symbol: string | null; name: string | null }>();
+  let invOffset = 0;
+  let invTotal = 0;
+  let invIterations = 0;
+  const MAX_INV_PAGES = 50;
+
+  do {
+    invIterations++;
+    const response = await plaidClient.investmentsTransactionsGet({
+      access_token: accessToken,
+      start_date: startDate,
+      end_date: endDate,
+      options: { count: 500, offset: invOffset },
+    });
+
+    invTotal = response.data.total_investment_transactions;
+    allInvestmentTx.push(...response.data.investment_transactions);
+    for (const s of response.data.securities) {
+      plaidSecurityMap.set(s.security_id, { ticker_symbol: s.ticker_symbol, name: s.name });
+    }
+
+    if (response.data.investment_transactions.length === 0) break;
+    invOffset += response.data.investment_transactions.length;
+  } while (invOffset < invTotal && invIterations < MAX_INV_PAGES);
+
+  if (allInvestmentTx.length === 0) return;
+
+  // Map Plaid account ids -> linked_accounts ids
+  const { data: userLinkedAccounts } = await supabase
+    .from('linked_accounts')
+    .select('id, plaid_account_id')
+    .eq('user_id', userId);
+
+  const linkedAccountMap = new Map(
+    (userLinkedAccounts || []).map((a: { plaid_account_id: string; id: string }) => [a.plaid_account_id, a.id])
+  );
+
+  // Map tickers -> securities DB ids (securities were upserted by the holdings sync)
+  const tickers = Array.from(
+    new Set(
+      allInvestmentTx
+        .map(t => (t.security_id ? plaidSecurityMap.get(t.security_id)?.ticker_symbol : null))
+        .filter((t): t is string => Boolean(t))
+    )
+  );
+
+  const tickerToSecurityId = new Map<string, string>();
+  if (tickers.length > 0) {
+    const { data: dbSecurities } = await supabase
+      .from('securities')
+      .select('id, ticker')
+      .in('ticker', tickers);
+
+    for (const s of dbSecurities || []) {
+      tickerToSecurityId.set(s.ticker, s.id);
+    }
+  }
+
+  const investmentTxUpserts = allInvestmentTx
+    .filter(t => linkedAccountMap.has(t.account_id))
+    .map(t => {
+      const security = t.security_id ? plaidSecurityMap.get(t.security_id) : null;
+      const ticker = security?.ticker_symbol || null;
+      return {
+        user_id: userId,
+        account_id: linkedAccountMap.get(t.account_id)!,
+        security_id: ticker ? tickerToSecurityId.get(ticker) ?? null : null,
+        plaid_investment_transaction_id: t.investment_transaction_id,
+        ticker,
+        name: t.name || security?.name || null,
+        transaction_type: t.subtype || t.type,
+        quantity: t.quantity,
+        price: t.price,
+        // Plaid: positive = cash out (buy). App convention: positive = money in.
+        amount: t.amount * -1,
+        fees: t.fees ?? null,
+        transaction_date: t.date,
+      };
+    });
+
+  if (investmentTxUpserts.length > 0) {
+    const { error: invError } = await supabase
+      .from('investment_transactions')
+      .upsert(investmentTxUpserts, {
+        onConflict: 'plaid_investment_transaction_id',
+        ignoreDuplicates: false,
+      });
+
+    if (invError) {
+      console.error('Error upserting investment transactions:', invError);
+      await logPlaidError(
+        userId, 'investmentsTransactionsGet',
+        'DB_UPSERT_FAILED',
+        invError.message || 'Investment transactions upsert failed',
+      );
+      return;
+    }
+  }
+
+  await logPlaidSuccess(userId, 'investmentsTransactionsGet', {
+    item_id: item.id,
+    investment_transactions_synced: investmentTxUpserts.length,
+  });
 }
 
 /**
