@@ -76,7 +76,8 @@ export function useLivePrices(
       }
     }
 
-    // Always fetch once on mount (covers after-hours: show last trade).
+    // Fetch once on mount. After hours the server returns no quotes
+    // (extended-hours prints are junk) and SSR/DB close prices stand.
     poll();
 
     const id = setInterval(() => {

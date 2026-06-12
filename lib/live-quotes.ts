@@ -28,7 +28,31 @@ const prevCloseCache = new Map<string, { prevClose: number; etDay: string }>();
 
 const ET_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' });
 
+/**
+ * Regular US trading hours: 9:30–16:00 ET, Mon–Fri. Outside this window
+ * the Finazon /price feed serves thin extended-hours odd-lot prints
+ * (e.g. 183-share trades dollars away from the consolidated close), so
+ * live quotes are suppressed and clients keep the official close from
+ * the database / SSR snapshot.
+ */
+function isUsMarketHours(): boolean {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    weekday: 'short',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false,
+  }).formatToParts(new Date());
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  const day = get('weekday');
+  if (day === 'Sat' || day === 'Sun') return false;
+  const minutes = Number(get('hour')) * 60 + Number(get('minute'));
+  return minutes >= 9 * 60 + 30 && minutes < 16 * 60;
+}
+
 export async function getLiveQuotes(tickers: string[], ttlMs: number): Promise<LiveQuote[]> {
+  if (!isUsMarketHours()) return [];
+
   const now = Date.now();
   const today = ET_DAY.format(new Date());
 
