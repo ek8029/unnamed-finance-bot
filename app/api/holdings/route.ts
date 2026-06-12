@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { parseDateLocal, formatMonthLabel } from '@/lib/date-format';
+import { resolveSector } from '@/lib/portfolio-analysis';
 
 export async function GET() {
   try {
@@ -96,7 +97,13 @@ export async function GET() {
           totalCostBasis: costBasis,
           current_price: Number(holding.current_price || 0),
           day_change_pct: holding.day_change_pct != null ? Number(holding.day_change_pct) : null,
-          sector: holding.security?.sector,
+          // Look through leveraged/single-stock products to their underlying
+          // (MSFL -> Technology, not "Other"). 'Unknown' maps to undefined so
+          // the UI hides the sector chip instead of showing "Unknown".
+          sector: (() => {
+            const resolved = resolveSector(ticker, holding.security?.sector, holdings || []);
+            return resolved === 'Unknown' ? undefined : resolved;
+          })(),
           asset_class: holding.security?.asset_class,
         });
       }
@@ -133,7 +140,9 @@ export async function GET() {
     }).sort((a, b) => b.total_value - a.total_value);
 
     const allocation = holdings?.reduce((acc, h) => {
-      const sector = h.security?.sector || 'Other';
+      // Same look-through as above; keep "Other" as the bucket label the UI expects.
+      const resolved = resolveSector(h.ticker, h.security?.sector, holdings || []);
+      const sector = resolved === 'Unknown' ? 'Other' : resolved;
       if (!acc[sector]) {
         acc[sector] = { name: sector, value: 0, percentage: 0 };
       }
