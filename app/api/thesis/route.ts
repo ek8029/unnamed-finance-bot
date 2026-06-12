@@ -1,0 +1,117 @@
+import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+
+// GET /api/thesis — list all user theses with their pillars (no evidence)
+export async function GET() {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: theses, error: thesesError } = await supabase
+      .from('theses')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (thesesError) {
+      console.error('[thesis] GET list theses error:', thesesError);
+      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+    }
+
+    const thesesList = theses ?? [];
+
+    if (thesesList.length === 0) {
+      return NextResponse.json({ theses: [] });
+    }
+
+    const thesisIds = thesesList.map((t) => t.id);
+
+    const { data: pillars, error: pillarsError } = await supabase
+      .from('thesis_pillars')
+      .select('*')
+      .in('thesis_id', thesisIds)
+      .eq('user_id', user.id)
+      .order('sort_order', { ascending: true });
+
+    if (pillarsError) {
+      console.error('[thesis] GET list pillars error:', pillarsError);
+      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+    }
+
+    const pillarsByThesis = new Map<string, typeof pillars>();
+    for (const pillar of pillars ?? []) {
+      const existing = pillarsByThesis.get(pillar.thesis_id) ?? [];
+      existing.push(pillar);
+      pillarsByThesis.set(pillar.thesis_id, existing);
+    }
+
+    const result = thesesList.map((t) => ({
+      ...t,
+      pillars: pillarsByThesis.get(t.id) ?? [],
+    }));
+
+    return NextResponse.json({ theses: result });
+  } catch (err) {
+    console.error('[thesis] GET list unhandled error:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+  }
+}
+
+// POST /api/thesis — create (or return existing) thesis for a ticker
+export async function POST(request: Request) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json() as { ticker?: unknown };
+    const rawTicker = body.ticker;
+
+    if (typeof rawTicker !== 'string' || rawTicker.trim().length === 0) {
+      return NextResponse.json({ error: 'ticker is required' }, { status: 400 });
+    }
+
+    const ticker = rawTicker.trim().toUpperCase();
+    if (!/^[A-Z.\-]{1,10}$/.test(ticker)) {
+      return NextResponse.json({ error: 'Invalid ticker format' }, { status: 400 });
+    }
+
+    // Return existing thesis if already present
+    const { data: existing, error: fetchError } = await supabase
+      .from('theses')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('ticker', ticker)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('[thesis] POST fetch error:', fetchError);
+      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+    }
+
+    if (existing) {
+      return NextResponse.json({ thesis: existing });
+    }
+
+    const { data: inserted, error: insertError } = await supabase
+      .from('theses')
+      .insert({ user_id: user.id, ticker, tracked: false })
+      .select('*')
+      .maybeSingle();
+
+    if (insertError || !inserted) {
+      console.error('[thesis] POST insert error:', insertError);
+      return NextResponse.json({ error: 'Failed to create thesis' }, { status: 500 });
+    }
+
+    return NextResponse.json({ thesis: inserted }, { status: 201 });
+  } catch (err) {
+    console.error('[thesis] POST unhandled error:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+  }
+}
