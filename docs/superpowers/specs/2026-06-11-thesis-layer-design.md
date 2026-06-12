@@ -17,7 +17,7 @@ Anti-goals:
 
 ## 2. Core concepts
 
-- **Thesis**: one per (user, ticker). Container for pillars, freeform notes, and tracking state.
+- **Thesis**: one per (user, ticker). Container for pillars, freeform notes, and tracking state. **Plaid-optional:** theses attach to any holding the user has — Plaid-synced OR manually entered (manual portfolio shipped in migration 037). Only 2 of 49 signups have connected Plaid; the thesis layer must not sit behind that wall.
 - **Pillar**: one plain-English claim, e.g. "Datacenter capex supercycle has 2+ years of runway." 2-4 typical per thesis. AI-drafted pillars arrive unconfirmed (ghosted in UI); nothing is "your thesis" until accepted, rewritten, or replaced. The system never edits a confirmed pillar.
 - **Evidence item**: attached to exactly one pillar, never freestanding. Mandatory slots: What (quoted excerpt), Why (causal link to the pillar), What it means (verdict + materiality). Optional: What to consider (only when a genuine action exists). No excerpt = no evidence row (hallucination kill-switch).
 - **Status**: derived by rules, never declared by the LLM. `unverified → intact → weakening → broken`. User-overridable.
@@ -87,7 +87,7 @@ All server-side work uses the existing service-role client pattern and lives in 
 
 ### 4.1 EDGAR ingestion (extends lib/edgar.ts)
 Existing: CIK mapping, recent filings, XBRL parsing. Add:
-- **Form 4 insider transactions** per held ticker (the "CFO sold $4.2M" signal). Parse owner, role, transaction type, value, date.
+- **Form 4 insider transactions** per held ticker (the "CFO sold $4.2M" signal). Parse owner, role, transaction type, value, date, AND the 10b5-1 plan checkbox/footnotes. **Scheduled 10b5-1 sales are routine noise: they default to `context` materiality and can never alone flip a pillar's status.** A false "thesis broken" on a scheduled sale is the fastest way to destroy credibility (Danny will run this on his own portfolio).
 - **XBRL company facts** pulls for held tickers (revenue, margins, segment data where available) — used as quotable facts, compared only against the company's own prior periods (no consensus data exists; never imply "beat expectations").
 - **12-month backfill** per tracked ticker: filings + Form 4. Marked `is_backfill = true`, labeled "historical context." Honest framing only — backfilled LLM judgments are hindsight-contaminated and are never pitched as predictive validation. Backfill depth is the cut line if the schedule slips; citation grounding is never cut.
 - **Backfill trigger:** runs when a thesis becomes tracked AND has at least one confirmed pillar (not in the 60s daily cron — it's a dedicated async route/job invoked at track time, scoped to that one thesis). Scores against confirmed pillars only, same as live scoring.
@@ -99,8 +99,8 @@ Existing: CIK mapping, recent filings, XBRL parsing. Add:
 - Drafting prompt gets: ticker, company profile, recent filings summary. Output: 2-4 short declarative claims. No numbers invented; claims must be checkable against future filings/news.
 - Re-drafting only on explicit user "re-suggest." The system never touches confirmed pillars.
 
-### 4.3 Evidence scoring (new step in the 9:15 cron)
-Added to `app/api/cron/daily/route.ts` after insights generation. Per user, per tracked thesis, per confirmed pillar:
+### 4.3 Evidence scoring (own route, triggered by the 9:15 cron)
+Scoring does NOT run inline in `app/api/cron/daily/route.ts` — the cron's 60s budget is already consumed by digest/sync/market work, and LLM scoring latency (3-8s per thesis) does not fit even at current scale. Instead the daily cron fires a separate scoring route (`app/api/cron/score-theses`, CRON_SECRET-authed, own `maxDuration`) and moves on. Per user, per tracked thesis, per confirmed pillar:
 1. Gather new candidate sources since `last_scanned_at`: new EDGAR filings + Form 4 (always), `market_news` rows passing the existing relevance filter (`lib/free-news.ts` junk/primary-ticker filters), price moves > 5%.
 2. LLM scores each candidate against the pillar set: verdict, materiality, why, what_it_means, consider (optional), excerpt (mandatory quoted text). The LLM must return the excerpt verbatim from supplied source text; rows whose excerpt is not found in the source are dropped.
 3. Insert evidence rows (dedupe on `(pillar_id, source_key)`); recompute statuses by the rules in §3; update `theses.last_scanned_at`.
