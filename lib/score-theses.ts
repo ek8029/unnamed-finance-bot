@@ -429,7 +429,8 @@ Rules:
 - why: one concise sentence explaining the connection.
 - what_it_means: one concise sentence on investment implication.
 - consider: optional, only if there is a meaningful counterpoint.
-Respond with JSON: { "evidence": [...] }`;
+Respond with JSON exactly in this shape:
+{ "evidence": [ { "pillar_index": <1-based pillar number>, "source_index": <1-based source number>, "verdict": "...", "materiality": "...", "excerpt": "...", "why": "...", "what_it_means": "...", "consider": "..." } ] }`;
 
   const userPrompt = `Thesis pillars:\n${pillarLines}\n\nSources:\n${sourceLines}`;
 
@@ -446,6 +447,7 @@ Respond with JSON: { "evidence": [...] }`;
     const raw = response.choices[0]?.message?.content ?? '{}';
     const parsed = JSON.parse(raw) as LLMResponse;
     llmRows = Array.isArray(parsed.evidence) ? parsed.evidence : [];
+    log.push(`[${ticker}] LLM returned ${llmRows.length} rows for ${sortedCandidates.length} candidates x ${pillars.length} pillars`);
   } catch (err) {
     log.push(`[${ticker}] LLM error: ${err instanceof Error ? err.message : String(err)}`);
     await bumpLastScanned(db, thesisId);
@@ -467,6 +469,7 @@ Respond with JSON: { "evidence": [...] }`;
       pi < 1 || pi > pillars.length ||
       si < 1 || si > sortedCandidates.length
     ) {
+      log.push(`[${ticker}] Dropping row: invalid indices pillar_index=${JSON.stringify(pi)} source_index=${JSON.stringify(si)}`);
       continue;
     }
 
