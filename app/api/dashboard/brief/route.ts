@@ -3,7 +3,6 @@ import { createClient } from '@/lib/supabase/server';
 import { getTickerSectorOverride } from '@/lib/market-classify';
 import { getQuote } from '@/lib/financial-data';
 import { rateLimit } from '@/lib/rate-limit';
-import { getSourceTier } from '@/lib/news-quality';
 import { getUserTier } from '@/lib/tier';
 import { getUnderlyingExposure } from '@/lib/etf-holdings';
 
@@ -12,7 +11,7 @@ type VixLevel = 'extreme_fear' | 'fear' | 'neutral' | 'greed' | 'extreme_greed';
 interface HoldingRow {
   ticker: string;
   total_value: number;
-  day_change_pct: number; // null from DB is coerced to 0 — "no data" treated as "no change" for portfolio aggregation
+  day_change_pct: number; // null from DB is coerced to 0 -- "no data" treated as "no change" for portfolio aggregation
   shares: number;
   current_price: number;
   portfolio_allocation_pct: number;
@@ -29,7 +28,7 @@ function classifyVix(vixyPrice: number): VixLevel {
   return 'extreme_greed';
 }
 
-// formatIndex removed — all market data now uses Finnhub getQuote() for real-time prices
+// formatIndex removed -- all market data now uses Finnhub getQuote() for real-time prices
 
 function resolveSector(ticker: string): string {
   return getTickerSectorOverride(ticker) || 'Diversified';
@@ -75,7 +74,7 @@ export async function GET() {
     const rawParsed: HoldingRow[] = (rawHoldings || []).map((h: Record<string, unknown>) => ({
       ticker: h.ticker as string,
       total_value: Number(h.total_value),
-      day_change_pct: Number(h.day_change_pct) || 0, // null → 0: no data means assume no change
+      day_change_pct: Number(h.day_change_pct) || 0, // null -> 0: no data means assume no change
       shares: Number(h.shares),
       current_price: Number(h.current_price),
       portfolio_allocation_pct: Number(h.portfolio_allocation_pct),
@@ -200,7 +199,6 @@ export async function GET() {
         expandedTickers.add(u.ticker);
       }
     }
-    const expandedTickerList = [...expandedTickers];
 
     let earningsThisWeek: { ticker: string; reportDate: string; portfolioWeight: number }[] = [];
     let dividendsThisWeek: { ticker: string; exDate: string; cashAmount: number | null; payDate: string | null }[] = [];
@@ -244,117 +242,164 @@ export async function GET() {
       ? Math.round((overnightChangePct - spyChangePct) * 100) / 100
       : null;
 
-        // ── Fetch pre-generated AI digest ──
+    // -- Fetch pre-generated AI digest --
     const { data: digestRow } = await supabase
       .from('brief_digests')
       .select('digest, generated_at')
       .eq('user_id', user.id)
       .maybeSingle();
 
-    // ── Fetch market news: position-relevant + general ──
-    const oneDayAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    const tier = await getUserTier(user.id);
+    const isPro = tier === 'pro';
 
-    const [positionNewsResult, generalNewsResult] = await Promise.all([
-      // News about tickers the user holds (directly or via ETFs)
-      expandedTickerList.length > 0
-        ? supabase
-            .from('market_news')
-            .select('id, title, summary, source, url, published_at, primary_ticker, sentiment')
-            .in('primary_ticker', expandedTickerList)
-            .gte('published_at', oneDayAgo)
-            .order('published_at', { ascending: false })
-            .limit(8)
-        : Promise.resolve({ data: [], error: null }),
-      // General market news (not tied to a specific ticker)
-      supabase
-        .from('market_news')
-        .select('id, title, summary, source, url, published_at, primary_ticker, sentiment')
-        .gte('published_at', oneDayAgo)
-        .order('published_at', { ascending: false })
-        .limit(10),
-    ]);
+    // -- Thesis intelligence queries --
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-    // Build holdings lookup for "Impact on You" context on news items
-    const holdingsLookup = new Map<string, { totalValue: number; portfolioWeight: number }>();
-    for (const h of holdings) {
-      const upper = h.ticker.toUpperCase();
-      const existing = holdingsLookup.get(upper);
-      if (existing) {
-        existing.totalValue += h.total_value;
-        existing.portfolioWeight += h.portfolio_allocation_pct;
-      } else {
-        holdingsLookup.set(upper, {
-          totalValue: h.total_value,
-          portfolioWeight: h.portfolio_allocation_pct,
+    const { data: trackedTheses } = await supabase
+      .from('theses')
+      .select('id, ticker, last_scanned_at')
+      .eq('user_id', user.id)
+      .eq('tracked', true);
+
+    const thesisRows = trackedTheses || [];
+    const thesisIds = thesisRows.map((t) => t.id);
+
+    // Build allocation lookup from already-merged holdings
+    const allocationLookup = new Map<string, number>(
+      holdings.map((h) => [h.ticker.toUpperCase(), h.portfolio_allocation_pct]),
+    );
+
+    let pillarSummary: {
+      intact: number;
+      weakening: number;
+      broken: number;
+      unverified: number;
+      positions: number;
+      lastScannedAt: string | null;
+    } = { intact: 0, weakening: 0, broken: 0, unverified: 0, positions: thesisRows.length, lastScannedAt: null };
+
+    let thesisIntelligence: {
+      ticker: string;
+      pillarClaim: string;
+      verdict: string;
+      materiality: string;
+      what: string;
+      why: string;
+      whatItMeans: string;
+      consider: string | null;
+      sourceTitle: string;
+      sourceUrl: string | null;
+      sourcePublishedAt: string | null;
+      statusChanged: boolean;
+    }[] = [];
+
+    if (thesisIds.length > 0) {
+      // Compute lastScannedAt from tracked theses
+      const validDates = thesisRows
+        .map((t) => t.last_scanned_at)
+        .filter((d): d is string => d !== null);
+      pillarSummary.lastScannedAt = validDates.length > 0
+        ? validDates.reduce((a, b) => (a > b ? a : b))
+        : null;
+
+      // Fetch confirmed pillars for all tracked theses
+      const { data: pillarsData } = await supabase
+        .from('thesis_pillars')
+        .select('id, thesis_id, claim, status, status_override, status_changed_at')
+        .eq('user_id', user.id)
+        .in('thesis_id', thesisIds)
+        .eq('confirmed', true);
+
+      const pillars = pillarsData || [];
+
+      // Count pillars by effective status
+      for (const p of pillars) {
+        const effectiveStatus: string = p.status_override ?? p.status;
+        if (effectiveStatus === 'intact') pillarSummary.intact += 1;
+        else if (effectiveStatus === 'weakening') pillarSummary.weakening += 1;
+        else if (effectiveStatus === 'broken') pillarSummary.broken += 1;
+        else pillarSummary.unverified += 1;
+      }
+
+      const pillarIds = pillars.map((p) => p.id);
+
+      if (pillarIds.length > 0) {
+        // Build lookup maps for evidence ranking
+        const pillarById = new Map(pillars.map((p) => [p.id, p]));
+        const thesisTickerById = new Map(thesisRows.map((t) => [t.id, t.ticker]));
+
+        const { data: evidenceData } = await supabase
+          .from('pillar_evidence')
+          .select('id, pillar_id, verdict, materiality, source_title, source_url, source_published_at, excerpt, why, what_it_means, consider')
+          .eq('user_id', user.id)
+          .in('pillar_id', pillarIds)
+          .eq('is_backfill', false)
+          .gte('created_at', oneDayAgo)
+          .order('created_at', { ascending: false });
+
+        const evidence = evidenceData || [];
+
+        // Rank: material first, then position allocation desc, take top 3
+        const materialityRank = (m: string) => (m === 'material' ? 1 : 0);
+
+        const ranked = [...evidence].sort((a, b) => {
+          const mDiff = materialityRank(b.materiality) - materialityRank(a.materiality);
+          if (mDiff !== 0) return mDiff;
+          const pillarA = pillarById.get(a.pillar_id);
+          const pillarB = pillarById.get(b.pillar_id);
+          const tickerA = pillarA ? thesisTickerById.get(pillarA.thesis_id) : undefined;
+          const tickerB = pillarB ? thesisTickerById.get(pillarB.thesis_id) : undefined;
+          const allocA = tickerA ? (allocationLookup.get(tickerA.toUpperCase()) ?? 0) : 0;
+          const allocB = tickerB ? (allocationLookup.get(tickerB.toUpperCase()) ?? 0) : 0;
+          return allocB - allocA;
+        });
+
+        thesisIntelligence = ranked.slice(0, 3).map((ev) => {
+          const pillar = pillarById.get(ev.pillar_id);
+          const ticker = pillar ? (thesisTickerById.get(pillar.thesis_id) ?? '') : '';
+          const statusChangedAt = pillar?.status_changed_at ?? null;
+          const statusChanged = statusChangedAt !== null
+            && new Date(statusChangedAt) >= new Date(oneDayAgo);
+          return {
+            ticker,
+            pillarClaim: pillar?.claim ?? '',
+            verdict: ev.verdict,
+            materiality: ev.materiality,
+            what: ev.excerpt,
+            why: ev.why,
+            whatItMeans: ev.what_it_means,
+            consider: ev.consider ?? null,
+            sourceTitle: ev.source_title,
+            sourceUrl: ev.source_url ?? null,
+            sourcePublishedAt: ev.source_published_at ?? null,
+            statusChanged,
+          };
         });
       }
     }
 
-    const tier = await getUserTier(user.id);
-    const isPro = tier === 'pro';
+    // -- Macro strip: top-tier market movers from last 24h --
+    const { data: macroNewsData } = await supabase
+      .from('market_news')
+      .select('title, url, published_at')
+      .eq('macro_tier', 'mover')
+      .gte('published_at', oneDayAgo)
+      .order('published_at', { ascending: false })
+      .limit(2);
 
-    // Deduplicate by URL
-    const seenUrls = new Set<string>();
-    const positionNews = (positionNewsResult.data || []).filter(n => {
-      const key = n.url || n.id;
-      if (seenUrls.has(key)) return false;
-      seenUrls.add(key);
-      return true;
-    }).map(n => {
-      const ticker = n.primary_ticker;
-      const holding = ticker ? holdingsLookup.get(ticker.toUpperCase()) : null;
-      return {
-        id: n.id,
-        title: n.title,
-        summary: n.summary,
-        source: n.source,
-        url: n.url,
-        publishedAt: n.published_at,
-        ticker,
-        sentiment: n.sentiment,
-        isHolding: true,
-        sourceTier: getSourceTier(n.source),
-        positionValue: holding?.totalValue ?? null,
-        portfolioWeight: holding?.portfolioWeight ?? null,
-        impactNote: holding
-          ? `You hold $${Math.round(holding.totalValue).toLocaleString()} of ${ticker} (${holding.portfolioWeight.toFixed(1)}% of portfolio)`
-          : null,
-      };
-    });
+    const equityPct = Math.min(
+      100,
+      Math.round(holdings.reduce((sum, h) => sum + h.portfolio_allocation_pct, 0)),
+    );
+    const exposureLine = holdings.length > 0
+      ? `Your portfolio is ${equityPct}% equities.`
+      : null;
 
-    // General news: exclude articles already in position news (only for Pro,
-    // since free users don't see positionNews and would otherwise lose articles)
-    const positionNewsIds = new Set(positionNews.map(n => n.id));
-    const generalSeenUrls = isPro ? seenUrls : new Set<string>();
-    const generalNews = (generalNewsResult.data || []).filter(n => {
-      const key = n.url || n.id;
-      if (generalSeenUrls.has(key)) return false;
-      generalSeenUrls.add(key);
-      return true;
-    })
-      .filter(n => isPro ? !positionNewsIds.has(n.id) : true)
-      .slice(0, 6)
-      .map(n => {
-        const ticker = n.primary_ticker;
-        const holding = ticker ? holdingsLookup.get(ticker.toUpperCase()) : null;
-        return {
-          id: n.id,
-          title: n.title,
-          summary: n.summary,
-          source: n.source,
-          url: n.url,
-          publishedAt: n.published_at,
-          ticker,
-          sentiment: n.sentiment,
-          isHolding: false,
-          sourceTier: getSourceTier(n.source),
-          positionValue: holding?.totalValue ?? null,
-          portfolioWeight: holding?.portfolioWeight ?? null,
-          impactNote: holding
-            ? `You hold $${Math.round(holding.totalValue).toLocaleString()} of ${ticker} (${holding.portfolioWeight.toFixed(1)}% of portfolio)`
-            : null,
-        };
-      });
+    const macroStrip = (macroNewsData || []).map((n) => ({
+      headline: n.title,
+      sourceUrl: n.url ?? null,
+      exposureLine,
+    }));
 
     return NextResponse.json(
       {
@@ -370,13 +415,15 @@ export async function GET() {
         sectorHeat,
         earningsThisWeek,
         dividendsThisWeek,
-        // Free: hide position-specific news
-        positionNews: isPro ? positionNews : [],
-        generalNews,
+        positionNews: [],
+        generalNews: [],
         // Free: hide AI digest
         digest: isPro ? (digestRow?.digest ?? null) : null,
         digestGeneratedAt: isPro ? (digestRow?.generated_at ?? null) : null,
         isPro,
+        pillarSummary,
+        thesisIntelligence,
+        macroStrip,
       },
       {
         headers: { 'Cache-Control': 'private, max-age=60' },
