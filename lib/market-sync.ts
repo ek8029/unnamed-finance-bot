@@ -554,7 +554,7 @@ export async function enrichMarketData(supabase: AnyClient, log: string[]) {
  * Market news + events refresh from free, license-clean sources:
  * Nasdaq per-ticker RSS headlines and SEC EDGAR 8-K filings.
  */
-export async function refreshMarketNews(supabase: AnyClient, log: string[]) {
+export async function refreshMarketNews(supabase: AnyClient, log: string[], options?: { classifyMacro?: boolean }) {
   const { data: holdings, error } = await supabase
     .from('holdings')
     .select('ticker')
@@ -571,6 +571,6 @@ export async function refreshMarketNews(supabase: AnyClient, log: string[]) {
       .filter((t): t is string => Boolean(t)),
   )];
 
-  await refreshRssNews(supabase, log, tickers);
+  await refreshRssNews(supabase, log, tickers, options);
   await refreshFilingEvents(supabase, log, tickers);
 }

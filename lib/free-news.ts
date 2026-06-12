@@ -211,6 +211,7 @@ export async function refreshRssNews(
   supabase: AnyClient,
   log: string[],
   tickers: string[],
+  options?: { classifyMacro?: boolean },
 ): Promise<number> {
   const unique = [...new Set(tickers.map(t => t.toUpperCase()))]
     .filter(t => !t.includes('-USD'))
@@ -333,10 +334,13 @@ export async function refreshRssNews(
   }
 
 
-  const macroCandidates = inserts
-    .filter((ins: { primary_ticker: string | null }) => ins.primary_ticker === null)
-    .map((ins: { url: string; title: string }) => ({ url: ins.url, title: ins.title }));
-  await classifyMacroMovers(supabase, log, macroCandidates);
+  // LLM classification is cron-only. Request-path callers (POST /api/market/news/refresh) must never trigger it.
+  if (options?.classifyMacro) {
+    const macroCandidates = inserts
+      .filter((ins: { primary_ticker: string | null }) => ins.primary_ticker === null)
+      .map((ins: { url: string; title: string }) => ({ url: ins.url, title: ins.title }));
+    await classifyMacroMovers(supabase, log, macroCandidates);
+  }
   log.push(`[news] Inserted ${inserts.length} new articles (${batch.length - newArticles.length} duplicates, ${newArticles.length - inserts.length} low-signal skipped)`);
   return inserts.length;
 }
