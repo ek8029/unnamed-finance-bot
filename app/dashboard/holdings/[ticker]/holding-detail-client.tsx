@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useMemo } from 'react';
 import { useLivePrices } from '@/hooks/use-live-prices';
 import { PriceFlash } from '@/components/price-flash';
+import { WhyIOwnThis } from '@/components/thesis/why-i-own-this';
 import { TrendingUp, TrendingDown, ExternalLink, ArrowLeft } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { StockQuote } from '@/lib/financial-data';
@@ -186,6 +187,9 @@ export function HoldingDetailClient({
           )}
         </div>
       </div>
+
+      {/* Why I Own This */}
+      <WhyIOwnThis ticker={holding.ticker} />
 
       {/* Live Quote (if available) */}
       {quote && quote.c > 0 && (
