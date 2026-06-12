@@ -143,7 +143,10 @@ export async function POST() {
       .map(([ticker, quote]) => ({
         security_id: tickerSecurityMap.get(ticker)!,
         ticker,
-        price_date: today,
+        // Use the trading session date the quote describes, NOT the run date.
+        // Writing the run date created phantom weekend rows and next-morning
+        // duplicates of the prior session, poisoning prevClose baselines.
+        price_date: quote.date || today,
         open: quote.o,
         high: quote.h,
         low: quote.l,

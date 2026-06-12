@@ -63,6 +63,7 @@ export interface StockQuote {
   o: number;   // open
   pc: number;  // previous close
   t: number;   // timestamp
+  date: string; // trading session date (YYYY-MM-DD, ET) this quote describes
 }
 
 export interface CompanyProfile {
@@ -161,6 +162,7 @@ export async function getQuote(symbol: string): Promise<StockQuote | null> {
     o,
     pc,
     t: Math.floor(new Date(date).getTime() / 1000),
+    date,
   };
 
   setCache(cacheKey, quote, QUOTE_CACHE_TTL);
@@ -192,6 +194,24 @@ export async function getBatchQuotes(
     }
     if (i + BATCH_SIZE < unique.length) {
       await new Promise(resolve => setTimeout(resolve, batchDelayMs));
+    }
+  }
+
+  // One retry pass for tickers that failed or returned no data. Without
+  // this, callers that persist day_change_pct silently keep stale values
+  // for the missing tickers (e.g. frozen premarket changes all day).
+  const missing = unique.filter(t => !results.has(t));
+  if (missing.length > 0 && missing.length < unique.length) {
+    for (let i = 0; i < missing.length; i += BATCH_SIZE) {
+      const batch = missing.slice(i, i + BATCH_SIZE);
+      await new Promise(resolve => setTimeout(resolve, batchDelayMs));
+      const settled = await Promise.allSettled(batch.map(t => getQuote(t)));
+      for (let j = 0; j < batch.length; j++) {
+        const r = settled[j];
+        if (r.status === 'fulfilled' && r.value && r.value.c > 0) {
+          results.set(batch[j], r.value);
+        }
+      }
     }
   }
 
