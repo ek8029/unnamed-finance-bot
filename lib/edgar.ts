@@ -294,6 +294,23 @@ export interface EdgarFiling {
 
 const FILINGS_TTL = 60 * 60 * 1000; // 1 hour
 
+async function fetchSubmissions(cik: string): Promise<any | null> {
+  try {
+    const res = await fetch(`https://data.sec.gov/submissions/CIK${cik}.json`, {
+      headers: { 'User-Agent': UA, Accept: 'application/json' },
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      console.error(`EDGAR submissions CIK${cik} error: ${res.status}`);
+      return null;
+    }
+    return await res.json();
+  } catch (error) {
+    console.error(`EDGAR submissions CIK${cik} failed:`, error);
+    return null;
+  }
+}
+
 /**
  * Fetch a company's recent EDGAR filings (newest first), optionally
  * filtered to those on/after `sinceDate` (YYYY-MM-DD).
@@ -306,38 +323,27 @@ export async function getRecentFilings(symbol: string, sinceDate?: string): Prom
     const cik = await getCik(symbol);
     if (!cik) return [];
 
-    try {
-      const res = await fetch(`https://data.sec.gov/submissions/CIK${cik}.json`, {
-        headers: { 'User-Agent': UA, Accept: 'application/json' },
-        cache: 'no-store',
-      });
-      if (!res.ok) {
-        console.error(`EDGAR submissions ${symbol} error: ${res.status}`);
-        return [];
-      }
-      const data = await res.json();
-      const recent = data.filings?.recent;
-      if (!recent?.form) return [];
+    const data = await fetchSubmissions(cik);
+    if (!data) return [];
 
-      const cikNum = String(Number(cik)); // strip leading zeros for archive URLs
-      filings = [];
-      for (let i = 0; i < recent.form.length && i < 100; i++) {
-        const accession = (recent.accessionNumber?.[i] || '').replace(/-/g, '');
-        const doc = recent.primaryDocument?.[i] || '';
-        filings.push({
-          form: recent.form[i],
-          filingDate: recent.filingDate?.[i] || '',
-          items: (recent.items?.[i] || '').split(',').map((s: string) => s.trim()).filter(Boolean),
-          url: accession && doc
-            ? `https://www.sec.gov/Archives/edgar/data/${cikNum}/${accession}/${doc}`
-            : `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${cik}&type=8-K`,
-        });
-      }
-      setCache(cacheKey, filings, FILINGS_TTL);
-    } catch (error) {
-      console.error(`EDGAR filings ${symbol} failed:`, error);
-      return [];
+    const recent = data.filings?.recent;
+    if (!recent?.form) return [];
+
+    const cikNum = String(Number(cik)); // strip leading zeros for archive URLs
+    filings = [];
+    for (let i = 0; i < recent.form.length && i < 100; i++) {
+      const accession = (recent.accessionNumber?.[i] || '').replace(/-/g, '');
+      const doc = recent.primaryDocument?.[i] || '';
+      filings.push({
+        form: recent.form[i],
+        filingDate: recent.filingDate?.[i] || '',
+        items: (recent.items?.[i] || '').split(',').map((s: string) => s.trim()).filter(Boolean),
+        url: accession && doc
+          ? `https://www.sec.gov/Archives/edgar/data/${cikNum}/${accession}/${doc}`
+          : `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${cik}&type=8-K`,
+      });
     }
+    setCache(cacheKey, filings, FILINGS_TTL);
   }
 
   return sinceDate ? filings.filter(f => f.filingDate >= sinceDate) : filings;
@@ -359,27 +365,16 @@ export async function getCompanyProfileEdgar(symbol: string): Promise<EdgarCompa
   const cik = await getCik(symbol);
   if (!cik) return null;
 
-  try {
-    const res = await fetch(`https://data.sec.gov/submissions/CIK${cik}.json`, {
-      headers: { 'User-Agent': UA, Accept: 'application/json' },
-      cache: 'no-store',
-    });
-    if (!res.ok) {
-      console.error(`EDGAR submissions ${symbol} error: ${res.status}`);
-      return null;
-    }
-    const data = await res.json();
-    const profile: EdgarCompanyProfile = {
-      name: data.name || symbol.toUpperCase(),
-      sicDescription: data.sicDescription || null,
-      exchange: Array.isArray(data.exchanges) && data.exchanges[0] ? data.exchanges[0] : null,
-    };
-    setCache(cacheKey, profile, PROFILE_TTL);
-    return profile;
-  } catch (error) {
-    console.error(`EDGAR submissions ${symbol} failed:`, error);
-    return null;
-  }
+  const data = await fetchSubmissions(cik);
+  if (!data) return null;
+
+  const profile: EdgarCompanyProfile = {
+    name: data.name || symbol.toUpperCase(),
+    sicDescription: data.sicDescription || null,
+    exchange: Array.isArray(data.exchanges) && data.exchanges[0] ? data.exchanges[0] : null,
+  };
+  setCache(cacheKey, profile, PROFILE_TTL);
+  return profile;
 }
 
 // ── Form 4 (insider transactions) ──
@@ -490,8 +485,6 @@ export function parseForm4Xml(xml: string): ParsedForm4 {
   return { ownerName, ownerRole, is10b51, transactions };
 }
 
-const FORM4_TTL = 60 * 60 * 1000; // 1 hour
-
 /**
  * Fetch up to 25 most recent Form 4 filings for a symbol since sinceDate.
  * Serializes document fetches to stay under EDGAR's 10 req/s limit.
@@ -502,21 +495,8 @@ export async function getForm4Filings(symbol: string, sinceDate: string): Promis
 
   const cikNum = String(Number(cik)); // strip leading zeros for archive URLs
 
-  let submissionsData: { filings?: { recent?: Record<string, unknown[]> } };
-  try {
-    const res = await fetch(`https://data.sec.gov/submissions/CIK${cik}.json`, {
-      headers: { 'User-Agent': UA, Accept: 'application/json' },
-      cache: 'no-store',
-    });
-    if (!res.ok) {
-      console.error(`EDGAR submissions ${symbol} error: ${res.status}`);
-      return [];
-    }
-    submissionsData = await res.json();
-  } catch (error) {
-    console.error(`EDGAR submissions ${symbol} failed:`, error);
-    return [];
-  }
+  const submissionsData = await fetchSubmissions(cik);
+  if (!submissionsData) return [];
 
   const recent = submissionsData.filings?.recent;
   if (!recent?.form) return [];
