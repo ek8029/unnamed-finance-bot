@@ -17,6 +17,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SCORE_MODEL = 'gpt-4o-mini';
 const MAX_CANDIDATES = 12;
 const SEC_FETCH_TRUNCATE = 8000;
+const CANDIDATE_TEXT_TRUNCATE = 2000;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -230,6 +231,7 @@ async function scoreThesis(
   try {
     const filings = await getRecentFilings(ticker, since);
     for (const f of filings) {
+      // source_key = filing URL: EdgarFiling exposes no accession number; URL is stable + unique per filing
       const sourceKey = f.url;
       if (existingSourceKeys.has(sourceKey)) continue;
       candidates.push({
@@ -257,7 +259,7 @@ async function scoreThesis(
         source_title: `Form 4: ${f.ownerName}`,
         source_url: f.url,
         source_published_at: f.filedAt,
-        sourceText: buildForm4Text(f),
+        sourceText: buildForm4Text(f).slice(0, CANDIDATE_TEXT_TRUNCATE),
         form4Meta: f,
       });
     }
@@ -272,7 +274,8 @@ async function scoreThesis(
       .select('title, summary, url, source, published_at, primary_ticker')
       .eq('primary_ticker', ticker)
       .gte('published_at', since)
-      .order('published_at', { ascending: false });
+      .order('published_at', { ascending: false })
+      .limit(50);
     for (const n of newsRows ?? []) {
       const sourceKey = n.url as string;
       if (existingSourceKeys.has(sourceKey)) continue;
@@ -282,7 +285,7 @@ async function scoreThesis(
         source_title: n.title as string,
         source_url: n.url as string,
         source_published_at: n.published_at as string,
-        sourceText: `${n.title}\n${n.summary ?? ''}`.trim(),
+        sourceText: `${n.title}\n${n.summary ?? ''}`.trim().slice(0, CANDIDATE_TEXT_TRUNCATE),
       });
     }
   } catch (err) {
@@ -306,9 +309,10 @@ async function scoreThesis(
         const pct = (latestClose - priorClose) / priorClose;
         if (Math.abs(pct) > 0.05) {
           const direction = pct > 0 ? 'rose' : 'fell';
-          const sourceKey = `price:${ticker}:${latest.price_date}`;
+          const priceDate = String(latest.price_date).split('T')[0];
+          const sourceKey = `price:${ticker}:${priceDate}`;
           if (!existingSourceKeys.has(sourceKey)) {
-            const excerpt = `${ticker} ${direction} ${(Math.abs(pct) * 100).toFixed(1)}% on ${latest.price_date}`;
+            const excerpt = `${ticker} ${direction} ${(Math.abs(pct) * 100).toFixed(1)}% on ${priceDate}`;
             candidates.push({
               source_type: 'price_move',
               source_key: sourceKey,
@@ -391,6 +395,7 @@ async function scoreThesis(
   for (const c of sortedCandidates) {
     if (c.source_type === 'filing' && c.sourceText === '') {
       c.sourceText = await fetchFilingText(c.source_url!);
+      await new Promise((r) => setTimeout(r, 150));
     }
   }
 
@@ -521,7 +526,7 @@ Respond with JSON: { "evidence": [...] }`;
       log.push(`[${ticker}] Upsert error: ${upsertErr.message}`);
     } else {
       evidenceAdded += toInsert.length;
-      log.push(`[${ticker}] Inserted ${toInsert.length} evidence rows`);
+      log.push(`[${ticker}] Upserted up to ${toInsert.length} evidence rows (duplicates skipped)`);
     }
   } else {
     log.push(`[${ticker}] No evidence rows to insert`);
