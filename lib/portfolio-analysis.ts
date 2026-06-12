@@ -10,6 +10,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { getCompanyProfile } from '@/lib/financial-data';
 import { CONCENTRATION_THRESHOLDS, CACHE_TTL } from '@/lib/financial-config';
+import { SINGLE_STOCK_MAP, LEVERAGED_ETF_MAP } from '@/lib/etf-holdings';
+import { getTickerSectorOverride } from '@/lib/market-classify';
 
 // ── Types ──
 
@@ -145,6 +147,31 @@ async function enrichSectors(holdings: RawHolding[]): Promise<void> {
 
 // ── Build enriched holdings ──
 
+/**
+ * Resolve a holding's sector with ETF/leveraged-product look-through:
+ * 1. Direct sector from the securities table (if known)
+ * 2. Curated ticker override (covers common stocks + ETFs)
+ * 3. Single-stock / leveraged product → underlying's override
+ * 4. Underlying's sector from a co-held position
+ */
+export function resolveSector(ticker: string, directSector: string | null | undefined, raw: RawHolding[]): string {
+  if (directSector && directSector !== 'Unknown') return directSector;
+
+  const upper = ticker.toUpperCase();
+  const override = getTickerSectorOverride(upper);
+  if (override) return override;
+
+  const underlying = SINGLE_STOCK_MAP[upper]?.underlying ?? LEVERAGED_ETF_MAP[upper]?.underlying;
+  if (underlying) {
+    const underlyingOverride = getTickerSectorOverride(underlying);
+    if (underlyingOverride) return underlyingOverride;
+    const coHeld = raw.find((r) => r.ticker?.toUpperCase() === underlying && r.security?.sector);
+    if (coHeld?.security?.sector) return coHeld.security.sector;
+  }
+
+  return 'Unknown';
+}
+
 function enrichHoldings(raw: RawHolding[], totalValue: number): EnrichedHolding[] {
   return raw.map((h) => ({
     ticker: h.ticker,
@@ -159,7 +186,7 @@ function enrichHoldings(raw: RawHolding[], totalValue: number): EnrichedHolding[
     dayChangePct: h.day_change_pct,
     allocationPct:
       h.portfolio_allocation_pct ?? (totalValue > 0 ? ((h.total_value || 0) / totalValue) * 100 : 0),
-    sector: h.security?.sector || 'Unknown',
+    sector: resolveSector(h.ticker, h.security?.sector, raw),
     industry: h.security?.industry || 'Unknown',
     assetClass: h.security?.asset_class || 'Unknown',
     exchange: h.security?.exchange || '',
