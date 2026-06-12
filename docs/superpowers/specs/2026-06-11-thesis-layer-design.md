@@ -67,7 +67,7 @@ New migration: `supabase/migrations/039_thesis_layer.sql`. Three tables, all per
 | source_title | text | e.g. "10-Q filed 2026-05-02" |
 | source_url | text | link target for citation footnote |
 | source_published_at | timestamptz | |
-| excerpt | text NOT NULL | quoted text from the source; enforced non-empty |
+| excerpt | text NOT NULL | quoted text from the source; enforced non-empty. For `price_move` and `xbrl` sources (no document to quote), the excerpt is a system-generated factual string from our own data (e.g. "NVDA fell 7.2% on 2026-06-10", "Q1 FY26 datacenter revenue $39.1B vs $18.4B prior year"), never LLM-generated. Verbatim-match verification applies to text sources (`filing`, `form4`, `news`) only |
 | why | text | causal link to this pillar |
 | what_it_means | text | verdict framing vs the user's position |
 | consider | text null | only when a genuine action exists; most rows null by design |
@@ -77,7 +77,7 @@ New migration: `supabase/migrations/039_thesis_layer.sql`. Three tables, all per
 Status derivation (pure function over evidence, runs after each scoring pass):
 - any non-backfill evidence exists → at least `intact`
 - 1 material contradicting item in last 30d → `weakening`
-- 2+ material contradicting items from independent sources in last 30d → `broken`
+- 2+ material contradicting items from independent sources in last 30d → `broken`. Independent = distinct `source_key`, and at least one must be a primary source (`filing`/`form4`/`xbrl`/`price_move`) — two rewrites of the same news story cannot break a thesis
 - `status_override` set → no auto-transitions; show override
 - transitions logged via `status_changed_at`; UI explains rule on hover ("2 contradicting filings within 30d")
 
@@ -90,6 +90,7 @@ Existing: CIK mapping, recent filings, XBRL parsing. Add:
 - **Form 4 insider transactions** per held ticker (the "CFO sold $4.2M" signal). Parse owner, role, transaction type, value, date.
 - **XBRL company facts** pulls for held tickers (revenue, margins, segment data where available) — used as quotable facts, compared only against the company's own prior periods (no consensus data exists; never imply "beat expectations").
 - **12-month backfill** per tracked ticker: filings + Form 4. Marked `is_backfill = true`, labeled "historical context." Honest framing only — backfilled LLM judgments are hindsight-contaminated and are never pitched as predictive validation. Backfill depth is the cut line if the schedule slips; citation grounding is never cut.
+- **Backfill trigger:** runs when a thesis becomes tracked AND has at least one confirmed pillar (not in the 60s daily cron — it's a dedicated async route/job invoked at track time, scoped to that one thesis). Scores against confirmed pillars only, same as live scoring.
 - Respect SEC fair-use: User-Agent header, ~10 req/s ceiling, cache aggressively (ticker map already cached 24h).
 
 ### 4.2 Seeding (AI-drafted pillars)
@@ -108,7 +109,7 @@ Added to `app/api/cron/daily/route.ts` after insights generation. Per user, per 
 Budget guard: cron has `maxDuration = 60`. Scoring must be batched (one LLM call per thesis covering all pillars and all new candidates, not per-pillar calls) and bounded (cap candidates per thesis per day). At current scale (2 Plaid users, ~30 holdings) this fits; if it grows, scoring moves to its own cron-triggered route. Failures per-thesis are caught and logged, never abort the cron.
 
 ### 4.4 Macro strip
-0-2 items max, only true market-movers (Fed, CPI shock, war). Selected from `market_news` general pool by a strict classifier, framed as: event → the user's portfolio exposure → materiality. Absent on quiet days. No evidence rows; this is presentation-layer selection in the brief API.
+0-2 items max, only true market-movers (Fed, CPI shock, war). Classified once in the daily cron during news ingestion (strict classifier; flag stored on `market_news`, e.g. a `macro_tier` column) — never an LLM call in the request path. The brief API reads flagged rows and frames each as: event → the user's portfolio exposure → materiality (exposure framing computed per-user at request time from holdings, no LLM). Absent on quiet days. No evidence rows.
 
 ## 5. Surfaces
 
