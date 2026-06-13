@@ -158,9 +158,9 @@ function matchesCategory(action: ActionItem, category: CategoryFilter): boolean 
    ────────────────────────────────────────────────── */
 
 const DEMO_ACTIONS: ActionItem[] = [
-  { id: 'da-1', type: 'tax_loss_harvest', priority: 'high', title: 'Tax-loss harvesting opportunity: AMZN', description: 'AMZN is down 12% from your cost basis. Harvesting this $1,793 unrealized loss could save ~$580 in taxes this year. Consider replacing with VTI to maintain broad market exposure without triggering a wash sale.', recommended_action: 'Sell AMZN, buy VTI as a replacement', estimated_impact: 580, source: 'portfolio', created_at: new Date().toISOString() },
-  { id: 'da-2', type: 'concentration_risk', priority: 'medium', title: 'Technology sector concentration at 43%', description: 'Technology stocks (AAPL, MSFT, NVDA, GOOGL) make up 43% of your portfolio. A sector-specific downturn could significantly impact your returns. Consider rebalancing into healthcare, energy, or international exposure.', recommended_action: 'Diversify 5-10% into non-tech sectors', source: 'portfolio', created_at: new Date().toISOString() },
-  { id: 'da-3', type: 'earnings_exposure', priority: 'medium', title: 'NVDA earnings report in 3 days', description: 'NVIDIA reports earnings this week and represents 12.5% of your portfolio ($23,120). High concentration in a single stock heading into earnings creates binary risk. Your position is large enough that a 10% post-earnings move would shift your portfolio by 1.25%.', recommended_action: 'Review position size before earnings', source: 'portfolio', created_at: new Date().toISOString() },
+  { id: 'da-1', type: 'tax_loss_harvest', priority: 'high', title: 'Tax-loss harvesting opportunity: AMZN', description: 'AMZN is down 12% from your cost basis. This $1,793 unrealized loss could offset ~$580 in taxes this year. VTI is a same-category broad-market ETF, so swapping would not trigger a wash sale.', recommended_action: 'AMZN is 22% of this demo portfolio.', estimated_impact: 580, source: 'portfolio', created_at: new Date().toISOString() },
+  { id: 'da-2', type: 'concentration_risk', priority: 'medium', title: 'Technology sector concentration at 43%', description: 'Technology stocks (AAPL, MSFT, NVDA, GOOGL) make up 43% of your portfolio. A sector-specific downturn would have an outsized effect on returns at this concentration. Healthcare, energy, and international are the underweighted sectors here.', recommended_action: 'Tech is 78% of this demo portfolio.', source: 'portfolio', created_at: new Date().toISOString() },
+  { id: 'da-3', type: 'earnings_exposure', priority: 'medium', title: 'NVDA earnings report in 3 days', description: 'NVIDIA reports earnings this week and represents 12.5% of your portfolio ($23,120). High concentration in a single stock heading into earnings creates binary risk. Your position is large enough that a 10% post-earnings move would shift your portfolio by 1.25%.', recommended_action: 'NVDA earnings in 3 days; 12.5% of portfolio exposed.', source: 'portfolio', created_at: new Date().toISOString() },
   { id: 'da-4', type: 'savings_positive', priority: 'low', title: 'Strong savings rate: 24% this month', description: 'You saved $3,420 this month, beating your 6-month average of $2,950 by 16%. Consistent savings at this rate compounds significantly over time.', source: 'cash_flow', created_at: new Date().toISOString() },
 ];
 
@@ -718,10 +718,10 @@ function DetailPane({
         </div>
       </div>
 
-      {/* Helm Reasoning */}
+      {/* Context */}
       {action.recommended_action && (
         <div className="mb-6 sm:mb-8">
-          <h3 className="type-eyebrow mb-3">Helm Reasoning</h3>
+          <h3 className="type-eyebrow mb-3">Context</h3>
           {isPro ? (
             <div className="border border-[var(--color-gold-border)] rounded-lg p-5 bg-[var(--color-gold-surface)]">
               <div className="flex items-start gap-3">
@@ -733,15 +733,15 @@ function DetailPane({
             </div>
           ) : (
             <ProBlur
-              label="Unlock recommendations"
-              description="See specific action steps and reasoning for this insight."
+              label="Unlock full analysis"
+              description="See the evidence and figures behind this."
               minHeight="80px"
             >
               <div className="border border-[var(--color-gold-border)] rounded-lg p-5 bg-[var(--color-gold-surface)]">
                 <div className="flex items-start gap-3">
                   <Sparkles className="w-4 h-4 text-[var(--color-gold)] mt-0.5 flex-shrink-0" />
                   <p className="text-[14px] leading-relaxed text-[var(--color-text-primary)]">
-                    Upgrade to Pro to see specific recommendations and reasoning for this insight.
+                    Upgrade to Pro to see the evidence and figures behind this.
                   </p>
                 </div>
               </div>
