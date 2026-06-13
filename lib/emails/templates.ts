@@ -141,7 +141,7 @@ export function getTemplate(dayIndex: number, userName?: string): EmailTemplate 
         ${sectionLabel("What's waiting")}
         ${bulletItem('Portfolio tracking', 'Every holding, every account, one view.')}
         ${bulletItem('Daily scans', 'Concentration risk, tax-loss harvesting, earnings exposure.')}
-        ${bulletItem('Actions inbox', 'Not just data. What to do with it, prioritized.')}
+        ${bulletItem('Signals', 'Not just data. What changed in your portfolio, prioritized.')}
         ${bulletItem('AI stock analysis', 'Free for any US ticker. No paywall.')}
         ${trustBar()}
       `),
@@ -160,7 +160,7 @@ export function getTemplate(dayIndex: number, userName?: string): EmailTemplate 
         ${bulletItem('Net worth', 'Real-time across all linked accounts.')}
         ${bulletItem('Concentration alerts', 'Know when one position dominates your portfolio.')}
         ${bulletItem('Tax-loss harvesting', 'Automated detection of harvestable losses.')}
-        ${bulletItem('Daily brief', 'What moved overnight. What to do about it.')}
+        ${bulletItem('Daily brief', 'What moved overnight. What it means for you.')}
         <div style="height:12px;"></div>
         ${cta('Connect Account', ACCOUNTS_URL)}
         ${trustBar()}
