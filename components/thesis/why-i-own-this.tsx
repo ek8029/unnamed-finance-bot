@@ -158,7 +158,7 @@ function EvidenceTimeline({ ticker, pillar }: { ticker: string; pillar: Pillar }
 
   return (
     <div className="pt-2 pb-3">
-      <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {shown.map((e) => (
           <VerdictCard key={e.id} item={toIntelligenceItem(ticker, pillar, e)} />
         ))}

@@ -307,7 +307,7 @@ export default function ThesesPage() {
   /* ── Loading / error ── */
   if (phase === 'loading') {
     return (
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-8">
+      <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8">
         <LoadingSkeleton />
       </div>
     );
@@ -315,7 +315,7 @@ export default function ThesesPage() {
 
   if (phase === 'error') {
     return (
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-8">
+      <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8">
         <p className="font-mono text-[13px] text-[#6A6A6A]">
           Could not load theses.{' '}
           <button
@@ -334,7 +334,7 @@ export default function ThesesPage() {
   const noThesesYet = theses.length === 0;
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-8 space-y-10">
+    <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8 space-y-10">
 
       {/* ── Section 1: Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -456,7 +456,7 @@ export default function ThesesPage() {
               const isExpanded = expandedTickers.has(t.ticker);
               const worst = summary.worst;
               return (
-                <div key={t.id} className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] overflow-hidden">
+                <div key={t.id} className={`rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] overflow-hidden${isExpanded ? ' lg:col-span-2' : ''}`}>
                   {/* Card header - clickable to toggle expansion */}
                   <button
                     type="button"
