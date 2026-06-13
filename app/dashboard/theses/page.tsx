@@ -1,4 +1,4 @@
-// /dashboard/theses — first-class home for investment theses.
+// /dashboard/theses - first-class home for investment theses.
 // Quiet state is the hero state: when nothing moved against the user's
 // reasons for holding, say exactly that, with a last-scanned stamp.
 'use client';
@@ -62,7 +62,7 @@ const STATUS_META: Record<PillarStatus, { label: string; color: string }> = {
   unverified: { label: 'Unverified', color: '#6A6A6A' },
 };
 
-/* ── toIntelligenceItem — mirrors line ~62 of why-i-own-this.tsx exactly ── */
+/* toIntelligenceItem - mirrors line ~62 of why-i-own-this.tsx exactly */
 function toIntelligenceItem(ticker: string, pillar: Pillar, e: EvidenceRow): ThesisIntelligenceItem {
   return {
     ticker,
@@ -80,7 +80,7 @@ function toIntelligenceItem(ticker: string, pillar: Pillar, e: EvidenceRow): The
   };
 }
 
-/* ── StatusChip — mirrors why-i-own-this.tsx internal component ── */
+/* StatusChip - mirrors why-i-own-this.tsx internal component */
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 
 function StatusChip({ status }: { status: PillarStatus }) {
@@ -213,7 +213,7 @@ export default function ThesesPage() {
 
   const loadHoldings = useCallback(async () => {
     try {
-      // Deliberately fetching /api/holdings directly instead of useHoldings() — the hook drags in 15-second quote polling this page does not need.
+      // Deliberately fetching /api/holdings directly instead of useHoldings() - the hook drags in 15-second quote polling this page does not need.
       const res = await fetch('/api/holdings');
       if (!mountedRef.current || !res.ok) return;
       const data = await res.json() as { holdings?: { ticker: string; asset_name?: string | null }[] };
@@ -221,7 +221,7 @@ export default function ThesesPage() {
       const raw = data.holdings ?? [];
       setHoldings(raw.map((h) => ({ ticker: h.ticker, name: h.asset_name ?? h.ticker })));
     } catch {
-      // holdings section degrades gracefully — not fatal
+      // holdings section degrades gracefully - not fatal
     }
   }, []);
 
@@ -457,7 +457,7 @@ export default function ThesesPage() {
               const worst = summary.worst;
               return (
                 <div key={t.id} className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] overflow-hidden">
-                  {/* Card header — clickable to toggle expansion */}
+                  {/* Card header - clickable to toggle expansion */}
                   <button
                     type="button"
                     onClick={() => {
@@ -509,7 +509,7 @@ export default function ThesesPage() {
                     )}
                   </button>
 
-                  {/* Expanded: WhyIOwnThis — collapse button triggers refresh */}
+                  {/* Expanded: WhyIOwnThis - collapse button triggers refresh */}
                   {isExpanded && (
                     <div className="border-t border-white/[0.07] p-4 space-y-3">
                       <WhyIOwnThis ticker={t.ticker} />
