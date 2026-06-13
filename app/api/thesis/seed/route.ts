@@ -66,7 +66,8 @@ export async function POST(request: Request) {
     const pillars = existingPillars ?? [];
 
     if (pillars.length > 0 && !resuggest) {
-      return NextResponse.json({ thesis, pillars });
+      // dismissed rows kept in dedupe set above but never surfaced to the client
+      return NextResponse.json({ thesis, pillars: pillars.filter((p: { lifecycle: string }) => p.lifecycle !== 'dismissed') });
     }
 
     // Draft new pillars via AI
@@ -131,7 +132,8 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ thesis, pillars: allPillars });
+    // dismissed rows kept in dedupe set above but never surfaced to the client
+    return NextResponse.json({ thesis, pillars: allPillars.filter((p: { lifecycle: string }) => p.lifecycle !== 'dismissed') });
   } catch (error) {
     console.error('[thesis/seed] unhandled error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

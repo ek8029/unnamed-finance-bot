@@ -34,6 +34,10 @@ export async function PATCH(
       return NextResponse.json({ error: 'Pillar not found' }, { status: 404 });
     }
 
+    if (pillar.lifecycle === 'dismissed') {
+      return NextResponse.json({ error: 'Dismissed pillars cannot be modified' }, { status: 409 });
+    }
+
     const body = await request.json() as Record<string, unknown>;
 
     const updates: Record<string, unknown> = {
