@@ -194,12 +194,13 @@ export async function scoreOneThesis(
   db: SupabaseClient,
   thesis: Thesis,
   log: string[],
-  options?: { since?: string; isBackfill?: boolean; maxCandidates?: number }
+  options?: { since?: string; isBackfill?: boolean; maxCandidates?: number; model?: string }
 ): Promise<{ evidenceAdded: number; statusChanges: number; breaches: BreachEvent[] }> {
   const { ticker, id: thesisId, user_id, last_scanned_at } = thesis;
   const since = options?.since ?? sinceDate(last_scanned_at);
   const isBackfill = options?.isBackfill ?? false;
   const maxCandidates = options?.maxCandidates ?? MAX_CANDIDATES;
+  const model = options?.model ?? SCORE_MODEL;
   let evidenceAdded = 0;
   let statusChanges = 0;
   const breaches: BreachEvent[] = [];
@@ -442,7 +443,7 @@ Respond with JSON exactly in this shape:
   let llmRows: LLMEvidenceRow[] = [];
   try {
     const response = await openai.chat.completions.create({
-      model: SCORE_MODEL,
+      model,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: systemPrompt },

@@ -191,11 +191,14 @@ async function main() {
       tracked: true,
       last_scanned_at: null,
     };
-    console.log(`[${ticker}] scoring (12-month backfill, maxCandidates=40)...`);
+    console.log(`[${ticker}] scoring (12-month backfill, gpt-4o, maxCandidates=50)...`);
     const { evidenceAdded, statusChanges } = await scoreOneThesis(supabase, thesisObj, log, {
       since,
       isBackfill: true,
-      maxCandidates: 40,
+      maxCandidates: 50,
+      // gpt-4o quotes verbatim far better than the cron's gpt-4o-mini, so more
+      // real evidence survives the excerpt guard. Demo seed only; cron stays mini.
+      model: 'gpt-4o',
     });
     console.log(`[${ticker}] scoreOneThesis: evidenceAdded=${evidenceAdded} statusChanges=${statusChanges}`);
 
