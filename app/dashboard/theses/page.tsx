@@ -187,7 +187,7 @@ export default function ThesesPage() {
   const [theses, setTheses] = useState<Thesis[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [phase, setPhase] = useState<'loading' | 'error' | 'ready'>('loading');
-  const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
+  const [expandedTickers, setExpandedTickers] = useState<Set<string>>(new Set());
   const [seedingTicker, setSeedingTicker] = useState<string | null>(null);
   const [seedError, setSeedError] = useState<string | null>(null);
 
@@ -293,7 +293,7 @@ export default function ThesesPage() {
       if (!mountedRef.current) return;
       if (res.ok) {
         await loadTheses();
-        if (mountedRef.current) setExpandedTicker(ticker);
+        if (mountedRef.current) setExpandedTickers((cur) => new Set(cur).add(ticker));
       } else {
         setSeedError(ticker);
       }
@@ -453,7 +453,7 @@ export default function ThesesPage() {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {summaries.map(({ t, summary }) => {
-              const isExpanded = expandedTicker === t.ticker;
+              const isExpanded = expandedTickers.has(t.ticker);
               const worst = summary.worst;
               return (
                 <div key={t.id} className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] overflow-hidden">
@@ -461,7 +461,12 @@ export default function ThesesPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      setExpandedTicker((cur) => (cur === t.ticker ? null : t.ticker));
+                      setExpandedTickers((cur) => {
+                        const next = new Set(cur);
+                        if (next.has(t.ticker)) next.delete(t.ticker);
+                        else next.add(t.ticker);
+                        return next;
+                      });
                     }}
                     className="w-full text-left px-4 py-4 hover:bg-white/[0.02] transition-colors"
                   >
@@ -517,7 +522,11 @@ export default function ThesesPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            setExpandedTicker(null);
+                            setExpandedTickers((cur) => {
+                              const next = new Set(cur);
+                              next.delete(t.ticker);
+                              return next;
+                            });
                             loadTheses();
                           }}
                           className="font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors"
