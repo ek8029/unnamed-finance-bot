@@ -12,6 +12,7 @@ import {
 } from '@/lib/edgar';
 import { excerptFoundInSource, TEXT_SOURCES } from '@/lib/thesis-evidence';
 import { derivePillarStatus, type EvidenceForStatus, type PillarStatus } from '@/lib/thesis-status';
+import type { BreachEvent } from '@/lib/thesis-breach';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SCORE_MODEL = 'gpt-4o-mini';
@@ -143,12 +144,14 @@ export async function scoreAllTheses(
   scanned: number;
   evidenceAdded: number;
   statusChanges: number;
+  breaches: BreachEvent[];
   log: string[];
 }> {
   const log: string[] = [];
   let scanned = 0;
   let evidenceAdded = 0;
   let statusChanges = 0;
+  const breaches: BreachEvent[] = [];
 
   // Fetch theses
   let query = serviceClient
@@ -161,11 +164,11 @@ export async function scoreAllTheses(
   const { data: theses, error: thesesErr } = await query;
   if (thesesErr) {
     log.push(`Fatal: failed to fetch theses: ${thesesErr.message}`);
-    return { scanned, evidenceAdded, statusChanges, log };
+    return { scanned, evidenceAdded, statusChanges, breaches, log };
   }
   if (!theses || theses.length === 0) {
     log.push('No tracked theses found.');
-    return { scanned, evidenceAdded, statusChanges, log };
+    return { scanned, evidenceAdded, statusChanges, breaches, log };
   }
 
   for (const thesis of theses as Thesis[]) {
@@ -173,13 +176,14 @@ export async function scoreAllTheses(
       const result = await scoreOneThesis(serviceClient, thesis, log);
       evidenceAdded += result.evidenceAdded;
       statusChanges += result.statusChanges;
+      breaches.push(...result.breaches);
       scanned++;
     } catch (err) {
       log.push(`[${thesis.ticker}] Unhandled error: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
-  return { scanned, evidenceAdded, statusChanges, log };
+  return { scanned, evidenceAdded, statusChanges, breaches, log };
 }
 
 // ---------------------------------------------------------------------------
@@ -191,13 +195,14 @@ export async function scoreOneThesis(
   thesis: Thesis,
   log: string[],
   options?: { since?: string; isBackfill?: boolean; maxCandidates?: number }
-): Promise<{ evidenceAdded: number; statusChanges: number }> {
+): Promise<{ evidenceAdded: number; statusChanges: number; breaches: BreachEvent[] }> {
   const { ticker, id: thesisId, user_id, last_scanned_at } = thesis;
   const since = options?.since ?? sinceDate(last_scanned_at);
   const isBackfill = options?.isBackfill ?? false;
   const maxCandidates = options?.maxCandidates ?? MAX_CANDIDATES;
   let evidenceAdded = 0;
   let statusChanges = 0;
+  const breaches: BreachEvent[] = [];
 
   // Fetch confirmed pillars for this thesis
   const { data: pillarsRaw, error: pillarsErr } = await db
@@ -209,7 +214,7 @@ export async function scoreOneThesis(
   if (pillarsErr) {
     log.push(`[${ticker}] Failed to fetch pillars: ${pillarsErr.message}`);
     await bumpLastScanned(db, thesisId);
-    return { evidenceAdded, statusChanges };
+    return { evidenceAdded, statusChanges, breaches };
   }
 
   const pillars: Pillar[] = (pillarsRaw ?? []) as Pillar[];
@@ -406,7 +411,7 @@ export async function scoreOneThesis(
   if (pillars.length === 0 || sortedCandidates.length === 0) {
     log.push(`[${ticker}] Skipping LLM (0 pillars or 0 candidates). pillars=${pillars.length} candidates=${sortedCandidates.length}`);
     await bumpLastScanned(db, thesisId);
-    return { evidenceAdded, statusChanges };
+    return { evidenceAdded, statusChanges, breaches };
   }
 
   // Build LLM prompt
@@ -451,7 +456,7 @@ Respond with JSON exactly in this shape:
   } catch (err) {
     log.push(`[${ticker}] LLM error: ${err instanceof Error ? err.message : String(err)}`);
     await bumpLastScanned(db, thesisId);
-    return { evidenceAdded, statusChanges };
+    return { evidenceAdded, statusChanges, breaches };
   }
 
   // Validate and build insert rows
@@ -543,7 +548,7 @@ Respond with JSON exactly in this shape:
     try {
       const { data: evidenceRows } = await db
         .from('pillar_evidence')
-        .select('verdict, materiality, source_type, source_key, is_backfill, created_at')
+        .select('verdict, materiality, source_type, source_key, is_backfill, created_at, excerpt, source_title, source_url')
         .eq('pillar_id', pillar.id);
 
       const evidence: EvidenceForStatus[] = (evidenceRows ?? []).map((e) => ({
@@ -567,6 +572,29 @@ Respond with JSON exactly in this shape:
         } else {
           statusChanges++;
           log.push(`[${ticker}] Pillar ${pillar.id} status: ${pillar.status} -> ${newStatus}`);
+
+          // Collect breach event: derived (not user-overridden) flip to broken
+          // on a live scoring run. Backfill runs never alert.
+          if (
+            newStatus === 'broken' &&
+            pillar.status !== 'broken' &&
+            !pillar.status_override &&
+            !isBackfill
+          ) {
+            const contradicting = (evidenceRows ?? [])
+              .filter((e) => e.verdict === 'contradicts')
+              .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
+            if (contradicting) {
+              breaches.push({
+                userId: thesis.user_id,
+                ticker,
+                claim: pillar.claim,
+                excerpt: contradicting.excerpt as string,
+                sourceTitle: contradicting.source_title as string,
+                sourceUrl: (contradicting.source_url as string | null) ?? null,
+              });
+            }
+          }
         }
       }
     } catch (err) {
@@ -577,7 +605,7 @@ Respond with JSON exactly in this shape:
   // Always bump last_scanned_at
   await bumpLastScanned(db, thesisId);
 
-  return { evidenceAdded, statusChanges };
+  return { evidenceAdded, statusChanges, breaches };
 }
 
 async function bumpLastScanned(db: SupabaseClient, thesisId: string): Promise<void> {

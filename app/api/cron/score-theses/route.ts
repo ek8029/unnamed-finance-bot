@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { scoreAllTheses } from '@/lib/score-theses';
+import { sendBreachAlerts } from '@/lib/thesis-breach';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -30,12 +31,15 @@ export async function GET(request: Request) {
 
     const result = await scoreAllTheses(serviceClient, ticker);
 
+    const breachesSent = await sendBreachAlerts(serviceClient, result.breaches, result.log);
+
     return NextResponse.json({
       ok: true,
       ticker: ticker ?? 'all',
       scanned: result.scanned,
       evidenceAdded: result.evidenceAdded,
       statusChanges: result.statusChanges,
+      breachesSent,
       log: result.log,
     });
   } catch (err) {
