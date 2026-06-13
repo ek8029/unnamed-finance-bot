@@ -164,7 +164,7 @@ export function AIInsightsFeed({ insights: initialInsights, holdings = [] }: AII
                     <>
                       <div className="mt-2.5 p-2.5 bg-[var(--color-bg-overlay)] rounded-md border border-[var(--color-border-base)]">
                         <div className="type-eyebrow text-[var(--color-gold)] mb-1">
-                          Recommended Action
+                          What this means
                         </div>
                         <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
                           {insight.recommended_action}
@@ -251,7 +251,7 @@ export function AIInsightsFeed({ insights: initialInsights, holdings = [] }: AII
                 </p>
                 {drawerInsight.recommended_action && (
                   <div className="mt-3 pt-3 border-t border-[var(--color-border-base)]">
-                    <div className="type-eyebrow text-[var(--color-gold)] mb-1">Recommended Action</div>
+                    <div className="type-eyebrow text-[var(--color-gold)] mb-1">What this means</div>
                     <p className="type-body text-[var(--color-gold)]">{drawerInsight.recommended_action}</p>
                   </div>
                 )}

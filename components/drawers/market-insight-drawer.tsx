@@ -61,7 +61,7 @@ export function MarketInsightDrawer({
 
       {/* Recommended Action */}
       <DrawerSection>
-        <DrawerSectionHeader>Recommended Action</DrawerSectionHeader>
+        <DrawerSectionHeader>Context</DrawerSectionHeader>
         <div className="p-4 bg-[var(--color-gold-surface)] rounded border border-[var(--color-gold)]/20">
           <div className="flex items-start gap-2">
             <div className="type-label text-sm text-[var(--color-gold)] leading-relaxed">
