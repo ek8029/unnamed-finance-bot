@@ -189,6 +189,7 @@ export default function ThesesPage() {
   const [phase, setPhase] = useState<'loading' | 'error' | 'ready'>('loading');
   const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
   const [seedingTicker, setSeedingTicker] = useState<string | null>(null);
+  const [seedError, setSeedError] = useState<string | null>(null);
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -212,12 +213,13 @@ export default function ThesesPage() {
 
   const loadHoldings = useCallback(async () => {
     try {
-      const res = await fetch('/api/dashboard/overview');
+      // Deliberately fetching /api/holdings directly instead of useHoldings() — the hook drags in 15-second quote polling this page does not need.
+      const res = await fetch('/api/holdings');
       if (!mountedRef.current || !res.ok) return;
-      const data = await res.json() as { holdings?: { ticker: string; name?: string; security_name?: string }[] };
+      const data = await res.json() as { holdings?: { ticker: string; asset_name?: string | null }[] };
       if (!mountedRef.current) return;
       const raw = data.holdings ?? [];
-      setHoldings(raw.map((h) => ({ ticker: h.ticker, name: h.name ?? h.security_name ?? h.ticker })));
+      setHoldings(raw.map((h) => ({ ticker: h.ticker, name: h.asset_name ?? h.ticker })));
     } catch {
       // holdings section degrades gracefully — not fatal
     }
@@ -281,8 +283,9 @@ export default function ThesesPage() {
   async function handleSeed(ticker: string) {
     if (seedingTicker) return;
     setSeedingTicker(ticker);
+    setSeedError(null);
     try {
-      const res = await fetch('/api/thesis', {
+      const res = await fetch('/api/thesis/seed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ticker }),
@@ -291,7 +294,11 @@ export default function ThesesPage() {
       if (res.ok) {
         await loadTheses();
         if (mountedRef.current) setExpandedTicker(ticker);
+      } else {
+        setSeedError(ticker);
       }
+    } catch {
+      if (mountedRef.current) setSeedError(ticker);
     } finally {
       if (mountedRef.current) setSeedingTicker(null);
     }
@@ -547,32 +554,36 @@ export default function ThesesPage() {
           {unthesedHoldings.length > 0 && (
             <div className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] divide-y divide-white/[0.05]">
               {unthesedHoldings.map((h) => (
-                <div
-                  key={h.ticker}
-                  className="flex items-center justify-between gap-4 px-4 py-3"
-                >
-                  <div className="min-w-0">
-                    <span
-                      className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA]"
+                <div key={h.ticker} className="px-4 py-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <span
+                        className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA]"
+                        style={MONO}
+                      >
+                        {h.ticker}
+                      </span>
+                      {h.name && h.name !== h.ticker && (
+                        <span className="ml-2 text-[13px] text-[#6A6A6A] truncate">
+                          {h.name}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      disabled={seedingTicker === h.ticker}
+                      onClick={() => handleSeed(h.ticker)}
+                      className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.15em] px-3 py-1.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors disabled:opacity-50"
                       style={MONO}
                     >
-                      {h.ticker}
-                    </span>
-                    {h.name && h.name !== h.ticker && (
-                      <span className="ml-2 text-[13px] text-[#6A6A6A] truncate">
-                        {h.name}
-                      </span>
-                    )}
+                      {seedingTicker === h.ticker ? 'Drafting...' : 'Draft thesis'}
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    disabled={seedingTicker === h.ticker}
-                    onClick={() => handleSeed(h.ticker)}
-                    className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.15em] px-3 py-1.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors disabled:opacity-50"
-                    style={MONO}
-                  >
-                    {seedingTicker === h.ticker ? 'Drafting...' : 'Draft thesis'}
-                  </button>
+                  {seedError === h.ticker && (
+                    <p className="mt-2 font-mono text-[11px] text-[#F87171]" style={MONO}>
+                      Could not draft thesis. Try again.
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
