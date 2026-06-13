@@ -167,7 +167,7 @@ export async function generateInsights(
             description: hasIndirect
               ? `Your total ${h.ticker} exposure is ${pctDisplay}% when including indirect holdings through ETFs and leveraged products${sources}. Direct position: $${Number(h.total_value).toLocaleString()}.`
               : `A single position making up more than ${CONCENTRATION_THRESHOLDS.critical}% of your portfolio increases risk. ${h.ticker} currently represents $${Number(h.total_value).toLocaleString()} of your $${totalPortfolio.toLocaleString()} portfolio.`,
-            recommended_action: `Consider diversifying by reducing your ${h.ticker} exposure${hasIndirect ? ' across direct and ETF holdings' : ''}.`,
+            recommended_action: `Single-position concentration above ${CONCENTRATION_THRESHOLDS.critical}% increases idiosyncratic risk. This ${h.ticker} figure of ${pctDisplay}%${hasIndirect ? ' reflects combined direct and ETF holdings' : ''} is above that level.`,
             confidence_score: 0.95,
             source_type: 'rule_based',
             related_entity_type: 'holding',
@@ -185,7 +185,7 @@ export async function generateInsights(
             priority: entry.totalWeight > 40 ? 'high' : 'medium',
             title: `Hidden ${ticker} exposure: ${Math.round(entry.totalWeight)}% via ETFs`,
             description: `You don't hold ${ticker} directly, but your ETF holdings give you ${Math.round(entry.totalWeight)}% effective exposure through ${entry.sources.join(', ')}.`,
-            recommended_action: `Review whether your combined ETF exposure to ${ticker} aligns with your risk tolerance.`,
+            recommended_action: `Combined ETF holdings give ${Math.round(entry.totalWeight)}% effective ${ticker} exposure through ${entry.sources.join(', ')}, above the ${CONCENTRATION_THRESHOLDS.critical}% single-name concentration threshold.`,
             confidence_score: 0.90,
             source_type: 'rule_based',
             related_entity_type: 'holding',
@@ -228,9 +228,10 @@ export async function generateInsights(
         priority: totalLoss > TAX_INSIGHT_HIGH_PRIORITY_LOSS ? 'high' : 'medium',
         title: `$${estimatedSavings.toLocaleString()} in potential tax savings`,
         description,
-        recommended_action: `Review selling ${tickers} to harvest losses, then reinvest in similar but not "substantially identical" assets to maintain exposure. ` +
-          `Important: do NOT repurchase the same security within 30 days or you will trigger a wash sale (IRC §1091). ` +
-          `This is not tax advice — consult a qualified tax professional before acting.`,
+        recommended_action: `These positions (${tickers}) are at unrealized losses totaling $${totalLoss.toLocaleString()}. ` +
+          `Tax-loss harvesting is a strategy investors use to offset gains. ` +
+          `Wash-sale rule: repurchasing a substantially identical security within 30 days disallows the loss (IRC §1091). ` +
+          `Not tax advice, consult a professional.`,
         estimated_impact_amount: estimatedSavings,
         confidence_score: 0.85,
         source_type: 'rule_based',
@@ -259,7 +260,7 @@ export async function generateInsights(
         priority: excess > IDLE_CASH_HIGH_PRIORITY ? 'high' : 'medium',
         title: `$${excess.toLocaleString()} idle cash could be working harder`,
         description: `You have $${totalCash.toLocaleString()} in cash accounts - about ${Math.round(totalCash / monthlyExpenses)} months of expenses. After keeping a ${IDLE_CASH_MONTHS}-month emergency fund ($${Math.round(monthlyExpenses * IDLE_CASH_MONTHS).toLocaleString()}), $${excess.toLocaleString()} could earn more in a high-yield savings account or short-term investments.`,
-        recommended_action: `Consider moving excess cash to a high-yield savings account or short-term Treasury bills.`,
+        recommended_action: `$${excess.toLocaleString()} exceeds a ${IDLE_CASH_MONTHS}-month buffer. High-yield savings and short-term Treasuries are options some investors use for idle cash.`,
         estimated_impact_amount: Math.round(excess * HYSA_APY),
         confidence_score: 0.8,
         source_type: 'rule_based',
@@ -278,7 +279,7 @@ export async function generateInsights(
           priority: balance > CREDIT_CARD_ALERT_THRESHOLD * 2 ? 'high' : 'medium',
           title: `${card.account_name} balance is $${balance.toLocaleString()}`,
           description: `Carrying a high credit card balance incurs significant interest charges. At a typical ${(CREDIT_CARD_APR * 100).toFixed(0)}% APR, this costs roughly $${Math.round(balance * CREDIT_CARD_APR / 12).toLocaleString()}/month in interest.`,
-          recommended_action: `Prioritize paying down this balance. Consider a balance transfer to a 0% APR card if available.`,
+          recommended_action: `At ${(CREDIT_CARD_APR * 100).toFixed(0)}% APR this balance accrues ~$${Math.round(balance * CREDIT_CARD_APR / 12).toLocaleString()}/mo in interest. Balance-transfer cards with introductory 0% APR periods exist.`,
           estimated_impact_amount: Math.round(balance * CREDIT_CARD_APR),
           confidence_score: 0.85,
           source_type: 'rule_based',

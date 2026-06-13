@@ -92,13 +92,13 @@ function concentrationAlerts(portfolio: PortfolioSummary): FeedInsight[] {
       priority,
       source: 'concentration',
       title: `${alert.ticker} concentration above ${alert.threshold}%`,
-      summary: `${alert.ticker} is ${alert.allocationPct.toFixed(1)}% of your portfolio ($${fmt(alert.totalValue)}). Recommended max single-stock: ${alert.threshold}%.`,
-      detail: `Consider trimming $${fmt(Math.max(0, trimAmount))} to reduce single-stock risk. A 20% decline in ${alert.ticker} would cost you $${fmt(alert.totalValue * 0.2)}.`,
+      summary: `${alert.ticker} is ${alert.allocationPct.toFixed(1)}% of your portfolio ($${fmt(alert.totalValue)}). A 20% decline in this position equals $${fmt(alert.totalValue * 0.2)}.`,
+      detail: `A position this size at ${alert.allocationPct.toFixed(1)}% carries concentrated single-stock risk. A 20% decline in ${alert.ticker} equals $${fmt(alert.totalValue * 0.2)}. The difference between this position and a ${alert.threshold}% allocation is $${fmt(Math.max(0, trimAmount))}.`,
       metrics: [
         { label: 'Allocation', value: `${alert.allocationPct.toFixed(1)}%` },
         { label: 'Position Value', value: `$${fmt(alert.totalValue)}` },
       ],
-      suggestedFollowUp: `How should I reduce my ${alert.ticker} concentration? What are the tax implications of trimming?`,
+      suggestedFollowUp: `What is my concentration risk in ${alert.ticker}?`,
       createdAt: timestamp(),
     });
   }
@@ -119,14 +119,14 @@ async function taxOpportunities(userId: string): Promise<FeedInsight[]> {
       type: 'opportunity',
       source: 'tax',
       priority: report.totalEstimatedSavings > 500 ? 'high' : 'medium',
-      title: `$${fmt(report.totalEstimatedSavings)} in tax savings available`,
-      summary: `${report.opportunityCount} positions have unrealized losses totaling $${fmt(Math.abs(report.totalHarvestableLoss))}. Harvesting could save ~$${fmt(report.totalEstimatedSavings)} on your tax bill.`,
-      detail: `At your ${(report.taxRate * 100).toFixed(0)}% combined rate, selling losing positions and swapping into similar ETFs maintains exposure while locking in the tax benefit.`,
+      title: `$${fmt(report.totalEstimatedSavings)} in potential tax savings identified`,
+      summary: `${report.opportunityCount} positions are at unrealized losses totaling $${fmt(Math.abs(report.totalHarvestableLoss))}. At a ${(report.taxRate * 100).toFixed(0)}% combined rate, that maps to roughly $${fmt(report.totalEstimatedSavings)} in offsettable tax. Not tax advice.`,
+      detail: `Tax-loss harvesting is a strategy some investors use to offset realized gains with realized losses. At a ${(report.taxRate * 100).toFixed(0)}% combined rate, $${fmt(Math.abs(report.totalHarvestableLoss))} in losses maps to roughly $${fmt(report.totalEstimatedSavings)}. Not tax advice.`,
       metrics: [
         { label: 'Total Losses', value: `$${fmt(Math.abs(report.totalHarvestableLoss))}` },
         { label: 'Est. Savings', value: `$${fmt(report.totalEstimatedSavings)}` },
       ],
-      suggestedFollowUp: `Walk me through the tax-loss harvesting opportunities in my portfolio. Which should I prioritize?`,
+      suggestedFollowUp: `Which of my positions are at an unrealized loss?`,
       createdAt: timestamp(),
     });
   } else {
@@ -136,16 +136,16 @@ async function taxOpportunities(userId: string): Promise<FeedInsight[]> {
       type: 'opportunity',
       source: 'tax',
       priority: top.estimatedSavings > 200 ? 'medium' : 'low',
-      title: `Tax-loss harvest opportunity: ${top.ticker}`,
-      summary: `${top.ticker} has an unrealized loss of $${fmt(Math.abs(top.unrealizedLoss))} (${top.lossPct.toFixed(1)}% below cost basis). Selling could save ~$${fmt(top.estimatedSavings)}.`,
+      title: `Unrealized loss flagged: ${top.ticker}`,
+      summary: `${top.ticker} is at an unrealized loss of $${fmt(Math.abs(top.unrealizedLoss))} (${top.lossPct.toFixed(1)}% below cost basis). Tax-loss harvesting is a strategy some investors use to offset gains. Not tax advice.`,
       detail: top.replacement
-        ? `Swap into ${top.replacement.ticker} (${top.replacement.name}) to maintain ${top.sector} exposure.${top.washSaleRisk ? ' Warning: wash sale risk detected.' : ''}`
-        : 'No specific replacement identified. Consider a broad sector ETF.',
+        ? `${top.replacement.ticker} (${top.replacement.name}) is another ${top.sector} security. Some investors use similar-exposure securities to stay invested while realizing a loss.${top.washSaleRisk ? ' Wash sale risk detected on this pairing.' : ''} Not tax advice.`
+        : 'No similar-exposure security identified for this position. Not tax advice.',
       metrics: [
         { label: 'Unrealized Loss', value: `$${fmt(Math.abs(top.unrealizedLoss))}` },
         { label: 'Tax Savings', value: `$${fmt(top.estimatedSavings)}` },
       ],
-      suggestedFollowUp: `Should I harvest the loss on ${top.ticker}? What about wash sale rules?`,
+      suggestedFollowUp: `Which of my positions are at an unrealized loss?`,
       createdAt: timestamp(),
     });
   }
@@ -181,8 +181,8 @@ async function earningsPreview(userId: string): Promise<FeedInsight[]> {
         { label: '5% Beat', value: `+$${fmt(multiple ? report.upcoming.reduce((s, e) => s + e.beatImpact5pct, 0) : nextEvent.beatImpact5pct)}` },
       ],
       suggestedFollowUp: multiple
-        ? 'What should I expect from upcoming earnings? How exposed am I?'
-        : `What should I expect from ${nextEvent.ticker}'s earnings? Should I hedge?`,
+        ? 'What is my total dollar exposure into upcoming earnings?'
+        : `What is my dollar exposure into ${nextEvent.ticker} earnings?`,
       createdAt: timestamp(),
     });
   }
@@ -269,7 +269,7 @@ async function cashFlowAnomalies(userId: string): Promise<FeedInsight[]> {
         { label: 'Deposits', value: `${incomeDeposits.length}` },
         { label: 'Total', value: `$${fmt(total)}` },
       ],
-      suggestedFollowUp: 'What should I do with the cash from my recent deposits?',
+      suggestedFollowUp: 'How much uninvested cash is in my accounts?',
       createdAt: timestamp(),
     });
   }
@@ -307,7 +307,7 @@ function marketEventImpact(portfolio: PortfolioSummary): FeedInsight[] {
           { label: 'Avg. Move', value: `${avgChange > 0 ? '+' : ''}${avgChange.toFixed(1)}%` },
           { label: 'Your Exposure', value: `$${fmt(sector.totalValue)}` },
         ],
-        suggestedFollowUp: `Why is the ${sector.sector} sector ${avgChange > 0 ? 'up' : 'down'} today? How should I respond?`,
+        suggestedFollowUp: `Why is the ${sector.sector} sector ${avgChange > 0 ? 'up' : 'down'} today? What is my dollar exposure to it?`,
         createdAt: timestamp(),
       });
     }
@@ -335,7 +335,7 @@ function performanceHighlights(portfolio: PortfolioSummary): FeedInsight[] {
         { label: 'Unrealized Gain', value: `+$${fmt(g.unrealizedGainLoss!)}` },
         { label: 'Return', value: `+${((g.unrealizedGainLossPct ?? 0) * 100).toFixed(1)}%` },
       ],
-      suggestedFollowUp: `Should I take profits on ${g.ticker} or let it ride? What's the tax impact of selling?`,
+      suggestedFollowUp: `What would the tax impact be if my ${g.ticker} position were sold?`,
       createdAt: timestamp(),
     });
   }
@@ -350,12 +350,12 @@ function performanceHighlights(portfolio: PortfolioSummary): FeedInsight[] {
       priority: Math.abs(l.unrealizedGainLoss ?? 0) > 1000 ? 'medium' : 'low',
       title: `${l.ticker} is your worst performer`,
       summary: `${l.securityName} is down $${fmt(Math.abs(l.unrealizedGainLoss!))} (${((l.unrealizedGainLossPct ?? 0) * 100).toFixed(1)}%) from cost basis.`,
-      detail: `${l.shares} shares @ $${l.currentPrice.toFixed(2)} = $${fmt(l.totalValue)} (${l.allocationPct.toFixed(1)}% of portfolio). Consider if the thesis still holds.`,
+      detail: `${l.shares} shares @ $${l.currentPrice.toFixed(2)} = $${fmt(l.totalValue)} (${l.allocationPct.toFixed(1)}% of portfolio).`,
       metrics: [
         { label: 'Unrealized Loss', value: `-$${fmt(Math.abs(l.unrealizedGainLoss!))}` },
         { label: 'Return', value: `${((l.unrealizedGainLossPct ?? 0) * 100).toFixed(1)}%` },
       ],
-      suggestedFollowUp: `Analyze ${l.ticker} — should I hold, add, or cut my losses? Is this a tax-loss harvest candidate?`,
+      suggestedFollowUp: `What would the tax impact be if my ${l.ticker} position were sold?`,
       createdAt: timestamp(),
     });
   }
@@ -408,7 +408,7 @@ function rebalancingSuggestions(portfolio: PortfolioSummary): FeedInsight[] {
           { label: 'Sector Weight', value: `${sector.allocationPct.toFixed(1)}%` },
           { label: '20% Drop Impact', value: `-$${fmt(sector.totalValue * 0.2)}` },
         ],
-        suggestedFollowUp: `How should I diversify away from ${sector.sector}? What sectors am I underweight in?`,
+        suggestedFollowUp: `What is my dollar exposure to the ${sector.sector} sector?`,
         createdAt: timestamp(),
       });
     }
@@ -423,12 +423,12 @@ function rebalancingSuggestions(portfolio: PortfolioSummary): FeedInsight[] {
       priority: 'medium',
       title: `Portfolio has only ${portfolio.positionCount} position${portfolio.positionCount > 1 ? 's' : ''}`,
       summary: `With ${portfolio.positionCount} holding${portfolio.positionCount > 1 ? 's' : ''}, a single earnings miss or sector downturn has outsized impact on your portfolio.`,
-      detail: 'Consider adding broad-market ETFs (VTI, VOO) or international exposure (VXUS) to reduce idiosyncratic risk.',
+      detail: 'Portfolios with fewer than 5 positions carry higher idiosyncratic risk. Broad-market and international ETFs are common diversification tools. This is information, not a recommendation to buy any specific security.',
       metrics: [
         { label: 'Positions', value: `${portfolio.positionCount}` },
         { label: 'Top Holding', value: `${portfolio.topHolding?.allocationPct.toFixed(1) ?? 0}%` },
       ],
-      suggestedFollowUp: 'What positions should I add to diversify my portfolio? Give me specific suggestions.',
+      suggestedFollowUp: 'How concentrated is my portfolio by position count?',
       createdAt: timestamp(),
     });
   }
