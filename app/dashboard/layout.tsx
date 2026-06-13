@@ -22,6 +22,7 @@ import {
   X,
   Search,
   PenLine,
+  Anchor,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
@@ -81,6 +82,7 @@ const navigation = [
       { name: 'Earnings', href: '/dashboard/earnings', icon: BarChart3 },
     ],
   },
+  { name: 'Theses', href: '/dashboard/theses', icon: Anchor },
   { name: 'Analyze', href: '/dashboard/analyze', icon: Search },
   { name: 'Daily Brief', href: '/dashboard/brief', icon: BookOpen },
   { name: 'Actions', href: '/dashboard/actions', icon: Zap },
@@ -105,6 +107,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/accounts': 'Connected Accounts',
   '/dashboard/settings': 'Settings',
   '/dashboard/analyze': 'Analyze',
+  '/dashboard/theses': 'Theses',
 };
 
 function getPageTitle(pathname: string): string {

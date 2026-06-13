@@ -49,9 +49,32 @@ export async function GET() {
       pillarsByThesis.set(pillar.thesis_id, existing);
     }
 
+    const pillarIds = (pillars ?? []).map((p) => p.id);
+    let latestByPillar = new Map<string, unknown>();
+    if (pillarIds.length > 0) {
+      const { data: evidence, error: evidenceError } = await supabase
+        .from('pillar_evidence')
+        .select('*')
+        .in('pillar_id', pillarIds)
+        .order('created_at', { ascending: false });
+      if (evidenceError) {
+        console.error('[thesis] GET list evidence error:', evidenceError);
+        return NextResponse.json({ error: 'Database error' }, { status: 500 });
+      }
+      latestByPillar = new Map();
+      for (const e of evidence ?? []) {
+        const cur = latestByPillar.get(e.pillar_id) as { verdict: string } | undefined;
+        if (!cur) { latestByPillar.set(e.pillar_id, e); continue; }
+        if (cur.verdict !== 'contradicts' && e.verdict === 'contradicts') latestByPillar.set(e.pillar_id, e);
+      }
+    }
+
     const result = thesesList.map((t) => ({
       ...t,
-      pillars: pillarsByThesis.get(t.id) ?? [],
+      pillars: (pillarsByThesis.get(t.id) ?? []).map((p) => ({
+        ...p,
+        latest_evidence: latestByPillar.get(p.id) ?? null,
+      })),
     }));
 
     return NextResponse.json({ theses: result });
