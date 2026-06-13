@@ -13,6 +13,7 @@ interface EvidenceRow {
   id: string;
   verdict: 'supports' | 'contradicts' | 'neutral';
   materiality: 'material' | 'context';
+  is_backfill: boolean;
   excerpt: string;
   why: string;
   what_it_means: string;
@@ -69,6 +70,7 @@ function toIntelligenceItem(ticker: string, pillar: Pillar, e: EvidenceRow): The
     why: e.why,
     whatItMeans: e.what_it_means,
     consider: e.consider,
+    isHistorical: e.is_backfill,
     sourceTitle: e.source_title,
     sourceUrl: e.source_url,
     sourcePublishedAt: e.source_published_at,
@@ -225,6 +227,12 @@ function ConfirmedPillarRow({
             >
               {pillar.claim}
             </button>
+          )}
+
+          {eff === 'unverified' && !editing && pillar.evidence.some((e) => e.verdict === 'supports') && (
+            <div className="mt-2 font-mono text-[11px] tracking-[0.04em] text-[#6A6A6A]">
+              Historical support &middot; watching for live confirmation
+            </div>
           )}
 
           {flagged && !editing && (

@@ -10,6 +10,7 @@ export interface ThesisIntelligenceItem {
   why: string;
   whatItMeans: string;
   consider: string | null;
+  isHistorical?: boolean;
   sourceTitle: string;
   sourceUrl: string | null;
   sourcePublishedAt: string | null;
@@ -81,6 +82,16 @@ export function VerdictCard({ item }: { item: ThesisIntelligenceItem }) {
               style={{ fontFamily: "'Space Grotesk', monospace" }}
             >
               Status changed
+            </span>
+          )}
+
+          {/* Historical context tag: backfilled evidence, not a live confirmation */}
+          {item.isHistorical && (
+            <span
+              className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] px-[7px] py-[3px] rounded-[2px] border border-white/[0.08] text-[#6A6A6A] bg-transparent"
+              style={{ fontFamily: "'Space Grotesk', monospace" }}
+            >
+              Historical context
             </span>
           )}
         </div>
