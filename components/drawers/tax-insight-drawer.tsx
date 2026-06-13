@@ -53,7 +53,7 @@ export function TaxInsightDrawer({
 
       {/* Recommended Action */}
       <DrawerSection>
-        <DrawerSectionHeader>Next Steps</DrawerSectionHeader>
+        <DrawerSectionHeader>What this means</DrawerSectionHeader>
         <div className="p-4 bg-[var(--color-gold-surface)] rounded border border-[var(--color-gold)]/20 mb-4">
           <p className="text-sm text-[var(--color-gold)] leading-relaxed mb-3">
             {recommendedAction}

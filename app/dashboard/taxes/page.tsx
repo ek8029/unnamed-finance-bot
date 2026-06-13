@@ -382,7 +382,7 @@ export default function TaxesPage() {
           {/* Subtitle */}
           <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed max-w-2xl">
             Helm tracks your tax lots and monitors wash-sale risk across your connected accounts.
-            Review your quarterly breakdown and harvest opportunities below.{' '}
+            Review your quarterly breakdown and harvestable-loss positions below.{' '}
             <a
               href="/tools/tlh-calculator"
               className="text-[var(--color-gold)] hover:underline font-medium"
@@ -940,8 +940,8 @@ export default function TaxesPage() {
         <TableSkeleton />
       ) : !showProContent ? (
         <ProBlur
-          label="Unlock harvest recommendations"
-          description={`${lossPositionCount} position${lossPositionCount !== 1 ? 's' : ''} with ${formatCurrency(totalHarvestable)} in harvestable losses found. Upgrade to see specific lots, wash-sale flags, replacement securities, and estimated tax savings.`}
+          label="Unlock full harvest analysis"
+          description={`${lossPositionCount} position${lossPositionCount !== 1 ? 's' : ''} with ${formatCurrency(totalHarvestable)} in harvestable losses found. Upgrade to see lots, wash-sale flags, and estimated figures.`}
           minHeight="280px"
         >
           {/* Placeholder rows for blur effect */}
@@ -994,7 +994,7 @@ export default function TaxesPage() {
             </div>
             {/* Wash sale legend — hidden on mobile, badges are self-explanatory */}
             <span className="hidden sm:inline text-[11px] text-[var(--color-text-muted)]" style={MONO}>
-              <span className="text-[var(--color-positive)]">Clear</span> = safe to harvest
+              <span className="text-[var(--color-positive)]">Clear</span> = no substantially-identical security detected
               <span className="mx-1.5">|</span>
               <span className="text-[var(--color-warning-text)]">Conflict</span> = wash sale risk detected
             </span>
@@ -1218,7 +1218,7 @@ function HarvestRow({
 
   const washSaleDetailText = opp.washSaleDetail
     ?? (isWashSafe
-      ? 'No substantially identical securities detected in your portfolio or recent transactions. Safe to harvest per IRC \u00a71091.'
+      ? 'No substantially identical securities detected in your portfolio or recent transactions, per IRC \u00a71091.'
       : null);
 
   const handleExpandToggle = (e: React.MouseEvent) => {
