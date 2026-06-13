@@ -32,6 +32,7 @@ import { FinancialDisclaimer } from '@/components/financial-disclaimer';
 import { FoundingMemberBanner } from '@/components/founding-member-banner';
 import { OnboardingFlow } from '@/components/onboarding/onboarding-flow';
 import { GuidedTour } from '@/components/onboarding/guided-tour';
+import { DisclaimerModal } from '@/components/legal/disclaimer-modal';
 import { MobileBottomNav } from '@/components/mobile-bottom-nav';
 
 /* ── Connect Banner — shown in demo mode ── */
@@ -227,6 +228,7 @@ export default function DashboardLayout({
     <>
     <OnboardingFlow />
     <GuidedTour />
+    <DisclaimerModal />
     <div className={cn(
       "bg-[var(--color-bg-base)] flex max-w-[100vw] overflow-x-hidden",
       isChatPage ? "h-dvh overflow-hidden" : "min-h-dvh"
