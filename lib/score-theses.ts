@@ -582,7 +582,7 @@ Respond with JSON exactly in this shape:
             !isBackfill
           ) {
             const contradicting = (evidenceRows ?? [])
-              .filter((e) => e.verdict === 'contradicts')
+              .filter((e) => e.verdict === 'contradicts' && !e.is_backfill)
               .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
             if (contradicting) {
               breaches.push({

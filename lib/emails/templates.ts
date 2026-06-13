@@ -346,7 +346,7 @@ export function getThesisBreachTemplate(p: ThesisBreachParams): EmailTemplate {
   const sourceTitle = escapeHtml(p.sourceTitle);
   const safeUrl = p.sourceUrl && /^https?:\/\//i.test(p.sourceUrl) ? p.sourceUrl : null;
   const source = safeUrl
-    ? `<a href="${safeUrl}" style="color:#E6B94D;">${sourceTitle}</a>`
+    ? `<a href="${escapeHtml(safeUrl)}" style="color:#E6B94D;">${sourceTitle}</a>`
     : sourceTitle;
   const url = `https://helmterminal.dev/dashboard/holdings/${p.ticker}`;
   return {
