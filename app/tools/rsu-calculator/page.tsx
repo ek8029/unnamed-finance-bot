@@ -688,11 +688,11 @@ export default function RSUCalculatorPage() {
           </div>
           <div>
             <h2 className="text-base font-bold text-[var(--color-text-primary)] mb-2" style={{ fontFamily: 'inherit' }}>Why concentration risk matters</h2>
-            <p>If your RSU grant represents a large percentage of your net worth, you have concentration risk — your financial outcomes are tied to a single company&rsquo;s stock price. Most financial advisors recommend keeping any single position under 10% of your total portfolio. A diversification plan — selling shares as they vest and reinvesting in broad market funds — reduces this risk without requiring you to time the market.</p>
+            <p>If your RSU grant represents a large percentage of your net worth, you have concentration risk: your financial outcomes are tied to a single company&rsquo;s stock price. A commonly cited guideline is keeping any single position under 10% of a total portfolio, though the right threshold depends on your situation. Selling shares as they vest and reinvesting in broad market funds is one widely discussed way investors reduce single-stock exposure. This is educational information, not financial advice.</p>
           </div>
           <div>
             <h2 className="text-base font-bold text-[var(--color-text-primary)] mb-2" style={{ fontFamily: 'inherit' }}>How Helm tracks RSU exposure</h2>
-            <p>Helm connects to your brokerage and tracks your actual RSU positions alongside the rest of your portfolio. Instead of manually updating spreadsheets, Helm shows your real-time concentration in any single stock, flags when positions exceed your risk threshold, and surfaces tax-aware rebalancing opportunities — all in one terminal.</p>
+            <p>Helm connects to your brokerage and tracks your actual RSU positions alongside the rest of your portfolio. Instead of manually updating spreadsheets, Helm shows your real-time concentration in any single stock, flags when positions exceed your risk threshold, and surfaces tax-aware context on your holdings, all in one terminal.</p>
           </div>
         </div>
       </section>
