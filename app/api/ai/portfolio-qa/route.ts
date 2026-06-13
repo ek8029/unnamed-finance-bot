@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getPortfolioSummary, formatPortfolioContext } from '@/lib/portfolio-analysis';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
+import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
 import OpenAI from 'openai';
 
 function getOpenAIClient() {
@@ -62,20 +63,20 @@ function generateFollowUps(question: string, hasAlerts: boolean): string[] {
 
   if (lower.includes('risk') || lower.includes('concentrat')) {
     suggestions.push('How would a 20% market correction affect me?');
-    suggestions.push('Which positions should I trim to reduce risk?');
+    suggestions.push('How concentrated is my largest position?');
   } else if (lower.includes('diversif')) {
-    suggestions.push("What sectors am I missing?");
-    suggestions.push("Am I overweight in any single stock?");
+    suggestions.push("What is my sector allocation?");
+    suggestions.push("How concentrated is my largest position?");
   } else if (lower.includes('tax') || lower.includes('sell') || lower.includes('harvest')) {
     suggestions.push('What are my largest unrealized losses?');
-    suggestions.push("How much could I save through tax-loss harvesting?");
+    suggestions.push("How does tax-loss harvesting work?");
   } else if (lower.includes('crash') || lower.includes('drop') || lower.includes('decline')) {
-    suggestions.push("What's my biggest single-stock risk?");
-    suggestions.push('How can I hedge my tech exposure?');
+    suggestions.push("What's my biggest single-stock exposure?");
+    suggestions.push('What is my total tech sector exposure?');
   } else {
-    if (hasAlerts) suggestions.push("What's my biggest risk right now?");
+    if (hasAlerts) suggestions.push("What's my biggest single-position exposure?");
     suggestions.push('How diversified am I?');
-    suggestions.push('Which positions have the best unrealized gains?');
+    suggestions.push('Which positions have the largest unrealized gains?');
   }
 
   return suggestions.slice(0, 3);
@@ -83,14 +84,16 @@ function generateFollowUps(question: string, hasAlerts: boolean): string[] {
 
 // ── System prompt ──
 
-const SYSTEM_PROMPT = `You are a senior portfolio analyst at Helm Intelligence. You have access to the user's ACTUAL portfolio data — every number is real, from their linked brokerage accounts.
+const SYSTEM_PROMPT = `${NO_ADVICE_GUARDRAIL}
+
+You are a senior portfolio analyst at Helm Intelligence. You have access to the user's ACTUAL portfolio data, every number is real, from their linked brokerage accounts.
 
 ABSOLUTE RULES:
-1. ALWAYS use SPECIFIC dollar amounts and percentages from the portfolio data. Never say "significant" or "large" — say "$47,200" or "34.2%".
+1. ALWAYS use SPECIFIC dollar amounts and percentages from the portfolio data. Never say "significant" or "large", say "$47,200" or "34.2%".
 2. Every sentence must contain a real number from their data.
 3. For hypothetical scenarios (e.g. "what if tech crashes 20%"), CALCULATE the exact dollar impact on their specific holdings.
-4. Be direct and actionable. No hedging. No "it depends." Tell them exactly what to do.
-5. Reference positions by ticker AND dollar value (e.g. "NVDA — $47,200 or 34% of your portfolio").
+4. Be direct and factual. State the numbers and what they mean. Do not tell the user what to do or recommend transactions.
+5. Reference positions by ticker AND dollar value (e.g. "NVDA, $47,200 or 34% of your portfolio").
 6. Format monetary values cleanly: $2,150,000 → $2.15M. Use M/B/T for large numbers, exact dollars for position-level amounts.
 7. Respond with valid JSON. Do NOT include markdown code fences.
 
@@ -107,11 +110,11 @@ RESPONSE FORMAT:
       "detail": "One sentence of context with another specific number"
     }
   ],
-  "recommendation": "One clear, actionable sentence with a specific number (e.g. 'Trim NVDA by $12,700 to bring it to 25% allocation').",
+  "recommendation": "One neutral factual observation with a specific number (e.g. 'NVDA is $47,200, 34% of your portfolio'). No buy/sell/trim, no advisability judgment.",
   "followUpQuestions": ["Suggested follow-up question 1", "Question 2", "Question 3"]
 }
 
-Include 3-6 highlights. Each highlight MUST have a real dollar amount or percentage. The highlights are the centerpiece of the response — they should be scannable and data-rich.`;
+Include 3-6 highlights. Each highlight MUST have a real dollar amount or percentage. The highlights are the centerpiece of the response, they should be scannable and data-rich.`;
 
 // ── API handler ──
 

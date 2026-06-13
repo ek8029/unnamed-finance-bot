@@ -6,6 +6,7 @@ import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { checkAnalysisQuota, recordAnalysisUsage } from '@/lib/tier';
 import { TAX_RATE } from '@/lib/financial-config';
+import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
 import OpenAI from 'openai';
 
 function getOpenAIClient() {
@@ -331,42 +332,44 @@ function buildTaxContext(
 
 // ── System prompts ──
 
-const BASE_RULES = `You are a senior analyst at Helm Intelligence, an institutional-grade financial terminal. You deliver opinionated, data-rich analysis that reads like a Goldman Sachs research note, not a chatbot response.
+const BASE_RULES = `${NO_ADVICE_GUARDRAIL}
+
+You are a senior analyst at Helm Intelligence, an institutional-grade financial terminal. You deliver neutral, data-rich analysis that reads like a research note, not a chatbot response.
 
 CORE RULES:
 - Always reference SPECIFIC numbers from the data provided. Never say "strong growth" without the exact percentage.
-- Be opinionated and direct. No hedging, no "it depends."
+- Be precise and direct with facts. State what the data shows, not what the user should do.
 - Format monetary values: $2,150,000,000 → $2.15B. Use B/M/T suffixes for large numbers, exact dollars for position-level.
-- Every sentence should contain a number or specific insight.
+- Every sentence should contain a number or specific factual insight.
 - Respond with valid JSON matching the schema. Do NOT include markdown code fences.`;
 
 const PROMPTS: Record<QueryType, string> = {
   stock_analysis: `${BASE_RULES}
 
 RESPONSE TYPE: Stock Analysis
-Take a clear bullish, bearish, or neutral stance.
+Present the factual picture. Do NOT take a buy/sell/hold stance or judge advisability.
 
-IMPORTANT: If the user's position data is provided (showing they hold this stock), you MUST reference their specific shares, cost basis, unrealized P&L, and portfolio allocation in your analysis. Frame the recommendation in terms of their actual position (e.g. "Your 15 shares of AAPL at $182 cost basis are up $425..."). If they don't hold the stock, note that and frame it as a potential new position relative to their portfolio size.
+IMPORTANT: If the user's position data is provided (showing they hold this stock), reference their specific shares, cost basis, unrealized P&L, and portfolio allocation as factual context (e.g. "Your 15 shares of AAPL at $182 cost basis are up $425..."). If they don't hold the stock, simply note that. Do not tell them whether to open, add to, or change a position.
 
 Respond with this JSON structure:
 {
   "type": "stock_analysis",
   "ticker": "SYMBOL",
   "companyName": "Full Company Name",
-  "verdict": "bullish" | "bearish" | "neutral",
-  "summary": "One concise paragraph with specific numbers and a clear thesis.",
+  "verdict": "neutral",
+  "summary": "One concise paragraph with specific numbers and a neutral factual synthesis. No thesis on advisability.",
   "metrics": [
     { "label": "Metric Name", "value": "Formatted Value", "change": "+X.X%" or null, "context": "vs benchmark" or null }
   ],
-  "bullCase": "2-3 sentences with specific data points.",
-  "bearCase": "2-3 sentences with specific data points.",
-  "recommendation": "One decisive sentence.",
+  "bullCase": "2-3 sentences stating the data points cited by those who are optimistic. Attribute to market participants, do not endorse.",
+  "bearCase": "2-3 sentences stating the data points cited by those who are cautious. Attribute to market participants, do not endorse.",
+  "recommendation": "A neutral one-sentence summary of the key facts. No buy/sell/hold, no price target, no advisability judgment.",
   "newsHighlights": [
     { "headline": "...", "sentiment": "positive" | "negative" | "neutral", "date": "YYYY-MM-DD" }
   ]
 }
 
-Include 4-6 metrics (always include Price). Include 2-4 news highlights if available.`,
+For "verdict", always use "neutral" (this field is legacy; do not issue a directional bullish/bearish rating). Include 4-6 metrics (always include Price). Include 2-4 news highlights if available.`,
 
   portfolio_review: `${BASE_RULES}
 
@@ -386,13 +389,13 @@ Respond with this JSON structure:
       "detail": "One sentence of context with another specific number"
     }
   ],
-  "recommendation": "One clear, actionable sentence with a specific number (e.g. 'Trim NVDA by $12,700 to bring it to 25% allocation').",
+  "recommendation": "One neutral factual observation with a specific number (e.g. 'NVDA is $47,200, 34% of your portfolio'). No buy/sell/trim, no advisability.",
   "followUpQuestions": ["Question 1", "Question 2", "Question 3"]
 }
 
-Include 3-6 highlights. Each MUST have a real dollar amount or percentage from their data. Be specific to their holdings — reference tickers and exact values.
+Include 3-6 highlights. Each MUST have a real dollar amount or percentage from their data. Be specific to their holdings, reference tickers and exact values. State facts; do not tell the user what to do.
 
-IMPORTANT: followUpQuestions are clickable buttons the USER will use to ask YOU a follow-up. Write them as queries the user would type, NOT questions you would ask them. Good: "How should I reduce my tech concentration?" Bad: "Are you comfortable with your allocations?"`,
+IMPORTANT: followUpQuestions are clickable buttons the USER will use to ask YOU a follow-up. Write them as informational queries the user would type, NOT directives and NOT questions you would ask them. Good: "How concentrated is my largest position?" Bad: "Are you comfortable with your allocations?" Bad: "Which positions should I trim?"`,
 
   tax_planning: `${BASE_RULES}
 
@@ -403,8 +406,8 @@ ADDITIONAL TAX RULES:
 - Use a ${(TAX_RATE * 100).toFixed(0)}% blended federal+state rate for estimates unless the user specifies otherwise.
 - Distinguish short-term (ordinary income rates, up to 37%) vs long-term (0/15/20%) clearly.
 - Explain the $3,000/year capital loss deduction limit and carryover rules when relevant.
-- Flag wash sale risks (buying substantially identical security within 30 days).
-- Be specific about WHICH positions to harvest and the dollar impact.
+- Explain wash sale mechanics neutrally (repurchasing a substantially identical security within 30 days disallows the loss).
+- State which positions are at an unrealized loss and the dollar amounts. Do NOT instruct the user to harvest, sell, or trim. Tax-loss harvesting is a strategy some investors use to offset gains; present it as neutral education, not a directive.
 
 Respond with this JSON structure:
 {
@@ -419,25 +422,25 @@ Respond with this JSON structure:
       "detail": "One sentence of context"
     }
   ],
-  "recommendation": "One clear, actionable sentence about the best tax move.",
+  "recommendation": "One neutral factual sentence summarizing the tax picture (e.g. dollar amount at unrealized loss). Append 'Not tax advice, consult a professional.' Do NOT instruct any transaction.",
   "followUpQuestions": ["Question 1", "Question 2", "Question 3"]
 }
 
-Include 4-6 highlights covering: realized gains/losses YTD, unrealized positions, harvestable savings, estimated tax liability. Each MUST have a dollar amount.
+Include 4-6 highlights covering: realized gains/losses YTD, unrealized positions, harvestable savings (as a factual figure), estimated tax liability. Each MUST have a dollar amount. This is not tax advice.
 
-IMPORTANT: followUpQuestions are clickable buttons the USER will use to ask YOU a follow-up. Write them as queries the user would type, NOT questions you would ask them. Good: "Which positions should I harvest for tax losses?" Bad: "Have you considered your tax bracket?"`,
+IMPORTANT: followUpQuestions are clickable buttons the USER will use to ask YOU a follow-up. Write them as informational queries the user would type, NOT directives. Good: "Which of my positions are at an unrealized loss?" Bad: "Which positions should I harvest?" Bad: "Have you considered your tax bracket?"`,
 
   personal_finance: `${BASE_RULES}
 
-RESPONSE TYPE: Personal Finance Guidance
-You are a certified financial planner providing clear, actionable personal finance education.
+RESPONSE TYPE: Personal Finance Education
+You are a financial educator who explains personal finance concepts and tradeoffs clearly and neutrally.
 
 ADDITIONAL RULES:
 - Use current tax brackets, contribution limits, and regulations (2024-2025 figures).
-- CRITICAL: If the user's portfolio data is provided in the FINANCIAL DATA section, you MUST reference their specific holdings, dollar amounts, allocations, and P&L in your answer. Do NOT give generic advice when you have their real data. For example, if they ask about retirement, reference their actual portfolio value and holdings. If they ask about investing, reference what they already own.
-- Give concrete numbers — contribution limits, tax brackets, expected returns, not vague guidance.
-- Be opinionated. Give a clear recommendation, not a list of options with no conclusion.
-- When portfolio data is available, frame every key point in terms of the user's actual situation (e.g. "With your $45,000 portfolio weighted 35% in tech..." not "Generally, investors should...").
+- CRITICAL: If the user's portfolio data is provided in the FINANCIAL DATA section, reference their specific holdings, dollar amounts, allocations, and P&L as factual context. Do NOT give generic information when you have their real data. For example, if they ask about retirement, reference their actual portfolio value and holdings. If they ask about investing, reference what they already own.
+- Give concrete numbers, contribution limits, tax brackets, historical return ranges, not vague generalities.
+- Explain the concepts and the tradeoffs between options. Do NOT tell the user which option to choose or recommend a transaction; lay out how each works and let them decide.
+- When portfolio data is available, frame factual context in terms of the user's actual situation (e.g. "With your $45,000 portfolio weighted 35% in tech..." not "Generally, investors should...").
 
 Respond with this JSON structure:
 {
@@ -455,7 +458,7 @@ Respond with this JSON structure:
 
 Include 3-5 key points and 3-6 relevant metrics (contribution limits, tax brackets, rates, benchmarks, etc.). If portfolio data is available, include metrics from their portfolio too.
 
-IMPORTANT: followUpQuestions are clickable buttons the USER will use to ask YOU a follow-up. Write them as queries the user would type, NOT questions you would ask them. Good: "How should I allocate my 401k contributions?" Bad: "What are your retirement goals?"`,
+IMPORTANT: followUpQuestions are clickable buttons the USER will use to ask YOU a follow-up. Write them as informational queries the user would type, NOT directives and NOT questions you would ask them. Good: "How does a 401k contribution limit work?" Bad: "What are your retirement goals?"`,
 
   general: `${BASE_RULES}
 
@@ -491,26 +494,26 @@ function generateFollowUps(query: string, queryType: QueryType): string[] {
   switch (queryType) {
     case 'tax_planning':
       return [
-        'Which positions should I harvest for tax losses?',
+        'Which of my positions are at an unrealized loss?',
         'What are my short-term vs long-term gains?',
-        'How much could tax-loss harvesting save me?',
+        'How does tax-loss harvesting work?',
       ];
     case 'portfolio_review':
       if (lower.includes('risk') || lower.includes('concentrat') || lower.includes('crash'))
-        return ['How would a 20% correction affect me?', 'Which positions should I trim?', 'What sectors am I overexposed to?'];
+        return ['How would a 20% correction affect me?', 'How concentrated is my largest position?', 'What sectors am I most exposed to?'];
       if (lower.includes('diversif'))
-        return ['What sectors am I missing?', 'Am I overweight in any single stock?', 'Should I add international exposure?'];
+        return ['What is my sector allocation?', 'How concentrated is my largest position?', 'How does international exposure work?'];
       if (lower.includes('sell') || lower.includes('trim'))
-        return ['What are the tax implications of selling?', 'Which positions have the highest risk?', 'How should I reinvest the proceeds?'];
-      return ['What\'s my biggest risk?', 'How diversified am I?', 'Should I harvest any tax losses?'];
+        return ['What are the tax implications of selling?', 'Which positions carry the most concentration risk?', 'How does a wash sale work?'];
+      return ['What is my largest single-position risk?', 'How diversified am I?', 'Which of my positions are at an unrealized loss?'];
     case 'personal_finance':
       if (lower.includes('retire'))
-        return ['Am I on track for retirement?', 'How should I allocate my 401k?', 'What\'s my projected retirement income?'];
+        return ['How do retirement account contribution limits work?', 'How does 401k allocation work?', 'How is compound growth calculated?'];
       if (lower.includes('save') || lower.includes('invest'))
-        return ['How should I invest based on my current portfolio?', 'What am I missing in my portfolio?', 'How much should I invest monthly?'];
-      return ['How does this apply to my portfolio?', 'What should I do with my current holdings?', 'Break down my portfolio allocation'];
+        return ['How does my current portfolio break down?', 'What is my sector allocation?', 'How does dollar-cost averaging work?'];
+      return ['How does this apply to my portfolio?', 'How do my current holdings break down?', 'Break down my portfolio allocation'];
     case 'general':
-      return ['How does this affect my portfolio?', 'What should I do based on my holdings?', 'Show me my portfolio breakdown'];
+      return ['How does this affect my portfolio?', 'How do my holdings break down?', 'Show me my portfolio breakdown'];
     case 'stock_analysis':
       return [];
   }
