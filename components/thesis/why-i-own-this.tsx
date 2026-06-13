@@ -157,8 +157,8 @@ function EvidenceTimeline({ ticker, pillar }: { ticker: string; pillar: Pillar }
   }
 
   return (
-    <div className="pt-1 pb-2">
-      <div className="flex flex-col gap-3">
+    <div className="pt-2 pb-3">
+      <div className="flex flex-col gap-4">
         {shown.map((e) => (
           <VerdictCard key={e.id} item={toIntelligenceItem(ticker, pillar, e)} />
         ))}
@@ -205,7 +205,7 @@ function ConfirmedPillarRow({
 
   return (
     <div className="border-t border-[var(--color-border-subtle)]">
-      <div className="flex items-start gap-4 py-4">
+      <div className="flex items-start gap-4 py-5">
         <div className="pt-0.5 shrink-0">
           <StatusChip status={eff} />
         </div>
@@ -384,7 +384,7 @@ export function WhyIOwnThis({ ticker }: { ticker: string }) {
   const [thesis, setThesis] = useState<Thesis | null>(null);
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [lockedMessage, setLockedMessage] = useState<string | null>(null);
-  const [openPillarId, setOpenPillarId] = useState<string | null>(null);
+  const [openPillars, setOpenPillars] = useState<Set<string>>(new Set());
   const [notesOpen, setNotesOpen] = useState(false);
   const [notesDraft, setNotesDraft] = useState('');
   const [adding, setAdding] = useState(false);
@@ -396,7 +396,11 @@ export function WhyIOwnThis({ ticker }: { ticker: string }) {
   const applyPayload = useCallback((data: { thesis: Thesis; pillars?: Partial<Pillar>[] }) => {
     setThesis(data.thesis);
     setNotesDraft(data.thesis.notes ?? '');
-    setPillars(((data.pillars ?? []) as Pillar[]).map((p) => ({ ...p, evidence: p.evidence ?? [] })));
+    const withEv = ((data.pillars ?? []) as Pillar[]).map((p) => ({ ...p, evidence: p.evidence ?? [] }));
+    setPillars(withEv);
+    // Auto-open evidence for pillars that have it: the substance shows on first
+    // expand, no second click.
+    setOpenPillars(new Set(withEv.filter((p) => p.evidence.length > 0).map((p) => p.id)));
     setPhase('ready');
   }, []);
 
@@ -652,8 +656,13 @@ export function WhyIOwnThis({ ticker }: { ticker: string }) {
                 key={p.id}
                 ticker={ticker}
                 pillar={p}
-                open={openPillarId === p.id}
-                onToggle={() => setOpenPillarId((cur) => (cur === p.id ? null : p.id))}
+                open={openPillars.has(p.id)}
+                onToggle={() => setOpenPillars((cur) => {
+                  const next = new Set(cur);
+                  if (next.has(p.id)) next.delete(p.id);
+                  else next.add(p.id);
+                  return next;
+                })}
                 onPatch={patchPillar}
               />
             ))}

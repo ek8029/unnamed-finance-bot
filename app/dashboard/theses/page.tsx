@@ -171,7 +171,7 @@ function LoadingSkeleton() {
     <div className="space-y-6">
       <SkeletonBlock className="h-8 w-48" />
       <SkeletonBlock className="h-4 w-full max-w-xs" />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-6">
         {[0, 1, 2, 3].map((i) => (
           <SkeletonBlock key={i} className="h-28 rounded-lg" />
         ))}
@@ -380,7 +380,7 @@ export default function ThesesPage() {
           >
             NEEDS ATTENTION
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {attentionItems.map(({ thesis, pillar }) => {
               const status = effectiveStatus(pillar);
               return (
@@ -451,7 +451,7 @@ export default function ThesesPage() {
           >
             YOUR THESES
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {summaries.map(({ t, summary }) => {
               const isExpanded = expandedTickers.has(t.ticker);
               const worst = summary.worst;
@@ -468,7 +468,7 @@ export default function ThesesPage() {
                         return next;
                       });
                     }}
-                    className="w-full text-left px-4 py-4 hover:bg-white/[0.02] transition-colors"
+                    className="w-full text-left px-5 py-5 hover:bg-white/[0.02] transition-colors"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1 min-w-0">
@@ -516,7 +516,7 @@ export default function ThesesPage() {
 
                   {/* Expanded: WhyIOwnThis - collapse button triggers refresh */}
                   {isExpanded && (
-                    <div className="border-t border-white/[0.07] p-4 space-y-3">
+                    <div className="border-t border-white/[0.07] p-5 sm:p-6 space-y-3">
                       <WhyIOwnThis ticker={t.ticker} />
                       <div className="flex justify-end">
                         <button
