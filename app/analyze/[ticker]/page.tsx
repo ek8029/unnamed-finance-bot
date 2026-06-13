@@ -58,10 +58,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  // Dynamic description — lead with verdict for CTR, not truncated mid-sentence
-  const verdict = analysis.verdict || 'Neutral';
+  // Dynamic description — neutral factual framing, not truncated mid-sentence
   const dynamicDesc = truncateForMeta(
-    `${symbol} is rated ${verdict} by Helm AI. ${analysis.companyName} — ${analysis.recommendation || analysis.summary}`,
+    `${symbol} analysis: ${analysis.companyName} fundamentals, filings, and metrics. ${analysis.summary}`,
   );
 
   return {
@@ -147,14 +146,13 @@ export default async function TickerAnalysisPage({ params }: Props) {
 
   const computedAtIso = computedAt || new Date().toISOString();
   const relTime = relativeTime(computedAtIso);
-  const verdictLabel = analysis.verdict.charAt(0).toUpperCase() + analysis.verdict.slice(1);
 
   // Prompt-shaped FAQ using REAL analysis data — matches what users type
   // into ChatGPT/Claude/Perplexity so Helm becomes a cited source
   const faqs = [
     {
-      question: `Is ${symbol} a buy right now?`,
-      answer: `Helm's AI rates ${symbol} as ${verdictLabel}. ${analysis.recommendation}`,
+      question: `What does Helm's AI summary say about ${symbol}?`,
+      answer: analysis.summary,
     },
     {
       question: `What are the main risks of holding ${symbol}?`,
@@ -165,12 +163,12 @@ export default async function TickerAnalysisPage({ params }: Props) {
       answer: analysis.bullCase,
     },
     {
-      question: `What does Helm's AI say about ${symbol}?`,
-      answer: analysis.summary,
+      question: `What are the key points for ${symbol}?`,
+      answer: `${analysis.bullCase} ${analysis.bearCase}`,
     },
     {
-      question: `What is ${analysis.companyName}'s current outlook?`,
-      answer: `${analysis.summary} Our overall verdict is ${verdictLabel}.`,
+      question: `What is ${analysis.companyName}'s current snapshot?`,
+      answer: analysis.summary,
     },
     {
       question: `Where can I get free AI analysis for ${symbol}?`,
