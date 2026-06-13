@@ -14,6 +14,9 @@ import { computePortfolioLookthrough } from '@/lib/etf-holdings';
 import { CONCENTRATION_THRESHOLDS } from '@/lib/financial-config';
 import { ScrollHint } from '@/components/ui/scroll-hint';
 import { PriceFlash } from '@/components/price-flash';
+import { Fragment } from 'react';
+import { WhyIOwnThis } from '@/components/thesis/why-i-own-this';
+import { summarizePillars, type ThesisSummary } from '@/lib/thesis-summary';
 
 /* ------------------------------------------------------------------ */
 /*  CSV download helper                                                */
@@ -230,7 +233,36 @@ export default function PortfolioPage() {
   const [filterSectors, setFilterSectors] = useState<Set<string>>(new Set());
   const [filterAssetClasses, setFilterAssetClasses] = useState<Set<string>>(new Set());
   const [filterSources, setFilterSources] = useState<Set<string>>(new Set());
+  const [thesisSummaries, setThesisSummaries] = useState<Record<string, ThesisSummary>>({});
+  const [expandedThesisTicker, setExpandedThesisTicker] = useState<string | null>(null);
   const filterRef = useRef<HTMLDivElement>(null);
+
+  const refreshThesisSummaries = useCallback(async () => {
+    try {
+      const res = await fetch('/api/thesis');
+      if (!res.ok) return;
+      const data = await res.json() as { theses: { ticker: string; pillars: Parameters<typeof summarizePillars>[0] }[] };
+      const map: Record<string, ThesisSummary> = {};
+      for (const t of data.theses) map[t.ticker] = summarizePillars(t.pillars);
+      setThesisSummaries(map);
+    } catch { /* column degrades gracefully */ }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/thesis');
+        if (!res.ok) return;
+        const data = await res.json() as { theses: { ticker: string; pillars: Parameters<typeof summarizePillars>[0] }[] };
+        if (cancelled) return;
+        const map: Record<string, ThesisSummary> = {};
+        for (const t of data.theses) map[t.ticker] = summarizePillars(t.pillars);
+        setThesisSummaries(map);
+      } catch { /* column degrades gracefully */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // Close filter on click outside
   useEffect(() => {
@@ -903,7 +935,7 @@ export default function PortfolioPage() {
               </div>
             ) : (<>
             <ScrollHint>
-              <table className="w-full min-w-[960px]">
+              <table className="w-full min-w-[1060px]">
                 <thead>
                   <tr className="bg-[var(--color-bg-elevated)]/60">
                     <th className="text-left pl-5 pr-2 py-2.5 w-[100px]">
@@ -923,6 +955,9 @@ export default function PortfolioPage() {
                     </th>
                     <th className="text-right px-2 py-2.5">
                       <ColHeader label="Day %" sortId="dayPct" className="justify-end" />
+                    </th>
+                    <th className="text-left px-2 py-2.5 w-[120px]">
+                      <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">Thesis</span>
                     </th>
                     <th className="px-2 py-2.5 w-[96px]">
                       <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">30D</span>
@@ -948,8 +983,8 @@ export default function PortfolioPage() {
                     const sparkTrend = dayPct >= 0;
 
                     return (
+                      <Fragment key={h.id}>
                       <tr
-                        key={h.id}
                         className={`h-16 border-b border-[var(--color-border-subtle)] ${
                           idx % 2 === 1 ? 'bg-[var(--color-bg-elevated)]/20' : ''
                         }`}
@@ -1002,6 +1037,50 @@ export default function PortfolioPage() {
                             {dayPct >= 0 ? '+' : ''}{dayPct.toFixed(2)}%
                           </span>
                         </td>
+                        {/* THESIS */}
+                        <td className="px-2 py-2">
+                          {(() => {
+                            const s = thesisSummaries[h.ticker];
+                            const open = expandedThesisTicker === h.ticker;
+                            const toggle = () => {
+                              if (open) { setExpandedThesisTicker(null); refreshThesisSummaries(); }
+                              else setExpandedThesisTicker(h.ticker);
+                            };
+                            const STATUS_COLORS: Record<string, string> = {
+                              intact: 'var(--color-positive)', weakening: 'var(--color-gold)',
+                              broken: 'var(--color-negative)', unverified: 'var(--color-text-muted)',
+                            };
+                            if (s && s.confirmedCount > 0) {
+                              const segments = (['broken', 'weakening', 'unverified', 'intact'] as const)
+                                .flatMap((st) => Array.from({ length: s.statusCounts[st] }, () => STATUS_COLORS[st]));
+                              return (
+                                <button onClick={toggle} className="group/th flex flex-col gap-1 w-full text-left rounded hover:bg-[var(--color-bg-elevated)]/50 -mx-1.5 px-1.5 py-1 transition-colors" aria-expanded={open}>
+                                  <span className="flex gap-0.5 h-[3px] w-[72px]">
+                                    {segments.map((c, i) => (
+                                      <span key={i} className="flex-1 rounded-full" style={{ background: c }} />
+                                    ))}
+                                  </span>
+                                  <span className="font-mono text-[10px] tracking-[0.04em]" style={{ color: s.worst ? STATUS_COLORS[s.worst] : 'var(--color-text-muted)' }}>
+                                    {s.worst === 'broken' ? 'Broken' : s.worst === 'weakening' ? 'Weakening' : s.worst === 'unverified' ? 'Unverified' : 'Intact'}
+                                    {' '}&middot; {s.confirmedCount}
+                                  </span>
+                                </button>
+                              );
+                            }
+                            if (s && s.draftCount > 0) {
+                              return (
+                                <button onClick={toggle} className="font-mono text-[10px] text-[var(--color-gold)] rounded hover:bg-[var(--color-bg-elevated)]/50 -mx-1.5 px-1.5 py-1 transition-colors" aria-expanded={open}>
+                                  Review {s.draftCount} draft{s.draftCount === 1 ? '' : 's'}
+                                </button>
+                              );
+                            }
+                            return (
+                              <button onClick={toggle} className="font-mono text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-gold)] rounded -mx-1.5 px-1.5 py-1 transition-colors" aria-expanded={open}>
+                                + Thesis
+                              </button>
+                            );
+                          })()}
+                        </td>
                         {/* 30D SPARKLINE */}
                         <td className="px-2 py-2">
                           <svg width="80" height="24" viewBox="0 0 80 24" fill="none" className="block">
@@ -1044,6 +1123,16 @@ export default function PortfolioPage() {
                           </span>
                         </td>
                       </tr>
+                      {expandedThesisTicker === h.ticker && (
+                        <tr className="border-b border-[var(--color-border-subtle)]">
+                          <td colSpan={11} className="px-5 py-4 bg-[var(--color-bg-elevated)]/30">
+                            <div className="max-w-[760px]">
+                              <WhyIOwnThis ticker={h.ticker} />
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      </Fragment>
                     );
                   })}
                 </tbody>
