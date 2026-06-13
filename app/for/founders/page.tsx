@@ -37,7 +37,7 @@ const FEATURES = [
     icon: Brain,
     title: 'AI Stock Analysis',
     description:
-      'Deep analysis for 500+ tickers with bull/bear cases, valuation metrics, and opinionated verdicts. Due diligence in seconds, not hours.',
+      'Deep analysis for 500+ tickers with bull/bear cases, valuation metrics, and clear summaries. Due diligence in seconds, not hours.',
   },
   {
     icon: Eye,
