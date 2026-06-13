@@ -10,6 +10,8 @@ alter table thesis_pillars add column if not exists lifecycle text not null defa
 alter table thesis_pillars add column if not exists lifecycle_at timestamptz;
 
 -- Backfill existing rows: anything user-authored or already confirmed counts as confirmed.
+-- Note: pre-migration confirmed ai_draft pillars cannot distinguish 'confirmed' vs 'edited';
+-- all are backfilled as 'confirmed'. Acceptable lossy classification for the training signal.
 update thesis_pillars
 set lifecycle = case when origin = 'user' or confirmed then 'confirmed' else 'proposed' end,
     lifecycle_at = updated_at

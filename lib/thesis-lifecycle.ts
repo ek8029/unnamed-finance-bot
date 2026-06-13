@@ -7,6 +7,7 @@ export const LIFECYCLES: readonly Lifecycle[] = ['proposed', 'confirmed', 'edite
  * Returns the new lifecycle a PATCH should set, or null when no transition applies.
  * Only `proposed` drafts transition via PATCH: confirm as-is -> 'confirmed',
  * confirm with a reworded claim -> 'edited'. Dismissal happens via DELETE.
+ * Callers that persist a non-null result MUST also set `lifecycle_at = now()`.
  */
 export function nextLifecycle(
   current: Lifecycle,
