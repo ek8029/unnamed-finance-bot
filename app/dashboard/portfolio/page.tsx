@@ -237,32 +237,27 @@ export default function PortfolioPage() {
   const [expandedThesisTicker, setExpandedThesisTicker] = useState<string | null>(null);
   const filterRef = useRef<HTMLDivElement>(null);
 
+  const thesisMountedRef = useRef(true);
+  useEffect(() => {
+    thesisMountedRef.current = true;
+    return () => { thesisMountedRef.current = false; };
+  }, []);
+
   const refreshThesisSummaries = useCallback(async () => {
     try {
       const res = await fetch('/api/thesis');
-      if (!res.ok) return;
+      if (!res.ok || !thesisMountedRef.current) return;
       const data = await res.json() as { theses: { ticker: string; pillars: Parameters<typeof summarizePillars>[0] }[] };
+      if (!thesisMountedRef.current) return;
       const map: Record<string, ThesisSummary> = {};
       for (const t of data.theses) map[t.ticker] = summarizePillars(t.pillars);
       setThesisSummaries(map);
-    } catch { /* column degrades gracefully */ }
+    } catch { /* column degrades to seed CTA */ }
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch('/api/thesis');
-        if (!res.ok) return;
-        const data = await res.json() as { theses: { ticker: string; pillars: Parameters<typeof summarizePillars>[0] }[] };
-        if (cancelled) return;
-        const map: Record<string, ThesisSummary> = {};
-        for (const t of data.theses) map[t.ticker] = summarizePillars(t.pillars);
-        setThesisSummaries(map);
-      } catch { /* column degrades gracefully */ }
-    })();
-    return () => { cancelled = true; };
-  }, []);
+    refreshThesisSummaries();
+  }, [refreshThesisSummaries]);
 
   // Close filter on click outside
   useEffect(() => {
