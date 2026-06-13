@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { scoreOneThesis, type Thesis } from '@/lib/score-theses';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -21,6 +22,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid ticker' }, { status: 400 });
     }
     const ticker = rawTicker;
+
+    // Rate limit per user: backfill runs up to 40 SEC EDGAR fetches per call.
+    // Tight cap protects our cost and avoids an EDGAR IP block affecting everyone.
+    const limit = rateLimit(`thesis-backfill:${user.id}`, 5, 3600);
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.', retryAfterSeconds: limit.retryAfterSeconds },
+        { status: 429 },
+      );
+    }
 
     // Fetch thesis
     const { data: thesis, error: thesisError } = await supabase

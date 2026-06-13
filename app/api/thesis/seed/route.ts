@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { draftPillars } from '@/lib/thesis-seed';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
   try {
@@ -23,6 +24,18 @@ export async function POST(request: Request) {
     }
 
     const resuggest = body.resuggest === true;
+
+    // Rate limit per user: draftPillars calls gpt-4o. Tighter cap on the
+    // resuggest regeneration path since it re-bills the model every call.
+    const limit = resuggest
+      ? rateLimit(`thesis-seed-resuggest:${user.id}`, 5, 3600)
+      : rateLimit(`thesis-seed:${user.id}`, 10, 3600);
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.', retryAfterSeconds: limit.retryAfterSeconds },
+        { status: 429 },
+      );
+    }
 
     // Fetch or create thesis
     let { data: thesis, error: thesisError } = await supabase

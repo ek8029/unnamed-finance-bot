@@ -21,6 +21,7 @@ export async function draftPillars(ticker: string): Promise<SeededPillar[]> {
     const response = await openai.chat.completions.create({
       model: SEED_MODEL,
       response_format: { type: 'json_object' },
+      max_tokens: 600,
       messages: [
         {
           role: 'system',
