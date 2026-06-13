@@ -187,7 +187,7 @@ export default function ThesesPage() {
   const [theses, setTheses] = useState<Thesis[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [phase, setPhase] = useState<'loading' | 'error' | 'ready'>('loading');
-  const [expandedTickers, setExpandedTickers] = useState<Set<string>>(new Set());
+  const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [seedingTicker, setSeedingTicker] = useState<string | null>(null);
   const [seedError, setSeedError] = useState<string | null>(null);
 
@@ -235,6 +235,8 @@ export default function ThesesPage() {
     t,
     summary: summarizePillars(t.pillars),
   }));
+  // Master-detail: selected thesis, defaulting to the first so detail always shows.
+  const activeTicker = selectedTicker ?? summaries[0]?.t.ticker ?? null;
 
   // Attention items: confirmed pillars whose effectiveStatus is weakening|broken
   const attentionItems: { thesis: Thesis; pillar: Pillar }[] = [];
@@ -293,7 +295,7 @@ export default function ThesesPage() {
       if (!mountedRef.current) return;
       if (res.ok) {
         await loadTheses();
-        if (mountedRef.current) setExpandedTickers((cur) => new Set(cur).add(ticker));
+        if (mountedRef.current) setSelectedTicker(ticker);
       } else {
         setSeedError(ticker);
       }
@@ -451,60 +453,51 @@ export default function ThesesPage() {
           >
             YOUR THESES
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {summaries.map(({ t, summary }) => {
-              const isExpanded = expandedTickers.has(t.ticker);
-              const worst = summary.worst;
-              return (
-                <div key={t.id} className={`rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] overflow-hidden${isExpanded ? ' lg:col-span-2' : ''}`}>
-                  {/* Card header - clickable to toggle expansion */}
+          <div className="flex flex-col 2xl:flex-row 2xl:gap-6 2xl:items-start">
+            {/* Left rail: selectable thesis list (becomes a sticky sidebar on ultrawide) */}
+            <div className="space-y-2.5 2xl:w-[340px] 2xl:shrink-0 2xl:sticky 2xl:top-6">
+              {summaries.map(({ t, summary }) => {
+                const active = activeTicker === t.ticker;
+                const worst = summary.worst;
+                return (
                   <button
+                    key={t.id}
                     type="button"
-                    onClick={() => {
-                      setExpandedTickers((cur) => {
-                        const next = new Set(cur);
-                        if (next.has(t.ticker)) next.delete(t.ticker);
-                        else next.add(t.ticker);
-                        return next;
-                      });
-                    }}
-                    className="w-full text-left px-5 py-5 hover:bg-white/[0.02] transition-colors"
+                    onClick={() => { setSelectedTicker(t.ticker); loadTheses(); }}
+                    className={`w-full text-left rounded-lg border px-4 py-4 transition-colors ${
+                      active
+                        ? 'border-[rgba(230,185,77,0.4)] bg-[rgba(230,185,77,0.05)]'
+                        : 'border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] hover:bg-white/[0.02]'
+                    }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span
-                            className="font-mono text-[14px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA]"
-                            style={MONO}
-                          >
-                            {t.ticker}
-                          </span>
-                          {summary.draftCount > 0 && (
-                            <span
-                              className="font-mono text-[9px] font-semibold uppercase tracking-[0.15em] px-2 py-[2px] rounded border border-[rgba(230,185,77,0.3)] text-[#E6B94D] bg-[rgba(230,185,77,0.06)]"
-                              style={MONO}
-                            >
-                              {summary.draftCount} draft
-                            </span>
-                          )}
-                          {t.tracked && (
-                            <span
-                              className="font-mono text-[9px] font-semibold uppercase tracking-[0.15em] px-2 py-[2px] rounded border border-[rgba(74,222,128,0.3)] text-[#4ADE80] bg-[rgba(74,222,128,0.06)]"
-                              style={MONO}
-                            >
-                              Tracked
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 flex-wrap">
-                          {worst && <StatusChip status={worst} />}
-                          <span className="font-mono text-[11px] text-[#6A6A6A]" style={MONO}>
-                            {summary.confirmedCount} pillar{summary.confirmedCount === 1 ? '' : 's'}
-                          </span>
-                        </div>
-                      </div>
-                      <span className="font-mono text-[16px] text-[#6A6A6A] shrink-0 mt-0.5">
-                        {isExpanded ? '−' : '+'}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className="font-mono text-[14px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA]"
+                        style={MONO}
+                      >
+                        {t.ticker}
+                      </span>
+                      {summary.draftCount > 0 && (
+                        <span
+                          className="font-mono text-[9px] font-semibold uppercase tracking-[0.15em] px-2 py-[2px] rounded border border-[rgba(230,185,77,0.3)] text-[#E6B94D] bg-[rgba(230,185,77,0.06)]"
+                          style={MONO}
+                        >
+                          {summary.draftCount} draft
+                        </span>
+                      )}
+                      {t.tracked && (
+                        <span
+                          className="font-mono text-[9px] font-semibold uppercase tracking-[0.15em] px-2 py-[2px] rounded border border-[rgba(74,222,128,0.3)] text-[#4ADE80] bg-[rgba(74,222,128,0.06)]"
+                          style={MONO}
+                        >
+                          Tracked
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap mt-1.5">
+                      {worst && <StatusChip status={worst} />}
+                      <span className="font-mono text-[11px] text-[#6A6A6A]" style={MONO}>
+                        {summary.confirmedCount} pillar{summary.confirmedCount === 1 ? '' : 's'}
                       </span>
                     </div>
                     {summary.confirmedCount > 0 && (
@@ -513,33 +506,18 @@ export default function ThesesPage() {
                       </div>
                     )}
                   </button>
+                );
+              })}
+            </div>
 
-                  {/* Expanded: WhyIOwnThis - collapse button triggers refresh */}
-                  {isExpanded && (
-                    <div className="border-t border-white/[0.07] p-5 sm:p-6 space-y-3">
-                      <WhyIOwnThis ticker={t.ticker} />
-                      <div className="flex justify-end">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setExpandedTickers((cur) => {
-                              const next = new Set(cur);
-                              next.delete(t.ticker);
-                              return next;
-                            });
-                            loadTheses();
-                          }}
-                          className="font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors"
-                          style={MONO}
-                        >
-                          Collapse
-                        </button>
-                      </div>
-                    </div>
-                  )}
+            {/* Right pane: selected thesis detail (fills remaining width) */}
+            <div className="flex-1 min-w-0 mt-4 2xl:mt-0">
+              {activeTicker && (
+                <div className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] p-5 sm:p-6 2xl:p-7">
+                  <WhyIOwnThis key={activeTicker} ticker={activeTicker} />
                 </div>
-              );
-            })}
+              )}
+            </div>
           </div>
         </section>
       )}
