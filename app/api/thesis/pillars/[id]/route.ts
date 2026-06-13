@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { nextLifecycle, type Lifecycle } from '@/lib/thesis-lifecycle';
 
 const VALID_STATUS_OVERRIDES = new Set(['unverified', 'intact', 'weakening', 'broken']);
 
@@ -39,6 +40,10 @@ export async function PATCH(
       updated_at: new Date().toISOString(),
     };
 
+    if ('lifecycle' in body || 'lifecycle_at' in body) {
+      return NextResponse.json({ error: 'lifecycle is derived and cannot be set directly' }, { status: 400 });
+    }
+
     // claim — non-empty trimmed string
     if ('claim' in body) {
       if (typeof body.claim !== 'string' || body.claim.trim().length === 0) {
@@ -74,6 +79,16 @@ export async function PATCH(
       }
       updates.status_override = so ?? null;
       updates.status_changed_at = new Date().toISOString();
+    }
+
+    // lifecycle -- derived, never client-settable
+    const transition = nextLifecycle(pillar.lifecycle as Lifecycle, {
+      confirmed: typeof body.confirmed === 'boolean' ? body.confirmed : undefined,
+      claimChanged: typeof updates.claim === 'string' && updates.claim !== pillar.claim,
+    });
+    if (transition) {
+      updates.lifecycle = transition;
+      updates.lifecycle_at = new Date().toISOString();
     }
 
     const { data: updated, error: updateError } = await supabase
@@ -112,7 +127,7 @@ export async function DELETE(
 
     const { data: pillar, error: fetchError } = await supabase
       .from('thesis_pillars')
-      .select('id')
+      .select('id, origin, confirmed')
       .eq('id', id)
       .eq('user_id', user.id)
       .maybeSingle();
@@ -124,6 +139,20 @@ export async function DELETE(
 
     if (!pillar) {
       return NextResponse.json({ error: 'Pillar not found' }, { status: 404 });
+    }
+
+    // Unconfirmed AI drafts are soft-dismissed: the rejection is a learning signal.
+    if (pillar.origin === 'ai_draft' && !pillar.confirmed) {
+      const { error: dismissError } = await supabase
+        .from('thesis_pillars')
+        .update({ lifecycle: 'dismissed', lifecycle_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('user_id', user.id);
+      if (dismissError) {
+        console.error('[thesis/pillars] DELETE dismiss error:', dismissError);
+        return NextResponse.json({ error: 'Failed to dismiss pillar' }, { status: 500 });
+      }
+      return NextResponse.json({ ok: true, dismissed: true });
     }
 
     const { error: deleteError } = await supabase

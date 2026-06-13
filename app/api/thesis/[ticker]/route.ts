@@ -49,6 +49,7 @@ export async function GET(
       .from('thesis_pillars')
       .select('*')
       .eq('thesis_id', thesis.id)
+      .neq('lifecycle', 'dismissed')
       .eq('user_id', user.id)
       .order('sort_order', { ascending: true });
 
@@ -334,6 +335,8 @@ export async function POST(
         confirmed: true,
         status: 'unverified',
         sort_order: sortOrder,
+        lifecycle: 'confirmed',
+        lifecycle_at: new Date().toISOString(),
       })
       .select('*')
       .maybeSingle();

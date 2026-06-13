@@ -33,6 +33,7 @@ export async function GET() {
       .from('thesis_pillars')
       .select('*')
       .in('thesis_id', thesisIds)
+      .neq('lifecycle', 'dismissed')
       .eq('user_id', user.id)
       .order('sort_order', { ascending: true });
 

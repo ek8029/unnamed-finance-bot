@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       thesis = inserted;
     }
 
-    // Fetch existing pillars
+    // Fetch existing pillars (dismissed rows intentionally included -- a dismissed draft must never be re-proposed)
     const { data: existingPillars, error: pillarsError } = await supabase
       .from('thesis_pillars')
       .select('*')
