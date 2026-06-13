@@ -567,9 +567,8 @@ export default function RSUCalculatorPage() {
                         {concentrationPct.toFixed(0)}% concentration in a single stock
                       </div>
                       <p className="text-xs text-[var(--color-text-muted)] leading-relaxed" style={{ fontFamily: 'var(--font-serif, "Source Serif Pro", serif)' }}>
-                        Financial advisors typically recommend keeping any single position under 10% of your total portfolio.
-                        At {fmt(portfolioValue)} portfolio value, your {ticker || 'RSU'} grant represents {concentrationPct.toFixed(1)}% — consider
-                        a diversification plan as shares vest.
+                        A commonly cited guideline is keeping any single position under 10% of a portfolio.
+                        At {fmt(portfolioValue)} portfolio value, your {ticker || 'RSU'} grant represents {concentrationPct.toFixed(1)}% of that total.
                       </p>
                     </div>
                   </div>

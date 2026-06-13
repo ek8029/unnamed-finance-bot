@@ -1317,7 +1317,7 @@ export default function SettingsPage() {
         Tax configuration
       </h2>
       <p className="text-[14px] text-[var(--color-text-secondary)] -mt-4">
-        Configure your tax bracket and filing preferences for accurate tax-loss harvesting recommendations.
+        Configure your tax bracket and filing preferences for accurate tax-loss harvesting analysis.
       </p>
 
       <div className="space-y-5">
