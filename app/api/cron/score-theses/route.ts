@@ -3,6 +3,8 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { scoreAllTheses } from '@/lib/score-theses';
 import { sendBreachAlerts } from '@/lib/thesis-breach';
 import { generateThesisActions } from '@/lib/thesis-actions';
+import { generateInvestigations } from '@/lib/thesis-investigation';
+import { generateCrossThesisRisks } from '@/lib/cross-thesis-risk';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -34,24 +36,37 @@ export async function GET(request: Request) {
 
     const breachesSent = await sendBreachAlerts(serviceClient, result.breaches, result.log);
 
-    // Pipeline step: now that statuses are recomputed, refresh reasoned actions for
-    // every user with tracked theses. Per-user so the pure pipeline can join holdings.
+    // Pipeline composition: now that statuses are recomputed, refresh the agentic
+    // outputs for every user with tracked theses. Per-user so each pure pipeline can
+    // join that user's holdings / pillars. Each is independent and fail-isolated.
     let actionsGenerated = 0;
+    let investigationsGenerated = 0;
+    let risksGenerated = 0;
     try {
       let owners = serviceClient.from('theses').select('user_id').eq('tracked', true);
       if (ticker) owners = owners.eq('ticker', ticker);
       const { data: ownerRows } = await owners;
       const userIds = [...new Set((ownerRows ?? []).map((r) => r.user_id as string))];
       for (const userId of userIds) {
+        const short = userId.slice(0, 8);
         try {
-          const { generated } = await generateThesisActions(serviceClient, userId);
-          actionsGenerated += generated;
+          actionsGenerated += (await generateThesisActions(serviceClient, userId)).generated;
         } catch (err) {
-          result.log.push(`[actions] ${userId.slice(0, 8)} failed: ${err instanceof Error ? err.message : 'unknown'}`);
+          result.log.push(`[actions] ${short} failed: ${err instanceof Error ? err.message : 'unknown'}`);
+        }
+        try {
+          investigationsGenerated += (await generateInvestigations(serviceClient, userId)).generated;
+        } catch (err) {
+          result.log.push(`[investigation] ${short} failed: ${err instanceof Error ? err.message : 'unknown'}`);
+        }
+        try {
+          risksGenerated += (await generateCrossThesisRisks(serviceClient, userId)).generated;
+        } catch (err) {
+          result.log.push(`[risk] ${short} failed: ${err instanceof Error ? err.message : 'unknown'}`);
         }
       }
     } catch (err) {
-      result.log.push(`[actions] generation skipped: ${err instanceof Error ? err.message : 'unknown'}`);
+      result.log.push(`[agentic] generation skipped: ${err instanceof Error ? err.message : 'unknown'}`);
     }
 
     return NextResponse.json({
@@ -62,6 +77,8 @@ export async function GET(request: Request) {
       statusChanges: result.statusChanges,
       breachesSent,
       actionsGenerated,
+      investigationsGenerated,
+      risksGenerated,
       log: result.log,
     });
   } catch (err) {

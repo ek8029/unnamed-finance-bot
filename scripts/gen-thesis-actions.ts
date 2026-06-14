@@ -30,15 +30,32 @@ async function main() {
   }
 
   const { generateThesisActions } = await import('../lib/thesis-actions');
-  const { generated, actions } = await generateThesisActions(sb, owner);
+  const { generateInvestigations } = await import('../lib/thesis-investigation');
+  const { generateCrossThesisRisks } = await import('../lib/cross-thesis-risk');
 
-  console.log(`owner=${owner.slice(0, 8)} generated=${generated}`);
+  const { generated, actions } = await generateThesisActions(sb, owner);
+  console.log(`\n=== ACTIONS (owner=${owner.slice(0, 8)}) generated=${generated} ===`);
   for (const a of actions) {
     console.log(`\n[${a.priority}] ${a.kind} :: ${a.title}`);
     console.log(`  ${a.description}`);
     console.log(`  > ${a.recommendedAction}`);
     if (a.estimatedImpact != null) console.log(`  ~impact: $${a.estimatedImpact}`);
-    console.log(`  grounding: ${a.explanation}`);
+  }
+
+  const inv = await generateInvestigations(sb, owner);
+  console.log(`\n=== INVESTIGATIONS generated=${inv.generated} ===`);
+  for (const i of inv.investigations) {
+    console.log(`\n[${i.priority}] ${i.trigger.kind} :: ${i.ticker}`);
+    console.log(`  trigger: ${i.trigger.headline}`);
+    console.log(`  finding: ${i.finding}`);
+    console.log(`  pillars: ${i.affectedPillars.map((p) => `${p.status}`).join(', ')}`);
+  }
+
+  const risk = await generateCrossThesisRisks(sb, owner);
+  console.log(`\n=== CROSS-THESIS RISKS generated=${risk.generated} ===`);
+  for (const r of risk.alerts) {
+    console.log(`\n[${r.severity}] ${r.driver} :: ${r.tickers.join(', ')} (moved: ${r.movedTickers.join(', ')})`);
+    console.log(`  ${r.rationale}`);
   }
 }
 

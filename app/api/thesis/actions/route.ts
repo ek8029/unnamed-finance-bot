@@ -45,10 +45,10 @@ export async function GET(request: Request) {
     let query = supabase
       .from('insights')
       .select(
-        'id, insight_type, priority, title, description, recommended_action, explanation, estimated_impact_amount, related_entity_ids, created_at',
+        'id, insight_type, priority, title, description, recommended_action, explanation, estimated_impact_amount, related_entity_type, related_entity_ids, created_at',
       )
       .eq('user_id', user.id)
-      .eq('related_entity_type', 'thesis')
+      .in('related_entity_type', ['thesis', 'thesis_investigation', 'thesis_risk'])
       .eq('is_dismissed', false)
       .eq('is_archived', false)
       .or('snoozed_until.is.null,snoozed_until.lte.' + new Date().toISOString());
@@ -67,8 +67,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
+    const KIND: Record<string, 'action' | 'investigation' | 'risk'> = {
+      thesis: 'action',
+      thesis_investigation: 'investigation',
+      thesis_risk: 'risk',
+    };
     const actions = (data ?? []).map((r) => ({
       id: r.id,
+      kind: KIND[r.related_entity_type as string] ?? 'action',
       type: r.insight_type,
       priority: r.priority,
       title: r.title,

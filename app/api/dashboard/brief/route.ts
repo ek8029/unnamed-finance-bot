@@ -5,6 +5,7 @@ import { getQuote } from '@/lib/financial-data';
 import { rateLimit } from '@/lib/rate-limit';
 import { getUserTier } from '@/lib/tier';
 import { getUnderlyingExposure } from '@/lib/etf-holdings';
+import { composeThesisBrief } from '@/lib/thesis-brief';
 
 type VixLevel = 'extreme_fear' | 'fear' | 'neutral' | 'greed' | 'extreme_greed';
 
@@ -401,6 +402,9 @@ export async function GET() {
       exposureLine,
     }));
 
+    // Proactive thesis brief: honest headline + 14-day "what moved" (replay-based).
+    const thesisBrief = await composeThesisBrief(supabase, user.id);
+
     return NextResponse.json(
       {
         portfolio: {
@@ -432,6 +436,7 @@ export async function GET() {
         isPro,
         pillarSummary,
         thesisIntelligence,
+        thesisBrief,
         macroStrip,
       },
       {

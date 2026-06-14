@@ -14,6 +14,7 @@ import {
 import { useTier } from '@/hooks/use-tier';
 import { ProBlur } from '@/components/pro-blur';
 import { VerdictCard, type ThesisIntelligenceItem } from '@/components/thesis/verdict-card';
+import type { ThesisBriefData } from '@/lib/thesis-brief';
 import { MacroStrip, type MacroItem } from '@/components/thesis/macro-strip';
 import { QuietState, type PillarSummary } from '@/components/thesis/quiet-state';
 
@@ -52,6 +53,7 @@ interface BriefData {
   generalNews: NewsItem[];
   pillarSummary: PillarSummary;
   thesisIntelligence: ThesisIntelligenceItem[];
+  thesisBrief?: ThesisBriefData;
   macroStrip: MacroItem[];
   digest: string | null;
   digestGeneratedAt: string | null;
@@ -529,6 +531,30 @@ export default function BriefPage() {
             </article>
 
             <MacroStrip items={data.macroStrip} />
+            {data.thesisBrief && data.thesisBrief.trackedCount > 0 && (
+              <section className="space-y-2">
+                <h2 className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#E6B94D]">Your theses this morning</h2>
+                <p className="text-[14px] leading-[1.55] text-[#CFCFCF] m-0">{data.thesisBrief.headline}</p>
+                {data.thesisBrief.moved.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#6A6A6A]">Moved in the last 14 days</span>
+                    {data.thesisBrief.moved.slice(0, 6).map((m, i) => (
+                      <span
+                        key={`${m.ticker}-${i}`}
+                        className="font-mono text-[10.5px] px-2 py-[3px] rounded border"
+                        style={{
+                          color: m.to === 'broken' ? '#F87171' : '#E6B94D',
+                          borderColor: m.to === 'broken' ? 'rgba(248,113,113,0.3)' : 'rgba(230,185,77,0.3)',
+                          background: m.to === 'broken' ? 'rgba(248,113,113,0.07)' : 'rgba(230,185,77,0.07)',
+                        }}
+                      >
+                        {m.ticker} {m.from} {'→'} {m.to}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
             {data.thesisIntelligence.length > 0 && (
               <section className="space-y-3">
                 <div className="flex items-baseline justify-between">
