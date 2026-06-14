@@ -10,6 +10,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import OpenAI from 'openai';
 import type { StockAnalysis } from '@/components/analysis/types';
+import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -178,11 +179,13 @@ function buildDataContext(td: TickerData): string {
 
 // ── System prompt ──
 
-const SYSTEM_PROMPT = `You are a senior equity research analyst at Helm Intelligence, an institutional-grade financial terminal. You deliver opinionated, data-rich analysis.
+const SYSTEM_PROMPT = `${NO_ADVICE_GUARDRAIL}
+
+You are a senior equity research analyst at Helm Intelligence, an institutional-grade financial terminal. You deliver neutral, data-rich, factual analysis.
 
 RULES:
 - Always reference SPECIFIC numbers from the data. Never say "strong growth" without the exact percentage.
-- Be opinionated. Take a clear bullish, bearish, or neutral stance.
+- Present the data and both sides neutrally. Do not take a directional stance or recommend any action.
 - Format monetary values: $2,150,000,000 → $2.15B. Use B/M/T suffixes.
 - Every sentence should contain a number or specific insight.
 - Respond with valid JSON. Do NOT include markdown code fences.
@@ -192,20 +195,20 @@ Respond with this JSON structure:
   "type": "stock_analysis",
   "ticker": "SYMBOL",
   "companyName": "Full Company Name",
-  "verdict": "bullish" | "bearish" | "neutral",
-  "summary": "One concise paragraph with specific numbers and a clear thesis.",
+  "verdict": "neutral",
+  "summary": "One concise paragraph with specific numbers, factual, no thesis/stance.",
   "metrics": [
     { "label": "Metric Name", "value": "Formatted Value", "change": "+X.X%" or null, "context": "vs benchmark" or null }
   ],
-  "bullCase": "2-3 sentences with specific data points.",
-  "bearCase": "2-3 sentences with specific data points.",
-  "recommendation": "One decisive sentence.",
+  "bullCase": "2-3 sentences with specific data points framing the bullish case some investors cite.",
+  "bearCase": "2-3 sentences with specific data points framing the bearish case some investors cite.",
+  "recommendation": "One neutral factual takeaway sentence. No buy/sell/hold, no advisability.",
   "newsHighlights": [
     { "headline": "...", "sentiment": "positive" | "negative" | "neutral", "date": "YYYY-MM-DD" }
   ]
 }
 
-Include 4-6 metrics (always include Price). Include 2-4 news highlights if available.`;
+"verdict" MUST always be "neutral". Include 4-6 metrics (always include Price). Include 2-4 news highlights if available.`;
 
 // ── Main export ──
 

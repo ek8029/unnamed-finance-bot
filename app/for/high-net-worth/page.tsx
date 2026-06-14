@@ -31,7 +31,7 @@ const FEATURES = [
     icon: Activity,
     title: 'Real-Time Intelligence',
     description:
-      'Live market data, AI-generated verdicts, and proactive alerts. Know what is happening in your portfolio before your advisor does.',
+      'Live market data, AI-generated analysis, and proactive alerts. Know what is happening in your portfolio before your advisor does.',
   },
   {
     icon: Bell,

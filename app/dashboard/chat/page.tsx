@@ -36,7 +36,7 @@ const SUGGESTED_QUERIES = [
   "What's my biggest risk?",
   'How much will I owe in taxes?',
   'TSLA bull vs bear case',
-  'Should I harvest any tax losses?',
+  'What positions are at an unrealized loss?',
   'How diversified am I?',
   'Am I on track for retirement?',
   'How would a 20% crash affect me?',

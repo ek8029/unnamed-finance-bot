@@ -31,7 +31,7 @@ const FEATURES = [
     icon: Search,
     title: 'AI Analysis for 500+ Tickers',
     description:
-      'Deep fundamental analysis with bull/bear cases, valuation metrics, analyst consensus, and opinionated AI verdicts. Updated during market hours. No subscription required.',
+      'Deep fundamental analysis with bull/bear cases, valuation metrics, analyst consensus, and AI summaries. Updated during market hours. No subscription required.',
   },
   {
     icon: Wallet,

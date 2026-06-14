@@ -102,7 +102,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const { ticker1, ticker2 } = parsed;
   const title = `${ticker1} vs ${ticker2} -- Stock Comparison | Helm Terminal`;
-  const description = `Side-by-side comparison of ${ticker1} and ${ticker2}. Compare price, P/E ratio, market cap, margins, dividends, and AI verdicts. Free on Helm Terminal.`;
+  const description = `Side-by-side comparison of ${ticker1} and ${ticker2}. Compare price, P/E ratio, market cap, margins, dividends, and AI summaries. Free on Helm Terminal.`;
 
   return {
     title,
@@ -153,7 +153,7 @@ export default async function ComparePage({ params }: Props) {
       '@context': 'https://schema.org',
       '@type': 'AnalysisNewsArticle',
       headline: `${name1} vs ${name2} — Stock Comparison`,
-      description: `Side-by-side comparison of ${ticker1} and ${ticker2}. Compare price, P/E ratio, market cap, margins, dividends, and AI verdicts.`,
+      description: `Side-by-side comparison of ${ticker1} and ${ticker2}. Compare price, P/E ratio, market cap, margins, dividends, and AI summaries.`,
       articleSection: 'Stock Comparison',
       datePublished: new Date().toISOString(),
       author: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
@@ -180,11 +180,11 @@ export default async function ComparePage({ params }: Props) {
       mainEntity: [
         {
           '@type': 'Question',
-          name: `Is ${ticker1} better than ${ticker2}?`,
+          name: `How do ${ticker1} and ${ticker2} compare?`,
           acceptedAnswer: {
             '@type': 'Answer',
             text: a1 && a2
-              ? `Helm's AI rates ${ticker1} as ${a1.verdict} and ${ticker2} as ${a2.verdict}. ${a1.recommendation} Meanwhile, ${a2.recommendation}`
+              ? `${ticker1}: ${a1.summary} ${ticker2}: ${a2.summary}`
               : `Compare ${ticker1} and ${ticker2} fundamentals, valuation, and analyst consensus on Helm Terminal.`,
           },
         },
@@ -267,7 +267,7 @@ export default async function ComparePage({ params }: Props) {
             {name1} vs {name2}
           </h1>
           <p className="text-[14px] text-[var(--color-text-secondary)] mt-2 max-w-xl mx-auto">
-            Which stock is better? Compare fundamentals, valuation, and AI-powered verdicts side by side.
+            Side-by-side fundamentals, valuation, and AI summaries for both tickers.
           </p>
         </div>
 
@@ -343,9 +343,9 @@ export default async function ComparePage({ params }: Props) {
           </h2>
           <div className="space-y-5">
             <FaqItem
-              q={`Is ${ticker1} better than ${ticker2}?`}
+              q={`How do ${ticker1} and ${ticker2} compare?`}
               a={a1 && a2
-                ? `Helm's AI rates ${ticker1} as ${a1.verdict} and ${ticker2} as ${a2.verdict}. ${a1.recommendation} Meanwhile, ${a2.recommendation}`
+                ? `${name1}: ${a1.summary} ${name2}: ${a2.summary}`
                 : `Compare ${ticker1} and ${ticker2} fundamentals, valuation, and analyst consensus on Helm Terminal.`}
             />
             <FaqItem

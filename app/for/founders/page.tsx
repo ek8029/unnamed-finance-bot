@@ -37,7 +37,7 @@ const FEATURES = [
     icon: Brain,
     title: 'AI Stock Analysis',
     description:
-      'Deep analysis for 500+ tickers with bull/bear cases, valuation metrics, and opinionated verdicts. Due diligence in seconds, not hours.',
+      'Deep analysis for 500+ tickers with bull/bear cases, valuation metrics, and clear summaries. Due diligence in seconds, not hours.',
   },
   {
     icon: Eye,
@@ -49,7 +49,7 @@ const FEATURES = [
     icon: Zap,
     title: 'Actions Inbox',
     description:
-      'Prioritized list of things you should consider doing with your portfolio. Tax-loss harvesting windows, rebalancing triggers, dividend reinvestment opportunities.',
+      'Prioritized list of what changed in your portfolio: tax-loss-harvest windows, concentration shifts, dividend events.',
   },
 ];
 

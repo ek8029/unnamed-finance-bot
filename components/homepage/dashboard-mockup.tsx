@@ -13,10 +13,10 @@ const moments = [
       { label: 'Positions', value: '14', sub: '3 drive 68% of value', subColor: 'text-[var(--color-warning)]', valueColor: '' },
       { label: 'Health Score', value: '72', sub: 'Good — 2 warnings', subColor: 'text-[var(--color-gold)]', valueColor: '' },
     ],
-    alert: { icon: PieChart, color: 'text-[var(--color-warning)]', borderColor: 'border-[var(--color-warning)]/20', bgColor: 'bg-[var(--color-warning)]/[0.04]', title: 'Concentration Risk Detected', body: 'NVDA (34%), AAPL (19%), MSFT (15%) = 68% in 3 stocks. Consider rebalancing to reduce single-stock exposure.' },
+    alert: { icon: PieChart, color: 'text-[var(--color-warning)]', borderColor: 'border-[var(--color-warning)]/20', bgColor: 'bg-[var(--color-warning)]/[0.04]', title: 'Concentration Risk Detected', body: 'NVDA 34%, AAPL 19%, MSFT 15% = 68% in 3 positions.' },
     actions: [
-      { priority: 'URGENT', color: 'text-[var(--color-negative)]', text: 'Rebalance: NVDA exceeds 30% threshold' },
-      { priority: 'THIS WEEK', color: 'text-[var(--color-warning)]', text: 'Review sector allocation — 72% tech' },
+      { priority: 'URGENT', color: 'text-[var(--color-negative)]', text: 'NVDA exceeds 30% concentration threshold' },
+      { priority: 'THIS WEEK', color: 'text-[var(--color-warning)]', text: 'Tech allocation: 72%' },
     ],
   },
   {
@@ -26,9 +26,9 @@ const moments = [
       { label: 'TLH Opportunities', value: '$2,800', sub: 'Wash-sale safe', subColor: 'text-[var(--color-positive)]', valueColor: 'text-[var(--color-gold)]' },
       { label: 'YTD Tax Saved', value: '$1,450', sub: 'From 3 harvests', subColor: 'text-[var(--color-text-muted)]', valueColor: 'text-[var(--color-positive)]' },
     ],
-    alert: { icon: DollarSign, color: 'text-[var(--color-positive)]', borderColor: 'border-[var(--color-positive)]/20', bgColor: 'bg-[var(--color-positive)]/[0.04]', title: '$2,800 Harvesting Opportunity', body: 'VXUS position has $2,800 in unrealized losses. Sell and replace with VEA to maintain international exposure. Wash-sale safe — no purchases in 31 days.' },
+    alert: { icon: DollarSign, color: 'text-[var(--color-positive)]', borderColor: 'border-[var(--color-positive)]/20', bgColor: 'bg-[var(--color-positive)]/[0.04]', title: '$2,800 Harvesting Opportunity', body: 'VXUS has $2,800 in unrealized losses; VEA is a same-category international ETF. No purchases in 31 days, so no wash-sale conflict detected.' },
     actions: [
-      { priority: 'ACTION', color: 'text-[var(--color-positive)]', text: 'Harvest VXUS loss — est. $840 tax savings' },
+      { priority: 'ACTION', color: 'text-[var(--color-positive)]', text: 'VXUS unrealized loss; ~$840 potential tax offset' },
       { priority: 'MONITOR', color: 'text-[var(--color-text-muted)]', text: 'INTC approaching harvestable loss (-8.2%)' },
     ],
   },
@@ -42,7 +42,7 @@ const moments = [
     alert: { icon: Calendar, color: 'text-[var(--color-warning)]', borderColor: 'border-[var(--color-warning)]/20', bgColor: 'bg-[var(--color-warning)]/[0.04]', title: '47% Earnings Exposure This Week', body: 'AAPL reports Thursday after close. MSFT reports Thursday after close. Combined: $163K or 47% of your portfolio. Historical post-earnings move: ±4.2%.' },
     actions: [
       { priority: 'URGENT', color: 'text-[var(--color-negative)]', text: 'AAPL earnings Thu — 19% of portfolio exposed' },
-      { priority: 'THIS WEEK', color: 'text-[var(--color-warning)]', text: 'MSFT earnings Thu — consider trimming' },
+      { priority: 'THIS WEEK', color: 'text-[var(--color-warning)]', text: 'MSFT earnings Thu; 19% of portfolio exposed' },
     ],
   },
 ];

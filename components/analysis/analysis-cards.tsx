@@ -169,7 +169,7 @@ export function StockAnalysisCard({ analysis, showWatermark = false }: { analysi
 
         {analysis.recommendation && (
           <div className="px-5 py-3.5 border-t border-[var(--color-border-subtle)]" style={{ background: 'rgba(184, 145, 74, 0.03)' }}>
-            <div className="type-caption text-[var(--color-gold)] mb-1">Recommendation</div>
+            <div className="type-caption text-[var(--color-gold)] mb-1">Summary</div>
             <p className="text-[0.8125rem] font-medium leading-[1.5] text-[var(--color-text-primary)]">{analysis.recommendation}</p>
           </div>
         )}
@@ -270,7 +270,7 @@ export function PortfolioReviewCard({ analysis }: { analysis: PortfolioReview })
         <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]">
           <div className="flex items-center gap-1.5 mb-2">
             <Target className="w-3.5 h-3.5 text-[var(--color-gold)]" />
-            <span className="type-caption text-[var(--color-gold)]">Recommendations</span>
+            <span className="type-caption text-[var(--color-gold)]">Key Takeaways</span>
           </div>
           <div className="space-y-2.5">
             {analysis.recommendations.map((rec, i) => (
@@ -446,7 +446,7 @@ export function PortfolioQACard({
       {/* Recommendation */}
       {analysis.recommendation && (
         <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)]" style={{ background: 'rgba(184, 145, 74, 0.03)' }}>
-          <div className="type-caption text-[var(--color-gold)] mb-1">Recommendation</div>
+          <div className="type-caption text-[var(--color-gold)] mb-1">Summary</div>
           <p className="text-[0.8125rem] font-medium leading-[1.5] text-[var(--color-text-primary)]">{analysis.recommendation}</p>
         </div>
       )}

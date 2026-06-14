@@ -974,7 +974,7 @@ function RightSidebar({
     <div className="space-y-5">
       {/* AI Verdict */}
       <div className="space-y-2">
-        <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">AI Verdict</div>
+        <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">AI Summary</div>
         <div className="flex items-center gap-2">
           <span className={`inline-flex items-center px-2.5 py-1 rounded-sm border text-[14px] font-mono font-bold tracking-wider ${verdictBg(analysis.verdict)}`}>
             {verdictLabel.toUpperCase()}
@@ -1062,8 +1062,7 @@ function ShareBar({ ticker, analysis }: { ticker: string; analysis: StockAnalysi
   const [copied, setCopied] = useState(false);
   const baseUrl = `https://helmterminal.dev/analyze/${ticker}`;
   const utmUrl = (medium: string) => `${baseUrl}?utm_source=${medium}&utm_medium=social&utm_campaign=analysis_share&utm_content=${ticker}`;
-  const verdictLabel = analysis.verdict.charAt(0).toUpperCase() + analysis.verdict.slice(1);
-  const shareText = `$${ticker} (${analysis.companyName}) — ${verdictLabel}\n\n${analysis.recommendation}\n\nFull AI analysis:`;
+  const shareText = `$${ticker} (${analysis.companyName})\n\n${analysis.summary}\n\nFull AI analysis:`;
 
   const shareOnX = () => {
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(utmUrl('twitter'))}`, '_blank');
@@ -1071,7 +1070,7 @@ function ShareBar({ ticker, analysis }: { ticker: string; analysis: StockAnalysi
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(`$${ticker} — ${analysis.companyName}\nVerdict: ${verdictLabel}\n\n${analysis.summary}\n\n${baseUrl}`);
+      await navigator.clipboard.writeText(`$${ticker} ${analysis.companyName}\n\n${analysis.summary}\n\n${baseUrl}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch { /* noop */ }
