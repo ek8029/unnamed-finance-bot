@@ -37,6 +37,7 @@ import { GuidedTour } from '@/components/onboarding/guided-tour';
 import { DisclaimerModal } from '@/components/legal/disclaimer-modal';
 import { MobileBottomNav } from '@/components/mobile-bottom-nav';
 import { ConvictionRail } from '@/components/thesis/conviction-rail';
+import { ConvictionNavButton } from '@/components/thesis/conviction-nav-button';
 
 /* ── Connect Banner — shown in demo mode ── */
 function ConnectBanner() {
@@ -546,7 +547,15 @@ export default function DashboardLayout({
               Helm
             </span>
           </div>
-          <div className="w-[44px]" />
+          {showRail ? (
+            <ConvictionNavButton
+              onClick={() => setMobileRailOpen(true)}
+              label={false}
+              className="flex items-center gap-1.5 min-h-[44px] px-2 text-[var(--color-text-muted)] hover:text-[#E6B94D] transition-colors"
+            />
+          ) : (
+            <div className="w-[44px]" />
+          )}
         </div>}
 
         {/* ── Glassmorphic Top Bar (desktop only) ── */}
@@ -556,6 +565,12 @@ export default function DashboardLayout({
               {pageTitle}
             </h1>
             <div className="flex items-center gap-3">
+              {showRail && (
+                <ConvictionNavButton
+                  onClick={() => setMobileRailOpen(true)}
+                  className="xl:hidden flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/[0.08] text-[#9A9A9A] hover:text-[#E6B94D] transition-colors"
+                />
+              )}
               <div className="relative" ref={topMenuRef}>
                 <button
                   onClick={() => setTopMenuOpen(!topMenuOpen)}
@@ -649,17 +664,6 @@ export default function DashboardLayout({
       </div>
 
       {/* ── Conviction rail (ultrawide-only, fixed right) ── */}
-      {showRail && !mobileRailOpen && (
-        <button
-          type="button"
-          onClick={() => setMobileRailOpen(true)}
-          className="xl:hidden fixed right-0 top-1/2 -translate-y-1/2 z-30 grid place-items-center w-7 h-16 rounded-l-md bg-[#131313] border border-r-0 border-white/[0.12] text-[#9A9A9A] hover:text-[#E6B94D] transition-colors"
-          aria-label="Open conviction"
-          title="Conviction"
-        >
-          <span className="text-[16px] leading-none">&#8249;</span>
-        </button>
-      )}
       {showRail && (
         <ConvictionRail
           collapsed={railCollapsed}
