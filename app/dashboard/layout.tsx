@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { isThesisUser } from '@/lib/thesis-access';
 import {
   LayoutDashboard,
   Wallet,
@@ -291,7 +292,7 @@ export default function DashboardLayout({
           </div>
 
           <div className="space-y-0.5">
-            {navigation.map((item) => {
+            {navigation.filter((item) => item.href !== '/dashboard/theses' || isThesisUser(profile?.email)).map((item) => {
               // Items with children (Portfolio group)
               if ('children' in item && item.children) {
                 const isGroupActive = PORTFOLIO_HREFS.includes(pathname);

@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { useLivePrices } from '@/hooks/use-live-prices';
 import { PriceFlash } from '@/components/price-flash';
 import { WhyIOwnThis } from '@/components/thesis/why-i-own-this';
+import { useThesisEnabled } from '@/lib/use-thesis-access';
 import { TrendingUp, TrendingDown, ExternalLink, ArrowLeft } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { StockQuote } from '@/lib/financial-data';
@@ -50,6 +51,7 @@ export function HoldingDetailClient({
   transactions: Transaction[];
   quote: StockQuote | null;
 }) {
+  const thesisEnabled = useThesisEnabled();
   // Live price overlay: poll /api/market/quotes every 30s while market open.
   const { quotes: liveQuotes } = useLivePrices(useMemo(() => [serverHolding.ticker], [serverHolding.ticker]));
   const holding = useMemo(() => {
@@ -189,7 +191,7 @@ export function HoldingDetailClient({
       </div>
 
       {/* Why I Own This */}
-      <WhyIOwnThis ticker={holding.ticker} />
+      {thesisEnabled && <WhyIOwnThis ticker={holding.ticker} />}
 
       {/* Live Quote (if available) */}
       {quote && quote.c > 0 && (

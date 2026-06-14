@@ -54,6 +54,7 @@ interface BriefData {
   pillarSummary: PillarSummary;
   thesisIntelligence: ThesisIntelligenceItem[];
   thesisBrief?: ThesisBriefData;
+  thesisEnabled?: boolean;
   macroStrip: MacroItem[];
   digest: string | null;
   digestGeneratedAt: string | null;
@@ -531,7 +532,7 @@ export default function BriefPage() {
             </article>
 
             <MacroStrip items={data.macroStrip} />
-            {data.thesisBrief && data.thesisBrief.trackedCount > 0 && (
+            {data.thesisEnabled && data.thesisBrief && data.thesisBrief.trackedCount > 0 && (
               <section className="space-y-2">
                 <h2 className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#E6B94D]">Your theses this morning</h2>
                 <p className="text-[14px] leading-[1.55] text-[#CFCFCF] m-0">{data.thesisBrief.headline}</p>
@@ -555,7 +556,7 @@ export default function BriefPage() {
                 )}
               </section>
             )}
-            {data.thesisIntelligence.length > 0 && (
+            {data.thesisEnabled && data.thesisIntelligence.length > 0 && (
               <section className="space-y-3">
                 <div className="flex items-baseline justify-between">
                   <h2 className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#E6B94D]">Thesis Intelligence</h2>
@@ -568,7 +569,7 @@ export default function BriefPage() {
                 </div>
               </section>
             )}
-            {data.thesisIntelligence.length === 0 && data.macroStrip.length === 0 && (
+            {data.thesisEnabled && data.thesisIntelligence.length === 0 && data.macroStrip.length === 0 && (
               <QuietState summary={data.pillarSummary} />
             )}
 

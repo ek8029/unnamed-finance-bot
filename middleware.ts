@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { isThesisUser } from '@/lib/thesis-access';
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -92,6 +93,12 @@ export async function middleware(request: NextRequest) {
   if (isProtectedPath && user && needsMFA) {
     // Authenticated but MFA not yet verified this session
     return NextResponse.redirect(new URL('/mfa-verify', request.url));
+  }
+
+  // Thesis + agentic layer is gated to allowlisted accounts while unlaunched.
+  // Non-allowlisted users are redirected away as if the page does not exist.
+  if (pathname.startsWith('/dashboard/theses') && !isThesisUser(user?.email)) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   // Auth pages - redirect to dashboard if already fully authenticated

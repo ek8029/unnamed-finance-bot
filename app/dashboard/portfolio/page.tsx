@@ -16,6 +16,7 @@ import { ScrollHint } from '@/components/ui/scroll-hint';
 import { PriceFlash } from '@/components/price-flash';
 import { Fragment } from 'react';
 import { WhyIOwnThis } from '@/components/thesis/why-i-own-this';
+import { useThesisEnabled } from '@/lib/use-thesis-access';
 import { summarizePillars, type ThesisSummary } from '@/lib/thesis-summary';
 
 /* ------------------------------------------------------------------ */
@@ -233,6 +234,7 @@ export default function PortfolioPage() {
   const [filterSectors, setFilterSectors] = useState<Set<string>>(new Set());
   const [filterAssetClasses, setFilterAssetClasses] = useState<Set<string>>(new Set());
   const [filterSources, setFilterSources] = useState<Set<string>>(new Set());
+  const thesisEnabled = useThesisEnabled();
   const [thesisSummaries, setThesisSummaries] = useState<Record<string, ThesisSummary>>({});
   const [expandedThesisTicker, setExpandedThesisTicker] = useState<string | null>(null);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -256,8 +258,8 @@ export default function PortfolioPage() {
   }, []);
 
   useEffect(() => {
-    refreshThesisSummaries();
-  }, [refreshThesisSummaries]);
+    if (thesisEnabled) refreshThesisSummaries();
+  }, [refreshThesisSummaries, thesisEnabled]);
 
   // Close filter on click outside
   useEffect(() => {
@@ -951,9 +953,11 @@ export default function PortfolioPage() {
                     <th className="text-right px-2 py-2.5">
                       <ColHeader label="Day %" sortId="dayPct" className="justify-end" />
                     </th>
+                    {thesisEnabled && (
                     <th className="text-left px-2 py-2.5 w-[120px]">
                       <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">Thesis</span>
                     </th>
+                    )}
                     <th className="px-2 py-2.5 w-[96px]">
                       <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">30D</span>
                     </th>
@@ -1032,7 +1036,8 @@ export default function PortfolioPage() {
                             {dayPct >= 0 ? '+' : ''}{dayPct.toFixed(2)}%
                           </span>
                         </td>
-                        {/* THESIS */}
+                        {/* THESIS (allowlisted only while unlaunched) */}
+                        {thesisEnabled && (
                         <td className="px-2 py-2">
                           {(() => {
                             const s = thesisSummaries[h.ticker];
@@ -1076,6 +1081,7 @@ export default function PortfolioPage() {
                             );
                           })()}
                         </td>
+                        )}
                         {/* 30D SPARKLINE */}
                         <td className="px-2 py-2">
                           <svg width="80" height="24" viewBox="0 0 80 24" fill="none" className="block">
@@ -1118,7 +1124,7 @@ export default function PortfolioPage() {
                           </span>
                         </td>
                       </tr>
-                      {expandedThesisTicker === h.ticker && (
+                      {thesisEnabled && expandedThesisTicker === h.ticker && (
                         <tr className="border-b border-[var(--color-border-subtle)]">
                           <td colSpan={11} className="px-5 py-4 bg-[var(--color-bg-elevated)]/30">
                             <div className="max-w-[760px]">
