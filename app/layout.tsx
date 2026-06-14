@@ -38,11 +38,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://helmterminal.dev'),
-  title: 'Helm Terminal | Free Bloomberg Terminal Alternative for Individual Investors',
+  title: 'Helm Terminal | Portfolio Intelligence for Individual Investors',
   description: 'See what your brokerage app won\'t show you. Concentration risk, tax-loss harvesting, earnings exposure, and AI stock analysis across all your accounts. Free.',
   openGraph: {
-    title: 'Helm Terminal | Free Bloomberg Terminal Alternative for Individual Investors',
-    description: 'The free Bloomberg alternative built for retail investors. AI stock analysis, tax-loss harvesting, earnings tracking, and portfolio intelligence across all your accounts.',
+    title: 'Helm Terminal | Portfolio Intelligence for Individual Investors',
+    description: 'Institutional-grade portfolio intelligence for individual investors. AI stock analysis, tax-loss harvesting, earnings tracking, and a unified view across all your accounts.',
     url: 'https://helmterminal.dev',
     siteName: 'Helm Terminal',
     type: 'website',
@@ -57,8 +57,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Helm Terminal | Free Bloomberg Terminal Alternative for Individual Investors',
-    description: 'The free Bloomberg alternative built for retail investors. AI stock analysis, tax-loss harvesting, and portfolio intelligence.',
+    title: 'Helm Terminal | Portfolio Intelligence for Individual Investors',
+    description: 'Institutional-grade portfolio intelligence for individual investors. AI stock analysis, tax-loss harvesting, and a unified view across your accounts.',
     images: ['/opengraph-image'],
   },
   alternates: {
