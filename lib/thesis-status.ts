@@ -10,6 +10,9 @@ export interface EvidenceForStatus {
   source_key: string;
   is_backfill: boolean;
   created_at: string; // ISO
+  /** A single severe primary contradiction (e.g. a >=20% adverse price move, a
+   *  withdrawn guidance) breaks a pillar on its own. Optional; defaults false. */
+  severe?: boolean;
 }
 
 const PRIMARY_SOURCES = new Set(['filing', 'form4', 'xbrl', 'price_move']);
@@ -39,6 +42,12 @@ export function derivePillarStatus(
   }
   const independent = [...distinctKeys.values()];
   const hasPrimary = independent.some((e) => PRIMARY_SOURCES.has(e.source_type));
+
+  // A single SEVERE primary contradiction breaks a pillar on its own: a thesis
+  // must not sit at "weakening" through a 28% crash or a withdrawn guidance.
+  // Ordinary material contradictions still need convergence (below).
+  const hasSeverePrimary = independent.some((e) => e.severe === true && PRIMARY_SOURCES.has(e.source_type));
+  if (hasSeverePrimary) return 'broken';
 
   if (independent.length >= 2 && hasPrimary) return 'broken';
   if (recentMaterialContradictions.length >= 1) return 'weakening';

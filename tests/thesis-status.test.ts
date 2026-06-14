@@ -53,6 +53,24 @@ describe('derivePillarStatus', () => {
     ], null, NOW)).toBe('broken');
   });
 
+  it('a single SEVERE primary contradiction breaks a pillar on its own', () => {
+    expect(derivePillarStatus([
+      ev({ verdict: 'contradicts', materiality: 'material', source_type: 'price_move', source_key: 'price:PRIM:2026-05-06', severe: true }),
+    ], null, NOW)).toBe('broken');
+  });
+
+  it('a severe but non-primary contradiction does not break alone (stays weakening)', () => {
+    expect(derivePillarStatus([
+      ev({ verdict: 'contradicts', materiality: 'material', source_type: 'news', source_key: 'https://x.com/1', severe: true }),
+    ], null, NOW)).toBe('weakening');
+  });
+
+  it('a non-severe single primary contradiction stays weakening (no crying wolf)', () => {
+    expect(derivePillarStatus([
+      ev({ verdict: 'contradicts', materiality: 'material', source_type: 'price_move', source_key: 'price:X:1' }),
+    ], null, NOW)).toBe('weakening');
+  });
+
   it('two news rewrites cannot break a thesis (no primary source)', () => {
     expect(derivePillarStatus([
       ev({ verdict: 'contradicts', materiality: 'material', source_key: 'https://a.com/1' }),

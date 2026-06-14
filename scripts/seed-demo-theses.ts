@@ -115,10 +115,10 @@ const SEEDS: Record<string, string[]> = {
     "Cash flow stays strong enough to service the spinoff debt load.",
   ],
   PRIM: [
-    "Primoris turns its record energy and renewables backlog into double digit EPS growth.",
+    "Primoris's share price holds up, reflecting market confidence in the 2026 plan.",
+    "The record renewables backlog converts to profit without execution stumbles.",
     "Full year adjusted EPS guidance holds as utility and solar demand scales.",
-    "Margin expands as higher value energy work replaces legacy civil projects.",
-    "Backlog gives multi year revenue visibility through the cycle.",
+    "Multi year backlog gives durable revenue visibility through the cycle.",
   ],
 };
 

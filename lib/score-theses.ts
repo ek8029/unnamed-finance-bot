@@ -554,6 +554,14 @@ Respond with JSON exactly in this shape:
     log.push(`[${ticker}] No evidence rows to insert`);
   }
 
+  // A price_move excerpt is system-generated ("TICKER fell 28.7% on DATE"); pull the
+  // magnitude back out to flag severe adverse moves that break a pillar on their own.
+  const SEVERE_MOVE_PCT = 20;
+  const priceMovePct = (excerpt: string | null): number => {
+    const m = (excerpt ?? '').match(/(\d+(?:\.\d+)?)%/);
+    return m ? parseFloat(m[1]) : 0;
+  };
+
   // Recompute status per confirmed pillar
   for (const pillar of pillars) {
     try {
@@ -569,6 +577,7 @@ Respond with JSON exactly in this shape:
         source_key: e.source_key as string,
         is_backfill: e.is_backfill as boolean,
         created_at: e.created_at as string,
+        severe: e.source_type === 'price_move' && priceMovePct(e.excerpt as string | null) >= SEVERE_MOVE_PCT,
       }));
 
       const newStatus = derivePillarStatus(evidence, pillar.status_override);

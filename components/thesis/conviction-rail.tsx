@@ -28,10 +28,10 @@ const STATUS_COLOR: Record<PillarStatus, string> = {
 const STATUS_LABEL: Record<PillarStatus, string> = {
   intact: 'intact', weakening: 'weakening', broken: 'broken', unverified: 'watching',
 };
-const VERDICT_META: Record<string, { color: string; glyph: string }> = {
-  supports:    { color: POS,  glyph: '+' },
-  contradicts: { color: NEG,  glyph: '−' },
-  neutral:     { color: INK2, glyph: '=' },
+const VERDICT_META: Record<string, { color: string; glyph: string; label: string }> = {
+  supports:    { color: POS,  glyph: '+', label: 'Supports' },
+  contradicts: { color: NEG,  glyph: '−', label: 'Contradicts' },
+  neutral:     { color: INK2, glyph: '=', label: 'Neutral' },
 };
 
 /* ── Local types (shape returned by GET /api/thesis) ── */
@@ -272,13 +272,18 @@ export function ConvictionRail({ collapsed, onToggle }: { collapsed: boolean; on
   }
 
   /* ── Expanded rail ── */
+  // Recent deteriorations drive the delta hero (honest 14-day window, never "since last scan").
+  const movers = transitions.filter((t) => t.to === 'weakening' || t.to === 'broken');
+  const moverTickers = new Set(movers.map((t) => t.ticker));
+  const anyBroke = movers.some((t) => t.to === 'broken');
+
   return (
     <aside
       className="hidden 2xl:flex flex-col fixed right-0 top-0 bottom-0 w-[316px] z-20 transition-all duration-200"
       style={{ borderLeft: `1px solid ${BD_BASE}`, background: BG_INSET }}
       aria-label="Conviction"
     >
-      {/* Header */}
+      {/* Header (fixed): mark + delta hero + trend row + meter */}
       <div className="shrink-0" style={{ padding: '18px 20px 16px', borderBottom: `1px solid ${BD_SUBTLE}` }}>
         <div className="flex items-center gap-2.5 mb-3.5">
           <HelmMark size={15} />
@@ -306,28 +311,65 @@ export function ConvictionRail({ collapsed, onToggle }: { collapsed: boolean; on
           <p style={{ ...MONO, fontSize: 11, color: INK4 }}>Unavailable.</p>
         ) : total > 0 ? (
           <>
-            <div style={{ fontSize: 16.5, fontWeight: 600, letterSpacing: '-0.01em', lineHeight: 1.3, marginBottom: 13, color: INK }}>
-              {counts.intact} of {total} pillar{total === 1 ? '' : 's'} intact
-            </div>
-            <Meter counts={counts} total={total} />
-            <div className="flex flex-wrap" style={{ gap: 14, marginTop: 11, ...MONO, fontSize: 11.5 }}>
-              {(['intact', 'weakening', 'broken', 'unverified'] as PillarStatus[])
-                .filter((s) => counts[s] > 0)
-                .map((s) => (
-                  <span key={s} style={{ color: STATUS_COLOR[s] }}>
-                    {counts[s]} {STATUS_LABEL[s]}
+            {/* Delta hero — the lead. What changed against you, recently. */}
+            {movers.length > 0 ? (
+              <>
+                <div style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.01em', lineHeight: 1.25, marginBottom: 6 }}>
+                  <span style={{ color: anyBroke ? NEG : GOLD }}>
+                    {movers.length} pillar{movers.length === 1 ? '' : 's'} {anyBroke ? 'broke' : 'weakened'}
                   </span>
-                ))}
-            </div>
-            {trendValues.length >= 2 && (
-              <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${BD_SUBTLE}` }}>
-                <div className="flex items-center justify-between" style={{ marginBottom: 9 }}>
-                  <Eyebrow>Verified intact · 14d</Eyebrow>
-                  {trendCaption && <span style={{ ...MONO, fontSize: 10.5, color: INK3 }}>{trendCaption}</span>}
+                  <span style={{ color: INK2 }}> recently</span>
                 </div>
-                <Trendline data={trendValues} />
-              </div>
+                <div style={{ fontSize: 12, color: INK3, marginBottom: 14 }}>
+                  {moverTickers.size === 1
+                    ? `All on ${[...moverTickers][0]}. Everything else held.`
+                    : `Across ${moverTickers.size} positions in the last 14 days.`}
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.01em', lineHeight: 1.25, marginBottom: 6, color: INK }}>
+                  Nothing moved against you.
+                </div>
+                <div style={{ fontSize: 12, color: INK3, marginBottom: 14 }}>
+                  {counts.intact} of {total} intact, holding.
+                </div>
+              </>
             )}
+
+            {/* Trend row — mono intact ratio beside the 14-day sparkline */}
+            <div className="flex items-end justify-between" style={{ gap: 12 }}>
+              <div>
+                <div style={{ ...MONO, fontSize: 24, fontWeight: 700, lineHeight: 1, color: INK }}>
+                  {counts.intact}
+                  <span style={{ fontSize: 13, color: INK3, fontWeight: 500 }}>/{total}</span>
+                </div>
+                <div style={{ ...MONO, fontSize: 9.5, color: INK3, marginTop: 4, letterSpacing: '0.06em' }}>INTACT · 14D</div>
+              </div>
+              {trendValues.length >= 2 && (
+                <div style={{ width: 140, flexShrink: 0 }}>
+                  <Trendline data={trendValues} w={140} h={34} />
+                </div>
+              )}
+            </div>
+            {trendCaption && (
+              <div style={{ ...MONO, fontSize: 10.5, color: INK3, marginTop: 9 }}>{trendCaption} · last 14 days</div>
+            )}
+
+            {/* Meter + legend */}
+            <div style={{ marginTop: 14 }}>
+              <Meter counts={counts} total={total} />
+              <div className="flex flex-wrap" style={{ gap: 14, marginTop: 11, ...MONO, fontSize: 11.5 }}>
+                {(['intact', 'weakening', 'broken', 'unverified'] as PillarStatus[])
+                  .filter((s) => counts[s] > 0)
+                  .map((s) => (
+                    <span key={s} className="inline-flex items-center gap-1.5" style={{ color: STATUS_COLOR[s] }}>
+                      <Dot status={s} size={5} />
+                      {counts[s]} {STATUS_LABEL[s]}
+                    </span>
+                  ))}
+              </div>
+            </div>
           </>
         ) : (
           <p style={{ fontSize: 13, lineHeight: 1.5, color: INK2, margin: 0 }}>
@@ -339,8 +381,45 @@ export function ConvictionRail({ collapsed, onToggle }: { collapsed: boolean; on
         )}
       </div>
 
-      {/* Scrollable middle: attention + evidence */}
+      {/* Scrollable middle: what moved + attention + evidence */}
       <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+        {/* What moved · 14d — real status transitions (from → to), weakest first */}
+        {transitions.length > 0 && (
+          <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${BD_SUBTLE}` }}>
+            <Eyebrow color={GOLD}>What moved · 14d</Eyebrow>
+            <div style={{ marginTop: 11 }}>
+              {transitions.slice(0, 5).map((t, i) => (
+                <div
+                  key={t.pillarId}
+                  className="flex gap-2.5"
+                  style={{ padding: '10px 0', borderTop: i ? `1px solid ${BD_SUBTLE}` : 'none' }}
+                >
+                  <div className="flex items-center gap-1 shrink-0" style={{ paddingTop: 1 }}>
+                    <Dot status={t.from} size={5} />
+                    <span style={{ color: INK4, fontSize: 10 }}>{'→'}</span>
+                    <Dot status={t.to} size={5} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2" style={{ marginBottom: 4 }}>
+                      <span className="font-bold uppercase" style={{ ...MONO, fontSize: 11, color: GOLD_HI }}>{t.ticker}</span>
+                      <span style={{ ...MONO, fontSize: 10, color: STATUS_COLOR[t.to] }}>now {STATUS_LABEL[t.to]}</span>
+                      {t.movedOn && (
+                        <span className="ml-auto" style={{ ...MONO, fontSize: 10, color: INK4 }}>{fmtDate(t.movedOn)}</span>
+                      )}
+                    </div>
+                    <div className="line-clamp-2" style={{ fontSize: 12.5, lineHeight: 1.42, color: INK2 }}>{t.claim}</div>
+                  </div>
+                </div>
+              ))}
+              {transitions.length > 5 && (
+                <Link href="/dashboard/theses" className="inline-block transition-colors" style={{ ...MONO, fontSize: 10.5, color: INK3, marginTop: 4 }}>
+                  +{transitions.length - 5} more
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Moved / attention — grouped by position, with the honest "since" date */}
         {topGroups.length > 0 ? (
           <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${BD_SUBTLE}` }}>
@@ -402,6 +481,9 @@ export function ConvictionRail({ collapsed, onToggle }: { collapsed: boolean; on
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2" style={{ marginBottom: 5 }}>
                         <span className="font-semibold uppercase" style={{ ...MONO, fontSize: 11.5, color: GOLD_HI }}>{ticker}</span>
+                        <span className="uppercase" style={{ ...MONO, fontSize: 9, letterSpacing: '0.08em', color: (VERDICT_META[ev.verdict] ?? VERDICT_META.neutral).color }}>
+                          {(VERDICT_META[ev.verdict] ?? VERDICT_META.neutral).label}
+                        </span>
                         {(ev.source_published_at || ev.created_at) && (
                           <span className="ml-auto" style={{ ...MONO, fontSize: 10.5, color: INK4 }}>
                             {fmtDate(ev.source_published_at ?? ev.created_at)}

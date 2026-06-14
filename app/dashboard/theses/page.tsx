@@ -200,6 +200,7 @@ export default function ThesesPage() {
   const [seedingTicker, setSeedingTicker] = useState<string | null>(null);
   const [seedError, setSeedError] = useState<string | null>(null);
   const [untrackedOpen, setUntrackedOpen] = useState(false);
+  const [attentionOpen, setAttentionOpen] = useState(false);
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -265,6 +266,15 @@ export default function ThesesPage() {
     const ob = effectiveStatus(b.pillar) === 'broken' ? 0 : 1;
     return oa - ob;
   });
+
+  // Group attention by ticker for the collapsed preview.
+  const attnGroupsMap = new Map<string, { thesis: Thesis; pillars: Pillar[] }>();
+  for (const { thesis, pillar } of attentionItems) {
+    const g = attnGroupsMap.get(thesis.ticker) ?? { thesis, pillars: [] };
+    g.pillars.push(pillar);
+    attnGroupsMap.set(thesis.ticker, g);
+  }
+  const attnGroups = [...attnGroupsMap.values()];
 
   // Aggregate meter totals
   const aggregateCounts: Record<PillarStatus, number> = { broken: 0, weakening: 0, unverified: 0, intact: 0 };
@@ -465,44 +475,80 @@ export default function ThesesPage() {
       {/* ── Section 1.5: Cross-thesis synthesis — preview strip, expands to detail ── */}
       {!noThesesYet && <CrossThesisSynthesis />}
 
-      {/* ── Section 2: Needs Attention ── */}
+      {/* ── Section 2: Needs Attention (collapsible; compact preview by default) ── */}
       {attentionItems.length > 0 && (
-        <section className="space-y-4">
-          <div
-            className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F87171]"
-            style={MONO}
-          >
-            NEEDS ATTENTION
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {attentionItems.map(({ thesis, pillar }) => {
-              const status = effectiveStatus(pillar);
-              return (
-                <div
-                  key={pillar.id}
-                  className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] p-4 space-y-3"
-                >
-                  <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <Link
-                      href={`/dashboard/holdings/${thesis.ticker}`}
-                      className="font-mono text-[14px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA] hover:text-[var(--color-gold)] transition-colors"
-                      style={MONO}
-                    >
-                      {thesis.ticker}
+        <section>
+          <div className="rounded-lg overflow-hidden bg-[#131313] border border-white/[0.07]" style={{ borderTop: '2px solid rgba(248,113,113,0.35)' }}>
+            <button
+              type="button"
+              onClick={() => setAttentionOpen((o) => !o)}
+              className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-white/[0.02] transition-colors"
+            >
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F87171]" style={MONO}>
+                Needs Attention
+              </span>
+              <span className="font-mono text-[11px] text-[#6A6A6A]" style={MONO}>
+                {attnGroups.length} position{attnGroups.length === 1 ? '' : 's'} · {attentionItems.length} pillar{attentionItems.length === 1 ? '' : 's'}
+              </span>
+              <span className="ml-auto hidden sm:inline font-mono text-[10.5px] text-[#6A6A6A]" style={MONO}>
+                {attentionOpen ? 'Hide evidence' : 'Show evidence'}
+              </span>
+              <ChevronDown className={`w-4 h-4 text-[#6A6A6A] transition-transform ${attentionOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {!attentionOpen ? (
+              <div className="px-5 pb-4 space-y-2.5">
+                {attnGroups.map(({ thesis, pillars }) => {
+                  const broken = pillars.filter((p) => effectiveStatus(p) === 'broken').length;
+                  const weak = pillars.length - broken;
+                  const worst: PillarStatus = broken > 0 ? 'broken' : 'weakening';
+                  return (
+                    <Link key={thesis.ticker} href={`/dashboard/holdings/${thesis.ticker}`} className="flex items-start gap-3 group">
+                      <span className="mt-[5px] w-2 h-2 rounded-full shrink-0" style={{ background: STATUS_META[worst].color, boxShadow: dotGlow(worst) }} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <span className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA] group-hover:text-[var(--color-gold)] transition-colors" style={MONO}>
+                            {thesis.ticker}
+                          </span>
+                          <span className="font-mono text-[10px] uppercase tracking-[0.1em]" style={{ ...MONO, color: STATUS_META[worst].color }}>
+                            {[broken > 0 ? `${broken} broken` : '', weak > 0 ? `${weak} weakening` : ''].filter(Boolean).join(' · ')}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[13px] leading-[1.45] text-[#9A9A9A] line-clamp-1 m-0">{pillars[0].claim}</p>
+                      </div>
                     </Link>
-                    <StatusChip status={status} />
-                  </div>
-                  <p className="text-[15px] font-medium leading-[1.5] text-[#C8C8C8] m-0">
-                    {pillar.claim}
-                  </p>
-                  {pillar.latest_evidence && (
-                    <VerdictCard
-                      item={toIntelligenceItem(thesis.ticker, pillar, pillar.latest_evidence)}
-                    />
-                  )}
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="px-5 pb-5 pt-1 border-t border-white/[0.05] grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {attentionItems.map(({ thesis, pillar }) => {
+                  const status = effectiveStatus(pillar);
+                  return (
+                    <div key={pillar.id} className="rounded-lg border border-white/[0.07] bg-[#0E0E0E] p-4 space-y-3">
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <Link
+                          href={`/dashboard/holdings/${thesis.ticker}`}
+                          className="font-mono text-[14px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA] hover:text-[var(--color-gold)] transition-colors"
+                          style={MONO}
+                        >
+                          {thesis.ticker}
+                        </Link>
+                        <StatusChip status={status} />
+                      </div>
+                      <p className="text-[15px] font-medium leading-[1.5] text-[#C8C8C8] m-0">
+                        {pillar.claim}
+                      </p>
+                      {pillar.latest_evidence && (
+                        <VerdictCard
+                          item={toIntelligenceItem(thesis.ticker, pillar, pillar.latest_evidence)}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
       )}
