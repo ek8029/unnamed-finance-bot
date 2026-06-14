@@ -148,7 +148,7 @@ function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export function ConvictionRail({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+export function ConvictionRail({ collapsed, onToggle, mobileOpen = false, onMobileClose }: { collapsed: boolean; onToggle: () => void; mobileOpen?: boolean; onMobileClose?: () => void }) {
   const [theses, setTheses] = useState<Thesis[] | null>(null);
   const [conviction, setConviction] = useState<ConvictionData | null>(null);
   const [errored, setErrored] = useState(false);
@@ -244,10 +244,10 @@ export function ConvictionRail({ collapsed, onToggle }: { collapsed: boolean; on
   const totalConfirmed = summaries.reduce((sum, { summary }) => sum + summary.confirmedCount, 0);
 
   /* ── Collapsed strip ── */
-  if (collapsed) {
+  if (collapsed && !mobileOpen) {
     return (
       <aside
-        className="hidden md:flex flex-col items-center fixed right-0 top-0 bottom-0 w-12 z-20 py-4 gap-4 transition-all duration-200"
+        className="hidden xl:flex flex-col items-center fixed right-0 top-0 bottom-0 w-12 z-20 py-4 gap-4 transition-all duration-200"
         style={{ borderLeft: `1px solid ${BD_BASE}`, background: BG_INSET }}
         aria-label="Conviction (collapsed)"
       >
@@ -278,8 +278,17 @@ export function ConvictionRail({ collapsed, onToggle }: { collapsed: boolean; on
   const anyBroke = movers.some((t) => t.to === 'broken');
 
   return (
+    <>
+      {mobileOpen && (
+        <div
+          className="xl:hidden fixed inset-0 z-40"
+          style={{ background: 'rgba(0,0,0,0.55)' }}
+          onClick={onMobileClose}
+          aria-hidden
+        />
+      )}
     <aside
-      className="hidden md:flex flex-col fixed right-0 top-0 bottom-0 w-[316px] z-20 transition-all duration-200"
+      className={`flex flex-col fixed right-0 top-0 bottom-0 w-[316px] max-w-[88vw] z-50 transition-transform duration-200 ${mobileOpen ? 'translate-x-0' : 'translate-x-full'} xl:translate-x-0`}
       style={{ borderLeft: `1px solid ${BD_BASE}`, background: BG_INSET }}
       aria-label="Conviction"
     >
@@ -296,7 +305,7 @@ export function ConvictionRail({ collapsed, onToggle }: { collapsed: boolean; on
           </span>
           <button
             type="button"
-            onClick={onToggle}
+            onClick={() => (mobileOpen ? onMobileClose?.() : onToggle())}
             className="grid place-items-center w-6 h-6 -mr-1 rounded text-[color:var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-white/[0.04] transition-colors"
             aria-label="Collapse conviction rail"
             title="Collapse"
@@ -531,5 +540,6 @@ export function ConvictionRail({ collapsed, onToggle }: { collapsed: boolean; on
         </Link>
       </div>
     </aside>
+    </>
   );
 }

@@ -143,6 +143,7 @@ export default function DashboardLayout({
   const reduceMotion = settings.accessibility.reduceMotion;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [railCollapsed, setRailCollapsed] = useState(false);
+  const [mobileRailOpen, setMobileRailOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -519,8 +520,7 @@ export default function DashboardLayout({
       <div className={cn(
         "ml-0 min-[1025px]:ml-64 flex flex-col flex-1 min-w-0 2xl:transition-[padding] 2xl:duration-200 2xl:ease-out",
         isChatPage ? "h-dvh overflow-hidden" : "min-h-dvh",
-        showRail && "md:pr-[48px]",
-        showRail && !railCollapsed && "xl:pr-[316px]"
+        showRail && (railCollapsed ? "xl:pr-[48px]" : "xl:pr-[316px]")
       )}>
 
         {/* ── Mobile Top Bar (hidden on wrapped) ── */}
@@ -649,7 +649,25 @@ export default function DashboardLayout({
       </div>
 
       {/* ── Conviction rail (ultrawide-only, fixed right) ── */}
-      {showRail && <ConvictionRail collapsed={railCollapsed} onToggle={toggleRail} />}
+      {showRail && !mobileRailOpen && (
+        <button
+          type="button"
+          onClick={() => setMobileRailOpen(true)}
+          className="xl:hidden fixed right-0 top-1/2 -translate-y-1/2 z-30 grid place-items-center w-7 h-16 rounded-l-md bg-[#131313] border border-r-0 border-white/[0.12] text-[#9A9A9A] hover:text-[#E6B94D] transition-colors"
+          aria-label="Open conviction"
+          title="Conviction"
+        >
+          <span className="text-[16px] leading-none">&#8249;</span>
+        </button>
+      )}
+      {showRail && (
+        <ConvictionRail
+          collapsed={railCollapsed}
+          onToggle={toggleRail}
+          mobileOpen={mobileRailOpen}
+          onMobileClose={() => setMobileRailOpen(false)}
+        />
+      )}
 
       {/* ── Mobile Bottom Tab Bar (hidden on wrapped — full-screen experience) ── */}
       {!isWrappedPage && <MobileBottomNav />}
