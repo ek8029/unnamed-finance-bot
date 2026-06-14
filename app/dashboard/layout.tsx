@@ -519,7 +519,7 @@ export default function DashboardLayout({
       <div className={cn(
         "ml-0 min-[1025px]:ml-64 flex flex-col flex-1 min-w-0 2xl:transition-[padding] 2xl:duration-200 2xl:ease-out",
         isChatPage ? "h-dvh overflow-hidden" : "min-h-dvh",
-        showRail && (railCollapsed ? "2xl:pr-[48px]" : "2xl:pr-[316px]")
+        showRail && (railCollapsed ? "xl:pr-[48px]" : "xl:pr-[316px]")
       )}>
 
         {/* ── Mobile Top Bar (hidden on wrapped) ── */}

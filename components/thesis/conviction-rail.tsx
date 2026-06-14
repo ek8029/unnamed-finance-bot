@@ -247,7 +247,7 @@ export function ConvictionRail({ collapsed, onToggle }: { collapsed: boolean; on
   if (collapsed) {
     return (
       <aside
-        className="hidden 2xl:flex flex-col items-center fixed right-0 top-0 bottom-0 w-12 z-20 py-4 gap-4 transition-all duration-200"
+        className="hidden xl:flex flex-col items-center fixed right-0 top-0 bottom-0 w-12 z-20 py-4 gap-4 transition-all duration-200"
         style={{ borderLeft: `1px solid ${BD_BASE}`, background: BG_INSET }}
         aria-label="Conviction (collapsed)"
       >
@@ -279,7 +279,7 @@ export function ConvictionRail({ collapsed, onToggle }: { collapsed: boolean; on
 
   return (
     <aside
-      className="hidden 2xl:flex flex-col fixed right-0 top-0 bottom-0 w-[316px] z-20 transition-all duration-200"
+      className="hidden xl:flex flex-col fixed right-0 top-0 bottom-0 w-[316px] z-20 transition-all duration-200"
       style={{ borderLeft: `1px solid ${BD_BASE}`, background: BG_INSET }}
       aria-label="Conviction"
     >

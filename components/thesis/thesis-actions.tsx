@@ -78,6 +78,17 @@ export function ThesisActions({ thesisId, className = '' }: { thesisId: string; 
       return next;
     });
 
+  // Non-discretionary: the user decides. "Mark done" = I acted; never auto-executed.
+  // Optimistic remove, then persist via the shared insights PATCH.
+  const act = (id: string, action: 'useful' | 'snooze' | 'dismiss', snoozeDays?: number) => {
+    setRows((prev) => (prev ? prev.filter((r) => r.id !== id) : prev));
+    fetch('/api/insights', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(snoozeDays ? { id, action, snooze_days: snoozeDays } : { id, action }),
+    }).catch(() => {});
+  };
+
   return (
     <div
       className={`rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] overflow-hidden ${className}`}
@@ -150,6 +161,36 @@ export function ThesisActions({ thesisId, className = '' }: { thesisId: string; 
                               {a.explanation}
                             </p>
                           )}
+                          <div className="flex items-center gap-3 mt-2.5 pt-2.5 border-t border-white/[0.05]">
+                            {a.kind === 'action' && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => act(a.id, 'useful')}
+                                  className="font-mono text-[10px] uppercase tracking-[0.10em] text-[#4ADE80] hover:opacity-80 transition-opacity"
+                                  style={MONO}
+                                >
+                                  Mark done
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => act(a.id, 'snooze', 7)}
+                                  className="font-mono text-[10px] uppercase tracking-[0.10em] text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors"
+                                  style={MONO}
+                                >
+                                  Snooze 1w
+                                </button>
+                              </>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => act(a.id, 'dismiss')}
+                              className="font-mono text-[10px] uppercase tracking-[0.10em] text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors"
+                              style={MONO}
+                            >
+                              Dismiss
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>

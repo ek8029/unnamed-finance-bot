@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { EvidenceTimeline as EvidenceChronology } from '@/components/thesis/evidence-timeline';
 import { VerdictCard, type ThesisIntelligenceItem } from '@/components/thesis/verdict-card';
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
@@ -13,6 +14,7 @@ interface EvidenceRow {
   id: string;
   verdict: 'supports' | 'contradicts' | 'neutral';
   materiality: 'material' | 'context';
+  source_type: 'filing' | 'form4' | 'xbrl' | 'news' | 'price_move';
   is_backfill: boolean;
   excerpt: string;
   why: string;
@@ -538,6 +540,19 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
   const confirmed = pillars.filter((p) => p.confirmed);
   const drafts = pillars.filter((p) => p.origin === 'ai_draft' && !p.confirmed);
   const intactCount = confirmed.filter((p) => effectiveStatus(p) === 'intact').length;
+  const allIntact = confirmed.length > 0 && intactCount === confirmed.length;
+  const timelineEvidence = confirmed.flatMap((p) =>
+    p.evidence.map((e) => ({
+      date: e.source_published_at ?? e.created_at,
+      source_type: e.source_type,
+      verdict: e.verdict,
+      materiality: e.materiality,
+      excerpt: e.excerpt,
+      source_title: e.source_title,
+      source_url: e.source_url,
+      pillarClaim: p.claim,
+    })),
+  );
 
   const acceptAllDrafts = useCallback(async () => {
     await Promise.all(drafts.map((d) => patchPillar(d.id, { confirmed: true })));
@@ -582,9 +597,16 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
           )}
         </div>
         {phase === 'ready' && confirmed.length > 0 && (
-          <div className="font-mono text-[11px] tracking-[0.06em] text-[#6A6A6A]">
-            {confirmed.length} pillar{confirmed.length === 1 ? '' : 's'} &middot; {intactCount} intact
-          </div>
+          allIntact ? (
+            <div className="font-mono text-[11px] tracking-[0.06em] inline-flex items-center gap-1.5" style={{ color: '#4ADE80' }}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#4ADE80', boxShadow: '0 0 6px #4ADE8088' }} />
+              All {confirmed.length} holding
+            </div>
+          ) : (
+            <div className="font-mono text-[11px] tracking-[0.06em] text-[#6A6A6A]">
+              {confirmed.length} pillar{confirmed.length === 1 ? '' : 's'} &middot; {intactCount} intact
+            </div>
+          )
         )}
       </div>
 
@@ -687,6 +709,12 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
               <div className="border-t border-[var(--color-border-subtle)] py-3.5">{addControl}</div>
             )}
           </div>
+
+          {timelineEvidence.length > 0 && (
+            <div className="mt-3">
+              <EvidenceChronology evidence={timelineEvidence} />
+            </div>
+          )}
 
           <div className="mt-2">
             <button

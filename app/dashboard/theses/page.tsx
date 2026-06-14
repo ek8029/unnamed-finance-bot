@@ -11,6 +11,7 @@ import { WhyIOwnThis } from '@/components/thesis/why-i-own-this';
 import { VerdictCard, type ThesisIntelligenceItem } from '@/components/thesis/verdict-card';
 import { CrossThesisSynthesis } from '@/components/thesis/cross-thesis-synthesis';
 import { ThesisActions } from '@/components/thesis/thesis-actions';
+import { ConvictionIndex } from '@/components/thesis/conviction-index';
 import { summarizePillars, effectiveStatus, type ThesisSummary } from '@/lib/thesis-summary';
 
 /* ── Local types ── */
@@ -474,8 +475,32 @@ export default function ThesesPage() {
         </div>
       )}
 
+      {/* ── Conviction index: glanceable KPI + honest 14-day trend ── */}
+      {!noThesesYet && totalPillarCount > 0 && (
+        <ConvictionIndex intact={aggregateCounts.intact} total={totalPillarCount} />
+      )}
+
       {/* ── Section 1.5: Cross-thesis synthesis — preview strip, expands to detail ── */}
       {!noThesesYet && <CrossThesisSynthesis />}
+
+      {/* ── All clear: reassuring quiet state when nothing needs attention ── */}
+      {!noThesesYet && totalPillarCount > 0 && attentionItems.length === 0 && (
+        <section>
+          <div
+            className="rounded-lg bg-[#131313] border border-white/[0.07] px-5 py-4 flex items-center gap-3"
+            style={{ borderTop: '2px solid rgba(74,222,128,0.35)' }}
+          >
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#4ADE80', boxShadow: '0 0 8px #4ADE8088' }} />
+            <div className="min-w-0">
+              <div className="text-[14px] font-semibold text-[#FAFAFA]">All clear</div>
+              <div className="text-[12.5px] text-[#8A8A8A]">
+                {aggregateCounts.intact} pillar{aggregateCounts.intact === 1 ? '' : 's'} holding, nothing breaking.
+                {lastScanned ? ` Last checked ${fmtScanned(lastScanned)}.` : ''} Helm is watching.
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── Section 2: Needs Attention (collapsible; compact preview by default) ── */}
       {attentionItems.length > 0 && (
