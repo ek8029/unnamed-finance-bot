@@ -34,6 +34,7 @@ import { FoundingMemberBanner } from '@/components/founding-member-banner';
 import { OnboardingFlow } from '@/components/onboarding/onboarding-flow';
 import { GuidedTour } from '@/components/onboarding/guided-tour';
 import { MobileBottomNav } from '@/components/mobile-bottom-nav';
+import { ConvictionRail } from '@/components/thesis/conviction-rail';
 
 /* ── Connect Banner — shown in demo mode ── */
 function ConnectBanner() {
@@ -139,6 +140,7 @@ export default function DashboardLayout({
   const { settings } = useSettings();
   const reduceMotion = settings.accessibility.reduceMotion;
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [railCollapsed, setRailCollapsed] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -160,6 +162,11 @@ export default function DashboardLayout({
   useEffect(() => {
     setSidebarOpen(false);
   }, [pathname]);
+
+  // Restore conviction-rail collapsed preference
+  useEffect(() => {
+    try { setRailCollapsed(localStorage.getItem('helm:conviction-collapsed') === '1'); } catch {}
+  }, []);
 
   // Close user menus on click outside
   useEffect(() => {
@@ -206,6 +213,14 @@ export default function DashboardLayout({
     return () => window.removeEventListener('helm:profile-updated', handleProfileUpdate);
   }, []);
 
+  const toggleRail = () => {
+    setRailCollapsed((v) => {
+      const next = !v;
+      try { localStorage.setItem('helm:conviction-collapsed', next ? '1' : '0'); } catch {}
+      return next;
+    });
+  };
+
   // Handle logout
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -223,6 +238,9 @@ export default function DashboardLayout({
 
   const isChatPage = pathname === '/dashboard/chat';
   const isWrappedPage = pathname === '/dashboard/wrapped';
+  // Conviction rail: ultrawide-only ambient panel; off on full-screen pages
+  // and on the Theses page itself (which is the full conviction surface).
+  const showRail = !isChatPage && !isWrappedPage && pathname !== '/dashboard/theses';
   const pageTitle = getPageTitle(pathname);
 
   return (
@@ -494,8 +512,9 @@ export default function DashboardLayout({
           MAIN AREA (offset by sidebar width)
           ═══════════════════════════════════════════════ */}
       <div className={cn(
-        "ml-0 min-[1025px]:ml-64 flex flex-col flex-1 min-w-0",
-        isChatPage ? "h-dvh overflow-hidden" : "min-h-dvh"
+        "ml-0 min-[1025px]:ml-64 flex flex-col flex-1 min-w-0 2xl:transition-[padding] 2xl:duration-200 2xl:ease-out",
+        isChatPage ? "h-dvh overflow-hidden" : "min-h-dvh",
+        showRail && (railCollapsed ? "2xl:pr-[48px]" : "2xl:pr-[316px]")
       )}>
 
         {/* ── Mobile Top Bar (hidden on wrapped) ── */}
@@ -622,6 +641,9 @@ export default function DashboardLayout({
           <div className="min-[1025px]:hidden shrink-0" style={{ height: 'calc(var(--mobile-nav-h, 56px) + env(safe-area-inset-bottom, 0px))' }} />
         )}
       </div>
+
+      {/* ── Conviction rail (ultrawide-only, fixed right) ── */}
+      {showRail && <ConvictionRail collapsed={railCollapsed} onToggle={toggleRail} />}
 
       {/* ── Mobile Bottom Tab Bar (hidden on wrapped — full-screen experience) ── */}
       {!isWrappedPage && <MobileBottomNav />}

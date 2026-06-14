@@ -48,7 +48,7 @@ const STATUS_META: Record<PillarStatus, { label: string; color: string }> = {
   intact: { label: 'Intact', color: '#4ADE80' },
   weakening: { label: 'Weakening', color: '#E6B94D' },
   broken: { label: 'Broken', color: '#F87171' },
-  unverified: { label: 'Unverified', color: '#6A6A6A' },
+  unverified: { label: 'Watching', color: '#6A6A6A' },
 };
 
 function effectiveStatus(p: Pillar): PillarStatus {
@@ -379,7 +379,7 @@ function Skeleton() {
   );
 }
 
-export function WhyIOwnThis({ ticker }: { ticker: string }) {
+export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: boolean }) {
   const [phase, setPhase] = useState<'loading' | 'none' | 'ready' | 'error'>('loading');
   const [thesis, setThesis] = useState<Thesis | null>(null);
   const [pillars, setPillars] = useState<Pillar[]>([]);
@@ -569,7 +569,7 @@ export function WhyIOwnThis({ ticker }: { ticker: string }) {
   );
 
   return (
-    <section className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5">
+    <section className={bare ? '' : 'rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5'}>
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--color-gold)]">

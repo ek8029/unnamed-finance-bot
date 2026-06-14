@@ -1055,9 +1055,9 @@ export default function PortfolioPage() {
                                       <span key={i} className="flex-1 rounded-full" style={{ background: c }} />
                                     ))}
                                   </span>
-                                  <span className="font-mono text-[10px] tracking-[0.04em]" style={{ color: s.worst ? STATUS_COLORS[s.worst] : 'var(--color-text-muted)' }}>
-                                    {s.worst === 'broken' ? 'Broken' : s.worst === 'weakening' ? 'Weakening' : s.worst === 'unverified' ? 'Unverified' : 'Intact'}
-                                    {' '}&middot; {s.confirmedCount}
+                                  <span className="font-mono text-[10px] tracking-[0.04em]" style={{ color: s.statusCounts.broken > 0 ? STATUS_COLORS.broken : s.statusCounts.weakening > 0 ? STATUS_COLORS.weakening : s.statusCounts.intact > 0 ? STATUS_COLORS.intact : 'var(--color-text-muted)' }}>
+                                    {s.statusCounts.intact} of {s.confirmedCount} intact
+                                    {s.statusCounts.broken > 0 ? ` · ${s.statusCounts.broken} broken` : s.statusCounts.weakening > 0 ? ` · ${s.statusCounts.weakening} weakening` : ''}
                                   </span>
                                 </button>
                               );

@@ -11,6 +11,7 @@ import {
   type Form4Summary,
 } from '@/lib/edgar';
 import { excerptFoundInSource, TEXT_SOURCES } from '@/lib/thesis-evidence';
+import { extractFilingSection, stripFilingHtml } from '@/lib/filing-extract';
 import { derivePillarStatus, type EvidenceForStatus, type PillarStatus } from '@/lib/thesis-status';
 import type { BreachEvent } from '@/lib/thesis-breach';
 
@@ -51,6 +52,7 @@ interface Candidate {
   sourceText: string; // text sent to LLM
   excerpt_override?: string; // for price_move/xbrl: overwrite LLM excerpt with this
   form4Meta?: Form4Summary; // for is10b5-1 guard
+  filingForm?: string; // form type (10-K/10-Q/8-K), drives MD&A extraction
 }
 
 interface LLMEvidenceRow {
@@ -72,30 +74,16 @@ interface LLMResponse {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function stripHtml(html: string): string {
-  return html
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-async function fetchFilingText(url: string): Promise<string> {
+async function fetchFilingText(url: string, form = ''): Promise<string> {
   try {
     const res = await fetch(url, {
       headers: { 'User-Agent': 'Helm Terminal hello@helmterminal.dev' },
     });
     if (!res.ok) return '';
     const raw = await res.text();
-    const stripped = stripHtml(raw);
-    return stripped.slice(0, SEC_FETCH_TRUNCATE);
+    const stripped = stripFilingHtml(raw);
+    // Pull the MD&A / substantive section, not the cover-page boilerplate.
+    return extractFilingSection(stripped, form, SEC_FETCH_TRUNCATE);
   } catch {
     return '';
   }
@@ -194,11 +182,15 @@ export async function scoreOneThesis(
   db: SupabaseClient,
   thesis: Thesis,
   log: string[],
-  options?: { since?: string; isBackfill?: boolean; maxCandidates?: number; model?: string }
+  options?: { since?: string; isBackfill?: boolean; maxCandidates?: number; model?: string; liveCutoff?: string }
 ): Promise<{ evidenceAdded: number; statusChanges: number; breaches: BreachEvent[] }> {
   const { ticker, id: thesisId, user_id, last_scanned_at } = thesis;
   const since = options?.since ?? sinceDate(last_scanned_at);
   const isBackfill = options?.isBackfill ?? false;
+  // When set, evidence dated on/after liveCutoff is LIVE (reflects the current
+  // state), older is backfill. Grounds the live/historical split in the quarterly
+  // reporting cycle instead of a flat per-call flag. See seed for the 90-day value.
+  const liveCutoff = options?.liveCutoff;
   const maxCandidates = options?.maxCandidates ?? MAX_CANDIDATES;
   const model = options?.model ?? SCORE_MODEL;
   let evidenceAdded = 0;
@@ -250,6 +242,7 @@ export async function scoreOneThesis(
         source_url: f.url,
         source_published_at: f.filingDate,
         sourceText: '', // filled lazily below
+        filingForm: f.form,
       });
     }
   } catch (err) {
@@ -391,19 +384,33 @@ export async function scoreOneThesis(
     log.push(`[${ticker}] XBRL error: ${err instanceof Error ? err.message : String(err)}`);
   }
 
-  // Sort by published date desc and cap
-  const sortedCandidates = candidates
+  // Sort by published date desc, then cap. Reserve slots for filings so the rare
+  // but high-value 10-K/10-Q/8-K are not crowded out of the cap by far more
+  // frequent news items.
+  const byDateDesc = (a: Candidate, b: Candidate) =>
+    (b.source_published_at ?? '').localeCompare(a.source_published_at ?? '');
+  const filingReserve = Math.min(6, Math.ceil(maxCandidates / 4));
+  const reservedFilings = candidates
+    .filter((c) => c.source_type === 'filing')
+    // 10-K/10-Q carry the quotable MD&A narrative; 8-K primary docs are XBRL cover
+    // boilerplate (their substance lives in exhibits). Reserve periodic reports first.
     .sort((a, b) => {
-      const da = a.source_published_at ?? '';
-      const db2 = b.source_published_at ?? '';
-      return db2 > da ? 1 : db2 < da ? -1 : 0;
+      const pa = /10-?[KQ]/i.test(a.filingForm ?? '') ? 0 : 1;
+      const pb = /10-?[KQ]/i.test(b.filingForm ?? '') ? 0 : 1;
+      return pa !== pb ? pa - pb : byDateDesc(a, b);
     })
-    .slice(0, maxCandidates);
+    .slice(0, filingReserve);
+  const reservedKeys = new Set(reservedFilings.map((c) => c.source_key));
+  const rest = candidates
+    .filter((c) => !reservedKeys.has(c.source_key))
+    .sort(byDateDesc)
+    .slice(0, Math.max(0, maxCandidates - reservedFilings.length));
+  const sortedCandidates = [...reservedFilings, ...rest].sort(byDateDesc);
 
   // Lazily fetch filing text for filings
   for (const c of sortedCandidates) {
     if (c.source_type === 'filing' && c.sourceText === '') {
-      c.sourceText = await fetchFilingText(c.source_url!);
+      c.sourceText = await fetchFilingText(c.source_url!, c.filingForm);
       await new Promise((r) => setTimeout(r, 150));
     }
   }
@@ -428,6 +435,7 @@ export async function scoreOneThesis(
 For each source that genuinely relates to a pillar, produce one evidence row.
 Rules:
 - Only emit rows where the source clearly bears on the pillar.
+- Filings (10-K, 10-Q) are authoritative primary sources. When a filing supports or contradicts a pillar, cite the filing, even if a news item makes a similar point. Use news for points the filings do not cover. Sources are tagged [filing], [form4], [xbrl], [news], [price_move].
 - excerpt must be copied verbatim from the source text. Do not paraphrase or invent.
 - No invented numbers. No em dashes.
 - verdict: "supports", "contradicts", or "neutral" (neutral only if clearly relevant context).
@@ -525,7 +533,9 @@ Respond with JSON exactly in this shape:
       why: row.why,
       what_it_means: row.what_it_means,
       consider: row.consider ?? null,
-      is_backfill: isBackfill,
+      is_backfill: liveCutoff
+        ? !(candidate.source_published_at != null && candidate.source_published_at >= liveCutoff)
+        : isBackfill,
     });
   }
 

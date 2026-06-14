@@ -5,8 +5,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { ChevronDown } from 'lucide-react';
+import { HelmMark } from '@/components/helm-mark';
 import { WhyIOwnThis } from '@/components/thesis/why-i-own-this';
 import { VerdictCard, type ThesisIntelligenceItem } from '@/components/thesis/verdict-card';
+import { CrossThesisSynthesis } from '@/components/thesis/cross-thesis-synthesis';
 import { summarizePillars, effectiveStatus, type ThesisSummary } from '@/lib/thesis-summary';
 
 /* ── Local types ── */
@@ -59,8 +62,13 @@ const STATUS_META: Record<PillarStatus, { label: string; color: string }> = {
   intact:     { label: 'Intact',     color: '#4ADE80' },
   weakening:  { label: 'Weakening',  color: '#E6B94D' },
   broken:     { label: 'Broken',     color: '#F87171' },
-  unverified: { label: 'Unverified', color: '#6A6A6A' },
+  unverified: { label: 'Watching', color: '#6A6A6A' },
 };
+
+/* Status dot glow (intact/weakening/broken lit; watching stays flat). */
+function dotGlow(status: PillarStatus): string {
+  return status === 'unverified' ? 'none' : `0 0 7px ${STATUS_META[status].color}`;
+}
 
 /* toIntelligenceItem - mirrors line ~62 of why-i-own-this.tsx exactly */
 function toIntelligenceItem(ticker: string, pillar: Pillar, e: EvidenceRow): ThesisIntelligenceItem {
@@ -90,7 +98,7 @@ function StatusChip({ status }: { status: PillarStatus }) {
       className="inline-flex items-center gap-1.5 px-2 py-[3px] rounded border border-white/[0.07]"
       style={MONO}
     >
-      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: meta.color }} />
+      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: meta.color, boxShadow: dotGlow(status) }} />
       <span
         className="text-[10px] font-semibold uppercase tracking-[0.15em]"
         style={{ color: meta.color }}
@@ -129,10 +137,11 @@ function AggregateMeter({
       {METER_ORDER.map((s) => {
         const pct = (counts[s] / total) * 100;
         if (pct === 0) return null;
+        const lit = s !== 'unverified';
         return (
           <div
             key={s}
-            style={{ width: `${pct}%`, background: METER_COLORS[s], opacity: 0.85 }}
+            style={{ width: `${pct}%`, background: METER_COLORS[s], opacity: 0.85, boxShadow: lit ? `0 0 8px ${METER_COLORS[s]}` : 'none' }}
           />
         );
       })}
@@ -190,6 +199,7 @@ export default function ThesesPage() {
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [seedingTicker, setSeedingTicker] = useState<string | null>(null);
   const [seedError, setSeedError] = useState<string | null>(null);
+  const [untrackedOpen, setUntrackedOpen] = useState(false);
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -276,6 +286,7 @@ export default function ThesesPage() {
   // Holdings without a thesis
   const thesisTickers = new Set(theses.map((t) => t.ticker));
   const unthesedHoldings = holdings.filter((h) => !thesisTickers.has(h.ticker));
+  const suggestedTickers = unthesedHoldings.slice(0, 3).map((h) => h.ticker);
 
   // Quiet state: no attention items AND at least one confirmed pillar
   const totalConfirmed = summaries.reduce((sum, { summary }) => sum + summary.confirmedCount, 0);
@@ -335,43 +346,124 @@ export default function ThesesPage() {
   /* ── Empty state: no theses yet ── */
   const noThesesYet = theses.length === 0;
 
+  /* ── Conviction verdict headline (Holdfast-style page lead) ── */
+  const allIntact = totalPillarCount > 0 && aggregateCounts.intact === totalPillarCount;
+  let verdictHeadline = 'Theses';
+  if (totalPillarCount > 0) {
+    if (allIntact) {
+      verdictHeadline = `All ${totalPillarCount} pillar${totalPillarCount === 1 ? '' : 's'} intact.`;
+    } else {
+      verdictHeadline = `${aggregateCounts.intact} of ${totalPillarCount} pillars intact.`;
+      if (aggregateCounts.weakening > 0 || aggregateCounts.broken > 0) {
+        const parts: string[] = [];
+        if (aggregateCounts.weakening > 0) parts.push(`${aggregateCounts.weakening} weakening`);
+        parts.push(aggregateCounts.broken > 0 ? `${aggregateCounts.broken} broken` : 'none broken');
+        verdictHeadline += ` ${parts.join(', ')}.`;
+      }
+    }
+  }
+  const verdictSub = allIntact
+    ? 'Nothing threatens the reasons you hold what you hold.'
+    : 'Helm watches filings, insider activity and headlines against every reason you hold.';
+
+  /* Full untracked-holdings list (reused by the empty state and the drawer). */
+  const unthesedListEl = (
+    <div className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] divide-y divide-white/[0.05]">
+      {unthesedHoldings.map((h) => (
+        <div key={h.ticker} className="px-4 py-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <span className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA]" style={MONO}>
+                {h.ticker}
+              </span>
+              {h.name && h.name !== h.ticker && (
+                <span className="ml-2 text-[13px] text-[#6A6A6A] truncate">{h.name}</span>
+              )}
+            </div>
+            <button
+              type="button"
+              disabled={seedingTicker === h.ticker}
+              onClick={() => handleSeed(h.ticker)}
+              className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.15em] px-3 py-1.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors disabled:opacity-50"
+              style={MONO}
+            >
+              {seedingTicker === h.ticker ? 'Drafting...' : 'Draft thesis'}
+            </button>
+          </div>
+          {seedError === h.ticker && (
+            <p className="mt-2 font-mono text-[11px] text-[#F87171]" style={MONO}>
+              Could not draft thesis. Try again.
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8 space-y-10">
 
-      {/* ── Section 1: Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+      {/* ── Section 1: Conviction header ── */}
+      {noThesesYet ? (
         <div>
           <div
-            className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-1"
+            className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-2.5"
             style={MONO}
           >
-            THESES
-          </div>
-          <h1 className="text-[28px] font-bold leading-[1.15] tracking-[-0.02em] text-[#FAFAFA] m-0">
             Theses
+          </div>
+          <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.03em] text-[#FAFAFA] m-0">
+            Your conviction, watched.
           </h1>
         </div>
-
-        {lastScanned && (
-          <div
-            className="font-mono text-[11px] tracking-[0.06em] text-[#4A4A4A] tabular-nums self-start sm:self-end"
-            style={MONO}
-          >
-            Last scanned {fmtScanned(lastScanned)}
+      ) : (
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+          <div className="min-w-0">
+            <div
+              className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-3"
+              style={MONO}
+            >
+              Your conviction today
+            </div>
+            <h1 className="text-[clamp(27px,3vw,34px)] font-bold leading-[1.14] tracking-[-0.03em] text-[#FAFAFA] m-0">
+              {verdictHeadline}
+            </h1>
+            <p
+              className="mt-3.5 text-[16.5px] leading-[1.5] text-[#9A9A9A] max-w-[540px] m-0"
+              style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontStyle: 'italic' }}
+            >
+              {verdictSub}
+            </p>
           </div>
-        )}
-      </div>
 
-      {/* Aggregate meter + counts (only when theses exist) */}
-      {!noThesesYet && totalPillarCount > 0 && (
-        <div className="space-y-2">
-          <AggregateMeter counts={aggregateCounts} total={totalPillarCount} height={6} />
-          <p className="font-mono text-[11px] tracking-[0.06em] text-[#6A6A6A]" style={MONO}>
-            {totalPillarCount} pillar{totalPillarCount === 1 ? '' : 's'} across{' '}
-            {theses.length} thesis{theses.length === 1 ? '' : 'es'}
-          </p>
+          {totalPillarCount > 0 && (
+            <div className="lg:w-[300px] shrink-0 rounded-lg border border-white/[0.07] bg-[#131313] p-4 space-y-3">
+              <AggregateMeter counts={aggregateCounts} total={totalPillarCount} height={8} />
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5 font-mono text-[11.5px]" style={MONO}>
+                {(['intact', 'weakening', 'broken', 'unverified'] as PillarStatus[])
+                  .filter((s) => aggregateCounts[s] > 0)
+                  .map((s) => (
+                    <span key={s} className="inline-flex items-center gap-1.5" style={{ color: STATUS_META[s].color }}>
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_META[s].color, boxShadow: dotGlow(s) }} />
+                      {aggregateCounts[s]} {STATUS_META[s].label}
+                    </span>
+                  ))}
+              </div>
+              {lastScanned && (
+                <div
+                  className="font-mono text-[10.5px] tracking-[0.06em] text-[#4A4A4A] tabular-nums pt-0.5"
+                  style={MONO}
+                >
+                  Last scanned {fmtScanned(lastScanned)}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
+
+      {/* ── Section 1.5: Cross-thesis synthesis — preview strip, expands to detail ── */}
+      {!noThesesYet && <CrossThesisSynthesis />}
 
       {/* ── Section 2: Needs Attention ── */}
       {attentionItems.length > 0 && (
@@ -393,14 +485,14 @@ export default function ThesesPage() {
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <Link
                       href={`/dashboard/holdings/${thesis.ticker}`}
-                      className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA] hover:text-[var(--color-gold)] transition-colors"
+                      className="font-mono text-[14px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA] hover:text-[var(--color-gold)] transition-colors"
                       style={MONO}
                     >
                       {thesis.ticker}
                     </Link>
                     <StatusChip status={status} />
                   </div>
-                  <p className="text-[14px] font-medium leading-[1.45] text-[#9A9A9A] m-0">
+                  <p className="text-[15px] font-medium leading-[1.5] text-[#C8C8C8] m-0">
                     {pillar.claim}
                   </p>
                   {pillar.latest_evidence && (
@@ -458,7 +550,6 @@ export default function ThesesPage() {
             <div className="space-y-2.5 2xl:w-[340px] 2xl:shrink-0 2xl:sticky 2xl:top-6">
               {summaries.map(({ t, summary }) => {
                 const active = activeTicker === t.ticker;
-                const worst = summary.worst;
                 return (
                   <button
                     key={t.id}
@@ -495,9 +586,17 @@ export default function ThesesPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-3 flex-wrap mt-1.5">
-                      {worst && <StatusChip status={worst} />}
-                      <span className="font-mono text-[11px] text-[#6A6A6A]" style={MONO}>
-                        {summary.confirmedCount} pillar{summary.confirmedCount === 1 ? '' : 's'}
+                      {(summary.statusCounts.broken > 0 || summary.statusCounts.weakening > 0) && (
+                        <StatusChip status={summary.statusCounts.broken > 0 ? 'broken' : 'weakening'} />
+                      )}
+                      <span
+                        className="font-mono text-[11px] inline-flex items-center gap-1.5"
+                        style={{ ...MONO, color: summary.statusCounts.intact > 0 ? '#4ADE80' : '#6A6A6A' }}
+                      >
+                        {summary.statusCounts.intact > 0 && (
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#4ADE80', boxShadow: dotGlow('intact') }} />
+                        )}
+                        {summary.statusCounts.intact} of {summary.confirmedCount} intact
                       </span>
                     </div>
                     {summary.confirmedCount > 0 && (
@@ -514,7 +613,7 @@ export default function ThesesPage() {
             <div className="flex-1 min-w-0 mt-4 2xl:mt-0">
               {activeTicker && (
                 <div className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] p-5 sm:p-6 2xl:p-7">
-                  <WhyIOwnThis key={activeTicker} ticker={activeTicker} />
+                  <WhyIOwnThis key={activeTicker} ticker={activeTicker} bare />
                 </div>
               )}
             </div>
@@ -522,67 +621,66 @@ export default function ThesesPage() {
         </section>
       )}
 
-      {/* ── Section 5: Start a thesis (unthesed holdings + empty state lead) ── */}
-      {(unthesedHoldings.length > 0 || noThesesYet) && (
+      {/* ── Section 5: Start a thesis ── */}
+      {noThesesYet ? (
         <section className="space-y-4">
-          <div
-            className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted,#6A6A6A)]"
-            style={MONO}
-          >
-            {noThesesYet ? 'START' : 'START A THESIS'}
+          <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted,#6A6A6A)]" style={MONO}>
+            START
           </div>
-
-          {noThesesYet && (
-            <p className="text-[15px] leading-[1.6] text-[#9A9A9A] max-w-[560px] m-0">
-              Helm drafts the reasons you might own each position. You confirm or rewrite them in your own words, and Helm watches the record for anything that breaks them.
-            </p>
-          )}
-
-          {unthesedHoldings.length > 0 && (
-            <div className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] divide-y divide-white/[0.05]">
-              {unthesedHoldings.map((h) => (
-                <div key={h.ticker} className="px-4 py-3">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <span
-                        className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA]"
-                        style={MONO}
-                      >
-                        {h.ticker}
-                      </span>
-                      {h.name && h.name !== h.ticker && (
-                        <span className="ml-2 text-[13px] text-[#6A6A6A] truncate">
-                          {h.name}
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      disabled={seedingTicker === h.ticker}
-                      onClick={() => handleSeed(h.ticker)}
-                      className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.15em] px-3 py-1.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors disabled:opacity-50"
-                      style={MONO}
-                    >
-                      {seedingTicker === h.ticker ? 'Drafting...' : 'Draft thesis'}
-                    </button>
-                  </div>
-                  {seedError === h.ticker && (
-                    <p className="mt-2 font-mono text-[11px] text-[#F87171]" style={MONO}>
-                      Could not draft thesis. Try again.
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {noThesesYet && unthesedHoldings.length === 0 && (
+          <p className="text-[15px] leading-[1.6] text-[#9A9A9A] max-w-[560px] m-0">
+            Helm drafts the reasons you might own each position. You confirm or rewrite them in your own words, and Helm watches the record for anything that breaks them.
+          </p>
+          {unthesedHoldings.length > 0 ? unthesedListEl : (
             <p className="font-mono text-[12px] text-[#4A4A4A]" style={MONO}>
               Connect a brokerage account to see your holdings here.
             </p>
           )}
         </section>
-      )}
+      ) : unthesedHoldings.length > 0 ? (
+        <section>
+          <div className="rounded-lg overflow-hidden bg-[#131313] border border-white/[0.07]" style={{ borderTop: '2px solid rgba(230,185,77,0.35)' }}>
+            <div className="flex items-center gap-4 px-5 py-4">
+              <HelmMark size={18} />
+              <div className="min-w-0 flex-1">
+                <div className="text-[14px] font-semibold text-[#FAFAFA]">
+                  {unthesedHoldings.length} untracked position{unthesedHoldings.length === 1 ? '' : 's'}
+                </div>
+                <div className="text-[12px] text-[#6A6A6A] truncate">
+                  Helm can draft a thesis for any of them{suggestedTickers.length > 0 ? `. Suggested: ${suggestedTickers.join(', ')}` : ''}.
+                </div>
+              </div>
+              <div className="hidden sm:flex items-center gap-2 shrink-0">
+                {suggestedTickers.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    disabled={seedingTicker === t}
+                    onClick={() => handleSeed(t)}
+                    className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] px-2.5 py-1.5 rounded border border-[rgba(230,185,77,0.35)] text-[#E6B94D] hover:bg-[rgba(230,185,77,0.08)] transition-colors disabled:opacity-50"
+                    style={MONO}
+                  >
+                    {seedingTicker === t ? '...' : `${t} +`}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setUntrackedOpen((o) => !o)}
+                className="shrink-0 inline-flex items-center gap-1.5 font-mono text-[10.5px] text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors"
+                style={MONO}
+              >
+                {untrackedOpen ? 'Hide' : `See all ${unthesedHoldings.length}`}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${untrackedOpen ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+            {untrackedOpen && (
+              <div className="px-5 pb-5 pt-1 border-t border-white/[0.05]">
+                {unthesedListEl}
+              </div>
+            )}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

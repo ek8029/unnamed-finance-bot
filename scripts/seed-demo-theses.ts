@@ -25,38 +25,100 @@ import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 const OWNER_EMAIL = 'evank8029@gmail.com';
+// Pass --reset to wipe each demo thesis's existing pillars + their evidence before
+// seeding, so changed claim wording fully replaces the old pillars instead of the
+// default rerun-safe append (which would leave stale pillars alongside new ones).
+const RESET = process.argv.includes('--reset');
+// --only=TICKER seeds just that ticker (leaves the rest of the demo book untouched).
+const ONLY = process.argv.find((a) => a.startsWith('--only='))?.split('=')[1];
 
 // Approved claims — final wording, inserted verbatim. No em dashes.
 const SEEDS: Record<string, string[]> = {
   AMD: [
-    "AMD's innovation in CPU and GPU technology drives market share gains against Intel and NVIDIA.",
-    "AMD's partnerships and customer relationships in data center and gaming fuel revenue growth.",
-    "AMD's financial strength and capital allocation support continued R&D investment.",
-    "AMD's diversified portfolio across PC, data center, and embedded markets captures broad semiconductor growth.",
+    "AMD keeps taking server CPU share from Intel as EPYC wins hyperscaler sockets.",
+    "MI300 establishes AMD as a credible second source to NVIDIA in data center AI accelerators.",
+    "Data center grows into AMD's largest segment and pulls gross margin higher.",
+    "Client and gaming hold up well enough to fund data center R&D through the cycle.",
   ],
   AAPL: [
-    "Apple's brand loyalty and ecosystem integration drive sustained demand across iPhone, iPad, and Mac.",
-    "Apple's services segment (App Store, Music, iCloud) provides recurring revenue that enhances profitability.",
-    "Apple's custom silicon (M-series chips) strengthens its competitive position and product performance.",
-    "Apple maintains strong gross margins through premium pricing and supply chain efficiency.",
+    "Services keeps compounding at double digit growth and lifts company gross margin.",
+    "The iPhone installed base keeps growing even as upgrade cycles stretch longer.",
+    "Apple silicon keeps the Mac and iPad differentiated without relying on Intel.",
+    "Buybacks keep shrinking the share count and support earnings per share.",
   ],
   NVDA: [
-    "NVIDIA's GPU dominance is driven by AI and data center expansion, maintaining an edge over rivals.",
-    "NVIDIA capitalizes on high-performance computing demand across gaming, autonomous vehicles, and cloud.",
-    "NVIDIA's investments in AI and machine learning position it to benefit from the shift to AI-powered solutions.",
-    "NVIDIA's high margins and revenue growth support strong financial performance.",
+    "Data center GPU demand stays supply constrained as hyperscalers raise AI capex.",
+    "CUDA and the software stack keep switching costs high and protect pricing power.",
+    "Networking with InfiniBand and Spectrum becomes a real second growth engine.",
+    "Gross margin holds above 70 percent as Blackwell ramps into volume.",
   ],
   META: [
-    "Meta leads social media with strong engagement across Facebook, Instagram, and WhatsApp, driving ad revenue.",
-    "Meta's investment in virtual and augmented reality, including Meta Quest, positions it for the metaverse market.",
-    "Meta's AI and machine learning improve user experience and ad precision, lifting monetization.",
-    "Meta's financial strength and capital allocation fund continued R&D investment.",
+    "AI driven ranking keeps lifting engagement and ad price across Instagram and Facebook.",
+    "Reality Labs losses stay bounded and do not derail company operating margin.",
+    "Reels and click to message ads offset any weakness in brand advertising.",
+    "Spending on AI infrastructure shows up as ad revenue, not just rising cost.",
   ],
   TSLA: [
-    "Tesla's leadership in electric vehicle technology drives demand as consumers and governments prioritize sustainable transport.",
-    "Tesla's Gigafactory expansion increases production capacity and lowers manufacturing cost.",
-    "Tesla's autonomous driving development positions it to capture future transportation revenue.",
-    "Tesla's brand and direct-to-consumer model support customer loyalty and margin.",
+    "Tesla defends EV gross margin leadership even while cutting prices to hold volume.",
+    "Energy generation and storage grows into a higher margin second business.",
+    "Full self driving and robotaxi optionality turns into real revenue, not just narrative.",
+    "Gigafactory scale keeps unit cost falling faster than average selling price.",
+  ],
+  MSFT: [
+    "Azure growth stays strong as enterprises move AI workloads to the cloud.",
+    "Copilot and AI features lift Microsoft 365 revenue per seat.",
+    "Operating margin holds even as Microsoft ramps capital spending on AI data centers.",
+    "Gaming revenue grows after the Activision deal without derailing margins.",
+  ],
+  GOOGL: [
+    "Search advertising keeps growing despite competition from AI chat assistants.",
+    "Google Cloud turns durably profitable and gains share on AWS and Azure.",
+    "YouTube advertising and subscriptions become a larger share of revenue.",
+    "Antitrust rulings do not force a breakup that breaks the advertising business.",
+  ],
+  AMZN: [
+    "AWS reaccelerates as AI demand lifts cloud spending.",
+    "North America retail operating margin expands as fulfillment costs come down.",
+    "Advertising becomes a high margin third business behind AWS and retail.",
+    "Capital spending on AI infrastructure converts into AWS revenue.",
+  ],
+  INTC: [
+    "Intel Foundry wins external customers and narrows the gap with TSMC.",
+    "The 18A process node ships on schedule and restores manufacturing credibility.",
+    "Data center share stabilizes against AMD instead of eroding further.",
+    "Cost cuts restore gross margin back toward 50 percent.",
+  ],
+  PLTR: [
+    "Commercial AIP adoption drives US commercial revenue growth above 50 percent.",
+    "Government revenue stays sticky and funds the commercial expansion.",
+    "Operating margin keeps expanding as revenue scales.",
+    "The valuation is supported by durable growth, not just AI enthusiasm.",
+  ],
+  NFLX: [
+    "The ad supported tier adds members and lifts average revenue per member.",
+    "The paid sharing crackdown keeps converting shared accounts to paying ones.",
+    "Operating margin expands as content spend grows slower than revenue.",
+    "Live events and games deepen engagement without large new losses.",
+  ],
+  LULU: [
+    "Lululemon's North America revenue reaccelerates as the brand wins back core customers.",
+    "Full year revenue guidance holds as new categories offset any softness.",
+    "International growth, led by China, becomes the main engine of the story.",
+    "Premium pricing keeps gross margin resilient through the slowdown.",
+  ],
+  // Deliberate "broken" candidates: real 2026 blowups whose actual filings/XBRL
+  // should contradict these bullish pillars at the primary-source level.
+  EMBC: [
+    "Embecta grows revenue as the standalone leader in insulin delivery devices.",
+    "Operating margin expands as Embecta finishes separating its systems from BD.",
+    "Full year guidance holds as the patch pump pipeline moves toward launch.",
+    "Cash flow stays strong enough to service the spinoff debt load.",
+  ],
+  PRIM: [
+    "Primoris turns its record energy and renewables backlog into double digit EPS growth.",
+    "Full year adjusted EPS guidance holds as utility and solar demand scales.",
+    "Margin expands as higher value energy work replaces legacy civil projects.",
+    "Backlog gives multi year revenue visibility through the cycle.",
   ],
 };
 
@@ -101,12 +163,19 @@ async function main() {
   const sinceDateObj = new Date();
   sinceDateObj.setFullYear(sinceDateObj.getFullYear() - 1);
   const since = sinceDateObj.toISOString().split('T')[0];
-  console.log(`Backfill window since: ${since}\n`);
+  // Latest ~quarter is scored as LIVE (the current state of the business); older
+  // evidence is historical backfill. This is what lets recent supporting filings
+  // move pillars to intact, instead of every pillar sitting at 'unverified'.
+  const liveSinceObj = new Date();
+  liveSinceObj.setDate(liveSinceObj.getDate() - 90);
+  const liveSince = liveSinceObj.toISOString().split('T')[0];
+  console.log(`Backfill window since: ${since} | live window since: ${liveSince}\n`);
 
   const log: string[] = [];
   const summary: Array<{ ticker: string; inserted: number; skipped: number; evidence: number }> = [];
 
   for (const ticker of Object.keys(SEEDS)) {
+    if (ONLY && ticker !== ONLY) continue;
     console.log(`=== ${ticker} ===`);
     const claims = SEEDS[ticker];
 
@@ -144,6 +213,21 @@ async function main() {
       }
     }
 
+    // 2a-reset. With --reset, clear this thesis's pillars + their evidence first so
+    // updated claim wording replaces the old pillars (default behavior only appends).
+    if (RESET) {
+      const { data: oldPillars } = await supabase
+        .from('thesis_pillars')
+        .select('id')
+        .eq('thesis_id', thesisId);
+      const oldIds = (oldPillars ?? []).map((p) => p.id as string);
+      if (oldIds.length > 0) {
+        await supabase.from('pillar_evidence').delete().in('pillar_id', oldIds);
+        await supabase.from('thesis_pillars').delete().eq('thesis_id', thesisId);
+      }
+      console.log(`[${ticker}] reset: cleared ${oldIds.length} existing pillars`);
+    }
+
     // 2b. Append only claims not already present (case-insensitive) so reruns don't dup.
     const { data: existingPillars, error: pillErr } = await supabase
       .from('thesis_pillars')
@@ -157,7 +241,9 @@ async function main() {
 
     let inserted = 0;
     let skipped = 0;
-    const nowIso = new Date().toISOString();
+    // Backdate confirmation ~3 months so the thesis reads as established and the
+    // latest-quarter live evidence is coherent ("Helm has watched for a quarter").
+    const lifecycleAt = liveSinceObj.toISOString();
     for (let i = 0; i < claims.length; i++) {
       const claim = claims[i];
       if (existingNorm.has(norm(claim))) {
@@ -171,7 +257,7 @@ async function main() {
         origin: 'user',
         confirmed: true,
         lifecycle: 'confirmed',
-        lifecycle_at: nowIso,
+        lifecycle_at: lifecycleAt,
         sort_order: i,
         // status intentionally omitted -> DB default 'unverified'
       });
@@ -191,13 +277,18 @@ async function main() {
       tracked: true,
       last_scanned_at: null,
     };
-    console.log(`[${ticker}] scoring (12-month backfill, gpt-4o, maxCandidates=50)...`);
+    // Single scan: liveCutoff dates the live/backfill split. Evidence from the last
+    // ~quarter (>= liveSince) is LIVE (reflects current state, can verify a pillar);
+    // older is historical backfill. 90d is grounded in the quarterly reporting cycle
+    // + post-earnings drift (~60-90 trading days), not a flat per-call flag.
+    console.log(`[${ticker}] scoring (single scan, live >= ${liveSince}, since ${since})...`);
     const { evidenceAdded, statusChanges } = await scoreOneThesis(supabase, thesisObj, log, {
       since,
-      isBackfill: true,
-      maxCandidates: 50,
-      // gpt-4o quotes verbatim far better than the cron's gpt-4o-mini, so more
-      // real evidence survives the excerpt guard. Demo seed only; cron stays mini.
+      liveCutoff: liveSince,
+      // 24 keeps the prompt under the org's gpt-4o TPM cap; filings still reserved,
+      // and candidates are date-sorted so the most recent (most relevant) survive.
+      maxCandidates: 24,
+      // gpt-4o quotes verbatim far better than the cron's gpt-4o-mini. Demo seed only.
       model: 'gpt-4o',
     });
     console.log(`[${ticker}] scoreOneThesis: evidenceAdded=${evidenceAdded} statusChanges=${statusChanges}`);
