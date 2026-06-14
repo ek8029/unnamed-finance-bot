@@ -224,6 +224,13 @@ export default function RootLayout({
         </a>
         <RecoveryRedirect />
         <Providers>{children}</Providers>
+        {/* Suppress Recharts' benign first-paint warning: ResponsiveContainer
+            measures width/height -1 before the browser lays out the parent, then
+            redraws correctly. Patches console.warn before hydration so it never
+            reaches the console. Filters ONLY that one exact message. */}
+        <Script id="recharts-warn-filter" strategy="beforeInteractive">
+          {`(function(){try{var w=console.warn;console.warn=function(){var a=arguments&&arguments[0];if(typeof a==='string'&&a.indexOf('width(-1) and height(-1) of chart')>-1)return;return w.apply(console,arguments)};}catch(e){}})()`}
+        </Script>
         <Script
           src="https://plausible.io/js/pa-O3gPqcGXLE6Ju_7Ulgsf6.js"
           strategy="afterInteractive"
