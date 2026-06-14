@@ -11,7 +11,8 @@ import { useFormat } from '@/hooks/use-format';
 import { useCountUp } from '@/hooks/use-count-up';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 import { NetWorthDataPoint } from '@/types';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
+import { ResponsiveContainer } from '@/components/charts/responsive-container';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
 interface NetWorthCardProps {

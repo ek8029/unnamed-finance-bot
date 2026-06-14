@@ -7,7 +7,8 @@ import {
   DataPanelTitle,
 } from '@/components/ui/data-panel';
 import { useFormat } from '@/hooks/use-format';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
+import { ResponsiveContainer } from '@/components/charts/responsive-container';
 import { TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 
 interface CashFlowDataPoint {
