@@ -73,7 +73,7 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentag
           <div className="space-y-4">
             {/* Top: Large Chart */}
             <div className="h-[200px] md:h-[280px]" role="img" aria-label={`Net worth trend: ${netWorthHistory.length} months of data, currently ${formatCurrency(currentNetWorth)}`}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={200}>
                 <AreaChart data={netWorthHistory} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
                   <defs>
                     <linearGradient id="netWorthGradient" x1="0" y1="0" x2="0" y2="1">

@@ -93,7 +93,7 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
 
         {/* Trend Chart */}
         <div className="h-[100px] md:h-[120px]" role="img" aria-label={`Cash flow trend: ${data.length} months of data, current net flow ${formatCurrency(currentMonth.netFlow)}`}>
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minHeight={100}>
             <AreaChart data={data}>
               <defs>
                 <linearGradient id="netFlowGradient" x1="0" y1="0" x2="0" y2="1">
