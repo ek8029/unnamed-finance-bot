@@ -10,6 +10,7 @@ import { HelmMark } from '@/components/helm-mark';
 import { WhyIOwnThis } from '@/components/thesis/why-i-own-this';
 import { VerdictCard, type ThesisIntelligenceItem } from '@/components/thesis/verdict-card';
 import { CrossThesisSynthesis } from '@/components/thesis/cross-thesis-synthesis';
+import { ThesisActions } from '@/components/thesis/thesis-actions';
 import { summarizePillars, effectiveStatus, type ThesisSummary } from '@/lib/thesis-summary';
 
 /* ── Local types ── */
@@ -248,6 +249,7 @@ export default function ThesesPage() {
   }));
   // Master-detail: selected thesis, defaulting to the first so detail always shows.
   const activeTicker = selectedTicker ?? summaries[0]?.t.ticker ?? null;
+  const activeThesisId = theses.find((x) => x.ticker === activeTicker)?.id ?? null;
 
   // Attention items: confirmed pillars whose effectiveStatus is weakening|broken
   const attentionItems: { thesis: Thesis; pillar: Pillar }[] = [];
@@ -657,6 +659,9 @@ export default function ThesesPage() {
 
             {/* Right pane: selected thesis detail (fills remaining width) */}
             <div className="flex-1 min-w-0 mt-4 2xl:mt-0">
+              {activeThesisId && (
+                <ThesisActions key={`actions-${activeThesisId}`} thesisId={activeThesisId} className="mb-4" />
+              )}
               {activeTicker && (
                 <div className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] p-5 sm:p-6 2xl:p-7">
                   <WhyIOwnThis key={activeTicker} ticker={activeTicker} bare />
