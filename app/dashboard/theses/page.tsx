@@ -11,7 +11,6 @@ import { WhyIOwnThis } from '@/components/thesis/why-i-own-this';
 import { VerdictCard, type ThesisIntelligenceItem } from '@/components/thesis/verdict-card';
 import { CrossThesisSynthesis } from '@/components/thesis/cross-thesis-synthesis';
 import { ThesisActions } from '@/components/thesis/thesis-actions';
-import { ConvictionIndex } from '@/components/thesis/conviction-index';
 import { summarizePillars, effectiveStatus, type ThesisSummary } from '@/lib/thesis-summary';
 
 /* ── Local types ── */
@@ -251,6 +250,7 @@ export default function ThesesPage() {
   // Master-detail: selected thesis, defaulting to the first so detail always shows.
   const activeTicker = selectedTicker ?? summaries[0]?.t.ticker ?? null;
   const activeThesisId = theses.find((x) => x.ticker === activeTicker)?.id ?? null;
+  const detailRef = useRef<HTMLDivElement>(null);
 
   // Attention items: confirmed pillars whose effectiveStatus is weakening|broken
   const attentionItems: { thesis: Thesis; pillar: Pillar }[] = [];
@@ -451,6 +451,17 @@ export default function ThesesPage() {
 
           {totalPillarCount > 0 && (
             <div className="lg:w-[300px] shrink-0 rounded-lg border border-white/[0.07] bg-[#131313] p-4 space-y-3">
+              <div className="flex items-baseline gap-2">
+                <span
+                  className="font-mono text-[26px] leading-none font-semibold tabular-nums"
+                  style={{ ...MONO, color: aggregateCounts.intact / totalPillarCount >= 0.8 ? '#4ADE80' : aggregateCounts.intact / totalPillarCount >= 0.5 ? '#E6B94D' : '#F87171' }}
+                >
+                  {Math.round((aggregateCounts.intact / totalPillarCount) * 100)}%
+                </span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#6A6A6A]" style={MONO}>
+                  conviction intact
+                </span>
+              </div>
               <AggregateMeter counts={aggregateCounts} total={totalPillarCount} height={8} />
               <div className="flex flex-wrap gap-x-4 gap-y-1.5 font-mono text-[11.5px]" style={MONO}>
                 {(['intact', 'weakening', 'broken', 'unverified'] as PillarStatus[])
@@ -473,11 +484,6 @@ export default function ThesesPage() {
             </div>
           )}
         </div>
-      )}
-
-      {/* ── Conviction index: glanceable KPI + honest 14-day trend ── */}
-      {!noThesesYet && totalPillarCount > 0 && (
-        <ConvictionIndex intact={aggregateCounts.intact} total={totalPillarCount} />
       )}
 
       {/* ── Section 1.5: Cross-thesis synthesis — preview strip, expands to detail ── */}
@@ -627,7 +633,13 @@ export default function ThesesPage() {
                   <button
                     key={t.id}
                     type="button"
-                    onClick={() => { setSelectedTicker(t.ticker); loadTheses(); }}
+                    onClick={() => {
+                      setSelectedTicker(t.ticker);
+                      loadTheses();
+                      if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1535px)').matches) {
+                        requestAnimationFrame(() => detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+                      }
+                    }}
                     className={`w-full text-left rounded-lg border px-4 py-4 transition-colors ${
                       active
                         ? 'border-[rgba(230,185,77,0.4)] bg-[rgba(230,185,77,0.05)]'
@@ -683,7 +695,7 @@ export default function ThesesPage() {
             </div>
 
             {/* Right pane: selected thesis detail (fills remaining width) */}
-            <div className="flex-1 min-w-0 mt-4 2xl:mt-0">
+            <div ref={detailRef} className="flex-1 min-w-0 mt-4 2xl:mt-0 scroll-mt-6">
               {activeThesisId && (
                 <ThesisActions key={`actions-${activeThesisId}`} thesisId={activeThesisId} className="mb-4" />
               )}
