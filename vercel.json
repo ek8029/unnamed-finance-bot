@@ -20,7 +20,7 @@
     },
     {
       "path": "/api/cron/score-theses",
-      "schedule": "25 13 * * *"
+      "schedule": "0 13-21 * * 1-5"
     }
   ]
 }
