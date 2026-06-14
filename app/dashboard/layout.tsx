@@ -242,7 +242,9 @@ export default function DashboardLayout({
   const isWrappedPage = pathname === '/dashboard/wrapped';
   // Conviction rail: ultrawide-only ambient panel; off on full-screen pages
   // and on the Theses page itself (which is the full conviction surface).
-  const showRail = !isChatPage && !isWrappedPage && pathname !== '/dashboard/theses';
+  // Gated: the conviction rail is part of the thesis layer, so only allowlisted
+  // accounts see it (and the layout reserves its width). Covers render + padding.
+  const showRail = isThesisUser(profile?.email) && !isChatPage && !isWrappedPage && pathname !== '/dashboard/theses';
   const pageTitle = getPageTitle(pathname);
 
   return (
