@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState } from 'react';
 import {
   AlertTriangle, CheckCircle2, ChevronDown,
   Sparkles, Eye,
@@ -216,8 +216,6 @@ export default function TaxesPage() {
   const { data: taxData, loading: taxLoading } = useTaxData();
   const { report: harvestReport, loading: harvestLoading, proRequired } = useTaxOpportunities();
 
-  const [selectedOpps, setSelectedOpps] = useState<Set<string>>(new Set());
-
   const loading = taxLoading || harvestLoading;
 
   // ── Derived calculations ──
@@ -292,37 +290,6 @@ export default function TaxesPage() {
 
   // Realized transactions table toggle
   const [showRealizedTx, setShowRealizedTx] = useState(false);
-
-  // ── Harvest table selection ──
-
-  const toggleOpp = useCallback((ticker: string) => {
-    setSelectedOpps((prev) => {
-      const next = new Set(prev);
-      if (next.has(ticker)) {
-        next.delete(ticker);
-      } else {
-        next.add(ticker);
-      }
-      return next;
-    });
-  }, []);
-
-  const toggleAllOpps = useCallback(() => {
-    if (!harvestReport) return;
-    setSelectedOpps((prev) => {
-      if (prev.size === harvestReport.opportunities.length) {
-        return new Set();
-      }
-      return new Set(harvestReport.opportunities.map((o) => o.ticker));
-    });
-  }, [harvestReport]);
-
-  const selectedSavings = useMemo(() => {
-    if (!harvestReport) return 0;
-    return harvestReport.opportunities
-      .filter((o) => selectedOpps.has(o.ticker))
-      .reduce((sum, o) => sum + o.estimatedSavings, 0);
-  }, [harvestReport, selectedOpps]);
 
   // (Form 8949 preview is now a separate component below)
 
@@ -640,23 +607,11 @@ export default function TaxesPage() {
           <div
             className="hidden md:grid px-5 py-2.5 border-b border-[var(--color-border-subtle)]"
             style={{
-              gridTemplateColumns: '32px 72px 1fr 80px 96px 96px 104px 96px 100px 80px',
+              gridTemplateColumns: '72px 1fr 80px 96px 96px 104px 96px 100px 80px',
               gap: '8px',
               background: 'rgba(255,255,255,0.015)',
             }}
           >
-            <div className="flex items-center justify-center">
-              <input
-                type="checkbox"
-                checked={
-                  harvestReport.opportunities.length > 0 &&
-                  selectedOpps.size === harvestReport.opportunities.length
-                }
-                onChange={toggleAllOpps}
-                aria-label="Select all harvest opportunities"
-                className="w-3.5 h-3.5 rounded-sm border-[var(--color-border-base)] accent-[var(--color-gold)] cursor-pointer"
-              />
-            </div>
             {['Symbol', 'Name', 'Shares', 'Basis', 'Mkt Value', 'Unrealized', 'Est. Saving', 'Wash Sale', 'Term'].map(
               (h) => (
                 <span
@@ -675,8 +630,6 @@ export default function TaxesPage() {
             <HarvestRow
               key={opp.ticker}
               opp={opp}
-              selected={selectedOpps.has(opp.ticker)}
-              onToggle={() => toggleOpp(opp.ticker)}
               formatCurrency={formatCurrency}
             />
           ))}
@@ -688,19 +641,17 @@ export default function TaxesPage() {
             aria-live="polite"
           >
             <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
-              {selectedOpps.size > 0
-                ? `${selectedOpps.size} of ${harvestReport.opportunityCount} selected`
-                : `All ${harvestReport.opportunityCount} opportunities`}
+              {`All ${harvestReport.opportunityCount} opportunities`}
             </span>
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
-                Est. tax saving{selectedOpps.size > 0 ? ' (selected)' : ' (total)'}
+                Est. tax saving (total)
               </span>
               <span
                 className="text-[14px] font-bold text-[var(--color-positive)]"
                 style={{ ...TNUM, ...MONO }}
               >
-                {formatCurrency(selectedOpps.size > 0 ? selectedSavings : harvestReport.totalEstimatedSavings)}
+                {formatCurrency(harvestReport.totalEstimatedSavings)}
               </span>
             </div>
           </div>
@@ -1193,13 +1144,9 @@ export default function TaxesPage() {
 
 function HarvestRow({
   opp,
-  selected,
-  onToggle,
   formatCurrency,
 }: {
   opp: TaxOpportunity;
-  selected: boolean;
-  onToggle: () => void;
   formatCurrency: (n: number) => string;
 }) {
   const isWashSafe = !opp.washSaleRisk;
@@ -1221,26 +1168,14 @@ function HarvestRow({
       <div
         className={cn(
           'hidden md:grid items-center px-5 py-3 border-b border-[var(--color-border-subtle)] motion-safe:transition-colors motion-safe:duration-100 cursor-pointer',
-          selected ? 'bg-[rgba(230,185,77,0.04)]' : 'hover:bg-white/[0.02]',
+          'hover:bg-white/[0.02]',
         )}
         style={{
-          gridTemplateColumns: '32px 72px 1fr 80px 96px 96px 104px 96px 100px 80px',
+          gridTemplateColumns: '72px 1fr 80px 96px 96px 104px 96px 100px 80px',
           gap: '8px',
         }}
         onClick={() => setExpanded((v) => !v)}
       >
-        {/* Checkbox */}
-        <div className="flex items-center justify-center">
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={onToggle}
-            onClick={(e) => e.stopPropagation()}
-            aria-label={`Select ${opp.ticker} for harvest`}
-            className="w-3.5 h-3.5 rounded-sm border-[var(--color-border-base)] accent-[var(--color-gold)] cursor-pointer"
-          />
-        </div>
-
         {/* Symbol */}
         <span className="text-[14px] font-bold text-[var(--color-gold)]" style={MONO}>
           {opp.ticker}
@@ -1364,7 +1299,6 @@ function HarvestRow({
           style={{
             borderLeft: `3px solid ${opp.washSaleRisk ? 'var(--color-warning-text)' : 'var(--color-positive)'}`,
             background: opp.washSaleRisk ? 'rgba(251, 191, 36, 0.03)' : 'rgba(74, 222, 128, 0.03)',
-            marginLeft: '32px',
           }}
         >
           <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
@@ -1381,7 +1315,6 @@ function HarvestRow({
           style={{
             borderLeft: `3px solid ${opp.thesisStatus === 'broken' ? '#F87171' : opp.thesisStatus === 'weakening' ? '#E6B94D' : '#4ADE80'}`,
             background: opp.thesisStatus === 'broken' ? 'rgba(248,113,113,0.03)' : opp.thesisStatus === 'weakening' ? 'rgba(230,185,77,0.03)' : 'rgba(74,222,128,0.03)',
-            marginLeft: '32px',
           }}
         >
           <span
@@ -1402,21 +1335,10 @@ function HarvestRow({
 
       {/* Mobile card */}
       <div
-        className={cn(
-          'md:hidden px-4 py-3.5 border-b border-[var(--color-border-subtle)] motion-safe:transition-colors motion-safe:duration-100',
-          selected ? 'bg-[rgba(230,185,77,0.04)]' : '',
-        )}
+        className="md:hidden px-4 py-3.5 border-b border-[var(--color-border-subtle)] motion-safe:transition-colors motion-safe:duration-100"
         onClick={() => setExpanded((v) => !v)}
       >
         <div className="flex items-center gap-2 sm:gap-3 mb-2.5 flex-wrap">
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={onToggle}
-            onClick={(e) => e.stopPropagation()}
-            aria-label={`Select ${opp.ticker} for harvest`}
-            className="w-4 h-4 rounded-sm border-[var(--color-border-base)] accent-[var(--color-gold)] cursor-pointer shrink-0"
-          />
           <span className="text-[14px] font-bold text-[var(--color-gold)]" style={MONO}>
             {opp.ticker}
           </span>
