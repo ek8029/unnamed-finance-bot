@@ -182,13 +182,14 @@ function EvidenceTimeline({ ticker, pillar }: { ticker: string; pillar: Pillar }
 }
 
 function ConfirmedPillarRow({
-  ticker, pillar, open, onToggle, onPatch,
+  ticker, pillar, open, onToggle, onPatch, onRemove,
 }: {
   ticker: string;
   pillar: Pillar;
   open: boolean;
   onToggle: () => void;
   onPatch: (id: string, body: Record<string, unknown>) => Promise<boolean>;
+  onRemove: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(pillar.claim);
@@ -207,7 +208,7 @@ function ConfirmedPillarRow({
 
   return (
     <div className="border-t border-[var(--color-border-subtle)]">
-      <div className="flex items-start gap-4 py-5">
+      <div className="flex items-start gap-4 py-3">
         <div className="pt-0.5 shrink-0">
           <StatusChip status={eff} />
         </div>
@@ -225,7 +226,7 @@ function ConfirmedPillarRow({
               type="button"
               onClick={() => { setText(pillar.claim); setEditing(true); }}
               title="Click to edit"
-              className="block w-full text-left text-[15px] font-semibold leading-[1.45] tracking-[-0.01em] text-[#FAFAFA] cursor-text"
+              className="block w-full text-left text-[14px] font-medium leading-[1.4] tracking-[-0.01em] text-[#FAFAFA] cursor-text"
             >
               {pillar.claim}
             </button>
@@ -265,16 +266,26 @@ function ConfirmedPillarRow({
             </div>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onToggle}
-          className="shrink-0 flex items-center gap-2 text-[#9A9A9A] hover:text-[#FAFAFA] transition-colors pt-0.5"
-        >
-          <span className="font-mono text-[11px] tracking-[0.04em]">{pillar.evidence.length} evidence</span>
-          <span className="text-[10px] text-[#6A6A6A] transition-transform" style={{ transform: open ? 'rotate(180deg)' : 'none' }}>
-            &#9662;
-          </span>
-        </button>
+        <div className="shrink-0 flex items-center gap-2 pt-0.5">
+          <button
+            type="button"
+            onClick={onToggle}
+            className="flex items-center gap-2 text-[#9A9A9A] hover:text-[#FAFAFA] transition-colors"
+          >
+            <span className="font-mono text-[11px] tracking-[0.04em]">{pillar.evidence.length} evidence</span>
+            <span className="text-[10px] text-[#6A6A6A] transition-transform" style={{ transform: open ? 'rotate(180deg)' : 'none' }}>
+              &#9662;
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { if (window.confirm('Remove this pillar? This deletes it and its evidence.')) onRemove(pillar.id); }}
+            title="Remove pillar"
+            className="w-7 h-7 inline-flex items-center justify-center rounded border border-white/[0.1] text-[#6A6A6A] hover:text-[#F87171] hover:border-[rgba(248,113,113,0.4)] transition-colors font-mono text-[14px]"
+          >
+            &times;
+          </button>
+        </div>
       </div>
       {open && (
         <div className="pb-4">
@@ -311,7 +322,7 @@ function DraftPillarRow({
   };
 
   return (
-    <div className="border-t border-[var(--color-border-subtle)] py-4">
+    <div className="border-t border-[var(--color-border-subtle)] py-3">
       <div className="flex items-start gap-4">
         <div className="pt-0.5 shrink-0">
           <StatusChip status="unverified" />
@@ -327,7 +338,7 @@ function DraftPillarRow({
             </div>
           ) : (
             <>
-              <div className="text-[15px] font-semibold italic leading-[1.45] tracking-[-0.01em] text-[#9A9A9A] border-l-2 border-dashed border-white/[0.18] pl-3.5">
+              <div className="text-[14px] font-medium italic leading-[1.4] tracking-[-0.01em] text-[#9A9A9A] border-l-2 border-dashed border-white/[0.18] pl-3.5">
                 {pillar.claim}
               </div>
               <div className="mt-2 font-mono text-[10px] uppercase tracking-[0.15em] text-[#6A6A6A]">
@@ -402,7 +413,7 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
     setPillars(withEv);
     // Auto-open evidence for pillars that have it: the substance shows on first
     // expand, no second click.
-    setOpenPillars(new Set(withEv.filter((p) => p.evidence.length > 0).map((p) => p.id)));
+    setOpenPillars(new Set()); // evidence collapsed by default — tap a pillar to expand
     setPhase('ready');
   }, []);
 
@@ -686,6 +697,7 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
                   return next;
                 })}
                 onPatch={patchPillar}
+                onRemove={dismissPillar}
               />
             ))}
 

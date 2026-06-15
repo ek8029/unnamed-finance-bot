@@ -6,16 +6,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
-import { HelmMark } from '@/components/helm-mark';
 import { WhyIOwnThis } from '@/components/thesis/why-i-own-this';
 import { VerdictCard, type ThesisIntelligenceItem } from '@/components/thesis/verdict-card';
 import { CrossThesisSynthesis } from '@/components/thesis/cross-thesis-synthesis';
 import { ThesisActions } from '@/components/thesis/thesis-actions';
+import { RatifyQueue, type RatifyItem } from '@/components/thesis/ratify-queue';
 import { summarizePillars, effectiveStatus, type ThesisSummary } from '@/lib/thesis-summary';
+import { STATUS_META, dotGlow, METER_ORDER, METER_COLORS, convictionColor, type PillarStatus } from '@/lib/thesis-palette';
 
 /* ── Local types ── */
-type PillarStatus = 'unverified' | 'intact' | 'weakening' | 'broken';
-
 interface EvidenceRow {
   id: string;
   pillar_id: string;
@@ -58,19 +57,6 @@ interface Holding {
   name: string;
 }
 
-/* ── Local STATUS_META (mirrors why-i-own-this.tsx, not exported from there) ── */
-const STATUS_META: Record<PillarStatus, { label: string; color: string }> = {
-  intact:     { label: 'Intact',     color: '#4ADE80' },
-  weakening:  { label: 'Weakening',  color: '#E6B94D' },
-  broken:     { label: 'Broken',     color: '#F87171' },
-  unverified: { label: 'Watching', color: '#6A6A6A' },
-};
-
-/* Status dot glow (intact/weakening/broken lit; watching stays flat). */
-function dotGlow(status: PillarStatus): string {
-  return status === 'unverified' ? 'none' : `0 0 7px ${STATUS_META[status].color}`;
-}
-
 /* toIntelligenceItem - mirrors line ~62 of why-i-own-this.tsx exactly */
 function toIntelligenceItem(ticker: string, pillar: Pillar, e: EvidenceRow): ThesisIntelligenceItem {
   return {
@@ -111,14 +97,6 @@ function StatusChip({ status }: { status: PillarStatus }) {
 }
 
 /* ── Aggregate status meter (thin flex bar) ── */
-const METER_ORDER: PillarStatus[] = ['broken', 'weakening', 'unverified', 'intact'];
-const METER_COLORS: Record<PillarStatus, string> = {
-  broken:     '#F87171',
-  weakening:  '#E6B94D',
-  unverified: '#6A6A6A',
-  intact:     '#4ADE80',
-};
-
 function AggregateMeter({
   counts,
   total,
@@ -200,8 +178,8 @@ export default function ThesesPage() {
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [seedingTicker, setSeedingTicker] = useState<string | null>(null);
   const [seedError, setSeedError] = useState<string | null>(null);
-  const [untrackedOpen, setUntrackedOpen] = useState(false);
   const [attentionOpen, setAttentionOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -247,10 +225,6 @@ export default function ThesesPage() {
     t,
     summary: summarizePillars(t.pillars),
   }));
-  // Master-detail: selected thesis, defaulting to the first so detail always shows.
-  const activeTicker = selectedTicker ?? summaries[0]?.t.ticker ?? null;
-  const activeThesisId = theses.find((x) => x.ticker === activeTicker)?.id ?? null;
-  const detailRef = useRef<HTMLDivElement>(null);
 
   // Attention items: confirmed pillars whose effectiveStatus is weakening|broken
   const attentionItems: { thesis: Thesis; pillar: Pillar }[] = [];
@@ -299,7 +273,23 @@ export default function ThesesPage() {
   // Holdings without a thesis
   const thesisTickers = new Set(theses.map((t) => t.ticker));
   const unthesedHoldings = holdings.filter((h) => !thesisTickers.has(h.ticker));
-  const suggestedTickers = unthesedHoldings.slice(0, 3).map((h) => h.ticker);
+
+  // Ratify queue: theses carrying unconfirmed AI-drafted pillars (variant A).
+  const ratifyItems: RatifyItem[] = [];
+  for (const { t } of summaries) {
+    const drafts = t.pillars.filter(
+      (p) => p.origin === 'ai_draft' && !p.confirmed && p.lifecycle !== 'dismissed',
+    );
+    if (drafts.length === 0) continue;
+    ratifyItems.push({
+      thesisId: t.id,
+      ticker: t.ticker,
+      draftPillarIds: drafts.map((d) => d.id),
+      topClaim: drafts[0].claim,
+      moreCount: drafts.length - 1,
+    });
+  }
+  const confirmedThesisCount = summaries.filter(({ summary }) => summary.confirmedCount > 0).length;
 
   // Quiet state: no attention items AND at least one confirmed pillar
   const totalConfirmed = summaries.reduce((sum, { summary }) => sum + summary.confirmedCount, 0);
@@ -327,6 +317,22 @@ export default function ThesesPage() {
       if (mountedRef.current) setSeedError(ticker);
     } finally {
       if (mountedRef.current) setSeedingTicker(null);
+    }
+  }
+
+  /* ── Delete thesis ── */
+  async function handleDeleteThesis(ticker: string) {
+    if (typeof window !== 'undefined' && !window.confirm(`Delete the ${ticker} thesis? This removes all its pillars and evidence.`)) return;
+    try {
+      const res = await fetch(`/api/thesis/${ticker}`, { method: 'DELETE' });
+      if (!mountedRef.current) return;
+      if (res.ok) {
+        setDetailOpen(false);
+        setSelectedTicker(null);
+        await loadTheses();
+      }
+    } catch {
+      // non-fatal
     }
   }
 
@@ -454,7 +460,7 @@ export default function ThesesPage() {
               <div className="flex items-baseline gap-2">
                 <span
                   className="font-mono text-[26px] leading-none font-semibold tabular-nums"
-                  style={{ ...MONO, color: aggregateCounts.intact / totalPillarCount >= 0.8 ? '#4ADE80' : aggregateCounts.intact / totalPillarCount >= 0.5 ? '#E6B94D' : '#F87171' }}
+                  style={{ ...MONO, color: convictionColor(aggregateCounts.intact / totalPillarCount) }}
                 >
                   {Math.round((aggregateCounts.intact / totalPillarCount) * 100)}%
                 </span>
@@ -486,29 +492,7 @@ export default function ThesesPage() {
         </div>
       )}
 
-      {/* ── Section 1.5: Cross-thesis synthesis — preview strip, expands to detail ── */}
-      {!noThesesYet && <CrossThesisSynthesis />}
-
-      {/* ── All clear: reassuring quiet state when nothing needs attention ── */}
-      {!noThesesYet && totalPillarCount > 0 && attentionItems.length === 0 && (
-        <section>
-          <div
-            className="rounded-lg bg-[#131313] border border-white/[0.07] px-5 py-4 flex items-center gap-3"
-            style={{ borderTop: '2px solid rgba(74,222,128,0.35)' }}
-          >
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#4ADE80', boxShadow: '0 0 8px #4ADE8088' }} />
-            <div className="min-w-0">
-              <div className="text-[14px] font-semibold text-[#FAFAFA]">All clear</div>
-              <div className="text-[12.5px] text-[#8A8A8A]">
-                {aggregateCounts.intact} pillar{aggregateCounts.intact === 1 ? '' : 's'} holding, nothing breaking.
-                {lastScanned ? ` Last checked ${fmtScanned(lastScanned)}.` : ''} Helm is watching.
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── Section 2: Needs Attention (collapsible; compact preview by default) ── */}
+      {/* ── Needs Attention (urgent, kept at top) ── */}
       {attentionItems.length > 0 && (
         <section>
           <div className="rounded-lg overflow-hidden bg-[#131313] border border-white/[0.07]" style={{ borderTop: '2px solid rgba(248,113,113,0.35)' }}>
@@ -586,36 +570,26 @@ export default function ThesesPage() {
         </section>
       )}
 
-      {/* ── Section 3: Quiet state ── */}
-      {isQuiet && (
-        <div className="flex overflow-hidden rounded-[4px] border border-white/[0.06] bg-[#131313]">
-          <div className="w-[3px] shrink-0 bg-[#4ADE80]" style={{ opacity: 0.7 }} />
-          <div className="flex-1 px-10 py-10">
-            <p
-              className="m-0 mb-4 text-[32px] font-bold leading-[1.2] tracking-[-0.02em] text-[#FAFAFA]"
-              style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
-            >
-              Nothing moved against your theses.
-            </p>
-            <p
-              className="m-0 mb-6 text-[17px] leading-[1.55] text-[#9A9A9A]"
-              style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontStyle: 'italic' }}
-            >
-              Helm scanned filings, insider activity and headlines overnight.
-            </p>
-            {lastScanned && (
-              <div
-                className="font-mono text-[11.5px] tracking-[0.06em] text-[#4A4A4A] tabular-nums"
-                style={MONO}
-              >
-                Last scanned {fmtScanned(lastScanned)}
+      {/* ── All clear (compact; only when nothing needs attention) ── */}
+      {!noThesesYet && totalPillarCount > 0 && attentionItems.length === 0 && (
+        <section>
+          <div
+            className="rounded-lg bg-[#131313] border border-white/[0.07] px-5 py-4 flex items-center gap-3"
+            style={{ borderTop: '2px solid rgba(74,222,128,0.35)' }}
+          >
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#4ADE80', boxShadow: '0 0 8px #4ADE8088' }} />
+            <div className="min-w-0">
+              <div className="text-[14px] font-semibold text-[#FAFAFA]">All clear</div>
+              <div className="text-[12.5px] text-[#8A8A8A]">
+                {aggregateCounts.intact} pillar{aggregateCounts.intact === 1 ? '' : 's'} holding, nothing breaking.
+                {lastScanned ? ` Last checked ${fmtScanned(lastScanned)}.` : ''} Helm is watching.
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* ── Section 4: Your theses ── */}
+      {/* ── Your theses (grid + docked inspector) ── */}
       {!noThesesYet && (
         <section className="space-y-4">
           <div
@@ -624,92 +598,73 @@ export default function ThesesPage() {
           >
             YOUR THESES
           </div>
-          <div className="flex flex-col 2xl:flex-row 2xl:gap-6 2xl:items-start">
-            {/* Left rail: selectable thesis list (becomes a sticky sidebar on ultrawide) */}
-            <div className="space-y-2.5 2xl:w-[340px] 2xl:shrink-0 2xl:sticky 2xl:top-6">
-              {summaries.map(({ t, summary }) => {
-                const active = activeTicker === t.ticker;
-                return (
+          {/* Accordion: compact rows, click expands one in place (others collapse) */}
+          <div className="rounded-lg border border-white/[0.07] bg-[#0E0E0E] overflow-hidden divide-y divide-white/[0.05]">
+            {summaries.map(({ t, summary }) => {
+              const open = selectedTicker === t.ticker && detailOpen;
+              const intactFrac = summary.confirmedCount > 0 ? summary.statusCounts.intact / summary.confirmedCount : 0;
+              const worst: PillarStatus | null = summary.statusCounts.broken > 0 ? 'broken' : summary.statusCounts.weakening > 0 ? 'weakening' : null;
+              return (
+                <div key={t.id}>
                   <button
-                    key={t.id}
                     type="button"
                     onClick={() => {
+                      if (open) { setDetailOpen(false); return; }
                       setSelectedTicker(t.ticker);
+                      setDetailOpen(true);
                       loadTheses();
-                      if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1535px)').matches) {
-                        requestAnimationFrame(() => detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-                      }
                     }}
-                    className={`w-full text-left rounded-lg border px-4 py-4 transition-colors ${
-                      active
-                        ? 'border-[rgba(230,185,77,0.4)] bg-[rgba(230,185,77,0.05)]'
-                        : 'border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] hover:bg-white/[0.02]'
-                    }`}
+                    className={`w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 text-left transition-colors ${open ? 'bg-[rgba(230,185,77,0.045)]' : 'hover:bg-white/[0.02]'}`}
                   >
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        className="font-mono text-[14px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA]"
-                        style={MONO}
-                      >
-                        {t.ticker}
-                      </span>
-                      {summary.draftCount > 0 && (
-                        <span
-                          className="font-mono text-[9px] font-semibold uppercase tracking-[0.15em] px-2 py-[2px] rounded border border-[rgba(230,185,77,0.3)] text-[#E6B94D] bg-[rgba(230,185,77,0.06)]"
-                          style={MONO}
-                        >
-                          {summary.draftCount} draft
+                    <span className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA] w-[58px] shrink-0" style={MONO}>
+                      {t.ticker}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      {summary.confirmedCount > 0 ? (
+                        <AggregateMeter counts={summary.statusCounts} total={summary.confirmedCount} height={6} />
+                      ) : summary.draftCount > 0 ? (
+                        <span className="font-mono text-[10px] uppercase tracking-[0.13em] text-[#E6B94D]" style={MONO}>
+                          {summary.draftCount} draft{summary.draftCount === 1 ? '' : 's'} to confirm
                         </span>
-                      )}
-                      {t.tracked && (
-                        <span
-                          className="font-mono text-[9px] font-semibold uppercase tracking-[0.15em] px-2 py-[2px] rounded border border-[rgba(74,222,128,0.3)] text-[#4ADE80] bg-[rgba(74,222,128,0.06)]"
-                          style={MONO}
-                        >
-                          Tracked
-                        </span>
+                      ) : (
+                        <span className="font-mono text-[10px] uppercase tracking-[0.13em] text-[#5F5F5F]" style={MONO}>no pillars yet</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 flex-wrap mt-1.5">
-                      {(summary.statusCounts.broken > 0 || summary.statusCounts.weakening > 0) && (
-                        <StatusChip status={summary.statusCounts.broken > 0 ? 'broken' : 'weakening'} />
-                      )}
-                      <span
-                        className="font-mono text-[11px] inline-flex items-center gap-1.5"
-                        style={{ ...MONO, color: summary.statusCounts.intact > 0 ? '#4ADE80' : '#6A6A6A' }}
-                      >
-                        {summary.statusCounts.intact > 0 && (
-                          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#4ADE80', boxShadow: dotGlow('intact') }} />
-                        )}
-                        {summary.statusCounts.intact} of {summary.confirmedCount} intact
-                      </span>
-                    </div>
+                    {worst && <div className="hidden sm:block shrink-0"><StatusChip status={worst} /></div>}
                     {summary.confirmedCount > 0 && (
-                      <div className="mt-3">
-                        <CardMeter summary={summary} />
-                      </div>
+                      <span className="font-mono text-[13px] font-semibold tabular-nums w-[42px] text-right shrink-0" style={{ ...MONO, color: convictionColor(intactFrac) }}>
+                        {Math.round(intactFrac * 100)}%
+                      </span>
                     )}
+                    <ChevronDown className={`w-4 h-4 text-[#6A6A6A] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
                   </button>
-                );
-              })}
-            </div>
-
-            {/* Right pane: selected thesis detail (fills remaining width) */}
-            <div ref={detailRef} className="flex-1 min-w-0 mt-4 2xl:mt-0 scroll-mt-6">
-              {activeThesisId && (
-                <ThesisActions key={`actions-${activeThesisId}`} thesisId={activeThesisId} className="mb-4" />
-              )}
-              {activeTicker && (
-                <div className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] p-5 sm:p-6 2xl:p-7">
-                  <WhyIOwnThis key={activeTicker} ticker={activeTicker} bare />
+                  {open && (
+                    <div className="px-4 sm:px-5 pb-5 pt-1 border-t border-white/[0.05]">
+                      <div className="flex items-center justify-end mb-3">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteThesis(t.ticker)}
+                          className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#6A6A6A] hover:text-[#F87171] transition-colors"
+                          style={MONO}
+                        >
+                          Delete thesis
+                        </button>
+                      </div>
+                      <ThesisActions key={`actions-${t.id}`} thesisId={t.id} className="mb-4" />
+                      <WhyIOwnThis key={t.ticker} ticker={t.ticker} bare />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })}
           </div>
         </section>
       )}
 
-      {/* ── Section 5: Start a thesis ── */}
+      {/* ── Intelligence: cross-thesis synthesis (below the theses) ── */}
+      {!noThesesYet && <CrossThesisSynthesis />}
+
+      {/* ── Bottom: start (empty state) or the ratify queue ── */}
       {noThesesYet ? (
         <section className="space-y-4">
           <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted,#6A6A6A)]" style={MONO}>
@@ -724,51 +679,18 @@ export default function ThesesPage() {
             </p>
           )}
         </section>
-      ) : unthesedHoldings.length > 0 ? (
-        <section>
-          <div className="rounded-lg overflow-hidden bg-[#131313] border border-white/[0.07]" style={{ borderTop: '2px solid rgba(230,185,77,0.35)' }}>
-            <div className="flex items-center gap-4 px-5 py-4">
-              <HelmMark size={18} />
-              <div className="min-w-0 flex-1">
-                <div className="text-[14px] font-semibold text-[#FAFAFA]">
-                  {unthesedHoldings.length} untracked position{unthesedHoldings.length === 1 ? '' : 's'}
-                </div>
-                <div className="text-[12px] text-[#6A6A6A] truncate">
-                  Helm can draft a thesis for any of them{suggestedTickers.length > 0 ? `. Suggested: ${suggestedTickers.join(', ')}` : ''}.
-                </div>
-              </div>
-              <div className="hidden sm:flex items-center gap-2 shrink-0">
-                {suggestedTickers.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    disabled={seedingTicker === t}
-                    onClick={() => handleSeed(t)}
-                    className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] px-2.5 py-1.5 rounded border border-[rgba(230,185,77,0.35)] text-[#E6B94D] hover:bg-[rgba(230,185,77,0.08)] transition-colors disabled:opacity-50"
-                    style={MONO}
-                  >
-                    {seedingTicker === t ? '...' : `${t} +`}
-                  </button>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={() => setUntrackedOpen((o) => !o)}
-                className="shrink-0 inline-flex items-center gap-1.5 font-mono text-[10.5px] text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors"
-                style={MONO}
-              >
-                {untrackedOpen ? 'Hide' : `See all ${unthesedHoldings.length}`}
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${untrackedOpen ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
-            {untrackedOpen && (
-              <div className="px-5 pb-5 pt-1 border-t border-white/[0.05]">
-                {unthesedListEl}
-              </div>
-            )}
-          </div>
-        </section>
-      ) : null}
+      ) : (
+        <RatifyQueue
+          items={ratifyItems}
+          unthesed={unthesedHoldings}
+          confirmedCount={confirmedThesisCount}
+          onChanged={loadTheses}
+          onEdit={(tk) => {
+            setSelectedTicker(tk);
+            setDetailOpen(true);
+          }}
+        />
+      )}
     </div>
   );
 }
