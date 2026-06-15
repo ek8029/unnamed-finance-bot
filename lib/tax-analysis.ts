@@ -55,6 +55,8 @@ export interface HarvestablePosition {
   accountName: string | null;
   accountSubtype: string | null;
   isRetirement: boolean;
+  /** Conviction from the thesis layer when available (thesis-aware TLH). */
+  thesisStatus?: 'intact' | 'weakening' | 'broken';
 }
 
 export interface ReplacementSecurity {

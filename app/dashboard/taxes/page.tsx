@@ -2,13 +2,14 @@
 
 import { useMemo, useState, useCallback } from 'react';
 import {
-  AlertTriangle, CheckCircle2, ChevronDown, ChevronRight,
+  AlertTriangle, CheckCircle2, ChevronDown,
   Sparkles, Eye,
 } from 'lucide-react';
 import { useFormat } from '@/hooks/use-format';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTaxData, useTaxOpportunities } from '@/hooks/use-financial-data';
 import type { TaxOpportunity, RealizedTransaction } from '@/hooks/use-financial-data';
+import { thesisTlhNote } from '@/lib/thesis-conviction';
 import { cn } from '@/lib/utils';
 import { useTier } from '@/hooks/use-tier';
 import { ProBlur } from '@/components/pro-blur';
@@ -391,20 +392,6 @@ export default function TaxesPage() {
             </a>
           </p>
 
-          {/* Scroll to Form 8949 */}
-          {showProContent && (
-            <button
-              onClick={() => document.getElementById('form-8949-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-[13px] font-semibold motion-safe:transition-colors motion-safe:duration-150 cursor-pointer"
-              style={{
-                background: 'var(--color-gold)',
-                color: 'var(--color-bg-base)',
-              }}
-            >
-              Preview Form 8949
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          )}
         </div>
       )}
 
@@ -581,6 +568,232 @@ export default function TaxesPage() {
                   : 'No net capital losses to offset ordinary income this year.'}
             </p>
           </div>
+        </section>
+      )}
+
+      {/* ─── 4. Harvest Opportunity Table ─── */}
+      {loading ? (
+        <TableSkeleton />
+      ) : !showProContent ? (
+        <ProBlur
+          label="Unlock full harvest analysis"
+          description={`${lossPositionCount} position${lossPositionCount !== 1 ? 's' : ''} with ${formatCurrency(totalHarvestable)} in harvestable losses found. Upgrade to see lots, wash-sale flags, and estimated figures.`}
+          minHeight="280px"
+        >
+          {/* Placeholder rows for blur effect */}
+          <div className="rounded-md overflow-hidden" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}>
+            <div className="px-5 py-4 flex items-center gap-2.5 border-b border-[var(--color-border-subtle)]">
+              <Sparkles className="w-4 h-4 text-[var(--color-gold)]" />
+              <span className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-gold)]" style={MONO}>
+                Harvest Opportunity
+              </span>
+              <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/5 text-[var(--color-text-secondary)]" style={MONO}>
+                {lossPositionCount}
+              </span>
+            </div>
+            {Array.from({ length: Math.min(lossPositionCount, 4) }).map((_, i) => (
+              <div key={i} className="px-5 py-4 border-b border-[var(--color-border-subtle)] flex items-center gap-4">
+                <div className="w-10 h-4 bg-[var(--color-bg-elevated)] rounded" />
+                <div className="flex-1 h-4 bg-[var(--color-bg-elevated)] rounded" />
+                <div className="w-20 h-4 bg-[var(--color-bg-elevated)] rounded" />
+                <div className="w-20 h-4 bg-[var(--color-bg-elevated)] rounded" />
+                <div className="w-16 h-4 bg-[var(--color-bg-elevated)] rounded" />
+              </div>
+            ))}
+          </div>
+        </ProBlur>
+      ) : harvestReport && harvestReport.opportunityCount > 0 ? (
+        <section
+          aria-label="Harvest opportunities"
+          className="rounded-md overflow-hidden"
+          style={{
+            background: 'var(--color-bg-surface)',
+            border: '1px solid var(--color-border-base)',
+          }}
+        >
+          {/* Table header bar */}
+          <div className="px-5 py-4 flex items-center justify-between border-b border-[var(--color-border-subtle)]">
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="w-4 h-4 text-[var(--color-gold)]" />
+              <span
+                className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-gold)]"
+                style={MONO}
+              >
+                Harvest Opportunity
+              </span>
+              <span
+                className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/5 text-[var(--color-text-secondary)]"
+                style={MONO}
+              >
+                {harvestReport.opportunityCount}
+              </span>
+            </div>
+            {/* Wash sale legend — hidden on mobile, badges are self-explanatory */}
+            <span className="hidden sm:inline text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+              <span className="text-[var(--color-positive)]">Clear</span> = no substantially-identical security detected
+              <span className="mx-1.5">|</span>
+              <span className="text-[var(--color-warning-text)]">Conflict</span> = wash sale risk detected
+            </span>
+          </div>
+
+          {/* Table column headers */}
+          <div
+            className="hidden md:grid px-5 py-2.5 border-b border-[var(--color-border-subtle)]"
+            style={{
+              gridTemplateColumns: '32px 72px 1fr 80px 96px 96px 104px 96px 100px 80px',
+              gap: '8px',
+              background: 'rgba(255,255,255,0.015)',
+            }}
+          >
+            <div className="flex items-center justify-center">
+              <input
+                type="checkbox"
+                checked={
+                  harvestReport.opportunities.length > 0 &&
+                  selectedOpps.size === harvestReport.opportunities.length
+                }
+                onChange={toggleAllOpps}
+                aria-label="Select all harvest opportunities"
+                className="w-3.5 h-3.5 rounded-sm border-[var(--color-border-base)] accent-[var(--color-gold)] cursor-pointer"
+              />
+            </div>
+            {['Symbol', 'Name', 'Shares', 'Basis', 'Mkt Value', 'Unrealized', 'Est. Saving', 'Wash Sale', 'Term'].map(
+              (h) => (
+                <span
+                  key={h}
+                  className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-medium truncate"
+                  style={MONO}
+                >
+                  {h}
+                </span>
+              ),
+            )}
+          </div>
+
+          {/* Table rows */}
+          {harvestReport.opportunities.map((opp: TaxOpportunity) => (
+            <HarvestRow
+              key={opp.ticker}
+              opp={opp}
+              selected={selectedOpps.has(opp.ticker)}
+              onToggle={() => toggleOpp(opp.ticker)}
+              formatCurrency={formatCurrency}
+            />
+          ))}
+
+          {/* Table footer */}
+          <div
+            className="px-5 py-3.5 flex items-center justify-between border-t border-[var(--color-border-subtle)]"
+            style={{ background: 'rgba(255,255,255,0.02)' }}
+            aria-live="polite"
+          >
+            <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
+              {selectedOpps.size > 0
+                ? `${selectedOpps.size} of ${harvestReport.opportunityCount} selected`
+                : `All ${harvestReport.opportunityCount} opportunities`}
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+                Est. tax saving{selectedOpps.size > 0 ? ' (selected)' : ' (total)'}
+              </span>
+              <span
+                className="text-[14px] font-bold text-[var(--color-positive)]"
+                style={{ ...TNUM, ...MONO }}
+              >
+                {formatCurrency(selectedOpps.size > 0 ? selectedSavings : harvestReport.totalEstimatedSavings)}
+              </span>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <div
+          className="rounded-md p-8 text-center"
+          style={{
+            background: 'var(--color-bg-surface)',
+            border: '1px solid var(--color-border-base)',
+          }}
+        >
+          <CheckCircle2 className="w-8 h-8 text-[var(--color-positive)] mx-auto mb-3 opacity-60" />
+          <p className="text-[14px] font-medium text-[var(--color-text-primary)] mb-1">
+            No harvest opportunities
+          </p>
+          <p className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
+            All positions are currently at a gain. Tax-loss harvesting opportunities will appear when positions decline below cost basis.
+          </p>
+        </div>
+      )}
+
+      {/* ─── 4b. Retirement Account Losses (Ineligible) ─── */}
+      {!loading && harvestReport && harvestReport.retirementPositions && harvestReport.retirementPositions.length > 0 && (
+        <section
+          aria-label="Retirement account losses"
+          className="rounded-md overflow-hidden"
+          style={{
+            background: 'var(--color-bg-surface)',
+            border: '1px solid var(--color-border-base)',
+          }}
+        >
+          <div className="px-5 py-4 flex items-center justify-between border-b border-[var(--color-border-subtle)]">
+            <div className="flex items-center gap-2.5">
+              <span
+                className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-text-muted)]"
+                style={MONO}
+              >
+                Retirement Account Losses
+              </span>
+              <span
+                className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/5 text-[var(--color-text-secondary)]"
+                style={MONO}
+              >
+                {harvestReport.retirementPositions.length}
+              </span>
+            </div>
+            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+              Not eligible for tax-loss harvesting
+            </span>
+          </div>
+          <div className="px-5 py-3 bg-[var(--color-bg-elevated)]/30 border-b border-[var(--color-border-subtle)]">
+            <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed" style={MONO}>
+              These positions are in tax-advantaged accounts (IRA, 401k, Roth, etc.). Losses in retirement accounts cannot be used for tax-loss harvesting because gains and losses within these accounts are not taxable events.
+            </p>
+          </div>
+          {harvestReport.retirementPositions.map((pos) => (
+            <div
+              key={`${pos.ticker}-${pos.accountName}`}
+              className="px-4 sm:px-5 py-3.5 border-b border-[var(--color-border-subtle)] opacity-60"
+            >
+              <div className="flex items-center gap-2 sm:gap-3 mb-1.5 flex-wrap">
+                <span className="text-[14px] font-bold text-[var(--color-text-muted)]" style={MONO}>
+                  {pos.ticker}
+                </span>
+                <span className="text-[12px] sm:text-[13px] text-[var(--color-text-muted)] truncate flex-1 min-w-[60px]">
+                  {pos.securityName}
+                </span>
+                {pos.accountSubtype && (
+                  <span
+                    className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold shrink-0"
+                    style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--color-text-muted)', ...MONO }}
+                  >
+                    {pos.accountSubtype.replace(/_/g, ' ')}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-x-4">
+                <div>
+                  <span className="text-[11px] text-[var(--color-text-muted)] block" style={MONO}>Shares</span>
+                  <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>{pos.shares.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-[11px] text-[var(--color-text-muted)] block" style={MONO}>Unrealized</span>
+                  <span className="text-[12px] text-[var(--color-negative)]/60 tabular-nums" style={MONO}>{formatCurrency(pos.unrealizedLoss)}</span>
+                </div>
+                <div>
+                  <span className="text-[11px] text-[var(--color-text-muted)] block" style={MONO}>Tax Savings</span>
+                  <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>$0 (exempt)</span>
+                </div>
+              </div>
+            </div>
+          ))}
         </section>
       )}
 
@@ -935,230 +1148,6 @@ export default function TaxesPage() {
         </section>
       )}
 
-      {/* ─── 4. Harvest Opportunity Table ─── */}
-      {loading ? (
-        <TableSkeleton />
-      ) : !showProContent ? (
-        <ProBlur
-          label="Unlock full harvest analysis"
-          description={`${lossPositionCount} position${lossPositionCount !== 1 ? 's' : ''} with ${formatCurrency(totalHarvestable)} in harvestable losses found. Upgrade to see lots, wash-sale flags, and estimated figures.`}
-          minHeight="280px"
-        >
-          {/* Placeholder rows for blur effect */}
-          <div className="rounded-md overflow-hidden" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}>
-            <div className="px-5 py-4 flex items-center gap-2.5 border-b border-[var(--color-border-subtle)]">
-              <Sparkles className="w-4 h-4 text-[var(--color-gold)]" />
-              <span className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-gold)]" style={MONO}>
-                Harvest Opportunity
-              </span>
-              <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/5 text-[var(--color-text-secondary)]" style={MONO}>
-                {lossPositionCount}
-              </span>
-            </div>
-            {Array.from({ length: Math.min(lossPositionCount, 4) }).map((_, i) => (
-              <div key={i} className="px-5 py-4 border-b border-[var(--color-border-subtle)] flex items-center gap-4">
-                <div className="w-10 h-4 bg-[var(--color-bg-elevated)] rounded" />
-                <div className="flex-1 h-4 bg-[var(--color-bg-elevated)] rounded" />
-                <div className="w-20 h-4 bg-[var(--color-bg-elevated)] rounded" />
-                <div className="w-20 h-4 bg-[var(--color-bg-elevated)] rounded" />
-                <div className="w-16 h-4 bg-[var(--color-bg-elevated)] rounded" />
-              </div>
-            ))}
-          </div>
-        </ProBlur>
-      ) : harvestReport && harvestReport.opportunityCount > 0 ? (
-        <section
-          aria-label="Harvest opportunities"
-          className="rounded-md overflow-hidden"
-          style={{
-            background: 'var(--color-bg-surface)',
-            border: '1px solid var(--color-border-base)',
-          }}
-        >
-          {/* Table header bar */}
-          <div className="px-5 py-4 flex items-center justify-between border-b border-[var(--color-border-subtle)]">
-            <div className="flex items-center gap-2.5">
-              <Sparkles className="w-4 h-4 text-[var(--color-gold)]" />
-              <span
-                className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-gold)]"
-                style={MONO}
-              >
-                Harvest Opportunity
-              </span>
-              <span
-                className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/5 text-[var(--color-text-secondary)]"
-                style={MONO}
-              >
-                {harvestReport.opportunityCount}
-              </span>
-            </div>
-            {/* Wash sale legend — hidden on mobile, badges are self-explanatory */}
-            <span className="hidden sm:inline text-[11px] text-[var(--color-text-muted)]" style={MONO}>
-              <span className="text-[var(--color-positive)]">Clear</span> = no substantially-identical security detected
-              <span className="mx-1.5">|</span>
-              <span className="text-[var(--color-warning-text)]">Conflict</span> = wash sale risk detected
-            </span>
-          </div>
-
-          {/* Table column headers */}
-          <div
-            className="hidden md:grid px-5 py-2.5 border-b border-[var(--color-border-subtle)]"
-            style={{
-              gridTemplateColumns: '32px 72px 1fr 80px 96px 96px 104px 100px 80px',
-              gap: '8px',
-              background: 'rgba(255,255,255,0.015)',
-            }}
-          >
-            <div className="flex items-center justify-center">
-              <input
-                type="checkbox"
-                checked={
-                  harvestReport.opportunities.length > 0 &&
-                  selectedOpps.size === harvestReport.opportunities.length
-                }
-                onChange={toggleAllOpps}
-                aria-label="Select all harvest opportunities"
-                className="w-3.5 h-3.5 rounded-sm border-[var(--color-border-base)] accent-[var(--color-gold)] cursor-pointer"
-              />
-            </div>
-            {['Symbol', 'Name', 'Shares', 'Basis', 'Mkt Value', 'Unrealized', 'Wash Sale', 'Term'].map(
-              (h) => (
-                <span
-                  key={h}
-                  className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-medium truncate"
-                  style={MONO}
-                >
-                  {h}
-                </span>
-              ),
-            )}
-          </div>
-
-          {/* Table rows */}
-          {harvestReport.opportunities.map((opp: TaxOpportunity) => (
-            <HarvestRow
-              key={opp.ticker}
-              opp={opp}
-              selected={selectedOpps.has(opp.ticker)}
-              onToggle={() => toggleOpp(opp.ticker)}
-              formatCurrency={formatCurrency}
-            />
-          ))}
-
-          {/* Table footer */}
-          <div
-            className="px-5 py-3.5 flex items-center justify-between border-t border-[var(--color-border-subtle)]"
-            style={{ background: 'rgba(255,255,255,0.02)' }}
-            aria-live="polite"
-          >
-            <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
-              {selectedOpps.size} of {harvestReport.opportunityCount} selected
-            </span>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
-                Est. tax saving
-              </span>
-              <span
-                className="text-[14px] font-bold text-[var(--color-positive)]"
-                style={{ ...TNUM, ...MONO }}
-              >
-                {formatCurrency(selectedSavings)}
-              </span>
-            </div>
-          </div>
-        </section>
-      ) : (
-        <div
-          className="rounded-md p-8 text-center"
-          style={{
-            background: 'var(--color-bg-surface)',
-            border: '1px solid var(--color-border-base)',
-          }}
-        >
-          <CheckCircle2 className="w-8 h-8 text-[var(--color-positive)] mx-auto mb-3 opacity-60" />
-          <p className="text-[14px] font-medium text-[var(--color-text-primary)] mb-1">
-            No harvest opportunities
-          </p>
-          <p className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
-            All positions are currently at a gain. Tax-loss harvesting opportunities will appear when positions decline below cost basis.
-          </p>
-        </div>
-      )}
-
-      {/* ─── 4b. Retirement Account Losses (Ineligible) ─── */}
-      {!loading && harvestReport && harvestReport.retirementPositions && harvestReport.retirementPositions.length > 0 && (
-        <section
-          aria-label="Retirement account losses"
-          className="rounded-md overflow-hidden"
-          style={{
-            background: 'var(--color-bg-surface)',
-            border: '1px solid var(--color-border-base)',
-          }}
-        >
-          <div className="px-5 py-4 flex items-center justify-between border-b border-[var(--color-border-subtle)]">
-            <div className="flex items-center gap-2.5">
-              <span
-                className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-text-muted)]"
-                style={MONO}
-              >
-                Retirement Account Losses
-              </span>
-              <span
-                className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/5 text-[var(--color-text-secondary)]"
-                style={MONO}
-              >
-                {harvestReport.retirementPositions.length}
-              </span>
-            </div>
-            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
-              Not eligible for tax-loss harvesting
-            </span>
-          </div>
-          <div className="px-5 py-3 bg-[var(--color-bg-elevated)]/30 border-b border-[var(--color-border-subtle)]">
-            <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed" style={MONO}>
-              These positions are in tax-advantaged accounts (IRA, 401k, Roth, etc.). Losses in retirement accounts cannot be used for tax-loss harvesting because gains and losses within these accounts are not taxable events.
-            </p>
-          </div>
-          {harvestReport.retirementPositions.map((pos) => (
-            <div
-              key={`${pos.ticker}-${pos.accountName}`}
-              className="px-4 sm:px-5 py-3.5 border-b border-[var(--color-border-subtle)] opacity-60"
-            >
-              <div className="flex items-center gap-2 sm:gap-3 mb-1.5 flex-wrap">
-                <span className="text-[14px] font-bold text-[var(--color-text-muted)]" style={MONO}>
-                  {pos.ticker}
-                </span>
-                <span className="text-[12px] sm:text-[13px] text-[var(--color-text-muted)] truncate flex-1 min-w-[60px]">
-                  {pos.securityName}
-                </span>
-                {pos.accountSubtype && (
-                  <span
-                    className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold shrink-0"
-                    style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--color-text-muted)', ...MONO }}
-                  >
-                    {pos.accountSubtype.replace(/_/g, ' ')}
-                  </span>
-                )}
-              </div>
-              <div className="grid grid-cols-3 gap-x-4">
-                <div>
-                  <span className="text-[11px] text-[var(--color-text-muted)] block" style={MONO}>Shares</span>
-                  <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>{pos.shares.toLocaleString()}</span>
-                </div>
-                <div>
-                  <span className="text-[11px] text-[var(--color-text-muted)] block" style={MONO}>Unrealized</span>
-                  <span className="text-[12px] text-[var(--color-negative)]/60 tabular-nums" style={MONO}>{formatCurrency(pos.unrealizedLoss)}</span>
-                </div>
-                <div>
-                  <span className="text-[11px] text-[var(--color-text-muted)] block" style={MONO}>Tax Savings</span>
-                  <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>$0 (exempt)</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </section>
-      )}
-
       {/* ─── 5. Form 8949 Preview ─── */}
       {!loading && (
         <div id="form-8949-section">
@@ -1235,10 +1224,10 @@ function HarvestRow({
           selected ? 'bg-[rgba(230,185,77,0.04)]' : 'hover:bg-white/[0.02]',
         )}
         style={{
-          gridTemplateColumns: '32px 72px 1fr 80px 96px 96px 104px 100px 80px',
+          gridTemplateColumns: '32px 72px 1fr 80px 96px 96px 104px 96px 100px 80px',
           gap: '8px',
         }}
-        onClick={onToggle}
+        onClick={() => setExpanded((v) => !v)}
       >
         {/* Checkbox */}
         <div className="flex items-center justify-center">
@@ -1280,6 +1269,11 @@ function HarvestRow({
         {/* Unrealized */}
         <span className="text-[13px] font-semibold text-[var(--color-negative)] tabular-nums" style={MONO}>
           {formatCurrency(opp.unrealizedLoss)}
+        </span>
+
+        {/* Est. saving */}
+        <span className="block text-right text-[13px] font-semibold text-[var(--color-positive)] tabular-nums" style={MONO}>
+          {formatCurrency(opp.estimatedSavings)}
         </span>
 
         {/* Wash sale status — clickable to expand detail */}
@@ -1373,9 +1367,35 @@ function HarvestRow({
             marginLeft: '32px',
           }}
         >
-          <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
+          <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
             <span className="font-semibold text-[var(--color-text-primary)]">What this means: </span>
             {washSaleDetailText}
+          </p>
+        </div>
+      )}
+
+      {/* Thesis-aware harvest note (desktop) */}
+      {expanded && opp.thesisStatus && (
+        <div
+          className="hidden md:block px-5 py-3 border-b border-[var(--color-border-subtle)]"
+          style={{
+            borderLeft: `3px solid ${opp.thesisStatus === 'broken' ? '#F87171' : opp.thesisStatus === 'weakening' ? '#E6B94D' : '#4ADE80'}`,
+            background: opp.thesisStatus === 'broken' ? 'rgba(248,113,113,0.03)' : opp.thesisStatus === 'weakening' ? 'rgba(230,185,77,0.03)' : 'rgba(74,222,128,0.03)',
+            marginLeft: '32px',
+          }}
+        >
+          <span
+            className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-semibold"
+            style={{
+              background: opp.thesisStatus === 'broken' ? 'rgba(248,113,113,0.1)' : opp.thesisStatus === 'weakening' ? 'rgba(230,185,77,0.1)' : 'rgba(74,222,128,0.1)',
+              color: opp.thesisStatus === 'broken' ? '#F87171' : opp.thesisStatus === 'weakening' ? '#E6B94D' : '#4ADE80',
+              ...MONO,
+            }}
+          >
+            Thesis {opp.thesisStatus}
+          </span>
+          <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed mt-1.5" style={MONO}>
+            {thesisTlhNote(opp.thesisStatus)}
           </p>
         </div>
       )}
@@ -1386,7 +1406,7 @@ function HarvestRow({
           'md:hidden px-4 py-3.5 border-b border-[var(--color-border-subtle)] motion-safe:transition-colors motion-safe:duration-100',
           selected ? 'bg-[rgba(230,185,77,0.04)]' : '',
         )}
-        onClick={onToggle}
+        onClick={() => setExpanded((v) => !v)}
       >
         <div className="flex items-center gap-2 sm:gap-3 mb-2.5 flex-wrap">
           <input
@@ -1493,6 +1513,12 @@ function HarvestRow({
               {formatCurrency(opp.unrealizedLoss)}
             </span>
           </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Est. saving</span>
+            <span className="text-[12px] font-semibold text-[var(--color-positive)] tabular-nums" style={MONO}>
+              {formatCurrency(opp.estimatedSavings)}
+            </span>
+          </div>
         </div>
 
         {/* Expandable wash sale detail banner (mobile) */}
@@ -1504,9 +1530,34 @@ function HarvestRow({
               background: opp.washSaleRisk ? 'rgba(251, 191, 36, 0.03)' : 'rgba(74, 222, 128, 0.03)',
             }}
           >
-            <p className="text-[10px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
+            <p className="text-[12px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
               <span className="font-semibold text-[var(--color-text-primary)]">What this means: </span>
               {washSaleDetailText}
+            </p>
+          </div>
+        )}
+
+        {/* Thesis-aware harvest note (mobile) */}
+        {expanded && opp.thesisStatus && (
+          <div
+            className="mt-2.5 ml-[26px] px-3 py-2.5 rounded-sm"
+            style={{
+              borderLeft: `3px solid ${opp.thesisStatus === 'broken' ? '#F87171' : opp.thesisStatus === 'weakening' ? '#E6B94D' : '#4ADE80'}`,
+              background: opp.thesisStatus === 'broken' ? 'rgba(248,113,113,0.03)' : opp.thesisStatus === 'weakening' ? 'rgba(230,185,77,0.03)' : 'rgba(74,222,128,0.03)',
+            }}
+          >
+            <span
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-semibold"
+              style={{
+                background: opp.thesisStatus === 'broken' ? 'rgba(248,113,113,0.1)' : opp.thesisStatus === 'weakening' ? 'rgba(230,185,77,0.1)' : 'rgba(74,222,128,0.1)',
+                color: opp.thesisStatus === 'broken' ? '#F87171' : opp.thesisStatus === 'weakening' ? '#E6B94D' : '#4ADE80',
+                ...MONO,
+              }}
+            >
+              Thesis {opp.thesisStatus}
+            </span>
+            <p className="text-[12px] text-[var(--color-text-secondary)] leading-relaxed mt-1" style={MONO}>
+              {thesisTlhNote(opp.thesisStatus)}
             </p>
           </div>
         )}

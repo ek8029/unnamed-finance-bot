@@ -618,6 +618,7 @@ export interface TaxOpportunity {
   accountName: string | null;
   accountSubtype: string | null;
   isRetirement: boolean;
+  thesisStatus?: 'intact' | 'weakening' | 'broken';
 }
 
 export interface AnnualCapInfo {
