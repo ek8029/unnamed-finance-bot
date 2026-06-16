@@ -8,6 +8,7 @@ import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
 import { useToast } from '@/contexts/toast-context';
 import { NetWorthCard } from '@/components/dashboard/net-worth-card';
 import { FinancialSummaryCards } from '@/components/dashboard/financial-summary-cards';
+import { ThesisConvictionKpi } from '@/components/thesis/conviction-kpi';
 import { FinancialHealthScore } from '@/components/dashboard/financial-health-score';
 import { IntelligenceFeed } from '@/components/dashboard/intelligence-feed';
 import { CashFlowTrend } from '@/components/dashboard/cash-flow-trend';
@@ -315,6 +316,9 @@ export default function DashboardOverview() {
           portfolioValue={(!isDemo && liveHoldingsValue > 0) ? liveHoldingsValue : (financialSummary?.portfolio_value || 0)}
           changes={financialSummary?.changes}
         />
+
+        {/* ── Thesis Conviction (gated; self-hides for non-allowlisted users) ── */}
+        <ThesisConvictionKpi />
 
         {/* ── Intelligence Feed ── */}
         {hasPlaidConnection && <IntelligenceFeed
