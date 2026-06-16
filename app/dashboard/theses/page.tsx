@@ -1,16 +1,15 @@
 // /dashboard/theses - first-class home for investment theses.
-// Quiet state is the hero state: when nothing moved against the user's
-// reasons for holding, say exactly that, with a last-scanned stamp.
+// Coexist A layout: conviction header, a shared-driver strip with an openable
+// Constellation map, then the Standings (positions ranked by conviction, banded
+// Strong / Holding / Under review). Click a row to expand its Why-I-Own-This.
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 import { WhyIOwnThis } from '@/components/thesis/why-i-own-this';
-import { VerdictCard, type ThesisIntelligenceItem } from '@/components/thesis/verdict-card';
-import { CrossThesisSynthesis } from '@/components/thesis/cross-thesis-synthesis';
 import { ThesisActions } from '@/components/thesis/thesis-actions';
 import { RatifyQueue, type RatifyItem } from '@/components/thesis/ratify-queue';
+import { DriverMap, type NodeInfo } from '@/components/thesis/driver-map';
 import { summarizePillars, effectiveStatus, type ThesisSummary } from '@/lib/thesis-summary';
 import { STATUS_META, dotGlow, METER_ORDER, METER_COLORS, convictionColor, type PillarStatus } from '@/lib/thesis-palette';
 
@@ -55,103 +54,77 @@ interface Thesis {
 interface Holding {
   ticker: string;
   name: string;
+  value?: number;
 }
 
-/* toIntelligenceItem - mirrors line ~62 of why-i-own-this.tsx exactly */
-function toIntelligenceItem(ticker: string, pillar: Pillar, e: EvidenceRow): ThesisIntelligenceItem {
-  return {
-    ticker,
-    pillarClaim: pillar.claim,
-    verdict: e.verdict,
-    materiality: e.materiality,
-    what: e.excerpt,
-    why: e.why,
-    whatItMeans: e.what_it_means,
-    consider: e.consider,
-    sourceTitle: e.source_title,
-    sourceUrl: e.source_url,
-    sourcePublishedAt: e.source_published_at,
-    statusChanged: false,
-  };
-}
-
-/* StatusChip - mirrors why-i-own-this.tsx internal component */
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
+const SERIF: React.CSSProperties = { fontFamily: "'Instrument Serif', Georgia, serif" };
+
+type Band = 'strong' | 'holding' | 'review';
+const BAND_META: Record<Band, { label: string; color: string }> = {
+  strong: { label: 'Strong conviction', color: '#4ADE80' },
+  holding: { label: 'Holding', color: '#6A6A6A' },
+  review: { label: 'Under review', color: '#E6B94D' },
+};
+
+interface Row {
+  t: Thesis;
+  summary: ThesisSummary;
+  intact: number;
+  total: number;
+  score: number;
+  band: Band;
+  worst: PillarStatus | null;
+  weight?: number;
+  confirmedPillars: Pillar[];
+}
 
 function StatusChip({ status }: { status: PillarStatus }) {
   const meta = STATUS_META[status];
   return (
-    <span
-      className="inline-flex items-center gap-1.5 px-2 py-[3px] rounded border border-white/[0.07]"
-      style={MONO}
-    >
+    <span className="inline-flex items-center gap-1.5 px-2 py-[3px] rounded border border-white/[0.07]" style={MONO}>
       <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: meta.color, boxShadow: dotGlow(status) }} />
-      <span
-        className="text-[10px] font-semibold uppercase tracking-[0.15em]"
-        style={{ color: meta.color }}
-      >
+      <span className="text-[10px] font-semibold uppercase tracking-[0.15em]" style={{ color: meta.color }}>
         {meta.label}
       </span>
     </span>
   );
 }
 
+/* ── Pillar pips: one colored tick per confirmed pillar ── */
+function SparkPills({ pillars }: { pillars: Pillar[] }) {
+  if (pillars.length === 0) return null;
+  return (
+    <span className="inline-flex gap-[3px]">
+      {pillars.slice(0, 6).map((p) => {
+        const s = effectiveStatus(p);
+        return <span key={p.id} className="w-[9px] h-[18px] rounded-[1px]" style={{ background: STATUS_META[s].color, opacity: s === 'unverified' ? 0.5 : 1 }} />;
+      })}
+    </span>
+  );
+}
+
 /* ── Aggregate status meter (thin flex bar) ── */
-function AggregateMeter({
-  counts,
-  total,
-  height = 6,
-}: {
-  counts: Record<PillarStatus, number>;
-  total: number;
-  height?: number;
-}) {
+function AggregateMeter({ counts, total, height = 6 }: { counts: Record<PillarStatus, number>; total: number; height?: number }) {
   if (total === 0) return null;
   return (
-    <div
-      className="flex rounded-full overflow-hidden w-full"
-      style={{ height }}
-      aria-hidden
-    >
+    <div className="flex rounded-full overflow-hidden w-full" style={{ height }} aria-hidden>
       {METER_ORDER.map((s) => {
         const pct = (counts[s] / total) * 100;
         if (pct === 0) return null;
         const lit = s !== 'unverified';
-        return (
-          <div
-            key={s}
-            style={{ width: `${pct}%`, background: METER_COLORS[s], opacity: 0.85, boxShadow: lit ? `0 0 8px ${METER_COLORS[s]}` : 'none' }}
-          />
-        );
+        return <div key={s} style={{ width: `${pct}%`, background: METER_COLORS[s], opacity: 0.85, boxShadow: lit ? `0 0 8px ${METER_COLORS[s]}` : 'none' }} />;
       })}
     </div>
   );
 }
 
-/* ── Per-thesis card meter (same component, smaller) ── */
-function CardMeter({ summary }: { summary: ThesisSummary }) {
-  const total = summary.confirmedCount;
-  if (total === 0) return null;
-  return <AggregateMeter counts={summary.statusCounts} total={total} height={4} />;
-}
-
-/* ── Date formatting ── */
 function fmtScanned(iso: string): string {
-  return new Date(iso).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+  return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
-/* ── Skeleton pulse block ── */
 function SkeletonBlock({ className }: { className?: string }) {
-  return (
-    <div
-      className={`rounded bg-white/[0.05] animate-pulse ${className ?? ''}`}
-    />
-  );
+  return <div className={`rounded bg-white/[0.05] animate-pulse ${className ?? ''}`} />;
 }
 
 function LoadingSkeleton() {
@@ -159,9 +132,10 @@ function LoadingSkeleton() {
     <div className="space-y-6">
       <SkeletonBlock className="h-8 w-48" />
       <SkeletonBlock className="h-4 w-full max-w-xs" />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-6">
-        {[0, 1, 2, 3].map((i) => (
-          <SkeletonBlock key={i} className="h-28 rounded-lg" />
+      <SkeletonBlock className="h-14 rounded-lg mt-6" />
+      <div className="space-y-2 mt-4">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <SkeletonBlock key={i} className="h-12 rounded-lg" />
         ))}
       </div>
     </div>
@@ -178,7 +152,6 @@ export default function ThesesPage() {
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [seedingTicker, setSeedingTicker] = useState<string | null>(null);
   const [seedError, setSeedError] = useState<string | null>(null);
-  const [attentionOpen, setAttentionOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
 
   const mountedRef = useRef(true);
@@ -203,13 +176,13 @@ export default function ThesesPage() {
 
   const loadHoldings = useCallback(async () => {
     try {
-      // Deliberately fetching /api/holdings directly instead of useHoldings() - the hook drags in 15-second quote polling this page does not need.
+      // Direct fetch instead of useHoldings() - the hook drags in 15s quote polling this page does not need.
       const res = await fetch('/api/holdings');
       if (!mountedRef.current || !res.ok) return;
-      const data = await res.json() as { holdings?: { ticker: string; asset_name?: string | null }[] };
+      const data = await res.json() as { holdings?: { ticker: string; asset_name?: string | null; total_value?: number | null }[] };
       if (!mountedRef.current) return;
       const raw = data.holdings ?? [];
-      setHoldings(raw.map((h) => ({ ticker: h.ticker, name: h.asset_name ?? h.ticker })));
+      setHoldings(raw.map((h) => ({ ticker: h.ticker, name: h.asset_name ?? h.ticker, value: h.total_value ?? undefined })));
     } catch {
       // holdings section degrades gracefully - not fatal
     }
@@ -221,37 +194,44 @@ export default function ThesesPage() {
   }, [loadTheses, loadHoldings]);
 
   /* ── Derived data ── */
-  const summaries = theses.map((t) => ({
-    t,
-    summary: summarizePillars(t.pillars),
-  }));
+  const summaries = theses.map((t) => ({ t, summary: summarizePillars(t.pillars) }));
 
-  // Attention items: confirmed pillars whose effectiveStatus is weakening|broken
-  const attentionItems: { thesis: Thesis; pillar: Pillar }[] = [];
-  for (const { t } of summaries) {
-    const confirmed = t.pillars.filter((p) => p.confirmed);
-    for (const p of confirmed) {
-      const s = effectiveStatus(p);
-      if (s === 'weakening' || s === 'broken') {
-        attentionItems.push({ thesis: t, pillar: p });
-      }
-    }
-  }
-  // broken first
-  attentionItems.sort((a, b) => {
-    const oa = effectiveStatus(a.pillar) === 'broken' ? 0 : 1;
-    const ob = effectiveStatus(b.pillar) === 'broken' ? 0 : 1;
-    return oa - ob;
+  // Portfolio weights (node size + Standings weight column). Degrades to undefined.
+  const totalValue = holdings.reduce((s, h) => s + (h.value ?? 0), 0);
+  const weightByTicker = new Map<string, number>();
+  if (totalValue > 0) for (const h of holdings) if (h.value) weightByTicker.set(h.ticker.toUpperCase(), (h.value / totalValue) * 100);
+
+  // Standings rows
+  const rows: Row[] = summaries.map(({ t, summary }) => {
+    const sc = summary.statusCounts;
+    const intact = sc.intact;
+    const total = summary.confirmedCount;
+    const worst: PillarStatus | null =
+      sc.broken > 0 ? 'broken' : sc.weakening > 0 ? 'weakening' : intact > 0 ? 'intact' : total > 0 ? 'unverified' : null;
+    const band: Band =
+      sc.weakening > 0 || sc.broken > 0 || total === 0 || intact === 0
+        ? 'review'
+        : intact >= 3 && sc.weakening === 0 && sc.broken === 0
+          ? 'strong'
+          : 'holding';
+    const score = intact - (sc.weakening + sc.broken) * 2 - (intact === 0 ? 0.5 : 0);
+    return {
+      t, summary, intact, total, score, band, worst,
+      weight: weightByTicker.get(t.ticker.toUpperCase()),
+      confirmedPillars: t.pillars.filter((p) => p.confirmed && p.lifecycle !== 'dismissed'),
+    };
   });
 
-  // Group attention by ticker for the collapsed preview.
-  const attnGroupsMap = new Map<string, { thesis: Thesis; pillars: Pillar[] }>();
-  for (const { thesis, pillar } of attentionItems) {
-    const g = attnGroupsMap.get(thesis.ticker) ?? { thesis, pillars: [] };
-    g.pillars.push(pillar);
-    attnGroupsMap.set(thesis.ticker, g);
-  }
-  const attnGroups = [...attnGroupsMap.values()];
+  const sortRows = (band: Band) =>
+    rows.filter((r) => r.band === band).sort((a, b) => b.score - a.score || (b.weight ?? 0) - (a.weight ?? 0) || a.t.ticker.localeCompare(b.t.ticker));
+  const bandedRows: { band: Band; rows: Row[] }[] = (['strong', 'holding', 'review'] as Band[])
+    .map((band) => ({ band, rows: sortRows(band) }))
+    .filter((g) => g.rows.length > 0);
+
+  // node map for the Constellation
+  const nameByTicker = new Map(holdings.map((h) => [h.ticker.toUpperCase(), h.name]));
+  const nodeMap: Record<string, NodeInfo> = {};
+  for (const r of rows) nodeMap[r.t.ticker.toUpperCase()] = { status: r.worst, intact: r.intact, total: r.total, weight: r.weight };
 
   // Aggregate meter totals
   const aggregateCounts: Record<PillarStatus, number> = { broken: 0, weakening: 0, unverified: 0, intact: 0 };
@@ -263,37 +243,22 @@ export default function ThesesPage() {
     }
   }
 
-  // Last scanned
   const lastScanned = theses.reduce<string | null>((best, t) => {
     if (!t.last_scanned_at) return best;
     if (!best) return t.last_scanned_at;
     return t.last_scanned_at > best ? t.last_scanned_at : best;
   }, null);
 
-  // Holdings without a thesis
   const thesisTickers = new Set(theses.map((t) => t.ticker));
   const unthesedHoldings = holdings.filter((h) => !thesisTickers.has(h.ticker));
 
-  // Ratify queue: theses carrying unconfirmed AI-drafted pillars (variant A).
   const ratifyItems: RatifyItem[] = [];
   for (const { t } of summaries) {
-    const drafts = t.pillars.filter(
-      (p) => p.origin === 'ai_draft' && !p.confirmed && p.lifecycle !== 'dismissed',
-    );
+    const drafts = t.pillars.filter((p) => p.origin === 'ai_draft' && !p.confirmed && p.lifecycle !== 'dismissed');
     if (drafts.length === 0) continue;
-    ratifyItems.push({
-      thesisId: t.id,
-      ticker: t.ticker,
-      draftPillarIds: drafts.map((d) => d.id),
-      topClaim: drafts[0].claim,
-      moreCount: drafts.length - 1,
-    });
+    ratifyItems.push({ thesisId: t.id, ticker: t.ticker, draftPillarIds: drafts.map((d) => d.id), topClaim: drafts[0].claim, moreCount: drafts.length - 1 });
   }
   const confirmedThesisCount = summaries.filter(({ summary }) => summary.confirmedCount > 0).length;
-
-  // Quiet state: no attention items AND at least one confirmed pillar
-  const totalConfirmed = summaries.reduce((sum, { summary }) => sum + summary.confirmedCount, 0);
-  const isQuiet = attentionItems.length === 0 && totalConfirmed > 0;
 
   /* ── Seed handler ── */
   async function handleSeed(ticker: string) {
@@ -309,7 +274,7 @@ export default function ThesesPage() {
       if (!mountedRef.current) return;
       if (res.ok) {
         await loadTheses();
-        if (mountedRef.current) setSelectedTicker(ticker);
+        if (mountedRef.current) { setSelectedTicker(ticker); setDetailOpen(true); }
       } else {
         setSeedError(ticker);
       }
@@ -350,11 +315,7 @@ export default function ThesesPage() {
       <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8">
         <p className="font-mono text-[13px] text-[#6A6A6A]">
           Could not load theses.{' '}
-          <button
-            type="button"
-            onClick={() => { setPhase('loading'); loadTheses(); }}
-            className="underline hover:text-[#9A9A9A] transition-colors"
-          >
+          <button type="button" onClick={() => { setPhase('loading'); loadTheses(); }} className="underline hover:text-[#9A9A9A] transition-colors">
             Retry
           </button>
         </p>
@@ -362,10 +323,9 @@ export default function ThesesPage() {
     );
   }
 
-  /* ── Empty state: no theses yet ── */
   const noThesesYet = theses.length === 0;
 
-  /* ── Conviction verdict headline (Holdfast-style page lead) ── */
+  /* ── Conviction verdict headline ── */
   const allIntact = totalPillarCount > 0 && aggregateCounts.intact === totalPillarCount;
   let verdictHeadline = 'Theses';
   if (totalPillarCount > 0) {
@@ -385,19 +345,14 @@ export default function ThesesPage() {
     ? 'Nothing threatens the reasons you hold what you hold.'
     : 'Helm watches filings, insider activity and headlines against every reason you hold.';
 
-  /* Full untracked-holdings list (reused by the empty state and the drawer). */
   const unthesedListEl = (
     <div className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] divide-y divide-white/[0.05]">
       {unthesedHoldings.map((h) => (
         <div key={h.ticker} className="px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <span className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA]" style={MONO}>
-                {h.ticker}
-              </span>
-              {h.name && h.name !== h.ticker && (
-                <span className="ml-2 text-[13px] text-[#6A6A6A] truncate">{h.name}</span>
-              )}
+              <span className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA]" style={MONO}>{h.ticker}</span>
+              {h.name && h.name !== h.ticker && <span className="ml-2 text-[13px] text-[#6A6A6A] truncate">{h.name}</span>}
             </div>
             <button
               type="button"
@@ -409,64 +364,38 @@ export default function ThesesPage() {
               {seedingTicker === h.ticker ? 'Drafting...' : 'Draft thesis'}
             </button>
           </div>
-          {seedError === h.ticker && (
-            <p className="mt-2 font-mono text-[11px] text-[#F87171]" style={MONO}>
-              Could not draft thesis. Try again.
-            </p>
-          )}
+          {seedError === h.ticker && <p className="mt-2 font-mono text-[11px] text-[#F87171]" style={MONO}>Could not draft thesis. Try again.</p>}
         </div>
       ))}
     </div>
   );
 
+  let rank = 0; // global rank across bands
+
   return (
-    <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8 space-y-10">
+    <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8 space-y-8">
 
       {/* ── Section 1: Conviction header ── */}
       {noThesesYet ? (
         <div>
-          <div
-            className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-2.5"
-            style={MONO}
-          >
-            Theses
-          </div>
-          <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.03em] text-[#FAFAFA] m-0">
-            Your conviction, watched.
-          </h1>
+          <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-2.5" style={MONO}>Theses</div>
+          <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.03em] text-[#FAFAFA] m-0">Your conviction, watched.</h1>
         </div>
       ) : (
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
           <div className="min-w-0">
-            <div
-              className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-3"
-              style={MONO}
-            >
-              Your conviction today
-            </div>
-            <h1 className="text-[clamp(27px,3vw,34px)] font-bold leading-[1.14] tracking-[-0.03em] text-[#FAFAFA] m-0">
-              {verdictHeadline}
-            </h1>
-            <p
-              className="mt-3.5 text-[16.5px] leading-[1.5] text-[#9A9A9A] max-w-[540px] m-0"
-              style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontStyle: 'italic' }}
-            >
-              {verdictSub}
-            </p>
+            <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-3" style={MONO}>Your conviction today</div>
+            <h1 className="text-[clamp(27px,3vw,34px)] font-bold leading-[1.14] tracking-[-0.03em] text-[#FAFAFA] m-0">{verdictHeadline}</h1>
+            <p className="mt-3.5 text-[16.5px] leading-[1.5] text-[#9A9A9A] max-w-[540px] m-0" style={{ ...SERIF, fontStyle: 'italic' }}>{verdictSub}</p>
           </div>
 
           {totalPillarCount > 0 && (
             <div className="lg:w-[300px] shrink-0 rounded-lg border border-white/[0.07] bg-[#131313] p-4 space-y-3">
               <div className="flex items-baseline gap-2">
-                <span
-                  className="font-mono text-[26px] leading-none font-semibold tabular-nums"
-                  style={{ ...MONO, color: convictionColor(aggregateCounts.intact / totalPillarCount) }}
-                >
+                <span className="font-mono text-[26px] leading-none font-semibold tabular-nums" style={{ ...MONO, color: convictionColor(aggregateCounts.intact / totalPillarCount) }}>
                   {Math.round((aggregateCounts.intact / totalPillarCount) * 100)}%
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#6A6A6A]" style={MONO}>
-                  conviction intact
-                </span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#6A6A6A]" style={MONO}>conviction intact</span>
               </div>
               <AggregateMeter counts={aggregateCounts} total={totalPillarCount} height={8} />
               <div className="flex flex-wrap gap-x-4 gap-y-1.5 font-mono text-[11.5px]" style={MONO}>
@@ -479,206 +408,105 @@ export default function ThesesPage() {
                     </span>
                   ))}
               </div>
-              {lastScanned && (
-                <div
-                  className="font-mono text-[10.5px] tracking-[0.06em] text-[#4A4A4A] tabular-nums pt-0.5"
-                  style={MONO}
-                >
-                  Last scanned {fmtScanned(lastScanned)}
-                </div>
-              )}
+              {lastScanned && <div className="font-mono text-[10.5px] tracking-[0.06em] text-[#4A4A4A] tabular-nums pt-0.5" style={MONO}>Last scanned {fmtScanned(lastScanned)}</div>}
             </div>
           )}
         </div>
       )}
 
-      {/* ── Needs Attention (urgent, kept at top) ── */}
-      {attentionItems.length > 0 && (
-        <section>
-          <div className="rounded-lg overflow-hidden bg-[#131313] border border-white/[0.07]" style={{ borderTop: '2px solid rgba(248,113,113,0.35)' }}>
-            <button
-              type="button"
-              onClick={() => setAttentionOpen((o) => !o)}
-              className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-white/[0.02] transition-colors"
-            >
-              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F87171]" style={MONO}>
-                Needs Attention
-              </span>
-              <span className="font-mono text-[11px] text-[#6A6A6A]" style={MONO}>
-                {attnGroups.length} position{attnGroups.length === 1 ? '' : 's'} · {attentionItems.length} pillar{attentionItems.length === 1 ? '' : 's'}
-              </span>
-              <span className="ml-auto hidden sm:inline font-mono text-[10.5px] text-[#6A6A6A]" style={MONO}>
-                {attentionOpen ? 'Hide evidence' : 'Show evidence'}
-              </span>
-              <ChevronDown className={`w-4 h-4 text-[#6A6A6A] transition-transform ${attentionOpen ? 'rotate-180' : ''}`} />
-            </button>
+      {/* ── Section 2: Driver strip + openable map ── */}
+      {!noThesesYet && <DriverMap nodes={nodeMap} />}
 
-            {!attentionOpen ? (
-              <div className="px-5 pb-4 space-y-2.5">
-                {attnGroups.map(({ thesis, pillars }) => {
-                  const broken = pillars.filter((p) => effectiveStatus(p) === 'broken').length;
-                  const weak = pillars.length - broken;
-                  const worst: PillarStatus = broken > 0 ? 'broken' : 'weakening';
-                  return (
-                    <Link key={thesis.ticker} href={`/dashboard/holdings/${thesis.ticker}`} className="flex items-start gap-3 group">
-                      <span className="mt-[5px] w-2 h-2 rounded-full shrink-0" style={{ background: STATUS_META[worst].color, boxShadow: dotGlow(worst) }} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2.5 flex-wrap">
-                          <span className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA] group-hover:text-[var(--color-gold)] transition-colors" style={MONO}>
-                            {thesis.ticker}
-                          </span>
-                          <span className="font-mono text-[10px] uppercase tracking-[0.1em]" style={{ ...MONO, color: STATUS_META[worst].color }}>
-                            {[broken > 0 ? `${broken} broken` : '', weak > 0 ? `${weak} weakening` : ''].filter(Boolean).join(' · ')}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-[13px] leading-[1.45] text-[#9A9A9A] line-clamp-1 m-0">{pillars[0].claim}</p>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="px-5 pb-5 pt-1 border-t border-white/[0.05] grid grid-cols-1 lg:grid-cols-2 gap-5">
-                {attentionItems.map(({ thesis, pillar }) => {
-                  const status = effectiveStatus(pillar);
-                  return (
-                    <div key={pillar.id} className="rounded-lg border border-white/[0.07] bg-[#0E0E0E] p-4 space-y-3">
-                      <div className="flex items-center justify-between gap-3 flex-wrap">
-                        <Link
-                          href={`/dashboard/holdings/${thesis.ticker}`}
-                          className="font-mono text-[14px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA] hover:text-[var(--color-gold)] transition-colors"
-                          style={MONO}
-                        >
-                          {thesis.ticker}
-                        </Link>
-                        <StatusChip status={status} />
-                      </div>
-                      <p className="text-[15px] font-medium leading-[1.5] text-[#C8C8C8] m-0">
-                        {pillar.claim}
-                      </p>
-                      {pillar.latest_evidence && (
-                        <VerdictCard
-                          item={toIntelligenceItem(thesis.ticker, pillar, pillar.latest_evidence)}
-                          showPillarClaim={false}
-                          showTicker={false}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* ── All clear (compact; only when nothing needs attention) ── */}
-      {!noThesesYet && totalPillarCount > 0 && attentionItems.length === 0 && (
-        <section>
-          <div
-            className="rounded-lg bg-[#131313] border border-white/[0.07] px-5 py-4 flex items-center gap-3"
-            style={{ borderTop: '2px solid rgba(74,222,128,0.35)' }}
-          >
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#4ADE80', boxShadow: '0 0 8px #4ADE8088' }} />
-            <div className="min-w-0">
-              <div className="text-[14px] font-semibold text-[#FAFAFA]">All clear</div>
-              <div className="text-[12.5px] text-[#8A8A8A]">
-                {aggregateCounts.intact} pillar{aggregateCounts.intact === 1 ? '' : 's'} holding, nothing breaking.
-                {lastScanned ? ` Last checked ${fmtScanned(lastScanned)}.` : ''} Helm is watching.
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── Your theses (grid + docked inspector) ── */}
+      {/* ── Section 3: Standings ── */}
       {!noThesesYet && (
-        <section className="space-y-4">
-          <div
-            className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted,#6A6A6A)]"
-            style={MONO}
-          >
-            YOUR THESES
+        <section className="space-y-3">
+          <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted,#6A6A6A)]" style={MONO}>
+            Standings &middot; strongest to weakest
           </div>
-          {/* Accordion: compact rows, click expands one in place (others collapse) */}
-          <div className="rounded-lg border border-white/[0.07] bg-[#0E0E0E] overflow-hidden divide-y divide-white/[0.05]">
-            {summaries.map(({ t, summary }) => {
-              const open = selectedTicker === t.ticker && detailOpen;
-              const intactFrac = summary.confirmedCount > 0 ? summary.statusCounts.intact / summary.confirmedCount : 0;
-              const worst: PillarStatus | null = summary.statusCounts.broken > 0 ? 'broken' : summary.statusCounts.weakening > 0 ? 'weakening' : null;
-              return (
-                <div key={t.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (open) { setDetailOpen(false); return; }
-                      setSelectedTicker(t.ticker);
-                      setDetailOpen(true);
-                      loadTheses();
-                    }}
-                    className={`w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 text-left transition-colors ${open ? 'bg-[rgba(230,185,77,0.045)]' : 'hover:bg-white/[0.02]'}`}
-                  >
-                    <span className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA] w-[58px] shrink-0" style={MONO}>
-                      {t.ticker}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      {summary.confirmedCount > 0 ? (
-                        <AggregateMeter counts={summary.statusCounts} total={summary.confirmedCount} height={6} />
-                      ) : summary.draftCount > 0 ? (
-                        <span className="font-mono text-[10px] uppercase tracking-[0.13em] text-[#E6B94D]" style={MONO}>
-                          {summary.draftCount} draft{summary.draftCount === 1 ? '' : 's'} to confirm
-                        </span>
-                      ) : (
-                        <span className="font-mono text-[10px] uppercase tracking-[0.13em] text-[#5F5F5F]" style={MONO}>no pillars yet</span>
+          <div className="rounded-lg border border-white/[0.07] bg-[#0E0E0E] overflow-hidden">
+            {bandedRows.map(({ band, rows: bandRows }) => (
+              <div key={band}>
+                <div className="flex items-center gap-2 px-4 sm:px-5 pt-4 pb-2 border-t border-white/[0.05] first:border-t-0">
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: BAND_META[band].color, boxShadow: band === 'holding' ? 'none' : `0 0 7px ${BAND_META[band].color}` }} />
+                  <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ ...MONO, color: BAND_META[band].color }}>{BAND_META[band].label}</span>
+                  <span className="font-mono text-[10px] text-[#4A4A4A]" style={MONO}>{bandRows.length}</span>
+                </div>
+
+                {bandRows.map((r) => {
+                  rank += 1;
+                  const open = selectedTicker === r.t.ticker && detailOpen;
+                  const name = nameByTicker.get(r.t.ticker.toUpperCase());
+                  const intactFrac = r.total > 0 ? r.intact / r.total : 0;
+                  const thisRank = rank;
+                  return (
+                    <div key={r.t.id} className="border-t border-white/[0.04]">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (open) { setDetailOpen(false); return; }
+                          setSelectedTicker(r.t.ticker);
+                          setDetailOpen(true);
+                          loadTheses();
+                        }}
+                        className={`w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 text-left transition-colors ${open ? 'bg-[rgba(230,185,77,0.045)]' : 'hover:bg-white/[0.02]'}`}
+                      >
+                        {/* rank */}
+                        <span className="text-[20px] leading-none w-[26px] shrink-0 tabular-nums" style={{ ...SERIF, color: thisRank <= 3 ? 'var(--color-gold)' : '#4A4A4A' }}>{thisRank}</span>
+                        {/* ticker + name */}
+                        <div className="w-[150px] sm:w-[220px] shrink-0 min-w-0">
+                          <div className="font-mono text-[13.5px] font-semibold uppercase tracking-[0.06em] text-[#FAFAFA]" style={MONO}>{r.t.ticker}</div>
+                          {name && name !== r.t.ticker && <div className="text-[11.5px] text-[#6A6A6A] truncate">{name}</div>}
+                        </div>
+                        {/* pillars */}
+                        <div className="hidden md:block w-[80px] shrink-0">
+                          {r.total > 0 ? <SparkPills pillars={r.confirmedPillars} /> : (
+                            <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-[#5F5F5F]" style={MONO}>{r.summary.draftCount > 0 ? `${r.summary.draftCount} draft${r.summary.draftCount === 1 ? '' : 's'}` : 'no pillars'}</span>
+                          )}
+                        </div>
+                        {/* intact count */}
+                        <div className="hidden sm:block w-[52px] shrink-0 text-center">
+                          {r.total > 0 && <span className="font-mono text-[14px] font-semibold tabular-nums" style={{ ...MONO, color: r.intact >= 3 ? '#4ADE80' : '#9A9A9A' }}>{r.intact}/{r.total}</span>}
+                        </div>
+                        {/* spacer */}
+                        <div className="flex-1 min-w-0" />
+                        {/* weight */}
+                        {r.weight != null && <span className="hidden lg:block font-mono text-[12px] tabular-nums text-[#9A9A9A] w-[56px] text-right shrink-0" style={MONO}>{r.weight.toFixed(1)}%</span>}
+                        {/* status chip */}
+                        {r.worst && r.worst !== 'unverified' ? <div className="hidden sm:block shrink-0"><StatusChip status={r.worst} /></div> : <div className="hidden sm:block shrink-0 w-[1px]" />}
+                        {/* conviction % */}
+                        {r.total > 0 && <span className="font-mono text-[13px] font-semibold tabular-nums w-[44px] text-right shrink-0" style={{ ...MONO, color: convictionColor(intactFrac) }}>{Math.round(intactFrac * 100)}%</span>}
+                        <ChevronDown className={`w-4 h-4 text-[#6A6A6A] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {open && (
+                        <div className="px-4 sm:px-5 pb-5 pt-1 bg-[#0B0B0B]">
+                          <div className="flex items-center justify-end mb-3">
+                            <button type="button" onClick={() => handleDeleteThesis(r.t.ticker)} className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#6A6A6A] hover:text-[#F87171] transition-colors" style={MONO}>
+                              Delete thesis
+                            </button>
+                          </div>
+                          <ThesisActions key={`actions-${r.t.id}`} thesisId={r.t.id} className="mb-4" />
+                          <WhyIOwnThis key={r.t.ticker} ticker={r.t.ticker} bare />
+                        </div>
                       )}
                     </div>
-                    {worst && <div className="hidden sm:block shrink-0"><StatusChip status={worst} /></div>}
-                    {summary.confirmedCount > 0 && (
-                      <span className="font-mono text-[13px] font-semibold tabular-nums w-[42px] text-right shrink-0" style={{ ...MONO, color: convictionColor(intactFrac) }}>
-                        {Math.round(intactFrac * 100)}%
-                      </span>
-                    )}
-                    <ChevronDown className={`w-4 h-4 text-[#6A6A6A] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
-                  </button>
-                  {open && (
-                    <div className="px-4 sm:px-5 pb-5 pt-1 border-t border-white/[0.05]">
-                      <div className="flex items-center justify-end mb-3">
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteThesis(t.ticker)}
-                          className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#6A6A6A] hover:text-[#F87171] transition-colors"
-                          style={MONO}
-                        >
-                          Delete thesis
-                        </button>
-                      </div>
-                      <ThesisActions key={`actions-${t.id}`} thesisId={t.id} className="mb-4" />
-                      <WhyIOwnThis key={t.ticker} ticker={t.ticker} bare />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            ))}
           </div>
         </section>
       )}
-
-      {/* ── Intelligence: cross-thesis synthesis (below the theses) ── */}
-      {!noThesesYet && <CrossThesisSynthesis />}
 
       {/* ── Bottom: start (empty state) or the ratify queue ── */}
       {noThesesYet ? (
         <section className="space-y-4">
-          <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted,#6A6A6A)]" style={MONO}>
-            START
-          </div>
+          <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted,#6A6A6A)]" style={MONO}>START</div>
           <p className="text-[15px] leading-[1.6] text-[#9A9A9A] max-w-[560px] m-0">
             Helm drafts the reasons you might own each position. You confirm or rewrite them in your own words, and Helm watches the record for anything that breaks them.
           </p>
           {unthesedHoldings.length > 0 ? unthesedListEl : (
-            <p className="font-mono text-[12px] text-[#4A4A4A]" style={MONO}>
-              Connect a brokerage account to see your holdings here.
-            </p>
+            <p className="font-mono text-[12px] text-[#4A4A4A]" style={MONO}>Connect a brokerage account to see your holdings here.</p>
           )}
         </section>
       ) : (
@@ -687,10 +515,7 @@ export default function ThesesPage() {
           unthesed={unthesedHoldings}
           confirmedCount={confirmedThesisCount}
           onChanged={loadTheses}
-          onEdit={(tk) => {
-            setSelectedTicker(tk);
-            setDetailOpen(true);
-          }}
+          onEdit={(tk) => { setSelectedTicker(tk); setDetailOpen(true); }}
         />
       )}
     </div>
