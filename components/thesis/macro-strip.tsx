@@ -30,15 +30,7 @@ export function MacroStrip({ items }: { items: MacroItem[] }) {
             <div className="w-[3px] shrink-0 bg-[#6A6A6A]" style={{ opacity: 0.6 }} />
 
             <div className="flex-1 px-[22px] py-[18px]">
-              <div className="flex items-start gap-4">
-                {/* Kind badge */}
-                <span
-                  className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6A6A6A] px-[8px] py-[4px] border border-white/[0.08] rounded-[2px] mt-[2px] shrink-0"
-                  style={{ fontFamily: "'Space Grotesk', monospace" }}
-                >
-                  Macro
-                </span>
-
+              <div className="flex items-start">
                 <div className="flex-1">
                   {/* Headline — links when sourceUrl present */}
                   {item.sourceUrl ? (

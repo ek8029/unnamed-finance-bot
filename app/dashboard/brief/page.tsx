@@ -599,10 +599,6 @@ export default function BriefPage() {
 
               <div className="flex items-center gap-2 sm:gap-3 text-[11px] text-[var(--color-text-muted)] mb-6 flex-wrap" style={MONO}>
                 <span>HELM ANALYST</span>
-                <span>·</span>
-                <span>{data.allHoldings.length} POSITIONS</span>
-                <span>·</span>
-                <span>{fmt(data.portfolio.totalValue)} TOTAL</span>
               </div>
 
               {/* Lead body text — larger serif with drop cap */}

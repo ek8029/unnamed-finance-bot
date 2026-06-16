@@ -38,10 +38,13 @@ function formatDate(iso: string | null): string {
 export function VerdictCard({
   item,
   showPillarClaim = true,
+  showTicker = true,
 }: {
   item: ThesisIntelligenceItem;
   /** Hide the "reason you own X" quote box when the parent already shows the claim. */
   showPillarClaim?: boolean;
+  /** Hide the ticker chip when the parent header already names the ticker. */
+  showTicker?: boolean;
 }) {
   const color = spineColor(item.verdict, item.materiality);
 
@@ -61,13 +64,15 @@ export function VerdictCard({
             {verdictLabel(item.verdict)}
           </span>
 
-          {/* Ticker chip */}
-          <span
-            className="font-mono text-[12px] font-semibold uppercase tracking-[0.08em] px-[8px] py-[3px] rounded-[3px] border border-white/[0.10] text-[#9A9A9A]"
-            style={{ fontFamily: "'Space Grotesk', monospace" }}
-          >
-            {item.ticker}
-          </span>
+          {/* Ticker chip — suppressed when the parent header already names the ticker. */}
+          {showTicker && (
+            <span
+              className="font-mono text-[12px] font-semibold uppercase tracking-[0.08em] px-[8px] py-[3px] rounded-[3px] border border-white/[0.10] text-[#9A9A9A]"
+              style={{ fontFamily: "'Space Grotesk', monospace" }}
+            >
+              {item.ticker}
+            </span>
+          )}
 
           {/* Materiality tag */}
           <span

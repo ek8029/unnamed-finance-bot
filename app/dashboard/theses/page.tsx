@@ -560,6 +560,7 @@ export default function ThesesPage() {
                         <VerdictCard
                           item={toIntelligenceItem(thesis.ticker, pillar, pillar.latest_evidence)}
                           showPillarClaim={false}
+                          showTicker={false}
                         />
                       )}
                     </div>

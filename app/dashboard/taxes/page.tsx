@@ -1422,17 +1422,7 @@ function HarvestRow({
             background: opp.thesisStatus === 'broken' ? 'rgba(248,113,113,0.03)' : opp.thesisStatus === 'weakening' ? 'rgba(230,185,77,0.03)' : 'rgba(74,222,128,0.03)',
           }}
         >
-          <span
-            className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-semibold"
-            style={{
-              background: opp.thesisStatus === 'broken' ? 'rgba(248,113,113,0.1)' : opp.thesisStatus === 'weakening' ? 'rgba(230,185,77,0.1)' : 'rgba(74,222,128,0.1)',
-              color: opp.thesisStatus === 'broken' ? '#F87171' : opp.thesisStatus === 'weakening' ? '#E6B94D' : '#4ADE80',
-              ...MONO,
-            }}
-          >
-            Thesis {opp.thesisStatus}
-          </span>
-          <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed mt-1.5" style={MONO}>
+          <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
             {thesisTlhNote(opp.thesisStatus)}
           </p>
         </div>
@@ -1575,17 +1565,7 @@ function HarvestRow({
               background: opp.thesisStatus === 'broken' ? 'rgba(248,113,113,0.03)' : opp.thesisStatus === 'weakening' ? 'rgba(230,185,77,0.03)' : 'rgba(74,222,128,0.03)',
             }}
           >
-            <span
-              className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-semibold"
-              style={{
-                background: opp.thesisStatus === 'broken' ? 'rgba(248,113,113,0.1)' : opp.thesisStatus === 'weakening' ? 'rgba(230,185,77,0.1)' : 'rgba(74,222,128,0.1)',
-                color: opp.thesisStatus === 'broken' ? '#F87171' : opp.thesisStatus === 'weakening' ? '#E6B94D' : '#4ADE80',
-                ...MONO,
-              }}
-            >
-              Thesis {opp.thesisStatus}
-            </span>
-            <p className="text-[12px] text-[var(--color-text-secondary)] leading-relaxed mt-1" style={MONO}>
+            <p className="text-[12px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
               {thesisTlhNote(opp.thesisStatus)}
             </p>
           </div>

@@ -708,9 +708,9 @@ function DetailPane({
         )}
       </div>
 
-      {/* Context Grid */}
+      {/* Details Grid */}
       <div className="mb-6 sm:mb-8">
-        <h3 className="type-eyebrow mb-3">Context</h3>
+        <h3 className="type-eyebrow mb-3">Details</h3>
         <div className="border border-[var(--color-border-base)] rounded-lg overflow-hidden">
           {contextPairs.map((pair, i) => (
             <div
