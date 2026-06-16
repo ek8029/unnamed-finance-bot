@@ -2,7 +2,9 @@ import OpenAI from 'openai';
 import { getCompanyProfileEdgar } from '@/lib/edgar';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const SEED_MODEL = 'gpt-4o';
+// Drafts are user-reviewed and edited before they ever count, so mini is sufficient
+// here and ~16x cheaper than gpt-4o.
+const SEED_MODEL = 'gpt-4o-mini';
 
 export interface SeededPillar {
   claim: string;

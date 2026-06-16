@@ -7,15 +7,9 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '@/lib/supabase/server';
 import { isThesisUser } from '@/lib/thesis-access';
-import { clusterPillars, hashPillars, type SynthPillarInput, type SynthCluster } from '@/lib/thesis-synthesis';
+import { getCachedClusters, type SynthPillarInput } from '@/lib/thesis-synthesis';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const MAX_CACHE_ENTRIES = 500; // bound memory; entries only churn when pillar sets change
-
-// Per-instance cache keyed by user + pillar-set hash. Recomputes only when the
-// user's confirmed pillars change (add/edit/dismiss). A scan never alters clusters
-// (they depend on claims, not evidence), so there is no time-based expiry.
-const cache = new Map<string, { clusters: SynthCluster[]; generatedAt: string }>();
 
 export async function GET() {
   try {
@@ -70,22 +64,10 @@ export async function GET() {
       return NextResponse.json({ clusters: [], status: 'insufficient' });
     }
 
-    // Cache
-    const cacheKey = `${user.id}:${hashPillars(inputs)}`;
-    const hit = cache.get(cacheKey);
-    if (hit) {
-      return NextResponse.json({ ...hit, status: 'ok', cached: true });
-    }
-
-    const clusters = await clusterPillars(openai, inputs);
-
-    const data = { clusters, generatedAt: new Date().toISOString() };
-    cache.set(cacheKey, data);
-    if (cache.size > MAX_CACHE_ENTRIES) {
-      const oldest = cache.keys().next().value;
-      if (oldest !== undefined) cache.delete(oldest);
-    }
-    return NextResponse.json({ ...data, status: 'ok' });
+    // Read the persisted clusters; recompute (one gpt-4o call) only when the pillar
+    // set has changed. No per-instance recomputation, so cold starts cost nothing.
+    const clusters = await getCachedClusters(supabase, openai, user.id, inputs);
+    return NextResponse.json({ clusters, status: 'ok' });
   } catch (err) {
     console.error('[synthesis] unhandled error:', err);
     return NextResponse.json({ clusters: [], status: 'error' });

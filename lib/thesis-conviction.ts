@@ -73,11 +73,14 @@ export async function getThesisContextForActions(
   db: SupabaseClient,
   userId: string,
   actions: { id: string; thesisId: string; pillarId: string | null }[],
+  injectedConviction?: Map<string, Conviction>,
 ): Promise<Map<string, ActionThesisContext>> {
   const out = new Map<string, ActionThesisContext>();
   if (actions.length === 0) return out;
 
-  const conviction = await getConvictionByTicker(db, userId);
+  // Callers that already hold a conviction map (e.g. the insights route, which also
+  // needs it for rule-based actions) can inject it to avoid a second identical query.
+  const conviction = injectedConviction ?? await getConvictionByTicker(db, userId);
 
   // thesisId -> tickerUpper
   const thesisIds = [...new Set(actions.map(a => a.thesisId))];

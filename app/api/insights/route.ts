@@ -85,13 +85,16 @@ export async function GET(request: Request) {
           thesisId: i.related_entity_ids[0],
           pillarId: i.related_entity_ids[1] ?? null,
         }));
-      ctx = await getThesisContextForActions(supabase, user.id, thesisActions);
+      // Conviction is needed both to enrich thesis-native actions and to stamp
+      // rule-based actions below. Compute it once and inject it into the former so
+      // it isn't queried twice in one request.
+      const conviction = await getConvictionByTicker(supabase, user.id);
+      ctx = await getThesisContextForActions(supabase, user.id, thesisActions, conviction);
 
       // Rule-based actions (concentration/TLH) are ticker-scoped via holding ids in
       // related_entity_ids. If that position has a tracked thesis, stamp a conviction-only
       // chip (no cite: the rule did not fire on thesis evidence). Thesis-native actions
       // handled above take precedence.
-      const conviction = await getConvictionByTicker(supabase, user.id);
       if (conviction.size > 0) {
         const ruleRows = (insights || []).filter(
           i =>

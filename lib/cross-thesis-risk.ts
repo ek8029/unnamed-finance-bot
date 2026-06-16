@@ -13,7 +13,7 @@
 import OpenAI from 'openai';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PillarStatus } from '@/lib/thesis-status';
-import { clusterPillars, type SynthPillarInput, type SynthCluster } from '@/lib/thesis-synthesis';
+import { getCachedClusters, type SynthPillarInput, type SynthCluster } from '@/lib/thesis-synthesis';
 
 // Lazy: do not construct at module load (keeps the pure exports importable in
 // tests / any context without OPENAI_API_KEY).
@@ -159,7 +159,7 @@ export async function generateCrossThesisRisks(
   }
   if (new Set(inputs.map((i) => i.ticker)).size < 2) return { generated: 0, alerts: [] };
 
-  const clusters = await clusterPillars(getOpenAI(), inputs);
+  const clusters = await getCachedClusters(db, getOpenAI(), userId, inputs);
   const riskClusters = toRiskClusters(clusters, thesisIdByTicker, worstByTicker);
   const alerts = buildRiskAlerts(riskClusters);
   if (alerts.length === 0) return { generated: 0, alerts: [] };

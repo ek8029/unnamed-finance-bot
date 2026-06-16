@@ -6,6 +6,7 @@
 // route AND the cross-thesis risk monitor compose the same tool.
 
 import OpenAI from 'openai';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export const SYNTHESIS_MODEL = 'gpt-4o';
 
@@ -135,4 +136,43 @@ export async function clusterPillars(
     return [];
   }
   return groundClusters(parsed, inputs);
+}
+
+/**
+ * Persisted clustering: read the stored clusters for this user and return them when the
+ * pillar set is unchanged (hash match); otherwise compute once via clusterPillars and
+ * write the result through. The output is deterministic for a given pillar set, so this
+ * means at most one gpt-4o call per actual pillar change across every instance, instead
+ * of one per cold serverless instance. Falls back to a live compute if the cache table
+ * is absent or unreadable, so it is safe to deploy before the migration is applied.
+ */
+export async function getCachedClusters(
+  db: SupabaseClient,
+  openai: OpenAI,
+  userId: string,
+  inputs: SynthPillarInput[],
+): Promise<SynthCluster[]> {
+  if (new Set(inputs.map((i) => i.ticker)).size < 2) return [];
+  const hash = hashPillars(inputs);
+
+  const { data, error } = await db
+    .from('thesis_clusters')
+    .select('pillar_hash, clusters')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (!error && data && data.pillar_hash === hash) {
+    return Array.isArray(data.clusters) ? (data.clusters as SynthCluster[]) : [];
+  }
+
+  const clusters = await clusterPillars(openai, inputs);
+
+  const { error: writeError } = await db
+    .from('thesis_clusters')
+    .upsert(
+      { user_id: userId, pillar_hash: hash, clusters, generated_at: new Date().toISOString() },
+      { onConflict: 'user_id' },
+    );
+  if (writeError) console.error('[synthesis] cluster cache write failed:', writeError.message);
+
+  return clusters;
 }
