@@ -94,13 +94,16 @@ export async function generateInsights(
           .eq('user_id', userId)
           .gte('transaction_date', getMonthStart(-1))
           .lte('transaction_date', getMonthEnd(-1)),
+        // All open insights (any age): the supersede must catch stale duplicates of any
+        // age, else normalized-title pile-ups (e.g. TLH cards whose $ amount drifts each
+        // run) accumulate once they age past a time window.
         supabase
           .from('insights')
-          .select('id, title, created_at')
+          .select('id, title')
           .eq('user_id', userId)
           .eq('is_dismissed', false)
           .eq('is_archived', false)
-          .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+          .order('created_at', { ascending: false }),
       ]);
 
     const accounts = accountsRes.data || [];
@@ -113,6 +116,16 @@ export async function generateInsights(
       const norm = normalizeInsightTitle(i.title);
       if (!existingByNorm.has(norm)) existingByNorm.set(norm, []);
       existingByNorm.get(norm)!.push(i.id);
+    }
+
+    // Collapse pre-existing duplicates of one normalized title (orphan pile-ups left by
+    // earlier runs before this dedup was fixed): keep the newest, dismiss the rest.
+    const orphanStaleIds: string[] = [];
+    for (const [norm, ids] of existingByNorm) {
+      if (ids.length > 1) {
+        orphanStaleIds.push(...ids.slice(1));
+        existingByNorm.set(norm, [ids[0]]);
+      }
     }
 
     const candidates: InsightCandidate[] = [];
@@ -418,11 +431,12 @@ export async function generateInsights(
       }
     }
 
-    if (staleIds.length > 0) {
+    const allStaleIds = [...new Set([...staleIds, ...orphanStaleIds])];
+    if (allStaleIds.length > 0) {
       await supabase
         .from('insights')
         .update({ is_dismissed: true })
-        .in('id', staleIds)
+        .in('id', allStaleIds)
         .eq('user_id', userId);
     }
 
