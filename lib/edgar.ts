@@ -231,7 +231,8 @@ export async function getReportedFinancialsEdgar(symbol: string): Promise<Report
       cache: 'no-store',
     });
     if (!res.ok) {
-      console.error(`EDGAR companyfacts ${symbol} error: ${res.status}`);
+      // 404 = issuer has no XBRL company-facts (ETFs, funds, many foreign/new filers). Expected, not an error.
+      if (res.status !== 404) console.error(`EDGAR companyfacts ${symbol} error: ${res.status}`);
       return [];
     }
     factsData = await res.json();
@@ -301,7 +302,8 @@ async function fetchSubmissions(cik: string): Promise<any | null> {
       cache: 'no-store',
     });
     if (!res.ok) {
-      console.error(`EDGAR submissions CIK${cik} error: ${res.status}`);
+      // 404 = no submissions for this CIK (delisted / edge cases). Expected, not an error.
+      if (res.status !== 404) console.error(`EDGAR submissions CIK${cik} error: ${res.status}`);
       return null;
     }
     return await res.json();
