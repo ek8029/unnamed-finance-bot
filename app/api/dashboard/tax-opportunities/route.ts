@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { generateTaxReport } from '@/lib/tax-analysis';
 import { requirePro } from '@/lib/tier';
 import { isThesisUser } from '@/lib/thesis-access';
-import { getConvictionByTicker } from '@/lib/thesis-conviction';
+import { getConvictionByTicker, getContradictionCitesByTicker } from '@/lib/thesis-conviction';
 
 export async function GET() {
   const supabase = await createClient();
@@ -36,6 +36,20 @@ export async function GET() {
         for (const p of [...report.opportunities, ...report.retirementPositions]) {
           const c = conviction.get(p.ticker.toUpperCase());
           if (c) p.thesisStatus = c;
+        }
+        // Broken-thesis harvests: attach the best verbatim contradiction cite so the
+        // Tax Center can show *why* the thesis broke (exit and harvest align).
+        const brokenTickers = report.opportunities
+          .filter((p) => p.thesisStatus === 'broken')
+          .map((p) => p.ticker);
+        if (brokenTickers.length > 0) {
+          const cites = await getContradictionCitesByTicker(supabase, user.id, brokenTickers);
+          for (const p of report.opportunities) {
+            if (p.thesisStatus === 'broken') {
+              const cite = cites.get(p.ticker.toUpperCase());
+              if (cite) p.thesisCite = cite;
+            }
+          }
         }
       }
     }

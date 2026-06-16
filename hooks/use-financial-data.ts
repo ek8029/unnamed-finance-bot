@@ -600,6 +600,15 @@ export function useTaxData() {
 
 // ── Tax-loss harvesting opportunities ──
 
+/** Verbatim contradiction cite from the thesis layer (raw evidence excerpt). */
+export interface ThesisCite {
+  excerpt: string;
+  sourceTitle: string;
+  sourceUrl: string | null;
+  publishedAt: string | null;
+  whatItMeans: string | null;
+}
+
 export interface TaxOpportunity {
   ticker: string;
   securityName: string;
@@ -619,6 +628,7 @@ export interface TaxOpportunity {
   accountSubtype: string | null;
   isRetirement: boolean;
   thesisStatus?: 'intact' | 'weakening' | 'broken';
+  thesisCite?: ThesisCite;
 }
 
 export interface AnnualCapInfo {

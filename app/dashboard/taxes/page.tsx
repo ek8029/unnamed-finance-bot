@@ -260,6 +260,20 @@ export default function TaxesPage() {
     return harvestReport.opportunities.filter((o) => !o.washSaleRisk).length;
   }, [harvestReport]);
 
+  // Lead with conviction: broken-thesis losses first (the exit and the tax move point
+  // the same way), then weakening, then intact, then no signal. Stable sort keeps the
+  // server order within a tier, so non-thesis users see the unchanged ordering.
+  const sortedOpportunities = useMemo(() => {
+    if (!harvestReport) return [];
+    const rank = (s?: string) => (s === 'broken' ? 0 : s === 'weakening' ? 1 : s === 'intact' ? 2 : 3);
+    return [...harvestReport.opportunities].sort((a, b) => rank(a.thesisStatus) - rank(b.thesisStatus));
+  }, [harvestReport]);
+
+  const brokenHarvests = useMemo(
+    () => sortedOpportunities.filter((o) => o.thesisStatus === 'broken'),
+    [sortedOpportunities],
+  );
+
   const carryoverLoss = useMemo(() => {
     if (!harvestReport) return 0;
     return harvestReport.annualCap.estimatedCarryforward;
@@ -538,6 +552,11 @@ export default function TaxesPage() {
         </section>
       )}
 
+      {/* ─── 3.9 Broken-thesis harvest callout (thesis users) ─── */}
+      {!loading && showProContent && brokenHarvests.length > 0 && (
+        <BrokenThesisCallout opps={brokenHarvests} formatCurrency={formatCurrency} />
+      )}
+
       {/* ─── 4. Harvest Opportunity Table ─── */}
       {loading ? (
         <TableSkeleton />
@@ -626,7 +645,7 @@ export default function TaxesPage() {
           </div>
 
           {/* Table rows */}
-          {harvestReport.opportunities.map((opp: TaxOpportunity) => (
+          {sortedOpportunities.map((opp: TaxOpportunity) => (
             <HarvestRow
               key={opp.ticker}
               opp={opp}
@@ -1140,6 +1159,88 @@ export default function TaxesPage() {
   );
 }
 
+// ── Conviction helpers (thesis-aware TLH) ──
+
+const CONVICTION_COLOR: Record<'intact' | 'weakening' | 'broken', string> = {
+  intact: '#4ADE80',
+  weakening: '#E6B94D',
+  broken: '#F87171',
+};
+
+// Row-level conviction chip: surfaces the thesis status without needing to expand.
+function ConvictionChip({ status }: { status: 'intact' | 'weakening' | 'broken' }) {
+  const c = CONVICTION_COLOR[status];
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-semibold shrink-0"
+      style={{ background: `${c}1A`, color: c, ...MONO }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: c }} />
+      Thesis {status}
+    </span>
+  );
+}
+
+// Tax-center hero: when a harvestable loss sits on a broken thesis, the exit and the
+// tax move point the same direction. Leads the section with that and a verbatim cite.
+function BrokenThesisCallout({
+  opps,
+  formatCurrency,
+}: {
+  opps: TaxOpportunity[];
+  formatCurrency: (n: number) => string;
+}) {
+  const lead = opps[0];
+  const tickers = opps.map((o) => o.ticker);
+  const totalSavings = opps.reduce((s, o) => s + o.estimatedSavings, 0);
+  const red = CONVICTION_COLOR.broken;
+  return (
+    <section
+      aria-label="Broken-thesis harvest opportunities"
+      className="rounded-md p-5"
+      style={{
+        background: 'rgba(248,113,113,0.04)',
+        border: '1px solid rgba(248,113,113,0.25)',
+        borderLeft: `3px solid ${red}`,
+      }}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <AlertTriangle className="w-4 h-4" style={{ color: red }} />
+        <span className="text-[11px] uppercase tracking-[0.15em] font-bold" style={{ color: red, ...MONO }}>
+          Conviction Alert
+        </span>
+      </div>
+      <p className="text-[15px] text-[var(--color-text-primary)] leading-relaxed font-medium">
+        {opps.length === 1 ? (
+          <>
+            This harvestable loss is on a <span style={{ color: red }}>broken thesis</span> ({tickers[0]}).
+          </>
+        ) : (
+          <>
+            {opps.length} harvestable losses are on <span style={{ color: red }}>broken theses</span> ({tickers.join(', ')}).
+          </>
+        )}{' '}
+        When the thesis is broken, the exit and the tax move point the same direction. Estimated saving{' '}
+        {formatCurrency(totalSavings)}.
+      </p>
+      {lead.thesisCite && (
+        <blockquote
+          className="mt-3 pl-3 text-[13px] text-[var(--color-text-secondary)] leading-relaxed"
+          style={{ borderLeft: '2px solid rgba(248,113,113,0.4)' }}
+        >
+          &ldquo;{lead.thesisCite.excerpt}&rdquo;
+          <span className="block mt-1 text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+            {lead.thesisCite.sourceTitle}
+            {lead.thesisCite.publishedAt ? ` · ${lead.thesisCite.publishedAt.slice(0, 10)}` : ''}
+            {' · '}
+            {lead.ticker}
+          </span>
+        </blockquote>
+      )}
+    </section>
+  );
+}
+
 // ── Harvest row component ──
 
 function HarvestRow({
@@ -1173,6 +1274,7 @@ function HarvestRow({
         style={{
           gridTemplateColumns: '72px 1fr 80px 96px 96px 104px 96px 100px 80px',
           gap: '8px',
+          boxShadow: opp.thesisStatus ? `inset 3px 0 0 ${CONVICTION_COLOR[opp.thesisStatus]}` : undefined,
         }}
         onClick={() => setExpanded((v) => !v)}
       >
@@ -1181,10 +1283,13 @@ function HarvestRow({
           {opp.ticker}
         </span>
 
-        {/* Name */}
-        <span className="text-[13px] text-[var(--color-text-secondary)] truncate">
-          {opp.securityName}
-        </span>
+        {/* Name + conviction */}
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[13px] text-[var(--color-text-secondary)] truncate">
+            {opp.securityName}
+          </span>
+          {opp.thesisStatus && <ConvictionChip status={opp.thesisStatus} />}
+        </div>
 
         {/* Shares */}
         <span className="text-[13px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
@@ -1336,12 +1441,14 @@ function HarvestRow({
       {/* Mobile card */}
       <div
         className="md:hidden px-4 py-3.5 border-b border-[var(--color-border-subtle)] motion-safe:transition-colors motion-safe:duration-100"
+        style={{ boxShadow: opp.thesisStatus ? `inset 3px 0 0 ${CONVICTION_COLOR[opp.thesisStatus]}` : undefined }}
         onClick={() => setExpanded((v) => !v)}
       >
         <div className="flex items-center gap-2 sm:gap-3 mb-2.5 flex-wrap">
           <span className="text-[14px] font-bold text-[var(--color-gold)]" style={MONO}>
             {opp.ticker}
           </span>
+          {opp.thesisStatus && <ConvictionChip status={opp.thesisStatus} />}
           <span className="text-[12px] sm:text-[13px] text-[var(--color-text-secondary)] truncate flex-1 min-w-[60px]">
             {opp.securityName}
           </span>

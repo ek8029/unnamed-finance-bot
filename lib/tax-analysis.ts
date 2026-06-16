@@ -19,6 +19,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
+import type { ActionCite } from '@/lib/thesis-conviction';
 import {
   TAX_RATE,
   WASH_SALE_WINDOW_DAYS,
@@ -57,6 +58,8 @@ export interface HarvestablePosition {
   isRetirement: boolean;
   /** Conviction from the thesis layer when available (thesis-aware TLH). */
   thesisStatus?: 'intact' | 'weakening' | 'broken';
+  /** Best verbatim contradiction cite for a broken thesis (why exit + harvest align). */
+  thesisCite?: ActionCite;
 }
 
 export interface ReplacementSecurity {

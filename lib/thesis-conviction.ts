@@ -185,3 +185,79 @@ export async function getThesisEarningsContext(
   }
   return map;
 }
+
+/**
+ * Best verbatim contradiction cite per ticker for the given tracked tickers. Same
+ * qualifying filter + ranking as getThesisContextForActions (verdict='contradicts'
+ * AND materiality='material' AND is_backfill=false, ordered source_type
+ * filing>form4>xbrl>price_move>news then source_published_at desc; first per ticker
+ * wins). Used by the Tax Center to show *why* a broken-thesis loss is worth harvesting.
+ * Verbatim excerpt passed through raw. Tickers with no qualifying evidence are omitted.
+ */
+export async function getContradictionCitesByTicker(
+  db: SupabaseClient,
+  userId: string,
+  tickers: string[],
+): Promise<Map<string, ActionCite>> {
+  const out = new Map<string, ActionCite>();
+  const want = new Set(tickers.map((t) => t.toUpperCase()));
+  if (want.size === 0) return out;
+
+  const { data: thesisRows } = await db
+    .from('theses')
+    .select('ticker, thesis_pillars(id)')
+    .eq('user_id', userId)
+    .eq('tracked', true);
+
+  // pillarId -> tickerUpper, limited to the tickers asked for.
+  const tickerByPillar = new Map<string, string>();
+  for (const r of (thesisRows ?? []) as { ticker: string; thesis_pillars?: { id: string }[] }[]) {
+    const t = r.ticker.toUpperCase();
+    if (!want.has(t)) continue;
+    for (const p of r.thesis_pillars ?? []) tickerByPillar.set(p.id, t);
+  }
+  const pillarIds = [...tickerByPillar.keys()];
+  if (pillarIds.length === 0) return out;
+
+  const { data: evidence } = await db
+    .from('pillar_evidence')
+    .select('pillar_id, verdict, materiality, source_type, source_title, source_url, source_published_at, excerpt, what_it_means, is_backfill')
+    .in('pillar_id', pillarIds);
+
+  type EvRow = {
+    pillar_id: string;
+    verdict: string;
+    materiality: string;
+    source_type: string;
+    source_title: string;
+    source_url: string | null;
+    source_published_at: string | null;
+    excerpt: string;
+    what_it_means: string | null;
+    is_backfill: boolean;
+  };
+  const priority: Record<string, number> = { filing: 0, form4: 1, xbrl: 2, price_move: 3, news: 4 };
+  const qualifying = ((evidence ?? []) as EvRow[]).filter(
+    (e) => e.verdict === 'contradicts' && e.materiality === 'material' && !e.is_backfill,
+  );
+  qualifying.sort((a, b) => {
+    const pa = priority[a.source_type] ?? 99;
+    const pb = priority[b.source_type] ?? 99;
+    if (pa !== pb) return pa - pb;
+    const ta = a.source_published_at ? Date.parse(a.source_published_at) : 0;
+    const tb = b.source_published_at ? Date.parse(b.source_published_at) : 0;
+    return tb - ta;
+  });
+  for (const e of qualifying) {
+    const t = tickerByPillar.get(e.pillar_id);
+    if (!t || out.has(t)) continue; // first per ticker = best after sort
+    out.set(t, {
+      excerpt: e.excerpt,
+      sourceTitle: e.source_title,
+      sourceUrl: e.source_url,
+      publishedAt: e.source_published_at,
+      whatItMeans: e.what_it_means,
+    });
+  }
+  return out;
+}
