@@ -47,3 +47,104 @@ export function thesisTlhNote(status: Conviction): string {
       return 'Your thesis is intact. This looks like a tax move, not a change of conviction. Consider rebuying after the wash-sale window to stay positioned.';
   }
 }
+
+export interface ActionCite {
+  excerpt: string;          // RAW verbatim from pillar_evidence.excerpt
+  sourceTitle: string;
+  sourceUrl: string | null;
+  publishedAt: string | null;
+  whatItMeans: string | null;
+}
+export interface ActionThesisContext {
+  ticker: string;
+  status: Conviction;       // intact | weakening | broken
+  cite?: ActionCite;
+}
+
+/**
+ * For thesis-native actions (related_entity_type='thesis', related_entity_ids=[thesisId,pillarId]),
+ * resolve conviction (per ticker) + ONE best verbatim contradiction cite (per pillar). Returns
+ * Map<insightId, ActionThesisContext>. Reuses getConvictionByTicker so status matches the theses UI.
+ * Cite ranking: verdict='contradicts' AND materiality='material' AND is_backfill=false, ordered
+ * source_type (filing>form4>xbrl>price_move>news) then source_published_at desc; take the first per pillar.
+ * No qualifying evidence => no cite (status only). Verbatim excerpt passed through raw.
+ */
+export async function getThesisContextForActions(
+  db: SupabaseClient,
+  userId: string,
+  actions: { id: string; thesisId: string; pillarId: string | null }[],
+): Promise<Map<string, ActionThesisContext>> {
+  const out = new Map<string, ActionThesisContext>();
+  if (actions.length === 0) return out;
+
+  const conviction = await getConvictionByTicker(db, userId);
+
+  // thesisId -> tickerUpper
+  const thesisIds = [...new Set(actions.map(a => a.thesisId))];
+  const { data: thesisRows } = await db
+    .from('theses')
+    .select('id, ticker')
+    .eq('user_id', userId)
+    .in('id', thesisIds);
+  const tickerByThesis = new Map<string, string>();
+  for (const r of (thesisRows ?? []) as { id: string; ticker: string }[]) {
+    tickerByThesis.set(r.id, r.ticker.toUpperCase());
+  }
+
+  // pillarId -> best contradiction cite
+  const pillarIds = [...new Set(actions.map(a => a.pillarId).filter((p): p is string => !!p))];
+  const sourcePriority: Record<string, number> = { filing: 0, form4: 1, xbrl: 2, price_move: 3, news: 4 };
+  const bestCiteByPillar = new Map<string, ActionCite>();
+  if (pillarIds.length > 0) {
+    const { data: evidence } = await db
+      .from('pillar_evidence')
+      .select('pillar_id, verdict, materiality, source_type, source_title, source_url, source_published_at, excerpt, what_it_means, is_backfill')
+      .in('pillar_id', pillarIds);
+
+    type EvRow = {
+      pillar_id: string;
+      verdict: string;
+      materiality: string;
+      source_type: string;
+      source_title: string;
+      source_url: string | null;
+      source_published_at: string | null;
+      excerpt: string;
+      what_it_means: string | null;
+      is_backfill: boolean;
+    };
+    const qualifying = ((evidence ?? []) as EvRow[]).filter(
+      e => e.verdict === 'contradicts' && e.materiality === 'material' && !e.is_backfill,
+    );
+    // Rank: source_type priority asc, then source_published_at desc.
+    qualifying.sort((a, b) => {
+      const pa = sourcePriority[a.source_type] ?? 99;
+      const pb = sourcePriority[b.source_type] ?? 99;
+      if (pa !== pb) return pa - pb;
+      const ta = a.source_published_at ? Date.parse(a.source_published_at) : 0;
+      const tb = b.source_published_at ? Date.parse(b.source_published_at) : 0;
+      return tb - ta;
+    });
+    for (const e of qualifying) {
+      if (bestCiteByPillar.has(e.pillar_id)) continue; // first = best after sort
+      bestCiteByPillar.set(e.pillar_id, {
+        excerpt: e.excerpt,
+        sourceTitle: e.source_title,
+        sourceUrl: e.source_url,
+        publishedAt: e.source_published_at,
+        whatItMeans: e.what_it_means,
+      });
+    }
+  }
+
+  for (const a of actions) {
+    const ticker = tickerByThesis.get(a.thesisId);
+    if (!ticker) continue;
+    const status = conviction.get(ticker);
+    if (!status) continue; // unverified-only thesis: no signal
+    const cite = a.pillarId ? bestCiteByPillar.get(a.pillarId) : undefined;
+    out.set(a.id, cite ? { ticker, status, cite } : { ticker, status });
+  }
+
+  return out;
+}

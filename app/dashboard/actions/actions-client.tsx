@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { useFormat } from '@/hooks/use-format';
 import { ProBlur } from '@/components/pro-blur';
+import { STATUS_META } from '@/lib/thesis-palette';
 
 /* ──────────────────────────────────────────────────
    Types
@@ -48,6 +49,9 @@ export interface ActionItem {
   is_archived?: boolean;
   is_dismissed?: boolean;
   is_useful?: boolean;
+  ticker?: string;
+  thesisStatus?: 'intact' | 'weakening' | 'broken';
+  thesisCite?: { excerpt: string; sourceTitle: string; sourceUrl: string | null; publishedAt: string | null; whatItMeans: string | null };
 }
 
 type StatusTab = 'open' | 'snoozed' | 'done' | 'archived';
@@ -494,6 +498,14 @@ export function ActionsClient({ initialActions, isPro }: { initialActions: Actio
                       <span className="text-[13px] font-mono text-[var(--color-text-muted)]">
                         {categoryLabels[action.type] || action.type}
                       </span>
+                      {action.thesisStatus && (
+                        <span
+                          className="text-[13px] font-mono uppercase tracking-wide"
+                          style={{ color: STATUS_META[action.thesisStatus].color }}
+                        >
+                          THESIS: {STATUS_META[action.thesisStatus].label.toUpperCase()}
+                        </span>
+                      )}
                       <span className="text-[13px] text-[var(--color-text-muted)] ml-auto">
                         {relativeTime(action.created_at)}
                       </span>
@@ -717,6 +729,88 @@ function DetailPane({
           ))}
         </div>
       </div>
+
+      {/* Thesis interlace */}
+      {action.thesisStatus && (
+        <div className="mb-6 sm:mb-8">
+          <h3 className="type-eyebrow mb-3">Thesis</h3>
+          <div className="border border-[var(--color-border-base)] rounded-lg p-5">
+            {/* Conviction badge + ticker */}
+            <div className="flex items-center gap-2 mb-3">
+              <span
+                className="text-[13px] font-semibold px-2 py-[2px] rounded uppercase tracking-wide"
+                style={{
+                  color: STATUS_META[action.thesisStatus].color,
+                  backgroundColor: `${STATUS_META[action.thesisStatus].color}1A`,
+                }}
+              >
+                {STATUS_META[action.thesisStatus].label}
+              </span>
+              {action.ticker && (
+                <span className="text-[14px] font-mono text-[var(--color-text-secondary)]">
+                  {action.ticker}
+                </span>
+              )}
+            </div>
+
+            {/* Non-directive observational line tied to status */}
+            <p className="text-[14px] sm:text-[15px] leading-relaxed text-[var(--color-text-secondary)]">
+              {action.thesisStatus === 'broken'
+                ? 'The evidence behind this thesis no longer holds. Worth deciding whether you still want the position, not just acting on this one item.'
+                : action.thesisStatus === 'weakening'
+                ? 'This thesis is showing strain. Worth watching the next data point closely before it resolves either way.'
+                : 'This thesis still holds. Read this as a routine item, not a change in conviction.'}
+            </p>
+
+            {/* Verbatim contradiction cite */}
+            {action.thesisCite && (
+              <div className="mt-4">
+                <p className="text-[13px] text-[var(--color-text-muted)] mb-2">
+                  From{' '}
+                  {action.thesisCite.sourceUrl ? (
+                    <a
+                      href={action.thesisCite.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[var(--color-text-secondary)] underline hover:text-[var(--color-text-primary)] motion-safe:transition-colors"
+                    >
+                      {action.thesisCite.sourceTitle}
+                    </a>
+                  ) : (
+                    <span className="text-[var(--color-text-secondary)]">{action.thesisCite.sourceTitle}</span>
+                  )}
+                  {action.thesisCite.publishedAt
+                    ? ' · ' +
+                      new Date(action.thesisCite.publishedAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
+                    : ''}
+                  :
+                </p>
+                <blockquote className="border-l-2 border-[var(--color-border-strong)] pl-3 text-[14px] sm:text-[15px] italic leading-relaxed text-[var(--color-text-primary)]">
+                  {action.thesisCite.excerpt}
+                </blockquote>
+                {action.thesisCite.whatItMeans && (
+                  <p className="text-[13px] sm:text-[14px] text-[var(--color-text-muted)] mt-2 leading-relaxed">
+                    {action.thesisCite.whatItMeans}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Link to theses */}
+            <a
+              href="/dashboard/theses"
+              className="inline-flex items-center gap-1 text-[14px] font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] mt-4 motion-safe:transition-colors"
+            >
+              View thesis
+              <ChevronRight className="w-4 h-4" />
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Context */}
       {action.recommended_action && (

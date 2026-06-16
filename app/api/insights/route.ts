@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { isThesisUser } from '@/lib/thesis-access';
+import { getThesisContextForActions, getConvictionByTicker, type ActionThesisContext, type Conviction } from '@/lib/thesis-conviction';
 
 /** Strip volatile dollar amounts and percentages for stable dedup */
 function normalizeTitle(title: string): string {
@@ -26,7 +28,7 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from('insights')
-      .select('id, insight_type, priority, title, description, recommended_action, estimated_impact_amount, source_type, created_at, expires_at, snoozed_until, is_archived, is_dismissed, is_useful')
+      .select('id, insight_type, priority, title, description, recommended_action, estimated_impact_amount, source_type, created_at, expires_at, snoozed_until, is_archived, is_dismissed, is_useful, related_entity_type, related_entity_ids')
       .eq('user_id', user.id);
 
     if (status === 'snoozed') {
@@ -69,25 +71,87 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch insights' }, { status: 500 });
     }
 
+    // Thesis interlace: for allowlisted users, enrich thesis-native actions
+    // (related_entity_type='thesis', related_entity_ids=[thesisId,pillarId]) with
+    // conviction status + one verbatim contradiction cite. Non-allowlisted users
+    // get a byte-identical response (map stays empty, no new fields emitted).
+    let ctx = new Map<string, ActionThesisContext>();
+    const ruleCtx = new Map<string, { ticker: string; status: Conviction }>();
+    if (isThesisUser(user.email)) {
+      const thesisActions = (insights || [])
+        .filter(i => i.related_entity_type === 'thesis' && Array.isArray(i.related_entity_ids))
+        .map(i => ({
+          id: i.id,
+          thesisId: i.related_entity_ids[0],
+          pillarId: i.related_entity_ids[1] ?? null,
+        }));
+      ctx = await getThesisContextForActions(supabase, user.id, thesisActions);
+
+      // Rule-based actions (concentration/TLH) are ticker-scoped via holding ids in
+      // related_entity_ids. If that position has a tracked thesis, stamp a conviction-only
+      // chip (no cite: the rule did not fire on thesis evidence). Thesis-native actions
+      // handled above take precedence.
+      const conviction = await getConvictionByTicker(supabase, user.id);
+      if (conviction.size > 0) {
+        const ruleRows = (insights || []).filter(
+          i =>
+            i.related_entity_type !== 'thesis' &&
+            (i.insight_type === 'portfolio' || i.insight_type === 'tax') &&
+            Array.isArray(i.related_entity_ids) &&
+            i.related_entity_ids.length > 0,
+        );
+        const holdingIds = [...new Set(ruleRows.flatMap(i => i.related_entity_ids as string[]))];
+        if (holdingIds.length > 0) {
+          const { data: holdingRows } = await supabase
+            .from('holdings')
+            .select('id, ticker')
+            .eq('user_id', user.id)
+            .in('id', holdingIds);
+          const tickerByHolding = new Map(
+            (holdingRows || []).map((h: { id: string; ticker: string }) => [h.id, h.ticker.toUpperCase()]),
+          );
+          for (const i of ruleRows) {
+            for (const hid of i.related_entity_ids as string[]) {
+              const ticker = tickerByHolding.get(hid);
+              const status = ticker ? conviction.get(ticker) : undefined;
+              if (ticker && status) {
+                ruleCtx.set(i.id, { ticker, status });
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
     // Transform and deduplicate by normalized title (keep the newest)
     const seenNormalized = new Set<string>();
     const transformedInsights = (insights || [])
-      .map(insight => ({
-        id: insight.id,
-        type: insight.insight_type,
-        priority: insight.priority,
-        title: insight.title,
-        description: insight.description,
-        recommended_action: insight.recommended_action,
-        estimated_impact: insight.estimated_impact_amount,
-        source: insight.source_type,
-        created_at: insight.created_at,
-        expires_at: insight.expires_at,
-        snoozed_until: insight.snoozed_until,
-        is_archived: insight.is_archived,
-        is_dismissed: insight.is_dismissed,
-        is_useful: insight.is_useful,
-      }))
+      .map(insight => {
+        const tc = ctx.get(insight.id);
+        const rc = ruleCtx.get(insight.id);
+        return {
+          id: insight.id,
+          type: insight.insight_type,
+          priority: insight.priority,
+          title: insight.title,
+          description: insight.description,
+          recommended_action: insight.recommended_action,
+          estimated_impact: insight.estimated_impact_amount,
+          source: insight.source_type,
+          created_at: insight.created_at,
+          expires_at: insight.expires_at,
+          snoozed_until: insight.snoozed_until,
+          is_archived: insight.is_archived,
+          is_dismissed: insight.is_dismissed,
+          is_useful: insight.is_useful,
+          ...(tc
+            ? { ticker: tc.ticker, thesisStatus: tc.status, thesisCite: tc.cite }
+            : rc
+              ? { ticker: rc.ticker, thesisStatus: rc.status }
+              : {}),
+        };
+      })
       .filter(insight => {
         const norm = normalizeTitle(insight.title);
         if (seenNormalized.has(norm)) return false;
