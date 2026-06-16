@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { summarizePillars, type SummaryPillar } from '@/lib/thesis-summary';
+import { summarizePillars, effectiveStatus, type SummaryPillar } from '@/lib/thesis-summary';
 
 // Thesis conviction for a position, reused across surfaces (TLH, actions, brief).
 export type Conviction = 'intact' | 'weakening' | 'broken';
@@ -147,4 +147,41 @@ export async function getThesisContextForActions(
   }
 
   return out;
+}
+
+export interface ThesisEarningsContext {
+  status: Conviction;
+  testPillar: string; // the claim of a confirmed pillar at the conviction status (the at-risk pillar)
+}
+
+/**
+ * Per tracked thesis: conviction (same rule as getConvictionByTicker) plus the claim
+ * of a confirmed pillar that sits at that status, so the Earnings page can frame the
+ * report as the next test of that specific pillar. Omits theses with no real signal.
+ */
+export async function getThesisEarningsContext(
+  db: SupabaseClient,
+  userId: string,
+): Promise<Map<string, ThesisEarningsContext>> {
+  const { data } = await db
+    .from('theses')
+    .select('ticker, thesis_pillars(claim, confirmed, status, status_override, lifecycle)')
+    .eq('user_id', userId)
+    .eq('tracked', true);
+
+  const map = new Map<string, ThesisEarningsContext>();
+  for (const row of data ?? []) {
+    const t = row as { ticker: string; thesis_pillars?: (SummaryPillar & { claim: string })[] };
+    const pillars = t.thesis_pillars ?? [];
+    const counts = summarizePillars(pillars).statusCounts;
+    const status: Conviction | null =
+      counts.broken > 0 ? 'broken' : counts.weakening > 0 ? 'weakening' : counts.intact > 0 ? 'intact' : null;
+    if (!status) continue;
+    const testPillar =
+      pillars.find(
+        (p) => p.confirmed && p.lifecycle !== 'dismissed' && effectiveStatus(p) === status,
+      )?.claim ?? '';
+    map.set(t.ticker.toUpperCase(), { status, testPillar });
+  }
+  return map;
 }

@@ -5,15 +5,10 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
-import { getUnderlyingExposure } from '@/lib/etf-holdings';
+import { getEdgarEarnings } from '@/lib/earnings-edgar';
 import {
-  getEarningsCalendar,
-  getEarnings,
   getCompanyProfile,
   getQuote,
-  getBasicFinancials,
-  type EarningsCalendarItem,
-  type EarningsSurprise,
 } from '@/lib/financial-data';
 
 // ── Types ──
@@ -39,6 +34,9 @@ export interface UpcomingEarningsEvent {
   // Scenario analysis
   beatImpact5pct: number;         // estimated $ impact if beats by 5%
   missImpact5pct: number;         // estimated $ impact if misses by 5%
+  estimated?: boolean;            // date derived from filing history, not a confirmed calendar
+  thesisStatus?: 'intact' | 'weakening' | 'broken';
+  testPillar?: string;
 }
 
 export interface RecentEarningsResult {
@@ -121,57 +119,35 @@ async function getUserHoldings(userId: string): Promise<Map<string, UserPosition
 async function getUpcomingEarnings(
   holdingsMap: Map<string, UserPosition>,
 ): Promise<UpcomingEarningsEvent[]> {
-  const now = new Date();
-  const twoWeeksOut = new Date(now.getTime() + 14 * 86400000);
-  const from = now.toISOString().split('T')[0];
-  const to = twoWeeksOut.toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0];
+  const ninetyDaysOut = new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0];
 
-  // Fetch earnings calendar from Finnhub
-  const calendar = await getEarningsCalendar(from, to);
-
-  // Build indirect exposure map: ticker → total exposure from ETFs
   const totalValue = Array.from(holdingsMap.values()).reduce((s, p) => s + p.totalValue, 0);
-  const indirectExposure = new Map<string, { exposureValue: number; sources: string[] }>();
-  for (const [hTicker, pos] of holdingsMap) {
-    const underlyings = getUnderlyingExposure(hTicker, pos.totalValue, totalValue);
-    for (const u of underlyings) {
-      const existing = indirectExposure.get(u.ticker) || { exposureValue: 0, sources: [] };
-      existing.exposureValue += (u.effectiveWeight / 100) * totalValue;
-      if (!existing.sources.includes(u.source)) existing.sources.push(u.source);
-      indirectExposure.set(u.ticker, existing);
-    }
-  }
 
-  // Cross-reference with user holdings (direct + indirect via ETFs)
+  // Derive an estimated next-report date per held ticker from EDGAR 8-K 2.02
+  // filing history. getRecentFilings caches, so this stays cheap in parallel.
+  const tickers = [...holdingsMap.keys()];
+  const dated = await Promise.all(
+    tickers.map(async (ticker) => ({
+      ticker,
+      nextEstimatedDate: (await getEdgarEarnings(ticker)).nextEstimatedDate,
+    })),
+  );
+
   const upcoming: UpcomingEarningsEvent[] = [];
 
-  for (const event of calendar) {
-    let position = holdingsMap.get(event.symbol);
-    const indirect = indirectExposure.get(event.symbol);
-
-    // Skip if no direct or indirect exposure
-    if (!position && !indirect) continue;
-
-    // If only indirect exposure, create a synthetic position
-    if (!position && indirect) {
-      position = {
-        ticker: event.symbol,
-        securityName: event.symbol,
-        shares: 0,
-        currentPrice: 0,
-        totalValue: indirect.exposureValue,
-        allocationPct: totalValue > 0 ? (indirect.exposureValue / totalValue) * 100 : 0,
-        sector: 'Unknown',
-      };
+  for (const { ticker, nextEstimatedDate } of dated) {
+    // Only keep estimates landing inside the forward window
+    if (!nextEstimatedDate || nextEstimatedDate < today || nextEstimatedDate > ninetyDaysOut) {
+      continue;
     }
 
-    // position is guaranteed non-undefined after the guards above
-    const pos = position!;
+    const pos = holdingsMap.get(ticker)!;
 
     // Refresh position with live price + company data
     const [quote, profile] = await Promise.all([
-      getQuote(event.symbol),
-      pos.securityName === event.symbol ? getCompanyProfile(event.symbol) : null,
+      getQuote(ticker),
+      pos.securityName === ticker ? getCompanyProfile(ticker) : null,
     ]);
 
     // Use live price if available, recalculate exposure
@@ -185,19 +161,14 @@ async function getUpcomingEarnings(
       };
     }
 
-    // Add indirect exposure (from ETFs/leveraged products) to total value
-    const indirectValue = indirect?.exposureValue ?? 0;
-    const totalExposureValue = livePosition.totalValue + indirectValue;
-
+    const totalExposureValue = livePosition.totalValue;
     const companyName = profile?.name || pos.securityName;
 
-    // Calculate scenario impacts on TOTAL exposure (direct + indirect)
-    // Leveraged products already have amplified effectiveWeight in indirectValue
+    // Scenario impacts on total exposure
     const beatMove = 0.05 * SURPRISE_MOVE_FACTOR;
     const beatImpact = totalExposureValue * beatMove;
     const missImpact = -(totalExposureValue * beatMove);
 
-    // Position reflects total exposure (direct + indirect via ETFs/leveraged)
     const exposurePosition = {
       ...livePosition,
       totalValue: totalExposureValue,
@@ -205,15 +176,16 @@ async function getUpcomingEarnings(
     };
 
     upcoming.push({
-      ticker: event.symbol,
+      ticker,
       companyName,
-      date: event.date,
-      time: event.hour === 'bmo' ? 'before_open' : event.hour === 'amc' ? 'after_close' : 'unknown',
-      epsEstimate: event.epsEstimate,
-      revenueEstimate: event.revenueEstimate,
+      date: nextEstimatedDate,
+      time: 'unknown',
+      epsEstimate: null,
+      revenueEstimate: null,
       position: exposurePosition,
       beatImpact5pct: beatImpact,
       missImpact5pct: missImpact,
+      estimated: true,
     });
   }
 
@@ -229,76 +201,20 @@ async function getRecentEarnings(
 ): Promise<RecentEarningsResult[]> {
   const results: RecentEarningsResult[] = [];
 
-  // Build indirect exposure map (same pattern as getUpcomingEarnings)
   const totalValue = Array.from(holdingsMap.values()).reduce((s, p) => s + p.totalValue, 0);
-  const indirectExposure = new Map<string, { exposureValue: number; sources: string[] }>();
-  for (const [hTicker, pos] of holdingsMap) {
-    const underlyings = getUnderlyingExposure(hTicker, pos.totalValue, totalValue);
-    for (const u of underlyings) {
-      const existing = indirectExposure.get(u.ticker) || { exposureValue: 0, sources: [] };
-      existing.exposureValue += (u.effectiveWeight / 100) * totalValue;
-      if (!existing.sources.includes(u.source)) existing.sources.push(u.source);
-      indirectExposure.set(u.ticker, existing);
-    }
-  }
+  const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString().split('T')[0];
 
-  // Expand tickers to include indirect exposure tickers
-  const allTickers = new Set([...holdingsMap.keys()]);
-  for (const t of indirectExposure.keys()) {
-    allTickers.add(t);
-  }
-  const tickers = [...allTickers];
-
-  // Fetch recent earnings for each holding (limited to avoid rate limits)
-  const batch = tickers.slice(0, 10);
+  // Most recent earnings release date per held ticker, from EDGAR 8-K 2.02.
+  const tickers = [...holdingsMap.keys()];
 
   await Promise.allSettled(
-    batch.map(async (ticker) => {
-      let position = holdingsMap.get(ticker);
-      const indirect = indirectExposure.get(ticker);
+    tickers.map(async (ticker) => {
+      const { lastReportDate } = await getEdgarEarnings(ticker);
 
-      // Skip if no direct or indirect exposure
-      if (!position && !indirect) return;
+      // Only surface a report from the trailing ~90 days
+      if (!lastReportDate || lastReportDate < ninetyDaysAgo) return;
 
-      // If only indirect exposure, create a synthetic position
-      if (!position && indirect) {
-        position = {
-          ticker,
-          securityName: ticker,
-          shares: 0,
-          currentPrice: 0,
-          totalValue: indirect.exposureValue,
-          allocationPct: totalValue > 0 ? (indirect.exposureValue / totalValue) * 100 : 0,
-          sector: 'Unknown',
-        };
-      }
-
-      // Get historical earnings
-      const earnings = await getEarnings(ticker);
-      if (!earnings?.length) return;
-
-      // Find earnings from the last 7 days
-      const sevenDaysAgo = new Date(Date.now() - 7 * 86400000);
-      const recent = earnings.filter((e: EarningsSurprise) => {
-        if (!e.period) return false;
-        const earningsDate = new Date(e.period);
-        return earningsDate >= sevenDaysAgo;
-      });
-
-      // Also check the most recent earnings if within 30 days
-      // (Finnhub period field may lag)
-      const latestEarning = earnings[0];
-      if (latestEarning?.actual != null && latestEarning?.estimate != null) {
-        const latestDate = latestEarning.period ? new Date(latestEarning.period) : null;
-        const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000);
-
-        if (latestDate && latestDate >= thirtyDaysAgo && !recent.includes(latestEarning)) {
-          recent.push(latestEarning);
-        }
-      }
-
-      // position is guaranteed non-undefined after the guards above
-      const pos = position!;
+      const pos = holdingsMap.get(ticker)!;
 
       // Fetch live quote + profile once per ticker
       const [quote, profile] = await Promise.all([
@@ -313,11 +229,8 @@ async function getRecentEarnings(
         livePosition = { ...pos, currentPrice: quote.c, totalValue: liveValue };
       }
 
-      // Add indirect exposure (from ETFs/leveraged products) to total value
-      const indirectValue = indirect?.exposureValue ?? 0;
-      const totalExposureValue = livePosition.totalValue + indirectValue;
+      const totalExposureValue = livePosition.totalValue;
 
-      // Position reflects total exposure (direct + indirect via ETFs/leveraged)
       const exposurePosition = {
         ...livePosition,
         totalValue: totalExposureValue,
@@ -326,43 +239,33 @@ async function getRecentEarnings(
 
       const companyName = profile?.name || pos.securityName;
 
-      for (const e of recent) {
-        if (e.actual == null || e.estimate == null) continue;
-
-        const surprisePct = e.estimate !== 0 ? ((e.actual - e.estimate) / Math.abs(e.estimate)) * 100 : 0;
-        const beat = e.actual > e.estimate;
-
-        // Estimate stock move from surprise using total exposure (direct + indirect)
-        const estimatedStockMove = (surprisePct / 100) * SURPRISE_MOVE_FACTOR;
-        const estimatedImpact = totalExposureValue * estimatedStockMove;
-
-        // Actual post-earnings move from quote (day change)
-        let actualMove: number | null = null;
-        let actualDollarImpact: number | null = null;
-        if (quote && quote.dp != null) {
-          actualMove = quote.dp;
-          actualDollarImpact = totalExposureValue * (quote.dp / 100);
-        }
-
-        results.push({
-          ticker,
-          companyName,
-          date: e.period || '',
-          epsActual: e.actual,
-          epsEstimate: e.estimate,
-          surprisePct,
-          beat,
-          position: exposurePosition,
-          estimatedImpact,
-          actualPostEarningsMove: actualMove,
-          actualDollarImpact,
-        });
+      // Actual post-earnings move from quote (day change). EDGAR carries no
+      // EPS estimate, so surprise/beat-miss are not available.
+      let actualMove: number | null = null;
+      let actualDollarImpact: number | null = null;
+      if (quote && quote.dp != null) {
+        actualMove = quote.dp;
+        actualDollarImpact = totalExposureValue * (quote.dp / 100);
       }
+
+      results.push({
+        ticker,
+        companyName,
+        date: lastReportDate,
+        epsActual: null,
+        epsEstimate: null,
+        surprisePct: null,
+        beat: false,
+        position: exposurePosition,
+        estimatedImpact: 0,
+        actualPostEarningsMove: actualMove,
+        actualDollarImpact,
+      });
     }),
   );
 
-  // Sort by most impactful first
-  results.sort((a, b) => Math.abs(b.estimatedImpact) - Math.abs(a.estimatedImpact));
+  // Sort by most recent report first
+  results.sort((a, b) => b.date.localeCompare(a.date));
   return results;
 }
 

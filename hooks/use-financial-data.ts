@@ -664,6 +664,9 @@ export interface UpcomingEarning {
   position: EarningsPosition;
   beatImpact5pct: number | null;
   missImpact5pct: number | null;
+  estimated?: boolean;
+  thesisStatus?: 'intact' | 'weakening' | 'broken';
+  testPillar?: string;
 }
 
 export interface RecentEarning {

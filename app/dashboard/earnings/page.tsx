@@ -15,6 +15,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { ProBlur } from '@/components/pro-blur';
+import { STATUS_META } from '@/lib/thesis-palette';
 
 // ── Upcoming Earnings Card ──
 
@@ -34,10 +35,14 @@ function UpcomingCard({ event, formatCurrency, isPro }: { event: UpcomingEarning
         <div className="w-20 shrink-0 flex flex-col items-center justify-center py-4 border-r border-[var(--color-border-subtle)]" style={{ background: 'var(--color-bg-elevated)' }}>
           <span className="type-eyebrow text-[var(--color-text-muted)]">{month}</span>
           <span className="type-data text-2xl">{day}</span>
-          <div className="flex items-center gap-1 mt-1">
-            <Clock className="w-2.5 h-2.5 text-[var(--color-text-muted)]" />
-            <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider" style={{ fontFamily: 'var(--font-mono)' }}>{timeLabel}</span>
-          </div>
+          {event.estimated ? (
+            <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mt-1" style={{ fontFamily: 'var(--font-mono)' }}>Est.</span>
+          ) : (
+            <div className="flex items-center gap-1 mt-1">
+              <Clock className="w-2.5 h-2.5 text-[var(--color-text-muted)]" />
+              <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider" style={{ fontFamily: 'var(--font-mono)' }}>{timeLabel}</span>
+            </div>
+          )}
         </div>
 
         {/* Content */}
@@ -71,6 +76,41 @@ function UpcomingCard({ event, formatCurrency, isPro }: { event: UpcomingEarning
               </div>
             )}
           </div>
+
+          {event.estimated && (
+            <div className="text-[11px] text-[var(--color-text-muted)] mb-3" style={{ fontFamily: 'var(--font-mono)' }}>
+              Date estimated from filing history.
+            </div>
+          )}
+
+          {/* Thesis test */}
+          {event.thesisStatus && (
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span
+                  className="px-1.5 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider"
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    color: STATUS_META[event.thesisStatus].color,
+                    background: `${STATUS_META[event.thesisStatus].color}1A`,
+                  }}
+                >
+                  THESIS: {STATUS_META[event.thesisStatus].label.toUpperCase()}
+                </span>
+                <span className="text-[13px] text-[var(--color-text-secondary)]">
+                  Next earnings is the next read on this thesis.
+                </span>
+              </div>
+              {event.testPillar && (
+                <div
+                  className="pl-2.5 text-[13px] italic text-[var(--color-text-secondary)]"
+                  style={{ borderLeft: `2px solid ${STATUS_META[event.thesisStatus].color}` }}
+                >
+                  &ldquo;{event.testPillar}&rdquo;
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Scenario analysis */}
           {isPro ? (
@@ -117,10 +157,22 @@ function UpcomingCard({ event, formatCurrency, isPro }: { event: UpcomingEarning
 // ── Recent Earnings Card ──
 
 function RecentCard({ result, formatCurrency, isPro }: { result: RecentEarning; formatCurrency: (n: number) => string; isPro: boolean }) {
-  const borderColor = result.beat ? 'rgba(56, 211, 159, 0.25)' : 'rgba(248, 113, 113, 0.25)';
-  const StatusIcon = result.beat ? CheckCircle2 : XCircle;
-  const statusColor = result.beat ? 'var(--color-positive)' : 'var(--color-negative)';
-  const statusText = result.beat
+  // EDGAR gives the report date but no EPS estimate, so beat/miss framing only
+  // applies when an estimate is present.
+  const hasComparison = result.epsEstimate != null;
+  const borderColor = !hasComparison
+    ? 'var(--color-border-base)'
+    : result.beat ? 'rgba(56, 211, 159, 0.25)' : 'rgba(248, 113, 113, 0.25)';
+  const StatusIcon = !hasComparison ? CheckCircle2 : result.beat ? CheckCircle2 : XCircle;
+  const statusColor = !hasComparison
+    ? 'var(--color-text-secondary)'
+    : result.beat ? 'var(--color-positive)' : 'var(--color-negative)';
+  const headerBg = !hasComparison
+    ? 'var(--color-bg-elevated)'
+    : result.beat ? 'rgba(56, 211, 159, 0.04)' : 'rgba(248, 113, 113, 0.04)';
+  const statusText = !hasComparison
+    ? (result.date ? `reported ${result.date}` : 'reported earnings')
+    : result.beat
     ? `beat estimates by ${Math.abs(result.surprisePct || 0).toFixed(1)}%`
     : `missed estimates by ${Math.abs(result.surprisePct || 0).toFixed(1)}%`;
 
@@ -130,7 +182,7 @@ function RecentCard({ result, formatCurrency, isPro }: { result: RecentEarning; 
       style={{ background: 'var(--color-bg-surface)', border: `1px solid ${borderColor}` }}
     >
       {/* Status header */}
-      <div className="px-3 sm:px-5 py-2 sm:py-2.5 flex items-center gap-2 border-b border-[var(--color-border-subtle)]" style={{ background: result.beat ? 'rgba(56, 211, 159, 0.04)' : 'rgba(248, 113, 113, 0.04)' }}>
+      <div className="px-3 sm:px-5 py-2 sm:py-2.5 flex items-center gap-2 border-b border-[var(--color-border-subtle)]" style={{ background: headerBg }}>
         <StatusIcon className="w-3.5 h-3.5" style={{ color: statusColor }} />
         <span className="text-[12px] font-semibold" style={{ color: statusColor, fontFamily: 'var(--font-mono)' }}>
           {result.ticker} {statusText}
