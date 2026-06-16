@@ -7,7 +7,6 @@ import {
   DataPanelTitle,
 } from '@/components/ui/data-panel';
 import { useFormat } from '@/hooks/use-format';
-import { Progress } from '@/components/ui/progress';
 
 interface CompositionItem {
   name: string;
@@ -30,7 +29,6 @@ export function AssetsLiabilitiesComposition({
   const totalAssets = assets.reduce((sum, item) => sum + item.value, 0);
   const totalLiabilities = liabilities.reduce((sum, item) => sum + item.value, 0);
   const netWorth = totalAssets - totalLiabilities;
-  const debtToAssetRatio = totalAssets > 0 ? (totalLiabilities / totalAssets) * 100 : 0;
 
   return (
     <DataPanel variant="metric">
@@ -52,21 +50,6 @@ export function AssetsLiabilitiesComposition({
               {formatCurrency(totalLiabilities)}
             </div>
           </div>
-        </div>
-
-        {/* Debt-to-Asset Ratio */}
-        <div className="mb-4 p-2 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
-          <div className="flex justify-between type-label text-xs mb-1.5">
-            <span className="text-[var(--color-text-secondary)]">Debt-to-Asset Ratio</span>
-            <span className={`font-tabular ${debtToAssetRatio < 30 ? 'text-[var(--color-positive)]' : debtToAssetRatio < 50 ? 'text-[var(--color-warning)]' : 'text-[var(--color-negative)]'}`}>
-              {debtToAssetRatio.toFixed(1)}%
-            </span>
-          </div>
-          <Progress
-            value={debtToAssetRatio}
-            max={100}
-            variant={debtToAssetRatio < 30 ? 'positive' : debtToAssetRatio < 50 ? 'warning' : 'negative'}
-          />
         </div>
 
         {/* Assets Breakdown */}

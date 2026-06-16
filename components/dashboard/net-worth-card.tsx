@@ -19,15 +19,25 @@ interface NetWorthCardProps {
   currentNetWorth: number;
   netWorthHistory: NetWorthDataPoint[];
   changePercentage?: number | null;
+  /**
+   * Authoritative dollar change from the page (same snapshot source as the hero),
+   * so the card and the hero never disagree. null = no baseline yet (hide the
+   * change). Omit entirely to derive from history (standalone use).
+   */
+  changeAmount?: number | null;
 }
 
-export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentage: apiChangePct }: NetWorthCardProps) {
+export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentage: apiChangePct, changeAmount }: NetWorthCardProps) {
   const { formatCurrency } = useFormat();
   const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
 
+  // Net worth change: prefer the authoritative figure the page passes (same source as
+  // the hero); fall back to the history delta only when the caller provides none.
   const previousNetWorth = netWorthHistory.length >= 2 ? (netWorthHistory[netWorthHistory.length - 2]?.value || 0) : 0;
-  const change = currentNetWorth - previousNetWorth;
-  const changePercentage = apiChangePct ?? (previousNetWorth !== 0 ? (change / previousNetWorth) * 100 : 0);
+  const historyChange = currentNetWorth - previousNetWorth;
+  const change = changeAmount === undefined ? historyChange : (changeAmount ?? 0);
+  const showChange = changeAmount === undefined ? true : changeAmount !== null;
+  const changePercentage = apiChangePct ?? (previousNetWorth !== 0 ? (historyChange / previousNetWorth) * 100 : 0);
   const isPositiveChange = change >= 0;
 
   const animatedNetWorth = useCountUp(currentNetWorth, 800, 0, 100);
@@ -56,18 +66,20 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentag
         <DataPanelHeader>
           <div className="flex items-center justify-between">
             <DataPanelTitle>Net Worth</DataPanelTitle>
-            <div className="flex items-center gap-1.5 type-label text-xs">
-              {isPositiveChange ? (
-                <TrendingUp className="h-3.5 w-3.5 text-[var(--color-positive)]" aria-hidden="true" />
-              ) : (
-                <TrendingDown className="h-3.5 w-3.5 text-[var(--color-negative)]" aria-hidden="true" />
-              )}
-              <span className="sr-only">{isPositiveChange ? 'Increased' : 'Decreased'}</span>
-              <span className={`font-tabular ${isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
-                {isPositiveChange ? '+' : ''}{changePercentage.toFixed(1)}%
-              </span>
-              <span className="text-[var(--color-text-muted)] whitespace-nowrap">from last month</span>
-            </div>
+            {showChange && (
+              <div className="flex items-center gap-1.5 type-label text-xs">
+                {isPositiveChange ? (
+                  <TrendingUp className="h-3.5 w-3.5 text-[var(--color-positive)]" aria-hidden="true" />
+                ) : (
+                  <TrendingDown className="h-3.5 w-3.5 text-[var(--color-negative)]" aria-hidden="true" />
+                )}
+                <span className="sr-only">{isPositiveChange ? 'Increased' : 'Decreased'}</span>
+                <span className={`font-tabular ${isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+                  {isPositiveChange ? '+' : ''}{changePercentage.toFixed(1)}%
+                </span>
+                <span className="text-[var(--color-text-muted)] whitespace-nowrap">from last month</span>
+              </div>
+            )}
           </div>
         </DataPanelHeader>
         <DataPanelContent>
@@ -142,12 +154,14 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentag
                 </div>
                 <div className="text-[10px] uppercase tracking-widest text-[var(--color-gold-hi)] font-mono mt-0.5">Total Net Worth</div>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className={`font-tabular text-sm font-medium ${isPositiveChange ? 'text-[var(--color-positive)] glow-positive' : 'text-[var(--color-negative)] glow-negative'}`}>
-                  {isPositiveChange ? '+' : '-'}{formatCurrency(isVisible ? animatedChange : Math.abs(change))}
-                </span>
-                <span className="text-xs text-[var(--color-text-muted)]">this mo</span>
-              </div>
+              {showChange && (
+                <div className="flex items-center gap-1.5">
+                  <span className={`font-tabular text-sm font-medium ${isPositiveChange ? 'text-[var(--color-positive)] glow-positive' : 'text-[var(--color-negative)] glow-negative'}`}>
+                    {isPositiveChange ? '+' : '-'}{formatCurrency(isVisible ? animatedChange : Math.abs(change))}
+                  </span>
+                  <span className="text-xs text-[var(--color-text-muted)]">this mo</span>
+                </div>
+              )}
             </div>
           </div>
         </DataPanelContent>

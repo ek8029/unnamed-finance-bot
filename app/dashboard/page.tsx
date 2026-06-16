@@ -334,6 +334,7 @@ export default function DashboardOverview() {
               currentNetWorth={netWorth}
               netWorthHistory={netWorthHistory}
               changePercentage={netWorthPctChange}
+              changeAmount={netWorthChange}
             />
           </div>
           <div className="lg:col-span-2">
