@@ -15,6 +15,7 @@ import { useTier } from '@/hooks/use-tier';
 import { ProBlur } from '@/components/pro-blur';
 import { VerdictCard, type ThesisIntelligenceItem } from '@/components/thesis/verdict-card';
 import type { ThesisBriefData } from '@/lib/thesis-brief';
+import { STATUS_META } from '@/lib/thesis-palette';
 import { MacroStrip, type MacroItem } from '@/components/thesis/macro-strip';
 import { QuietState, type PillarSummary } from '@/components/thesis/quiet-state';
 
@@ -367,6 +368,35 @@ export default function BriefPage() {
     );
   }
 
+  /* ─── Thesis-led brief: lead with conviction when a tracked pillar broke or weakened ─── */
+  const thesisLeads = !!(data.thesisEnabled && data.thesisBrief && data.thesisBrief.trackedCount > 0 && (data.thesisBrief.counts.broken > 0 || data.thesisBrief.counts.weakening > 0));
+  const leadStatus = data.thesisBrief && data.thesisBrief.counts.broken > 0 ? 'broken' : 'weakening';
+
+  const thesisMorningSection = data.thesisEnabled && data.thesisBrief && data.thesisBrief.trackedCount > 0 ? (
+    <section className="space-y-2">
+      <h2 className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#E6B94D]">Your theses this morning</h2>
+      <p className="text-[14px] leading-[1.55] text-[#CFCFCF] m-0">{data.thesisBrief.headline}</p>
+      {data.thesisBrief.moved.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#6A6A6A]">Moved in the last 14 days</span>
+          {data.thesisBrief.moved.slice(0, 6).map((m, i) => (
+            <span
+              key={`${m.ticker}-${i}`}
+              className="font-mono text-[10.5px] px-2 py-[3px] rounded border"
+              style={{
+                color: m.to === 'broken' ? '#F87171' : '#E6B94D',
+                borderColor: m.to === 'broken' ? 'rgba(248,113,113,0.3)' : 'rgba(230,185,77,0.3)',
+                background: m.to === 'broken' ? 'rgba(248,113,113,0.07)' : 'rgba(230,185,77,0.07)',
+              }}
+            >
+              {m.ticker} {m.from} {'→'} {m.to}
+            </span>
+          ))}
+        </div>
+      )}
+    </section>
+  ) : null;
+
     /* ═══════════════════════════════════════════════════════════════════════ */
   /*  RENDER                                                                */
   /* ═══════════════════════════════════════════════════════════════════════ */
@@ -475,6 +505,69 @@ export default function BriefPage() {
           {/* ══ MAIN COLUMN ══ */}
           <main className="space-y-6 sm:space-y-10">
 
+            {/* ── Conviction Alert: thesis leads when a pillar broke or weakened ── */}
+            {thesisLeads && (
+              <section
+                className="relative rounded-md pl-4 pr-4 py-4 space-y-2"
+                style={{
+                  borderLeft: `2px solid ${STATUS_META[leadStatus].color}`,
+                  borderTop: `1px solid ${STATUS_META[leadStatus].color}`,
+                  background: `${STATUS_META[leadStatus].color}0D`,
+                }}
+              >
+                <div
+                  className="font-mono text-[11px] uppercase tracking-[0.15em]"
+                  style={{ color: STATUS_META[leadStatus].color }}
+                >
+                  Conviction Alert
+                </div>
+                <h2 className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#E6B94D]">Your theses this morning</h2>
+                <p className="text-[14px] leading-[1.55] text-[#CFCFCF] m-0">{data.thesisBrief!.headline}</p>
+                {data.thesisBrief!.needsAttention.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#6A6A6A]">At risk</span>
+                    {data.thesisBrief!.needsAttention.slice(0, 4).map((a, i) => (
+                      <span
+                        key={`${a.ticker}-${i}`}
+                        className="font-mono text-[10.5px] px-2 py-[3px] rounded border"
+                        style={{
+                          color: STATUS_META[a.status].color,
+                          borderColor: `${STATUS_META[a.status].color}4D`,
+                          background: `${STATUS_META[a.status].color}12`,
+                        }}
+                      >
+                        {a.ticker} {STATUS_META[a.status].label}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {data.thesisBrief!.moved.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#6A6A6A]">Moved in the last 14 days</span>
+                    {data.thesisBrief!.moved.slice(0, 6).map((m, i) => (
+                      <span
+                        key={`${m.ticker}-${i}`}
+                        className="font-mono text-[10.5px] px-2 py-[3px] rounded border"
+                        style={{
+                          color: m.to === 'broken' ? '#F87171' : '#E6B94D',
+                          borderColor: m.to === 'broken' ? 'rgba(248,113,113,0.3)' : 'rgba(230,185,77,0.3)',
+                          background: m.to === 'broken' ? 'rgba(248,113,113,0.07)' : 'rgba(230,185,77,0.07)',
+                        }}
+                      >
+                        {m.ticker} {m.from} {'→'} {m.to}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <Link
+                  href="/dashboard/theses"
+                  className="inline-block font-mono text-[11px] uppercase tracking-[0.12em] text-[#6A6A6A] hover:text-[#E6B94D] transition-colors pt-1"
+                >
+                  Review your theses {'->'}
+                </Link>
+              </section>
+            )}
+
             {/* ── Lead Story: Editorial headline ── */}
             <article>
               <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-gold)] mb-4" style={MONO}>
@@ -532,30 +625,7 @@ export default function BriefPage() {
             </article>
 
             <MacroStrip items={data.macroStrip} />
-            {data.thesisEnabled && data.thesisBrief && data.thesisBrief.trackedCount > 0 && (
-              <section className="space-y-2">
-                <h2 className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#E6B94D]">Your theses this morning</h2>
-                <p className="text-[14px] leading-[1.55] text-[#CFCFCF] m-0">{data.thesisBrief.headline}</p>
-                {data.thesisBrief.moved.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#6A6A6A]">Moved in the last 14 days</span>
-                    {data.thesisBrief.moved.slice(0, 6).map((m, i) => (
-                      <span
-                        key={`${m.ticker}-${i}`}
-                        className="font-mono text-[10.5px] px-2 py-[3px] rounded border"
-                        style={{
-                          color: m.to === 'broken' ? '#F87171' : '#E6B94D',
-                          borderColor: m.to === 'broken' ? 'rgba(248,113,113,0.3)' : 'rgba(230,185,77,0.3)',
-                          background: m.to === 'broken' ? 'rgba(248,113,113,0.07)' : 'rgba(230,185,77,0.07)',
-                        }}
-                      >
-                        {m.ticker} {m.from} {'→'} {m.to}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </section>
-            )}
+            {!thesisLeads && thesisMorningSection}
             {data.thesisEnabled && data.thesisIntelligence.length > 0 && (
               <section className="space-y-3">
                 <div className="flex items-baseline justify-between">
