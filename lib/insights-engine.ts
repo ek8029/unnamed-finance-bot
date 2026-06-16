@@ -224,6 +224,11 @@ export async function generateInsights(
       const ANNUAL_CAP = ANNUAL_LOSS_DEDUCTION_CAP;
       const deductibleThisYear = Math.min(totalLoss, ANNUAL_CAP);
       const estimatedSavings = Math.round(deductibleThisYear * TAX_RATE);
+      // Full potential tax value of the harvestable losses (losses offset capital gains
+      // dollar-for-dollar, uncapped). The $3,000/yr cap below only limits the portion
+      // applied against ordinary income. Headline uses the full value so it tracks the
+      // user's actual loss size, not a flat $3k-cap figure that reads identically for everyone.
+      const fullTaxValue = Math.round(totalLoss * TAX_RATE);
       const carryforward = Math.max(0, totalLoss - ANNUAL_CAP);
       const tickers = losers.map((h: { ticker: string }) => h.ticker).join(', ');
 
@@ -239,13 +244,13 @@ export async function generateInsights(
       candidates.push({
         insight_type: 'tax',
         priority: totalLoss > TAX_INSIGHT_HIGH_PRIORITY_LOSS ? 'high' : 'medium',
-        title: `$${estimatedSavings.toLocaleString()} in potential tax savings`,
+        title: `$${fullTaxValue.toLocaleString()} in potential tax savings`,
         description,
         recommended_action: `These positions (${tickers}) are at unrealized losses totaling $${totalLoss.toLocaleString()}. ` +
           `Tax-loss harvesting is a strategy investors use to offset gains. ` +
           `Wash-sale rule: repurchasing a substantially identical security within 30 days disallows the loss (IRC §1091). ` +
           `Not tax advice, consult a professional.`,
-        estimated_impact_amount: estimatedSavings,
+        estimated_impact_amount: fullTaxValue,
         confidence_score: 0.85,
         source_type: 'rule_based',
         related_entity_type: 'holding',
@@ -431,11 +436,13 @@ export async function generateInsights(
       }
     }
 
+    // Hard-delete superseded duplicates rather than marking them dismissed. Insights are
+    // regenerated every run, so dismissing piled up hundreds of dead rows per user.
     const allStaleIds = [...new Set([...staleIds, ...orphanStaleIds])];
     if (allStaleIds.length > 0) {
       await supabase
         .from('insights')
-        .update({ is_dismissed: true })
+        .delete()
         .in('id', allStaleIds)
         .eq('user_id', userId);
     }

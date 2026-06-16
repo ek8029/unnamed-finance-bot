@@ -5,6 +5,7 @@ import { usePlaidLink } from 'react-plaid-link';
 import { Loader2, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import posthog from 'posthog-js';
+import { useDemo } from '@/contexts/demo-context';
 
 // User-friendly messages for common Plaid Link error codes
 const PLAID_ERROR_MESSAGES: Record<string, string> = {
@@ -46,6 +47,7 @@ export function PlaidLinkButton({
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [exchanging, setExchanging] = useState(false);
   const [tokenError, setTokenError] = useState(false);
+  const { disableDemo } = useDemo();
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
 
@@ -106,6 +108,9 @@ export function PlaidLinkButton({
       await fetch('/api/market/prices/refresh', { method: 'POST' }).catch(() => {});
 
       posthog.capture('plaid_link_completed');
+      // Real accounts connected: end demo mode so sample data does not linger.
+      try { sessionStorage.removeItem('helm_demo_mode'); } catch {}
+      disableDemo();
       onSuccess();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to link account';
@@ -113,7 +118,7 @@ export function PlaidLinkButton({
     } finally {
       setExchanging(false);
     }
-  }, [onSuccess, onError, onWarning]);
+  }, [onSuccess, onError, onWarning, disableDemo]);
 
   const { open, ready } = usePlaidLink({
     token: linkToken ?? '',
