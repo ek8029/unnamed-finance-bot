@@ -7,6 +7,7 @@ import { plaidClient, mapPlaidAccountType } from '@/lib/plaid';
 import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
 import { extractPlaidError } from '@/lib/plaid-errors';
 import { summarizeCashFlow, countsAsCashFlow } from '@/lib/cash-flow';
+import { aggregateHoldingLots } from '@/lib/holdings-aggregate';
 import { InvestmentTransaction, RemovedTransaction, Transaction } from 'plaid';
 import {
   EMERGENCY_FUND_MONTHS,
@@ -307,7 +308,7 @@ export async function syncPlaidItem(
       const securitiesArray = Array.from(securitiesUpserts.values());
       let dbSecurities: { id: string; ticker: string }[] = [];
       if (securitiesArray.length > 0) {
-        const { data } = await supabase
+        const { data, error: securitiesError } = await supabase
           .from('securities')
           .upsert(securitiesArray, {
             onConflict: 'ticker',
@@ -315,6 +316,9 @@ export async function syncPlaidItem(
           })
           .select('id, ticker');
 
+        if (securitiesError) {
+          console.error('[plaid-sync] securities upsert failed:', securitiesError.message);
+        }
         dbSecurities = data || [];
       }
 
@@ -324,7 +328,7 @@ export async function syncPlaidItem(
       );
 
       // Build holdings upsert array
-      const holdingsUpserts = holdingsByTicker
+      const holdingsUpserts = aggregateHoldingLots(holdingsByTicker)
         .map(h => {
           const securityId = tickerToSecurityId.get(h.ticker);
           const linkedAccountId = linkedAccountMap.get(h.plaid_account_id);
@@ -361,18 +365,19 @@ export async function syncPlaidItem(
 
       // Batch upsert all holdings at once
       if (holdingsUpserts.length > 0) {
-        await supabase
+        const { error: holdingsError } = await supabase
           .from('holdings')
           .upsert(holdingsUpserts, {
             onConflict: 'user_id,security_id,account_id',
           });
 
-        holdingsSynced = holdingsUpserts.length;
+        if (holdingsError) console.error('[plaid-sync] holdings upsert failed:', holdingsError.message);
+        holdingsSynced = holdingsError ? 0 : holdingsUpserts.length;
 
         // ── Reconcile manual holdings ──
         // If a ticker now exists in a Plaid-linked account, remove the
         // duplicate from the Manual Portfolio so it doesn't double-count.
-        try {
+        if (holdingsSynced > 0) try {
           const syncedTickers = (holdingsUpserts as { ticker: string }[]).map(h => h.ticker);
           const { data: manualAccounts } = await supabase
             .from('linked_accounts')
