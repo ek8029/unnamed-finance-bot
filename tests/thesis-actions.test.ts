@@ -41,6 +41,42 @@ function pillar(overrides: Partial<PillarInput>): PillarInput {
 const holdingLoss: HoldingSnapshot = { ticker: 'PRIM', totalValue: 8000, unrealisedGainLoss: -2500 };
 const holdingGain: HoldingSnapshot = { ticker: 'PRIM', totalValue: 12000, unrealisedGainLoss: 3000 };
 
+describe('buildThesisActions one-per-ticker', () => {
+  const noHoldings = new Map<string, HoldingSnapshot>();
+  it('collapses two weakening pillars of one ticker into a single action', () => {
+    const out = buildThesisActions(
+      [
+        pillar({ ticker: 'ABC', pillarId: 'p1', status: 'weakening' }),
+        pillar({ ticker: 'ABC', pillarId: 'p2', status: 'weakening' }),
+      ],
+      noHoldings,
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0].ticker).toBe('ABC');
+  });
+  it('keeps the highest-priority action when a ticker has mixed situations', () => {
+    const out = buildThesisActions(
+      [
+        pillar({ ticker: 'XYZ', pillarId: 'p1', status: 'weakening' }),
+        pillar({ ticker: 'XYZ', pillarId: 'p2', status: 'broken', evidence: [ev({ severe: true })] }),
+      ],
+      new Map<string, HoldingSnapshot>([['XYZ', { ticker: 'XYZ', totalValue: 8000, unrealisedGainLoss: -2500 }]]),
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0].priority).toBe('critical');
+  });
+  it('keeps separate actions for different tickers', () => {
+    const out = buildThesisActions(
+      [
+        pillar({ ticker: 'AAA', pillarId: 'p1', status: 'weakening' }),
+        pillar({ ticker: 'BBB', pillarId: 'p2', status: 'weakening' }),
+      ],
+      noHoldings,
+    );
+    expect(out).toHaveLength(2);
+  });
+});
+
 const noEmDash = (s: string) => expect(s.includes('—')).toBe(false);
 
 describe('selectActionableSituations', () => {
@@ -144,7 +180,7 @@ describe('buildAction', () => {
 });
 
 describe('buildThesisActions', () => {
-  it('joins holdings by ticker and produces one action per actionable pillar', () => {
+  it('joins holdings by ticker and collapses one ticker to its highest-priority action', () => {
     const holdings = new Map<string, HoldingSnapshot>([['PRIM', holdingLoss]]);
     const out = buildThesisActions(
       [
@@ -154,8 +190,7 @@ describe('buildThesisActions', () => {
       ],
       holdings,
     );
-    expect(out).toHaveLength(2);
-    expect(out[0].kind).toBe('harvest_loss'); // broken + loss holding
-    expect(out[1].kind).toBe('watch'); // weakening
+    expect(out).toHaveLength(1);
+    expect(out[0].kind).toBe('harvest_loss'); // broken + loss holding wins over the weakening watch
   });
 });

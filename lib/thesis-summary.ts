@@ -16,7 +16,12 @@ export interface ThesisSummary {
   worst: PillarStatus | null;
 }
 
-const SEVERITY: PillarStatus[] = ['broken', 'weakening', 'unverified', 'intact'];
+// Worst-of precedence. `unverified` is LEAST severe: a pillar with no live read yet
+// must not outrank a verified-intact one, so a thesis reads "intact" when any pillar
+// is intact and only "watching" (unverified) when nothing better exists. This keeps
+// `.worst` in step with getConvictionByTicker so the Theses page, rail, and the
+// conviction chips on Actions/Taxes never disagree.
+const SEVERITY: PillarStatus[] = ['broken', 'weakening', 'intact', 'unverified'];
 
 export function effectiveStatus(p: Pick<SummaryPillar, 'status' | 'status_override'>): PillarStatus {
   return p.status_override ?? p.status;

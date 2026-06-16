@@ -197,9 +197,26 @@ export function buildThesisActions(
   pillars: PillarInput[],
   holdings: Map<string, HoldingSnapshot>,
 ): ThesisAction[] {
-  return selectActionableSituations(pillars).map((p) =>
+  const all = selectActionableSituations(pillars).map((p) =>
     buildAction(p, holdings.get(p.ticker.toUpperCase())),
   );
+  // One action per ticker: a thesis with two weakening pillars should surface a
+  // single inbox item, not duplicates. Keep the highest-priority action; tie-break
+  // by pillarId so the kept action is stable across scoring runs.
+  const RANK: Record<ThesisAction['priority'], number> = { critical: 0, high: 1, medium: 2, low: 3 };
+  const byTicker = new Map<string, ThesisAction>();
+  for (const a of all) {
+    const key = a.ticker.toUpperCase();
+    const cur = byTicker.get(key);
+    if (
+      !cur ||
+      RANK[a.priority] < RANK[cur.priority] ||
+      (RANK[a.priority] === RANK[cur.priority] && a.pillarId < cur.pillarId)
+    ) {
+      byTicker.set(key, a);
+    }
+  }
+  return [...byTicker.values()];
 }
 
 // ---------------------------------------------------------------------------
@@ -309,9 +326,9 @@ export async function generateThesisActions(
   const actions = buildThesisActions(pillarInputs, holdings);
   if (actions.length === 0) return { generated: 0, actions: [] };
 
-  // 6. Dedup by PILLAR (not title): supersede any open action for a pillar we are
-  // re-acting on, even if the kind changed (e.g. a position moving from a gain to a
-  // loss swaps "trim" for "harvest the loss"). related_entity_ids = [thesisId, pillarId].
+  // 6. Dedup by THESIS: we now emit at most one action per thesis, so supersede every
+  // open thesis action for a thesis we are re-acting on. related_entity_ids = [thesisId,
+  // pillarId]; keying on thesisId also clears stale duplicates left by prior per-pillar runs.
   const { data: existing } = await db
     .from('insights')
     .select('id, related_entity_ids')
@@ -319,17 +336,17 @@ export async function generateThesisActions(
     .eq('related_entity_type', 'thesis')
     .eq('is_dismissed', false)
     .eq('is_archived', false);
-  const existingByPillar = new Map<string, string[]>();
+  const existingByThesis = new Map<string, string[]>();
   for (const row of (existing ?? []) as { id: string; related_entity_ids: string[] | null }[]) {
-    const pid = Array.isArray(row.related_entity_ids) ? row.related_entity_ids[1] : undefined;
-    if (!pid) continue;
-    const ids = existingByPillar.get(pid) ?? [];
+    const tid = Array.isArray(row.related_entity_ids) ? row.related_entity_ids[0] : undefined;
+    if (!tid) continue;
+    const ids = existingByThesis.get(tid) ?? [];
     ids.push(row.id);
-    existingByPillar.set(pid, ids);
+    existingByThesis.set(tid, ids);
   }
   const staleIds: string[] = [];
   for (const a of actions) {
-    const ids = existingByPillar.get(a.pillarId);
+    const ids = existingByThesis.get(a.thesisId);
     if (ids) staleIds.push(...ids);
   }
   if (staleIds.length > 0) {

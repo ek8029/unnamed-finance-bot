@@ -17,6 +17,14 @@ describe('summarizePillars', () => {
     expect(s.statusCounts.intact).toBe(1);
     expect(s.worst).toBe('intact');
   });
+  it('intact outranks unverified, so a thesis with a verified pillar is not "watching"', () => {
+    const s = summarizePillars([p({ status: 'intact' }), p({ status: 'unverified' })]);
+    expect(s.worst).toBe('intact');
+  });
+  it('worst is unverified only when no confirmed pillar has a better status', () => {
+    const s = summarizePillars([p({ status: 'unverified' }), p({ status: 'unverified' })]);
+    expect(s.worst).toBe('unverified');
+  });
   it('unconfirmed proposed drafts count as drafts, not statuses', () => {
     const s = summarizePillars([p({ confirmed: false, lifecycle: 'proposed', status: 'unverified' })]);
     expect(s.confirmedCount).toBe(0);
