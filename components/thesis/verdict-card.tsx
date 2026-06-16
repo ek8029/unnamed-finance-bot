@@ -35,7 +35,14 @@ function formatDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export function VerdictCard({ item }: { item: ThesisIntelligenceItem }) {
+export function VerdictCard({
+  item,
+  showPillarClaim = true,
+}: {
+  item: ThesisIntelligenceItem;
+  /** Hide the "reason you own X" quote box when the parent already shows the claim. */
+  showPillarClaim?: boolean;
+}) {
   const color = spineColor(item.verdict, item.materiality);
 
   return (
@@ -96,18 +103,20 @@ export function VerdictCard({ item }: { item: ThesisIntelligenceItem }) {
           )}
         </div>
 
-        {/* Pillar quote box */}
-        <div className="px-[18px] py-[14px] bg-white/[0.02] border border-white/[0.04] rounded-[3px] mb-[18px]">
-          <div
-            className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.18em] text-[#6A6A6A] mb-[8px]"
-            style={{ fontFamily: "'Space Grotesk', monospace" }}
-          >
-            The reason you own {item.ticker}
+        {/* Pillar quote box — suppressed when the parent already shows the claim. */}
+        {showPillarClaim && (
+          <div className="px-[18px] py-[14px] bg-white/[0.02] border border-white/[0.04] rounded-[3px] mb-[18px]">
+            <div
+              className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.18em] text-[#6A6A6A] mb-[8px]"
+              style={{ fontFamily: "'Space Grotesk', monospace" }}
+            >
+              The reason you own {item.ticker}
+            </div>
+            <p className="text-[15.5px] font-semibold leading-[1.45] tracking-[-0.01em] text-[#FAFAFA] m-0">
+              {item.pillarClaim}
+            </p>
           </div>
-          <p className="text-[15.5px] font-semibold leading-[1.45] tracking-[-0.01em] text-[#FAFAFA] m-0">
-            {item.pillarClaim}
-          </p>
-        </div>
+        )}
 
         {/* What it means */}
         <p className="text-[16px] leading-[1.55] font-medium text-[#FAFAFA] m-0 mb-[18px]">

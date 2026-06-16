@@ -162,7 +162,7 @@ function EvidenceTimeline({ ticker, pillar }: { ticker: string; pillar: Pillar }
     <div className="pt-2 pb-3">
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {shown.map((e) => (
-          <VerdictCard key={e.id} item={toIntelligenceItem(ticker, pillar, e)} />
+          <VerdictCard key={e.id} item={toIntelligenceItem(ticker, pillar, e)} showPillarClaim={false} />
         ))}
         {shown.length === 0 && (
           <p className="text-[13px] text-[#6A6A6A] m-0">Only neutral evidence so far.</p>
