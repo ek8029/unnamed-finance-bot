@@ -6,6 +6,7 @@
 import { plaidClient, mapPlaidAccountType } from '@/lib/plaid';
 import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
 import { extractPlaidError } from '@/lib/plaid-errors';
+import { summarizeCashFlow, countsAsCashFlow } from '@/lib/cash-flow';
 import { InvestmentTransaction, RemovedTransaction, Transaction } from 'plaid';
 import {
   EMERGENCY_FUND_MONTHS,
@@ -685,15 +686,19 @@ export async function computeSnapshots(
       .gte('transaction_date', monthStart)
       .lte('transaction_date', monthEnd);
 
-    let totalIncome = 0;
-    let totalExpenses = 0;
-    for (const t of monthTx || []) {
-      const amt = Number(t.amount);
-      if (amt > 0) totalIncome += amt;
-      else totalExpenses += Math.abs(amt);
-    }
+    // Investment cash for the same month (dividends, fees, transfers...). Trades
+    // (buy/sell) are excluded inside summarizeCashFlow — they're internal moves.
+    const { data: monthInvTx } = await supabase
+      .from('investment_transactions')
+      .select('amount, transaction_type')
+      .eq('user_id', userId)
+      .gte('transaction_date', monthStart)
+      .lte('transaction_date', monthEnd);
 
-    const netFlow = totalIncome - totalExpenses;
+    const { totalIncome, totalExpenses, netFlow } = summarizeCashFlow([
+      ...(monthTx || []),
+      ...(monthInvTx || []),
+    ]);
     const savingsAmount = Math.max(0, netFlow);
     // Use rolling average savings rate if available (same pattern as emergency fund)
     let savingsRate = totalIncome > 0 ? savingsAmount / totalIncome : 0;
@@ -854,9 +859,27 @@ async function backfillHistoricalSnapshots(
       .eq('user_id', userId)
       .gte('transaction_date', sixMonthsAgo.toISOString().split('T')[0]);
 
+    // Investment cash over the same window. Buys/sells are internal moves and are
+    // skipped (countsAsCashFlow); everything else buckets by sign like bank rows.
+    const { data: investmentTransactions } = await supabase
+      .from('investment_transactions')
+      .select('amount, transaction_type, transaction_date')
+      .eq('user_id', userId)
+      .gte('transaction_date', sixMonthsAgo.toISOString().split('T')[0]);
+
     // Group transactions by month
     const monthlyFlows = new Map<string, { income: number; expenses: number }>();
     for (const tx of transactions || []) {
+      const d = new Date(tx.transaction_date + 'T12:00:00');
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+      if (!monthlyFlows.has(key)) monthlyFlows.set(key, { income: 0, expenses: 0 });
+      const flow = monthlyFlows.get(key)!;
+      const amt = Number(tx.amount);
+      if (amt > 0) flow.income += amt;
+      else flow.expenses += Math.abs(amt);
+    }
+    for (const tx of investmentTransactions || []) {
+      if (!countsAsCashFlow(tx.transaction_type)) continue;
       const d = new Date(tx.transaction_date + 'T12:00:00');
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
       if (!monthlyFlows.has(key)) monthlyFlows.set(key, { income: 0, expenses: 0 });

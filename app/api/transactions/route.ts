@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { formatCategoryName, guessCategoryGroup } from '@/lib/utils';
+import { summarizeCashFlow } from '@/lib/cash-flow';
 
 export async function GET(request: Request) {
   try {
@@ -252,15 +253,42 @@ export async function GET(request: Request) {
 
     const { data: allFiltered } = await summaryQuery.limit(10000);
 
-    let totalIncome = 0;
-    let totalExpenses = 0;
-    if (allFiltered) {
-      for (const t of allFiltered) {
-        const amt = Number(t.amount);
-        if (amt > 0) totalIncome += amt;
-        else totalExpenses += Math.abs(amt);
+    // Investment cash rows for the summary (same filters). Skipped under category
+    // filters, mirroring the list — investment rows carry no categories. Trades
+    // (buy/sell) are dropped inside summarizeCashFlow, not here.
+    let investmentFiltered: { amount: number | string; transaction_type: string | null }[] = [];
+    if (!category && !categoryGroup) {
+      let invSummaryQuery = supabase
+        .from('investment_transactions')
+        .select('amount, transaction_type')
+        .eq('user_id', user.id);
+
+      if (sanitizedSearch) {
+        invSummaryQuery = invSummaryQuery.ilike('name', `%${sanitizedSearch}%`);
       }
+      if (accountId) {
+        invSummaryQuery = invSummaryQuery.eq('account_id', accountId);
+      }
+      if (dateFrom) {
+        invSummaryQuery = invSummaryQuery.gte('transaction_date', dateFrom);
+      }
+      if (dateTo) {
+        invSummaryQuery = invSummaryQuery.lte('transaction_date', dateTo);
+      }
+      if (type === 'income') {
+        invSummaryQuery = invSummaryQuery.gt('amount', 0);
+      } else if (type === 'expense') {
+        invSummaryQuery = invSummaryQuery.lt('amount', 0);
+      }
+
+      const { data: invSummaryData } = await invSummaryQuery.limit(10000);
+      investmentFiltered = invSummaryData || [];
     }
+
+    const { totalIncome, totalExpenses, netFlow } = summarizeCashFlow([
+      ...(allFiltered ?? []),
+      ...investmentFiltered,
+    ]);
 
     // --- Fetch account filter options ---
     const { data: accountsData } = await supabase
@@ -329,7 +357,7 @@ export async function GET(request: Request) {
       summary: {
         totalIncome,
         totalExpenses,
-        netFlow: totalIncome - totalExpenses,
+        netFlow,
         transactionCount: totalCount,
       },
       filters: {

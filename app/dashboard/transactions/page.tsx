@@ -612,10 +612,10 @@ export default function TransactionsPage() {
       <main className="space-y-6">
         {/* ─── Summary Tiles ─── */}
         <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
-          {/* Net Flow */}
+          {/* Cash Flow */}
           <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded-lg px-4 py-3.5">
             <p className="text-[11px] font-mono uppercase tracking-[0.06em] text-[var(--color-text-muted)] mb-1">
-              Net Flow
+              Cash Flow
             </p>
             {loading ? (
               <Skeleton className="h-7 w-24 mb-1" />
