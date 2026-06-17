@@ -146,6 +146,28 @@ function LoadingSkeleton() {
 /* ════════════════════════════════════════════════════════════════════
    Main page
    ════════════════════════════════════════════════════════════════════ */
+// Drag-to-resize grip for the Keel. Counter-zoomed so it stays a constant size while
+// the page scales. Drag horizontally to scale 100-200%, double-click to reset.
+function ZoomGrip({ zoom, setZoom }: { zoom: number; setZoom: (z: number) => void }) {
+  const start = useRef<{ x: number; z: number } | null>(null);
+  return (
+    <div
+      onPointerDown={(e) => { start.current = { x: e.clientX, z: zoom }; (e.target as HTMLElement).setPointerCapture(e.pointerId); }}
+      onPointerMove={(e) => { if (start.current) setZoom(Math.min(2, Math.max(1, start.current.z + (e.clientX - start.current.x) * 0.0016))); }}
+      onPointerUp={(e) => { start.current = null; try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch {} }}
+      onDoubleClick={() => setZoom(1)}
+      title="Drag to resize the Keel · double-click to reset"
+      style={{
+        position: 'fixed', right: 18, bottom: 18, zoom: 1 / zoom, zIndex: 50, cursor: 'ew-resize',
+        display: 'flex', alignItems: 'center', gap: 6, padding: '7px 11px', borderRadius: 8,
+        background: '#141414', border: '1px solid rgba(255,255,255,0.10)', userSelect: 'none', touchAction: 'none',
+      }}
+    >
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#8A8A8A' }}>⟷ {Math.round(zoom * 100)}%</span>
+    </div>
+  );
+}
+
 export default function ThesesPage() {
   const [theses, setTheses] = useState<Thesis[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
@@ -154,6 +176,14 @@ export default function ThesesPage() {
   const [seedingTicker, setSeedingTicker] = useState<string | null>(null);
   const [seedError, setSeedError] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [zoom, setZoom] = useState(1); // Keel size: drag the grip (bottom-right) to scale everything on big displays.
+  useEffect(() => {
+    const z = parseFloat(localStorage.getItem('helm_keel_zoom') || '1');
+    if (z >= 1 && z <= 2) setZoom(z);
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem('helm_keel_zoom', String(zoom)); } catch {}
+  }, [zoom]);
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -374,7 +404,8 @@ export default function ThesesPage() {
   let rank = 0; // global rank across bands
 
   return (
-    <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8 space-y-8">
+    <div style={{ zoom }} className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8 space-y-8">
+      <ZoomGrip zoom={zoom} setZoom={setZoom} />
 
       {/* ── Section 1: Conviction header ── */}
       {noThesesYet ? (
