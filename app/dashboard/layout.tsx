@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
+import { ZoomShell } from '@/components/zoom-shell';
 import { useSettings } from '@/contexts/settings-context';
 import { DemoProvider, useDemo } from '@/contexts/demo-context';
 import { LegalFooter } from '@/components/legal-footer';
@@ -650,7 +651,7 @@ export default function DashboardLayout({
               isChatPage && 'flex-1 min-h-0 flex flex-col'
             )}
           >
-            {children}
+            <ZoomShell>{children}</ZoomShell>
           </div>
         </main>
 
