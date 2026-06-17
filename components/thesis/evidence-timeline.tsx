@@ -79,7 +79,7 @@ export function EvidenceTimeline({ evidence, defaultOpen = false }: { evidence: 
                     style={{ background: v.color, boxShadow: e.materiality === 'material' ? `0 0 8px ${v.color}66` : 'none' }}
                   />
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-[13px] text-[#9A9A9A]" style={MONO}>
+                    <span className="font-mono text-[14px] font-semibold text-[#D6D6D6] tabular-nums" style={MONO}>
                       {fmtDate(e.date)}
                     </span>
                     <span

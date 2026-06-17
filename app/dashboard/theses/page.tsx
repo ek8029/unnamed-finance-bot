@@ -38,6 +38,7 @@ interface Pillar {
   confirmed: boolean;
   status: PillarStatus;
   status_override: PillarStatus | null;
+  status_changed_at: string | null;
   lifecycle: string;
   sort_order: number;
   latest_evidence: EvidenceRow | null;
@@ -78,6 +79,7 @@ interface Row {
   worst: PillarStatus | null;
   weight?: number;
   confirmedPillars: Pillar[];
+  movedAt: string | null;
 }
 
 function StatusChip({ status }: { status: PillarStatus }) {
@@ -122,6 +124,20 @@ function AggregateMeter({ counts, total, height = 6 }: { counts: Record<PillarSt
 
 function fmtScanned(iso: string): string {
   return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+// Days since a status flip — drives the recency chip + "Recently moved" strip.
+function daysSince(iso: string): number {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+}
+function relTime(iso: string): string {
+  const d = daysSince(iso);
+  if (d <= 0) return 'today';
+  if (d === 1) return '1d ago';
+  if (d < 7) return `${d}d ago`;
+  if (d < 14) return '1w ago';
+  if (d < 56) return `${Math.floor(d / 7)}w ago`;
+  return `${Math.floor(d / 30)}mo ago`;
 }
 
 function SkeletonBlock({ className }: { className?: string }) {
@@ -216,10 +232,14 @@ export default function ThesesPage() {
           ? 'strong'
           : 'holding';
     const score = intact - (sc.weakening + sc.broken) * 2 - (intact === 0 ? 0.5 : 0);
+    const movedAt = t.pillars
+      .filter((p) => p.confirmed && p.lifecycle !== 'dismissed' && p.status_changed_at)
+      .reduce<string | null>((best, p) => (!best || p.status_changed_at! > best ? p.status_changed_at! : best), null);
     return {
       t, summary, intact, total, score, band, worst,
       weight: weightByTicker.get(t.ticker.toUpperCase()),
       confirmedPillars: t.pillars.filter((p) => p.confirmed && p.lifecycle !== 'dismissed'),
+      movedAt,
     };
   });
 
@@ -228,6 +248,12 @@ export default function ThesesPage() {
   const bandedRows: { band: Band; rows: Row[] }[] = (['strong', 'holding', 'review'] as Band[])
     .map((band) => ({ band, rows: sortRows(band) }))
     .filter((g) => g.rows.length > 0);
+
+  // Recently moved: positions whose conviction last flipped, newest first.
+  const recentMovers = rows
+    .filter((r) => r.movedAt)
+    .sort((a, b) => (b.movedAt! > a.movedAt! ? 1 : -1))
+    .slice(0, 3);
 
   // node map for the Constellation
   const nameByTicker = new Map(holdings.map((h) => [h.ticker.toUpperCase(), h.name]));
@@ -429,6 +455,27 @@ export default function ThesesPage() {
               intact pillars &middot; % of portfolio &middot; conviction
             </span>
           </div>
+          {recentMovers.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[var(--color-gold)]" style={MONO}>Recently moved</span>
+              {recentMovers.map((r) => (
+                <button
+                  key={r.t.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedTicker(r.t.ticker);
+                    setDetailOpen(true);
+                    loadTheses();
+                    setTimeout(() => document.getElementById(`row-${r.t.ticker}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-2 py-[3px] rounded border border-[rgba(230,185,77,0.18)] bg-[rgba(230,185,77,0.05)] hover:bg-[rgba(230,185,77,0.1)] transition-colors"
+                >
+                  <span className="font-mono text-[12.5px] font-semibold uppercase tracking-[0.06em] text-[#FAFAFA]" style={MONO}>{r.t.ticker}</span>
+                  <span className="font-mono text-[11.5px] text-[#9A9A9A]" style={MONO}>{relTime(r.movedAt!)}</span>
+                </button>
+              ))}
+            </div>
+          )}
           <div className="rounded-lg border border-white/[0.07] bg-[#0E0E0E] overflow-hidden">
             {bandedRows.map(({ band, rows: bandRows }) => (
               <div key={band}>
@@ -445,7 +492,7 @@ export default function ThesesPage() {
                   const intactFrac = r.total > 0 ? r.intact / r.total : 0;
                   const thisRank = rank;
                   return (
-                    <div key={r.t.id} className="border-t border-white/[0.04]">
+                    <div key={r.t.id} id={`row-${r.t.ticker}`} className="border-t border-white/[0.04]">
                       <button
                         type="button"
                         onClick={() => {
@@ -475,8 +522,14 @@ export default function ThesesPage() {
                         <div className="hidden sm:block w-[52px] shrink-0 text-center">
                           {r.total > 0 && <span className="font-mono text-[18px] font-semibold tabular-nums" style={{ ...MONO, color: r.intact >= 3 ? '#4ADE80' : '#9A9A9A' }}>{r.intact}/{r.total}</span>}
                         </div>
-                        {/* spacer */}
-                        <div className="flex-1 min-w-0" />
+                        {/* recency chip, right-aligned in the flexible gap */}
+                        <div className="flex-1 min-w-0 flex justify-end pr-1">
+                          {r.movedAt && (
+                            <span className="hidden lg:inline-flex items-center font-mono text-[12px] tracking-[0.03em] text-[#5A5A5A]" style={MONO}>
+                              moved {relTime(r.movedAt)}
+                            </span>
+                          )}
+                        </div>
                         {/* weight */}
                         {r.weight != null && <span className="hidden lg:block font-mono text-[15px] tabular-nums text-[#9A9A9A] w-[66px] text-right shrink-0" style={MONO}>{r.weight.toFixed(1)}%</span>}
                         {/* status chip */}

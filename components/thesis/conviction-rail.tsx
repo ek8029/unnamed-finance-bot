@@ -148,7 +148,7 @@ function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export function ConvictionRail({ collapsed, onToggle, mobileOpen = false, onMobileClose }: { collapsed: boolean; onToggle: () => void; mobileOpen?: boolean; onMobileClose?: () => void }) {
+export function ConvictionRail({ collapsed, onToggle, mobileOpen = false, onMobileClose, width = 316, onResize }: { collapsed: boolean; onToggle: () => void; mobileOpen?: boolean; onMobileClose?: () => void; width?: number; onResize?: (w: number) => void }) {
   const [theses, setTheses] = useState<Thesis[] | null>(null);
   const [conviction, setConviction] = useState<ConvictionData | null>(null);
   const [errored, setErrored] = useState(false);
@@ -288,10 +288,34 @@ export function ConvictionRail({ collapsed, onToggle, mobileOpen = false, onMobi
         />
       )}
     <aside
-      className={`flex flex-col fixed right-0 top-0 bottom-0 w-[316px] max-w-[88vw] z-50 transition-transform duration-200 ${mobileOpen ? 'translate-x-0' : 'translate-x-full'} xl:translate-x-0`}
-      style={{ borderLeft: `1px solid ${BD_BASE}`, background: BG_INSET }}
+      className={`flex flex-col fixed right-0 top-0 bottom-0 max-w-[88vw] z-50 transition-transform duration-200 ${mobileOpen ? 'translate-x-0' : 'translate-x-full'} xl:translate-x-0`}
+      style={{ width, borderLeft: `1px solid ${BD_BASE}`, background: BG_INSET }}
       aria-label="Conviction"
     >
+      {/* Drag-to-resize handle (desktop) — grab the left edge, drag left to widen. */}
+      {onResize && (
+        <div
+          onPointerDown={(e) => {
+            e.preventDefault();
+            const startX = e.clientX;
+            const startW = width;
+            const move = (ev: PointerEvent) => onResize(startW + (startX - ev.clientX));
+            const up = () => {
+              window.removeEventListener('pointermove', move);
+              window.removeEventListener('pointerup', up);
+            };
+            window.addEventListener('pointermove', move);
+            window.addEventListener('pointerup', up);
+          }}
+          onDoubleClick={() => onResize(316)}
+          className="hidden xl:block absolute left-0 top-0 bottom-0 w-2 -ml-1 cursor-ew-resize z-10 group"
+          style={{ touchAction: 'none' }}
+          title="Drag to resize · double-click to reset"
+          aria-label="Resize conviction rail"
+        >
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-[3px] rounded-full bg-white/[0.12] group-hover:bg-[#E6B94D] transition-colors" />
+        </div>
+      )}
       {/* Header (fixed): mark + delta hero + trend row + meter */}
       <div className="shrink-0" style={{ padding: '18px 20px 16px', borderBottom: `1px solid ${BD_SUBTLE}` }}>
         <div className="flex items-center gap-2.5 mb-3.5">

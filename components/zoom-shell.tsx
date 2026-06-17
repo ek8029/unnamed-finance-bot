@@ -28,7 +28,7 @@ export function ZoomShell({ children }: { children: React.ReactNode }) {
         onDoubleClick={() => setZoom(1)}
         title="Drag to resize the terminal · double-click to reset"
         style={{
-          position: 'fixed', right: 18, bottom: 18, zIndex: 50, cursor: 'ew-resize',
+          position: 'fixed', right: 'calc(var(--rail-w, 0px) + 18px)', bottom: 18, zIndex: 50, cursor: 'ew-resize',
           display: 'flex', alignItems: 'center', gap: 6, padding: '7px 11px', borderRadius: 8,
           background: '#141414', border: '1px solid rgba(255,255,255,0.10)', userSelect: 'none', touchAction: 'none',
         }}

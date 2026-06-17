@@ -422,6 +422,7 @@ export async function generateInsights(
 
     const newInsights: InsightCandidate[] = [];
     const staleIds: string[] = [];
+    const updates: { id: string; fields: InsightCandidate }[] = [];
 
     for (const c of candidates) {
       const norm = normalizeInsightTitle(c.title);
@@ -430,8 +431,12 @@ export async function generateInsights(
         newInsights.push(c);
         existingByNorm.set(norm, []);
       } else {
-        staleIds.push(...existingIds);
-        newInsights.push(c);
+        // Refresh the existing active row in place. Preserves created_at — the true age of
+        // the opportunity (e.g. a tax loss harvestable for days) — instead of the old
+        // delete+reinsert, which reset the "X min ago" clock on every run. Drop any dupes.
+        const [keepId, ...dupeIds] = existingIds;
+        updates.push({ id: keepId, fields: c });
+        if (dupeIds.length > 0) staleIds.push(...dupeIds);
         existingByNorm.set(norm, []);
       }
     }
@@ -461,6 +466,17 @@ export async function generateInsights(
       }
     }
 
+    // Refresh content of insights that persist across runs (amount/description) without
+    // touching created_at, so the displayed age stays honest.
+    for (const u of updates) {
+      const { error: updateError } = await supabase
+        .from('insights')
+        .update({ ...u.fields })
+        .eq('id', u.id)
+        .eq('user_id', userId);
+      if (updateError) console.error('[insights-engine] Error refreshing insight:', updateError);
+    }
+
     await supabase
       .from('insights')
       .update({ is_dismissed: true })
@@ -468,7 +484,7 @@ export async function generateInsights(
       .lt('expires_at', new Date().toISOString())
       .eq('is_dismissed', false);
 
-    return newInsights.length;
+    return newInsights.length + updates.length;
   } catch (error) {
     console.error(`[insights-engine] Error generating insights for ${userId}:`, error);
     return 0;

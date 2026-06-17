@@ -90,6 +90,38 @@ function LoadingSkeleton() {
 /* ------------------------------------------------------------------ */
 type PositionSortKey = 'ticker' | 'name' | 'shares' | 'avgCost' | 'price' | 'dayPct' | 'value' | 'alloc' | 'pl';
 
+// Today's movers — top gainers and losers by day change, so the biggest moves
+// surface without scrolling/sorting the whole table.
+function TodaysMovers({ movers }: { movers: { ticker: string; day_change_percentage: number | null }[] }) {
+  if (movers.length === 0) return null;
+  return (
+    <div className="flex items-center gap-2 flex-wrap px-1">
+      <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+        Today&apos;s movers
+      </span>
+      {movers.map((h) => {
+        const pct = h.day_change_percentage ?? 0;
+        const up = pct >= 0;
+        return (
+          <span
+            key={h.ticker}
+            className="inline-flex items-center gap-1.5 px-2 py-[3px] rounded border"
+            style={{
+              borderColor: up ? 'rgba(74,222,128,0.2)' : 'rgba(248,113,113,0.2)',
+              background: up ? 'rgba(74,222,128,0.05)' : 'rgba(248,113,113,0.05)',
+            }}
+          >
+            <span className="font-mono text-[12px] font-semibold uppercase tracking-[0.05em] text-[var(--color-text-primary)]">{h.ticker}</span>
+            <span className="font-mono text-[11.5px] tabular-nums" style={{ color: up ? 'var(--color-positive)' : 'var(--color-negative)' }}>
+              {up ? '+' : ''}{pct.toFixed(2)}%
+            </span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function PortfolioPage() {
   const { formatCurrency, formatCurrencyDetailed } = useFormat();
 
@@ -215,6 +247,13 @@ export default function PortfolioPage() {
   // Hooks that the old code used (must stay above early returns)
   const sortedByAllocation = useMemo(() => [...holdings].sort((a, b) => b.portfolio_allocation - a.portfolio_allocation), [holdings]);
   const sortedByDayChange = useMemo(() => [...holdings].sort((a, b) => (b.day_change_percentage ?? 0) - (a.day_change_percentage ?? 0)), [holdings]);
+  // Top 2 gainers + top 2 losers for the "Today's movers" strip.
+  const movers = useMemo(() => {
+    const withChange = sortedByDayChange.filter((h) => (h.day_change_percentage ?? 0) !== 0);
+    const gainers = withChange.filter((h) => (h.day_change_percentage ?? 0) > 0).slice(0, 2);
+    const losers = withChange.filter((h) => (h.day_change_percentage ?? 0) < 0).slice(-2).reverse();
+    return [...gainers, ...losers];
+  }, [sortedByDayChange]);
 
   /* ---------- positions sub-tab ---------- */
   const [positionsView, setPositionsView] = useState<'positions' | 'exposure'>('positions');
@@ -628,6 +667,9 @@ export default function PortfolioPage() {
               ))}
             </div>
 
+            {/* ── Today's movers ── */}
+            <TodaysMovers movers={movers} />
+
             {/* ── Mobile Positions Header with Toggle ── */}
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-3">
@@ -724,6 +766,13 @@ export default function PortfolioPage() {
               </div>
             )}
           </div>
+
+          {/* ── Today's movers (desktop) ── */}
+          {movers.length > 0 && (
+            <div className="hidden lg:block mb-3">
+              <TodaysMovers movers={movers} />
+            </div>
+          )}
 
           {/* ── Desktop: Table view ── */}
           <div className="hidden lg:block border border-[var(--color-border-base)] rounded-lg overflow-hidden bg-[var(--color-bg-surface)]">

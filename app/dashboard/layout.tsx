@@ -145,6 +145,7 @@ export default function DashboardLayout({
   const reduceMotion = settings.accessibility.reduceMotion;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [railCollapsed, setRailCollapsed] = useState(false);
+  const [railWidth, setRailWidth] = useState(316);
   const [mobileRailOpen, setMobileRailOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -171,6 +172,14 @@ export default function DashboardLayout({
   // Restore conviction-rail collapsed preference
   useEffect(() => {
     try { setRailCollapsed(localStorage.getItem('helm:conviction-collapsed') === '1'); } catch {}
+  }, []);
+
+  // Restore conviction-rail width preference
+  useEffect(() => {
+    try {
+      const w = parseInt(localStorage.getItem('helm:conviction-width') || '', 10);
+      if (w >= 280 && w <= 620) setRailWidth(w);
+    } catch {}
   }, []);
 
   // Close user menus on click outside
@@ -226,6 +235,12 @@ export default function DashboardLayout({
     });
   };
 
+  const resizeRail = (w: number) => {
+    const clamped = Math.max(280, Math.min(620, Math.round(w)));
+    setRailWidth(clamped);
+    try { localStorage.setItem('helm:conviction-width', String(clamped)); } catch {}
+  };
+
   // Handle logout
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -256,10 +271,13 @@ export default function DashboardLayout({
     <OnboardingFlow />
     <GuidedTour />
     <DisclaimerModal />
-    <div className={cn(
-      "bg-[var(--color-bg-base)] flex max-w-[100vw] overflow-x-hidden",
-      isChatPage ? "h-dvh overflow-hidden" : "min-h-dvh"
-    )}>
+    <div
+      className={cn(
+        "bg-[var(--color-bg-base)] flex max-w-[100vw] overflow-x-hidden",
+        isChatPage ? "h-dvh overflow-hidden" : "min-h-dvh"
+      )}
+      style={{ ['--rail-w' as string]: showRail ? (railCollapsed ? '48px' : `${railWidth}px`) : '0px' } as React.CSSProperties}
+    >
 
       {/* ═══════════════════════════════════════════════
           FIXED SIDEBAR
@@ -522,7 +540,7 @@ export default function DashboardLayout({
       <div className={cn(
         "ml-0 min-[1025px]:ml-64 flex flex-col flex-1 min-w-0 2xl:transition-[padding] 2xl:duration-200 2xl:ease-out",
         isChatPage ? "h-dvh overflow-hidden" : "min-h-dvh",
-        showRail && (railCollapsed ? "xl:pr-[48px]" : "xl:pr-[316px]")
+        showRail && "xl:pr-[var(--rail-w)]"
       )}>
 
         {/* ── Mobile Top Bar (hidden on wrapped) ── */}
@@ -669,6 +687,8 @@ export default function DashboardLayout({
         <ConvictionRail
           collapsed={railCollapsed}
           onToggle={toggleRail}
+          width={railWidth}
+          onResize={resizeRail}
           mobileOpen={mobileRailOpen}
           onMobileClose={() => setMobileRailOpen(false)}
         />

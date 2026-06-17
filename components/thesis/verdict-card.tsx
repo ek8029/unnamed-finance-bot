@@ -151,16 +151,17 @@ export function VerdictCard({
                   {s.excerpt}
                 </p>
 
-                <div className="flex items-center gap-[6px] flex-wrap">
-                  <span className="text-[13px] text-[#6A6A6A]">{s.sourceTitle}</span>
+                <div className="flex items-center gap-[8px] flex-wrap">
                   {s.sourcePublishedAt && (
-                    <>
-                      <span className="text-[#4A4A4A] text-[12px]">·</span>
-                      <span className="font-mono text-[12px] text-[#6A6A6A] tabular-nums" style={{ fontFamily: "'Space Grotesk', monospace" }}>
-                        {formatDate(s.sourcePublishedAt)}
-                      </span>
-                    </>
+                    <span className="inline-flex items-center gap-[5px] font-mono text-[13px] font-semibold text-[#D6D6D6] tabular-nums px-[7px] py-[3px] rounded-[3px] bg-white/[0.04] border border-white/[0.07]" style={{ fontFamily: "'Space Grotesk', monospace" }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9A9A9A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                        <rect x="3" y="4" width="18" height="18" rx="2" />
+                        <path d="M16 2v4M8 2v4M3 10h18" />
+                      </svg>
+                      {formatDate(s.sourcePublishedAt)}
+                    </span>
                   )}
+                  <span className="text-[13px] text-[#6A6A6A]">{s.sourceTitle}</span>
                   {s.sourceUrl && (
                     <>
                       <span className="text-[#4A4A4A] text-[12px]">·</span>
