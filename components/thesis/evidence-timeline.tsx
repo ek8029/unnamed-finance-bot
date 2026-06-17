@@ -58,7 +58,7 @@ export function EvidenceTimeline({ evidence, defaultOpen = false }: { evidence: 
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-white/[0.02] transition-colors"
       >
-        <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#E6B94D]" style={MONO}>
+        <span className="font-mono text-[11.5px] font-semibold uppercase tracking-[0.18em] text-[#E6B94D]" style={MONO}>
           Timeline
         </span>
         <span className="font-mono text-[11px] text-[#6A6A6A]" style={MONO}>
@@ -73,22 +73,22 @@ export function EvidenceTimeline({ evidence, defaultOpen = false }: { evidence: 
             {ordered.map((e, i) => {
               const v = VERDICT[e.verdict];
               return (
-                <li key={i} className="relative pl-5 pb-5 last:pb-0">
+                <li key={i} className="relative pl-5 pb-4 last:pb-0">
                   <span
                     className="absolute -left-[5px] top-[3px] w-[9px] h-[9px] rounded-full"
                     style={{ background: v.color, boxShadow: e.materiality === 'material' ? `0 0 8px ${v.color}66` : 'none' }}
                   />
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-[11px] text-[#9A9A9A]" style={MONO}>
+                    <span className="font-mono text-[13px] text-[#9A9A9A]" style={MONO}>
                       {fmtDate(e.date)}
                     </span>
                     <span
-                      className="font-mono text-[8.5px] font-semibold uppercase tracking-[0.14em] px-1.5 py-[2px] rounded border border-white/[0.10] text-[#8A8A8A]"
+                      className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] px-1.5 py-[2px] rounded border border-white/[0.10] text-[#8A8A8A]"
                       style={MONO}
                     >
                       {SOURCE_LABEL[e.source_type]}
                     </span>
-                    <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.10em]" style={{ ...MONO, color: v.color }}>
+                    <span className="font-mono text-[11.5px] font-semibold uppercase tracking-[0.10em]" style={{ ...MONO, color: v.color }}>
                       {v.label}
                     </span>
                     {e.materiality === 'material' && (
@@ -97,8 +97,8 @@ export function EvidenceTimeline({ evidence, defaultOpen = false }: { evidence: 
                       </span>
                     )}
                   </div>
-                  <p className="text-[13px] leading-[1.55] text-[#E4E4E4] mt-1.5 mb-0">&ldquo;{e.excerpt}&rdquo;</p>
-                  <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-[#6A6A6A]">
+                  <p className="text-[15px] leading-[1.55] text-[#E4E4E4] mt-1.5 mb-0">&ldquo;{e.excerpt}&rdquo;</p>
+                  <div className="flex items-center gap-1.5 mt-1.5 text-[12.5px] text-[#6A6A6A]">
                     {e.source_url ? (
                       <a href={e.source_url} target="_blank" rel="noopener noreferrer" className="hover:text-[#E6B94D] transition-colors truncate max-w-[280px]">
                         {e.source_title}
@@ -107,7 +107,7 @@ export function EvidenceTimeline({ evidence, defaultOpen = false }: { evidence: 
                       <span className="truncate max-w-[280px]">{e.source_title}</span>
                     )}
                   </div>
-                  <div className="text-[11px] text-[#5A5A5A] mt-1 truncate">on: {e.pillarClaim}</div>
+                  <div className="text-[12px] text-[#5A5A5A] mt-1 truncate">on: {e.pillarClaim}</div>
                 </li>
               );
             })}

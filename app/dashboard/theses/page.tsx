@@ -421,8 +421,13 @@ export default function ThesesPage() {
       {/* ── Section 3: Standings ── */}
       {!noThesesYet && (
         <section className="space-y-3">
-          <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted,#6A6A6A)]" style={MONO}>
-            Standings &middot; strongest to weakest
+          <div className="flex items-baseline justify-between gap-3 flex-wrap">
+            <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted,#6A6A6A)]" style={MONO}>
+              Standings &middot; strongest to weakest
+            </span>
+            <span className="font-mono text-[10.5px] tracking-[0.08em] text-[#5A5A5A]" style={MONO}>
+              intact pillars &middot; % of portfolio &middot; conviction
+            </span>
           </div>
           <div className="rounded-lg border border-white/[0.07] bg-[#0E0E0E] overflow-hidden">
             {bandedRows.map(({ band, rows: bandRows }) => (

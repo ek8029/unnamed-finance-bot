@@ -58,9 +58,9 @@ export function VerdictCard({
       {/* 3px colored left spine */}
       <div className="w-[3px] shrink-0" style={{ background: color, opacity: 0.85 }} />
 
-      <div className="flex-1 p-[22px_24px]">
+      <div className="flex-1 p-[18px_22px]">
         {/* Header row */}
-        <div className="flex items-center gap-[14px] mb-[18px] flex-wrap">
+        <div className="flex items-center gap-[14px] mb-[14px] flex-wrap">
           {/* Verdict word */}
           <span
             className="font-mono text-[18px] font-semibold uppercase tracking-[0.04em]"
@@ -115,9 +115,9 @@ export function VerdictCard({
 
         {/* Pillar quote box — suppressed when the parent already shows the claim. */}
         {showPillarClaim && (
-          <div className="px-[18px] py-[14px] bg-white/[0.02] border border-white/[0.04] rounded-[3px] mb-[18px]">
+          <div className="px-[18px] py-[14px] bg-white/[0.02] border border-white/[0.04] rounded-[3px] mb-[14px]">
             <div
-              className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.18em] text-[#6A6A6A] mb-[8px]"
+              className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6A6A6A] mb-[8px]"
               style={{ fontFamily: "'Space Grotesk', monospace" }}
             >
               The reason you own {item.ticker}
@@ -129,7 +129,7 @@ export function VerdictCard({
         )}
 
         {/* What it means */}
-        <p className="text-[16px] leading-[1.55] font-medium text-[#FAFAFA] m-0 mb-[18px]">
+        <p className="text-[16px] leading-[1.55] font-medium text-[#FAFAFA] m-0 mb-[14px]">
           {item.whatItMeans}
         </p>
 
@@ -181,9 +181,9 @@ export function VerdictCard({
         </div>
 
         {/* Why (muted) */}
-        <p className="text-[14px] leading-[1.6] text-[#6A6A6A] mt-[16px] mb-0">
+        <p className="text-[15px] leading-[1.6] text-[#C8C8C8] mt-[14px] mb-0 border-l-2 border-[rgba(230,185,77,0.4)] pl-[14px]">
           <span
-            className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.18em] text-[#4A4A4A] mr-[10px]"
+            className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[#E6B94D] mr-[10px]"
             style={{ fontFamily: "'Space Grotesk', monospace" }}
           >
             Why
@@ -193,10 +193,10 @@ export function VerdictCard({
 
         {/* Consider row (only when non-null) */}
         {item.consider && (
-          <div className="flex items-start gap-[16px] mt-[18px] px-[18px] py-[13px] border border-[rgba(230,185,77,0.18)] bg-[rgba(230,185,77,0.06)] rounded-[3px]">
+          <div className="flex items-start gap-[16px] mt-[14px] px-[18px] py-[12px] border border-[rgba(230,185,77,0.18)] bg-[rgba(230,185,77,0.06)] rounded-[3px]">
             <div className="flex-1">
               <span
-                className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.18em] text-[#E6B94D] mr-[10px]"
+                className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[#E6B94D] mr-[10px]"
                 style={{ fontFamily: "'Space Grotesk', monospace" }}
               >
                 Consider

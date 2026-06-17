@@ -310,9 +310,9 @@ export function Constellation({
               {showLogo ? (
                 <>
                   <clipPath id={`logoclip-${t}`}><circle cx={n.x} cy={n.y} r={lr} /></clipPath>
-                  <circle cx={n.x} cy={n.y} r={lr} fill="#FFFFFF" />
+                  <circle cx={n.x} cy={n.y} r={lr} fill="#0E0E0E" />
                   <image
-                    href={`https://img.logo.dev/ticker/${encodeURIComponent(t)}?token=${LOGO_TOKEN}&size=${Math.min(800, Math.round(lr * 4))}&format=png&retina=true&fallback=404`}
+                    href={`https://img.logo.dev/ticker/${encodeURIComponent(t)}?token=${LOGO_TOKEN}&size=${Math.min(800, Math.round(lr * 6))}&format=png&theme=dark&fallback=404`}
                     x={n.x - lr}
                     y={n.y - lr}
                     width={lr * 2}

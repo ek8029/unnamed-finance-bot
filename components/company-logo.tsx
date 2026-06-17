@@ -25,8 +25,10 @@ export function CompanyLogo({
   const base: React.CSSProperties = { width: size, height: size, borderRadius: radius, flexShrink: 0 };
 
   if (TOKEN && !failed && sym) {
-    const px = Math.min(800, Math.round(size * 2));
-    const src = `https://img.logo.dev/ticker/${encodeURIComponent(sym)}?token=${TOKEN}&size=${px}&format=png&retina=true&fallback=404`;
+    // theme=dark returns the logo made for a dark background, so it sits transparently on
+    // the app (no white tile, no ring). contain = never cropped. 3x size = crisp.
+    const px = Math.min(800, Math.max(96, Math.round(size * 3)));
+    const src = `https://img.logo.dev/ticker/${encodeURIComponent(sym)}?token=${TOKEN}&size=${px}&format=png&theme=dark&fallback=404`;
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
@@ -34,7 +36,7 @@ export function CompanyLogo({
         alt={sym}
         onError={() => setFailed(true)}
         className={className}
-        style={{ ...base, objectFit: 'contain', background: '#fff', padding: Math.round(size * 0.12), boxSizing: 'border-box' }}
+        style={{ ...base, objectFit: 'contain' }}
       />
     );
   }
