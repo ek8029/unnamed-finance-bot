@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { generateEarningsReport } from '@/lib/earnings-analysis';
 import { getUserTier } from '@/lib/tier';
-import { isThesisUser } from '@/lib/thesis-access';
+import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { getThesisEarningsContext } from '@/lib/thesis-conviction';
 
 export async function GET() {
@@ -23,7 +23,7 @@ export async function GET() {
     // Thesis test: stamp each upcoming event for a held, tracked-thesis ticker with
     // its conviction + the at-risk pillar claim, so the UI can frame the report as
     // the next read on that thesis. Gated to thesis users; nobody else gets fields.
-    if (isThesisUser(user.email)) {
+    if (await hasThesisAccess(user.id, user.email)) {
       const tctx = await getThesisEarningsContext(supabase, user.id);
       if (tctx.size > 0) {
         for (const e of report.upcoming) {

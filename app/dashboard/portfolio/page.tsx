@@ -90,6 +90,12 @@ function LoadingSkeleton() {
 /* ------------------------------------------------------------------ */
 type PositionSortKey = 'ticker' | 'name' | 'shares' | 'avgCost' | 'price' | 'dayPct' | 'value' | 'alloc' | 'pl';
 
+// Neutralize CSV formula injection: prefix risky lead chars so spreadsheets treat the cell as text, then quote-escape.
+function csvCell(v: string): string {
+  const s = /^[=+\-@\t\r]/.test(v) ? "'" + v : v;
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
 // Today's movers — top gainers and losers by day change, so the biggest moves
 // surface without scrolling/sorting the whole table.
 function TodaysMovers({ movers }: { movers: { ticker: string; day_change_percentage: number | null }[] }) {
@@ -313,7 +319,7 @@ export default function PortfolioPage() {
       const rows = [
         ['Ticker', 'Direct %', 'Indirect %', 'Total %', 'Sources'].join(','),
         ...source.map(e =>
-          [e.ticker, e.directWeight.toFixed(2), e.indirectWeight.toFixed(2), e.totalWeight.toFixed(2), `"${e.sources.join('; ')}"`].join(',')
+          [csvCell(e.ticker), e.directWeight.toFixed(2), e.indirectWeight.toFixed(2), e.totalWeight.toFixed(2), csvCell(e.sources.join('; '))].join(',')
         ),
       ];
       downloadCSV(rows.join('\n'), 'helm-true-exposure.csv');
@@ -323,8 +329,8 @@ export default function PortfolioPage() {
         ['Ticker', 'Name', 'Shares', 'Avg Cost', 'Price', 'Day Change %', 'Value', 'Allocation %', 'Unrealized P/L', 'Sector'].join(','),
         ...data.map(h =>
           [
-            h.ticker,
-            `"${h.asset_name}"`,
+            csvCell(h.ticker),
+            csvCell(h.asset_name),
             h.shares,
             (h.cost_basis ?? 0).toFixed(2),
             h.current_price.toFixed(2),
@@ -332,7 +338,7 @@ export default function PortfolioPage() {
             h.total_value.toFixed(2),
             h.portfolio_allocation.toFixed(2),
             (h.unrealised_gain ?? 0).toFixed(2),
-            h.sector || '',
+            csvCell(h.sector || ''),
           ].join(',')
         ),
       ];

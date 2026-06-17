@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { analyzeStock } from '@/lib/analyze-stock';
+import { TOP_TICKERS } from '@/lib/top-tickers';
 import { getFullTickerData } from '@/lib/financial-data';
 import { INDEXABLE_TICKERS } from '@/lib/indexable-tickers';
 import { AnalysisTerminal } from './analysis-terminal';
@@ -48,7 +49,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // Call analyzeStock for both metadata and page body — it's cached, so the
   // second call in the page component is free.
-  const { analysis, computedAt } = await analyzeStock(symbol);
+  const { analysis, computedAt } = await analyzeStock(symbol, (TOP_TICKERS as readonly string[]).includes(symbol));
 
   if (!analysis) {
     return {
@@ -102,7 +103,7 @@ export default async function TickerAnalysisPage({ params }: Props) {
   }
 
   const [{ analysis, computedAt, dataSources, methodologyVersion }, tickerData] = await Promise.all([
-    analyzeStock(symbol),
+    analyzeStock(symbol, (TOP_TICKERS as readonly string[]).includes(symbol)),
     getFullTickerData(symbol),
   ]);
 

@@ -131,7 +131,11 @@ function exportToCsv(
 ) {
   const header = 'Date,Description,Merchant,Category,Account,Amount,Status\n';
   const rows = transactions.map((tx) => {
-    const esc = (s: string | null) => `"${(s || '').replace(/"/g, '""')}"`;
+    const esc = (s: string | null) => {
+      // Neutralize CSV formula injection (=, +, -, @ lead chars) so spreadsheets treat it as text.
+      const v = /^[=+\-@\t\r]/.test(s || '') ? "'" + (s || '') : (s || '');
+      return `"${v.replace(/"/g, '""')}"`;
+    };
     return [
       tx.date,
       esc(tx.description),

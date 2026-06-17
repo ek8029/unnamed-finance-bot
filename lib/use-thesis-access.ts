@@ -8,20 +8,25 @@
 
 import { useEffect, useState } from 'react';
 import { isThesisUser } from '@/lib/thesis-access';
+import { useTier } from '@/hooks/use-tier';
 
+// Thesis layer is a Pro feature, with the email allowlist as a backstop (founder +
+// comped testers). Mirrors the server-side hasThesisAccess. UI-only; the real
+// boundary is the gated /api/thesis routes.
 export function useThesisEnabled(): boolean {
-  const [enabled, setEnabled] = useState(false);
+  const { isPro } = useTier();
+  const [allowlisted, setAllowlisted] = useState(false);
   useEffect(() => {
     let active = true;
     fetch('/api/user/profile')
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (active) setEnabled(isThesisUser(d?.profile?.email));
+        if (active) setAllowlisted(isThesisUser(d?.profile?.email));
       })
       .catch(() => {});
     return () => {
       active = false;
     };
   }, []);
-  return enabled;
+  return isPro || allowlisted;
 }

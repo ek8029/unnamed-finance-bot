@@ -13,6 +13,7 @@ import {
 import { excerptFoundInSource, TEXT_SOURCES } from '@/lib/thesis-evidence';
 import { extractFilingSection, stripFilingHtml } from '@/lib/filing-extract';
 import { derivePillarStatus, type EvidenceForStatus, type PillarStatus } from '@/lib/thesis-status';
+import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import type { BreachEvent } from '@/lib/thesis-breach';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -431,10 +432,12 @@ export async function scoreOneThesis(
     .map((c, i) => `Source ${i + 1} [${c.source_type}]: ${c.sourceText}`)
     .join('\n\n');
 
-  const systemPrompt = `You are a senior equity analyst judging whether each source bears on each thesis pillar.
-For each source that genuinely relates to a pillar, produce one evidence row.
+  const systemPrompt = `${INJECTION_GUARD}
+You are a senior equity analyst judging whether each source bears on each thesis pillar.
+A single source can bear on more than one pillar. For each pillar a source genuinely relates to, produce a separate evidence row.
 Rules:
 - Only emit rows where the source clearly bears on the pillar.
+- Assign each source to the pillar it most DIRECTLY affects. A change to a specific contract, customer, segment, or revenue stream bears on the pillar about THAT revenue (e.g. a government contract win or loss bears on a "government revenue" pillar), not merely a downstream "margin" or "valuation" pillar. Only also tag a downstream pillar when the source genuinely speaks to it too.
 - Filings (10-K, 10-Q) are authoritative primary sources. When a filing supports or contradicts a pillar, cite the filing, even if a news item makes a similar point. Use news for points the filings do not cover. Sources are tagged [filing], [form4], [xbrl], [news], [price_move].
 - excerpt must be copied verbatim from the source text. Do not paraphrase or invent.
 - No invented numbers. No em dashes.
@@ -446,7 +449,7 @@ Rules:
 Respond with JSON exactly in this shape:
 { "evidence": [ { "pillar_index": <1-based pillar number>, "source_index": <1-based source number>, "verdict": "...", "materiality": "...", "excerpt": "...", "why": "...", "what_it_means": "...", "consider": "..." } ] }`;
 
-  const userPrompt = `Thesis pillars:\n${pillarLines}\n\nSources:\n${sourceLines}`;
+  const userPrompt = `Thesis pillars:\n${fence(pillarLines, 'PILLARS')}\n\nSources:\n${fence(sourceLines, 'SOURCES')}`;
 
   let llmRows: LLMEvidenceRow[] = [];
   try {

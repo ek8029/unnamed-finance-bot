@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { isThesisUser } from '@/lib/thesis-access';
+import { hasThesisAccess } from '@/lib/thesis-access-server';
 import {
   convictionTrend,
   recentTransitions,
@@ -19,7 +19,7 @@ export async function GET() {
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (!isThesisUser(user.email)) {
+    if (!(await hasThesisAccess(user.id, user.email))) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 

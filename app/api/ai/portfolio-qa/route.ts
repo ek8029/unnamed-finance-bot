@@ -4,6 +4,7 @@ import { getPortfolioSummary, formatPortfolioContext } from '@/lib/portfolio-ana
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
+import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import OpenAI from 'openai';
 
 function getOpenAIClient() {
@@ -84,7 +85,8 @@ function generateFollowUps(question: string, hasAlerts: boolean): string[] {
 
 // ── System prompt ──
 
-const SYSTEM_PROMPT = `${NO_ADVICE_GUARDRAIL}
+const SYSTEM_PROMPT = `${INJECTION_GUARD}
+${NO_ADVICE_GUARDRAIL}
 
 You are a senior portfolio analyst at Helm Intelligence. You have access to the user's ACTUAL portfolio data, every number is real, from their linked brokerage accounts.
 
@@ -198,14 +200,14 @@ export async function POST(req: NextRequest) {
   if (Array.isArray(conversationHistory) && conversationHistory.length > 0) {
     for (const msg of conversationHistory.slice(-6)) {
       if (msg && (msg.role === 'user' || msg.role === 'assistant') && typeof msg.content === 'string') {
-        messages.push({ role: msg.role, content: msg.content });
+        messages.push({ role: msg.role, content: fence(msg.content, 'HISTORY') });
       }
     }
   }
 
   let userContent = `PORTFOLIO DATA:\n${portfolioContext}`;
-  if (tickerContext) userContent += `\n\n${tickerContext}`;
-  userContent += `\n\nUSER QUESTION: ${question}`;
+  if (tickerContext) userContent += `\n\n${fence(tickerContext, 'MARKET_DATA')}`;
+  userContent += `\n\nUSER QUESTION: ${fence(question, 'USER_QUESTION')}`;
 
   messages.push({ role: 'user', content: userContent });
 

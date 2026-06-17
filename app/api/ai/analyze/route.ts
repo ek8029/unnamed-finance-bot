@@ -7,6 +7,7 @@ import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { checkAnalysisQuota, recordAnalysisUsage } from '@/lib/tier';
 import { TAX_RATE } from '@/lib/financial-config';
 import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
+import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import OpenAI from 'openai';
 
 function getOpenAIClient() {
@@ -332,7 +333,8 @@ function buildTaxContext(
 
 // ── System prompts ──
 
-const BASE_RULES = `${NO_ADVICE_GUARDRAIL}
+const BASE_RULES = `${INJECTION_GUARD}
+${NO_ADVICE_GUARDRAIL}
 
 You are a senior analyst at Helm Intelligence, an institutional-grade financial terminal. You deliver neutral, data-rich analysis that reads like a research note, not a chatbot response.
 
@@ -669,18 +671,18 @@ export async function POST(req: NextRequest) {
   if (Array.isArray(conversationHistory) && conversationHistory.length > 0) {
     for (const msg of conversationHistory.slice(-6)) {
       if (msg && (msg.role === 'user' || msg.role === 'assistant') && typeof msg.content === 'string') {
-        messages.push({ role: msg.role, content: msg.content });
+        messages.push({ role: msg.role, content: fence(msg.content, 'HISTORY') });
       }
     }
   }
 
   let userMessage: string;
   if (dataContext) {
-    userMessage = `FINANCIAL DATA:\n${dataContext}\n\nUSER QUERY: ${userQuery}`;
+    userMessage = `FINANCIAL DATA:\n${fence(dataContext, 'MARKET_DATA')}\n\nUSER QUERY: ${fence(userQuery, 'USER_QUERY')}`;
   } else if (queryType === 'portfolio_review' || queryType === 'tax_planning') {
-    userMessage = `USER QUERY: ${userQuery}\n\n(User has no linked holdings. Advise them to connect accounts on the Accounts page.)`;
+    userMessage = `USER QUERY: ${fence(userQuery, 'USER_QUERY')}\n\n(User has no linked holdings. Advise them to connect accounts on the Accounts page.)`;
   } else {
-    userMessage = `USER QUERY: ${userQuery}\n\n(User has no linked portfolio. If the question would benefit from portfolio data, mention that connecting accounts on the Accounts page would allow personalized analysis.)`;
+    userMessage = `USER QUERY: ${fence(userQuery, 'USER_QUERY')}\n\n(User has no linked portfolio. If the question would benefit from portfolio data, mention that connecting accounts on the Accounts page would allow personalized analysis.)`;
   }
   messages.push({ role: 'user', content: userMessage });
 

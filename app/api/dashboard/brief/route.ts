@@ -6,7 +6,7 @@ import { rateLimit } from '@/lib/rate-limit';
 import { getUserTier } from '@/lib/tier';
 import { getUnderlyingExposure } from '@/lib/etf-holdings';
 import { composeThesisBrief } from '@/lib/thesis-brief';
-import { isThesisUser } from '@/lib/thesis-access';
+import { hasThesisAccess } from '@/lib/thesis-access-server';
 
 type VixLevel = 'extreme_fear' | 'fear' | 'neutral' | 'greed' | 'extreme_greed';
 
@@ -428,7 +428,7 @@ export async function GET() {
 
     // Proactive thesis brief: honest headline + 14-day "what moved" (replay-based).
     // Gated to allowlisted accounts while the thesis layer is unlaunched.
-    const thesisEnabled = isThesisUser(user.email);
+    const thesisEnabled = await hasThesisAccess(user.id, user.email);
     const thesisBrief = thesisEnabled ? await composeThesisBrief(supabase, user.id) : undefined;
 
     return NextResponse.json(

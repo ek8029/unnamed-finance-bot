@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { WhyIOwnThis } from '@/components/thesis/why-i-own-this';
+import { ProBlur } from '@/components/pro-blur';
 import { ThesisActions } from '@/components/thesis/thesis-actions';
 import { RatifyQueue, type RatifyItem } from '@/components/thesis/ratify-queue';
 import { DriverMap, type NodeInfo } from '@/components/thesis/driver-map';
@@ -165,10 +166,19 @@ function LoadingSkeleton() {
 export default function ThesesPage() {
   const [theses, setTheses] = useState<Thesis[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
-  const [phase, setPhase] = useState<'loading' | 'error' | 'ready'>('loading');
+  const [phase, setPhase] = useState<'loading' | 'error' | 'ready' | 'locked'>('loading');
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [seedingTicker, setSeedingTicker] = useState<string | null>(null);
   const [seedError, setSeedError] = useState<string | null>(null);
+  const [firstTicker, setFirstTicker] = useState('');
+  const [forceFirstRun, setForceFirstRun] = useState(false);
+  // Inline first-thesis flow: pick -> confirm reasons -> scanning -> done
+  const [onboardStep, setOnboardStep] = useState<'pick' | 'confirm' | 'scanning' | 'done'>('pick');
+  const [draftTicker, setDraftTicker] = useState('');
+  const [draftPillars, setDraftPillars] = useState<{ id: string; claim: string }[]>([]);
+  const [keptClaims, setKeptClaims] = useState<Record<string, string>>({});
+  const [removedIds, setRemovedIds] = useState<string[]>([]);
+  const [scanEvidence, setScanEvidence] = useState<number | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
   const mountedRef = useRef(true);
@@ -177,10 +187,16 @@ export default function ThesesPage() {
     return () => { mountedRef.current = false; };
   }, []);
 
+  // Dev/preview: /dashboard/theses?firstrun=1 forces the first-run onboarding state.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('firstrun') === '1') setForceFirstRun(true);
+  }, []);
+
   const loadTheses = useCallback(async () => {
     try {
       const res = await fetch('/api/thesis');
       if (!mountedRef.current) return;
+      if (res.status === 403) { setPhase('locked'); return; }
       if (!res.ok) { setPhase('error'); return; }
       const data = await res.json() as { theses: Thesis[] };
       if (!mountedRef.current) return;
@@ -300,8 +316,21 @@ export default function ThesesPage() {
       });
       if (!mountedRef.current) return;
       if (res.ok) {
-        await loadTheses();
-        if (mountedRef.current) { setSelectedTicker(ticker); setDetailOpen(true); }
+        const data = await res.json() as { pillars?: { id: string; claim: string; confirmed: boolean }[] };
+        const drafts = (data.pillars ?? []).filter((p) => !p.confirmed);
+        if (!mountedRef.current) return;
+        if (drafts.length === 0) {
+          // Existing/confirmed thesis — skip straight to the live view.
+          setForceFirstRun(false);
+          await loadTheses();
+          if (mountedRef.current) { setSelectedTicker(ticker); setDetailOpen(true); }
+        } else {
+          setDraftTicker(ticker);
+          setDraftPillars(drafts.map((p) => ({ id: p.id, claim: p.claim })));
+          setKeptClaims(Object.fromEntries(drafts.map((p) => [p.id, p.claim])));
+          setRemovedIds([]);
+          setOnboardStep('confirm');
+        }
       } else {
         setSeedError(ticker);
       }
@@ -310,6 +339,48 @@ export default function ThesesPage() {
     } finally {
       if (mountedRef.current) setSeedingTicker(null);
     }
+  }
+
+  /* ── Confirm drafted pillars, track, then backfill (the aha) ── */
+  async function handleConfirm() {
+    const kept = draftPillars.filter((p) => !removedIds.includes(p.id) && keptClaims[p.id]?.trim());
+    if (kept.length === 0) return;
+    setOnboardStep('scanning');
+    try {
+      await Promise.all(kept.map((p) =>
+        fetch(`/api/thesis/pillars/${p.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ confirmed: true, claim: keptClaims[p.id].trim() }),
+        }),
+      ));
+      const toRemove = draftPillars.filter((p) => removedIds.includes(p.id) || !keptClaims[p.id]?.trim());
+      await Promise.all(toRemove.map((p) => fetch(`/api/thesis/pillars/${p.id}`, { method: 'DELETE' })));
+      await fetch(`/api/thesis/${draftTicker}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tracked: true }),
+      });
+      const br = await fetch('/api/thesis/backfill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticker: draftTicker }),
+      });
+      const result = br.ok ? (await br.json() as { evidenceAdded?: number }) : null;
+      if (!mountedRef.current) return;
+      setScanEvidence(result?.evidenceAdded ?? 0);
+      setOnboardStep('done');
+    } catch {
+      if (mountedRef.current) { setSeedError(draftTicker); setOnboardStep('confirm'); }
+    }
+  }
+
+  async function finishOnboarding() {
+    const tk = draftTicker;
+    setOnboardStep('pick');
+    setForceFirstRun(false);
+    await loadTheses();
+    if (mountedRef.current && tk) { setSelectedTicker(tk); setDetailOpen(true); }
   }
 
   /* ── Delete thesis ── */
@@ -350,7 +421,34 @@ export default function ThesesPage() {
     );
   }
 
-  const noThesesYet = theses.length === 0;
+  if (phase === 'locked') {
+    return (
+      <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8">
+        <ProBlur
+          label="Unlock Theses with Pro"
+          description="Write why you own each position. Helm scores SEC filings, news and price moves against your theses every market hour, and flags what strengthens or breaks them. Sourced, dated, auditable."
+          minHeight="440px"
+        >
+          <div className="space-y-6">
+            <div>
+              <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-2.5" style={MONO}>Your conviction today</div>
+              <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.03em] text-[#FAFAFA] m-0">14 of 16 pillars intact. 2 weakening.</h1>
+            </div>
+            <div className="rounded-lg border border-white/[0.07] bg-[#0E0E0E] divide-y divide-white/[0.05]">
+              {(['NVDA', 'AMD', 'PLTR', 'META'] as const).map((t, i) => (
+                <div key={t} className="flex items-center justify-between px-5 py-3.5">
+                  <span className="font-mono text-[17px] font-semibold text-[#FAFAFA]" style={MONO}>{t}</span>
+                  <span className="font-mono text-[15px] text-[#9A9A9A]" style={MONO}>{[92, 78, 41, 95][i]}% conviction</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </ProBlur>
+      </div>
+    );
+  }
+
+  const noThesesYet = theses.length === 0 || forceFirstRun;
 
   /* ── Conviction verdict headline ── */
   const allIntact = totalPillarCount > 0 && aggregateCounts.intact === totalPillarCount;
@@ -373,25 +471,23 @@ export default function ThesesPage() {
     : 'Helm watches filings, insider activity and headlines against every reason you hold.';
 
   const unthesedListEl = (
-    <div className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] divide-y divide-white/[0.05]">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
       {unthesedHoldings.map((h) => (
-        <div key={h.ticker} className="px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <span className="font-mono text-[14.5px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA]" style={MONO}>{h.ticker}</span>
-              {h.name && h.name !== h.ticker && <span className="ml-2 text-[13px] text-[#6A6A6A] truncate">{h.name}</span>}
-            </div>
-            <button
-              type="button"
-              disabled={seedingTicker === h.ticker}
-              onClick={() => handleSeed(h.ticker)}
-              className="shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] px-3.5 py-2 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors disabled:opacity-50"
-              style={MONO}
-            >
-              {seedingTicker === h.ticker ? 'Drafting...' : 'Draft thesis'}
-            </button>
+        <div key={h.ticker} className="rounded-lg border border-white/[0.07] bg-[#131313] p-4 flex flex-col gap-3">
+          <div className="min-w-0">
+            <div className="font-mono text-[16px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA] truncate" style={MONO}>{h.ticker}</div>
+            {h.name && h.name !== h.ticker && <div className="text-[13.5px] text-[#6A6A6A] truncate mt-0.5">{h.name}</div>}
           </div>
-          {seedError === h.ticker && <p className="mt-2 font-mono text-[11px] text-[#F87171]" style={MONO}>Could not draft thesis. Try again.</p>}
+          <button
+            type="button"
+            disabled={seedingTicker === h.ticker}
+            onClick={() => handleSeed(h.ticker)}
+            className="w-full font-mono text-[12px] font-semibold uppercase tracking-[0.12em] px-3.5 py-2.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors disabled:opacity-50"
+            style={MONO}
+          >
+            {seedingTicker === h.ticker ? 'Drafting…' : 'Draft thesis'}
+          </button>
+          {seedError === h.ticker && <p className="font-mono text-[11.5px] text-[#F87171]" style={MONO}>Try again.</p>}
         </div>
       ))}
     </div>
@@ -561,15 +657,149 @@ export default function ThesesPage() {
 
       {/* ── Bottom: start (empty state) or the ratify queue ── */}
       {noThesesYet ? (
-        <section className="space-y-4">
-          <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted,#6A6A6A)]" style={MONO}>START</div>
-          <p className="text-[15px] leading-[1.6] text-[#9A9A9A] max-w-[560px] m-0">
-            Helm drafts the reasons you might own each position. You confirm or rewrite them in your own words, and Helm watches the record for anything that breaks them.
-          </p>
-          {unthesedHoldings.length > 0 ? unthesedListEl : (
-            <p className="font-mono text-[12px] text-[#4A4A4A]" style={MONO}>Connect a brokerage account to see your holdings here.</p>
+        onboardStep === 'pick' ? (
+        <section className="space-y-7">
+          <div>
+            <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-3" style={MONO}>Start here</div>
+            <p className="text-[17.5px] leading-[1.6] text-[#B8B8B8] max-w-[700px] m-0">
+              Pick a stock you have a view on. Helm drafts the reasons you might own it. You confirm or rewrite them in your own words, and it watches filings, insider activity and headlines against every one.
+            </p>
+          </div>
+
+          {/* 3-step */}
+          <div className="grid sm:grid-cols-3 gap-4">
+            {([
+              ['1', 'Name a position', 'A ticker you actually have a view on.'],
+              ['2', 'Confirm the reasons', 'Helm drafts the pillars; you keep what’s right.'],
+              ['3', 'Helm watches', 'Filings, news and price moves, scored hourly.'],
+            ] as const).map(([n, t, d]) => (
+              <div key={n} className="rounded-lg border border-white/[0.07] bg-[#131313] p-5">
+                <div className="font-mono text-[15px] font-semibold text-[var(--color-gold)] mb-2" style={MONO}>{n}</div>
+                <div className="text-[16.5px] font-semibold text-[#FAFAFA] mb-1.5">{t}</div>
+                <div className="text-[14px] leading-[1.5] text-[#8A8A8A]">{d}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Ticker input — no brokerage connection required */}
+          <form
+            onSubmit={(e) => { e.preventDefault(); const tk = firstTicker.trim().toUpperCase(); if (tk && !seedingTicker) handleSeed(tk); }}
+            className="flex items-center gap-2.5 max-w-[520px]"
+          >
+            <input
+              value={firstTicker}
+              onChange={(e) => setFirstTicker(e.target.value)}
+              placeholder="Ticker, e.g. NVDA"
+              maxLength={10}
+              spellCheck={false}
+              className="flex-1 bg-[#0E0E0E] border border-white/[0.12] rounded px-4 py-3 font-mono text-[16px] tracking-[0.06em] text-[#FAFAFA] uppercase placeholder:text-[#5A5A5A] placeholder:normal-case focus:outline-none focus:border-[rgba(230,185,77,0.5)] transition-colors"
+              style={MONO}
+            />
+            <button
+              type="submit"
+              disabled={!firstTicker.trim() || seedingTicker !== null}
+              className="shrink-0 font-mono text-[13px] font-semibold uppercase tracking-[0.14em] px-5 py-3 rounded bg-[var(--color-gold)] text-black border border-[var(--color-gold)] hover:bg-[#EFCB72] transition-colors disabled:opacity-50"
+              style={MONO}
+            >
+              {seedingTicker ? 'Drafting…' : 'Draft thesis'}
+            </button>
+          </form>
+          {seedError && (
+            <p className="font-mono text-[12.5px] text-[#F87171]" style={MONO}>Could not draft a thesis for {seedError}. Check the symbol and try again.</p>
+          )}
+
+          {/* or from holdings, when connected — fills the width as a grid */}
+          {unthesedHoldings.length > 0 && (
+            <div className="space-y-3.5">
+              <div className="font-mono text-[13px] font-semibold uppercase tracking-[0.14em] text-[#7A7A7A]" style={MONO}>Or start from a holding</div>
+              {unthesedListEl}
+            </div>
           )}
         </section>
+        ) : onboardStep === 'confirm' ? (
+        <section className="space-y-6">
+          <div>
+            <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-3" style={MONO}>Confirm the reasons</div>
+            <h2 className="text-[24px] font-bold leading-[1.15] tracking-[-0.02em] text-[#FAFAFA] m-0">Why you own {draftTicker}</h2>
+            <p className="mt-2.5 text-[15.5px] leading-[1.6] text-[#9A9A9A] max-w-[640px] m-0">Helm drafted these. Keep what is right, rewrite any in your own words, and drop the rest.</p>
+          </div>
+
+          <div className="space-y-3 max-w-[760px]">
+            {draftPillars.map((p) => {
+              const removed = removedIds.includes(p.id);
+              return (
+                <div key={p.id} className={`rounded-lg border bg-[#131313] p-4 transition-opacity ${removed ? 'border-white/[0.05] opacity-40' : 'border-white/[0.09]'}`}>
+                  <div className="flex items-start gap-3">
+                    <textarea
+                      value={keptClaims[p.id] ?? ''}
+                      onChange={(e) => setKeptClaims((m) => ({ ...m, [p.id]: e.target.value }))}
+                      disabled={removed}
+                      rows={2}
+                      className="flex-1 bg-transparent border-0 resize-none text-[15.5px] leading-[1.5] text-[#FAFAFA] focus:outline-none disabled:line-through disabled:text-[#6A6A6A]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setRemovedIds((ids) => removed ? ids.filter((x) => x !== p.id) : [...ids, p.id])}
+                      className="shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6A6A6A] hover:text-[#F87171] transition-colors mt-0.5"
+                      style={MONO}
+                    >
+                      {removed ? 'Add back' : 'Remove'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-4 flex-wrap">
+            <button
+              type="button"
+              onClick={handleConfirm}
+              disabled={draftPillars.every((p) => removedIds.includes(p.id) || !keptClaims[p.id]?.trim())}
+              className="font-mono text-[13px] font-semibold uppercase tracking-[0.14em] px-5 py-3 rounded bg-[var(--color-gold)] text-black border border-[var(--color-gold)] hover:bg-[#EFCB72] transition-colors disabled:opacity-50"
+              style={MONO}
+            >
+              Track this thesis
+            </button>
+            <span className="font-mono text-[12px] text-[#5A5A5A]" style={MONO}>Helm will scan 12 months of filings and news against these.</span>
+          </div>
+          {seedError && (
+            <p className="font-mono text-[12.5px] text-[#F87171]" style={MONO}>Something went wrong. Try again.</p>
+          )}
+        </section>
+        ) : onboardStep === 'scanning' ? (
+        <section className="space-y-4 py-8">
+          <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>Scanning</div>
+          <p className="text-[17px] leading-[1.5] text-[#FAFAFA] m-0">Helm is reading the last 12 months of filings, news and price moves for {draftTicker}.</p>
+          <div className="h-1 w-[260px] max-w-full rounded-full bg-white/[0.06] overflow-hidden">
+            <div className="h-full w-1/3 bg-[var(--color-gold)] animate-pulse" />
+          </div>
+          <p className="font-mono text-[12.5px] text-[#6A6A6A] m-0" style={MONO}>This takes a few seconds.</p>
+        </section>
+        ) : (
+        <section className="space-y-5">
+          <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>Now watching {draftTicker}</div>
+          {scanEvidence && scanEvidence > 0 ? (
+            <>
+              <h2 className="text-[26px] font-bold leading-[1.15] tracking-[-0.02em] text-[#FAFAFA] m-0">Helm already found {scanEvidence} piece{scanEvidence === 1 ? '' : 's'} of evidence.</h2>
+              <p className="text-[16px] leading-[1.6] text-[#9A9A9A] max-w-[600px] m-0">Across the reasons you confirmed, going back 12 months. From here Helm scans every hour the market is open and flags anything that strengthens or breaks them.</p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-[26px] font-bold leading-[1.15] tracking-[-0.02em] text-[#FAFAFA] m-0">Helm is now watching {draftTicker}.</h2>
+              <p className="text-[16px] leading-[1.6] text-[#9A9A9A] max-w-[600px] m-0">Nothing in the last 12 months moved these reasons. Helm scans every hour the market is open and will surface anything that strengthens or breaks them.</p>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={finishOnboarding}
+            className="font-mono text-[13px] font-semibold uppercase tracking-[0.14em] px-5 py-3 rounded bg-[var(--color-gold)] text-black border border-[var(--color-gold)] hover:bg-[#EFCB72] transition-colors"
+            style={MONO}
+          >
+            See {draftTicker}
+          </button>
+        </section>
+        )
       ) : (
         <RatifyQueue
           items={ratifyItems}

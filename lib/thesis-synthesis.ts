@@ -7,6 +7,7 @@
 
 import OpenAI from 'openai';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 
 export const SYNTHESIS_MODEL = 'gpt-4o';
 
@@ -22,7 +23,8 @@ export interface SynthCluster {
   rationale: string;
 }
 
-export const SYNTHESIS_SYSTEM_PROMPT = `You are an equity analyst finding HIDDEN CONCENTRATION across a user's investment theses. Each numbered pillar below is one reason the user holds a position. Pillars from DIFFERENT tickers often depend on the SAME underlying driver (for example: AI datacenter capex, the interest-rate path, consumer credit health, energy prices, GLP-1 demand). When several positions share a driver, one change in that driver moves them together, which is concentration the user may not see when tracking each position separately.
+export const SYNTHESIS_SYSTEM_PROMPT = `${INJECTION_GUARD}
+You are an equity analyst finding HIDDEN CONCENTRATION across a user's investment theses. Each numbered pillar below is one reason the user holds a position. Pillars from DIFFERENT tickers often depend on the SAME underlying driver (for example: AI datacenter capex, the interest-rate path, consumer credit health, energy prices, GLP-1 demand). When several positions share a driver, one change in that driver moves them together, which is concentration the user may not see when tracking each position separately.
 
 Identify clusters where pillars from 2 OR MORE DIFFERENT tickers depend on the same underlying driver.
 
@@ -120,7 +122,7 @@ export async function clusterPillars(
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: SYNTHESIS_SYSTEM_PROMPT },
-        { role: 'user', content: `Pillars:\n${pillarLines}` },
+        { role: 'user', content: `Pillars:\n${fence(pillarLines, 'PILLARS')}` },
       ],
     });
     raw = response.choices[0]?.message?.content ?? '{}';

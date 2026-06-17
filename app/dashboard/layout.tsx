@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { isThesisUser } from '@/lib/thesis-access';
+import { useTier } from '@/hooks/use-tier';
 import {
   LayoutDashboard,
   Wallet,
@@ -33,6 +34,7 @@ import { DemoProvider, useDemo } from '@/contexts/demo-context';
 import { LegalFooter } from '@/components/legal-footer';
 import { FinancialDisclaimer } from '@/components/financial-disclaimer';
 import { FoundingMemberBanner } from '@/components/founding-member-banner';
+import { ThesesWhatsNewBanner } from '@/components/thesis/theses-whatsnew-banner';
 import { OnboardingFlow } from '@/components/onboarding/onboarding-flow';
 import { GuidedTour } from '@/components/onboarding/guided-tour';
 import { DisclaimerModal } from '@/components/legal/disclaimer-modal';
@@ -146,6 +148,8 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [railCollapsed, setRailCollapsed] = useState(false);
   const [railWidth, setRailWidth] = useState(316);
+  const [thesesVisited, setThesesVisited] = useState(true);
+  const { isPro } = useTier();
   const [mobileRailOpen, setMobileRailOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -181,6 +185,17 @@ export default function DashboardLayout({
       if (w >= 280 && w <= 620) setRailWidth(w);
     } catch {}
   }, []);
+
+  // "New" badge on the Theses nav item until the user opens it once.
+  useEffect(() => {
+    try { setThesesVisited(localStorage.getItem('helm_theses_visited') === '1'); } catch {}
+  }, []);
+  useEffect(() => {
+    if (pathname === '/dashboard/theses') {
+      try { localStorage.setItem('helm_theses_visited', '1'); } catch {}
+      setThesesVisited(true);
+    }
+  }, [pathname]);
 
   // Close user menus on click outside
   useEffect(() => {
@@ -262,7 +277,8 @@ export default function DashboardLayout({
   // and on the Theses page itself (which is the full conviction surface).
   // Gated: the conviction rail is part of the thesis layer, so only allowlisted
   // accounts see it (and the layout reserves its width). Covers render + padding.
-  const showRail = isThesisUser(profile?.email) && !isChatPage && !isWrappedPage && pathname !== '/dashboard/theses';
+  const thesisEntitled = isPro || isThesisUser(profile?.email);
+  const showRail = thesisEntitled && !isChatPage && !isWrappedPage && pathname !== '/dashboard/theses';
   const pageTitle = getPageTitle(pathname);
 
   return (
@@ -317,7 +333,7 @@ export default function DashboardLayout({
           </div>
 
           <div className="space-y-0.5">
-            {navigation.filter((item) => item.href !== '/dashboard/theses' || isThesisUser(profile?.email)).map((item) => {
+            {navigation.map((item) => {
               // Items with children (Portfolio group)
               if ('children' in item && item.children) {
                 const isGroupActive = PORTFOLIO_HREFS.includes(pathname);
@@ -410,6 +426,9 @@ export default function DashboardLayout({
                     !isActive && 'opacity-60'
                   )} />
                   <span>{item.name}</span>
+                  {item.href === '/dashboard/theses' && !thesesVisited && (
+                    <span className="ml-auto font-mono text-[9px] font-semibold uppercase tracking-[0.12em] px-1.5 py-0.5 rounded bg-[var(--color-gold)] text-black" style={{ fontFamily: 'var(--font-mono)' }}>New</span>
+                  )}
                 </Link>
               );
             })}
@@ -662,6 +681,7 @@ export default function DashboardLayout({
         )}>
           <ConnectBanner />
           <FoundingMemberBanner />
+          {thesisEntitled && pathname !== '/dashboard/theses' && <ThesesWhatsNewBanner />}
           <div
             key={pathname}
             className={cn(

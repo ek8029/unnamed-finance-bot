@@ -1,6 +1,5 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { isThesisUser } from '@/lib/thesis-access';
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -95,11 +94,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/mfa-verify', request.url));
   }
 
-  // Thesis + agentic layer is gated to allowlisted accounts while unlaunched.
-  // Non-allowlisted users are redirected away as if the page does not exist.
-  if (pathname.startsWith('/dashboard/theses') && !isThesisUser(user?.email)) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
+  // Thesis layer is a Pro feature. The page itself is reachable by everyone so free
+  // users see the ProBlur upsell; entitlement is enforced at the page (blur) and on
+  // the /api/thesis routes (403 via hasThesisAccess). No middleware redirect needed.
 
   // Auth pages - redirect to dashboard if already fully authenticated
   const authPaths = ['/login', '/signup', '/forgot-password'];

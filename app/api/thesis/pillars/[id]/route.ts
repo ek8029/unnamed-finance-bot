@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { isThesisUser } from '@/lib/thesis-access';
+import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { nextLifecycle, type Lifecycle } from '@/lib/thesis-lifecycle';
 
 const VALID_STATUS_OVERRIDES = new Set(['unverified', 'intact', 'weakening', 'broken']);
@@ -16,7 +16,7 @@ export async function PATCH(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (!isThesisUser(user.email)) {
+    if (!(await hasThesisAccess(user.id, user.email))) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
@@ -56,6 +56,9 @@ export async function PATCH(
     if ('claim' in body) {
       if (typeof body.claim !== 'string' || body.claim.trim().length === 0) {
         return NextResponse.json({ error: 'claim must be a non-empty string' }, { status: 400 });
+      }
+      if (body.claim.trim().length > 500) {
+        return NextResponse.json({ error: 'claim must be 500 characters or fewer' }, { status: 400 });
       }
       updates.claim = body.claim.trim();
     }
@@ -130,7 +133,7 @@ export async function DELETE(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (!isThesisUser(user.email)) {
+    if (!(await hasThesisAccess(user.id, user.email))) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 

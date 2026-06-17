@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { getCompanyProfileEdgar } from '@/lib/edgar';
+import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // Drafts are user-reviewed and edited before they ever count, so mini is sufficient
@@ -18,7 +19,7 @@ export async function draftPillars(ticker: string): Promise<SeededPillar[]> {
       ? `Company: ${profile.name}\nIndustry: ${profile.sicDescription ?? 'Unknown'}\nExchange: ${profile.exchange ?? 'Unknown'}`
       : `Ticker: ${ticker}`;
 
-    const userPrompt = `${profileContext}\n\nDraft 2-4 thesis pillars for this stock.`;
+    const userPrompt = `${fence(profileContext, 'PROFILE')}\n\nDraft 2-4 thesis pillars for this stock.`;
 
     const response = await openai.chat.completions.create({
       model: SEED_MODEL,
@@ -27,7 +28,8 @@ export async function draftPillars(ticker: string): Promise<SeededPillar[]> {
       messages: [
         {
           role: 'system',
-          content: `You are a fundamental equity analyst. Draft 2-4 short thesis pillars: the core reasons a long-term investor would own this stock. Use your knowledge of the company's business, products, competitive position, and growth drivers.
+          content: `${INJECTION_GUARD}
+You are a fundamental equity analyst. Draft 2-4 short thesis pillars: the core reasons a long-term investor would own this stock. Use your knowledge of the company's business, products, competitive position, and growth drivers.
 
 Rules:
 - Each pillar is a single declarative sentence about the BUSINESS: demand drivers, competitive position, product cycles, market share, margins, or capital allocation.

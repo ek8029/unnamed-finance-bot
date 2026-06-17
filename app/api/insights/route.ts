@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { isThesisUser } from '@/lib/thesis-access';
+import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { getThesisContextForActions, getConvictionByTicker, type ActionThesisContext, type Conviction } from '@/lib/thesis-conviction';
 
 /** Strip volatile dollar amounts and percentages for stable dedup */
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
     // get a byte-identical response (map stays empty, no new fields emitted).
     let ctx = new Map<string, ActionThesisContext>();
     const ruleCtx = new Map<string, { ticker: string; status: Conviction }>();
-    if (isThesisUser(user.email)) {
+    if (await hasThesisAccess(user.id, user.email)) {
       const thesisActions = (insights || [])
         .filter(i => i.related_entity_type === 'thesis' && Array.isArray(i.related_entity_ids))
         .map(i => ({

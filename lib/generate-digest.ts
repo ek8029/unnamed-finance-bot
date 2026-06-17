@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getQuote } from '@/lib/financial-data';
 import { getSourceTier } from '@/lib/news-quality';
+import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -105,7 +106,8 @@ export async function generateDigest(
       )
       .join('\n') || 'No general news';
 
-  const prompt = `You are writing the morning brief for an individual investor's financial intelligence terminal called "The Current" by Helm Terminal. The tone is concise, direct, and informed — like a sharp analyst note, not a chatbot. No greetings, no sign-offs. Write in second person ("your portfolio").
+  const prompt = `${INJECTION_GUARD}
+You are writing the morning brief for an individual investor's financial intelligence terminal called "The Current" by Helm Terminal. The tone is concise, direct, and informed — like a sharp analyst note, not a chatbot. No greetings, no sign-offs. Write in second person ("your portfolio").
 
 MARKET SNAPSHOT:
 ${marketContext || 'Market data unavailable'}
@@ -113,10 +115,10 @@ ${marketContext || 'Market data unavailable'}
 USER HOLDS: ${holdingsStr}
 
 NEWS AFFECTING HOLDINGS (last 48 hours):
-${positionNewsStr}
+${fence(positionNewsStr, 'NEWS')}
 
 GENERAL MARKET NEWS:
-${generalNewsStr}
+${fence(generalNewsStr, 'NEWS')}
 
 Write a 3-4 paragraph digest (150-250 words total):
 
@@ -229,16 +231,17 @@ export async function generateGenericDigest(): Promise<DigestResult> {
       )
       .join('\n') || 'No general news';
 
-  const prompt = `You are writing a daily market brief for Helm Terminal's "The Current." This goes to users who have not yet connected a brokerage account, so this is a general market overview — not a portfolio brief. Never say "your portfolio," "your holdings," or "your positions." The tone is concise, direct, and informed — like a sharp analyst note. No greetings, no sign-offs.
+  const prompt = `${INJECTION_GUARD}
+You are writing a daily market brief for Helm Terminal's "The Current." This goes to users who have not yet connected a brokerage account, so this is a general market overview — not a portfolio brief. Never say "your portfolio," "your holdings," or "your positions." The tone is concise, direct, and informed — like a sharp analyst note. No greetings, no sign-offs.
 
 MARKET SNAPSHOT:
 ${marketContext || 'Market data unavailable'}
 
 KEY MARKET MOVERS (${keyTickers.join(', ')}):
-${tickerNewsStr}
+${fence(tickerNewsStr, 'NEWS')}
 
 GENERAL MARKET NEWS:
-${generalNewsStr}
+${fence(generalNewsStr, 'NEWS')}
 
 Write a 3-4 paragraph market brief (150-250 words total):
 

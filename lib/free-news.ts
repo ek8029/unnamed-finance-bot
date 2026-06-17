@@ -14,6 +14,7 @@
 import { scoreSentiment } from '@/lib/market-classify';
 import { detectPrimaryTicker } from '@/lib/news-primary-ticker';
 import { getRecentFilings } from '@/lib/edgar';
+import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import OpenAI from 'openai';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -372,6 +373,7 @@ async function classifyMacroMovers(
         {
           role: 'system',
           content:
+            INJECTION_GUARD +
             'You are a strict macro news classifier. A true market-mover is ONLY one of: ' +
             'a Federal Reserve rate decision or emergency action, a CPI or inflation data release ' +
             'that shocks consensus expectations, an outbreak of war or major geopolitical escalation, ' +
@@ -384,7 +386,7 @@ async function classifyMacroMovers(
         },
         {
           role: 'user',
-          content: numberedList,
+          content: fence(numberedList, 'HEADLINES'),
         },
       ],
     });

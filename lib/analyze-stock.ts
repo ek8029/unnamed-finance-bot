@@ -6,6 +6,7 @@
  */
 
 import { cache } from 'react';
+import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import OpenAI from 'openai';
@@ -223,7 +224,7 @@ export interface AnalyzeStockResult {
 // React cache() dedupes within a single request — generateMetadata and the
 // page component previously each ran the full Finnhub + OpenAI pipeline on a
 // cache miss, doubling latency and API usage.
-export const analyzeStock = cache(async (ticker: string): Promise<AnalyzeStockResult> => {
+export const analyzeStock = cache(async (ticker: string, allowGenerate = true): Promise<AnalyzeStockResult> => {
   const symbol = ticker.toUpperCase().replace(/[^A-Z]/g, '');
   const emptyResult: AnalyzeStockResult = {
     analysis: null,
@@ -248,6 +249,13 @@ export const analyzeStock = cache(async (ticker: string): Promise<AnalyzeStockRe
     };
   }
 
+  // Cost guard: callers (the public SEO page) pass allowGenerate=false for tickers
+  // outside their allowlist. Cached entries above still serve; this blocks a cache-miss
+  // from spending Finnhub + OpenAI on scripted iteration over arbitrary valid tickers.
+  if (!allowGenerate) {
+    return emptyResult;
+  }
+
   // Fetch financial data
   const tickerData = await getFullTickerData(symbol);
 
@@ -262,8 +270,8 @@ export const analyzeStock = cache(async (ticker: string): Promise<AnalyzeStockRe
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: `FINANCIAL DATA:\n${dataContext}\n\nAnalyze ${symbol} stock.` },
+        { role: 'system', content: `${INJECTION_GUARD}\n${SYSTEM_PROMPT}` },
+        { role: 'user', content: `FINANCIAL DATA:\n${fence(dataContext, 'MARKET_DATA')}\n\nAnalyze ${symbol} stock.` },
       ],
       temperature: 0.7,
       max_tokens: 1500,
@@ -290,10 +298,10 @@ export const analyzeStock = cache(async (ticker: string): Promise<AnalyzeStockRe
       // Enrich AI-generated headlines with URLs from the original Finnhub data
       if (tickerData.news?.length && analysis.newsHighlights.length) {
         for (const highlight of analysis.newsHighlights) {
+          // Exact (normalized) match only. Loose substring matching let a fabricated
+          // AI headline borrow a real article's URL — a citation-integrity hole.
           const match = tickerData.news.find(n =>
-            n.headline === highlight.headline ||
-            n.headline.toLowerCase().includes(highlight.headline.toLowerCase()) ||
-            highlight.headline.toLowerCase().includes(n.headline.toLowerCase())
+            n.headline.trim().toLowerCase() === highlight.headline.trim().toLowerCase()
           );
           if (match?.url) highlight.url = match.url;
         }

@@ -68,9 +68,11 @@ export async function POST(request: NextRequest) {
         console.log(`[webhook] Unhandled event type: ${event.type}`);
     }
   } catch (err) {
-    // Log but still return 200 so Stripe doesn't retry indefinitely.
-    // A retry won't help if it's a logic error; alerting/monitoring handles recovery.
+    // Return 5xx so Stripe retries — a transient DB error must not silently drop a paid
+    // user's tier upgrade. Stripe gives up after ~3 days, so a genuine logic error won't
+    // loop forever; server logs/alerting cover the permanent-error case.
     console.error(`[webhook] Handler threw for ${event.type}:`, err);
+    return NextResponse.json({ error: 'Handler error, retry' }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });
