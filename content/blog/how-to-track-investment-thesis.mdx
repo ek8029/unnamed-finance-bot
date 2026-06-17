@@ -1,0 +1,75 @@
+---
+title: "How to Track Your Investment Thesis (A Practical Guide)"
+description: "A step-by-step guide to tracking your investment thesis: how to write pillars, define what would break each one, and monitor them against SEC filings and earnings so you know when to sell."
+date: "2026-06-17"
+author: "Evan Kim"
+tags: ["thesis", "investing", "self-directed", "sell-discipline", "how-to"]
+published: true
+---
+
+There is plenty written about how to build an investment thesis. There is almost nothing written about how to track one after you buy. That is backwards. Writing the thesis takes an afternoon. Tracking it is the work of owning the position, and it is where most of the money is won or lost.
+
+Here is the system I use, broken into steps you can run today on any stock you hold.
+
+## Step 1: Write the thesis as pillars, not a paragraph
+
+A thesis written as prose is impossible to track. You cannot check a vibe against a filing. So break it into pillars: the two to four specific, separable reasons you own the stock.
+
+For a hypothetical position, that might be:
+
+- Revenue grows 20%+ for the next two years
+- Operating margin expands from 15% to 25%
+- The government segment stays sticky and keeps growing
+
+Each pillar is a claim a real-world event could confirm or contradict. That is the whole point. If a reason cannot be proven wrong, it cannot be tracked, and you should not be relying on it.
+
+<ProTip>
+If your thesis has more than four pillars, you probably have one or two real reasons and a pile of rationalizations. Cut it down to what actually has to be true.
+</ProTip>
+
+## Step 2: Define what would break each pillar
+
+This is the step almost everyone skips, and it is the most valuable one. For each pillar, write the single fact that would invalidate it. Do it now, while you are calm, not later when the stock is moving.
+
+- "Revenue grows 20%+" breaks if two consecutive quarters come in under 12%
+- "Margin expands to 25%" breaks if guidance is cut or gross margin rolls over
+- "Government segment stays sticky" breaks if a major contract is cancelled or not renewed
+
+You have now turned a fuzzy belief into a checklist. You know exactly what you are watching for, which means you will actually notice it when it shows up.
+
+## Step 3: Watch the right channel
+
+Here is the trap. The default channel for a self-directed investor is the price. But price is not a reason, and a falling price does not mean your thesis broke. The evidence that a pillar broke lives somewhere else entirely.
+
+| Pillar type | Where the evidence lives | What to read |
+| --- | --- | --- |
+| Revenue / growth | Earnings + 10-Q | Segment revenue, guidance |
+| Margin | 10-Q + earnings call | Gross and operating margin trend, guidance |
+| Contracts / customers | 8-K + news | Contract wins, losses, renewals |
+| Competitive / risk | 10-K risk factors | New or changed risk language |
+
+The 10-K risk factor section is the most underused document in retail investing. Companies are legally required to tell you what could go wrong, in their own words, and almost nobody reads the changes year over year. When a new risk appears that maps to one of your pillars, that is an early warning straight from management.
+
+## Step 4: Make it a habit, then automate it
+
+The manual version of this is a spreadsheet: one tab per holding, pillars in rows, a column for status, and a discipline of updating it every time a filing or earnings report lands. It works. I ran it for years. It is also tedious enough that most people quit after a month, which is why thesis tracking stays a thing people know they should do rather than a thing they do.
+
+That tedium is exactly what software should remove. The reading is mechanical: pull the filing, find the lines that touch a pillar, flag the change, attach the dated source. A machine should do that, and surface only the moments a pillar actually moves.
+
+That is what we built Helm to do. You write the pillars, and Helm reads SEC filings, earnings, and news against each one every hour the market is open, then tells you, with the verbatim dated source, when one weakens or breaks. It also flags when several of your holdings rest on the same pillar, which is the hidden correlation a position-by-position spreadsheet will never show you. The full breakdown is on the [thesis monitoring page](/thesis-monitoring).
+
+## The short version
+
+1. Write your thesis as two to four falsifiable pillars
+2. Define the single fact that would break each one
+3. Watch filings and earnings, not just the price
+4. Check the evidence against your pillars every time new information lands
+
+Do that and you will never again hold a position for a reason that quietly stopped being true.
+
+<CTACard
+  title="Stop tracking theses in a spreadsheet"
+  description="Helm watches the reasons behind every position against live filings and earnings, and tells you when one breaks. Free to start."
+  href="/thesis-monitoring"
+  buttonText="See how thesis monitoring works"
+/>

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getAllPosts } from '@/lib/blog';
 import { INDEXABLE_TICKERS } from '@/lib/indexable-tickers';
+import { THEMES } from '@/lib/themes';
 
 /** Popular comparison pairs for programmatic SEO. */
 const COMPARISON_PAIRS = [
@@ -27,6 +28,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/pricing`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/about`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/blog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${base}/thesis-monitoring`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${base}/best-thesis-trackers`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${base}/how-helm-detects-thesis-drift`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/vela-alternative`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${base}/usethesis-alternative`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },
     { url: `${base}/privacy`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/terms`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/security`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
@@ -65,5 +71,26 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...blogPosts, ...tickerPages, ...comparePages];
+  const thesisRiskPages: MetadataRoute.Sitemap = [...INDEXABLE_TICKERS].map((ticker) => ({
+    url: `${base}/thesis-risks/${ticker}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.6,
+  }));
+
+  const whenToSellPages: MetadataRoute.Sitemap = [...INDEXABLE_TICKERS].map((ticker) => ({
+    url: `${base}/when-to-sell/${ticker}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.6,
+  }));
+
+  const themePages: MetadataRoute.Sitemap = THEMES.map((t) => ({
+    url: `${base}/theme/${t.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }));
+
+  return [...staticRoutes, ...blogPosts, ...tickerPages, ...comparePages, ...thesisRiskPages, ...whenToSellPages, ...themePages];
 }

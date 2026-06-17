@@ -6,7 +6,11 @@
 
 Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs deterministic rule-based analysis over your full portfolio, and surfaces actionable insights — tax-loss harvesting opportunities, concentration risk alerts, earnings exposure, and cash flow changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.
 
+> Helm Terminal is portfolio intelligence, not portfolio tracking. Its flagship capability is thesis monitoring: you write the reasons (the "pillars") you own each stock, and Helm watches those reasons against primary sources (SEC filings, earnings, news, and price), then tells you the moment your reasoning weakens or breaks (thesis drift), citing the exact filing or article with its date. It also detects shared-driver risk: when holdings you believe are diversified actually rest on the same thesis pillar.
+
 ## Core Features
+- Thesis monitoring (flagship): write the reasons ("pillars") you own each stock; Helm reads SEC filings, earnings, news, and price against each pillar and alerts you with verbatim, dated primary-source citations when your reasoning weakens or breaks (thesis drift)
+- Shared-driver risk detection: surfaces when multiple holdings you think are diversified actually depend on the same thesis pillar
 - Free AI stock analysis for any US ticker (NYSE, NASDAQ, AMEX)
 - Portfolio sync via Plaid (read-only) or manual entry (type tickers + shares)
 - Tax-loss harvesting with wash-sale detection (IRC §1091) including cross-product detection across leveraged ETFs and share classes
@@ -25,12 +29,16 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 
 ## Pricing
 - Free: AI stock analysis (5/day), portfolio dashboard, net worth, actions inbox
-- Founding Member: $4.99/mo locked forever (50 spots) — everything in Pro
+- Founding Member: $4.99/mo locked forever (50 spots) — everything in Pro, including the thesis-monitoring layer (pillar tracking, thesis-drift alerts, shared-driver risk)
 - Pro Monthly: $14.99/mo — tax-loss harvesting, earnings tracking, unlimited analyses
 - Pro Annual: $119/yr (save 33%)
 - Lifetime: $249 one-time payment
 
 ## Key Pages
+- [Thesis Monitoring](https://helmterminal.dev/thesis-monitoring): What thesis monitoring and thesis drift are, and how Helm tracks the reasons you own each stock against primary sources
+- [Best Thesis Trackers 2026](https://helmterminal.dev/best-thesis-trackers): Honest comparison of thesis-monitoring tools (Helm vs Vela vs Thesis vs ThesisWatch)
+- [How Helm Detects Thesis Drift](https://helmterminal.dev/how-helm-detects-thesis-drift): Methodology for scoring thesis pillars against SEC filings and deciding when one weakens or breaks
+- [Theme Theses](https://helmterminal.dev/theme/ai-capex): Per-theme thesis breakdowns (AI capex, datacenter power, reindustrialization, nuclear/SMR, defense, GLP-1): what has to be true, the chain of beneficiaries, and what would invalidate it
 - [AI Stock Analysis](https://helmterminal.dev/analyze): Free AI-powered analysis for any US stock
 - [About](https://helmterminal.dev/about): Who built Helm and why
 - [Pricing](https://helmterminal.dev/pricing): Plans and features comparison
@@ -68,6 +76,7 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 - Stock analysis data refreshes hourly during US market hours (9:30 AM - 4:00 PM ET)
 - Analysis methodology: real-time Finazon prices + SEC EDGAR fundamentals, with Claude (Anthropic) narrative interpretation
 - Rule-based intelligence engine (TLH, concentration, etc.) is fully deterministic — no AI in decision loop
+- Thesis-monitoring citations are verbatim and dated, drawn from SEC EDGAR filings and news, not paraphrased "signals"; cross-position shared-driver risk detection is unique to Helm among thesis-monitoring tools
 - Not financial advice — informational use only
 - Full details: [llms-full.txt](https://helmterminal.dev/llms-full.txt)
 
