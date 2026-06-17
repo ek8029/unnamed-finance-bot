@@ -13,6 +13,7 @@ import { STATUS_META, type PillarStatus } from '@/lib/thesis-palette';
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 const EDGE = 'rgba(255,255,255,0.14)'; // faint white spoke (--bd-strong), no gold shout
+const LOGO_TOKEN = process.env.NEXT_PUBLIC_LOGODEV_TOKEN;
 
 interface ClusterPillar { ticker: string; claim: string; pillarId: string }
 export interface Cluster { driver: string; pillars: ClusterPillar[]; rationale: string }
@@ -261,6 +262,7 @@ export function Constellation({
 }) {
   const W = 1000;
   const H = 330;
+  const [failedLogos, setFailedLogos] = useState<Set<string>>(() => new Set());
   const layoutKey = JSON.stringify({ c: clusterTickers, t: Object.keys(nodes).sort() });
   const { hubs, nodePos, edges, standalones, dividerY, rowY } = useMemo(
     () => layoutWeb(clusters, clusterTickers, nodes, W, H),
@@ -296,17 +298,39 @@ export function Constellation({
           );
         })}
 
-        {/* positions: weight-sized bubble, worst-status colour, ticker + intact/total */}
+        {/* positions: company logo in a status-colour ring; ticker label as the fallback */}
         {[...nodePos.entries()].map(([t, n]) => {
           const col = nodeColor(n.status);
           const glow = n.status && n.status !== 'unverified';
+          const showLogo = !!LOGO_TOKEN && !failedLogos.has(t);
+          const lr = n.r - 2.5;
           return (
             <g key={`n-${t}`}>
               {n.bridge && <circle cx={n.x} cy={n.y} r={n.r + 4.5} fill="none" stroke="rgba(230,185,77,0.5)" strokeWidth={1.25} />}
-              <circle cx={n.x} cy={n.y} r={n.r} fill="#0E0E0E" stroke={col} strokeWidth={2} style={glow ? { filter: `drop-shadow(0 0 9px ${col}59)` } : undefined} />
-              <text x={n.x} y={n.total > 0 ? n.y - 1 : n.y + 5} textAnchor="middle" fontSize={13} fontWeight={700} fill="#FAFAFA" fontFamily="var(--font-mono)">{t}</text>
-              {n.total > 0 && (
-                <text x={n.x} y={n.y + 13} textAnchor="middle" fontSize={10} fill={glow ? col : '#8A8A8A'} fontFamily="var(--font-mono)">{n.intact}/{n.total}</text>
+              {showLogo ? (
+                <>
+                  <clipPath id={`logoclip-${t}`}><circle cx={n.x} cy={n.y} r={lr} /></clipPath>
+                  <circle cx={n.x} cy={n.y} r={lr} fill="#FFFFFF" />
+                  <image
+                    href={`https://img.logo.dev/ticker/${encodeURIComponent(t)}?token=${LOGO_TOKEN}&size=${Math.min(800, Math.round(lr * 4))}&format=png&retina=true&fallback=404`}
+                    x={n.x - lr}
+                    y={n.y - lr}
+                    width={lr * 2}
+                    height={lr * 2}
+                    clipPath={`url(#logoclip-${t})`}
+                    preserveAspectRatio="xMidYMid meet"
+                    onError={() => setFailedLogos((prev) => { const s = new Set(prev); s.add(t); return s; })}
+                  />
+                  <circle cx={n.x} cy={n.y} r={n.r} fill="none" stroke={col} strokeWidth={2.5} style={glow ? { filter: `drop-shadow(0 0 9px ${col}59)` } : undefined} />
+                </>
+              ) : (
+                <>
+                  <circle cx={n.x} cy={n.y} r={n.r} fill="#0E0E0E" stroke={col} strokeWidth={2} style={glow ? { filter: `drop-shadow(0 0 9px ${col}59)` } : undefined} />
+                  <text x={n.x} y={n.total > 0 ? n.y - 1 : n.y + 5} textAnchor="middle" fontSize={13} fontWeight={700} fill="#FAFAFA" fontFamily="var(--font-mono)">{t}</text>
+                  {n.total > 0 && (
+                    <text x={n.x} y={n.y + 13} textAnchor="middle" fontSize={10} fill={glow ? col : '#8A8A8A'} fontFamily="var(--font-mono)">{n.intact}/{n.total}</text>
+                  )}
+                </>
               )}
             </g>
           );

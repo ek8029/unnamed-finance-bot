@@ -12,6 +12,7 @@ import { RatifyQueue, type RatifyItem } from '@/components/thesis/ratify-queue';
 import { DriverMap, type NodeInfo } from '@/components/thesis/driver-map';
 import { summarizePillars, effectiveStatus, type ThesisSummary } from '@/lib/thesis-summary';
 import { STATUS_META, dotGlow, METER_ORDER, METER_COLORS, convictionColor, type PillarStatus } from '@/lib/thesis-palette';
+import { CompanyLogo } from '@/components/company-logo';
 
 /* ── Local types ── */
 interface EvidenceRow {
@@ -452,6 +453,8 @@ export default function ThesesPage() {
                       >
                         {/* rank */}
                         <span className="text-[30px] leading-none w-[36px] shrink-0 tabular-nums" style={{ ...SERIF, color: thisRank <= 3 ? 'var(--color-gold)' : '#4A4A4A' }}>{thisRank}</span>
+                        {/* logo */}
+                        <CompanyLogo ticker={r.t.ticker} size={34} className="shrink-0" />
                         {/* ticker + name */}
                         <div className="w-[150px] sm:w-[220px] shrink-0 min-w-0">
                           <div className="font-mono text-[17px] font-semibold uppercase tracking-[0.06em] text-[#FAFAFA]" style={MONO}>{r.t.ticker}</div>

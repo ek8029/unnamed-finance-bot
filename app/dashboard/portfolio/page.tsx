@@ -6,6 +6,7 @@ import { PortfolioMonitor } from '@/components/dashboard/portfolio-monitor';
 import { PortfolioAllocation } from '@/components/dashboard/portfolio-allocation';
 import { MarketIntelligence } from '@/components/portfolio/market-intelligence';
 import { useHoldings, useTaxData } from '@/hooks/use-financial-data';
+import { CompanyLogo } from '@/components/company-logo';
 import { TrendingUp, TrendingDown, Filter, Download, ChevronUp, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -60,14 +61,7 @@ function generateSparklinePath(ticker: string, width = 80, height = 24): string 
 /*  Ticker icon with gold gradient                                     */
 /* ------------------------------------------------------------------ */
 function TickerIcon({ ticker }: { ticker: string }) {
-  return (
-    <div className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
-      style={{ background: 'linear-gradient(135deg, var(--color-gold) 0%, #b8860b 100%)' }}>
-      <span className="text-[11px] font-bold text-black leading-none font-mono">
-        {ticker.slice(0, 2)}
-      </span>
-    </div>
-  );
+  return <CompanyLogo ticker={ticker} size={32} shape="rounded" />;
 }
 
 /* ------------------------------------------------------------------ */

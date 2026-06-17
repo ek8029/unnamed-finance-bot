@@ -132,6 +132,19 @@ export default function AboutPage() {
               AI-generated.
             </p>
 
+            <p className="text-[var(--color-text-muted)] text-[13px]">
+              Company logos provided by{' '}
+              <a
+                href="https://logo.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--color-gold)] hover:underline"
+              >
+                Logo.dev
+              </a>
+              .
+            </p>
+
             <h2 className="text-[var(--color-text-primary)] text-xl font-semibold pt-4">
               The philosophy
             </h2>
