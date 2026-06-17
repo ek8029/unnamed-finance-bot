@@ -68,15 +68,17 @@ function toIntelligenceItem(ticker: string, pillar: Pillar, e: EvidenceRow): The
     pillarClaim: pillar.claim,
     verdict: e.verdict,
     materiality: e.materiality,
-    what: e.excerpt,
     why: e.why,
     whatItMeans: e.what_it_means,
     consider: e.consider,
     isHistorical: e.is_backfill,
-    sourceTitle: e.source_title,
-    sourceUrl: e.source_url,
-    sourcePublishedAt: e.source_published_at,
     statusChanged: false,
+    sources: [{
+      excerpt: e.excerpt,
+      sourceTitle: e.source_title,
+      sourceUrl: e.source_url,
+      sourcePublishedAt: e.source_published_at,
+    }],
   };
 }
 
@@ -90,7 +92,7 @@ function StatusChip({ status }: { status: PillarStatus }) {
   return (
     <span className="inline-flex items-center gap-1.5 px-2 py-[3px] rounded border border-white/[0.07]" style={MONO}>
       <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: meta.color }} />
-      <span className="text-[10px] font-semibold uppercase tracking-[0.15em]" style={{ color: meta.color }}>
+      <span className="text-[11.5px] font-semibold uppercase tracking-[0.15em]" style={{ color: meta.color }}>
         {meta.label}
       </span>
     </span>
@@ -226,7 +228,7 @@ function ConfirmedPillarRow({
               type="button"
               onClick={() => { setText(pillar.claim); setEditing(true); }}
               title="Click to edit"
-              className="block w-full text-left text-[14px] font-medium leading-[1.4] tracking-[-0.01em] text-[#FAFAFA] cursor-text"
+              className="block w-full text-left text-[15.5px] font-medium leading-[1.4] tracking-[-0.01em] text-[#FAFAFA] cursor-text"
             >
               {pillar.claim}
             </button>
@@ -240,7 +242,7 @@ function ConfirmedPillarRow({
 
           {flagged && !editing && (
             <div className="mt-3 flex items-start gap-3 px-3.5 py-2.5 rounded border border-[rgba(230,185,77,0.25)] bg-[rgba(230,185,77,0.06)]">
-              <span className="flex-1 text-[12.5px] leading-[1.5] text-[#E6B94D]">
+              <span className="flex-1 text-[14px] leading-[1.5] text-[#E6B94D]">
                 {ruleExplanation(pillar.status)}
               </span>
               <button
@@ -272,7 +274,7 @@ function ConfirmedPillarRow({
             onClick={onToggle}
             className="flex items-center gap-2 text-[#9A9A9A] hover:text-[#FAFAFA] transition-colors"
           >
-            <span className="font-mono text-[11px] tracking-[0.04em]">{pillar.evidence.length} evidence</span>
+            <span className="font-mono text-[12.5px] tracking-[0.04em]">{pillar.evidence.length} evidence</span>
             <span className="text-[10px] text-[#6A6A6A] transition-transform" style={{ transform: open ? 'rotate(180deg)' : 'none' }}>
               &#9662;
             </span>
@@ -338,7 +340,7 @@ function DraftPillarRow({
             </div>
           ) : (
             <>
-              <div className="text-[14px] font-medium italic leading-[1.4] tracking-[-0.01em] text-[#9A9A9A] border-l-2 border-dashed border-white/[0.18] pl-3.5">
+              <div className="text-[15.5px] font-medium italic leading-[1.4] tracking-[-0.01em] text-[#9A9A9A] border-l-2 border-dashed border-white/[0.18] pl-3.5">
                 {pillar.claim}
               </div>
               <div className="mt-2 font-mono text-[10px] uppercase tracking-[0.15em] text-[#6A6A6A]">
@@ -602,7 +604,7 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
             Why I Own This
           </div>
           {phase === 'ready' && (
-            <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed mt-2 max-w-[520px] m-0">
+            <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed mt-2 max-w-[520px] m-0">
               The reasons you hold {ticker}, in your words. Helm scans filings and news against each one and surfaces only what changes them.
             </p>
           )}
@@ -629,7 +631,7 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
 
       {phase === 'none' && (
         <div className="mt-4">
-          <p className="text-[13.5px] text-[var(--color-text-secondary)] leading-relaxed m-0">
+          <p className="text-[14.5px] text-[var(--color-text-secondary)] leading-relaxed m-0">
             No thesis for {ticker} yet. Write the reasons you own it, or let Helm draft a starting point from your holdings.
           </p>
           <div className="flex items-center gap-3 mt-3.5">
@@ -648,7 +650,7 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
             {pillars.map((p, i) => (
               <div key={p.id} className={`flex items-start gap-3 py-3 ${i ? 'border-t border-[var(--color-border-subtle)]' : ''}`}>
                 <span className="w-1.5 h-1.5 rounded-full mt-[7px] shrink-0 bg-[#6A6A6A]" />
-                <span className="text-[14px] leading-[1.45] font-medium text-[#9A9A9A]">{p.claim}</span>
+                <span className="text-[15px] leading-[1.45] font-medium text-[#9A9A9A]">{p.claim}</span>
               </div>
             ))}
           </div>
@@ -658,7 +660,7 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
               style={{ background: 'linear-gradient(180deg, transparent, rgba(6,6,6,0.85) 55%)' }}
             >
               <LockIcon size={14} color="#E6B94D" />
-              <span className="text-[12.5px] text-[var(--color-text-secondary)]">{lockedMessage}</span>
+              <span className="text-[14px] text-[var(--color-text-secondary)]">{lockedMessage}</span>
               <Link
                 href="/pricing"
                 className="ml-auto font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--color-gold)] hover:text-[#EFCB72] transition-colors whitespace-nowrap"
@@ -674,7 +676,7 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
         <>
           {thesis && !thesis.tracked && (
             <div className="mt-4 flex items-center gap-3 flex-wrap px-3.5 py-3 rounded border border-white/[0.07] bg-[#060606]">
-              <span className="flex-1 min-w-[200px] text-[12.5px] text-[var(--color-text-secondary)] leading-[1.5]">
+              <span className="flex-1 min-w-[200px] text-[14px] text-[var(--color-text-secondary)] leading-[1.5]">
                 Helm is not scanning this thesis yet. Track it to check filings and news against each pillar.
               </span>
               <MiniButton primary onClick={trackThesis} disabled={trackBusy}>

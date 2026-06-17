@@ -19,6 +19,46 @@ import { STATUS_META } from '@/lib/thesis-palette';
 import { MacroStrip, type MacroItem } from '@/components/thesis/macro-strip';
 import { QuietState, type PillarSummary } from '@/components/thesis/quiet-state';
 
+function intelColor(item: ThesisIntelligenceItem): string {
+  if (item.verdict === 'contradicts' && item.materiality === 'material') return '#F87171';
+  if (item.verdict === 'contradicts') return '#E6B94D';
+  if (item.verdict === 'supports') return '#4ADE80';
+  return '#6A6A6A';
+}
+
+// Brief digest row: a scannable one-liner per reason (ticker + claim + source count),
+// expandable to the full VerdictCard so the section is short to scroll by default.
+function IntelDigestCard({ item }: { item: ThesisIntelligenceItem }) {
+  const [open, setOpen] = useState(false);
+  const color = intelColor(item);
+  const n = item.sources.length;
+  return (
+    <div className="space-y-2">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="w-full text-left rounded-[4px] border border-white/[0.06] bg-[#131313] hover:bg-white/[0.025] transition-colors flex items-start gap-3 px-4 py-3"
+      >
+        <span className="mt-[6px] w-2 h-2 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 8px ${color}66` }} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-mono text-[12px] font-semibold uppercase tracking-[0.06em] text-[#FAFAFA]" style={{ fontFamily: "'Space Grotesk', monospace" }}>{item.ticker}</span>
+            <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.12em]" style={{ color, fontFamily: "'Space Grotesk', monospace" }}>{item.verdict}</span>
+            {item.statusChanged && <span className="font-mono text-[9px] uppercase tracking-[0.1em] text-[#E6B94D]">status changed</span>}
+          </div>
+          <p className="text-[13.5px] leading-[1.4] text-[#E8E8E8] m-0 line-clamp-2">{item.pillarClaim}</p>
+          <span className="font-mono text-[10px] text-[#6A6A6A] mt-1.5 inline-block">{n} source{n === 1 ? '' : 's'} {'·'} {open ? 'hide' : 'details'}</span>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6A6A6A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`mt-[3px] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {open && <VerdictCard item={item} showPillarClaim={false} showTicker={false} />}
+    </div>
+  );
+}
+
 /* ─── Types ─── */
 
 interface NewsItem {
@@ -523,24 +563,35 @@ export default function BriefPage() {
                 </div>
                 <h2 className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#E6B94D]">Your theses this morning</h2>
                 <p className="text-[14px] leading-[1.55] text-[#CFCFCF] m-0">{data.thesisBrief!.headline}</p>
-                {data.thesisBrief!.needsAttention.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#6A6A6A]">At risk</span>
-                    {data.thesisBrief!.needsAttention.slice(0, 4).map((a, i) => (
-                      <span
-                        key={`${a.ticker}-${i}`}
-                        className="font-mono text-[10.5px] px-2 py-[3px] rounded border"
-                        style={{
-                          color: STATUS_META[a.status].color,
-                          borderColor: `${STATUS_META[a.status].color}4D`,
-                          background: `${STATUS_META[a.status].color}12`,
-                        }}
-                      >
-                        {a.ticker} {STATUS_META[a.status].label}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                {(() => {
+                  // Only at-risk pillars that a recent move (shown below) or an intelligence
+                  // card does not already account for, so the same ticker is never listed
+                  // two or three times in one brief.
+                  const movedTickers = new Set(data.thesisBrief!.moved.map((m) => m.ticker));
+                  const cardTickers = new Set(data.thesisIntelligence.map((c) => c.ticker));
+                  const atRisk = data.thesisBrief!.needsAttention.filter(
+                    (a) => !movedTickers.has(a.ticker) && !cardTickers.has(a.ticker),
+                  );
+                  if (atRisk.length === 0) return null;
+                  return (
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                      <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#6A6A6A]">At risk</span>
+                      {atRisk.slice(0, 4).map((a, i) => (
+                        <span
+                          key={`${a.ticker}-${i}`}
+                          className="font-mono text-[10.5px] px-2 py-[3px] rounded border"
+                          style={{
+                            color: STATUS_META[a.status].color,
+                            borderColor: `${STATUS_META[a.status].color}4D`,
+                            background: `${STATUS_META[a.status].color}12`,
+                          }}
+                        >
+                          {a.ticker} {STATUS_META[a.status].label}
+                        </span>
+                      ))}
+                    </div>
+                  );
+                })()}
                 {data.thesisBrief!.moved.length > 0 && (
                   <div className="flex flex-wrap items-center gap-2 pt-0.5">
                     <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#6A6A6A]">Moved in the last 14 days</span>
@@ -630,7 +681,7 @@ export default function BriefPage() {
                 </div>
                 <div className="space-y-3">
                   {data.thesisIntelligence.map((item, i) => (
-                    <VerdictCard key={`${item.ticker}-${i}`} item={item} />
+                    <IntelDigestCard key={`${item.ticker}-${i}`} item={item} />
                   ))}
                 </div>
               </section>

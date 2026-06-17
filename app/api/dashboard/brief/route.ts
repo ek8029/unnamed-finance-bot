@@ -285,14 +285,11 @@ export async function GET() {
       pillarClaim: string;
       verdict: string;
       materiality: string;
-      what: string;
       why: string;
       whatItMeans: string;
       consider: string | null;
-      sourceTitle: string;
-      sourceUrl: string | null;
-      sourcePublishedAt: string | null;
       statusChanged: boolean;
+      sources: { excerpt: string; sourceTitle: string; sourceUrl: string | null; sourcePublishedAt: string | null }[];
     }[] = [];
 
     if (thesisIds.length > 0) {
@@ -344,20 +341,44 @@ export async function GET() {
         // Rank: material first, then position allocation desc, take top 3
         const materialityRank = (m: string) => (m === 'material' ? 1 : 0);
 
-        const ranked = [...evidence].sort((a, b) => {
-          const mDiff = materialityRank(b.materiality) - materialityRank(a.materiality);
-          if (mDiff !== 0) return mDiff;
-          const pillarA = pillarById.get(a.pillar_id);
-          const pillarB = pillarById.get(b.pillar_id);
-          const tickerA = pillarA ? thesisTickerById.get(pillarA.thesis_id) : undefined;
-          const tickerB = pillarB ? thesisTickerById.get(pillarB.thesis_id) : undefined;
-          const allocA = tickerA ? (allocationLookup.get(tickerA.toUpperCase()) ?? 0) : 0;
-          const allocB = tickerB ? (allocationLookup.get(tickerB.toUpperCase()) ?? 0) : 0;
-          return allocB - allocA;
-        });
+        const tickerOf = (pillarId: string) => {
+          const pillar = pillarById.get(pillarId);
+          return pillar ? thesisTickerById.get(pillar.thesis_id) : undefined;
+        };
+        const allocOf = (pillarId: string) => {
+          const ticker = tickerOf(pillarId);
+          return ticker ? (allocationLookup.get(ticker.toUpperCase()) ?? 0) : 0;
+        };
+        const pubMs = (ev: (typeof evidence)[number]) => (ev.source_published_at ? Date.parse(ev.source_published_at) : 0);
 
-        thesisIntelligence = ranked.slice(0, 3).map((ev) => {
-          const pillar = pillarById.get(ev.pillar_id);
+        // Group evidence by pillar (the "reason"). Keep the top 3 pillars: a pillar ranks
+        // by its strongest piece (material first), then by position weight. Within a pillar,
+        // pieces are ordered material-first then most recent and capped, so a reason backed
+        // by several articles is one titled group with multiple receipts, not the same title
+        // repeated. The UI renders the claim once per pillar (showPillarClaim on the first).
+        const MAX_PILLARS = 3;
+        const MAX_PER_PILLAR = 3;
+        const evSort = (a: (typeof evidence)[number], b: (typeof evidence)[number]) => {
+          const mDiff = materialityRank(b.materiality) - materialityRank(a.materiality);
+          return mDiff !== 0 ? mDiff : pubMs(b) - pubMs(a);
+        };
+        const byPillar = new Map<string, (typeof evidence)[number][]>();
+        for (const ev of evidence) {
+          const arr = byPillar.get(ev.pillar_id) ?? [];
+          arr.push(ev);
+          byPillar.set(ev.pillar_id, arr);
+        }
+        for (const arr of byPillar.values()) arr.sort(evSort);
+        const topPillars = [...byPillar.entries()]
+          .sort(([, ea], [, eb]) => {
+            const mDiff = materialityRank(eb[0].materiality) - materialityRank(ea[0].materiality);
+            return mDiff !== 0 ? mDiff : allocOf(eb[0].pillar_id) - allocOf(ea[0].pillar_id);
+          })
+          .slice(0, MAX_PILLARS);
+
+        thesisIntelligence = topPillars.map(([pillarId, arr]) => {
+          const primary = arr[0];
+          const pillar = pillarById.get(pillarId);
           const ticker = pillar ? (thesisTickerById.get(pillar.thesis_id) ?? '') : '';
           const statusChangedAt = pillar?.status_changed_at ?? null;
           const statusChanged = statusChangedAt !== null
@@ -365,16 +386,18 @@ export async function GET() {
           return {
             ticker,
             pillarClaim: pillar?.claim ?? '',
-            verdict: ev.verdict,
-            materiality: ev.materiality,
-            what: ev.excerpt,
-            why: ev.why,
-            whatItMeans: ev.what_it_means,
-            consider: ev.consider ?? null,
-            sourceTitle: ev.source_title,
-            sourceUrl: ev.source_url ?? null,
-            sourcePublishedAt: ev.source_published_at ?? null,
+            verdict: primary.verdict,
+            materiality: primary.materiality,
+            why: primary.why,
+            whatItMeans: primary.what_it_means,
+            consider: primary.consider ?? null,
             statusChanged,
+            sources: arr.slice(0, MAX_PER_PILLAR).map((ev) => ({
+              excerpt: ev.excerpt,
+              sourceTitle: ev.source_title,
+              sourceUrl: ev.source_url ?? null,
+              sourcePublishedAt: ev.source_published_at ?? null,
+            })),
           };
         });
       }

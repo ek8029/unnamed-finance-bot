@@ -84,7 +84,7 @@ function StatusChip({ status }: { status: PillarStatus }) {
   return (
     <span className="inline-flex items-center gap-1.5 px-2 py-[3px] rounded border border-white/[0.07]" style={MONO}>
       <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: meta.color, boxShadow: dotGlow(status) }} />
-      <span className="text-[10px] font-semibold uppercase tracking-[0.15em]" style={{ color: meta.color }}>
+      <span className="text-[11.5px] font-semibold uppercase tracking-[0.15em]" style={{ color: meta.color }}>
         {meta.label}
       </span>
     </span>
@@ -98,7 +98,7 @@ function SparkPills({ pillars }: { pillars: Pillar[] }) {
     <span className="inline-flex gap-[3px]">
       {pillars.slice(0, 6).map((p) => {
         const s = effectiveStatus(p);
-        return <span key={p.id} className="w-[9px] h-[18px] rounded-[1px]" style={{ background: STATUS_META[s].color, opacity: s === 'unverified' ? 0.5 : 1 }} />;
+        return <span key={p.id} className="w-[11px] h-[26px] rounded-[1px]" style={{ background: STATUS_META[s].color, opacity: s === 'unverified' ? 0.5 : 1 }} />;
       })}
     </span>
   );
@@ -351,14 +351,14 @@ export default function ThesesPage() {
         <div key={h.ticker} className="px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <span className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA]" style={MONO}>{h.ticker}</span>
+              <span className="font-mono text-[14.5px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA]" style={MONO}>{h.ticker}</span>
               {h.name && h.name !== h.ticker && <span className="ml-2 text-[13px] text-[#6A6A6A] truncate">{h.name}</span>}
             </div>
             <button
               type="button"
               disabled={seedingTicker === h.ticker}
               onClick={() => handleSeed(h.ticker)}
-              className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.15em] px-3 py-1.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors disabled:opacity-50"
+              className="shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] px-3.5 py-2 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors disabled:opacity-50"
               style={MONO}
             >
               {seedingTicker === h.ticker ? 'Drafting...' : 'Draft thesis'}
@@ -378,13 +378,13 @@ export default function ThesesPage() {
       {/* ── Section 1: Conviction header ── */}
       {noThesesYet ? (
         <div>
-          <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-2.5" style={MONO}>Theses</div>
+          <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-2.5" style={MONO}>Theses</div>
           <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.03em] text-[#FAFAFA] m-0">Your conviction, watched.</h1>
         </div>
       ) : (
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
           <div className="min-w-0">
-            <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-3" style={MONO}>Your conviction today</div>
+            <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-3" style={MONO}>Your conviction today</div>
             <h1 className="text-[clamp(27px,3vw,34px)] font-bold leading-[1.14] tracking-[-0.03em] text-[#FAFAFA] m-0">{verdictHeadline}</h1>
             <p className="mt-3.5 text-[16.5px] leading-[1.5] text-[#9A9A9A] max-w-[540px] m-0" style={{ ...SERIF, fontStyle: 'italic' }}>{verdictSub}</p>
           </div>
@@ -392,13 +392,13 @@ export default function ThesesPage() {
           {totalPillarCount > 0 && (
             <div className="lg:w-[300px] shrink-0 rounded-lg border border-white/[0.07] bg-[#131313] p-4 space-y-3">
               <div className="flex items-baseline gap-2">
-                <span className="font-mono text-[26px] leading-none font-semibold tabular-nums" style={{ ...MONO, color: convictionColor(aggregateCounts.intact / totalPillarCount) }}>
+                <span className="font-mono text-[30px] leading-none font-semibold tabular-nums" style={{ ...MONO, color: convictionColor(aggregateCounts.intact / totalPillarCount) }}>
                   {Math.round((aggregateCounts.intact / totalPillarCount) * 100)}%
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#6A6A6A]" style={MONO}>conviction intact</span>
+                <span className="font-mono text-[11.5px] uppercase tracking-[0.14em] text-[#6A6A6A]" style={MONO}>conviction intact</span>
               </div>
               <AggregateMeter counts={aggregateCounts} total={totalPillarCount} height={8} />
-              <div className="flex flex-wrap gap-x-4 gap-y-1.5 font-mono text-[11.5px]" style={MONO}>
+              <div className="flex flex-wrap gap-x-5 gap-y-1.5 font-mono text-[13px]" style={MONO}>
                 {(['intact', 'weakening', 'broken', 'unverified'] as PillarStatus[])
                   .filter((s) => aggregateCounts[s] > 0)
                   .map((s) => (
@@ -408,7 +408,7 @@ export default function ThesesPage() {
                     </span>
                   ))}
               </div>
-              {lastScanned && <div className="font-mono text-[10.5px] tracking-[0.06em] text-[#4A4A4A] tabular-nums pt-0.5" style={MONO}>Last scanned {fmtScanned(lastScanned)}</div>}
+              {lastScanned && <div className="font-mono text-[11.5px] tracking-[0.06em] text-[#4A4A4A] tabular-nums pt-0.5" style={MONO}>Last scanned {fmtScanned(lastScanned)}</div>}
             </div>
           )}
         </div>
@@ -420,7 +420,7 @@ export default function ThesesPage() {
       {/* ── Section 3: Standings ── */}
       {!noThesesYet && (
         <section className="space-y-3">
-          <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted,#6A6A6A)]" style={MONO}>
+          <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted,#6A6A6A)]" style={MONO}>
             Standings &middot; strongest to weakest
           </div>
           <div className="rounded-lg border border-white/[0.07] bg-[#0E0E0E] overflow-hidden">
@@ -428,8 +428,8 @@ export default function ThesesPage() {
               <div key={band}>
                 <div className="flex items-center gap-2 px-4 sm:px-5 pt-4 pb-2 border-t border-white/[0.05] first:border-t-0">
                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: BAND_META[band].color, boxShadow: band === 'holding' ? 'none' : `0 0 7px ${BAND_META[band].color}` }} />
-                  <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ ...MONO, color: BAND_META[band].color }}>{BAND_META[band].label}</span>
-                  <span className="font-mono text-[10px] text-[#4A4A4A]" style={MONO}>{bandRows.length}</span>
+                  <span className="font-mono text-[13.5px] font-semibold uppercase tracking-[0.14em]" style={{ ...MONO, color: BAND_META[band].color }}>{BAND_META[band].label}</span>
+                  <span className="font-mono text-[13.5px] text-[#4A4A4A]" style={MONO}>{bandRows.length}</span>
                 </div>
 
                 {bandRows.map((r) => {
@@ -451,30 +451,30 @@ export default function ThesesPage() {
                         className={`w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 text-left transition-colors ${open ? 'bg-[rgba(230,185,77,0.045)]' : 'hover:bg-white/[0.02]'}`}
                       >
                         {/* rank */}
-                        <span className="text-[20px] leading-none w-[26px] shrink-0 tabular-nums" style={{ ...SERIF, color: thisRank <= 3 ? 'var(--color-gold)' : '#4A4A4A' }}>{thisRank}</span>
+                        <span className="text-[30px] leading-none w-[36px] shrink-0 tabular-nums" style={{ ...SERIF, color: thisRank <= 3 ? 'var(--color-gold)' : '#4A4A4A' }}>{thisRank}</span>
                         {/* ticker + name */}
                         <div className="w-[150px] sm:w-[220px] shrink-0 min-w-0">
-                          <div className="font-mono text-[13.5px] font-semibold uppercase tracking-[0.06em] text-[#FAFAFA]" style={MONO}>{r.t.ticker}</div>
-                          {name && name !== r.t.ticker && <div className="text-[11.5px] text-[#6A6A6A] truncate">{name}</div>}
+                          <div className="font-mono text-[17px] font-semibold uppercase tracking-[0.06em] text-[#FAFAFA]" style={MONO}>{r.t.ticker}</div>
+                          {name && name !== r.t.ticker && <div className="text-[14px] text-[#6A6A6A] truncate">{name}</div>}
                         </div>
                         {/* pillars */}
                         <div className="hidden md:block w-[80px] shrink-0">
                           {r.total > 0 ? <SparkPills pillars={r.confirmedPillars} /> : (
-                            <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-[#5F5F5F]" style={MONO}>{r.summary.draftCount > 0 ? `${r.summary.draftCount} draft${r.summary.draftCount === 1 ? '' : 's'}` : 'no pillars'}</span>
+                            <span className="font-mono text-[12.5px] uppercase tracking-[0.1em] text-[#5F5F5F]" style={MONO}>{r.summary.draftCount > 0 ? `${r.summary.draftCount} draft${r.summary.draftCount === 1 ? '' : 's'}` : 'no pillars'}</span>
                           )}
                         </div>
                         {/* intact count */}
                         <div className="hidden sm:block w-[52px] shrink-0 text-center">
-                          {r.total > 0 && <span className="font-mono text-[14px] font-semibold tabular-nums" style={{ ...MONO, color: r.intact >= 3 ? '#4ADE80' : '#9A9A9A' }}>{r.intact}/{r.total}</span>}
+                          {r.total > 0 && <span className="font-mono text-[18px] font-semibold tabular-nums" style={{ ...MONO, color: r.intact >= 3 ? '#4ADE80' : '#9A9A9A' }}>{r.intact}/{r.total}</span>}
                         </div>
                         {/* spacer */}
                         <div className="flex-1 min-w-0" />
                         {/* weight */}
-                        {r.weight != null && <span className="hidden lg:block font-mono text-[12px] tabular-nums text-[#9A9A9A] w-[56px] text-right shrink-0" style={MONO}>{r.weight.toFixed(1)}%</span>}
+                        {r.weight != null && <span className="hidden lg:block font-mono text-[15px] tabular-nums text-[#9A9A9A] w-[66px] text-right shrink-0" style={MONO}>{r.weight.toFixed(1)}%</span>}
                         {/* status chip */}
                         {r.worst && r.worst !== 'unverified' ? <div className="hidden sm:block shrink-0"><StatusChip status={r.worst} /></div> : <div className="hidden sm:block shrink-0 w-[1px]" />}
                         {/* conviction % */}
-                        {r.total > 0 && <span className="font-mono text-[13px] font-semibold tabular-nums w-[44px] text-right shrink-0" style={{ ...MONO, color: convictionColor(intactFrac) }}>{Math.round(intactFrac * 100)}%</span>}
+                        {r.total > 0 && <span className="font-mono text-[17px] font-semibold tabular-nums w-[54px] text-right shrink-0" style={{ ...MONO, color: convictionColor(intactFrac) }}>{Math.round(intactFrac * 100)}%</span>}
                         <ChevronDown className={`w-4 h-4 text-[#6A6A6A] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
                       </button>
 
@@ -501,7 +501,7 @@ export default function ThesesPage() {
       {/* ── Bottom: start (empty state) or the ratify queue ── */}
       {noThesesYet ? (
         <section className="space-y-4">
-          <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted,#6A6A6A)]" style={MONO}>START</div>
+          <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted,#6A6A6A)]" style={MONO}>START</div>
           <p className="text-[15px] leading-[1.6] text-[#9A9A9A] max-w-[560px] m-0">
             Helm drafts the reasons you might own each position. You confirm or rewrite them in your own words, and Helm watches the record for anything that breaks them.
           </p>

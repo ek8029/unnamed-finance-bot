@@ -1,20 +1,25 @@
 import { ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+export interface IntelligenceSource {
+  excerpt: string; // verbatim
+  sourceTitle: string;
+  sourceUrl: string | null;
+  sourcePublishedAt: string | null;
+}
+
 export interface ThesisIntelligenceItem {
   ticker: string;
   pillarClaim: string;
   verdict: 'supports' | 'contradicts' | 'neutral';
   materiality: 'material' | 'context';
-  what: string;
   why: string;
   whatItMeans: string;
   consider: string | null;
   isHistorical?: boolean;
-  sourceTitle: string;
-  sourceUrl: string | null;
-  sourcePublishedAt: string | null;
   statusChanged: boolean;
+  /** One or more supporting articles for this pillar. Several share one claim, shown once. */
+  sources: IntelligenceSource[];
 }
 
 function spineColor(verdict: ThesisIntelligenceItem['verdict'], materiality: ThesisIntelligenceItem['materiality']): string {
@@ -128,54 +133,55 @@ export function VerdictCard({
           {item.whatItMeans}
         </p>
 
-        {/* Receipt inset */}
-        <div className="flex gap-[14px] p-[16px_18px] bg-[#060606] border border-white/[0.06] rounded-[3px]">
-          {/* File icon */}
-          <svg
-            width="17" height="17" viewBox="0 0 24 24" fill="none"
-            stroke="#6A6A6A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
-            className="shrink-0 mt-[2px]"
-          >
-            <path d="M14 3v5h5M7 3h8l4 4v14H7z" />
-            <path d="M10 13h6M10 17h4" />
-          </svg>
+        {/* Receipts: one compact row per supporting article (claim/analysis shown once above) */}
+        <div className="space-y-[10px]">
+          {item.sources.map((s, si) => (
+            <div key={si} className="flex gap-[14px] p-[16px_18px] bg-[#060606] border border-white/[0.06] rounded-[3px]">
+              <svg
+                width="17" height="17" viewBox="0 0 24 24" fill="none"
+                stroke="#6A6A6A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
+                className="shrink-0 mt-[2px]"
+              >
+                <path d="M14 3v5h5M7 3h8l4 4v14H7z" />
+                <path d="M10 13h6M10 17h4" />
+              </svg>
 
-          <div className="flex-1">
-            {/* Excerpt */}
-            <p className="text-[13.5px] leading-[1.55] text-[#9A9A9A] m-0 mb-[8px]">
-              {item.what}
-            </p>
+              <div className="flex-1">
+                <p className="text-[14.5px] leading-[1.55] text-[#9A9A9A] m-0 mb-[8px]">
+                  {s.excerpt}
+                </p>
 
-            {/* Citation footnote */}
-            <div className="flex items-center gap-[6px] flex-wrap">
-              <span className="text-[12px] text-[#6A6A6A]">{item.sourceTitle}</span>
-              {item.sourcePublishedAt && (
-                <>
-                  <span className="text-[#4A4A4A] text-[12px]">·</span>
-                  <span className="font-mono text-[11px] text-[#6A6A6A] tabular-nums" style={{ fontFamily: "'Space Grotesk', monospace" }}>
-                    {formatDate(item.sourcePublishedAt)}
-                  </span>
-                </>
-              )}
-              {item.sourceUrl && (
-                <>
-                  <span className="text-[#4A4A4A] text-[12px]">·</span>
-                  <a
-                    href={item.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-[3px] text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors"
-                  >
-                    <ExternalLink size={11} />
-                  </a>
-                </>
-              )}
+                <div className="flex items-center gap-[6px] flex-wrap">
+                  <span className="text-[13px] text-[#6A6A6A]">{s.sourceTitle}</span>
+                  {s.sourcePublishedAt && (
+                    <>
+                      <span className="text-[#4A4A4A] text-[12px]">·</span>
+                      <span className="font-mono text-[12px] text-[#6A6A6A] tabular-nums" style={{ fontFamily: "'Space Grotesk', monospace" }}>
+                        {formatDate(s.sourcePublishedAt)}
+                      </span>
+                    </>
+                  )}
+                  {s.sourceUrl && (
+                    <>
+                      <span className="text-[#4A4A4A] text-[12px]">·</span>
+                      <a
+                        href={s.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-[3px] text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors"
+                      >
+                        <ExternalLink size={11} />
+                      </a>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
 
         {/* Why (muted) */}
-        <p className="text-[13.5px] leading-[1.6] text-[#6A6A6A] mt-[16px] mb-0">
+        <p className="text-[14px] leading-[1.6] text-[#6A6A6A] mt-[16px] mb-0">
           <span
             className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.18em] text-[#4A4A4A] mr-[10px]"
             style={{ fontFamily: "'Space Grotesk', monospace" }}
@@ -195,7 +201,7 @@ export function VerdictCard({
               >
                 Consider
               </span>
-              <span className="text-[13.5px] leading-[1.5] text-[#E6B94D]">
+              <span className="text-[14px] leading-[1.5] text-[#E6B94D]">
                 {item.consider}
               </span>
             </div>
