@@ -113,7 +113,10 @@ async function gatherSources(
  * Select the single most newsworthy content event for the run date across the
  * house-thesis universe. Returns null when nothing clears MIN_THRESHOLD.
  */
-export async function selectTopEvent(runDate: string): Promise<ContentEvent | null> {
+export async function selectTopEvent(
+  runDate: string,
+  minThreshold: number = MIN_THRESHOLD,
+): Promise<ContentEvent | null> {
   const db = await createServiceClient();
 
   const scored: Array<ScoredItem & { ticker: string; company: string }> = [];
@@ -152,7 +155,7 @@ export async function selectTopEvent(runDate: string): Promise<ContentEvent | nu
 
   scored.sort((a, b) => b.score - a.score);
   const top = scored[0];
-  if (top.score < MIN_THRESHOLD) return null;
+  if (top.score < minThreshold) return null;
 
   return {
     id: '', // filled on persist

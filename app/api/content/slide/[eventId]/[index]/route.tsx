@@ -1,8 +1,16 @@
 import { ImageResponse } from 'next/og';
-import { createServiceClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { isThesisUser } from '@/lib/thesis-access';
 import { toSlides } from '@/lib/content/slides';
 
 export async function GET(_req: Request, { params }: { params: Promise<{ eventId: string; index: string }> }) {
+  // Admin-only: drafts are internal until Evan posts them manually.
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!isThesisUser(user?.email)) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
   const { eventId, index } = await params;
   const idx = Number(index);
   if (!Number.isInteger(idx) || idx < 0 || idx > 5) {
