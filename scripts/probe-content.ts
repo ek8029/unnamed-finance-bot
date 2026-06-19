@@ -1,4 +1,5 @@
-import 'dotenv/config';
+import { config } from 'dotenv';
+config({ path: '.env.local' }); // repo uses .env.local, not .env
 import { selectTopEvent } from '@/lib/content/select';
 
 async function main() {
