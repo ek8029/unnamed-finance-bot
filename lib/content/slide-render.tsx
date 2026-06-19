@@ -199,6 +199,7 @@ function Shell({
   ghost,
   ghostColor,
   accent,
+  bg,
 }: {
   children: React.ReactNode;
   ticker: string;
@@ -207,6 +208,7 @@ function Shell({
   ghost?: string;
   ghostColor?: string;
   accent?: string;
+  bg?: string;
 }) {
   return (
     <div
@@ -218,7 +220,8 @@ function Shell({
         width: '100%',
         height: '100%',
         padding: PAD,
-        background: `linear-gradient(150deg, #0c0b08 0%, ${BG} 40%, ${accent || 'rgba(230,185,77,0.12)'} 108%)`,
+        background:
+          bg || `linear-gradient(150deg, #0c0b08 0%, ${BG} 40%, ${accent || 'rgba(230,185,77,0.12)'} 108%)`,
       }}
     >
       <GhostTicker text={ghost || ''} color={ghostColor} />
@@ -232,7 +235,7 @@ function Shell({
 // ---- Per-kind layouts ----
 function HookSlide({ slide, ev }: { slide: SlideModel; ev: EventRow }) {
   return (
-    <Shell ticker={ev.ticker || ''} idx={slide.index} ghost={ev.ticker || ''}>
+    <Shell ticker={ev.ticker || ''} idx={slide.index} ghost={ev.ticker || ''} bg={`radial-gradient(1150px 760px at 84% 2%, rgba(230,185,77,0.17), ${BG} 56%)`}>
       <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'center' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginBottom: 40 }}>
           <div
@@ -298,7 +301,7 @@ function HookSlide({ slide, ev }: { slide: SlideModel; ev: EventRow }) {
 function PillarSlide({ slide, ev }: { slide: SlideModel; ev: EventRow }) {
   const claim = ev.pillar_claim || slide.body;
   return (
-    <Shell ticker={ev.ticker || ''} idx={slide.index} ghost={ev.ticker || ''}>
+    <Shell ticker={ev.ticker || ''} idx={slide.index} ghost={ev.ticker || ''} bg={`linear-gradient(0deg, rgba(230,185,77,0.12), ${BG} 50%)`}>
       <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'center' }}>
         <Label text="THE THESIS" />
         <div
@@ -334,7 +337,7 @@ function PillarSlide({ slide, ev }: { slide: SlideModel; ev: EventRow }) {
 
 function EventSlide({ slide, ev }: { slide: SlideModel; ev: EventRow }) {
   return (
-    <Shell ticker={ev.ticker || ''} idx={slide.index} ghost={ev.ticker || ''}>
+    <Shell ticker={ev.ticker || ''} idx={slide.index} ghost={ev.ticker || ''} bg={`linear-gradient(180deg, rgba(230,185,77,0.07), ${BG} 30%)`}>
       <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'center' }}>
         <Label text="WHAT HAPPENED" />
         {slide.title ? (
@@ -447,7 +450,7 @@ function VerdictSlide({ slide, ev }: { slide: SlideModel; ev: EventRow }) {
       idx={slide.index}
       ghost={ev.ticker || ''}
       ghostColor={v.color}
-      accent={`${v.color}14`}
+      bg={`radial-gradient(950px 720px at 50% 58%, ${v.color}26, ${BG} 60%)`}
     >
       <div
         style={{
@@ -494,7 +497,7 @@ function VerdictSlide({ slide, ev }: { slide: SlideModel; ev: EventRow }) {
 
 function CtaSlide({ slide, ev }: { slide: SlideModel; ev: EventRow }) {
   return (
-    <Shell ticker={ev.ticker || ''} idx={slide.index} footer="@helmterminal" ghost="HELM">
+    <Shell ticker={ev.ticker || ''} idx={slide.index} footer="@helmterminal" ghost="HELM" bg={`linear-gradient(130deg, rgba(230,185,77,0.20), ${BG} 50%)`}>
       <div
         style={{
           display: 'flex',
