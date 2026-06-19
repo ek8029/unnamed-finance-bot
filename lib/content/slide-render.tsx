@@ -218,9 +218,7 @@ function Shell({
         width: '100%',
         height: '100%',
         padding: PAD,
-        background: accent
-          ? `linear-gradient(160deg, ${BG} 55%, ${accent})`
-          : `linear-gradient(165deg, #0a0a0a 0%, ${BG} 60%)`,
+        background: `linear-gradient(150deg, #0c0b08 0%, ${BG} 40%, ${accent || 'rgba(230,185,77,0.12)'} 108%)`,
       }}
     >
       <GhostTicker text={ghost || ''} color={ghostColor} />
@@ -269,12 +267,12 @@ function HookSlide({ slide, ev }: { slide: SlideModel; ev: EventRow }) {
         <div
           style={{
             display: 'flex',
-            fontFamily: G,
-            fontWeight: 700,
-            fontSize: 82,
+            fontFamily: S,
+            fontWeight: 400,
+            fontSize: 88,
             color: TEXT,
-            lineHeight: 1.04,
-            letterSpacing: '-0.02em',
+            lineHeight: 1.06,
+            letterSpacing: '-0.01em',
           }}
         >
           {slide.title}
@@ -306,12 +304,12 @@ function PillarSlide({ slide, ev }: { slide: SlideModel; ev: EventRow }) {
         <div
           style={{
             display: 'flex',
-            fontFamily: G,
-            fontWeight: 700,
-            fontSize: 62,
+            fontFamily: S,
+            fontWeight: 400,
+            fontSize: 70,
             color: TEXT,
-            lineHeight: 1.12,
-            letterSpacing: '-0.015em',
+            lineHeight: 1.14,
+            letterSpacing: '-0.005em',
             marginTop: 40,
           }}
         >
@@ -343,12 +341,12 @@ function EventSlide({ slide, ev }: { slide: SlideModel; ev: EventRow }) {
           <div
             style={{
               display: 'flex',
-              fontFamily: G,
-              fontWeight: 700,
-              fontSize: 52,
+              fontFamily: S,
+              fontWeight: 400,
+              fontSize: 60,
               color: TEXT,
-              lineHeight: 1.1,
-              letterSpacing: '-0.01em',
+              lineHeight: 1.12,
+              letterSpacing: '-0.005em',
               marginTop: 36,
             }}
           >
@@ -508,12 +506,12 @@ function CtaSlide({ slide, ev }: { slide: SlideModel; ev: EventRow }) {
         <div
           style={{
             display: 'flex',
-            fontFamily: G,
-            fontWeight: 700,
-            fontSize: 72,
+            fontFamily: S,
+            fontWeight: 400,
+            fontSize: 80,
             color: TEXT,
-            lineHeight: 1.06,
-            letterSpacing: '-0.02em',
+            lineHeight: 1.08,
+            letterSpacing: '-0.01em',
           }}
         >
           {slide.title || 'Run any ticker, free.'}
