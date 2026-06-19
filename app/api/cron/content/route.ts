@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   if (!check.ok) return NextResponse.json({ status: 'validation-failed', reasons: check.reasons, eventId: ev.id });
   await supabase.from('content_queue').insert({
     event_id: ev.id, status: 'draft', x_thread: content.xThread, linkedin_post: content.linkedinPost,
-    caption: content.caption, slide_copy: content.slideCopy, disclaimer: content.disclaimer,
+    caption: content.caption, slide_copy: [], disclaimer: content.disclaimer,
   });
   return NextResponse.json({ status: 'queued', eventId: ev.id });
 }

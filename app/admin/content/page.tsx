@@ -10,10 +10,25 @@ interface DraftRow {
   x_thread: string[];
   linkedin_post: string;
   caption: string;
-  slide_copy: { title: string; body: string }[];
   disclaimer: string;
   created_at: string;
-  content_events: { ticker: string; company: string; pillar_claim: string; verdict: string } | null;
+  content_events: {
+    ticker: string;
+    company: string;
+    pillar_claim: string;
+    verdict: string;
+    verbatim_cite: string;
+    cite_date: string | null;
+    source_url: string;
+    source_type: string;
+  } | null;
+}
+
+function fmtCiteDate(raw: string | null): string {
+  if (!raw) return '';
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }
 
 export default async function ContentApprovalPage() {
@@ -33,7 +48,7 @@ export default async function ContentApprovalPage() {
   const db = await createServiceClient();
   const { data } = await db
     .from('content_queue')
-    .select('id, event_id, x_thread, linkedin_post, caption, slide_copy, disclaimer, created_at, content_events(ticker, company, pillar_claim, verdict)')
+    .select('id, event_id, x_thread, linkedin_post, caption, disclaimer, created_at, content_events(ticker, company, pillar_claim, verdict, verbatim_cite, cite_date, source_url, source_type)')
     .eq('status', 'draft')
     .order('created_at', { ascending: false });
 
@@ -69,6 +84,33 @@ export default async function ContentApprovalPage() {
 
                 {ev?.pillar_claim && (
                   <p className="mb-6 text-sm text-[#C8C8C8] italic">{ev.pillar_claim}</p>
+                )}
+
+                {/* Verbatim cite */}
+                {ev?.verbatim_cite && (
+                  <section className="mb-6">
+                    <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-[#E6B94D]">Verbatim cite</h2>
+                    <blockquote className="rounded-md border-l-2 border-[#E6B94D]/60 bg-black/40 p-3 text-sm text-[#FAFAFA]">
+                      <p className="italic">{ev.verbatim_cite}</p>
+                      <p className="mt-2 text-xs text-[#888]">
+                        {fmtCiteDate(ev.cite_date)}
+                        {ev.source_type ? ` · ${ev.source_type}` : ''}
+                        {ev.source_url && (
+                          <>
+                            {' · '}
+                            <a
+                              href={ev.source_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[#E6B94D] hover:underline"
+                            >
+                              source
+                            </a>
+                          </>
+                        )}
+                      </p>
+                    </blockquote>
+                  </section>
                 )}
 
                 {/* X thread */}
@@ -110,24 +152,20 @@ export default async function ContentApprovalPage() {
                   </pre>
                 </section>
 
-                {/* Slides */}
-                <section className="mb-6">
-                  <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-[#E6B94D]">Slides</h2>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {[0, 1, 2, 3, 4, 5].map((idx) => {
-                      const src = `/api/content/slide/${d.event_id}/${idx}`;
-                      return (
-                        <figure key={idx} className="space-y-1">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={src} alt={`Slide ${idx + 1}`} className="w-full rounded-md border border-white/10" />
-                          <a href={src} download={`${ev?.ticker ?? 'slide'}-${idx}.png`} className="block text-center text-xs text-[#E6B94D] hover:underline">
-                            Download {idx + 1}
-                          </a>
-                        </figure>
-                      );
-                    })}
-                  </div>
-                </section>
+                {/* Visual */}
+                {ev?.ticker && (
+                  <section className="mb-6">
+                    <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-[#E6B94D]">Visual</h2>
+                    <a
+                      href={`https://helmterminal.dev/analyze/${ev.ticker}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex rounded-md border border-[#E6B94D]/40 px-4 py-2 text-sm font-bold text-[#E6B94D] hover:bg-[#E6B94D]/10"
+                    >
+                      Grab a visual from /analyze
+                    </a>
+                  </section>
+                )}
 
                 {/* Decision */}
                 <footer className="flex gap-3">

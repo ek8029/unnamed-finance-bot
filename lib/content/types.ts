@@ -29,6 +29,5 @@ export interface GeneratedContent {
   xThread: string[];
   linkedinPost: string;
   caption: string;
-  slideCopy: { title: string; body: string }[];
   disclaimer: string;
 }

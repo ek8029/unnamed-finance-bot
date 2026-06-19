@@ -25,7 +25,6 @@ interface LLMContent {
   xThread?: unknown;
   linkedinPost?: unknown;
   caption?: unknown;
-  slideCopy?: unknown;
 }
 
 export async function generateContent(event: ContentEvent): Promise<GeneratedContent> {
@@ -36,7 +35,7 @@ You write Helm Terminal's company social posts. Descriptive and analytical, NEVE
 ${fence(JSON.stringify(event), 'EVENT')}
 Voice guide:
 ${fence(VOICE_GUIDE, 'VOICE')}
-Return JSON exactly: {"xThread":string[],"linkedinPost":string,"caption":string,"slideCopy":[{"title":string,"body":string}]}. xThread 5-8 items; slideCopy EXACTLY 6. The X thread must end with: Run any ticker free at helmterminal.dev/analyze`;
+Return JSON exactly: {"xThread":string[],"linkedinPost":string,"caption":string}. xThread 5-8 items. The X thread must end with: Run any ticker free at helmterminal.dev/analyze`;
 
   let parsed: LLMContent = {};
   const response = await getOpenAI().chat.completions.create({
@@ -55,15 +54,6 @@ Return JSON exactly: {"xThread":string[],"linkedinPost":string,"caption":string,
     : [];
   const linkedinPost = typeof parsed.linkedinPost === 'string' ? parsed.linkedinPost : '';
   const caption = typeof parsed.caption === 'string' ? parsed.caption : '';
-  const slideCopy = Array.isArray(parsed.slideCopy)
-    ? (parsed.slideCopy as unknown[]).map((s) => {
-        const row = (s ?? {}) as { title?: unknown; body?: unknown };
-        return {
-          title: typeof row.title === 'string' ? row.title : '',
-          body: typeof row.body === 'string' ? row.body : '',
-        };
-      })
-    : [];
 
-  return { xThread, linkedinPost, caption, slideCopy, disclaimer: DISCLAIMER };
+  return { xThread, linkedinPost, caption, disclaimer: DISCLAIMER };
 }
