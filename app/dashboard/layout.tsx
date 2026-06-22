@@ -26,6 +26,7 @@ import {
   PenLine,
   Anchor,
   Layers,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
@@ -92,6 +93,7 @@ const navigation = [
     ],
   },
   { name: 'Theses', href: '/dashboard/theses', icon: Anchor },
+  { name: 'Screener', href: '/dashboard/screener', icon: SlidersHorizontal },
   { name: 'Analyze', href: '/dashboard/analyze', icon: Search },
   { name: 'Daily Brief', href: '/dashboard/brief', icon: BookOpen },
   { name: 'Actions', href: '/dashboard/actions', icon: Zap },
@@ -337,6 +339,9 @@ export default function DashboardLayout({
 
           <div className="space-y-0.5">
             {navigation.map((item) => {
+              // Screener is thesis-access-only: gate it exactly like the thesis layer
+              // (Pro tier or thesis allowlist). Other items render unconditionally.
+              if (item.href === '/dashboard/screener' && !thesisEntitled) return null;
               // Items with children (Portfolio group)
               if ('children' in item && item.children) {
                 const isGroupActive = PORTFOLIO_HREFS.includes(pathname);
