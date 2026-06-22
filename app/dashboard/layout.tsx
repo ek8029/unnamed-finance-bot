@@ -101,6 +101,8 @@ const navigation = [
 ];
 
 const PORTFOLIO_HREFS = ['/dashboard/portfolio', '/dashboard/portfolio/add', '/dashboard/chat', '/dashboard/earnings', '/dashboard/portfolio/factors'];
+// Pro/intelligence routes that show a "Pro" tag in the sidebar for non-entitled (free) users.
+const PRO_HREFS = ['/dashboard/theses', '/dashboard/taxes', '/dashboard/wrapped', '/dashboard/earnings', '/dashboard/portfolio/factors'];
 
 /* Map pathnames to page titles for the top bar */
 const PAGE_TITLES: Record<string, string> = {
@@ -398,6 +400,9 @@ export default function DashboardLayout({
                                 !isChildActive && 'opacity-60'
                               )} />
                               <span>{child.name}</span>
+                              {PRO_HREFS.includes(child.href) && !thesisEntitled && (
+                                <span className="ml-auto font-mono text-[9px] font-semibold uppercase tracking-[0.12em] px-1.5 py-0.5 rounded border border-[var(--color-gold)] text-[var(--color-gold)]" style={{ fontFamily: 'var(--font-mono)' }}>Pro</span>
+                              )}
                             </Link>
                           );
                         })}
@@ -429,7 +434,10 @@ export default function DashboardLayout({
                     !isActive && 'opacity-60'
                   )} />
                   <span>{item.name}</span>
-                  {item.href === '/dashboard/theses' && !thesesVisited && (
+                  {PRO_HREFS.includes(item.href) && !thesisEntitled && (
+                    <span className="ml-auto font-mono text-[9px] font-semibold uppercase tracking-[0.12em] px-1.5 py-0.5 rounded border border-[var(--color-gold)] text-[var(--color-gold)]" style={{ fontFamily: 'var(--font-mono)' }}>Pro</span>
+                  )}
+                  {item.href === '/dashboard/theses' && thesisEntitled && !thesesVisited && (
                     <span className="ml-auto font-mono text-[9px] font-semibold uppercase tracking-[0.12em] px-1.5 py-0.5 rounded bg-[var(--color-gold)] text-black" style={{ fontFamily: 'var(--font-mono)' }}>New</span>
                   )}
                 </Link>
