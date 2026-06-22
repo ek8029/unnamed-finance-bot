@@ -181,6 +181,8 @@ export default function ThesesPage() {
   const [removedIds, setRemovedIds] = useState<string[]>([]);
   const [scanEvidence, setScanEvidence] = useState<number | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  // Standings view toggle: show only theses with a broken or weakening pillar.
+  const [breakingOnly, setBreakingOnly] = useState(false);
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -262,8 +264,11 @@ export default function ThesesPage() {
 
   const sortRows = (band: Band) =>
     rows.filter((r) => r.band === band).sort((a, b) => b.score - a.score || (b.weight ?? 0) - (a.weight ?? 0) || a.t.ticker.localeCompare(b.t.ticker));
+  // A thesis is "breaking" when any confirmed pillar is broken or weakening.
+  const isBreaking = (r: Row) => r.summary.statusCounts.broken > 0 || r.summary.statusCounts.weakening > 0;
+  const breakingCount = rows.filter(isBreaking).length;
   const bandedRows: { band: Band; rows: Row[] }[] = (['strong', 'holding', 'review'] as Band[])
-    .map((band) => ({ band, rows: sortRows(band) }))
+    .map((band) => ({ band, rows: sortRows(band).filter((r) => !breakingOnly || isBreaking(r)) }))
     .filter((g) => g.rows.length > 0);
 
   // Recently moved: positions whose conviction last flipped, newest first.
@@ -561,9 +566,22 @@ export default function ThesesPage() {
       {!noThesesYet && (
         <section className="space-y-3">
           <div className="flex items-baseline justify-between gap-3 flex-wrap">
-            <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted,#6A6A6A)]" style={MONO}>
-              Standings &middot; strongest to weakest
-            </span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted,#6A6A6A)]" style={MONO}>
+                Standings &middot; strongest to weakest
+              </span>
+              {breakingCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setBreakingOnly((v) => !v)}
+                  aria-pressed={breakingOnly}
+                  className={`font-mono text-[11px] font-semibold uppercase tracking-[0.1em] px-3 py-1.5 rounded border transition-colors ${breakingOnly ? 'text-[#060606] bg-[var(--color-gold)] border-[var(--color-gold)]' : 'text-[#CFCFCF] bg-transparent border-white/[0.12] hover:border-white/[0.25]'}`}
+                  style={MONO}
+                >
+                  Breaking ({breakingCount})
+                </button>
+              )}
+            </div>
             <span className="font-mono text-[10.5px] tracking-[0.08em] text-[#5A5A5A]" style={MONO}>
               intact pillars &middot; % of portfolio &middot; conviction
             </span>
