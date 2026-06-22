@@ -516,7 +516,7 @@ export default function ThesesPage() {
             className="shrink-0 self-start sm:self-auto font-mono text-[12px] font-semibold uppercase tracking-[0.12em] px-4 py-2.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors"
             style={MONO}
           >
-            Build a thesis
+            Research a new thesis
           </Link>
         </div>
       ) : (

@@ -242,14 +242,6 @@ export default async function TickerAnalysisPage({ params }: Props) {
           {symbol} Stock Analysis — {analysis.companyName}
         </h1>
 
-        {/* Pre-buy thesis builder CTA — routes through login if needed */}
-        <a
-          href={`/dashboard/theses/builder?ticker=${symbol}`}
-          className="inline-flex items-center gap-2 mb-5 px-4 py-2 rounded border border-[rgba(230,185,77,0.35)] bg-[rgba(230,185,77,0.06)] text-[13px] font-semibold text-[var(--color-gold)] hover:bg-[rgba(230,185,77,0.12)] transition-colors"
-        >
-          Build a thesis on {symbol}
-        </a>
-
         {/* Bloomberg-style 3-pane terminal */}
         <AnalysisTerminal
           analysis={analysis}

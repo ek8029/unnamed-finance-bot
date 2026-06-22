@@ -231,13 +231,13 @@ function BuilderInner() {
       <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8">
         <ProBlur
           label="Unlock the Thesis Builder with Pro"
-          description="Pressure-test a name before you buy. Draft the reasons to own it, see the sector concentration it would add, the drivers it shares with what you already hold, and the bear case. Then track it."
+          description="Stress-test a name before you buy. Draft a starting set of pillars to edit and make your own, see the sector concentration it would add, the drivers it shares with what you already hold, and the bear case. Then track it."
           minHeight="380px"
         >
           <div className="space-y-6">
             <div>
               <Label>Thesis Builder</Label>
-              <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.03em] text-[#FAFAFA] m-0">Test a thesis before you buy.</h1>
+              <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.03em] text-[#FAFAFA] m-0">Stress-test a thesis before you buy.</h1>
             </div>
             <div className="rounded-lg border border-white/[0.07] bg-[#0E0E0E] p-5 space-y-3">
               {['Demand for its core product keeps compounding.', 'It is taking share in a growing market.', 'Margins expand as the mix shifts.'].map((c) => (
@@ -268,10 +268,10 @@ function BuilderInner() {
         </Link>
         <Label>Thesis Builder</Label>
         <h1 className="text-[clamp(27px,3vw,34px)] font-bold leading-[1.14] tracking-[-0.03em] text-[#FAFAFA] m-0">
-          Test a thesis before you buy.
+          Stress-test a thesis before you buy.
         </h1>
         <p className="mt-3.5 text-[16.5px] leading-[1.5] text-[#9A9A9A] max-w-[620px] m-0" style={{ ...SERIF, fontStyle: 'italic' }}>
-          Enter a name you are researching. You do not have to own it. Helm drafts the reasons to own it, then shows the risk you would take on if you did.
+          Enter a name you are researching. You do not have to own it. Helm drafts a starting set of pillars for you to edit and make your own, then runs the pre-buy risk check: the concentration it would add, the drivers it shares with what you already hold, and the bear case.
         </p>
       </div>
 
@@ -293,7 +293,7 @@ function BuilderInner() {
           className="font-mono text-[12px] font-semibold uppercase tracking-[0.12em] px-5 py-3 rounded bg-[#E6B94D] text-[#060606] hover:bg-[#F0C868] transition-colors disabled:opacity-50"
           style={MONO}
         >
-          {drafting ? 'Drafting…' : 'Draft thesis'}
+          {drafting ? 'Drafting…' : 'Draft starting pillars'}
         </button>
       </form>
       {draftError && <p className="font-mono text-[12px] text-[#F87171] -mt-4" style={MONO}>{draftError}</p>}

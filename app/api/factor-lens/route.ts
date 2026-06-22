@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { requirePro } from '@/lib/tier';
+import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { resolveSector } from '@/lib/portfolio-analysis';
 import { getFullTickerData } from '@/lib/financial-data';
 import { buildFactorReport, type EnrichedHolding } from '@/lib/factor-lens';
@@ -18,7 +18,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { allowed } = await requirePro(user.id);
+    const allowed = await hasThesisAccess(user.id, user.email);
     if (!allowed) {
       return NextResponse.json({ error: 'Pro required' }, { status: 403 });
     }

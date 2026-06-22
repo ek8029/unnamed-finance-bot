@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProBlur } from '@/components/pro-blur';
 import { useTier } from '@/hooks/use-tier';
+import { isThesisUser } from '@/lib/thesis-access';
 import { STATUS_META } from '@/lib/thesis-palette';
 import type {
   FactorReport,
@@ -271,6 +272,23 @@ export default function FactorLensPage() {
   const [empty, setEmpty] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [profileEmail, setProfileEmail] = useState<string | null>(null);
+
+  // Mirror the dashboard layout: allowlisted users are entitled even off Pro.
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/user/profile')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled) setProfileEmail(data?.profile?.email ?? null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const entitled = isPro || isThesisUser(profileEmail);
 
   useEffect(() => {
     let cancelled = false;
@@ -349,7 +367,7 @@ export default function FactorLensPage() {
         </Card>
       )}
 
-      {!loading && !tierLoading && !error && !empty && !isPro && (
+      {!loading && !tierLoading && !error && !empty && !entitled && (
         <ProBlur
           label="Unlock Factor Lens with Pro"
           description="See the style and factor exposure hiding in your portfolio"
@@ -359,7 +377,7 @@ export default function FactorLensPage() {
         </ProBlur>
       )}
 
-      {!loading && !tierLoading && !error && !empty && isPro && report && (
+      {!loading && !tierLoading && !error && !empty && entitled && report && (
         <ReportBody report={report} />
       )}
     </div>
