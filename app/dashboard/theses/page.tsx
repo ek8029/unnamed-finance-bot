@@ -5,6 +5,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 import { WhyIOwnThis } from '@/components/thesis/why-i-own-this';
 import { ProBlur } from '@/components/pro-blur';
@@ -500,9 +501,18 @@ export default function ThesesPage() {
 
       {/* ── Section 1: Conviction header ── */}
       {noThesesYet ? (
-        <div>
-          <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-2.5" style={MONO}>Theses</div>
-          <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.03em] text-[#FAFAFA] m-0">Your conviction, watched.</h1>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-2.5" style={MONO}>Theses</div>
+            <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.03em] text-[#FAFAFA] m-0">Your conviction, watched.</h1>
+          </div>
+          <Link
+            href="/dashboard/theses/builder"
+            className="shrink-0 self-start sm:self-auto font-mono text-[12px] font-semibold uppercase tracking-[0.12em] px-4 py-2.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors"
+            style={MONO}
+          >
+            Build a thesis
+          </Link>
         </div>
       ) : (
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
@@ -510,6 +520,13 @@ export default function ThesesPage() {
             <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-3" style={MONO}>Your conviction today</div>
             <h1 className="text-[clamp(27px,3vw,34px)] font-bold leading-[1.14] tracking-[-0.03em] text-[#FAFAFA] m-0">{verdictHeadline}</h1>
             <p className="mt-3.5 text-[16.5px] leading-[1.5] text-[#9A9A9A] max-w-[540px] m-0" style={{ ...SERIF, fontStyle: 'italic' }}>{verdictSub}</p>
+            <Link
+              href="/dashboard/theses/builder"
+              className="inline-block mt-4 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] px-4 py-2.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors"
+              style={MONO}
+            >
+              Build a thesis
+            </Link>
           </div>
 
           {totalPillarCount > 0 && (
