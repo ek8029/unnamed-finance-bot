@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 export interface TierInfo {
-  tier: 'free' | 'pro';
+  tier: 'free' | 'pro' | 'max';
   quota: {
     allowed: boolean;
     used: number;
@@ -22,10 +22,12 @@ export function useTier() {
       .finally(() => setLoading(false));
   }, []);
 
+  const tier = data?.tier ?? 'free';
   return {
-    tier: data?.tier ?? 'free',
+    tier,
     quota: data?.quota ?? null,
-    isPro: data?.tier === 'pro',
+    isPro: tier === 'pro' || tier === 'max', // max is a superset of pro
+    isMax: tier === 'max',
     loading,
   };
 }

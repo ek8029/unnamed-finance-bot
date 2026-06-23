@@ -8,7 +8,13 @@
 
 import { createClient } from '@/lib/supabase/server';
 
-export type Tier = 'free' | 'pro';
+export type Tier = 'free' | 'pro' | 'max';
+
+// Tier rank: free < pro < max. Max is a superset of Pro access.
+export const TIER_RANK: Record<Tier, number> = { free: 0, pro: 1, max: 2 };
+export function tierAtLeast(tier: Tier, min: Tier): boolean {
+  return TIER_RANK[tier] >= TIER_RANK[min];
+}
 
 const FREE_DAILY_ANALYSIS_LIMIT = 5;
 
@@ -48,7 +54,7 @@ export interface QuotaCheck {
 export async function checkAnalysisQuota(userId: string): Promise<QuotaCheck> {
   const tier = await getUserTier(userId);
 
-  if (tier === 'pro') {
+  if (tierAtLeast(tier, 'pro')) {
     return { allowed: true, used: 0, limit: null, remaining: null };
   }
 
@@ -84,5 +90,12 @@ export async function recordAnalysisUsage(userId: string): Promise<void> {
 
 export async function requirePro(userId: string): Promise<{ allowed: boolean }> {
   const tier = await getUserTier(userId);
-  return { allowed: tier === 'pro' };
+  return { allowed: tierAtLeast(tier, 'pro') };
+}
+
+// ── Check if user has Max-tier access ──
+
+export async function requireMax(userId: string): Promise<{ allowed: boolean }> {
+  const tier = await getUserTier(userId);
+  return { allowed: tierAtLeast(tier, 'max') };
 }
