@@ -140,12 +140,12 @@ const PALETTE_NAVIGATE: { name: string; href: string; hint: string; tier?: Tier 
   { name: 'Accounts', href: '/dashboard/accounts', hint: 'G A' },
   { name: 'Daily Brief', href: '/dashboard/brief', hint: 'G B' },
   { name: 'Theses', href: '/dashboard/theses', hint: 'G T', tier: 'pro' },
-  { name: 'Taxes', href: '/dashboard/taxes', hint: 'PRO', tier: 'pro' },
+  { name: 'Taxes', href: '/dashboard/taxes', hint: 'G X', tier: 'pro' },
   { name: 'Settings', href: '/dashboard/settings', hint: 'G S' },
 ];
 const PALETTE_ACTIONS: { name: string; href: string; hint: string; glyph: string; tier?: Tier }[] = [
   { name: 'Analyze a ticker…', href: '/dashboard/analyze', hint: '⏎', glyph: '⌕' },
-  { name: 'Harvest tax losses', href: '/dashboard/taxes', hint: 'PRO', glyph: '✦', tier: 'pro' },
+  { name: 'Harvest tax losses', href: '/dashboard/taxes', hint: '', glyph: '✦', tier: 'pro' },
 ];
 
 interface UserProfile {
@@ -174,6 +174,9 @@ export default function DashboardLayout({
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [paletteQuery, setPaletteQuery] = useState('');
+  const [tickerResults, setTickerResults] = useState<{ ticker: string; name: string }[]>([]);
+  const [paletteSel, setPaletteSel] = useState(0);
   const [portfolioDropdownOpen, setPortfolioDropdownOpen] = useState(() =>
     PORTFOLIO_HREFS.includes(typeof window !== 'undefined' ? window.location.pathname : '')
   );
@@ -248,6 +251,25 @@ export default function DashboardLayout({
   useEffect(() => {
     setPaletteOpen(false);
   }, [pathname]);
+
+  // Reset query + selection each time the palette opens.
+  useEffect(() => {
+    if (paletteOpen) { setPaletteQuery(''); setTickerResults([]); setPaletteSel(0); }
+  }, [paletteOpen]);
+
+  // Debounced ticker autocomplete.
+  useEffect(() => {
+    const q = paletteQuery.trim();
+    if (!q) { setTickerResults([]); return; }
+    const ctrl = new AbortController();
+    const t = setTimeout(() => {
+      fetch(`/api/tickers/search?q=${encodeURIComponent(q)}`, { signal: ctrl.signal })
+        .then((r) => (r.ok ? r.json() : { results: [] }))
+        .then((d) => setTickerResults(d.results || []))
+        .catch(() => {});
+    }, 120);
+    return () => { clearTimeout(t); ctrl.abort(); };
+  }, [paletteQuery]);
 
   // Fetch user profile on mount + re-fetch when profile is updated
   useEffect(() => {
@@ -396,6 +418,27 @@ export default function DashboardLayout({
     );
   }
 
+  // Build the live result list: page matches + ticker autocomplete + an
+  // "Analyze <SYMBOL>" fallback + matching actions. One flat, keyboard-navigable list.
+  const _pq = paletteQuery.trim().toLowerCase();
+  const _qUpper = paletteQuery.trim().toUpperCase();
+  const _hasFallback =
+    _qUpper.length >= 1 && _qUpper.length <= 6 && /^[A-Z.]+$/.test(_qUpper) &&
+    !tickerResults.some((t) => t.ticker === _qUpper);
+  type PItem = { key: string; label: string; sub?: string; href: string; glyph: string; locked?: boolean; hint?: string };
+  const paletteItems: PItem[] = [
+    ...PALETTE_NAVIGATE
+      .filter((r) => !_pq || r.name.toLowerCase().includes(_pq))
+      .map((r) => ({ key: `nav-${r.href}`, label: r.name, href: r.href, glyph: '◇', locked: !!(r.tier && isLocked(r.tier)), hint: r.hint })),
+    ...tickerResults.map((t) => ({ key: `tk-${t.ticker}`, label: t.ticker, sub: t.name !== t.ticker ? t.name : undefined, href: `/dashboard/analyze/${t.ticker}`, glyph: '⌕' })),
+    ...(_hasFallback ? [{ key: 'fb', label: `Analyze "${_qUpper}"`, href: `/dashboard/analyze/${_qUpper}`, glyph: '⌕' }] : []),
+    ...PALETTE_ACTIONS
+      .filter((r) => r.href !== '/dashboard/analyze' && (!_pq || r.name.toLowerCase().includes(_pq)))
+      .map((r) => ({ key: `act-${r.name}`, label: r.name, href: r.href, glyph: r.glyph, locked: !!(r.tier && isLocked(r.tier)) })),
+  ];
+  const _selIdx = Math.min(paletteSel, Math.max(0, paletteItems.length - 1));
+  const go = (href: string) => { setPaletteOpen(false); router.push(href); };
+
   const palettePanel = paletteOpen && (
     <div
       onClick={() => setPaletteOpen(false)}
@@ -424,7 +467,14 @@ export default function DashboardLayout({
           <Search size={16} strokeWidth={1.6} className="text-[var(--color-text-muted)]" />
           <input
             autoFocus
-            placeholder="Jump to a page, ticker, or run a command…"
+            value={paletteQuery}
+            onChange={(e) => { setPaletteQuery(e.target.value); setPaletteSel(0); }}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowDown') { e.preventDefault(); setPaletteSel((s) => Math.min(s + 1, paletteItems.length - 1)); }
+              else if (e.key === 'ArrowUp') { e.preventDefault(); setPaletteSel((s) => Math.max(s - 1, 0)); }
+              else if (e.key === 'Enter') { e.preventDefault(); const it = paletteItems[_selIdx]; if (it) go(it.href); }
+            }}
+            placeholder="Search pages and tickers…"
             className="flex-1 bg-transparent border-none outline-none text-[15px] text-[var(--color-text-primary)]"
             style={{ fontFamily: 'var(--font-sans)' }}
           />
@@ -436,50 +486,32 @@ export default function DashboardLayout({
           </span>
         </div>
         <div className="p-2 max-h-[50vh] overflow-y-auto custom-scrollbar">
-          <div className="px-3 pt-2 pb-1.5 text-[11px] uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.16em', color: '#7a7a7a' }}>
-            Navigate
-          </div>
-          {PALETTE_NAVIGATE.map((row) => (
-            <Link
-              key={row.name}
-              href={row.href}
-              onClick={() => setPaletteOpen(false)}
-              className="palette-row flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-[15px] text-left text-[var(--color-text-secondary)] no-underline"
-              style={{ fontFamily: 'var(--font-sans)' }}
-            >
-              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)' }}>◇</span>
-              {row.name}
-              <span className="flex-1" />
-              <span
-                className="text-[10px]"
-                style={{ fontFamily: 'var(--font-mono)', color: row.tier && isLocked(row.tier) ? 'var(--color-gold)' : '#5a5a5a' }}
+          {paletteItems.length === 0 ? (
+            <div className="px-3 py-6 text-center text-[14px] text-[var(--color-text-muted)]">No matches.</div>
+          ) : (
+            paletteItems.map((it, i) => (
+              <button
+                key={it.key}
+                type="button"
+                onMouseEnter={() => setPaletteSel(i)}
+                onClick={() => go(it.href)}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-[15px] no-underline transition-colors"
+                style={{
+                  fontFamily: 'var(--font-sans)',
+                  color: 'var(--color-text-secondary)',
+                  background: i === _selIdx ? 'rgba(255,255,255,0.06)' : 'transparent',
+                }}
               >
-                {row.tier && isLocked(row.tier) ? 'PRO' : row.hint}
-              </span>
-            </Link>
-          ))}
-          <div className="px-3 pt-3 pb-1.5 text-[11px] uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.16em', color: '#7a7a7a' }}>
-            Actions
-          </div>
-          {PALETTE_ACTIONS.map((row) => (
-            <Link
-              key={row.name}
-              href={row.href}
-              onClick={() => setPaletteOpen(false)}
-              className="palette-row flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-[15px] text-left text-[var(--color-text-secondary)] no-underline"
-              style={{ fontFamily: 'var(--font-sans)' }}
-            >
-              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-gold)' }}>{row.glyph}</span>
-              {row.name}
-              <span className="flex-1" />
-              <span
-                className="text-[10px]"
-                style={{ fontFamily: 'var(--font-mono)', color: row.tier && isLocked(row.tier) ? 'var(--color-gold)' : '#5a5a5a' }}
-              >
-                {row.tier && isLocked(row.tier) ? 'PRO' : row.hint}
-              </span>
-            </Link>
-          ))}
+                <span style={{ fontFamily: 'var(--font-mono)', color: it.glyph === '⌕' ? 'var(--color-gold)' : 'var(--color-text-muted)' }}>{it.glyph}</span>
+                <span className="text-[var(--color-text-primary)]">{it.label}</span>
+                {it.sub && <span className="truncate text-[13px] text-[var(--color-text-muted)]">{it.sub}</span>}
+                <span className="flex-1" />
+                <span className="text-[10px]" style={{ fontFamily: 'var(--font-mono)', color: it.locked ? 'var(--color-gold)' : '#5a5a5a' }}>
+                  {it.locked ? 'PRO' : it.hint}
+                </span>
+              </button>
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -756,7 +788,7 @@ export default function DashboardLayout({
               style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
             >
               <Search size={14} strokeWidth={1.6} className="shrink-0" />
-              <span className="flex-1 text-[14.5px] truncate">Search tickers, accounts, commands…</span>
+              <span className="flex-1 text-[14.5px] truncate">Search pages, tickers…</span>
               <span
                 className="text-[9px] px-1.5 py-0.5 rounded-[3px] shrink-0"
                 style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
@@ -774,17 +806,6 @@ export default function DashboardLayout({
                 className="xl:hidden flex items-center gap-2 h-[34px] px-3 rounded-md border border-[var(--color-border-base)] text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors"
               />
             )}
-
-            {/* ● ALL ACCOUNTS -> accounts */}
-            <Link
-              href="/dashboard/accounts"
-              className="hidden sm:flex items-center gap-[7px] h-[34px] px-3 rounded-md text-[var(--color-text-secondary)] uppercase hover:text-[var(--color-text-primary)] transition-colors no-underline"
-              style={{ background: 'transparent', border: '1px solid var(--color-border-base)', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em' }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-positive)]" />
-              All accounts
-              <ChevronDown size={12} strokeWidth={2} />
-            </Link>
 
             {/* Notification bell with gold dot -> Actions inbox */}
             <Link
