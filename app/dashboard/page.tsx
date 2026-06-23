@@ -451,6 +451,24 @@ export default function DashboardOverview() {
     [chartPoints],
   );
 
+  // Headline change tracks the SELECTED range: first vs last point of the
+  // series the pills produced. Falls back to the month-over-month change from
+  // the API when there's no daily series to slice (demo / brand-new account).
+  const RANGE_LABEL: Record<typeof nwRange, string> = {
+    '1W': 'past week',
+    '1M': 'past month',
+    '3M': 'past 3 months',
+    '6M': 'past 6 months',
+    '1Y': 'past year',
+    ALL: 'all time',
+  };
+  const rangeChange = useMemo(() => {
+    if (chartPoints.length < 2) return null;
+    const first = chartPoints[0].value;
+    const last = chartPoints[chartPoints.length - 1].value;
+    return { dollar: last - first, pct: first !== 0 ? ((last - first) / first) * 100 : null };
+  }, [chartPoints]);
+
   const sectorSlices = useMemo(() => {
     const totals = new Map<string, number>();
     let sum = 0;
@@ -599,6 +617,11 @@ export default function DashboardOverview() {
   // ── Connected / demo ───────────────────────────────────────────────────
   const netWorth = financialSummary?.net_worth || 0;
   const isPositiveChange = netWorthChange !== null ? netWorthChange >= 0 : true;
+  // Range-aware headline change (drives the net-worth badge + chart-card header).
+  const dispDollar = rangeChange ? rangeChange.dollar : netWorthChange;
+  const dispPct = rangeChange ? rangeChange.pct : netWorthPctChange;
+  const dispPositive = dispDollar !== null ? dispDollar >= 0 : true;
+  const dispLabel = rangeChange ? RANGE_LABEL[nwRange] : netWorthChangeLabel;
   const showDemoBanner = isDemo || dataState === 'demo';
 
   const invested = financialSummary?.total_assets || 0;
@@ -639,31 +662,31 @@ export default function DashboardOverview() {
             <div className="text-[34px] sm:text-[46px] font-bold leading-none tracking-[-0.03em] tabular-nums">
               {formatCurrency(netWorth)}
             </div>
-            {(netWorthChange !== null || netWorthPctChange !== null) && (
+            {(dispDollar !== null || dispPct !== null) && (
               <div
                 className={`flex items-center gap-2 rounded-[5px] px-3 py-[5px] ${
-                  isPositiveChange
+                  dispPositive
                     ? 'border border-[var(--color-positive-border)] bg-[var(--color-positive-muted)]'
                     : 'border border-[var(--color-negative-border)] bg-[var(--color-negative-muted)]'
                 }`}
               >
                 <span
                   className={`text-[15px] font-semibold tabular-nums ${
-                    isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'
+                    dispPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'
                   }`}
                   style={MONO}
                 >
-                  {netWorthChange !== null && (
+                  {dispDollar !== null && (
                     <>
-                      {isPositiveChange ? '+' : ''}
-                      {formatCurrency(netWorthChange)}
+                      {dispPositive ? '+' : ''}
+                      {formatCurrency(dispDollar)}
                     </>
                   )}
-                  {netWorthChange !== null && netWorthPctChange !== null && ' · '}
-                  {netWorthPctChange !== null && formatPercentage(netWorthPctChange)}
+                  {dispDollar !== null && dispPct !== null && ' · '}
+                  {dispPct !== null && formatPercentage(dispPct)}
                 </span>
                 <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
-                  {netWorthChangeLabel}
+                  {dispLabel}
                 </span>
               </div>
             )}
@@ -703,18 +726,18 @@ export default function DashboardOverview() {
               <Eyebrow className="mb-2">Net worth · trend</Eyebrow>
               <div className="flex items-baseline gap-3">
                 <span className="text-[21px] font-bold tracking-[-0.02em] tabular-nums">
-                  {netWorthChange !== null
-                    ? `${isPositiveChange ? '+' : ''}${formatCurrency(netWorthChange)}`
+                  {dispDollar !== null
+                    ? `${dispPositive ? '+' : ''}${formatCurrency(dispDollar)}`
                     : formatCurrency(netWorth)}
                 </span>
-                {netWorthPctChange !== null && (
+                {dispPct !== null && (
                   <span
                     className={`text-[15px] font-semibold ${
-                      isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'
+                      dispPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'
                     }`}
                     style={MONO}
                   >
-                    {formatPercentage(netWorthPctChange)}
+                    {formatPercentage(dispPct)}
                   </span>
                 )}
               </div>
