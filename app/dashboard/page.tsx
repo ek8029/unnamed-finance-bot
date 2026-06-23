@@ -384,6 +384,7 @@ export default function DashboardOverview() {
   const {
     financialSummary,
     netWorthHistory,
+    netWorthDaily,
     hasPlaidConnection,
     loading,
     error,
@@ -401,7 +402,7 @@ export default function DashboardOverview() {
   const router = useRouter();
   const toast = useToast();
   const [plaidError, setPlaidError] = useState<string | null>(null);
-  const [nwRange, setNwRange] = useState<'3M' | '6M' | '1Y' | 'ALL'>('ALL');
+  const [nwRange, setNwRange] = useState<'1W' | '1M' | '3M' | '6M' | '1Y' | 'ALL'>('ALL');
 
   useEffect(() => {
     posthog.capture('dashboard_viewed', { has_plaid: hasPlaidConnection, is_demo: isDemo });
@@ -423,14 +424,31 @@ export default function DashboardOverview() {
   // ── Derived presentation data ──────────────────────────────────────────
   // Net-worth history is monthly snapshots; the range pills slice trailing
   // months. ALL keeps everything. (No intraday data → no 1D/1W ranges.)
-  const rangedHistory = useMemo(() => {
-    const n = { '3M': 3, '6M': 6, '1Y': 12, ALL: Infinity }[nwRange];
-    return n === Infinity ? netWorthHistory : netWorthHistory.slice(-n);
-  }, [netWorthHistory, nwRange]);
+  // Chart points as {label, value}. Prefer the daily series (real per-day
+  // resolution → supports 1W/1M); fall back to the monthly history when no
+  // daily data exists yet (e.g. demo mode or a brand-new account).
+  const chartPoints = useMemo(() => {
+    if (netWorthDaily.length >= 2) {
+      const days = { '1W': 7, '1M': 31, '3M': 92, '6M': 183, '1Y': 366, ALL: Infinity }[nwRange];
+      const fmt = (d: string) =>
+        new Date(`${d}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      let pts = netWorthDaily;
+      if (days !== Infinity) {
+        const cutoff = Date.now() - days * 86400000;
+        const sliced = netWorthDaily.filter((p) => new Date(`${p.date}T12:00:00`).getTime() >= cutoff);
+        pts = sliced.length >= 2 ? sliced : netWorthDaily.slice(-2);
+      }
+      return pts.map((p) => ({ label: fmt(p.date), value: p.value }));
+    }
+    // Monthly fallback (no daily data): short ranges just show what we have.
+    const n = { '1W': 2, '1M': 2, '3M': 3, '6M': 6, '1Y': 12, ALL: Infinity }[nwRange];
+    const src = n === Infinity ? netWorthHistory : netWorthHistory.slice(-n);
+    return src.map((p) => ({ label: p.month, value: p.value }));
+  }, [netWorthDaily, netWorthHistory, nwRange]);
 
   const chartSeries = useMemo(
-    () => (rangedHistory.length >= 2 ? rangedHistory.map((p) => p.value) : []),
-    [rangedHistory],
+    () => (chartPoints.length >= 2 ? chartPoints.map((p) => p.value) : []),
+    [chartPoints],
   );
 
   const sectorSlices = useMemo(() => {
@@ -653,7 +671,7 @@ export default function DashboardOverview() {
         </div>
         <div className="flex flex-col items-end gap-2.5">
           <div className="flex gap-1 text-[12px] uppercase tracking-[0.1em]" style={MONO}>
-            {(['3M', '6M', '1Y', 'ALL'] as const).map((r) => (
+            {(['1W', '1M', '3M', '6M', '1Y', 'ALL'] as const).map((r) => (
               <button
                 key={r}
                 onClick={() => setNwRange(r)}
@@ -709,16 +727,16 @@ export default function DashboardOverview() {
               Not enough history yet — check back after a few days of snapshots.
             </div>
           )}
-          {rangedHistory.length >= 2 && (
+          {chartPoints.length >= 2 && (
             <div
               className="mt-1.5 flex justify-between border-t border-[var(--color-border-subtle)] pt-2 text-[10px] tracking-[0.08em] text-[#5a5a5a]"
               style={MONO}
             >
-              {rangedHistory
+              {chartPoints
                 .filter((_, i, arr) => i % Math.max(1, Math.floor(arr.length / 6)) === 0 || i === arr.length - 1)
                 .slice(0, 7)
                 .map((p, i) => (
-                  <span key={i}>{p.month}</span>
+                  <span key={i}>{p.label}</span>
                 ))}
             </div>
           )}

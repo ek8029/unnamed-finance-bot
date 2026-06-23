@@ -101,6 +101,7 @@ interface FinancialDataState {
   accounts: Account[];
   holdings: Holding[];
   netWorthHistory: NetWorthDataPoint[];
+  netWorthDaily: { date: string; value: number }[];
   cashFlowHistory: CashFlowDataPoint[];
   assetsComposition: CompositionItem[];
   liabilitiesComposition: CompositionItem[];
@@ -121,6 +122,7 @@ export function useFinancialSummary() {
     accounts: [],
     holdings: [],
     netWorthHistory: [],
+    netWorthDaily: [],
     cashFlowHistory: [],
     assetsComposition: [],
     liabilitiesComposition: [],
@@ -144,6 +146,7 @@ export function useFinancialSummary() {
           accounts: data.accounts || [],
           holdings: data.holdings || [],
           netWorthHistory: data.netWorthHistory || [],
+          netWorthDaily: data.netWorthDaily || [],
           cashFlowHistory: data.cashFlowHistory || [],
           assetsComposition: data.assetsComposition || [],
           liabilitiesComposition: data.liabilitiesComposition || [],
@@ -194,6 +197,7 @@ export function useFinancialSummary() {
               accounts: data.accounts || prev.accounts,
               holdings: data.holdings || prev.holdings,
               netWorthHistory: data.netWorthHistory || prev.netWorthHistory,
+              netWorthDaily: data.netWorthDaily || prev.netWorthDaily,
               cashFlowHistory: data.cashFlowHistory || prev.cashFlowHistory,
               assetsComposition: data.assetsComposition || prev.assetsComposition,
               liabilitiesComposition: data.liabilitiesComposition || prev.liabilitiesComposition,
@@ -220,6 +224,7 @@ export function useFinancialSummary() {
       accounts: d.DEMO_ACCOUNTS,
       holdings: d.DEMO_HOLDINGS,
       netWorthHistory: d.DEMO_NET_WORTH_HISTORY,
+      netWorthDaily: d.DEMO_NET_WORTH_DAILY || [],
       cashFlowHistory: d.DEMO_CASH_FLOW_HISTORY,
       assetsComposition: d.DEMO_ASSETS_COMPOSITION,
       liabilitiesComposition: d.DEMO_LIABILITIES_COMPOSITION,

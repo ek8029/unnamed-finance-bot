@@ -47,7 +47,7 @@ export async function GET() {
         .select('*')
         .eq('user_id', user.id)
         .order('snapshot_date', { ascending: true })
-        .limit(12),
+        .limit(400),
       // Fetch cash flow history (last 6 months)
       supabase
         .from('cash_flow_snapshots')
@@ -126,7 +126,7 @@ export async function GET() {
             .select('*')
             .eq('user_id', user.id)
             .order('snapshot_date', { ascending: true })
-            .limit(12),
+            .limit(400),
           supabase
             .from('cash_flow_snapshots')
             .select('*')
@@ -266,6 +266,21 @@ export async function GET() {
 
     const transformedNetWorthHistory = Array.from(snapshotsByMonth.values());
 
+    // Daily net-worth series (one point per snapshot day) for fine-grained chart
+    // ranges (1W / 1M / ...). Deduped by date; today's live value appended so the
+    // latest point matches the displayed net worth exactly.
+    const dailyByDate = new Map<string, { date: string; value: number }>();
+    for (const snapshot of netWorthHistory) {
+      dailyByDate.set(snapshot.snapshot_date, {
+        date: snapshot.snapshot_date,
+        value: Number(snapshot.net_worth),
+      });
+    }
+    dailyByDate.set(today, { date: today, value: netWorth });
+    const netWorthDaily = Array.from(dailyByDate.values()).sort((a, b) =>
+      a.date < b.date ? -1 : a.date > b.date ? 1 : 0,
+    );
+
     // Transform cash flow history for chart
     const transformedCashFlowHistory = cashFlowHistory.map(snapshot => {
       const date = parseDateLocal(snapshot.snapshot_month);
@@ -353,6 +368,7 @@ export async function GET() {
       holdings,
       insights: transformedInsights,
       netWorthHistory: transformedNetWorthHistory,
+      netWorthDaily,
       cashFlowHistory: transformedCashFlowHistory,
       assetsComposition,
       liabilitiesComposition,
