@@ -157,7 +157,7 @@ function RecentTable({
               <HeadCell align="right">EPS actual</HeadCell>
               <HeadCell align="right">vs est.</HeadCell>
               <HeadCell align="right">Your position</HeadCell>
-              <HeadCell align="right">Est. impact</HeadCell>
+              <HeadCell align="right">Impact</HeadCell>
             </tr>
           </thead>
           <tbody>
@@ -168,7 +168,7 @@ function RecentTable({
               const surpriseColor = !hasComparison
                 ? 'var(--color-text-muted)'
                 : r.beat ? 'var(--color-positive)' : 'var(--color-negative-text)';
-              const impact = r.estimatedImpact ?? 0;
+              const impact = r.actualDollarImpact ?? 0;
               return (
                 <tr key={`${r.ticker}-${i}`} className="group hover:bg-white/[0.015] transition-colors">
                   <td className="p-0" style={{ borderBottom: border }}>
@@ -207,7 +207,11 @@ function RecentTable({
                     </Link>
                   </td>
                   <td className="p-0" style={{ borderBottom: border }}>
-                    {isPro && r.estimatedImpact != null ? (
+                    {!isPro ? (
+                      <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-right text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+                        Pro
+                      </Link>
+                    ) : r.actualDollarImpact != null ? (
                       <Link
                         href={`/dashboard/analyze/${r.ticker}`}
                         className="block px-5 py-[14px] text-right text-[13px] font-semibold"
@@ -216,8 +220,8 @@ function RecentTable({
                         {impact >= 0 ? '+' : ''}{formatCurrency(impact)}
                       </Link>
                     ) : (
-                      <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-right text-[11px] text-[var(--color-text-muted)]" style={MONO}>
-                        Pro
+                      <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-right text-[13px] text-[var(--color-text-muted)]" style={MONO}>
+                        &mdash;
                       </Link>
                     )}
                   </td>

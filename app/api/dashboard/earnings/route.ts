@@ -35,7 +35,7 @@ export async function GET() {
 
     // Free users: return observation data only (dates, tickers, exposure, EPS)
     // Strip impact/scenario fields that constitute Pro recommendations
-    if (tier !== 'pro') {
+    if (tier !== 'pro' && tier !== 'max') {
       return NextResponse.json({
         ...report,
         isPro: false,
