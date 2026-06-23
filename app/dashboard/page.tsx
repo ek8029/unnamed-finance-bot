@@ -321,6 +321,7 @@ export default function DashboardOverview() {
   const router = useRouter();
   const toast = useToast();
   const [plaidError, setPlaidError] = useState<string | null>(null);
+  const [nwRange, setNwRange] = useState<'3M' | '6M' | '1Y' | 'ALL'>('ALL');
 
   useEffect(() => {
     posthog.capture('dashboard_viewed', { has_plaid: hasPlaidConnection, is_demo: isDemo });
@@ -340,9 +341,16 @@ export default function DashboardOverview() {
   }, [financialSummary]);
 
   // ── Derived presentation data ──────────────────────────────────────────
+  // Net-worth history is monthly snapshots; the range pills slice trailing
+  // months. ALL keeps everything. (No intraday data → no 1D/1W ranges.)
+  const rangedHistory = useMemo(() => {
+    const n = { '3M': 3, '6M': 6, '1Y': 12, ALL: Infinity }[nwRange];
+    return n === Infinity ? netWorthHistory : netWorthHistory.slice(-n);
+  }, [netWorthHistory, nwRange]);
+
   const chartSeries = useMemo(
-    () => (netWorthHistory.length >= 2 ? netWorthHistory.map((p) => p.value) : []),
-    [netWorthHistory],
+    () => (rangedHistory.length >= 2 ? rangedHistory.map((p) => p.value) : []),
+    [rangedHistory],
   );
 
   const sectorSlices = useMemo(() => {
@@ -530,17 +538,18 @@ export default function DashboardOverview() {
         </div>
         <div className="flex flex-col items-end gap-2.5">
           <div className="flex gap-1 text-[11px] uppercase tracking-[0.1em]" style={MONO}>
-            {['1D', '1W', '1M', 'YTD', '1Y', 'ALL'].map((r) => (
-              <span
+            {(['3M', '6M', '1Y', 'ALL'] as const).map((r) => (
+              <button
                 key={r}
-                className={`rounded px-[11px] py-1.5 ${
-                  r === 'YTD'
+                onClick={() => setNwRange(r)}
+                className={`cursor-pointer rounded px-[11px] py-1.5 transition-colors ${
+                  r === nwRange
                     ? 'bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
-                    : 'text-[var(--color-text-muted)]'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
                 }`}
               >
                 {r}
-              </span>
+              </button>
             ))}
           </div>
           <div className="text-[11px] tracking-[0.06em] text-[var(--color-text-muted)]" style={MONO}>
@@ -582,12 +591,12 @@ export default function DashboardOverview() {
               Not enough history yet — check back after a few days of snapshots.
             </div>
           )}
-          {netWorthHistory.length >= 2 && (
+          {rangedHistory.length >= 2 && (
             <div
               className="mt-1.5 flex justify-between border-t border-[var(--color-border-subtle)] pt-2 text-[10px] tracking-[0.08em] text-[#5a5a5a]"
               style={MONO}
             >
-              {netWorthHistory
+              {rangedHistory
                 .filter((_, i, arr) => i % Math.max(1, Math.floor(arr.length / 6)) === 0 || i === arr.length - 1)
                 .slice(0, 7)
                 .map((p, i) => (

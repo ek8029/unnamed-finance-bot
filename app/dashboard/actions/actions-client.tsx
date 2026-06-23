@@ -96,6 +96,21 @@ const primaryCta: Record<string, string> = {
   rebalance: 'Model it',
 };
 
+// Where each action's primary CTA takes the user — the surface that acts on it.
+const ctaHref: Record<string, string> = {
+  tax: '/dashboard/taxes',
+  credit: '/dashboard/accounts',
+  filings: '/dashboard/theses',
+  cash: '/dashboard/accounts',
+  spending: '/dashboard/transactions',
+  earnings: '/dashboard/earnings',
+  market: '/dashboard/brief',
+  concentration: '/dashboard/portfolio/factors',
+  portfolio: '/dashboard/portfolio/factors',
+  drift: '/dashboard/portfolio/factors',
+  rebalance: '/dashboard/portfolio/factors',
+};
+
 /* ──────────────────────────────────────────────────
    Demo data
    ────────────────────────────────────────────────── */
@@ -353,13 +368,13 @@ function BasicCard({
           >
             {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Dismiss'}
           </button>
-          <button
-            disabled={loading}
-            className="px-[11px] py-1.5 font-mono text-[9px] font-bold tracking-[0.08em] uppercase rounded border border-[var(--color-gold-border)] bg-[rgba(230,185,77,0.1)] text-[var(--color-gold)] hover:bg-[rgba(230,185,77,0.16)] motion-safe:transition-colors disabled:opacity-50"
+          <a
+            href={ctaHref[action.type] || '/dashboard/portfolio'}
+            className="inline-flex items-center px-[11px] py-1.5 font-mono text-[9px] font-bold tracking-[0.08em] uppercase rounded border border-[var(--color-gold-border)] bg-[rgba(230,185,77,0.1)] text-[var(--color-gold)] hover:bg-[rgba(230,185,77,0.16)] motion-safe:transition-colors"
             style={MONO}
           >
             {cta}
-          </button>
+          </a>
         </div>
       </div>
     </div>
@@ -374,7 +389,7 @@ function MaxCard({ action }: { action: ActionItem }) {
   const kind = maxKind(action);
   const badge = kind === 'investigation' ? '✦ Investigation' : '✦ Shared exposure';
   const ctaLabel = kind === 'investigation' ? 'View thesis' : 'Factor lens';
-  const href = kind === 'investigation' ? '/dashboard/theses' : '/dashboard/portfolio/factor';
+  const href = kind === 'investigation' ? '/dashboard/theses' : '/dashboard/portfolio/factors';
 
   return (
     <div
