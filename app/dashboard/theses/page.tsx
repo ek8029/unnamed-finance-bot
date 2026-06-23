@@ -672,7 +672,10 @@ export default function ThesesPage() {
 
                       {open && (
                         <div className="px-4 sm:px-5 pb-5 pt-1 bg-[#0B0B0B]">
-                          <div className="flex items-center justify-end mb-3">
+                          <div className="flex items-center justify-between mb-3">
+                            <Link href={`/dashboard/theses/${r.t.id}`} className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#6A6A6A] hover:text-[#E6B94D] transition-colors" style={MONO}>
+                              Open reassessment &rsaquo;
+                            </Link>
                             <button type="button" onClick={() => handleDeleteThesis(r.t.ticker)} className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#6A6A6A] hover:text-[#F87171] transition-colors" style={MONO}>
                               Delete thesis
                             </button>

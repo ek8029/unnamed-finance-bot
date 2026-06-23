@@ -140,20 +140,17 @@ function normalizeTitle(title: string): string {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyClient = SupabaseClient | any;
 
-export async function generateInvestigations(
+/**
+ * Load confirmed pillars + their stored evidence for the given theses, grouped
+ * into InvEvidence[] per thesisId. Shared by the cron generator and the live
+ * per-thesis reassessment on the thesis detail page.
+ */
+export async function loadInvEvidence(
   db: AnyClient,
-  userId: string,
-): Promise<{ generated: number; investigations: Investigation[] }> {
-  const { data: theses } = await db
-    .from('theses')
-    .select('id, ticker')
-    .eq('user_id', userId)
-    .eq('tracked', true);
-  if (!theses || theses.length === 0) return { generated: 0, investigations: [] };
-
-  const tickerByThesis = new Map<string, string>();
-  for (const t of theses as { id: string; ticker: string }[]) tickerByThesis.set(t.id, t.ticker);
-  const thesisIds = [...tickerByThesis.keys()];
+  thesisIds: string[],
+): Promise<Map<string, InvEvidence[]>> {
+  const rowsByThesis = new Map<string, InvEvidence[]>();
+  if (thesisIds.length === 0) return rowsByThesis;
 
   const { data: pillarsRaw } = await db
     .from('thesis_pillars')
@@ -163,7 +160,7 @@ export async function generateInvestigations(
   const pillarRows = (pillarsRaw ?? []) as {
     id: string; thesis_id: string; claim: string; status: PillarStatus; status_override: PillarStatus | null;
   }[];
-  if (pillarRows.length === 0) return { generated: 0, investigations: [] };
+  if (pillarRows.length === 0) return rowsByThesis;
 
   const pillarMeta = new Map(pillarRows.map((p) => [p.id, p]));
   const pillarIds = pillarRows.map((p) => p.id);
@@ -173,8 +170,6 @@ export async function generateInvestigations(
     .select('pillar_id, verdict, materiality, source_type, excerpt, what_it_means, source_title, source_url, is_backfill, source_published_at')
     .in('pillar_id', pillarIds);
 
-  // Group evidence by thesis
-  const rowsByThesis = new Map<string, InvEvidence[]>();
   for (const e of (evidenceRaw ?? []) as Record<string, unknown>[]) {
     const pid = e.pillar_id as string;
     const meta = pillarMeta.get(pid);
@@ -199,6 +194,39 @@ export async function generateInvestigations(
     arr.push(row);
     rowsByThesis.set(meta.thesis_id, arr);
   }
+  return rowsByThesis;
+}
+
+/**
+ * Live reassessment for a single thesis, derived from current pillars + evidence.
+ * Returns null when there is no triggering event (intact thesis, no severe move
+ * or broken pillar). Used by the thesis detail page.
+ */
+export async function investigationForThesis(
+  db: AnyClient,
+  thesisId: string,
+  ticker: string,
+): Promise<Investigation | null> {
+  const rowsByThesis = await loadInvEvidence(db, [thesisId]);
+  return buildInvestigation(thesisId, ticker, rowsByThesis.get(thesisId) ?? []);
+}
+
+export async function generateInvestigations(
+  db: AnyClient,
+  userId: string,
+): Promise<{ generated: number; investigations: Investigation[] }> {
+  const { data: theses } = await db
+    .from('theses')
+    .select('id, ticker')
+    .eq('user_id', userId)
+    .eq('tracked', true);
+  if (!theses || theses.length === 0) return { generated: 0, investigations: [] };
+
+  const tickerByThesis = new Map<string, string>();
+  for (const t of theses as { id: string; ticker: string }[]) tickerByThesis.set(t.id, t.ticker);
+  const thesisIds = [...tickerByThesis.keys()];
+
+  const rowsByThesis = await loadInvEvidence(db, thesisIds);
 
   const investigations: Investigation[] = [];
   for (const [thesisId, rows] of rowsByThesis) {

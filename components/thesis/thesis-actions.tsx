@@ -162,6 +162,15 @@ export function ThesisActions({ thesisId, className = '' }: { thesisId: string; 
                             </p>
                           )}
                           <div className="flex items-center gap-3 mt-2.5 pt-2.5 border-t border-white/[0.05]">
+                            {a.kind === 'investigation' && (
+                              <Link
+                                href={`/dashboard/theses/${thesisId}`}
+                                className="font-mono text-[10px] uppercase tracking-[0.10em] text-[#E6B94D] hover:opacity-80 transition-opacity"
+                                style={MONO}
+                              >
+                                View reassessment &rsaquo;
+                              </Link>
+                            )}
                             {a.kind === 'action' && (
                               <>
                                 <button
