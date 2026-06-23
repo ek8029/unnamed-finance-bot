@@ -776,20 +776,22 @@ export default function DashboardLayout({
               />
             )}
 
-            {/* ● ALL ACCOUNTS ▾ */}
-            <button
-              className="hidden sm:flex items-center gap-[7px] h-[34px] px-3 rounded-md text-[var(--color-text-secondary)] uppercase hover:text-[var(--color-text-primary)] transition-colors"
+            {/* ● ALL ACCOUNTS -> accounts */}
+            <Link
+              href="/dashboard/accounts"
+              className="hidden sm:flex items-center gap-[7px] h-[34px] px-3 rounded-md text-[var(--color-text-secondary)] uppercase hover:text-[var(--color-text-primary)] transition-colors no-underline"
               style={{ background: 'transparent', border: '1px solid var(--color-border-base)', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em' }}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-positive)]" />
               All accounts
               <ChevronDown size={12} strokeWidth={2} />
-            </button>
+            </Link>
 
-            {/* Notification bell with gold dot */}
-            <button
+            {/* Notification bell with gold dot -> Actions inbox */}
+            <Link
+              href="/dashboard/actions"
               aria-label="Notifications"
-              className="relative w-[34px] h-[34px] flex items-center justify-center rounded-md text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors shrink-0"
+              className="relative w-[34px] h-[34px] flex items-center justify-center rounded-md text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors shrink-0 no-underline"
               style={{ background: 'transparent', border: '1px solid var(--color-border-base)' }}
             >
               <Bell size={15} strokeWidth={1.6} />
@@ -797,7 +799,7 @@ export default function DashboardLayout({
                 className="absolute top-[7px] right-[8px] w-1.5 h-1.5 rounded-full bg-[var(--color-gold)]"
                 style={{ border: '1.5px solid #0A0A0A' }}
               />
-            </button>
+            </Link>
 
             {/* + ADD ACCOUNT gold CTA */}
             <Link
