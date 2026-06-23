@@ -1,443 +1,445 @@
 'use client';
 
+// Earnings — Sovereign Architect redesign. Presentation-only rebuild of the
+// EDGAR-backed earnings screen. Data fetching + isPro/thesis/scenario logic from
+// useEarnings() is preserved untouched; only the markup and states are new.
+
+import Link from 'next/link';
 import { useFormat } from '@/hooks/use-format';
 import { useEarnings } from '@/hooks/use-financial-data';
 import type { UpcomingEarning, RecentEarning } from '@/hooks/use-financial-data';
+import { usePreview } from '@/lib/preview-context';
+import { TierLock } from '@/components/tier-lock';
 import { Skeleton } from '@/components/ui/skeleton';
+import { STATUS_META } from '@/lib/thesis-palette';
 import {
   Calendar,
+  Link2,
   TrendingUp,
   TrendingDown,
-  Clock,
   CheckCircle2,
   XCircle,
-  BarChart3,
   AlertTriangle,
 } from 'lucide-react';
-import { ProBlur } from '@/components/pro-blur';
-import { STATUS_META } from '@/lib/thesis-palette';
 
-// ── Upcoming Earnings Card ──
+// ── Tokens ──
 
-function UpcomingCard({ event, formatCurrency, isPro }: { event: UpcomingEarning; formatCurrency: (n: number) => string; isPro: boolean }) {
-  const dateObj = new Date(event.date + 'T12:00:00');
-  const month = dateObj.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
-  const day = dateObj.getDate();
-  const timeLabel = event.time === 'before_open' ? 'Before Open' : event.time === 'after_close' ? 'After Close' : 'TBD';
+const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
+const TNUM: React.CSSProperties = { fontVariantNumeric: 'tabular-nums', fontFeatureSettings: "'tnum' 1" };
 
+// Sovereign card surface, shared across the redesign.
+const CARD: React.CSSProperties = {
+  background: 'var(--color-bg-surface)',
+  border: '1px solid var(--color-border-base)',
+  boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+};
+
+// ── Shared bits ──
+
+function HeadCell({ children, align = 'left' }: { children: React.ReactNode; align?: 'left' | 'right' }) {
   return (
-    <div
-      className="rounded-sm overflow-hidden"
-      style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
+    <th
+      className="px-5 py-[11px] text-[9px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)] border-b border-[var(--color-border-base)]"
+      style={{ ...MONO, textAlign: align }}
     >
-      <div className="flex">
-        {/* Date column */}
-        <div className="w-20 shrink-0 flex flex-col items-center justify-center py-4 border-r border-[var(--color-border-subtle)]" style={{ background: 'var(--color-bg-elevated)' }}>
-          <span className="type-eyebrow text-[var(--color-text-muted)]">{month}</span>
-          <span className="type-data text-2xl">{day}</span>
-          {event.estimated ? (
-            <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mt-1" style={{ fontFamily: 'var(--font-mono)' }}>Est.</span>
-          ) : (
-            <div className="flex items-center gap-1 mt-1">
-              <Clock className="w-2.5 h-2.5 text-[var(--color-text-muted)]" />
-              <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider" style={{ fontFamily: 'var(--font-mono)' }}>{timeLabel}</span>
-            </div>
-          )}
-        </div>
+      {children}
+    </th>
+  );
+}
 
-        {/* Content */}
-        <div className="flex-1 px-3 sm:px-5 py-3 sm:py-3.5">
-          <div className="flex items-baseline justify-between gap-2 mb-1">
-            <div className="min-w-0 flex items-baseline gap-2 flex-wrap">
-              <span className="text-base sm:text-lg font-bold tracking-tight text-[var(--color-text-primary)]">{event.ticker}</span>
-              <span className="text-[11px] text-[var(--color-text-muted)] truncate" style={{ fontFamily: 'var(--font-mono)' }}>
-                {event.companyName}
-              </span>
-            </div>
-            <span className="type-eyebrow text-[var(--color-text-muted)] shrink-0 hidden sm:inline">{event.position.sector}</span>
-          </div>
+function timeLabel(t: UpcomingEarning['time']): string {
+  if (t === 'before_open') return 'Before open';
+  if (t === 'after_close') return 'After close';
+  return 'TBD';
+}
 
-          <div className="flex items-center gap-3 sm:gap-4 mt-2 mb-3 flex-wrap">
-            <div>
-              <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Your Exposure</div>
-              <div className="text-[14px] font-semibold text-[var(--color-text-primary)] font-tabular">
-                {formatCurrency(event.position.totalValue)}
-              </div>
-              <div className="text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
-                {event.position.allocationPct.toFixed(1)}% of portfolio
-              </div>
-            </div>
-            {event.epsEstimate != null && (
-              <div>
-                <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Consensus EPS</div>
-                <div className="text-[14px] font-semibold text-[var(--color-text-primary)] font-tabular">
-                  ${event.epsEstimate.toFixed(2)}
-                </div>
-              </div>
-            )}
-          </div>
+function fmtDateCell(iso: string): string {
+  const d = new Date(iso + 'T12:00:00');
+  if (Number.isNaN(d.getTime())) return iso;
+  const wd = d.toLocaleDateString('en-US', { weekday: 'short' });
+  const md = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${wd} · ${md}`;
+}
 
-          {event.estimated && (
-            <div className="text-[11px] text-[var(--color-text-muted)] mb-3" style={{ fontFamily: 'var(--font-mono)' }}>
-              Date estimated from filing history.
-            </div>
-          )}
+// ── Upcoming earnings table ──
+// Columns mirror the mockup exactly: Date · Symbol · Time · Cons. EPS · Implied
+// move · Your exposure. Rows link to Analyze. Implied move has no EDGAR source,
+// so it renders honestly as a muted placeholder rather than a fabricated figure.
 
-          {/* Thesis test */}
-          {event.thesisStatus && (
-            <div className="mb-3">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span
-                  className="px-1.5 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider"
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    color: STATUS_META[event.thesisStatus].color,
-                    background: `${STATUS_META[event.thesisStatus].color}1A`,
-                  }}
-                >
-                  THESIS: {STATUS_META[event.thesisStatus].label.toUpperCase()}
-                </span>
-                <span className="text-[13px] text-[var(--color-text-secondary)]">
-                  Next earnings is the next read on this thesis.
-                </span>
-              </div>
-              {event.testPillar && (
-                <div
-                  className="pl-2.5 text-[13px] italic text-[var(--color-text-secondary)]"
-                  style={{ borderLeft: `2px solid ${STATUS_META[event.thesisStatus].color}` }}
-                >
-                  &ldquo;{event.testPillar}&rdquo;
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Scenario analysis */}
-          {isPro ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-sm" style={{ background: 'rgba(56, 211, 159, 0.06)', border: '1px solid rgba(56, 211, 159, 0.15)' }}>
-                <TrendingUp className="w-3 h-3 text-[var(--color-positive)] shrink-0" />
-                <div>
-                  <div className="text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>If beats by 5%</div>
-                  <div className="text-[13px] font-bold text-[var(--color-positive)] font-tabular">
-                    +{formatCurrency(event.beatImpact5pct ?? 0)}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-2 rounded-sm" style={{ background: 'rgba(248, 113, 113, 0.06)', border: '1px solid rgba(248, 113, 113, 0.15)' }}>
-                <TrendingDown className="w-3 h-3 text-[var(--color-negative)] shrink-0" />
-                <div>
-                  <div className="text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>If misses by 5%</div>
-                  <div className="text-[13px] font-bold text-[var(--color-negative)] font-tabular">
-                    {formatCurrency(event.missImpact5pct ?? 0)}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <ProBlur label="Unlock scenario analysis" description="See estimated portfolio impact if this stock beats or misses earnings." variant="overlay" minHeight="56px">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-sm" style={{ background: 'rgba(56, 211, 159, 0.06)' }}>
-                  <TrendingUp className="w-3 h-3 text-[var(--color-positive)]" />
-                  <div className="text-[13px] font-bold text-[var(--color-positive)]">+$X,XXX</div>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-sm" style={{ background: 'rgba(248, 113, 113, 0.06)' }}>
-                  <TrendingDown className="w-3 h-3 text-[var(--color-negative)]" />
-                  <div className="text-[13px] font-bold text-[var(--color-negative)]">-$X,XXX</div>
-                </div>
-              </div>
-            </ProBlur>
-          )}
-        </div>
+function UpcomingTable({ rows }: { rows: UpcomingEarning[] }) {
+  return (
+    <div className="rounded-lg overflow-hidden" style={CARD}>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr>
+              <HeadCell>Date</HeadCell>
+              <HeadCell>Symbol</HeadCell>
+              <HeadCell>Time</HeadCell>
+              <HeadCell align="right">Cons. EPS</HeadCell>
+              <HeadCell align="right">Implied move</HeadCell>
+              <HeadCell align="right">Your exposure</HeadCell>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((e, i) => {
+              const last = i === rows.length - 1;
+              const border = last ? 'none' : '1px solid var(--color-border-subtle)';
+              return (
+                <tr key={`${e.ticker}-${i}`} className="group hover:bg-white/[0.015] transition-colors">
+                  <td className="p-0" style={{ borderBottom: border }}>
+                    <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px] text-[12px] text-[var(--color-text-secondary)]" style={MONO}>
+                      {fmtDateCell(e.date)}
+                      {e.estimated && (
+                        <span className="ml-1.5 text-[10px] text-[var(--color-text-muted)]">est.</span>
+                      )}
+                    </Link>
+                  </td>
+                  <td className="p-0" style={{ borderBottom: border }}>
+                    <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px]">
+                      <span className="text-[13px] font-bold text-[var(--color-gold)]" style={MONO}>{e.ticker}</span>
+                      <span className="ml-2 text-[11px] text-[var(--color-text-muted)] hidden md:inline" style={MONO}>
+                        {e.companyName}
+                      </span>
+                    </Link>
+                  </td>
+                  <td className="p-0" style={{ borderBottom: border }}>
+                    <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px] text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+                      {timeLabel(e.time)}
+                    </Link>
+                  </td>
+                  <td className="p-0" style={{ borderBottom: border }}>
+                    <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px] text-right text-[13px] text-[var(--color-text-primary)]" style={{ ...MONO, ...TNUM }}>
+                      {e.epsEstimate != null ? `$${e.epsEstimate.toFixed(2)}` : <span className="text-[var(--color-text-muted)]">—</span>}
+                    </Link>
+                  </td>
+                  <td className="p-0" style={{ borderBottom: border }}>
+                    <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px] text-right text-[13px] text-[var(--color-text-muted)]" style={{ ...MONO, ...TNUM }}>
+                      —
+                    </Link>
+                  </td>
+                  <td className="p-0" style={{ borderBottom: border }}>
+                    <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px] text-right text-[13px] font-semibold text-[var(--color-text-primary)]" style={{ ...MONO, ...TNUM }}>
+                      {e.position.allocationPct.toFixed(1)}%
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
-// ── Recent Earnings Card ──
+// ── Recent earnings table ──
+// Preserves the EDGAR-backed recent-results data (beat/miss, EPS actual vs est,
+// pro impact figures). Same table aesthetic as upcoming; pro figures gate inline.
 
-function RecentCard({ result, formatCurrency, isPro }: { result: RecentEarning; formatCurrency: (n: number) => string; isPro: boolean }) {
-  // EDGAR gives the report date but no EPS estimate, so beat/miss framing only
-  // applies when an estimate is present.
-  const hasComparison = result.epsEstimate != null;
-  const borderColor = !hasComparison
-    ? 'var(--color-border-base)'
-    : result.beat ? 'rgba(56, 211, 159, 0.25)' : 'rgba(248, 113, 113, 0.25)';
-  const StatusIcon = !hasComparison ? CheckCircle2 : result.beat ? CheckCircle2 : XCircle;
-  const statusColor = !hasComparison
-    ? 'var(--color-text-secondary)'
-    : result.beat ? 'var(--color-positive)' : 'var(--color-negative)';
-  const headerBg = !hasComparison
-    ? 'var(--color-bg-elevated)'
-    : result.beat ? 'rgba(56, 211, 159, 0.04)' : 'rgba(248, 113, 113, 0.04)';
-  const statusText = !hasComparison
-    ? (result.date ? `reported ${result.date}` : 'reported earnings')
-    : result.beat
-    ? `beat estimates by ${Math.abs(result.surprisePct || 0).toFixed(1)}%`
-    : `missed estimates by ${Math.abs(result.surprisePct || 0).toFixed(1)}%`;
-
+function RecentTable({
+  rows,
+  isPro,
+  formatCurrency,
+}: {
+  rows: RecentEarning[];
+  isPro: boolean;
+  formatCurrency: (n: number) => string;
+}) {
   return (
-    <div
-      className="rounded-sm overflow-hidden"
-      style={{ background: 'var(--color-bg-surface)', border: `1px solid ${borderColor}` }}
-    >
-      {/* Status header */}
-      <div className="px-3 sm:px-5 py-2 sm:py-2.5 flex items-center gap-2 border-b border-[var(--color-border-subtle)]" style={{ background: headerBg }}>
-        <StatusIcon className="w-3.5 h-3.5" style={{ color: statusColor }} />
-        <span className="text-[12px] font-semibold" style={{ color: statusColor, fontFamily: 'var(--font-mono)' }}>
-          {result.ticker} {statusText}
-        </span>
-      </div>
-
-      {/* Details */}
-      <div className="px-3 sm:px-5 py-3 sm:py-3.5">
-        <div className="flex items-baseline gap-2 mb-3 flex-wrap">
-          <span className="text-base sm:text-lg font-bold tracking-tight text-[var(--color-text-primary)]">{result.ticker}</span>
-          <span className="text-[11px] text-[var(--color-text-muted)] truncate max-w-[120px] sm:max-w-none" style={{ fontFamily: 'var(--font-mono)' }}>
-            {result.companyName}
-          </span>
-          {result.date && (
-            <span className="type-eyebrow text-[var(--color-text-muted)] ml-auto shrink-0">{result.date}</span>
-          )}
-        </div>
-
-        {/* EPS comparison */}
-        {result.epsActual != null && result.epsEstimate != null && (
-          <div className="flex items-center gap-3 sm:gap-4 mb-3 flex-wrap">
-            <div>
-              <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">EPS Actual</div>
-              <div className="text-[14px] font-semibold text-[var(--color-text-primary)] font-tabular">
-                ${result.epsActual.toFixed(2)}
-              </div>
-            </div>
-            <div className="text-[var(--color-text-muted)]">vs</div>
-            <div>
-              <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">EPS Estimate</div>
-              <div className="text-[14px] font-semibold text-[var(--color-text-secondary)] font-tabular">
-                ${result.epsEstimate.toFixed(2)}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Impact grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-[var(--color-border-subtle)] rounded-sm overflow-hidden">
-          <div className="bg-[var(--color-bg-surface)] px-3 sm:px-4 py-2 sm:py-3">
-            <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Your Position</div>
-            <div className="text-[15px] font-bold text-[var(--color-text-primary)] font-tabular">
-              {formatCurrency(result.position.totalValue)}
-            </div>
-          </div>
-          {isPro ? (
-            <>
-              <div className="bg-[var(--color-bg-surface)] px-3 sm:px-4 py-2 sm:py-3">
-                <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Est. Impact</div>
-                <div
-                  className="text-[15px] font-bold font-tabular"
-                  style={{ color: (result.estimatedImpact ?? 0) >= 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
-                >
-                  {(result.estimatedImpact ?? 0) >= 0 ? '+' : ''}{formatCurrency(result.estimatedImpact ?? 0)}
-                </div>
-              </div>
-              {result.actualPostEarningsMove != null && (
-                <div className="bg-[var(--color-bg-surface)] px-3 sm:px-4 py-2 sm:py-3">
-                  <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Today&apos;s Move</div>
-                  <div
-                    className="text-[15px] font-bold font-tabular"
-                    style={{ color: result.actualPostEarningsMove >= 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
-                  >
-                    {result.actualPostEarningsMove >= 0 ? '+' : ''}{result.actualPostEarningsMove.toFixed(2)}%
-                  </div>
-                </div>
-              )}
-              {result.actualDollarImpact != null && (
-                <div className="bg-[var(--color-bg-surface)] px-3 sm:px-4 py-2 sm:py-3">
-                  <div className="type-eyebrow text-[var(--color-text-muted)] mb-0.5">Your Gain/Loss</div>
-                  <div
-                    className="text-[15px] font-bold font-tabular"
-                    style={{ color: result.actualDollarImpact >= 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
-                  >
-                    {result.actualDollarImpact >= 0 ? '+' : ''}{formatCurrency(result.actualDollarImpact)}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="bg-[var(--color-bg-surface)] px-3 sm:px-4 py-2 sm:py-3 col-span-1 sm:col-span-1">
-              <ProBlur label="Unlock impact analysis" variant="inline" />
-            </div>
-          )}
-        </div>
+    <div className="rounded-lg overflow-hidden" style={CARD}>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr>
+              <HeadCell>Date</HeadCell>
+              <HeadCell>Symbol</HeadCell>
+              <HeadCell align="right">EPS actual</HeadCell>
+              <HeadCell align="right">vs est.</HeadCell>
+              <HeadCell align="right">Your position</HeadCell>
+              <HeadCell align="right">Est. impact</HeadCell>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => {
+              const last = i === rows.length - 1;
+              const border = last ? 'none' : '1px solid var(--color-border-subtle)';
+              const hasComparison = r.epsEstimate != null;
+              const surpriseColor = !hasComparison
+                ? 'var(--color-text-muted)'
+                : r.beat ? 'var(--color-positive)' : 'var(--color-negative-text)';
+              const impact = r.estimatedImpact ?? 0;
+              return (
+                <tr key={`${r.ticker}-${i}`} className="group hover:bg-white/[0.015] transition-colors">
+                  <td className="p-0" style={{ borderBottom: border }}>
+                    <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-[12px] text-[var(--color-text-secondary)]" style={MONO}>
+                      {r.date || '—'}
+                    </Link>
+                  </td>
+                  <td className="p-0" style={{ borderBottom: border }}>
+                    <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] flex items-center gap-2">
+                      {hasComparison && (
+                        r.beat
+                          ? <CheckCircle2 className="w-3 h-3 shrink-0" style={{ color: 'var(--color-positive)' }} />
+                          : <XCircle className="w-3 h-3 shrink-0" style={{ color: 'var(--color-negative-text)' }} />
+                      )}
+                      <span className="text-[13px] font-bold text-[var(--color-gold)]" style={MONO}>{r.ticker}</span>
+                      <span className="text-[11px] text-[var(--color-text-muted)] hidden md:inline truncate max-w-[160px]" style={MONO}>
+                        {r.companyName}
+                      </span>
+                    </Link>
+                  </td>
+                  <td className="p-0" style={{ borderBottom: border }}>
+                    <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-right text-[13px] text-[var(--color-text-primary)]" style={{ ...MONO, ...TNUM }}>
+                      {r.epsActual != null ? `$${r.epsActual.toFixed(2)}` : <span className="text-[var(--color-text-muted)]">—</span>}
+                    </Link>
+                  </td>
+                  <td className="p-0" style={{ borderBottom: border }}>
+                    <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-right text-[13px] font-semibold" style={{ ...MONO, ...TNUM, color: surpriseColor }}>
+                      {hasComparison && r.surprisePct != null
+                        ? `${r.surprisePct >= 0 ? '+' : ''}${r.surprisePct.toFixed(1)}%`
+                        : <span className="text-[var(--color-text-muted)]">—</span>}
+                    </Link>
+                  </td>
+                  <td className="p-0" style={{ borderBottom: border }}>
+                    <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-right text-[13px] text-[var(--color-text-primary)]" style={{ ...MONO, ...TNUM }}>
+                      {formatCurrency(r.position.totalValue)}
+                    </Link>
+                  </td>
+                  <td className="p-0" style={{ borderBottom: border }}>
+                    {isPro && r.estimatedImpact != null ? (
+                      <Link
+                        href={`/dashboard/analyze/${r.ticker}`}
+                        className="block px-5 py-[14px] text-right text-[13px] font-semibold"
+                        style={{ ...MONO, ...TNUM, color: impact >= 0 ? 'var(--color-positive)' : 'var(--color-negative-text)' }}
+                      >
+                        {impact >= 0 ? '+' : ''}{formatCurrency(impact)}
+                      </Link>
+                    ) : (
+                      <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-right text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+                        Pro
+                      </Link>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
-// ── Main Page ──
+// ── Centered-panel states (shared "Connect your brokerage" vocabulary) ──
 
-export default function EarningsPage() {
-  const { formatCurrency } = useFormat();
-  const { report, loading, error, isPro } = useEarnings();
-
+function ConnectEmpty() {
   return (
-    <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-5xl">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="type-h1">Earnings Impact</h1>
-        <p className="type-body text-[var(--color-text-secondary)]">
-          How earnings results affect your portfolio, with specific dollar amounts
+    <div className="flex min-h-[calc(100vh-200px)] items-center justify-center px-6 py-10">
+      <div className="max-w-[460px] text-center">
+        <div
+          className="mx-auto mb-[22px] inline-flex h-[60px] w-[60px] items-center justify-center rounded-[14px]"
+          style={{ background: 'rgba(230,185,77,0.06)', border: '1px solid rgba(230,185,77,0.18)' }}
+        >
+          <Link2 size={26} className="text-[var(--color-gold)]" strokeWidth={1.6} />
+        </div>
+        <h1 className="text-[24px] font-bold tracking-[-0.025em] leading-[1.1] text-[var(--color-text-primary)] mb-3">
+          Connect your brokerage
+        </h1>
+        <p className="text-[14px] leading-[1.65] text-[var(--color-text-muted)]">
+          Helm tracks the earnings calendar for every position over a read-only connection, then
+          surfaces your exposure here when reports approach. Link an account to get started.
         </p>
       </div>
+    </div>
+  );
+}
 
-      {/* Summary cards */}
-      {!loading && report && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-          <div
-            className="rounded-sm px-3 sm:px-5 py-3 sm:py-4"
-            style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
-              <span className="type-eyebrow text-[var(--color-text-muted)]">Upcoming Reports</span>
-            </div>
-            <div className="type-data text-2xl">{report.upcoming.length}</div>
-            <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
-              next 14 days
-            </div>
-          </div>
-
-          <div
-            className="rounded-sm px-3 sm:px-5 py-3 sm:py-4"
-            style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <BarChart3 className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
-              <span className="type-eyebrow text-[var(--color-text-muted)]">Upcoming Exposure</span>
-            </div>
-            <div className="type-data text-2xl">{formatCurrency(report.totalUpcomingExposure)}</div>
-            <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
-              in positions reporting soon
-            </div>
-          </div>
-
-          <div
-            className="rounded-sm px-3 sm:px-5 py-3 sm:py-4"
-            style={{
-              background: 'var(--color-bg-surface)',
-              border: isPro && report.recentNetImpact != null
-                ? (report.recentNetImpact >= 0
-                  ? '1px solid rgba(56, 211, 159, 0.20)'
-                  : '1px solid rgba(248, 113, 113, 0.20)')
-                : '1px solid var(--color-border-base)',
-            }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              {isPro && report.recentNetImpact != null
-                ? (report.recentNetImpact >= 0
-                  ? <TrendingUp className="w-3.5 h-3.5 text-[var(--color-positive)]" />
-                  : <TrendingDown className="w-3.5 h-3.5 text-[var(--color-negative)]" />)
-                : <BarChart3 className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
-              }
-              <span className="type-eyebrow text-[var(--color-text-muted)]">Recent Net Impact</span>
-            </div>
-            {isPro && report.recentNetImpact != null ? (
-              <>
-                <div
-                  className="type-data text-2xl"
-                  style={{ color: report.recentNetImpact >= 0 ? 'var(--color-positive)' : 'var(--color-negative)' }}
-                >
-                  {report.recentNetImpact >= 0 ? '+' : ''}{formatCurrency(report.recentNetImpact)}
-                </div>
-                <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
-                  from recent earnings
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="type-data text-2xl text-[var(--color-text-muted)]">—</div>
-                <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
-                  Pro feature
-                </div>
-              </>
-            )}
-          </div>
+function NoEarningsEmpty() {
+  return (
+    <div className="flex items-center justify-center px-6 py-16">
+      <div className="max-w-[460px] text-center">
+        <div
+          className="mx-auto mb-[22px] inline-flex h-[60px] w-[60px] items-center justify-center rounded-[14px]"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border-base)' }}
+        >
+          <Calendar size={26} className="text-[var(--color-text-muted)]" strokeWidth={1.6} />
         </div>
-      )}
+        <h2 className="text-[24px] font-bold tracking-[-0.025em] leading-[1.1] text-[var(--color-text-primary)] mb-3">
+          No earnings in your holdings this week
+        </h2>
+        <p className="text-[14px] leading-[1.65] text-[var(--color-text-muted)]">
+          Helm tracks the calendar for every position and surfaces your exposure here when reports
+          approach.
+        </p>
+      </div>
+    </div>
+  );
+}
 
-      {/* Loading */}
-      {loading && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="rounded-sm p-5 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)]">
-                <Skeleton className="h-3 w-24 mb-2" />
-                <Skeleton className="h-7 w-16" />
-              </div>
-            ))}
+function PageSkeleton() {
+  return (
+    <main className="mx-auto px-7 py-[26px] pb-[60px] max-w-[1240px] space-y-[22px]">
+      <div className="space-y-2.5">
+        <Skeleton className="h-3 w-40" />
+        <Skeleton className="h-9 w-96 max-w-full" />
+      </div>
+      <div className="rounded-lg p-5 space-y-3" style={CARD}>
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-6 w-full" />
+        ))}
+      </div>
+    </main>
+  );
+}
+
+// ── Main page ──
+
+export default function EarningsPage() {
+  return (
+    <TierLock
+      required="pro"
+      label="Earnings exposure is a Pro feature"
+      blurb="See what's reporting across your book, the consensus expectations, and exactly how much of your portfolio is exposed each week."
+    >
+      <EarningsContent />
+    </TierLock>
+  );
+}
+
+function EarningsContent() {
+  const { formatCurrency } = useFormat();
+  const { dataState } = usePreview();
+  const { report, loading, error, isPro } = useEarnings();
+
+  // Connect-your-brokerage: no account linked (or preview Empty toggle).
+  const notConnected = dataState === 'empty' || (!loading && !error && !report);
+
+  if (loading) return <PageSkeleton />;
+
+  if (notConnected) {
+    return (
+      <main className="mx-auto px-7 py-[26px] pb-[60px] max-w-[1240px]" aria-label="Earnings">
+        <ConnectEmpty />
+      </main>
+    );
+  }
+
+  const upcoming = report?.upcoming ?? [];
+  const recent = report?.recent ?? [];
+
+  // Share of book reporting soon — the warning chip headline figure.
+  const exposurePct = upcoming.reduce((sum, e) => sum + (e.position.allocationPct || 0), 0);
+
+  // Connected but nothing scheduled and nothing recent → calm empty state.
+  const nothingToShow = upcoming.length === 0 && recent.length === 0;
+
+  return (
+    <main className="mx-auto px-7 py-[26px] pb-[60px] max-w-[1240px] space-y-[22px]" aria-label="Earnings">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-2" style={MONO}>
+            Earnings · Next 14 days
           </div>
-          {[1, 2].map(i => (
-            <div key={i} className="rounded-sm p-5 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] space-y-3">
-              <div className="flex gap-3">
-                <Skeleton className="h-5 w-16" />
-                <Skeleton className="h-5 w-40" />
-              </div>
-              <Skeleton className="h-16 w-full" />
-            </div>
-          ))}
+          <h1 className="text-[28px] sm:text-[32px] font-bold tracking-[-0.025em] leading-[1.08] text-[var(--color-text-primary)]">
+            What&apos;s reporting, and your exposure
+          </h1>
         </div>
-      )}
+
+        {upcoming.length > 0 && (
+          <div
+            className="flex items-center gap-[9px] px-[14px] py-2 rounded-md shrink-0"
+            style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.18)' }}
+          >
+            <Calendar className="w-[14px] h-[14px] shrink-0" style={{ color: 'var(--color-warning-text)' }} strokeWidth={1.7} />
+            <span className="text-[12px] text-[var(--color-text-primary)]">
+              <span className="font-semibold" style={{ color: 'var(--color-warning-text)' }}>{exposurePct.toFixed(1)}%</span> of your book reports soon
+            </span>
+          </div>
+        )}
+      </div>
 
       {/* Error */}
       {error && (
-        <div className="rounded-sm px-5 py-4 flex items-center gap-3" style={{ background: 'rgba(248, 113, 113, 0.06)', border: '1px solid rgba(248, 113, 113, 0.20)' }}>
-          <AlertTriangle className="w-4 h-4 text-[var(--color-negative)]" />
-          <span className="text-[13px] text-[var(--color-negative)]">{error}</span>
+        <div
+          className="rounded-lg px-5 py-4 flex items-center gap-3"
+          style={{ background: 'var(--color-negative-muted)', border: '1px solid var(--color-negative-border)' }}
+        >
+          <AlertTriangle className="w-4 h-4 shrink-0" style={{ color: 'var(--color-negative-text)' }} />
+          <span className="text-[13px]" style={{ color: 'var(--color-negative-text)' }}>{error}</span>
         </div>
       )}
 
-      {/* Recent Earnings Results */}
-      {!loading && report && report.recent.length > 0 && (
+      {/* Calm empty: connected, nothing scheduled or recent */}
+      {!error && nothingToShow && <NoEarningsEmpty />}
+
+      {/* Upcoming */}
+      {upcoming.length > 0 && <UpcomingTable rows={upcoming} />}
+
+      {/* Thesis read — verbatim pillar tests for upcoming reports (preserved logic) */}
+      {upcoming.some((e) => e.thesisStatus) && (
+        <div className="rounded-lg overflow-hidden" style={CARD}>
+          <div className="px-5 py-[11px] border-b border-[var(--color-border-base)]">
+            <span className="text-[9px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)]" style={MONO}>
+              The next read on your theses
+            </span>
+          </div>
+          <div className="divide-y divide-[var(--color-border-subtle)]">
+            {upcoming.filter((e) => e.thesisStatus).map((e, i) => {
+              const meta = STATUS_META[e.thesisStatus as keyof typeof STATUS_META];
+              return (
+                <div key={`${e.ticker}-thesis-${i}`} className="px-5 py-4" style={{ borderLeft: `2px solid ${meta.color}` }}>
+                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                    <span className="text-[13px] font-bold text-[var(--color-gold)]" style={MONO}>{e.ticker}</span>
+                    <span
+                      className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-[0.12em]"
+                      style={{ ...MONO, color: meta.color, background: `${meta.color}1A` }}
+                    >
+                      Thesis: {meta.label}
+                    </span>
+                  </div>
+                  {e.testPillar && (
+                    <p className="text-[13.5px] leading-[1.6] text-[var(--color-text-secondary)] italic m-0 pl-3" style={{ borderLeft: `1px solid ${meta.color}` }}>
+                      &ldquo;{e.testPillar}&rdquo;
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Recent results */}
+      {recent.length > 0 && (
         <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[var(--color-text-muted)]" />
-            <h2 className="type-h2">Recent Earnings Results</h2>
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)]" style={MONO}>
+              Recently reported
+            </div>
+            {isPro && report && report.recentNetImpact != null && (
+              <div className="flex items-center gap-1.5">
+                {report.recentNetImpact >= 0
+                  ? <TrendingUp className="w-3.5 h-3.5" style={{ color: 'var(--color-positive)' }} />
+                  : <TrendingDown className="w-3.5 h-3.5" style={{ color: 'var(--color-negative-text)' }} />}
+                <span className="text-[12px] font-semibold" style={{ ...MONO, ...TNUM, color: report.recentNetImpact >= 0 ? 'var(--color-positive)' : 'var(--color-negative-text)' }}>
+                  {report.recentNetImpact >= 0 ? '+' : ''}{formatCurrency(report.recentNetImpact)} net
+                </span>
+              </div>
+            )}
           </div>
-          {report.recent.map((result, i) => (
-            <RecentCard key={`${result.ticker}-${i}`} result={result} formatCurrency={formatCurrency} isPro={isPro} />
-          ))}
+          <RecentTable rows={recent} isPro={isPro} formatCurrency={formatCurrency} />
         </div>
       )}
 
-      {/* Upcoming Earnings */}
-      {!loading && report && report.upcoming.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[var(--color-text-muted)]" />
-            <h2 className="type-h2">Upcoming Earnings (Next 14 Days)</h2>
-          </div>
-          {report.upcoming.map((event, i) => (
-            <UpcomingCard key={`${event.ticker}-${i}`} event={event} formatCurrency={formatCurrency} isPro={isPro} />
-          ))}
-        </div>
+      {/* Methodology / no-black-boxes footnote */}
+      {(upcoming.length > 0 || recent.length > 0) && (
+        <p className="text-[10px] text-[var(--color-text-muted)] leading-[1.6]" style={MONO}>
+          Dates and consensus pulled from SEC filings and the earnings calendar. Impact estimates use
+          a simplified model (1% EPS surprise ≈ 0.5% move) and are not financial advice.
+        </p>
       )}
-
-      {/* Empty state */}
-      {!loading && report && report.upcoming.length === 0 && report.recent.length === 0 && (
-        <div className="rounded-sm px-4 sm:px-8 py-8 sm:py-12 text-center" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}>
-          <div className="w-12 h-12 rounded-sm mx-auto mb-4 flex items-center justify-center" style={{ background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-base)' }}>
-            <Calendar className="w-5 h-5 text-[var(--color-text-muted)]" />
-          </div>
-          <h3 className="type-h2 mb-1">No earnings activity</h3>
-          <p className="text-[13px] text-[var(--color-text-secondary)] max-w-sm mx-auto">
-            None of your holdings have upcoming earnings in the next 14 days, and no recent results were found. Check back during earnings season.
-          </p>
-        </div>
-      )}
-
-      {/* Methodology note */}
-      <p className="text-[10px] text-[var(--color-text-muted)] text-center" style={{ fontFamily: 'var(--font-mono)' }}>
-        Impact estimates use a simplified model: 1% EPS surprise ≈ 0.5% stock move. Actual market reactions vary. This is not financial advice.
-      </p>
-    </div>
+    </main>
   );
 }
