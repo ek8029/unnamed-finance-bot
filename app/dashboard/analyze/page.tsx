@@ -200,7 +200,7 @@ export default function DashboardAnalyzePage() {
               key={ticker}
               type="button"
               onClick={() => analyzeTicker(ticker)}
-              className="rounded-[5px] border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] px-4 py-2 text-[13px] font-semibold uppercase tracking-[0.04em] text-[var(--color-gold)] transition-colors hover:bg-[rgba(230,185,77,0.14)]"
+              className="rounded-[5px] border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] px-4 py-2 text-[14px] font-semibold uppercase tracking-[0.04em] text-[var(--color-gold)] transition-colors hover:bg-[rgba(230,185,77,0.14)]"
               style={MONO}
             >
               {ticker}
@@ -238,13 +238,13 @@ export default function DashboardAnalyzePage() {
                         <span className="text-[14px] font-bold uppercase tracking-[0.02em] text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-gold)]" style={MONO}>{m.ticker}</span>
                         {up ? <TrendingUp className="w-3.5 h-3.5 text-[var(--color-positive)]" /> : <TrendingDown className="w-3.5 h-3.5 text-[var(--color-negative-text)]" />}
                       </div>
-                      <div className="mt-0.5 truncate text-[12px] text-[var(--color-text-muted)]">{m.name}</div>
+                      <div className="mt-0.5 truncate text-[13px] text-[var(--color-text-muted)]">{m.name}</div>
                     </div>
                     <div className="ml-3 shrink-0 text-right">
                       <div className={`text-[14px] font-bold tabular-nums ${up ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`} style={MONO}>
                         {up ? '+' : ''}{m.changePct.toFixed(2)}%
                       </div>
-                      <div className={`text-[12px] tabular-nums ${up ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`} style={MONO}>
+                      <div className={`text-[13px] tabular-nums ${up ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`} style={MONO}>
                         {m.dollarImpact >= 0 ? '+' : '-'}${Math.abs(m.dollarImpact) >= 1000 ? `${(Math.abs(m.dollarImpact) / 1000).toFixed(1)}K` : Math.abs(m.dollarImpact).toFixed(0)}
                       </div>
                     </div>

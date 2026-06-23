@@ -35,7 +35,7 @@ export default async function DashboardTickerAnalysisPage({ params }: Props) {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
               href="/dashboard/analyze"
-              className="px-5 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[13px] font-semibold rounded transition-colors"
+              className="px-5 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[14px] font-semibold rounded transition-colors"
             >
               Try another ticker
             </a>

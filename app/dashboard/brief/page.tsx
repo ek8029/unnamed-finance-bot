@@ -810,7 +810,7 @@ export default function BriefPage() {
               <div className="mb-[6px] text-[15px] font-semibold leading-[1.3] tracking-[-0.01em] text-[var(--color-text-primary)]">
                 Make this brief yours
               </div>
-              <p className="m-0 text-[13.5px] leading-[1.6] text-[var(--color-text-secondary)]">
+              <p className="m-0 text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
                 Pro turns the general brief above into a conviction-led read on what moved your book and why, and tracks the theses behind every position, leading your brief the morning a pillar cracks.
               </p>
               <span className="mt-3 inline-block text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-gold)]" style={MONO}>
@@ -849,11 +849,11 @@ export default function BriefPage() {
                     className="flex items-center gap-2.5 py-[11px]"
                     style={i > 0 ? { borderTop: '1px solid var(--color-border-subtle)' } : undefined}
                   >
-                    <span className="w-[46px] text-[12px] font-bold text-[var(--color-gold)]" style={MONO}>{m.ticker}</span>
+                    <span className="w-[46px] text-[13px] font-bold text-[var(--color-gold)]" style={MONO}>{m.ticker}</span>
                     <span className={`flex-1 text-[11px] ${m.dollarImpact >= 0 ? 'text-[var(--color-text-muted)]' : 'text-[var(--color-text-muted)]'}`}>
                       {m.dollarImpact >= 0 ? '+' : '−'}{fmt(Math.abs(m.dollarImpact))}
                     </span>
-                    <span className={`text-[12px] font-semibold ${m.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`} style={MONO}>
+                    <span className={`text-[13px] font-semibold ${m.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`} style={MONO}>
                       {fmtPct(m.changePct)}
                     </span>
                   </Link>
@@ -894,9 +894,9 @@ export default function BriefPage() {
               <div className="flex flex-col gap-3">
                 {watchlistSignals.map(w => (
                   <div key={w.ticker} className="group flex items-start gap-[11px]">
-                    <span className="w-[46px] text-[12px] font-bold text-[var(--color-text-primary)]" style={MONO}>{w.ticker}</span>
+                    <span className="w-[46px] text-[13px] font-bold text-[var(--color-text-primary)]" style={MONO}>{w.ticker}</span>
                     <div className="flex-1">
-                      <div className="text-[12px] leading-[1.4] text-[var(--color-text-secondary)]">
+                      <div className="text-[13px] leading-[1.4] text-[var(--color-text-secondary)]">
                         <PriceFlash value={w.price}>${w.price.toFixed(2)}</PriceFlash>
                         {' · '}
                         {w.changeAmt >= 0 ? '+' : '−'}{fmt(Math.abs(w.changeAmt))} today
@@ -921,7 +921,7 @@ export default function BriefPage() {
                 ))}
               </div>
             ) : (
-              <p className="m-0 text-[12px] leading-[1.5] text-[var(--color-text-muted)]">
+              <p className="m-0 text-[13px] leading-[1.5] text-[var(--color-text-muted)]">
                 Quiet across your watchlist. Helm flags moves over 1% here.
               </p>
             )}
@@ -940,7 +940,7 @@ export default function BriefPage() {
               <Sparkles size={12} strokeWidth={1.6} />
               Ask Helm
             </div>
-            <p className="m-0 mb-3 text-[12.5px] leading-[1.55] text-[var(--color-text-secondary)]">
+            <p className="m-0 mb-3 text-[13.5px] leading-[1.55] text-[var(--color-text-secondary)]">
               {biggestMover
                 ? `"What happens to my portfolio if ${biggestMover.ticker} drops 20%?"`
                 : '"What happens to my portfolio if the market drops 10%?"'}

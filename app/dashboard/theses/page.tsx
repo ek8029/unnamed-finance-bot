@@ -421,7 +421,7 @@ export default function ThesesPage() {
   if (phase === 'error') {
     return (
       <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8">
-        <p className="font-mono text-[13px] text-[#6A6A6A]">
+        <p className="font-mono text-[14px] text-[#6A6A6A]">
           Could not load theses.{' '}
           <button type="button" onClick={() => { setPhase('loading'); loadTheses(); }} className="underline hover:text-[#9A9A9A] transition-colors">
             Retry
@@ -486,13 +486,13 @@ export default function ThesesPage() {
         <div key={h.ticker} className="rounded-lg border border-white/[0.07] bg-[#131313] p-4 flex flex-col gap-3">
           <div className="min-w-0">
             <div className="font-mono text-[16px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA] truncate" style={MONO}>{h.ticker}</div>
-            {h.name && h.name !== h.ticker && <div className="text-[13.5px] text-[#6A6A6A] truncate mt-0.5">{h.name}</div>}
+            {h.name && h.name !== h.ticker && <div className="text-[14px] text-[#6A6A6A] truncate mt-0.5">{h.name}</div>}
           </div>
           <button
             type="button"
             disabled={seedingTicker === h.ticker}
             onClick={() => handleSeed(h.ticker)}
-            className="w-full font-mono text-[12px] font-semibold uppercase tracking-[0.12em] px-3.5 py-2.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors disabled:opacity-50"
+            className="w-full font-mono text-[13px] font-semibold uppercase tracking-[0.12em] px-3.5 py-2.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors disabled:opacity-50"
             style={MONO}
           >
             {seedingTicker === h.ticker ? 'Drafting…' : 'Draft thesis'}
@@ -517,7 +517,7 @@ export default function ThesesPage() {
           </div>
           <Link
             href="/dashboard/theses/builder"
-            className="shrink-0 self-start sm:self-auto font-mono text-[12px] font-semibold uppercase tracking-[0.12em] px-4 py-2.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors"
+            className="shrink-0 self-start sm:self-auto font-mono text-[13px] font-semibold uppercase tracking-[0.12em] px-4 py-2.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors"
             style={MONO}
           >
             Research a new thesis
@@ -531,7 +531,7 @@ export default function ThesesPage() {
             <p className="mt-3.5 text-[16.5px] leading-[1.5] text-[#9A9A9A] max-w-[540px] m-0" style={{ ...SERIF, fontStyle: 'italic' }}>{verdictSub}</p>
             <Link
               href="/dashboard/theses/builder"
-              className="inline-block mt-4 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] px-4 py-2.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors"
+              className="inline-block mt-4 font-mono text-[13px] font-semibold uppercase tracking-[0.12em] px-4 py-2.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors"
               style={MONO}
             >
               Build a thesis
@@ -547,7 +547,7 @@ export default function ThesesPage() {
                 <span className="font-mono text-[11.5px] uppercase tracking-[0.14em] text-[#6A6A6A]" style={MONO}>conviction intact</span>
               </div>
               <AggregateMeter counts={aggregateCounts} total={totalPillarCount} height={8} />
-              <div className="flex flex-wrap gap-x-5 gap-y-1.5 font-mono text-[13px]" style={MONO}>
+              <div className="flex flex-wrap gap-x-5 gap-y-1.5 font-mono text-[14px]" style={MONO}>
                 {(['intact', 'weakening', 'broken', 'unverified'] as PillarStatus[])
                   .filter((s) => aggregateCounts[s] > 0)
                   .map((s) => (
@@ -605,7 +605,7 @@ export default function ThesesPage() {
                   }}
                   className="inline-flex items-center gap-1.5 px-2 py-[3px] rounded border border-[rgba(230,185,77,0.18)] bg-[rgba(230,185,77,0.05)] hover:bg-[rgba(230,185,77,0.1)] transition-colors"
                 >
-                  <span className="font-mono text-[12.5px] font-semibold uppercase tracking-[0.06em] text-[#FAFAFA]" style={MONO}>{r.t.ticker}</span>
+                  <span className="font-mono text-[13.5px] font-semibold uppercase tracking-[0.06em] text-[#FAFAFA]" style={MONO}>{r.t.ticker}</span>
                   <span className="font-mono text-[11.5px] text-[#9A9A9A]" style={MONO}>{relTime(r.movedAt!)}</span>
                 </button>
               ))}
@@ -616,8 +616,8 @@ export default function ThesesPage() {
               <div key={band}>
                 <div className="flex items-center gap-2 px-4 sm:px-5 pt-4 pb-2 border-t border-white/[0.05] first:border-t-0">
                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: BAND_META[band].color, boxShadow: band === 'holding' ? 'none' : `0 0 7px ${BAND_META[band].color}` }} />
-                  <span className="font-mono text-[13.5px] font-semibold uppercase tracking-[0.14em]" style={{ ...MONO, color: BAND_META[band].color }}>{BAND_META[band].label}</span>
-                  <span className="font-mono text-[13.5px] text-[#4A4A4A]" style={MONO}>{bandRows.length}</span>
+                  <span className="font-mono text-[14px] font-semibold uppercase tracking-[0.14em]" style={{ ...MONO, color: BAND_META[band].color }}>{BAND_META[band].label}</span>
+                  <span className="font-mono text-[14px] text-[#4A4A4A]" style={MONO}>{bandRows.length}</span>
                 </div>
 
                 {bandRows.map((r) => {
@@ -650,7 +650,7 @@ export default function ThesesPage() {
                         {/* pillars */}
                         <div className="hidden md:block w-[80px] shrink-0">
                           {r.total > 0 ? <SparkPills pillars={r.confirmedPillars} /> : (
-                            <span className="font-mono text-[12.5px] uppercase tracking-[0.1em] text-[#5F5F5F]" style={MONO}>{r.summary.draftCount > 0 ? `${r.summary.draftCount} draft${r.summary.draftCount === 1 ? '' : 's'}` : 'no pillars'}</span>
+                            <span className="font-mono text-[13.5px] uppercase tracking-[0.1em] text-[#5F5F5F]" style={MONO}>{r.summary.draftCount > 0 ? `${r.summary.draftCount} draft${r.summary.draftCount === 1 ? '' : 's'}` : 'no pillars'}</span>
                           )}
                         </div>
                         {/* intact count */}
@@ -660,7 +660,7 @@ export default function ThesesPage() {
                         {/* recency chip, right-aligned in the flexible gap */}
                         <div className="flex-1 min-w-0 flex justify-end pr-1">
                           {r.movedAt && (
-                            <span className="hidden lg:inline-flex items-center font-mono text-[12px] tracking-[0.03em] text-[#5A5A5A]" style={MONO}>
+                            <span className="hidden lg:inline-flex items-center font-mono text-[13px] tracking-[0.03em] text-[#5A5A5A]" style={MONO}>
                               moved {relTime(r.movedAt)}
                             </span>
                           )}
@@ -719,7 +719,7 @@ export default function ThesesPage() {
         onboardStep === 'pick' ? (
         <section className="space-y-7">
           <div>
-            <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-3" style={MONO}>Start here</div>
+            <div className="font-mono text-[13px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-3" style={MONO}>Start here</div>
             <p className="text-[17.5px] leading-[1.6] text-[#B8B8B8] max-w-[700px] m-0">
               Pick a stock you have a view on. Helm drafts the reasons you might own it. You confirm or rewrite them in your own words, and it watches filings, insider activity and headlines against every one.
             </p>
@@ -757,20 +757,20 @@ export default function ThesesPage() {
             <button
               type="submit"
               disabled={!firstTicker.trim() || seedingTicker !== null}
-              className="shrink-0 font-mono text-[13px] font-semibold uppercase tracking-[0.14em] px-5 py-3 rounded bg-[var(--color-gold)] text-black border border-[var(--color-gold)] hover:bg-[#EFCB72] transition-colors disabled:opacity-50"
+              className="shrink-0 font-mono text-[14px] font-semibold uppercase tracking-[0.14em] px-5 py-3 rounded bg-[var(--color-gold)] text-black border border-[var(--color-gold)] hover:bg-[#EFCB72] transition-colors disabled:opacity-50"
               style={MONO}
             >
               {seedingTicker ? 'Drafting…' : 'Draft thesis'}
             </button>
           </form>
           {seedError && (
-            <p className="font-mono text-[12.5px] text-[#F87171]" style={MONO}>Could not draft a thesis for {seedError}. Check the symbol and try again.</p>
+            <p className="font-mono text-[13.5px] text-[#F87171]" style={MONO}>Could not draft a thesis for {seedError}. Check the symbol and try again.</p>
           )}
 
           {/* or from holdings, when connected — fills the width as a grid */}
           {unthesedHoldings.length > 0 && (
             <div className="space-y-3.5">
-              <div className="font-mono text-[13px] font-semibold uppercase tracking-[0.14em] text-[#7A7A7A]" style={MONO}>Or start from a holding</div>
+              <div className="font-mono text-[14px] font-semibold uppercase tracking-[0.14em] text-[#7A7A7A]" style={MONO}>Or start from a holding</div>
               {unthesedListEl}
             </div>
           )}
@@ -778,7 +778,7 @@ export default function ThesesPage() {
         ) : onboardStep === 'confirm' ? (
         <section className="space-y-6">
           <div>
-            <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-3" style={MONO}>Confirm the reasons</div>
+            <div className="font-mono text-[13px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-3" style={MONO}>Confirm the reasons</div>
             <h2 className="text-[24px] font-bold leading-[1.15] tracking-[-0.02em] text-[#FAFAFA] m-0">Why you own {draftTicker}</h2>
             <p className="mt-2.5 text-[15.5px] leading-[1.6] text-[#9A9A9A] max-w-[640px] m-0">Helm drafted these. Keep what is right, rewrite any in your own words, and drop the rest.</p>
           </div>
@@ -815,29 +815,29 @@ export default function ThesesPage() {
               type="button"
               onClick={handleConfirm}
               disabled={draftPillars.every((p) => removedIds.includes(p.id) || !keptClaims[p.id]?.trim())}
-              className="font-mono text-[13px] font-semibold uppercase tracking-[0.14em] px-5 py-3 rounded bg-[var(--color-gold)] text-black border border-[var(--color-gold)] hover:bg-[#EFCB72] transition-colors disabled:opacity-50"
+              className="font-mono text-[14px] font-semibold uppercase tracking-[0.14em] px-5 py-3 rounded bg-[var(--color-gold)] text-black border border-[var(--color-gold)] hover:bg-[#EFCB72] transition-colors disabled:opacity-50"
               style={MONO}
             >
               Track this thesis
             </button>
-            <span className="font-mono text-[12px] text-[#5A5A5A]" style={MONO}>Helm will scan 12 months of filings and news against these.</span>
+            <span className="font-mono text-[13px] text-[#5A5A5A]" style={MONO}>Helm will scan 12 months of filings and news against these.</span>
           </div>
           {seedError && (
-            <p className="font-mono text-[12.5px] text-[#F87171]" style={MONO}>Something went wrong. Try again.</p>
+            <p className="font-mono text-[13.5px] text-[#F87171]" style={MONO}>Something went wrong. Try again.</p>
           )}
         </section>
         ) : onboardStep === 'scanning' ? (
         <section className="space-y-4 py-8">
-          <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>Scanning</div>
+          <div className="font-mono text-[13px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>Scanning</div>
           <p className="text-[17px] leading-[1.5] text-[#FAFAFA] m-0">Helm is reading the last 12 months of filings, news and price moves for {draftTicker}.</p>
           <div className="h-1 w-[260px] max-w-full rounded-full bg-white/[0.06] overflow-hidden">
             <div className="h-full w-1/3 bg-[var(--color-gold)] animate-pulse" />
           </div>
-          <p className="font-mono text-[12.5px] text-[#6A6A6A] m-0" style={MONO}>This takes a few seconds.</p>
+          <p className="font-mono text-[13.5px] text-[#6A6A6A] m-0" style={MONO}>This takes a few seconds.</p>
         </section>
         ) : (
         <section className="space-y-5">
-          <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>Now watching {draftTicker}</div>
+          <div className="font-mono text-[13px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>Now watching {draftTicker}</div>
           {scanEvidence && scanEvidence > 0 ? (
             <>
               <h2 className="text-[26px] font-bold leading-[1.15] tracking-[-0.02em] text-[#FAFAFA] m-0">Helm already found {scanEvidence} piece{scanEvidence === 1 ? '' : 's'} of evidence.</h2>
@@ -852,7 +852,7 @@ export default function ThesesPage() {
           <button
             type="button"
             onClick={finishOnboarding}
-            className="font-mono text-[13px] font-semibold uppercase tracking-[0.14em] px-5 py-3 rounded bg-[var(--color-gold)] text-black border border-[var(--color-gold)] hover:bg-[#EFCB72] transition-colors"
+            className="font-mono text-[14px] font-semibold uppercase tracking-[0.14em] px-5 py-3 rounded bg-[var(--color-gold)] text-black border border-[var(--color-gold)] hover:bg-[#EFCB72] transition-colors"
             style={MONO}
           >
             See {draftTicker}

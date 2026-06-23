@@ -663,7 +663,7 @@ export default function TransactionsPage() {
                 {formatCurrency(summary.netFlow)}
               </p>
             )}
-            <p className="text-[12px] text-[var(--color-text-muted)]">
+            <p className="text-[13px] text-[var(--color-text-muted)]">
               {loading ? '' : `${pagination.total} transactions`}
             </p>
           </div>
@@ -678,7 +678,7 @@ export default function TransactionsPage() {
                 {formatCurrency(tileSummary.bought)}
               </p>
             )}
-            <p className="text-[12px] text-[var(--color-text-muted)]">
+            <p className="text-[13px] text-[var(--color-text-muted)]">
               {loading ? '' : `${tileSummary.buyCount} trade${tileSummary.buyCount !== 1 ? 's' : ''}`}
             </p>
           </div>
@@ -693,7 +693,7 @@ export default function TransactionsPage() {
                 {formatCurrency(tileSummary.sold)}
               </p>
             )}
-            <p className="text-[12px] text-[var(--color-text-muted)]">
+            <p className="text-[13px] text-[var(--color-text-muted)]">
               {loading ? '' : `${tileSummary.sellCount} trade${tileSummary.sellCount !== 1 ? 's' : ''}`}
             </p>
           </div>
@@ -708,7 +708,7 @@ export default function TransactionsPage() {
                 {formatCurrency(tileSummary.dividends)}
               </p>
             )}
-            <p className="text-[12px] text-[var(--color-text-muted)]">
+            <p className="text-[13px] text-[var(--color-text-muted)]">
               {loading ? '' : `${tileSummary.divCount} payment${tileSummary.divCount !== 1 ? 's' : ''}`}
             </p>
           </div>
@@ -723,7 +723,7 @@ export default function TransactionsPage() {
                 {formatCurrency(tileSummary.fees)}
               </p>
             )}
-            <p className="text-[12px] text-[var(--color-text-muted)]">
+            <p className="text-[13px] text-[var(--color-text-muted)]">
               {loading ? '' : `${tileSummary.feeCount} charge${tileSummary.feeCount !== 1 ? 's' : ''}`}
             </p>
           </div>
@@ -740,7 +740,7 @@ export default function TransactionsPage() {
               aria-selected={chipFilter === c.key}
               aria-label={`Filter by ${c.label}`}
               onClick={() => setChipFilter(c.key)}
-              className={`px-3.5 py-2.5 sm:py-2 rounded-full text-[13px] font-medium motion-safe:transition-all border ${
+              className={`px-3.5 py-2.5 sm:py-2 rounded-full text-[14px] font-medium motion-safe:transition-all border ${
                 chipFilter === c.key
                   ? 'bg-[var(--color-gold)]/15 border-[var(--color-gold)]/40 text-[var(--color-gold)]'
                   : 'bg-[var(--color-bg-surface)] border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold-border)] hover:text-[var(--color-text-primary)]'
@@ -763,7 +763,7 @@ export default function TransactionsPage() {
               aria-label={`Filter by account: ${name}`}
               aria-pressed={accountChip === name}
               onClick={() => setAccountChip(accountChip === name ? '' : name)}
-              className={`px-3.5 py-2.5 sm:py-2 rounded-full text-[13px] font-medium motion-safe:transition-all border ${
+              className={`px-3.5 py-2.5 sm:py-2 rounded-full text-[14px] font-medium motion-safe:transition-all border ${
                 accountChip === name
                   ? 'bg-[var(--color-gold)]/15 border-[var(--color-gold)]/40 text-[var(--color-gold)]'
                   : 'bg-[var(--color-bg-surface)] border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold-border)] hover:text-[var(--color-text-primary)]'
@@ -779,7 +779,7 @@ export default function TransactionsPage() {
               type="button"
               onClick={clearAllFilters}
               aria-label="Clear all filters"
-              className="flex items-center gap-1 px-2.5 py-2.5 sm:py-2 text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] motion-safe:transition-colors"
+              className="flex items-center gap-1 px-2.5 py-2.5 sm:py-2 text-[14px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] motion-safe:transition-colors"
             >
               <X className="w-3.5 h-3.5" />
               Clear
@@ -821,7 +821,7 @@ export default function TransactionsPage() {
                     {formatGroupDate(group.dateStr)}
                   </h3>
                   <span
-                    className={`font-mono text-[12px] font-semibold tabular-nums ${
+                    className={`font-mono text-[13px] font-semibold tabular-nums ${
                       group.dailyNet >= 0
                         ? 'text-[var(--color-positive)]'
                         : 'text-[var(--color-negative-text)]'
@@ -884,7 +884,7 @@ export default function TransactionsPage() {
                             )}
                           </div>
                           {metaParts.length > 0 && (
-                            <div className="font-mono text-[12px] text-[var(--color-text-muted)] truncate mt-1 flex items-center gap-1.5">
+                            <div className="font-mono text-[13px] text-[var(--color-text-muted)] truncate mt-1 flex items-center gap-1.5">
                               {tx.is_pending && <Clock className="w-3 h-3 flex-shrink-0" />}
                               <span className="truncate">{metaParts.join(' · ')}</span>
                             </div>
@@ -894,7 +894,7 @@ export default function TransactionsPage() {
                         {/* Right-aligned signed amount */}
                         <div className="flex-shrink-0 text-right">
                           {isSync ? (
-                            <span className="font-mono text-[13px] text-[var(--color-text-muted)]">&mdash;</span>
+                            <span className="font-mono text-[14px] text-[var(--color-text-muted)]">&mdash;</span>
                           ) : (
                             <span
                               className={`font-mono text-[15px] font-semibold tabular-nums ${
@@ -921,7 +921,7 @@ export default function TransactionsPage() {
                 aria-label="Transaction pagination"
                 className="flex items-center justify-between pt-2"
               >
-                <p className="text-[12px] text-[var(--color-text-muted)] font-mono">
+                <p className="text-[13px] text-[var(--color-text-muted)] font-mono">
                   Page {pagination.page} of {pagination.totalPages}
                 </p>
                 <div className="flex items-center gap-1.5">
@@ -951,7 +951,7 @@ export default function TransactionsPage() {
                         onClick={() => goToPage(pageNum)}
                         aria-label={`Go to page ${pageNum}`}
                         aria-current={pageNum === pagination.page ? 'page' : undefined}
-                        className={`w-9 h-9 sm:w-8 sm:h-8 rounded text-[13px] font-mono motion-safe:transition-colors ${
+                        className={`w-9 h-9 sm:w-8 sm:h-8 rounded text-[14px] font-mono motion-safe:transition-colors ${
                           pageNum === pagination.page
                             ? 'bg-[var(--color-gold)] text-black font-semibold'
                             : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-overlay)]'

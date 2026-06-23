@@ -584,7 +584,7 @@ export default function DashboardLayout({
                     <Link
                       key={child.name}
                       href={child.href}
-                      className="flex items-center gap-2.5 py-[7px] pr-3 pl-[34px] text-[12px] rounded-[5px] no-underline"
+                      className="flex items-center gap-2.5 py-[7px] pr-3 pl-[34px] text-[13px] rounded-[5px] no-underline"
                       style={{
                         color: childActive ? 'var(--color-gold)' : 'var(--color-text-muted)',
                         fontWeight: childActive ? 600 : 500,
@@ -666,7 +666,7 @@ export default function DashboardLayout({
               {profile?.initials || 'JD'}
             </div>
             <div className="flex-1 min-w-0 text-left">
-              <div className="text-[12px] font-semibold truncate text-[var(--color-text-primary)]">
+              <div className="text-[13px] font-semibold truncate text-[var(--color-text-primary)]">
                 {profile?.fullName || 'Loading…'}
               </div>
               <div
@@ -757,7 +757,7 @@ export default function DashboardLayout({
               style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
             >
               <Search size={14} strokeWidth={1.6} className="shrink-0" />
-              <span className="flex-1 text-[12.5px] truncate">Search tickers, accounts, commands…</span>
+              <span className="flex-1 text-[13.5px] truncate">Search tickers, accounts, commands…</span>
               <span
                 className="text-[9px] px-1.5 py-0.5 rounded-[3px] shrink-0"
                 style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}

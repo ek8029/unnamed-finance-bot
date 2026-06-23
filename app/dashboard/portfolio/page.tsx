@@ -118,7 +118,7 @@ function TodaysMovers({ movers }: { movers: { ticker: string; day_change_percent
               background: up ? 'rgba(74,222,128,0.05)' : 'rgba(248,113,113,0.05)',
             }}
           >
-            <span className="font-mono text-[12px] font-semibold uppercase tracking-[0.05em] text-[var(--color-text-primary)]">{h.ticker}</span>
+            <span className="font-mono text-[13px] font-semibold uppercase tracking-[0.05em] text-[var(--color-text-primary)]">{h.ticker}</span>
             <span className="font-mono text-[11.5px] tabular-nums" style={{ color: up ? 'var(--color-positive)' : 'var(--color-negative)' }}>
               {up ? '+' : ''}{pct.toFixed(2)}%
             </span>
@@ -488,7 +488,7 @@ export default function PortfolioPage() {
                 <span className="text-[32px] font-bold tracking-[-0.025em] tabular-nums text-[var(--color-text-primary)] leading-none">
                   {formatCurrency(totalValue)}
                 </span>
-                <span className={`font-mono text-[13px] font-semibold ${
+                <span className={`font-mono text-[14px] font-semibold ${
                   totalDayChange >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'
                 }`}>
                   {totalDayChange >= 0 ? '+' : '−'}{formatCurrency(Math.abs(totalDayChange))} &middot; {dayChangePercentage >= 0 ? '+' : '−'}{Math.abs(dayChangePercentage).toFixed(2)}% today
@@ -587,7 +587,7 @@ export default function PortfolioPage() {
                   <div className="flex items-center gap-3">
                     <TrendingDown className="w-4 h-4 text-[var(--color-gold)] shrink-0" />
                     <div>
-                      <span className="text-[13px] sm:text-sm font-medium text-[var(--color-text-primary)]">
+                      <span className="text-[14px] sm:text-sm font-medium text-[var(--color-text-primary)]">
                         {formatCurrency(harvestable)} in harvestable losses
                       </span>
                       <span className="text-xs text-[var(--color-text-muted)] ml-2 hidden sm:inline">
@@ -630,7 +630,7 @@ export default function PortfolioPage() {
                 </span>
               </div>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className={`font-mono text-[11px] sm:text-[13px] font-bold tabular-nums ${
+                <span className={`font-mono text-[11px] sm:text-[14px] font-bold tabular-nums ${
                   totalDayChange >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                 }`}>
                   {totalDayChange >= 0 ? '+' : ''}{formatCurrency(totalDayChange)} ({dayChangePercentage >= 0 ? '+' : ''}{dayChangePercentage.toFixed(2)}%)
@@ -752,19 +752,19 @@ export default function PortfolioPage() {
                     <TickerIcon ticker={h.ticker} />
                     <div className="min-w-0">
                       <div className="flex items-baseline gap-1.5 sm:gap-2">
-                        <span className="font-mono text-[13px] sm:text-[14px] font-bold tracking-wide text-[var(--color-text-primary)]">
+                        <span className="font-mono text-[14px] sm:text-[14px] font-bold tracking-wide text-[var(--color-text-primary)]">
                           {h.ticker}
                         </span>
                         <span className="text-[10px] sm:text-[11px] text-[var(--color-text-muted)] truncate">
                           {h.shares} sh &middot; <PriceFlash value={h.current_price}>${h.current_price.toFixed(2)}</PriceFlash>
                         </span>
                       </div>
-                      <div className="text-[11px] sm:text-[12px] text-[var(--color-text-muted)] mt-0.5 truncate">
+                      <div className="text-[11px] sm:text-[13px] text-[var(--color-text-muted)] mt-0.5 truncate">
                         {h.asset_name}
                       </div>
                     </div>
                     <div className="text-right flex flex-col items-end gap-0.5 sm:gap-1">
-                      <div className="font-mono text-[12px] sm:text-[13px] font-bold tabular-nums text-[var(--color-text-primary)]">
+                      <div className="font-mono text-[13px] sm:text-[14px] font-bold tabular-nums text-[var(--color-text-primary)]">
                         {h.total_value >= 1000 ? `$${(h.total_value / 1000).toFixed(1)}k` : formatCurrency(h.total_value)}
                       </div>
                       <svg width="40" height="14" viewBox="0 0 80 24" fill="none" className="block sm:hidden">
@@ -813,7 +813,7 @@ export default function PortfolioPage() {
                 value={tableSearch}
                 onChange={(e) => setTableSearch(e.target.value)}
                 placeholder="Filter holdings…"
-                className="flex-1 bg-transparent border-none outline-none text-[var(--color-text-primary)] text-[12px] placeholder:text-[var(--color-text-muted)]"
+                className="flex-1 bg-transparent border-none outline-none text-[var(--color-text-primary)] text-[13px] placeholder:text-[var(--color-text-muted)]"
               />
             </div>
             <div className="flex gap-[5px] font-mono text-[10px] tracking-[0.06em] uppercase">
@@ -1364,7 +1364,7 @@ export default function PortfolioPage() {
                   <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5">
                     <div className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2">Diversification Score</div>
                     <div className="text-[28px] sm:text-[40px] font-bold tabular-nums" style={{ color: scoreColor, fontFamily: 'var(--font-mono)' }}>{diversificationScore}</div>
-                    <div className="text-[13px] text-[var(--color-text-muted)] mt-1">out of 100 (look-through)</div>
+                    <div className="text-[14px] text-[var(--color-text-muted)] mt-1">out of 100 (look-through)</div>
                     <div className="mt-3 h-2 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${diversificationScore}%`, backgroundColor: scoreColor }} />
                     </div>
@@ -1372,8 +1372,8 @@ export default function PortfolioPage() {
                   <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5">
                     <div className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2">Effective Positions</div>
                     <div className="text-[28px] sm:text-[40px] font-bold tabular-nums text-[var(--color-text-primary)]" style={{ fontFamily: 'var(--font-mono)' }}>{effectivePositions}</div>
-                    <div className="text-[13px] text-[var(--color-text-muted)] mt-1">of {ltEntries.length} underlying names</div>
-                    <div className="text-[12px] text-[var(--color-text-muted)] mt-2" style={{ fontFamily: 'var(--font-mono)' }}>
+                    <div className="text-[14px] text-[var(--color-text-muted)] mt-1">of {ltEntries.length} underlying names</div>
+                    <div className="text-[13px] text-[var(--color-text-muted)] mt-2" style={{ fontFamily: 'var(--font-mono)' }}>
                       HHI: {(hhi * 10000).toFixed(0)} / 10,000
                     </div>
                   </div>
@@ -1382,8 +1382,8 @@ export default function PortfolioPage() {
                     <div className="text-[28px] sm:text-[40px] font-bold tabular-nums" style={{ color: topWeight > 0.25 ? 'var(--color-negative)' : 'var(--color-text-primary)', fontFamily: 'var(--font-mono)' }}>
                       {(topWeight * 100).toFixed(1)}%
                     </div>
-                    <div className="text-[13px] text-[var(--color-text-muted)] mt-1">{topTicker}</div>
-                    <div className="text-[12px] text-[var(--color-text-muted)] mt-2">
+                    <div className="text-[14px] text-[var(--color-text-muted)] mt-1">{topTicker}</div>
+                    <div className="text-[13px] text-[var(--color-text-muted)] mt-2">
                       {topWeight > 0.25 ? '⚠ Exceeds 25% single-name threshold' : '✓ Within concentration limits'}
                     </div>
                   </div>
@@ -1398,7 +1398,7 @@ export default function PortfolioPage() {
             <Card className="mb-6">
               <CardHeader className="pb-3">
                 <CardTitle className="text-[15px]">Sector Concentration</CardTitle>
-                <p className="text-[12px] text-[var(--color-text-muted)] font-mono">Your sector weights vs typical S&P 500 allocation</p>
+                <p className="text-[13px] text-[var(--color-text-muted)] font-mono">Your sector weights vs typical S&P 500 allocation</p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -1414,14 +1414,14 @@ export default function PortfolioPage() {
                       const diffColor = Math.abs(diff) > 10 ? 'var(--color-warning-text)' : 'var(--color-text-muted)';
                       return (
                         <div key={sector.name} className="flex items-center gap-3">
-                          <span className="text-[13px] text-[var(--color-text-secondary)] w-40 shrink-0">{sector.name}</span>
+                          <span className="text-[14px] text-[var(--color-text-secondary)] w-40 shrink-0">{sector.name}</span>
                           <div className="flex-1 flex items-center gap-2">
                             <div className="flex-1 h-2 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden relative">
                               <div className="h-full bg-[var(--color-gold)] rounded-full" style={{ width: `${Math.min(100, sector.percentage)}%` }} />
                               <div className="absolute top-0 bottom-0 w-0.5 bg-white/30" style={{ left: `${Math.min(100, benchmark)}%` }} title={`S&P: ${benchmark}%`} />
                             </div>
                           </div>
-                          <span className="font-mono text-[13px] font-bold tabular-nums w-14 text-right text-[var(--color-text-primary)]">
+                          <span className="font-mono text-[14px] font-bold tabular-nums w-14 text-right text-[var(--color-text-primary)]">
                             {sector.percentage.toFixed(1)}%
                           </span>
                           <span className="font-mono text-[11px] tabular-nums w-16 text-right" style={{ color: diffColor }}>
@@ -1570,7 +1570,7 @@ function ConcentrationTable({ holdings, formatCurrency }: {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-[15px]">Single-Name Risk (Look-Through)</CardTitle>
-            <p className="text-[12px] text-[var(--color-text-muted)] font-mono mt-1">
+            <p className="text-[13px] text-[var(--color-text-muted)] font-mono mt-1">
               Includes ETF and leveraged product exposure · Red {'>'} 25% · Yellow {'>'} 10% · ETF weights as of Q2 2026
             </p>
           </div>
@@ -1579,7 +1579,7 @@ function ConcentrationTable({ holdings, formatCurrency }: {
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(0); }}
             placeholder="AAPL, NVDA, MSFT..."
-            className="w-48 px-3 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[13px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors"
+            className="w-48 px-3 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[14px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors"
             style={{ fontFamily: 'var(--font-mono)' }}
           />
         </div>
@@ -1617,35 +1617,35 @@ function ConcentrationTable({ holdings, formatCurrency }: {
                 <span className={`font-mono text-[14px] font-bold tabular-nums w-16 text-right ${textColor}`}>
                   {alloc.toFixed(1)}%
                 </span>
-                <span className="font-mono text-[12px] text-[var(--color-text-muted)] tabular-nums w-24 text-right">
+                <span className="font-mono text-[13px] text-[var(--color-text-muted)] tabular-nums w-24 text-right">
                   {formatCurrency(h.value)}
                 </span>
               </div>
             );
           })}
           {pageItems.length === 0 && (
-            <p className="text-[13px] text-[var(--color-text-muted)] py-4 text-center">No holdings match &quot;{search}&quot;</p>
+            <p className="text-[14px] text-[var(--color-text-muted)] py-4 text-center">No holdings match &quot;{search}&quot;</p>
           )}
         </div>
 
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4 pt-3 border-t border-[var(--color-border-subtle)]">
-            <span className="text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+            <span className="text-[13px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
               {filtered.length} holdings · page {page + 1}/{totalPages}
             </span>
             <div className="flex gap-1">
               <button
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="px-3 py-1 text-[12px] rounded border border-[var(--color-border-base)] text-[var(--color-text-secondary)] disabled:opacity-30 hover:border-[var(--color-border-strong)] transition-colors"
+                className="px-3 py-1 text-[13px] rounded border border-[var(--color-border-base)] text-[var(--color-text-secondary)] disabled:opacity-30 hover:border-[var(--color-border-strong)] transition-colors"
               >
                 Prev
               </button>
               <button
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="px-3 py-1 text-[12px] rounded border border-[var(--color-border-base)] text-[var(--color-text-secondary)] disabled:opacity-30 hover:border-[var(--color-border-strong)] transition-colors"
+                className="px-3 py-1 text-[13px] rounded border border-[var(--color-border-base)] text-[var(--color-text-secondary)] disabled:opacity-30 hover:border-[var(--color-border-strong)] transition-colors"
               >
                 Next
               </button>
@@ -1856,7 +1856,7 @@ function StressTest({ holdings, totalValue, formatCurrency }: {
               <select
                 value={selectedTicker}
                 onChange={e => setSelectedTicker(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-[12px] text-[var(--color-text-primary)] font-mono"
+                className="w-full px-2.5 py-1.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-[13px] text-[var(--color-text-primary)] font-mono"
               >
                 {holdings.sort((a, b) => b.total_value - a.total_value).map(h => (
                   <option key={h.ticker} value={h.ticker}>{h.ticker}</option>
@@ -1866,7 +1866,7 @@ function StressTest({ holdings, totalValue, formatCurrency }: {
               <select
                 value={selectedSector}
                 onChange={e => setSelectedSector(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-[12px] text-[var(--color-text-primary)] font-mono"
+                className="w-full px-2.5 py-1.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-[13px] text-[var(--color-text-primary)] font-mono"
               >
                 {sectors.map(([s]) => (
                   <option key={s} value={s}>{s}</option>
@@ -1879,7 +1879,7 @@ function StressTest({ holdings, totalValue, formatCurrency }: {
               <select
                 value={dropPct}
                 onChange={e => setDropPct(Number(e.target.value))}
-                className="flex-1 px-2.5 py-1.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-[12px] text-[var(--color-negative)] font-mono font-bold"
+                className="flex-1 px-2.5 py-1.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-[13px] text-[var(--color-negative)] font-mono font-bold"
               >
                 {[5, 10, 15, 20, 25, 30, 40, 50].map(p => (
                   <option key={p} value={p}>-{p}%</option>

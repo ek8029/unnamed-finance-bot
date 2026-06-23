@@ -251,7 +251,7 @@ export default function AccountsPage() {
         <div className="rounded-lg border p-6"
           style={{ background: 'rgba(248,113,113,0.08)', borderColor: 'rgba(248,113,113,0.25)', color: 'var(--color-negative-text)' }}>
           <h2 className="text-[15px] font-semibold mb-2">Error loading accounts</h2>
-          <p className="text-[13px]">{error}</p>
+          <p className="text-[14px]">{error}</p>
         </div>
       </div>
     );
@@ -322,7 +322,7 @@ export default function AccountsPage() {
             )}
             {!apiLoading && (
               <span
-                className="text-[12px]"
+                className="text-[13px]"
                 style={{ ...MONO, color: allSynced ? 'var(--color-positive)' : 'var(--color-warning-text)' }}
               >
                 {allSynced ? '● All synced' : '◐ Sync attention needed'}
@@ -365,7 +365,7 @@ export default function AccountsPage() {
         {apiLoading ? (
           <div className="h-3 w-full rounded animate-pulse mb-4" style={{ background: 'var(--color-bg-elevated)' }} />
         ) : composition.length === 0 ? (
-          <div className="text-[12px] mb-2" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="text-[13px] mb-2" style={{ color: 'var(--color-text-muted)' }}>
             No assets connected yet.
           </div>
         ) : (
@@ -429,7 +429,7 @@ export default function AccountsPage() {
                       {chip.initial}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[13.5px] font-semibold truncate">{account.institution}</div>
+                      <div className="text-[14px] font-semibold truncate">{account.institution}</div>
                       <div className="text-[9px] uppercase truncate" style={{ ...MONO, letterSpacing: '0.1em', color: 'var(--color-text-muted)' }}>
                         {typeLabel}
                       </div>
@@ -443,7 +443,7 @@ export default function AccountsPage() {
                     style={{ letterSpacing: '-0.02em', color: dimmed ? 'var(--color-text-muted)' : undefined }}
                   >
                     {formatCurrency(Math.abs(account.balance))}
-                    {account.balance < 0 && <span className="text-[12px] ml-2" style={{ ...MONO }}>due</span>}
+                    {account.balance < 0 && <span className="text-[13px] ml-2" style={{ ...MONO }}>due</span>}
                   </div>
 
                   {/* Sub-line: last sync / stale */}
@@ -512,7 +512,7 @@ export default function AccountsPage() {
 
       {healthError && (
         <div
-          className="rounded-lg mb-[14px] px-5 py-3 flex items-center gap-2 text-[12px]"
+          className="rounded-lg mb-[14px] px-5 py-3 flex items-center gap-2 text-[13px]"
           style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)', color: 'var(--color-negative-text)' }}
         >
           <span>Could not load connection health.</span>
@@ -526,12 +526,12 @@ export default function AccountsPage() {
         style={{ background: '#0C0C0C', border: '1px solid var(--color-border-subtle)', ...MONO }}
       >
         <ShieldCheck className="w-[18px] h-[18px] shrink-0" strokeWidth={1.6} style={{ color: 'var(--color-positive)' }} />
-        <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
+        <span className="text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>
           <span style={{ color: 'var(--color-positive)' }}>Read-only access</span>
           {' '}— Helm cannot move money or execute trades.
         </span>
         <span className="hidden md:block" style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.08)' }} />
-        <span className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
+        <span className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
           256-bit encryption · Connected via Plaid — same provider as Venmo and Robinhood.
         </span>
       </div>

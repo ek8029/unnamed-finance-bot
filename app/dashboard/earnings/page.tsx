@@ -88,7 +88,7 @@ function UpcomingTable({ rows }: { rows: UpcomingEarning[] }) {
               return (
                 <tr key={`${e.ticker}-${i}`} className="group hover:bg-white/[0.015] transition-colors">
                   <td className="p-0" style={{ borderBottom: border }}>
-                    <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px] text-[12px] text-[var(--color-text-secondary)]" style={MONO}>
+                    <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px] text-[13px] text-[var(--color-text-secondary)]" style={MONO}>
                       {fmtDateCell(e.date)}
                       {e.estimated && (
                         <span className="ml-1.5 text-[10px] text-[var(--color-text-muted)]">est.</span>
@@ -97,7 +97,7 @@ function UpcomingTable({ rows }: { rows: UpcomingEarning[] }) {
                   </td>
                   <td className="p-0" style={{ borderBottom: border }}>
                     <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px]">
-                      <span className="text-[13px] font-bold text-[var(--color-gold)]" style={MONO}>{e.ticker}</span>
+                      <span className="text-[14px] font-bold text-[var(--color-gold)]" style={MONO}>{e.ticker}</span>
                       <span className="ml-2 text-[11px] text-[var(--color-text-muted)] hidden md:inline" style={MONO}>
                         {e.companyName}
                       </span>
@@ -109,17 +109,17 @@ function UpcomingTable({ rows }: { rows: UpcomingEarning[] }) {
                     </Link>
                   </td>
                   <td className="p-0" style={{ borderBottom: border }}>
-                    <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px] text-right text-[13px] text-[var(--color-text-primary)]" style={{ ...MONO, ...TNUM }}>
+                    <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px] text-right text-[14px] text-[var(--color-text-primary)]" style={{ ...MONO, ...TNUM }}>
                       {e.epsEstimate != null ? `$${e.epsEstimate.toFixed(2)}` : <span className="text-[var(--color-text-muted)]">—</span>}
                     </Link>
                   </td>
                   <td className="p-0" style={{ borderBottom: border }}>
-                    <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px] text-right text-[13px] text-[var(--color-text-muted)]" style={{ ...MONO, ...TNUM }}>
+                    <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px] text-right text-[14px] text-[var(--color-text-muted)]" style={{ ...MONO, ...TNUM }}>
                       —
                     </Link>
                   </td>
                   <td className="p-0" style={{ borderBottom: border }}>
-                    <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px] text-right text-[13px] font-semibold text-[var(--color-text-primary)]" style={{ ...MONO, ...TNUM }}>
+                    <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px] text-right text-[14px] font-semibold text-[var(--color-text-primary)]" style={{ ...MONO, ...TNUM }}>
                       {e.position.allocationPct.toFixed(1)}%
                     </Link>
                   </td>
@@ -172,7 +172,7 @@ function RecentTable({
               return (
                 <tr key={`${r.ticker}-${i}`} className="group hover:bg-white/[0.015] transition-colors">
                   <td className="p-0" style={{ borderBottom: border }}>
-                    <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-[12px] text-[var(--color-text-secondary)]" style={MONO}>
+                    <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-[13px] text-[var(--color-text-secondary)]" style={MONO}>
                       {r.date || '—'}
                     </Link>
                   </td>
@@ -183,26 +183,26 @@ function RecentTable({
                           ? <CheckCircle2 className="w-3 h-3 shrink-0" style={{ color: 'var(--color-positive)' }} />
                           : <XCircle className="w-3 h-3 shrink-0" style={{ color: 'var(--color-negative-text)' }} />
                       )}
-                      <span className="text-[13px] font-bold text-[var(--color-gold)]" style={MONO}>{r.ticker}</span>
+                      <span className="text-[14px] font-bold text-[var(--color-gold)]" style={MONO}>{r.ticker}</span>
                       <span className="text-[11px] text-[var(--color-text-muted)] hidden md:inline truncate max-w-[160px]" style={MONO}>
                         {r.companyName}
                       </span>
                     </Link>
                   </td>
                   <td className="p-0" style={{ borderBottom: border }}>
-                    <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-right text-[13px] text-[var(--color-text-primary)]" style={{ ...MONO, ...TNUM }}>
+                    <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-right text-[14px] text-[var(--color-text-primary)]" style={{ ...MONO, ...TNUM }}>
                       {r.epsActual != null ? `$${r.epsActual.toFixed(2)}` : <span className="text-[var(--color-text-muted)]">—</span>}
                     </Link>
                   </td>
                   <td className="p-0" style={{ borderBottom: border }}>
-                    <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-right text-[13px] font-semibold" style={{ ...MONO, ...TNUM, color: surpriseColor }}>
+                    <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-right text-[14px] font-semibold" style={{ ...MONO, ...TNUM, color: surpriseColor }}>
                       {hasComparison && r.surprisePct != null
                         ? `${r.surprisePct >= 0 ? '+' : ''}${r.surprisePct.toFixed(1)}%`
                         : <span className="text-[var(--color-text-muted)]">—</span>}
                     </Link>
                   </td>
                   <td className="p-0" style={{ borderBottom: border }}>
-                    <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-right text-[13px] text-[var(--color-text-primary)]" style={{ ...MONO, ...TNUM }}>
+                    <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-right text-[14px] text-[var(--color-text-primary)]" style={{ ...MONO, ...TNUM }}>
                       {formatCurrency(r.position.totalValue)}
                     </Link>
                   </td>
@@ -214,13 +214,13 @@ function RecentTable({
                     ) : r.actualDollarImpact != null ? (
                       <Link
                         href={`/dashboard/analyze/${r.ticker}`}
-                        className="block px-5 py-[14px] text-right text-[13px] font-semibold"
+                        className="block px-5 py-[14px] text-right text-[14px] font-semibold"
                         style={{ ...MONO, ...TNUM, color: impact >= 0 ? 'var(--color-positive)' : 'var(--color-negative-text)' }}
                       >
                         {impact >= 0 ? '+' : ''}{formatCurrency(impact)}
                       </Link>
                     ) : (
-                      <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-right text-[13px] text-[var(--color-text-muted)]" style={MONO}>
+                      <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-right text-[14px] text-[var(--color-text-muted)]" style={MONO}>
                         &mdash;
                       </Link>
                     )}
@@ -357,7 +357,7 @@ function EarningsContent() {
             style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.18)' }}
           >
             <Calendar className="w-[14px] h-[14px] shrink-0" style={{ color: 'var(--color-warning-text)' }} strokeWidth={1.7} />
-            <span className="text-[12px] text-[var(--color-text-primary)]">
+            <span className="text-[13px] text-[var(--color-text-primary)]">
               <span className="font-semibold" style={{ color: 'var(--color-warning-text)' }}>{exposurePct.toFixed(1)}%</span> of your book reports soon
             </span>
           </div>
@@ -371,7 +371,7 @@ function EarningsContent() {
           style={{ background: 'var(--color-negative-muted)', border: '1px solid var(--color-negative-border)' }}
         >
           <AlertTriangle className="w-4 h-4 shrink-0" style={{ color: 'var(--color-negative-text)' }} />
-          <span className="text-[13px]" style={{ color: 'var(--color-negative-text)' }}>{error}</span>
+          <span className="text-[14px]" style={{ color: 'var(--color-negative-text)' }}>{error}</span>
         </div>
       )}
 
@@ -395,7 +395,7 @@ function EarningsContent() {
               return (
                 <div key={`${e.ticker}-thesis-${i}`} className="px-5 py-4" style={{ borderLeft: `2px solid ${meta.color}` }}>
                   <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                    <span className="text-[13px] font-bold text-[var(--color-gold)]" style={MONO}>{e.ticker}</span>
+                    <span className="text-[14px] font-bold text-[var(--color-gold)]" style={MONO}>{e.ticker}</span>
                     <span
                       className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-[0.12em]"
                       style={{ ...MONO, color: meta.color, background: `${meta.color}1A` }}
@@ -404,7 +404,7 @@ function EarningsContent() {
                     </span>
                   </div>
                   {e.testPillar && (
-                    <p className="text-[13.5px] leading-[1.6] text-[var(--color-text-secondary)] italic m-0 pl-3" style={{ borderLeft: `1px solid ${meta.color}` }}>
+                    <p className="text-[14px] leading-[1.6] text-[var(--color-text-secondary)] italic m-0 pl-3" style={{ borderLeft: `1px solid ${meta.color}` }}>
                       &ldquo;{e.testPillar}&rdquo;
                     </p>
                   )}
@@ -427,7 +427,7 @@ function EarningsContent() {
                 {report.recentNetImpact >= 0
                   ? <TrendingUp className="w-3.5 h-3.5" style={{ color: 'var(--color-positive)' }} />
                   : <TrendingDown className="w-3.5 h-3.5" style={{ color: 'var(--color-negative-text)' }} />}
-                <span className="text-[12px] font-semibold" style={{ ...MONO, ...TNUM, color: report.recentNetImpact >= 0 ? 'var(--color-positive)' : 'var(--color-negative-text)' }}>
+                <span className="text-[13px] font-semibold" style={{ ...MONO, ...TNUM, color: report.recentNetImpact >= 0 ? 'var(--color-positive)' : 'var(--color-negative-text)' }}>
                   {report.recentNetImpact >= 0 ? '+' : ''}{formatCurrency(report.recentNetImpact)} net
                 </span>
               </div>

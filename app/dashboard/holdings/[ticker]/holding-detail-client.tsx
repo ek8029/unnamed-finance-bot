@@ -249,7 +249,7 @@ export function HoldingDetailClient({
               </ResponsiveContainer>
             </div>
           ) : (
-            <div className="h-64 flex items-center justify-center text-center text-[13px] text-[var(--color-text-muted)] px-6">
+            <div className="h-64 flex items-center justify-center text-center text-[14px] text-[var(--color-text-muted)] px-6">
               Not enough price data yet. The chart builds as market data syncs.
             </div>
           )}
@@ -259,7 +259,7 @@ export function HoldingDetailClient({
         <div className="sovereign-card rounded-lg p-5 sm:p-6">
           <Eyebrow>Recent news</Eyebrow>
           {news.length === 0 ? (
-            <p className="text-[13px] text-[var(--color-text-muted)] mt-4">No recent news for {holding.ticker}.</p>
+            <p className="text-[14px] text-[var(--color-text-muted)] mt-4">No recent news for {holding.ticker}.</p>
           ) : (
             <div className="space-y-3.5 overflow-y-auto max-h-[300px] custom-scrollbar mt-4 -mr-1 pr-1">
               {news.map(n => (

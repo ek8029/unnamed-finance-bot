@@ -57,7 +57,7 @@ function LockedPanel() {
         <p className="text-[15px] leading-[1.5] text-[#9A9A9A] m-0">Thesis detail is a Pro feature.</p>
         <Link
           href="/pricing"
-          className="inline-block font-mono text-[12px] font-semibold uppercase tracking-[0.12em] px-4 py-2.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors"
+          className="inline-block font-mono text-[13px] font-semibold uppercase tracking-[0.12em] px-4 py-2.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors"
           style={MONO}
         >
           See plans
@@ -164,7 +164,7 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
           The reasons you own this
         </div>
         {ordered.length === 0 ? (
-          <p className="font-mono text-[13px] text-[#6A6A6A]" style={MONO}>No confirmed pillars yet.</p>
+          <p className="font-mono text-[14px] text-[#6A6A6A]" style={MONO}>No confirmed pillars yet.</p>
         ) : (
           <div className="space-y-3">
             {ordered.map((p) => {
@@ -194,7 +194,7 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
                                   {e.source_title}
                                 </span>
                               )}
-                              <p className="text-[12.5px] leading-[1.55] text-[#7A7A7A] mt-1 mb-0 italic">&ldquo;{e.excerpt}&rdquo;</p>
+                              <p className="text-[13.5px] leading-[1.55] text-[#7A7A7A] mt-1 mb-0 italic">&ldquo;{e.excerpt}&rdquo;</p>
                             </div>
                           ))}
                         </div>

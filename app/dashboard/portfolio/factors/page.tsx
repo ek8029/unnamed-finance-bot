@@ -125,7 +125,7 @@ function DivergingBar({ tilt }: { tilt: Tilt }) {
     <div>
       <div className="flex items-center justify-between mb-[7px]">
         <span className="text-[14px] text-[var(--color-text-primary)]">{tilt.label}</span>
-        <span className="text-[13px] font-semibold tabular-nums" style={{ ...MONO, color }}>
+        <span className="text-[14px] font-semibold tabular-nums" style={{ ...MONO, color }}>
           {tiltFigure(tilt.value)}
         </span>
       </div>
@@ -304,7 +304,7 @@ function HoldingsTable({ report }: { report: FactorReport }) {
         Per-holding classification
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-[13.5px]">
+        <table className="w-full text-[14px]">
           <thead>
             <tr
               className="text-left text-[var(--color-text-muted)] text-[10px] uppercase tracking-[0.1em]"
@@ -499,7 +499,7 @@ export default function FactorLensPage() {
 
       {/* Coverage note always visible once we have a report */}
       {coverageNote && (
-        <p className="mb-4 text-[12px] text-[var(--color-text-muted)]" style={MONO}>
+        <p className="mb-4 text-[13px] text-[var(--color-text-muted)]" style={MONO}>
           {coverageNote}
         </p>
       )}
