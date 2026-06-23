@@ -1,44 +1,168 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Lock } from 'lucide-react';
+import { Lock, Link2, Sparkles } from 'lucide-react';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
 import { useToast } from '@/contexts/toast-context';
-import { NetWorthCard } from '@/components/dashboard/net-worth-card';
-import { FinancialSummaryCards } from '@/components/dashboard/financial-summary-cards';
 import { ThesisConvictionKpi } from '@/components/thesis/conviction-kpi';
-import { FinancialHealthScore } from '@/components/dashboard/financial-health-score';
-import { IntelligenceFeed } from '@/components/dashboard/intelligence-feed';
-import { CashFlowTrend } from '@/components/dashboard/cash-flow-trend';
-import { AssetsLiabilitiesComposition } from '@/components/dashboard/assets-liabilities-composition';
-import { SavingsRateTimeline } from '@/components/dashboard/savings-rate-timeline';
-import { DailyBrief } from '@/components/dashboard/daily-brief';
 import { useFinancialSummary, useIntelligence, useHoldings } from '@/hooks/use-financial-data';
 import { useFormat } from '@/hooks/use-format';
 import { useDemo } from '@/contexts/demo-context';
+import { usePreview } from '@/lib/preview-context';
+import { TierLock } from '@/components/tier-lock';
 import posthog from 'posthog-js';
 
+// ── Sovereign Architect tokens (local to this screen) ──────────────────────
+const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
+const SCREEN: React.CSSProperties = { padding: '26px 28px 60px', maxWidth: 1320 };
+const CARD =
+  'rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] shadow-[0_2px_12px_rgba(0,0,0,0.5)]';
+
+// Sector → chart color (matches the README chart palette, in order).
+const CHART_COLORS = ['#E6B94D', '#7AA3C7', '#9FB89D', '#C8A165', '#8E7DC7', '#5A6070'];
+
+// ── Local presentational helpers ───────────────────────────────────────────
+
+function Eyebrow({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div
+      className={`text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-muted)] ${className}`}
+      style={MONO}
+    >
+      {children}
+    </div>
+  );
+}
+
+function KpiTile({
+  label,
+  value,
+  delta,
+  tone = 'muted',
+}: {
+  label: string;
+  value: string;
+  delta: string;
+  tone?: 'positive' | 'negative' | 'warning' | 'muted';
+}) {
+  const valueColor =
+    tone === 'negative' ? 'text-[var(--color-negative-text)]' : 'text-[var(--color-text-primary)]';
+  const deltaColor =
+    tone === 'positive'
+      ? 'text-[var(--color-positive)]'
+      : tone === 'negative'
+        ? 'text-[var(--color-negative-text)]'
+        : tone === 'warning'
+          ? 'text-[var(--color-warning-text)]'
+          : 'text-[var(--color-text-muted)]';
+  return (
+    <div className={`${CARD} px-4 pt-4 pb-[15px]`}>
+      <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-muted)] mb-[11px]" style={MONO}>
+        {label}
+      </div>
+      <div className={`text-[25px] font-bold tracking-[-0.02em] leading-none tabular-nums ${valueColor}`}>
+        {value}
+      </div>
+      <div className={`text-[12px] font-semibold mt-[9px] tabular-nums ${deltaColor}`} style={MONO}>
+        {delta}
+      </div>
+    </div>
+  );
+}
+
+// Area chart built from a value series. Gold line over a gradient fill, 3
+// gridlines, month axis. No chart library — inline SVG per the spec.
+function PerformanceChart({ series, gradientId }: { series: number[]; gradientId: string }) {
+  const W = 1000;
+  const H = 240;
+  const top = 16; // headroom so the peak dot isn't clipped
+  const bottom = 224;
+
+  const pts = series.length >= 2 ? series : [0, 0];
+  const min = Math.min(...pts);
+  const max = Math.max(...pts);
+  const span = max - min || 1;
+
+  const coords = pts.map((v, i) => {
+    const x = (i / (pts.length - 1)) * W;
+    const y = bottom - ((v - min) / span) * (bottom - top);
+    return { x, y };
+  });
+
+  const line = coords.map((c, i) => `${i === 0 ? 'M' : 'L'}${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ');
+  const fill = `${line} L${W},${H} L0,${H} Z`;
+  const last = coords[coords.length - 1];
+
+  return (
+    <svg width="100%" height="232" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block overflow-visible">
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#E6B94D" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#E6B94D" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <line x1="0" y1="60" x2={W} y2="60" stroke="rgba(255,255,255,0.04)" />
+      <line x1="0" y1="120" x2={W} y2="120" stroke="rgba(255,255,255,0.04)" />
+      <line x1="0" y1="180" x2={W} y2="180" stroke="rgba(255,255,255,0.04)" />
+      <path d={fill} fill={`url(#${gradientId})`} />
+      <path d={line} fill="none" stroke="#E6B94D" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={last.x} cy={last.y} r="3.5" fill="#E6B94D" />
+    </svg>
+  );
+}
+
+// Allocation donut from sector slices. Segments via stroke-dasharray on r=58.
+function AllocationDonut({ slices }: { slices: { name: string; pct: number; color: string }[] }) {
+  const C = 2 * Math.PI * 58; // circumference ≈ 364.4
+  let offset = 0;
+  return (
+    <svg width="124" height="124" viewBox="0 0 140 140" className="shrink-0">
+      <g transform="rotate(-90 70 70)" fill="none" strokeWidth="15">
+        {slices.map((s, i) => {
+          const len = (s.pct / 100) * C;
+          const dash = `${len.toFixed(1)} ${(C - len).toFixed(1)}`;
+          const dashoffset = -offset;
+          offset += len;
+          return (
+            <circle
+              key={i}
+              cx="70"
+              cy="70"
+              r="58"
+              stroke={s.color}
+              strokeDasharray={dash}
+              strokeDashoffset={dashoffset.toFixed(1)}
+            />
+          );
+        })}
+      </g>
+      <text x="70" y="66" textAnchor="middle" style={{ ...MONO, fill: 'var(--color-text-muted)' }} fontSize="9" letterSpacing="0.1em">
+        SECTORS
+      </text>
+      <text x="70" y="82" textAnchor="middle" fontSize="17" fontWeight="700" fill="var(--color-text-primary)">
+        {slices.length}
+      </text>
+    </svg>
+  );
+}
+
+// ── Loading skeleton ───────────────────────────────────────────────────────
 function LoadingSkeleton() {
   return (
-    <div className="animate-pulse space-y-density" role="status" aria-live="polite" aria-label="Loading dashboard data">
-      {/* Hero skeleton */}
-      <div className="pt-6 pb-4 space-y-3">
-        <div className="h-4 bg-[var(--color-bg-elevated)] rounded w-48"></div>
-        <div className="h-16 bg-[var(--color-bg-elevated)] rounded w-72"></div>
-        <div className="h-8 bg-[var(--color-bg-elevated)] rounded-full w-40"></div>
+    <div className="animate-pulse" role="status" aria-live="polite" aria-label="Loading dashboard data">
+      <div className="mb-6 space-y-3">
+        <div className="h-3.5 w-56 rounded bg-[var(--color-bg-elevated)]" />
+        <div className="h-14 w-80 rounded bg-[var(--color-bg-elevated)]" />
+        <div className="h-7 w-44 rounded bg-[var(--color-bg-elevated)]" />
       </div>
-      {/* Cards skeleton */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-density mt-6">
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-32 bg-[var(--color-bg-elevated)] rounded-xl"></div>
-        ))}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.62fr_1fr] gap-3.5 mb-3.5">
+        <div className="h-[300px] rounded-lg bg-[var(--color-bg-elevated)]" />
+        <div className="h-[300px] rounded-lg bg-[var(--color-bg-elevated)]" />
       </div>
-      {/* Chart skeleton */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-density mt-6">
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-40 bg-[var(--color-bg-elevated)] rounded-xl"></div>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-3.5">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-24 rounded-md bg-[var(--color-bg-elevated)]" />
         ))}
       </div>
     </div>
@@ -48,30 +172,21 @@ function LoadingSkeleton() {
 export default function DashboardOverview() {
   const {
     financialSummary,
-    healthScore,
     netWorthHistory,
-    cashFlowHistory,
-    assetsComposition,
-    liabilitiesComposition,
-    savingsRateTimeline,
-    accounts,
     hasPlaidConnection,
     loading,
-    error
+    error,
   } = useFinancialSummary();
 
-  const {
-    insights: feedInsights,
-    loading: feedLoading,
-    error: feedError,
-  } = useIntelligence();
+  const { insights: feedInsights } = useIntelligence();
 
-  // Live portfolio value: useHoldings polls /api/market/quotes every 30s
-  // and recomputes totalValue client-side. Overrides the static DB aggregate.
-  const { totalValue: liveHoldingsValue } = useHoldings();
+  // Live portfolio value: useHoldings polls /api/market/quotes every 30s and
+  // recomputes totalValue client-side. Overrides the static DB aggregate.
+  const { holdings, totalValue: liveHoldingsValue } = useHoldings();
 
   const { formatCurrency, formatPercentage } = useFormat();
   const { isDemo, enableDemo, disableDemo } = useDemo();
+  const { dataState } = usePreview();
   const router = useRouter();
   const toast = useToast();
   const [plaidError, setPlaidError] = useState<string | null>(null);
@@ -81,7 +196,6 @@ export default function DashboardOverview() {
   }, [hasPlaidConnection, isDemo]);
 
   // Snapshot-based dollar change from the API (same baseline as the % change).
-  // Null when there is no meaningful baseline (new account) — badge stays hidden.
   const netWorthChange = financialSummary?.changes?.net_worth_dollar ?? null;
   const netWorthPctChange = financialSummary?.changes?.net_worth ?? null;
 
@@ -94,9 +208,50 @@ export default function DashboardOverview() {
     return `since ${new Date(`${baseline}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
   }, [financialSummary]);
 
+  // ── Derived presentation data ──────────────────────────────────────────
+  const chartSeries = useMemo(
+    () => (netWorthHistory.length >= 2 ? netWorthHistory.map((p) => p.value) : []),
+    [netWorthHistory],
+  );
+
+  const sectorSlices = useMemo(() => {
+    const totals = new Map<string, number>();
+    let sum = 0;
+    for (const h of holdings) {
+      const sector = h.sector || 'Other';
+      const v = h.total_value || 0;
+      totals.set(sector, (totals.get(sector) || 0) + v);
+      sum += v;
+    }
+    if (sum === 0) return [];
+    const ranked = [...totals.entries()].sort((a, b) => b[1] - a[1]);
+    const top = ranked.slice(0, 5);
+    const restPct = ranked.slice(5).reduce((acc, [, v]) => acc + (v / sum) * 100, 0);
+    const slices = top.map(([name, v], i) => ({ name, pct: (v / sum) * 100, color: CHART_COLORS[i] }));
+    if (restPct > 0.05) slices.push({ name: 'Other', pct: restPct, color: CHART_COLORS[5] });
+    return slices;
+  }, [holdings]);
+
+  const topSectorPct = sectorSlices[0]?.pct ?? 0;
+
+  const movers = useMemo(() => {
+    return [...holdings]
+      .filter((h) => h.ticker && h.ticker !== 'UNKNOWN' && h.day_change_percentage != null)
+      .sort((a, b) => Math.abs(b.day_change_percentage || 0) - Math.abs(a.day_change_percentage || 0))
+      .slice(0, 5);
+  }, [holdings]);
+
+  const topHoldings = useMemo(() => {
+    return [...holdings]
+      .filter((h) => h.ticker && h.ticker !== 'UNKNOWN')
+      .sort((a, b) => (b.total_value || 0) - (a.total_value || 0))
+      .slice(0, 6);
+  }, [holdings]);
+
+  // ── Loading / error ────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="container mx-auto card-padding max-w-[1600px]">
+      <div className="mx-auto" style={SCREEN}>
         <LoadingSkeleton />
       </div>
     );
@@ -104,8 +259,8 @@ export default function DashboardOverview() {
 
   if (error) {
     return (
-      <div className="container mx-auto card-padding max-w-[1600px]">
-        <div className="bg-[var(--color-negative)]/10 border border-[var(--color-negative)]/20 text-[var(--color-negative)] p-6 rounded-xl">
+      <div className="mx-auto" style={SCREEN}>
+        <div className="rounded-lg border border-[var(--color-negative)]/20 bg-[var(--color-negative)]/10 p-6 text-[var(--color-negative-text)]">
           <h2 className="font-semibold mb-2">Error loading dashboard</h2>
           <p>{error}</p>
         </div>
@@ -113,249 +268,502 @@ export default function DashboardOverview() {
     );
   }
 
-  // No Plaid connection = show empty state, regardless of stale data
-  const hasNoData = !financialSummary || !hasPlaidConnection;
+  // ── Empty: connect your brokerage ──────────────────────────────────────
+  // Real condition (no account/summary) OR the preview empty toggle.
+  const hasNoData = !financialSummary || !hasPlaidConnection || dataState === 'empty';
 
   if (hasNoData) {
     return (
-      <div className="container mx-auto px-4 md:card-padding max-w-[1600px]">
-        <div className="flex flex-col min-h-[calc(100vh-200px)]">
-
-          {/* Main content — vertically centered, readable width */}
-          <div className="flex-1 flex flex-col justify-center max-w-[580px] mx-auto md:mx-0 md:ml-[8%] py-16">
-
-            <h1
-              className="font-bold tracking-[-0.04em] leading-[1.1] text-[var(--color-text-primary)] mb-5"
-              style={{ fontSize: 'clamp(32px, 5vw, 48px)' }}
+      <div className="mx-auto" style={SCREEN}>
+        <div className="flex min-h-[calc(100vh-200px)] items-center justify-center">
+          <div className={`${CARD} w-full max-w-[560px] px-8 py-10 text-center`}>
+            <div
+              className="mx-auto mb-5 inline-flex h-12 w-12 items-center justify-center rounded-full"
+              style={{ background: 'rgba(230,185,77,0.08)', border: '1px solid rgba(230,185,77,0.18)' }}
             >
-              Your dashboard is ready.
+              <Link2 size={20} className="text-[var(--color-gold)]" />
+            </div>
+            <h1 className="text-[26px] font-bold tracking-[-0.025em] leading-[1.15] text-[var(--color-text-primary)] mb-3">
+              Connect your brokerage
             </h1>
-
-            <p className="text-[14px] sm:text-[15px] text-[var(--color-text-muted)] leading-[1.7] mb-8 sm:mb-10 max-w-[480px]">
-              Your dashboard runs on real data. Connect a brokerage for automatic sync, or add your holdings manually to get started in 15 seconds.
+            <p className="mx-auto mb-6 max-w-[420px] text-[14px] leading-[1.65] text-[var(--color-text-muted)]">
+              Helm reads your accounts over a read-only Plaid connection. It can never move money or
+              place trades. Link an account to see your real net worth, allocation, and daily brief.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col items-center gap-3">
               <PlaidLinkButton
-                className="px-9 py-4 text-[14px] font-bold rounded-[3px]"
+                className="w-full max-w-[280px] rounded-[5px] px-9 py-3.5 text-[14px] font-bold"
                 onSuccess={() => router.refresh()}
                 onError={(msg) => setPlaidError(msg)}
                 onLinkError={(_code, message) => {
                   toast.error('Connection failed', message);
                 }}
               >
-                Connect via Plaid
+                Connect account
               </PlaidLinkButton>
-              <a
-                href="/dashboard/portfolio/add"
-                className="inline-flex items-center justify-center px-9 py-4 text-[14px] font-bold rounded-[3px] border border-[var(--color-border-strong)] text-[var(--color-text-primary)] hover:border-[var(--color-gold)] hover:text-[var(--color-gold)] transition-colors"
-              >
-                Add holdings manually
-              </a>
-            </div>
-            {plaidError && (
-              <p className="text-[13px] text-[var(--color-negative)] mt-3">{plaidError}</p>
-            )}
-
-            {/* Trust strip */}
-            <div className="mt-4 flex flex-col gap-1.5 max-w-[480px]">
-              <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] text-[var(--color-text-muted)]">
-                <Lock className="w-3 h-3 shrink-0" />
-                <span>Read-only access — Helm can never move your money</span>
-              </div>
-              <p className="text-[10px] sm:text-[11px] text-[#555] pl-[18px]">
-                Secured by Plaid · 256-bit encryption · 12,000+ institutions
-              </p>
-            </div>
-
-            {/* Plaid trust section */}
-            <div className="mt-7 sm:mt-9 pt-5 sm:pt-6 border-t border-[var(--color-border-subtle)] max-w-[500px]">
-              <p className="text-[14px] sm:text-[15px] font-bold text-[var(--color-text-primary)] mb-3 sm:mb-4">What is Plaid?</p>
-              <p className="text-[13px] sm:text-[14px] text-[var(--color-text-muted)] leading-[1.7] mb-4 sm:mb-5">
-                Plaid is the infrastructure layer between your bank and apps like Venmo, Robinhood, Coinbase, and Wealthfront. Over 12,000 financial institutions are supported.
-              </p>
-
-              <div className="flex flex-col">
-                {[
-                  { label: 'Access', text: 'Read-only.', detail: ' Helm can view balances and transactions. It cannot move money, place trades, or modify your accounts.' },
-                  { label: 'Credentials', text: 'Never shared.', detail: ' Your login is entered directly in Plaid\'s secure window. Helm never sees your username or password.' },
-                  { label: 'Encryption', text: 'AES-256', detail: ' in transit and at rest. Same standard used by major banks.' },
-                  { label: 'Control', text: 'Disconnect anytime', detail: ' from Settings. Your data is deleted immediately.' },
-                ].map((fact) => (
-                  <div key={fact.label} className="flex items-baseline gap-2 sm:gap-3 py-2 sm:py-2.5 border-b border-[var(--color-border-subtle)] last:border-b-0 text-[13px] sm:text-[14px]">
-                    <span className="shrink-0 w-[80px] sm:w-[100px] text-[10px] sm:text-[11px] tracking-[0.12em] uppercase text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
-                      {fact.label}
-                    </span>
-                    <span className="text-[#888]">
-                      <strong className="text-[var(--color-text-primary)] font-semibold">{fact.text}</strong>
-                      {fact.detail}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Demo escape */}
-            <div className="mt-7 sm:mt-9 pt-4 sm:pt-5 border-t border-[var(--color-border-subtle)] max-w-[500px]">
               <button
-                onClick={() => { enableDemo(); router.refresh(); }}
-                className="px-6 py-3 border border-[var(--color-border-base)] rounded-[3px] text-[13px] font-semibold text-[var(--color-text-muted)] hover:border-[var(--color-gold)] hover:text-[var(--color-gold)] transition-colors cursor-pointer bg-transparent"
+                onClick={() => {
+                  enableDemo();
+                  router.refresh();
+                }}
+                className="cursor-pointer bg-transparent text-[13px] font-semibold text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-gold)]"
               >
-                Explore with sample data
+                Explore with demo data →
               </button>
-              <p className="text-[13px] text-[#555] mt-2.5" style={{ fontFamily: 'var(--font-mono)' }}>
-                See the full dashboard with a fictional portfolio. No account needed.
-              </p>
             </div>
+
+            {plaidError && <p className="mt-3 text-[13px] text-[var(--color-negative-text)]">{plaidError}</p>}
+
+            <p className="mt-7 text-[11px] tracking-[0.06em] text-[#5a5a5a]" style={MONO}>
+              12,000+ institutions · 256-bit encryption · via Plaid
+            </p>
           </div>
-
-
         </div>
       </div>
     );
   }
 
-  const transformedHealthScore = healthScore ? {
-    score: healthScore.score || 0,
-    debt_to_asset_ratio: healthScore.debt_to_asset_ratio || 0,
-    savings_rate: healthScore.savings_rate || 0,
-    emergency_fund_months: healthScore.emergency_fund_months || 0,
-    portfolio_diversification: healthScore.portfolio_diversification || 0,
-  } : null;
-
+  // ── Connected / demo ───────────────────────────────────────────────────
   const netWorth = financialSummary?.net_worth || 0;
   const isPositiveChange = netWorthChange !== null ? netWorthChange >= 0 : true;
+  const showDemoBanner = isDemo || dataState === 'demo';
+
+  const invested = financialSummary?.total_assets || 0;
+  const cash =
+    (financialSummary?.total_assets || 0) - ((!isDemo && liveHoldingsValue > 0)
+      ? liveHoldingsValue
+      : financialSummary?.portfolio_value || 0);
+  const portfolioValue =
+    !isDemo && liveHoldingsValue > 0 ? liveHoldingsValue : financialSummary?.portfolio_value || 0;
+  const dayChange = financialSummary?.changes?.portfolio ?? null;
 
   return (
-    <div className="container mx-auto px-4 md:card-padding max-w-[1600px]">
-      <div className="space-y-4 md:space-y-density stagger-fade-in">
-        {isDemo && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-[var(--color-gold)]/10 border border-[var(--color-gold)]/20 px-4 py-3 rounded-lg">
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[11px] tracking-wider uppercase text-[var(--color-gold)] font-semibold">Demo Mode</span>
-              <span className="text-[13px] text-[var(--color-text-muted)] hidden sm:inline">Viewing sample data.</span>
-            </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <button onClick={disableDemo} className="text-[12px] font-semibold text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors cursor-pointer">
-                Connect Account
-              </button>
-              <button onClick={disableDemo} className="text-[11px] text-[var(--color-text-muted)]/50 hover:text-[var(--color-text-muted)] transition-colors">
-                Exit Demo
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── HERO: Net Worth ── */}
-        <section className="pt-2 pb-2">
-          {/* Eyebrow */}
-          <div className="flex items-center gap-2 mb-3">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--color-positive)] opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--color-positive)]"></span>
+    <div className="mx-auto stagger-fade-in" style={SCREEN}>
+      {showDemoBanner && (
+        <div className="mb-4 flex flex-col items-start justify-between gap-2 rounded-md border border-[var(--color-info-border)] bg-[var(--color-info-muted)] px-4 py-2.5 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-info-text)]" style={MONO}>
+              Demo data
             </span>
-            <span
-              className="font-mono text-xs font-medium uppercase tracking-[0.15em] text-[var(--color-text-muted)]"
-            >
-              Net Worth &middot; All Accounts
+            <span className="hidden text-[13px] text-[var(--color-text-muted)] sm:inline">
+              You&apos;re viewing a sample portfolio.
             </span>
           </div>
-
-          {/* Giant number */}
-          <h1
-            className="font-mono font-bold tabular-nums text-[var(--color-text-primary)] max-w-full"
-            style={{
-              fontSize: 'clamp(40px, 7vw, 96px)',
-              letterSpacing: '-0.04em',
-              lineHeight: 1.05,
-            }}
+          <button
+            onClick={disableDemo}
+            className="cursor-pointer text-[12px] font-semibold text-[var(--color-info-text)] transition-colors hover:brightness-110"
           >
-            {formatCurrency(netWorth)}
-          </h1>
+            Connect →
+          </button>
+        </div>
+      )}
 
-          {/* Change pill */}
-          {(netWorthChange !== null || netWorthPctChange !== null) && (
-            <div className="mt-3 flex items-center gap-2">
-              <span
-                className={`
-                  inline-flex items-center gap-1.5 rounded-full px-3 py-1
-                  text-sm font-semibold tabular-nums font-mono
-                  ${isPositiveChange
-                    ? 'bg-[var(--color-positive)]/15 text-[var(--color-positive)]'
-                    : 'bg-[var(--color-negative)]/15 text-[var(--color-negative)]'
-                  }
-                `}
-              >
-                {netWorthChange !== null && (
-                  <span>
-                    {isPositiveChange ? '+' : ''}
-                    {formatCurrency(netWorthChange)}
-                  </span>
-                )}
-                {netWorthPctChange !== null && (
-                  <span>
-                    ({formatPercentage(netWorthPctChange)})
-                  </span>
-                )}
-              </span>
-              <span className="text-xs text-[var(--color-text-muted)]">
-                {netWorthChangeLabel}
-              </span>
+      {/* ── Net-worth header ── */}
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+        <div>
+          <Eyebrow className="mb-2 !tracking-[0.2em] !text-[12px]">Net worth · All accounts · USD</Eyebrow>
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+            <div className="text-[46px] font-bold leading-none tracking-[-0.03em] tabular-nums">
+              {formatCurrency(netWorth)}
             </div>
-          )}
-        </section>
-
-        {/* ── Daily Brief ── */}
-        {hasPlaidConnection && <DailyBrief />}
-
-        {/* ── Summary Cards ── */}
-        <FinancialSummaryCards
-          totalAssets={financialSummary?.total_assets || 0}
-          totalLiabilities={financialSummary?.total_liabilities || 0}
-          monthlyCashFlow={financialSummary?.monthly_cash_flow || 0}
-          portfolioValue={(!isDemo && liveHoldingsValue > 0) ? liveHoldingsValue : (financialSummary?.portfolio_value || 0)}
-          changes={financialSummary?.changes}
-        />
-
-        {/* ── Thesis Conviction (gated; self-hides for non-allowlisted users) ── */}
-        <ThesisConvictionKpi />
-
-        {/* ── Intelligence Feed ── */}
-        {hasPlaidConnection && <IntelligenceFeed
-          insights={feedInsights}
-          loading={feedLoading}
-          error={feedError}
-        />}
-
-        {/* ── Net Worth Chart (3/5) + Health Score (2/5) ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-density">
-          <div className="lg:col-span-3">
-            <NetWorthCard
-              currentNetWorth={netWorth}
-              netWorthHistory={netWorthHistory}
-              changePercentage={netWorthPctChange}
-              changeAmount={netWorthChange}
-            />
-          </div>
-          <div className="lg:col-span-2">
-            {transformedHealthScore && (
-              <FinancialHealthScore healthScore={transformedHealthScore} />
+            {(netWorthChange !== null || netWorthPctChange !== null) && (
+              <div
+                className={`flex items-center gap-2 rounded-[5px] px-3 py-[5px] ${
+                  isPositiveChange
+                    ? 'border border-[var(--color-positive-border)] bg-[var(--color-positive-muted)]'
+                    : 'border border-[var(--color-negative-border)] bg-[var(--color-negative-muted)]'
+                }`}
+              >
+                <span
+                  className={`text-[13px] font-semibold tabular-nums ${
+                    isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'
+                  }`}
+                  style={MONO}
+                >
+                  {netWorthChange !== null && (
+                    <>
+                      {isPositiveChange ? '+' : ''}
+                      {formatCurrency(netWorthChange)}
+                    </>
+                  )}
+                  {netWorthChange !== null && netWorthPctChange !== null && ' · '}
+                  {netWorthPctChange !== null && formatPercentage(netWorthPctChange)}
+                </span>
+                <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+                  {netWorthChangeLabel}
+                </span>
+              </div>
             )}
           </div>
         </div>
+        <div className="flex flex-col items-end gap-2.5">
+          <div className="flex gap-1 text-[11px] uppercase tracking-[0.1em]" style={MONO}>
+            {['1D', '1W', '1M', 'YTD', '1Y', 'ALL'].map((r) => (
+              <span
+                key={r}
+                className={`rounded px-[11px] py-1.5 ${
+                  r === 'YTD'
+                    ? 'bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
+                    : 'text-[var(--color-text-muted)]'
+                }`}
+              >
+                {r}
+              </span>
+            ))}
+          </div>
+          <div className="text-[11px] tracking-[0.06em] text-[var(--color-text-muted)]" style={MONO}>
+            ● Live
+          </div>
+        </div>
+      </div>
 
-        {/* ── Cash Flow & Savings (left) + Composition (right) ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-density">
-          <div className="space-y-density">
-            {cashFlowHistory.length > 0 && <CashFlowTrend data={cashFlowHistory} />}
-            {savingsRateTimeline.length > 0 && <SavingsRateTimeline data={savingsRateTimeline} targetRate={30} />}
+      {/* ── Chart + Helm Brief ── */}
+      <div className="mb-3.5 grid grid-cols-1 gap-3.5 lg:grid-cols-[1.62fr_1fr]">
+        {/* performance chart */}
+        <div className={`${CARD} relative overflow-hidden px-[22px] pt-5 pb-3.5`}>
+          <div className="mb-[18px] flex items-start justify-between">
+            <div>
+              <Eyebrow className="mb-2">Net worth · trend</Eyebrow>
+              <div className="flex items-baseline gap-3">
+                <span className="text-[21px] font-bold tracking-[-0.02em] tabular-nums">
+                  {netWorthChange !== null
+                    ? `${isPositiveChange ? '+' : ''}${formatCurrency(netWorthChange)}`
+                    : formatCurrency(netWorth)}
+                </span>
+                {netWorthPctChange !== null && (
+                  <span
+                    className={`text-[14px] font-semibold ${
+                      isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'
+                    }`}
+                    style={MONO}
+                  >
+                    {formatPercentage(netWorthPctChange)}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-          <div>
-            <AssetsLiabilitiesComposition
-              assets={assetsComposition}
-              liabilities={liabilitiesComposition}
-            />
+          {chartSeries.length >= 2 ? (
+            <PerformanceChart series={chartSeries} gradientId="nwFill" />
+          ) : (
+            <div className="flex h-[232px] items-center justify-center text-[12px] text-[var(--color-text-muted)]" style={MONO}>
+              Not enough history yet — check back after a few days of snapshots.
+            </div>
+          )}
+          {netWorthHistory.length >= 2 && (
+            <div
+              className="mt-1.5 flex justify-between border-t border-[var(--color-border-subtle)] pt-2 text-[10px] tracking-[0.08em] text-[#5a5a5a]"
+              style={MONO}
+            >
+              {netWorthHistory
+                .filter((_, i, arr) => i % Math.max(1, Math.floor(arr.length / 6)) === 0 || i === arr.length - 1)
+                .slice(0, 7)
+                .map((p, i) => (
+                  <span key={i}>{p.month}</span>
+                ))}
+            </div>
+          )}
+        </div>
+
+        {/* AI Helm Brief (Pro intelligence) */}
+        <TierLock required="pro" label="The Helm Brief is a Pro feature" blurb="Conviction-led daily intelligence on what moved your book and why.">
+          <div
+            className="flex h-full flex-col rounded-lg px-[22px] py-5"
+            style={{
+              border: '1px solid rgba(230,185,77,0.18)',
+              background: 'rgba(230,185,77,0.025)',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+            }}
+          >
+            <div className="mb-3.5 flex items-center gap-2.5">
+              <Sparkles size={15} strokeWidth={1.6} className="text-[var(--color-gold)]" />
+              <span className="text-[11px] uppercase tracking-[0.16em] text-[var(--color-gold)]" style={MONO}>
+                Helm Brief
+              </span>
+              <span className="h-px flex-1" style={{ background: 'rgba(230,185,77,0.12)' }} />
+            </div>
+
+            {feedInsights.length > 0 ? (
+              <>
+                <p className="m-0 mb-3.5 text-[14px] leading-[1.62] text-[var(--color-text-primary)] text-pretty">
+                  {feedInsights[0].summary}
+                </p>
+                <div className="mb-4 flex flex-col gap-2.5">
+                  {feedInsights.slice(0, 3).map((ins) => {
+                    const glyph =
+                      ins.type === 'risk' ? '▲' : ins.type === 'opportunity' ? '＄' : '●';
+                    const color =
+                      ins.type === 'risk'
+                        ? 'var(--color-warning-text)'
+                        : ins.type === 'opportunity'
+                          ? 'var(--color-positive)'
+                          : 'var(--color-info-text)';
+                    return (
+                      <div key={ins.id} className="flex items-start gap-2.5">
+                        <span className="text-[12px] leading-[1.4]" style={{ ...MONO, color }}>
+                          {glyph}
+                        </span>
+                        <span className="text-[13px] leading-[1.5] text-[var(--color-text-secondary)]">
+                          {ins.title}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <p className="m-0 mb-4 flex-1 text-[13px] leading-[1.62] text-[var(--color-text-muted)]">
+                Helm is still gathering signal across your book. Your first brief lands once a full day
+                of data has synced.
+              </p>
+            )}
+
+            <button
+              onClick={() => router.push('/dashboard/brief')}
+              className="mt-auto flex items-center justify-between rounded-[5px] px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-gold)]"
+              style={{ ...MONO, border: '1px solid rgba(230,185,77,0.18)', background: 'rgba(230,185,77,0.08)' }}
+            >
+              Read full brief <span>→</span>
+            </button>
           </div>
+        </TierLock>
+      </div>
+
+      {/* ── KPI tiles ── */}
+      <div className="mb-3.5 grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <KpiTile
+          label="Invested"
+          value={formatCurrency(portfolioValue)}
+          delta={netWorthPctChange !== null ? `${formatPercentage(netWorthPctChange)} · YTD` : '—'}
+          tone={isPositiveChange ? 'positive' : 'negative'}
+        />
+        <KpiTile
+          label="Cash"
+          value={formatCurrency(cash)}
+          delta={cash > 0 ? `${formatCurrency(cash)} liquid` : '—'}
+          tone="muted"
+        />
+        <KpiTile
+          label="Day change"
+          value={dayChange !== null ? `${dayChange >= 0 ? '+' : ''}${formatPercentage(dayChange)}` : '—'}
+          delta="today"
+          tone={dayChange !== null ? (dayChange >= 0 ? 'positive' : 'negative') : 'muted'}
+        />
+        <KpiTile
+          label="Portfolio"
+          value={formatCurrency(portfolioValue)}
+          delta="market value"
+          tone="muted"
+        />
+        <KpiTile
+          label="Total assets"
+          value={formatCurrency(invested)}
+          delta="across all accounts"
+          tone="muted"
+        />
+      </div>
+
+      {/* ── Thesis conviction (gated; self-hides for non-allowlisted users) ── */}
+      <div className="mb-3.5">
+        <ThesisConvictionKpi />
+      </div>
+
+      {/* ── Actions + Allocation + Movers ── */}
+      <div className="mb-3.5 grid grid-cols-1 gap-3.5 lg:grid-cols-[1.5fr_1fr_0.92fr]">
+        {/* actions inbox */}
+        <div className={`${CARD} px-5 py-[18px]`}>
+          <div className="mb-1.5 flex items-center justify-between">
+            <Eyebrow className="!text-[10px] !tracking-[0.14em]">Actions inbox</Eyebrow>
+            <span className="text-[10px] tracking-[0.06em] text-[var(--color-text-muted)]" style={MONO}>
+              {feedInsights.length} items · ranked by impact
+            </span>
+          </div>
+          <div className="flex flex-col">
+            {feedInsights.length === 0 && (
+              <div className="border-t border-[var(--color-border-subtle)] py-5 text-[13px] text-[var(--color-text-muted)]">
+                You&apos;re all clear. Helm keeps watching your book.
+              </div>
+            )}
+            {feedInsights.slice(0, 4).map((ins) => {
+              const pr =
+                ins.priority === 'high'
+                  ? { label: 'HIGH', color: 'var(--color-negative-text)' }
+                  : ins.priority === 'medium'
+                    ? { label: 'MED', color: 'var(--color-warning-text)' }
+                    : { label: 'LOW', color: 'var(--color-text-muted)' };
+              return (
+                <button
+                  key={ins.id}
+                  onClick={() => router.push('/dashboard/actions')}
+                  className="flex cursor-pointer items-start gap-3 border-t border-[var(--color-border-subtle)] py-3.5 text-left"
+                >
+                  <span
+                    className="mt-0.5 min-w-[34px] text-[9px] font-bold uppercase tracking-[0.12em]"
+                    style={{ ...MONO, color: pr.color }}
+                  >
+                    {pr.label}
+                  </span>
+                  <div className="flex-1">
+                    <div className="mb-[3px] text-[13px] font-semibold text-[var(--color-text-primary)]">
+                      {ins.title}
+                    </div>
+                    <div className="text-[12px] leading-[1.5] text-[var(--color-text-muted)]">{ins.summary}</div>
+                  </div>
+                  <span
+                    className="whitespace-nowrap rounded-sm border border-[var(--color-border-base)] bg-white/[0.03] px-[7px] py-[3px] text-[9px] uppercase tracking-[0.1em] text-[var(--color-text-muted)]"
+                    style={MONO}
+                  >
+                    {ins.type}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* allocation donut */}
+        <div className={`${CARD} px-5 py-[18px]`}>
+          <div className="mb-3.5 flex items-center justify-between">
+            <Eyebrow className="!text-[10px] !tracking-[0.14em]">Allocation</Eyebrow>
+            {topSectorPct > 40 && sectorSlices[0] && (
+              <span className="text-[9px] tracking-[0.04em] text-[var(--color-warning-text)]" style={MONO}>
+                ⚠ {sectorSlices[0].name} {topSectorPct.toFixed(0)}%
+              </span>
+            )}
+          </div>
+          {sectorSlices.length > 0 ? (
+            <div className="flex items-center gap-[18px]">
+              <AllocationDonut slices={sectorSlices} />
+              <div className="flex flex-1 flex-col gap-2">
+                {sectorSlices.map((s) => (
+                  <div key={s.name} className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-sm" style={{ background: s.color }} />
+                    <span className="flex-1 text-[12px] text-[var(--color-text-secondary)]">{s.name}</span>
+                    <span className="text-[11px] tabular-nums" style={MONO}>
+                      {s.pct.toFixed(1)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="py-8 text-center text-[12px] text-[var(--color-text-muted)]">
+              No sector data yet.
+            </div>
+          )}
+        </div>
+
+        {/* today's movers */}
+        <div className={`${CARD} px-5 py-[18px]`}>
+          <Eyebrow className="mb-1.5 !text-[10px] !tracking-[0.14em]">Today&apos;s movers</Eyebrow>
+          <div className="flex flex-col">
+            {movers.length === 0 && (
+              <div className="border-t border-[var(--color-border-subtle)] py-4 text-[12px] text-[var(--color-text-muted)]">
+                No moves yet today.
+              </div>
+            )}
+            {movers.map((h) => {
+              const pct = h.day_change_percentage || 0;
+              const up = pct >= 0;
+              return (
+                <button
+                  key={h.id}
+                  onClick={() => router.push(`/dashboard/analyze/${h.ticker}`)}
+                  className="flex cursor-pointer items-center gap-2.5 border-t border-[var(--color-border-subtle)] py-[11px] text-left"
+                >
+                  <span className="w-[46px] text-[12px] font-bold text-[var(--color-gold)]" style={MONO}>
+                    {h.ticker}
+                  </span>
+                  <span className="flex-1 truncate text-[11px] text-[var(--color-text-muted)]">{h.asset_name}</span>
+                  <span
+                    className={`text-[12px] font-semibold tabular-nums ${
+                      up ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'
+                    }`}
+                    style={MONO}
+                  >
+                    {up ? '+' : ''}
+                    {pct.toFixed(2)}%
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Top holdings table ── */}
+      <div className={`${CARD} overflow-hidden`}>
+        <div className="flex items-center justify-between border-b border-[var(--color-border-base)] px-5 py-3.5">
+          <Eyebrow className="!text-[10px] !tracking-[0.14em]">
+            Top holdings · {topHoldings.length} of {holdings.length}
+          </Eyebrow>
+          <button
+            onClick={() => router.push('/dashboard/portfolio')}
+            className="cursor-pointer border-none bg-transparent text-[10px] uppercase tracking-[0.12em] text-[var(--color-gold)]"
+            style={MONO}
+          >
+            View all →
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                {['Symbol', 'Name', 'Price', 'Day', 'Weight', 'Value'].map((h, i) => (
+                  <th
+                    key={h}
+                    className={`border-b border-[var(--color-border-subtle)] px-5 py-2.5 text-[9px] font-medium uppercase tracking-[0.14em] text-[var(--color-text-muted)] ${
+                      i >= 2 ? 'text-right' : 'text-left'
+                    }`}
+                    style={MONO}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {topHoldings.map((h) => {
+                const pct = h.day_change_percentage || 0;
+                const up = pct >= 0;
+                const weight = h.portfolio_allocation || 0;
+                return (
+                  <tr
+                    key={h.id}
+                    onClick={() => router.push(`/dashboard/analyze/${h.ticker}`)}
+                    className="cursor-pointer hover:bg-white/[0.015]"
+                  >
+                    <td className="border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-[13px] font-bold text-[var(--color-gold)]" style={MONO}>
+                      {h.ticker}
+                    </td>
+                    <td className="border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-[13px]">
+                      {h.asset_name}
+                      {h.sector && <span className="text-[11px] text-[var(--color-text-muted)]"> · {h.sector}</span>}
+                    </td>
+                    <td className="border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-right text-[13px] tabular-nums" style={MONO}>
+                      {formatCurrency(h.current_price || 0)}
+                    </td>
+                    <td
+                      className={`border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-right text-[13px] font-semibold tabular-nums ${
+                        up ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'
+                      }`}
+                      style={MONO}
+                    >
+                      {up ? '+' : ''}
+                      {pct.toFixed(2)}%
+                    </td>
+                    <td className="border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-right text-[13px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>
+                      {weight.toFixed(1)}%
+                    </td>
+                    <td className="border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-right text-[13px] font-semibold tabular-nums" style={MONO}>
+                      {formatCurrency(h.total_value || 0)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

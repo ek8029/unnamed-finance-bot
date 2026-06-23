@@ -7,7 +7,8 @@ import { PortfolioAllocation } from '@/components/dashboard/portfolio-allocation
 import { MarketIntelligence } from '@/components/portfolio/market-intelligence';
 import { useHoldings, useTaxData } from '@/hooks/use-financial-data';
 import { CompanyLogo } from '@/components/company-logo';
-import { TrendingUp, TrendingDown, Filter, Download, ChevronUp, ChevronDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, Filter, Download, ChevronUp, ChevronDown, Search, Link2 } from 'lucide-react';
+import { usePreview } from '@/lib/preview-context';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useFormat } from '@/hooks/use-format';
@@ -128,8 +129,40 @@ function TodaysMovers({ movers }: { movers: { ticker: string; day_change_percent
   );
 }
 
+// Connect-your-brokerage empty state — shown when no account is linked
+// (dataState === 'empty'). Read-only Plaid framing + gold Connect CTA.
+function ConnectBrokerage() {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center px-6 py-16">
+      <div className="max-w-[470px] text-center">
+        <div className="w-[60px] h-[60px] mx-auto mb-[22px] rounded-[14px] bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center">
+          <Link2 className="w-[26px] h-[26px] text-[var(--color-gold)]" strokeWidth={1.6} />
+        </div>
+        <h1 className="text-2xl font-bold tracking-[-0.025em] text-[var(--color-text-primary)] mb-3">
+          Connect your brokerage
+        </h1>
+        <p className="text-sm leading-[1.65] text-[var(--color-text-muted)] mb-6">
+          Link an account and Helm builds your net worth, holdings, taxes and intelligence automatically.{' '}
+          <span className="text-[var(--color-positive)]">Read-only access</span> &mdash; Helm can never move money or place trades.
+        </p>
+        <Link
+          href="/dashboard/accounts"
+          className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[#0A0A0A] font-mono text-[11px] font-bold uppercase tracking-[0.12em] transition-all"
+          style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.25)' }}
+        >
+          Connect account
+        </Link>
+        <div className="font-mono text-[10px] text-[var(--color-text-muted)] mt-[18px] tracking-[0.04em]">
+          12,000+ institutions &middot; 256-bit encryption &middot; via Plaid
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PortfolioPage() {
   const { formatCurrency, formatCurrencyDetailed } = useFormat();
+  const { dataState } = usePreview();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const holdingsData: any = useHoldings();
@@ -221,6 +254,9 @@ export default function PortfolioPage() {
   const [sortKey, setSortKey] = useState<PositionSortKey>('value');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
+  /* ---------- holdings table text search (filter row) ---------- */
+  const [tableSearch, setTableSearch] = useState('');
+
   const handleSort = useCallback((key: PositionSortKey) => {
     if (sortKey === key) {
       setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -304,8 +340,10 @@ export default function PortfolioPage() {
     let result = sortedPositions;
     if (filterSectors.size > 0) result = result.filter(h => h.sector && filterSectors.has(h.sector));
     if (filterAssetClasses.size > 0) result = result.filter(h => h.asset_class && filterAssetClasses.has(h.asset_class));
+    const q = tableSearch.trim().toUpperCase();
+    if (q) result = result.filter(h => h.ticker.toUpperCase().includes(q) || h.asset_name.toUpperCase().includes(q));
     return result;
-  }, [sortedPositions, filterSectors, filterAssetClasses]);
+  }, [sortedPositions, filterSectors, filterAssetClasses, tableSearch]);
 
   const filteredLookthrough = useMemo(() => {
     if (filterSources.size === 0) return lookthrough;
@@ -353,6 +391,9 @@ export default function PortfolioPage() {
   /* ================================================================ */
   /*  EARLY RETURNS                                                    */
   /* ================================================================ */
+  // Empty state: no brokerage linked (preview dataState === 'empty').
+  if (dataState === 'empty') return <ConnectBrokerage />;
+
   if (loading) return <LoadingSkeleton />;
 
   if (error) {
@@ -428,119 +469,103 @@ export default function PortfolioPage() {
         {/* ======================================================= */}
         <div className="flex-1 min-w-0 space-y-4 sm:space-y-6">
 
-          {/* ---- 1. HEADER STRIP ---- */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            {/* Breadcrumb — hidden on mobile, redundant with sidebar */}
-            <div className="hidden sm:flex items-center gap-2">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="flex-shrink-0">
-                <rect width="20" height="20" rx="4" fill="var(--color-gold)" fillOpacity="0.15" />
-                <path d="M6 6h2v8H6V6zm6 0h2v8h-2V6zm-4 3h4v2H8V9z" fill="var(--color-gold)" />
-              </svg>
-              <span className="font-mono text-xs text-[var(--color-text-muted)]">
-                Helm
-              </span>
-              <span className="font-mono text-xs text-[var(--color-text-muted)]">/</span>
-              <span className="font-mono text-xs text-[var(--color-text-muted)]">
-                Portfolio
-              </span>
-              <span className="font-mono text-xs text-[var(--color-text-muted)] mx-0.5">
-                &#8250;
-              </span>
-              <span className="font-mono text-xs text-[var(--color-text-primary)] font-medium">
-                All accounts
-              </span>
-              {lastRefreshed && (
-                <>
-                  <span className="mx-2 w-px h-3 bg-[var(--color-border-base)]" />
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] animate-pulse" />
-                  <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
+          {/* ---- 1. HEADER STRIP (Sovereign Architect) ---- */}
+          {/* Desktop: eyebrow + title + day P/L, Export/Rebalance, tab pills.
+              Mobile keeps its own value header lower down. */}
+          <div className="hidden lg:flex items-end justify-between gap-6">
+            <div>
+              <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-[var(--color-text-muted)] mb-2">
+                Portfolio &middot; {holdings.length} position{holdings.length !== 1 ? 's' : ''}
+                {lastRefreshed && (
+                  <>
+                    <span className="mx-2">&middot;</span>
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] align-middle mr-1.5" />
                     {lastRefreshed}
-                  </span>
-                </>
-              )}
-            </div>
-
-            {/* Tab pills */}
-            <div className="flex items-center gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-0.5 w-fit">
-              {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors ${
-                    activeTab === tab
-                      ? 'bg-[var(--color-gold)] text-black'
-                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* ---- 2. HEADLINE STATS ---- */}
-          <div className="space-y-3 sm:space-y-4">
-            {/* Portfolio value — always full width */}
-            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-4 sm:p-5">
-              <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-1">
-                Portfolio value
-              </span>
-              <div className="flex items-baseline gap-3 flex-wrap">
-                <span className="font-mono tabular-nums font-semibold text-[var(--color-text-primary)] leading-none text-3xl sm:text-4xl lg:text-[52px]">
+                  </>
+                )}
+              </div>
+              <div className="flex items-baseline gap-3.5">
+                <span className="text-[32px] font-bold tracking-[-0.025em] tabular-nums text-[var(--color-text-primary)] leading-none">
                   {formatCurrency(totalValue)}
                 </span>
-                <span className={`inline-flex items-center gap-1 font-mono text-sm tabular-nums ${
-                  dayChangePercentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                <span className={`font-mono text-[13px] font-semibold ${
+                  totalDayChange >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'
                 }`}>
-                  {dayChangePercentage >= 0 ? (
-                    <TrendingUp className="w-3.5 h-3.5" />
-                  ) : (
-                    <TrendingDown className="w-3.5 h-3.5" />
-                  )}
-                  {dayChangePercentage >= 0 ? '+' : ''}{dayChangePercentage.toFixed(2)}%
-                  <span className="text-[var(--color-text-muted)] text-xs ml-1">today</span>
+                  {totalDayChange >= 0 ? '+' : '−'}{formatCurrency(Math.abs(totalDayChange))} &middot; {dayChangePercentage >= 0 ? '+' : '−'}{Math.abs(dayChangePercentage).toFixed(2)}% today
                 </span>
               </div>
-              <span className="block font-mono text-xs text-[var(--color-text-muted)] mt-1.5 tabular-nums">
-                {holdings.length} position{holdings.length !== 1 ? 's' : ''} across {new Set(holdings.map(h => h.sector).filter(Boolean)).size} sectors
-              </span>
             </div>
-
-            {/* Unrealized P/L + Day Change — side by side, each gets half */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-4 sm:p-5">
-                <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-1">
-                  Unrealized P/L
-                </span>
-                <span className={`block font-mono tabular-nums text-xl sm:text-2xl font-semibold leading-tight ${
-                  totalUnrealized >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-                }`}>
-                  {totalUnrealized >= 0 ? '+' : ''}{formatCurrency(totalUnrealized)}
-                </span>
-                <span className={`block font-mono tabular-nums text-xs mt-1 ${
-                  unrealizedPct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-                }`}>
-                  {unrealizedPct >= 0 ? '+' : ''}{unrealizedPct.toFixed(2)}%
-                </span>
-              </div>
-
-              <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-4 sm:p-5">
-                <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-1">
-                  Day Change
-                </span>
-                <span className={`block font-mono tabular-nums text-xl sm:text-2xl font-semibold leading-tight ${
-                  totalDayChange >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-                }`}>
-                  {totalDayChange >= 0 ? '+' : ''}{formatCurrency(totalDayChange)}
-                </span>
-                <span className={`block font-mono tabular-nums text-xs mt-1 ${
-                  dayChangePercentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-                }`}>
-                  {dayChangePercentage >= 0 ? '+' : ''}{dayChangePercentage.toFixed(2)}%
-                </span>
-              </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportCSV}
+                className="inline-flex items-center gap-[7px] h-8 px-3 rounded-[5px] border border-[var(--color-border-base)] bg-transparent text-[var(--color-text-secondary)] hover:border-[rgba(255,255,255,0.16)] hover:text-[var(--color-text-primary)] font-mono text-[10px] tracking-[0.08em] uppercase transition-colors cursor-pointer"
+              >
+                <Download className="w-[13px] h-[13px]" />
+                Export
+              </button>
+              <Link
+                href="/dashboard/theses/new"
+                className="inline-flex items-center gap-[7px] h-8 px-3 rounded-[5px] border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] text-[var(--color-gold)] hover:bg-[rgba(230,185,77,0.14)] font-mono text-[10px] tracking-[0.08em] uppercase transition-colors cursor-pointer"
+              >
+                <TrendingUp className="w-[13px] h-[13px]" />
+                Rebalance
+              </Link>
             </div>
           </div>
+
+          {/* Tab pills — Portfolio / Concentration (drive activeTab) */}
+          <div className="flex items-center gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-0.5 w-fit">
+            {tabs.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors ${
+                  activeTab === tab
+                    ? 'bg-[var(--color-gold)] text-black'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {/* ---- 2. SUMMARY STRIP (desktop, 5 cells) ---- */}
+          {activeTab === 'Portfolio' && (() => {
+            const topHolding = sortedByAllocation[0];
+            return (
+              <div className="hidden lg:grid grid-cols-5 border border-[var(--color-border-base)] rounded-md bg-[var(--color-bg-surface)] overflow-hidden">
+                <div className="px-[18px] py-3.5 border-r border-[var(--color-border-subtle)]">
+                  <div className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--color-text-muted)] mb-2">Positions</div>
+                  <div className="text-[18px] font-bold tabular-nums text-[var(--color-text-primary)]">{holdings.length}</div>
+                </div>
+                <div className="px-[18px] py-3.5 border-r border-[var(--color-border-subtle)]">
+                  <div className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--color-text-muted)] mb-2">Day P/L</div>
+                  <div className={`text-[18px] font-bold tabular-nums ${totalDayChange >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}>
+                    {totalDayChange >= 0 ? '+' : '−'}{formatCurrency(Math.abs(totalDayChange))}
+                  </div>
+                </div>
+                <div className="px-[18px] py-3.5 border-r border-[var(--color-border-subtle)]">
+                  <div className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--color-text-muted)] mb-2">Unrealized P/L</div>
+                  <div className={`text-[18px] font-bold tabular-nums ${totalUnrealized >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}>
+                    {totalUnrealized >= 0 ? '+' : '−'}{formatCurrency(Math.abs(totalUnrealized))}
+                  </div>
+                </div>
+                <div className="px-[18px] py-3.5 border-r border-[var(--color-border-subtle)]">
+                  <div className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--color-text-muted)] mb-2">Unrealized %</div>
+                  <div className={`text-[18px] font-bold tabular-nums ${unrealizedPct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}>
+                    {unrealizedPct >= 0 ? '+' : '−'}{Math.abs(unrealizedPct).toFixed(2)}%
+                  </div>
+                </div>
+                <div className="px-[18px] py-3.5">
+                  <div className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--color-warning-text)] mb-2">&#9888; Top weight</div>
+                  <div className="text-[18px] font-bold tabular-nums text-[var(--color-text-primary)]">
+                    {topHolding ? `${topHolding.ticker} · ${topHolding.portfolio_allocation.toFixed(1)}%` : '—'}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ---- TAB CONTENT ---- */}
           {(activeTab === 'Portfolio') && (
@@ -779,6 +804,28 @@ export default function PortfolioPage() {
               <TodaysMovers movers={movers} />
             </div>
           )}
+
+          {/* ── Filter row (desktop) ── */}
+          <div className="hidden lg:flex items-center gap-2.5 mb-3.5">
+            <div className="flex items-center gap-2 h-8 px-[11px] bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-[5px] flex-1 max-w-[280px]">
+              <Search className="w-[13px] h-[13px] text-[var(--color-text-muted)]" strokeWidth={1.6} />
+              <input
+                value={tableSearch}
+                onChange={(e) => setTableSearch(e.target.value)}
+                placeholder="Filter holdings…"
+                className="flex-1 bg-transparent border-none outline-none text-[var(--color-text-primary)] text-[12px] placeholder:text-[var(--color-text-muted)]"
+              />
+            </div>
+            <div className="flex gap-[5px] font-mono text-[10px] tracking-[0.06em] uppercase">
+              <span className="px-3 py-[7px] rounded-[5px] bg-[rgba(230,185,77,0.1)] text-[var(--color-gold)]">
+                All accounts
+              </span>
+            </div>
+            <div className="flex-1" />
+            <span className="font-mono text-[10px] text-[var(--color-text-muted)] tracking-[0.08em] uppercase">
+              Group &middot; Sector &#9662;
+            </span>
+          </div>
 
           {/* ── Desktop: Table view ── */}
           <div className="hidden lg:block border border-[var(--color-border-base)] rounded-lg overflow-hidden bg-[var(--color-bg-surface)]">

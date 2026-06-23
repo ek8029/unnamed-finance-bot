@@ -1,14 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, RefreshCcw, Building2, X, Loader2, CheckCircle2, AlertCircle, Clock, Trash2 } from 'lucide-react';
+import { Plus, X, Loader2, Trash2, Link2, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/contexts/toast-context';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useFormat } from '@/hooks/use-format';
 import { useAccounts } from '@/hooks/use-financial-data';
-import { AccountsOverview } from '@/components/accounts/accounts-overview';
+import { usePreview } from '@/lib/preview-context';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
 import { PlaidUpdateLink } from '@/components/plaid/plaid-update-link';
 
@@ -20,6 +18,43 @@ interface Account {
   account_name: string;
   sync_status: string;
   last_synced_at?: string;
+}
+
+interface HealthItem {
+  id: string;
+  institution_name: string;
+  status: string;
+  last_balances_sync: string | null;
+  last_transactions_sync: string | null;
+  error_code: string | null;
+  error_message: string | null;
+}
+
+const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
+
+// Account-type composition palette (matches the design token chart palette).
+const TYPE_PALETTE: { key: string; label: string; color: string; match: (t: string) => boolean }[] = [
+  { key: 'brokerage', label: 'Brokerage', color: '#E6B94D', match: (t) => t === 'brokerage' || t === 'investment' },
+  { key: 'roth', label: 'Roth IRA', color: '#7AA3C7', match: (t) => t.includes('roth') },
+  { key: 'retirement', label: 'Retirement', color: '#9FB89D', match: (t) => t === 'ira' || t.includes('401') || t.includes('retire') },
+  { key: 'crypto', label: 'Crypto', color: '#8E7DC7', match: (t) => t.includes('crypto') },
+  { key: 'hsa', label: 'HSA', color: '#C8A165', match: (t) => t.includes('hsa') },
+  { key: 'cash', label: 'Cash', color: '#5A6070', match: (t) => t === 'depository' || t === 'checking' || t === 'savings' || t === 'cash' },
+];
+
+// Brand chip color sets keyed off the institution initial.
+const CHIP_COLORS: Record<string, { bg: string; fg: string }> = {
+  F: { bg: '#13314F', fg: '#7AB8E8' },
+  R: { bg: '#0E3D2E', fg: '#4ADE80' },
+  S: { bg: '#3A2A0E', fg: '#E6B94D' },
+  V: { bg: '#0B2A4A', fg: '#5B8DEF' },
+  C: { bg: '#0A2540', fg: '#3B82F6' },
+};
+const CHIP_FALLBACK = { bg: 'var(--color-bg-overlay)', fg: 'var(--color-text-secondary)' };
+
+function chipColors(institution: string) {
+  const initial = (institution.trim()[0] || '?').toUpperCase();
+  return { initial, ...(CHIP_COLORS[initial] ?? CHIP_FALLBACK) };
 }
 
 function formatTimeAgo(dateString: string): string {
@@ -34,10 +69,13 @@ function formatTimeAgo(dateString: string): string {
   return date.toLocaleDateString();
 }
 
+type CardSyncState = 'synced' | 'syncing' | 'reconnect';
+
 export default function AccountsPage() {
   const { formatCurrency } = useFormat();
-  const { accounts, balanceHistory, loading: apiLoading, error, refetch } = useAccounts();
+  const { accounts, loading: apiLoading, error, refetch } = useAccounts();
   const { success, error: showError } = useToast();
+  const { dataState } = usePreview();
 
   // Separate assets from liabilities by account type, not just balance sign
   // Plaid stores credit card balances as positive (amount owed)
@@ -53,8 +91,6 @@ export default function AccountsPage() {
   const totalBalance = totalAssets - totalLiabilities;
 
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
-  const [filterType, setFilterType] = useState<'all' | 'assets' | 'liabilities'>('all');
-  const [sortBy, setSortBy] = useState<'balance-high' | 'balance-low' | 'name'>('balance-high');
   const [syncing, setSyncing] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
@@ -64,7 +100,7 @@ export default function AccountsPage() {
     lastSync: string | null;
     itemCount: number;
     errorCount: number;
-    items: { id: string; institution_name: string; status: string; last_balances_sync: string | null; last_transactions_sync: string | null; error_code: string | null; error_message: string | null }[];
+    items: HealthItem[];
   }>({ lastSync: null, itemCount: 0, errorCount: 0, items: [] });
 
   const fetchConnectionHealth = async () => {
@@ -156,7 +192,7 @@ export default function AccountsPage() {
   };
 
   const primaryAccountId = useMemo(() => {
-    const positive = assetAccounts.sort((a, b) => b.balance - a.balance)[0];
+    const positive = [...assetAccounts].sort((a, b) => b.balance - a.balance)[0];
     return positive?.id ?? null;
   }, [assetAccounts]);
 
@@ -164,361 +200,341 @@ export default function AccountsPage() {
     ? accounts.find((a) => a.id === selectedAccountId) || null
     : null;
 
-  // Filter and sort accounts
-  const filteredAndSortedAccounts = useMemo(() => {
-    let filtered: Account[] = accounts;
-
-    // Apply filter
-    if (filterType === 'assets') {
-      filtered = assetAccounts;
-    } else if (filterType === 'liabilities') {
-      filtered = liabilityAccounts;
+  // Map an institution name → its Plaid health item (for reconnect / error state).
+  const healthByInstitution = useMemo(() => {
+    const map = new Map<string, HealthItem>();
+    for (const item of connectionHealth.items) {
+      if (item.institution_name) map.set(item.institution_name.toLowerCase(), item);
     }
+    return map;
+  }, [connectionHealth.items]);
 
-    // Apply sort
-    const sorted = [...filtered].sort((a, b) => {
-      if (sortBy === 'balance-high') {
-        return Math.abs(b.balance) - Math.abs(a.balance);
-      } else if (sortBy === 'balance-low') {
-        return Math.abs(a.balance) - Math.abs(b.balance);
-      } else {
-        return a.institution.localeCompare(b.institution);
-      }
-    });
+  // Determine the three-state sync badge for an account card.
+  function cardState(account: Account): { state: CardSyncState; health?: HealthItem } {
+    const health = healthByInstitution.get(account.institution.toLowerCase());
+    if (health && (health.status === 'error' || health.status === 'login_required')) {
+      return { state: 'reconnect', health };
+    }
+    if (
+      account.sync_status === 'error' ||
+      account.sync_status === 'login_required' ||
+      account.sync_status === 'reconnect'
+    ) {
+      return { state: 'reconnect', health };
+    }
+    if (syncing || account.sync_status === 'syncing' || account.sync_status === 'pending') {
+      return { state: 'syncing', health };
+    }
+    return { state: 'synced', health };
+  }
 
-    return sorted;
-  }, [filterType, sortBy, accounts, assetAccounts, liabilityAccounts]);
+  // Net-worth-by-account-type composition (asset accounts only).
+  const composition = useMemo(() => {
+    const buckets = TYPE_PALETTE.map((p) => ({ ...p, total: 0 }));
+    for (const a of assetAccounts) {
+      const t = a.account_type.toLowerCase();
+      const bucket = buckets.find((b) => b.match(t)) ?? buckets[buckets.length - 1];
+      bucket.total += a.balance;
+    }
+    const grand = buckets.reduce((s, b) => s + b.total, 0) || 1;
+    return buckets
+      .filter((b) => b.total > 0)
+      .map((b) => ({ ...b, pct: (b.total / grand) * 100 }));
+  }, [assetAccounts]);
+
+  const allSynced = connectionHealth.errorCount === 0;
+  const lastSyncLabel = connectionHealth.lastSync ? formatTimeAgo(connectionHealth.lastSync) : null;
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-4 sm:p-6 max-w-7xl">
-        <div className="bg-[var(--color-negative)]/10 border border-[var(--color-negative)]/20 text-[var(--color-negative)] p-6 rounded-xl">
-          <h2 className="font-semibold mb-2">Error loading accounts</h2>
-          <p>{error}</p>
+      <div className="px-7 pt-7 pb-16 max-w-[1320px] mx-auto">
+        <div className="rounded-lg border p-6"
+          style={{ background: 'rgba(248,113,113,0.08)', borderColor: 'rgba(248,113,113,0.25)', color: 'var(--color-negative-text)' }}>
+          <h2 className="text-[15px] font-semibold mb-2">Error loading accounts</h2>
+          <p className="text-[13px]">{error}</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="container mx-auto px-4 py-4 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="space-y-1 sm:space-y-2">
-          <h1 className="type-h1">Accounts</h1>
-          <p className="type-body hidden sm:block">
-            Manage your connected financial accounts and institutions
-          </p>
-        </div>
-        <div className="flex items-center space-x-2 sm:space-x-3">
-          <Button
-            variant="outline"
-            className="flex items-center space-x-2"
-            onClick={handleSyncAll}
-            disabled={syncing}
+  // ── EMPTY · CONNECT BROKERAGE ──────────────────────────────────────────
+  if (dataState === 'empty') {
+    return (
+      <div className="min-h-full flex items-center justify-center p-10">
+        <div className="max-w-[470px] text-center">
+          <div
+            className="mx-auto mb-[22px] flex items-center justify-center"
+            style={{
+              width: 60, height: 60, borderRadius: 14,
+              background: 'rgba(230,185,77,0.06)', border: '1px solid rgba(230,185,77,0.18)',
+            }}
           >
-            {syncing ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <RefreshCcw className="w-4 h-4" />
-            )}
-            <span className="hidden sm:inline">{syncing ? 'Syncing...' : 'Sync All'}</span>
-            <span className="sm:hidden">{syncing ? '...' : 'Sync'}</span>
-          </Button>
-          <Button className="flex items-center space-x-2" onClick={() => setShowAddAccount(true)}>
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Add Account</span>
-            <span className="sm:hidden">Add</span>
-          </Button>
+            <Link2 className="w-[26px] h-[26px]" strokeWidth={1.6} style={{ color: 'var(--color-gold)' }} />
+          </div>
+          <div className="text-[24px] font-bold mb-3" style={{ letterSpacing: '-0.025em' }}>
+            Connect your brokerage
+          </div>
+          <p className="text-[14px] leading-[1.65] mb-6" style={{ color: 'var(--color-text-muted)' }}>
+            Link an account and Helm builds your net worth, holdings, taxes and intelligence
+            automatically.{' '}
+            <span style={{ color: 'var(--color-positive)' }}>Read-only access</span>{' '}
+            — Helm can never move money or place trades.
+          </p>
+          <div className="flex justify-center">
+            <PlaidLinkButton onSuccess={handlePlaidSuccess} onError={handlePlaidError} />
+          </div>
+          <div
+            className="mt-[18px] text-[10px]"
+            style={{ ...MONO, color: 'var(--color-text-muted)', letterSpacing: '0.04em' }}
+          >
+            12,000+ institutions · 256-bit encryption · via Plaid
+          </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Accounts Overview */}
-      {balanceHistory.length > 0 && (
-        <AccountsOverview balanceHistory={balanceHistory} />
-      )}
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>Total Balance</CardDescription>
+  // ── CONNECTED / DEMO ───────────────────────────────────────────────────
+  return (
+    <div className="px-7 pt-7 pb-16 max-w-[1320px] mx-auto">
+      {/* Header */}
+      <div className="flex items-end justify-between gap-6 mb-[22px]">
+        <div>
+          <div
+            className="text-[10px] uppercase mb-2"
+            style={{ ...MONO, letterSpacing: '0.2em', color: 'var(--color-text-muted)' }}
+          >
+            Accounts · {accounts.length} connected · read-only
+          </div>
+          <div className="flex items-baseline gap-[14px] flex-wrap">
             {apiLoading ? (
-              <Skeleton className="h-8 w-32 mt-2" />
+              <div
+                className="h-[34px] w-[180px] rounded animate-pulse"
+                style={{ background: 'var(--color-bg-elevated)' }}
+              />
             ) : (
-              <CardTitle className="type-data text-2xl sm:text-3xl">
+              <span
+                className="text-[32px] font-bold tabular-nums"
+                style={{ letterSpacing: '-0.025em' }}
+              >
                 {formatCurrency(totalBalance)}
-              </CardTitle>
+              </span>
             )}
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-[var(--color-text-secondary)]">{accounts.length} accounts connected</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>Assets</CardDescription>
-            {apiLoading ? (
-              <Skeleton className="h-8 w-32 mt-2" />
-            ) : (
-              <CardTitle className="type-data text-2xl sm:text-3xl text-[var(--color-positive)]">
-                {formatCurrency(totalAssets)}
-              </CardTitle>
+            {!apiLoading && (
+              <span
+                className="text-[12px]"
+                style={{ ...MONO, color: allSynced ? 'var(--color-positive)' : 'var(--color-warning-text)' }}
+              >
+                {allSynced ? '● All synced' : '◐ Sync attention needed'}
+                {lastSyncLabel ? ` · ${lastSyncLabel}` : ''}
+              </span>
             )}
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-[var(--color-text-secondary)]">{assetAccounts.length} asset accounts</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>Liabilities</CardDescription>
-            {apiLoading ? (
-              <Skeleton className="h-8 w-32 mt-2" />
-            ) : (
-              <CardTitle className="type-data text-2xl sm:text-3xl text-[var(--color-negative)]">
-                {formatCurrency(totalLiabilities)}
-              </CardTitle>
-            )}
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-[var(--color-text-secondary)]">{liabilityAccounts.length} liability accounts</p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+        <button
+          onClick={handleSyncAll}
+          disabled={syncing}
+          className="flex items-center gap-[7px] h-[34px] px-[14px] rounded-md cursor-pointer disabled:opacity-60"
+          style={{
+            background: 'var(--color-gold)', color: '#0A0A0A',
+            ...MONO, fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
+            boxShadow: '0 4px 16px rgba(230,185,77,0.2)',
+          }}
+        >
+          {syncing ? <Loader2 className="w-[13px] h-[13px] animate-spin" /> : <Plus className="w-[13px] h-[13px]" strokeWidth={2.2} />}
+          {syncing ? 'Syncing' : 'Sync all'}
+        </button>
       </div>
 
-      {/* Consolidated account list with drill-down */}
-      <Card variant="elevated">
-        <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <CardTitle>Connected Accounts</CardTitle>
-              <CardDescription className="hidden sm:block">Tap any account to see recent activity and details.</CardDescription>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Filter Controls */}
-              <div className="flex gap-1 p-1 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
-                <button
-                  onClick={() => setFilterType('all')}
-                  className={`px-3 py-2.5 sm:py-1.5 rounded type-label text-xs transition-colors ${
-                    filterType === 'all'
-                      ? 'bg-[var(--color-gold)] text-black font-medium'
-                      : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
-                  }`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => setFilterType('assets')}
-                  className={`px-3 py-2.5 sm:py-1.5 rounded type-label text-xs transition-colors ${
-                    filterType === 'assets'
-                      ? 'bg-[var(--color-positive)] text-[var(--color-text-inverse)]'
-                      : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
-                  }`}
-                >
-                  Assets
-                </button>
-                <button
-                  onClick={() => setFilterType('liabilities')}
-                  className={`px-3 py-2.5 sm:py-1.5 rounded type-label text-xs transition-colors ${
-                    filterType === 'liabilities'
-                      ? 'bg-[var(--color-negative)] text-[var(--color-text-inverse)]'
-                      : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
-                  }`}
-                >
-                  Liabilities
-                </button>
-              </div>
-
-              {/* Sort Controls */}
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'balance-high' | 'balance-low' | 'name')}
-                aria-label="Sort accounts"
-                className="px-3 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded type-label text-xs text-[var(--color-text-primary)] cursor-pointer hover:border-[var(--color-border-strong)] transition-colors"
-              >
-                <option value="balance-high">Balance: High to Low</option>
-                <option value="balance-low">Balance: Low to High</option>
-                <option value="name">Name: A to Z</option>
-              </select>
-            </div>
+      {/* Net worth by account type */}
+      <div
+        className="rounded-lg mb-[14px] px-[22px] py-5"
+        style={{
+          background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+        }}
+      >
+        <div className="flex justify-between items-center mb-[14px] gap-3">
+          <div className="text-[10px] uppercase" style={{ ...MONO, letterSpacing: '0.14em', color: 'var(--color-text-muted)' }}>
+            Net worth by account type
           </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {apiLoading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
-            </div>
-          ) : filteredAndSortedAccounts.length === 0 && accounts.length === 0 ? (
-            <div className="text-center py-12 text-[var(--color-text-secondary)]">
-              <Building2 className="w-10 h-10 mx-auto mb-3 text-[var(--color-text-muted)]" />
-              <p className="text-sm mb-4">No accounts connected yet</p>
-              <Button onClick={() => setShowAddAccount(true)} className="inline-flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                <span>Connect Account</span>
-              </Button>
-            </div>
-          ) : filteredAndSortedAccounts.length === 0 ? (
-            <div className="text-center py-8 text-[var(--color-text-secondary)]">
-              <p className="text-sm">No accounts match the current filter.</p>
-            </div>
-          ) : (
-            filteredAndSortedAccounts.map((account) => {
-              const isPrimary = account.id === primaryAccountId;
-              const isSelected = account.id === selectedAccountId;
-
-              return (
-                <button
-                  key={account.id}
-                  type="button"
-                  onClick={() => setSelectedAccountId(account.id)}
-                  className={`w-full text-left rounded-md border px-3 sm:px-4 py-3 flex items-center justify-between gap-2 sm:gap-4 transition-colors ${
-                    isPrimary
-                      ? 'border-[var(--color-gold-border)] bg-[var(--color-gold-surface)]'
-                      : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] hover:border-[var(--color-border-strong)]'
-                  } ${isSelected ? 'ring-1 ring-[var(--color-gold)]' : ''}`}
-                >
-                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[var(--color-bg-overlay)] border border-[var(--color-border-subtle)] rounded-md flex items-center justify-center shrink-0">
-                      <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-text-secondary)]" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        <h3 className="type-h3 truncate">{account.institution}</h3>
-                        {isPrimary && (
-                          <span className="type-caption text-[var(--color-gold)] shrink-0">Primary</span>
-                        )}
-                      </div>
-                      <p className="text-xs text-[var(--color-text-secondary)] capitalize">
-                        {account.account_type.replace('_', ' ')}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p
-                      className={`type-data text-base sm:text-xl ${
-                        account.balance >= 0 ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-negative)]'
-                      }`}
-                    >
-                      {formatCurrency(Math.abs(account.balance))}{' '}
-                      {account.balance < 0 && <span className="type-caption">due</span>}
-                    </p>
-                    <p className="text-xs text-[var(--color-text-muted)]">
-                      {account.last_synced_at
-                        ? formatTimeAgo(account.last_synced_at)
-                        : account.sync_status === 'healthy' ? 'Synced' : account.sync_status}
-                    </p>
-                  </div>
-                </button>
-              );
-            })
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Connection Status */}
-      <Card variant="glass">
-        <CardHeader>
-          <CardTitle>Connection Status</CardTitle>
-          <CardDescription>Health across all linked institutions.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {healthError && (
-            <div className="flex items-center gap-2 p-3 bg-[var(--color-negative)]/10 border border-[var(--color-negative)]/20 rounded-lg text-sm text-[var(--color-negative)]">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>Could not load connection health.</span>
-              <button onClick={fetchConnectionHealth} className="underline hover:no-underline ml-auto">Retry</button>
-            </div>
-          )}
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-[var(--color-text-secondary)]">Last full sync</span>
-            <span className="type-label text-[var(--color-text-primary)]">
-              {connectionHealth.lastSync ? formatTimeAgo(connectionHealth.lastSync) : 'Never'}
-            </span>
+          <div className="text-[10px] hidden sm:block" style={{ ...MONO, color: 'var(--color-text-muted)' }}>
+            {composition.map((c) => `${c.label} ${Math.round(c.pct)}%`).join(' · ')}
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-[var(--color-text-secondary)]">Connected institutions</span>
-            <span className="type-label text-[var(--color-text-primary)]">{connectionHealth.itemCount}</span>
+        </div>
+        {apiLoading ? (
+          <div className="h-3 w-full rounded animate-pulse mb-4" style={{ background: 'var(--color-bg-elevated)' }} />
+        ) : composition.length === 0 ? (
+          <div className="text-[12px] mb-2" style={{ color: 'var(--color-text-muted)' }}>
+            No assets connected yet.
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-[var(--color-text-secondary)]">Connection health</span>
-            {connectionHealth.errorCount > 0 ? (
-              <span className="type-label text-[var(--color-negative)] flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                {connectionHealth.errorCount} issue{connectionHealth.errorCount > 1 ? 's' : ''}
-              </span>
-            ) : connectionHealth.itemCount > 0 ? (
-              <span className="type-label text-[var(--color-positive)] flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                All systems operational
-              </span>
-            ) : (
-              <span className="type-label text-[var(--color-text-muted)] flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                No connections
-              </span>
-            )}
-          </div>
-          {/* Per-institution status */}
-          {connectionHealth.items.length > 0 && (
-            <div className="pt-2 border-t border-[var(--color-border-subtle)] space-y-3">
-              {connectionHealth.items.map((item) => (
-                <div key={item.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-[var(--color-text-secondary)]">{item.institution_name || 'Unknown'}</span>
-                    {item.last_balances_sync && (
-                      <span className="text-[var(--color-text-muted)]">
-                        {formatTimeAgo(item.last_balances_sync)}
-                      </span>
-                    )}
-                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
-                      item.status === 'active'
-                        ? 'bg-emerald-500/10 text-emerald-400'
-                        : item.status === 'error'
-                        ? 'bg-[var(--color-negative-muted)] text-[var(--color-negative-text)]'
-                        : 'bg-[var(--color-warning-muted)] text-[var(--color-warning-text)]'
-                    }`}>
-                      {item.status === 'active' ? 'Healthy' : item.status === 'login_required' ? 'Login Required' : item.status}
+        ) : (
+          <>
+            <div className="flex w-full overflow-hidden mb-4" style={{ height: 12, borderRadius: 3 }}>
+              {composition.map((c) => (
+                <div key={c.key} style={{ width: `${c.pct}%`, background: c.color }} />
+              ))}
+            </div>
+            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
+              {composition.map((c) => (
+                <div key={c.key}>
+                  <div className="flex items-center gap-[7px] mb-[5px]">
+                    <span style={{ width: 8, height: 8, borderRadius: 1, background: c.color }} />
+                    <span className="text-[9px] uppercase" style={{ ...MONO, letterSpacing: '0.08em', color: 'var(--color-text-muted)' }}>
+                      {c.label}
                     </span>
-                    {item.error_message && (item.status === 'error' || item.status === 'login_required') && (
-                      <span className="text-[10px] text-[var(--color-text-muted)]">{item.error_message}</span>
-                    )}
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    {(item.status === 'error' || item.status === 'login_required') && item.id && (
-                      <PlaidUpdateLink
-                        itemId={item.id}
-                        institutionName={item.institution_name || 'Unknown'}
-                        onSuccess={handleReconnectSuccess}
-                        onError={(err) => showError('Reconnect failed', err)}
-                      />
-                    )}
-                    {item.id && (
-                      <button
-                        onClick={() => setConfirmDisconnect(item.id)}
-                        disabled={disconnecting === item.id}
-                        className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-negative)] transition-colors rounded hover:bg-[var(--color-bg-overlay)]"
-                        title="Disconnect"
-                        aria-label={`Disconnect ${item.institution_name}`}
-                      >
-                        {disconnecting === item.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Trash2 className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                    )}
-                  </div>
+                  <div className="text-[15px] font-bold tabular-nums">{formatCurrency(c.total)}</div>
                 </div>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </>
+        )}
+      </div>
+
+      {/* Account cards */}
+      <div className="grid gap-[14px] mb-[14px]" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+        {apiLoading ? (
+          [0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="rounded-lg animate-pulse"
+              style={{ minHeight: 160, background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
+            />
+          ))
+        ) : (
+          <>
+            {accounts.map((account) => {
+              const { state, health } = cardState(account);
+              const chip = chipColors(account.institution);
+              const dimmed = state === 'reconnect';
+              const typeLabel = account.account_type.replace(/_/g, ' ');
+
+              return (
+                <div
+                  key={account.id}
+                  onClick={() => setSelectedAccountId(account.id)}
+                  className="rounded-lg px-5 py-[18px] cursor-pointer sovereign-card"
+                  style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
+                >
+                  {/* Brand chip + name + type + badge */}
+                  <div className="flex items-center gap-[11px] mb-4">
+                    <span
+                      className="flex items-center justify-center shrink-0"
+                      style={{
+                        width: 34, height: 34, borderRadius: 7, background: chip.bg, color: chip.fg,
+                        ...MONO, fontSize: 14, fontWeight: 700,
+                      }}
+                    >
+                      {chip.initial}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13.5px] font-semibold truncate">{account.institution}</div>
+                      <div className="text-[9px] uppercase truncate" style={{ ...MONO, letterSpacing: '0.1em', color: 'var(--color-text-muted)' }}>
+                        {typeLabel}
+                      </div>
+                    </div>
+                    <SyncBadge state={state} />
+                  </div>
+
+                  {/* Balance */}
+                  <div
+                    className="text-[24px] font-bold tabular-nums mb-1"
+                    style={{ letterSpacing: '-0.02em', color: dimmed ? 'var(--color-text-muted)' : undefined }}
+                  >
+                    {formatCurrency(Math.abs(account.balance))}
+                    {account.balance < 0 && <span className="text-[12px] ml-2" style={{ ...MONO }}>due</span>}
+                  </div>
+
+                  {/* Sub-line: last sync / stale */}
+                  <div
+                    className="text-[11px] mb-[14px]"
+                    style={{ ...MONO, color: dimmed ? 'var(--color-text-muted)' : 'var(--color-text-muted)' }}
+                  >
+                    {dimmed
+                      ? `Last synced ${account.last_synced_at ? formatTimeAgo(account.last_synced_at) : 'a while ago'} · stale`
+                      : account.account_name}
+                  </div>
+
+                  {/* Allocation bar (presentational accent, dimmed when stale) */}
+                  <div
+                    className="flex w-full overflow-hidden mb-2"
+                    style={{ height: 5, borderRadius: 2, opacity: dimmed ? 0.4 : 1 }}
+                  >
+                    <div style={{ width: '58%', background: chip.fg }} />
+                    <div style={{ width: '22%', background: '#7AA3C7' }} />
+                    <div style={{ width: '20%', background: '#5A6070' }} />
+                  </div>
+
+                  {/* Footer: synced → last sync; reconnect → expired + button */}
+                  {state === 'reconnect' ? (
+                    <div className="flex items-center justify-between gap-[10px]" onClick={(e) => e.stopPropagation()}>
+                      <span className="text-[10px]" style={{ ...MONO, color: 'var(--color-negative-text)' }}>
+                        Connection expired
+                      </span>
+                      {health?.id ? (
+                        <PlaidUpdateLink
+                          itemId={health.id}
+                          institutionName={account.institution}
+                          onSuccess={handleReconnectSuccess}
+                          onError={(err) => showError('Reconnect failed', err)}
+                        />
+                      ) : (
+                        <button
+                          onClick={handleSyncAll}
+                          className="cursor-pointer"
+                          style={{
+                            padding: '5px 11px', background: 'rgba(248,113,113,0.1)',
+                            border: '1px solid rgba(248,113,113,0.25)', borderRadius: 5,
+                            color: 'var(--color-negative-text)', ...MONO, fontSize: 9, fontWeight: 700,
+                            letterSpacing: '0.08em', textTransform: 'uppercase',
+                          }}
+                        >
+                          Reconnect
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-[10px]" style={{ ...MONO, color: 'var(--color-text-muted)' }}>
+                      {typeLabel} · last sync{' '}
+                      {account.last_synced_at ? formatTimeAgo(account.last_synced_at) : 'pending'}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Connect another */}
+            <ConnectAnotherTile onClick={() => setShowAddAccount(true)} />
+          </>
+        )}
+      </div>
+
+      {healthError && (
+        <div
+          className="rounded-lg mb-[14px] px-5 py-3 flex items-center gap-2 text-[12px]"
+          style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)', color: 'var(--color-negative-text)' }}
+        >
+          <span>Could not load connection health.</span>
+          <button onClick={fetchConnectionHealth} className="underline hover:no-underline ml-auto">Retry</button>
+        </div>
+      )}
+
+      {/* Security strip */}
+      <div
+        className="rounded-lg flex items-center gap-4 flex-wrap px-5 py-4"
+        style={{ background: '#0C0C0C', border: '1px solid var(--color-border-subtle)', ...MONO }}
+      >
+        <ShieldCheck className="w-[18px] h-[18px] shrink-0" strokeWidth={1.6} style={{ color: 'var(--color-positive)' }} />
+        <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
+          <span style={{ color: 'var(--color-positive)' }}>Read-only access</span>
+          {' '}— Helm cannot move money or execute trades.
+        </span>
+        <span className="hidden md:block" style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.08)' }} />
+        <span className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
+          256-bit encryption · Connected via Plaid — same provider as Venmo and Robinhood.
+        </span>
+      </div>
 
       {/* Account detail drawer */}
       {selectedAccount && (
@@ -568,6 +584,23 @@ export default function AccountsPage() {
                 <p className="type-label text-[var(--color-text-secondary)] mb-2">Recent transactions</p>
                 <p className="text-xs text-[var(--color-text-muted)]">View full transaction history on the Transactions page.</p>
               </div>
+              {(() => {
+                const health = healthByInstitution.get(selectedAccount.institution.toLowerCase());
+                if (!health?.id) return null;
+                return (
+                  <div className="pt-2 border-t border-[var(--color-border-subtle)] flex items-center justify-between gap-2">
+                    <span className="type-label text-[var(--color-text-secondary)]">Connection</span>
+                    <button
+                      onClick={() => setConfirmDisconnect(health.id)}
+                      disabled={disconnecting === health.id}
+                      className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-negative-text)] transition-colors"
+                    >
+                      {disconnecting === health.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      Disconnect
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -687,5 +720,53 @@ export default function AccountsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// ── Connect-another dashed tile (hover-driven) ───────────────────────────
+function ConnectAnotherTile({ onClick }: { onClick: () => void }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      className="rounded-lg cursor-pointer flex flex-col items-center justify-center gap-[10px]"
+      style={{
+        border: `1px dashed ${hover ? 'rgba(230,185,77,0.35)' : 'rgba(255,255,255,0.12)'}`,
+        background: 'transparent', padding: '18px 20px', minHeight: 160,
+        color: hover ? 'var(--color-gold)' : 'var(--color-text-muted)',
+        transition: 'border-color 200ms var(--ease-out-expo), color 200ms var(--ease-out-expo)',
+      }}
+    >
+      <Plus className="w-[22px] h-[22px]" strokeWidth={1.6} />
+      <span className="text-[10px] uppercase" style={{ ...MONO, letterSpacing: '0.12em' }}>
+        Connect another
+      </span>
+      <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+        12,000+ institutions supported
+      </span>
+    </button>
+  );
+}
+
+// ── Sync badge (three states) ────────────────────────────────────────────
+function SyncBadge({ state }: { state: CardSyncState }) {
+  const meta = {
+    synced: { label: '● Synced', color: 'var(--color-positive)', bg: 'rgba(74,222,128,0.08)', border: 'rgba(74,222,128,0.2)' },
+    syncing: { label: '◐ Syncing', color: 'var(--color-warning-text)', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.22)' },
+    reconnect: { label: '⚠ Reconnect', color: 'var(--color-negative-text)', bg: 'rgba(248,113,113,0.08)', border: 'rgba(248,113,113,0.25)' },
+  }[state];
+
+  return (
+    <span
+      className="uppercase shrink-0"
+      style={{
+        ...MONO, fontSize: 8, letterSpacing: '0.1em', padding: '3px 6px',
+        background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 3, color: meta.color,
+      }}
+    >
+      {meta.label}
+    </span>
   );
 }
