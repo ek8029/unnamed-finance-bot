@@ -504,7 +504,7 @@ export default function PortfolioPage() {
                 Export
               </button>
               <Link
-                href="/dashboard/theses/new"
+                href="/dashboard/theses/builder"
                 className="inline-flex items-center gap-[7px] h-8 px-3 rounded-[5px] border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] text-[var(--color-gold)] hover:bg-[rgba(230,185,77,0.14)] font-mono text-[10px] tracking-[0.08em] uppercase transition-colors cursor-pointer"
               >
                 <TrendingUp className="w-[13px] h-[13px]" />
