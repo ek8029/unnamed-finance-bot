@@ -27,7 +27,9 @@ export async function GET() {
     .maybeSingle();
 
   return NextResponse.json({
-    tier: data?.tier || tier || 'free',
+    // getUserTier (user_subscriptions) is the canonical, webhook-written tier;
+    // user_tiers is only consulted for billing display fields below.
+    tier: tier || data?.tier || 'free',
     quota,
     billingPeriod: data?.billing_period || null,
     currentPeriodEnd: data?.current_period_end || null,

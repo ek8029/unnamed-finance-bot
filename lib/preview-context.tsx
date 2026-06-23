@@ -9,8 +9,12 @@
 // initialize from real entitlements (useTier) and `dataState` from real
 // account-connection status; the toggle becomes dev-only / removed.
 
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import type { Tier } from '@/lib/tier-shared';
+
+// In production the gates must reflect the user's REAL entitlement, not the dev
+// toggle. Dev keeps the localStorage-backed toggle for testing locks/empties.
+const IS_PROD = process.env.NODE_ENV === 'production';
 
 export type DataState = 'connected' | 'demo' | 'empty';
 
@@ -31,18 +35,36 @@ export function PreviewProvider({ children }: { children: React.ReactNode }) {
   // surfaces (e.g. Factor Lens) before the lock paints. Defaults to the full
   // premium experience on the server / when nothing is stored.
   const [tier, setTierState] = useState<Tier>(() => {
+    // Prod: gate-first (free) until the real entitlement loads — never leak
+    // paid content to a free user on first paint. Dev: localStorage toggle.
+    if (IS_PROD) return 'free';
     if (typeof window === 'undefined') return 'max';
     const t = localStorage.getItem(LS_TIER);
     return t === 'free' || t === 'pro' || t === 'max' ? t : 'max';
   });
   const [dataState, setDataStateState] = useState<DataState>(() => {
-    if (typeof window === 'undefined') return 'connected';
+    if (IS_PROD || typeof window === 'undefined') return 'connected';
     const d = localStorage.getItem(LS_DS);
     return d === 'connected' || d === 'demo' || d === 'empty' ? d : 'connected';
   });
 
-  const setTier = (t: Tier) => { setTierState(t); localStorage.setItem(LS_TIER, t); };
-  const setDataState = (d: DataState) => { setDataStateState(d); localStorage.setItem(LS_DS, d); };
+  // Production: real subscription tier is the source of truth.
+  useEffect(() => {
+    if (!IS_PROD) return;
+    let cancelled = false;
+    fetch('/api/user/tier')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && (d?.tier === 'free' || d?.tier === 'pro' || d?.tier === 'max')) {
+          setTierState(d.tier);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const setTier = (t: Tier) => { setTierState(t); if (!IS_PROD) localStorage.setItem(LS_TIER, t); };
+  const setDataState = (d: DataState) => { setDataStateState(d); if (!IS_PROD) localStorage.setItem(LS_DS, d); };
 
   return <Ctx.Provider value={{ tier, dataState, setTier, setDataState }}>{children}</Ctx.Provider>;
 }
