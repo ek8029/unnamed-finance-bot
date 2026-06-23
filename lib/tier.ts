@@ -8,13 +8,8 @@
 
 import { createClient } from '@/lib/supabase/server';
 
-export type Tier = 'free' | 'pro' | 'max';
-
-// Tier rank: free < pro < max. Max is a superset of Pro access.
-export const TIER_RANK: Record<Tier, number> = { free: 0, pro: 1, max: 2 };
-export function tierAtLeast(tier: Tier, min: Tier): boolean {
-  return TIER_RANK[tier] >= TIER_RANK[min];
-}
+import { tierAtLeast, TIER_RANK, type Tier } from '@/lib/tier-shared';
+export { tierAtLeast, TIER_RANK, type Tier };
 
 const FREE_DAILY_ANALYSIS_LIMIT = 5;
 
