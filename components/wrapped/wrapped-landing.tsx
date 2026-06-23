@@ -307,7 +307,7 @@ export function WrappedLanding() {
                 placeholder="Full name (optional)"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors"
+                className="w-full px-4 py-3 bg-[var(--color-bg-inset)] border border-white/[0.07] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors"
                 autoComplete="name"
               />
               <label className="sr-only" htmlFor="wrapped-email">Email</label>
@@ -317,7 +317,7 @@ export function WrappedLanding() {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors"
+                className="w-full px-4 py-3 bg-[var(--color-bg-inset)] border border-white/[0.07] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors"
                 autoComplete="email"
                 required
               />
@@ -329,7 +329,7 @@ export function WrappedLanding() {
                   placeholder="Password (8+ characters)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors pr-11"
+                  className="w-full px-4 py-3 bg-[var(--color-bg-inset)] border border-white/[0.07] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors pr-11"
                   autoComplete="new-password"
                   minLength={8}
                   required
@@ -409,7 +409,7 @@ export function WrappedLanding() {
 
             <HelmMark size={36} />
 
-            <p className="text-[11px] tracking-[0.25em] text-[var(--color-gold)] uppercase mt-6 mb-3" style={MONO}>
+            <p className="font-semibold text-[11px] tracking-[0.18em] text-[var(--color-gold)] uppercase mt-6 mb-3" style={MONO}>
               Helm Wrapped
             </p>
 
@@ -418,7 +418,7 @@ export function WrappedLanding() {
             </h1>
 
             <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed mb-8 max-w-sm mx-auto">
-              Helm reads your portfolio history to build your personalized year in review. Read-only — we can never trade or move money.
+              Helm reads your portfolio history to build your personalized year in review. Read-only, we can never trade or move money.
             </p>
 
             {/* Plaid button */}
@@ -483,7 +483,7 @@ export function WrappedLanding() {
         <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-[1fr_480px] gap-10 lg:gap-16 items-center pt-28 pb-16 lg:pt-0 lg:pb-0">
           {/* LEFT — massive headline */}
           <div>
-            <p className="text-[14px] tracking-[0.3em] text-[var(--color-gold)] uppercase mb-10" style={MONO}>
+            <p className="font-semibold text-[12px] tracking-[0.18em] text-[var(--color-gold)] uppercase mb-10" style={MONO}>
               Helm Wrapped &middot; 2025
             </p>
 
@@ -647,14 +647,14 @@ export function WrappedLanding() {
           ══════════════════════════════════════ */}
       <section className="py-32 md:py-44 border-t border-white/[0.06]">
         <div className="max-w-[1400px] mx-auto px-6 md:px-12">
-          <p className="text-[14px] tracking-[0.3em] text-[var(--color-gold)] uppercase mb-16" style={MONO}>
+          <p className="font-semibold text-[12px] tracking-[0.18em] text-[var(--color-gold)] uppercase mb-16" style={MONO}>
             Seven slides. One portfolio.
           </p>
 
           {[
             { n: '01', label: 'Total return vs the S&P 500', accent: true },
             { n: '02', label: 'Your best and worst trade' },
-            { n: '03', label: 'How you traded — habits, timing, volume' },
+            { n: '03', label: 'How you traded: habits, timing, volume' },
             { n: '04', label: 'Sector conviction and allocation' },
             { n: '05', label: 'Your investor personality type', accent: true },
             { n: '06', label: 'A shareable card with your stats' },
@@ -681,7 +681,7 @@ export function WrappedLanding() {
           ══════════════════════════════════════ */}
       <section className="py-32 md:py-44 border-t border-white/[0.06]">
         <div className="max-w-[1400px] mx-auto px-6 md:px-12">
-          <p className="text-[14px] tracking-[0.3em] text-[var(--color-gold)] uppercase mb-16" style={MONO}>
+          <p className="font-semibold text-[12px] tracking-[0.18em] text-[var(--color-gold)] uppercase mb-16" style={MONO}>
             Three steps. Thirty seconds.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-14 md:gap-20">

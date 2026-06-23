@@ -11,6 +11,9 @@ interface ProGateProps {
   description: string;
 }
 
+// `period` maps onto the existing Stripe billing-period keys so checkout
+// keeps working unchanged while we display the new $20 / $50 model.
+// TODO: needs STRIPE_PRICE_PRO / STRIPE_PRICE_MAX env for $20/$50
 type BillingPeriod = 'monthly' | 'annual' | 'lifetime' | 'founding';
 
 const PLANS: {
@@ -22,15 +25,13 @@ const PLANS: {
   save: string | null;
   badge: string | null;
 }[] = [
-  { period: 'founding', label: 'Founding Member', price: '$4.99', unit: '/mo', note: 'Locked at $4.99/mo forever', save: 'Save 67%', badge: '50 spots' },
-  { period: 'monthly',  label: 'Monthly',  price: '$14.99', unit: '/mo',   note: null,                save: null, badge: null },
-  { period: 'annual',   label: 'Annual',   price: '$9.99',  unit: '/mo',   note: 'Billed $119/year',  save: 'Save 33%', badge: null },
-  { period: 'lifetime', label: 'Lifetime', price: '$249',   unit: '',      note: 'One-time payment',  save: null, badge: null },
+  { period: 'monthly', label: 'Pro', price: '$20', unit: '/mo', note: 'Thesis monitoring, earnings, tax center', save: null, badge: null },
+  { period: 'annual',  label: 'Max', price: '$50', unit: '/mo', note: 'Everything in Pro plus the agent', save: null, badge: null },
 ];
 
 export function ProGate({ feature, description }: ProGateProps) {
   const [showCheckout, setShowCheckout] = useState(false);
-  const [selected, setSelected] = useState<BillingPeriod>('founding');
+  const [selected, setSelected] = useState<BillingPeriod>('monthly');
 
   const plan = PLANS.find(p => p.period === selected)!;
 

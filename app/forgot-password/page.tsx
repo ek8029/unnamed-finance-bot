@@ -47,8 +47,8 @@ export default function ForgotPasswordPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Check your email</h2>
-          <p className="text-[var(--color-text-secondary)] text-sm">
+          <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">Check your email</h2>
+          <p className="text-[15px] text-[var(--color-text-secondary)]">
             If an account exists for <span className="text-[var(--color-text-primary)]">{email}</span>, you&apos;ll receive a password reset link shortly.
           </p>
           <Link
@@ -61,19 +61,19 @@ export default function ForgotPasswordPage() {
         </div>
       ) : (
         <>
-          <p className="text-[var(--color-text-secondary)] text-sm mb-6">
+          <p className="text-[15px] text-[var(--color-text-secondary)] mb-6">
             Enter your email address and we&apos;ll send you a link to reset your password.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-lg text-sm">
+              <div className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-md text-sm">
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+              <label htmlFor="email" className="block font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9A9A9A] mb-2">
                 Email
               </label>
               <input
@@ -83,7 +83,7 @@ export default function ForgotPasswordPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]/30 focus:border-[var(--color-gold)] transition-colors"
+                className="w-full px-4 py-3 bg-[var(--color-bg-inset,#060606)] border border-white/[0.07] rounded-md text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors"
                 placeholder="you@example.com"
               />
             </div>
@@ -91,7 +91,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] disabled:opacity-50 text-[var(--color-bg-base)] font-semibold rounded-lg transition-colors"
+              className="w-full py-3.5 px-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] disabled:opacity-50 text-[#0A0A0A] font-semibold rounded-md transition-colors"
             >
               {loading ? 'Sending...' : 'Send reset link'}
             </button>

@@ -7,6 +7,8 @@ import { InteractiveGrid } from '@/app/landing-effects';
 import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
 
+const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
+
 interface AuthShellProps {
   subtitle: string;
   children: ReactNode;
@@ -14,28 +16,28 @@ interface AuthShellProps {
 
 export function AuthShell({ subtitle, children }: AuthShellProps) {
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)] relative overflow-hidden flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-[var(--color-bg-inset,#060606)] relative overflow-hidden flex items-center justify-center px-4 py-12">
       {/* Interactive constellation grid */}
       <InteractiveGrid />
 
       {/* Ambient glow orbs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-[300px] -left-[200px] w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(230,185,77,0.06)_0%,transparent_70%)]" />
-        <div className="absolute -bottom-[200px] -right-[200px] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(230,185,77,0.04)_0%,transparent_70%)]" />
+        <div className="absolute -top-[300px] -left-[200px] w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(230,185,77,0.05)_0%,transparent_70%)]" />
+        <div className="absolute -bottom-[200px] -right-[200px] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(230,185,77,0.035)_0%,transparent_70%)]" />
       </div>
 
       {/* Scanline overlay */}
       <div className="pointer-events-none fixed inset-0 z-50 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,0.015)_2px,rgba(0,0,0,0.015)_4px)]" />
 
       <main className="relative z-10 w-full max-w-md">
-        {/* Animated logo with sonar pulse */}
+        {/* Brand mark with sonar pulse */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-col items-center mb-8"
+          className="flex flex-col items-center mb-9"
         >
-          <Link href="/" className="flex flex-col items-center gap-3 mb-3 group">
+          <Link href="/" className="flex flex-col items-center gap-4 group">
             <div className="relative flex items-center justify-center w-[44px] h-[44px]">
               <motion.div
                 className="absolute inset-0 rounded-full border border-[var(--color-gold)]/20"
@@ -49,24 +51,31 @@ export function AuthShell({ subtitle, children }: AuthShellProps) {
               />
               <HelmMark size={44} />
             </div>
-            <div className="text-lg font-bold tracking-tight uppercase text-[var(--color-text-primary)]">
+            <div
+              className="text-[22px] font-bold uppercase tracking-[0.42em] text-[var(--color-gold)] pl-[0.42em]"
+              style={MONO}
+            >
               Helm
             </div>
           </Link>
-          <p className="text-[var(--color-text-secondary)] mt-2">{subtitle}</p>
+          <div
+            className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-[#6A6A6A] mt-3"
+            style={MONO}
+          >
+            Financial Intelligence Terminal
+          </div>
+          <p className="text-[15px] text-[var(--color-text-secondary)] mt-4 text-center">{subtitle}</p>
         </motion.div>
 
-        {/* Glassmorphism card */}
+        {/* Sovereign card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-          className="relative"
+          className="relative rounded-xl border border-white/[0.07] bg-[var(--color-bg-surface,#131313)] p-8 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.7)]"
+          style={{ borderTop: '2px solid rgba(230,185,77,0.30)' }}
         >
-          <div className="absolute -inset-px rounded-xl bg-gradient-to-b from-[var(--color-gold)]/20 via-[var(--color-gold)]/5 to-transparent opacity-60" />
-          <div className="relative bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] rounded-xl p-8">
-            {children}
-          </div>
+          {children}
         </motion.div>
 
         {/* Footer */}

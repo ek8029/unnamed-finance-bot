@@ -43,7 +43,7 @@ const ROWS = [
   ['Status (June 2026)', 'Live, free to start', 'Private waitlist'],
   ['Citations', 'Verbatim, dated SEC + news', 'Paraphrased signals'],
   ['Cross-position risk', 'Shared-driver detection', 'Not offered'],
-  ['Pricing', '$4.99/mo founding', 'Not public'],
+  ['Pricing', '$20/mo Pro', 'Not public'],
 ];
 
 export default function VelaAlternativePage() {

@@ -48,7 +48,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'Is there a free thesis tracker?',
-    a: 'Helm Terminal is free to use for portfolio aggregation, AI stock analysis, and the actions inbox. The thesis-monitoring layer (pillar tracking, thesis-drift alerts, and shared-driver risk) is part of Helm Pro, starting at $4.99/month for founding members.',
+    a: 'Helm Terminal is free to use for portfolio aggregation, AI stock analysis, and the actions inbox. The thesis-monitoring layer (pillar tracking, thesis-drift alerts, and shared-driver risk) is part of Helm Pro at $20/month.',
   },
   {
     q: 'What is shared-driver risk?',
@@ -244,7 +244,7 @@ export default function ThesisMonitoringPage() {
           {/* CTA */}
           <section className="sovereign-card rounded p-6 md:p-8 text-center">
             <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-2">Watch the reasoning, not just the price.</h2>
-            <p className="mb-5 max-w-xl mx-auto">Helm Terminal monitors the thesis behind every position you hold and tells you, with dated citations, when it starts to break. Free to start. The thesis layer is part of Pro at $4.99/month.</p>
+            <p className="mb-5 max-w-xl mx-auto">Helm Terminal monitors the thesis behind every position you hold and tells you, with dated citations, when it starts to break. Free to start. The thesis layer is part of Pro at $20/month.</p>
             <div className="flex items-center justify-center gap-3">
               <Link href="/signup" className="px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Take the helm</Link>
               <Link href="/best-thesis-trackers" className="px-5 py-2.5 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-colors">Compare tools</Link>

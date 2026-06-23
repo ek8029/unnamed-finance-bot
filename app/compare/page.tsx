@@ -34,27 +34,26 @@ const POPULAR_COMPARISONS = [
 
 export default function CompareIndexPage() {
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)] flex flex-col relative overflow-hidden">
       <CinematicBg />
 
       {/* Nav */}
-      <header className="relative z-10 glass-nav">
-        <div className="max-w-[1200px] mx-auto px-3 sm:px-4 lg:px-6 h-12 flex items-center justify-between">
+      <header className="relative z-10 border-b border-[var(--color-border-base)]">
+        <div className="max-w-[1200px] mx-auto px-3 sm:px-4 lg:px-6 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <HelmMark size={24} />
+            <HelmMark size={28} />
             <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             <Link
               href="/analyze"
-              className="text-[12px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-              style={{ fontFamily: 'var(--font-mono)' }}
+              className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               Analyze
             </Link>
             <Link
               href="/signup"
-              className="px-4 py-1.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[12px] font-semibold rounded transition-colors"
+              className="px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:brightness-110"
             >
               Get Started
             </Link>
@@ -65,13 +64,10 @@ export default function CompareIndexPage() {
       <main className="relative z-10 flex-1 w-full max-w-[1200px] mx-auto px-3 sm:px-4 lg:px-6 py-12">
         {/* Hero */}
         <div className="text-center mb-12">
-          <p
-            className="text-[11px] uppercase tracking-[0.3em] text-[var(--color-gold)] mb-3"
-            style={{ fontFamily: 'var(--font-mono)' }}
-          >
+          <p className="type-eyebrow text-[var(--color-gold)] mb-3">
             Stock Comparison
           </p>
-          <h1 className="text-[32px] sm:text-[42px] font-bold text-[var(--color-text-primary)] leading-tight mb-4">
+          <h1 className="text-[34px] sm:text-[46px] font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.08] mb-4">
             Compare Any Two Stocks
           </h1>
           <p className="text-[15px] text-[var(--color-text-secondary)] max-w-lg mx-auto">
@@ -84,10 +80,7 @@ export default function CompareIndexPage() {
 
         {/* Popular Comparisons */}
         <section className="mt-14">
-          <h2
-            className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-6 text-center"
-            style={{ fontFamily: 'var(--font-mono)' }}
-          >
+          <h2 className="type-eyebrow text-[var(--color-gold)] mb-6 text-center">
             Popular Comparisons
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -95,7 +88,7 @@ export default function CompareIndexPage() {
               <Link
                 key={comp.pair}
                 href={`/compare/${comp.pair}`}
-                className="group border border-[var(--color-border-base)] rounded-lg px-5 py-4 hover:border-[var(--color-gold)]/40 hover:bg-white/[0.02] transition-all"
+                className="group sovereign-card rounded px-5 py-4 transition-all"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -116,8 +109,8 @@ export default function CompareIndexPage() {
         </section>
 
         {/* CTA */}
-        <section className="text-center mt-16 py-10 border-t border-[var(--color-border-subtle)]">
-          <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-3">
+        <section className="sovereign-card rounded text-center mt-16 p-8 md:p-10">
+          <h2 className="text-[24px] font-bold text-[var(--color-text-primary)] mb-3">
             Want AI analysis for your whole portfolio?
           </h2>
           <p className="text-[14px] text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">
@@ -125,7 +118,7 @@ export default function CompareIndexPage() {
           </p>
           <Link
             href="/signup"
-            className="inline-block px-6 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[13px] font-semibold rounded transition-colors"
+            className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:brightness-110"
           >
             Sign Up Free
           </Link>

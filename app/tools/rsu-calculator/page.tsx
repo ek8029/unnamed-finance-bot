@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
+import { CinematicBg } from '@/components/cinematic-bg';
 import { ArrowRight, Shield, ChevronRight, AlertTriangle } from 'lucide-react';
 
 /* ── Types ── */
@@ -227,7 +228,8 @@ export default function RSUCalculatorPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)]">
+    <main className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)] relative overflow-hidden">
+      <CinematicBg />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -292,7 +294,7 @@ export default function RSUCalculatorPage() {
       />
 
       {/* Nav */}
-      <nav className="border-b border-[var(--color-border-base)]">
+      <nav className="relative z-10 border-b border-[var(--color-border-base)]">
         <div className="container mx-auto px-6 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <HelmMark size={28} />
@@ -306,19 +308,13 @@ export default function RSUCalculatorPage() {
         </div>
       </nav>
 
-      <div className="relative min-h-[80vh]">
-        {/* Ambient glow */}
-        <div className="absolute top-24 left-1/2 -translate-x-1/2 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-[radial-gradient(circle,rgba(230,185,77,0.05),transparent_70%)] pointer-events-none" />
-
+      <div className="relative z-10 min-h-[80vh]">
         <section className="relative container mx-auto px-6 pt-16 pb-20 max-w-xl">
 
           {/* Header */}
           <div className="mb-12">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)]" />
-              <div className="h-px flex-1 bg-gradient-to-r from-[var(--color-gold)]/30 to-transparent" />
-            </div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-[1.1] mb-3">
+            <div className="type-eyebrow text-[var(--color-gold)] mb-4">RSU Vesting Calculator</div>
+            <h1 className="font-sans font-bold text-[30px] sm:text-[36px] md:text-[44px] tracking-tight leading-[1.08] mb-3">
               What are your RSUs<br />
               <span className="text-[var(--color-gold)]">actually worth</span>
               <br />after taxes?
@@ -347,7 +343,7 @@ export default function RSUCalculatorPage() {
                     }}
                     placeholder="AAPL"
                     maxLength={5}
-                    className="w-full px-4 py-4 bg-transparent border-b-2 border-white/[0.1] text-[var(--color-text-primary)] placeholder-white/[0.15] focus:outline-none focus:border-[var(--color-gold)] transition-colors font-mono text-2xl uppercase"
+                    className="w-full px-4 py-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors font-mono text-2xl uppercase"
                   />
                   <div className="flex items-center gap-2 mt-1.5">
                     {fetchLoading && (
@@ -359,7 +355,7 @@ export default function RSUCalculatorPage() {
                       </span>
                     )}
                     {fetchError && (
-                      <span className="text-xs text-[var(--color-negative)]">{fetchError}</span>
+                      <span className="text-xs text-[var(--color-negative-text)]">{fetchError}</span>
                     )}
                   </div>
                 </div>
@@ -373,7 +369,7 @@ export default function RSUCalculatorPage() {
                     value={totalShares ? Number(totalShares).toLocaleString() : ''}
                     onChange={(e) => setTotalShares(e.target.value.replace(/\D/g, ''))}
                     placeholder="1,000"
-                    className="w-full px-4 py-4 bg-transparent border-b-2 border-white/[0.1] text-[var(--color-text-primary)] placeholder-white/[0.15] focus:outline-none focus:border-[var(--color-gold)] transition-colors font-mono text-2xl"
+                    className="w-full px-4 py-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors font-mono text-2xl"
                   />
                   <p className="text-xs text-[var(--color-text-muted)] mt-1.5">Total number of shares in your RSU grant.</p>
                 </div>
@@ -458,7 +454,7 @@ export default function RSUCalculatorPage() {
                         setPriceOverride(true);
                       }}
                       placeholder="150.00"
-                      className="w-full pl-10 pr-4 py-4 bg-transparent border-b-2 border-white/[0.1] text-[var(--color-text-primary)] placeholder-white/[0.15] focus:outline-none focus:border-[var(--color-gold)] transition-colors font-mono text-2xl"
+                      className="w-full pl-10 pr-4 py-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors font-mono text-2xl"
                     />
                   </div>
                   {!priceOverride && fetchedPrice !== null && (
@@ -468,16 +464,16 @@ export default function RSUCalculatorPage() {
 
                 {/* Tax bracket pills */}
                 <div>
-                  <div className="text-sm font-medium text-[var(--color-text-secondary)] mb-3">Federal tax bracket</div>
+                  <div className="type-label text-[var(--color-text-secondary)] mb-3">Federal tax bracket</div>
                   <div className="flex flex-wrap gap-2">
                     {TAX_BRACKETS.map((b, i) => (
                       <button
                         key={i}
                         onClick={() => setBracketIdx(i)}
-                        className={`px-4 py-2 rounded-full text-sm font-mono font-semibold transition-all duration-150 cursor-pointer ${
+                        className={`px-4 py-2 rounded text-sm font-mono font-semibold transition-all duration-150 cursor-pointer border ${
                           i === bracketIdx
-                            ? 'bg-[var(--color-gold)] text-[var(--color-bg-base)] shadow-[0_0_20px_rgba(230,185,77,0.25)]'
-                            : 'bg-white/[0.04] text-[var(--color-text-muted)] hover:bg-white/[0.08] hover:text-[var(--color-text-secondary)]'
+                            ? 'bg-[var(--color-gold)] border-[var(--color-gold)] text-[var(--color-bg-base)]'
+                            : 'bg-[var(--color-bg-elevated)] border-[var(--color-border-base)] text-[var(--color-text-muted)] hover:border-[var(--color-gold-border)] hover:text-[var(--color-text-secondary)]'
                         }`}
                       >
                         {b.label}
@@ -492,7 +488,7 @@ export default function RSUCalculatorPage() {
               <button
                 onClick={handleCalculate}
                 disabled={!canCalculate}
-                className="group w-full flex items-center justify-center gap-3 py-4 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[15px] tracking-wide rounded-lg shadow-[0_8px_32px_rgba(230,185,77,0.3)] transition-all duration-200 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
+                className="group w-full flex items-center justify-center gap-3 py-4 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all duration-200 hover:brightness-110 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
               >
                 Calculate vesting schedule
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
@@ -505,12 +501,12 @@ export default function RSUCalculatorPage() {
             <div id="rsu-results">
               {/* Total grant value */}
               <div className="text-center py-12 mb-10">
-                <div className="text-xs font-mono uppercase tracking-[0.25em] text-[var(--color-text-muted)] mb-4">
+                <div className="type-eyebrow text-[var(--color-text-muted)] mb-4">
                   Total grant value at current price
                 </div>
                 <div
-                  className="text-4xl sm:text-6xl md:text-7xl font-mono text-[var(--color-gold)] leading-none"
-                  style={{ fontWeight: 600, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}
+                  className="text-4xl sm:text-6xl md:text-7xl font-sans text-[var(--color-gold)] leading-none"
+                  style={{ fontWeight: 700, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}
                 >
                   {fmt(totalGrantValue)}
                 </div>
@@ -528,17 +524,17 @@ export default function RSUCalculatorPage() {
                 ].map((m) => (
                   <div
                     key={m.label}
-                    className="text-center py-4 border-b border-white/[0.06] first:border-r last:border-l border-r-white/[0.06] border-l-white/[0.06]"
+                    className="text-center py-4 border-b border-[var(--color-border-subtle)] first:border-r last:border-l border-r-[var(--color-border-subtle)] border-l-[var(--color-border-subtle)]"
                   >
-                    <div className="text-xs font-mono uppercase tracking-[0.15em] text-[var(--color-text-muted)] mb-1.5">{m.label}</div>
-                    <div className="text-lg font-bold font-mono text-[var(--color-text-primary)]">{m.value}</div>
+                    <div className="type-data-label mb-1.5">{m.label}</div>
+                    <div className="type-data-sm text-[var(--color-text-primary)]">{m.value}</div>
                   </div>
                 ))}
               </div>
 
               {/* Concentration risk warning */}
               <div className="mb-8">
-                <div className="text-xs font-mono uppercase tracking-[0.15em] text-[var(--color-text-muted)] mb-4">
+                <div className="type-data-label mb-4">
                   Concentration Risk
                 </div>
                 <div className="flex items-center justify-between mb-3">
@@ -560,13 +556,13 @@ export default function RSUCalculatorPage() {
                 </div>
 
                 {concentrationPct > 10 && (
-                  <div className="mt-4 flex items-start gap-3 rounded-lg border border-[var(--color-gold)]/20 bg-[var(--color-gold)]/[0.03] p-4">
+                  <div className="mt-4 flex items-start gap-3 sovereign-card rounded border-l-2 border-l-[var(--color-gold)] p-4">
                     <AlertTriangle className="w-4 h-4 text-[var(--color-gold)] shrink-0 mt-0.5" />
                     <div>
                       <div className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">
                         {concentrationPct.toFixed(0)}% concentration in a single stock
                       </div>
-                      <p className="text-xs text-[var(--color-text-muted)] leading-relaxed" style={{ fontFamily: 'var(--font-serif, "Source Serif Pro", serif)' }}>
+                      <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
                         A commonly cited guideline is keeping any single position under 10% of a portfolio.
                         At {fmt(portfolioValue)} portfolio value, your {ticker || 'RSU'} grant represents {concentrationPct.toFixed(1)}% of that total.
                       </p>
@@ -575,8 +571,8 @@ export default function RSUCalculatorPage() {
                 )}
 
                 {concentrationPct <= 10 && concentrationPct > 0 && (
-                  <div className="mt-4 flex items-start gap-3 rounded-lg border border-white/[0.06] p-4">
-                    <div className="w-4 h-4 rounded-full bg-[var(--color-positive)]/20 flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="mt-4 flex items-start gap-3 sovereign-card rounded p-4">
+                    <div className="w-4 h-4 rounded-full bg-[var(--color-positive-muted)] flex items-center justify-center shrink-0 mt-0.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-positive)]" />
                     </div>
                     <div className="text-sm text-[var(--color-text-muted)]">
@@ -588,11 +584,11 @@ export default function RSUCalculatorPage() {
 
               {/* Tax impact summary */}
               <div className="mb-8">
-                <div className="text-xs font-mono uppercase tracking-[0.15em] text-[var(--color-text-muted)] mb-4">Tax Impact Summary</div>
+                <div className="type-data-label mb-4">Tax Impact Summary</div>
                 <div className="space-y-3 text-[14px]">
                   <Row left="Total pre-tax grant value" right={fmt(totalGrantValue)} />
-                  <Row left={`Federal tax at ${(taxRate * 100).toFixed(0)}%`} right={`-${fmt(totalTax)}`} rightColor="text-[var(--color-negative)]" />
-                  <div className="h-px bg-white/[0.04]" />
+                  <Row left={`Federal tax at ${(taxRate * 100).toFixed(0)}%`} right={`-${fmt(totalTax)}`} rightColor="text-[var(--color-negative-text)]" />
+                  <div className="h-px bg-[var(--color-border-subtle)]" />
                   <Row left="Estimated post-tax value" right={fmt(totalPostTax)} rightColor="text-[var(--color-gold)]" bold />
                   <Row left="Avg. tax per vest event" right={fmt(vestEvents.length > 0 ? totalTax / vestEvents.length : 0)} />
                 </div>
@@ -600,18 +596,18 @@ export default function RSUCalculatorPage() {
 
               {/* Vesting timeline table */}
               <div className="mb-10">
-                <div className="text-xs font-mono uppercase tracking-[0.15em] text-[var(--color-text-muted)] mb-4">
+                <div className="type-data-label mb-4">
                   Vesting Timeline ({vestEvents.length} events)
                 </div>
-                <div className="overflow-x-auto -mx-6 px-6">
+                <div className="overflow-x-auto sovereign-card rounded">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-white/[0.08]">
-                        <th className="text-left py-2 pr-4 text-xs font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Date</th>
-                        <th className="text-right py-2 px-4 text-xs font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Shares</th>
-                        <th className="text-right py-2 px-4 text-xs font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Pre-Tax</th>
-                        <th className="text-right py-2 px-4 text-xs font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Est. Tax</th>
-                        <th className="text-right py-2 pl-4 text-xs font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Post-Tax</th>
+                      <tr className="border-b border-[var(--color-border-base)]">
+                        <th className="text-left py-2.5 px-4 text-xs font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Date</th>
+                        <th className="text-right py-2.5 px-4 text-xs font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Shares</th>
+                        <th className="text-right py-2.5 px-4 text-xs font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Pre-Tax</th>
+                        <th className="text-right py-2.5 px-4 text-xs font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Est. Tax</th>
+                        <th className="text-right py-2.5 px-4 text-xs font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Post-Tax</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -620,27 +616,27 @@ export default function RSUCalculatorPage() {
                         return (
                           <tr
                             key={idx}
-                            className={`border-b border-white/[0.04] ${isPast ? 'opacity-50' : ''}`}
+                            className={`border-b border-[var(--color-border-subtle)] last:border-0 ${isPast ? 'opacity-50' : ''}`}
                           >
-                            <td className="py-2.5 pr-4 font-mono text-[var(--color-text-secondary)] whitespace-nowrap">
+                            <td className="py-2.5 px-4 font-mono text-[var(--color-text-secondary)] whitespace-nowrap">
                               {fmtDate(event.date)}
                               {isPast && <span className="ml-1.5 text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">vested</span>}
                             </td>
                             <td className="py-2.5 px-4 font-mono text-right text-[var(--color-text-primary)]">{fmtShares(event.shares)}</td>
                             <td className="py-2.5 px-4 font-mono text-right text-[var(--color-text-primary)]">{fmt(event.preTax)}</td>
-                            <td className="py-2.5 px-4 font-mono text-right text-[var(--color-negative)]">-{fmt(event.estTax)}</td>
-                            <td className="py-2.5 pl-4 font-mono text-right text-[var(--color-positive)]">{fmt(event.postTax)}</td>
+                            <td className="py-2.5 px-4 font-mono text-right text-[var(--color-negative-text)]">-{fmt(event.estTax)}</td>
+                            <td className="py-2.5 px-4 font-mono text-right text-[var(--color-positive)]">{fmt(event.postTax)}</td>
                           </tr>
                         );
                       })}
                     </tbody>
                     <tfoot>
-                      <tr className="border-t border-white/[0.08]">
-                        <td className="py-3 pr-4 font-semibold text-[var(--color-text-primary)]">Total</td>
+                      <tr className="border-t border-[var(--color-border-base)]">
+                        <td className="py-3 px-4 font-semibold text-[var(--color-text-primary)]">Total</td>
                         <td className="py-3 px-4 font-mono text-right font-semibold text-[var(--color-text-primary)]">{fmtShares(sharesNum)}</td>
                         <td className="py-3 px-4 font-mono text-right font-semibold text-[var(--color-text-primary)]">{fmt(totalGrantValue)}</td>
-                        <td className="py-3 px-4 font-mono text-right font-semibold text-[var(--color-negative)]">-{fmt(totalTax)}</td>
-                        <td className="py-3 pl-4 font-mono text-right font-semibold text-[var(--color-gold)]">{fmt(totalPostTax)}</td>
+                        <td className="py-3 px-4 font-mono text-right font-semibold text-[var(--color-negative-text)]">-{fmt(totalTax)}</td>
+                        <td className="py-3 px-4 font-mono text-right font-semibold text-[var(--color-gold)]">{fmt(totalPostTax)}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -651,13 +647,13 @@ export default function RSUCalculatorPage() {
               <div className="space-y-3">
                 <Link
                   href="/signup"
-                  className="flex items-center justify-center gap-2.5 w-full py-4 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[15px] tracking-wide rounded-lg shadow-[0_8px_32px_rgba(230,185,77,0.3)] hover:brightness-110 transition-all cursor-pointer"
+                  className="flex items-center justify-center gap-2.5 w-full py-4 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded hover:brightness-110 transition-all cursor-pointer"
                 >
                   Track your actual RSU exposure alongside your full portfolio <ArrowRight className="w-4 h-4" />
                 </Link>
                 <button
                   onClick={() => setShowResults(false)}
-                  className="w-full flex items-center justify-center gap-2 py-3 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] border border-white/[0.06] hover:border-white/[0.12] rounded-lg transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 py-3 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] border border-[var(--color-border-base)] rounded transition-colors cursor-pointer"
                 >
                   <ChevronRight className="w-3.5 h-3.5 rotate-180" /> Edit inputs
                 </button>
@@ -675,22 +671,22 @@ export default function RSUCalculatorPage() {
       </div>
 
       {/* SEO content */}
-      <section className="container mx-auto px-6 py-16 max-w-2xl">
-        <div className="space-y-8 text-[var(--color-text-secondary)] text-sm leading-relaxed" style={{ fontFamily: 'var(--font-serif, "Source Serif Pro", serif)' }}>
+      <section className="relative z-10 container mx-auto px-6 py-16 max-w-2xl">
+        <div className="space-y-10 text-[var(--color-text-secondary)] text-[15px] leading-relaxed">
           <div>
-            <h2 className="text-base font-bold text-[var(--color-text-primary)] mb-2" style={{ fontFamily: 'inherit' }}>How are RSUs taxed?</h2>
+            <h2 className="type-h2 mb-2.5">How are RSUs taxed?</h2>
             <p>Restricted Stock Units are taxed as ordinary income when they vest — not when they&rsquo;re granted. The taxable amount is the fair market value of the shares on the vesting date multiplied by the number of shares vesting. Your employer withholds federal and state income taxes, Social Security, and Medicare at vest. If the default withholding (often 22% federal) is lower than your marginal rate, you&rsquo;ll owe the difference at tax time.</p>
           </div>
           <div>
-            <h2 className="text-base font-bold text-[var(--color-text-primary)] mb-2" style={{ fontFamily: 'inherit' }}>What is a typical RSU vesting schedule?</h2>
+            <h2 className="type-h2 mb-2.5">What is a typical RSU vesting schedule?</h2>
             <p>The most common schedule is a 4-year vest with a 1-year cliff: 25% of shares vest after 12 months, then the remaining 75% vest monthly or quarterly over the next 36 months. Some companies use a 4-year quarterly schedule with no cliff, and others use 3-year monthly vesting. The schedule is defined in your grant agreement.</p>
           </div>
           <div>
-            <h2 className="text-base font-bold text-[var(--color-text-primary)] mb-2" style={{ fontFamily: 'inherit' }}>Why concentration risk matters</h2>
+            <h2 className="type-h2 mb-2.5">Why concentration risk matters</h2>
             <p>If your RSU grant represents a large percentage of your net worth, you have concentration risk: your financial outcomes are tied to a single company&rsquo;s stock price. A commonly cited guideline is keeping any single position under 10% of a total portfolio, though the right threshold depends on your situation. Selling shares as they vest and reinvesting in broad market funds is one widely discussed way investors reduce single-stock exposure. This is educational information, not financial advice.</p>
           </div>
           <div>
-            <h2 className="text-base font-bold text-[var(--color-text-primary)] mb-2" style={{ fontFamily: 'inherit' }}>How Helm tracks RSU exposure</h2>
+            <h2 className="type-h2 mb-2.5">How Helm tracks RSU exposure</h2>
             <p>Helm connects to your brokerage and tracks your actual RSU positions alongside the rest of your portfolio. Instead of manually updating spreadsheets, Helm shows your real-time concentration in any single stock, flags when positions exceed your risk threshold, and surfaces tax-aware context on your holdings, all in one terminal.</p>
           </div>
         </div>

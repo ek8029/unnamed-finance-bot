@@ -224,21 +224,21 @@ export function getTemplate(dayIndex: number, userName?: string): EmailTemplate 
     };
 
     case 21: return {
-      subject: 'Founding member rate: $4.99/mo, locked forever',
-      text: `Hey ${name},\n\nHelm's founding member rate is $4.99/mo, locked forever. 50 spots total.\n\nWhat you get:\n- Tax-loss harvesting with wash-sale detection\n- Earnings exposure alerts\n- Annual Portfolio Wrapped\n- Founding member badge\n\nThe free tier already includes the full terminal, AI analysis, daily brief, and actions inbox.\n\nhelmterminal.dev/pricing\n\n- Helm Terminal`,
+      subject: 'Helm Pro: thesis monitoring and tax intelligence for $20/mo',
+      text: `Hey ${name},\n\nHelm Pro is $20/mo.\n\nWhat you get:\n- Thesis monitoring with cited evidence\n- Tax center with wash-sale-aware TLH\n- Earnings exposure alerts\n- Conviction-led tailored brief\n\nMax is $50/mo and adds the agent, the Thesis Builder, and the factor lens.\n\nThe free tier already includes the full terminal, AI analysis, daily brief, and actions inbox.\n\nhelmterminal.dev/pricing\n\n- Helm Terminal`,
       html: wrap(`
         <div style="text-align:center;">
-        ${heading('<span style="font-weight:700;color:#E6B94D;">$4.99/mo.</span> Locked forever.')}
-        ${subtext('Founding member rate. 50 spots. Once they fill, this price is gone.')}
+        ${heading('<span style="font-weight:700;color:#E6B94D;">$20/mo.</span> Helm Pro.')}
+        ${subtext('Thesis monitoring, earnings, and the tax center. Max is $50/mo.')}
         </div>
         ${dividerLine()}
-        ${sectionLabel('What founding members get')}
-        ${bulletItem('Tax-loss harvesting', 'Automated detection with wash-sale protection.')}
+        ${sectionLabel('What Pro adds')}
+        ${bulletItem('Thesis monitoring', 'Cited evidence the moment a thesis starts to break.')}
+        ${bulletItem('Tax center', 'Wash-sale-aware tax-loss harvesting.')}
         ${bulletItem('Earnings exposure', 'Know when your holdings report, before they move.')}
-        ${bulletItem('Portfolio Wrapped', 'Your year in review. Shareable.')}
-        ${bulletItem('Founding badge', 'Early supporter recognition, permanently.')}
+        ${bulletItem('Tailored brief', 'Conviction-led, built around your positions.')}
         <div style="height:12px;"></div>
-        ${cta('Claim Founding Rate', 'https://helmterminal.dev/pricing')}
+        ${cta('Upgrade to Pro', 'https://helmterminal.dev/pricing')}
         ${dividerLine()}
         <p style="margin:16px 0 0;font-size:11px;color:#8A8A8A;text-align:center;">The free tier already includes the full terminal, AI analysis, daily brief, and actions inbox. Pro adds tax intelligence.</p>
       `),

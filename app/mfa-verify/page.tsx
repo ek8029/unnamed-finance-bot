@@ -78,18 +78,18 @@ export default function MfaVerifyPage() {
     <AuthShell subtitle="Two-factor authentication">
       <form onSubmit={handleVerify} className="space-y-6">
         {error && (
-          <div className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-lg text-sm">
+          <div className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-md text-sm">
             {error}
           </div>
         )}
 
-        <div className="text-center space-y-3">
+        <div className="text-center space-y-4">
           <div className="w-14 h-14 rounded-full bg-[var(--color-gold)]/10 border border-[var(--color-gold)]/20 flex items-center justify-center mx-auto">
             <svg className="w-7 h-7 text-[var(--color-gold)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <p className="text-[var(--color-text-secondary)] text-sm">
+          <p className="text-[15px] text-[var(--color-text-secondary)]">
             Enter the 6-digit code from your authenticator app to continue
           </p>
         </div>
@@ -105,7 +105,7 @@ export default function MfaVerifyPage() {
             required
             autoComplete="one-time-code"
             aria-label="Verification code"
-            className="w-full px-4 py-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-lg text-[var(--color-text-primary)] text-center text-2xl tracking-[0.5em] font-mono placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]/30 focus:border-[var(--color-gold)] transition-colors"
+            className="w-full px-4 py-4 bg-[var(--color-bg-inset,#060606)] border border-white/[0.07] rounded-md text-[var(--color-text-primary)] text-center text-2xl tracking-[0.5em] font-mono placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors"
             placeholder="------"
           />
         </div>
@@ -113,7 +113,7 @@ export default function MfaVerifyPage() {
         <button
           type="submit"
           disabled={code.length !== 6 || loading}
-          className="w-full py-3 px-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] disabled:opacity-50 text-[var(--color-bg-base)] font-semibold rounded-lg transition-colors"
+          className="w-full py-3.5 px-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] disabled:opacity-50 text-[#0A0A0A] font-semibold rounded-md transition-colors"
         >
           {loading ? 'Verifying...' : 'Verify'}
         </button>

@@ -139,7 +139,7 @@ function SlideCover({ onBegin }: { onBegin: () => void }) {
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-8 overflow-hidden">
       <div className="absolute -top-[30%] -left-[20%] w-[80vw] h-[80vw] rounded-full opacity-[0.08] blur-[140px] pointer-events-none" style={{ background: 'radial-gradient(circle, var(--color-gold), transparent 65%)' }} />
       <div className="relative z-10 max-w-lg w-full">
-        <p className="text-[14px] tracking-[0.3em] text-[var(--color-gold)] mb-10" style={MONO}>HELM WRAPPED — DEMO</p>
+        <p className="font-semibold text-[13px] uppercase tracking-[0.18em] text-[var(--color-gold)] mb-10" style={MONO}>HELM WRAPPED, DEMO</p>
         <h1 className="font-bold leading-[0.88] tracking-[-0.05em] mb-12" style={{ fontSize: 'clamp(72px, 18vw, 160px)' }}>
           Your<br />
           <span className="italic font-normal text-[var(--color-gold)]" style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}>2025</span>
@@ -341,7 +341,7 @@ function SlideCTA() {
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 text-center overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] rounded-full opacity-[0.06] blur-[140px] pointer-events-none" style={{ background: 'var(--color-gold)' }} />
       <div className="relative z-10 max-w-lg">
-        <p className="text-[14px] tracking-[0.3em] text-[var(--color-gold)] mb-8" style={MONO}>THIS WAS A DEMO</p>
+        <p className="font-semibold text-[13px] uppercase tracking-[0.18em] text-[var(--color-gold)] mb-8" style={MONO}>THIS WAS A DEMO</p>
         <h2 className="font-bold tracking-[-0.04em] leading-[0.9] mb-6" style={{ fontSize: 'clamp(48px, 12vw, 96px)' }}>
           Now see{' '}
           <span className="italic text-[var(--color-gold)]" style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}>

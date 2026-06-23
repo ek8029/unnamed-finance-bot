@@ -79,10 +79,9 @@ const NAV_LINKS = [
 /* ─── Pricing ───────────────────────────────────────────────────────────── */
 
 const TIERS = [
-  { name: 'Free', price: '$0', sub: 'Forever, no card', features: ['Full terminal access', 'AI analysis, any US ticker', 'Connected brokerages', 'Daily brief', 'Actions inbox'], cta: 'Start free', featured: false },
-  { name: 'Founding Member', price: '$4.99', priceSuffix: '/mo', sub: 'Locked forever, 50 spots', features: ['Everything in Free', 'Tax-loss harvesting', 'Earnings exposure', 'Annual Wrapped', 'Founding badge'], cta: 'Claim founding rate', featured: true, chip: 'Limited' },
-  { name: 'Pro Annual', price: '$119', priceSuffix: '/yr', sub: '$9.92/mo, save 34%', features: ['Everything in Founding', '2 months free', 'Locked annual rate', 'Early beta access', 'Priority support'], cta: 'Go Pro', featured: false },
-  { name: 'Lifetime', price: '$249', sub: 'One-time, never billed again', features: ['All Pro, forever', 'Founding-member badge', 'Direct line to the team', 'Early access to tools', 'Never billed again'], cta: 'Claim a seat', featured: false },
+  { name: 'Free', price: '$0', sub: 'Forever, no card', features: ['Full terminal access', 'AI analysis, any US ticker', 'Connected brokerages', 'Daily brief', 'Actions inbox', 'Portfolio Wrapped'], cta: 'Start free', featured: false },
+  { name: 'Pro', price: '$20', priceSuffix: '/mo', sub: 'Thesis monitoring and tax intelligence', features: ['Everything in Free', 'Thesis monitoring with cited evidence', 'Earnings exposure', 'Tax center with TLH', 'Conviction-led tailored brief'], cta: 'Upgrade to Pro', featured: true, chip: 'Most popular' },
+  { name: 'Max', price: '$50', priceSuffix: '/mo', sub: 'Everything in Pro plus the agent', features: ['Everything in Pro', 'The agent', 'Thesis Builder (pre-buy)', 'Factor lens', 'Coming: real-time, iOS, advisor'], cta: 'Upgrade to Max', featured: false },
 ];
 
 /* ─── Reveal hook ───────────────────────────────────────────────────────── */
@@ -521,11 +520,11 @@ export default function HomeContent({ tickerTape }: HomeContentProps) {
                 Pricing
               </div>
               <h2 className="text-[clamp(2rem,4vw,3rem)] font-bold tracking-[-0.035em] leading-[1.05]">
-                Four tiers. <em className="font-[family-name:var(--font-display-serif)] italic font-normal text-[var(--color-gold)]">Zero percent of AUM.</em>
+                Three tiers. <em className="font-[family-name:var(--font-display-serif)] italic font-normal text-[var(--color-gold)]">Zero percent of AUM.</em>
               </h2>
             </div>
             <div className="font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-text-muted)] tracking-[0.08em] text-right max-w-[300px]">
-              Founding rate: 20 of 50 spots claimed
+              Pro is $20/mo. Max is $50/mo.
               <div className="h-0.5 bg-[var(--color-border-base)] mt-3 relative">
                 <span className="absolute inset-0 w-[40%] bg-[var(--color-gold)]" />
               </div>
@@ -533,7 +532,7 @@ export default function HomeContent({ tickerTape }: HomeContentProps) {
           </div>
         </Reveal>
         <Reveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {TIERS.map((tier) => (
               <div key={tier.name} className={`relative p-8 max-sm:p-6 border rounded-lg transition-all hover:border-[var(--color-gold-border)] hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(0,0,0,0.5)] ${tier.featured ? 'border-[var(--color-gold-border)] bg-[linear-gradient(180deg,rgba(230,185,77,0.05),rgba(230,185,77,0.01))] lg:-translate-y-2 lg:scale-[1.03] lg:shadow-[0_20px_50px_rgba(230,185,77,0.12)]' : 'border-[var(--color-border-base)] bg-[var(--color-bg-surface)]'}`}>
                 {tier.chip && <span className="absolute -top-2.5 left-8 px-2.5 py-1 bg-[var(--color-gold)] text-black font-[family-name:var(--font-mono)] text-[9px] font-bold tracking-[0.18em] uppercase rounded-[3px]">{tier.chip}</span>}
@@ -591,7 +590,7 @@ export default function HomeContent({ tickerTape }: HomeContentProps) {
             actionable insights: tax-loss harvesting opportunities with wash-sale
             detection, concentration risk alerts, earnings exposure, and cash flow
             changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.
-            Most features are free. Pro plans start at $4.99/month.
+            Most features are free. Pro is $20/mo and Max is $50/mo.
           </p>
         </div>
       </section>
@@ -629,7 +628,7 @@ export default function HomeContent({ tickerTape }: HomeContentProps) {
             '@type': 'FAQPage',
             mainEntity: [
               { '@type': 'Question', name: 'What is Helm Terminal?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal is a free, institutional-grade financial intelligence platform for individual investors. It aggregates brokerage and bank accounts via Plaid, runs deterministic rule-based analysis over your portfolio, and surfaces actionable insights like tax-loss harvesting opportunities, concentration risk, earnings exposure, and cash flow changes.' } },
-              { '@type': 'Question', name: 'Is Helm Terminal free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Helm Terminal offers a free tier that includes AI stock analysis, a full portfolio dashboard with Plaid sync, net worth tracking, daily brief, and an actions inbox. Pro plans starting at $4.99/month add tax-loss harvesting with wash-sale detection, earnings exposure tracking, and unlimited analyses.' } },
+              { '@type': 'Question', name: 'Is Helm Terminal free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Helm Terminal offers a free tier that includes AI stock analysis, a full portfolio dashboard with Plaid sync, net worth tracking, daily brief, and an actions inbox. Pro at $20/month adds thesis monitoring with cited evidence, earnings exposure tracking, and the tax center. Max at $50/month adds the agent, the Thesis Builder, and the factor lens.' } },
               { '@type': 'Question', name: 'Is Helm Terminal safe to use with my financial accounts?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal connects to your accounts through Plaid, a bank-grade financial data provider. The connection is read-only. Helm can never move money, execute trades, or modify your accounts. All data is encrypted in transit (TLS 1.3) and at rest (AES-256).' } },
             ],
           }),
