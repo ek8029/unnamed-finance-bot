@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (subscription?.tier === 'pro') {
+    if (subscription?.tier === 'pro' || subscription?.tier === 'max') {
       return NextResponse.json(
         { error: 'You already have an active Pro subscription.' },
         { status: 400 },

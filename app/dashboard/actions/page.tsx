@@ -20,7 +20,7 @@ export default async function ActionsPage() {
 
   if (user) {
     const tier = await getUserTier(user.id);
-    isPro = tier === 'pro';
+    isPro = tier === 'pro' || tier === 'max';
     // No Plaid connections = no actions
     const { data: plaidItems } = await supabase
       .from('plaid_items')

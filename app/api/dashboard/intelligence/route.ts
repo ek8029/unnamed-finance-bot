@@ -20,7 +20,7 @@ export async function GET() {
       getUserTier(user.id),
     ]);
 
-    if (tier === 'pro') {
+    if (tier === 'pro' || tier === 'max') {
       return NextResponse.json({ insights, tier });
     }
 

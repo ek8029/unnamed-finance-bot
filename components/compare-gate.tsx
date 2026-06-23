@@ -61,7 +61,7 @@ export function CompareGate() {
 
         const data = await res.json();
 
-        if (data.tier === 'pro') {
+        if (data.tier === 'pro' || data.tier === 'max') {
           if (!cancelled) setState('allowed');
           return;
         }
