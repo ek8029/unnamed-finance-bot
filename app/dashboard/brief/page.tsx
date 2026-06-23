@@ -12,7 +12,6 @@ import {
   X,
 } from 'lucide-react';
 import { usePreview } from '@/lib/preview-context';
-import { TierLock } from '@/components/tier-lock';
 import { VerdictCard, type ThesisIntelligenceItem } from '@/components/thesis/verdict-card';
 import type { ThesisBriefData } from '@/lib/thesis-brief';
 import { STATUS_META } from '@/lib/thesis-palette';
@@ -398,6 +397,30 @@ export default function BriefPage() {
     return parts.join(' ');
   }, [data, portfolioUp, spyDir, qqqDir, biggestMover, topSector]);
 
+  /* ─── General market brief (free tier): non-tailored, market-wide only.
+        Never references the user's book — that narrative is the Pro digest. ─── */
+  const generalMarketBrief = useMemo(() => {
+    if (!data) return '';
+    const parts: string[] = [];
+    if (data.market.spy) {
+      parts.push(
+        `The S&P 500 (SPY) is ${spyDir} ${fmtPct(data.market.spy.changePct)}${data.market.qqq ? ` and the Nasdaq (QQQ) is ${qqqDir} ${fmtPct(data.market.qqq.changePct)}` : ''} this morning.`,
+      );
+    }
+    if (data.market.vix) {
+      const lvl = data.market.vix.price;
+      const regime = lvl < 15 ? 'a calm, low-volatility tape' : lvl < 20 ? 'moderate volatility' : lvl < 30 ? 'elevated volatility as risk gets repriced' : 'high volatility — markets are repricing risk fast';
+      parts.push(`The VIX sits at ${lvl.toFixed(1)}, ${regime}.`);
+    }
+    if (data.market.treasury) {
+      parts.push(
+        `Long-dated Treasuries (TLT) are ${data.market.treasury.changePct >= 0 ? 'up' : 'down'} ${fmtPct(data.market.treasury.changePct)}, ${data.market.treasury.changePct >= 0 ? 'a bid for duration' : 'with yields ticking higher'}.`,
+      );
+    }
+    if (parts.length === 0) parts.push('Markets are quiet this morning with no major index moves to flag.');
+    return parts.join(' ');
+  }, [data, spyDir, qqqDir]);
+
   /* ─── Market context strip cells (only real data; never fabricated) ─── */
   const marketCells = useMemo(() => {
     if (!data) return [] as { label: string; value: string; delta: string; pos: boolean }[];
@@ -613,36 +636,38 @@ export default function BriefPage() {
         </div>
       </div>
 
-      {/* ══ Editorial hero (gold-tinted) ══ */}
-      <TierLock
-        required="pro"
-        label="The Helm Brief is a Pro feature"
-        blurb="Conviction-led daily intelligence on what moved your book and why."
+      {/* ══ Editorial hero (gold-tinted) ══
+           Free → general market brief (non-tailored). Pro+ → tailored digest. */}
+      <div
+        className="mb-3.5 rounded-lg px-[26px] py-6"
+        style={{
+          border: '1px solid rgba(230,185,77,0.18)',
+          background: 'rgba(230,185,77,0.025)',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+        }}
       >
-        <div
-          className="mb-3.5 rounded-lg px-[26px] py-6"
-          style={{
-            border: '1px solid rgba(230,185,77,0.18)',
-            background: 'rgba(230,185,77,0.025)',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
-          }}
-        >
-          {data.digest ? (
-            data.digest.split('\n\n').map((para, i) => (
-              <p
-                key={i}
-                className="m-0 mb-3 text-[16.5px] leading-[1.62] text-[var(--color-text-primary)] text-pretty last:mb-0"
-              >
-                {para}
-              </p>
-            ))
-          ) : (
-            <p className="m-0 text-[16.5px] leading-[1.62] text-[var(--color-text-primary)] text-pretty">
-              {heroParagraph}
-            </p>
-          )}
+        <div className="mb-2.5 text-[10px] uppercase tracking-[0.16em] text-[var(--color-gold)]" style={MONO}>
+          {tier === 'free' ? 'Market brief' : 'Your brief'}
         </div>
-      </TierLock>
+        {tier === 'free' ? (
+          <p className="m-0 text-[16.5px] leading-[1.62] text-[var(--color-text-primary)] text-pretty">
+            {generalMarketBrief}
+          </p>
+        ) : data.digest ? (
+          data.digest.split('\n\n').map((para, i) => (
+            <p
+              key={i}
+              className="m-0 mb-3 text-[16.5px] leading-[1.62] text-[var(--color-text-primary)] text-pretty last:mb-0"
+            >
+              {para}
+            </p>
+          ))
+        ) : (
+          <p className="m-0 text-[16.5px] leading-[1.62] text-[var(--color-text-primary)] text-pretty">
+            {heroParagraph}
+          </p>
+        )}
+      </div>
 
       {/* ══ Market context strip (5 cells, real data only) ══ */}
       {marketCells.length > 0 && (
@@ -685,12 +710,7 @@ export default function BriefPage() {
           </div>
 
           {/* Conviction alert leads when a tracked pillar broke or weakened (Pro) */}
-          {thesisLeads && data.thesisBrief && (
-            <TierLock
-              required="pro"
-              label="Conviction-led brief is a Pro feature"
-              blurb="Helm watches the filings behind every thesis you write and leads your brief when one cracks."
-            >
+          {tier !== 'free' && thesisLeads && data.thesisBrief && (
               <div
                 className={`${CARD} px-5 py-[18px]`}
                 style={{ borderLeft: `2px solid ${STATUS_META[leadStatus].color}` }}
@@ -749,19 +769,13 @@ export default function BriefPage() {
                   </Link>
                 </div>
               </div>
-            </TierLock>
           )}
 
           {/* Category-coded signal cards */}
           {signals.map((s, i) => <SignalCard key={`${s.category}-${i}`} signal={s} />)}
 
           {/* Thesis intelligence digest (Pro) */}
-          {data.thesisEnabled && data.thesisIntelligence.length > 0 && (
-            <TierLock
-              required="pro"
-              label="Thesis intelligence is a Pro feature"
-              blurb="Verbatim filing and news evidence scored against the pillars you wrote."
-            >
+          {tier !== 'free' && data.thesisEnabled && data.thesisIntelligence.length > 0 && (
               <div className={`${CARD} px-5 py-[18px]`} style={{ borderLeft: '2px solid var(--color-gold)' }}>
                 <div className="mb-3 flex items-baseline justify-between">
                   <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--color-gold)]" style={MONO}>
@@ -777,7 +791,32 @@ export default function BriefPage() {
                   ))}
                 </div>
               </div>
-            </TierLock>
+          )}
+
+          {/* One light upgrade nudge for free users — mentions both the
+              conviction-led brief and thesis tracking. Not a wall. */}
+          {tier === 'free' && (
+            <Link
+              href="/pricing"
+              className={`${CARD} group block px-5 py-[18px] transition-colors hover:border-[rgba(230,185,77,0.32)]`}
+              style={{ borderLeft: '2px solid rgba(230,185,77,0.4)' }}
+            >
+              <div className="mb-2 flex items-center gap-2">
+                <Sparkles size={13} className="text-[var(--color-gold)]" />
+                <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--color-gold)]" style={MONO}>
+                  Pro · $20/mo
+                </span>
+              </div>
+              <div className="mb-[6px] text-[15px] font-semibold leading-[1.3] tracking-[-0.01em] text-[var(--color-text-primary)]">
+                Make this brief yours
+              </div>
+              <p className="m-0 text-[13.5px] leading-[1.6] text-[var(--color-text-secondary)]">
+                Pro turns the general brief above into a conviction-led read on what moved your book and why, and tracks the theses behind every position, leading your brief the morning a pillar cracks.
+              </p>
+              <span className="mt-3 inline-block text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-gold)]" style={MONO}>
+                Upgrade to Pro →
+              </span>
+            </Link>
           )}
 
           {/* Quiet thesis state */}
