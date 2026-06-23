@@ -39,7 +39,6 @@ import { useSettings } from '@/contexts/settings-context';
 import { DemoProvider, useDemo } from '@/contexts/demo-context';
 import { LegalFooter } from '@/components/legal-footer';
 import { FinancialDisclaimer } from '@/components/financial-disclaimer';
-import { FoundingMemberBanner } from '@/components/founding-member-banner';
 import { ThesesWhatsNewBanner } from '@/components/thesis/theses-whatsnew-banner';
 import { OnboardingFlow } from '@/components/onboarding/onboarding-flow';
 import { GuidedTour } from '@/components/onboarding/guided-tour';

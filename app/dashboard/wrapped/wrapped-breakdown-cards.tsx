@@ -45,7 +45,7 @@ export function SectorBreakdownCard({ data, active }: { data: WrappedData; activ
           </div>
         ))}
       </div>
-      <CardBranding shareText={`My top sector: ${data.sectorBreakdown[0]?.sector} at ${data.sectorBreakdown[0]?.pct.toFixed(0)}%`} />
+      <CardBranding shareText={`My top sector: ${data.sectorBreakdown[0]?.sector} at ${data.sectorBreakdown[0]?.pct?.toFixed(0) ?? '0'}%`} />
     </div>
   );
 }
