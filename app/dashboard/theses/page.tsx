@@ -623,7 +623,7 @@ export default function ThesesPage() {
                   const intactFrac = r.total > 0 ? r.intact / r.total : 0;
                   const thisRank = rank;
                   return (
-                    <div key={r.t.id} id={`row-${r.t.ticker}`} className="border-t border-white/[0.04]">
+                    <div key={r.t.id} id={`row-${r.t.ticker}`} className="relative border-t border-white/[0.04]">
                       <button
                         type="button"
                         onClick={() => {
@@ -669,6 +669,23 @@ export default function ThesesPage() {
                         {r.total > 0 && <span className="font-mono text-[17px] font-semibold tabular-nums w-[54px] text-right shrink-0" style={{ ...MONO, color: convictionColor(intactFrac) }}>{Math.round(intactFrac * 100)}%</span>}
                         <ChevronDown className={`w-4 h-4 text-[#6A6A6A] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
                       </button>
+
+                      {/* One-click reassessment entry: visible on the collapsed row when the agent flagged a move. */}
+                      {!open && (r.worst === 'broken' || r.worst === 'weakening') && (
+                        <Link
+                          href={`/dashboard/theses/${r.t.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute top-1/2 -translate-y-1/2 right-[148px] z-10 hidden lg:inline-flex items-center gap-1 px-2.5 py-1 rounded font-mono text-[10px] font-semibold uppercase tracking-[0.1em] no-underline"
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            color: r.worst === 'broken' ? '#F87171' : '#E6B94D',
+                            background: r.worst === 'broken' ? 'rgba(248,113,113,0.10)' : 'rgba(230,185,77,0.10)',
+                            border: `1px solid ${r.worst === 'broken' ? 'rgba(248,113,113,0.30)' : 'rgba(230,185,77,0.30)'}`,
+                          }}
+                        >
+                          Reassessment &rsaquo;
+                        </Link>
+                      )}
 
                       {open && (
                         <div className="px-4 sm:px-5 pb-5 pt-1 bg-[#0B0B0B]">

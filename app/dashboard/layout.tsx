@@ -60,12 +60,12 @@ function ConnectBanner() {
       <div className="max-w-[1600px] mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)] shrink-0" />
-          <span className="text-[13px] text-[var(--color-text-primary)] truncate">
+          <span className="text-[14px] text-[var(--color-text-primary)] truncate">
             You&apos;re viewing <strong>sample data</strong>.
           </span>
           <Link
             href="/dashboard/accounts"
-            className="text-[13px] font-semibold text-[var(--color-gold)] hover:underline shrink-0"
+            className="text-[14px] font-semibold text-[var(--color-gold)] hover:underline shrink-0"
           >
             <span className="hidden sm:inline">Connect your account to see your real portfolio →</span>
             <span className="sm:hidden">Connect account →</span>
@@ -340,7 +340,7 @@ export default function DashboardLayout({
             : item.name.toLowerCase().replace(/\s+/g, '-')
         }
         aria-current={active ? 'page' : undefined}
-        className="group/nav flex items-center gap-[11px] py-[9px] pl-[13px] pr-3 text-[13px] tracking-[-0.005em] no-underline"
+        className="group/nav flex items-center gap-[11px] py-[9px] pl-[13px] pr-3 text-[14px] tracking-[-0.005em] no-underline"
         style={{
           borderLeft: `2px solid ${active ? 'var(--color-gold)' : 'transparent'}`,
           borderRadius: '0 5px 5px 0',
@@ -445,7 +445,7 @@ export default function DashboardLayout({
               key={row.name}
               href={row.href}
               onClick={() => setPaletteOpen(false)}
-              className="palette-row flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-[13px] text-left text-[var(--color-text-secondary)] no-underline"
+              className="palette-row flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-[14px] text-left text-[var(--color-text-secondary)] no-underline"
               style={{ fontFamily: 'var(--font-sans)' }}
             >
               <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)' }}>◇</span>
@@ -467,7 +467,7 @@ export default function DashboardLayout({
               key={row.name}
               href={row.href}
               onClick={() => setPaletteOpen(false)}
-              className="palette-row flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-[13px] text-left text-[var(--color-text-secondary)] no-underline"
+              className="palette-row flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-[14px] text-left text-[var(--color-text-secondary)] no-underline"
               style={{ fontFamily: 'var(--font-sans)' }}
             >
               <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-gold)' }}>{row.glyph}</span>
@@ -553,7 +553,7 @@ export default function DashboardLayout({
                 href={PORTFOLIO_PARENT.href}
                 data-tour="portfolio"
                 aria-current={isActive(PORTFOLIO_PARENT.href) ? 'page' : undefined}
-                className="flex-1 flex items-center gap-[11px] py-[9px] pl-[13px] pr-1 text-[13px] tracking-[-0.005em] no-underline"
+                className="flex-1 flex items-center gap-[11px] py-[9px] pl-[13px] pr-1 text-[14px] tracking-[-0.005em] no-underline"
                 style={{
                   borderLeft: `2px solid ${isActive(PORTFOLIO_PARENT.href) ? 'var(--color-gold)' : 'transparent'}`,
                   borderRadius: '0 5px 5px 0',
