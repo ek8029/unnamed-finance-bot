@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import { analyzeStock } from '@/lib/analyze-stock';
-import { TOP_TICKERS } from '@/lib/top-tickers';
 import { getFullTickerData } from '@/lib/financial-data';
 import { INDEXABLE_TICKERS } from '@/lib/indexable-tickers';
 import { AnalysisTerminal } from './analysis-terminal';
@@ -11,6 +11,12 @@ import { AnalysisGate } from '@/components/analysis-gate';
 
 // Force dynamic rendering — quote prices must be fresh on every request
 export const dynamic = 'force-dynamic';
+
+// Client IP for the anonymous-generation rate limit (see lib/analyze-rate-limit).
+async function anonClientIp(): Promise<string> {
+  const h = await headers();
+  return h.get('x-forwarded-for')?.split(',')[0].trim() || h.get('x-real-ip') || '127.0.0.1';
+}
 
 interface Props {
   params: Promise<{ ticker: string }>;
@@ -48,8 +54,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   // Call analyzeStock for both metadata and page body — it's cached, so the
-  // second call in the page component is free.
-  const { analysis, computedAt } = await analyzeStock(symbol, (TOP_TICKERS as readonly string[]).includes(symbol));
+  // second call in the page component is free. anonIp gates anonymous on-demand
+  // generation (any real ticker, rate-limited) instead of a curated allowlist.
+  const ip = await anonClientIp();
+  const { analysis, computedAt } = await analyzeStock(symbol, true, ip);
 
   if (!analysis) {
     return {
@@ -102,8 +110,9 @@ export default async function TickerAnalysisPage({ params }: Props) {
     notFound();
   }
 
+  const ip = await anonClientIp();
   const [{ analysis, computedAt, dataSources, methodologyVersion }, tickerData] = await Promise.all([
-    analyzeStock(symbol, (TOP_TICKERS as readonly string[]).includes(symbol)),
+    analyzeStock(symbol, true, ip),
     getFullTickerData(symbol),
   ]);
 

@@ -87,6 +87,16 @@ async function getCik(symbol: string): Promise<string | null> {
   return cik != null ? String(cik).padStart(10, '0') : null;
 }
 
+/**
+ * Cheap validity check: does this symbol have an SEC CIK (i.e. is it a real
+ * SEC-registered US issuer)? Reuses the 24h-cached ticker→CIK map, so after
+ * the first load it is an in-memory Map lookup — no network, no paid API.
+ * Used to gate anonymous on-demand analysis generation against garbage tickers.
+ */
+export async function tickerHasCik(symbol: string): Promise<boolean> {
+  return (await getCik(symbol)) !== null;
+}
+
 // ── Curated concept lists ──
 // companyfacts returns every XBRL concept ever filed; we map a curated set
 // to readable statement line items. Arrays = fallback chain (filers differ).

@@ -4,6 +4,8 @@
  * accessible but get noindex to avoid thin content penalties.
  */
 export const INDEXABLE_TICKERS = new Set([
+  // Recent high-search IPOs
+  'SPCX',
   // Mega-cap / FAANG+
   'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK.B', 'AVGO',
   'LLY', 'JPM', 'V', 'UNH', 'XOM', 'MA', 'JNJ', 'PG', 'COST', 'HD',

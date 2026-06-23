@@ -12,6 +12,8 @@ import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import OpenAI from 'openai';
 import type { StockAnalysis } from '@/components/analysis/types';
 import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
+import { isAnalyzableTicker } from '@/lib/valid-tickers';
+import { canGenerateAnon } from '@/lib/analyze-rate-limit';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -224,7 +226,7 @@ export interface AnalyzeStockResult {
 // React cache() dedupes within a single request — generateMetadata and the
 // page component previously each ran the full Finnhub + OpenAI pipeline on a
 // cache miss, doubling latency and API usage.
-export const analyzeStock = cache(async (ticker: string, allowGenerate = true): Promise<AnalyzeStockResult> => {
+export const analyzeStock = cache(async (ticker: string, allowGenerate = true, anonIp?: string): Promise<AnalyzeStockResult> => {
   const symbol = ticker.toUpperCase().replace(/[^A-Z]/g, '');
   const emptyResult: AnalyzeStockResult = {
     analysis: null,
@@ -254,6 +256,19 @@ export const analyzeStock = cache(async (ticker: string, allowGenerate = true): 
   // from spending Finnhub + OpenAI on scripted iteration over arbitrary valid tickers.
   if (!allowGenerate) {
     return emptyResult;
+  }
+
+  // Anonymous public path (anonIp set): gate before spending any paid call.
+  // 1) validity — real SEC ticker or curated ETF, else a garbage string never
+  //    reaches Finazon/OpenAI. 2) rate-limit per-IP + global to bound spend.
+  // Authed/cron callers omit anonIp and skip this entirely.
+  if (anonIp !== undefined) {
+    if (!(await isAnalyzableTicker(symbol))) {
+      return emptyResult;
+    }
+    if (!(await canGenerateAnon(anonIp))) {
+      return emptyResult;
+    }
   }
 
   // Fetch financial data
