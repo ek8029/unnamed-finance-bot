@@ -17,7 +17,9 @@ import posthog from 'posthog-js';
 
 // ── Sovereign Architect tokens (local to this screen) ──────────────────────
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
-const SCREEN: React.CSSProperties = { padding: '26px 28px 60px', maxWidth: 1320 };
+const SCREEN: React.CSSProperties = { maxWidth: 1320 };
+// Responsive page padding: tighter on phones, full bleed-in on >=sm.
+const SCREEN_PAD = 'px-4 pt-6 pb-16 sm:px-7 sm:pt-[26px]';
 const CARD =
   'rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] shadow-[0_2px_12px_rgba(0,0,0,0.5)]';
 
@@ -177,18 +179,6 @@ function SectorHeatStrip({
         <div className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-gold)]" style={MONO}>
           Sector heat · today
         </div>
-        {movers.length > 0 && (
-          <div className="hidden items-center gap-3.5 sm:flex">
-            {movers.map((m) => (
-              <span key={m.ticker} className="inline-flex items-baseline gap-1.5 text-[12px]" style={MONO}>
-                <span className="font-semibold text-[var(--color-text-secondary)]">{m.ticker}</span>
-                <span className={m.pct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}>
-                  {formatPct(m.pct)}
-                </span>
-              </span>
-            ))}
-          </div>
-        )}
       </div>
       {/* weighted heat bar */}
       <div className="flex h-[10px] w-full gap-[2px] overflow-hidden rounded-full">
@@ -219,6 +209,22 @@ function SectorHeatStrip({
           </div>
         ))}
       </div>
+      {/* movers — own row so they survive on mobile */}
+      {movers.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 border-t border-[var(--color-border-subtle)] pt-3">
+          <span className="text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-muted)]" style={MONO}>
+            Movers
+          </span>
+          {movers.map((m) => (
+            <span key={m.ticker} className="inline-flex items-baseline gap-1.5 text-[12px]" style={MONO}>
+              <span className="font-semibold text-[var(--color-text-secondary)]">{m.ticker}</span>
+              <span className={m.pct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}>
+                {formatPct(m.pct)}
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -499,7 +505,7 @@ export default function DashboardOverview() {
   // ── Loading / error ────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="mx-auto" style={SCREEN}>
+      <div className={`mx-auto ${SCREEN_PAD}`} style={SCREEN}>
         <LoadingSkeleton />
       </div>
     );
@@ -507,7 +513,7 @@ export default function DashboardOverview() {
 
   if (error) {
     return (
-      <div className="mx-auto" style={SCREEN}>
+      <div className={`mx-auto ${SCREEN_PAD}`} style={SCREEN}>
         <div className="rounded-lg border border-[var(--color-negative)]/20 bg-[var(--color-negative)]/10 p-6 text-[var(--color-negative-text)]">
           <h2 className="font-semibold mb-2">Error loading dashboard</h2>
           <p>{error}</p>
@@ -522,7 +528,7 @@ export default function DashboardOverview() {
 
   if (hasNoData) {
     return (
-      <div className="mx-auto" style={SCREEN}>
+      <div className={`mx-auto ${SCREEN_PAD}`} style={SCREEN}>
         <div className="flex min-h-[calc(100vh-200px)] items-center justify-center">
           <div className={`${CARD} w-full max-w-[560px] px-8 py-10 text-center`}>
             <div
@@ -587,7 +593,7 @@ export default function DashboardOverview() {
   const dayChange = financialSummary?.changes?.portfolio ?? null;
 
   return (
-    <div className="mx-auto stagger-fade-in" style={SCREEN}>
+    <div className={`mx-auto stagger-fade-in ${SCREEN_PAD}`} style={SCREEN}>
       {showDemoBanner && (
         <div className="mb-4 flex flex-col items-start justify-between gap-2 rounded-md border border-[var(--color-info-border)] bg-[var(--color-info-muted)] px-4 py-2.5 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">
@@ -612,7 +618,7 @@ export default function DashboardOverview() {
         <div>
           <Eyebrow className="mb-2 !tracking-[0.2em] !text-[14px]">Net worth · All accounts · USD</Eyebrow>
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
-            <div className="text-[46px] font-bold leading-none tracking-[-0.03em] tabular-nums">
+            <div className="text-[34px] sm:text-[46px] font-bold leading-none tracking-[-0.03em] tabular-nums">
               {formatCurrency(netWorth)}
             </div>
             {(netWorthChange !== null || netWorthPctChange !== null) && (
