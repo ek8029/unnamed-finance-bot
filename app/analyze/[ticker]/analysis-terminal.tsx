@@ -45,6 +45,10 @@ const FUNCTIONS: FunctionItem[] = [
 
 const POPULAR_TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA'];
 
+// Sovereign Architect card chrome — surface bg, hairline border, soft drop shadow.
+const CARD = 'border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] rounded-lg shadow-[0_2px_12px_rgba(0,0,0,0.5)]';
+const SECTION_LABEL = 'font-mono text-[11px] font-semibold tracking-[0.18em] uppercase text-[var(--color-text-muted)]';
+
 // ── Helpers ──
 
 function fmt(n: number | null | undefined, decimals = 2): string {
@@ -73,19 +77,26 @@ function fmtPrice(n: number | null | undefined): string {
 
 function changeColor(n: number | null | undefined): string {
   if (n == null || n === 0) return 'text-[var(--color-text-secondary)]';
-  return n > 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]';
+  return n > 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]';
 }
 
 function sentimentDot(s: string): string {
   if (s === 'positive') return 'bg-[var(--color-positive)]';
-  if (s === 'negative') return 'bg-[var(--color-negative)]';
+  if (s === 'negative') return 'bg-[var(--color-negative-text)]';
   return 'bg-[var(--color-text-muted)]';
 }
 
 function verdictBg(v: string): string {
   if (v === 'bullish') return 'bg-[var(--color-positive)]/15 text-[var(--color-positive)] border-[var(--color-positive)]/30';
-  if (v === 'bearish') return 'bg-[var(--color-negative)]/15 text-[var(--color-negative)] border-[var(--color-negative)]/30';
+  if (v === 'bearish') return 'bg-[var(--color-negative)]/15 text-[var(--color-negative-text)] border-[var(--color-negative)]/30';
   return 'bg-[var(--color-gold)]/15 text-[var(--color-gold)] border-[var(--color-gold)]/30';
+}
+
+// Hex for the verdict sentiment dot — used in inline SVG / style props.
+function verdictColor(v: string): string {
+  if (v === 'bullish') return 'var(--color-positive)';
+  if (v === 'bearish') return 'var(--color-negative-text)';
+  return 'var(--color-gold)';
 }
 
 function relativeTime(ts: number): string {
@@ -121,7 +132,7 @@ function InlineSearch({ currentTicker, basePath = '/analyze' }: { currentTicker:
   return (
     <form onSubmit={handleSubmit} className="flex gap-2 w-full max-w-xs">
       <div className="flex-1 relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--color-text-muted)]" aria-hidden="true" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" aria-hidden="true" />
         <input
           type="text"
           value={input}
@@ -130,15 +141,15 @@ function InlineSearch({ currentTicker, basePath = '/analyze' }: { currentTicker:
           maxLength={5}
           disabled={loading}
           aria-label="Stock ticker symbol"
-          className="w-full pl-7 pr-2 py-2.5 sm:py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-[12px] tracking-wider font-mono tabular-nums disabled:opacity-60"
+          className="w-full pl-8 pr-2 py-2.5 sm:py-2 bg-[var(--color-bg-inset)] border border-[var(--color-border-base)] rounded-md text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-[13px] tracking-wider font-mono tabular-nums disabled:opacity-60"
         />
       </div>
       <button
         type="submit"
         disabled={!input.trim() || input.trim().toUpperCase() === currentTicker || loading}
-        className="px-3 py-2.5 sm:py-1.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded-sm transition-colors text-[11px] whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+        className="px-3.5 py-2.5 sm:py-2 bg-[var(--color-gold)] hover:brightness-[1.08] text-[var(--color-text-inverse)] font-semibold rounded-md transition-all text-[12px] whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
       >
-        {loading ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : 'GO'}
+        {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : 'GO'}
       </button>
     </form>
   );
@@ -157,12 +168,12 @@ function FunctionTree({ active, onSelect }: { active: FunctionKey; onSelect: (k:
             <button
               onClick={() => !isDisabled && onSelect(fn.key)}
               disabled={isDisabled}
-              className={`w-full text-left px-3 py-2.5 text-[14px] tracking-widest font-mono transition-colors flex items-center justify-between group border-l-2 ${
+              className={`w-full text-left px-3 py-2.5 text-[14px] tracking-[0.14em] font-mono transition-colors flex items-center justify-between group border-l-2 ${
                 isActive
                   ? 'border-[var(--color-gold)] text-[var(--color-gold)] bg-[var(--color-gold)]/5'
                   : isDisabled
                     ? 'border-transparent text-[var(--color-text-muted)]/50 cursor-not-allowed'
-                    : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-bg-elevated)]'
+                    : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-bg-elevated)]'
               }`}
               aria-current={isActive ? 'page' : undefined}
             >
@@ -177,13 +188,13 @@ function FunctionTree({ active, onSelect }: { active: FunctionKey; onSelect: (k:
                 </span>
               )}
               {!fn.badge && !isDisabled && (
-                <ChevronRight className={`w-3 h-3 transition-opacity ${isActive ? 'opacity-100 text-[var(--color-gold)]' : 'opacity-0 group-hover:opacity-50'}`} />
+                <ChevronRight className={`w-3.5 h-3.5 transition-opacity ${isActive ? 'opacity-100 text-[var(--color-gold)]' : 'opacity-0 group-hover:opacity-50'}`} />
               )}
             </button>
             {isActive && fn.children && (
               <div className="ml-5 border-l border-[var(--color-border-subtle)] pl-3 py-1 space-y-0.5">
                 {fn.children.map((child) => (
-                  <div key={child} className="text-[10px] font-mono tracking-wider text-[var(--color-text-muted)] py-0.5">
+                  <div key={child} className="text-[11px] font-mono tracking-wider text-[var(--color-text-muted)] py-0.5">
                     {child}
                   </div>
                 ))}
@@ -196,14 +207,35 @@ function FunctionTree({ active, onSelect }: { active: FunctionKey; onSelect: (k:
   );
 }
 
-// ── Metric Cell ──
+// ── Metric Cell (8-col strip style) ──
 
 function MetricCell({ label, value, context }: { label: string; value: string; context?: string }) {
   return (
-    <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-2.5 sm:p-3 space-y-1 min-w-0">
-      <div className="text-[11px] sm:text-[12px] font-mono tracking-wider text-[var(--color-text-muted)] uppercase">{label}</div>
-      <div className="text-[14px] sm:text-[18px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)] truncate" title={value}>{value}</div>
-      {context && <div className="text-[11px] sm:text-[12px] font-mono text-[var(--color-text-muted)]">{context}</div>}
+    <div className="px-3.5 py-3 border-r border-b border-[var(--color-border-subtle)] min-w-0">
+      <div className="font-mono text-[10px] tracking-[0.1em] uppercase text-[var(--color-text-muted)] mb-1.5">{label}</div>
+      <div className="font-mono text-[16px] sm:text-[17px] font-bold tabular-nums text-[var(--color-text-primary)] truncate" title={value}>{value}</div>
+      {context && <div className="font-mono text-[11px] text-[var(--color-text-muted)] mt-0.5">{context}</div>}
+    </div>
+  );
+}
+
+// ── Range pills (presentational — chart shows trailing window) ──
+
+function RangePills() {
+  const ranges = ['1D', '5D', '1M', '6M', 'YTD', '1Y'];
+  const active = '6M';
+  return (
+    <div className="flex gap-1.5 font-mono text-[11px] tracking-[0.1em] uppercase">
+      {ranges.map((r) => (
+        <span
+          key={r}
+          className={`px-2.5 py-1.5 rounded ${
+            r === active ? 'bg-[var(--color-gold)]/[0.08] text-[var(--color-gold)]' : 'text-[var(--color-text-muted)]'
+          }`}
+        >
+          {r}
+        </span>
+      ))}
     </div>
   );
 }
@@ -222,7 +254,7 @@ function PriceChart({ ticker }: { ticker: string }) {
       .finally(() => setLoading(false));
   }, [ticker]);
 
-  if (loading) return <div className="h-[200px] flex items-center justify-center text-[12px] font-mono text-[var(--color-text-muted)]">Loading chart...</div>;
+  if (loading) return <div className="h-[200px] flex items-center justify-center text-[13px] font-mono text-[var(--color-text-muted)]">Loading chart...</div>;
   if (prices.length < 2) return null;
 
   const min = Math.min(...prices.map(p => p.close));
@@ -230,7 +262,7 @@ function PriceChart({ ticker }: { ticker: string }) {
   const first = prices[0].close;
   const last = prices[prices.length - 1].close;
   const isUp = last >= first;
-  const color = isUp ? 'var(--color-positive)' : 'var(--color-negative)';
+  const color = isUp ? 'var(--color-positive)' : 'var(--color-negative-text)';
 
   return (
     <div className="h-[200px] w-full">
@@ -238,7 +270,7 @@ function PriceChart({ ticker }: { ticker: string }) {
         <AreaChart data={prices} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id={`gradient-${ticker}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity={0.2} />
+              <stop offset="0%" stopColor={color} stopOpacity={0.25} />
               <stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
@@ -248,13 +280,13 @@ function PriceChart({ ticker }: { ticker: string }) {
             if (!active || !payload?.[0]) return null;
             const d = payload[0].payload;
             return (
-              <div className="bg-[var(--color-bg-overlay)] border border-[var(--color-border-strong)] rounded-sm px-3 py-2 text-[12px] font-mono shadow-lg">
+              <div className="bg-[var(--color-bg-overlay)] border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[12px] font-mono shadow-lg">
                 <div className="text-[var(--color-text-muted)]">{d.price_date}</div>
                 <div className="text-[var(--color-text-primary)] font-semibold">${d.close.toFixed(2)}</div>
               </div>
             );
           }} />
-          <Area type="monotone" dataKey="close" stroke={color} strokeWidth={1.5} fill={`url(#gradient-${ticker})`} dot={false} />
+          <Area type="monotone" dataKey="close" stroke={color} strokeWidth={1.6} fill={`url(#gradient-${ticker})`} dot={false} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -281,8 +313,8 @@ function EPSChart({ earnings }: { earnings: TickerData['earnings'] }) {
   if (data.length < 2) return null;
 
   return (
-    <div className="space-y-2">
-      <div className="text-[12px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">EPS History (Actual vs Estimate)</div>
+    <div className="space-y-2.5">
+      <div className={SECTION_LABEL}>EPS History (Actual vs Estimate)</div>
       <div className="h-[160px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
@@ -293,9 +325,9 @@ function EPSChart({ earnings }: { earnings: TickerData['earnings'] }) {
               if (!active || !payload?.[0]) return null;
               const d = payload[0].payload;
               return (
-                <div className="bg-[var(--color-bg-overlay)] border border-[var(--color-border-strong)] rounded-sm px-3 py-2 text-[12px] font-mono shadow-lg">
+                <div className="bg-[var(--color-bg-overlay)] border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[12px] font-mono shadow-lg">
                   <div className="text-[var(--color-text-muted)]">{d.quarter}</div>
-                  <div className={`font-semibold ${d.beat ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>Actual: ${d.actual.toFixed(2)}</div>
+                  <div className={`font-semibold ${d.beat ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}>Actual: ${d.actual.toFixed(2)}</div>
                   {d.estimate != null && <div className="text-[var(--color-text-muted)]">Est: ${d.estimate.toFixed(2)}</div>}
                 </div>
               );
@@ -309,12 +341,66 @@ function EPSChart({ earnings }: { earnings: TickerData['earnings'] }) {
   );
 }
 
+// ── Verdict Card (gold-tinted, Sovereign Architect) ──
+
+function VerdictCard({ analysis }: { analysis: StockAnalysis }) {
+  const verdictLabel = analysis.verdict.toUpperCase();
+  return (
+    <div className="border border-[var(--color-gold)]/20 bg-[var(--color-gold)]/[0.025] rounded-lg px-6 py-5">
+      <div className="flex items-center gap-3 mb-3.5">
+        <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-[var(--color-gold)]">✦ Helm Verdict</span>
+        <span className="flex-1 h-px bg-[var(--color-gold)]/[0.12]" />
+        <span className="font-mono text-[10px] tracking-[0.1em] uppercase flex items-center gap-1.5" style={{ color: verdictColor(analysis.verdict) }}>
+          <span className="w-1.5 h-1.5 rounded-full" style={{ background: verdictColor(analysis.verdict) }} />
+          {verdictLabel}
+        </span>
+      </div>
+      <p className="text-[15.5px] leading-[1.62] text-[var(--color-text-primary)] m-0 text-pretty">{analysis.recommendation}</p>
+    </div>
+  );
+}
+
+// ── Bull / Bear two-column cards ──
+
+function BullBearCards({ analysis }: { analysis: StockAnalysis }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+      <div className="border border-[var(--color-positive)]/15 bg-[var(--color-positive)]/[0.03] rounded-lg px-5 py-5">
+        <div className="font-mono text-[10px] font-bold tracking-[0.14em] uppercase text-[var(--color-positive)] mb-3.5">▲ Bull Case</div>
+        <p className="text-[14px] leading-[1.6] text-[var(--color-text-secondary)] m-0">{analysis.bullCase}</p>
+      </div>
+      <div className="border border-[var(--color-negative)]/15 bg-[var(--color-negative)]/[0.03] rounded-lg px-5 py-5">
+        <div className="font-mono text-[10px] font-bold tracking-[0.14em] uppercase text-[var(--color-negative-text)] mb-3.5">▼ Bear Case</div>
+        <p className="text-[14px] leading-[1.6] text-[var(--color-text-secondary)] m-0">{analysis.bearCase}</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Sources strip ("No black boxes") ──
+
+function SourcesStrip({ dataSources, computedAt, methodologyVersion }: { dataSources: string[]; computedAt: string; methodologyVersion: string }) {
+  return (
+    <div className="border border-[var(--color-border-subtle)] bg-[var(--color-bg-inset)] rounded-lg px-5 py-4 flex items-center gap-5 flex-wrap">
+      <div className="font-mono text-[9px] tracking-[0.16em] uppercase text-[var(--color-text-muted)]">Sources</div>
+      {dataSources.map((s, i) => (
+        <div key={i} className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)]" />
+          <span className="font-mono text-[12px] text-[var(--color-text-secondary)]">{s}</span>
+        </div>
+      ))}
+      <div className="w-full font-mono text-[11px] text-[var(--color-text-muted)]">
+        Methodology v{methodologyVersion} · {new Date(computedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · No black boxes. Every figure is sourced and timestamped.
+      </div>
+    </div>
+  );
+}
+
 // ── Center Pane Views ──
 
-function OverviewView({ analysis, tickerData }: { analysis: StockAnalysis; tickerData: TickerData }) {
+function OverviewView({ analysis, tickerData, computedAt, dataSources, methodologyVersion }: { analysis: StockAnalysis; tickerData: TickerData; computedAt: string; dataSources: string[]; methodologyVersion: string }) {
   const { quote, profile, financials, earnings } = tickerData;
   const m = financials?.metric || {};
-  const verdictLabel = analysis.verdict.charAt(0).toUpperCase() + analysis.verdict.slice(1);
 
   // Next earnings date
   const nextEarnings = useMemo(() => {
@@ -326,39 +412,36 @@ function OverviewView({ analysis, tickerData }: { analysis: StockAnalysis; ticke
   }, [earnings]);
 
   return (
-    <div className="space-y-6">
-      {/* Company header */}
-      <div>
-        <div className="flex items-baseline gap-3 flex-wrap">
-          <span className="text-[28px] font-mono font-bold text-[var(--color-gold)] tabular-nums tracking-tight">{analysis.ticker}</span>
-          <span className="text-[18px] text-[var(--color-text-primary)] font-medium">{analysis.companyName}</span>
+    <div className="space-y-3.5">
+      {/* Price header */}
+      <div className="flex items-end justify-between gap-8 flex-wrap">
+        <div>
+          <div className="flex items-baseline gap-3.5 mb-1 flex-wrap">
+            <span className="font-mono text-[22px] font-bold text-[var(--color-gold)] tabular-nums tracking-[0.02em]">{analysis.ticker}</span>
+            <span className="text-[16px] text-[var(--color-text-muted)] font-medium">{analysis.companyName}</span>
+          </div>
+          <div className="flex items-baseline gap-3.5 flex-wrap">
+            <span className="text-[42px] font-bold tabular-nums tracking-[-0.025em] leading-none text-[var(--color-text-primary)]">{fmtPrice(quote?.c)}</span>
+            <span className={`font-mono text-[15px] font-semibold ${changeColor(quote?.dp)}`}>
+              {quote?.d != null ? `${quote.d >= 0 ? '+' : ''}${fmt(quote.d)} · ` : ''}{fmtPct(quote?.dp)}
+            </span>
+            <span className="font-mono text-[10px] text-[var(--color-text-muted)] tracking-[0.1em] flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] animate-pulse" /> LIVE
+            </span>
+          </div>
+          <div className="flex items-center gap-2 mt-2 text-[12px] font-mono tracking-wider text-[var(--color-text-muted)]">
+            {profile?.exchange && <span>{profile.exchange}</span>}
+            {profile?.exchange && profile?.industry && <span className="text-[var(--color-border-strong)]">|</span>}
+            {profile?.industry && <span>{profile.industry}</span>}
+          </div>
         </div>
-        <div className="flex items-center gap-2 mt-1 text-[13px] font-mono tracking-wider text-[var(--color-text-muted)]">
-          {profile?.exchange && <span>{profile.exchange}</span>}
-          {profile?.exchange && profile?.industry && <span className="text-[var(--color-border-strong)]">|</span>}
-          {profile?.industry && <span>{profile.industry}</span>}
-        </div>
+        <RangePills />
       </div>
 
-      {/* Key stats row */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
-        <MetricCell label="Price" value={fmtPrice(quote?.c)} />
-        <MetricCell label="Day Change" value={fmtPct(quote?.dp)} context={quote?.d != null ? `${quote.d >= 0 ? '+' : ''}${fmt(quote.d)}` : undefined} />
-        <MetricCell label="Market Cap" value={profile?.marketCapitalization != null ? fmtCompact(profile.marketCapitalization * 1e6) : '--'} />
-        <MetricCell label="P/E Ratio" value={m.peBasicExclExtraTTM != null ? fmt(m.peBasicExclExtraTTM) : '--'} />
-        <MetricCell label="52W Range" value={m['52WeekLow'] != null && m['52WeekHigh'] != null ? `${fmt(m['52WeekLow'])} - ${fmt(m['52WeekHigh'])}` : '--'} />
-      </div>
-
-      {/* Company description (AI summary) */}
-      <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-4">
-        <div className="text-[12px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase mb-2">Company Overview</div>
-        <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed">{analysis.summary}</p>
-      </div>
-
-      {/* Price chart */}
-      <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-4">
+      {/* Price chart card */}
+      <div className={`${CARD} px-5 py-4`}>
         <div className="flex items-center justify-between mb-3">
-          <div className="text-[12px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Price — 45 Day</div>
+          <div className={SECTION_LABEL}>Price — 45 Day</div>
           <div className="flex items-baseline gap-2 font-mono tabular-nums">
             <span className="text-[18px] font-semibold text-[var(--color-text-primary)]">{fmtPrice(quote?.c)}</span>
             <span className={`text-[13px] ${changeColor(quote?.dp)}`}>{fmtPct(quote?.dp)}</span>
@@ -367,42 +450,49 @@ function OverviewView({ analysis, tickerData }: { analysis: StockAnalysis; ticke
         <PriceChart ticker={analysis.ticker} />
       </div>
 
+      {/* Helm verdict */}
+      <VerdictCard analysis={analysis} />
+
+      {/* 8-col metrics strip */}
+      <div className={`${CARD} overflow-hidden grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 [&>*:nth-child(-n+8)]:border-b-0`}>
+        <MetricCell label="Price" value={fmtPrice(quote?.c)} />
+        <MetricCell label="Day Chg" value={fmtPct(quote?.dp)} />
+        <MetricCell label="Mkt Cap" value={profile?.marketCapitalization != null ? fmtCompact(profile.marketCapitalization * 1e6) : '--'} />
+        <MetricCell label="P/E" value={m.peBasicExclExtraTTM != null ? fmt(m.peBasicExclExtraTTM) : '--'} />
+        <MetricCell label="EPS" value={m.epsBasicExclExtraTTM != null ? fmtPrice(m.epsBasicExclExtraTTM) : '--'} />
+        <MetricCell label="Beta" value={m.beta != null ? fmt(m.beta) : '--'} />
+        <MetricCell label="52W High" value={m['52WeekHigh'] != null ? fmtPrice(m['52WeekHigh']) : '--'} />
+        <MetricCell label="52W Low" value={m['52WeekLow'] != null ? fmtPrice(m['52WeekLow']) : '--'} />
+      </div>
+
+      {/* Company overview */}
+      <div className={`${CARD} px-5 py-4`}>
+        <div className={`${SECTION_LABEL} mb-2`}>Company Overview</div>
+        <p className="text-[14px] text-[var(--color-text-secondary)] leading-[1.6] m-0">{analysis.summary}</p>
+      </div>
+
+      {/* Bull / Bear */}
+      <BullBearCards analysis={analysis} />
+
       {/* Revenue chart + Earnings date side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4">
-        <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3.5">
+        <div className={`${CARD} px-5 py-4`}>
           <EPSChart earnings={earnings} />
         </div>
         {nextEarnings && (
-          <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-4 flex flex-col items-center justify-center min-w-[160px]">
+          <div className={`${CARD} px-5 py-4 flex flex-col items-center justify-center min-w-[160px]`}>
             <Calendar className="w-5 h-5 text-[var(--color-gold)] mb-2" />
-            <div className="text-[11px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase mb-1">Earnings</div>
+            <div className="font-mono text-[10px] tracking-[0.14em] uppercase text-[var(--color-text-muted)] mb-1">Earnings</div>
             <div className="text-[16px] font-mono font-semibold text-[var(--color-text-primary)]">
               {new Date(nextEarnings.period).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </div>
-            <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-0.5">Q{nextEarnings.quarter} {nextEarnings.year}</div>
+            <div className="font-mono text-[11px] text-[var(--color-text-muted)] mt-0.5">Q{nextEarnings.quarter} {nextEarnings.year}</div>
           </div>
         )}
       </div>
 
-      {/* AI Verdict */}
-      <div className="flex items-start gap-4">
-        <span className={`inline-flex items-center px-3 py-1.5 rounded-sm border text-[14px] font-mono font-bold tracking-wider ${verdictBg(analysis.verdict)}`}>
-          {verdictLabel.toUpperCase()}
-        </span>
-        <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed flex-1">{analysis.recommendation}</p>
-      </div>
-
-      {/* Bull/Bear summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="border border-[var(--color-positive)]/20 rounded-sm p-3">
-          <div className="text-[11px] font-mono tracking-widest text-[var(--color-positive)] uppercase font-semibold mb-1.5">Bull Case</div>
-          <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed line-clamp-3">{analysis.bullCase}</p>
-        </div>
-        <div className="border border-[var(--color-negative)]/20 rounded-sm p-3">
-          <div className="text-[11px] font-mono tracking-widest text-[var(--color-negative)] uppercase font-semibold mb-1.5">Bear Case</div>
-          <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed line-clamp-3">{analysis.bearCase}</p>
-        </div>
-      </div>
+      {/* Sources strip */}
+      <SourcesStrip dataSources={dataSources} computedAt={computedAt} methodologyVersion={methodologyVersion} />
     </div>
   );
 }
@@ -445,10 +535,10 @@ function FundamentalsView({ tickerData, profile }: { tickerData: TickerData; pro
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`px-3 py-2 text-[12px] font-mono tracking-wider uppercase whitespace-nowrap border-b-2 -mb-px transition-colors ${
+            className={`px-3.5 py-2.5 text-[13px] font-mono tracking-wider uppercase whitespace-nowrap border-b-2 -mb-px transition-colors ${
               tab === key
                 ? 'border-[var(--color-gold)] text-[var(--color-gold)]'
-                : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
+                : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
             }`}
           >
             {label}
@@ -457,7 +547,7 @@ function FundamentalsView({ tickerData, profile }: { tickerData: TickerData; pro
       </div>
 
       {tab === 'metrics' ? (
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2.5">
+        <div className={`${CARD} overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4`}>
           {cells.map((c) => (
             <MetricCell key={c.label} label={c.label} value={c.value} context={c.context} />
           ))}
@@ -519,7 +609,7 @@ function StatementView({ symbol, statement }: { symbol: string; statement: 'ic' 
 
   if (error) {
     return (
-      <div className="text-[13px] text-[var(--color-text-muted)] font-mono py-8 text-center">
+      <div className="text-[14px] text-[var(--color-text-muted)] font-mono py-8 text-center">
         Failed to load financial statements.
       </div>
     );
@@ -529,14 +619,14 @@ function StatementView({ symbol, statement }: { symbol: string; statement: 'ic' 
     return (
       <div className="flex items-center justify-center gap-2 py-12 text-[var(--color-text-muted)]">
         <Loader2 className="w-4 h-4 animate-spin" />
-        <span className="text-[13px] font-mono">Loading statements...</span>
+        <span className="text-[14px] font-mono">Loading statements...</span>
       </div>
     );
   }
 
   if (reports.length === 0) {
     return (
-      <div className="text-[13px] text-[var(--color-text-muted)] font-mono py-8 text-center">
+      <div className="text-[14px] text-[var(--color-text-muted)] font-mono py-8 text-center">
         No annual filings available for {symbol}.
       </div>
     );
@@ -548,7 +638,7 @@ function StatementView({ symbol, statement }: { symbol: string; statement: 'ic' 
 
   if (rows.length === 0) {
     return (
-      <div className="text-[13px] text-[var(--color-text-muted)] font-mono py-8 text-center">
+      <div className="text-[14px] text-[var(--color-text-muted)] font-mono py-8 text-center">
         No data for this statement.
       </div>
     );
@@ -558,20 +648,20 @@ function StatementView({ symbol, statement }: { symbol: string; statement: 'ic' 
 
   return (
     <div className="space-y-3">
-      <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">
+      <div className={SECTION_LABEL}>
         {titles[statement]} — Annual (10-K)
       </div>
-      <div className="overflow-x-auto border border-[var(--color-border-subtle)] rounded-sm">
-        <table className="w-full text-[12px] font-mono">
+      <div className={`${CARD} overflow-x-auto`}>
+        <table className="w-full text-[13px] font-mono">
           <thead>
             <tr className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
-              <th className="text-left px-3 py-2 text-[11px] tracking-wider uppercase text-[var(--color-text-muted)] font-medium min-w-[200px]">
+              <th className="text-left px-3.5 py-2.5 text-[11px] tracking-wider uppercase text-[var(--color-text-muted)] font-medium min-w-[200px]">
                 Line Item
               </th>
               {reports.map((r) => (
                 <th
                   key={r.year}
-                  className="text-right px-3 py-2 text-[11px] tracking-wider uppercase text-[var(--color-text-muted)] font-medium whitespace-nowrap"
+                  className="text-right px-3.5 py-2.5 text-[11px] tracking-wider uppercase text-[var(--color-text-muted)] font-medium whitespace-nowrap"
                 >
                   FY{r.year}
                 </th>
@@ -584,7 +674,7 @@ function StatementView({ symbol, statement }: { symbol: string; statement: 'ic' 
                 key={`${row.concept}-${i}`}
                 className="border-b border-[var(--color-border-subtle)] last:border-b-0 hover:bg-[var(--color-bg-elevated)]/50"
               >
-                <td className="px-3 py-1.5 text-[var(--color-text-secondary)]">{row.label}</td>
+                <td className="px-3.5 py-2 text-[var(--color-text-secondary)]">{row.label}</td>
                 {reports.map((r) => {
                   const match = r[statement].find(
                     (item) => item.concept === row.concept && item.label === row.label,
@@ -592,7 +682,7 @@ function StatementView({ symbol, statement }: { symbol: string; statement: 'ic' 
                   return (
                     <td
                       key={r.year}
-                      className="px-3 py-1.5 text-right tabular-nums text-[var(--color-text-primary)] whitespace-nowrap"
+                      className="px-3.5 py-2 text-right tabular-nums text-[var(--color-text-primary)] whitespace-nowrap"
                     >
                       {match != null ? fmtStatementValue(match.value, match.unit) : '--'}
                     </td>
@@ -615,7 +705,7 @@ function EarningsView({ earnings }: { earnings: TickerData['earnings'] }) {
 
   if (rows.length === 0) {
     return (
-      <div className="text-[13px] text-[var(--color-text-muted)] font-mono py-8 text-center">
+      <div className="text-[14px] text-[var(--color-text-muted)] font-mono py-8 text-center">
         No earnings data available.
       </div>
     );
@@ -623,32 +713,32 @@ function EarningsView({ earnings }: { earnings: TickerData['earnings'] }) {
 
   return (
     <div className="space-y-4">
-      <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Earnings History</div>
-      <div className="overflow-x-auto">
+      <div className={SECTION_LABEL}>Earnings History</div>
+      <div className={`${CARD} overflow-x-auto`}>
         <table className="w-full text-[14px] font-mono tabular-nums">
           <thead>
-            <tr className="border-b border-[var(--color-border-strong)]">
-              <th className="text-left py-2 px-2 text-[12px] tracking-widest text-[var(--color-text-muted)] uppercase font-normal">Quarter</th>
-              <th className="text-right py-2 px-2 text-[12px] tracking-widest text-[var(--color-text-muted)] uppercase font-normal">EPS Est.</th>
-              <th className="text-right py-2 px-2 text-[12px] tracking-widest text-[var(--color-text-muted)] uppercase font-normal">EPS Actual</th>
-              <th className="text-right py-2 px-2 text-[12px] tracking-widest text-[var(--color-text-muted)] uppercase font-normal">Surprise %</th>
-              <th className="text-right py-2 px-2 text-[12px] tracking-widest text-[var(--color-text-muted)] uppercase font-normal">Period</th>
+            <tr className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
+              <th className="text-left py-2.5 px-3.5 text-[11px] tracking-widest text-[var(--color-text-muted)] uppercase font-medium">Quarter</th>
+              <th className="text-right py-2.5 px-3.5 text-[11px] tracking-widest text-[var(--color-text-muted)] uppercase font-medium">EPS Est.</th>
+              <th className="text-right py-2.5 px-3.5 text-[11px] tracking-widest text-[var(--color-text-muted)] uppercase font-medium">EPS Actual</th>
+              <th className="text-right py-2.5 px-3.5 text-[11px] tracking-widest text-[var(--color-text-muted)] uppercase font-medium">Surprise %</th>
+              <th className="text-right py-2.5 px-3.5 text-[11px] tracking-widest text-[var(--color-text-muted)] uppercase font-medium">Period</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((e, i) => {
               const beat = e.surprisePercent != null ? e.surprisePercent > 0 : null;
               return (
-                <tr key={i} className="border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors">
-                  <td className="py-2 px-2 text-[var(--color-text-primary)]">Q{e.quarter} {e.year}</td>
-                  <td className="py-2 px-2 text-right text-[var(--color-text-secondary)]">{e.estimate != null ? fmtPrice(e.estimate) : '--'}</td>
-                  <td className={`py-2 px-2 text-right font-semibold ${beat === true ? 'text-[var(--color-positive)]' : beat === false ? 'text-[var(--color-negative)]' : 'text-[var(--color-text-primary)]'}`}>
+                <tr key={i} className="border-b border-[var(--color-border-subtle)] last:border-b-0 hover:bg-[var(--color-bg-elevated)] transition-colors">
+                  <td className="py-2.5 px-3.5 text-[var(--color-text-primary)]">Q{e.quarter} {e.year}</td>
+                  <td className="py-2.5 px-3.5 text-right text-[var(--color-text-secondary)]">{e.estimate != null ? fmtPrice(e.estimate) : '--'}</td>
+                  <td className={`py-2.5 px-3.5 text-right font-semibold ${beat === true ? 'text-[var(--color-positive)]' : beat === false ? 'text-[var(--color-negative-text)]' : 'text-[var(--color-text-primary)]'}`}>
                     {e.actual != null ? fmtPrice(e.actual) : '--'}
                   </td>
-                  <td className={`py-2 px-2 text-right ${beat === true ? 'text-[var(--color-positive)]' : beat === false ? 'text-[var(--color-negative)]' : 'text-[var(--color-text-secondary)]'}`}>
+                  <td className={`py-2.5 px-3.5 text-right ${beat === true ? 'text-[var(--color-positive)]' : beat === false ? 'text-[var(--color-negative-text)]' : 'text-[var(--color-text-secondary)]'}`}>
                     {e.surprisePercent != null ? fmtPct(e.surprisePercent) : '--'}
                   </td>
-                  <td className="py-2 px-2 text-right text-[var(--color-text-muted)]">{e.period}</td>
+                  <td className="py-2.5 px-3.5 text-right text-[var(--color-text-muted)]">{e.period}</td>
                 </tr>
               );
             })}
@@ -668,10 +758,10 @@ function NewsView({ news, analysisNews }: { news: TickerData['news']; analysisNe
       {/* AI-flagged headlines */}
       {highlights.length > 0 && (
         <div className="space-y-3">
-          <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">AI-Flagged Headlines</div>
+          <div className={SECTION_LABEL}>AI-Flagged Headlines</div>
           <div className="space-y-2">
             {highlights.map((h, i) => (
-              <div key={i} className="flex items-start gap-2.5 py-2 border-b border-[var(--color-border-subtle)]">
+              <div key={i} className="flex items-start gap-2.5 py-2.5 border-b border-[var(--color-border-subtle)]">
                 <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${sentimentDot(h.sentiment)}`} />
                 <div className="flex-1 min-w-0">
                   {h.url ? (
@@ -681,7 +771,7 @@ function NewsView({ news, analysisNews }: { news: TickerData['news']; analysisNe
                   ) : (
                     <span className="text-[15px] text-[var(--color-text-primary)] leading-snug">{h.headline}</span>
                   )}
-                  <div className="text-[10px] font-mono text-[var(--color-text-muted)] mt-0.5">{h.date}</div>
+                  <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-0.5">{h.date}</div>
                 </div>
               </div>
             ))}
@@ -691,9 +781,9 @@ function NewsView({ news, analysisNews }: { news: TickerData['news']; analysisNe
 
       {/* Full news feed */}
       <div className="space-y-3">
-        <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Recent News</div>
+        <div className={SECTION_LABEL}>Recent News</div>
         {items.length === 0 ? (
-          <div className="text-[13px] text-[var(--color-text-muted)] font-mono py-4 text-center">No recent news.</div>
+          <div className="text-[14px] text-[var(--color-text-muted)] font-mono py-4 text-center">No recent news.</div>
         ) : (
           <div className="space-y-1">
             {items.slice(0, 20).map((item) => (
@@ -702,12 +792,12 @@ function NewsView({ news, analysisNews }: { news: TickerData['news']; analysisNe
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-start gap-2.5 py-2.5 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors rounded-sm px-2 -mx-2 group"
+                className="flex items-start gap-2.5 py-3 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors rounded-md px-2 -mx-2 group"
               >
                 <span className="mt-1.5 w-2 h-2 rounded-full shrink-0 bg-[var(--color-text-muted)]" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-[13px] text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors leading-snug">{item.headline}</div>
-                  <div className="flex items-center gap-2 mt-1 text-[10px] font-mono text-[var(--color-text-muted)]">
+                  <div className="text-[14px] text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors leading-snug">{item.headline}</div>
+                  <div className="flex items-center gap-2 mt-1 text-[11px] font-mono text-[var(--color-text-muted)]">
                     <span>{item.source}</span>
                     <span className="text-[var(--color-border-strong)]">|</span>
                     <span>{relativeTime(item.datetime)}</span>
@@ -726,38 +816,38 @@ function AIAnalysisView({ analysis }: { analysis: StockAnalysis }) {
   return (
     <div className="space-y-6">
       {/* Bull case */}
-      <div className="border border-[var(--color-positive)]/30 rounded-sm overflow-hidden">
-        <div className="bg-[var(--color-positive)]/10 px-4 py-2 border-b border-[var(--color-positive)]/20">
-          <span className="text-[13px] font-mono tracking-widest text-[var(--color-positive)] uppercase font-semibold">Bull Case</span>
+      <div className="border border-[var(--color-positive)]/30 rounded-lg overflow-hidden">
+        <div className="bg-[var(--color-positive)]/10 px-5 py-2.5 border-b border-[var(--color-positive)]/20">
+          <span className="font-mono text-[12px] tracking-[0.14em] text-[var(--color-positive)] uppercase font-bold">▲ Bull Case</span>
         </div>
-        <div className="px-4 py-3">
-          <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed">{analysis.bullCase}</p>
+        <div className="px-5 py-4">
+          <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed m-0">{analysis.bullCase}</p>
         </div>
       </div>
 
       {/* Bear case */}
-      <div className="border border-[var(--color-negative)]/30 rounded-sm overflow-hidden">
-        <div className="bg-[var(--color-negative)]/10 px-4 py-2 border-b border-[var(--color-negative)]/20">
-          <span className="text-[13px] font-mono tracking-widest text-[var(--color-negative)] uppercase font-semibold">Bear Case</span>
+      <div className="border border-[var(--color-negative)]/30 rounded-lg overflow-hidden">
+        <div className="bg-[var(--color-negative)]/10 px-5 py-2.5 border-b border-[var(--color-negative)]/20">
+          <span className="font-mono text-[12px] tracking-[0.14em] text-[var(--color-negative-text)] uppercase font-bold">▼ Bear Case</span>
         </div>
-        <div className="px-4 py-3">
-          <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed">{analysis.bearCase}</p>
+        <div className="px-5 py-4">
+          <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed m-0">{analysis.bearCase}</p>
         </div>
       </div>
 
       {/* AI Metrics grid */}
       {analysis.metrics.length > 0 && (
         <div className="space-y-3">
-          <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">AI-Extracted Metrics</div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <div className={SECTION_LABEL}>AI-Extracted Metrics</div>
+          <div className={`${CARD} overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4`}>
             {analysis.metrics.map((m: AnalysisMetric, i: number) => (
-              <div key={i} className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-3 space-y-1">
-                <div className="text-[10px] font-mono tracking-wider text-[var(--color-text-muted)] uppercase">{m.label}</div>
-                <div className="text-[16px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{m.value}</div>
+              <div key={i} className="px-3.5 py-3 border-r border-b border-[var(--color-border-subtle)]">
+                <div className="font-mono text-[10px] tracking-[0.1em] uppercase text-[var(--color-text-muted)] mb-1.5">{m.label}</div>
+                <div className="font-mono text-[16px] tabular-nums font-bold text-[var(--color-text-primary)]">{m.value}</div>
                 {m.change && (
-                  <div className={`text-[10px] font-mono ${m.change.startsWith('-') ? 'text-[var(--color-negative)]' : 'text-[var(--color-positive)]'}`}>{m.change}</div>
+                  <div className={`font-mono text-[11px] mt-0.5 ${m.change.startsWith('-') ? 'text-[var(--color-negative-text)]' : 'text-[var(--color-positive)]'}`}>{m.change}</div>
                 )}
-                {m.context && <div className="text-[10px] font-mono text-[var(--color-text-muted)]">{m.context}</div>}
+                {m.context && <div className="font-mono text-[11px] text-[var(--color-text-muted)] mt-0.5">{m.context}</div>}
               </div>
             ))}
           </div>
@@ -803,9 +893,9 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
     const bWins = highlight === 'higher' ? bNum > aNum : highlight === 'lower' ? bNum < aNum : false;
     return (
       <tr key={label} className="border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors">
-        <td className="py-2 px-3 text-[13px] font-mono text-[var(--color-text-muted)]">{label}</td>
-        <td className={`py-2 px-3 text-right text-[14px] font-mono tabular-nums font-semibold ${aWins ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-primary)]'}`}>{aVal}</td>
-        <td className={`py-2 px-3 text-right text-[14px] font-mono tabular-nums font-semibold ${bWins ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-primary)]'}`}>{bVal}</td>
+        <td className="py-2.5 px-3.5 text-[13px] font-mono text-[var(--color-text-muted)]">{label}</td>
+        <td className={`py-2.5 px-3.5 text-right text-[14px] font-mono tabular-nums font-semibold ${aWins ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-primary)]'}`}>{aVal}</td>
+        <td className={`py-2.5 px-3.5 text-right text-[14px] font-mono tabular-nums font-semibold ${bWins ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-primary)]'}`}>{bVal}</td>
       </tr>
     );
   };
@@ -813,26 +903,26 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
   if (!compareData) {
     return (
       <div className="space-y-5">
-        <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Compare {currentTicker} against</div>
+        <div className={SECTION_LABEL}>Compare {currentTicker} against</div>
         <form onSubmit={handleCompare} className="flex gap-2 max-w-sm">
           <div className="flex-1 relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--color-text-muted)]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" />
             <input
               type="text" value={compareTicker} onChange={(e) => setCompareTicker(e.target.value.toUpperCase())}
               placeholder="Enter ticker" maxLength={5} disabled={loading}
-              className="w-full pl-7 pr-2 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-[13px] tracking-wider font-mono tabular-nums"
+              className="w-full pl-8 pr-2 py-2.5 bg-[var(--color-bg-inset)] border border-[var(--color-border-base)] rounded-md text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-[13px] tracking-wider font-mono tabular-nums"
             />
           </div>
           <button type="submit" disabled={!compareTicker.trim() || loading}
-            className="px-4 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded-sm transition-colors text-[12px] disabled:opacity-40 flex items-center gap-1.5">
-            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Compare'}
+            className="px-4 py-2.5 bg-[var(--color-gold)] hover:brightness-[1.08] text-[var(--color-text-inverse)] font-semibold rounded-md transition-all text-[12px] disabled:opacity-40 flex items-center gap-1.5">
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Compare'}
           </button>
         </form>
-        {error && <div className="text-[13px] text-[var(--color-negative)] font-mono">{error}</div>}
+        {error && <div className="text-[13px] text-[var(--color-negative-text)] font-mono">{error}</div>}
         <div className="flex flex-wrap gap-2 pt-2">
           {SUGGESTIONS.slice(0, 6).map(t => (
             <button key={t} onClick={() => { setCompareTicker(t); }}
-              className="px-3 py-2.5 sm:py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm text-[11px] font-mono font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:border-[var(--color-gold-border)] transition-colors">
+              className="px-3 py-2.5 sm:py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-md text-[11px] font-mono font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:border-[var(--color-gold-border)] transition-colors">
               {t}
             </button>
           ))}
@@ -851,18 +941,18 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">
+        <div className={SECTION_LABEL}>
           {currentTicker} vs {compareData.symbol}
         </div>
         <button onClick={() => { setCompareData(null); setCompareTicker(''); }}
-          className="text-[11px] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors">
+          className="text-[12px] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors">
           Change ticker
         </button>
       </div>
 
       {/* Company cards */}
-      <div className="grid grid-cols-2 gap-2 sm:gap-3">
-        <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-3 sm:p-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3.5">
+        <div className={`${CARD} p-3.5 sm:p-4`}>
           <div className="text-[16px] sm:text-[18px] font-mono font-bold text-[var(--color-gold)] tabular-nums">{currentTicker}</div>
           <div className="text-[12px] sm:text-[13px] text-[var(--color-text-secondary)] mt-0.5 truncate">{currentAnalysis.companyName}</div>
           <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-1 truncate">{a.profile?.industry || '--'}</div>
@@ -871,7 +961,7 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
             <span className={`text-[11px] sm:text-[13px] font-mono tabular-nums ${changeColor(a.quote?.dp)}`}>{fmtPct(a.quote?.dp)}</span>
           </div>
         </div>
-        <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-3 sm:p-4">
+        <div className={`${CARD} p-3.5 sm:p-4`}>
           <div className="text-[16px] sm:text-[18px] font-mono font-bold text-[var(--color-text-primary)] tabular-nums">{b.symbol}</div>
           <div className="text-[12px] sm:text-[13px] text-[var(--color-text-secondary)] mt-0.5 truncate">{b.profile?.name || b.symbol}</div>
           <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-1 truncate">{b.profile?.industry || '--'}</div>
@@ -883,13 +973,13 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
       </div>
 
       {/* Comparison table */}
-      <div className="overflow-x-auto">
+      <div className={`${CARD} overflow-x-auto`}>
         <table className="w-full">
           <thead>
-            <tr className="border-b border-[var(--color-border-strong)]">
-              <th className="text-left py-2 px-3 text-[11px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase font-normal w-1/3">Metric</th>
-              <th className="text-right py-2 px-3 text-[11px] font-mono tracking-widest text-[var(--color-gold)] uppercase font-semibold w-1/3">{currentTicker}</th>
-              <th className="text-right py-2 px-3 text-[11px] font-mono tracking-widest text-[var(--color-text-secondary)] uppercase font-semibold w-1/3">{b.symbol}</th>
+            <tr className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
+              <th className="text-left py-2.5 px-3.5 text-[11px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase font-medium w-1/3">Metric</th>
+              <th className="text-right py-2.5 px-3.5 text-[11px] font-mono tracking-widest text-[var(--color-gold)] uppercase font-semibold w-1/3">{currentTicker}</th>
+              <th className="text-right py-2.5 px-3.5 text-[11px] font-mono tracking-widest text-[var(--color-text-secondary)] uppercase font-semibold w-1/3">{b.symbol}</th>
             </tr>
           </thead>
           <tbody>
@@ -915,26 +1005,26 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
       {/* Analyst consensus side by side */}
       {(a.recommendations?.[0] || b.recommendations?.[0]) && (
         <div className="space-y-3">
-          <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Analyst Consensus</div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className={SECTION_LABEL}>Analyst Consensus</div>
+          <div className="grid grid-cols-2 gap-3.5">
             {[{ ticker: currentTicker, rec: a.recommendations?.[0] }, { ticker: b.symbol, rec: b.recommendations?.[0] }].map(({ ticker: t, rec }) => {
               if (!rec) return <div key={t} className="text-[13px] text-[var(--color-text-muted)] font-mono py-4 text-center">No data</div>;
               const total = rec.strongBuy + rec.buy + rec.hold + rec.sell + rec.strongSell;
               if (total === 0) return null;
               return (
-                <div key={t} className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm p-3 space-y-2">
+                <div key={t} className={`${CARD} p-3.5 space-y-2`}>
                   <div className="text-[12px] font-mono tracking-wider text-[var(--color-text-muted)]">{t}</div>
-                  <div className="flex h-3 rounded-sm overflow-hidden bg-[var(--color-bg-base)]">
+                  <div className="flex h-3 rounded-sm overflow-hidden bg-[var(--color-bg-inset)]">
                     {rec.strongBuy > 0 && <div style={{ width: `${(rec.strongBuy / total) * 100}%`, backgroundColor: 'var(--color-positive)' }} />}
                     {rec.buy > 0 && <div style={{ width: `${(rec.buy / total) * 100}%`, backgroundColor: 'var(--color-positive)', opacity: 0.6 }} />}
                     {rec.hold > 0 && <div style={{ width: `${(rec.hold / total) * 100}%`, backgroundColor: 'var(--color-text-muted)', opacity: 0.4 }} />}
-                    {rec.sell > 0 && <div style={{ width: `${(rec.sell / total) * 100}%`, backgroundColor: 'var(--color-negative)', opacity: 0.6 }} />}
-                    {rec.strongSell > 0 && <div style={{ width: `${(rec.strongSell / total) * 100}%`, backgroundColor: 'var(--color-negative)' }} />}
+                    {rec.sell > 0 && <div style={{ width: `${(rec.sell / total) * 100}%`, backgroundColor: 'var(--color-negative-text)', opacity: 0.6 }} />}
+                    {rec.strongSell > 0 && <div style={{ width: `${(rec.strongSell / total) * 100}%`, backgroundColor: 'var(--color-negative-text)' }} />}
                   </div>
                   <div className="flex justify-between text-[11px] font-mono text-[var(--color-text-muted)]">
                     <span className="text-[var(--color-positive)]">Buy {rec.strongBuy + rec.buy}</span>
                     <span>Hold {rec.hold}</span>
-                    <span className="text-[var(--color-negative)]">Sell {rec.sell + rec.strongSell}</span>
+                    <span className="text-[var(--color-negative-text)]">Sell {rec.sell + rec.strongSell}</span>
                   </div>
                 </div>
               );
@@ -963,8 +1053,8 @@ function RightSidebar({
   methodologyVersion: string;
   isDashboard?: boolean;
 }) {
-  const { quote, recommendations, news } = tickerData;
-  const verdictLabel = analysis.verdict.charAt(0).toUpperCase() + analysis.verdict.slice(1);
+  const { recommendations } = tickerData;
+  const verdictLabel = analysis.verdict.toUpperCase();
   const latestRec = recommendations?.[0];
 
   // Analyst ratings bar
@@ -973,24 +1063,27 @@ function RightSidebar({
   return (
     <div className="space-y-5">
       {/* AI Verdict */}
-      <div className="space-y-2">
-        <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">AI Summary</div>
+      <div className="border border-[var(--color-gold)]/20 bg-[var(--color-gold)]/[0.025] rounded-lg px-4 py-4 space-y-2.5">
         <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center px-2.5 py-1 rounded-sm border text-[14px] font-mono font-bold tracking-wider ${verdictBg(analysis.verdict)}`}>
-            {verdictLabel.toUpperCase()}
+          <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-[var(--color-gold)]">✦ Helm Verdict</span>
+          <span className="flex-1 h-px bg-[var(--color-gold)]/[0.12]" />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center px-2.5 py-1 rounded-sm border text-[13px] font-mono font-bold tracking-wider ${verdictBg(analysis.verdict)}`}>
+            {verdictLabel}
           </span>
         </div>
-        <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed">{analysis.recommendation}</p>
+        <p className="text-[14.5px] text-[var(--color-text-primary)] leading-[1.55] m-0">{analysis.recommendation}</p>
       </div>
 
       {/* Quick metrics */}
       {analysis.metrics.length > 0 && (
         <div className="space-y-2">
-          <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Quick Metrics</div>
+          <div className={SECTION_LABEL}>Quick Metrics</div>
           <div className="space-y-1.5">
             {analysis.metrics.slice(0, isDashboard ? 6 : 4).map((m: AnalysisMetric, i: number) => (
               <div key={i} className="flex items-center justify-between py-1.5 border-b border-[var(--color-border-subtle)]">
-                <span className="text-[14px] font-mono text-[var(--color-text-muted)]">{m.label}</span>
+                <span className="text-[13px] font-mono text-[var(--color-text-muted)]">{m.label}</span>
                 <span className="text-[15px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{m.value}</span>
               </div>
             ))}
@@ -1001,21 +1094,21 @@ function RightSidebar({
       {/* Analyst Ratings */}
       {latestRec && totalRatings > 0 && (
         <div className="space-y-2">
-          <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Analyst Consensus</div>
+          <div className={SECTION_LABEL}>Analyst Consensus</div>
           <div className="space-y-2">
             {/* Stacked bar */}
-            <div className="flex h-4 rounded-sm overflow-hidden bg-[var(--color-bg-elevated)]">
+            <div className="flex h-4 rounded-sm overflow-hidden bg-[var(--color-bg-inset)]">
               {latestRec.strongBuy > 0 && <div style={{ width: `${(latestRec.strongBuy / totalRatings) * 100}%`, backgroundColor: 'var(--color-positive)' }} />}
               {latestRec.buy > 0 && <div style={{ width: `${(latestRec.buy / totalRatings) * 100}%`, backgroundColor: 'var(--color-positive)', opacity: 0.6 }} />}
               {latestRec.hold > 0 && <div style={{ width: `${(latestRec.hold / totalRatings) * 100}%`, backgroundColor: 'var(--color-text-muted)', opacity: 0.4 }} />}
-              {latestRec.sell > 0 && <div style={{ width: `${(latestRec.sell / totalRatings) * 100}%`, backgroundColor: 'var(--color-negative)', opacity: 0.6 }} />}
-              {latestRec.strongSell > 0 && <div style={{ width: `${(latestRec.strongSell / totalRatings) * 100}%`, backgroundColor: 'var(--color-negative)' }} />}
+              {latestRec.sell > 0 && <div style={{ width: `${(latestRec.sell / totalRatings) * 100}%`, backgroundColor: 'var(--color-negative-text)', opacity: 0.6 }} />}
+              {latestRec.strongSell > 0 && <div style={{ width: `${(latestRec.strongSell / totalRatings) * 100}%`, backgroundColor: 'var(--color-negative-text)' }} />}
             </div>
             {/* Labels */}
             <div className="flex justify-between text-[13px] font-mono text-[var(--color-text-muted)]">
               <span className="text-[var(--color-positive)]">Buy {latestRec.strongBuy + latestRec.buy}</span>
               <span>Hold {latestRec.hold}</span>
-              <span className="text-[var(--color-negative)]">Sell {latestRec.sell + latestRec.strongSell}</span>
+              <span className="text-[var(--color-negative-text)]">Sell {latestRec.sell + latestRec.strongSell}</span>
             </div>
           </div>
         </div>
@@ -1030,7 +1123,7 @@ function RightSidebar({
         const isFuture = new Date(entry.period) > now;
         return (
           <div className="space-y-2">
-            <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">{isFuture ? 'Next Earnings' : 'Last Earnings'}</div>
+            <div className={SECTION_LABEL}>{isFuture ? 'Next Earnings' : 'Last Earnings'}</div>
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-[var(--color-gold)]" />
               <span className="text-[15px] font-mono font-semibold text-[var(--color-text-primary)]">
@@ -1041,15 +1134,23 @@ function RightSidebar({
         );
       })()}
 
-      {/* Data provenance */}
+      {/* Data provenance — "No black boxes" */}
       <div className="space-y-1.5 pt-3 border-t border-[var(--color-border-subtle)]">
-        <div className="text-[12px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Data Sources</div>
-        <div className="text-[11px] font-mono text-[var(--color-text-muted)] space-y-0.5">
-          {dataSources.map((s, i) => <div key={i}>{s}</div>)}
+        <div className={SECTION_LABEL}>Data Sources</div>
+        <div className="space-y-1 pt-0.5">
+          {dataSources.map((s, i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)] shrink-0" />
+              <span className="text-[12px] font-mono text-[var(--color-text-secondary)]">{s}</span>
+            </div>
+          ))}
         </div>
-        <div className="flex items-center justify-between text-[11px] font-mono text-[var(--color-text-muted)] pt-1">
+        <div className="flex items-center justify-between text-[11px] font-mono text-[var(--color-text-muted)] pt-1.5">
           <span>v{methodologyVersion}</span>
           <span>{new Date(computedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+        </div>
+        <div className="text-[11px] font-mono text-[var(--color-text-muted)] leading-relaxed pt-0.5">
+          No black boxes. Every figure is sourced and timestamped.
         </div>
       </div>
     </div>
@@ -1076,18 +1177,18 @@ function ShareBar({ ticker, analysis }: { ticker: string; analysis: StockAnalysi
     } catch { /* noop */ }
   };
 
-  const btnClass = "flex items-center gap-1.5 px-2.5 py-2 sm:py-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm text-[10px] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] transition-colors";
+  const btnClass = "flex items-center gap-1.5 px-2.5 py-2 sm:py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-md text-[11px] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors";
 
   return (
     <div className="flex items-center gap-1.5 sm:gap-2">
       <button onClick={shareOnX} className={btnClass} aria-label={`Share ${ticker} analysis on X`}>
-        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
         </svg>
         <span className="hidden sm:inline">Share</span>
       </button>
       <button onClick={copyLink} className={btnClass} aria-label="Copy analysis link">
-        {copied ? <Check className="w-3 h-3 text-[var(--color-positive)]" /> : <Link2 className="w-3 h-3" />}
+        {copied ? <Check className="w-3.5 h-3.5 text-[var(--color-positive)]" /> : <Link2 className="w-3.5 h-3.5" />}
         <span className="hidden sm:inline">{copied ? 'Copied' : 'Copy'}</span>
       </button>
     </div>
@@ -1111,7 +1212,7 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
   const centerContent = useMemo(() => {
     switch (activeFunction) {
       case 'overview':
-        return <OverviewView analysis={analysis} tickerData={tickerData} />;
+        return <OverviewView analysis={analysis} tickerData={tickerData} computedAt={computedAt} dataSources={dataSources} methodologyVersion={methodologyVersion} />;
       case 'fundamentals':
         return <FundamentalsView tickerData={tickerData} profile={tickerData.profile} />;
       case 'earnings':
@@ -1123,19 +1224,19 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
       case 'compare':
         return <CompareView currentTicker={ticker} currentData={tickerData} currentAnalysis={analysis} basePath={analyzePath} />;
       default:
-        return <OverviewView analysis={analysis} tickerData={tickerData} />;
+        return <OverviewView analysis={analysis} tickerData={tickerData} computedAt={computedAt} dataSources={dataSources} methodologyVersion={methodologyVersion} />;
     }
-  }, [activeFunction, analysis, tickerData]);
+  }, [activeFunction, analysis, tickerData, computedAt, dataSources, methodologyVersion, analyzePath, ticker]);
 
   return (
     <div className="space-y-0 animate-fade-in text-[15px]">
       {/* Command bar */}
-      <div className="flex items-center justify-between py-3 px-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-t-sm">
+      <div className="flex items-center justify-between py-3 px-4 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-t-lg">
         <div className="flex items-center gap-4">
           {/* Mobile menu toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2.5 -ml-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+            className="lg:hidden p-2.5 -ml-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
             aria-label="Toggle navigation menu"
           >
             {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -1151,11 +1252,11 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
         </div>
         <div className="flex items-center gap-4">
           <ShareBar ticker={ticker} analysis={analysis} />
-          <div className="flex items-center gap-1.5 sm:gap-3 font-mono tabular-nums text-[13px] sm:text-[15px]">
+          <div className="flex items-center gap-1.5 sm:gap-3 font-mono tabular-nums text-[14px] sm:text-[16px]">
             <span className="text-[var(--color-text-primary)] font-semibold">{fmtPrice(quote?.c)}</span>
             <span className={`hidden sm:inline ${changeColor(quote?.dp)}`}>{fmtPct(quote?.dp)}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[10px] font-mono text-[var(--color-text-muted)]">
+          <div className="flex items-center gap-1.5 text-[10px] font-mono text-[var(--color-text-muted)] tracking-[0.1em]">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] animate-pulse" />
             <span className="hidden sm:inline">LIVE</span>
           </div>
@@ -1163,12 +1264,12 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
       </div>
 
       {/* Mobile search */}
-      <div className="sm:hidden px-4 py-2 bg-[var(--color-bg-elevated)] border-x border-[var(--color-border-base)]">
+      <div className="sm:hidden px-4 py-2 bg-[var(--color-bg-surface)] border-x border-[var(--color-border-base)]">
         <InlineSearch currentTicker={ticker} basePath={analyzePath} />
       </div>
 
       {/* 3-pane grid */}
-      <div className={`grid grid-cols-1 border border-t-0 border-[var(--color-border-base)] rounded-b-sm overflow-hidden lg:min-h-[600px] ${isDashboard ? 'lg:grid-cols-[240px_1fr_300px]' : 'lg:grid-cols-[260px_1fr_340px]'}`}>
+      <div className={`grid grid-cols-1 border border-t-0 border-[var(--color-border-base)] rounded-b-lg overflow-hidden lg:min-h-[600px] ${isDashboard ? 'lg:grid-cols-[240px_1fr_300px]' : 'lg:grid-cols-[260px_1fr_340px]'}`}>
         {/* LEFT PANE */}
         {/* Desktop: always visible. Mobile: toggle */}
         <aside className={`bg-[var(--color-bg-base)] border-r border-[var(--color-border-subtle)] py-3 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
@@ -1186,7 +1287,7 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
                   <a
                     key={t}
                     href={`${analyzePath}/${t}`}
-                    className="px-3 py-2 sm:px-2 sm:py-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-sm text-[11px] sm:text-[10px] font-mono font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:border-[var(--color-gold-border)] transition-colors"
+                    className="px-3 py-2 sm:px-2 sm:py-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-md text-[11px] sm:text-[10px] font-mono font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:border-[var(--color-gold-border)] transition-colors"
                   >
                     {t}
                   </a>
@@ -1202,16 +1303,16 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
 
           {/* CTA — public only */}
           {!isDashboard && (
-            <div className="mt-8 border border-[var(--color-border-base)] rounded-sm p-5 text-center space-y-2.5 bg-[var(--color-bg-elevated)]">
-              <p className="text-[15px] font-medium text-[var(--color-text-primary)]">
+            <div className="mt-8 border border-[var(--color-gold)]/20 bg-[var(--color-gold)]/[0.025] rounded-lg p-6 text-center space-y-2.5">
+              <p className="text-[16px] font-semibold text-[var(--color-text-primary)]">
                 Want AI analysis of your entire portfolio?
               </p>
               <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed max-w-md mx-auto">
-                Helm Terminal connects to your brokerage, analyzes every holding, and delivers actionable intelligence weekly.
+                Helm Terminal connects to your brokerage, analyzes every holding, and delivers actionable intelligence weekly. Free to start. Pro unlocks the full terminal at $20/mo.
               </p>
               <a
                 href="/signup"
-                className="inline-block px-5 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[14px] font-semibold rounded-sm transition-colors"
+                className="inline-block px-6 py-2.5 bg-[var(--color-gold)] hover:brightness-[1.08] text-[var(--color-text-inverse)] text-[14px] font-semibold rounded-md transition-all"
               >
                 Get started free
               </a>
@@ -1221,15 +1322,15 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
           {/* Headlines in center pane — both variants */}
           {tickerData.news && tickerData.news.length > 0 && (
             <div className="mt-8 space-y-4">
-              <div className="text-[13px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase">Recent Headlines</div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className={SECTION_LABEL}>Recent Headlines</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {tickerData.news.slice(0, 8).map((item) => (
                   <a
                     key={item.id}
                     href={item.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-start gap-2.5 py-3 px-3 border border-[var(--color-border-subtle)] rounded-sm hover:bg-[var(--color-bg-elevated)] hover:border-[var(--color-border-base)] transition-colors group"
+                    className="flex items-start gap-2.5 py-3 px-3.5 border border-[var(--color-border-base)] rounded-lg hover:bg-[var(--color-bg-elevated)] hover:border-[var(--color-gold)]/20 transition-colors group"
                   >
                     <span className="mt-1.5 w-2 h-2 rounded-full shrink-0 bg-[var(--color-text-muted)]" />
                     <div className="flex-1 min-w-0">

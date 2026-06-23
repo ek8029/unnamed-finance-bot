@@ -15,6 +15,15 @@ interface ManualPortfolioFormProps {
   compact?: boolean;
 }
 
+const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
+
+// Sovereign Architect input treatment: inset background, calm border, gold focus.
+const FIELD_CLASS =
+  'h-[44px] px-3 bg-[var(--color-bg-inset)] border border-[var(--color-border-base)] rounded-[5px] text-[15px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors';
+
+const FIELD_LABEL_CLASS =
+  'block text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-2';
+
 function createEmptyRow(): HoldingRow {
   return { id: crypto.randomUUID(), ticker: '', shares: '', costBasis: '' };
 }
@@ -41,6 +50,11 @@ export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortf
 
   const removeRow = useCallback((id: string) => {
     setRows(prev => prev.length <= 1 ? prev : prev.filter(r => r.id !== id));
+  }, []);
+
+  const clearRows = useCallback(() => {
+    setError(null);
+    setRows([createEmptyRow(), createEmptyRow(), createEmptyRow()]);
   }, []);
 
   const handleSubmit = async () => {
@@ -107,105 +121,118 @@ export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortf
         <div className="w-10 h-10 rounded-full bg-[rgba(74,222,128,0.1)] border border-[rgba(74,222,128,0.2)] flex items-center justify-center">
           <Check className="w-5 h-5 text-[var(--color-positive)]" />
         </div>
-        <p className="text-[14px] font-medium text-[var(--color-text-primary)]">Portfolio saved</p>
-        <p className="text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>Loading your dashboard...</p>
+        <p className="text-[15px] font-medium text-[var(--color-text-primary)]">Portfolio saved</p>
+        <p className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Loading your dashboard...</p>
       </div>
     );
   }
 
   return (
-    <div className={compact ? '' : 'max-w-2xl mx-auto'}>
-      <div className="space-y-2">
-        {/* Header row */}
-        <div className="grid gap-1.5 sm:gap-2" style={{ gridTemplateColumns: '1fr 70px 85px 36px' }}>
-          <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-medium" style={{ fontFamily: 'var(--font-mono)' }}>Ticker</span>
-          <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-medium" style={{ fontFamily: 'var(--font-mono)' }}>Shares</span>
-          <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-medium" style={{ fontFamily: 'var(--font-mono)' }}>
-            Cost basis
-            <span className="text-[var(--color-text-muted)] opacity-50 ml-1">opt</span>
-          </span>
-          <span />
+    <div className={compact ? '' : ''}>
+      <div className="sovereign-card rounded-lg p-6">
+        <div className="space-y-3">
+          {/* Header row */}
+          <div className="grid gap-2 sm:gap-3" style={{ gridTemplateColumns: '1fr 90px 110px 40px' }}>
+            <span className={FIELD_LABEL_CLASS} style={MONO}>Symbol / asset</span>
+            <span className={FIELD_LABEL_CLASS} style={MONO}>Shares</span>
+            <span className={FIELD_LABEL_CLASS} style={MONO}>
+              Cost basis
+              <span className="opacity-50 ml-1">opt</span>
+            </span>
+            <span />
+          </div>
+
+          {/* Holding rows */}
+          {rows.map((row) => (
+            <div key={row.id} className="grid gap-2 sm:gap-3" style={{ gridTemplateColumns: '1fr 90px 110px 40px' }}>
+              <input
+                type="text"
+                placeholder="e.g. BRK.B"
+                value={row.ticker}
+                onChange={(e) => updateRow(row.id, 'ticker', e.target.value)}
+                maxLength={6}
+                className={FIELD_CLASS}
+                style={MONO}
+              />
+              <input
+                type="number"
+                placeholder="0"
+                value={row.shares}
+                onChange={(e) => updateRow(row.id, 'shares', e.target.value)}
+                min="0"
+                step="any"
+                className={`${FIELD_CLASS} tabular-nums`}
+                style={MONO}
+              />
+              <input
+                type="number"
+                placeholder="$0.00"
+                value={row.costBasis}
+                onChange={(e) => updateRow(row.id, 'costBasis', e.target.value)}
+                min="0"
+                step="any"
+                className={`${FIELD_CLASS} tabular-nums`}
+                style={MONO}
+              />
+              <button
+                onClick={() => removeRow(row.id)}
+                className="flex items-center justify-center h-[44px] w-10 rounded text-[var(--color-text-muted)] hover:text-[var(--color-negative)] hover:bg-[var(--color-negative)]/5 transition-colors cursor-pointer"
+                aria-label="Remove"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
         </div>
 
-        {/* Holding rows */}
-        {rows.map((row) => (
-          <div key={row.id} className="grid gap-1.5 sm:gap-2" style={{ gridTemplateColumns: '1fr 70px 85px 36px' }}>
-            <input
-              type="text"
-              placeholder="AAPL"
-              value={row.ticker}
-              onChange={(e) => updateRow(row.id, 'ticker', e.target.value)}
-              maxLength={6}
-              className="px-2 sm:px-3 py-2.5 sm:py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[13px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors"
-              style={{ fontFamily: 'var(--font-mono)' }}
-            />
-            <input
-              type="number"
-              placeholder="100"
-              value={row.shares}
-              onChange={(e) => updateRow(row.id, 'shares', e.target.value)}
-              min="0"
-              step="any"
-              className="px-2 sm:px-3 py-2.5 sm:py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[13px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors tabular-nums"
-              style={{ fontFamily: 'var(--font-mono)' }}
-            />
-            <input
-              type="number"
-              placeholder="$150"
-              value={row.costBasis}
-              onChange={(e) => updateRow(row.id, 'costBasis', e.target.value)}
-              min="0"
-              step="any"
-              className="px-2 sm:px-3 py-2.5 sm:py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[13px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors tabular-nums"
-              style={{ fontFamily: 'var(--font-mono)' }}
-            />
-            <button
-              onClick={() => removeRow(row.id)}
-              className="flex items-center justify-center w-9 h-9 rounded text-[var(--color-text-muted)] hover:text-[var(--color-negative)] hover:bg-[var(--color-negative)]/5 transition-colors cursor-pointer"
-              aria-label="Remove"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ))}
+        {/* Add row */}
+        {rows.length < 50 && (
+          <button
+            onClick={addRow}
+            className="flex items-center gap-1.5 mt-4 py-2 text-[11px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors cursor-pointer"
+            style={MONO}
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Add position
+          </button>
+        )}
+
+        {/* Error */}
+        {error && (
+          <p className="mt-4 text-[13px] text-[var(--color-negative)]" style={MONO}>
+            {error}
+          </p>
+        )}
+
+        {/* Actions */}
+        <div className="flex justify-end gap-2.5 mt-5">
+          <button
+            onClick={clearRows}
+            disabled={saving}
+            className="h-9 px-4 inline-flex items-center bg-transparent border border-[var(--color-border-base)] rounded-md text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-secondary)] hover:border-[var(--color-text-muted)] transition-colors cursor-pointer disabled:opacity-50"
+            style={MONO}
+          >
+            Clear
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="h-9 px-[18px] inline-flex items-center gap-2 bg-[var(--color-gold)] hover:brightness-[1.08] text-[#0A0A0A] font-bold text-[10px] uppercase tracking-[0.12em] rounded-md cursor-pointer transition-all disabled:opacity-50"
+            style={MONO}
+          >
+            {saving ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Saving
+              </>
+            ) : (
+              'Add holding'
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Add row */}
-      {rows.length < 50 && (
-        <button
-          onClick={addRow}
-          className="flex items-center gap-1.5 mt-3 py-2 text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors cursor-pointer"
-          style={{ fontFamily: 'var(--font-mono)' }}
-        >
-          <Plus className="w-3 h-3" />
-          Add position
-        </button>
-      )}
-
-      {/* Error */}
-      {error && (
-        <p className="mt-3 text-[12px] text-[var(--color-negative)]" style={{ fontFamily: 'var(--font-mono)' }}>
-          {error}
-        </p>
-      )}
-
-      {/* Submit */}
-      <button
-        onClick={handleSubmit}
-        disabled={saving}
-        className="w-full mt-5 flex items-center justify-center gap-2 px-5 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[14px] rounded-[var(--radius-md)] cursor-pointer transition-colors disabled:opacity-50"
-      >
-        {saving ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Saving...
-          </>
-        ) : (
-          'Save holdings'
-        )}
-      </button>
-
-      <p className="mt-3 text-[10px] text-[var(--color-text-muted)] text-center" style={{ fontFamily: 'var(--font-mono)' }}>
+      <p className="mt-3 text-[11px] text-[var(--color-text-muted)] text-center" style={MONO}>
         Cost basis is optional. Entering it unlocks tax-loss harvesting insights.
       </p>
     </div>

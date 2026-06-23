@@ -7,31 +7,22 @@ export default function AddHoldingsPage() {
   const router = useRouter();
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 max-w-[90vw] sm:max-w-xl lg:max-w-2xl">
-      <div className="space-y-2 mb-8">
-        <div className="flex items-center gap-2">
-          <span
-            className="text-[11px] uppercase tracking-[0.15em] font-semibold text-[var(--color-text-muted)]"
-            style={{ fontFamily: 'var(--font-mono)' }}
-          >
-            HELM
-          </span>
-          <span className="text-[11px] text-[var(--color-text-muted)]">/</span>
-          <span
-            className="text-[11px] uppercase tracking-[0.15em] font-semibold text-[var(--color-text-muted)]"
-            style={{ fontFamily: 'var(--font-mono)' }}
-          >
-            ADD HOLDINGS
-          </span>
+    <div className="px-6 sm:px-7 py-7 pb-16 max-w-[1100px] mx-auto">
+      <div className="mb-[22px]">
+        <div
+          className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-2"
+          style={{ fontFamily: 'var(--font-mono)' }}
+        >
+          Manual entry
         </div>
-        <h1 className="text-[22px] sm:text-[28px] font-bold tracking-tight text-[var(--color-text-primary)]">
-          Add your holdings
+        <h1 className="text-[28px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)]">
+          Add a holding by hand
         </h1>
-        <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed">
-          Enter your positions below. Prices update automatically via live market data.
-          Cost basis is optional but unlocks tax-loss harvesting insights.
+        <p className="text-[14px] text-[var(--color-text-muted)] leading-relaxed mt-1.5">
+          For assets Helm cannot sync automatically. Prices update via live market data, and cost
+          basis unlocks tax-loss harvesting insights.
         </p>
-        <div className="flex items-start gap-2 mt-3 p-3 rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)]">
+        <div className="flex items-start gap-2 mt-4 p-3 rounded-lg bg-[var(--color-bg-inset)] border border-[var(--color-border-subtle)]">
           <span className="text-[var(--color-gold)] text-[13px] mt-0.5 shrink-0">&#9432;</span>
           <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed" style={{ fontFamily: 'var(--font-mono)' }}>
             Manual holdings let you see positions immediately without waiting for brokerage sync. If you connect a brokerage via Plaid that holds the same tickers, the manual entries will be automatically replaced with your real brokerage data on the next sync.
