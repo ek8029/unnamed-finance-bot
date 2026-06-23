@@ -229,9 +229,12 @@ export default function ThesesPage() {
   }, []);
 
   useEffect(() => {
+    // Non-Pro is gated — don't fetch theses/holdings just to throw the data away
+    // behind the lock; the lock renders off previewTier alone.
+    if (!tierAtLeast(previewTier, 'pro')) return;
     loadTheses();
     loadHoldings();
-  }, [loadTheses, loadHoldings]);
+  }, [loadTheses, loadHoldings, previewTier]);
 
   /* ── Derived data ── */
   const summaries = theses.map((t) => ({ t, summary: summarizePillars(t.pillars) }));
@@ -409,8 +412,9 @@ export default function ThesesPage() {
     }
   }
 
-  /* ── Loading / error ── */
-  if (phase === 'loading') {
+  /* ── Gate first: non-Pro sees the lock instantly (previewTier is correct on
+        first paint), never waiting on the /api/thesis fetch. ── */
+  if (phase === 'loading' && tierAtLeast(previewTier, 'pro')) {
     return (
       <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8">
         <LoadingSkeleton />
@@ -431,7 +435,7 @@ export default function ThesesPage() {
     );
   }
 
-  if (phase === 'locked' || (phase === 'ready' && !tierAtLeast(previewTier, 'pro'))) {
+  if (phase === 'locked' || !tierAtLeast(previewTier, 'pro')) {
     return (
       <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8">
         <TierLock

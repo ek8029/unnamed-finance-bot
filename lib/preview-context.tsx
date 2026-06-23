@@ -9,7 +9,7 @@
 // initialize from real entitlements (useTier) and `dataState` from real
 // account-connection status; the toggle becomes dev-only / removed.
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 import type { Tier } from '@/lib/tier-shared';
 
 export type DataState = 'connected' | 'demo' | 'empty';
@@ -26,16 +26,20 @@ const LS_TIER = 'helm-preview-tier';
 const LS_DS = 'helm-preview-datastate';
 
 export function PreviewProvider({ children }: { children: React.ReactNode }) {
-  // Default to the full premium experience; toggle down to test locks/empties.
-  const [tier, setTierState] = useState<Tier>('max');
-  const [dataState, setDataStateState] = useState<DataState>('connected');
-
-  useEffect(() => {
-    const t = localStorage.getItem(LS_TIER) as Tier | null;
-    const d = localStorage.getItem(LS_DS) as DataState | null;
-    if (t === 'free' || t === 'pro' || t === 'max') setTierState(t);
-    if (d === 'connected' || d === 'demo' || d === 'empty') setDataStateState(d);
-  }, []);
+  // Lazy-init from localStorage so the FIRST client render already has the real
+  // preview tier — no default-then-correct flash that briefly unlocks gated
+  // surfaces (e.g. Factor Lens) before the lock paints. Defaults to the full
+  // premium experience on the server / when nothing is stored.
+  const [tier, setTierState] = useState<Tier>(() => {
+    if (typeof window === 'undefined') return 'max';
+    const t = localStorage.getItem(LS_TIER);
+    return t === 'free' || t === 'pro' || t === 'max' ? t : 'max';
+  });
+  const [dataState, setDataStateState] = useState<DataState>(() => {
+    if (typeof window === 'undefined') return 'connected';
+    const d = localStorage.getItem(LS_DS);
+    return d === 'connected' || d === 'demo' || d === 'empty' ? d : 'connected';
+  });
 
   const setTier = (t: Tier) => { setTierState(t); localStorage.setItem(LS_TIER, t); };
   const setDataState = (d: DataState) => { setDataStateState(d); localStorage.setItem(LS_DS, d); };

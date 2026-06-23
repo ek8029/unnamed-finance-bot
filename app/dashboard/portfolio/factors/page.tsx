@@ -452,6 +452,9 @@ export default function FactorLensPage() {
   const entitled = tierAtLeast(previewTier, 'max');
 
   useEffect(() => {
+    // Non-entitled users get the lock immediately — never fetch (no wasted
+    // round-trip, no loading gate to wait through before the lock paints).
+    if (!entitled) { setLoading(false); return; }
     let cancelled = false;
     fetch('/api/factor-lens')
       .then(async (res) => {
@@ -476,7 +479,7 @@ export default function FactorLensPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [entitled]);
 
   const coverageNote = report
     ? `Classified ${report.coverage.classified} of ${report.coverage.total} holdings.`
@@ -497,55 +500,59 @@ export default function FactorLensPage() {
         </h1>
       </div>
 
-      {/* Coverage note always visible once we have a report */}
-      {coverageNote && (
-        <p className="mb-4 text-[14px] text-[var(--color-text-muted)]" style={MONO}>
-          {coverageNote}
-        </p>
-      )}
-
-      {(loading || tierLoading) && (
-        <div
-          className="rounded-lg border py-16 text-center text-[15px] text-[var(--color-text-muted)]"
-          style={{ borderColor: 'var(--color-border-base)', background: 'var(--color-bg-surface)' }}
-        >
-          Loading factor exposure...
-        </div>
-      )}
-
-      {!loading && !tierLoading && error && (
-        <div
-          className="rounded-lg border py-16 text-center text-[15px] text-[var(--color-text-muted)]"
-          style={{ borderColor: 'var(--color-border-base)', background: 'var(--color-bg-surface)' }}
-        >
-          Could not load your factor lens. Please try again.
-        </div>
-      )}
-
-      {!loading && !tierLoading && !error && empty && (
-        <div
-          className="rounded-lg border py-16 text-center"
-          style={{ borderColor: 'var(--color-border-base)', background: 'var(--color-bg-surface)' }}
-        >
-          <p className="text-[16px] text-[var(--color-text-primary)] mb-1">No holdings yet</p>
-          <p className="text-[15px] text-[var(--color-text-muted)]">
-            Connect a brokerage or add holdings to see your factor exposure.
-          </p>
-        </div>
-      )}
-
-      {!loading && !tierLoading && !error && !empty && !entitled && (
+      {/* Gate FIRST: non-entitled users see the lock instantly — no data fetch,
+          no loading spinner to wait through. Everything below is for Max. */}
+      {!entitled ? (
         <TierLock
           required="max"
           label="Unlock Factor Lens with Max"
           blurb="See the style and factor exposure hiding in your portfolio."
         >
-          {report && <ReportBody report={report} />}
+          <div className="h-[420px]" />
         </TierLock>
-      )}
+      ) : (
+        <>
+          {/* Coverage note always visible once we have a report */}
+          {coverageNote && (
+            <p className="mb-4 text-[14px] text-[var(--color-text-muted)]" style={MONO}>
+              {coverageNote}
+            </p>
+          )}
 
-      {!loading && !tierLoading && !error && !empty && entitled && report && (
-        <ReportBody report={report} />
+          {(loading || tierLoading) && (
+            <div
+              className="rounded-lg border py-16 text-center text-[15px] text-[var(--color-text-muted)]"
+              style={{ borderColor: 'var(--color-border-base)', background: 'var(--color-bg-surface)' }}
+            >
+              Loading factor exposure...
+            </div>
+          )}
+
+          {!loading && !tierLoading && error && (
+            <div
+              className="rounded-lg border py-16 text-center text-[15px] text-[var(--color-text-muted)]"
+              style={{ borderColor: 'var(--color-border-base)', background: 'var(--color-bg-surface)' }}
+            >
+              Could not load your factor lens. Please try again.
+            </div>
+          )}
+
+          {!loading && !tierLoading && !error && empty && (
+            <div
+              className="rounded-lg border py-16 text-center"
+              style={{ borderColor: 'var(--color-border-base)', background: 'var(--color-bg-surface)' }}
+            >
+              <p className="text-[16px] text-[var(--color-text-primary)] mb-1">No holdings yet</p>
+              <p className="text-[15px] text-[var(--color-text-muted)]">
+                Connect a brokerage or add holdings to see your factor exposure.
+              </p>
+            </div>
+          )}
+
+          {!loading && !tierLoading && !error && !empty && report && (
+            <ReportBody report={report} />
+          )}
+        </>
       )}
     </div>
   );
