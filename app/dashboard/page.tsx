@@ -7,6 +7,7 @@ import { Link2, Sparkles } from 'lucide-react';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
 import { useToast } from '@/contexts/toast-context';
 import { ThesisConvictionKpi } from '@/components/thesis/conviction-kpi';
+import { MaxUpgradeCard } from '@/components/max-upgrade-card';
 import { useFinancialSummary, useIntelligence, useHoldings } from '@/hooks/use-financial-data';
 import { useFormat } from '@/hooks/use-format';
 import { useDemo } from '@/contexts/demo-context';
@@ -716,6 +717,9 @@ export default function DashboardOverview() {
 
       {/* ── Sector heat strip ── */}
       <SectorHeatStrip sectors={sectorHeat} movers={heatMovers} formatPct={formatPercentage} />
+
+      {/* ── Pro -> Max upgrade nudge (only renders for Pro, not Max) ── */}
+      <MaxUpgradeCard className="mb-3.5" />
 
       {/* ── Chart + Helm Brief ── */}
       <div className="mb-3.5 grid grid-cols-1 gap-3.5 lg:grid-cols-[1.62fr_1fr]">

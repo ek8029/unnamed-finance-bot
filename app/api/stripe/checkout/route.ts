@@ -6,6 +6,7 @@ import {
   isValidBillingPeriod,
   getCheckoutMode,
 } from '@/lib/stripe';
+import { tierAtLeast } from '@/lib/tier-shared';
 
 /**
  * POST /api/stripe/checkout
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
     // 3. Already-Pro guard
     const { data: subscription, error: subError } = await serviceClient
       .from('user_subscriptions')
-      .select('tier, stripe_customer_id')
+      .select('tier, stripe_customer_id, stripe_subscription_id')
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -55,11 +56,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (subscription?.tier === 'pro' || subscription?.tier === 'max') {
+    const currentTier = (subscription?.tier ?? 'free') as 'free' | 'pro' | 'max';
+
+    // Block buying a tier you already hold or exceed (pro->pro, max->anything).
+    // Pro->Max falls through (tierAtLeast('pro','max') is false) so it's allowed.
+    if (tierAtLeast(currentTier, billingPeriod)) {
       return NextResponse.json(
-        { error: 'You already have an active Pro subscription.' },
+        { error: `You already have ${currentTier === 'max' ? 'Max' : 'Pro'}.` },
         { status: 400 },
       );
+    }
+
+    // Pro -> Max for a user with a LIVE subscription: swap the price on the
+    // existing subscription (prorated) instead of creating a second one — no
+    // double billing. The subscription.updated webhook flips tier to 'max'.
+    if (currentTier === 'pro' && billingPeriod === 'max' && subscription?.stripe_subscription_id) {
+      const maxPrice = getPriceId('max');
+      if (!maxPrice) {
+        console.error('[checkout] STRIPE_PRICE_MAX not configured');
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+      }
+      const sub = await getStripe().subscriptions.retrieve(subscription.stripe_subscription_id);
+      const itemId = sub.items.data[0]?.id;
+      if (!itemId) {
+        console.error('[checkout] No subscription item to upgrade:', subscription.stripe_subscription_id);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+      }
+      await getStripe().subscriptions.update(subscription.stripe_subscription_id, {
+        items: [{ id: itemId, price: maxPrice }],
+        proration_behavior: 'create_prorations',
+        metadata: { supabase_user_id: user.id, billing_period: 'max' },
+      });
+      return NextResponse.json({ upgraded: true });
     }
 
     // 4. Find or create Stripe customer

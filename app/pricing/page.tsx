@@ -8,6 +8,7 @@ import { CheckoutModal } from '@/components/checkout-modal';
 import { AnimatedSection } from '@/components/ui/animated-section';
 import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
+import { usePreview } from '@/lib/preview-context';
 
 // Display tiers for the new model. The `period` maps onto the existing
 // Stripe billing-period keys so checkout keeps working unchanged.
@@ -84,6 +85,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 export default function PricingPage() {
   // Which paid tier the checkout modal will open with.
   const [checkoutPeriod, setCheckoutPeriod] = useState<PaidPeriod | null>(null);
+  const { tier } = usePreview();
 
   return (
     <main className="min-h-screen bg-[var(--color-bg-base)] bg-depth relative overflow-hidden">
@@ -202,13 +204,19 @@ export default function PricingPage() {
                   </li>
                 ))}
               </ul>
-              <button
-                onClick={() => setCheckoutPeriod('pro')}
-                className="group w-full flex items-center justify-center gap-2.5 px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-colors duration-200"
-              >
-                Upgrade to Pro
-                <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-              </button>
+              {tier === 'free' ? (
+                <button
+                  onClick={() => setCheckoutPeriod('pro')}
+                  className="group w-full flex items-center justify-center gap-2.5 px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-colors duration-200"
+                >
+                  Upgrade to Pro
+                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </button>
+              ) : (
+                <div className="w-full flex items-center justify-center px-6 py-3 border border-[var(--color-border-base)] text-[var(--color-text-muted)] font-semibold text-[15px] rounded-[var(--radius-md)]">
+                  {tier === 'pro' ? 'Current plan' : 'Included in Max'}
+                </div>
+              )}
             </div>
           </AnimatedSection>
 
@@ -232,14 +240,20 @@ export default function PricingPage() {
                   </li>
                 ))}
               </ul>
-              <button
-                onClick={() => setCheckoutPeriod('max')}
-                className="group w-full flex items-center justify-center gap-2.5 px-6 py-3 font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-opacity duration-200 hover:opacity-90"
-                style={{ background: '#FFD67A', color: 'var(--color-bg-base)' }}
-              >
-                Upgrade to Max
-                <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-              </button>
+              {tier === 'max' ? (
+                <div className="w-full flex items-center justify-center px-6 py-3 border border-[var(--color-border-base)] text-[var(--color-text-muted)] font-semibold text-[15px] rounded-[var(--radius-md)]">
+                  Current plan
+                </div>
+              ) : (
+                <button
+                  onClick={() => setCheckoutPeriod('max')}
+                  className="group w-full flex items-center justify-center gap-2.5 px-6 py-3 font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-opacity duration-200 hover:opacity-90"
+                  style={{ background: '#FFD67A', color: 'var(--color-bg-base)' }}
+                >
+                  Upgrade to Max
+                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </button>
+              )}
             </div>
           </AnimatedSection>
 
