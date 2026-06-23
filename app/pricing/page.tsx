@@ -12,7 +12,7 @@ import { CinematicBg } from '@/components/cinematic-bg';
 // Display tiers for the new model. The `period` maps onto the existing
 // Stripe billing-period keys so checkout keeps working unchanged.
 // TODO: needs STRIPE_PRICE_PRO / STRIPE_PRICE_MAX env for $20/$50
-type PaidPeriod = 'monthly' | 'annual';
+type PaidPeriod = 'pro' | 'max';
 
 const freeFeatures = [
   'Full terminal and portfolio dashboard',
@@ -203,7 +203,7 @@ export default function PricingPage() {
                 ))}
               </ul>
               <button
-                onClick={() => setCheckoutPeriod('monthly')}
+                onClick={() => setCheckoutPeriod('pro')}
                 className="group w-full flex items-center justify-center gap-2.5 px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-colors duration-200"
               >
                 Upgrade to Pro
@@ -233,7 +233,7 @@ export default function PricingPage() {
                 ))}
               </ul>
               <button
-                onClick={() => setCheckoutPeriod('annual')}
+                onClick={() => setCheckoutPeriod('max')}
                 className="group w-full flex items-center justify-center gap-2.5 px-6 py-3 font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-opacity duration-200 hover:opacity-90"
                 style={{ background: '#FFD67A', color: 'var(--color-bg-base)' }}
               >

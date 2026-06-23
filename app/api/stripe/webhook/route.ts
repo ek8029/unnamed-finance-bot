@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { getStripe } from '@/lib/stripe';
+import { getStripe, tierForPriceId } from '@/lib/stripe';
 import { createServiceClient } from '@/lib/supabase/server';
 
 /**
@@ -122,6 +122,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
   }
 
+  // Tier from the purchased price (source of truth); fall back to the metadata
+  // tier name if the price isn't recognized.
+  const tier = tierForPriceId(stripePriceId) ?? (billingPeriod === 'max' ? 'max' : 'pro');
+
   const supabase = await createServiceClient();
 
   const { error } = await supabase
@@ -129,7 +133,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     .upsert(
       {
         user_id: userId,
-        tier: 'pro',
+        tier,
         stripe_customer_id: typeof session.customer === 'string' ? session.customer : session.customer?.id ?? null,
         stripe_subscription_id: stripeSubscriptionId,
         stripe_price_id: stripePriceId,
@@ -179,9 +183,14 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
 
   const supabase = await createServiceClient();
 
+  // Reflect plan switches (Pro <-> Max) — derive tier from the active price.
+  const priceId = sub.items.data[0]?.price?.id ?? null;
+  const tier = tierForPriceId(priceId);
+
   const { error } = await supabase
     .from('user_subscriptions')
     .update({
+      ...(tier ? { tier, stripe_price_id: priceId, billing_period: tier } : {}),
       cancel_at_period_end: sub.cancel_at_period_end,
       current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
       updated_at: new Date().toISOString(),

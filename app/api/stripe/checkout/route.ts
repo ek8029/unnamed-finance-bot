@@ -5,7 +5,6 @@ import {
   getPriceId,
   isValidBillingPeriod,
   getCheckoutMode,
-  FOUNDING_MEMBER_CAP,
 } from '@/lib/stripe';
 
 /**
@@ -114,33 +113,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 5. Seat cap enforcement (lifetime: 200, founding: 50)
-    if (billingPeriod === 'lifetime' || billingPeriod === 'founding') {
-      const cap = billingPeriod === 'founding' ? FOUNDING_MEMBER_CAP : 200;
-      const label = billingPeriod === 'founding' ? 'Founding member' : 'Lifetime';
-
-      const { count, error: countError } = await serviceClient
-        .from('user_subscriptions')
-        .select('*', { count: 'exact', head: true })
-        .eq('billing_period', billingPeriod);
-
-      if (countError) {
-        console.error(`[checkout] Failed to count ${billingPeriod} subs:`, countError);
-        return NextResponse.json(
-          { error: 'Internal server error' },
-          { status: 500 },
-        );
-      }
-
-      if ((count ?? 0) >= cap) {
-        return NextResponse.json(
-          { error: `${label} spots are sold out.` },
-          { status: 400 },
-        );
-      }
-    }
-
-    // 6. Get price ID
+    // 5. Get price ID
     const priceId = getPriceId(billingPeriod);
     if (!priceId) {
       console.error(`[checkout] No price ID configured for billingPeriod: ${billingPeriod}`);

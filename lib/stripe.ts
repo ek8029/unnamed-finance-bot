@@ -30,16 +30,18 @@ export function getStripe(): Stripe {
 /** @deprecated Use getStripe() instead — this crashes at build time if key is missing */
 export const stripe = null as unknown as Stripe;
 
-export type BillingPeriod = 'monthly' | 'annual' | 'lifetime' | 'founding';
+// Two paid tiers, both recurring monthly subscriptions:
+//   Pro  $20/mo  -> STRIPE_PRICE_PRO
+//   Max  $50/mo  -> STRIPE_PRICE_MAX
+// The `billingPeriod` field on checkout/webhook now carries the tier name.
+export type BillingPeriod = 'pro' | 'max';
 
 const BILLING_PERIOD_TO_PRICE: Record<BillingPeriod, string | undefined> = {
-  monthly: process.env.STRIPE_PRICE_MONTHLY,
-  annual: process.env.STRIPE_PRICE_ANNUAL,
-  lifetime: process.env.STRIPE_PRICE_LIFETIME,
-  founding: process.env.STRIPE_PRICE_FOUNDING,
+  pro: process.env.STRIPE_PRICE_PRO,
+  max: process.env.STRIPE_PRICE_MAX,
 };
 
-/** Map a billing period to its Stripe Price ID. Returns null for invalid input. */
+/** Map a billing period (tier) to its Stripe Price ID. Returns null if invalid/unset. */
 export function getPriceId(billingPeriod: string): string | null {
   const priceId = BILLING_PERIOD_TO_PRICE[billingPeriod as BillingPeriod];
   return priceId ?? null;
@@ -47,13 +49,18 @@ export function getPriceId(billingPeriod: string): string | null {
 
 /** Validate a billing period string. */
 export function isValidBillingPeriod(value: string): value is BillingPeriod {
-  return value === 'monthly' || value === 'annual' || value === 'lifetime' || value === 'founding';
+  return value === 'pro' || value === 'max';
 }
 
-/** Whether this billing period uses Stripe 'payment' mode (one-time) vs 'subscription'. */
-export function getCheckoutMode(billingPeriod: BillingPeriod): 'payment' | 'subscription' {
-  return billingPeriod === 'lifetime' ? 'payment' : 'subscription';
+/** Both tiers are subscriptions. Kept for the checkout-session mode argument. */
+export function getCheckoutMode(_billingPeriod: BillingPeriod): 'payment' | 'subscription' {
+  return 'subscription';
 }
 
-/** Maximum number of founding member seats available. */
-export const FOUNDING_MEMBER_CAP = 50;
+/** Resolve which tier a Stripe Price ID corresponds to (webhook source of truth). */
+export function tierForPriceId(priceId: string | null | undefined): 'pro' | 'max' | null {
+  if (!priceId) return null;
+  if (priceId === process.env.STRIPE_PRICE_MAX) return 'max';
+  if (priceId === process.env.STRIPE_PRICE_PRO) return 'pro';
+  return null;
+}

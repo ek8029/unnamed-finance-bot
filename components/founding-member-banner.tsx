@@ -82,7 +82,7 @@ export function FoundingMemberBanner() {
 
       {showCheckout && (
         <CheckoutModal
-          billingPeriod="founding"
+          billingPeriod="pro"
           onClose={() => setShowCheckout(false)}
         />
       )}

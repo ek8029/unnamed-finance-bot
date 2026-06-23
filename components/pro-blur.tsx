@@ -42,7 +42,7 @@ export function ProBlur({
 
         {showCheckout && (
           <CheckoutModal
-            billingPeriod="founding"
+            billingPeriod="pro"
             onClose={() => setShowCheckout(false)}
           />
         )}
@@ -100,7 +100,7 @@ export function ProBlur({
 
       {showCheckout && (
         <CheckoutModal
-          billingPeriod="founding"
+          billingPeriod="pro"
           onClose={() => setShowCheckout(false)}
         />
       )}
