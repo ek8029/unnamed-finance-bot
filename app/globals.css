@@ -676,6 +676,12 @@ html { scroll-behavior: smooth; }
     border-left: 2px solid var(--color-gold);
     color: var(--color-gold);
   }
+
+  /* ── COMMAND PALETTE ROW HOVER (gold tint) ── */
+  .palette-row:hover {
+    background: rgba(230, 185, 77, 0.08);
+    color: var(--color-gold);
+  }
 }
 
 /* ══════════════════════════════════════════════════
