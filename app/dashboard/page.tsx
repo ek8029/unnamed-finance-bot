@@ -149,6 +149,80 @@ function AllocationDonut({ slices }: { slices: { name: string; pct: number; colo
   );
 }
 
+// ── Sector heat strip (top of overview) ────────────────────────────────────
+// Weighted, day-change-colored sector bar + legend + top movers. Same info as
+// the old daily-brief heat line, restyled for the Sovereign Architect look.
+function heatColor(pct: number): string {
+  if (pct > 0.5) return '#4ADE80';
+  if (pct > 0.1) return 'rgba(74,222,128,0.5)';
+  if (pct < -0.5) return '#F87171';
+  if (pct < -0.1) return 'rgba(248,113,113,0.5)';
+  return 'rgba(255,255,255,0.14)';
+}
+
+function SectorHeatStrip({
+  sectors,
+  movers,
+  formatPct,
+}: {
+  sectors: { sector: string; weight: number; changePct: number }[];
+  movers: { ticker: string; pct: number }[];
+  formatPct: (n: number) => string;
+}) {
+  if (sectors.length === 0) return null;
+  const total = sectors.reduce((s, x) => s + x.weight, 0) || 1;
+  return (
+    <div className={`${CARD} mb-3.5 px-[22px] py-[18px]`}>
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <div className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-gold)]" style={MONO}>
+          Sector heat · today
+        </div>
+        {movers.length > 0 && (
+          <div className="hidden items-center gap-3.5 sm:flex">
+            {movers.map((m) => (
+              <span key={m.ticker} className="inline-flex items-baseline gap-1.5 text-[12px]" style={MONO}>
+                <span className="font-semibold text-[var(--color-text-secondary)]">{m.ticker}</span>
+                <span className={m.pct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}>
+                  {formatPct(m.pct)}
+                </span>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      {/* weighted heat bar */}
+      <div className="flex h-[10px] w-full gap-[2px] overflow-hidden rounded-full">
+        {sectors.map((s) => (
+          <div
+            key={s.sector}
+            className="h-full"
+            style={{ width: `${(s.weight / total) * 100}%`, backgroundColor: heatColor(s.changePct) }}
+            title={`${s.sector}: ${formatPct(s.changePct)} · ${s.weight.toFixed(1)}%`}
+          />
+        ))}
+      </div>
+      {/* legend */}
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+        {sectors.map((s) => (
+          <div key={s.sector} className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: heatColor(s.changePct) }} />
+            <span className="text-[12px] text-[var(--color-text-secondary)]">{s.sector}</span>
+            <span
+              className={`text-[11px] tabular-nums ${s.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}
+              style={MONO}
+            >
+              {formatPct(s.changePct)}
+            </span>
+            <span className="text-[10px] tabular-nums text-[var(--color-text-muted)]" style={MONO}>
+              {s.weight.toFixed(0)}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── General market brief (Free tier) ───────────────────────────────────────
 // Non-personalized daily market read for users without Pro. Reuses the SAME
 // public market data the /brief page uses: client-side polling of the
@@ -373,6 +447,41 @@ export default function DashboardOverview() {
 
   const topSectorPct = sectorSlices[0]?.pct ?? 0;
 
+  // Sector heat: weight by value, day-change as a value-weighted average.
+  const sectorHeat = useMemo(() => {
+    const m = new Map<string, { value: number; weighted: number }>();
+    let sum = 0;
+    for (const h of holdings) {
+      const sector = h.sector || 'Other';
+      const v = h.total_value || 0;
+      const pct = h.day_change_percentage || 0;
+      const cur = m.get(sector) || { value: 0, weighted: 0 };
+      cur.value += v;
+      cur.weighted += v * pct;
+      m.set(sector, cur);
+      sum += v;
+    }
+    if (sum === 0) return [] as { sector: string; weight: number; changePct: number }[];
+    return [...m.entries()]
+      .map(([sector, { value, weighted }]) => ({
+        sector,
+        weight: (value / sum) * 100,
+        changePct: value > 0 ? weighted / value : 0,
+      }))
+      .sort((a, b) => b.weight - a.weight)
+      .slice(0, 8);
+  }, [holdings]);
+
+  const heatMovers = useMemo(
+    () =>
+      [...holdings]
+        .filter((h) => (h.day_change_percentage ?? 0) !== 0)
+        .sort((a, b) => Math.abs(b.day_change_percentage || 0) - Math.abs(a.day_change_percentage || 0))
+        .slice(0, 4)
+        .map((h) => ({ ticker: h.ticker, pct: h.day_change_percentage || 0 })),
+    [holdings],
+  );
+
   const movers = useMemo(() => {
     return [...holdings]
       .filter((h) => h.ticker && h.ticker !== 'UNKNOWN' && h.day_change_percentage != null)
@@ -557,6 +666,9 @@ export default function DashboardOverview() {
           </div>
         </div>
       </div>
+
+      {/* ── Sector heat strip ── */}
+      <SectorHeatStrip sectors={sectorHeat} movers={heatMovers} formatPct={formatPercentage} />
 
       {/* ── Chart + Helm Brief ── */}
       <div className="mb-3.5 grid grid-cols-1 gap-3.5 lg:grid-cols-[1.62fr_1fr]">
