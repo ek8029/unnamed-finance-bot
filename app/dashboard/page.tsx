@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, Link2, Sparkles } from 'lucide-react';
+import Link from 'next/link';
+import { Link2, Sparkles } from 'lucide-react';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
 import { useToast } from '@/contexts/toast-context';
 import { ThesisConvictionKpi } from '@/components/thesis/conviction-kpi';
@@ -10,7 +11,8 @@ import { useFinancialSummary, useIntelligence, useHoldings } from '@/hooks/use-f
 import { useFormat } from '@/hooks/use-format';
 import { useDemo } from '@/contexts/demo-context';
 import { usePreview } from '@/lib/preview-context';
-import { TierLock } from '@/components/tier-lock';
+import { tierAtLeast } from '@/lib/tier-shared';
+import { useLivePrices } from '@/hooks/use-live-prices';
 import posthog from 'posthog-js';
 
 // ── Sovereign Architect tokens (local to this screen) ──────────────────────
@@ -147,6 +149,135 @@ function AllocationDonut({ slices }: { slices: { name: string; pct: number; colo
   );
 }
 
+// ── General market brief (Free tier) ───────────────────────────────────────
+// Non-personalized daily market read for users without Pro. Reuses the SAME
+// public market data the /brief page uses: client-side polling of the
+// no-auth /api/market/quotes/public endpoint via useLivePrices. No per-user
+// OpenAI call. Templated text, only rendered for cells backed by real data.
+const BRIEF_TICKERS = ['SPY', 'QQQ', 'NVDA', 'AAPL', 'MSFT', 'GOOGL', 'META', 'AMZN', 'TSLA', 'AMD', 'AVGO', 'JPM'];
+
+function fmtPct2(n: number): string {
+  return `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
+}
+
+function macroRead(spyPct: number, greens: number, total: number): string {
+  const abs = Math.abs(spyPct);
+  if (total === 0) return 'Market data is syncing. Check back in a moment.';
+  if (abs < 0.4) return 'A quiet, range-bound session with no single catalyst driving direction.';
+  if (spyPct >= 1) return 'Broad participation behind the move. Breadth and volume into the close will say whether it holds.';
+  if (spyPct <= -1) return 'Risk-off pressure on equities. Watch yields and breadth for a dip versus a deeper turn.';
+  return greens >= total / 2
+    ? 'A modest tape with more names green than red. Conviction stays moderate.'
+    : 'A modest tape leaning red. Conviction stays moderate.';
+}
+
+function GeneralMarketBrief() {
+  const { quotes: live } = useLivePrices(BRIEF_TICKERS, 60_000, '/api/market/quotes/public');
+
+  const rows = useMemo(
+    () =>
+      BRIEF_TICKERS.map((t) => {
+        const q = live[t];
+        if (!q || q.price <= 0 || q.dayChangePct == null) return null;
+        return { symbol: t, price: q.price, changePct: q.dayChangePct };
+      }).filter((r): r is { symbol: string; price: number; changePct: number } => r !== null),
+    [live],
+  );
+
+  const spy = rows.find((r) => r.symbol === 'SPY');
+  const qqq = rows.find((r) => r.symbol === 'QQQ');
+  const stocks = rows.filter((r) => r.symbol !== 'SPY' && r.symbol !== 'QQQ');
+  const greens = stocks.filter((r) => r.changePct >= 0).length;
+  const topMover = [...stocks].sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct))[0];
+  const spyUp = spy ? spy.changePct >= 0 : true;
+
+  return (
+    <div
+      className="flex h-full flex-col rounded-lg px-[22px] py-5"
+      style={{
+        border: '1px solid rgba(230,185,77,0.18)',
+        background: 'rgba(230,185,77,0.025)',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+      }}
+    >
+      <div className="mb-3.5 flex items-center gap-2.5">
+        <Sparkles size={15} strokeWidth={1.6} className="text-[var(--color-gold)]" />
+        <span className="text-[11px] uppercase tracking-[0.16em] text-[var(--color-gold)]" style={MONO}>
+          Market Brief
+        </span>
+        <span className="h-px flex-1" style={{ background: 'rgba(230,185,77,0.12)' }} />
+      </div>
+
+      {/* Benchmarks */}
+      {spy || qqq ? (
+        <div className="mb-4 grid grid-cols-2 gap-3">
+          {[
+            { q: spy, label: 'S&P 500' },
+            { q: qqq, label: 'Nasdaq 100' },
+          ]
+            .filter((b) => b.q)
+            .map((b) => (
+              <div key={b.label} className="rounded-[5px] border border-[var(--color-border-subtle)] bg-white/[0.02] px-3 py-2.5">
+                <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-muted)]" style={MONO}>
+                  {b.label}
+                </div>
+                <div className="mt-1 text-[19px] font-bold leading-none tabular-nums">
+                  ${b.q!.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                <div
+                  className={`mt-1.5 text-[13px] font-semibold tabular-nums ${
+                    b.q!.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'
+                  }`}
+                  style={MONO}
+                >
+                  {fmtPct2(b.q!.changePct)}
+                </div>
+              </div>
+            ))}
+        </div>
+      ) : null}
+
+      {/* Lead line + notable movers + macro read */}
+      {spy ? (
+        <p className="m-0 mb-3 text-[15px] leading-[1.6] text-[var(--color-text-primary)] text-pretty">
+          The S&amp;P 500 is {spyUp ? 'up' : 'down'} {fmtPct2(spy.changePct)} today
+          {qqq ? `, with the Nasdaq 100 ${qqq.changePct >= 0 ? 'up' : 'down'} ${fmtPct2(qqq.changePct)}` : ''}.
+        </p>
+      ) : (
+        <p className="m-0 mb-3 flex-1 text-[14px] leading-[1.6] text-[var(--color-text-muted)]">
+          Live market data is syncing. Today&apos;s brief lands once prices come through.
+        </p>
+      )}
+
+      {topMover && (
+        <p className="m-0 mb-3 text-[14px] leading-[1.55] text-[var(--color-text-secondary)]">
+          Notable mover:{' '}
+          <span className="font-semibold text-[var(--color-gold)]" style={MONO}>
+            {topMover.symbol}
+          </span>{' '}
+          at {fmtPct2(topMover.changePct)}
+          {stocks.length > 0 ? `. ${greens} of ${stocks.length} mega-caps tracked are green.` : '.'}
+        </p>
+      )}
+
+      {rows.length > 0 && (
+        <p className="m-0 mb-4 text-[14px] leading-[1.55] text-[var(--color-text-secondary)]">
+          {macroRead(spy?.changePct ?? 0, greens, stocks.length)}
+        </p>
+      )}
+
+      {/* Inline upgrade nudge — soft, no hard lock */}
+      <Link
+        href="/pricing"
+        className="mt-auto flex items-center justify-between rounded-[5px] px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-gold)]"
+        style={{ ...MONO, border: '1px solid rgba(230,185,77,0.18)', background: 'rgba(230,185,77,0.08)' }}
+      >
+        Get a brief tailored to your portfolio with Pro <span>→</span>
+      </Link>
+    </div>
+  );
+}
+
 // ── Loading skeleton ───────────────────────────────────────────────────────
 function LoadingSkeleton() {
   return (
@@ -186,7 +317,7 @@ export default function DashboardOverview() {
 
   const { formatCurrency, formatPercentage } = useFormat();
   const { isDemo, enableDemo, disableDemo } = useDemo();
-  const { dataState } = usePreview();
+  const { tier, dataState } = usePreview();
   const router = useRouter();
   const toast = useToast();
   const [plaidError, setPlaidError] = useState<string | null>(null);
@@ -466,8 +597,8 @@ export default function DashboardOverview() {
           )}
         </div>
 
-        {/* AI Helm Brief (Pro intelligence) */}
-        <TierLock required="pro" label="The Helm Brief is a Pro feature" blurb="Conviction-led daily intelligence on what moved your book and why.">
+        {/* AI Helm Brief — tailored for Pro+, general market brief for Free */}
+        {tierAtLeast(tier, 'pro') ? (
           <div
             className="flex h-full flex-col rounded-lg px-[22px] py-5"
             style={{
@@ -527,7 +658,9 @@ export default function DashboardOverview() {
               Read full brief <span>→</span>
             </button>
           </div>
-        </TierLock>
+        ) : (
+          <GeneralMarketBrief />
+        )}
       </div>
 
       {/* ── KPI tiles ── */}

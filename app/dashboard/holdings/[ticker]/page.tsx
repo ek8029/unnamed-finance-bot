@@ -49,12 +49,25 @@ export default async function HoldingDetailPage({ params }: Props) {
   const holdings = holdingsResult.data || [];
   if (holdings.length === 0) {
     return (
-      <div className="px-6 py-16 text-center">
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mb-2">No position in {symbol}</h1>
-        <p className="text-[var(--color-text-muted)] mb-4">You don&apos;t hold {symbol} in any linked account.</p>
-        <Link href={`/dashboard/analyze/${symbol}`} className="text-[var(--color-gold)] hover:text-[var(--color-gold-hi)]">
-          View AI analysis for {symbol} →
-        </Link>
+      <div className="min-h-[60vh] flex items-center justify-center px-6 py-16">
+        <div className="max-w-[470px] text-center">
+          <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-3">
+            Not held
+          </div>
+          <h1 className="text-[26px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)] mb-3">
+            No position in {symbol}
+          </h1>
+          <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)] mb-6">
+            You don&apos;t hold {symbol} in any linked account. You can still run a full AI analysis on it.
+          </p>
+          <Link
+            href={`/dashboard/analyze/${symbol}`}
+            className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[#0A0A0A] font-mono text-[11px] font-bold uppercase tracking-[0.12em] transition-all"
+            style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.25)' }}
+          >
+            Open analysis for {symbol}
+          </Link>
+        </div>
       </div>
     );
   }

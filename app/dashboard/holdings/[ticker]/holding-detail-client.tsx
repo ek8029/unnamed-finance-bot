@@ -6,7 +6,8 @@ import { useLivePrices } from '@/hooks/use-live-prices';
 import { PriceFlash } from '@/components/price-flash';
 import { WhyIOwnThis } from '@/components/thesis/why-i-own-this';
 import { useThesisEnabled } from '@/lib/use-thesis-access';
-import { TrendingUp, TrendingDown, ExternalLink, ArrowLeft } from 'lucide-react';
+import { usePreview } from '@/lib/preview-context';
+import { ArrowLeft, ArrowUpRight, Link2, TrendingUp, TrendingDown } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { StockQuote } from '@/lib/financial-data';
 
@@ -42,6 +43,57 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+// ── Section eyebrow ──────────────────────────────────────────────────────
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--color-text-muted)]"
+      style={MONO}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ── Connect-your-brokerage empty state (dataState === 'empty') ────────────
+// Read-only Plaid framing + gold Connect CTA, mirroring the portfolio surface.
+function ConnectBrokerage({ ticker }: { ticker: string }) {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center px-6 py-16">
+      <div className="max-w-[470px] text-center">
+        <div className="w-[60px] h-[60px] mx-auto mb-[22px] rounded-[14px] bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center">
+          <Link2 className="w-[26px] h-[26px] text-[var(--color-gold)]" strokeWidth={1.6} />
+        </div>
+        <h1 className="text-[26px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)] mb-3">
+          Connect your brokerage
+        </h1>
+        <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)] mb-6">
+          Link an account and Helm tracks your {ticker} position, cost basis and unrealized P&amp;L automatically.{' '}
+          <span className="text-[var(--color-positive)]">Read-only access</span> &mdash; Helm can never move money or place trades.
+        </p>
+        <Link
+          href="/dashboard/accounts"
+          className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[#0A0A0A] font-mono text-[11px] font-bold uppercase tracking-[0.12em] transition-all"
+          style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.25)' }}
+        >
+          Connect account
+        </Link>
+        <div className="font-mono text-[10px] text-[var(--color-text-muted)] mt-[18px] tracking-[0.04em]">
+          12,000+ institutions &middot; 256-bit encryption &middot; via Plaid
+        </div>
+        <div className="mt-5">
+          <Link
+            href={`/dashboard/analyze/${ticker}`}
+            className="font-mono text-[11px] tracking-[0.04em] text-[var(--color-text-secondary)] hover:text-[var(--color-gold)] transition-colors"
+          >
+            Open analysis for {ticker} &rarr;
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function HoldingDetailClient({
   holding: serverHolding, priceHistory, news, transactions, quote,
 }: {
@@ -52,6 +104,7 @@ export function HoldingDetailClient({
   quote: StockQuote | null;
 }) {
   const thesisEnabled = useThesisEnabled();
+  const { dataState } = usePreview();
   // Live price overlay: poll /api/market/quotes every 30s while market open.
   const { quotes: liveQuotes } = useLivePrices(useMemo(() => [serverHolding.ticker], [serverHolding.ticker]));
   const holding = useMemo(() => {
@@ -71,70 +124,108 @@ export function HoldingDetailClient({
   const up = holding.dayChangePct >= 0;
   const glUp = holding.unrealizedGL >= 0;
 
-  return (
-    <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      {/* Back + Header */}
-      <div>
-        <Link
-          href="/dashboard/portfolio"
-          className="inline-flex items-center gap-1.5 text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors mb-4"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Portfolio
-        </Link>
+  // No linked brokerage (preview dataState === 'empty').
+  if (dataState === 'empty') return <ConnectBrokerage ticker={holding.ticker} />;
 
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-          <div>
-            <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
-              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--color-gold)]" style={MONO}>{holding.ticker}</h1>
-              <span className="text-base sm:text-lg text-[var(--color-text-secondary)] truncate max-w-[200px] sm:max-w-none">{holding.name}</span>
-            </div>
-            <div className="flex items-center gap-2 mt-1 text-[13px] text-[var(--color-text-muted)]" style={MONO}>
-              {holding.exchange && <span>{holding.exchange}</span>}
-              {holding.exchange && holding.sector && <span className="opacity-30">|</span>}
-              <span>{holding.sector}</span>
-            </div>
+  // Secondary KPI tiles (price + day change are surfaced large in the header).
+  const tiles: { label: string; value: string; flash?: number; color?: string }[] = [
+    { label: 'Market value', value: fmt(holding.totalValue), flash: holding.totalValue },
+    { label: 'Shares', value: holding.shares.toLocaleString() },
+    { label: 'Avg cost', value: fmt(holding.avgCost) },
+    { label: 'Cost basis', value: fmt(holding.costBasis) },
+    {
+      label: 'Unrealized P&L',
+      value: `${glUp ? '+' : ''}${fmt(holding.unrealizedGL)}  (${fmtPct(holding.unrealizedPct)})`,
+      color: glUp ? 'var(--color-positive)' : 'var(--color-negative-text)',
+    },
+    {
+      label: 'Portfolio weight',
+      value: `${holding.allocPct.toFixed(1)}%`,
+      color: holding.allocPct > 25 ? 'var(--color-warning-text)' : undefined,
+    },
+  ];
+
+  return (
+    <div className="px-4 sm:px-6 lg:px-8 py-7 space-y-8 max-w-[1180px]">
+      {/* ── Back link ── */}
+      <Link
+        href="/dashboard/portfolio"
+        className="inline-flex items-center gap-1.5 font-mono text-[11px] tracking-[0.06em] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+        style={MONO}
+      >
+        <ArrowLeft className="w-3.5 h-3.5" /> Portfolio
+      </Link>
+
+      {/* ── Header: identity + price + day change + CTA ── */}
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <Eyebrow>
+            Position{holding.exchange ? ` · ${holding.exchange}` : ''}
+            {holding.sector ? ` · ${holding.sector}` : ''}
+          </Eyebrow>
+          <div className="flex items-baseline gap-3 flex-wrap mt-2.5">
+            <h1 className="text-[40px] sm:text-[48px] leading-none font-bold text-[var(--color-gold)] tracking-[-0.02em]" style={MONO}>
+              {holding.ticker}
+            </h1>
+            <span className="text-[18px] sm:text-[20px] text-[var(--color-text-secondary)] tracking-[-0.01em]">
+              {holding.name}
+            </span>
           </div>
-          <Link
-            href={`/dashboard/analyze/${holding.ticker}`}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black text-[13px] font-semibold rounded transition-colors"
-          >
-            Full AI Analysis <ExternalLink className="w-3.5 h-3.5" />
-          </Link>
+          {/* Live price + day change, surfaced large. */}
+          <div className="flex items-end gap-4 mt-5">
+            <PriceFlash value={holding.currentPrice}>
+              <span className="text-[34px] sm:text-[40px] leading-none font-bold tabular-nums text-[var(--color-text-primary)]" style={MONO}>
+                {fmt(holding.currentPrice)}
+              </span>
+            </PriceFlash>
+            <span
+              className="inline-flex items-center gap-1.5 text-[16px] font-bold tabular-nums pb-1"
+              style={{ ...MONO, color: up ? 'var(--color-positive)' : 'var(--color-negative-text)' }}
+            >
+              {up ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+              {fmtPct(holding.dayChangePct)}
+            </span>
+          </div>
         </div>
+
+        <Link
+          href={`/dashboard/analyze/${holding.ticker}`}
+          className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] text-[#0A0A0A] font-mono text-[11px] font-bold uppercase tracking-[0.12em] rounded-[7px] transition-all shrink-0"
+          style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.25)' }}
+        >
+          Open analysis <ArrowUpRight className="w-4 h-4" />
+        </Link>
       </div>
 
-      {/* Key Metrics Row */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
-        {[
-          { label: 'Price', value: fmt(holding.currentPrice), flash: holding.currentPrice },
-          { label: 'Day Change', value: fmtPct(holding.dayChangePct), color: up ? 'var(--color-positive)' : 'var(--color-negative)' },
-          { label: 'Shares', value: holding.shares.toLocaleString() },
-          { label: 'Market Value', value: fmt(holding.totalValue), flash: holding.totalValue },
-          { label: 'Avg Cost', value: fmt(holding.avgCost) },
-          { label: 'Unrealized P&L', value: `${glUp ? '+' : ''}${fmt(holding.unrealizedGL)}`, color: glUp ? 'var(--color-positive)' : 'var(--color-negative)' },
-          { label: 'Allocation', value: `${holding.allocPct.toFixed(1)}%`, color: holding.allocPct > 25 ? 'var(--color-negative)' : undefined },
-        ].map((m: { label: string; value: string; color?: string; flash?: number }) => (
-          <div key={m.label} className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-3.5">
-            <div className="text-[11px] font-mono tracking-wider text-[var(--color-text-muted)] uppercase">{m.label}</div>
-            <div className="text-[15px] sm:text-[18px] font-bold tabular-nums mt-1" style={{ ...MONO, color: m.color || 'var(--color-text-primary)' }}>
+      {/* ── KPI tiles ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-px bg-[var(--color-border-base)] border border-[var(--color-border-base)] rounded-lg overflow-hidden">
+        {tiles.map((m) => (
+          <div key={m.label} className="bg-[var(--color-bg-surface)] px-4 py-4 sm:px-5 sm:py-5">
+            <div className="font-mono text-[10px] font-semibold tracking-[0.16em] text-[var(--color-text-muted)] uppercase" style={MONO}>
+              {m.label}
+            </div>
+            <div
+              className="text-[19px] sm:text-[22px] font-bold tabular-nums mt-2 tracking-[-0.01em]"
+              style={{ ...MONO, color: m.color || 'var(--color-text-primary)' }}
+            >
               {m.flash !== undefined ? <PriceFlash value={m.flash}>{m.value}</PriceFlash> : m.value}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Chart + News side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
-        {/* Price Chart */}
-        <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">Price History (90d)</h2>
-            <div className="flex items-center gap-1.5">
-              {up ? <TrendingUp className="w-4 h-4 text-[var(--color-positive)]" /> : <TrendingDown className="w-4 h-4 text-[var(--color-negative)]" />}
-              <span className={`text-[14px] font-bold tabular-nums ${up ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`} style={MONO}>
-                {fmtPct(holding.dayChangePct)}
-              </span>
-            </div>
+      {/* ── Chart + News ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+        {/* Price chart */}
+        <div className="sovereign-card rounded-lg p-5 sm:p-6">
+          <div className="flex items-center justify-between mb-5">
+            <Eyebrow>Price history · 90d</Eyebrow>
+            <span
+              className="text-[14px] font-bold tabular-nums"
+              style={{ ...MONO, color: up ? 'var(--color-positive)' : 'var(--color-negative-text)' }}
+            >
+              {fmtPct(holding.dayChangePct)}
+            </span>
           </div>
           {priceHistory.length > 2 ? (
             <div className="h-64">
@@ -158,29 +249,29 @@ export function HoldingDetailClient({
               </ResponsiveContainer>
             </div>
           ) : (
-            <div className="h-64 flex items-center justify-center text-[var(--color-text-muted)] text-sm">
-              Not enough price data yet. Chart builds as market data syncs.
+            <div className="h-64 flex items-center justify-center text-center text-[13px] text-[var(--color-text-muted)] px-6">
+              Not enough price data yet. The chart builds as market data syncs.
             </div>
           )}
         </div>
 
         {/* News */}
-        <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5">
-          <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-4">Recent News</h2>
+        <div className="sovereign-card rounded-lg p-5 sm:p-6">
+          <Eyebrow>Recent news</Eyebrow>
           {news.length === 0 ? (
-            <p className="text-[13px] text-[var(--color-text-muted)]">No recent news for {holding.ticker}.</p>
+            <p className="text-[13px] text-[var(--color-text-muted)] mt-4">No recent news for {holding.ticker}.</p>
           ) : (
-            <div className="space-y-3 overflow-y-auto max-h-[280px] custom-scrollbar">
+            <div className="space-y-3.5 overflow-y-auto max-h-[300px] custom-scrollbar mt-4 -mr-1 pr-1">
               {news.map(n => (
-                <div key={n.id} className="border-b border-[var(--color-border-subtle)] pb-3">
-                  <h3 className="text-[14px] font-medium leading-snug">
+                <div key={n.id} className="border-b border-[var(--color-border-subtle)] pb-3.5 last:border-0 last:pb-0">
+                  <h3 className="text-[14px] font-medium leading-snug tracking-[-0.01em]">
                     {n.url ? (
                       <a href={n.url} target="_blank" rel="noopener noreferrer" className="text-[var(--color-text-primary)] hover:text-[var(--color-gold)] transition-colors">
                         {n.title}
                       </a>
                     ) : n.title}
                   </h3>
-                  <div className="text-[11px] text-[var(--color-text-muted)] mt-1" style={MONO}>
+                  <div className="font-mono text-[11px] text-[var(--color-text-muted)] mt-1.5 tracking-[0.02em]" style={MONO}>
                     {n.source} · {timeAgo(n.publishedAt)}
                   </div>
                 </div>
@@ -190,44 +281,54 @@ export function HoldingDetailClient({
         </div>
       </div>
 
-      {/* Why I Own This */}
-      {thesisEnabled && <WhyIOwnThis ticker={holding.ticker} />}
+      {/* ── The thesis on this holding (links to thesis detail inside) ── */}
+      {thesisEnabled && (
+        <div className="space-y-4">
+          <Eyebrow>The thesis on this holding</Eyebrow>
+          <WhyIOwnThis ticker={holding.ticker} />
+        </div>
+      )}
 
-      {/* Live Quote (if available) */}
+      {/* ── Live quote ── */}
       {quote && quote.c > 0 && (
-        <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5">
-          <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-3">Live Quote</h2>
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
+        <div className="sovereign-card rounded-lg p-5 sm:p-6">
+          <Eyebrow>Live quote</Eyebrow>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-x-5 gap-y-4 mt-4">
             {[
               { label: 'Last', value: `$${quote.c.toFixed(2)}` },
               { label: 'Open', value: `$${quote.o.toFixed(2)}` },
               { label: 'High', value: `$${quote.h.toFixed(2)}` },
               { label: 'Low', value: `$${quote.l.toFixed(2)}` },
-              { label: 'Prev Close', value: `$${quote.pc.toFixed(2)}` },
-              { label: 'Change', value: quote.d != null ? `${quote.d >= 0 ? '+' : ''}${quote.d.toFixed(2)}` : '—', color: (quote.d ?? 0) >= 0 ? 'var(--color-positive)' : 'var(--color-negative)' },
-              { label: 'Change %', value: quote.dp != null ? fmtPct(quote.dp) : '—', color: (quote.dp ?? 0) >= 0 ? 'var(--color-positive)' : 'var(--color-negative)' },
+              { label: 'Prev close', value: `$${quote.pc.toFixed(2)}` },
+              { label: 'Change', value: quote.d != null ? `${quote.d >= 0 ? '+' : ''}${quote.d.toFixed(2)}` : '—', color: (quote.d ?? 0) >= 0 ? 'var(--color-positive)' : 'var(--color-negative-text)' },
+              { label: 'Change %', value: quote.dp != null ? fmtPct(quote.dp) : '—', color: (quote.dp ?? 0) >= 0 ? 'var(--color-positive)' : 'var(--color-negative-text)' },
             ].map(m => (
               <div key={m.label}>
-                <div className="text-[10px] font-mono tracking-wider text-[var(--color-text-muted)] uppercase">{m.label}</div>
-                <div className="text-[15px] font-bold tabular-nums mt-0.5" style={{ ...MONO, color: m.color || 'var(--color-text-primary)' }}>{m.value}</div>
+                <div className="font-mono text-[10px] tracking-[0.16em] text-[var(--color-text-muted)] uppercase" style={MONO}>{m.label}</div>
+                <div className="text-[16px] font-bold tabular-nums mt-1" style={{ ...MONO, color: m.color || 'var(--color-text-primary)' }}>{m.value}</div>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Recent Transactions for this ticker */}
+      {/* ── Per-holding transactions ── */}
       {transactions.length > 0 && (
-        <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5">
-          <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-3">Recent Activity</h2>
-          <div className="space-y-2">
+        <div className="sovereign-card rounded-lg p-5 sm:p-6">
+          <Eyebrow>Activity in {holding.ticker}</Eyebrow>
+          <div className="mt-4">
             {transactions.map(t => (
-              <div key={t.id} className="flex items-center justify-between gap-3 py-2 border-b border-[var(--color-border-subtle)]">
+              <div key={t.id} className="flex items-center justify-between gap-3 py-3 border-b border-[var(--color-border-subtle)] last:border-0">
                 <div className="min-w-0 flex-1">
-                  <span className="text-[13px] sm:text-[14px] text-[var(--color-text-primary)] truncate block">{t.description || t.merchantName || 'Transaction'}</span>
-                  <span className="text-[11px] text-[var(--color-text-muted)] block sm:inline sm:ml-2" style={MONO}>{t.date}</span>
+                  <span className="text-[14px] text-[var(--color-text-primary)] truncate block tracking-[-0.01em]">
+                    {t.description || t.merchantName || 'Transaction'}
+                  </span>
+                  <span className="font-mono text-[11px] text-[var(--color-text-muted)] mt-0.5 block tracking-[0.02em]" style={MONO}>{t.date}</span>
                 </div>
-                <span className={`text-[13px] sm:text-[14px] font-bold tabular-nums shrink-0 ${t.amount >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-primary)]'}`} style={MONO}>
+                <span
+                  className="text-[15px] font-bold tabular-nums shrink-0"
+                  style={{ ...MONO, color: t.amount >= 0 ? 'var(--color-positive)' : 'var(--color-text-primary)' }}
+                >
                   {t.amount >= 0 ? '+' : ''}{fmt(t.amount)}
                 </span>
               </div>
