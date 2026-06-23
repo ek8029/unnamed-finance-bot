@@ -34,7 +34,7 @@ export default async function ActionsPage() {
 
     const { data: insights } = await supabase
       .from('insights')
-      .select('id, insight_type, priority, title, description, recommended_action, estimated_impact_amount, source_type, created_at, snoozed_until, is_archived, is_dismissed, is_useful')
+      .select('id, insight_type, priority, title, description, recommended_action, estimated_impact_amount, source_type, related_entity_type, created_at, snoozed_until, is_archived, is_dismissed, is_useful')
       .eq('user_id', user.id)
       .eq('is_dismissed', false)
       .eq('is_archived', false)
@@ -55,6 +55,7 @@ export default async function ActionsPage() {
         recommended_action: insight.recommended_action,
         estimated_impact: insight.estimated_impact_amount,
         source: insight.source_type,
+        related_entity_type: insight.related_entity_type,
         created_at: insight.created_at,
       }))
       .filter(insight => {
