@@ -51,10 +51,10 @@ export function TierLock({
           <div className="text-[15px] font-semibold text-[#FAFAFA] mb-1.5">
             {label ?? `Unlock with ${meta.label}`}
           </div>
-          {blurb && <p className="text-[13px] leading-[1.55] text-[#8A8A8A] m-0 mb-4">{blurb}</p>}
+          {blurb && <p className="text-[14px] leading-[1.55] text-[#8A8A8A] m-0 mb-4">{blurb}</p>}
           <Link
             href="/pricing"
-            className="inline-flex items-center justify-center rounded-md px-4 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] mt-1"
+            className="inline-flex items-center justify-center rounded-md px-4 py-2 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] mt-1"
             style={{ background: meta.color, color: '#0A0A0A', fontFamily: 'var(--font-mono)' }}
           >
             Unlock with {meta.label} · {meta.price}

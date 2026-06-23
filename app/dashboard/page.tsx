@@ -29,7 +29,7 @@ const CHART_COLORS = ['#E6B94D', '#7AA3C7', '#9FB89D', '#C8A165', '#8E7DC7', '#5
 function Eyebrow({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-muted)] ${className}`}
+      className={`text-[12px] uppercase tracking-[0.16em] text-[var(--color-text-muted)] ${className}`}
       style={MONO}
     >
       {children}
@@ -66,7 +66,7 @@ function KpiTile({
       <div className={`text-[25px] font-bold tracking-[-0.02em] leading-none tabular-nums ${valueColor}`}>
         {value}
       </div>
-      <div className={`text-[13px] font-semibold mt-[9px] tabular-nums ${deltaColor}`} style={MONO}>
+      <div className={`text-[14px] font-semibold mt-[9px] tabular-nums ${deltaColor}`} style={MONO}>
         {delta}
       </div>
     </div>
@@ -202,7 +202,7 @@ function GeneralMarketBrief() {
     >
       <div className="mb-3.5 flex items-center gap-2.5">
         <Sparkles size={15} strokeWidth={1.6} className="text-[var(--color-gold)]" />
-        <span className="text-[11px] uppercase tracking-[0.16em] text-[var(--color-gold)]" style={MONO}>
+        <span className="text-[12px] uppercase tracking-[0.16em] text-[var(--color-gold)]" style={MONO}>
           Market Brief
         </span>
         <span className="h-px flex-1" style={{ background: 'rgba(230,185,77,0.12)' }} />
@@ -225,7 +225,7 @@ function GeneralMarketBrief() {
                   ${b.q!.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
                 <div
-                  className={`mt-1.5 text-[14px] font-semibold tabular-nums ${
+                  className={`mt-1.5 text-[15px] font-semibold tabular-nums ${
                     b.q!.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'
                   }`}
                   style={MONO}
@@ -244,13 +244,13 @@ function GeneralMarketBrief() {
           {qqq ? `, with the Nasdaq 100 ${qqq.changePct >= 0 ? 'up' : 'down'} ${fmtPct2(qqq.changePct)}` : ''}.
         </p>
       ) : (
-        <p className="m-0 mb-3 flex-1 text-[14px] leading-[1.6] text-[var(--color-text-muted)]">
+        <p className="m-0 mb-3 flex-1 text-[15px] leading-[1.6] text-[var(--color-text-muted)]">
           Live market data is syncing. Today&apos;s brief lands once prices come through.
         </p>
       )}
 
       {topMover && (
-        <p className="m-0 mb-3 text-[14px] leading-[1.55] text-[var(--color-text-secondary)]">
+        <p className="m-0 mb-3 text-[15px] leading-[1.55] text-[var(--color-text-secondary)]">
           Notable mover:{' '}
           <span className="font-semibold text-[var(--color-gold)]" style={MONO}>
             {topMover.symbol}
@@ -261,7 +261,7 @@ function GeneralMarketBrief() {
       )}
 
       {rows.length > 0 && (
-        <p className="m-0 mb-4 text-[14px] leading-[1.55] text-[var(--color-text-secondary)]">
+        <p className="m-0 mb-4 text-[15px] leading-[1.55] text-[var(--color-text-secondary)]">
           {macroRead(spy?.changePct ?? 0, greens, stocks.length)}
         </p>
       )}
@@ -269,7 +269,7 @@ function GeneralMarketBrief() {
       {/* Inline upgrade nudge — soft, no hard lock */}
       <Link
         href="/pricing"
-        className="mt-auto flex items-center justify-between rounded-[5px] px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-gold)]"
+        className="mt-auto flex items-center justify-between rounded-[5px] px-3.5 py-2.5 text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--color-gold)]"
         style={{ ...MONO, border: '1px solid rgba(230,185,77,0.18)', background: 'rgba(230,185,77,0.08)' }}
       >
         Get a brief tailored to your portfolio with Pro <span>→</span>
@@ -425,14 +425,14 @@ export default function DashboardOverview() {
             <h1 className="text-[26px] font-bold tracking-[-0.025em] leading-[1.15] text-[var(--color-text-primary)] mb-3">
               Connect your brokerage
             </h1>
-            <p className="mx-auto mb-6 max-w-[420px] text-[14px] leading-[1.65] text-[var(--color-text-muted)]">
+            <p className="mx-auto mb-6 max-w-[420px] text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
               Helm reads your accounts over a read-only Plaid connection. It can never move money or
               place trades. Link an account to see your real net worth, allocation, and daily brief.
             </p>
 
             <div className="flex flex-col items-center gap-3">
               <PlaidLinkButton
-                className="w-full max-w-[280px] rounded-[5px] px-9 py-3.5 text-[14px] font-bold"
+                className="w-full max-w-[280px] rounded-[5px] px-9 py-3.5 text-[15px] font-bold"
                 onSuccess={() => router.refresh()}
                 onError={(msg) => setPlaidError(msg)}
                 onLinkError={(_code, message) => {
@@ -446,15 +446,15 @@ export default function DashboardOverview() {
                   enableDemo();
                   router.refresh();
                 }}
-                className="cursor-pointer bg-transparent text-[14px] font-semibold text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-gold)]"
+                className="cursor-pointer bg-transparent text-[15px] font-semibold text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-gold)]"
               >
                 Explore with demo data →
               </button>
             </div>
 
-            {plaidError && <p className="mt-3 text-[14px] text-[var(--color-negative-text)]">{plaidError}</p>}
+            {plaidError && <p className="mt-3 text-[15px] text-[var(--color-negative-text)]">{plaidError}</p>}
 
-            <p className="mt-7 text-[11px] tracking-[0.06em] text-[#5a5a5a]" style={MONO}>
+            <p className="mt-7 text-[12px] tracking-[0.06em] text-[#5a5a5a]" style={MONO}>
               12,000+ institutions · 256-bit encryption · via Plaid
             </p>
           </div>
@@ -485,13 +485,13 @@ export default function DashboardOverview() {
             <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-info-text)]" style={MONO}>
               Demo data
             </span>
-            <span className="hidden text-[14px] text-[var(--color-text-muted)] sm:inline">
+            <span className="hidden text-[15px] text-[var(--color-text-muted)] sm:inline">
               You&apos;re viewing a sample portfolio.
             </span>
           </div>
           <button
             onClick={disableDemo}
-            className="cursor-pointer text-[13px] font-semibold text-[var(--color-info-text)] transition-colors hover:brightness-110"
+            className="cursor-pointer text-[14px] font-semibold text-[var(--color-info-text)] transition-colors hover:brightness-110"
           >
             Connect →
           </button>
@@ -501,7 +501,7 @@ export default function DashboardOverview() {
       {/* ── Net-worth header ── */}
       <div className="mb-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
         <div>
-          <Eyebrow className="mb-2 !tracking-[0.2em] !text-[13px]">Net worth · All accounts · USD</Eyebrow>
+          <Eyebrow className="mb-2 !tracking-[0.2em] !text-[14px]">Net worth · All accounts · USD</Eyebrow>
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
             <div className="text-[46px] font-bold leading-none tracking-[-0.03em] tabular-nums">
               {formatCurrency(netWorth)}
@@ -515,7 +515,7 @@ export default function DashboardOverview() {
                 }`}
               >
                 <span
-                  className={`text-[14px] font-semibold tabular-nums ${
+                  className={`text-[15px] font-semibold tabular-nums ${
                     isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'
                   }`}
                   style={MONO}
@@ -529,7 +529,7 @@ export default function DashboardOverview() {
                   {netWorthChange !== null && netWorthPctChange !== null && ' · '}
                   {netWorthPctChange !== null && formatPercentage(netWorthPctChange)}
                 </span>
-                <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+                <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
                   {netWorthChangeLabel}
                 </span>
               </div>
@@ -537,7 +537,7 @@ export default function DashboardOverview() {
           </div>
         </div>
         <div className="flex flex-col items-end gap-2.5">
-          <div className="flex gap-1 text-[11px] uppercase tracking-[0.1em]" style={MONO}>
+          <div className="flex gap-1 text-[12px] uppercase tracking-[0.1em]" style={MONO}>
             {(['3M', '6M', '1Y', 'ALL'] as const).map((r) => (
               <button
                 key={r}
@@ -552,7 +552,7 @@ export default function DashboardOverview() {
               </button>
             ))}
           </div>
-          <div className="text-[11px] tracking-[0.06em] text-[var(--color-text-muted)]" style={MONO}>
+          <div className="text-[12px] tracking-[0.06em] text-[var(--color-text-muted)]" style={MONO}>
             ● Live
           </div>
         </div>
@@ -573,7 +573,7 @@ export default function DashboardOverview() {
                 </span>
                 {netWorthPctChange !== null && (
                   <span
-                    className={`text-[14px] font-semibold ${
+                    className={`text-[15px] font-semibold ${
                       isPositiveChange ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'
                     }`}
                     style={MONO}
@@ -587,7 +587,7 @@ export default function DashboardOverview() {
           {chartSeries.length >= 2 ? (
             <PerformanceChart series={chartSeries} gradientId="nwFill" />
           ) : (
-            <div className="flex h-[232px] items-center justify-center text-[13px] text-[var(--color-text-muted)]" style={MONO}>
+            <div className="flex h-[232px] items-center justify-center text-[14px] text-[var(--color-text-muted)]" style={MONO}>
               Not enough history yet — check back after a few days of snapshots.
             </div>
           )}
@@ -618,7 +618,7 @@ export default function DashboardOverview() {
           >
             <div className="mb-3.5 flex items-center gap-2.5">
               <Sparkles size={15} strokeWidth={1.6} className="text-[var(--color-gold)]" />
-              <span className="text-[11px] uppercase tracking-[0.16em] text-[var(--color-gold)]" style={MONO}>
+              <span className="text-[12px] uppercase tracking-[0.16em] text-[var(--color-gold)]" style={MONO}>
                 Helm Brief
               </span>
               <span className="h-px flex-1" style={{ background: 'rgba(230,185,77,0.12)' }} />
@@ -626,7 +626,7 @@ export default function DashboardOverview() {
 
             {feedInsights.length > 0 ? (
               <>
-                <p className="m-0 mb-3.5 text-[14px] leading-[1.62] text-[var(--color-text-primary)] text-pretty">
+                <p className="m-0 mb-3.5 text-[15px] leading-[1.62] text-[var(--color-text-primary)] text-pretty">
                   {feedInsights[0].summary}
                 </p>
                 <div className="mb-4 flex flex-col gap-2.5">
@@ -641,10 +641,10 @@ export default function DashboardOverview() {
                           : 'var(--color-info-text)';
                     return (
                       <div key={ins.id} className="flex items-start gap-2.5">
-                        <span className="text-[13px] leading-[1.4]" style={{ ...MONO, color }}>
+                        <span className="text-[14px] leading-[1.4]" style={{ ...MONO, color }}>
                           {glyph}
                         </span>
-                        <span className="text-[14px] leading-[1.5] text-[var(--color-text-secondary)]">
+                        <span className="text-[15px] leading-[1.5] text-[var(--color-text-secondary)]">
                           {ins.title}
                         </span>
                       </div>
@@ -653,7 +653,7 @@ export default function DashboardOverview() {
                 </div>
               </>
             ) : (
-              <p className="m-0 mb-4 flex-1 text-[14px] leading-[1.62] text-[var(--color-text-muted)]">
+              <p className="m-0 mb-4 flex-1 text-[15px] leading-[1.62] text-[var(--color-text-muted)]">
                 Helm is still gathering signal across your book. Your first brief lands once a full day
                 of data has synced.
               </p>
@@ -661,7 +661,7 @@ export default function DashboardOverview() {
 
             <button
               onClick={() => router.push('/dashboard/brief')}
-              className="mt-auto flex items-center justify-between rounded-[5px] px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-gold)]"
+              className="mt-auto flex items-center justify-between rounded-[5px] px-3.5 py-2.5 text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--color-gold)]"
               style={{ ...MONO, border: '1px solid rgba(230,185,77,0.18)', background: 'rgba(230,185,77,0.08)' }}
             >
               Read full brief <span>→</span>
@@ -723,7 +723,7 @@ export default function DashboardOverview() {
           </div>
           <div className="flex flex-col">
             {feedInsights.length === 0 && (
-              <div className="border-t border-[var(--color-border-subtle)] py-5 text-[14px] text-[var(--color-text-muted)]">
+              <div className="border-t border-[var(--color-border-subtle)] py-5 text-[15px] text-[var(--color-text-muted)]">
                 You&apos;re all clear. Helm keeps watching your book.
               </div>
             )}
@@ -747,10 +747,10 @@ export default function DashboardOverview() {
                     {pr.label}
                   </span>
                   <div className="flex-1">
-                    <div className="mb-[3px] text-[14px] font-semibold text-[var(--color-text-primary)]">
+                    <div className="mb-[3px] text-[15px] font-semibold text-[var(--color-text-primary)]">
                       {ins.title}
                     </div>
-                    <div className="text-[13px] leading-[1.5] text-[var(--color-text-muted)]">{ins.summary}</div>
+                    <div className="text-[14px] leading-[1.5] text-[var(--color-text-muted)]">{ins.summary}</div>
                   </div>
                   <span
                     className="whitespace-nowrap rounded-sm border border-[var(--color-border-base)] bg-white/[0.03] px-[7px] py-[3px] text-[9px] uppercase tracking-[0.1em] text-[var(--color-text-muted)]"
@@ -781,8 +781,8 @@ export default function DashboardOverview() {
                 {sectorSlices.map((s) => (
                   <div key={s.name} className="flex items-center gap-2">
                     <span className="h-2 w-2 rounded-sm" style={{ background: s.color }} />
-                    <span className="flex-1 text-[13px] text-[var(--color-text-secondary)]">{s.name}</span>
-                    <span className="text-[11px] tabular-nums" style={MONO}>
+                    <span className="flex-1 text-[14px] text-[var(--color-text-secondary)]">{s.name}</span>
+                    <span className="text-[12px] tabular-nums" style={MONO}>
                       {s.pct.toFixed(1)}%
                     </span>
                   </div>
@@ -790,7 +790,7 @@ export default function DashboardOverview() {
               </div>
             </div>
           ) : (
-            <div className="py-8 text-center text-[13px] text-[var(--color-text-muted)]">
+            <div className="py-8 text-center text-[14px] text-[var(--color-text-muted)]">
               No sector data yet.
             </div>
           )}
@@ -801,7 +801,7 @@ export default function DashboardOverview() {
           <Eyebrow className="mb-1.5 !text-[10px] !tracking-[0.14em]">Today&apos;s movers</Eyebrow>
           <div className="flex flex-col">
             {movers.length === 0 && (
-              <div className="border-t border-[var(--color-border-subtle)] py-4 text-[13px] text-[var(--color-text-muted)]">
+              <div className="border-t border-[var(--color-border-subtle)] py-4 text-[14px] text-[var(--color-text-muted)]">
                 No moves yet today.
               </div>
             )}
@@ -814,12 +814,12 @@ export default function DashboardOverview() {
                   onClick={() => router.push(`/dashboard/analyze/${h.ticker}`)}
                   className="flex cursor-pointer items-center gap-2.5 border-t border-[var(--color-border-subtle)] py-[11px] text-left"
                 >
-                  <span className="w-[46px] text-[13px] font-bold text-[var(--color-gold)]" style={MONO}>
+                  <span className="w-[46px] text-[14px] font-bold text-[var(--color-gold)]" style={MONO}>
                     {h.ticker}
                   </span>
-                  <span className="flex-1 truncate text-[11px] text-[var(--color-text-muted)]">{h.asset_name}</span>
+                  <span className="flex-1 truncate text-[12px] text-[var(--color-text-muted)]">{h.asset_name}</span>
                   <span
-                    className={`text-[13px] font-semibold tabular-nums ${
+                    className={`text-[14px] font-semibold tabular-nums ${
                       up ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'
                     }`}
                     style={MONO}
@@ -876,18 +876,18 @@ export default function DashboardOverview() {
                     onClick={() => router.push(`/dashboard/analyze/${h.ticker}`)}
                     className="cursor-pointer hover:bg-white/[0.015]"
                   >
-                    <td className="border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-[14px] font-bold text-[var(--color-gold)]" style={MONO}>
+                    <td className="border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-[15px] font-bold text-[var(--color-gold)]" style={MONO}>
                       {h.ticker}
                     </td>
-                    <td className="border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-[14px]">
+                    <td className="border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-[15px]">
                       {h.asset_name}
-                      {h.sector && <span className="text-[11px] text-[var(--color-text-muted)]"> · {h.sector}</span>}
+                      {h.sector && <span className="text-[12px] text-[var(--color-text-muted)]"> · {h.sector}</span>}
                     </td>
-                    <td className="border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-right text-[14px] tabular-nums" style={MONO}>
+                    <td className="border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-right text-[15px] tabular-nums" style={MONO}>
                       {formatCurrency(h.current_price || 0)}
                     </td>
                     <td
-                      className={`border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-right text-[14px] font-semibold tabular-nums ${
+                      className={`border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-right text-[15px] font-semibold tabular-nums ${
                         up ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'
                       }`}
                       style={MONO}
@@ -895,10 +895,10 @@ export default function DashboardOverview() {
                       {up ? '+' : ''}
                       {pct.toFixed(2)}%
                     </td>
-                    <td className="border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-right text-[14px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>
+                    <td className="border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-right text-[15px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>
                       {weight.toFixed(1)}%
                     </td>
-                    <td className="border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-right text-[14px] font-semibold tabular-nums" style={MONO}>
+                    <td className="border-b border-[var(--color-border-subtle)] px-5 py-3.5 text-right text-[15px] font-semibold tabular-nums" style={MONO}>
                       {formatCurrency(h.total_value || 0)}
                     </td>
                   </tr>

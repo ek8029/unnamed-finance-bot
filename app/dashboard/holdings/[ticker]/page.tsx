@@ -62,7 +62,7 @@ export default async function HoldingDetailPage({ params }: Props) {
           </p>
           <Link
             href={`/dashboard/analyze/${symbol}`}
-            className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[#0A0A0A] font-mono text-[11px] font-bold uppercase tracking-[0.12em] transition-all"
+            className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[#0A0A0A] font-mono text-[12px] font-bold uppercase tracking-[0.12em] transition-all"
             style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.25)' }}
           >
             Open analysis for {symbol}

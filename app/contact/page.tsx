@@ -27,13 +27,13 @@ export default function ContactPage() {
         <div className="max-w-3xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
             <HelmMark size={24} />
-            <span className="font-semibold text-sm tracking-[0.12em] group-hover:text-[var(--color-gold)] transition-colors">
+            <span className="font-semibold text-[15px] tracking-[0.12em] group-hover:text-[var(--color-gold)] transition-colors">
               HELM
             </span>
           </Link>
           <Link
             href="/signup"
-            className="h-9 px-5 rounded-full bg-[var(--color-gold)] text-[var(--color-text-inverse)] text-[13px] font-semibold flex items-center gap-1.5 hover:brightness-110 transition-all"
+            className="h-9 px-5 rounded-full bg-[var(--color-gold)] text-[var(--color-text-inverse)] text-[14px] font-semibold flex items-center gap-1.5 hover:brightness-110 transition-all"
           >
             Open terminal
             <ArrowRight className="w-3.5 h-3.5" />
@@ -62,7 +62,7 @@ export default function ContactPage() {
 
         {/* Direct email fallback */}
         <div className="mt-10 pt-8 border-t border-[var(--color-border-subtle)]">
-          <p className="text-sm text-[var(--color-text-muted)]">
+          <p className="text-[15px] text-[var(--color-text-muted)]">
             Or email us directly at{' '}
             <a
               href="mailto:support@helmterminal.dev"

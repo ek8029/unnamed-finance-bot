@@ -201,7 +201,7 @@ export default function RootLayout({
         {/* FAQPage schema moved to homepage only — see components/homepage/home-content.tsx */}
       </head>
       <body className={`${manrope.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable} font-sans`}>
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-[var(--color-gold)] focus:text-[var(--color-bg-base)] focus:rounded focus:text-sm focus:font-semibold">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-[var(--color-gold)] focus:text-[var(--color-bg-base)] focus:rounded focus:text-[15px] focus:font-semibold">
           Skip to main content
         </a>
         <RecoveryRedirect />

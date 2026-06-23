@@ -47,7 +47,7 @@ export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
       <DataPanelHeader>
         <div className="flex items-center justify-between">
           <DataPanelTitle>Accounts Overview</DataPanelTitle>
-          <div className="flex items-center gap-1.5 type-label text-xs">
+          <div className="flex items-center gap-1.5 type-label text-[13px]">
             {isPositive ? (
               <TrendingUp className="h-3.5 w-3.5 text-[var(--color-positive)]" />
             ) : (
@@ -71,7 +71,7 @@ export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
                 {formatCurrency(currentMonth.balance)}
               </div>
               <div className="flex items-center gap-1 mt-1">
-                <span className={`type-label text-xs ${isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+                <span className={`type-label text-[13px] ${isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
                   {isPositive ? '+' : ''}{formatCurrency(balanceChange)}
                 </span>
                 <span className="type-caption text-[var(--color-text-muted)]">this month</span>
@@ -85,7 +85,7 @@ export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
                   <ArrowUpRight className="h-3 w-3 text-[var(--color-positive)]" />
                   <div className="type-caption text-[var(--color-text-secondary)]">Inflows</div>
                 </div>
-                <div className="type-data text-[12px] sm:text-sm font-tabular text-[var(--color-positive)] truncate">
+                <div className="type-data text-[13px] sm:text-[15px] font-tabular text-[var(--color-positive)] truncate">
                   {formatCurrency(currentMonth.inflows)}
                 </div>
               </div>
@@ -94,7 +94,7 @@ export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
                   <ArrowDownRight className="h-3 w-3 text-[var(--color-negative)]" />
                   <div className="type-caption text-[var(--color-text-secondary)]">Outflows</div>
                 </div>
-                <div className="type-data text-[12px] sm:text-sm font-tabular text-[var(--color-negative)] truncate">
+                <div className="type-data text-[13px] sm:text-[15px] font-tabular text-[var(--color-negative)] truncate">
                   {formatCurrency(currentMonth.outflows)}
                 </div>
               </div>
@@ -110,11 +110,11 @@ export function AccountsOverview({ balanceHistory }: AccountsOverviewProps) {
 
             {/* 3-Month Averages */}
             <div className="pt-3 border-t border-[var(--color-border-subtle)] space-y-2">
-              <div className="flex justify-between type-label text-xs">
+              <div className="flex justify-between type-label text-[13px]">
                 <span className="text-[var(--color-text-secondary)]">3-Mo Avg Inflows</span>
                 <span className="text-[var(--color-text-primary)] font-tabular">{formatCurrency(avgInflows)}</span>
               </div>
-              <div className="flex justify-between type-label text-xs">
+              <div className="flex justify-between type-label text-[13px]">
                 <span className="text-[var(--color-text-secondary)]">3-Mo Avg Outflows</span>
                 <span className="text-[var(--color-text-primary)] font-tabular">{formatCurrency(avgOutflows)}</span>
               </div>

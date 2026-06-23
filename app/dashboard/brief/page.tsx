@@ -148,7 +148,7 @@ function SignalCard({ signal }: { signal: Signal }) {
       <div className="mb-[7px] text-[16px] font-semibold leading-[1.3] tracking-[-0.01em] text-[var(--color-text-primary)]">
         {signal.headline}
       </div>
-      <p className="m-0 text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
+      <p className="m-0 text-[15px] leading-[1.6] text-[var(--color-text-secondary)]">
         {signal.body}
       </p>
       {(signal.action || signal.source) && (
@@ -201,7 +201,7 @@ function GeneratingOverlay() {
       <div className="text-[16px] font-semibold text-[var(--color-text-primary)]">
         Helm is writing your brief…
       </div>
-      <div className="text-[11px] tracking-[0.04em] text-[var(--color-text-muted)]" style={MONO}>
+      <div className="text-[12px] tracking-[0.04em] text-[var(--color-text-muted)]" style={MONO}>
         Reading filings · pulling market data · scoring the thesis
       </div>
       <div className="mt-1.5 flex w-[min(460px,80%)] flex-col gap-[9px]">
@@ -538,17 +538,17 @@ export default function BriefPage() {
             <h1 className="mb-3 text-[26px] font-bold leading-[1.15] tracking-[-0.025em] text-[var(--color-text-primary)]">
               Connect your brokerage
             </h1>
-            <p className="mx-auto mb-6 max-w-[420px] text-[14px] leading-[1.65] text-[var(--color-text-muted)]">
+            <p className="mx-auto mb-6 max-w-[420px] text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
               Helm reads your accounts over a read-only Plaid connection. It can never move money or
               place trades. Link an account to get a personalized brief on what moved your book and why.
             </p>
             <Link
               href="/dashboard/accounts"
-              className="inline-flex items-center justify-center rounded-[5px] bg-[var(--color-gold)] px-9 py-3.5 text-[14px] font-bold text-[var(--color-bg-base)] transition-colors hover:bg-[var(--color-gold-hi)]"
+              className="inline-flex items-center justify-center rounded-[5px] bg-[var(--color-gold)] px-9 py-3.5 text-[15px] font-bold text-[var(--color-bg-base)] transition-colors hover:bg-[var(--color-gold-hi)]"
             >
               Connect account
             </Link>
-            <p className="mt-7 text-[11px] tracking-[0.06em] text-[#5a5a5a]" style={MONO}>
+            <p className="mt-7 text-[12px] tracking-[0.06em] text-[#5a5a5a]" style={MONO}>
               12,000+ institutions · 256-bit encryption · via Plaid
             </p>
           </div>
@@ -594,7 +594,7 @@ export default function BriefPage() {
   if (error || !data) {
     return (
       <div className="mx-auto flex min-h-[60vh] items-center justify-center" style={SCREEN}>
-        <div className="text-[14px] text-[var(--color-negative-text)]">
+        <div className="text-[15px] text-[var(--color-negative-text)]">
           Failed to load brief.{' '}
           <Link href="/dashboard" className="text-[var(--color-gold)]">Back to dashboard</Link>
         </div>
@@ -685,7 +685,7 @@ export default function BriefPage() {
               <div className="mb-1.5 text-[9px] uppercase tracking-[0.1em] text-[var(--color-text-muted)]" style={MONO}>
                 {c.label}
               </div>
-              <div className="text-[14px] font-bold tabular-nums" style={MONO}>{c.value}</div>
+              <div className="text-[15px] font-bold tabular-nums" style={MONO}>{c.value}</div>
               <div
                 className={`mt-[3px] text-[10px] ${c.pos ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}
                 style={MONO}
@@ -738,7 +738,7 @@ export default function BriefPage() {
                 <div className="mb-[7px] text-[16px] font-semibold leading-[1.3] tracking-[-0.01em] text-[var(--color-text-primary)]">
                   Your theses this morning
                 </div>
-                <p className="m-0 text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
+                <p className="m-0 text-[15px] leading-[1.6] text-[var(--color-text-secondary)]">
                   {data.thesisBrief.headline}
                 </p>
                 {data.thesisBrief.moved.length > 0 && (
@@ -810,10 +810,10 @@ export default function BriefPage() {
               <div className="mb-[6px] text-[15px] font-semibold leading-[1.3] tracking-[-0.01em] text-[var(--color-text-primary)]">
                 Make this brief yours
               </div>
-              <p className="m-0 text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
+              <p className="m-0 text-[15px] leading-[1.6] text-[var(--color-text-secondary)]">
                 Pro turns the general brief above into a conviction-led read on what moved your book and why, and tracks the theses behind every position, leading your brief the morning a pillar cracks.
               </p>
-              <span className="mt-3 inline-block text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-gold)]" style={MONO}>
+              <span className="mt-3 inline-block text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--color-gold)]" style={MONO}>
                 Upgrade to Pro →
               </span>
             </Link>
@@ -827,7 +827,7 @@ export default function BriefPage() {
           {/* No signals fallback */}
           {signals.length === 0 && !thesisLeads && !(data.thesisEnabled && data.thesisIntelligence.length > 0) && (
             <div className={`${CARD} px-5 py-[18px]`}>
-              <p className="m-0 text-[14px] leading-[1.6] text-[var(--color-text-muted)]">
+              <p className="m-0 text-[15px] leading-[1.6] text-[var(--color-text-muted)]">
                 Nothing needs your attention this morning. No concentration flags, no earnings inside the
                 window, and no harvestable losses across your book. Helm keeps watching.
               </p>
@@ -849,11 +849,11 @@ export default function BriefPage() {
                     className="flex items-center gap-2.5 py-[11px]"
                     style={i > 0 ? { borderTop: '1px solid var(--color-border-subtle)' } : undefined}
                   >
-                    <span className="w-[46px] text-[13px] font-bold text-[var(--color-gold)]" style={MONO}>{m.ticker}</span>
-                    <span className={`flex-1 text-[11px] ${m.dollarImpact >= 0 ? 'text-[var(--color-text-muted)]' : 'text-[var(--color-text-muted)]'}`}>
+                    <span className="w-[46px] text-[14px] font-bold text-[var(--color-gold)]" style={MONO}>{m.ticker}</span>
+                    <span className={`flex-1 text-[12px] ${m.dollarImpact >= 0 ? 'text-[var(--color-text-muted)]' : 'text-[var(--color-text-muted)]'}`}>
                       {m.dollarImpact >= 0 ? '+' : '−'}{fmt(Math.abs(m.dollarImpact))}
                     </span>
-                    <span className={`text-[13px] font-semibold ${m.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`} style={MONO}>
+                    <span className={`text-[14px] font-semibold ${m.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`} style={MONO}>
                       {fmtPct(m.changePct)}
                     </span>
                   </Link>
@@ -880,7 +880,7 @@ export default function BriefPage() {
                     value={watchlistInput}
                     onChange={(e) => setWatchlistInput(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5))}
                     placeholder="AAPL"
-                    className="w-16 rounded border border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] px-2 py-0.5 text-[11px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
+                    className="w-16 rounded border border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] px-2 py-0.5 text-[12px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
                     autoFocus
                     maxLength={5}
                   />
@@ -894,9 +894,9 @@ export default function BriefPage() {
               <div className="flex flex-col gap-3">
                 {watchlistSignals.map(w => (
                   <div key={w.ticker} className="group flex items-start gap-[11px]">
-                    <span className="w-[46px] text-[13px] font-bold text-[var(--color-text-primary)]" style={MONO}>{w.ticker}</span>
+                    <span className="w-[46px] text-[14px] font-bold text-[var(--color-text-primary)]" style={MONO}>{w.ticker}</span>
                     <div className="flex-1">
-                      <div className="text-[13px] leading-[1.4] text-[var(--color-text-secondary)]">
+                      <div className="text-[14px] leading-[1.4] text-[var(--color-text-secondary)]">
                         <PriceFlash value={w.price}>${w.price.toFixed(2)}</PriceFlash>
                         {' · '}
                         {w.changeAmt >= 0 ? '+' : '−'}{fmt(Math.abs(w.changeAmt))} today
@@ -921,7 +921,7 @@ export default function BriefPage() {
                 ))}
               </div>
             ) : (
-              <p className="m-0 text-[13px] leading-[1.5] text-[var(--color-text-muted)]">
+              <p className="m-0 text-[14px] leading-[1.5] text-[var(--color-text-muted)]">
                 Quiet across your watchlist. Helm flags moves over 1% here.
               </p>
             )}
@@ -940,7 +940,7 @@ export default function BriefPage() {
               <Sparkles size={12} strokeWidth={1.6} />
               Ask Helm
             </div>
-            <p className="m-0 mb-3 text-[13.5px] leading-[1.55] text-[var(--color-text-secondary)]">
+            <p className="m-0 mb-3 text-[14.5px] leading-[1.55] text-[var(--color-text-secondary)]">
               {biggestMover
                 ? `"What happens to my portfolio if ${biggestMover.ticker} drops 20%?"`
                 : '"What happens to my portfolio if the market drops 10%?"'}
@@ -958,7 +958,7 @@ export default function BriefPage() {
 
       {/* ══ Footer ══ */}
       <footer className="mt-10 border-t border-white/[0.06] pt-4">
-        <div className="flex flex-col justify-between gap-2 text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] sm:flex-row" style={MONO}>
+        <div className="flex flex-col justify-between gap-2 text-[12px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] sm:flex-row" style={MONO}>
           <span>Sources: Finazon · SEC EDGAR · Market News</span>
           <span>AI-generated summary · Not financial advice</span>
         </div>

@@ -18,13 +18,13 @@ export default function AddHoldingsPage() {
         <h1 className="text-[28px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)]">
           Add a holding by hand
         </h1>
-        <p className="text-[14px] text-[var(--color-text-muted)] leading-relaxed mt-1.5">
+        <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed mt-1.5">
           For assets Helm cannot sync automatically. Prices update via live market data, and cost
           basis unlocks tax-loss harvesting insights.
         </p>
         <div className="flex items-start gap-2 mt-4 p-3 rounded-lg bg-[var(--color-bg-inset)] border border-[var(--color-border-subtle)]">
-          <span className="text-[var(--color-gold)] text-[14px] mt-0.5 shrink-0">&#9432;</span>
-          <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed" style={{ fontFamily: 'var(--font-mono)' }}>
+          <span className="text-[var(--color-gold)] text-[15px] mt-0.5 shrink-0">&#9432;</span>
+          <p className="text-[14px] text-[var(--color-text-muted)] leading-relaxed" style={{ fontFamily: 'var(--font-mono)' }}>
             Manual holdings let you see positions immediately without waiting for brokerage sync. If you connect a brokerage via Plaid that holds the same tickers, the manual entries will be automatically replaced with your real brokerage data on the next sync.
           </p>
         </div>

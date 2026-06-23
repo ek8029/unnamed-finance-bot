@@ -301,9 +301,9 @@ export default function RSUCalculatorPage() {
             <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
           </Link>
           <div className="flex items-center gap-5">
-            <Link href="/analyze" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Analyze</Link>
-            <Link href="/pricing" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Pricing</Link>
-            <Link href="/signup" className="px-4 py-1.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Sign up</Link>
+            <Link href="/analyze" className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Analyze</Link>
+            <Link href="/pricing" className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Pricing</Link>
+            <Link href="/signup" className="px-4 py-1.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Sign up</Link>
           </div>
         </div>
       </nav>
@@ -347,15 +347,15 @@ export default function RSUCalculatorPage() {
                   />
                   <div className="flex items-center gap-2 mt-1.5">
                     {fetchLoading && (
-                      <span className="text-xs text-[var(--color-text-muted)]">Fetching price...</span>
+                      <span className="text-[13px] text-[var(--color-text-muted)]">Fetching price...</span>
                     )}
                     {!fetchLoading && fetchedPrice !== null && !priceOverride && (
-                      <span className="text-xs text-[var(--color-text-muted)]">
+                      <span className="text-[13px] text-[var(--color-text-muted)]">
                         Live: <span className="font-mono text-[var(--color-text-primary)]">${fetchedPrice.toFixed(2)}</span>
                       </span>
                     )}
                     {fetchError && (
-                      <span className="text-xs text-[var(--color-negative-text)]">{fetchError}</span>
+                      <span className="text-[13px] text-[var(--color-negative-text)]">{fetchError}</span>
                     )}
                   </div>
                 </div>
@@ -371,7 +371,7 @@ export default function RSUCalculatorPage() {
                     placeholder="1,000"
                     className="w-full px-4 py-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors font-mono text-2xl"
                   />
-                  <p className="text-xs text-[var(--color-text-muted)] mt-1.5">Total number of shares in your RSU grant.</p>
+                  <p className="text-[13px] text-[var(--color-text-muted)] mt-1.5">Total number of shares in your RSU grant.</p>
                 </div>
 
                 {/* Vesting schedule */}
@@ -380,7 +380,7 @@ export default function RSUCalculatorPage() {
                   <select
                     value={schedule}
                     onChange={(e) => setSchedule(e.target.value as ScheduleValue)}
-                    className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors cursor-pointer"
+                    className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded text-[15px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors cursor-pointer"
                   >
                     {SCHEDULES.map((s) => (
                       <option key={s.value} value={s.value}>{s.label}</option>
@@ -392,25 +392,25 @@ export default function RSUCalculatorPage() {
                 {schedule === 'custom' && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Total months</label>
+                      <label className="block text-[15px] font-medium text-[var(--color-text-secondary)] mb-2">Total months</label>
                       <input
                         type="text"
                         inputMode="numeric"
                         value={customMonths}
                         onChange={(e) => setCustomMonths(e.target.value.replace(/\D/g, ''))}
                         placeholder="48"
-                        className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded text-sm font-mono text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors"
+                        className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded text-[15px] font-mono text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Vest every N months</label>
+                      <label className="block text-[15px] font-medium text-[var(--color-text-secondary)] mb-2">Vest every N months</label>
                       <input
                         type="text"
                         inputMode="numeric"
                         value={customFrequency}
                         onChange={(e) => setCustomFrequency(e.target.value.replace(/\D/g, ''))}
                         placeholder="3"
-                        className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded text-sm font-mono text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors"
+                        className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded text-[15px] font-mono text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors"
                       />
                     </div>
                   </div>
@@ -423,7 +423,7 @@ export default function RSUCalculatorPage() {
                     type="date"
                     value={grantDate}
                     onChange={(e) => setGrantDate(e.target.value)}
-                    className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors cursor-pointer"
+                    className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded text-[15px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors cursor-pointer"
                   />
                 </div>
 
@@ -438,7 +438,7 @@ export default function RSUCalculatorPage() {
                           setPriceInput(fetchedPrice.toFixed(2));
                         }
                       }}
-                      className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors cursor-pointer"
+                      className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors cursor-pointer"
                     >
                       {priceOverride ? 'Use live price' : 'Override manually'}
                     </button>
@@ -458,7 +458,7 @@ export default function RSUCalculatorPage() {
                     />
                   </div>
                   {!priceOverride && fetchedPrice !== null && (
-                    <p className="text-xs text-[var(--color-text-muted)] mt-1.5">Auto-fetched from Finazon. Overriding locks the price.</p>
+                    <p className="text-[13px] text-[var(--color-text-muted)] mt-1.5">Auto-fetched from Finazon. Overriding locks the price.</p>
                   )}
                 </div>
 
@@ -470,7 +470,7 @@ export default function RSUCalculatorPage() {
                       <button
                         key={i}
                         onClick={() => setBracketIdx(i)}
-                        className={`px-4 py-2 rounded text-sm font-mono font-semibold transition-all duration-150 cursor-pointer border ${
+                        className={`px-4 py-2 rounded text-[15px] font-mono font-semibold transition-all duration-150 cursor-pointer border ${
                           i === bracketIdx
                             ? 'bg-[var(--color-gold)] border-[var(--color-gold)] text-[var(--color-bg-base)]'
                             : 'bg-[var(--color-bg-elevated)] border-[var(--color-border-base)] text-[var(--color-text-muted)] hover:border-[var(--color-gold-border)] hover:text-[var(--color-text-secondary)]'
@@ -480,7 +480,7 @@ export default function RSUCalculatorPage() {
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs text-[var(--color-text-muted)] mt-2">RSU income is taxed as ordinary income at vest.</p>
+                  <p className="text-[13px] text-[var(--color-text-muted)] mt-2">RSU income is taxed as ordinary income at vest.</p>
                 </div>
               </div>
 
@@ -488,7 +488,7 @@ export default function RSUCalculatorPage() {
               <button
                 onClick={handleCalculate}
                 disabled={!canCalculate}
-                className="group w-full flex items-center justify-center gap-3 py-4 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all duration-200 hover:brightness-110 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
+                className="group w-full flex items-center justify-center gap-3 py-4 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all duration-200 hover:brightness-110 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
               >
                 Calculate vesting schedule
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
@@ -510,7 +510,7 @@ export default function RSUCalculatorPage() {
                 >
                   {fmt(totalGrantValue)}
                 </div>
-                <div className="text-sm text-[var(--color-text-muted)] mt-4">
+                <div className="text-[15px] text-[var(--color-text-muted)] mt-4">
                   {fmtShares(sharesNum)} shares {ticker ? `of ${ticker}` : ''} at ${priceNum.toFixed(2)}/share
                 </div>
               </div>
@@ -538,8 +538,8 @@ export default function RSUCalculatorPage() {
                   Concentration Risk
                 </div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm text-[var(--color-text-secondary)]">Portfolio value for comparison</span>
-                  <span className="text-xs font-mono text-[var(--color-text-muted)]">{fmt(portfolioValue)}</span>
+                  <span className="text-[15px] text-[var(--color-text-secondary)]">Portfolio value for comparison</span>
+                  <span className="text-[13px] font-mono text-[var(--color-text-muted)]">{fmt(portfolioValue)}</span>
                 </div>
                 <input
                   type="range"
@@ -550,7 +550,7 @@ export default function RSUCalculatorPage() {
                   onChange={(e) => setPortfolioValue(Number(e.target.value))}
                   className="w-full accent-[var(--color-gold)] cursor-pointer h-1 mb-3"
                 />
-                <div className="flex items-center justify-between text-xs font-mono text-[var(--color-text-muted)]">
+                <div className="flex items-center justify-between text-[13px] font-mono text-[var(--color-text-muted)]">
                   <span>$50K</span>
                   <span>$2M</span>
                 </div>
@@ -559,10 +559,10 @@ export default function RSUCalculatorPage() {
                   <div className="mt-4 flex items-start gap-3 sovereign-card rounded border-l-2 border-l-[var(--color-gold)] p-4">
                     <AlertTriangle className="w-4 h-4 text-[var(--color-gold)] shrink-0 mt-0.5" />
                     <div>
-                      <div className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">
+                      <div className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1">
                         {concentrationPct.toFixed(0)}% concentration in a single stock
                       </div>
-                      <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+                      <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
                         A commonly cited guideline is keeping any single position under 10% of a portfolio.
                         At {fmt(portfolioValue)} portfolio value, your {ticker || 'RSU'} grant represents {concentrationPct.toFixed(1)}% of that total.
                       </p>
@@ -575,7 +575,7 @@ export default function RSUCalculatorPage() {
                     <div className="w-4 h-4 rounded-full bg-[var(--color-positive-muted)] flex items-center justify-center shrink-0 mt-0.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-positive)]" />
                     </div>
-                    <div className="text-sm text-[var(--color-text-muted)]">
+                    <div className="text-[15px] text-[var(--color-text-muted)]">
                       {concentrationPct.toFixed(1)}% of portfolio — within typical concentration guidelines.
                     </div>
                   </div>
@@ -585,7 +585,7 @@ export default function RSUCalculatorPage() {
               {/* Tax impact summary */}
               <div className="mb-8">
                 <div className="type-data-label mb-4">Tax Impact Summary</div>
-                <div className="space-y-3 text-[14px]">
+                <div className="space-y-3 text-[15px]">
                   <Row left="Total pre-tax grant value" right={fmt(totalGrantValue)} />
                   <Row left={`Federal tax at ${(taxRate * 100).toFixed(0)}%`} right={`-${fmt(totalTax)}`} rightColor="text-[var(--color-negative-text)]" />
                   <div className="h-px bg-[var(--color-border-subtle)]" />
@@ -600,14 +600,14 @@ export default function RSUCalculatorPage() {
                   Vesting Timeline ({vestEvents.length} events)
                 </div>
                 <div className="overflow-x-auto sovereign-card rounded">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-[15px]">
                     <thead>
                       <tr className="border-b border-[var(--color-border-base)]">
-                        <th className="text-left py-2.5 px-4 text-xs font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Date</th>
-                        <th className="text-right py-2.5 px-4 text-xs font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Shares</th>
-                        <th className="text-right py-2.5 px-4 text-xs font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Pre-Tax</th>
-                        <th className="text-right py-2.5 px-4 text-xs font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Est. Tax</th>
-                        <th className="text-right py-2.5 px-4 text-xs font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Post-Tax</th>
+                        <th className="text-left py-2.5 px-4 text-[13px] font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Date</th>
+                        <th className="text-right py-2.5 px-4 text-[13px] font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Shares</th>
+                        <th className="text-right py-2.5 px-4 text-[13px] font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Pre-Tax</th>
+                        <th className="text-right py-2.5 px-4 text-[13px] font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Est. Tax</th>
+                        <th className="text-right py-2.5 px-4 text-[13px] font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)] font-medium">Post-Tax</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -647,20 +647,20 @@ export default function RSUCalculatorPage() {
               <div className="space-y-3">
                 <Link
                   href="/signup"
-                  className="flex items-center justify-center gap-2.5 w-full py-4 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded hover:brightness-110 transition-all cursor-pointer"
+                  className="flex items-center justify-center gap-2.5 w-full py-4 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded hover:brightness-110 transition-all cursor-pointer"
                 >
                   Track your actual RSU exposure alongside your full portfolio <ArrowRight className="w-4 h-4" />
                 </Link>
                 <button
                   onClick={() => setShowResults(false)}
-                  className="w-full flex items-center justify-center gap-2 py-3 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] border border-[var(--color-border-base)] rounded transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 py-3 text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] border border-[var(--color-border-base)] rounded transition-colors cursor-pointer"
                 >
                   <ChevronRight className="w-3.5 h-3.5 rotate-180" /> Edit inputs
                 </button>
               </div>
 
               {/* Disclaimer */}
-              <div className="flex items-start gap-2 text-xs text-[var(--color-text-muted)] leading-relaxed mt-8">
+              <div className="flex items-start gap-2 text-[13px] text-[var(--color-text-muted)] leading-relaxed mt-8">
                 <Shield className="w-3 h-3 shrink-0 mt-0.5" />
                 <span>Estimates only. Does not account for state taxes, FICA, AMT, or stock price changes between now and vest dates. RSU income is taxed as ordinary income at the fair market value on the vesting date. Not tax or investment advice. Consult a qualified tax professional.</span>
               </div>

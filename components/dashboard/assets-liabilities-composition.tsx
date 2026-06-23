@@ -58,7 +58,7 @@ export function AssetsLiabilitiesComposition({
           <div className="space-y-2">
             {assets.map((item) => (
               <div key={item.name}>
-                <div className="flex justify-between type-label text-xs mb-1">
+                <div className="flex justify-between type-label text-[13px] mb-1">
                   <span className="text-[var(--color-text-secondary)]">{item.name}</span>
                   <span className="text-[var(--color-text-primary)] font-tabular">
                     {formatCurrency(item.value)} ({item.percentage.toFixed(1)}%)
@@ -81,7 +81,7 @@ export function AssetsLiabilitiesComposition({
           <div className="space-y-2">
             {liabilities.map((item) => (
               <div key={item.name}>
-                <div className="flex justify-between type-label text-xs mb-1">
+                <div className="flex justify-between type-label text-[13px] mb-1">
                   <span className="text-[var(--color-text-secondary)]">{item.name}</span>
                   <span className="text-[var(--color-text-primary)] font-tabular">
                     {formatCurrency(item.value)} ({item.percentage.toFixed(1)}%)

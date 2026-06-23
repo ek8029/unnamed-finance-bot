@@ -43,7 +43,7 @@ export function CompareSearch() {
           style={{ fontFamily: 'var(--font-mono)' }}
         />
         <span
-          className="text-[13px] font-semibold text-[var(--color-text-muted)] shrink-0"
+          className="text-[14px] font-semibold text-[var(--color-text-muted)] shrink-0"
           style={{ fontFamily: 'var(--font-mono)' }}
         >
           vs
@@ -63,12 +63,12 @@ export function CompareSearch() {
           onClick={handleCompare}
           disabled={!isValid}
           aria-label="Compare stocks"
-          className="px-5 py-3 bg-[var(--color-gold)] hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all shrink-0"
+          className="px-5 py-3 bg-[var(--color-gold)] hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all shrink-0"
         >
           Compare
         </button>
       </div>
-      <p className="text-[11px] text-[var(--color-text-muted)] text-center mt-2">
+      <p className="text-[12px] text-[var(--color-text-muted)] text-center mt-2">
         Enter any two US-listed ticker symbols (NYSE, NASDAQ, AMEX)
       </p>
     </div>

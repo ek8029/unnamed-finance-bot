@@ -83,7 +83,7 @@ export function ConvictionIndex({ intact, total, className = '' }: { intact: num
           <span className="font-mono text-[34px] leading-none font-semibold tabular-nums" style={{ ...MONO, color }}>
             {pct}%
           </span>
-          <span className="text-[12px] text-[#8A8A8A]">
+          <span className="text-[13px] text-[#8A8A8A]">
             {intact} of {total} pillars intact
           </span>
         </div>
@@ -96,7 +96,7 @@ export function ConvictionIndex({ intact, total, className = '' }: { intact: num
               14 days
             </div>
             <div
-              className="font-mono text-[13px] font-semibold tabular-nums"
+              className="font-mono text-[14px] font-semibold tabular-nums"
               style={{ ...MONO, color: deltaPts > 0 ? '#4ADE80' : deltaPts < 0 ? '#F87171' : '#6A6A6A' }}
             >
               {deltaPts > 0 ? '+' : ''}

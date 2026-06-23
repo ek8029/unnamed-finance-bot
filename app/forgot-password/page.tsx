@@ -53,7 +53,7 @@ export default function ForgotPasswordPage() {
           </p>
           <Link
             href="/login"
-            className="inline-flex items-center gap-1.5 mt-4 text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] text-sm transition-colors font-medium"
+            className="inline-flex items-center gap-1.5 mt-4 text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] text-[15px] transition-colors font-medium"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Back to sign in
@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-md text-sm">
+              <div className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-md text-[15px]">
                 {error}
               </div>
             )}
@@ -98,7 +98,7 @@ export default function ForgotPasswordPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <Link href="/login" className="inline-flex items-center gap-1.5 text-sm text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors font-medium">
+            <Link href="/login" className="inline-flex items-center gap-1.5 text-[15px] text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors font-medium">
               <ArrowLeft className="w-3.5 h-3.5" />
               Back to sign in
             </Link>

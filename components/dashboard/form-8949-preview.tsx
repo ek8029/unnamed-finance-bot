@@ -124,7 +124,7 @@ function PartTable({
         className="px-5 py-6 text-center"
         style={{ background: 'var(--color-bg-surface)' }}
       >
-        <p className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
+        <p className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>
           No {part.label === 'Part I' ? 'short-term' : 'long-term'} transactions for this tax year.
         </p>
       </div>
@@ -171,24 +171,24 @@ function PartTable({
               gap: '8px',
             }}
           >
-            <span className="text-[12px] text-[var(--color-text-primary)] truncate" style={MONO}>
+            <span className="text-[13px] text-[var(--color-text-primary)] truncate" style={MONO}>
               {row.description}
             </span>
-            <span className="text-[12px] text-[var(--color-text-secondary)] tabular-nums" style={MONO}>
+            <span className="text-[13px] text-[var(--color-text-secondary)] tabular-nums" style={MONO}>
               {row.dateAcquired}
             </span>
-            <span className="text-[12px] text-[var(--color-text-secondary)] tabular-nums" style={MONO}>
+            <span className="text-[13px] text-[var(--color-text-secondary)] tabular-nums" style={MONO}>
               {row.dateSold}
             </span>
-            <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums text-right" style={{ ...MONO, ...TNUM }}>
+            <span className="text-[13px] text-[var(--color-text-primary)] tabular-nums text-right" style={{ ...MONO, ...TNUM }}>
               {formatCurrency(row.proceeds)}
             </span>
-            <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums text-right" style={{ ...MONO, ...TNUM }}>
+            <span className="text-[13px] text-[var(--color-text-primary)] tabular-nums text-right" style={{ ...MONO, ...TNUM }}>
               {formatCurrency(row.costBasis)}
             </span>
             <span
               className={cn(
-                'text-[12px] font-semibold tabular-nums text-right',
+                'text-[13px] font-semibold tabular-nums text-right',
                 row.gainLoss >= 0
                   ? 'text-[var(--color-positive)]'
                   : 'text-[var(--color-negative)]',
@@ -203,12 +203,12 @@ function PartTable({
           {/* Mobile card */}
           <div className="md:hidden px-4 py-3 border-b border-[var(--color-border-subtle)]">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[13px] font-semibold text-[var(--color-text-primary)]" style={MONO}>
+              <span className="text-[14px] font-semibold text-[var(--color-text-primary)]" style={MONO}>
                 {row.description}
               </span>
               <span
                 className={cn(
-                  'text-[12px] font-semibold tabular-nums',
+                  'text-[13px] font-semibold tabular-nums',
                   row.gainLoss >= 0
                     ? 'text-[var(--color-positive)]'
                     : 'text-[var(--color-negative)]',
@@ -222,25 +222,25 @@ function PartTable({
             <div className="grid grid-cols-2 gap-y-1.5 gap-x-4">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>Acquired</span>
-                <span className="text-[11px] text-[var(--color-text-secondary)] tabular-nums" style={MONO}>
+                <span className="text-[12px] text-[var(--color-text-secondary)] tabular-nums" style={MONO}>
                   {row.dateAcquired}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>Sold</span>
-                <span className="text-[11px] text-[var(--color-text-secondary)] tabular-nums" style={MONO}>
+                <span className="text-[12px] text-[var(--color-text-secondary)] tabular-nums" style={MONO}>
                   {row.dateSold}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>Proceeds</span>
-                <span className="text-[11px] text-[var(--color-text-primary)] tabular-nums" style={{ ...MONO, ...TNUM }}>
+                <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={{ ...MONO, ...TNUM }}>
                   {formatCurrency(row.proceeds)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>Basis</span>
-                <span className="text-[11px] text-[var(--color-text-primary)] tabular-nums" style={{ ...MONO, ...TNUM }}>
+                <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={{ ...MONO, ...TNUM }}>
                   {formatCurrency(row.costBasis)}
                 </span>
               </div>
@@ -258,20 +258,20 @@ function PartTable({
           background: 'rgba(255,255,255,0.03)',
         }}
       >
-        <span className="text-[11px] uppercase tracking-wider font-bold text-[var(--color-text-secondary)]" style={MONO}>
+        <span className="text-[12px] uppercase tracking-wider font-bold text-[var(--color-text-secondary)]" style={MONO}>
           Totals
         </span>
         <span />
         <span />
-        <span className="text-[12px] font-bold text-[var(--color-text-primary)] tabular-nums text-right" style={{ ...MONO, ...TNUM }}>
+        <span className="text-[13px] font-bold text-[var(--color-text-primary)] tabular-nums text-right" style={{ ...MONO, ...TNUM }}>
           {formatCurrency(part.totalProceeds)}
         </span>
-        <span className="text-[12px] font-bold text-[var(--color-text-primary)] tabular-nums text-right" style={{ ...MONO, ...TNUM }}>
+        <span className="text-[13px] font-bold text-[var(--color-text-primary)] tabular-nums text-right" style={{ ...MONO, ...TNUM }}>
           {formatCurrency(part.totalCostBasis)}
         </span>
         <span
           className={cn(
-            'text-[12px] font-bold tabular-nums text-right',
+            'text-[13px] font-bold tabular-nums text-right',
             part.totalGainLoss >= 0
               ? 'text-[var(--color-positive)]'
               : 'text-[var(--color-negative)]',
@@ -289,12 +289,12 @@ function PartTable({
         style={{ background: 'rgba(255,255,255,0.03)' }}
       >
         <div className="flex items-center justify-between">
-          <span className="text-[11px] uppercase tracking-wider font-bold text-[var(--color-text-secondary)]" style={MONO}>
+          <span className="text-[12px] uppercase tracking-wider font-bold text-[var(--color-text-secondary)]" style={MONO}>
             Totals
           </span>
           <span
             className={cn(
-              'text-[13px] font-bold tabular-nums',
+              'text-[14px] font-bold tabular-nums',
               part.totalGainLoss >= 0
                 ? 'text-[var(--color-positive)]'
                 : 'text-[var(--color-negative)]',
@@ -384,12 +384,12 @@ export function Form8949Preview() {
         <div className="flex items-center gap-2.5">
           <FileText className="w-4 h-4 text-[var(--color-gold)]" />
           <span
-            className="text-[13px] font-semibold text-[var(--color-text-primary)]"
+            className="text-[14px] font-semibold text-[var(--color-text-primary)]"
           >
             Preview Form 8949
           </span>
           <span
-            className="text-[11px] text-[var(--color-text-muted)]"
+            className="text-[12px] text-[var(--color-text-muted)]"
             style={MONO}
           >
             Capital Gains and Losses
@@ -399,7 +399,7 @@ export function Form8949Preview() {
           {expanded && data && (
             <span
               className={cn(
-                'text-[12px] font-semibold tabular-nums',
+                'text-[13px] font-semibold tabular-nums',
                 data.grandTotalGainLoss >= 0
                   ? 'text-[var(--color-positive)]'
                   : 'text-[var(--color-negative)]',
@@ -433,7 +433,7 @@ export function Form8949Preview() {
           {loading && (
             <div className="flex items-center justify-center py-12 gap-3">
               <Loader2 className="w-4 h-4 text-[var(--color-gold)] animate-spin" />
-              <span className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>
+              <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>
                 Generating Form 8949...
               </span>
             </div>
@@ -443,7 +443,7 @@ export function Form8949Preview() {
           {error && error !== 'PRO_REQUIRED' && (
             <div className="flex items-center justify-center py-12 gap-2">
               <AlertTriangle className="w-4 h-4 text-[var(--color-warning-text)]" />
-              <span className="text-[13px] text-[var(--color-warning-text)]">
+              <span className="text-[14px] text-[var(--color-warning-text)]">
                 {error}
               </span>
             </div>
@@ -468,7 +468,7 @@ export function Form8949Preview() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleCopy}
-                    className="inline-flex items-center gap-1.5 px-3 py-2.5 sm:py-1.5 rounded text-[11px] font-medium motion-safe:transition-colors motion-safe:duration-150 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-2.5 sm:py-1.5 rounded text-[12px] font-medium motion-safe:transition-colors motion-safe:duration-150 cursor-pointer"
                     style={{
                       background: 'rgba(255,255,255,0.05)',
                       color: 'var(--color-text-secondary)',
@@ -490,7 +490,7 @@ export function Form8949Preview() {
                   </button>
                   <button
                     onClick={handleDownload}
-                    className="inline-flex items-center gap-1.5 px-3 py-2.5 sm:py-1.5 rounded text-[11px] font-semibold motion-safe:transition-colors motion-safe:duration-150 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-2.5 sm:py-1.5 rounded text-[12px] font-semibold motion-safe:transition-colors motion-safe:duration-150 cursor-pointer"
                     style={{
                       background: 'var(--color-gold)',
                       color: 'var(--color-bg-base)',
@@ -507,7 +507,7 @@ export function Form8949Preview() {
               <div className="border-b border-[var(--color-border-subtle)]">
                 <div className="px-5 py-3 border-b border-[var(--color-border-subtle)]" style={{ background: 'rgba(91, 141, 239, 0.04)' }}>
                   <span
-                    className="text-[11px] uppercase tracking-[0.12em] font-bold"
+                    className="text-[12px] uppercase tracking-[0.12em] font-bold"
                     style={{ ...MONO, color: '#5B8DEF' }}
                   >
                     Part I &mdash; Short-term
@@ -523,7 +523,7 @@ export function Form8949Preview() {
               <div className="border-b border-[var(--color-border-subtle)]">
                 <div className="px-5 py-3 border-b border-[var(--color-border-subtle)]" style={{ background: 'rgba(230, 185, 77, 0.04)' }}>
                   <span
-                    className="text-[11px] uppercase tracking-[0.12em] font-bold text-[var(--color-gold)]"
+                    className="text-[12px] uppercase tracking-[0.12em] font-bold text-[var(--color-gold)]"
                     style={MONO}
                   >
                     Part II &mdash; Long-term
@@ -541,7 +541,7 @@ export function Form8949Preview() {
                 style={{ background: 'rgba(255,255,255,0.02)' }}
               >
                 <span
-                  className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-text-secondary)]"
+                  className="text-[12px] uppercase tracking-[0.15em] font-bold text-[var(--color-text-secondary)]"
                   style={MONO}
                 >
                   Combined totals
@@ -551,7 +551,7 @@ export function Form8949Preview() {
                     <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>
                       Proceeds
                     </span>
-                    <span className="text-[12px] font-bold text-[var(--color-text-primary)] tabular-nums" style={{ ...MONO, ...TNUM }}>
+                    <span className="text-[13px] font-bold text-[var(--color-text-primary)] tabular-nums" style={{ ...MONO, ...TNUM }}>
                       {formatCurrency(data.grandTotalProceeds)}
                     </span>
                   </div>
@@ -559,7 +559,7 @@ export function Form8949Preview() {
                     <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>
                       Basis
                     </span>
-                    <span className="text-[12px] font-bold text-[var(--color-text-primary)] tabular-nums" style={{ ...MONO, ...TNUM }}>
+                    <span className="text-[13px] font-bold text-[var(--color-text-primary)] tabular-nums" style={{ ...MONO, ...TNUM }}>
                       {formatCurrency(data.grandTotalCostBasis)}
                     </span>
                   </div>
@@ -569,7 +569,7 @@ export function Form8949Preview() {
                     </span>
                     <span
                       className={cn(
-                        'text-[14px] font-bold tabular-nums',
+                        'text-[15px] font-bold tabular-nums',
                         data.grandTotalGainLoss >= 0
                           ? 'text-[var(--color-positive)]'
                           : 'text-[var(--color-negative)]',
@@ -601,10 +601,10 @@ export function Form8949Preview() {
           {data && data.transactionCount === 0 && !loading && (
             <div className="flex flex-col items-center justify-center py-12">
               <FileText className="w-8 h-8 text-[var(--color-text-muted)] opacity-40 mb-3" />
-              <p className="text-[14px] font-medium text-[var(--color-text-primary)] mb-1">
+              <p className="text-[15px] font-medium text-[var(--color-text-primary)] mb-1">
                 No realized transactions
               </p>
-              <p className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
+              <p className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>
                 Form 8949 data will appear after you sell securities.
               </p>
             </div>

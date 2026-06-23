@@ -192,7 +192,7 @@ function DateDropdown({
         aria-label={`Date range: ${activeLabel}`}
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="flex items-center gap-2 px-3.5 py-2.5 rounded-md border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] text-[14px] text-[var(--color-text-secondary)] hover:border-[var(--color-gold-border)] motion-safe:transition-colors"
+        className="flex items-center gap-2 px-3.5 py-2.5 rounded-md border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] text-[15px] text-[var(--color-text-secondary)] hover:border-[var(--color-gold-border)] motion-safe:transition-colors"
       >
         <Calendar className="w-4 h-4" />
         <span>{activeLabel}</span>
@@ -214,7 +214,7 @@ function DateDropdown({
                 onSelect(p.key);
                 setOpen(false);
               }}
-              className={`w-full text-left px-3.5 py-2.5 text-[14px] motion-safe:transition-colors hover:bg-[var(--color-bg-overlay)] ${
+              className={`w-full text-left px-3.5 py-2.5 text-[15px] motion-safe:transition-colors hover:bg-[var(--color-bg-overlay)] ${
                 activePreset === p.key
                   ? 'text-[var(--color-gold)] font-medium'
                   : 'text-[var(--color-text-primary)]'
@@ -298,13 +298,13 @@ function ConnectBrokerage() {
         <h1 className="text-[24px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)] mb-3">
           Connect your brokerage
         </h1>
-        <p className="text-[14px] leading-[1.65] text-[var(--color-text-muted)] mb-6">
+        <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)] mb-6">
           Link an account and Helm builds your net worth, holdings, taxes and intelligence automatically.{' '}
           <span className="text-[var(--color-positive)]">Read-only access</span> &mdash; Helm can never move money or place trades.
         </p>
         <Link
           href="/dashboard/accounts"
-          className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[#0A0A0A] font-mono text-[11px] font-bold uppercase tracking-[0.12em] transition-all"
+          className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[#0A0A0A] font-mono text-[12px] font-bold uppercase tracking-[0.12em] transition-all"
           style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.25)' }}
         >
           Connect account
@@ -524,7 +524,7 @@ export default function TransactionsPage() {
           <h2 className="font-sans text-[18px] font-semibold text-[var(--color-text-primary)] mb-2">
             Error loading transactions
           </h2>
-          <p className="text-[14px] text-[var(--color-text-secondary)]">{error}</p>
+          <p className="text-[15px] text-[var(--color-text-secondary)]">{error}</p>
         </div>
       </div>
     );
@@ -546,7 +546,7 @@ export default function TransactionsPage() {
               Every move, in one ledger
             </h1>
             <div
-              className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-[var(--color-text-muted)]"
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] text-[var(--color-text-muted)]"
               aria-live="polite"
               aria-atomic="true"
             >
@@ -600,7 +600,7 @@ export default function TransactionsPage() {
                   }}
                   placeholder="Search transactions..."
                   aria-label="Search transactions"
-                  className="w-full sm:w-56 pl-9 pr-9 py-2.5 rounded-md border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] text-[14px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30"
+                  className="w-full sm:w-56 pl-9 pr-9 py-2.5 rounded-md border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] text-[15px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30"
                 />
                 {searchInput && (
                   <button
@@ -632,7 +632,7 @@ export default function TransactionsPage() {
               onClick={() => exportToCsv(filtered)}
               disabled={loading || filtered.length === 0}
               aria-label="Export transactions to CSV"
-              className="flex items-center gap-2 px-3.5 py-2.5 rounded-md border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] text-[14px] text-[var(--color-text-secondary)] hover:border-[var(--color-gold-border)] disabled:opacity-40 disabled:cursor-not-allowed motion-safe:transition-colors"
+              className="flex items-center gap-2 px-3.5 py-2.5 rounded-md border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] text-[15px] text-[var(--color-text-secondary)] hover:border-[var(--color-gold-border)] disabled:opacity-40 disabled:cursor-not-allowed motion-safe:transition-colors"
               title="Export CSV"
             >
               <Download className="w-4 h-4" />
@@ -663,7 +663,7 @@ export default function TransactionsPage() {
                 {formatCurrency(summary.netFlow)}
               </p>
             )}
-            <p className="text-[13px] text-[var(--color-text-muted)]">
+            <p className="text-[14px] text-[var(--color-text-muted)]">
               {loading ? '' : `${pagination.total} transactions`}
             </p>
           </div>
@@ -678,7 +678,7 @@ export default function TransactionsPage() {
                 {formatCurrency(tileSummary.bought)}
               </p>
             )}
-            <p className="text-[13px] text-[var(--color-text-muted)]">
+            <p className="text-[14px] text-[var(--color-text-muted)]">
               {loading ? '' : `${tileSummary.buyCount} trade${tileSummary.buyCount !== 1 ? 's' : ''}`}
             </p>
           </div>
@@ -693,7 +693,7 @@ export default function TransactionsPage() {
                 {formatCurrency(tileSummary.sold)}
               </p>
             )}
-            <p className="text-[13px] text-[var(--color-text-muted)]">
+            <p className="text-[14px] text-[var(--color-text-muted)]">
               {loading ? '' : `${tileSummary.sellCount} trade${tileSummary.sellCount !== 1 ? 's' : ''}`}
             </p>
           </div>
@@ -708,7 +708,7 @@ export default function TransactionsPage() {
                 {formatCurrency(tileSummary.dividends)}
               </p>
             )}
-            <p className="text-[13px] text-[var(--color-text-muted)]">
+            <p className="text-[14px] text-[var(--color-text-muted)]">
               {loading ? '' : `${tileSummary.divCount} payment${tileSummary.divCount !== 1 ? 's' : ''}`}
             </p>
           </div>
@@ -723,7 +723,7 @@ export default function TransactionsPage() {
                 {formatCurrency(tileSummary.fees)}
               </p>
             )}
-            <p className="text-[13px] text-[var(--color-text-muted)]">
+            <p className="text-[14px] text-[var(--color-text-muted)]">
               {loading ? '' : `${tileSummary.feeCount} charge${tileSummary.feeCount !== 1 ? 's' : ''}`}
             </p>
           </div>
@@ -740,7 +740,7 @@ export default function TransactionsPage() {
               aria-selected={chipFilter === c.key}
               aria-label={`Filter by ${c.label}`}
               onClick={() => setChipFilter(c.key)}
-              className={`px-3.5 py-2.5 sm:py-2 rounded-full text-[14px] font-medium motion-safe:transition-all border ${
+              className={`px-3.5 py-2.5 sm:py-2 rounded-full text-[15px] font-medium motion-safe:transition-all border ${
                 chipFilter === c.key
                   ? 'bg-[var(--color-gold)]/15 border-[var(--color-gold)]/40 text-[var(--color-gold)]'
                   : 'bg-[var(--color-bg-surface)] border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold-border)] hover:text-[var(--color-text-primary)]'
@@ -763,7 +763,7 @@ export default function TransactionsPage() {
               aria-label={`Filter by account: ${name}`}
               aria-pressed={accountChip === name}
               onClick={() => setAccountChip(accountChip === name ? '' : name)}
-              className={`px-3.5 py-2.5 sm:py-2 rounded-full text-[14px] font-medium motion-safe:transition-all border ${
+              className={`px-3.5 py-2.5 sm:py-2 rounded-full text-[15px] font-medium motion-safe:transition-all border ${
                 accountChip === name
                   ? 'bg-[var(--color-gold)]/15 border-[var(--color-gold)]/40 text-[var(--color-gold)]'
                   : 'bg-[var(--color-bg-surface)] border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold-border)] hover:text-[var(--color-text-primary)]'
@@ -779,7 +779,7 @@ export default function TransactionsPage() {
               type="button"
               onClick={clearAllFilters}
               aria-label="Clear all filters"
-              className="flex items-center gap-1 px-2.5 py-2.5 sm:py-2 text-[14px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] motion-safe:transition-colors"
+              className="flex items-center gap-1 px-2.5 py-2.5 sm:py-2 text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] motion-safe:transition-colors"
             >
               <X className="w-3.5 h-3.5" />
               Clear
@@ -801,12 +801,12 @@ export default function TransactionsPage() {
             {hasActiveFilters ? (
               <button
                 onClick={clearAllFilters}
-                className="text-[14px] text-[var(--color-gold)] hover:underline"
+                className="text-[15px] text-[var(--color-gold)] hover:underline"
               >
                 Clear all filters
               </button>
             ) : (
-              <p className="text-[14px] text-[var(--color-text-muted)]">
+              <p className="text-[15px] text-[var(--color-text-muted)]">
                 Once your accounts sync, every move lands here.
               </p>
             )}
@@ -817,11 +817,11 @@ export default function TransactionsPage() {
               <div key={group.dateStr}>
                 {/* Date group label + daily net */}
                 <div className="flex items-center justify-between gap-3 mb-2.5 px-0.5">
-                  <h3 className="font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--color-text-muted)] m-0">
+                  <h3 className="font-mono text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--color-text-muted)] m-0">
                     {formatGroupDate(group.dateStr)}
                   </h3>
                   <span
-                    className={`font-mono text-[13px] font-semibold tabular-nums ${
+                    className={`font-mono text-[14px] font-semibold tabular-nums ${
                       group.dailyNet >= 0
                         ? 'text-[var(--color-positive)]'
                         : 'text-[var(--color-negative-text)]'
@@ -884,7 +884,7 @@ export default function TransactionsPage() {
                             )}
                           </div>
                           {metaParts.length > 0 && (
-                            <div className="font-mono text-[13px] text-[var(--color-text-muted)] truncate mt-1 flex items-center gap-1.5">
+                            <div className="font-mono text-[14px] text-[var(--color-text-muted)] truncate mt-1 flex items-center gap-1.5">
                               {tx.is_pending && <Clock className="w-3 h-3 flex-shrink-0" />}
                               <span className="truncate">{metaParts.join(' · ')}</span>
                             </div>
@@ -894,7 +894,7 @@ export default function TransactionsPage() {
                         {/* Right-aligned signed amount */}
                         <div className="flex-shrink-0 text-right">
                           {isSync ? (
-                            <span className="font-mono text-[14px] text-[var(--color-text-muted)]">&mdash;</span>
+                            <span className="font-mono text-[15px] text-[var(--color-text-muted)]">&mdash;</span>
                           ) : (
                             <span
                               className={`font-mono text-[15px] font-semibold tabular-nums ${
@@ -921,7 +921,7 @@ export default function TransactionsPage() {
                 aria-label="Transaction pagination"
                 className="flex items-center justify-between pt-2"
               >
-                <p className="text-[13px] text-[var(--color-text-muted)] font-mono">
+                <p className="text-[14px] text-[var(--color-text-muted)] font-mono">
                   Page {pagination.page} of {pagination.totalPages}
                 </p>
                 <div className="flex items-center gap-1.5">
@@ -951,7 +951,7 @@ export default function TransactionsPage() {
                         onClick={() => goToPage(pageNum)}
                         aria-label={`Go to page ${pageNum}`}
                         aria-current={pageNum === pagination.page ? 'page' : undefined}
-                        className={`w-9 h-9 sm:w-8 sm:h-8 rounded text-[14px] font-mono motion-safe:transition-colors ${
+                        className={`w-9 h-9 sm:w-8 sm:h-8 rounded text-[15px] font-mono motion-safe:transition-colors ${
                           pageNum === pagination.page
                             ? 'bg-[var(--color-gold)] text-black font-semibold'
                             : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-overlay)]'

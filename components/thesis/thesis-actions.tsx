@@ -102,7 +102,7 @@ export function ThesisActions({ thesisId, className = '' }: { thesisId: string; 
         <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#E6B94D]" style={MONO}>
           Intelligence
         </span>
-        <span className="font-mono text-[11px] text-[#6A6A6A]" style={MONO}>
+        <span className="font-mono text-[12px] text-[#6A6A6A]" style={MONO}>
           {rows.length} grounded in your thesis
         </span>
         <ChevronDown size={15} className={`ml-auto text-[#6A6A6A] transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -136,13 +136,13 @@ export function ThesisActions({ thesisId, className = '' }: { thesisId: string; 
                           {meta.label}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <div className="text-[14px] font-semibold text-[#FAFAFA] leading-snug">{a.title}</div>
-                          <p className="text-[12.5px] leading-[1.55] text-[#9A9A9A] mt-1 mb-0">{a.description}</p>
+                          <div className="text-[15px] font-semibold text-[#FAFAFA] leading-snug">{a.title}</div>
+                          <p className="text-[13.5px] leading-[1.55] text-[#9A9A9A] mt-1 mb-0">{a.description}</p>
                           {a.recommended_action && (
-                            <p className="text-[12.5px] leading-[1.55] text-[#CFCFCF] mt-2 mb-0">{a.recommended_action}</p>
+                            <p className="text-[13.5px] leading-[1.55] text-[#CFCFCF] mt-2 mb-0">{a.recommended_action}</p>
                           )}
                           {a.estimated_impact != null && a.estimated_impact > 0 && (
-                            <div className="font-mono text-[11px] text-[#4ADE80] mt-2" style={MONO}>
+                            <div className="font-mono text-[12px] text-[#4ADE80] mt-2" style={MONO}>
                               ~${a.estimated_impact.toLocaleString()} potential tax impact
                             </div>
                           )}

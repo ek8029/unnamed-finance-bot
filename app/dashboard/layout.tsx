@@ -60,12 +60,12 @@ function ConnectBanner() {
       <div className="max-w-[1600px] mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)] shrink-0" />
-          <span className="text-[14px] text-[var(--color-text-primary)] truncate">
+          <span className="text-[15px] text-[var(--color-text-primary)] truncate">
             You&apos;re viewing <strong>sample data</strong>.
           </span>
           <Link
             href="/dashboard/accounts"
-            className="text-[14px] font-semibold text-[var(--color-gold)] hover:underline shrink-0"
+            className="text-[15px] font-semibold text-[var(--color-gold)] hover:underline shrink-0"
           >
             <span className="hidden sm:inline">Connect your account to see your real portfolio →</span>
             <span className="sm:hidden">Connect account →</span>
@@ -340,7 +340,7 @@ export default function DashboardLayout({
             : item.name.toLowerCase().replace(/\s+/g, '-')
         }
         aria-current={active ? 'page' : undefined}
-        className="group/nav flex items-center gap-[11px] py-[9px] pl-[13px] pr-3 text-[14px] tracking-[-0.005em] no-underline"
+        className="group/nav flex items-center gap-[11px] py-[9px] pl-[13px] pr-3 text-[15px] tracking-[-0.005em] no-underline"
         style={{
           borderLeft: `2px solid ${active ? 'var(--color-gold)' : 'transparent'}`,
           borderRadius: '0 5px 5px 0',
@@ -426,7 +426,7 @@ export default function DashboardLayout({
           <input
             autoFocus
             placeholder="Jump to a page, ticker, or run a command…"
-            className="flex-1 bg-transparent border-none outline-none text-[14px] text-[var(--color-text-primary)]"
+            className="flex-1 bg-transparent border-none outline-none text-[15px] text-[var(--color-text-primary)]"
             style={{ fontFamily: 'var(--font-sans)' }}
           />
           <span
@@ -445,7 +445,7 @@ export default function DashboardLayout({
               key={row.name}
               href={row.href}
               onClick={() => setPaletteOpen(false)}
-              className="palette-row flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-[14px] text-left text-[var(--color-text-secondary)] no-underline"
+              className="palette-row flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-[15px] text-left text-[var(--color-text-secondary)] no-underline"
               style={{ fontFamily: 'var(--font-sans)' }}
             >
               <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)' }}>◇</span>
@@ -467,7 +467,7 @@ export default function DashboardLayout({
               key={row.name}
               href={row.href}
               onClick={() => setPaletteOpen(false)}
-              className="palette-row flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-[14px] text-left text-[var(--color-text-secondary)] no-underline"
+              className="palette-row flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-[15px] text-left text-[var(--color-text-secondary)] no-underline"
               style={{ fontFamily: 'var(--font-sans)' }}
             >
               <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-gold)' }}>{row.glyph}</span>
@@ -553,7 +553,7 @@ export default function DashboardLayout({
                 href={PORTFOLIO_PARENT.href}
                 data-tour="portfolio"
                 aria-current={isActive(PORTFOLIO_PARENT.href) ? 'page' : undefined}
-                className="flex-1 flex items-center gap-[11px] py-[9px] pl-[13px] pr-1 text-[14px] tracking-[-0.005em] no-underline"
+                className="flex-1 flex items-center gap-[11px] py-[9px] pl-[13px] pr-1 text-[15px] tracking-[-0.005em] no-underline"
                 style={{
                   borderLeft: `2px solid ${isActive(PORTFOLIO_PARENT.href) ? 'var(--color-gold)' : 'transparent'}`,
                   borderRadius: '0 5px 5px 0',
@@ -584,7 +584,7 @@ export default function DashboardLayout({
                     <Link
                       key={child.name}
                       href={child.href}
-                      className="flex items-center gap-2.5 py-[7px] pr-3 pl-[34px] text-[13px] rounded-[5px] no-underline"
+                      className="flex items-center gap-2.5 py-[7px] pr-3 pl-[34px] text-[14px] rounded-[5px] no-underline"
                       style={{
                         color: childActive ? 'var(--color-gold)' : 'var(--color-text-muted)',
                         fontWeight: childActive ? 600 : 500,
@@ -645,7 +645,7 @@ export default function DashboardLayout({
                 >
                   {acct.initial}
                 </span>
-                <span className="flex-1 text-[11px] text-[var(--color-text-secondary)] truncate">{acct.name}</span>
+                <span className="flex-1 text-[12px] text-[var(--color-text-secondary)] truncate">{acct.name}</span>
                 <span className="text-[10px] text-[var(--color-text-muted)] tabular-nums" style={{ fontFamily: 'var(--font-mono)' }}>{acct.bal}</span>
               </div>
             ))}
@@ -659,14 +659,14 @@ export default function DashboardLayout({
             className="w-full flex items-center gap-2.5 px-3.5 py-[13px] hover:bg-[var(--color-bg-overlay)]/40 transition-colors"
           >
             <div
-              className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-[11px] font-bold text-black shrink-0"
+              className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-[12px] font-bold text-black shrink-0"
               style={{ background: 'linear-gradient(135deg,#E6B94D,#1A2E3F)' }}
               aria-hidden="true"
             >
               {profile?.initials || 'JD'}
             </div>
             <div className="flex-1 min-w-0 text-left">
-              <div className="text-[13px] font-semibold truncate text-[var(--color-text-primary)]">
+              <div className="text-[14px] font-semibold truncate text-[var(--color-text-primary)]">
                 {profile?.fullName || 'Loading…'}
               </div>
               <div
@@ -683,14 +683,14 @@ export default function DashboardLayout({
           {menuOpen && (
             <div className="absolute bottom-[68px] left-3 right-3 bg-[var(--color-bg-elevated)] rounded shadow-xl z-50 overflow-hidden border border-[var(--color-border-base)]">
               <div className="px-4 py-3 border-b border-[var(--color-border-base)]">
-                <p className="text-sm font-medium text-[var(--color-text-primary)]">{profile?.fullName || 'User'}</p>
-                <p className="text-xs text-[var(--color-text-muted)] truncate">{profile?.email || ''}</p>
+                <p className="text-[15px] font-medium text-[var(--color-text-primary)]">{profile?.fullName || 'User'}</p>
+                <p className="text-[13px] text-[var(--color-text-muted)] truncate">{profile?.email || ''}</p>
               </div>
               <div className="py-1">
                 <Link
                   href="/pricing"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
+                  className="flex items-center gap-3 px-4 py-2.5 text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
                 >
                   <TrendingUp className="w-4 h-4" />
                   <span>Pricing</span>
@@ -700,7 +700,7 @@ export default function DashboardLayout({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
+                  className="flex items-center gap-3 px-4 py-2.5 text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
                 >
                   <BookOpen className="w-4 h-4" />
                   <span>Blog</span>
@@ -710,7 +710,7 @@ export default function DashboardLayout({
                 <button
                   onClick={() => { setMenuOpen(false); handleLogout(); }}
                   disabled={loggingOut}
-                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-[var(--color-negative)] hover:text-[var(--color-negative)] hover:bg-[var(--color-negative)]/5 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-[15px] text-[var(--color-negative)] hover:text-[var(--color-negative)] hover:bg-[var(--color-negative)]/5 transition-colors disabled:opacity-50"
                 >
                   {loggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
                   <span>{loggingOut ? 'Signing out...' : 'Sign out'}</span>
@@ -757,7 +757,7 @@ export default function DashboardLayout({
               style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
             >
               <Search size={14} strokeWidth={1.6} className="shrink-0" />
-              <span className="flex-1 text-[13.5px] truncate">Search tickers, accounts, commands…</span>
+              <span className="flex-1 text-[14.5px] truncate">Search tickers, accounts, commands…</span>
               <span
                 className="text-[9px] px-1.5 py-0.5 rounded-[3px] shrink-0"
                 style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}

@@ -57,7 +57,7 @@ export function DashboardMockup({ momentIndex = 0 }: { momentIndex?: number }) {
         {moment.cards.map((card) => (
           <div key={card.label} className="bg-white/[0.03] rounded-lg p-2.5">
             <div className="text-[8px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-mono mb-0.5">{card.label}</div>
-            <div className={`font-mono font-bold text-sm md:text-base ${card.valueColor} truncate`} title={card.value}>{card.value}</div>
+            <div className={`font-mono font-bold text-[15px] md:text-base ${card.valueColor} truncate`} title={card.value}>{card.value}</div>
             <div className={`text-[9px] font-mono mt-0.5 ${card.subColor}`}>{card.sub}</div>
           </div>
         ))}
@@ -68,7 +68,7 @@ export function DashboardMockup({ momentIndex = 0 }: { momentIndex?: number }) {
         <div className="flex items-start gap-2.5">
           <moment.alert.icon className={`w-4 h-4 ${moment.alert.color} shrink-0 mt-0.5`} aria-hidden="true" />
           <div className="min-w-0">
-            <div className={`text-[11px] font-bold ${moment.alert.color} mb-1`}>{moment.alert.title}</div>
+            <div className={`text-[12px] font-bold ${moment.alert.color} mb-1`}>{moment.alert.title}</div>
             <p className="text-[10px] text-[var(--color-text-muted)] leading-relaxed">{moment.alert.body}</p>
           </div>
         </div>

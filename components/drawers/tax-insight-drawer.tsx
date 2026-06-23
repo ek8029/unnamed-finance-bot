@@ -37,12 +37,12 @@ export function TaxInsightDrawer({
           </div>
           <div className="flex-1">
             <h3 className="type-h3 text-[var(--color-text-primary)] mb-2">Tax Optimization Opportunity</h3>
-            <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed mb-3">
+            <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed mb-3">
               {insightDescription}
             </p>
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-[var(--color-positive)]" />
-              <span className="type-label text-sm text-[var(--color-text-secondary)]">Potential Tax Savings:</span>
+              <span className="type-label text-[15px] text-[var(--color-text-secondary)]">Potential Tax Savings:</span>
               <span className="type-data text-lg font-tabular text-[var(--color-positive)]">
                 {formatCurrency(potentialSavings)}
               </span>
@@ -55,7 +55,7 @@ export function TaxInsightDrawer({
       <DrawerSection>
         <DrawerSectionHeader>What this means</DrawerSectionHeader>
         <div className="p-4 bg-[var(--color-gold-surface)] rounded border border-[var(--color-gold)]/20 mb-4">
-          <p className="text-sm text-[var(--color-gold)] leading-relaxed mb-3">
+          <p className="text-[15px] text-[var(--color-gold)] leading-relaxed mb-3">
             {recommendedAction}
           </p>
           <div className="flex gap-2">
@@ -71,14 +71,14 @@ export function TaxInsightDrawer({
 
         {/* Tax Strategy Checklist */}
         <div className="space-y-2">
-          <h4 className="type-label text-xs text-[var(--color-text-primary)] mb-2">Before Taking Action:</h4>
+          <h4 className="type-label text-[13px] text-[var(--color-text-primary)] mb-2">Before Taking Action:</h4>
           {[
             'Review your current tax bracket and expected income',
             'Consider holding periods for long-term vs short-term gains',
             'Ensure compliance with wash-sale rules (30-day period)',
             'Consult with a tax professional for your specific situation',
           ].map((item, index) => (
-            <div key={index} className="flex items-start gap-2 text-xs text-[var(--color-text-secondary)]">
+            <div key={index} className="flex items-start gap-2 text-[13px] text-[var(--color-text-secondary)]">
               <div className="w-1 h-1 rounded-full bg-[var(--color-gold)] mt-1.5 flex-shrink-0" />
               <span>{item}</span>
             </div>
@@ -94,7 +94,7 @@ export function TaxInsightDrawer({
           </DrawerSectionHeader>
           <div className="p-3 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)] mb-3">
             <div className="flex items-center justify-between">
-              <span className="type-label text-sm text-[var(--color-text-secondary)]">
+              <span className="type-label text-[15px] text-[var(--color-text-secondary)]">
                 Total Harvestable Losses
               </span>
               <span className="type-data text-lg font-tabular text-[var(--color-negative)]">
@@ -119,7 +119,7 @@ export function TaxInsightDrawer({
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="type-label text-sm text-[var(--color-text-primary)] font-medium">
+                        <span className="type-label text-[15px] text-[var(--color-text-primary)] font-medium">
                           {holding.ticker}
                         </span>
                         <span className="type-caption text-[var(--color-text-secondary)]">
@@ -131,10 +131,10 @@ export function TaxInsightDrawer({
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="type-data text-sm font-tabular text-[var(--color-negative)] mb-1">
+                      <div className="type-data text-[15px] font-tabular text-[var(--color-negative)] mb-1">
                         {formatCurrency(unrealisedGain)}
                       </div>
-                      <div className="flex items-center gap-1 type-label text-xs text-[var(--color-negative)]">
+                      <div className="flex items-center gap-1 type-label text-[13px] text-[var(--color-negative)]">
                         <TrendingDown className="h-3 w-3" />
                         <span className="font-tabular">{lossPercentage.toFixed(1)}%</span>
                       </div>
@@ -144,13 +144,13 @@ export function TaxInsightDrawer({
                   <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[var(--color-border-subtle)]">
                     <div>
                       <div className="type-caption text-[var(--color-text-secondary)] mb-0.5">Cost Basis</div>
-                      <div className="type-label text-xs font-tabular text-[var(--color-text-primary)]">
+                      <div className="type-label text-[13px] font-tabular text-[var(--color-text-primary)]">
                         {formatCurrency(costBasis * holding.shares)}
                       </div>
                     </div>
                     <div>
                       <div className="type-caption text-[var(--color-text-secondary)] mb-0.5">Current Value</div>
-                      <div className="type-label text-xs font-tabular text-[var(--color-text-primary)]">
+                      <div className="type-label text-[13px] font-tabular text-[var(--color-text-primary)]">
                         {formatCurrency(holding.total_value)}
                       </div>
                     </div>
@@ -177,7 +177,7 @@ export function TaxInsightDrawer({
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="type-label text-sm text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors">
+                  <div className="type-label text-[15px] text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors">
                     {resource.title}
                   </div>
                   <div className="type-caption text-[var(--color-text-secondary)]">{resource.subtitle}</div>

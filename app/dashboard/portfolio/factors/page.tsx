@@ -124,8 +124,8 @@ function DivergingBar({ tilt }: { tilt: Tilt }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-[7px]">
-        <span className="text-[14px] text-[var(--color-text-primary)]">{tilt.label}</span>
-        <span className="text-[14px] font-semibold tabular-nums" style={{ ...MONO, color }}>
+        <span className="text-[15px] text-[var(--color-text-primary)]">{tilt.label}</span>
+        <span className="text-[15px] font-semibold tabular-nums" style={{ ...MONO, color }}>
           {tiltFigure(tilt.value)}
         </span>
       </div>
@@ -204,7 +204,7 @@ function StyleBox({ report }: { report: FactorReport }) {
             return (
               <div
                 key={`${r}-${c}`}
-                className="rounded-[2px] flex items-center justify-center text-[11px] tabular-nums"
+                className="rounded-[2px] flex items-center justify-center text-[12px] tabular-nums"
                 style={{ ...MONO, background: bg, color: textColor, fontWeight: isPeak ? 700 : 400 }}
               >
                 {w > 0.005 ? pct(w) : ''}
@@ -246,7 +246,7 @@ function DayDriverLine({ report }: { report: FactorReport }) {
       >
         What moved you today
       </div>
-      <p className="text-[14px] leading-[1.6] text-[var(--color-text-primary)] m-0">
+      <p className="text-[15px] leading-[1.6] text-[var(--color-text-primary)] m-0">
         <span className="font-semibold">{label(d.bucket)}</span> drove most of your{' '}
         <span className="font-semibold tabular-nums" style={{ color: up ? POSITIVE : NEGATIVE }}>
           {up ? '+' : ''}
@@ -304,7 +304,7 @@ function HoldingsTable({ report }: { report: FactorReport }) {
         Per-holding classification
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-[14px]">
+        <table className="w-full text-[15px]">
           <thead>
             <tr
               className="text-left text-[var(--color-text-muted)] text-[10px] uppercase tracking-[0.1em]"
@@ -378,7 +378,7 @@ function ReportBody({ report }: { report: FactorReport }) {
             Factor tilt {'·'} relative to benchmark
           </div>
           {tilts.length === 0 ? (
-            <p className="text-[14px] text-[var(--color-text-muted)]">
+            <p className="text-[15px] text-[var(--color-text-muted)]">
               Not enough classified holdings to compute a factor tilt.
             </p>
           ) : (
@@ -406,7 +406,7 @@ function ReportBody({ report }: { report: FactorReport }) {
             >
               {'✦'} Read
             </div>
-            <p className="text-[14px] leading-[1.6] text-[var(--color-text-primary)] m-0">
+            <p className="text-[15px] leading-[1.6] text-[var(--color-text-primary)] m-0">
               {report.tiltSummary}
             </p>
           </div>
@@ -499,14 +499,14 @@ export default function FactorLensPage() {
 
       {/* Coverage note always visible once we have a report */}
       {coverageNote && (
-        <p className="mb-4 text-[13px] text-[var(--color-text-muted)]" style={MONO}>
+        <p className="mb-4 text-[14px] text-[var(--color-text-muted)]" style={MONO}>
           {coverageNote}
         </p>
       )}
 
       {(loading || tierLoading) && (
         <div
-          className="rounded-lg border py-16 text-center text-[14px] text-[var(--color-text-muted)]"
+          className="rounded-lg border py-16 text-center text-[15px] text-[var(--color-text-muted)]"
           style={{ borderColor: 'var(--color-border-base)', background: 'var(--color-bg-surface)' }}
         >
           Loading factor exposure...
@@ -515,7 +515,7 @@ export default function FactorLensPage() {
 
       {!loading && !tierLoading && error && (
         <div
-          className="rounded-lg border py-16 text-center text-[14px] text-[var(--color-text-muted)]"
+          className="rounded-lg border py-16 text-center text-[15px] text-[var(--color-text-muted)]"
           style={{ borderColor: 'var(--color-border-base)', background: 'var(--color-bg-surface)' }}
         >
           Could not load your factor lens. Please try again.
@@ -528,7 +528,7 @@ export default function FactorLensPage() {
           style={{ borderColor: 'var(--color-border-base)', background: 'var(--color-bg-surface)' }}
         >
           <p className="text-[16px] text-[var(--color-text-primary)] mb-1">No holdings yet</p>
-          <p className="text-[14px] text-[var(--color-text-muted)]">
+          <p className="text-[15px] text-[var(--color-text-muted)]">
             Connect a brokerage or add holdings to see your factor exposure.
           </p>
         </div>

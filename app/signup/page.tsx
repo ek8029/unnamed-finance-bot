@@ -119,7 +119,7 @@ function SignupForm() {
   return (
     <AuthShell subtitle={isWrappedFlow ? "Create your account to see your Wrapped" : "Create your account"}>
       {isWrappedFlow && (
-        <p className="text-sm text-[var(--color-text-muted)] -mt-2 mb-5 text-center">
+        <p className="text-[15px] text-[var(--color-text-muted)] -mt-2 mb-5 text-center">
           Connect any brokerage and get your personalized year in review in 30 seconds.
         </p>
       )}
@@ -142,7 +142,7 @@ function SignupForm() {
         </div>
 
         {error && (
-          <div role="alert" className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-md text-sm">{error}</div>
+          <div role="alert" className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-md text-[15px]">{error}</div>
         )}
 
         <div>
@@ -179,11 +179,11 @@ function SignupForm() {
                     <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i < strength.score ? strength.color : 'bg-[var(--color-border-base)]'}`} />
                   ))}
                 </div>
-                <span className="text-xs text-[var(--color-text-muted)]">{strength.label}</span>
+                <span className="text-[13px] text-[var(--color-text-muted)]">{strength.label}</span>
               </div>
               <div className="flex flex-wrap gap-x-3 gap-y-1">
                 {strength.requirements.map((req) => (
-                  <span key={req.label} className={`text-xs ${req.met ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-muted)]'}`}>
+                  <span key={req.label} className={`text-[13px] ${req.met ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-muted)]'}`}>
                     {req.met ? '\u2713' : '\u2717'} {req.label}
                   </span>
                 ))}
@@ -203,13 +203,13 @@ function SignupForm() {
           {loading ? 'Creating account...' : (<>Start free — takes 30 seconds <ArrowRight className="w-4 h-4" /></>)}
         </button>
 
-        <p className="text-xs text-center text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+        <p className="text-[13px] text-center text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
           No credit card required · Read-only via Plaid · Cancel anytime
         </p>
       </form>
 
       <div className="mt-6 text-center">
-        <p className="text-[var(--color-text-secondary)] text-sm">
+        <p className="text-[var(--color-text-secondary)] text-[15px]">
           Already have an account?{' '}
           <Link href={isWrappedFlow ? "/login?redirect=/dashboard/wrapped" : "/login"} className="text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors font-medium">Sign in</Link>
         </p>

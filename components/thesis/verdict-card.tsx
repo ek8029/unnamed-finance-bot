@@ -72,7 +72,7 @@ export function VerdictCard({
           {/* Ticker chip — suppressed when the parent header already names the ticker. */}
           {showTicker && (
             <span
-              className="font-mono text-[12px] font-semibold uppercase tracking-[0.08em] px-[8px] py-[3px] rounded-[3px] border border-white/[0.10] text-[#9A9A9A]"
+              className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em] px-[8px] py-[3px] rounded-[3px] border border-white/[0.10] text-[#9A9A9A]"
               style={{ fontFamily: "'Space Grotesk', monospace" }}
             >
               {item.ticker}
@@ -117,7 +117,7 @@ export function VerdictCard({
         {showPillarClaim && (
           <div className="px-[18px] py-[14px] bg-white/[0.02] border border-white/[0.04] rounded-[3px] mb-[14px]">
             <div
-              className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6A6A6A] mb-[8px]"
+              className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[#6A6A6A] mb-[8px]"
               style={{ fontFamily: "'Space Grotesk', monospace" }}
             >
               The reason you own {item.ticker}
@@ -153,7 +153,7 @@ export function VerdictCard({
 
                 <div className="flex items-center gap-[8px] flex-wrap">
                   {s.sourcePublishedAt && (
-                    <span className="inline-flex items-center gap-[5px] font-mono text-[13px] font-semibold text-[#D6D6D6] tabular-nums px-[7px] py-[3px] rounded-[3px] bg-white/[0.04] border border-white/[0.07]" style={{ fontFamily: "'Space Grotesk', monospace" }}>
+                    <span className="inline-flex items-center gap-[5px] font-mono text-[14px] font-semibold text-[#D6D6D6] tabular-nums px-[7px] py-[3px] rounded-[3px] bg-white/[0.04] border border-white/[0.07]" style={{ fontFamily: "'Space Grotesk', monospace" }}>
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9A9A9A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                         <rect x="3" y="4" width="18" height="18" rx="2" />
                         <path d="M16 2v4M8 2v4M3 10h18" />
@@ -161,10 +161,10 @@ export function VerdictCard({
                       {formatDate(s.sourcePublishedAt)}
                     </span>
                   )}
-                  <span className="text-[13px] text-[#6A6A6A]">{s.sourceTitle}</span>
+                  <span className="text-[14px] text-[#6A6A6A]">{s.sourceTitle}</span>
                   {s.sourceUrl && (
                     <>
-                      <span className="text-[#4A4A4A] text-[12px]">·</span>
+                      <span className="text-[#4A4A4A] text-[13px]">·</span>
                       <a
                         href={s.sourceUrl}
                         target="_blank"
@@ -184,7 +184,7 @@ export function VerdictCard({
         {/* Why (muted) */}
         <p className="text-[15px] leading-[1.6] text-[#C8C8C8] mt-[14px] mb-0 border-l-2 border-[rgba(230,185,77,0.4)] pl-[14px]">
           <span
-            className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[#E6B94D] mr-[10px]"
+            className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[#E6B94D] mr-[10px]"
             style={{ fontFamily: "'Space Grotesk', monospace" }}
           >
             Why
@@ -197,12 +197,12 @@ export function VerdictCard({
           <div className="flex items-start gap-[16px] mt-[14px] px-[18px] py-[12px] border border-[rgba(230,185,77,0.18)] bg-[rgba(230,185,77,0.06)] rounded-[3px]">
             <div className="flex-1">
               <span
-                className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[#E6B94D] mr-[10px]"
+                className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[#E6B94D] mr-[10px]"
                 style={{ fontFamily: "'Space Grotesk', monospace" }}
               >
                 Consider
               </span>
-              <span className="text-[14px] leading-[1.5] text-[#E6B94D]">
+              <span className="text-[15px] leading-[1.5] text-[#E6B94D]">
                 {item.consider}
               </span>
             </div>

@@ -277,7 +277,7 @@ function ResearchChatContent() {
         </div>
         <div
           className={cn(
-            'text-[14px] font-semibold tabular-nums',
+            'text-[15px] font-semibold tabular-nums',
             quotaExceeded ? 'text-[var(--color-warning-text)]' : 'text-[var(--color-gold)]',
           )}
           style={MONO}
@@ -312,7 +312,7 @@ function ResearchChatContent() {
               key={q}
               onClick={() => sendMessage(q)}
               disabled={inputDisabled}
-              className="px-4 py-3 text-left text-[14px] text-[var(--color-text-secondary)] bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg hover:border-[var(--color-gold-border)] hover:text-[var(--color-text-primary)] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-3 text-left text-[15px] text-[var(--color-text-secondary)] bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg hover:border-[var(--color-gold-border)] hover:text-[var(--color-text-primary)] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {q}
             </button>

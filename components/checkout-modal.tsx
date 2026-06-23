@@ -84,7 +84,7 @@ export function CheckoutModal({ billingPeriod, onClose }: CheckoutModalProps) {
           style={{ borderBottom: '1px solid var(--color-border-base)' }}
         >
           <span
-            className="text-sm font-semibold tracking-tight"
+            className="text-[15px] font-semibold tracking-tight"
             style={{ color: 'var(--color-text-primary)' }}
           >
             Upgrade to Helm Pro
@@ -104,7 +104,7 @@ export function CheckoutModal({ billingPeriod, onClose }: CheckoutModalProps) {
           {/* Stripe key missing */}
           {!stripePromise && (
             <div
-              className="rounded-sm px-4 py-3 text-sm"
+              className="rounded-sm px-4 py-3 text-[15px]"
               style={{
                 background: 'rgba(230,185,77,0.08)',
                 border: '1px solid rgba(230,185,77,0.2)',
@@ -118,7 +118,7 @@ export function CheckoutModal({ billingPeriod, onClose }: CheckoutModalProps) {
           {/* Fetch error */}
           {fetchError && (
             <div
-              className="rounded-sm px-4 py-3 text-sm"
+              className="rounded-sm px-4 py-3 text-[15px]"
               style={{
                 background: 'rgba(239,68,68,0.08)',
                 border: '1px solid rgba(239,68,68,0.2)',

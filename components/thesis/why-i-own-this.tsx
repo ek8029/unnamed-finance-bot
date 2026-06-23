@@ -154,7 +154,7 @@ function EvidenceTimeline({ ticker, pillar }: { ticker: string; pillar: Pillar }
 
   if (all.length === 0) {
     return (
-      <p className="text-[13.5px] italic text-[#6A6A6A] py-3 m-0" style={SERIF}>
+      <p className="text-[14.5px] italic text-[#6A6A6A] py-3 m-0" style={SERIF}>
         No filings or news have moved this pillar since you wrote it. Helm keeps watching.
       </p>
     );
@@ -167,14 +167,14 @@ function EvidenceTimeline({ ticker, pillar }: { ticker: string; pillar: Pillar }
           <VerdictCard key={e.id} item={toIntelligenceItem(ticker, pillar, e)} showPillarClaim={false} />
         ))}
         {shown.length === 0 && (
-          <p className="text-[13px] text-[#6A6A6A] m-0">Only neutral evidence so far.</p>
+          <p className="text-[14px] text-[#6A6A6A] m-0">Only neutral evidence so far.</p>
         )}
       </div>
       {neutralCount > 0 && (
         <button
           type="button"
           onClick={() => setShowNeutral((s) => !s)}
-          className="mt-3 font-mono text-[11px] tracking-[0.06em] text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors"
+          className="mt-3 font-mono text-[12px] tracking-[0.06em] text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors"
         >
           {showNeutral ? 'Hide neutral evidence' : `Show all evidence (${neutralCount} neutral hidden)`}
         </button>
@@ -235,14 +235,14 @@ function ConfirmedPillarRow({
           )}
 
           {eff === 'unverified' && !editing && pillar.evidence.some((e) => e.verdict === 'supports') && (
-            <div className="mt-2 font-mono text-[11px] tracking-[0.04em] text-[#6A6A6A]">
+            <div className="mt-2 font-mono text-[12px] tracking-[0.04em] text-[#6A6A6A]">
               Historical support &middot; watching for live confirmation
             </div>
           )}
 
           {flagged && !editing && (
             <div className="mt-3 flex items-start gap-3 px-3.5 py-2.5 rounded border border-[rgba(230,185,77,0.25)] bg-[rgba(230,185,77,0.06)]">
-              <span className="flex-1 text-[14px] leading-[1.5] text-[#E6B94D]">
+              <span className="flex-1 text-[15px] leading-[1.5] text-[#E6B94D]">
                 {ruleExplanation(pillar.status)}
               </span>
               <button
@@ -256,7 +256,7 @@ function ConfirmedPillarRow({
           )}
 
           {pillar.status_override && !editing && (
-            <div className="mt-2.5 flex items-center gap-3 font-mono text-[11px] tracking-[0.04em] text-[#6A6A6A]">
+            <div className="mt-2.5 flex items-center gap-3 font-mono text-[12px] tracking-[0.04em] text-[#6A6A6A]">
               <span>You marked this intact on {fmtDate(pillar.status_changed_at)}</span>
               <button
                 type="button"
@@ -274,7 +274,7 @@ function ConfirmedPillarRow({
             onClick={onToggle}
             className="flex items-center gap-2 text-[#9A9A9A] hover:text-[#FAFAFA] transition-colors"
           >
-            <span className="font-mono text-[12.5px] tracking-[0.04em]">{pillar.evidence.length} evidence</span>
+            <span className="font-mono text-[13.5px] tracking-[0.04em]">{pillar.evidence.length} evidence</span>
             <span className="text-[10px] text-[#6A6A6A] transition-transform" style={{ transform: open ? 'rotate(180deg)' : 'none' }}>
               &#9662;
             </span>
@@ -283,7 +283,7 @@ function ConfirmedPillarRow({
             type="button"
             onClick={() => { if (window.confirm('Remove this pillar? This deletes it and its evidence.')) onRemove(pillar.id); }}
             title="Remove pillar"
-            className="w-7 h-7 inline-flex items-center justify-center rounded border border-white/[0.1] text-[#6A6A6A] hover:text-[#F87171] hover:border-[rgba(248,113,113,0.4)] transition-colors font-mono text-[14px]"
+            className="w-7 h-7 inline-flex items-center justify-center rounded border border-white/[0.1] text-[#6A6A6A] hover:text-[#F87171] hover:border-[rgba(248,113,113,0.4)] transition-colors font-mono text-[15px]"
           >
             &times;
           </button>
@@ -356,7 +356,7 @@ function DraftPillarRow({
               onClick={accept}
               disabled={busy}
               title="Accept"
-              className="w-8 h-8 inline-flex items-center justify-center rounded border border-white/[0.14] text-[#4ADE80] font-mono text-[14px] hover:border-white/[0.28] transition-colors disabled:opacity-50"
+              className="w-8 h-8 inline-flex items-center justify-center rounded border border-white/[0.14] text-[#4ADE80] font-mono text-[15px] hover:border-white/[0.28] transition-colors disabled:opacity-50"
             >
               &#10003;
             </button>
@@ -364,7 +364,7 @@ function DraftPillarRow({
               type="button"
               onClick={() => { setText(pillar.claim); setEditing(true); }}
               title="Edit"
-              className="w-8 h-8 inline-flex items-center justify-center rounded border border-white/[0.14] text-[#9A9A9A] font-mono text-[13px] hover:border-white/[0.28] transition-colors"
+              className="w-8 h-8 inline-flex items-center justify-center rounded border border-white/[0.14] text-[#9A9A9A] font-mono text-[14px] hover:border-white/[0.28] transition-colors"
             >
               &#9998;
             </button>
@@ -591,8 +591,8 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
       onClick={() => setAdding(true)}
       className="flex items-center gap-3 text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors"
     >
-      <span className="w-[22px] h-[22px] inline-flex items-center justify-center border border-white/[0.14] rounded text-[14px]">+</span>
-      <span className="text-[13.5px]">Add a pillar</span>
+      <span className="w-[22px] h-[22px] inline-flex items-center justify-center border border-white/[0.14] rounded text-[15px]">+</span>
+      <span className="text-[14.5px]">Add a pillar</span>
     </button>
   );
 
@@ -604,19 +604,19 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
             Why I Own This
           </div>
           {phase === 'ready' && (
-            <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed mt-2 max-w-[520px] m-0">
+            <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed mt-2 max-w-[520px] m-0">
               The reasons you hold {ticker}, in your words. Helm scans filings and news against each one and surfaces only what changes them.
             </p>
           )}
         </div>
         {phase === 'ready' && confirmed.length > 0 && (
           allIntact ? (
-            <div className="font-mono text-[11px] tracking-[0.06em] inline-flex items-center gap-1.5" style={{ color: '#4ADE80' }}>
+            <div className="font-mono text-[12px] tracking-[0.06em] inline-flex items-center gap-1.5" style={{ color: '#4ADE80' }}>
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#4ADE80', boxShadow: '0 0 6px #4ADE8088' }} />
               All {confirmed.length} holding
             </div>
           ) : (
-            <div className="font-mono text-[11px] tracking-[0.06em] text-[#6A6A6A]">
+            <div className="font-mono text-[12px] tracking-[0.06em] text-[#6A6A6A]">
               {confirmed.length} pillar{confirmed.length === 1 ? '' : 's'} &middot; {intactCount} intact
             </div>
           )
@@ -626,7 +626,7 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
       {phase === 'loading' && <Skeleton />}
 
       {phase === 'error' && (
-        <p className="mt-4 text-[13px] text-[#6A6A6A] m-0">Could not load your thesis. Refresh to retry.</p>
+        <p className="mt-4 text-[14px] text-[#6A6A6A] m-0">Could not load your thesis. Refresh to retry.</p>
       )}
 
       {phase === 'none' && (
@@ -660,7 +660,7 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
               style={{ background: 'linear-gradient(180deg, transparent, rgba(6,6,6,0.85) 55%)' }}
             >
               <LockIcon size={14} color="#E6B94D" />
-              <span className="text-[14px] text-[var(--color-text-secondary)]">{lockedMessage}</span>
+              <span className="text-[15px] text-[var(--color-text-secondary)]">{lockedMessage}</span>
               <Link
                 href="/pricing"
                 className="ml-auto font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--color-gold)] hover:text-[#EFCB72] transition-colors whitespace-nowrap"
@@ -676,7 +676,7 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
         <>
           {thesis && !thesis.tracked && (
             <div className="mt-4 flex items-center gap-3 flex-wrap px-3.5 py-3 rounded border border-white/[0.07] bg-[#060606]">
-              <span className="flex-1 min-w-[200px] text-[14px] text-[var(--color-text-secondary)] leading-[1.5]">
+              <span className="flex-1 min-w-[200px] text-[15px] text-[var(--color-text-secondary)] leading-[1.5]">
                 Helm is not scanning this thesis yet. Track it to check filings and news against each pillar.
               </span>
               <MiniButton primary onClick={trackThesis} disabled={trackBusy}>
@@ -739,8 +739,8 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
               <span className="text-[10px] transition-transform" style={{ transform: notesOpen ? 'rotate(90deg)' : 'none' }}>
                 &#9656;
               </span>
-              <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.15em]">Your notes</span>
-              <span className="font-mono text-[11px] text-[#6A6A6A] normal-case tracking-normal">not scanned</span>
+              <span className="font-mono text-[12px] font-semibold uppercase tracking-[0.15em]">Your notes</span>
+              <span className="font-mono text-[12px] text-[#6A6A6A] normal-case tracking-normal">not scanned</span>
             </button>
             {notesOpen && (
               <textarea
@@ -755,7 +755,7 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
             )}
           </div>
 
-          <div className="mt-3 font-mono text-[11px] tracking-[0.06em] text-[#6A6A6A]">
+          <div className="mt-3 font-mono text-[12px] tracking-[0.06em] text-[#6A6A6A]">
             {thesis?.last_scanned_at ? `Last scanned ${fmtDate(thesis.last_scanned_at)}` : 'Not scanned yet'}
           </div>
         </>

@@ -211,7 +211,7 @@ export function ActionsClient({ initialActions, isPro }: { initialActions: Actio
             <h2 className="text-[24px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)] mb-3">
               You&apos;re all clear
             </h2>
-            <p className="text-[14px] leading-[1.65] text-[var(--color-text-muted)]">
+            <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
               No actions need your attention. Helm keeps watching your book and will rank anything worth doing here.
             </p>
           </div>
@@ -350,8 +350,8 @@ function BasicCard({
       </span>
 
       <div className="flex-1 min-w-0">
-        <div className="text-[14px] font-semibold text-[var(--color-text-primary)] mb-1">{action.title}</div>
-        <p className="text-[13.5px] leading-[1.55] text-[var(--color-text-muted)]">{action.description}</p>
+        <div className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1">{action.title}</div>
+        <p className="text-[14.5px] leading-[1.55] text-[var(--color-text-muted)]">{action.description}</p>
       </div>
 
       <div className="flex flex-col items-end gap-2 shrink-0">
@@ -404,8 +404,8 @@ function MaxCard({ action }: { action: ActionItem }) {
       </span>
 
       <div className="flex-1 min-w-0">
-        <div className="text-[14px] font-semibold text-[var(--color-text-primary)] mb-1">{action.title}</div>
-        <p className="text-[13.5px] leading-[1.55] text-[var(--color-text-muted)]">{action.description}</p>
+        <div className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1">{action.title}</div>
+        <p className="text-[14.5px] leading-[1.55] text-[var(--color-text-muted)]">{action.description}</p>
       </div>
 
       <div className="flex flex-col items-end gap-2 shrink-0">
@@ -446,7 +446,7 @@ function MaxTeaser({ action }: { action: ActionItem }) {
       </span>
 
       <div className="flex-1 min-w-0">
-        <div className="text-[14px] font-semibold text-[var(--color-text-primary)] mb-[7px]">{tease}</div>
+        <div className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-[7px]">{tease}</div>
         <div className="flex flex-col gap-1.5 select-none" style={{ filter: 'blur(3px)', opacity: 0.55 }} aria-hidden="true">
           <div className="h-2 w-[90%] rounded-[3px] bg-[rgba(255,255,255,0.08)]" />
           <div className="h-2 w-[72%] rounded-[3px] bg-[rgba(255,255,255,0.06)]" />

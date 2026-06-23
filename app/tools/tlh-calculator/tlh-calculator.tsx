@@ -176,7 +176,7 @@ export function TLHCalculator() {
                   onChange={setLosses}
                   placeholder="15,000"
                   belowHint={
-                    <Link href="/signup" className="inline-flex items-center gap-1 text-xs text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors mt-1">
+                    <Link href="/signup" className="inline-flex items-center gap-1 text-[13px] text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors mt-1">
                       Not sure? Connect your brokerage — Helm calculates it for you <ArrowRight className="w-3 h-3" />
                     </Link>
                   }
@@ -198,7 +198,7 @@ export function TLHCalculator() {
                       <button
                         key={i}
                         onClick={() => setBracketIdx(i)}
-                        className={`px-4 py-2 rounded text-sm font-mono font-semibold transition-all duration-150 cursor-pointer border ${
+                        className={`px-4 py-2 rounded text-[15px] font-mono font-semibold transition-all duration-150 cursor-pointer border ${
                           i === bracketIdx
                             ? 'bg-[var(--color-gold)] border-[var(--color-gold)] text-[var(--color-bg-base)]'
                             : 'bg-[var(--color-bg-elevated)] border-[var(--color-border-base)] text-[var(--color-text-muted)] hover:border-[var(--color-gold-border)] hover:text-[var(--color-text-secondary)]'
@@ -214,7 +214,7 @@ export function TLHCalculator() {
               {/* ── Advanced — collapsed ── */}
               <button
                 onClick={() => setShowAdvanced(!showAdvanced)}
-                className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer mb-6"
+                className="flex items-center gap-1.5 text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer mb-6"
               >
                 <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${showAdvanced ? 'rotate-90' : ''}`} />
                 <span>State tax &amp; holding period</span>
@@ -238,7 +238,7 @@ export function TLHCalculator() {
                             <button
                               key={i}
                               onClick={() => setStateIdx(i)}
-                              className={`px-3 py-1.5 rounded text-xs font-mono transition-all duration-150 cursor-pointer border ${
+                              className={`px-3 py-1.5 rounded text-[13px] font-mono transition-all duration-150 cursor-pointer border ${
                                 i === stateIdx
                                   ? 'bg-[var(--color-bg-elevated)] text-[var(--color-text-primary)] border-[var(--color-border-strong)]'
                                   : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] border-transparent hover:border-[var(--color-border-base)]'
@@ -253,7 +253,7 @@ export function TLHCalculator() {
                       <div>
                         <div className="flex justify-between mb-2">
                           <span className="type-label text-[var(--color-text-secondary)]">Holding period mix</span>
-                          <span className="text-xs font-mono text-[var(--color-text-muted)]">{stPct}% short / {100 - stPct}% long</span>
+                          <span className="text-[13px] font-mono text-[var(--color-text-muted)]">{stPct}% short / {100 - stPct}% long</span>
                         </div>
                         <input type="range" min={0} max={100} step={5} value={stPct} onChange={(e) => setStPct(Number(e.target.value))}
                           className="w-full accent-[var(--color-gold)] cursor-pointer h-1" />
@@ -269,7 +269,7 @@ export function TLHCalculator() {
                 disabled={!canGo}
                 whileHover={canGo ? { scale: 1.01 } : {}}
                 whileTap={canGo ? { scale: 0.98 } : {}}
-                className="group w-full flex items-center justify-center gap-3 py-4 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all duration-200 hover:brightness-110 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
+                className="group w-full flex items-center justify-center gap-3 py-4 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all duration-200 hover:brightness-110 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
               >
                 Show me the math
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
@@ -302,14 +302,14 @@ export function TLHCalculator() {
                   style={{ fontWeight: 700, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}
                 />
                 <motion.div
-                  className="text-sm text-[var(--color-text-muted)] mt-4"
+                  className="text-[15px] text-[var(--color-text-muted)] mt-4"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.8 }}
                 >
                   <span>from {fmt(lVal)} in losses · {r.lossPct.toFixed(1)}% of your portfolio</span>
                   {r.carryforward > 0 && (
-                    <span className="block text-xs mt-1">
+                    <span className="block text-[13px] mt-1">
                       {fmt(r.gainsOffset)} offsets gains directly · {fmt(r.carryforward)} carries forward at $3,000/yr
                     </span>
                   )}
@@ -347,7 +347,7 @@ export function TLHCalculator() {
                 transition={{ delay: 0.9 }}
               >
                 <div className="type-data-label mb-4">Breakdown</div>
-                <div className="space-y-3 text-[14px]">
+                <div className="space-y-3 text-[15px]">
                   {r.gainsOffset > 0 && (
                     <>
                       <Row left="Losses offsetting gains (no cap)" right={fmt(r.gainsOffset)} />
@@ -381,13 +381,13 @@ export function TLHCalculator() {
                 transition={{ delay: 1.1 }}
               >
                 <div className="type-data-label text-[var(--color-gold)] mb-4">What if this was automated?</div>
-                <div className="space-y-2.5 text-[14px]">
+                <div className="space-y-2.5 text-[15px]">
                   <Row left="Your TLH savings" right={`${fmt(r.total)}/yr`} rightColor="text-[var(--color-positive)]" />
                   <Row left="Helm Pro" right={`${fmt(r.helmCost)}/yr`} />
                   <div className="h-px bg-[var(--color-gold-border)]" />
                   <Row left="Net after Helm" right={`${fmt(r.net)}/yr`} rightColor={r.net >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'} bold />
                 </div>
-                <div className="text-xs font-mono text-[var(--color-text-muted)] mt-3">
+                <div className="text-[13px] font-mono text-[var(--color-text-muted)] mt-3">
                   {r.roi.toFixed(0)}% return on your subscription. Helm scans your brokerage daily.
                 </div>
               </motion.div>
@@ -401,24 +401,24 @@ export function TLHCalculator() {
               >
                 {!emailDone ? (
                   <div className="sovereign-card rounded p-5">
-                    <div className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">Get quarterly TLH reminders</div>
-                    <p className="text-xs text-[var(--color-text-muted)] mb-4">A nudge each quarter to check for harvesting opportunities — when it matters most.</p>
+                    <div className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1">Get quarterly TLH reminders</div>
+                    <p className="text-[13px] text-[var(--color-text-muted)] mb-4">A nudge each quarter to check for harvesting opportunities — when it matters most.</p>
                     <form onSubmit={doEmail} className="flex gap-2">
                       <div className="relative flex-1">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" />
                         <input type="email" value={email} onChange={(e) => { setEmail(e.target.value); setEmailErr(''); }}
                           placeholder="you@example.com" aria-label="Email for TLH reminders"
-                          className="w-full pl-9 pr-3 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors" />
+                          className="w-full pl-9 pr-3 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[15px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors" />
                       </div>
                       <button type="submit" disabled={emailLoading}
-                        className="px-5 py-2.5 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap">
+                        className="px-5 py-2.5 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap">
                         {emailLoading ? '...' : 'Subscribe'}
                       </button>
                     </form>
-                    {emailErr && <p className="text-xs text-[var(--color-negative-text)] mt-1.5">{emailErr}</p>}
+                    {emailErr && <p className="text-[13px] text-[var(--color-negative-text)] mt-1.5">{emailErr}</p>}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 text-sm text-[var(--color-positive)]">
+                  <div className="flex items-center gap-2 text-[15px] text-[var(--color-positive)]">
                     <Check className="w-4 h-4" /> Quarterly reminders set. Check your inbox.
                   </div>
                 )}
@@ -432,23 +432,23 @@ export function TLHCalculator() {
                 transition={{ delay: 1.4 }}
               >
                 <Link href="/signup"
-                  className="flex items-center justify-center gap-2.5 w-full py-4 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded hover:brightness-110 transition-all cursor-pointer">
+                  className="flex items-center justify-center gap-2.5 w-full py-4 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded hover:brightness-110 transition-all cursor-pointer">
                   Start Helm Pro — automate your TLH <ArrowRight className="w-4 h-4" />
                 </Link>
                 <div className="flex gap-3">
                   <button onClick={() => { setStep('input'); setShowAdvanced(false); }}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] border border-[var(--color-border-base)] rounded transition-colors cursor-pointer">
+                    className="flex-1 flex items-center justify-center gap-2 py-3 text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] border border-[var(--color-border-base)] rounded transition-colors cursor-pointer">
                     <RotateCcw className="w-3.5 h-3.5" /> Recalculate
                   </button>
                   <Link href="/analyze"
-                    className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-gold)] border border-[var(--color-border-base)] hover:border-[var(--color-gold-border)] rounded transition-colors cursor-pointer">
+                    className="flex-1 flex items-center justify-center gap-2 py-3 text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-gold)] border border-[var(--color-border-base)] hover:border-[var(--color-gold-border)] rounded transition-colors cursor-pointer">
                     Try stock analysis <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </motion.div>
 
               {/* Disclaimer */}
-              <div className="flex items-start gap-2 text-xs text-[var(--color-text-muted)] leading-relaxed mt-8">
+              <div className="flex items-start gap-2 text-[13px] text-[var(--color-text-muted)] leading-relaxed mt-8">
                 <Shield className="w-3 h-3 shrink-0 mt-0.5" />
                 <span>Estimates only. Not tax or investment advice. Consult a qualified tax professional. Rates approximate for 2026.</span>
               </div>
@@ -480,7 +480,7 @@ function InputField({ label, hint, value, onChange, placeholder, belowHint }: {
           className="w-full pl-10 pr-4 py-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors font-mono text-2xl"
         />
       </div>
-      <p className="text-xs text-[var(--color-text-muted)] mt-1.5">{hint}</p>
+      <p className="text-[13px] text-[var(--color-text-muted)] mt-1.5">{hint}</p>
       {belowHint}
     </div>
   );

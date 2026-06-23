@@ -113,7 +113,7 @@ export function InsightCard({
           <button
             onClick={() => setExpanded(!expanded)}
             aria-expanded={expanded}
-            className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors mb-3"
+            className="flex items-center gap-1 text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors mb-3"
           >
             <ChevronDown
               className={cn('w-3.5 h-3.5 transition-transform duration-200', expanded && 'rotate-180')}
@@ -130,7 +130,7 @@ export function InsightCard({
 
         <Link
           href={`/dashboard/chat?q=${encodeURIComponent(insight.suggestedFollowUp)}`}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors"
+          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors"
         >
           Ask Helm about this
           <ArrowRight className="w-3 h-3" />

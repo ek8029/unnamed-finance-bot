@@ -73,7 +73,7 @@ function ConnectBrokerage({ ticker }: { ticker: string }) {
         </p>
         <Link
           href="/dashboard/accounts"
-          className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[#0A0A0A] font-mono text-[11px] font-bold uppercase tracking-[0.12em] transition-all"
+          className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[#0A0A0A] font-mono text-[12px] font-bold uppercase tracking-[0.12em] transition-all"
           style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.25)' }}
         >
           Connect account
@@ -84,7 +84,7 @@ function ConnectBrokerage({ ticker }: { ticker: string }) {
         <div className="mt-5">
           <Link
             href={`/dashboard/analyze/${ticker}`}
-            className="font-mono text-[11px] tracking-[0.04em] text-[var(--color-text-secondary)] hover:text-[var(--color-gold)] transition-colors"
+            className="font-mono text-[12px] tracking-[0.04em] text-[var(--color-text-secondary)] hover:text-[var(--color-gold)] transition-colors"
           >
             Open analysis for {ticker} &rarr;
           </Link>
@@ -150,7 +150,7 @@ export function HoldingDetailClient({
       {/* ── Back link ── */}
       <Link
         href="/dashboard/portfolio"
-        className="inline-flex items-center gap-1.5 font-mono text-[11px] tracking-[0.06em] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+        className="inline-flex items-center gap-1.5 font-mono text-[12px] tracking-[0.06em] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
         style={MONO}
       >
         <ArrowLeft className="w-3.5 h-3.5" /> Portfolio
@@ -190,7 +190,7 @@ export function HoldingDetailClient({
 
         <Link
           href={`/dashboard/analyze/${holding.ticker}`}
-          className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] text-[#0A0A0A] font-mono text-[11px] font-bold uppercase tracking-[0.12em] rounded-[7px] transition-all shrink-0"
+          className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] text-[#0A0A0A] font-mono text-[12px] font-bold uppercase tracking-[0.12em] rounded-[7px] transition-all shrink-0"
           style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.25)' }}
         >
           Open analysis <ArrowUpRight className="w-4 h-4" />
@@ -221,7 +221,7 @@ export function HoldingDetailClient({
           <div className="flex items-center justify-between mb-5">
             <Eyebrow>Price history · 90d</Eyebrow>
             <span
-              className="text-[14px] font-bold tabular-nums"
+              className="text-[15px] font-bold tabular-nums"
               style={{ ...MONO, color: up ? 'var(--color-positive)' : 'var(--color-negative-text)' }}
             >
               {fmtPct(holding.dayChangePct)}
@@ -249,7 +249,7 @@ export function HoldingDetailClient({
               </ResponsiveContainer>
             </div>
           ) : (
-            <div className="h-64 flex items-center justify-center text-center text-[14px] text-[var(--color-text-muted)] px-6">
+            <div className="h-64 flex items-center justify-center text-center text-[15px] text-[var(--color-text-muted)] px-6">
               Not enough price data yet. The chart builds as market data syncs.
             </div>
           )}
@@ -259,19 +259,19 @@ export function HoldingDetailClient({
         <div className="sovereign-card rounded-lg p-5 sm:p-6">
           <Eyebrow>Recent news</Eyebrow>
           {news.length === 0 ? (
-            <p className="text-[14px] text-[var(--color-text-muted)] mt-4">No recent news for {holding.ticker}.</p>
+            <p className="text-[15px] text-[var(--color-text-muted)] mt-4">No recent news for {holding.ticker}.</p>
           ) : (
             <div className="space-y-3.5 overflow-y-auto max-h-[300px] custom-scrollbar mt-4 -mr-1 pr-1">
               {news.map(n => (
                 <div key={n.id} className="border-b border-[var(--color-border-subtle)] pb-3.5 last:border-0 last:pb-0">
-                  <h3 className="text-[14px] font-medium leading-snug tracking-[-0.01em]">
+                  <h3 className="text-[15px] font-medium leading-snug tracking-[-0.01em]">
                     {n.url ? (
                       <a href={n.url} target="_blank" rel="noopener noreferrer" className="text-[var(--color-text-primary)] hover:text-[var(--color-gold)] transition-colors">
                         {n.title}
                       </a>
                     ) : n.title}
                   </h3>
-                  <div className="font-mono text-[11px] text-[var(--color-text-muted)] mt-1.5 tracking-[0.02em]" style={MONO}>
+                  <div className="font-mono text-[12px] text-[var(--color-text-muted)] mt-1.5 tracking-[0.02em]" style={MONO}>
                     {n.source} · {timeAgo(n.publishedAt)}
                   </div>
                 </div>
@@ -320,10 +320,10 @@ export function HoldingDetailClient({
             {transactions.map(t => (
               <div key={t.id} className="flex items-center justify-between gap-3 py-3 border-b border-[var(--color-border-subtle)] last:border-0">
                 <div className="min-w-0 flex-1">
-                  <span className="text-[14px] text-[var(--color-text-primary)] truncate block tracking-[-0.01em]">
+                  <span className="text-[15px] text-[var(--color-text-primary)] truncate block tracking-[-0.01em]">
                     {t.description || t.merchantName || 'Transaction'}
                   </span>
-                  <span className="font-mono text-[11px] text-[var(--color-text-muted)] mt-0.5 block tracking-[0.02em]" style={MONO}>{t.date}</span>
+                  <span className="font-mono text-[12px] text-[var(--color-text-muted)] mt-0.5 block tracking-[0.02em]" style={MONO}>{t.date}</span>
                 </div>
                 <span
                   className="text-[15px] font-bold tabular-nums shrink-0"

@@ -47,7 +47,7 @@ const POPULAR_TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA'];
 
 // Sovereign Architect card chrome — surface bg, hairline border, soft drop shadow.
 const CARD = 'border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] rounded-lg shadow-[0_2px_12px_rgba(0,0,0,0.5)]';
-const SECTION_LABEL = 'font-mono text-[11px] font-semibold tracking-[0.18em] uppercase text-[var(--color-text-muted)]';
+const SECTION_LABEL = 'font-mono text-[12px] font-semibold tracking-[0.18em] uppercase text-[var(--color-text-muted)]';
 
 // ── Helpers ──
 
@@ -141,13 +141,13 @@ function InlineSearch({ currentTicker, basePath = '/analyze' }: { currentTicker:
           maxLength={5}
           disabled={loading}
           aria-label="Stock ticker symbol"
-          className="w-full pl-8 pr-2 py-2.5 sm:py-2 bg-[var(--color-bg-inset)] border border-[var(--color-border-base)] rounded-md text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-[13px] tracking-wider font-mono tabular-nums disabled:opacity-60"
+          className="w-full pl-8 pr-2 py-2.5 sm:py-2 bg-[var(--color-bg-inset)] border border-[var(--color-border-base)] rounded-md text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-[14px] tracking-wider font-mono tabular-nums disabled:opacity-60"
         />
       </div>
       <button
         type="submit"
         disabled={!input.trim() || input.trim().toUpperCase() === currentTicker || loading}
-        className="px-3.5 py-2.5 sm:py-2 bg-[var(--color-gold)] hover:brightness-[1.08] text-[var(--color-text-inverse)] font-semibold rounded-md transition-all text-[12px] whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+        className="px-3.5 py-2.5 sm:py-2 bg-[var(--color-gold)] hover:brightness-[1.08] text-[var(--color-text-inverse)] font-semibold rounded-md transition-all text-[13px] whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
       >
         {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : 'GO'}
       </button>
@@ -168,7 +168,7 @@ function FunctionTree({ active, onSelect }: { active: FunctionKey; onSelect: (k:
             <button
               onClick={() => !isDisabled && onSelect(fn.key)}
               disabled={isDisabled}
-              className={`w-full text-left px-3 py-2.5 text-[14px] tracking-[0.14em] font-mono transition-colors flex items-center justify-between group border-l-2 ${
+              className={`w-full text-left px-3 py-2.5 text-[15px] tracking-[0.14em] font-mono transition-colors flex items-center justify-between group border-l-2 ${
                 isActive
                   ? 'border-[var(--color-gold)] text-[var(--color-gold)] bg-[var(--color-gold)]/5'
                   : isDisabled
@@ -194,7 +194,7 @@ function FunctionTree({ active, onSelect }: { active: FunctionKey; onSelect: (k:
             {isActive && fn.children && (
               <div className="ml-5 border-l border-[var(--color-border-subtle)] pl-3 py-1 space-y-0.5">
                 {fn.children.map((child) => (
-                  <div key={child} className="text-[11px] font-mono tracking-wider text-[var(--color-text-muted)] py-0.5">
+                  <div key={child} className="text-[12px] font-mono tracking-wider text-[var(--color-text-muted)] py-0.5">
                     {child}
                   </div>
                 ))}
@@ -214,7 +214,7 @@ function MetricCell({ label, value, context }: { label: string; value: string; c
     <div className="px-3.5 py-3 border-r border-b border-[var(--color-border-subtle)] min-w-0">
       <div className="font-mono text-[10px] tracking-[0.1em] uppercase text-[var(--color-text-muted)] mb-1.5">{label}</div>
       <div className="font-mono text-[16px] sm:text-[17px] font-bold tabular-nums text-[var(--color-text-primary)] truncate" title={value}>{value}</div>
-      {context && <div className="font-mono text-[11px] text-[var(--color-text-muted)] mt-0.5">{context}</div>}
+      {context && <div className="font-mono text-[12px] text-[var(--color-text-muted)] mt-0.5">{context}</div>}
     </div>
   );
 }
@@ -225,7 +225,7 @@ function RangePills() {
   const ranges = ['1D', '5D', '1M', '6M', 'YTD', '1Y'];
   const active = '6M';
   return (
-    <div className="flex gap-1.5 font-mono text-[11px] tracking-[0.1em] uppercase">
+    <div className="flex gap-1.5 font-mono text-[12px] tracking-[0.1em] uppercase">
       {ranges.map((r) => (
         <span
           key={r}
@@ -254,7 +254,7 @@ function PriceChart({ ticker }: { ticker: string }) {
       .finally(() => setLoading(false));
   }, [ticker]);
 
-  if (loading) return <div className="h-[200px] flex items-center justify-center text-[13px] font-mono text-[var(--color-text-muted)]">Loading chart...</div>;
+  if (loading) return <div className="h-[200px] flex items-center justify-center text-[14px] font-mono text-[var(--color-text-muted)]">Loading chart...</div>;
   if (prices.length < 2) return null;
 
   const min = Math.min(...prices.map(p => p.close));
@@ -280,7 +280,7 @@ function PriceChart({ ticker }: { ticker: string }) {
             if (!active || !payload?.[0]) return null;
             const d = payload[0].payload;
             return (
-              <div className="bg-[var(--color-bg-overlay)] border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[12px] font-mono shadow-lg">
+              <div className="bg-[var(--color-bg-overlay)] border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[13px] font-mono shadow-lg">
                 <div className="text-[var(--color-text-muted)]">{d.price_date}</div>
                 <div className="text-[var(--color-text-primary)] font-semibold">${d.close.toFixed(2)}</div>
               </div>
@@ -325,7 +325,7 @@ function EPSChart({ earnings }: { earnings: TickerData['earnings'] }) {
               if (!active || !payload?.[0]) return null;
               const d = payload[0].payload;
               return (
-                <div className="bg-[var(--color-bg-overlay)] border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[12px] font-mono shadow-lg">
+                <div className="bg-[var(--color-bg-overlay)] border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[13px] font-mono shadow-lg">
                   <div className="text-[var(--color-text-muted)]">{d.quarter}</div>
                   <div className={`font-semibold ${d.beat ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}>Actual: ${d.actual.toFixed(2)}</div>
                   {d.estimate != null && <div className="text-[var(--color-text-muted)]">Est: ${d.estimate.toFixed(2)}</div>}
@@ -367,11 +367,11 @@ function BullBearCards({ analysis }: { analysis: StockAnalysis }) {
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
       <div className="border border-[var(--color-positive)]/15 bg-[var(--color-positive)]/[0.03] rounded-lg px-5 py-5">
         <div className="font-mono text-[10px] font-bold tracking-[0.14em] uppercase text-[var(--color-positive)] mb-3.5">▲ Bull Case</div>
-        <p className="text-[14px] leading-[1.6] text-[var(--color-text-secondary)] m-0">{analysis.bullCase}</p>
+        <p className="text-[15px] leading-[1.6] text-[var(--color-text-secondary)] m-0">{analysis.bullCase}</p>
       </div>
       <div className="border border-[var(--color-negative)]/15 bg-[var(--color-negative)]/[0.03] rounded-lg px-5 py-5">
         <div className="font-mono text-[10px] font-bold tracking-[0.14em] uppercase text-[var(--color-negative-text)] mb-3.5">▼ Bear Case</div>
-        <p className="text-[14px] leading-[1.6] text-[var(--color-text-secondary)] m-0">{analysis.bearCase}</p>
+        <p className="text-[15px] leading-[1.6] text-[var(--color-text-secondary)] m-0">{analysis.bearCase}</p>
       </div>
     </div>
   );
@@ -386,10 +386,10 @@ function SourcesStrip({ dataSources, computedAt, methodologyVersion }: { dataSou
       {dataSources.map((s, i) => (
         <div key={i} className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)]" />
-          <span className="font-mono text-[12px] text-[var(--color-text-secondary)]">{s}</span>
+          <span className="font-mono text-[13px] text-[var(--color-text-secondary)]">{s}</span>
         </div>
       ))}
-      <div className="w-full font-mono text-[11px] text-[var(--color-text-muted)]">
+      <div className="w-full font-mono text-[12px] text-[var(--color-text-muted)]">
         Methodology v{methodologyVersion} · {new Date(computedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · No black boxes. Every figure is sourced and timestamped.
       </div>
     </div>
@@ -429,7 +429,7 @@ function OverviewView({ analysis, tickerData, computedAt, dataSources, methodolo
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] animate-pulse" /> LIVE
             </span>
           </div>
-          <div className="flex items-center gap-2 mt-2 text-[12px] font-mono tracking-wider text-[var(--color-text-muted)]">
+          <div className="flex items-center gap-2 mt-2 text-[13px] font-mono tracking-wider text-[var(--color-text-muted)]">
             {profile?.exchange && <span>{profile.exchange}</span>}
             {profile?.exchange && profile?.industry && <span className="text-[var(--color-border-strong)]">|</span>}
             {profile?.industry && <span>{profile.industry}</span>}
@@ -444,7 +444,7 @@ function OverviewView({ analysis, tickerData, computedAt, dataSources, methodolo
           <div className={SECTION_LABEL}>Price — 45 Day</div>
           <div className="flex items-baseline gap-2 font-mono tabular-nums">
             <span className="text-[18px] font-semibold text-[var(--color-text-primary)]">{fmtPrice(quote?.c)}</span>
-            <span className={`text-[13px] ${changeColor(quote?.dp)}`}>{fmtPct(quote?.dp)}</span>
+            <span className={`text-[14px] ${changeColor(quote?.dp)}`}>{fmtPct(quote?.dp)}</span>
           </div>
         </div>
         <PriceChart ticker={analysis.ticker} />
@@ -468,7 +468,7 @@ function OverviewView({ analysis, tickerData, computedAt, dataSources, methodolo
       {/* Company overview */}
       <div className={`${CARD} px-5 py-4`}>
         <div className={`${SECTION_LABEL} mb-2`}>Company Overview</div>
-        <p className="text-[14px] text-[var(--color-text-secondary)] leading-[1.6] m-0">{analysis.summary}</p>
+        <p className="text-[15px] text-[var(--color-text-secondary)] leading-[1.6] m-0">{analysis.summary}</p>
       </div>
 
       {/* Bull / Bear */}
@@ -486,7 +486,7 @@ function OverviewView({ analysis, tickerData, computedAt, dataSources, methodolo
             <div className="text-[16px] font-mono font-semibold text-[var(--color-text-primary)]">
               {new Date(nextEarnings.period).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </div>
-            <div className="font-mono text-[11px] text-[var(--color-text-muted)] mt-0.5">Q{nextEarnings.quarter} {nextEarnings.year}</div>
+            <div className="font-mono text-[12px] text-[var(--color-text-muted)] mt-0.5">Q{nextEarnings.quarter} {nextEarnings.year}</div>
           </div>
         )}
       </div>
@@ -535,7 +535,7 @@ function FundamentalsView({ tickerData, profile }: { tickerData: TickerData; pro
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`px-3.5 py-2.5 text-[13px] font-mono tracking-wider uppercase whitespace-nowrap border-b-2 -mb-px transition-colors ${
+            className={`px-3.5 py-2.5 text-[14px] font-mono tracking-wider uppercase whitespace-nowrap border-b-2 -mb-px transition-colors ${
               tab === key
                 ? 'border-[var(--color-gold)] text-[var(--color-gold)]'
                 : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
@@ -609,7 +609,7 @@ function StatementView({ symbol, statement }: { symbol: string; statement: 'ic' 
 
   if (error) {
     return (
-      <div className="text-[14px] text-[var(--color-text-muted)] font-mono py-8 text-center">
+      <div className="text-[15px] text-[var(--color-text-muted)] font-mono py-8 text-center">
         Failed to load financial statements.
       </div>
     );
@@ -619,14 +619,14 @@ function StatementView({ symbol, statement }: { symbol: string; statement: 'ic' 
     return (
       <div className="flex items-center justify-center gap-2 py-12 text-[var(--color-text-muted)]">
         <Loader2 className="w-4 h-4 animate-spin" />
-        <span className="text-[14px] font-mono">Loading statements...</span>
+        <span className="text-[15px] font-mono">Loading statements...</span>
       </div>
     );
   }
 
   if (reports.length === 0) {
     return (
-      <div className="text-[14px] text-[var(--color-text-muted)] font-mono py-8 text-center">
+      <div className="text-[15px] text-[var(--color-text-muted)] font-mono py-8 text-center">
         No annual filings available for {symbol}.
       </div>
     );
@@ -638,7 +638,7 @@ function StatementView({ symbol, statement }: { symbol: string; statement: 'ic' 
 
   if (rows.length === 0) {
     return (
-      <div className="text-[14px] text-[var(--color-text-muted)] font-mono py-8 text-center">
+      <div className="text-[15px] text-[var(--color-text-muted)] font-mono py-8 text-center">
         No data for this statement.
       </div>
     );
@@ -652,16 +652,16 @@ function StatementView({ symbol, statement }: { symbol: string; statement: 'ic' 
         {titles[statement]} — Annual (10-K)
       </div>
       <div className={`${CARD} overflow-x-auto`}>
-        <table className="w-full text-[13px] font-mono">
+        <table className="w-full text-[14px] font-mono">
           <thead>
             <tr className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
-              <th className="text-left px-3.5 py-2.5 text-[11px] tracking-wider uppercase text-[var(--color-text-muted)] font-medium min-w-[200px]">
+              <th className="text-left px-3.5 py-2.5 text-[12px] tracking-wider uppercase text-[var(--color-text-muted)] font-medium min-w-[200px]">
                 Line Item
               </th>
               {reports.map((r) => (
                 <th
                   key={r.year}
-                  className="text-right px-3.5 py-2.5 text-[11px] tracking-wider uppercase text-[var(--color-text-muted)] font-medium whitespace-nowrap"
+                  className="text-right px-3.5 py-2.5 text-[12px] tracking-wider uppercase text-[var(--color-text-muted)] font-medium whitespace-nowrap"
                 >
                   FY{r.year}
                 </th>
@@ -693,7 +693,7 @@ function StatementView({ symbol, statement }: { symbol: string; statement: 'ic' 
           </tbody>
         </table>
       </div>
-      <div className="text-[11px] text-[var(--color-text-muted)] font-mono">
+      <div className="text-[12px] text-[var(--color-text-muted)] font-mono">
         Source: SEC EDGAR filings. Values as reported.
       </div>
     </div>
@@ -705,7 +705,7 @@ function EarningsView({ earnings }: { earnings: TickerData['earnings'] }) {
 
   if (rows.length === 0) {
     return (
-      <div className="text-[14px] text-[var(--color-text-muted)] font-mono py-8 text-center">
+      <div className="text-[15px] text-[var(--color-text-muted)] font-mono py-8 text-center">
         No earnings data available.
       </div>
     );
@@ -715,14 +715,14 @@ function EarningsView({ earnings }: { earnings: TickerData['earnings'] }) {
     <div className="space-y-4">
       <div className={SECTION_LABEL}>Earnings History</div>
       <div className={`${CARD} overflow-x-auto`}>
-        <table className="w-full text-[14px] font-mono tabular-nums">
+        <table className="w-full text-[15px] font-mono tabular-nums">
           <thead>
             <tr className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
-              <th className="text-left py-2.5 px-3.5 text-[11px] tracking-widest text-[var(--color-text-muted)] uppercase font-medium">Quarter</th>
-              <th className="text-right py-2.5 px-3.5 text-[11px] tracking-widest text-[var(--color-text-muted)] uppercase font-medium">EPS Est.</th>
-              <th className="text-right py-2.5 px-3.5 text-[11px] tracking-widest text-[var(--color-text-muted)] uppercase font-medium">EPS Actual</th>
-              <th className="text-right py-2.5 px-3.5 text-[11px] tracking-widest text-[var(--color-text-muted)] uppercase font-medium">Surprise %</th>
-              <th className="text-right py-2.5 px-3.5 text-[11px] tracking-widest text-[var(--color-text-muted)] uppercase font-medium">Period</th>
+              <th className="text-left py-2.5 px-3.5 text-[12px] tracking-widest text-[var(--color-text-muted)] uppercase font-medium">Quarter</th>
+              <th className="text-right py-2.5 px-3.5 text-[12px] tracking-widest text-[var(--color-text-muted)] uppercase font-medium">EPS Est.</th>
+              <th className="text-right py-2.5 px-3.5 text-[12px] tracking-widest text-[var(--color-text-muted)] uppercase font-medium">EPS Actual</th>
+              <th className="text-right py-2.5 px-3.5 text-[12px] tracking-widest text-[var(--color-text-muted)] uppercase font-medium">Surprise %</th>
+              <th className="text-right py-2.5 px-3.5 text-[12px] tracking-widest text-[var(--color-text-muted)] uppercase font-medium">Period</th>
             </tr>
           </thead>
           <tbody>
@@ -771,7 +771,7 @@ function NewsView({ news, analysisNews }: { news: TickerData['news']; analysisNe
                   ) : (
                     <span className="text-[15px] text-[var(--color-text-primary)] leading-snug">{h.headline}</span>
                   )}
-                  <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-0.5">{h.date}</div>
+                  <div className="text-[12px] font-mono text-[var(--color-text-muted)] mt-0.5">{h.date}</div>
                 </div>
               </div>
             ))}
@@ -783,7 +783,7 @@ function NewsView({ news, analysisNews }: { news: TickerData['news']; analysisNe
       <div className="space-y-3">
         <div className={SECTION_LABEL}>Recent News</div>
         {items.length === 0 ? (
-          <div className="text-[14px] text-[var(--color-text-muted)] font-mono py-4 text-center">No recent news.</div>
+          <div className="text-[15px] text-[var(--color-text-muted)] font-mono py-4 text-center">No recent news.</div>
         ) : (
           <div className="space-y-1">
             {items.slice(0, 20).map((item) => (
@@ -796,8 +796,8 @@ function NewsView({ news, analysisNews }: { news: TickerData['news']; analysisNe
               >
                 <span className="mt-1.5 w-2 h-2 rounded-full shrink-0 bg-[var(--color-text-muted)]" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-[14px] text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors leading-snug">{item.headline}</div>
-                  <div className="flex items-center gap-2 mt-1 text-[11px] font-mono text-[var(--color-text-muted)]">
+                  <div className="text-[15px] text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors leading-snug">{item.headline}</div>
+                  <div className="flex items-center gap-2 mt-1 text-[12px] font-mono text-[var(--color-text-muted)]">
                     <span>{item.source}</span>
                     <span className="text-[var(--color-border-strong)]">|</span>
                     <span>{relativeTime(item.datetime)}</span>
@@ -818,7 +818,7 @@ function AIAnalysisView({ analysis }: { analysis: StockAnalysis }) {
       {/* Bull case */}
       <div className="border border-[var(--color-positive)]/30 rounded-lg overflow-hidden">
         <div className="bg-[var(--color-positive)]/10 px-5 py-2.5 border-b border-[var(--color-positive)]/20">
-          <span className="font-mono text-[12px] tracking-[0.14em] text-[var(--color-positive)] uppercase font-bold">▲ Bull Case</span>
+          <span className="font-mono text-[13px] tracking-[0.14em] text-[var(--color-positive)] uppercase font-bold">▲ Bull Case</span>
         </div>
         <div className="px-5 py-4">
           <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed m-0">{analysis.bullCase}</p>
@@ -828,7 +828,7 @@ function AIAnalysisView({ analysis }: { analysis: StockAnalysis }) {
       {/* Bear case */}
       <div className="border border-[var(--color-negative)]/30 rounded-lg overflow-hidden">
         <div className="bg-[var(--color-negative)]/10 px-5 py-2.5 border-b border-[var(--color-negative)]/20">
-          <span className="font-mono text-[12px] tracking-[0.14em] text-[var(--color-negative-text)] uppercase font-bold">▼ Bear Case</span>
+          <span className="font-mono text-[13px] tracking-[0.14em] text-[var(--color-negative-text)] uppercase font-bold">▼ Bear Case</span>
         </div>
         <div className="px-5 py-4">
           <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed m-0">{analysis.bearCase}</p>
@@ -845,9 +845,9 @@ function AIAnalysisView({ analysis }: { analysis: StockAnalysis }) {
                 <div className="font-mono text-[10px] tracking-[0.1em] uppercase text-[var(--color-text-muted)] mb-1.5">{m.label}</div>
                 <div className="font-mono text-[16px] tabular-nums font-bold text-[var(--color-text-primary)]">{m.value}</div>
                 {m.change && (
-                  <div className={`font-mono text-[11px] mt-0.5 ${m.change.startsWith('-') ? 'text-[var(--color-negative-text)]' : 'text-[var(--color-positive)]'}`}>{m.change}</div>
+                  <div className={`font-mono text-[12px] mt-0.5 ${m.change.startsWith('-') ? 'text-[var(--color-negative-text)]' : 'text-[var(--color-positive)]'}`}>{m.change}</div>
                 )}
-                {m.context && <div className="font-mono text-[11px] text-[var(--color-text-muted)] mt-0.5">{m.context}</div>}
+                {m.context && <div className="font-mono text-[12px] text-[var(--color-text-muted)] mt-0.5">{m.context}</div>}
               </div>
             ))}
           </div>
@@ -893,9 +893,9 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
     const bWins = highlight === 'higher' ? bNum > aNum : highlight === 'lower' ? bNum < aNum : false;
     return (
       <tr key={label} className="border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors">
-        <td className="py-2.5 px-3.5 text-[13px] font-mono text-[var(--color-text-muted)]">{label}</td>
-        <td className={`py-2.5 px-3.5 text-right text-[14px] font-mono tabular-nums font-semibold ${aWins ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-primary)]'}`}>{aVal}</td>
-        <td className={`py-2.5 px-3.5 text-right text-[14px] font-mono tabular-nums font-semibold ${bWins ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-primary)]'}`}>{bVal}</td>
+        <td className="py-2.5 px-3.5 text-[14px] font-mono text-[var(--color-text-muted)]">{label}</td>
+        <td className={`py-2.5 px-3.5 text-right text-[15px] font-mono tabular-nums font-semibold ${aWins ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-primary)]'}`}>{aVal}</td>
+        <td className={`py-2.5 px-3.5 text-right text-[15px] font-mono tabular-nums font-semibold ${bWins ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-primary)]'}`}>{bVal}</td>
       </tr>
     );
   };
@@ -910,19 +910,19 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
             <input
               type="text" value={compareTicker} onChange={(e) => setCompareTicker(e.target.value.toUpperCase())}
               placeholder="Enter ticker" maxLength={5} disabled={loading}
-              className="w-full pl-8 pr-2 py-2.5 bg-[var(--color-bg-inset)] border border-[var(--color-border-base)] rounded-md text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-[13px] tracking-wider font-mono tabular-nums"
+              className="w-full pl-8 pr-2 py-2.5 bg-[var(--color-bg-inset)] border border-[var(--color-border-base)] rounded-md text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-[14px] tracking-wider font-mono tabular-nums"
             />
           </div>
           <button type="submit" disabled={!compareTicker.trim() || loading}
-            className="px-4 py-2.5 bg-[var(--color-gold)] hover:brightness-[1.08] text-[var(--color-text-inverse)] font-semibold rounded-md transition-all text-[12px] disabled:opacity-40 flex items-center gap-1.5">
+            className="px-4 py-2.5 bg-[var(--color-gold)] hover:brightness-[1.08] text-[var(--color-text-inverse)] font-semibold rounded-md transition-all text-[13px] disabled:opacity-40 flex items-center gap-1.5">
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Compare'}
           </button>
         </form>
-        {error && <div className="text-[13px] text-[var(--color-negative-text)] font-mono">{error}</div>}
+        {error && <div className="text-[14px] text-[var(--color-negative-text)] font-mono">{error}</div>}
         <div className="flex flex-wrap gap-2 pt-2">
           {SUGGESTIONS.slice(0, 6).map(t => (
             <button key={t} onClick={() => { setCompareTicker(t); }}
-              className="px-3 py-2.5 sm:py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-md text-[11px] font-mono font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:border-[var(--color-gold-border)] transition-colors">
+              className="px-3 py-2.5 sm:py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-md text-[12px] font-mono font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:border-[var(--color-gold-border)] transition-colors">
               {t}
             </button>
           ))}
@@ -945,7 +945,7 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
           {currentTicker} vs {compareData.symbol}
         </div>
         <button onClick={() => { setCompareData(null); setCompareTicker(''); }}
-          className="text-[12px] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors">
+          className="text-[13px] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors">
           Change ticker
         </button>
       </div>
@@ -954,20 +954,20 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
       <div className="grid grid-cols-2 gap-2 sm:gap-3.5">
         <div className={`${CARD} p-3.5 sm:p-4`}>
           <div className="text-[16px] sm:text-[18px] font-mono font-bold text-[var(--color-gold)] tabular-nums">{currentTicker}</div>
-          <div className="text-[12px] sm:text-[13px] text-[var(--color-text-secondary)] mt-0.5 truncate">{currentAnalysis.companyName}</div>
-          <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-1 truncate">{a.profile?.industry || '--'}</div>
+          <div className="text-[13px] sm:text-[14px] text-[var(--color-text-secondary)] mt-0.5 truncate">{currentAnalysis.companyName}</div>
+          <div className="text-[12px] font-mono text-[var(--color-text-muted)] mt-1 truncate">{a.profile?.industry || '--'}</div>
           <div className="flex items-baseline gap-1.5 sm:gap-2 mt-2">
             <span className="text-[16px] sm:text-[20px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{fmtPrice(a.quote?.c)}</span>
-            <span className={`text-[11px] sm:text-[13px] font-mono tabular-nums ${changeColor(a.quote?.dp)}`}>{fmtPct(a.quote?.dp)}</span>
+            <span className={`text-[12px] sm:text-[14px] font-mono tabular-nums ${changeColor(a.quote?.dp)}`}>{fmtPct(a.quote?.dp)}</span>
           </div>
         </div>
         <div className={`${CARD} p-3.5 sm:p-4`}>
           <div className="text-[16px] sm:text-[18px] font-mono font-bold text-[var(--color-text-primary)] tabular-nums">{b.symbol}</div>
-          <div className="text-[12px] sm:text-[13px] text-[var(--color-text-secondary)] mt-0.5 truncate">{b.profile?.name || b.symbol}</div>
-          <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-1 truncate">{b.profile?.industry || '--'}</div>
+          <div className="text-[13px] sm:text-[14px] text-[var(--color-text-secondary)] mt-0.5 truncate">{b.profile?.name || b.symbol}</div>
+          <div className="text-[12px] font-mono text-[var(--color-text-muted)] mt-1 truncate">{b.profile?.industry || '--'}</div>
           <div className="flex items-baseline gap-1.5 sm:gap-2 mt-2">
             <span className="text-[16px] sm:text-[20px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{fmtPrice(b.quote?.c)}</span>
-            <span className={`text-[11px] sm:text-[13px] font-mono tabular-nums ${changeColor(b.quote?.dp)}`}>{fmtPct(b.quote?.dp)}</span>
+            <span className={`text-[12px] sm:text-[14px] font-mono tabular-nums ${changeColor(b.quote?.dp)}`}>{fmtPct(b.quote?.dp)}</span>
           </div>
         </div>
       </div>
@@ -977,9 +977,9 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
         <table className="w-full">
           <thead>
             <tr className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
-              <th className="text-left py-2.5 px-3.5 text-[11px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase font-medium w-1/3">Metric</th>
-              <th className="text-right py-2.5 px-3.5 text-[11px] font-mono tracking-widest text-[var(--color-gold)] uppercase font-semibold w-1/3">{currentTicker}</th>
-              <th className="text-right py-2.5 px-3.5 text-[11px] font-mono tracking-widest text-[var(--color-text-secondary)] uppercase font-semibold w-1/3">{b.symbol}</th>
+              <th className="text-left py-2.5 px-3.5 text-[12px] font-mono tracking-widest text-[var(--color-text-muted)] uppercase font-medium w-1/3">Metric</th>
+              <th className="text-right py-2.5 px-3.5 text-[12px] font-mono tracking-widest text-[var(--color-gold)] uppercase font-semibold w-1/3">{currentTicker}</th>
+              <th className="text-right py-2.5 px-3.5 text-[12px] font-mono tracking-widest text-[var(--color-text-secondary)] uppercase font-semibold w-1/3">{b.symbol}</th>
             </tr>
           </thead>
           <tbody>
@@ -1008,12 +1008,12 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
           <div className={SECTION_LABEL}>Analyst Consensus</div>
           <div className="grid grid-cols-2 gap-3.5">
             {[{ ticker: currentTicker, rec: a.recommendations?.[0] }, { ticker: b.symbol, rec: b.recommendations?.[0] }].map(({ ticker: t, rec }) => {
-              if (!rec) return <div key={t} className="text-[13px] text-[var(--color-text-muted)] font-mono py-4 text-center">No data</div>;
+              if (!rec) return <div key={t} className="text-[14px] text-[var(--color-text-muted)] font-mono py-4 text-center">No data</div>;
               const total = rec.strongBuy + rec.buy + rec.hold + rec.sell + rec.strongSell;
               if (total === 0) return null;
               return (
                 <div key={t} className={`${CARD} p-3.5 space-y-2`}>
-                  <div className="text-[12px] font-mono tracking-wider text-[var(--color-text-muted)]">{t}</div>
+                  <div className="text-[13px] font-mono tracking-wider text-[var(--color-text-muted)]">{t}</div>
                   <div className="flex h-3 rounded-sm overflow-hidden bg-[var(--color-bg-inset)]">
                     {rec.strongBuy > 0 && <div style={{ width: `${(rec.strongBuy / total) * 100}%`, backgroundColor: 'var(--color-positive)' }} />}
                     {rec.buy > 0 && <div style={{ width: `${(rec.buy / total) * 100}%`, backgroundColor: 'var(--color-positive)', opacity: 0.6 }} />}
@@ -1021,7 +1021,7 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
                     {rec.sell > 0 && <div style={{ width: `${(rec.sell / total) * 100}%`, backgroundColor: 'var(--color-negative-text)', opacity: 0.6 }} />}
                     {rec.strongSell > 0 && <div style={{ width: `${(rec.strongSell / total) * 100}%`, backgroundColor: 'var(--color-negative-text)' }} />}
                   </div>
-                  <div className="flex justify-between text-[11px] font-mono text-[var(--color-text-muted)]">
+                  <div className="flex justify-between text-[12px] font-mono text-[var(--color-text-muted)]">
                     <span className="text-[var(--color-positive)]">Buy {rec.strongBuy + rec.buy}</span>
                     <span>Hold {rec.hold}</span>
                     <span className="text-[var(--color-negative-text)]">Sell {rec.sell + rec.strongSell}</span>
@@ -1069,7 +1069,7 @@ function RightSidebar({
           <span className="flex-1 h-px bg-[var(--color-gold)]/[0.12]" />
         </div>
         <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center px-2.5 py-1 rounded-sm border text-[13px] font-mono font-bold tracking-wider ${verdictBg(analysis.verdict)}`}>
+          <span className={`inline-flex items-center px-2.5 py-1 rounded-sm border text-[14px] font-mono font-bold tracking-wider ${verdictBg(analysis.verdict)}`}>
             {verdictLabel}
           </span>
         </div>
@@ -1083,7 +1083,7 @@ function RightSidebar({
           <div className="space-y-1.5">
             {analysis.metrics.slice(0, isDashboard ? 6 : 4).map((m: AnalysisMetric, i: number) => (
               <div key={i} className="flex items-center justify-between py-1.5 border-b border-[var(--color-border-subtle)]">
-                <span className="text-[13px] font-mono text-[var(--color-text-muted)]">{m.label}</span>
+                <span className="text-[14px] font-mono text-[var(--color-text-muted)]">{m.label}</span>
                 <span className="text-[15px] font-mono tabular-nums font-semibold text-[var(--color-text-primary)]">{m.value}</span>
               </div>
             ))}
@@ -1105,7 +1105,7 @@ function RightSidebar({
               {latestRec.strongSell > 0 && <div style={{ width: `${(latestRec.strongSell / totalRatings) * 100}%`, backgroundColor: 'var(--color-negative-text)' }} />}
             </div>
             {/* Labels */}
-            <div className="flex justify-between text-[13px] font-mono text-[var(--color-text-muted)]">
+            <div className="flex justify-between text-[14px] font-mono text-[var(--color-text-muted)]">
               <span className="text-[var(--color-positive)]">Buy {latestRec.strongBuy + latestRec.buy}</span>
               <span>Hold {latestRec.hold}</span>
               <span className="text-[var(--color-negative-text)]">Sell {latestRec.sell + latestRec.strongSell}</span>
@@ -1141,15 +1141,15 @@ function RightSidebar({
           {dataSources.map((s, i) => (
             <div key={i} className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)] shrink-0" />
-              <span className="text-[12px] font-mono text-[var(--color-text-secondary)]">{s}</span>
+              <span className="text-[13px] font-mono text-[var(--color-text-secondary)]">{s}</span>
             </div>
           ))}
         </div>
-        <div className="flex items-center justify-between text-[11px] font-mono text-[var(--color-text-muted)] pt-1.5">
+        <div className="flex items-center justify-between text-[12px] font-mono text-[var(--color-text-muted)] pt-1.5">
           <span>v{methodologyVersion}</span>
           <span>{new Date(computedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
         </div>
-        <div className="text-[11px] font-mono text-[var(--color-text-muted)] leading-relaxed pt-0.5">
+        <div className="text-[12px] font-mono text-[var(--color-text-muted)] leading-relaxed pt-0.5">
           No black boxes. Every figure is sourced and timestamped.
         </div>
       </div>
@@ -1177,7 +1177,7 @@ function ShareBar({ ticker, analysis }: { ticker: string; analysis: StockAnalysi
     } catch { /* noop */ }
   };
 
-  const btnClass = "flex items-center gap-1.5 px-2.5 py-2 sm:py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-md text-[11px] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors";
+  const btnClass = "flex items-center gap-1.5 px-2.5 py-2 sm:py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-md text-[12px] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors";
 
   return (
     <div className="flex items-center gap-1.5 sm:gap-2">
@@ -1252,7 +1252,7 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
         </div>
         <div className="flex items-center gap-4">
           <ShareBar ticker={ticker} analysis={analysis} />
-          <div className="flex items-center gap-1.5 sm:gap-3 font-mono tabular-nums text-[14px] sm:text-[16px]">
+          <div className="flex items-center gap-1.5 sm:gap-3 font-mono tabular-nums text-[15px] sm:text-[16px]">
             <span className="text-[var(--color-text-primary)] font-semibold">{fmtPrice(quote?.c)}</span>
             <span className={`hidden sm:inline ${changeColor(quote?.dp)}`}>{fmtPct(quote?.dp)}</span>
           </div>
@@ -1287,7 +1287,7 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
                   <a
                     key={t}
                     href={`${analyzePath}/${t}`}
-                    className="px-3 py-2 sm:px-2 sm:py-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-md text-[11px] sm:text-[10px] font-mono font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:border-[var(--color-gold-border)] transition-colors"
+                    className="px-3 py-2 sm:px-2 sm:py-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-md text-[12px] sm:text-[10px] font-mono font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-gold)] hover:border-[var(--color-gold-border)] transition-colors"
                   >
                     {t}
                   </a>
@@ -1307,12 +1307,12 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
               <p className="text-[16px] font-semibold text-[var(--color-text-primary)]">
                 Want AI analysis of your entire portfolio?
               </p>
-              <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed max-w-md mx-auto">
+              <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed max-w-md mx-auto">
                 Helm Terminal connects to your brokerage, analyzes every holding, and delivers actionable intelligence weekly. Free to start. Pro unlocks the full terminal at $20/mo.
               </p>
               <a
                 href="/signup"
-                className="inline-block px-6 py-2.5 bg-[var(--color-gold)] hover:brightness-[1.08] text-[var(--color-text-inverse)] text-[14px] font-semibold rounded-md transition-all"
+                className="inline-block px-6 py-2.5 bg-[var(--color-gold)] hover:brightness-[1.08] text-[var(--color-text-inverse)] text-[15px] font-semibold rounded-md transition-all"
               >
                 Get started free
               </a>
@@ -1334,8 +1334,8 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
                   >
                     <span className="mt-1.5 w-2 h-2 rounded-full shrink-0 bg-[var(--color-text-muted)]" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-[14px] text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors leading-snug line-clamp-2">{item.headline}</div>
-                      <div className="text-[11px] font-mono text-[var(--color-text-muted)] mt-1">{item.source} · {relativeTime(item.datetime)}</div>
+                      <div className="text-[15px] text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors leading-snug line-clamp-2">{item.headline}</div>
+                      <div className="text-[12px] font-mono text-[var(--color-text-muted)] mt-1">{item.source} · {relativeTime(item.datetime)}</div>
                     </div>
                   </a>
                 ))}

@@ -91,7 +91,7 @@ function TopBar({ current }: { current: number }) {
     <div className="absolute top-0 left-0 right-0 z-30 flex items-center gap-3 px-4 py-3 md:px-10 md:py-4">
       <div className="flex items-center gap-2.5 shrink-0">
         <HelmMark size={18} />
-        <span className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]" style={MONO}>
+        <span className="text-[12px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]" style={MONO}>
           Helm / Wrapped &middot; Demo
         </span>
       </div>
@@ -106,7 +106,7 @@ function TopBar({ current }: { current: number }) {
           />
         ))}
       </div>
-      <span className="text-[11px] text-[var(--color-text-muted)] tabular-nums shrink-0" style={MONO}>
+      <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums shrink-0" style={MONO}>
         {String(current + 1).padStart(2, '0')} / {String(TOTAL_SLIDES).padStart(2, '0')}
       </span>
       <a
@@ -139,7 +139,7 @@ function SlideCover({ onBegin }: { onBegin: () => void }) {
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-8 overflow-hidden">
       <div className="absolute -top-[30%] -left-[20%] w-[80vw] h-[80vw] rounded-full opacity-[0.08] blur-[140px] pointer-events-none" style={{ background: 'radial-gradient(circle, var(--color-gold), transparent 65%)' }} />
       <div className="relative z-10 max-w-lg w-full">
-        <p className="font-semibold text-[13px] uppercase tracking-[0.18em] text-[var(--color-gold)] mb-10" style={MONO}>HELM WRAPPED, DEMO</p>
+        <p className="font-semibold text-[14px] uppercase tracking-[0.18em] text-[var(--color-gold)] mb-10" style={MONO}>HELM WRAPPED, DEMO</p>
         <h1 className="font-bold leading-[0.88] tracking-[-0.05em] mb-12" style={{ fontSize: 'clamp(72px, 18vw, 160px)' }}>
           Your<br />
           <span className="italic font-normal text-[var(--color-gold)]" style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}>2025</span>
@@ -172,7 +172,7 @@ function SlideReturn() {
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 text-center overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] h-[90vw] rounded-full opacity-[0.07] blur-[150px] pointer-events-none" style={{ background: 'radial-gradient(circle, #4ADE80, transparent 60%)' }} />
       <div className="relative z-10">
-        <p className="text-[14px] text-[var(--color-text-muted)] mb-3">Your portfolio returned</p>
+        <p className="text-[15px] text-[var(--color-text-muted)] mb-3">Your portfolio returned</p>
         <div
           className="text-[clamp(60px,18vw,240px)] font-bold leading-none tabular-nums tracking-[-0.05em] text-[#4ADE80]"
           style={{ textShadow: '0 0 60px rgba(74,222,128,0.35), 0 0 120px rgba(74,222,128,0.15)' }}
@@ -181,18 +181,18 @@ function SlideReturn() {
         </div>
         <div className="flex items-center justify-center gap-8 mt-8">
           <div className="text-center">
-            <p className="text-[11px] tracking-[0.15em] text-[var(--color-text-muted)] mb-1" style={MONO}>S&amp;P 500</p>
+            <p className="text-[12px] tracking-[0.15em] text-[var(--color-text-muted)] mb-1" style={MONO}>S&amp;P 500</p>
             <p className="text-[20px] font-bold" style={MONO}>{fmtPct(d.spyComparison.spyReturn!)}</p>
           </div>
           <div className="text-center">
-            <p className="text-[11px] tracking-[0.15em] text-[var(--color-text-muted)] mb-1" style={MONO}>ALPHA</p>
+            <p className="text-[12px] tracking-[0.15em] text-[var(--color-text-muted)] mb-1" style={MONO}>ALPHA</p>
             <p className="text-[20px] font-bold text-[var(--color-gold)]" style={MONO}>{fmtPct(pct - d.spyComparison.spyReturn!)}</p>
           </div>
           <div className="px-5 py-2 rounded-full bg-[#4ADE80]/10 border border-[#4ADE80]/20">
-            <p className="text-[14px] font-bold text-[#4ADE80]" style={MONO}>BEAT THE MARKET</p>
+            <p className="text-[15px] font-bold text-[#4ADE80]" style={MONO}>BEAT THE MARKET</p>
           </div>
         </div>
-        <p className="text-[11px] text-white/40 mt-6" style={MONO}>
+        <p className="text-[12px] text-white/40 mt-6" style={MONO}>
           Return based on cost basis. MVP &amp; villain reflect total gain since purchase.
         </p>
       </div>
@@ -213,17 +213,17 @@ function SlideBestWorst() {
       <div className="absolute -bottom-[20%] -left-[20%] w-[50vw] h-[50vw] rounded-full opacity-[0.05] blur-[120px] pointer-events-none" style={{ background: '#F87171' }} />
       <div className="relative z-10 w-full max-w-lg">
         <div className="text-center mb-8">
-          <p className="text-[13px] tracking-[0.2em] text-[#4ADE80] mb-3" style={MONO}>YOUR MVP</p>
+          <p className="text-[14px] tracking-[0.2em] text-[#4ADE80] mb-3" style={MONO}>YOUR MVP</p>
           <p className="text-[clamp(48px,12vw,80px)] font-bold text-[var(--color-gold)] tracking-tight leading-none" style={MONO}>{best.ticker}</p>
           <p className="text-[clamp(32px,8vw,56px)] font-bold text-[#4ADE80] tabular-nums mt-2">{fmtPct(best.returnPct)}</p>
-          <p className="text-[14px] text-[var(--color-text-muted)] mt-2">{best.name} &middot; {fmtDollar(best.returnDollars)}</p>
+          <p className="text-[15px] text-[var(--color-text-muted)] mt-2">{best.name} &middot; {fmtDollar(best.returnDollars)}</p>
         </div>
         <div className="w-16 h-px bg-white/10 mx-auto my-6" />
         <div className="text-center">
-          <p className="text-[13px] tracking-[0.2em] text-[#F87171] mb-3" style={MONO}>YOUR VILLAIN</p>
+          <p className="text-[14px] tracking-[0.2em] text-[#F87171] mb-3" style={MONO}>YOUR VILLAIN</p>
           <p className="text-[clamp(48px,12vw,80px)] font-bold text-[#F87171] tracking-tight leading-none" style={MONO}>{worst.ticker}</p>
           <p className="text-[clamp(32px,8vw,56px)] font-bold text-[#F87171] tabular-nums mt-2">{fmtPct(worst.returnPct)}</p>
-          <p className="text-[14px] text-[var(--color-text-muted)] mt-2">{worst.name} &middot; {fmtDollar(worst.returnDollars)}</p>
+          <p className="text-[15px] text-[var(--color-text-muted)] mt-2">{worst.name} &middot; {fmtDollar(worst.returnDollars)}</p>
         </div>
       </div>
     </div>
@@ -252,7 +252,7 @@ function SlideTradingHabits() {
           ].map((s) => (
             <div key={s.label} className="p-5 bg-white/[0.03] border border-white/[0.06] rounded-2xl">
               <p className="text-[clamp(24px,5vw,32px)] font-bold tabular-nums">{s.value}</p>
-              <p className="text-[11px] tracking-[0.15em] text-[var(--color-gold)] mt-2" style={MONO}>{s.label}</p>
+              <p className="text-[12px] tracking-[0.15em] text-[var(--color-gold)] mt-2" style={MONO}>{s.label}</p>
             </div>
           ))}
         </div>
@@ -284,7 +284,7 @@ function SlideSectors() {
           </div>
           <div className="flex flex-wrap justify-center gap-x-3 md:gap-x-5 gap-y-1.5 mt-4 md:mt-5">
             {sectors.slice(0, 5).map((s, i) => (
-              <span key={s.sector} className="flex items-center gap-1.5 text-[11px] md:text-[14px] text-[var(--color-text-muted)]" style={MONO}>
+              <span key={s.sector} className="flex items-center gap-1.5 text-[12px] md:text-[15px] text-[var(--color-text-muted)]" style={MONO}>
                 <span className="w-3 h-3 rounded-full" style={{ background: sectorColors[i % sectorColors.length] }} />
                 {s.sector} {s.pct}%
               </span>
@@ -293,11 +293,11 @@ function SlideSectors() {
         </div>
         <div className="flex items-center justify-center gap-10 mt-4">
           <div>
-            <p className="text-[12px] tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>NET WORTH</p>
+            <p className="text-[13px] tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>NET WORTH</p>
             <p className="text-[28px] font-bold mt-1 tabular-nums text-[#4ADE80]">{fmtDollar(nwChange.change)}</p>
           </div>
           <div>
-            <p className="text-[12px] tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>CHANGE</p>
+            <p className="text-[13px] tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>CHANGE</p>
             <p className="text-[28px] font-bold mt-1 tabular-nums text-[#4ADE80]">{fmtPct(nwChange.changePct)}</p>
           </div>
         </div>
@@ -324,7 +324,7 @@ function SlidePersonality() {
         <p className="text-[18px] text-[var(--color-text-muted)] leading-relaxed max-w-md mx-auto mb-8">{p.description}</p>
         <div className="flex flex-wrap justify-center gap-2.5 max-w-md mx-auto">
           {p.traits.map((t) => (
-            <span key={t} className="px-5 py-2.5 rounded-full border border-[var(--color-gold)]/25 bg-[var(--color-gold)]/[0.08] text-[14px] font-medium text-[var(--color-gold)]" style={MONO}>{t}</span>
+            <span key={t} className="px-5 py-2.5 rounded-full border border-[var(--color-gold)]/25 bg-[var(--color-gold)]/[0.08] text-[15px] font-medium text-[var(--color-gold)]" style={MONO}>{t}</span>
           ))}
         </div>
       </div>
@@ -341,7 +341,7 @@ function SlideCTA() {
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 text-center overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] rounded-full opacity-[0.06] blur-[140px] pointer-events-none" style={{ background: 'var(--color-gold)' }} />
       <div className="relative z-10 max-w-lg">
-        <p className="font-semibold text-[13px] uppercase tracking-[0.18em] text-[var(--color-gold)] mb-8" style={MONO}>THIS WAS A DEMO</p>
+        <p className="font-semibold text-[14px] uppercase tracking-[0.18em] text-[var(--color-gold)] mb-8" style={MONO}>THIS WAS A DEMO</p>
         <h2 className="font-bold tracking-[-0.04em] leading-[0.9] mb-6" style={{ fontSize: 'clamp(48px, 12vw, 96px)' }}>
           Now see{' '}
           <span className="italic text-[var(--color-gold)]" style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}>
@@ -359,7 +359,7 @@ function SlideCTA() {
           Get my Wrapped
           <ChevronRight className="w-6 h-6" />
         </a>
-        <p className="text-[13px] text-white/40 mt-6" style={MONO}>Free &middot; 30 seconds &middot; Any brokerage</p>
+        <p className="text-[14px] text-white/40 mt-6" style={MONO}>Free &middot; 30 seconds &middot; Any brokerage</p>
       </div>
     </div>
   );

@@ -52,7 +52,7 @@ export function QuietState({ summary }: { summary: PillarSummary }) {
             </p>
             <Link
               href="/dashboard/portfolio"
-              className="text-[14px] font-semibold text-[#E6B94D] hover:text-[#FFD67A] transition-colors underline-offset-2 hover:underline"
+              className="text-[15px] font-semibold text-[#E6B94D] hover:text-[#FFD67A] transition-colors underline-offset-2 hover:underline"
             >
               Set up your first thesis
             </Link>

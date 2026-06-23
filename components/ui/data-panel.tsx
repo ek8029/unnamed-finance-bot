@@ -91,7 +91,7 @@ const DataPanelTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn('text-xs uppercase tracking-widest text-[var(--color-text-muted)] font-mono', className)}
+    className={cn('text-[13px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono', className)}
     {...props}
   />
 ));

@@ -41,7 +41,7 @@ function SummaryCard({ item, index }: { item: SummaryItem; index: number }) {
     >
       <div className="sovereign-card rounded border overflow-hidden p-3 md:p-5">
         <div className="flex items-center justify-between mb-1.5 md:mb-2">
-          <h3 className="text-[10px] md:text-xs uppercase tracking-widest text-[var(--color-text-muted)] font-mono leading-tight">
+          <h3 className="text-[10px] md:text-[13px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono leading-tight">
             {item.title}
           </h3>
           <div className={`rounded p-1 md:p-2 ${item.iconBg} ${index === 0 ? 'shadow-glow-gold' : ''}`}>
@@ -60,13 +60,13 @@ function SummaryCard({ item, index }: { item: SummaryItem; index: number }) {
                 <ArrowDownRight className="h-3 w-3 shrink-0 text-[var(--color-negative)]" aria-hidden="true" />
               )}
               <span className="sr-only">{isPositive ? 'Up' : 'Down'}</span>
-              <span className={`text-[11px] font-tabular ${isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
+              <span className={`text-[12px] font-tabular ${isPositive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}>
                 {formatPercentage(item.change)}
               </span>
-              <span className="text-[11px] text-[var(--color-text-muted)]">vs last mo</span>
+              <span className="text-[12px] text-[var(--color-text-muted)]">vs last mo</span>
             </>
           ) : (
-            <span className="text-[11px] text-[var(--color-text-muted)]" aria-label="No change data available">--</span>
+            <span className="text-[12px] text-[var(--color-text-muted)]" aria-label="No change data available">--</span>
           )}
         </div>
       </div>

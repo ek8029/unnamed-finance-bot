@@ -47,13 +47,13 @@ export default function CompareIndexPage() {
           <div className="flex items-center gap-5">
             <Link
               href="/analyze"
-              className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+              className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               Analyze
             </Link>
             <Link
               href="/signup"
-              className="px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:brightness-110"
+              className="px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110"
             >
               Get Started
             </Link>
@@ -92,10 +92,10 @@ export default function CompareIndexPage() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[14px] font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors">
+                    <p className="text-[15px] font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors">
                       {comp.label}
                     </p>
-                    <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
+                    <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
                       {comp.category}
                     </p>
                   </div>
@@ -113,12 +113,12 @@ export default function CompareIndexPage() {
           <h2 className="text-[24px] font-bold text-[var(--color-text-primary)] mb-3">
             Want AI analysis for your whole portfolio?
           </h2>
-          <p className="text-[14px] text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">
+          <p className="text-[15px] text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">
             Helm Terminal monitors your holdings and tells you what matters this week.
           </p>
           <Link
             href="/signup"
-            className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:brightness-110"
+            className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110"
           >
             Sign Up Free
           </Link>

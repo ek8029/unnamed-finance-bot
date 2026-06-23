@@ -53,7 +53,7 @@ export function ContactForm() {
         <p className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1">
           Message sent.
         </p>
-        <p className="text-sm text-[var(--color-text-muted)]">
+        <p className="text-[15px] text-[var(--color-text-muted)]">
           We&apos;ll get back to you within 24 hours.
         </p>
       </div>
@@ -66,7 +66,7 @@ export function ContactForm() {
       <div>
         <label
           htmlFor="contact-name"
-          className="block font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2"
+          className="block font-mono text-[12px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2"
         >
           Name
         </label>
@@ -76,7 +76,7 @@ export function ContactForm() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          className="w-full h-11 px-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-lg font-mono text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)]/40 transition-colors"
+          className="w-full h-11 px-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-lg font-mono text-[15px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)]/40 transition-colors"
           placeholder="Your name"
         />
       </div>
@@ -85,7 +85,7 @@ export function ContactForm() {
       <div>
         <label
           htmlFor="contact-email"
-          className="block font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2"
+          className="block font-mono text-[12px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2"
         >
           Email
         </label>
@@ -95,7 +95,7 @@ export function ContactForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="w-full h-11 px-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-lg font-mono text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)]/40 transition-colors"
+          className="w-full h-11 px-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-lg font-mono text-[15px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)]/40 transition-colors"
           placeholder="you@email.com"
         />
       </div>
@@ -104,7 +104,7 @@ export function ContactForm() {
       <div>
         <label
           htmlFor="contact-message"
-          className="block font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2"
+          className="block font-mono text-[12px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2"
         >
           Message
         </label>
@@ -115,21 +115,21 @@ export function ContactForm() {
           required
           minLength={10}
           rows={5}
-          className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-lg font-mono text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)]/40 transition-colors resize-none"
+          className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-lg font-mono text-[15px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)]/40 transition-colors resize-none"
           placeholder="How can we help?"
         />
       </div>
 
       {/* Error */}
       {status === 'error' && errorMsg && (
-        <p className="text-sm text-[var(--color-negative)]">{errorMsg}</p>
+        <p className="text-[15px] text-[var(--color-negative)]">{errorMsg}</p>
       )}
 
       {/* Submit */}
       <button
         type="submit"
         disabled={status === 'submitting'}
-        className="h-11 px-6 bg-[var(--color-gold)] text-black font-mono text-[13px] font-semibold tracking-wider uppercase rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+        className="h-11 px-6 bg-[var(--color-gold)] text-black font-mono text-[14px] font-semibold tracking-wider uppercase rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
       >
         {status === 'submitting' ? (
           <>

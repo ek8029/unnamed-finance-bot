@@ -251,7 +251,7 @@ export default function AccountsPage() {
         <div className="rounded-lg border p-6"
           style={{ background: 'rgba(248,113,113,0.08)', borderColor: 'rgba(248,113,113,0.25)', color: 'var(--color-negative-text)' }}>
           <h2 className="text-[15px] font-semibold mb-2">Error loading accounts</h2>
-          <p className="text-[14px]">{error}</p>
+          <p className="text-[15px]">{error}</p>
         </div>
       </div>
     );
@@ -274,7 +274,7 @@ export default function AccountsPage() {
           <div className="text-[24px] font-bold mb-3" style={{ letterSpacing: '-0.025em' }}>
             Connect your brokerage
           </div>
-          <p className="text-[14px] leading-[1.65] mb-6" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-[15px] leading-[1.65] mb-6" style={{ color: 'var(--color-text-muted)' }}>
             Link an account and Helm builds your net worth, holdings, taxes and intelligence
             automatically.{' '}
             <span style={{ color: 'var(--color-positive)' }}>Read-only access</span>{' '}
@@ -322,7 +322,7 @@ export default function AccountsPage() {
             )}
             {!apiLoading && (
               <span
-                className="text-[13px]"
+                className="text-[14px]"
                 style={{ ...MONO, color: allSynced ? 'var(--color-positive)' : 'var(--color-warning-text)' }}
               >
                 {allSynced ? '● All synced' : '◐ Sync attention needed'}
@@ -365,7 +365,7 @@ export default function AccountsPage() {
         {apiLoading ? (
           <div className="h-3 w-full rounded animate-pulse mb-4" style={{ background: 'var(--color-bg-elevated)' }} />
         ) : composition.length === 0 ? (
-          <div className="text-[13px] mb-2" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="text-[14px] mb-2" style={{ color: 'var(--color-text-muted)' }}>
             No assets connected yet.
           </div>
         ) : (
@@ -429,7 +429,7 @@ export default function AccountsPage() {
                       {chip.initial}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[14px] font-semibold truncate">{account.institution}</div>
+                      <div className="text-[15px] font-semibold truncate">{account.institution}</div>
                       <div className="text-[9px] uppercase truncate" style={{ ...MONO, letterSpacing: '0.1em', color: 'var(--color-text-muted)' }}>
                         {typeLabel}
                       </div>
@@ -443,12 +443,12 @@ export default function AccountsPage() {
                     style={{ letterSpacing: '-0.02em', color: dimmed ? 'var(--color-text-muted)' : undefined }}
                   >
                     {formatCurrency(Math.abs(account.balance))}
-                    {account.balance < 0 && <span className="text-[13px] ml-2" style={{ ...MONO }}>due</span>}
+                    {account.balance < 0 && <span className="text-[14px] ml-2" style={{ ...MONO }}>due</span>}
                   </div>
 
                   {/* Sub-line: last sync / stale */}
                   <div
-                    className="text-[11px] mb-[14px]"
+                    className="text-[12px] mb-[14px]"
                     style={{ ...MONO, color: dimmed ? 'var(--color-text-muted)' : 'var(--color-text-muted)' }}
                   >
                     {dimmed
@@ -512,7 +512,7 @@ export default function AccountsPage() {
 
       {healthError && (
         <div
-          className="rounded-lg mb-[14px] px-5 py-3 flex items-center gap-2 text-[13px]"
+          className="rounded-lg mb-[14px] px-5 py-3 flex items-center gap-2 text-[14px]"
           style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)', color: 'var(--color-negative-text)' }}
         >
           <span>Could not load connection health.</span>
@@ -526,12 +526,12 @@ export default function AccountsPage() {
         style={{ background: '#0C0C0C', border: '1px solid var(--color-border-subtle)', ...MONO }}
       >
         <ShieldCheck className="w-[18px] h-[18px] shrink-0" strokeWidth={1.6} style={{ color: 'var(--color-positive)' }} />
-        <span className="text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>
+        <span className="text-[14px]" style={{ color: 'var(--color-text-secondary)' }}>
           <span style={{ color: 'var(--color-positive)' }}>Read-only access</span>
           {' '}— Helm cannot move money or execute trades.
         </span>
         <span className="hidden md:block" style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.08)' }} />
-        <span className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
+        <span className="text-[14px]" style={{ color: 'var(--color-text-muted)' }}>
           256-bit encryption · Connected via Plaid — same provider as Venmo and Robinhood.
         </span>
       </div>
@@ -549,7 +549,7 @@ export default function AccountsPage() {
               <div>
                 <p className="type-caption text-[var(--color-text-secondary)] mb-1">Account details</p>
                 <h2 id="account-detail-heading" className="type-h2">{selectedAccount.institution}</h2>
-                <p className="text-xs text-[var(--color-text-secondary)] capitalize">
+                <p className="text-[13px] text-[var(--color-text-secondary)] capitalize">
                   {selectedAccount.account_type.replace('_', ' ')}
                 </p>
               </div>
@@ -582,7 +582,7 @@ export default function AccountsPage() {
               </div>
               <div className="pt-2 border-t border-[var(--color-border-subtle)]">
                 <p className="type-label text-[var(--color-text-secondary)] mb-2">Recent transactions</p>
-                <p className="text-xs text-[var(--color-text-muted)]">View full transaction history on the Transactions page.</p>
+                <p className="text-[13px] text-[var(--color-text-muted)]">View full transaction history on the Transactions page.</p>
               </div>
               {(() => {
                 const health = healthByInstitution.get(selectedAccount.institution.toLowerCase());
@@ -593,7 +593,7 @@ export default function AccountsPage() {
                     <button
                       onClick={() => setConfirmDisconnect(health.id)}
                       disabled={disconnecting === health.id}
-                      className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-negative-text)] transition-colors"
+                      className="inline-flex items-center gap-1.5 text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-negative-text)] transition-colors"
                     >
                       {disconnecting === health.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                       Disconnect
@@ -621,12 +621,12 @@ export default function AccountsPage() {
               </div>
               <div>
                 <h3 id="disconnect-heading" className="type-h3">Disconnect this institution?</h3>
-                <p className="text-sm text-[var(--color-text-secondary)]">
+                <p className="text-[15px] text-[var(--color-text-secondary)]">
                   {connectionHealth.items.find(i => i.id === confirmDisconnect)?.institution_name || 'This institution'}
                 </p>
               </div>
             </div>
-            <p className="text-sm text-[var(--color-text-secondary)]">
+            <p className="text-[15px] text-[var(--color-text-secondary)]">
               This will remove all associated accounts, transactions, and holdings. This action cannot be undone.
             </p>
             <div className="flex gap-3">
@@ -660,7 +660,7 @@ export default function AccountsPage() {
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[var(--color-border-base)]">
               <div>
                 <h2 id="add-account-heading" className="type-h2">Connect Account</h2>
-                <p className="text-sm text-[var(--color-text-secondary)]">Link a new financial account</p>
+                <p className="text-[15px] text-[var(--color-text-secondary)]">Link a new financial account</p>
               </div>
               <button
                 className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] rounded-md hover:bg-[var(--color-bg-overlay)] transition-colors"
@@ -671,7 +671,7 @@ export default function AccountsPage() {
               </button>
             </div>
             <div className="px-4 sm:px-6 py-6 space-y-6">
-              <p className="text-sm text-[var(--color-text-secondary)]">
+              <p className="text-[15px] text-[var(--color-text-secondary)]">
                 Connect your bank accounts, credit cards, and investment accounts securely using Plaid.
               </p>
 
@@ -688,14 +688,14 @@ export default function AccountsPage() {
                       key={label}
                       className="flex items-center p-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg"
                     >
-                      <span className="text-sm text-[var(--color-text-primary)]">{label}</span>
+                      <span className="text-[15px] text-[var(--color-text-primary)]">{label}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div className="p-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg">
-                <p className="text-sm text-[var(--color-text-secondary)]">
+                <p className="text-[15px] text-[var(--color-text-secondary)]">
                   Your credentials are encrypted end-to-end by Plaid and never touch our servers.
                 </p>
               </div>
@@ -743,7 +743,7 @@ function ConnectAnotherTile({ onClick }: { onClick: () => void }) {
       <span className="text-[10px] uppercase" style={{ ...MONO, letterSpacing: '0.12em' }}>
         Connect another
       </span>
-      <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+      <span className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
         12,000+ institutions supported
       </span>
     </button>

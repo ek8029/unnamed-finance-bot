@@ -223,22 +223,22 @@ export function DriverMap({ nodes }: { nodes: Record<string, NodeInfo> }) {
   return (
     <section className="rounded-lg border border-white/[0.07] bg-[#131313] overflow-hidden">
       <div className="flex items-center gap-3 px-5 py-4 flex-wrap">
-        <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] shrink-0" style={MONO}>
+        <span className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] shrink-0" style={MONO}>
           How your theses connect
         </span>
         <div className="flex items-center gap-x-6 gap-y-2 flex-wrap flex-1 min-w-0">
           {clusters.map((c, i) => (
-            <span key={`${c.driver}-${i}`} className="inline-flex items-center gap-2 text-[14px] text-[#B4B4B4]">
+            <span key={`${c.driver}-${i}`} className="inline-flex items-center gap-2 text-[15px] text-[#B4B4B4]">
               <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--color-gold)', boxShadow: '0 0 8px rgba(230,185,77,0.7)' }} />
               <span className="truncate max-w-[260px]">{c.driver}</span>
-              <span className="font-mono text-[14px] font-semibold text-[#FAFAFA]" style={MONO}>{clusterTickers[i].length}</span>
+              <span className="font-mono text-[15px] font-semibold text-[#FAFAFA]" style={MONO}>{clusterTickers[i].length}</span>
             </span>
           ))}
         </div>
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="shrink-0 font-mono text-[12.5px] tracking-[0.06em] rounded px-3.5 py-1.5 border transition-colors hover:brightness-110"
+          className="shrink-0 font-mono text-[13.5px] tracking-[0.06em] rounded px-3.5 py-1.5 border transition-colors hover:brightness-110"
           style={{ ...MONO, color: '#E6B94D', borderColor: 'rgba(230,185,77,0.25)', background: 'rgba(230,185,77,0.06)' }}
           aria-expanded={open}
         >
@@ -359,12 +359,12 @@ export function Constellation({
 
       <div className="flex items-center gap-5 px-2 mt-3 flex-wrap">
         {([['#4ADE80', 'Intact'], ['#E6B94D', 'Weakening'], ['#F87171', 'Broken'], ['#6A6A6A', 'Watching']] as const).map(([c, l]) => (
-          <span key={l} className="inline-flex items-center gap-2 font-mono text-[12px] text-[#8A8A8A]" style={MONO}>
+          <span key={l} className="inline-flex items-center gap-2 font-mono text-[13px] text-[#8A8A8A]" style={MONO}>
             <span className="w-2 h-2 rounded-full" style={{ background: c }} />{l}
           </span>
         ))}
       </div>
-      <p className="font-mono text-[12px] text-[#5A5A5A] mt-2 px-2" style={MONO}>
+      <p className="font-mono text-[13px] text-[#5A5A5A] mt-2 px-2" style={MONO}>
         Each gold hub is a shared driver; a line ties it to every position that depends on it. A position on two hubs (gold ring) rides both. Size = weight.
       </p>
     </div>

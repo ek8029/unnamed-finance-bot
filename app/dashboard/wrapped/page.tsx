@@ -66,7 +66,7 @@ function TopBar({ current, year, onClose }: { current: number; year: string; onC
       <div className="flex items-center gap-2.5 shrink-0">
         <HelmMark size={18} />
         <span
-          className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]"
+          className="text-[12px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]"
           style={MONO}
         >
           Helm / Wrapped &middot; {year}
@@ -90,7 +90,7 @@ function TopBar({ current, year, onClose }: { current: number; year: string; onC
 
       {/* Slide counter + close */}
       <span
-        className="text-[11px] text-[var(--color-text-muted)] tabular-nums shrink-0"
+        className="text-[12px] text-[var(--color-text-muted)] tabular-nums shrink-0"
         style={MONO}
       >
         {String(current + 1).padStart(2, '0')} / {String(TOTAL_SLIDES).padStart(2, '0')}
@@ -147,7 +147,7 @@ function SlideCover({
       <div className="absolute -top-[30%] -left-[20%] w-[60vw] h-[60vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: '#E6B94D' }} />
 
       <div className="relative z-10 max-w-lg w-full">
-        <p className="text-[14px] tracking-[0.3em] text-[var(--color-gold)] mb-10" style={MONO}>HELM WRAPPED</p>
+        <p className="text-[15px] tracking-[0.3em] text-[var(--color-gold)] mb-10" style={MONO}>HELM WRAPPED</p>
 
         <h1 className="font-bold leading-[0.88] tracking-[-0.05em] mb-12" style={{ fontSize: 'clamp(72px, 18vw, 160px)' }}>
           Your<br />
@@ -188,7 +188,7 @@ function SlideReturn({ data }: { data: WrappedData | null }) {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: positive ? '#4ADE80' : '#F87171' }} />
 
       <div className="relative z-10">
-        <p className="text-[14px] text-[var(--color-text-muted)] mb-3">Your portfolio returned</p>
+        <p className="text-[15px] text-[var(--color-text-muted)] mb-3">Your portfolio returned</p>
 
         <div
           className={cn('text-[clamp(60px,18vw,240px)] font-bold leading-none tabular-nums tracking-[-0.05em]', positive ? 'text-[#4ADE80]' : 'text-[#F87171]')}
@@ -200,24 +200,24 @@ function SlideReturn({ data }: { data: WrappedData | null }) {
         <div className="flex items-center justify-center gap-8 mt-8">
           {spyReturn != null && (
             <div className="text-center">
-              <p className="text-[11px] tracking-[0.15em] text-[var(--color-text-muted)] mb-1" style={MONO}>S&amp;P 500</p>
+              <p className="text-[12px] tracking-[0.15em] text-[var(--color-text-muted)] mb-1" style={MONO}>S&amp;P 500</p>
               <p className="text-[20px] font-bold" style={MONO}>{fmtPct(spyReturn)}</p>
             </div>
           )}
           {alpha != null && (
             <div className="text-center">
-              <p className="text-[11px] tracking-[0.15em] text-[var(--color-text-muted)] mb-1" style={MONO}>ALPHA</p>
+              <p className="text-[12px] tracking-[0.15em] text-[var(--color-text-muted)] mb-1" style={MONO}>ALPHA</p>
               <p className={cn('text-[20px] font-bold', alpha >= 0 ? 'text-[var(--color-gold)]' : 'text-[#F87171]')} style={MONO}>{fmtPct(alpha)}</p>
             </div>
           )}
           {data?.spyComparison.beat && (
             <div className="px-5 py-2 rounded-full bg-[#4ADE80]/10 border border-[#4ADE80]/20">
-              <p className="text-[14px] font-bold text-[#4ADE80]" style={MONO}>BEAT THE MARKET</p>
+              <p className="text-[15px] font-bold text-[#4ADE80]" style={MONO}>BEAT THE MARKET</p>
             </div>
           )}
         </div>
 
-        <p className="text-[11px] text-white/40 mt-6" style={MONO}>
+        <p className="text-[12px] text-white/40 mt-6" style={MONO}>
           Return based on cost basis. MVP &amp; villain reflect total gain since purchase.
         </p>
       </div>
@@ -241,19 +241,19 @@ function SlideBestWorst({ data }: { data: WrappedData | null }) {
 
       <div className="relative z-10 w-full max-w-lg">
         <div className="text-center mb-8">
-          <p className="text-[14px] tracking-[0.2em] text-[#4ADE80] mb-3" style={MONO}>YOUR MVP</p>
+          <p className="text-[15px] tracking-[0.2em] text-[#4ADE80] mb-3" style={MONO}>YOUR MVP</p>
           <p className="text-[clamp(48px,12vw,80px)] font-bold text-[var(--color-gold)] tracking-tight leading-none" style={MONO}>{best?.ticker ?? '---'}</p>
           <p className="text-[clamp(32px,8vw,56px)] font-bold text-[#4ADE80] tabular-nums mt-2">{best ? fmtPct(best.returnPct) : '---'}</p>
-          <p className="text-[14px] text-[var(--color-text-muted)] mt-2">{best?.name ?? ''} &middot; {best ? fmtDollar(best.returnDollars) : ''}</p>
+          <p className="text-[15px] text-[var(--color-text-muted)] mt-2">{best?.name ?? ''} &middot; {best ? fmtDollar(best.returnDollars) : ''}</p>
         </div>
 
         <div className="w-16 h-px bg-white/10 mx-auto my-6" />
 
         <div className="text-center">
-          <p className="text-[14px] tracking-[0.2em] text-[#F87171] mb-3" style={MONO}>YOUR VILLAIN</p>
+          <p className="text-[15px] tracking-[0.2em] text-[#F87171] mb-3" style={MONO}>YOUR VILLAIN</p>
           <p className="text-[clamp(48px,12vw,80px)] font-bold text-[#F87171] tracking-tight leading-none" style={MONO}>{worst?.ticker ?? '---'}</p>
           <p className="text-[clamp(32px,8vw,56px)] font-bold text-[#F87171] tabular-nums mt-2">{worst ? fmtPct(worst.returnPct) : '---'}</p>
-          <p className="text-[14px] text-[var(--color-text-muted)] mt-2">{worst?.name ?? ''} &middot; {worst ? fmtDollar(worst.returnDollars) : ''}</p>
+          <p className="text-[15px] text-[var(--color-text-muted)] mt-2">{worst?.name ?? ''} &middot; {worst ? fmtDollar(worst.returnDollars) : ''}</p>
         </div>
       </div>
     </div>
@@ -296,7 +296,7 @@ function SlideTradingHabits({ data }: { data: WrappedData | null }) {
           ].map((s) => (
             <div key={s.label} className="p-5 bg-white/[0.03] border border-white/[0.06] rounded-2xl">
               <p className="text-[clamp(24px,5vw,32px)] font-bold tabular-nums">{s.value}</p>
-              <p className="text-[11px] tracking-[0.15em] text-[var(--color-gold)] mt-2" style={MONO}>{s.label}</p>
+              <p className="text-[12px] tracking-[0.15em] text-[var(--color-gold)] mt-2" style={MONO}>{s.label}</p>
             </div>
           ))}
         </div>
@@ -338,7 +338,7 @@ function SlideSectors({ data }: { data: WrappedData | null }) {
             </div>
             <div className="flex flex-wrap justify-center gap-x-3 md:gap-x-5 gap-y-1.5 mt-4 md:mt-5">
               {sectors.slice(0, 5).map((s, i) => (
-                <span key={s.sector} className="flex items-center gap-1.5 text-[11px] md:text-[14px] text-[var(--color-text-muted)]" style={MONO}>
+                <span key={s.sector} className="flex items-center gap-1.5 text-[12px] md:text-[15px] text-[var(--color-text-muted)]" style={MONO}>
                   <span className="w-3 h-3 rounded-full" style={{ background: sectorColors[i % sectorColors.length] }} />
                   {s.sector} {s.pct.toFixed(0)}%
                 </span>
@@ -350,11 +350,11 @@ function SlideSectors({ data }: { data: WrappedData | null }) {
         {nwChange && nwChange.change !== 0 && (
           <div className="flex items-center justify-center gap-10 mt-4">
             <div>
-              <p className="text-[13px] tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>NET WORTH</p>
+              <p className="text-[14px] tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>NET WORTH</p>
               <p className={cn('text-[28px] font-bold mt-1 tabular-nums', nwChange.change >= 0 ? 'text-[#4ADE80]' : 'text-[#F87171]')}>{fmtDollar(nwChange.change)}</p>
             </div>
             <div>
-              <p className="text-[13px] tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>CHANGE</p>
+              <p className="text-[14px] tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>CHANGE</p>
               <p className={cn('text-[28px] font-bold mt-1 tabular-nums', nwChange.changePct >= 0 ? 'text-[#4ADE80]' : 'text-[#F87171]')}>{fmtPct(nwChange.changePct)}</p>
             </div>
           </div>
@@ -393,7 +393,7 @@ function SlidePersonality({ data }: { data: WrappedData | null }) {
         {traits.length > 0 && (
           <div className="flex flex-wrap justify-center gap-2.5 max-w-md mx-auto">
             {traits.map((t) => (
-              <span key={t} className="px-5 py-2.5 rounded-full border border-[var(--color-gold)]/25 bg-[var(--color-gold)]/[0.08] text-[14px] font-medium text-[var(--color-gold)]" style={MONO}>{t}</span>
+              <span key={t} className="px-5 py-2.5 rounded-full border border-[var(--color-gold)]/25 bg-[var(--color-gold)]/[0.08] text-[15px] font-medium text-[var(--color-gold)]" style={MONO}>{t}</span>
             ))}
           </div>
         )}
@@ -483,7 +483,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter, onC
     <div className="flex flex-col lg:flex-row items-center justify-center h-full px-4 md:px-6 gap-6 lg:gap-12">
       {/* Left: CTA — hidden on mobile, shown on desktop */}
       <div className="hidden lg:block text-left max-w-sm shrink-0">
-        <p className="text-[13px] uppercase tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
+        <p className="text-[14px] uppercase tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
           &sect; 06 &mdash; Your Card
         </p>
         <h2 className="text-[clamp(32px,6vw,56px)] font-bold tracking-[-0.03em] leading-[1.05] mb-4">
@@ -499,13 +499,13 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter, onC
           <button
             onClick={handleShareImage}
             disabled={shareStatus === 'generating'}
-            className="px-8 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[14px] rounded-sm transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+            className="px-8 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[15px] rounded-sm transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {shareStatus === 'generating' ? 'Sharing...' : shareStatus === 'copied' ? 'Copied!' : 'Share Wrapped'}
           </button>
           <button
             onClick={onShareTwitter}
-            className="px-6 py-3.5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white font-medium text-[14px] rounded-sm transition-colors cursor-pointer"
+            className="px-6 py-3.5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white font-medium text-[15px] rounded-sm transition-colors cursor-pointer"
           >
             Post on X
           </button>
@@ -561,11 +561,11 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter, onC
               {fmtPct(pct)}
             </p>
             <div className="flex items-baseline justify-center gap-3 mt-2">
-              <span style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }} className="text-[14px] text-[var(--color-gold)]">
+              <span style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }} className="text-[15px] text-[var(--color-gold)]">
                 {positive ? 'beat the market' : 'tough year'}
               </span>
               {alpha != null && (
-                <span className="text-[13px] text-[var(--color-gold)] font-bold" style={MONO}>ALPHA {fmtPct(alpha)}</span>
+                <span className="text-[14px] text-[var(--color-gold)] font-bold" style={MONO}>ALPHA {fmtPct(alpha)}</span>
               )}
             </div>
           </div>
@@ -597,12 +597,12 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter, onC
             <div className="p-2.5 md:p-3.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>MVP</p>
               <p className="text-[20px] md:text-[28px] font-bold text-[var(--color-gold)] mt-1" style={MONO}>{best?.ticker ?? '---'}</p>
-              <p className="text-[14px] font-semibold text-[#4ADE80]" style={MONO}>{best ? fmtPct(best.returnPct) : ''}</p>
+              <p className="text-[15px] font-semibold text-[#4ADE80]" style={MONO}>{best ? fmtPct(best.returnPct) : ''}</p>
             </div>
             {/* Type */}
             <div className="p-2.5 md:p-3.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>TYPE</p>
-              <p className="text-[14px] md:text-[18px] font-bold text-[var(--color-gold)] mt-1 leading-tight" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>
+              <p className="text-[15px] md:text-[18px] font-bold text-[var(--color-gold)] mt-1 leading-tight" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>
                 {personality?.title ?? 'Investor'}
               </p>
             </div>
@@ -625,7 +625,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter, onC
             <div className="p-2.5 md:p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>VILLAIN</p>
               <p className="text-[20px] md:text-[28px] font-bold text-[#F87171] mt-1" style={MONO}>{worst?.ticker ?? '---'}</p>
-              <p className="text-[14px] font-semibold text-[#F87171]" style={MONO}>{worst ? fmtPct(worst.returnPct) : ''}</p>
+              <p className="text-[15px] font-semibold text-[#F87171]" style={MONO}>{worst ? fmtPct(worst.returnPct) : ''}</p>
             </div>
           </div>
 
@@ -639,7 +639,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter, onC
         {/* Hover hint — OUTSIDE cardRef, won't appear in screenshot */}
         <div className="absolute inset-0 z-20 rounded-2xl bg-black/0 group-hover:bg-black/20 transition-colors items-center justify-center pointer-events-none hidden md:flex">
           <span className={cn(
-            'text-[14px] font-bold tracking-wide px-5 py-2.5 rounded-full transition-all',
+            'text-[15px] font-bold tracking-wide px-5 py-2.5 rounded-full transition-all',
             shareStatus === 'copied'
               ? 'bg-[#4ADE80] text-black opacity-100'
               : 'bg-white/90 text-black opacity-0 group-hover:opacity-100',
@@ -650,7 +650,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter, onC
 
         {/* Mobile: "Copied" feedback */}
         {shareStatus === 'copied' && (
-          <p className="lg:hidden text-center text-[14px] text-[#4ADE80] font-bold mt-2" style={MONO}>Copied to clipboard!</p>
+          <p className="lg:hidden text-center text-[15px] text-[#4ADE80] font-bold mt-2" style={MONO}>Copied to clipboard!</p>
         )}
 
         {/* Mobile: buttons below card */}
@@ -658,20 +658,20 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter, onC
           <button
             onClick={handleShareImage}
             disabled={shareStatus === 'generating'}
-            className="px-5 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[14px] rounded-sm transition-colors cursor-pointer disabled:opacity-60"
+            className="px-5 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[15px] rounded-sm transition-colors cursor-pointer disabled:opacity-60"
           >
             {shareStatus === 'generating' ? 'Sharing...' : 'Share Wrapped'}
           </button>
           <button
             onClick={onShareTwitter}
-            className="px-4 py-3.5 border border-white/10 text-white/60 font-medium text-[14px] rounded-sm cursor-pointer"
+            className="px-4 py-3.5 border border-white/10 text-white/60 font-medium text-[15px] rounded-sm cursor-pointer"
           >
             Post on X
           </button>
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onClose(); }}
-            className="px-4 py-3.5 border border-white/10 text-white/60 font-medium text-[14px] rounded-sm text-center cursor-pointer"
+            className="px-4 py-3.5 border border-white/10 text-white/60 font-medium text-[15px] rounded-sm text-center cursor-pointer"
           >
             Close
           </button>
@@ -913,7 +913,7 @@ function StatCard({
   return (
     <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] px-5 py-[18px] transition-colors hover:border-[rgba(230,185,77,0.2)]">
       <div
-        className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-[10px]"
+        className="text-[12px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-[10px]"
         style={MONO}
       >
         {label}
@@ -925,7 +925,7 @@ function StatCard({
         {value}
       </div>
       {sub && (
-        <div className="text-[14px] text-[var(--color-text-muted)] mt-[6px]" style={MONO}>
+        <div className="text-[15px] text-[var(--color-text-muted)] mt-[6px]" style={MONO}>
           {sub}
         </div>
       )}
@@ -967,7 +967,7 @@ function WrappedSummary({
         }}
       >
         <div
-          className="text-[13px] uppercase tracking-[0.24em] text-[var(--color-gold)] mb-4"
+          className="text-[14px] uppercase tracking-[0.24em] text-[var(--color-gold)] mb-4"
           style={MONO}
         >
           &#10022; Helm Wrapped &middot; {year}
@@ -1006,7 +1006,7 @@ function WrappedSummary({
           <button
             type="button"
             onClick={onPlay}
-            className="inline-flex items-center gap-2 rounded-md bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[14px] px-6 py-3 cursor-pointer transition-colors"
+            className="inline-flex items-center gap-2 rounded-md bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[15px] px-6 py-3 cursor-pointer transition-colors"
           >
             <Sparkles className="w-4 h-4" strokeWidth={2} />
             Play your Wrapped
@@ -1014,7 +1014,7 @@ function WrappedSummary({
           <button
             type="button"
             onClick={onShareTwitter}
-            className="inline-flex items-center gap-2 rounded-md border border-[var(--color-border-strong,rgba(255,255,255,0.12))] hover:border-[rgba(230,185,77,0.3)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-medium text-[14px] px-6 py-3 cursor-pointer transition-colors"
+            className="inline-flex items-center gap-2 rounded-md border border-[var(--color-border-strong,rgba(255,255,255,0.12))] hover:border-[rgba(230,185,77,0.3)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-medium text-[15px] px-6 py-3 cursor-pointer transition-colors"
           >
             Post on X
           </button>
@@ -1130,7 +1130,7 @@ function ConnectEmpty() {
         <h1 className="text-[24px] font-bold tracking-[-0.025em] leading-[1.1] text-[var(--color-text-primary)] mb-3">
           Connect your brokerage
         </h1>
-        <p className="text-[14px] leading-[1.65] text-[var(--color-text-muted)]">
+        <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
           Wrapped turns a full year of your activity into a shareable story: your return versus the
           S&amp;P, your best and worst picks, dividends, and where your conviction sat. Link an
           account over a read-only connection to generate yours.
@@ -1189,7 +1189,7 @@ export default function WrappedPage() {
         <button
           type="button"
           onClick={() => router.push('/dashboard')}
-          className="text-[14px] text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] cursor-pointer"
+          className="text-[15px] text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] cursor-pointer"
         >
           Back to dashboard
         </button>

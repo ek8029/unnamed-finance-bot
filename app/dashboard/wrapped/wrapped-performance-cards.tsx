@@ -21,7 +21,7 @@ export function BestTradeCard({ data, active }: { data: WrappedData; active: boo
          style={{ ...stagger(active, 0), ...EYEBROW }}>
         Your MVP
       </p>
-      <p className="text-sm text-[var(--color-gold)] mb-6"
+      <p className="text-[15px] text-[var(--color-gold)] mb-6"
          style={{ ...stagger(active, 0), ...MONO }}>
         Best Performing Position
       </p>
@@ -29,7 +29,7 @@ export function BestTradeCard({ data, active }: { data: WrappedData; active: boo
            style={stagger(active, 1)}>
         {pos.ticker}
       </div>
-      <p className="text-sm text-[var(--color-text-secondary)] mb-6"
+      <p className="text-[15px] text-[var(--color-text-secondary)] mb-6"
          style={stagger(active, 2)}>
         {pos.name}
       </p>
@@ -43,7 +43,7 @@ export function BestTradeCard({ data, active }: { data: WrappedData; active: boo
       </div>
       <div className="mt-6 px-4 py-2 rounded-full border border-[var(--color-positive)]/20 bg-[var(--color-positive)]/5"
            style={stagger(active, 5)}>
-        <span className="text-xs text-[var(--color-positive)]" style={MONO}>
+        <span className="text-[13px] text-[var(--color-positive)]" style={MONO}>
           Position value: ${fmt(pos.value)}
         </span>
       </div>
@@ -95,7 +95,7 @@ export function SpyComparisonCard({ data, active }: { data: WrappedData; active:
                style={{ ...stagger(active, 2), ...TNUM }}>
             {fmtPct(data.spyComparison.userReturn)}
           </div>
-          <p className="text-sm text-[var(--color-text-muted)]" style={stagger(active, 3)}>
+          <p className="text-[15px] text-[var(--color-text-muted)]" style={stagger(active, 3)}>
             Your return vs SPY&apos;s {data.spyComparison.spyReturn != null ? fmtPct(data.spyComparison.spyReturn) : 'N/A'}
           </p>
         </>
@@ -105,20 +105,20 @@ export function SpyComparisonCard({ data, active }: { data: WrappedData; active:
                style={{ ...stagger(active, 1), ...TNUM }}>
             {fmtPct(data.spyComparison.userReturn)}
           </div>
-          <p className="text-sm text-[var(--color-text-muted)]" style={stagger(active, 2)}>
+          <p className="text-[15px] text-[var(--color-text-muted)]" style={stagger(active, 2)}>
             Your portfolio return
           </p>
         </>
       )}
       <div className="mt-8 grid grid-cols-2 gap-8" style={stagger(active, 4)}>
         <div className="text-center">
-          <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-1" style={MONO}>You</p>
+          <p className="text-[13px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1" style={MONO}>You</p>
           <p className="text-xl font-bold text-[var(--color-text-primary)]" style={TNUM}>
             {fmtPct(data.spyComparison.userReturn)}
           </p>
         </div>
         <div className="text-center">
-          <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-1" style={MONO}>S&P 500</p>
+          <p className="text-[13px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1" style={MONO}>S&P 500</p>
           <p className="text-xl font-bold text-[var(--color-text-primary)]" style={TNUM}>
             {data.spyComparison.spyReturn != null ? fmtPct(data.spyComparison.spyReturn) : '\u2014'}
           </p>
@@ -144,7 +144,7 @@ export function WorstTradeCard({ data, active }: { data: WrappedData; active: bo
            style={stagger(active, 1)}>
         {pos.ticker}
       </div>
-      <p className="text-sm text-[var(--color-text-secondary)] mb-6"
+      <p className="text-[15px] text-[var(--color-text-secondary)] mb-6"
          style={stagger(active, 2)}>
         {pos.name}
       </p>
@@ -156,7 +156,7 @@ export function WorstTradeCard({ data, active }: { data: WrappedData; active: bo
            style={{ ...stagger(active, 4), ...TNUM, opacity: 0.8 }}>
         -${fmt(Math.abs(pos.returnDollars))}
       </div>
-      <p className="mt-6 text-xs text-[var(--color-text-muted)] max-w-xs"
+      <p className="mt-6 text-[13px] text-[var(--color-text-muted)] max-w-xs"
          style={{ ...stagger(active, 5), ...MONO }}>
         Every portfolio has them — it&apos;s how you respond that matters
       </p>

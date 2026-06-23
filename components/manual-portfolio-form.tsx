@@ -122,7 +122,7 @@ export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortf
           <Check className="w-5 h-5 text-[var(--color-positive)]" />
         </div>
         <p className="text-[15px] font-medium text-[var(--color-text-primary)]">Portfolio saved</p>
-        <p className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Loading your dashboard...</p>
+        <p className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>Loading your dashboard...</p>
       </div>
     );
   }
@@ -189,7 +189,7 @@ export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortf
         {rows.length < 50 && (
           <button
             onClick={addRow}
-            className="flex items-center gap-1.5 mt-4 py-2 text-[11px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 mt-4 py-2 text-[12px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors cursor-pointer"
             style={MONO}
           >
             <Plus className="w-3.5 h-3.5" />
@@ -199,7 +199,7 @@ export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortf
 
         {/* Error */}
         {error && (
-          <p className="mt-4 text-[13px] text-[var(--color-negative)]" style={MONO}>
+          <p className="mt-4 text-[14px] text-[var(--color-negative)]" style={MONO}>
             {error}
           </p>
         )}
@@ -232,7 +232,7 @@ export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortf
         </div>
       </div>
 
-      <p className="mt-3 text-[11px] text-[var(--color-text-muted)] text-center" style={MONO}>
+      <p className="mt-3 text-[12px] text-[var(--color-text-muted)] text-center" style={MONO}>
         Cost basis is optional. Entering it unlocks tax-loss harvesting insights.
       </p>
     </div>

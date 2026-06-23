@@ -31,7 +31,7 @@ export function MarketInsightDrawer({
           </div>
           <div className="flex-1">
             <h3 className="type-h3 text-[var(--color-text-primary)] mb-1">{insightTitle}</h3>
-            <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+            <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed">
               {insightDescription}
             </p>
           </div>
@@ -64,7 +64,7 @@ export function MarketInsightDrawer({
         <DrawerSectionHeader>Context</DrawerSectionHeader>
         <div className="p-4 bg-[var(--color-gold-surface)] rounded border border-[var(--color-gold)]/20">
           <div className="flex items-start gap-2">
-            <div className="type-label text-sm text-[var(--color-gold)] leading-relaxed">
+            <div className="type-label text-[15px] text-[var(--color-gold)] leading-relaxed">
               {recommendedAction}
             </div>
           </div>
@@ -108,20 +108,20 @@ export function MarketInsightDrawer({
                 <div className="grid grid-cols-4 gap-4 p-3 bg-[var(--color-bg-surface)] rounded border border-[var(--color-border-subtle)]">
                   <div>
                     <div className="type-caption text-[var(--color-text-secondary)] mb-1">Current Value</div>
-                    <div className="type-data text-sm font-tabular text-[var(--color-text-primary)]">
+                    <div className="type-data text-[15px] font-tabular text-[var(--color-text-primary)]">
                       {formatCurrency(holding.total_value)}
                     </div>
                   </div>
                   <div>
                     <div className="type-caption text-[var(--color-text-secondary)] mb-1">Current Price</div>
-                    <div className="type-data text-sm font-tabular text-[var(--color-text-primary)]">
+                    <div className="type-data text-[15px] font-tabular text-[var(--color-text-primary)]">
                       {formatCurrency(holding.current_price)}
                     </div>
                   </div>
                   <div>
                     <div className="type-caption text-[var(--color-text-secondary)] mb-1">Day Change</div>
                     <div
-                      className={`flex items-center gap-1 type-data text-sm font-tabular ${
+                      className={`flex items-center gap-1 type-data text-[15px] font-tabular ${
                         (holding.day_change_percentage ?? 0) >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                       }`}
                     >
@@ -141,7 +141,7 @@ export function MarketInsightDrawer({
                   <div>
                     <div className="type-caption text-[var(--color-text-secondary)] mb-1">Total Gain/Loss</div>
                     <div
-                      className={`type-data text-sm font-tabular ${
+                      className={`type-data text-[15px] font-tabular ${
                         totalGainLoss >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                       }`}
                     >

@@ -104,7 +104,7 @@ export function RatifyQueue({ items, unthesed, confirmedCount, onChanged, onEdit
             Confirm why you own each position
           </span>
           {total > 0 && (
-            <span className="font-mono text-[11px] text-[#6A6A6A]" style={MONO}>
+            <span className="font-mono text-[12px] text-[#6A6A6A]" style={MONO}>
               {confirmedCount} of {total} confirmed
             </span>
           )}
@@ -127,13 +127,13 @@ export function RatifyQueue({ items, unthesed, confirmedCount, onChanged, onEdit
             {items.map((item) => (
               <div key={item.thesisId} className="flex items-center gap-4 px-5 py-3.5">
                 <span
-                  className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA] w-[58px] shrink-0"
+                  className="font-mono text-[14px] font-semibold uppercase tracking-[0.08em] text-[#FAFAFA] w-[58px] shrink-0"
                   style={MONO}
                 >
                   {item.ticker}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13.5px] leading-[1.4] text-[#D8D8D8] m-0 line-clamp-1">
+                  <p className="text-[14.5px] leading-[1.4] text-[#D8D8D8] m-0 line-clamp-1">
                     &ldquo;{item.topClaim}&rdquo;
                   </p>
                   <p className="mt-1 font-mono text-[10.5px] text-[#5F5F5F] m-0" style={MONO}>
@@ -145,7 +145,7 @@ export function RatifyQueue({ items, unthesed, confirmedCount, onChanged, onEdit
                     type="button"
                     disabled={busy === item.ticker}
                     onClick={() => looksRight(item)}
-                    className="font-mono text-[11px] font-semibold px-3 py-1.5 rounded bg-[#E6B94D] text-[#0A0A0A] hover:brightness-110 transition disabled:opacity-50"
+                    className="font-mono text-[12px] font-semibold px-3 py-1.5 rounded bg-[#E6B94D] text-[#0A0A0A] hover:brightness-110 transition disabled:opacity-50"
                     style={MONO}
                   >
                     {busy === item.ticker ? 'Saving…' : 'Looks right'}
@@ -153,7 +153,7 @@ export function RatifyQueue({ items, unthesed, confirmedCount, onChanged, onEdit
                   <button
                     type="button"
                     onClick={() => onEdit(item.ticker)}
-                    className="font-mono text-[11px] px-3 py-1.5 rounded border border-white/[0.1] text-[#9A9A9A] hover:text-[#D8D8D8] transition-colors"
+                    className="font-mono text-[12px] px-3 py-1.5 rounded border border-white/[0.1] text-[#9A9A9A] hover:text-[#D8D8D8] transition-colors"
                     style={MONO}
                   >
                     Edit
@@ -163,13 +163,13 @@ export function RatifyQueue({ items, unthesed, confirmedCount, onChanged, onEdit
             ))}
           </div>
         ) : (
-          <div className="px-5 py-4 font-mono text-[12px] text-[#6A6A6A]" style={MONO}>
+          <div className="px-5 py-4 font-mono text-[13px] text-[#6A6A6A]" style={MONO}>
             All drafts confirmed.{unthesed.length > 0 ? ' Draft your remaining holdings above.' : ''}
           </div>
         )}
 
         {note && (
-          <div className="px-5 py-3 border-t border-white/[0.05] font-mono text-[11px] text-[#9A9A9A]" style={MONO}>
+          <div className="px-5 py-3 border-t border-white/[0.05] font-mono text-[12px] text-[#9A9A9A]" style={MONO}>
             {note}
           </div>
         )}

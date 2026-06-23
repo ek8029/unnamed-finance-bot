@@ -79,7 +79,7 @@ export function PasswordSection({
             </div>
             <div>
               <h2 className="type-h2">Change Password</h2>
-              <p className="text-[var(--color-text-secondary)] text-sm">Enter your current and new password</p>
+              <p className="text-[var(--color-text-secondary)] text-[15px]">Enter your current and new password</p>
             </div>
           </div>
           <button
@@ -196,7 +196,7 @@ export function PasswordSection({
               </button>
             </div>
             {passwordForm.new && passwordForm.confirm && passwordForm.new !== passwordForm.confirm && (
-              <p className="text-xs text-[var(--color-negative)]">Passwords do not match</p>
+              <p className="text-[13px] text-[var(--color-negative)]">Passwords do not match</p>
             )}
           </div>
         </div>

@@ -98,7 +98,7 @@ export function CompareGate() {
           <HelmMark size={24} />
           <div className="h-px flex-1 bg-[var(--color-border-base)]" />
           <span
-            className="text-[12px] uppercase tracking-[0.2em] text-[var(--color-gold)] font-medium"
+            className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] font-medium"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             {state === 'anon-blocked' ? 'Free' : 'Pro'}
@@ -120,7 +120,7 @@ export function CompareGate() {
               Create free account
               <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
             </Link>
-            <div className="flex items-center justify-between text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+            <div className="flex items-center justify-between text-[13px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
               <Link
                 href="/login"
                 className="hover:text-[var(--color-text-secondary)] transition-colors duration-150"
@@ -144,7 +144,7 @@ export function CompareGate() {
               Upgrade to Pro · $20/mo
               <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
             </Link>
-            <div className="flex items-center justify-between text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+            <div className="flex items-center justify-between text-[13px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
               <Link
                 href="/dashboard"
                 className="hover:text-[var(--color-text-secondary)] transition-colors duration-150"

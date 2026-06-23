@@ -38,14 +38,14 @@ function InlineSearch({ currentTicker }: { currentTicker: string }) {
           maxLength={5}
           disabled={loading}
           aria-label="Stock ticker symbol"
-          className="w-full pl-9 pr-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-2 focus:ring-[var(--color-gold)]/30 transition-colors text-sm tracking-wider disabled:opacity-60"
+          className="w-full pl-9 pr-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-2 focus:ring-[var(--color-gold)]/30 transition-colors text-[15px] tracking-wider disabled:opacity-60"
           style={{ fontFamily: 'var(--font-mono)' }}
         />
       </div>
       <button
         type="submit"
         disabled={!input.trim() || input.trim().toUpperCase() === currentTicker || loading}
-        className="px-5 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded-sm transition-colors text-sm whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+        className="px-5 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded-sm transition-colors text-[15px] whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
       >
         {loading ? (
           <>
@@ -66,7 +66,7 @@ function RelatedTickers({ currentTicker }: { currentTicker: string }) {
   return (
     <div className="space-y-3">
       <p
-        className="text-[11px] uppercase tracking-wider text-[var(--color-text-muted)]"
+        className="text-[12px] uppercase tracking-wider text-[var(--color-text-muted)]"
         style={{ fontFamily: 'var(--font-mono)' }}
       >
         Analyze another stock
@@ -76,7 +76,7 @@ function RelatedTickers({ currentTicker }: { currentTicker: string }) {
           <a
             key={t}
             href={`/analyze/${t}`}
-            className="px-3.5 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm text-[13px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-gold)] hover:border-[var(--color-gold-border)] transition-colors"
+            className="px-3.5 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-sm text-[14px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-gold)] hover:border-[var(--color-gold-border)] transition-colors"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             {t}
@@ -159,15 +159,15 @@ export function AnalysisResultClient({
 
       {/* CTA — portfolio upgrade, not a content gate */}
       <div className="glass-card rounded-sm p-6 text-center space-y-3">
-        <p className="text-[14px] font-medium text-[var(--color-text-primary)]">
+        <p className="text-[15px] font-medium text-[var(--color-text-primary)]">
           Want AI analysis of your entire portfolio?
         </p>
-        <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed max-w-md mx-auto">
+        <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed max-w-md mx-auto">
           Helm Terminal connects to your brokerage, analyzes your holdings, and delivers actionable intelligence weekly.
         </p>
         <a
           href="/signup"
-          className="inline-block px-6 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[13px] font-semibold rounded-sm transition-colors"
+          className="inline-block px-6 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[14px] font-semibold rounded-sm transition-colors"
         >
           Get started free
         </a>

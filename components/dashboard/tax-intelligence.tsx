@@ -53,7 +53,7 @@ export function TaxIntelligence({ taxData, onCategorySelect }: TaxIntelligencePr
                 <Info className="h-3 w-3 text-[var(--color-text-muted)]" />
                 <span className="type-label text-[var(--color-text-secondary)]">{item.label}</span>
               </div>
-              <span className="type-data text-sm">
+              <span className="type-data text-[15px]">
                 {formatCurrency(item.value)}
               </span>
             </button>
@@ -62,7 +62,7 @@ export function TaxIntelligence({ taxData, onCategorySelect }: TaxIntelligencePr
 
         <div className="p-3 rounded-md border border-[var(--color-warning)]/30 bg-[var(--color-bg-overlay)]">
           <p className="type-caption text-[var(--color-warning)] mb-1">Disclaimer</p>
-          <p className="text-[11px] text-[var(--color-text-secondary)]">
+          <p className="text-[12px] text-[var(--color-text-secondary)]">
             These views are informational only and are not tax advice. Always consult with a qualified professional
             before taking action.
           </p>

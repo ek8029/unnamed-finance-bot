@@ -140,19 +140,19 @@ function StackedBar({
       <div className="flex items-center gap-4 mt-2.5">
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-sm" style={{ background: '#5B8DEF' }} />
-          <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+          <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
             ST Gains
           </span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-sm" style={{ background: 'var(--color-gold)' }} />
-          <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+          <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
             LT Gains
           </span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-sm" style={{ background: 'var(--color-positive)' }} />
-          <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+          <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
             Dividends
           </span>
         </div>
@@ -223,7 +223,7 @@ function ConnectEmpty() {
         <h1 className="text-[24px] font-bold tracking-[-0.025em] leading-[1.1] text-[var(--color-text-primary)] mb-3">
           Connect your brokerage
         </h1>
-        <p className="text-[14px] leading-[1.65] text-[var(--color-text-muted)]">
+        <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
           Helm reads your tax lots over a read-only connection, then tracks realized gains and
           flags wash-sale-safe harvesting opportunities here. Link an account to get started.
         </p>
@@ -245,7 +245,7 @@ function NoHarvestEmpty() {
         <h2 className="text-[24px] font-bold tracking-[-0.025em] leading-[1.1] text-[var(--color-text-primary)] mb-3">
           No harvestable losses right now
         </h2>
-        <p className="text-[14px] leading-[1.65] text-[var(--color-text-muted)]">
+        <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
           Helm scans your lots daily and flags wash-sale-safe harvesting opportunities here the
           moment they appear.
         </p>
@@ -412,7 +412,7 @@ function TaxesContent() {
             </h1>
 
             {/* Subtitle */}
-            <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed max-w-2xl">
+            <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed max-w-2xl">
               Helm tracks your tax lots and monitors wash-sale risk across your connected accounts.{' '}
               <a
                 href="/tools/tlh-calculator"
@@ -425,7 +425,7 @@ function TaxesContent() {
 
           {/* Year selector */}
           <div
-            className="flex gap-[5px] text-[11px] tracking-[0.06em] shrink-0"
+            className="flex gap-[5px] text-[12px] tracking-[0.06em] shrink-0"
             style={MONO}
             role="group"
             aria-label="Tax year"
@@ -503,7 +503,7 @@ function TaxesContent() {
             >
               {realizedYTD >= 0 ? '' : ''}
               {formatCurrency(realizedYTD)}
-              <span className="ml-2 align-middle text-[11px] text-[var(--color-text-muted)] font-medium">
+              <span className="ml-2 align-middle text-[12px] text-[var(--color-text-muted)] font-medium">
                 {lotCount} lot{lotCount !== 1 ? 's' : ''} closed
               </span>
             </div>
@@ -530,13 +530,13 @@ function TaxesContent() {
           <div className="rounded-md p-5" style={CARD}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-3">
               <span
-                className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+                className="text-[12px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
                 style={MONO}
               >
                 §1211(b) Ordinary Income Offset
               </span>
               <span
-                className="text-[13px] font-semibold text-[var(--color-text-primary)]"
+                className="text-[14px] font-semibold text-[var(--color-text-primary)]"
                 style={{ ...TNUM, ...MONO }}
               >
                 {formatCurrency(deductionUsed)} of {formatCurrency(ANNUAL_LOSS_DEDUCTION_CAP)}
@@ -551,7 +551,7 @@ function TaxesContent() {
                 }}
               />
             </div>
-            <p className="text-[13px] text-[var(--color-text-muted)] mt-2.5" style={MONO}>
+            <p className="text-[14px] text-[var(--color-text-muted)] mt-2.5" style={MONO}>
               {deductionUsed >= ANNUAL_LOSS_DEDUCTION_CAP
                 ? `Cap reached — excess losses carry forward to TY ${CURRENT_YEAR + 1} per IRC §1212(b).`
                 : deductionUsed > 0
@@ -595,7 +595,7 @@ function TaxesContent() {
                   Tax-loss harvesting
                 </span>
               </div>
-              <div className="text-[14px] text-[var(--color-text-muted)] mt-1">
+              <div className="text-[15px] text-[var(--color-text-muted)] mt-1">
                 {harvestCount} lot{harvestCount !== 1 ? 's' : ''} sitting on losses
                 {washConflictCount > 0
                   ? ` · ${washConflictCount} wash-sale conflict${washConflictCount !== 1 ? 's' : ''} flagged`
@@ -655,7 +655,7 @@ function TaxesContent() {
             style={{ borderTop: '1px solid rgba(230,185,77,0.1)' }}
             aria-live="polite"
           >
-            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+            <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
               Harvesting the {washSafeCount} wash-safe lot{washSafeCount !== 1 ? 's' : ''} offsets an
               estimated{' '}
               <span className="text-[var(--color-positive)] font-semibold">
@@ -686,7 +686,7 @@ function TaxesContent() {
           <div className="px-5 py-4 flex items-center justify-between border-b border-[var(--color-border-subtle)]">
             <div className="flex items-center gap-2.5">
               <span
-                className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-text-muted)]"
+                className="text-[12px] uppercase tracking-[0.15em] font-bold text-[var(--color-text-muted)]"
                 style={MONO}
               >
                 Retirement Account Losses
@@ -698,12 +698,12 @@ function TaxesContent() {
                 {harvestReport.retirementPositions.length}
               </span>
             </div>
-            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+            <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
               Not eligible for tax-loss harvesting
             </span>
           </div>
           <div className="px-5 py-3 bg-[var(--color-bg-elevated)]/30 border-b border-[var(--color-border-subtle)]">
-            <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed" style={MONO}>
+            <p className="text-[14px] text-[var(--color-text-muted)] leading-relaxed" style={MONO}>
               These positions are in tax-advantaged accounts (IRA, 401k, Roth, etc.). Losses in retirement accounts cannot be used for tax-loss harvesting because gains and losses within these accounts are not taxable events.
             </p>
           </div>
@@ -713,10 +713,10 @@ function TaxesContent() {
               className="px-4 sm:px-5 py-3.5 border-b border-[var(--color-border-subtle)] opacity-60"
             >
               <div className="flex items-center gap-2 sm:gap-3 mb-1.5 flex-wrap">
-                <span className="text-[14px] font-bold text-[var(--color-text-muted)]" style={MONO}>
+                <span className="text-[15px] font-bold text-[var(--color-text-muted)]" style={MONO}>
                   {pos.ticker}
                 </span>
-                <span className="text-[13px] sm:text-[14px] text-[var(--color-text-muted)] truncate flex-1 min-w-[60px]">
+                <span className="text-[14px] sm:text-[15px] text-[var(--color-text-muted)] truncate flex-1 min-w-[60px]">
                   {pos.securityName}
                 </span>
                 {pos.accountSubtype && (
@@ -730,16 +730,16 @@ function TaxesContent() {
               </div>
               <div className="grid grid-cols-3 gap-x-4">
                 <div>
-                  <span className="text-[11px] text-[var(--color-text-muted)] block" style={MONO}>Shares</span>
-                  <span className="text-[13px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>{pos.shares.toLocaleString()}</span>
+                  <span className="text-[12px] text-[var(--color-text-muted)] block" style={MONO}>Shares</span>
+                  <span className="text-[14px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>{pos.shares.toLocaleString()}</span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-[var(--color-text-muted)] block" style={MONO}>Unrealized</span>
-                  <span className="text-[13px] text-[var(--color-negative)]/60 tabular-nums" style={MONO}>{formatCurrency(pos.unrealizedLoss)}</span>
+                  <span className="text-[12px] text-[var(--color-text-muted)] block" style={MONO}>Unrealized</span>
+                  <span className="text-[14px] text-[var(--color-negative)]/60 tabular-nums" style={MONO}>{formatCurrency(pos.unrealizedLoss)}</span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-[var(--color-text-muted)] block" style={MONO}>Tax Savings</span>
-                  <span className="text-[13px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>$0 (exempt)</span>
+                  <span className="text-[12px] text-[var(--color-text-muted)] block" style={MONO}>Tax Savings</span>
+                  <span className="text-[14px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>$0 (exempt)</span>
                 </div>
               </div>
             </div>
@@ -774,12 +774,12 @@ function TaxesContent() {
                     >
                       <div className="min-w-0">
                         <span
-                          className="text-[14px] font-bold"
+                          className="text-[15px] font-bold"
                           style={{ color: isGain ? 'var(--color-gold)' : 'var(--color-negative-text)', ...MONO }}
                         >
                           {tx.ticker}
                         </span>{' '}
-                        <span className="text-[11px] text-[var(--color-text-muted)]">
+                        <span className="text-[12px] text-[var(--color-text-muted)]">
                           · sold {tx.shares.toLocaleString()} sh · {dateLabel}
                         </span>
                       </div>
@@ -796,7 +796,7 @@ function TaxesContent() {
                       </span>
                       <span
                         className={cn(
-                          'text-[14px] font-semibold tabular-nums text-right shrink-0',
+                          'text-[15px] font-semibold tabular-nums text-right shrink-0',
                           isGain ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]',
                         )}
                         style={MONO}
@@ -808,7 +808,7 @@ function TaxesContent() {
                 })}
               </div>
             ) : (
-              <p className="text-[14px] text-[var(--color-text-muted)] py-2" style={MONO}>
+              <p className="text-[15px] text-[var(--color-text-muted)] py-2" style={MONO}>
                 No realized transactions yet this year.
               </p>
             )}
@@ -828,7 +828,7 @@ function TaxesContent() {
               formatCurrency={formatCurrency}
             />
             <div className="mt-[18px] pt-4 border-t border-[var(--color-border-subtle)] flex items-center justify-between">
-              <span className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>
+              <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>
                 After harvesting {formatCurrency(Math.abs(totalHarvestable))}
               </span>
               <span
@@ -852,13 +852,13 @@ function TaxesContent() {
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-sm" style={{ background: '#5B8DEF' }} />
               <span
-                className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+                className="text-[12px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
                 style={MONO}
               >
                 Short-Term Realized
               </span>
               <span
-                className="ml-auto text-[13px] text-[var(--color-text-muted)]"
+                className="ml-auto text-[14px] text-[var(--color-text-muted)]"
                 style={MONO}
               >
                 ~{(TAX_RATE * 100).toFixed(0)}% rate
@@ -866,23 +866,23 @@ function TaxesContent() {
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
-                <span className="text-[13px] font-semibold text-[var(--color-positive)]" style={{ ...TNUM, ...MONO }}>
+                <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
+                <span className="text-[14px] font-semibold text-[var(--color-positive)]" style={{ ...TNUM, ...MONO }}>
                   +{formatCurrency(shortTermGains)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
-                <span className="text-[13px] font-semibold text-[var(--color-negative)]" style={{ ...TNUM, ...MONO }}>
+                <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
+                <span className="text-[14px] font-semibold text-[var(--color-negative)]" style={{ ...TNUM, ...MONO }}>
                   {formatCurrency(shortTermLosses)}
                 </span>
               </div>
               <div className="pt-1.5 mt-1 border-t border-[var(--color-border-subtle)]">
                 <div className="flex items-center justify-between">
-                  <span className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
+                  <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
                   <span
                     className={cn(
-                      'text-[14px] font-bold',
+                      'text-[15px] font-bold',
                       shortTermNet >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
                     )}
                     style={{ ...TNUM, ...MONO }}
@@ -899,13 +899,13 @@ function TaxesContent() {
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-sm" style={{ background: 'var(--color-gold)' }} />
               <span
-                className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+                className="text-[12px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
                 style={MONO}
               >
                 Long-Term Realized
               </span>
               <span
-                className="ml-auto text-[13px] text-[var(--color-text-muted)]"
+                className="ml-auto text-[14px] text-[var(--color-text-muted)]"
                 style={MONO}
               >
                 ~{(LTCG_RATE_DEFAULT * 100).toFixed(0)}% rate
@@ -913,23 +913,23 @@ function TaxesContent() {
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
-                <span className="text-[13px] font-semibold text-[var(--color-positive)]" style={{ ...TNUM, ...MONO }}>
+                <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
+                <span className="text-[14px] font-semibold text-[var(--color-positive)]" style={{ ...TNUM, ...MONO }}>
                   +{formatCurrency(longTermGains)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
-                <span className="text-[13px] font-semibold text-[var(--color-negative)]" style={{ ...TNUM, ...MONO }}>
+                <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
+                <span className="text-[14px] font-semibold text-[var(--color-negative)]" style={{ ...TNUM, ...MONO }}>
                   {formatCurrency(longTermLosses)}
                 </span>
               </div>
               <div className="pt-1.5 mt-1 border-t border-[var(--color-border-subtle)]">
                 <div className="flex items-center justify-between">
-                  <span className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
+                  <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
                   <span
                     className={cn(
-                      'text-[14px] font-bold',
+                      'text-[15px] font-bold',
                       longTermNet >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
                     )}
                     style={{ ...TNUM, ...MONO }}
@@ -974,7 +974,7 @@ function TaxesContent() {
                 }}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[14px] font-bold text-[var(--color-text-primary)]">
+                  <span className="text-[15px] font-bold text-[var(--color-text-primary)]">
                     {q.label}
                   </span>
                   <span className={cn('text-[10px] uppercase tracking-wider font-semibold', statusColor)} style={MONO}>
@@ -982,29 +982,29 @@ function TaxesContent() {
                   </span>
                 </div>
 
-                <p className="text-[13px] text-[var(--color-text-muted)] mb-3" style={MONO}>
+                <p className="text-[14px] text-[var(--color-text-muted)] mb-3" style={MONO}>
                   {q.range}
                 </p>
 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
-                    <span className="text-[13px] font-semibold text-[var(--color-positive)]" style={TNUM}>
+                    <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
+                    <span className="text-[14px] font-semibold text-[var(--color-positive)]" style={TNUM}>
                       +{formatCurrency(q.gains)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
-                    <span className="text-[13px] font-semibold text-[var(--color-negative)]" style={TNUM}>
+                    <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
+                    <span className="text-[14px] font-semibold text-[var(--color-negative)]" style={TNUM}>
                       {formatCurrency(q.losses)}
                     </span>
                   </div>
                   <div className="pt-1 mt-1 border-t border-[var(--color-border-subtle)]">
                     <div className="flex items-center justify-between">
-                      <span className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
+                      <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
                       <span
                         className={cn(
-                          'text-[14px] font-bold',
+                          'text-[15px] font-bold',
                           q.net >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
                         )}
                         style={TNUM}
@@ -1031,7 +1031,7 @@ function TaxesContent() {
             >
               <div className="flex items-center gap-2.5">
                 <span
-                  className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-text-primary)]"
+                  className="text-[12px] uppercase tracking-[0.15em] font-bold text-[var(--color-text-primary)]"
                   style={MONO}
                 >
                   Realized Transactions
@@ -1087,22 +1087,22 @@ function TaxesContent() {
                           gap: '8px',
                         }}
                       >
-                        <span className="text-[13px] text-[var(--color-text-secondary)] tabular-nums" style={MONO}>
+                        <span className="text-[14px] text-[var(--color-text-secondary)] tabular-nums" style={MONO}>
                           {tx.date}
                         </span>
-                        <span className="text-[14px] font-bold text-[var(--color-text-primary)]" style={MONO}>
+                        <span className="text-[15px] font-bold text-[var(--color-text-primary)]" style={MONO}>
                           {tx.ticker}
                         </span>
                         <span />
-                        <span className="text-[13px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+                        <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
                           {formatCurrency(tx.proceeds)}
                         </span>
-                        <span className="text-[13px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+                        <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
                           {formatCurrency(tx.costBasis)}
                         </span>
                         <span
                           className={cn(
-                            'text-[13px] font-semibold tabular-nums',
+                            'text-[14px] font-semibold tabular-nums',
                             isGain ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
                           )}
                           style={MONO}
@@ -1126,7 +1126,7 @@ function TaxesContent() {
                       <div className="md:hidden px-4 py-3.5 border-b border-[var(--color-border-subtle)]">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-[14px] font-bold text-[var(--color-text-primary)]" style={MONO}>
+                            <span className="text-[15px] font-bold text-[var(--color-text-primary)]" style={MONO}>
                               {tx.ticker}
                             </span>
                             <span
@@ -1141,24 +1141,24 @@ function TaxesContent() {
                               {typeLabel}
                             </span>
                           </div>
-                          <span className="text-[13px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>
+                          <span className="text-[14px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>
                             {tx.date}
                           </span>
                         </div>
                         <div className="grid grid-cols-3 gap-x-4">
                           <div>
-                            <span className="text-[13px] text-[var(--color-text-muted)] block" style={MONO}>Proceeds</span>
-                            <span className="text-[13px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>{formatCurrency(tx.proceeds)}</span>
+                            <span className="text-[14px] text-[var(--color-text-muted)] block" style={MONO}>Proceeds</span>
+                            <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>{formatCurrency(tx.proceeds)}</span>
                           </div>
                           <div>
-                            <span className="text-[13px] text-[var(--color-text-muted)] block" style={MONO}>Basis</span>
-                            <span className="text-[13px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>{formatCurrency(tx.costBasis)}</span>
+                            <span className="text-[14px] text-[var(--color-text-muted)] block" style={MONO}>Basis</span>
+                            <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>{formatCurrency(tx.costBasis)}</span>
                           </div>
                           <div>
-                            <span className="text-[13px] text-[var(--color-text-muted)] block" style={MONO}>Gain/Loss</span>
+                            <span className="text-[14px] text-[var(--color-text-muted)] block" style={MONO}>Gain/Loss</span>
                             <span
                               className={cn(
-                                'text-[13px] font-semibold tabular-nums',
+                                'text-[14px] font-semibold tabular-nums',
                                 isGain ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
                               )}
                               style={MONO}
@@ -1185,7 +1185,7 @@ function TaxesContent() {
       )}
 
       {/* Disclaimer */}
-      <p className="text-[11px] text-[var(--color-text-muted)] text-center leading-relaxed max-w-3xl mx-auto" style={MONO}>
+      <p className="text-[12px] text-[var(--color-text-muted)] text-center leading-relaxed max-w-3xl mx-auto" style={MONO}>
         All figures are estimates based on a {(TAX_RATE * 100).toFixed(0)}% blended tax rate and your connected portfolio data.
         This is not tax advice. Wash sale rules (IRC &sect;1091), the $3,000 annual deduction cap (IRC &sect;1211), and
         holding period requirements apply. Consult a qualified tax professional before making tax-related decisions.
@@ -1214,10 +1214,10 @@ function HoldingPeriodBars({
       {/* Long-term */}
       <div>
         <div className="flex justify-between mb-[7px]">
-          <span className="text-[13px] text-[var(--color-text-secondary)]">
+          <span className="text-[14px] text-[var(--color-text-secondary)]">
             Long-term gains · {(LTCG_RATE_DEFAULT * 100).toFixed(0)}% rate
           </span>
-          <span className="text-[14px] font-semibold tabular-nums text-[var(--color-text-primary)]" style={MONO}>
+          <span className="text-[15px] font-semibold tabular-nums text-[var(--color-text-primary)]" style={MONO}>
             {formatCurrency(ltTax)}
           </span>
         </div>
@@ -1235,10 +1235,10 @@ function HoldingPeriodBars({
       {/* Short-term */}
       <div>
         <div className="flex justify-between mb-[7px]">
-          <span className="text-[13px] text-[var(--color-text-secondary)]">
+          <span className="text-[14px] text-[var(--color-text-secondary)]">
             Short-term gains · {(TAX_RATE * 100).toFixed(0)}% rate
           </span>
-          <span className="text-[14px] font-semibold tabular-nums text-[var(--color-text-primary)]" style={MONO}>
+          <span className="text-[15px] font-semibold tabular-nums text-[var(--color-text-primary)]" style={MONO}>
             {formatCurrency(stTax)}
           </span>
         </div>
@@ -1269,7 +1269,7 @@ function ConvictionChip({ status }: { status: 'intact' | 'weakening' | 'broken' 
   const c = CONVICTION_COLOR[status];
   return (
     <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-semibold shrink-0"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] uppercase tracking-wider font-semibold shrink-0"
       style={{ background: `${c}1A`, color: c, ...MONO }}
     >
       <span className="w-1.5 h-1.5 rounded-full" style={{ background: c }} />
@@ -1303,7 +1303,7 @@ function BrokenThesisCallout({
     >
       <div className="flex items-center gap-2 mb-2">
         <AlertTriangle className="w-4 h-4" style={{ color: red }} />
-        <span className="text-[11px] uppercase tracking-[0.15em] font-bold" style={{ color: red, ...MONO }}>
+        <span className="text-[12px] uppercase tracking-[0.15em] font-bold" style={{ color: red, ...MONO }}>
           Conviction Alert
         </span>
       </div>
@@ -1322,11 +1322,11 @@ function BrokenThesisCallout({
       </p>
       {lead.thesisCite && (
         <blockquote
-          className="mt-3 pl-3 text-[14px] text-[var(--color-text-secondary)] leading-relaxed"
+          className="mt-3 pl-3 text-[15px] text-[var(--color-text-secondary)] leading-relaxed"
           style={{ borderLeft: '2px solid rgba(248,113,113,0.4)' }}
         >
           &ldquo;{lead.thesisCite.excerpt}&rdquo;
-          <span className="block mt-1 text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+          <span className="block mt-1 text-[12px] text-[var(--color-text-muted)]" style={MONO}>
             {lead.thesisCite.sourceTitle}
             {lead.thesisCite.publishedAt ? ` · ${lead.thesisCite.publishedAt.slice(0, 10)}` : ''}
             {' · '}
@@ -1376,40 +1376,40 @@ function HarvestRow({
         onClick={() => setExpanded((v) => !v)}
       >
         {/* Symbol */}
-        <span className="text-[14px] font-bold text-[var(--color-gold)]" style={MONO}>
+        <span className="text-[15px] font-bold text-[var(--color-gold)]" style={MONO}>
           {opp.ticker}
         </span>
 
         {/* Name + conviction */}
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-[14px] text-[var(--color-text-secondary)] truncate">
+          <span className="text-[15px] text-[var(--color-text-secondary)] truncate">
             {opp.securityName}
           </span>
           {opp.thesisStatus && <ConvictionChip status={opp.thesisStatus} />}
         </div>
 
         {/* Shares */}
-        <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+        <span className="text-[15px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
           {opp.shares.toLocaleString()}
         </span>
 
         {/* Basis */}
-        <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+        <span className="text-[15px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
           {formatCurrency(opp.costBasis)}
         </span>
 
         {/* Market value */}
-        <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+        <span className="text-[15px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
           {formatCurrency(opp.currentValue)}
         </span>
 
         {/* Unrealized */}
-        <span className="text-[14px] font-semibold text-[var(--color-negative)] tabular-nums" style={MONO}>
+        <span className="text-[15px] font-semibold text-[var(--color-negative)] tabular-nums" style={MONO}>
           {formatCurrency(opp.unrealizedLoss)}
         </span>
 
         {/* Est. saving */}
-        <span className="block text-right text-[14px] font-semibold text-[var(--color-positive)] tabular-nums" style={MONO}>
+        <span className="block text-right text-[15px] font-semibold text-[var(--color-positive)] tabular-nums" style={MONO}>
           {formatCurrency(opp.estimatedSavings)}
         </span>
 
@@ -1458,7 +1458,7 @@ function HarvestRow({
         <div>
           {opp.holdingPeriod === 'short_term' ? (
             <span
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold"
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] uppercase tracking-wider font-semibold"
               style={{
                 background: 'rgba(251, 146, 60, 0.1)',
                 color: 'rgb(251, 146, 60)',
@@ -1469,7 +1469,7 @@ function HarvestRow({
             </span>
           ) : opp.holdingPeriod === 'long_term' ? (
             <span
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold"
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] uppercase tracking-wider font-semibold"
               style={{
                 background: 'rgba(74, 222, 128, 0.1)',
                 color: 'var(--color-positive)',
@@ -1480,7 +1480,7 @@ function HarvestRow({
             </span>
           ) : (
             <span
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold"
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] uppercase tracking-wider font-semibold"
               style={{
                 background: 'rgba(255,255,255,0.05)',
                 color: 'var(--color-text-muted)',
@@ -1503,7 +1503,7 @@ function HarvestRow({
             background: opp.washSaleRisk ? 'rgba(251, 191, 36, 0.03)' : 'rgba(74, 222, 128, 0.03)',
           }}
         >
-          <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
+          <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
             <span className="font-semibold text-[var(--color-text-primary)]">What this means: </span>
             {washSaleDetailText}
           </p>
@@ -1519,7 +1519,7 @@ function HarvestRow({
             background: opp.thesisStatus === 'broken' ? 'rgba(248,113,113,0.03)' : opp.thesisStatus === 'weakening' ? 'rgba(230,185,77,0.03)' : 'rgba(74,222,128,0.03)',
           }}
         >
-          <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
+          <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
             {thesisTlhNote(opp.thesisStatus)}
           </p>
         </div>
@@ -1532,17 +1532,17 @@ function HarvestRow({
         onClick={() => setExpanded((v) => !v)}
       >
         <div className="flex items-center gap-2 sm:gap-3 mb-2.5 flex-wrap">
-          <span className="text-[14px] font-bold text-[var(--color-gold)]" style={MONO}>
+          <span className="text-[15px] font-bold text-[var(--color-gold)]" style={MONO}>
             {opp.ticker}
           </span>
           {opp.thesisStatus && <ConvictionChip status={opp.thesisStatus} />}
-          <span className="text-[13px] sm:text-[14px] text-[var(--color-text-secondary)] truncate flex-1 min-w-[60px]">
+          <span className="text-[14px] sm:text-[15px] text-[var(--color-text-secondary)] truncate flex-1 min-w-[60px]">
             {opp.securityName}
           </span>
           {/* Holding period badge (mobile) */}
           {opp.holdingPeriod === 'short_term' ? (
             <span
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold shrink-0"
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] uppercase tracking-wider font-semibold shrink-0"
               style={{
                 background: 'rgba(251, 146, 60, 0.1)',
                 color: 'rgb(251, 146, 60)',
@@ -1553,7 +1553,7 @@ function HarvestRow({
             </span>
           ) : opp.holdingPeriod === 'long_term' ? (
             <span
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold shrink-0"
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] uppercase tracking-wider font-semibold shrink-0"
               style={{
                 background: 'rgba(74, 222, 128, 0.1)',
                 color: 'var(--color-positive)',
@@ -1606,32 +1606,32 @@ function HarvestRow({
         </div>
         <div className="grid grid-cols-2 gap-y-1.5 gap-x-4 pl-[26px]">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Shares</span>
-            <span className="text-[13px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+            <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Shares</span>
+            <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
               {opp.shares.toLocaleString()}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Basis</span>
-            <span className="text-[13px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+            <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Basis</span>
+            <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
               {formatCurrency(opp.costBasis)}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Mkt Value</span>
-            <span className="text-[13px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+            <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Mkt Value</span>
+            <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
               {formatCurrency(opp.currentValue)}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Unrealized</span>
-            <span className="text-[13px] font-semibold text-[var(--color-negative)] tabular-nums" style={MONO}>
+            <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Unrealized</span>
+            <span className="text-[14px] font-semibold text-[var(--color-negative)] tabular-nums" style={MONO}>
               {formatCurrency(opp.unrealizedLoss)}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Est. saving</span>
-            <span className="text-[13px] font-semibold text-[var(--color-positive)] tabular-nums" style={MONO}>
+            <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Est. saving</span>
+            <span className="text-[14px] font-semibold text-[var(--color-positive)] tabular-nums" style={MONO}>
               {formatCurrency(opp.estimatedSavings)}
             </span>
           </div>
@@ -1646,7 +1646,7 @@ function HarvestRow({
               background: opp.washSaleRisk ? 'rgba(251, 191, 36, 0.03)' : 'rgba(74, 222, 128, 0.03)',
             }}
           >
-            <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
+            <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
               <span className="font-semibold text-[var(--color-text-primary)]">What this means: </span>
               {washSaleDetailText}
             </p>
@@ -1662,7 +1662,7 @@ function HarvestRow({
               background: opp.thesisStatus === 'broken' ? 'rgba(248,113,113,0.03)' : opp.thesisStatus === 'weakening' ? 'rgba(230,185,77,0.03)' : 'rgba(74,222,128,0.03)',
             }}
           >
-            <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
+            <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
               {thesisTlhNote(opp.thesisStatus)}
             </p>
           </div>

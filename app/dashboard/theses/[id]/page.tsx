@@ -40,7 +40,7 @@ function StatusChip({ status }: { status: PillarStatus }) {
   return (
     <span className="inline-flex items-center gap-1.5 px-2 py-[3px] rounded border border-white/[0.07] shrink-0" style={MONO}>
       <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: meta.color, boxShadow: dotGlow(status) }} />
-      <span className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: meta.color }}>
+      <span className="text-[12px] font-semibold uppercase tracking-[0.15em]" style={{ color: meta.color }}>
         {meta.label}
       </span>
     </span>
@@ -51,13 +51,13 @@ function LockedPanel() {
   return (
     <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8">
       <div className="max-w-[460px] rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] p-6 space-y-3">
-        <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>
+        <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>
           Pro
         </div>
         <p className="text-[15px] leading-[1.5] text-[#9A9A9A] m-0">Thesis detail is a Pro feature.</p>
         <Link
           href="/pricing"
-          className="inline-block font-mono text-[13px] font-semibold uppercase tracking-[0.12em] px-4 py-2.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors"
+          className="inline-block font-mono text-[14px] font-semibold uppercase tracking-[0.12em] px-4 py-2.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors"
           style={MONO}
         >
           See plans
@@ -129,7 +129,7 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
       {/* Back link */}
       <Link
         href="/dashboard/theses"
-        className="inline-flex items-center font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors"
+        className="inline-flex items-center font-mono text-[12px] font-semibold uppercase tracking-[0.14em] text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors"
         style={MONO}
       >
         &larr; Theses
@@ -160,11 +160,11 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
 
       {/* Pillars */}
       <section className="space-y-3">
-        <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6A6A6A]" style={MONO}>
+        <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[#6A6A6A]" style={MONO}>
           The reasons you own this
         </div>
         {ordered.length === 0 ? (
-          <p className="font-mono text-[14px] text-[#6A6A6A]" style={MONO}>No confirmed pillars yet.</p>
+          <p className="font-mono text-[15px] text-[#6A6A6A]" style={MONO}>No confirmed pillars yet.</p>
         ) : (
           <div className="space-y-3">
             {ordered.map((p) => {
@@ -184,17 +184,17 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
                                   href={e.source_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="font-mono text-[11px] uppercase tracking-[0.1em] text-[#9A9A9A] hover:text-[#E6B94D] transition-colors"
+                                  className="font-mono text-[12px] uppercase tracking-[0.1em] text-[#9A9A9A] hover:text-[#E6B94D] transition-colors"
                                   style={MONO}
                                 >
                                   {e.source_title}
                                 </a>
                               ) : (
-                                <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-[#6A6A6A]" style={MONO}>
+                                <span className="font-mono text-[12px] uppercase tracking-[0.1em] text-[#6A6A6A]" style={MONO}>
                                   {e.source_title}
                                 </span>
                               )}
-                              <p className="text-[13.5px] leading-[1.55] text-[#7A7A7A] mt-1 mb-0 italic">&ldquo;{e.excerpt}&rdquo;</p>
+                              <p className="text-[14.5px] leading-[1.55] text-[#7A7A7A] mt-1 mb-0 italic">&ldquo;{e.excerpt}&rdquo;</p>
                             </div>
                           ))}
                         </div>

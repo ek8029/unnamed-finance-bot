@@ -59,19 +59,19 @@ export default function BlogIndex() {
           <div className="flex items-center gap-5">
             <Link
               href="/analyze"
-              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+              className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               Free Stock Analysis
             </Link>
             <Link
               href="/blog"
-              className="text-sm text-[var(--color-gold)] transition-colors"
+              className="text-[15px] text-[var(--color-gold)] transition-colors"
             >
               Blog
             </Link>
             <Link
               href="/login"
-              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+              className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               Sign in
             </Link>
@@ -116,11 +116,11 @@ export default function BlogIndex() {
                 <h2 className="font-sans font-semibold text-[18px] text-[var(--color-text-primary)] mb-2 group-hover:text-[var(--color-gold)] transition-colors leading-snug">
                   {post.title}
                 </h2>
-                <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed mb-4 line-clamp-3">
+                <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed mb-4 line-clamp-3">
                   {post.description}
                 </p>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-[12px] text-[var(--color-text-muted)] font-mono">
+                  <div className="flex items-center gap-3 text-[13px] text-[var(--color-text-muted)] font-mono">
                     <span>{formatDate(post.date)}</span>
                     <span>&middot;</span>
                     <span>{post.readingTime}</span>

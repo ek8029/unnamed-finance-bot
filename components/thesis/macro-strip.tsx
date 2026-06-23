@@ -57,7 +57,7 @@ export function MacroStrip({ items }: { items: MacroItem[] }) {
                       >
                         Your Exposure
                       </span>
-                      <span className="text-[13.5px] leading-[1.55] text-[#9A9A9A]">
+                      <span className="text-[14.5px] leading-[1.55] text-[#9A9A9A]">
                         {item.exposureLine}
                       </span>
                     </div>

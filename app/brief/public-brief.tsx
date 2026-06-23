@@ -150,7 +150,7 @@ export function PublicBrief({ quotes: serverQuotes }: { quotes: Quote[] }) {
       {/* Nav */}
       <nav className="sticky top-0 z-50 bg-[rgba(6,6,6,0.78)] backdrop-blur-[20px] backdrop-saturate-[1.4] border-b border-white/[0.07]">
         <div className="max-w-[1040px] mx-auto px-4 sm:px-6 h-[58px] flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-[11px] font-bold tracking-[0.16em] uppercase text-[14px] text-[var(--color-gold)]" style={MONO}>
+          <Link href="/" className="flex items-center gap-[11px] font-bold tracking-[0.16em] uppercase text-[15px] text-[var(--color-gold)]" style={MONO}>
             <HelmMark size={22} />
             Helm
           </Link>
@@ -177,7 +177,7 @@ export function PublicBrief({ quotes: serverQuotes }: { quotes: Quote[] }) {
           </div>
           <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6">
             <div>
-              <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-3 tabular-nums" style={MONO}>{dateStr}</div>
+              <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-3 tabular-nums" style={MONO}>{dateStr}</div>
               <div className="flex items-center gap-3">
                 <HelmMark size={28} />
                 <h1 className="type-display text-[40px] sm:text-[52px] md:text-[56px] font-bold tracking-tight leading-[0.95]">The Current</h1>
@@ -203,7 +203,7 @@ export function PublicBrief({ quotes: serverQuotes }: { quotes: Quote[] }) {
               <div key={q!.symbol} className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] px-4 py-3.5">
                 <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7A7A7A]" style={MONO}>{q!.symbol}</div>
                 <div className="type-data-sm text-[20px] font-bold mt-1.5 tabular-nums"><PriceFlash value={q!.price}>${fmtPrice(q!.price)}</PriceFlash></div>
-                <div className="font-mono text-[13px] font-semibold mt-1 tabular-nums" style={{ ...MONO, color: q!.changePct >= 0 ? '#4ADE80' : '#F87171' }}>
+                <div className="font-mono text-[14px] font-semibold mt-1 tabular-nums" style={{ ...MONO, color: q!.changePct >= 0 ? '#4ADE80' : '#F87171' }}>
                   {fmtPct(q!.changePct)}
                 </div>
               </div>
@@ -212,7 +212,7 @@ export function PublicBrief({ quotes: serverQuotes }: { quotes: Quote[] }) {
               <div className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] px-4 py-3.5">
                 <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7A7A7A]" style={MONO}>Top mover</div>
                 <div className="type-data-sm text-[20px] font-bold mt-1.5 tabular-nums">{biggestMover.symbol}</div>
-                <div className="font-mono text-[13px] font-semibold mt-1 tabular-nums" style={{ ...MONO, color: biggestMover.changePct >= 0 ? '#4ADE80' : '#F87171' }}>
+                <div className="font-mono text-[14px] font-semibold mt-1 tabular-nums" style={{ ...MONO, color: biggestMover.changePct >= 0 ? '#4ADE80' : '#F87171' }}>
                   {fmtPct(biggestMover.changePct)}
                 </div>
               </div>
@@ -220,8 +220,8 @@ export function PublicBrief({ quotes: serverQuotes }: { quotes: Quote[] }) {
             {stocks.length > 0 && (
               <div className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] px-4 py-3.5">
                 <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7A7A7A]" style={MONO}>Breadth</div>
-                <div className="type-data-sm text-[20px] font-bold mt-1.5 tabular-nums">{gainers.length} <span className="text-[13px]" style={{ color: '#4ADE80' }}>&#9650;</span> {losers.length} <span className="text-[13px]" style={{ color: '#F87171' }}>&#9660;</span></div>
-                <div className="font-mono text-[13px] text-[#6A6A6A] mt-1 tabular-nums" style={MONO}>of {stocks.length} tracked</div>
+                <div className="type-data-sm text-[20px] font-bold mt-1.5 tabular-nums">{gainers.length} <span className="text-[14px]" style={{ color: '#4ADE80' }}>&#9650;</span> {losers.length} <span className="text-[14px]" style={{ color: '#F87171' }}>&#9660;</span></div>
+                <div className="font-mono text-[14px] text-[#6A6A6A] mt-1 tabular-nums" style={MONO}>of {stocks.length} tracked</div>
               </div>
             )}
           </div>
@@ -297,11 +297,11 @@ export function PublicBrief({ quotes: serverQuotes }: { quotes: Quote[] }) {
                       href={`/analyze/${m.symbol}`}
                       className="grid grid-cols-[60px_1fr_80px] sm:grid-cols-[90px_1fr_100px] gap-2 sm:gap-3 items-center px-4 sm:px-5 py-4 border-t border-white/[0.05] hover:bg-white/[0.025] transition-colors"
                     >
-                      <span className="font-mono text-[14px] sm:text-[16px] font-bold text-[var(--color-gold)] tabular-nums">
+                      <span className="font-mono text-[15px] sm:text-[16px] font-bold text-[var(--color-gold)] tabular-nums">
                         {m.symbol}
                       </span>
-                      <span className="text-[14px] sm:text-[16px] text-[#B8B8B8] truncate">{NAMES[m.symbol] || m.symbol}</span>
-                      <span className="font-mono text-[14px] sm:text-[16px] font-semibold text-right tabular-nums" style={{ color: m.changePct >= 0 ? '#4ADE80' : '#F87171' }}>
+                      <span className="text-[15px] sm:text-[16px] text-[#B8B8B8] truncate">{NAMES[m.symbol] || m.symbol}</span>
+                      <span className="font-mono text-[15px] sm:text-[16px] font-semibold text-right tabular-nums" style={{ color: m.changePct >= 0 ? '#4ADE80' : '#F87171' }}>
                         {fmtPct(m.changePct)}
                       </span>
                     </Link>
@@ -325,7 +325,7 @@ export function PublicBrief({ quotes: serverQuotes }: { quotes: Quote[] }) {
                           {fmtPct(s.avgChange)}
                         </span>
                       </div>
-                      <div className="font-mono text-[12px] text-[#6A6A6A] mt-1.5 tabular-nums" style={MONO}>
+                      <div className="font-mono text-[13px] text-[#6A6A6A] mt-1.5 tabular-nums" style={MONO}>
                         {s.tickers.map((t) => t.symbol).join(', ')}
                       </div>
                     </div>
@@ -375,7 +375,7 @@ export function PublicBrief({ quotes: serverQuotes }: { quotes: Quote[] }) {
                           {fmtPct(m.changePct)}
                         </span>
                       </div>
-                      <div className="text-[13px] text-[#9A9A9A] mt-1.5 leading-[1.5]">
+                      <div className="text-[14px] text-[#9A9A9A] mt-1.5 leading-[1.5]">
                         {moverReason(m.symbol, m.changePct, spy?.changePct ?? 0)}
                       </div>
                     </div>
@@ -397,7 +397,7 @@ export function PublicBrief({ quotes: serverQuotes }: { quotes: Quote[] }) {
                       <span className="font-mono text-[16px] font-bold text-[#FAFAFA] tabular-nums">{gainers[0].symbol}</span>
                       <span className="font-mono text-[16px] font-bold tabular-nums" style={{ color: '#4ADE80' }}>{fmtPct(gainers[0].changePct)}</span>
                     </div>
-                    <div className="text-[13px] text-[#9A9A9A] mt-1">{NAMES[gainers[0].symbol] || gainers[0].symbol}</div>
+                    <div className="text-[14px] text-[#9A9A9A] mt-1">{NAMES[gainers[0].symbol] || gainers[0].symbol}</div>
                   </div>
                   <div className="h-px bg-white/[0.06]" />
                   <div>
@@ -406,7 +406,7 @@ export function PublicBrief({ quotes: serverQuotes }: { quotes: Quote[] }) {
                       <span className="font-mono text-[16px] font-bold text-[#FAFAFA] tabular-nums">{losers[0].symbol}</span>
                       <span className="font-mono text-[16px] font-bold tabular-nums" style={{ color: '#F87171' }}>{fmtPct(losers[0].changePct)}</span>
                     </div>
-                    <div className="text-[13px] text-[#9A9A9A] mt-1">{NAMES[losers[0].symbol] || losers[0].symbol}</div>
+                    <div className="text-[14px] text-[#9A9A9A] mt-1">{NAMES[losers[0].symbol] || losers[0].symbol}</div>
                   </div>
                 </div>
               </div>
@@ -417,7 +417,7 @@ export function PublicBrief({ quotes: serverQuotes }: { quotes: Quote[] }) {
               <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-4" style={MONO}>
                 With a connected account
               </div>
-              <ul className="space-y-3 text-[14px] text-[#B8B8B8]">
+              <ul className="space-y-3 text-[15px] text-[#B8B8B8]">
                 {[
                   'Dollar impact on every move',
                   'AI digest written about your holdings',

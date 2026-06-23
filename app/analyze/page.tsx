@@ -58,13 +58,13 @@ export default function AnalyzePage() {
           <div className="flex items-center gap-5">
             <Link
               href="/analyze"
-              className="text-sm text-[var(--color-text-primary)] font-medium transition-colors"
+              className="text-[15px] text-[var(--color-text-primary)] font-medium transition-colors"
             >
               Analyze
             </Link>
             <Link
               href="/login"
-              className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+              className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               Sign in
             </Link>

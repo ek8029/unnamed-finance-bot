@@ -52,7 +52,7 @@ export default function BriefLoading() {
         <div className="max-w-3xl mx-auto px-6 h-[58px] flex items-center justify-between">
           <a href="/" className="flex items-center gap-2.5">
             <HelmMark size={24} />
-            <span className="font-mono text-[14px] font-bold tracking-[0.16em] uppercase text-[var(--color-gold)]" style={{ fontFamily: 'var(--font-mono)' }}>Helm</span>
+            <span className="font-mono text-[15px] font-bold tracking-[0.16em] uppercase text-[var(--color-gold)]" style={{ fontFamily: 'var(--font-mono)' }}>Helm</span>
           </a>
           <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6A6A6A]" style={{ fontFamily: 'var(--font-mono)' }}>
             The Current
@@ -61,7 +61,7 @@ export default function BriefLoading() {
       </header>
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-6">
-        <div className="rounded-xl border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] px-6 py-5 font-mono text-sm max-w-lg w-full" style={{ borderTop: '2px solid rgba(230,185,77,0.30)' }}>
+        <div className="rounded-xl border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] px-6 py-5 font-mono text-[15px] max-w-lg w-full" style={{ borderTop: '2px solid rgba(230,185,77,0.30)' }}>
           <div className="flex items-center mb-4">
             <span className="text-[var(--color-gold)] mr-2">&rarr;</span>
             <span className="text-[#FAFAFA]">{commandText}</span>
@@ -80,13 +80,13 @@ export default function BriefLoading() {
                     className="flex items-center gap-3"
                     style={{ animation: 'fadeSlideIn 0.3s ease-out both' }}
                   >
-                    <span className="text-[#6A6A6A] text-[11px] font-semibold uppercase tracking-[0.12em] w-[76px] text-right shrink-0">
+                    <span className="text-[#6A6A6A] text-[12px] font-semibold uppercase tracking-[0.12em] w-[76px] text-right shrink-0">
                       [{step.tag}]
                     </span>
                     <span style={{ color: completed ? '#4ADE80' : '#9A9A9A' }}>
                       {step.text}
                     </span>
-                    {completed && <span className="text-[11px] ml-auto" style={{ color: '#4ADE80' }}>&#10003;</span>}
+                    {completed && <span className="text-[12px] ml-auto" style={{ color: '#4ADE80' }}>&#10003;</span>}
                     {!completed && i < visibleSteps && (
                       <span className="ml-auto">
                         <span className="inline-block w-3 h-3 border-2 border-[var(--color-gold)]/40 border-t-[var(--color-gold)] rounded-full animate-spin" />

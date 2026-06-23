@@ -166,7 +166,7 @@ export function OnboardingFlow() {
                   <div className="text-center mb-6 sm:mb-10">
                     <div className="flex items-center justify-center gap-2.5 mb-4">
                       <div className="w-2 h-2 rounded-full bg-[var(--color-gold)]" />
-                      <span className="font-mono text-[12px] tracking-[0.2em] text-[var(--color-gold)] uppercase">
+                      <span className="font-mono text-[13px] tracking-[0.2em] text-[var(--color-gold)] uppercase">
                         Demo Mode
                       </span>
                     </div>
@@ -202,7 +202,7 @@ export function OnboardingFlow() {
                             {step.title}
                           </div>
                           {i === tourStep && (
-                            <p className="text-[14px] sm:text-[15px] text-[var(--color-text-muted)] mt-1.5 leading-relaxed"
+                            <p className="text-[15px] sm:text-[15px] text-[var(--color-text-muted)] mt-1.5 leading-relaxed"
                               style={{ animation: 'onb-fade-in 0.3s ease-out' }}>
                               {step.desc}
                             </p>
@@ -219,7 +219,7 @@ export function OnboardingFlow() {
                 <div className="flex items-center justify-between max-w-xl mx-auto">
                   <button
                     onClick={handleSkipTour}
-                    className="font-mono text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors min-h-[44px]"
+                    className="font-mono text-[14px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors min-h-[44px]"
                   >
                     Skip tour
                   </button>
@@ -269,7 +269,7 @@ export function OnboardingFlow() {
                     >
                       <Link2 className="w-6 h-6 text-[var(--color-gold)]" />
                       <span className="text-[15px] font-semibold text-[var(--color-text-primary)]">Connect brokerage</span>
-                      <span className="text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>Auto-sync via Plaid</span>
+                      <span className="text-[13px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>Auto-sync via Plaid</span>
                     </button>
 
                     <button
@@ -278,7 +278,7 @@ export function OnboardingFlow() {
                     >
                       <PenLine className="w-6 h-6 text-[var(--color-text-muted)]" />
                       <span className="text-[15px] font-semibold text-[var(--color-text-primary)]">Add holdings</span>
-                      <span className="text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>Type tickers + shares</span>
+                      <span className="text-[13px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>Type tickers + shares</span>
                     </button>
                   </div>
                 </div>
@@ -288,7 +288,7 @@ export function OnboardingFlow() {
               <div className="shrink-0 sticky bottom-0 bg-[#050505]/92 backdrop-blur-md border-t border-[var(--color-border-base)] px-5 sm:px-8 py-4 text-center" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
                 <button
                   onClick={handleLaunchDemo}
-                  className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer min-h-[44px]"
+                  className="text-[14px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer min-h-[44px]"
                   style={{ fontFamily: 'var(--font-mono)' }}
                 >
                   Skip for now
@@ -306,7 +306,7 @@ export function OnboardingFlow() {
                     <h2 className="text-[24px] sm:text-[28px] font-bold tracking-tight text-[var(--color-text-primary)]">
                       Add your holdings
                     </h2>
-                    <p className="text-[14px] text-[var(--color-text-muted)] mt-2">
+                    <p className="text-[15px] text-[var(--color-text-muted)] mt-2">
                       Enter your positions below. Cost basis is optional but unlocks tax insights.
                     </p>
                   </div>
@@ -325,7 +325,7 @@ export function OnboardingFlow() {
               <div className="shrink-0 sticky bottom-0 bg-[#050505]/92 backdrop-blur-md border-t border-[var(--color-border-base)] px-5 sm:px-8 py-4 text-center" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
                 <button
                   onClick={() => setPhase('launch')}
-                  className="text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer min-h-[44px]"
+                  className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer min-h-[44px]"
                   style={{ fontFamily: 'var(--font-mono)' }}
                 >
                   ← Back

@@ -97,7 +97,7 @@ export function DisclaimerModal() {
         {/* Eyebrow */}
         <div className="flex items-center gap-2.5 mb-4">
           <HelmMark size={24} />
-          <span className="font-mono text-[11px] tracking-[0.2em] text-[var(--color-gold)] uppercase">
+          <span className="font-mono text-[12px] tracking-[0.2em] text-[var(--color-gold)] uppercase">
             Before you start
           </span>
         </div>
@@ -109,20 +109,20 @@ export function DisclaimerModal() {
           Helm is information, not advice
         </h2>
 
-        <p className="mt-4 text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
+        <p className="mt-4 text-[15px] leading-relaxed text-[var(--color-text-secondary)]">
           {DISCLAIMER_TEXT}
         </p>
 
         <button
           onClick={handleAgree}
           disabled={submitting}
-          className="mt-6 w-full rounded-lg bg-[var(--color-gold)] px-5 py-3 text-[14px] font-semibold text-[#0A0A0A] transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="mt-6 w-full rounded-lg bg-[var(--color-gold)] px-5 py-3 text-[15px] font-semibold text-[#0A0A0A] transition-opacity hover:opacity-90 disabled:opacity-60"
         >
           {submitting ? 'Saving...' : 'I understand and agree'}
         </button>
 
         {error && (
-          <p className="mt-3 text-center text-[12px] text-[var(--color-negative)]">
+          <p className="mt-3 text-center text-[13px] text-[var(--color-negative)]">
             Something went wrong. Please tap the button again.
           </p>
         )}

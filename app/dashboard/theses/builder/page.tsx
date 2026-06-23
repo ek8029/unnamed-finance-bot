@@ -48,7 +48,7 @@ const TICKER_RE = /^[A-Z.\-]{1,10}$/;
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="font-mono text-[13px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]"
+      className="font-mono text-[14px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]"
       style={MONO}
     >
       {children}
@@ -60,7 +60,7 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
 function RiskHeading({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="font-mono text-[13px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-secondary)]"
+      className="font-mono text-[14px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-secondary)]"
       style={MONO}
     >
       {children}
@@ -248,7 +248,7 @@ function BuilderInner() {
       <div>
         <Link
           href="/dashboard/theses"
-          className="inline-flex items-center gap-1.5 font-mono text-[14px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors mb-5"
+          className="inline-flex items-center gap-1.5 font-mono text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors mb-5"
           style={MONO}
         >
           <ArrowLeft className="w-4 h-4" /> Theses
@@ -280,14 +280,14 @@ function BuilderInner() {
         <button
           type="submit"
           disabled={drafting}
-          className="inline-flex items-center justify-center gap-2 font-mono text-[14px] font-semibold uppercase tracking-[0.12em] px-6 py-3.5 rounded-md bg-[var(--color-gold)] text-[var(--color-text-inverse)] hover:bg-[var(--color-gold-hi)] transition-colors disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 font-mono text-[15px] font-semibold uppercase tracking-[0.12em] px-6 py-3.5 rounded-md bg-[var(--color-gold)] text-[var(--color-text-inverse)] hover:bg-[var(--color-gold-hi)] transition-colors disabled:opacity-50"
           style={MONO}
         >
           <Sparkles className="w-4 h-4" />
           {drafting ? 'Drafting…' : 'Draft starting pillars'}
         </button>
       </form>
-      {draftError && <p className="font-mono text-[14px] text-[var(--color-negative-text)] -mt-6" style={MONO}>{draftError}</p>}
+      {draftError && <p className="font-mono text-[15px] text-[var(--color-negative-text)] -mt-6" style={MONO}>{draftError}</p>}
 
       {activeTicker && (
         <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6">
@@ -296,7 +296,7 @@ function BuilderInner() {
             <div className="flex items-center justify-between gap-3">
               <Eyebrow>Proposed pillars — {activeTicker}</Eyebrow>
               {tracked && (
-                <span className="inline-flex items-center gap-1.5 font-mono text-[13px] font-semibold uppercase tracking-[0.14em] text-[var(--color-positive)]" style={MONO}>
+                <span className="inline-flex items-center gap-1.5 font-mono text-[14px] font-semibold uppercase tracking-[0.14em] text-[var(--color-positive)]" style={MONO}>
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-positive)]" style={{ boxShadow: '0 0 7px var(--color-positive)' }} />
                   Tracked
                 </span>
@@ -304,7 +304,7 @@ function BuilderInner() {
             </div>
 
             {pillars.length === 0 ? (
-              <p className="font-mono text-[14px] text-[var(--color-text-secondary)]" style={MONO}>
+              <p className="font-mono text-[15px] text-[var(--color-text-secondary)]" style={MONO}>
                 {drafting ? 'Drafting pillars…' : 'No pillars yet. Draft again or pick another ticker.'}
               </p>
             ) : (
@@ -318,7 +318,7 @@ function BuilderInner() {
                     <div className="flex items-start gap-3.5">
                       {/* Numbered marker */}
                       <span
-                        className="shrink-0 mt-0.5 inline-flex items-center justify-center w-7 h-7 rounded-md font-mono text-[14px] font-semibold tabular-nums"
+                        className="shrink-0 mt-0.5 inline-flex items-center justify-center w-7 h-7 rounded-md font-mono text-[15px] font-semibold tabular-nums"
                         style={{
                           ...MONO,
                           color: p.confirmed ? 'var(--color-positive)' : 'var(--color-gold)',
@@ -344,7 +344,7 @@ function BuilderInner() {
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           {p.confirmed ? (
-                            <span className="inline-flex items-center gap-1.5 font-mono text-[13px] font-semibold uppercase tracking-[0.14em] text-[var(--color-positive)]" style={MONO}>
+                            <span className="inline-flex items-center gap-1.5 font-mono text-[14px] font-semibold uppercase tracking-[0.14em] text-[var(--color-positive)]" style={MONO}>
                               <Check className="w-3.5 h-3.5" /> Confirmed
                             </span>
                           ) : (
@@ -353,7 +353,7 @@ function BuilderInner() {
                                 type="button"
                                 disabled={busyPillar === p.id}
                                 onClick={() => confirmPillar(p.id)}
-                                className="inline-flex items-center gap-1.5 font-mono text-[13px] font-semibold uppercase tracking-[0.12em] px-3.5 py-2 rounded-md bg-[rgba(74,222,128,0.1)] text-[var(--color-positive)] border border-[rgba(74,222,128,0.3)] hover:bg-[rgba(74,222,128,0.16)] transition-colors disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 font-mono text-[14px] font-semibold uppercase tracking-[0.12em] px-3.5 py-2 rounded-md bg-[rgba(74,222,128,0.1)] text-[var(--color-positive)] border border-[rgba(74,222,128,0.3)] hover:bg-[rgba(74,222,128,0.16)] transition-colors disabled:opacity-50"
                                 style={MONO}
                               >
                                 <Check className="w-3.5 h-3.5" /> Confirm
@@ -363,7 +363,7 @@ function BuilderInner() {
                                   type="button"
                                   disabled={busyPillar === p.id}
                                   onClick={() => saveEdit(p.id)}
-                                  className="font-mono text-[13px] font-semibold uppercase tracking-[0.12em] px-3.5 py-2 rounded-md bg-transparent text-[var(--color-gold)] border border-[var(--color-gold-border)] hover:bg-[var(--color-gold-surface)] transition-colors disabled:opacity-50"
+                                  className="font-mono text-[14px] font-semibold uppercase tracking-[0.12em] px-3.5 py-2 rounded-md bg-transparent text-[var(--color-gold)] border border-[var(--color-gold-border)] hover:bg-[var(--color-gold-surface)] transition-colors disabled:opacity-50"
                                   style={MONO}
                                 >
                                   Save edit
@@ -373,7 +373,7 @@ function BuilderInner() {
                                 type="button"
                                 disabled={busyPillar === p.id}
                                 onClick={() => dismissPillar(p.id)}
-                                className="inline-flex items-center gap-1.5 font-mono text-[13px] font-semibold uppercase tracking-[0.12em] px-3.5 py-2 rounded-md bg-transparent text-[var(--color-text-secondary)] border border-[var(--color-border-base)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 font-mono text-[14px] font-semibold uppercase tracking-[0.12em] px-3.5 py-2 rounded-md bg-transparent text-[var(--color-text-secondary)] border border-[var(--color-border-base)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors disabled:opacity-50"
                                 style={MONO}
                               >
                                 <X className="w-3.5 h-3.5" /> Dismiss
@@ -394,14 +394,14 @@ function BuilderInner() {
                   type="button"
                   disabled={tracking || tracked}
                   onClick={trackThesis}
-                  className="w-full font-mono text-[14px] font-semibold uppercase tracking-[0.12em] px-4 py-3.5 rounded-md bg-[var(--color-gold)] text-[var(--color-text-inverse)] hover:bg-[var(--color-gold-hi)] transition-colors disabled:opacity-50"
+                  className="w-full font-mono text-[15px] font-semibold uppercase tracking-[0.12em] px-4 py-3.5 rounded-md bg-[var(--color-gold)] text-[var(--color-text-inverse)] hover:bg-[var(--color-gold-hi)] transition-colors disabled:opacity-50"
                   style={MONO}
                 >
                   {tracked ? 'Thesis tracked' : tracking ? 'Tracking…' : 'Track this thesis'}
                 </button>
-                {trackError && <p className="font-mono text-[14px] text-[var(--color-negative-text)]" style={MONO}>{trackError}</p>}
+                {trackError && <p className="font-mono text-[15px] text-[var(--color-negative-text)]" style={MONO}>{trackError}</p>}
                 {tracked && (
-                  <Link href="/dashboard/theses" className="block text-center font-mono text-[14px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors" style={MONO}>
+                  <Link href="/dashboard/theses" className="block text-center font-mono text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors" style={MONO}>
                     View in Theses
                   </Link>
                 )}
@@ -417,7 +417,7 @@ function BuilderInner() {
             </div>
 
             {riskLoading && !risk ? (
-              <p className="font-mono text-[14px] text-[var(--color-text-secondary)]" style={MONO}>Computing risk…</p>
+              <p className="font-mono text-[15px] text-[var(--color-text-secondary)]" style={MONO}>Computing risk…</p>
             ) : (
               <div className="space-y-7">
                 {/* Sector concentration */}
@@ -428,7 +428,7 @@ function BuilderInner() {
                       <p className="text-[15px] leading-[1.55] text-[var(--color-text-primary)] m-0">{sc.note}</p>
                       {!sc.alreadyHeld && (
                         <div className="flex items-center gap-3 rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-base)] px-4 py-3">
-                          <span className="font-mono text-[14px] uppercase tracking-[0.1em] text-[var(--color-text-muted)]" style={MONO}>{sc.sector}</span>
+                          <span className="font-mono text-[15px] uppercase tracking-[0.1em] text-[var(--color-text-muted)]" style={MONO}>{sc.sector}</span>
                           <span className="ml-auto flex items-center gap-3 font-mono tabular-nums" style={MONO}>
                             <span className="text-[20px] font-semibold text-[var(--color-text-secondary)]">{sc.currentSectorPct.toFixed(1)}%</span>
                             <span className="text-[16px] text-[var(--color-text-secondary)]/60">→</span>
@@ -459,10 +459,10 @@ function BuilderInner() {
                     <div className="space-y-3">
                       {risk.sharedDriver.map((d) => (
                         <div key={d.driver} className="rounded-lg border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] p-4 space-y-2">
-                          <div className="font-mono text-[14px] font-semibold uppercase tracking-[0.1em] text-[var(--color-gold)]" style={MONO}>
+                          <div className="font-mono text-[15px] font-semibold uppercase tracking-[0.1em] text-[var(--color-gold)]" style={MONO}>
                             {d.driver}
                           </div>
-                          <p className="text-[14px] leading-[1.55] text-[var(--color-text-primary)] m-0">
+                          <p className="text-[15px] leading-[1.55] text-[var(--color-text-primary)] m-0">
                             Also drives {d.otherTickers.join(', ')} in your book. {d.rationale}
                           </p>
                         </div>
@@ -493,7 +493,7 @@ function BuilderInner() {
       )}
 
       {!activeTicker && (
-        <div className="flex items-center gap-2 font-mono text-[14px] text-[var(--color-text-secondary)]" style={MONO}>
+        <div className="flex items-center gap-2 font-mono text-[15px] text-[var(--color-text-secondary)]" style={MONO}>
           <Lock className="w-4 h-4" />
           Drafts are private to you and never count until you confirm them.
         </div>

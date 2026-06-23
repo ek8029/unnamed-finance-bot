@@ -30,7 +30,7 @@ export function HealthScoreCard({ data, active }: { data: WrappedData; active: b
         <>
           <div className="flex items-center gap-6 mb-6" style={stagger(active, 1)}>
             <div className="text-center">
-              <p className="text-[var(--color-text-muted)] text-xs mb-2" style={MONO}>Start</p>
+              <p className="text-[var(--color-text-muted)] text-[13px] mb-2" style={MONO}>Start</p>
               <div className="text-[clamp(2.5rem,8vw,4.5rem)] font-bold text-[var(--color-text-secondary)]"
                    style={TNUM}>
                 {start}
@@ -38,7 +38,7 @@ export function HealthScoreCard({ data, active }: { data: WrappedData; active: b
             </div>
             <div className="text-3xl text-[var(--color-text-muted)]">&rarr;</div>
             <div className="text-center">
-              <p className="text-[var(--color-text-muted)] text-xs mb-2" style={MONO}>Now</p>
+              <p className="text-[var(--color-text-muted)] text-[13px] mb-2" style={MONO}>Now</p>
               <div className={cn(
                 'text-[clamp(2.5rem,8vw,4.5rem)] font-bold',
                 improved ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
@@ -76,7 +76,7 @@ export function PersonalityCard({ data, active }: { data: WrappedData; active: b
          style={{ ...stagger(active, 0), ...EYEBROW }}>
         Your Investor DNA
       </p>
-      <p className="text-xs text-[var(--color-gold)] mb-8"
+      <p className="text-[13px] text-[var(--color-gold)] mb-8"
          style={{ ...stagger(active, 0), ...MONO }}>
         Based on your {data.periodLabel.toLowerCase()} activity
       </p>
@@ -87,7 +87,7 @@ export function PersonalityCard({ data, active }: { data: WrappedData; active: b
            }}>
         {p.title}
       </div>
-      <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed max-w-sm mb-8"
+      <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed max-w-sm mb-8"
          style={stagger(active, 2)}>
         {p.description}
       </p>
@@ -176,7 +176,7 @@ export function SummaryCard({ data, active }: { data: WrappedData; active: boole
             className="text-center px-3 py-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]"
             style={stagger(active, i + 2)}
           >
-            <p className="text-sm font-bold mb-0.5"
+            <p className="text-[15px] font-bold mb-0.5"
                style={{ ...TNUM, color: h.accent ? 'var(--color-gold)' : 'var(--color-text-primary)' }}>
               {h.value}
             </p>
@@ -191,7 +191,7 @@ export function SummaryCard({ data, active }: { data: WrappedData; active: boole
       <div className="flex flex-col items-center gap-3" style={stagger(active, highlights.length + 2)}>
         <button
           onClick={handleNativeShare}
-          className="flex items-center gap-2.5 px-8 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-semibold rounded-lg transition-colors text-sm"
+          className="flex items-center gap-2.5 px-8 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-semibold rounded-lg transition-colors text-[15px]"
         >
           <Share2 className="w-4 h-4" />
           Share Your Wrapped

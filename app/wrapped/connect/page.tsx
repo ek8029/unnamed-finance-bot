@@ -63,7 +63,7 @@ export default function WrappedConnectPage() {
 
         {/* Eyebrow */}
         <p
-          className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]"
+          className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]"
           style={MONO}
         >
           Helm Wrapped &middot; 2025
@@ -83,7 +83,7 @@ export default function WrappedConnectPage() {
         {/* Already connected shortcut */}
         <button
           onClick={() => router.push('/dashboard/wrapped')}
-          className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#7A7A7A] hover:text-[var(--color-gold)] transition-colors mt-4 cursor-pointer"
+          className="font-mono text-[12px] uppercase tracking-[0.14em] text-[#7A7A7A] hover:text-[var(--color-gold)] transition-colors mt-4 cursor-pointer"
           style={MONO}
         >
           Already connected? Skip to Wrapped &rarr;
@@ -103,21 +103,21 @@ export default function WrappedConnectPage() {
 
         {/* Error display */}
         {error && (
-          <p className="text-[13px] text-[#F87171] mt-4">{error}</p>
+          <p className="text-[14px] text-[#F87171] mt-4">{error}</p>
         )}
 
         {/* Trust signals */}
         <div className="sovereign-card rounded-lg px-5 py-4 mt-8 flex flex-col items-center gap-2.5">
           <div className="flex items-center gap-2">
             <Shield className="h-3.5 w-3.5 text-[var(--color-positive)]" />
-            <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#9A9A9A]" style={MONO}>
+            <span className="font-mono text-[12px] uppercase tracking-[0.12em] text-[#9A9A9A]" style={MONO}>
               Read-only access &middot; Bank-level encryption
             </span>
           </div>
-          <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#7A7A7A]" style={MONO}>
+          <span className="font-mono text-[12px] uppercase tracking-[0.12em] text-[#7A7A7A]" style={MONO}>
             12,000+ institutions supported
           </span>
-          <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#7A7A7A]" style={MONO}>
+          <span className="font-mono text-[12px] uppercase tracking-[0.12em] text-[#7A7A7A]" style={MONO}>
             Takes about 30 seconds
           </span>
         </div>

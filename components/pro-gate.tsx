@@ -44,7 +44,7 @@ export function ProGate({ feature, description }: ProGateProps) {
           <HelmMark size={24} />
           <div className="h-px flex-1 bg-[var(--color-border-base)]" />
           <span
-            className="text-[12px] uppercase tracking-[0.2em] text-[var(--color-gold)] font-medium"
+            className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] font-medium"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             Pro
@@ -110,7 +110,7 @@ export function ProGate({ feature, description }: ProGateProps) {
                       )}
                     </div>
                     {p.note && (
-                      <span className="text-[13px] text-[var(--color-text-muted)] mt-0.5 block" style={{ fontFamily: 'var(--font-mono)' }}>
+                      <span className="text-[14px] text-[var(--color-text-muted)] mt-0.5 block" style={{ fontFamily: 'var(--font-mono)' }}>
                         {p.note}
                       </span>
                     )}
@@ -124,7 +124,7 @@ export function ProGate({ feature, description }: ProGateProps) {
                   }`}>
                     {p.price}
                   </span>
-                  <span className={`text-[13px] ${
+                  <span className={`text-[14px] ${
                     active ? 'text-[var(--color-text-secondary)]' : 'text-[var(--color-text-muted)]'
                   }`}>
                     {p.unit}
@@ -145,7 +145,7 @@ export function ProGate({ feature, description }: ProGateProps) {
         </button>
 
         {/* Fine print */}
-        <div className="flex items-center justify-between text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+        <div className="flex items-center justify-between text-[13px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
           <Link
             href="/dashboard"
             className="hover:text-[var(--color-text-secondary)] transition-colors duration-150 cursor-pointer"

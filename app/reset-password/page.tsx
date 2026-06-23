@@ -141,7 +141,7 @@ export default function ResetPasswordPage() {
                 <p className="text-[15px] text-[var(--color-text-secondary)]">
                   Verifying your reset link...
                 </p>
-                <p className="text-[var(--color-text-muted)] text-xs">
+                <p className="text-[var(--color-text-muted)] text-[13px]">
                   If this takes too long, your link may have expired.{' '}
                   <Link href="/forgot-password" className="text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors">
                     Request a new one
@@ -151,7 +151,7 @@ export default function ResetPasswordPage() {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
                 {error && (
-                  <div className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-md text-sm">
+                  <div className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-md text-[15px]">
                     {error}
                   </div>
                 )}

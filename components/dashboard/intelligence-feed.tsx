@@ -124,7 +124,7 @@ export function IntelligenceFeed({
       <div className="sovereign-card rounded">
         <div className="flex items-center gap-3 px-5 py-3.5">
           <Loader2 className="w-4 h-4 text-[var(--color-gold)] animate-spin" />
-          <span className="text-sm text-[var(--color-text-muted)]">Loading alerts…</span>
+          <span className="text-[15px] text-[var(--color-text-muted)]">Loading alerts…</span>
         </div>
       </div>
     );
@@ -136,7 +136,7 @@ export function IntelligenceFeed({
       <div className="sovereign-card rounded">
         <div className="flex items-center gap-3 px-5 py-3.5">
           <Zap className="w-4 h-4 text-[var(--color-text-muted)]" />
-          <span className="text-sm text-[var(--color-text-muted)]">
+          <span className="text-[15px] text-[var(--color-text-muted)]">
             No alerts right now. Helm is monitoring your portfolio.
           </span>
         </div>
@@ -154,7 +154,7 @@ export function IntelligenceFeed({
       >
         <div className="flex items-center gap-3">
           <Zap className="w-4 h-4 text-[var(--color-gold)]" />
-          <span className="text-sm font-medium text-[var(--color-text-primary)]">
+          <span className="text-[15px] font-medium text-[var(--color-text-primary)]">
             {activeCount > 0
               ? `${activeCount} alert${activeCount !== 1 ? 's' : ''}`
               : 'All alerts dismissed'}
@@ -185,7 +185,7 @@ export function IntelligenceFeed({
               ))}
             </div>
           ) : (
-            <div className="px-5 py-4 text-sm text-[var(--color-text-muted)]">
+            <div className="px-5 py-4 text-[15px] text-[var(--color-text-muted)]">
               All caught up. No active alerts.
             </div>
           )}
@@ -196,7 +196,7 @@ export function IntelligenceFeed({
               <button
                 onClick={() => setShowDismissed(!showDismissed)}
                 aria-expanded={showDismissed}
-                className="w-full flex items-center gap-2 px-5 py-2.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+                className="w-full flex items-center gap-2 px-5 py-2.5 text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
               >
                 <Eye className="w-3.5 h-3.5" />
                 {showDismissed ? 'Hide' : 'View'} dismissed ({dismissedEntries.length})
@@ -210,7 +210,7 @@ export function IntelligenceFeed({
                       className="flex items-center gap-3 py-2.5 px-4 group"
                     >
                       <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-[var(--color-text-muted)]" />
-                      <span className="text-sm text-[var(--color-text-secondary)] truncate flex-1 line-through">
+                      <span className="text-[15px] text-[var(--color-text-secondary)] truncate flex-1 line-through">
                         {entry.insight.title}
                       </span>
                       <span className="type-eyebrow text-[var(--color-text-muted)] shrink-0">
@@ -218,7 +218,7 @@ export function IntelligenceFeed({
                       </span>
                       <button
                         onClick={() => handleRestore(entry.insight.id)}
-                        className="shrink-0 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-gold)] opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="shrink-0 text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-gold)] opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         Restore
                       </button>

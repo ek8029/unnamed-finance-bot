@@ -52,7 +52,7 @@ function GeneratingOverlay({ symbol }: { symbol: string }) {
         Helm is analyzing <span className="text-[var(--color-gold)]">{symbol}</span>…
       </div>
       <div
-        className="text-[11px] tracking-[0.04em] text-[var(--color-text-muted)]"
+        className="text-[12px] tracking-[0.04em] text-[var(--color-text-muted)]"
         style={MONO}
       >
         Reading filings · pulling market data · scoring the thesis
@@ -88,7 +88,7 @@ function NotFoundPanel({ symbol, onReset }: { symbol: string; onReset: () => voi
             {symbol}
           </span>
         </div>
-        <p className="mb-6 text-[14px] leading-[1.65] text-[var(--color-text-muted)]">
+        <p className="mb-6 text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
           Helm covers US-listed stocks and ETFs (NYSE, NASDAQ, AMEX). International, OTC, and mutual
           funds aren&apos;t supported yet.
         </p>
@@ -200,7 +200,7 @@ export default function DashboardAnalyzePage() {
               key={ticker}
               type="button"
               onClick={() => analyzeTicker(ticker)}
-              className="rounded-[5px] border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] px-4 py-2 text-[14px] font-semibold uppercase tracking-[0.04em] text-[var(--color-gold)] transition-colors hover:bg-[rgba(230,185,77,0.14)]"
+              className="rounded-[5px] border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] px-4 py-2 text-[15px] font-semibold uppercase tracking-[0.04em] text-[var(--color-gold)] transition-colors hover:bg-[rgba(230,185,77,0.14)]"
               style={MONO}
             >
               {ticker}
@@ -235,16 +235,16 @@ export default function DashboardAnalyzePage() {
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-[14px] font-bold uppercase tracking-[0.02em] text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-gold)]" style={MONO}>{m.ticker}</span>
+                        <span className="text-[15px] font-bold uppercase tracking-[0.02em] text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-gold)]" style={MONO}>{m.ticker}</span>
                         {up ? <TrendingUp className="w-3.5 h-3.5 text-[var(--color-positive)]" /> : <TrendingDown className="w-3.5 h-3.5 text-[var(--color-negative-text)]" />}
                       </div>
-                      <div className="mt-0.5 truncate text-[13px] text-[var(--color-text-muted)]">{m.name}</div>
+                      <div className="mt-0.5 truncate text-[14px] text-[var(--color-text-muted)]">{m.name}</div>
                     </div>
                     <div className="ml-3 shrink-0 text-right">
-                      <div className={`text-[14px] font-bold tabular-nums ${up ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`} style={MONO}>
+                      <div className={`text-[15px] font-bold tabular-nums ${up ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`} style={MONO}>
                         {up ? '+' : ''}{m.changePct.toFixed(2)}%
                       </div>
-                      <div className={`text-[13px] tabular-nums ${up ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`} style={MONO}>
+                      <div className={`text-[14px] tabular-nums ${up ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`} style={MONO}>
                         {m.dollarImpact >= 0 ? '+' : '-'}${Math.abs(m.dollarImpact) >= 1000 ? `${(Math.abs(m.dollarImpact) / 1000).toFixed(1)}K` : Math.abs(m.dollarImpact).toFixed(0)}
                       </div>
                     </div>
@@ -271,10 +271,10 @@ export default function DashboardAnalyzePage() {
                       className="flex w-full items-center justify-between rounded-lg px-4 py-2.5 text-left transition-colors hover:bg-[var(--color-bg-surface)] group"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="w-14 text-[14px] font-bold uppercase text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-gold)]" style={MONO}>{m.ticker}</span>
-                        <span className="truncate text-[14px] text-[var(--color-text-muted)]">{m.name}</span>
+                        <span className="w-14 text-[15px] font-bold uppercase text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-gold)]" style={MONO}>{m.ticker}</span>
+                        <span className="truncate text-[15px] text-[var(--color-text-muted)]">{m.name}</span>
                       </div>
-                      <span className="text-[14px] font-bold tabular-nums text-[var(--color-positive)]" style={MONO}>+{m.changePct.toFixed(2)}%</span>
+                      <span className="text-[15px] font-bold tabular-nums text-[var(--color-positive)]" style={MONO}>+{m.changePct.toFixed(2)}%</span>
                     </button>
                   ))}
                 </div>
@@ -295,10 +295,10 @@ export default function DashboardAnalyzePage() {
                       className="flex w-full items-center justify-between rounded-lg px-4 py-2.5 text-left transition-colors hover:bg-[var(--color-bg-surface)] group"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="w-14 text-[14px] font-bold uppercase text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-gold)]" style={MONO}>{m.ticker}</span>
-                        <span className="truncate text-[14px] text-[var(--color-text-muted)]">{m.name}</span>
+                        <span className="w-14 text-[15px] font-bold uppercase text-[var(--color-text-primary)] transition-colors group-hover:text-[var(--color-gold)]" style={MONO}>{m.ticker}</span>
+                        <span className="truncate text-[15px] text-[var(--color-text-muted)]">{m.name}</span>
                       </div>
-                      <span className="text-[14px] font-bold tabular-nums text-[var(--color-negative-text)]" style={MONO}>{m.changePct.toFixed(2)}%</span>
+                      <span className="text-[15px] font-bold tabular-nums text-[var(--color-negative-text)]" style={MONO}>{m.changePct.toFixed(2)}%</span>
                     </button>
                   ))}
                 </div>

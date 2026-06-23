@@ -28,14 +28,14 @@ export default async function DashboardTickerAnalysisPage({ params }: Props) {
       <div className="flex-1 flex items-center justify-center px-6 py-16">
         <div className="text-center space-y-5 max-w-md">
           <div className="type-h1 text-[var(--color-text-primary)]">Ticker not found</div>
-          <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed">
+          <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed">
             We couldn&apos;t find data for <span className="font-bold text-[var(--color-text-primary)]">{symbol}</span>.
             Helm currently covers US-listed stocks and ETFs (NYSE, NASDAQ, AMEX).
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
               href="/dashboard/analyze"
-              className="px-5 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[14px] font-semibold rounded transition-colors"
+              className="px-5 py-2 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[15px] font-semibold rounded transition-colors"
             >
               Try another ticker
             </a>

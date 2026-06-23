@@ -227,19 +227,19 @@ export default async function ComparePage({ params }: Props) {
           <div className="flex items-center gap-5">
             <Link
               href="/compare"
-              className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+              className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               Compare
             </Link>
             <Link
               href="/analyze"
-              className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+              className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               Analyze
             </Link>
             <Link
               href="/signup"
-              className="px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:brightness-110"
+              className="px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110"
             >
               Get Started
             </Link>
@@ -261,7 +261,7 @@ export default async function ComparePage({ params }: Props) {
           <h1 className="text-[30px] sm:text-[40px] font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.08]">
             {name1} vs {name2}
           </h1>
-          <p className="text-[14px] text-[var(--color-text-secondary)] mt-2 max-w-xl mx-auto">
+          <p className="text-[15px] text-[var(--color-text-secondary)] mt-2 max-w-xl mx-auto">
             Side-by-side fundamentals, valuation, and AI summaries for both tickers.
           </p>
         </div>
@@ -282,13 +282,13 @@ export default async function ComparePage({ params }: Props) {
           <div className="sovereign-card rounded overflow-hidden">
             {/* Header row */}
             <div className="grid grid-cols-3 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-base)]">
-              <div className="px-4 py-3 text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+              <div className="px-4 py-3 text-[12px] uppercase tracking-[0.15em] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
                 Metric
               </div>
-              <div className="px-4 py-3 text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-primary)] text-center" style={{ fontFamily: 'var(--font-mono)' }}>
+              <div className="px-4 py-3 text-[12px] uppercase tracking-[0.15em] text-[var(--color-text-primary)] text-center" style={{ fontFamily: 'var(--font-mono)' }}>
                 {ticker1}
               </div>
-              <div className="px-4 py-3 text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-primary)] text-center" style={{ fontFamily: 'var(--font-mono)' }}>
+              <div className="px-4 py-3 text-[12px] uppercase tracking-[0.15em] text-[var(--color-text-primary)] text-center" style={{ fontFamily: 'var(--font-mono)' }}>
                 {ticker2}
               </div>
             </div>
@@ -298,13 +298,13 @@ export default async function ComparePage({ params }: Props) {
                 key={row.label}
                 className={`grid grid-cols-3 border-b border-[var(--color-border-subtle)] last:border-b-0 ${i % 2 === 0 ? '' : 'bg-[var(--color-bg-elevated)]/40'}`}
               >
-                <div className="px-4 py-2.5 text-[13px] text-[var(--color-text-secondary)]">
+                <div className="px-4 py-2.5 text-[14px] text-[var(--color-text-secondary)]">
                   {row.label}
                 </div>
-                <div className="px-4 py-2.5 text-[13px] text-[var(--color-text-primary)] text-center" style={{ fontFamily: 'var(--font-mono)' }}>
+                <div className="px-4 py-2.5 text-[14px] text-[var(--color-text-primary)] text-center" style={{ fontFamily: 'var(--font-mono)' }}>
                   {row.ticker1}
                 </div>
-                <div className="px-4 py-2.5 text-[13px] text-[var(--color-text-primary)] text-center" style={{ fontFamily: 'var(--font-mono)' }}>
+                <div className="px-4 py-2.5 text-[14px] text-[var(--color-text-primary)] text-center" style={{ fontFamily: 'var(--font-mono)' }}>
                   {row.ticker2}
                 </div>
               </div>
@@ -357,26 +357,26 @@ export default async function ComparePage({ params }: Props) {
           <h2 className="text-[24px] font-bold text-[var(--color-text-primary)] mb-3">
             Get deeper analysis on Helm Terminal
           </h2>
-          <p className="text-[14px] text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">
+          <p className="text-[15px] text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">
             AI-powered portfolio intelligence, daily briefs, and real-time monitoring for every stock you own.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/signup"
-              className="px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:brightness-110"
+              className="px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110"
             >
               Sign Up Free
             </Link>
             <div className="flex gap-3">
               <Link
                 href={`/analyze/${ticker1}`}
-                className="px-5 py-2.5 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-colors"
+                className="px-5 py-2.5 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-colors"
               >
                 Full {ticker1} Analysis
               </Link>
               <Link
                 href={`/analyze/${ticker2}`}
-                className="px-5 py-2.5 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-colors"
+                className="px-5 py-2.5 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-colors"
               >
                 Full {ticker2} Analysis
               </Link>
@@ -385,7 +385,7 @@ export default async function ComparePage({ params }: Props) {
         </section>
 
         {/* Disclaimer */}
-        <p className="text-[11px] italic text-[var(--color-text-muted)] text-center mt-6 max-w-2xl mx-auto">
+        <p className="text-[12px] italic text-[var(--color-text-muted)] text-center mt-6 max-w-2xl mx-auto">
           Not financial advice. Informational use only. AI-generated content may contain errors.
           Consult a licensed financial advisor before making investment decisions.
         </p>
@@ -413,21 +413,21 @@ function VerdictCard({
       <div className="flex items-center justify-between mb-3">
         <div>
           <p
-            className="text-[11px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-1"
+            className="text-[12px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-1"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             {ticker}
           </p>
           <p className="text-[16px] font-semibold text-[var(--color-text-primary)]">{name}</p>
         </div>
-        <span className={`text-[14px] font-bold ${verdictColor(analysis.verdict)}`} style={{ fontFamily: 'var(--font-mono)' }}>
+        <span className={`text-[15px] font-bold ${verdictColor(analysis.verdict)}`} style={{ fontFamily: 'var(--font-mono)' }}>
           {label}
         </span>
       </div>
-      <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed mb-3">
+      <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed mb-3">
         {analysis.summary}
       </p>
-      <p className="text-[12px] text-[var(--color-text-secondary)] italic">
+      <p className="text-[13px] text-[var(--color-text-secondary)] italic">
         {analysis.recommendation}
       </p>
     </div>
@@ -446,22 +446,22 @@ function CaseCard({
   return (
     <div className="sovereign-card rounded p-5 space-y-4">
       <p
-        className="text-[12px] uppercase tracking-[0.2em] text-[var(--color-text-primary)] font-semibold"
+        className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-text-primary)] font-semibold"
         style={{ fontFamily: 'var(--font-mono)' }}
       >
         {ticker}
       </p>
       <div>
-        <p className="text-[11px] uppercase tracking-[0.15em] text-emerald-400 mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>
+        <p className="text-[12px] uppercase tracking-[0.15em] text-emerald-400 mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>
           Bull Case
         </p>
-        <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">{bullCase}</p>
+        <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed">{bullCase}</p>
       </div>
       <div>
-        <p className="text-[11px] uppercase tracking-[0.15em] text-red-400 mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>
+        <p className="text-[12px] uppercase tracking-[0.15em] text-red-400 mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>
           Bear Case
         </p>
-        <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">{bearCase}</p>
+        <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed">{bearCase}</p>
       </div>
     </div>
   );
@@ -470,8 +470,8 @@ function CaseCard({
 function FaqItem({ q, a }: { q: string; a: string }) {
   return (
     <div className="space-y-1.5">
-      <h3 className="text-[14px] font-semibold text-[var(--color-text-primary)]">{q}</h3>
-      <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">{a}</p>
+      <h3 className="text-[15px] font-semibold text-[var(--color-text-primary)]">{q}</h3>
+      <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed">{a}</p>
     </div>
   );
 }

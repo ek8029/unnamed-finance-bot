@@ -206,7 +206,7 @@ export function StockAnalysisCard({ analysis, showWatermark = false }: { analysi
       <div className="px-5 py-3 border-t border-[var(--color-border-subtle)]">
         <a
           href={`/analyze/${analysis.ticker}`}
-          className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors"
+          className="flex items-center gap-2 text-[13px] font-mono uppercase tracking-wider text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors"
         >
           Open in terminal <span className="text-[10px]">→</span>
         </a>

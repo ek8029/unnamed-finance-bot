@@ -123,10 +123,10 @@ export default function PricingPage() {
             <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
           </Link>
           <div className="flex items-center gap-5">
-            <Link href="/analyze" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Analyze</Link>
-            <Link href="/pricing" className="text-sm text-[var(--color-text-primary)] transition-colors">Pricing</Link>
-            <Link href="/blog" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Blog</Link>
-            <Link href="/login" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Sign in</Link>
+            <Link href="/analyze" className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Analyze</Link>
+            <Link href="/pricing" className="text-[15px] text-[var(--color-text-primary)] transition-colors">Pricing</Link>
+            <Link href="/blog" className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Blog</Link>
+            <Link href="/login" className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Sign in</Link>
           </div>
         </div>
       </nav>
@@ -152,7 +152,7 @@ export default function PricingPage() {
           <AnimatedSection delay={100}>
             <div className="sovereign-card rounded p-6 flex flex-col h-full">
               <div className="mb-5">
-                <span className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-medium" style={{ fontFamily: 'var(--font-mono)' }}>
+                <span className="text-[14px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-medium" style={{ fontFamily: 'var(--font-mono)' }}>
                   Free
                 </span>
                 <div className="flex items-baseline gap-1.5 mt-3">
@@ -182,7 +182,7 @@ export default function PricingPage() {
             <div className="sovereign-card rounded p-6 flex flex-col h-full border-[var(--color-gold-border)] bg-[var(--color-gold-surface)]">
               <div className="mb-5">
                 <div className="flex items-center gap-2.5">
-                  <span className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] font-medium" style={{ fontFamily: 'var(--font-mono)' }}>
+                  <span className="text-[14px] uppercase tracking-[0.2em] text-[var(--color-gold)] font-medium" style={{ fontFamily: 'var(--font-mono)' }}>
                     Pro
                   </span>
                   <span className="text-[10px] uppercase tracking-wider font-semibold text-[var(--color-gold)] px-2 py-0.5 rounded-sm bg-[rgba(230,185,77,0.12)]" style={{ fontFamily: 'var(--font-mono)' }}>
@@ -216,7 +216,7 @@ export default function PricingPage() {
           <AnimatedSection delay={300}>
             <div className="sovereign-card rounded p-6 flex flex-col h-full" style={{ borderColor: 'rgba(255,214,122,0.45)' }}>
               <div className="mb-5">
-                <span className="text-[13px] uppercase tracking-[0.2em] font-medium" style={{ fontFamily: 'var(--font-mono)', color: '#FFD67A' }}>
+                <span className="text-[14px] uppercase tracking-[0.2em] font-medium" style={{ fontFamily: 'var(--font-mono)', color: '#FFD67A' }}>
                   Max
                 </span>
                 <div className="flex items-baseline gap-1.5 mt-3">
@@ -247,7 +247,7 @@ export default function PricingPage() {
 
         {/* Fine print */}
         <AnimatedSection delay={400}>
-          <div className="text-center text-[13px] text-[var(--color-text-muted)] mt-8" style={{ fontFamily: 'var(--font-mono)' }}>
+          <div className="text-center text-[14px] text-[var(--color-text-muted)] mt-8" style={{ fontFamily: 'var(--font-mono)' }}>
             Cancel anytime &middot; Secure via Stripe
           </div>
         </AnimatedSection>

@@ -78,7 +78,7 @@ export default function MfaVerifyPage() {
     <AuthShell subtitle="Two-factor authentication">
       <form onSubmit={handleVerify} className="space-y-6">
         {error && (
-          <div className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-md text-sm">
+          <div className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-md text-[15px]">
             {error}
           </div>
         )}
@@ -125,7 +125,7 @@ export default function MfaVerifyPage() {
             router.push('/login');
             router.refresh();
           }}
-          className="w-full text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+          className="w-full text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
         >
           Sign out and go back
         </button>

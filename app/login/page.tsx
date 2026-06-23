@@ -134,7 +134,7 @@ function LoginForm() {
         /* MFA Verification Step */
         <form onSubmit={handleMfaVerify} className="space-y-6">
           {error && (
-            <div role="alert" className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-md text-sm">
+            <div role="alert" className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-md text-[15px]">
               {error}
             </div>
           )}
@@ -182,7 +182,7 @@ function LoginForm() {
               setFactorId('');
               setError('');
             }}
-            className="w-full text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+            className="w-full text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
           >
             Back to sign in
           </button>
@@ -208,13 +208,13 @@ function LoginForm() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {message && (
-              <div role="status" className="bg-[var(--color-positive-muted)] border border-[var(--color-positive-border)] text-[var(--color-positive)] px-4 py-3 rounded-md text-sm">
+              <div role="status" className="bg-[var(--color-positive-muted)] border border-[var(--color-positive-border)] text-[var(--color-positive)] px-4 py-3 rounded-md text-[15px]">
                 {message}
               </div>
             )}
 
             {error && (
-              <div role="alert" className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-md text-sm">
+              <div role="alert" className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-md text-[15px]">
                 {error}
               </div>
             )}
@@ -242,7 +242,7 @@ function LoginForm() {
                 </label>
                 <Link
                   href="/forgot-password"
-                  className="text-sm text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors"
+                  className="text-[15px] text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -260,7 +260,7 @@ function LoginForm() {
             </div>
 
             <div className="flex items-center">
-              <label htmlFor="remember-me" className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] cursor-pointer py-1">
+              <label htmlFor="remember-me" className="flex items-center gap-2 text-[15px] text-[var(--color-text-secondary)] cursor-pointer py-1">
                 <input
                   id="remember-me"
                   type="checkbox"
@@ -287,7 +287,7 @@ function LoginForm() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-[var(--color-text-secondary)] text-sm">
+            <p className="text-[var(--color-text-secondary)] text-[15px]">
               Don&apos;t have an account?{' '}
               <Link href="/signup" className="text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors font-medium">
                 Sign up

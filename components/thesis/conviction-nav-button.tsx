@@ -54,12 +54,12 @@ export function ConvictionNavButton({
   return (
     <button type="button" onClick={onClick} aria-label="Open conviction" className={className}>
       <Anchor className="w-4 h-4 shrink-0" />
-      {label && <span className="font-mono text-[11px] uppercase tracking-[0.12em]">Conviction</span>}
+      {label && <span className="font-mono text-[12px] uppercase tracking-[0.12em]">Conviction</span>}
       {flagged && worst && (
         <span className="inline-flex items-center gap-1 ml-auto">
           <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: COLOR[worst], boxShadow: `0 0 6px ${COLOR[worst]}88` }} />
           {attention > 0 && (
-            <span className="font-mono text-[11px] tabular-nums" style={{ color: COLOR[worst] }}>
+            <span className="font-mono text-[12px] tabular-nums" style={{ color: COLOR[worst] }}>
               {attention}
             </span>
           )}
