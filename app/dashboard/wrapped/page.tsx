@@ -161,7 +161,7 @@ function SlideCover({
 
         <button
           onClick={(e) => { e.stopPropagation(); onBegin(); }}
-          className="group inline-flex items-center gap-3 px-12 py-5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[17px] rounded-full cursor-pointer transition-all"
+          className="group inline-flex items-center gap-3 px-8 sm:px-12 py-4 sm:py-5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[15px] sm:text-[17px] rounded-full cursor-pointer transition-all"
           style={{ boxShadow: '0 12px 40px rgba(230,185,77,0.35)' }}
         >
           Begin Wrapped

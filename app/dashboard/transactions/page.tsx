@@ -645,7 +645,7 @@ export default function TransactionsPage() {
       {/* ─── Main Content ─── */}
       <main className="space-y-6">
         {/* ─── Summary Tiles ─── */}
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
           {/* Cash Flow */}
           <div className="sovereign-card rounded-lg px-5 py-4">
             <p className="type-data-label mb-2">Cash Flow</p>

@@ -192,7 +192,7 @@ function RailCard({ label, labelColor, children }: { label: string; labelColor?:
 function GeneratingOverlay() {
   return (
     <div
-      className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 px-10 text-center"
+      className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 px-6 sm:px-10 text-center"
       style={{ background: 'rgba(10,10,10,0.88)', backdropFilter: 'blur(3px)' }}
       role="status"
       aria-live="polite"
