@@ -11,6 +11,7 @@ import { WhyIOwnThis } from '@/components/thesis/why-i-own-this';
 import { ProBlur } from '@/components/pro-blur';
 import { usePreview } from '@/lib/preview-context';
 import { tierAtLeast } from '@/lib/tier-shared';
+import { TierLock } from '@/components/tier-lock';
 import { ThesisActions } from '@/components/thesis/thesis-actions';
 import { RatifyQueue, type RatifyItem } from '@/components/thesis/ratify-queue';
 import { DriverMap, type NodeInfo } from '@/components/thesis/driver-map';
@@ -433,10 +434,10 @@ export default function ThesesPage() {
   if (phase === 'locked' || (phase === 'ready' && !tierAtLeast(previewTier, 'pro'))) {
     return (
       <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8">
-        <ProBlur
+        <TierLock
+          required="pro"
           label="Unlock Theses with Pro"
-          description="Write why you own each position. Helm scores SEC filings, news and price moves against your theses every market hour, and flags what strengthens or breaks them. Sourced, dated, auditable."
-          minHeight="440px"
+          blurb="Write why you own each position. Helm scores SEC filings, news and price moves against your theses every market hour, and flags what strengthens or breaks them. Sourced, dated, auditable."
         >
           <div className="space-y-6">
             <div>
@@ -452,7 +453,7 @@ export default function ThesesPage() {
               ))}
             </div>
           </div>
-        </ProBlur>
+        </TierLock>
       </div>
     );
   }

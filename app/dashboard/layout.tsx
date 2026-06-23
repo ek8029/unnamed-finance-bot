@@ -824,7 +824,7 @@ export default function DashboardLayout({
           isChatPage && "min-h-0 flex flex-col"
         )}>
           <ConnectBanner />
-          <FoundingMemberBanner />
+          {/* FoundingMemberBanner removed: founding tier retired (Free / Pro $20 / Max $50) */}
           {thesisEntitled && pathname !== '/dashboard/theses' && <ThesesWhatsNewBanner />}
           <div
             key={pathname}

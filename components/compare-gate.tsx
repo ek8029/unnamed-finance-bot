@@ -141,7 +141,7 @@ export function CompareGate() {
               href="/pricing"
               className="group w-full flex items-center justify-center gap-2.5 px-8 py-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[15px] rounded-[var(--radius-md)] transition-colors duration-200 mb-4"
             >
-              Upgrade from $4.99/mo
+              Upgrade to Pro · $20/mo
               <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
             </Link>
             <div className="flex items-center justify-between text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>

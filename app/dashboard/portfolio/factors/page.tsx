@@ -7,6 +7,7 @@ import { useTier } from '@/hooks/use-tier';
 import { isThesisUser } from '@/lib/thesis-access';
 import { usePreview } from '@/lib/preview-context';
 import { tierAtLeast } from '@/lib/tier-shared';
+import { TierLock } from '@/components/tier-lock';
 import { STATUS_META } from '@/lib/thesis-palette';
 import type {
   FactorReport,
@@ -373,13 +374,13 @@ export default function FactorLensPage() {
       )}
 
       {!loading && !tierLoading && !error && !empty && !entitled && (
-        <ProBlur
-          label="Unlock Factor Lens with Pro"
-          description="See the style and factor exposure hiding in your portfolio"
-          minHeight="420px"
+        <TierLock
+          required="max"
+          label="Unlock Factor Lens with Max"
+          blurb="See the style and factor exposure hiding in your portfolio."
         >
           {report && <ReportBody report={report} />}
-        </ProBlur>
+        </TierLock>
       )}
 
       {!loading && !tierLoading && !error && !empty && entitled && report && (

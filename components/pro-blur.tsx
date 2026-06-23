@@ -84,7 +84,7 @@ export function ProBlur({
               onClick={() => setShowCheckout(true)}
               className="flex items-center gap-2 px-5 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[14px] rounded-[var(--radius-md)] cursor-pointer transition-colors"
             >
-              Upgrade for $4.99/mo
+              Upgrade to Pro · $20/mo
             </button>
 
             <Link
