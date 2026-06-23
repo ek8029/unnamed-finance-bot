@@ -25,10 +25,13 @@ export function TierLock({
   const meta = TIER_META[required];
   return (
     <div className="relative">
-      <div className="pointer-events-none select-none blur-[6px] opacity-50" aria-hidden>
+      <div className="pointer-events-none select-none blur-[6px] opacity-40 max-h-[78vh] overflow-hidden" aria-hidden>
         {children}
       </div>
-      <div className="absolute inset-0 flex items-center justify-center p-6">
+      <div
+        className="absolute inset-0 flex items-start justify-center pt-[13vh] px-6"
+        style={{ background: 'linear-gradient(180deg, rgba(6,6,6,0.40), rgba(6,6,6,0.72))' }}
+      >
         <div
           className="max-w-sm w-full text-center rounded-lg bg-[var(--color-bg-surface)] px-6 py-7"
           style={{ border: `1px solid ${meta.color}`, boxShadow: `0 0 24px ${meta.color}22` }}

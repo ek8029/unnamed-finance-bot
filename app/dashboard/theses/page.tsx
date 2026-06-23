@@ -9,6 +9,8 @@ import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 import { WhyIOwnThis } from '@/components/thesis/why-i-own-this';
 import { ProBlur } from '@/components/pro-blur';
+import { usePreview } from '@/lib/preview-context';
+import { tierAtLeast } from '@/lib/tier-shared';
 import { ThesisActions } from '@/components/thesis/thesis-actions';
 import { RatifyQueue, type RatifyItem } from '@/components/thesis/ratify-queue';
 import { DriverMap, type NodeInfo } from '@/components/thesis/driver-map';
@@ -168,6 +170,7 @@ export default function ThesesPage() {
   const [theses, setTheses] = useState<Thesis[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [phase, setPhase] = useState<'loading' | 'error' | 'ready' | 'locked'>('loading');
+  const { tier: previewTier } = usePreview();
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [seedingTicker, setSeedingTicker] = useState<string | null>(null);
   const [seedError, setSeedError] = useState<string | null>(null);
@@ -427,7 +430,7 @@ export default function ThesesPage() {
     );
   }
 
-  if (phase === 'locked') {
+  if (phase === 'locked' || (phase === 'ready' && !tierAtLeast(previewTier, 'pro'))) {
     return (
       <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8">
         <ProBlur

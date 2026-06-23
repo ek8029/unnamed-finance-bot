@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProBlur } from '@/components/pro-blur';
 import { useTier } from '@/hooks/use-tier';
 import { isThesisUser } from '@/lib/thesis-access';
+import { usePreview } from '@/lib/preview-context';
+import { tierAtLeast } from '@/lib/tier-shared';
 import { STATUS_META } from '@/lib/thesis-palette';
 import type {
   FactorReport,
@@ -268,6 +270,7 @@ function ReportBody({ report }: { report: FactorReport }) {
 
 export default function FactorLensPage() {
   const { isPro, loading: tierLoading } = useTier();
+  const { tier: previewTier } = usePreview();
   const [report, setReport] = useState<FactorReport | null>(null);
   const [empty, setEmpty] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -288,7 +291,9 @@ export default function FactorLensPage() {
     };
   }, []);
 
-  const entitled = isPro || isThesisUser(profileEmail);
+  // Factor lens is a Max feature; drive gating off the preview tier (redesign source of truth).
+  void isPro; void isThesisUser; void profileEmail; // real-entitlement gating swaps in during the pricing phase
+  const entitled = tierAtLeast(previewTier, 'max');
 
   useEffect(() => {
     let cancelled = false;
