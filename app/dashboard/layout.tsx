@@ -387,8 +387,8 @@ export default function DashboardLayout({
   function GroupLabel({ children, proTag }: { children: React.ReactNode; proTag?: boolean }) {
     return (
       <div
-        className="flex justify-between px-[13px] pt-[15px] pb-[7px] text-[8px] uppercase first:pt-1"
-        style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.22em', color: '#5a5a5a' }}
+        className="flex justify-between px-[13px] pt-[15px] pb-[7px] text-[11px] uppercase first:pt-1"
+        style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.16em', color: '#7a7a7a' }}
       >
         <span>{children}</span>
         {proTag && <span className="text-[var(--color-gold)]">Pro</span>}
@@ -436,7 +436,7 @@ export default function DashboardLayout({
           </span>
         </div>
         <div className="p-2 max-h-[50vh] overflow-y-auto custom-scrollbar">
-          <div className="px-3 pt-2 pb-1.5 text-[8px] uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.2em', color: '#5a5a5a' }}>
+          <div className="px-3 pt-2 pb-1.5 text-[11px] uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.16em', color: '#7a7a7a' }}>
             Navigate
           </div>
           {PALETTE_NAVIGATE.map((row) => (
@@ -458,7 +458,7 @@ export default function DashboardLayout({
               </span>
             </Link>
           ))}
-          <div className="px-3 pt-3 pb-1.5 text-[8px] uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.2em', color: '#5a5a5a' }}>
+          <div className="px-3 pt-3 pb-1.5 text-[11px] uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.16em', color: '#7a7a7a' }}>
             Actions
           </div>
           {PALETTE_ACTIONS.map((row) => (
@@ -625,8 +625,8 @@ export default function DashboardLayout({
         {/* ── Connected mini-panel ── */}
         <div className="shrink-0 px-3.5 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
           <div
-            className="flex justify-between mb-2.5 text-[8px] uppercase"
-            style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.18em', color: '#5a5a5a' }}
+            className="flex justify-between mb-2.5 text-[10px] uppercase"
+            style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.14em', color: '#7a7a7a' }}
           >
             <span>Connected · 4</span>
             <span className="text-[var(--color-positive)]">● synced</span>
@@ -669,7 +669,7 @@ export default function DashboardLayout({
                 {profile?.fullName || 'Loading…'}
               </div>
               <div
-                className="text-[8px] uppercase truncate"
+                className="text-[10px] uppercase truncate"
                 style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', color: tierBadgeColor }}
               >
                 {planLabel}
