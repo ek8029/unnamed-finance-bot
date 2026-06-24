@@ -74,7 +74,7 @@ function fmtPct(n: number): string {
 }
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
-const SCREEN: React.CSSProperties = { padding: '26px 28px 60px', maxWidth: 1240 };
+const SCREEN: React.CSSProperties = { padding: '26px 28px 60px', maxWidth: 1600 };
 const CARD =
   'rounded-md border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] shadow-[0_2px_12px_rgba(0,0,0,0.5)]';
 
@@ -677,17 +677,17 @@ export default function BriefPage() {
           {marketCells.map((c, i) => (
             <div
               key={c.label}
-              className="px-[18px] py-[13px]"
+              className="px-[20px] py-[16px]"
               style={{
                 borderRight: i < marketCells.length - 1 ? '1px solid var(--color-border-subtle)' : undefined,
               }}
             >
-              <div className="mb-1.5 text-[9px] uppercase tracking-[0.1em] text-[var(--color-text-muted)]" style={MONO}>
+              <div className="mb-2 text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)]" style={MONO}>
                 {c.label}
               </div>
-              <div className="text-[15px] font-bold tabular-nums" style={MONO}>{c.value}</div>
+              <div className="text-[18px] font-bold tabular-nums" style={MONO}>{c.value}</div>
               <div
-                className={`mt-[3px] text-[10px] ${c.pos ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}
+                className={`mt-1 text-[11px] ${c.pos ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}
                 style={MONO}
               >
                 {c.delta}
@@ -774,24 +774,7 @@ export default function BriefPage() {
           {/* Category-coded signal cards */}
           {signals.map((s, i) => <SignalCard key={`${s.category}-${i}`} signal={s} />)}
 
-          {/* Thesis intelligence digest (Pro) */}
-          {tier !== 'free' && data.thesisEnabled && data.thesisIntelligence.length > 0 && (
-              <div className={`${CARD} px-5 py-[18px]`} style={{ borderLeft: '2px solid var(--color-gold)' }}>
-                <div className="mb-3 flex items-baseline justify-between">
-                  <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--color-gold)]" style={MONO}>
-                    Thesis intelligence
-                  </span>
-                  <span className="text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)]" style={MONO}>
-                    {data.thesisIntelligence.length} of 3 max today
-                  </span>
-                </div>
-                <div className="flex flex-col gap-3">
-                  {data.thesisIntelligence.map((item, i) => (
-                    <VerdictCard key={`${item.ticker}-${i}`} item={item} />
-                  ))}
-                </div>
-              </div>
-          )}
+          {/* Thesis intelligence moved to full-width strip below the grid */}
 
           {/* One light upgrade nudge for free users — mentions both the
               conviction-led brief and thesis tracking. Not a wall. */}
@@ -837,6 +820,9 @@ export default function BriefPage() {
 
         {/* ── Right rail ── */}
         <div className="flex flex-col gap-3">
+          <div className="mb-0.5 text-[9px] uppercase tracking-[0.2em] text-[#5a5a5a]" style={MONO}>
+            Live market
+          </div>
 
           {/* Driving your day */}
           {drivers.length > 0 && (
@@ -955,6 +941,25 @@ export default function BriefPage() {
           </div>
         </div>
       </div>
+
+      {/* ══ Thesis intelligence — full-width strip ══ */}
+      {tier !== 'free' && data.thesisEnabled && data.thesisIntelligence.length > 0 && (
+        <div className={`${CARD} mt-3.5 px-5 py-[18px]`} style={{ borderLeft: '2px solid var(--color-gold)' }}>
+          <div className="mb-3 flex items-baseline justify-between">
+            <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--color-gold)]" style={MONO}>
+              Thesis intelligence
+            </span>
+            <span className="text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)]" style={MONO}>
+              {data.thesisIntelligence.length} of 3 max today
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {data.thesisIntelligence.map((item, i) => (
+              <VerdictCard key={`${item.ticker}-${i}`} item={item} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ══ Footer ══ */}
       <footer className="mt-10 border-t border-white/[0.06] pt-4">
