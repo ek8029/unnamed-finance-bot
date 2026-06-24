@@ -34,6 +34,13 @@ const SCENES = [
     ambient: 'rgba(230,185,77,0.16)',
   },
   {
+    img: '/product/thesis.png',
+    eyebrow: 'Thesis monitoring',
+    head: <>We watch <em>why</em> you bought. Not just the price.</>,
+    cap: <>Every pillar tracked <Dot /> alerted the morning one <b className="text-[var(--color-negative-text)]">cracks</b>, with the filing that broke it</>,
+    ambient: 'rgba(230,185,77,0.15)',
+  },
+  {
     img: '/product/exposure.png',
     eyebrow: 'True exposure',
     head: <>See what you actually own. <em>Through every ETF.</em></>,
