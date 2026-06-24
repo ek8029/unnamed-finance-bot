@@ -85,14 +85,14 @@ export default async function BlogPost({ params }: PageProps) {
   const shareText = encodeURIComponent(`${post.title} — by @helmterminal\n\nhttps://helmterminal.dev/blog/${slug}`);
   const shareUrl = `https://x.com/intent/tweet?text=${shareText}`;
 
-  const jsonLd = [
+  const jsonLd: Record<string, unknown>[] = [
     {
       '@context': 'https://schema.org',
       '@type': 'Article',
       headline: post.title,
       description: post.description,
       datePublished: post.date,
-      dateModified: post.date,
+      dateModified: post.updated || post.date,
       author: { '@type': 'Person', name: post.author || 'Evan Kim', url: 'https://helmterminal.dev/about', jobTitle: 'Founder' },
       publisher: {
         '@type': 'Organization',
@@ -116,6 +116,18 @@ export default async function BlogPost({ params }: PageProps) {
       ],
     },
   ];
+
+  if (post.faq?.length) {
+    jsonLd.push({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: post.faq.map((f) => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+      })),
+    });
+  }
 
   return (
     <main className="min-h-screen bg-[var(--color-bg-base)] relative overflow-hidden">
@@ -191,6 +203,12 @@ export default async function BlogPost({ params }: PageProps) {
                 <span>{formatDate(post.date)}</span>
                 <span>&middot;</span>
                 <span>{post.readingTime}</span>
+                {post.updated && (
+                  <>
+                    <span>&middot;</span>
+                    <span>Updated {formatDate(post.updated)}</span>
+                  </>
+                )}
               </div>
             </header>
 
@@ -208,6 +226,23 @@ export default async function BlogPost({ params }: PageProps) {
               />
             </div>
 
+
+            {/* ── FAQ ── */}
+            {post.faq?.length ? (
+              <section className="mt-12 pt-8 border-t border-[var(--color-border-subtle)]">
+                <h2 className="font-sans font-bold text-[24px] md:text-[28px] text-[var(--color-text-primary)] tracking-tight mb-6">
+                  Frequently asked questions
+                </h2>
+                <div className="space-y-6">
+                  {post.faq.map((f, i) => (
+                    <div key={i}>
+                      <h3 className="text-[17px] font-semibold text-[var(--color-text-primary)] mb-2">{f.q}</h3>
+                      <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed">{f.a}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
             {/* ── Disclaimer ── */}
             <div className="mt-8 pt-6 border-t border-[var(--color-border-subtle)]">

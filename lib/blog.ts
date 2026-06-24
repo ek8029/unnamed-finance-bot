@@ -12,6 +12,8 @@ export interface BlogPost {
   tags: string[];
   image?: string;
   published: boolean;
+  updated?: string;
+  faq?: { q: string; a: string }[];
   readingTime: string;
   content: string;
 }
@@ -39,6 +41,8 @@ export function getAllPosts(): BlogPost[] {
         tags: data.tags ?? [],
         image: data.image ?? undefined,
         published: data.published ?? false,
+        updated: data.updated ?? undefined,
+        faq: data.faq ?? undefined,
         readingTime: stats.text,
         content,
       } satisfies BlogPost;
@@ -69,6 +73,8 @@ export function getPostBySlug(slug: string): BlogPost | null {
     tags: data.tags ?? [],
     image: data.image ?? undefined,
     published: data.published ?? false,
+    updated: data.updated ?? undefined,
+    faq: data.faq ?? undefined,
     readingTime: stats.text,
     content,
   };
