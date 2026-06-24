@@ -694,7 +694,7 @@ export default function DashboardOverview() {
           </div>
         </div>
         <div className="flex flex-col items-end gap-2.5">
-          <div className="flex gap-1 text-[12px] uppercase tracking-[0.1em]" style={MONO}>
+          <div className="flex flex-wrap justify-end gap-1 text-[12px] uppercase tracking-[0.1em]" style={MONO}>
             {(['1W', '1M', '3M', '6M', '1Y', 'ALL'] as const).map((r) => (
               <button
                 key={r}

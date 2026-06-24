@@ -247,7 +247,7 @@ export default function AccountsPage() {
 
   if (error) {
     return (
-      <div className="px-7 pt-7 pb-16 max-w-[1320px] mx-auto">
+      <div className="px-4 sm:px-7 pt-7 pb-16 max-w-[1600px] mx-auto">
         <div className="rounded-lg border p-6"
           style={{ background: 'rgba(248,113,113,0.08)', borderColor: 'rgba(248,113,113,0.25)', color: 'var(--color-negative-text)' }}>
           <h2 className="text-[15px] font-semibold mb-2">Error loading accounts</h2>

@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { HelmMark } from '@/components/helm-mark';
 import { useDemo } from '@/contexts/demo-context';
-import { ArrowRight, PenLine, Link2 } from 'lucide-react';
+import { ArrowRight, PenLine } from 'lucide-react';
 import { ManualPortfolioForm } from '@/components/manual-portfolio-form';
+import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
 
 const ONBOARDING_KEY = 'helm_onboarding_dismissed';
 
@@ -74,6 +75,12 @@ export function OnboardingFlow() {
       sessionStorage.setItem(ONBOARDING_KEY, '1');
       setShow(false);
     }, 1200);
+  }
+
+  function handlePlaidConnected() {
+    sessionStorage.setItem(ONBOARDING_KEY, '1');
+    setPhase('done');
+    setTimeout(() => { window.location.href = '/dashboard'; }, 1200);
   }
 
   function handleSkipTour() {
@@ -263,14 +270,13 @@ export function OnboardingFlow() {
                   </p>
 
                   <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-md mx-auto mt-6 sm:mt-8">
-                    <button
-                      onClick={handleLaunchDemo}
+                    <PlaidLinkButton
+                      onSuccess={handlePlaidConnected}
                       className="flex-1 flex flex-col items-center gap-3 px-4 sm:px-6 py-5 sm:py-6 rounded-md border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] hover:bg-[rgba(230,185,77,0.08)] transition-colors cursor-pointer"
                     >
-                      <Link2 className="w-6 h-6 text-[var(--color-gold)]" />
                       <span className="text-[15px] font-semibold text-[var(--color-text-primary)]">Connect brokerage</span>
                       <span className="text-[13px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>Auto-sync via Plaid</span>
-                    </button>
+                    </PlaidLinkButton>
 
                     <button
                       onClick={() => setPhase('manual')}

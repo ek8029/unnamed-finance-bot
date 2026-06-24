@@ -499,7 +499,7 @@ export default function DashboardLayout({
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-label="Command palette"
-        className="w-[560px] max-w-[90vw] overflow-hidden"
+        className="w-[560px] max-w-[94vw] overflow-hidden"
         style={{
           background: '#141414',
           border: '1px solid rgba(255,255,255,0.1)',

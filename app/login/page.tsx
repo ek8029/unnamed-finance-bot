@@ -84,6 +84,11 @@ function LoginForm() {
 
       // Check if MFA is required
       if (data.mfa_required) {
+        if (!data.factor_id) {
+          setError('Could not start two-factor verification. Please try again.');
+          setLoading(false);
+          return;
+        }
         setFactorId(data.factor_id);
         setMfaStep(true);
         setLoading(false);
