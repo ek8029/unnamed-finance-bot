@@ -17,6 +17,7 @@ import type { ThesisBriefData } from '@/lib/thesis-brief';
 import { STATUS_META } from '@/lib/thesis-palette';
 import { MacroStrip, type MacroItem } from '@/components/thesis/macro-strip';
 import { QuietState, type PillarSummary } from '@/components/thesis/quiet-state';
+import { DemoConnectCta } from '@/components/demo/demo-connect-cta';
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /*  Types                                                                      */
@@ -668,6 +669,11 @@ export default function BriefPage() {
           </p>
         )}
       </div>
+
+      <DemoConnectCta
+        headline="Get this brief about your portfolio."
+        sub="Connect your accounts for a daily conviction-led read on what actually moved your book, and why."
+      />
 
       {/* ══ Market context strip (5 cells, real data only) ══ */}
       {marketCells.length > 0 && (

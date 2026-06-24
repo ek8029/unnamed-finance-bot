@@ -11,6 +11,7 @@ import { useTaxData, useTaxOpportunities } from '@/hooks/use-financial-data';
 import type { TaxOpportunity, RealizedTransaction } from '@/hooks/use-financial-data';
 import { thesisTlhNote } from '@/lib/thesis-conviction';
 import { cn } from '@/lib/utils';
+import { DemoConnectCta } from '@/components/demo/demo-connect-cta';
 import { Form8949Preview } from '@/components/dashboard/form-8949-preview';
 import { TierLock } from '@/components/tier-lock';
 import { usePreview } from '@/lib/preview-context';
@@ -391,6 +392,10 @@ function TaxesContent() {
 
   return (
     <main className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6 sm:space-y-8 max-w-6xl" aria-label="Tax Center">
+      <DemoConnectCta
+        headline="These harvestable losses are samples. What are yours?"
+        sub="Connect your accounts to surface your real tax-loss harvesting opportunities and wash-sale risk, tracked all year."
+      />
 
       {/* ─── 1. Header ─── */}
       {loading ? (

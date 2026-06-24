@@ -13,6 +13,7 @@ import { usePreview } from '@/lib/preview-context';
 import { tierAtLeast } from '@/lib/tier-shared';
 import { TierLock } from '@/components/tier-lock';
 import { ThesisActions } from '@/components/thesis/thesis-actions';
+import { DemoConnectCta } from '@/components/demo/demo-connect-cta';
 import { RatifyQueue, type RatifyItem } from '@/components/thesis/ratify-queue';
 import { DriverMap, type NodeInfo } from '@/components/thesis/driver-map';
 import { summarizePillars, effectiveStatus, type ThesisSummary } from '@/lib/thesis-summary';
@@ -511,6 +512,10 @@ export default function ThesesPage() {
 
   return (
     <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8 space-y-8">
+      <DemoConnectCta
+        headline="Track the theses behind your real positions."
+        sub="Connect your brokerages and Helm watches every pillar, alerting you the morning one cracks, with the filing that broke it."
+      />
 
       {/* ── Section 1: Conviction header ── */}
       {noThesesYet ? (
