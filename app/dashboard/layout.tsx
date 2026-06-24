@@ -834,7 +834,7 @@ export default function DashboardLayout({
               <Search size={14} strokeWidth={1.6} className="shrink-0" />
               <span className="flex-1 text-[14.5px] truncate">Search pages, tickers…</span>
               <span
-                className="text-[9px] px-1.5 py-0.5 rounded-[3px] shrink-0"
+                className="hidden md:inline-block text-[9px] px-1.5 py-0.5 rounded-[3px] shrink-0"
                 style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
               >
                 CTRL + K
