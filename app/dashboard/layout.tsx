@@ -233,19 +233,58 @@ export default function DashboardLayout({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Command palette: ⌘K / Ctrl+K toggles, Esc closes. Wired on mount, removed on unmount.
+  // Ctrl+K (or ⌘K) toggles the palette; Esc closes. Plus vim-style "G then
+  // <key>" quick-nav chords. Wired on mount, removed on unmount.
   useEffect(() => {
+    const GO_MAP: Record<string, string> = {
+      o: '/dashboard',
+      p: '/dashboard/portfolio',
+      a: '/dashboard/accounts',
+      b: '/dashboard/brief',
+      t: '/dashboard/theses',
+      x: '/dashboard/taxes',
+      s: '/dashboard/settings',
+    };
+    let gPending = false;
+    let gTimer: ReturnType<typeof setTimeout> | undefined;
+
     function handleKeydown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
         setPaletteOpen((v) => !v);
-      } else if (e.key === 'Escape') {
+        return;
+      }
+      if (e.key === 'Escape') {
         setPaletteOpen(false);
+        return;
+      }
+
+      // Chords only fire outside text fields and without modifiers, so they
+      // never interfere with typing (incl. the palette search).
+      const el = e.target as HTMLElement | null;
+      const typing = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+      if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const k = e.key.toLowerCase();
+      if (gPending) {
+        gPending = false;
+        if (gTimer) clearTimeout(gTimer);
+        const href = GO_MAP[k];
+        if (href) { e.preventDefault(); router.push(href); }
+        return;
+      }
+      if (k === 'g') {
+        gPending = true;
+        gTimer = setTimeout(() => { gPending = false; }, 1200);
       }
     }
+
     document.addEventListener('keydown', handleKeydown);
-    return () => document.removeEventListener('keydown', handleKeydown);
-  }, []);
+    return () => {
+      document.removeEventListener('keydown', handleKeydown);
+      if (gTimer) clearTimeout(gTimer);
+    };
+  }, [router]);
 
   // Close the palette whenever the route changes (a row was selected).
   useEffect(() => {
@@ -793,7 +832,7 @@ export default function DashboardLayout({
                 className="text-[9px] px-1.5 py-0.5 rounded-[3px] shrink-0"
                 style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
               >
-                ⌘K
+                Ctrl K
               </span>
             </button>
 
