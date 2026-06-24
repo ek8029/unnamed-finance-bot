@@ -460,6 +460,7 @@ export default function DashboardLayout({
   // Build the live result list: page matches + ticker autocomplete + an
   // "Analyze <SYMBOL>" fallback + matching actions. One flat, keyboard-navigable list.
   const _pq = paletteQuery.trim().toLowerCase();
+  const _pqNoSpace = _pq.replace(/\s/g, '');
   const _qUpper = paletteQuery.trim().toUpperCase();
   const _hasFallback =
     _qUpper.length >= 1 && _qUpper.length <= 6 && /^[A-Z.]+$/.test(_qUpper) &&
@@ -467,7 +468,11 @@ export default function DashboardLayout({
   type PItem = { key: string; label: string; sub?: string; href: string; glyph: string; locked?: boolean; hint?: string };
   const paletteItems: PItem[] = [
     ...PALETTE_NAVIGATE
-      .filter((r) => !_pq || r.name.toLowerCase().includes(_pq))
+      .filter((r) =>
+        !_pq ||
+        r.name.toLowerCase().includes(_pq) ||
+        r.hint.toLowerCase().replace(/\s/g, '').includes(_pqNoSpace),
+      )
       .map((r) => ({ key: `nav-${r.href}`, label: r.name, href: r.href, glyph: '◇', locked: !!(r.tier && isLocked(r.tier)), hint: r.hint })),
     ...tickerResults.map((t) => ({ key: `tk-${t.ticker}`, label: t.ticker, sub: t.name !== t.ticker ? t.name : undefined, href: `/dashboard/analyze/${t.ticker}`, glyph: '⌕' })),
     ...(_hasFallback ? [{ key: 'fb', label: `Analyze "${_qUpper}"`, href: `/dashboard/analyze/${_qUpper}`, glyph: '⌕' }] : []),
@@ -832,7 +837,7 @@ export default function DashboardLayout({
                 className="text-[9px] px-1.5 py-0.5 rounded-[3px] shrink-0"
                 style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
               >
-                Ctrl K
+                CTRL + K
               </span>
             </button>
 
