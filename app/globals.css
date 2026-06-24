@@ -206,7 +206,10 @@ html { scroll-behavior: smooth; }
     background-color: var(--color-bg-base);
     color: var(--color-text-primary);
     font-family: var(--font-sans), system-ui, sans-serif;
-    @apply antialiased;
+    /* macOS only: default smoothing (not forced grayscale). No effect on
+       Windows Chrome, which always renders via DirectWrite/ClearType. */
+    -webkit-font-smoothing: auto;
+    -moz-osx-font-smoothing: auto;
   }
 }
 

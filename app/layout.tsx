@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import { Manrope, Space_Grotesk, Instrument_Serif } from 'next/font/google';
-import Script from 'next/script';
-import "./globals.css";
-import { Providers } from '@/components/providers';
-import { RecoveryRedirect } from '@/components/recovery-redirect';
-import { CookieConsent } from '@/components/cookie-consent';
+import { Inter, Space_Grotesk, Instrument_Serif } from 'next/font/google';
 
-const manrope = Manrope({
+const inter = Inter({
   subsets: ['latin'],
   variable: '--font-sans',
   weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
+import Script from 'next/script';
+import "./globals.css";
+import { Providers } from '@/components/providers';
+import { RecoveryRedirect } from '@/components/recovery-redirect';
+import { CookieConsent } from '@/components/cookie-consent';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -200,7 +200,7 @@ export default function RootLayout({
         />
         {/* FAQPage schema moved to homepage only — see components/homepage/home-content.tsx */}
       </head>
-      <body className={`${manrope.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable} font-sans`}>
+      <body className={`${inter.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable} font-sans`}>
         <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-[var(--color-gold)] focus:text-[var(--color-bg-base)] focus:rounded focus:text-[15px] focus:font-semibold">
           Skip to main content
         </a>

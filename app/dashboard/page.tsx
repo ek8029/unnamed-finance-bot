@@ -18,7 +18,7 @@ import posthog from 'posthog-js';
 
 // ── Sovereign Architect tokens (local to this screen) ──────────────────────
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
-const SCREEN: React.CSSProperties = { maxWidth: 1320 };
+const SCREEN: React.CSSProperties = { maxWidth: 1600 };
 // Responsive page padding: tighter on phones, full bleed-in on >=sm.
 const SCREEN_PAD = 'px-4 pt-6 pb-16 sm:px-7 sm:pt-[26px]';
 const CARD =
