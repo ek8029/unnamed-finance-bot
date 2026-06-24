@@ -529,7 +529,7 @@ export default function DashboardOverview() {
     return [...holdings]
       .filter((h) => h.ticker && h.ticker !== 'UNKNOWN' && h.day_change_percentage != null)
       .sort((a, b) => Math.abs(b.day_change_percentage || 0) - Math.abs(a.day_change_percentage || 0))
-      .slice(0, 5);
+      .slice(0, 8);
   }, [holdings]);
 
   const topHoldings = useMemo(() => {
@@ -955,6 +955,31 @@ export default function DashboardOverview() {
           ) : (
             <div className="py-8 text-center text-[14px] text-[var(--color-text-muted)]">
               No sector data yet.
+            </div>
+          )}
+
+          {topHoldings.length > 0 && (
+            <div className="mt-3.5 border-t border-[var(--color-border-subtle)] pt-3">
+              <div className="mb-2 text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-muted)]" style={MONO}>
+                Top positions
+              </div>
+              <div className="flex flex-col gap-1.5">
+                {topHoldings.slice(0, 5).map((h) => (
+                  <button
+                    key={h.id}
+                    onClick={() => router.push(`/dashboard/analyze/${h.ticker}`)}
+                    className="flex cursor-pointer items-center gap-2.5 text-left"
+                  >
+                    <span className="w-[46px] text-[13px] font-bold text-[var(--color-gold)]" style={MONO}>
+                      {h.ticker}
+                    </span>
+                    <span className="flex-1 truncate text-[12px] text-[var(--color-text-muted)]">{h.asset_name}</span>
+                    <span className="text-[12px] tabular-nums text-[var(--color-text-secondary)]" style={MONO}>
+                      {(h.portfolio_allocation || 0).toFixed(1)}%
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
