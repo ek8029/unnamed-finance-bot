@@ -7,7 +7,8 @@ import { PortfolioAllocation } from '@/components/dashboard/portfolio-allocation
 import { MarketIntelligence } from '@/components/portfolio/market-intelligence';
 import { useHoldings, useTaxData } from '@/hooks/use-financial-data';
 import { CompanyLogo } from '@/components/company-logo';
-import { TrendingUp, TrendingDown, Filter, Download, ChevronUp, ChevronDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, Filter, Download, ChevronUp, ChevronDown, Search, Link2 } from 'lucide-react';
+import { usePreview } from '@/lib/preview-context';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useFormat } from '@/hooks/use-format';
@@ -117,7 +118,7 @@ function TodaysMovers({ movers }: { movers: { ticker: string; day_change_percent
               background: up ? 'rgba(74,222,128,0.05)' : 'rgba(248,113,113,0.05)',
             }}
           >
-            <span className="font-mono text-[12px] font-semibold uppercase tracking-[0.05em] text-[var(--color-text-primary)]">{h.ticker}</span>
+            <span className="font-mono text-[14px] font-semibold uppercase tracking-[0.05em] text-[var(--color-text-primary)]">{h.ticker}</span>
             <span className="font-mono text-[11.5px] tabular-nums" style={{ color: up ? 'var(--color-positive)' : 'var(--color-negative)' }}>
               {up ? '+' : ''}{pct.toFixed(2)}%
             </span>
@@ -128,8 +129,40 @@ function TodaysMovers({ movers }: { movers: { ticker: string; day_change_percent
   );
 }
 
+// Connect-your-brokerage empty state — shown when no account is linked
+// (dataState === 'empty'). Read-only Plaid framing + gold Connect CTA.
+function ConnectBrokerage() {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center px-6 py-16">
+      <div className="max-w-[470px] text-center">
+        <div className="w-[60px] h-[60px] mx-auto mb-[22px] rounded-[14px] bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center">
+          <Link2 className="w-[26px] h-[26px] text-[var(--color-gold)]" strokeWidth={1.6} />
+        </div>
+        <h1 className="text-2xl font-bold tracking-[-0.025em] text-[var(--color-text-primary)] mb-3">
+          Connect your brokerage
+        </h1>
+        <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)] mb-6">
+          Link an account and Helm builds your net worth, holdings, taxes and intelligence automatically.{' '}
+          <span className="text-[var(--color-positive)]">Read-only access</span> &mdash; Helm can never move money or place trades.
+        </p>
+        <Link
+          href="/dashboard/accounts"
+          className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[#0A0A0A] font-mono text-[12px] font-bold uppercase tracking-[0.12em] transition-all"
+          style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.25)' }}
+        >
+          Connect account
+        </Link>
+        <div className="font-mono text-[10px] text-[var(--color-text-muted)] mt-[18px] tracking-[0.04em]">
+          12,000+ institutions &middot; 256-bit encryption &middot; via Plaid
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PortfolioPage() {
   const { formatCurrency, formatCurrencyDetailed } = useFormat();
+  const { dataState } = usePreview();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const holdingsData: any = useHoldings();
@@ -221,6 +254,9 @@ export default function PortfolioPage() {
   const [sortKey, setSortKey] = useState<PositionSortKey>('value');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
+  /* ---------- holdings table text search (filter row) ---------- */
+  const [tableSearch, setTableSearch] = useState('');
+
   const handleSort = useCallback((key: PositionSortKey) => {
     if (sortKey === key) {
       setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -304,8 +340,10 @@ export default function PortfolioPage() {
     let result = sortedPositions;
     if (filterSectors.size > 0) result = result.filter(h => h.sector && filterSectors.has(h.sector));
     if (filterAssetClasses.size > 0) result = result.filter(h => h.asset_class && filterAssetClasses.has(h.asset_class));
+    const q = tableSearch.trim().toUpperCase();
+    if (q) result = result.filter(h => h.ticker.toUpperCase().includes(q) || h.asset_name.toUpperCase().includes(q));
     return result;
-  }, [sortedPositions, filterSectors, filterAssetClasses]);
+  }, [sortedPositions, filterSectors, filterAssetClasses, tableSearch]);
 
   const filteredLookthrough = useMemo(() => {
     if (filterSources.size === 0) return lookthrough;
@@ -353,6 +391,9 @@ export default function PortfolioPage() {
   /* ================================================================ */
   /*  EARLY RETURNS                                                    */
   /* ================================================================ */
+  // Empty state: no brokerage linked (preview dataState === 'empty').
+  if (dataState === 'empty') return <ConnectBrokerage />;
+
   if (loading) return <LoadingSkeleton />;
 
   if (error) {
@@ -428,119 +469,103 @@ export default function PortfolioPage() {
         {/* ======================================================= */}
         <div className="flex-1 min-w-0 space-y-4 sm:space-y-6">
 
-          {/* ---- 1. HEADER STRIP ---- */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            {/* Breadcrumb — hidden on mobile, redundant with sidebar */}
-            <div className="hidden sm:flex items-center gap-2">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="flex-shrink-0">
-                <rect width="20" height="20" rx="4" fill="var(--color-gold)" fillOpacity="0.15" />
-                <path d="M6 6h2v8H6V6zm6 0h2v8h-2V6zm-4 3h4v2H8V9z" fill="var(--color-gold)" />
-              </svg>
-              <span className="font-mono text-xs text-[var(--color-text-muted)]">
-                Helm
-              </span>
-              <span className="font-mono text-xs text-[var(--color-text-muted)]">/</span>
-              <span className="font-mono text-xs text-[var(--color-text-muted)]">
-                Portfolio
-              </span>
-              <span className="font-mono text-xs text-[var(--color-text-muted)] mx-0.5">
-                &#8250;
-              </span>
-              <span className="font-mono text-xs text-[var(--color-text-primary)] font-medium">
-                All accounts
-              </span>
-              {lastRefreshed && (
-                <>
-                  <span className="mx-2 w-px h-3 bg-[var(--color-border-base)]" />
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] animate-pulse" />
-                  <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
+          {/* ---- 1. HEADER STRIP (Sovereign Architect) ---- */}
+          {/* Desktop: eyebrow + title + day P/L, Export/Rebalance, tab pills.
+              Mobile keeps its own value header lower down. */}
+          <div className="hidden lg:flex items-end justify-between gap-6">
+            <div>
+              <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-[var(--color-text-muted)] mb-2">
+                Portfolio &middot; {holdings.length} position{holdings.length !== 1 ? 's' : ''}
+                {lastRefreshed && (
+                  <>
+                    <span className="mx-2">&middot;</span>
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] align-middle mr-1.5" />
                     {lastRefreshed}
-                  </span>
-                </>
-              )}
-            </div>
-
-            {/* Tab pills */}
-            <div className="flex items-center gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-0.5 w-fit">
-              {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors ${
-                    activeTab === tab
-                      ? 'bg-[var(--color-gold)] text-black'
-                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* ---- 2. HEADLINE STATS ---- */}
-          <div className="space-y-3 sm:space-y-4">
-            {/* Portfolio value — always full width */}
-            <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-4 sm:p-5">
-              <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-1">
-                Portfolio value
-              </span>
-              <div className="flex items-baseline gap-3 flex-wrap">
-                <span className="font-mono tabular-nums font-semibold text-[var(--color-text-primary)] leading-none text-3xl sm:text-4xl lg:text-[52px]">
+                  </>
+                )}
+              </div>
+              <div className="flex items-baseline gap-3.5">
+                <span className="text-[32px] font-bold tracking-[-0.025em] tabular-nums text-[var(--color-text-primary)] leading-none">
                   {formatCurrency(totalValue)}
                 </span>
-                <span className={`inline-flex items-center gap-1 font-mono text-sm tabular-nums ${
-                  dayChangePercentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                <span className={`font-mono text-[15px] font-semibold ${
+                  totalDayChange >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'
                 }`}>
-                  {dayChangePercentage >= 0 ? (
-                    <TrendingUp className="w-3.5 h-3.5" />
-                  ) : (
-                    <TrendingDown className="w-3.5 h-3.5" />
-                  )}
-                  {dayChangePercentage >= 0 ? '+' : ''}{dayChangePercentage.toFixed(2)}%
-                  <span className="text-[var(--color-text-muted)] text-xs ml-1">today</span>
+                  {totalDayChange >= 0 ? '+' : '−'}{formatCurrency(Math.abs(totalDayChange))} &middot; {dayChangePercentage >= 0 ? '+' : '−'}{Math.abs(dayChangePercentage).toFixed(2)}% today
                 </span>
               </div>
-              <span className="block font-mono text-xs text-[var(--color-text-muted)] mt-1.5 tabular-nums">
-                {holdings.length} position{holdings.length !== 1 ? 's' : ''} across {new Set(holdings.map(h => h.sector).filter(Boolean)).size} sectors
-              </span>
             </div>
-
-            {/* Unrealized P/L + Day Change — side by side, each gets half */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-4 sm:p-5">
-                <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-1">
-                  Unrealized P/L
-                </span>
-                <span className={`block font-mono tabular-nums text-xl sm:text-2xl font-semibold leading-tight ${
-                  totalUnrealized >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-                }`}>
-                  {totalUnrealized >= 0 ? '+' : ''}{formatCurrency(totalUnrealized)}
-                </span>
-                <span className={`block font-mono tabular-nums text-xs mt-1 ${
-                  unrealizedPct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-                }`}>
-                  {unrealizedPct >= 0 ? '+' : ''}{unrealizedPct.toFixed(2)}%
-                </span>
-              </div>
-
-              <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-4 sm:p-5">
-                <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-1">
-                  Day Change
-                </span>
-                <span className={`block font-mono tabular-nums text-xl sm:text-2xl font-semibold leading-tight ${
-                  totalDayChange >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-                }`}>
-                  {totalDayChange >= 0 ? '+' : ''}{formatCurrency(totalDayChange)}
-                </span>
-                <span className={`block font-mono tabular-nums text-xs mt-1 ${
-                  dayChangePercentage >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-                }`}>
-                  {dayChangePercentage >= 0 ? '+' : ''}{dayChangePercentage.toFixed(2)}%
-                </span>
-              </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportCSV}
+                className="inline-flex items-center gap-[7px] h-8 px-3 rounded-[5px] border border-[var(--color-border-base)] bg-transparent text-[var(--color-text-secondary)] hover:border-[rgba(255,255,255,0.16)] hover:text-[var(--color-text-primary)] font-mono text-[10px] tracking-[0.08em] uppercase transition-colors cursor-pointer"
+              >
+                <Download className="w-[13px] h-[13px]" />
+                Export
+              </button>
+              <Link
+                href="/dashboard/theses/builder"
+                className="inline-flex items-center gap-[7px] h-8 px-3 rounded-[5px] border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] text-[var(--color-gold)] hover:bg-[rgba(230,185,77,0.14)] font-mono text-[10px] tracking-[0.08em] uppercase transition-colors cursor-pointer"
+              >
+                <TrendingUp className="w-[13px] h-[13px]" />
+                New thesis
+              </Link>
             </div>
           </div>
+
+          {/* Tab pills — Portfolio / Concentration (drive activeTab) */}
+          <div className="flex items-center gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-0.5 w-fit">
+            {tabs.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
+                  activeTab === tab
+                    ? 'bg-[var(--color-gold)] text-black'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {/* ---- 2. SUMMARY STRIP (desktop, 5 cells) ---- */}
+          {activeTab === 'Portfolio' && (() => {
+            const topHolding = sortedByAllocation[0];
+            return (
+              <div className="hidden lg:grid grid-cols-5 border border-[var(--color-border-base)] rounded-md bg-[var(--color-bg-surface)] overflow-hidden">
+                <div className="px-[18px] py-3.5 border-r border-[var(--color-border-subtle)]">
+                  <div className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--color-text-muted)] mb-2">Positions</div>
+                  <div className="text-[18px] font-bold tabular-nums text-[var(--color-text-primary)]">{holdings.length}</div>
+                </div>
+                <div className="px-[18px] py-3.5 border-r border-[var(--color-border-subtle)]">
+                  <div className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--color-text-muted)] mb-2">Day P/L</div>
+                  <div className={`text-[18px] font-bold tabular-nums ${totalDayChange >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}>
+                    {totalDayChange >= 0 ? '+' : '−'}{formatCurrency(Math.abs(totalDayChange))}
+                  </div>
+                </div>
+                <div className="px-[18px] py-3.5 border-r border-[var(--color-border-subtle)]">
+                  <div className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--color-text-muted)] mb-2">Unrealized P/L</div>
+                  <div className={`text-[18px] font-bold tabular-nums ${totalUnrealized >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}>
+                    {totalUnrealized >= 0 ? '+' : '−'}{formatCurrency(Math.abs(totalUnrealized))}
+                  </div>
+                </div>
+                <div className="px-[18px] py-3.5 border-r border-[var(--color-border-subtle)]">
+                  <div className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--color-text-muted)] mb-2">Unrealized %</div>
+                  <div className={`text-[18px] font-bold tabular-nums ${unrealizedPct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}>
+                    {unrealizedPct >= 0 ? '+' : '−'}{Math.abs(unrealizedPct).toFixed(2)}%
+                  </div>
+                </div>
+                <div className="px-[18px] py-3.5">
+                  <div className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--color-warning-text)] mb-2">&#9888; Top weight</div>
+                  <div className="text-[18px] font-bold tabular-nums text-[var(--color-text-primary)]">
+                    {topHolding ? `${topHolding.ticker} · ${topHolding.portfolio_allocation.toFixed(1)}%` : '—'}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ---- TAB CONTENT ---- */}
           {(activeTab === 'Portfolio') && (
@@ -562,17 +587,17 @@ export default function PortfolioPage() {
                   <div className="flex items-center gap-3">
                     <TrendingDown className="w-4 h-4 text-[var(--color-gold)] shrink-0" />
                     <div>
-                      <span className="text-[13px] sm:text-sm font-medium text-[var(--color-text-primary)]">
+                      <span className="text-[15px] sm:text-[15px] font-medium text-[var(--color-text-primary)]">
                         {formatCurrency(harvestable)} in harvestable losses
                       </span>
-                      <span className="text-xs text-[var(--color-text-muted)] ml-2 hidden sm:inline">
+                      <span className="text-[13px] text-[var(--color-text-muted)] ml-2 hidden sm:inline">
                         across {underwater.length} position{underwater.length !== 1 ? 's' : ''}
                       </span>
                     </div>
                   </div>
                   <Link
                     href={`/tools/tlh-calculator?${calcParams.toString()}`}
-                    className="text-xs font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors ml-7 sm:ml-0"
+                    className="text-[13px] font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors ml-7 sm:ml-0"
                   >
                     Estimate tax savings &rarr;
                   </Link>
@@ -580,7 +605,7 @@ export default function PortfolioPage() {
                 {realizedGains > 0 && (
                   <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[var(--color-gold)]/10">
                     <TrendingUp className="w-3.5 h-3.5 text-[var(--color-positive)]" />
-                    <span className="text-xs text-[var(--color-text-muted)]">
+                    <span className="text-[13px] text-[var(--color-text-muted)]">
                       YTD realized gains: <span className="text-[var(--color-positive)] font-mono">{formatCurrency(realizedGains)}</span> — losses can offset these dollar-for-dollar
                     </span>
                   </div>
@@ -605,12 +630,12 @@ export default function PortfolioPage() {
                 </span>
               </div>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className={`font-mono text-[11px] sm:text-[13px] font-bold tabular-nums ${
+                <span className={`font-mono text-[12px] sm:text-[15px] font-bold tabular-nums ${
                   totalDayChange >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                 }`}>
                   {totalDayChange >= 0 ? '+' : ''}{formatCurrency(totalDayChange)} ({dayChangePercentage >= 0 ? '+' : ''}{dayChangePercentage.toFixed(2)}%)
                 </span>
-                <span className="font-mono text-[11px] text-[var(--color-text-muted)] uppercase tracking-wider">today</span>
+                <span className="font-mono text-[12px] text-[var(--color-text-muted)] uppercase tracking-wider">today</span>
               </div>
             </div>
 
@@ -648,7 +673,7 @@ export default function PortfolioPage() {
                     ))}
                   </div>
                   {topSectorPct > 35 && (
-                    <div className="flex items-center gap-1.5 text-[11px] font-mono text-[var(--color-warning-text,var(--color-gold))]">
+                    <div className="flex items-center gap-1.5 text-[12px] font-mono text-[var(--color-warning-text,var(--color-gold))]">
                       <span>&#9888;</span>
                       <span>Concentrated &mdash; top sector is {topSectorPct.toFixed(0)}%</span>
                     </div>
@@ -662,7 +687,7 @@ export default function PortfolioPage() {
               {['All', 'Equities', 'ETFs', 'Crypto', 'Cash'].map((label, i) => (
                 <button
                   key={label}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full font-mono text-[11px] border transition-colors ${
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full font-mono text-[12px] border transition-colors ${
                     i === 0
                       ? 'bg-[rgba(230,185,77,0.1)] text-[var(--color-gold)] border-[var(--color-gold-border)]'
                       : 'bg-transparent text-[var(--color-text-muted)] border-[var(--color-border-subtle)]'
@@ -683,19 +708,19 @@ export default function PortfolioPage() {
                   <div className="flex items-center gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-0.5">
                     <button
                       onClick={() => setPositionsView('positions')}
-                      className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${positionsView === 'positions' ? 'bg-[var(--color-gold)] text-black' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
+                      className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors cursor-pointer ${positionsView === 'positions' ? 'bg-[var(--color-gold)] text-black' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
                     >
                       Positions
                     </button>
                     <button
                       onClick={() => setPositionsView('exposure')}
-                      className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${positionsView === 'exposure' ? 'bg-[var(--color-gold)] text-black' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
+                      className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors cursor-pointer ${positionsView === 'exposure' ? 'bg-[var(--color-gold)] text-black' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
                     >
                       True Exposure
                     </button>
                   </div>
                 ) : (
-                  <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Positions</h2>
+                  <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">Positions</h2>
                 )}
                 <span className="font-mono text-[10px] text-[var(--color-text-muted)] bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5">
                   {positionsView === 'positions' ? holdings.length : lookthrough.length}
@@ -727,19 +752,19 @@ export default function PortfolioPage() {
                     <TickerIcon ticker={h.ticker} />
                     <div className="min-w-0">
                       <div className="flex items-baseline gap-1.5 sm:gap-2">
-                        <span className="font-mono text-[13px] sm:text-[14px] font-bold tracking-wide text-[var(--color-text-primary)]">
+                        <span className="font-mono text-[15px] sm:text-[15px] font-bold tracking-wide text-[var(--color-text-primary)]">
                           {h.ticker}
                         </span>
-                        <span className="text-[10px] sm:text-[11px] text-[var(--color-text-muted)] truncate">
+                        <span className="text-[10px] sm:text-[12px] text-[var(--color-text-muted)] truncate">
                           {h.shares} sh &middot; <PriceFlash value={h.current_price}>${h.current_price.toFixed(2)}</PriceFlash>
                         </span>
                       </div>
-                      <div className="text-[11px] sm:text-[12px] text-[var(--color-text-muted)] mt-0.5 truncate">
+                      <div className="text-[12px] sm:text-[14px] text-[var(--color-text-muted)] mt-0.5 truncate">
                         {h.asset_name}
                       </div>
                     </div>
                     <div className="text-right flex flex-col items-end gap-0.5 sm:gap-1">
-                      <div className="font-mono text-[12px] sm:text-[13px] font-bold tabular-nums text-[var(--color-text-primary)]">
+                      <div className="font-mono text-[14px] sm:text-[15px] font-bold tabular-nums text-[var(--color-text-primary)]">
                         {h.total_value >= 1000 ? `$${(h.total_value / 1000).toFixed(1)}k` : formatCurrency(h.total_value)}
                       </div>
                       <svg width="40" height="14" viewBox="0 0 80 24" fill="none" className="block sm:hidden">
@@ -748,7 +773,7 @@ export default function PortfolioPage() {
                       <svg width="48" height="16" viewBox="0 0 80 24" fill="none" className="hidden sm:block">
                         <path d={sparkPath} stroke={sparkTrend ? 'var(--color-positive)' : 'var(--color-negative)'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                       </svg>
-                      <div className={`font-mono text-[11px] font-bold tabular-nums ${
+                      <div className={`font-mono text-[12px] font-bold tabular-nums ${
                         dayPct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                       }`}>
                         {dayPct >= 0 ? '+' : ''}{dayPct.toFixed(2)}%
@@ -780,6 +805,28 @@ export default function PortfolioPage() {
             </div>
           )}
 
+          {/* ── Filter row (desktop) ── */}
+          <div className="hidden lg:flex items-center gap-2.5 mb-3.5">
+            <div className="flex items-center gap-2 h-8 px-[11px] bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-[5px] flex-1 max-w-[280px]">
+              <Search className="w-[13px] h-[13px] text-[var(--color-text-muted)]" strokeWidth={1.6} />
+              <input
+                value={tableSearch}
+                onChange={(e) => setTableSearch(e.target.value)}
+                placeholder="Filter holdings…"
+                className="flex-1 bg-transparent border-none outline-none text-[var(--color-text-primary)] text-[14px] placeholder:text-[var(--color-text-muted)]"
+              />
+            </div>
+            <div className="flex gap-[5px] font-mono text-[10px] tracking-[0.06em] uppercase">
+              <span className="px-3 py-[7px] rounded-[5px] bg-[rgba(230,185,77,0.1)] text-[var(--color-gold)]">
+                All accounts
+              </span>
+            </div>
+            <div className="flex-1" />
+            <span className="font-mono text-[10px] text-[var(--color-text-muted)] tracking-[0.08em] uppercase">
+              Group &middot; Sector &#9662;
+            </span>
+          </div>
+
           {/* ── Desktop: Table view ── */}
           <div className="hidden lg:block border border-[var(--color-border-base)] rounded-lg overflow-hidden bg-[var(--color-bg-surface)]">
             {/* Table header bar */}
@@ -789,19 +836,19 @@ export default function PortfolioPage() {
                   <div className="flex items-center gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-0.5">
                     <button
                       onClick={() => setPositionsView('positions')}
-                      className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${positionsView === 'positions' ? 'bg-[var(--color-gold)] text-black' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
+                      className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors cursor-pointer ${positionsView === 'positions' ? 'bg-[var(--color-gold)] text-black' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
                     >
                       Positions
                     </button>
                     <button
                       onClick={() => setPositionsView('exposure')}
-                      className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${positionsView === 'exposure' ? 'bg-[var(--color-gold)] text-black' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
+                      className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors cursor-pointer ${positionsView === 'exposure' ? 'bg-[var(--color-gold)] text-black' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'}`}
                     >
                       True Exposure
                     </button>
                   </div>
                 ) : (
-                  <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Positions</h2>
+                  <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">Positions</h2>
                 )}
                 <span className="font-mono text-[10px] text-[var(--color-text-muted)] bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5">
                   {positionsView === 'positions' ? holdings.length : lookthrough.length}
@@ -816,7 +863,7 @@ export default function PortfolioPage() {
                 <div className="relative" ref={filterRef}>
                   <button
                     onClick={() => setFilterOpen(f => !f)}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium border rounded-md transition-colors cursor-pointer ${
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] font-medium border rounded-md transition-colors cursor-pointer ${
                       hasActiveFilter
                         ? 'text-[var(--color-gold)] border-[var(--color-gold)]/40 bg-[var(--color-gold)]/10'
                         : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]'
@@ -845,7 +892,7 @@ export default function PortfolioPage() {
                                 <button
                                   key={s}
                                   onClick={() => toggleFilter(filterSectors, setFilterSectors, s)}
-                                  className={`px-2 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer border ${
+                                  className={`px-2 py-1 rounded text-[12px] font-mono transition-colors cursor-pointer border ${
                                     filterSectors.has(s)
                                       ? 'bg-[var(--color-gold)]/15 border-[var(--color-gold)]/40 text-[var(--color-gold)]'
                                       : 'bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border-base)]'
@@ -866,7 +913,7 @@ export default function PortfolioPage() {
                                 <button
                                   key={c}
                                   onClick={() => toggleFilter(filterAssetClasses, setFilterAssetClasses, c)}
-                                  className={`px-2 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer border ${
+                                  className={`px-2 py-1 rounded text-[12px] font-mono transition-colors cursor-pointer border ${
                                     filterAssetClasses.has(c)
                                       ? 'bg-[var(--color-gold)]/15 border-[var(--color-gold)]/40 text-[var(--color-gold)]'
                                       : 'bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border-base)]'
@@ -887,7 +934,7 @@ export default function PortfolioPage() {
                                 <button
                                   key={s}
                                   onClick={() => toggleFilter(filterSources, setFilterSources, s)}
-                                  className={`px-2 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer border ${
+                                  className={`px-2 py-1 rounded text-[12px] font-mono transition-colors cursor-pointer border ${
                                     filterSources.has(s)
                                       ? 'bg-[var(--color-gold)]/15 border-[var(--color-gold)]/40 text-[var(--color-gold)]'
                                       : 'bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border-base)]'
@@ -905,7 +952,7 @@ export default function PortfolioPage() {
                 </div>
                 <button
                   onClick={handleExportCSV}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] rounded-md bg-[var(--color-bg-elevated)] transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] rounded-md bg-[var(--color-bg-elevated)] transition-colors cursor-pointer"
                 >
                   <Download className="w-3 h-3" />
                   Export
@@ -1007,7 +1054,7 @@ export default function PortfolioPage() {
                         <td className="pl-5 pr-2 py-2">
                           <Link href={`/dashboard/holdings/${h.ticker}`} className="flex items-center gap-2.5 group rounded hover:bg-[var(--color-bg-elevated)]/50 -mx-1.5 px-1.5 py-1 transition-colors">
                             <TickerIcon ticker={h.ticker} />
-                            <span className="font-mono text-sm font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors">
+                            <span className="font-mono text-[15px] font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors">
                               {h.ticker}
                             </span>
                           </Link>
@@ -1015,7 +1062,7 @@ export default function PortfolioPage() {
                         {/* NAME + sector */}
                         <td className="px-2 py-2">
                           <Link href={`/dashboard/holdings/${h.ticker}`} className="flex flex-col group rounded hover:bg-[var(--color-bg-elevated)]/50 -mx-1.5 px-1.5 py-1 transition-colors">
-                            <span className="text-sm text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] truncate max-w-[180px] transition-colors">
+                            <span className="text-[15px] text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] truncate max-w-[180px] transition-colors">
                               {h.asset_name}
                             </span>
                             {h.sector && (
@@ -1027,25 +1074,25 @@ export default function PortfolioPage() {
                         </td>
                         {/* SHARES */}
                         <td className="px-2 py-2 text-right">
-                          <span className="font-mono text-sm tabular-nums text-[var(--color-text-primary)]">
+                          <span className="font-mono text-[15px] tabular-nums text-[var(--color-text-primary)]">
                             {h.shares % 1 === 0 ? h.shares.toLocaleString() : h.shares.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
                           </span>
                         </td>
                         {/* AVG COST */}
                         <td className="px-2 py-2 text-right">
-                          <span className="font-mono text-sm tabular-nums text-[var(--color-text-secondary)]">
+                          <span className="font-mono text-[15px] tabular-nums text-[var(--color-text-secondary)]">
                             {avgCost > 0 ? formatCurrencyDetailed(avgCost) : '--'}
                           </span>
                         </td>
                         {/* PRICE */}
                         <td className="px-2 py-2 text-right">
-                          <PriceFlash value={h.current_price} className="font-mono text-sm tabular-nums text-[var(--color-text-primary)]">
+                          <PriceFlash value={h.current_price} className="font-mono text-[15px] tabular-nums text-[var(--color-text-primary)]">
                             {formatCurrencyDetailed(h.current_price)}
                           </PriceFlash>
                         </td>
                         {/* DAY % */}
                         <td className="px-2 py-2 text-right">
-                          <span className={`font-mono text-sm tabular-nums ${
+                          <span className={`font-mono text-[15px] tabular-nums ${
                             dayPct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                           }`}>
                             {dayPct >= 0 ? '+' : ''}{dayPct.toFixed(2)}%
@@ -1066,7 +1113,7 @@ export default function PortfolioPage() {
                         </td>
                         {/* VALUE */}
                         <td className="px-2 py-2 text-right">
-                          <span className="font-mono text-sm tabular-nums font-medium text-[var(--color-text-primary)]">
+                          <span className="font-mono text-[15px] tabular-nums font-medium text-[var(--color-text-primary)]">
                             {formatCurrency(h.total_value)}
                           </span>
                         </td>
@@ -1079,14 +1126,14 @@ export default function PortfolioPage() {
                                 style={{ width: `${Math.min(100, allocPct)}%` }}
                               />
                             </div>
-                            <span className="font-mono text-xs tabular-nums text-[var(--color-text-secondary)] w-10 text-right">
+                            <span className="font-mono text-[13px] tabular-nums text-[var(--color-text-secondary)] w-10 text-right">
                               {allocPct.toFixed(1)}%
                             </span>
                           </div>
                         </td>
                         {/* P/L */}
                         <td className="pl-2 pr-5 py-2 text-right">
-                          <span className={`font-mono text-sm tabular-nums ${
+                          <span className={`font-mono text-[15px] tabular-nums ${
                             pl >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                           }`}>
                             {pl >= 0 ? '+' : ''}{formatCurrency(pl)}
@@ -1123,7 +1170,7 @@ export default function PortfolioPage() {
                 <CardTitle className="type-h2 flex items-center gap-2">
                   Performance over time
                 </CardTitle>
-                <CardDescription className="font-mono text-[11px]">
+                <CardDescription className="font-mono text-[12px]">
                   Portfolio value evolution across selected time range
                 </CardDescription>
               </div>
@@ -1132,7 +1179,7 @@ export default function PortfolioPage() {
                   <button
                     key={key}
                     onClick={() => setRange(key)}
-                    className={`px-2.5 py-1.5 rounded-md font-mono text-[11px] transition-colors duration-200 ${
+                    className={`px-2.5 py-1.5 rounded-md font-mono text-[12px] transition-colors duration-200 ${
                       range === key
                         ? 'bg-[var(--color-gold-surface)] text-[var(--color-gold)] border border-[var(--color-gold-border)]'
                         : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] hover:border-[var(--color-border-base)]'
@@ -1225,7 +1272,7 @@ export default function PortfolioPage() {
               <CardContent className="space-y-4">
                 {allocation.slice(0, 5).map((sector) => (
                   <div key={sector.name} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center justify-between text-[15px]">
                       <span className="type-label text-[var(--color-text-secondary)]">{sector.name}</span>
                       <span className="font-mono tabular-nums text-[var(--color-text-primary)]">{sector.percentage.toFixed(1)}%</span>
                     </div>
@@ -1235,7 +1282,7 @@ export default function PortfolioPage() {
                         style={{ width: `${Math.min(100, sector.percentage)}%` }}
                       />
                     </div>
-                    <div className="font-mono tabular-nums text-xs text-[var(--color-text-muted)]">
+                    <div className="font-mono tabular-nums text-[13px] text-[var(--color-text-muted)]">
                       {formatCurrencyDetailed(sector.value)}
                     </div>
                   </div>
@@ -1315,28 +1362,28 @@ export default function PortfolioPage() {
               return (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
                   <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5">
-                    <div className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2">Diversification Score</div>
+                    <div className="font-mono text-[12px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2">Diversification Score</div>
                     <div className="text-[28px] sm:text-[40px] font-bold tabular-nums" style={{ color: scoreColor, fontFamily: 'var(--font-mono)' }}>{diversificationScore}</div>
-                    <div className="text-[13px] text-[var(--color-text-muted)] mt-1">out of 100 (look-through)</div>
+                    <div className="text-[15px] text-[var(--color-text-muted)] mt-1">out of 100 (look-through)</div>
                     <div className="mt-3 h-2 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${diversificationScore}%`, backgroundColor: scoreColor }} />
                     </div>
                   </div>
                   <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5">
-                    <div className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2">Effective Positions</div>
+                    <div className="font-mono text-[12px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2">Effective Positions</div>
                     <div className="text-[28px] sm:text-[40px] font-bold tabular-nums text-[var(--color-text-primary)]" style={{ fontFamily: 'var(--font-mono)' }}>{effectivePositions}</div>
-                    <div className="text-[13px] text-[var(--color-text-muted)] mt-1">of {ltEntries.length} underlying names</div>
-                    <div className="text-[12px] text-[var(--color-text-muted)] mt-2" style={{ fontFamily: 'var(--font-mono)' }}>
+                    <div className="text-[15px] text-[var(--color-text-muted)] mt-1">of {ltEntries.length} underlying names</div>
+                    <div className="text-[14px] text-[var(--color-text-muted)] mt-2" style={{ fontFamily: 'var(--font-mono)' }}>
                       HHI: {(hhi * 10000).toFixed(0)} / 10,000
                     </div>
                   </div>
                   <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5">
-                    <div className="font-mono text-[11px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2">Top Exposure (Look-Through)</div>
+                    <div className="font-mono text-[12px] tracking-wider text-[var(--color-text-muted)] uppercase mb-2">Top Exposure (Look-Through)</div>
                     <div className="text-[28px] sm:text-[40px] font-bold tabular-nums" style={{ color: topWeight > 0.25 ? 'var(--color-negative)' : 'var(--color-text-primary)', fontFamily: 'var(--font-mono)' }}>
                       {(topWeight * 100).toFixed(1)}%
                     </div>
-                    <div className="text-[13px] text-[var(--color-text-muted)] mt-1">{topTicker}</div>
-                    <div className="text-[12px] text-[var(--color-text-muted)] mt-2">
+                    <div className="text-[15px] text-[var(--color-text-muted)] mt-1">{topTicker}</div>
+                    <div className="text-[14px] text-[var(--color-text-muted)] mt-2">
                       {topWeight > 0.25 ? '⚠ Exceeds 25% single-name threshold' : '✓ Within concentration limits'}
                     </div>
                   </div>
@@ -1351,7 +1398,7 @@ export default function PortfolioPage() {
             <Card className="mb-6">
               <CardHeader className="pb-3">
                 <CardTitle className="text-[15px]">Sector Concentration</CardTitle>
-                <p className="text-[12px] text-[var(--color-text-muted)] font-mono">Your sector weights vs typical S&P 500 allocation</p>
+                <p className="text-[14px] text-[var(--color-text-muted)] font-mono">Your sector weights vs typical S&P 500 allocation</p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -1367,17 +1414,17 @@ export default function PortfolioPage() {
                       const diffColor = Math.abs(diff) > 10 ? 'var(--color-warning-text)' : 'var(--color-text-muted)';
                       return (
                         <div key={sector.name} className="flex items-center gap-3">
-                          <span className="text-[13px] text-[var(--color-text-secondary)] w-40 shrink-0">{sector.name}</span>
+                          <span className="text-[15px] text-[var(--color-text-secondary)] w-40 shrink-0">{sector.name}</span>
                           <div className="flex-1 flex items-center gap-2">
                             <div className="flex-1 h-2 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden relative">
                               <div className="h-full bg-[var(--color-gold)] rounded-full" style={{ width: `${Math.min(100, sector.percentage)}%` }} />
                               <div className="absolute top-0 bottom-0 w-0.5 bg-white/30" style={{ left: `${Math.min(100, benchmark)}%` }} title={`S&P: ${benchmark}%`} />
                             </div>
                           </div>
-                          <span className="font-mono text-[13px] font-bold tabular-nums w-14 text-right text-[var(--color-text-primary)]">
+                          <span className="font-mono text-[15px] font-bold tabular-nums w-14 text-right text-[var(--color-text-primary)]">
                             {sector.percentage.toFixed(1)}%
                           </span>
-                          <span className="font-mono text-[11px] tabular-nums w-16 text-right" style={{ color: diffColor }}>
+                          <span className="font-mono text-[12px] tabular-nums w-16 text-right" style={{ color: diffColor }}>
                             {diff >= 0 ? '+' : ''}{diff.toFixed(1)}pp
                           </span>
                         </div>
@@ -1385,7 +1432,7 @@ export default function PortfolioPage() {
                     });
                   })()}
                 </div>
-                <div className="flex items-center gap-2 mt-4 text-[11px] text-[var(--color-text-muted)]">
+                <div className="flex items-center gap-2 mt-4 text-[12px] text-[var(--color-text-muted)]">
                   <div className="w-3 h-0.5 bg-[var(--color-gold)] rounded" /> Your allocation
                   <div className="w-3 h-0.5 bg-white/30 rounded ml-3" /> S&P 500 benchmark
                 </div>
@@ -1400,7 +1447,7 @@ export default function PortfolioPage() {
               <CardContent>
                 {(() => {
                   const top = holdings[0];
-                  if (!top) return <p className="text-sm text-[var(--color-text-muted)]">No holdings</p>;
+                  if (!top) return <p className="text-[15px] text-[var(--color-text-muted)]">No holdings</p>;
                   const dropPct = 0.20;
                   const loss = top.total_value * dropPct;
                   const portfolioImpact = totalValue > 0 ? (loss / totalValue) * 100 : 0;
@@ -1523,7 +1570,7 @@ function ConcentrationTable({ holdings, formatCurrency }: {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-[15px]">Single-Name Risk (Look-Through)</CardTitle>
-            <p className="text-[12px] text-[var(--color-text-muted)] font-mono mt-1">
+            <p className="text-[14px] text-[var(--color-text-muted)] font-mono mt-1">
               Includes ETF and leveraged product exposure · Red {'>'} 25% · Yellow {'>'} 10% · ETF weights as of Q2 2026
             </p>
           </div>
@@ -1532,7 +1579,7 @@ function ConcentrationTable({ holdings, formatCurrency }: {
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(0); }}
             placeholder="AAPL, NVDA, MSFT..."
-            className="w-48 px-3 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[13px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors"
+            className="w-48 px-3 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[15px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors"
             style={{ fontFamily: 'var(--font-mono)' }}
           />
         </div>
@@ -1549,7 +1596,7 @@ function ConcentrationTable({ holdings, formatCurrency }: {
                 key={h.ticker}
                 className="flex items-center gap-3 py-2.5 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-overlay)] transition-colors rounded px-1 -mx-1 group"
               >
-                <span className="font-mono text-[14px] font-bold text-[var(--color-gold)] w-16 shrink-0">{h.ticker}</span>
+                <span className="font-mono text-[15px] font-bold text-[var(--color-gold)] w-16 shrink-0">{h.ticker}</span>
                 <div className="flex-1 min-w-0">
                   <div className="h-2.5 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
                     {hasIndirect ? (
@@ -1567,38 +1614,38 @@ function ConcentrationTable({ holdings, formatCurrency }: {
                     </span>
                   )}
                 </div>
-                <span className={`font-mono text-[14px] font-bold tabular-nums w-16 text-right ${textColor}`}>
+                <span className={`font-mono text-[15px] font-bold tabular-nums w-16 text-right ${textColor}`}>
                   {alloc.toFixed(1)}%
                 </span>
-                <span className="font-mono text-[12px] text-[var(--color-text-muted)] tabular-nums w-24 text-right">
+                <span className="font-mono text-[14px] text-[var(--color-text-muted)] tabular-nums w-24 text-right">
                   {formatCurrency(h.value)}
                 </span>
               </div>
             );
           })}
           {pageItems.length === 0 && (
-            <p className="text-[13px] text-[var(--color-text-muted)] py-4 text-center">No holdings match &quot;{search}&quot;</p>
+            <p className="text-[15px] text-[var(--color-text-muted)] py-4 text-center">No holdings match &quot;{search}&quot;</p>
           )}
         </div>
 
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4 pt-3 border-t border-[var(--color-border-subtle)]">
-            <span className="text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+            <span className="text-[14px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
               {filtered.length} holdings · page {page + 1}/{totalPages}
             </span>
             <div className="flex gap-1">
               <button
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="px-3 py-1 text-[12px] rounded border border-[var(--color-border-base)] text-[var(--color-text-secondary)] disabled:opacity-30 hover:border-[var(--color-border-strong)] transition-colors"
+                className="px-3 py-1 text-[14px] rounded border border-[var(--color-border-base)] text-[var(--color-text-secondary)] disabled:opacity-30 hover:border-[var(--color-border-strong)] transition-colors"
               >
                 Prev
               </button>
               <button
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="px-3 py-1 text-[12px] rounded border border-[var(--color-border-base)] text-[var(--color-text-secondary)] disabled:opacity-30 hover:border-[var(--color-border-strong)] transition-colors"
+                className="px-3 py-1 text-[14px] rounded border border-[var(--color-border-base)] text-[var(--color-text-secondary)] disabled:opacity-30 hover:border-[var(--color-border-strong)] transition-colors"
               >
                 Next
               </button>
@@ -1676,25 +1723,25 @@ function TrueExposureSection({ lookthrough, open, onToggle, formatCurrency }: {
                       }`}
                     >
                       <td className="pl-4 pr-1 py-2">
-                        <span className="font-mono text-sm font-semibold text-[var(--color-gold)]">{entry.ticker}</span>
+                        <span className="font-mono text-[15px] font-semibold text-[var(--color-gold)]">{entry.ticker}</span>
                       </td>
                       <td className="px-1 py-2 text-right">
-                        <span className="font-mono text-sm tabular-nums text-[var(--color-text-secondary)]">
+                        <span className="font-mono text-[15px] tabular-nums text-[var(--color-text-secondary)]">
                           {entry.directWeight > 0 ? `${entry.directWeight.toFixed(2)}%` : '--'}
                         </span>
                       </td>
                       <td className="px-1 py-2 text-right">
-                        <span className="font-mono text-sm tabular-nums text-[var(--color-text-secondary)]">
+                        <span className="font-mono text-[15px] tabular-nums text-[var(--color-text-secondary)]">
                           {entry.indirectWeight > 0 ? `${entry.indirectWeight.toFixed(2)}%` : '--'}
                         </span>
                       </td>
                       <td className="px-1 py-2 text-right">
-                        <span className={`font-mono text-sm tabular-nums font-medium ${totalColor}`}>
+                        <span className={`font-mono text-[15px] tabular-nums font-medium ${totalColor}`}>
                           {entry.totalWeight.toFixed(2)}%
                         </span>
                       </td>
                       <td className="pl-2 pr-4 py-2">
-                        <span className="font-mono text-[11px] text-[var(--color-text-muted)] truncate block max-w-[200px]">
+                        <span className="font-mono text-[12px] text-[var(--color-text-muted)] truncate block max-w-[200px]">
                           {entry.sources.join(', ')}
                         </span>
                       </td>
@@ -1779,7 +1826,7 @@ function StressTest({ holdings, totalValue, formatCurrency }: {
         className="w-full px-4 py-3 flex items-center justify-between hover:bg-[var(--color-bg-elevated)] transition-colors"
       >
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-[var(--color-text-primary)]">Scenario Analysis</span>
+          <span className="text-[15px] font-semibold text-[var(--color-text-primary)]">Scenario Analysis</span>
           <span className="font-mono text-[9px] text-[var(--color-gold)] tracking-wider uppercase">Beta</span>
         </div>
         <ChevronDown className={`w-3.5 h-3.5 text-[var(--color-text-muted)] transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -1791,13 +1838,13 @@ function StressTest({ holdings, totalValue, formatCurrency }: {
           <div className="flex gap-1.5 pt-3">
             <button
               onClick={() => setMode('ticker')}
-              className={`px-2.5 py-1 rounded text-[11px] font-mono transition-colors ${mode === 'ticker' ? 'bg-[var(--color-gold)] text-black' : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)]'}`}
+              className={`px-2.5 py-1 rounded text-[12px] font-mono transition-colors ${mode === 'ticker' ? 'bg-[var(--color-gold)] text-black' : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)]'}`}
             >
               Ticker
             </button>
             <button
               onClick={() => setMode('sector')}
-              className={`px-2.5 py-1 rounded text-[11px] font-mono transition-colors ${mode === 'sector' ? 'bg-[var(--color-gold)] text-black' : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)]'}`}
+              className={`px-2.5 py-1 rounded text-[12px] font-mono transition-colors ${mode === 'sector' ? 'bg-[var(--color-gold)] text-black' : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)]'}`}
             >
               Sector
             </button>
@@ -1809,7 +1856,7 @@ function StressTest({ holdings, totalValue, formatCurrency }: {
               <select
                 value={selectedTicker}
                 onChange={e => setSelectedTicker(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-[12px] text-[var(--color-text-primary)] font-mono"
+                className="w-full px-2.5 py-1.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-[14px] text-[var(--color-text-primary)] font-mono"
               >
                 {holdings.sort((a, b) => b.total_value - a.total_value).map(h => (
                   <option key={h.ticker} value={h.ticker}>{h.ticker}</option>
@@ -1819,7 +1866,7 @@ function StressTest({ holdings, totalValue, formatCurrency }: {
               <select
                 value={selectedSector}
                 onChange={e => setSelectedSector(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-[12px] text-[var(--color-text-primary)] font-mono"
+                className="w-full px-2.5 py-1.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-[14px] text-[var(--color-text-primary)] font-mono"
               >
                 {sectors.map(([s]) => (
                   <option key={s} value={s}>{s}</option>
@@ -1828,11 +1875,11 @@ function StressTest({ holdings, totalValue, formatCurrency }: {
             )}
 
             <div className="flex items-center gap-2">
-              <span className="text-[11px] text-[var(--color-text-muted)] font-mono">if it drops</span>
+              <span className="text-[12px] text-[var(--color-text-muted)] font-mono">if it drops</span>
               <select
                 value={dropPct}
                 onChange={e => setDropPct(Number(e.target.value))}
-                className="flex-1 px-2.5 py-1.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-[12px] text-[var(--color-negative)] font-mono font-bold"
+                className="flex-1 px-2.5 py-1.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] text-[14px] text-[var(--color-negative)] font-mono font-bold"
               >
                 {[5, 10, 15, 20, 25, 30, 40, 50].map(p => (
                   <option key={p} value={p}>-{p}%</option>
@@ -1846,19 +1893,19 @@ function StressTest({ holdings, totalValue, formatCurrency }: {
             <div className="space-y-1 pt-1">
               <div className="flex justify-between items-baseline py-1.5 border-b border-[var(--color-border-subtle)]">
                 <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">Impact</span>
-                <span className="font-mono text-[14px] font-bold text-[var(--color-negative)]">-{impact.portfolioImpactPct.toFixed(2)}%</span>
+                <span className="font-mono text-[15px] font-bold text-[var(--color-negative)]">-{impact.portfolioImpactPct.toFixed(2)}%</span>
               </div>
               <div className="flex justify-between items-baseline py-1.5 border-b border-[var(--color-border-subtle)]">
                 <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">Loss</span>
-                <span className="font-mono text-[14px] font-bold text-[var(--color-negative)]">-{formatCurrency(impact.loss)}</span>
+                <span className="font-mono text-[15px] font-bold text-[var(--color-negative)]">-{formatCurrency(impact.loss)}</span>
               </div>
               <div className="flex justify-between items-baseline py-1.5 border-b border-[var(--color-border-subtle)]">
                 <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">New Total</span>
-                <span className="font-mono text-[14px] font-bold text-[var(--color-text-primary)]">{formatCurrency(impact.newTotal)}</span>
+                <span className="font-mono text-[15px] font-bold text-[var(--color-text-primary)]">{formatCurrency(impact.newTotal)}</span>
               </div>
               <div className="flex justify-between items-baseline py-1.5">
                 <span className="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">Weight</span>
-                <span className="font-mono text-[14px] font-bold text-[var(--color-text-primary)]">{impact.weight.toFixed(1)}%</span>
+                <span className="font-mono text-[15px] font-bold text-[var(--color-text-primary)]">{impact.weight.toFixed(1)}%</span>
               </div>
             </div>
           )}

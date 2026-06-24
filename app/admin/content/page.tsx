@@ -40,7 +40,7 @@ export default async function ContentApprovalPage() {
   if (!isThesisUser(user?.email)) {
     return (
       <div className="min-h-screen bg-[#060606] text-[#FAFAFA] flex items-center justify-center px-6">
-        <p className="text-sm text-[#C8C8C8]">Not found.</p>
+        <p className="text-[15px] text-[#C8C8C8]">Not found.</p>
       </div>
     );
   }
@@ -60,10 +60,10 @@ export default async function ContentApprovalPage() {
         <h1 className="text-2xl font-bold tracking-tight" style={{ fontFamily: 'Space Grotesk, monospace' }}>
           Content Approval Queue
         </h1>
-        <p className="mt-1 text-sm text-[#C8C8C8]">{drafts.length} draft{drafts.length === 1 ? '' : 's'} awaiting review.</p>
+        <p className="mt-1 text-[15px] text-[#C8C8C8]">{drafts.length} draft{drafts.length === 1 ? '' : 's'} awaiting review.</p>
 
         {drafts.length === 0 && (
-          <p className="mt-12 text-sm text-[#888]">Nothing in the queue.</p>
+          <p className="mt-12 text-[15px] text-[#888]">Nothing in the queue.</p>
         )}
 
         <div className="mt-8 space-y-12">
@@ -74,25 +74,25 @@ export default async function ContentApprovalPage() {
                 <header className="mb-4 flex items-baseline justify-between gap-4">
                   <div>
                     <span className="text-[#E6B94D] font-bold">{ev?.ticker ?? '—'}</span>
-                    <span className="ml-2 text-sm text-[#C8C8C8]">{ev?.company ?? ''}</span>
+                    <span className="ml-2 text-[15px] text-[#C8C8C8]">{ev?.company ?? ''}</span>
                     {ev?.verdict && (
-                      <span className="ml-2 text-xs uppercase tracking-wide text-[#888]">{ev.verdict}</span>
+                      <span className="ml-2 text-[13px] uppercase tracking-wide text-[#888]">{ev.verdict}</span>
                     )}
                   </div>
-                  <time className="text-xs text-[#888]">{new Date(d.created_at).toLocaleString()}</time>
+                  <time className="text-[13px] text-[#888]">{new Date(d.created_at).toLocaleString()}</time>
                 </header>
 
                 {ev?.pillar_claim && (
-                  <p className="mb-6 text-sm text-[#C8C8C8] italic">{ev.pillar_claim}</p>
+                  <p className="mb-6 text-[15px] text-[#C8C8C8] italic">{ev.pillar_claim}</p>
                 )}
 
                 {/* Verbatim cite */}
                 {ev?.verbatim_cite && (
                   <section className="mb-6">
-                    <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-[#E6B94D]">Verbatim cite</h2>
-                    <blockquote className="rounded-md border-l-2 border-[#E6B94D]/60 bg-black/40 p-3 text-sm text-[#FAFAFA]">
+                    <h2 className="mb-2 text-[13px] font-bold uppercase tracking-widest text-[#E6B94D]">Verbatim cite</h2>
+                    <blockquote className="rounded-md border-l-2 border-[#E6B94D]/60 bg-black/40 p-3 text-[15px] text-[#FAFAFA]">
                       <p className="italic">{ev.verbatim_cite}</p>
-                      <p className="mt-2 text-xs text-[#888]">
+                      <p className="mt-2 text-[13px] text-[#888]">
                         {fmtCiteDate(ev.cite_date)}
                         {ev.source_type ? ` · ${ev.source_type}` : ''}
                         {ev.source_url && (
@@ -115,12 +115,12 @@ export default async function ContentApprovalPage() {
 
                 {/* X thread */}
                 <section className="mb-6">
-                  <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-[#E6B94D]">X thread</h2>
+                  <h2 className="mb-2 text-[13px] font-bold uppercase tracking-widest text-[#E6B94D]">X thread</h2>
                   <div className="space-y-2">
                     {d.x_thread.map((tweet, i) => (
                       <pre
                         key={i}
-                        className="whitespace-pre-wrap break-words rounded-md border border-white/10 bg-black/40 p-3 text-sm text-[#FAFAFA]"
+                        className="whitespace-pre-wrap break-words rounded-md border border-white/10 bg-black/40 p-3 text-[15px] text-[#FAFAFA]"
                       >
                         <code>{tweet}</code>
                       </pre>
@@ -130,24 +130,24 @@ export default async function ContentApprovalPage() {
 
                 {/* LinkedIn */}
                 <section className="mb-6">
-                  <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-[#E6B94D]">LinkedIn post</h2>
-                  <pre className="whitespace-pre-wrap break-words rounded-md border border-white/10 bg-black/40 p-3 text-sm text-[#FAFAFA]">
+                  <h2 className="mb-2 text-[13px] font-bold uppercase tracking-widest text-[#E6B94D]">LinkedIn post</h2>
+                  <pre className="whitespace-pre-wrap break-words rounded-md border border-white/10 bg-black/40 p-3 text-[15px] text-[#FAFAFA]">
                     <code>{d.linkedin_post}</code>
                   </pre>
                 </section>
 
                 {/* Caption */}
                 <section className="mb-6">
-                  <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-[#E6B94D]">Caption</h2>
-                  <pre className="whitespace-pre-wrap break-words rounded-md border border-white/10 bg-black/40 p-3 text-sm text-[#FAFAFA]">
+                  <h2 className="mb-2 text-[13px] font-bold uppercase tracking-widest text-[#E6B94D]">Caption</h2>
+                  <pre className="whitespace-pre-wrap break-words rounded-md border border-white/10 bg-black/40 p-3 text-[15px] text-[#FAFAFA]">
                     <code>{d.caption}</code>
                   </pre>
                 </section>
 
                 {/* Disclaimer */}
                 <section className="mb-6">
-                  <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-[#E6B94D]">Disclaimer</h2>
-                  <pre className="whitespace-pre-wrap break-words rounded-md border border-white/10 bg-black/40 p-3 text-xs text-[#C8C8C8]">
+                  <h2 className="mb-2 text-[13px] font-bold uppercase tracking-widest text-[#E6B94D]">Disclaimer</h2>
+                  <pre className="whitespace-pre-wrap break-words rounded-md border border-white/10 bg-black/40 p-3 text-[13px] text-[#C8C8C8]">
                     <code>{d.disclaimer}</code>
                   </pre>
                 </section>
@@ -155,12 +155,12 @@ export default async function ContentApprovalPage() {
                 {/* Visual */}
                 {ev?.ticker && (
                   <section className="mb-6">
-                    <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-[#E6B94D]">Visual</h2>
+                    <h2 className="mb-2 text-[13px] font-bold uppercase tracking-widest text-[#E6B94D]">Visual</h2>
                     <a
                       href={`https://helmterminal.dev/analyze/${ev.ticker}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex rounded-md border border-[#E6B94D]/40 px-4 py-2 text-sm font-bold text-[#E6B94D] hover:bg-[#E6B94D]/10"
+                      className="inline-flex rounded-md border border-[#E6B94D]/40 px-4 py-2 text-[15px] font-bold text-[#E6B94D] hover:bg-[#E6B94D]/10"
                     >
                       Grab a visual from /analyze
                     </a>
@@ -172,7 +172,7 @@ export default async function ContentApprovalPage() {
                   <form action={approveDraft.bind(null, d.id)}>
                     <button
                       type="submit"
-                      className="rounded-md bg-[#4ADE80] px-4 py-2 text-sm font-bold text-black hover:opacity-90"
+                      className="rounded-md bg-[#4ADE80] px-4 py-2 text-[15px] font-bold text-black hover:opacity-90"
                     >
                       Approve
                     </button>
@@ -180,7 +180,7 @@ export default async function ContentApprovalPage() {
                   <form action={rejectDraft.bind(null, d.id)}>
                     <button
                       type="submit"
-                      className="rounded-md border border-[#F87171]/40 px-4 py-2 text-sm font-bold text-[#F87171] hover:bg-[#F87171]/10"
+                      className="rounded-md border border-[#F87171]/40 px-4 py-2 text-[15px] font-bold text-[#F87171] hover:bg-[#F87171]/10"
                     >
                       Reject
                     </button>

@@ -41,7 +41,7 @@ export function PortfolioInsightDrawer({ holdings, insightDescription }: Portfol
         <div className="p-3 bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border-subtle)]">
           <div className="flex items-start gap-2 mb-2">
             <AlertTriangle className="h-4 w-4 text-[var(--color-warning)] flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+            <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed">
               {insightDescription}
             </p>
           </div>
@@ -55,10 +55,10 @@ export function PortfolioInsightDrawer({ holdings, insightDescription }: Portfol
           {sectorTotals.map(({ sector, totalValue, holdings }) => (
             <div key={sector}>
               <div className="flex justify-between items-baseline mb-1">
-                <span className="type-label text-sm text-[var(--color-text-primary)]">{sector}</span>
+                <span className="type-label text-[15px] text-[var(--color-text-primary)]">{sector}</span>
                 <div className="flex items-center gap-2">
                   <span className="type-caption text-[var(--color-text-secondary)]">{holdings} holdings</span>
-                  <span className="type-data text-sm font-tabular text-[var(--color-text-primary)]">
+                  <span className="type-data text-[15px] font-tabular text-[var(--color-text-primary)]">
                     {formatCurrency(totalValue)}
                   </span>
                 </div>
@@ -93,7 +93,7 @@ export function PortfolioInsightDrawer({ holdings, insightDescription }: Portfol
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="type-label text-sm text-[var(--color-text-primary)] font-medium">
+                    <span className="type-label text-[15px] text-[var(--color-text-primary)] font-medium">
                       {holding.ticker}
                     </span>
                     <span className="type-caption text-[var(--color-text-secondary)]">
@@ -107,11 +107,11 @@ export function PortfolioInsightDrawer({ holdings, insightDescription }: Portfol
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="type-data text-sm font-tabular text-[var(--color-text-primary)] mb-1">
+                  <div className="type-data text-[15px] font-tabular text-[var(--color-text-primary)] mb-1">
                     {formatCurrency(holding.total_value)}
                   </div>
                   <div
-                    className={`flex items-center gap-1 type-label text-xs ${
+                    className={`flex items-center gap-1 type-label text-[13px] ${
                       (holding.day_change_percentage ?? 0) >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                     }`}
                   >
@@ -134,14 +134,14 @@ export function PortfolioInsightDrawer({ holdings, insightDescription }: Portfol
               <div className="grid grid-cols-3 gap-3 pt-2 border-t border-[var(--color-border-subtle)]">
                 <div>
                   <div className="type-caption text-[var(--color-text-secondary)] mb-0.5">Cost Basis</div>
-                  <div className="type-label text-xs font-tabular text-[var(--color-text-primary)]">
+                  <div className="type-label text-[13px] font-tabular text-[var(--color-text-primary)]">
                     {formatCurrency(holding.cost_basis || 0)}
                   </div>
                 </div>
                 <div>
                   <div className="type-caption text-[var(--color-text-secondary)] mb-0.5">Unrealized Gain</div>
                   <div
-                    className={`type-label text-xs font-tabular ${
+                    className={`type-label text-[13px] font-tabular ${
                       (holding.unrealised_gain || 0) >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
                     }`}
                   >
@@ -151,7 +151,7 @@ export function PortfolioInsightDrawer({ holdings, insightDescription }: Portfol
                 </div>
                 <div>
                   <div className="type-caption text-[var(--color-text-secondary)] mb-0.5">Allocation</div>
-                  <div className="type-label text-xs font-tabular text-[var(--color-text-primary)]">
+                  <div className="type-label text-[13px] font-tabular text-[var(--color-text-primary)]">
                     {holding.portfolio_allocation.toFixed(1)}%
                   </div>
                 </div>

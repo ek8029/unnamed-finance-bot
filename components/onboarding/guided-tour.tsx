@@ -212,7 +212,7 @@ export function GuidedTour() {
           <h3 className="text-[16px] font-bold text-[var(--color-text-primary)] mb-1.5">
             {s.title}
           </h3>
-          <p className="text-[14px] text-[var(--color-text-muted)] leading-relaxed mb-4">
+          <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed mb-4">
             {s.desc}
           </p>
 
@@ -231,7 +231,7 @@ export function GuidedTour() {
 
             <button
               onClick={next}
-              className="flex items-center gap-2 px-4 py-2 bg-[var(--color-gold)] text-black text-[13px] font-semibold rounded-md hover:brightness-110 transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-[var(--color-gold)] text-black text-[14px] font-semibold rounded-md hover:brightness-110 transition-all"
             >
               {step < STEPS.length - 1 ? 'Next' : 'Start Exploring'}
               <ArrowRight className="w-3.5 h-3.5" />

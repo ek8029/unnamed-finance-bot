@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, X, Share2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Sparkles, Link2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useWrapped, type WrappedData } from '@/hooks/use-financial-data';
+import { usePreview } from '@/lib/preview-context';
 import { HelmMark } from '@/components/helm-mark';
 
 // ═══════════════════════════════════════════
@@ -27,6 +28,9 @@ const fmtDollar = (n: number) =>
 const fmtPct = (n: number) =>
   `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
 
+const fmtPct1 = (n: number) =>
+  `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
+
 const fmtCompact = (n: number) => {
   const abs = Math.abs(n);
   const sign = n < 0 ? '-' : '';
@@ -39,7 +43,7 @@ const TOTAL_SLIDES = 7;
 
 
 // ═══════════════════════════════════════════
-// Ambient glow blobs
+// Ambient glow blobs (full-deck overlay)
 // ═══════════════════════════════════════════
 
 function AmbientGlow() {
@@ -55,14 +59,14 @@ function AmbientGlow() {
 // Top bar: HELM mark + title + progress + counter
 // ═══════════════════════════════════════════
 
-function TopBar({ current, year }: { current: number; year: string }) {
+function TopBar({ current, year, onClose }: { current: number; year: string; onClose: () => void }) {
   return (
     <div className="absolute top-0 left-0 right-0 z-30 flex items-center gap-3 px-4 py-3 md:px-10 md:py-4">
       {/* HELM branding */}
       <div className="flex items-center gap-2.5 shrink-0">
         <HelmMark size={18} />
         <span
-          className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]"
+          className="text-[12px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]"
           style={MONO}
         >
           Helm / Wrapped &middot; {year}
@@ -86,18 +90,19 @@ function TopBar({ current, year }: { current: number; year: string }) {
 
       {/* Slide counter + close */}
       <span
-        className="text-[11px] text-[var(--color-text-muted)] tabular-nums shrink-0"
+        className="text-[12px] text-[var(--color-text-muted)] tabular-nums shrink-0"
         style={MONO}
       >
         {String(current + 1).padStart(2, '0')} / {String(TOTAL_SLIDES).padStart(2, '0')}
       </span>
-      <a
-        href="/dashboard"
-        className="ml-2 w-8 h-8 flex items-center justify-center rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-white/50 hover:text-white transition-colors"
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
+        className="ml-2 w-8 h-8 flex items-center justify-center rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-white/50 hover:text-white transition-colors cursor-pointer"
         aria-label="Close Wrapped"
       >
         <X className="w-4 h-4" />
-      </a>
+      </button>
     </div>
   );
 }
@@ -142,7 +147,7 @@ function SlideCover({
       <div className="absolute -top-[30%] -left-[20%] w-[60vw] h-[60vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: '#E6B94D' }} />
 
       <div className="relative z-10 max-w-lg w-full">
-        <p className="text-[14px] tracking-[0.3em] text-[var(--color-gold)] mb-10" style={MONO}>HELM WRAPPED</p>
+        <p className="text-[15px] tracking-[0.3em] text-[var(--color-gold)] mb-10" style={MONO}>HELM WRAPPED</p>
 
         <h1 className="font-bold leading-[0.88] tracking-[-0.05em] mb-12" style={{ fontSize: 'clamp(72px, 18vw, 160px)' }}>
           Your<br />
@@ -156,7 +161,7 @@ function SlideCover({
 
         <button
           onClick={(e) => { e.stopPropagation(); onBegin(); }}
-          className="group inline-flex items-center gap-3 px-12 py-5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[17px] rounded-full cursor-pointer transition-all"
+          className="group inline-flex items-center gap-3 px-8 sm:px-12 py-4 sm:py-5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[15px] sm:text-[17px] rounded-full cursor-pointer transition-all"
           style={{ boxShadow: '0 12px 40px rgba(230,185,77,0.35)' }}
         >
           Begin Wrapped
@@ -183,7 +188,7 @@ function SlideReturn({ data }: { data: WrappedData | null }) {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: positive ? '#4ADE80' : '#F87171' }} />
 
       <div className="relative z-10">
-        <p className="text-[14px] text-[var(--color-text-muted)] mb-3">Your portfolio returned</p>
+        <p className="text-[15px] text-[var(--color-text-muted)] mb-3">Your portfolio returned</p>
 
         <div
           className={cn('text-[clamp(60px,18vw,240px)] font-bold leading-none tabular-nums tracking-[-0.05em]', positive ? 'text-[#4ADE80]' : 'text-[#F87171]')}
@@ -195,24 +200,24 @@ function SlideReturn({ data }: { data: WrappedData | null }) {
         <div className="flex items-center justify-center gap-8 mt-8">
           {spyReturn != null && (
             <div className="text-center">
-              <p className="text-[11px] tracking-[0.15em] text-[var(--color-text-muted)] mb-1" style={MONO}>S&amp;P 500</p>
+              <p className="text-[12px] tracking-[0.15em] text-[var(--color-text-muted)] mb-1" style={MONO}>S&amp;P 500</p>
               <p className="text-[20px] font-bold" style={MONO}>{fmtPct(spyReturn)}</p>
             </div>
           )}
           {alpha != null && (
             <div className="text-center">
-              <p className="text-[11px] tracking-[0.15em] text-[var(--color-text-muted)] mb-1" style={MONO}>ALPHA</p>
+              <p className="text-[12px] tracking-[0.15em] text-[var(--color-text-muted)] mb-1" style={MONO}>ALPHA</p>
               <p className={cn('text-[20px] font-bold', alpha >= 0 ? 'text-[var(--color-gold)]' : 'text-[#F87171]')} style={MONO}>{fmtPct(alpha)}</p>
             </div>
           )}
           {data?.spyComparison.beat && (
             <div className="px-5 py-2 rounded-full bg-[#4ADE80]/10 border border-[#4ADE80]/20">
-              <p className="text-[14px] font-bold text-[#4ADE80]" style={MONO}>BEAT THE MARKET</p>
+              <p className="text-[15px] font-bold text-[#4ADE80]" style={MONO}>BEAT THE MARKET</p>
             </div>
           )}
         </div>
 
-        <p className="text-[11px] text-white/40 mt-6" style={MONO}>
+        <p className="text-[12px] text-white/40 mt-6" style={MONO}>
           Return based on cost basis. MVP &amp; villain reflect total gain since purchase.
         </p>
       </div>
@@ -236,19 +241,19 @@ function SlideBestWorst({ data }: { data: WrappedData | null }) {
 
       <div className="relative z-10 w-full max-w-lg">
         <div className="text-center mb-8">
-          <p className="text-[13px] tracking-[0.2em] text-[#4ADE80] mb-3" style={MONO}>YOUR MVP</p>
+          <p className="text-[15px] tracking-[0.2em] text-[#4ADE80] mb-3" style={MONO}>YOUR MVP</p>
           <p className="text-[clamp(48px,12vw,80px)] font-bold text-[var(--color-gold)] tracking-tight leading-none" style={MONO}>{best?.ticker ?? '---'}</p>
           <p className="text-[clamp(32px,8vw,56px)] font-bold text-[#4ADE80] tabular-nums mt-2">{best ? fmtPct(best.returnPct) : '---'}</p>
-          <p className="text-[14px] text-[var(--color-text-muted)] mt-2">{best?.name ?? ''} &middot; {best ? fmtDollar(best.returnDollars) : ''}</p>
+          <p className="text-[15px] text-[var(--color-text-muted)] mt-2">{best?.name ?? ''} &middot; {best ? fmtDollar(best.returnDollars) : ''}</p>
         </div>
 
         <div className="w-16 h-px bg-white/10 mx-auto my-6" />
 
         <div className="text-center">
-          <p className="text-[13px] tracking-[0.2em] text-[#F87171] mb-3" style={MONO}>YOUR VILLAIN</p>
+          <p className="text-[15px] tracking-[0.2em] text-[#F87171] mb-3" style={MONO}>YOUR VILLAIN</p>
           <p className="text-[clamp(48px,12vw,80px)] font-bold text-[#F87171] tracking-tight leading-none" style={MONO}>{worst?.ticker ?? '---'}</p>
           <p className="text-[clamp(32px,8vw,56px)] font-bold text-[#F87171] tabular-nums mt-2">{worst ? fmtPct(worst.returnPct) : '---'}</p>
-          <p className="text-[14px] text-[var(--color-text-muted)] mt-2">{worst?.name ?? ''} &middot; {worst ? fmtDollar(worst.returnDollars) : ''}</p>
+          <p className="text-[15px] text-[var(--color-text-muted)] mt-2">{worst?.name ?? ''} &middot; {worst ? fmtDollar(worst.returnDollars) : ''}</p>
         </div>
       </div>
     </div>
@@ -291,7 +296,7 @@ function SlideTradingHabits({ data }: { data: WrappedData | null }) {
           ].map((s) => (
             <div key={s.label} className="p-5 bg-white/[0.03] border border-white/[0.06] rounded-2xl">
               <p className="text-[clamp(24px,5vw,32px)] font-bold tabular-nums">{s.value}</p>
-              <p className="text-[11px] tracking-[0.15em] text-[var(--color-gold)] mt-2" style={MONO}>{s.label}</p>
+              <p className="text-[12px] tracking-[0.15em] text-[var(--color-gold)] mt-2" style={MONO}>{s.label}</p>
             </div>
           ))}
         </div>
@@ -333,7 +338,7 @@ function SlideSectors({ data }: { data: WrappedData | null }) {
             </div>
             <div className="flex flex-wrap justify-center gap-x-3 md:gap-x-5 gap-y-1.5 mt-4 md:mt-5">
               {sectors.slice(0, 5).map((s, i) => (
-                <span key={s.sector} className="flex items-center gap-1.5 text-[11px] md:text-[14px] text-[var(--color-text-muted)]" style={MONO}>
+                <span key={s.sector} className="flex items-center gap-1.5 text-[12px] md:text-[15px] text-[var(--color-text-muted)]" style={MONO}>
                   <span className="w-3 h-3 rounded-full" style={{ background: sectorColors[i % sectorColors.length] }} />
                   {s.sector} {s.pct.toFixed(0)}%
                 </span>
@@ -345,11 +350,11 @@ function SlideSectors({ data }: { data: WrappedData | null }) {
         {nwChange && nwChange.change !== 0 && (
           <div className="flex items-center justify-center gap-10 mt-4">
             <div>
-              <p className="text-[12px] tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>NET WORTH</p>
+              <p className="text-[14px] tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>NET WORTH</p>
               <p className={cn('text-[28px] font-bold mt-1 tabular-nums', nwChange.change >= 0 ? 'text-[#4ADE80]' : 'text-[#F87171]')}>{fmtDollar(nwChange.change)}</p>
             </div>
             <div>
-              <p className="text-[12px] tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>CHANGE</p>
+              <p className="text-[14px] tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>CHANGE</p>
               <p className={cn('text-[28px] font-bold mt-1 tabular-nums', nwChange.changePct >= 0 ? 'text-[#4ADE80]' : 'text-[#F87171]')}>{fmtPct(nwChange.changePct)}</p>
             </div>
           </div>
@@ -388,7 +393,7 @@ function SlidePersonality({ data }: { data: WrappedData | null }) {
         {traits.length > 0 && (
           <div className="flex flex-wrap justify-center gap-2.5 max-w-md mx-auto">
             {traits.map((t) => (
-              <span key={t} className="px-5 py-2.5 rounded-full border border-[var(--color-gold)]/25 bg-[var(--color-gold)]/[0.08] text-[14px] font-medium text-[var(--color-gold)]" style={MONO}>{t}</span>
+              <span key={t} className="px-5 py-2.5 rounded-full border border-[var(--color-gold)]/25 bg-[var(--color-gold)]/[0.08] text-[15px] font-medium text-[var(--color-gold)]" style={MONO}>{t}</span>
             ))}
           </div>
         )}
@@ -415,7 +420,7 @@ async function captureCardAsBlob(element: HTMLElement): Promise<Blob> {
   return new Blob([bytes], { type: 'image/png' });
 }
 
-function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: { data: WrappedData | null; onShareImage: () => void; onShareTwitter: () => void }) {
+function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter, onClose }: { data: WrappedData | null; onShareImage: () => void; onShareTwitter: () => void; onClose: () => void }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const pct = data?.totalReturn.pct ?? 0;
   const positive = pct >= 0;
@@ -478,7 +483,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
     <div className="flex flex-col lg:flex-row items-center justify-center h-full px-4 md:px-6 gap-6 lg:gap-12">
       {/* Left: CTA — hidden on mobile, shown on desktop */}
       <div className="hidden lg:block text-left max-w-sm shrink-0">
-        <p className="text-[12px] uppercase tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
+        <p className="text-[14px] uppercase tracking-[0.3em] text-[var(--color-gold)] mb-6" style={MONO}>
           &sect; 06 &mdash; Your Card
         </p>
         <h2 className="text-[clamp(32px,6vw,56px)] font-bold tracking-[-0.03em] leading-[1.05] mb-4">
@@ -494,13 +499,13 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
           <button
             onClick={handleShareImage}
             disabled={shareStatus === 'generating'}
-            className="px-8 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[14px] rounded-sm transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+            className="px-8 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[15px] rounded-sm transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {shareStatus === 'generating' ? 'Sharing...' : shareStatus === 'copied' ? 'Copied!' : 'Share Wrapped'}
           </button>
           <button
             onClick={onShareTwitter}
-            className="px-6 py-3.5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white font-medium text-[14px] rounded-sm transition-colors cursor-pointer"
+            className="px-6 py-3.5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white font-medium text-[15px] rounded-sm transition-colors cursor-pointer"
           >
             Post on X
           </button>
@@ -556,11 +561,11 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
               {fmtPct(pct)}
             </p>
             <div className="flex items-baseline justify-center gap-3 mt-2">
-              <span style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }} className="text-[14px] text-[var(--color-gold)]">
+              <span style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }} className="text-[15px] text-[var(--color-gold)]">
                 {positive ? 'beat the market' : 'tough year'}
               </span>
               {alpha != null && (
-                <span className="text-[12px] text-[var(--color-gold)] font-bold" style={MONO}>ALPHA {fmtPct(alpha)}</span>
+                <span className="text-[14px] text-[var(--color-gold)] font-bold" style={MONO}>ALPHA {fmtPct(alpha)}</span>
               )}
             </div>
           </div>
@@ -592,12 +597,12 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
             <div className="p-2.5 md:p-3.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>MVP</p>
               <p className="text-[20px] md:text-[28px] font-bold text-[var(--color-gold)] mt-1" style={MONO}>{best?.ticker ?? '---'}</p>
-              <p className="text-[13px] font-semibold text-[#4ADE80]" style={MONO}>{best ? fmtPct(best.returnPct) : ''}</p>
+              <p className="text-[15px] font-semibold text-[#4ADE80]" style={MONO}>{best ? fmtPct(best.returnPct) : ''}</p>
             </div>
             {/* Type */}
             <div className="p-2.5 md:p-3.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>TYPE</p>
-              <p className="text-[13px] md:text-[18px] font-bold text-[var(--color-gold)] mt-1 leading-tight" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>
+              <p className="text-[15px] md:text-[18px] font-bold text-[var(--color-gold)] mt-1 leading-tight" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>
                 {personality?.title ?? 'Investor'}
               </p>
             </div>
@@ -620,7 +625,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
             <div className="p-2.5 md:p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>VILLAIN</p>
               <p className="text-[20px] md:text-[28px] font-bold text-[#F87171] mt-1" style={MONO}>{worst?.ticker ?? '---'}</p>
-              <p className="text-[13px] font-semibold text-[#F87171]" style={MONO}>{worst ? fmtPct(worst.returnPct) : ''}</p>
+              <p className="text-[15px] font-semibold text-[#F87171]" style={MONO}>{worst ? fmtPct(worst.returnPct) : ''}</p>
             </div>
           </div>
 
@@ -634,7 +639,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
         {/* Hover hint — OUTSIDE cardRef, won't appear in screenshot */}
         <div className="absolute inset-0 z-20 rounded-2xl bg-black/0 group-hover:bg-black/20 transition-colors items-center justify-center pointer-events-none hidden md:flex">
           <span className={cn(
-            'text-[14px] font-bold tracking-wide px-5 py-2.5 rounded-full transition-all',
+            'text-[15px] font-bold tracking-wide px-5 py-2.5 rounded-full transition-all',
             shareStatus === 'copied'
               ? 'bg-[#4ADE80] text-black opacity-100'
               : 'bg-white/90 text-black opacity-0 group-hover:opacity-100',
@@ -645,7 +650,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
 
         {/* Mobile: "Copied" feedback */}
         {shareStatus === 'copied' && (
-          <p className="lg:hidden text-center text-[13px] text-[#4ADE80] font-bold mt-2" style={MONO}>Copied to clipboard!</p>
+          <p className="lg:hidden text-center text-[15px] text-[#4ADE80] font-bold mt-2" style={MONO}>Copied to clipboard!</p>
         )}
 
         {/* Mobile: buttons below card */}
@@ -653,22 +658,23 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
           <button
             onClick={handleShareImage}
             disabled={shareStatus === 'generating'}
-            className="px-5 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[13px] rounded-sm transition-colors cursor-pointer disabled:opacity-60"
+            className="px-5 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[15px] rounded-sm transition-colors cursor-pointer disabled:opacity-60"
           >
             {shareStatus === 'generating' ? 'Sharing...' : 'Share Wrapped'}
           </button>
           <button
             onClick={onShareTwitter}
-            className="px-4 py-3.5 border border-white/10 text-white/60 font-medium text-[13px] rounded-sm cursor-pointer"
+            className="px-4 py-3.5 border border-white/10 text-white/60 font-medium text-[15px] rounded-sm cursor-pointer"
           >
             Post on X
           </button>
-          <a
-            href="/dashboard"
-            className="px-4 py-3.5 border border-white/10 text-white/60 font-medium text-[13px] rounded-sm text-center"
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onClose(); }}
+            className="px-4 py-3.5 border border-white/10 text-white/60 font-medium text-[15px] rounded-sm text-center cursor-pointer"
           >
             Close
-          </a>
+          </button>
         </div>
       </div>
     </div>
@@ -676,14 +682,13 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter }: {
 }
 
 // ═══════════════════════════════════════════
-// Main Page
+// FULL-DECK OVERLAY — the cinematic 7-slide story.
+// Preserved verbatim from the original page; launched
+// from the dashboard summary view via "Play your Wrapped".
 // ═══════════════════════════════════════════
 
-export default function WrappedPage() {
+function WrappedStory({ data, onClose }: { data: WrappedData | null; onClose: () => void }) {
   const router = useRouter();
-  const [period, setPeriod] = useState<'quarter' | 'year'>('year');
-  const { data, loading, error } = useWrapped(period);
-
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(0);
   const [touchStartX, setTouchStartX] = useState(0);
@@ -715,11 +720,11 @@ export default function WrappedPage() {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
       if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
-      if (e.key === 'Escape') router.push('/dashboard');
+      if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [next, prev, router]);
+  }, [next, prev, onClose]);
 
   // Touch swipe
   const handleTouchStart = (e: React.TouchEvent) => setTouchStartX(e.touches[0].clientX);
@@ -794,33 +799,6 @@ export default function WrappedPage() {
     window.open(url, '_blank', 'width=550,height=420');
   }, [data, currentSlide]);
 
-  // ── Loading / Error ──
-
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 bg-[var(--color-bg-base)] flex flex-col items-center justify-center gap-4">
-        <div className="w-8 h-8 border-2 border-[var(--color-gold)] border-t-transparent rounded-full animate-spin" />
-        <p className="text-[13px] text-[var(--color-text-muted)]" style={MONO}>
-          Generating your Wrapped...
-        </p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="fixed inset-0 z-50 bg-[var(--color-bg-base)] flex flex-col items-center justify-center">
-        <p className="text-[var(--color-text-secondary)] mb-4">Unable to generate your Wrapped.</p>
-        <button
-          onClick={() => router.push('/dashboard')}
-          className="text-sm text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] cursor-pointer"
-        >
-          Back to Dashboard
-        </button>
-      </div>
-    );
-  }
-
   // ── Slide renderer ──
 
   function renderSlide(index: number) {
@@ -831,10 +809,13 @@ export default function WrappedPage() {
       case 3: return <SlideTradingHabits data={data} />;
       case 4: return <SlideSectors data={data} />;
       case 5: return <SlidePersonality data={data} />;
-      case 6: return <SlideShareCard data={data} onShareImage={handleShareImage} onShareTwitter={handleShareTwitter} />;
+      case 6: return <SlideShareCard data={data} onShareImage={handleShareImage} onShareTwitter={handleShareTwitter} onClose={onClose} />;
       default: return null;
     }
   }
+
+  // router referenced to keep the import path identical to original; no-op otherwise.
+  void router;
 
   return (
     <div
@@ -848,7 +829,7 @@ export default function WrappedPage() {
       }}
     >
       <AmbientGlow />
-      <TopBar current={currentSlide} year={year} />
+      <TopBar current={currentSlide} year={year} onClose={onClose} />
 
       {/* Screen reader announcement for slide changes */}
       <div className="sr-only" aria-live="polite" aria-atomic="true">
@@ -893,5 +874,334 @@ export default function WrappedPage() {
         </button>
       )}
     </div>
+  );
+}
+
+// ═══════════════════════════════════════════
+// DASHBOARD SUMMARY VIEW — Sovereign Architect
+// Big gradient hero + 4-stat grid + 3-stat grid.
+// ═══════════════════════════════════════════
+
+// Build the editorial subhead from real data, no fabrication.
+function buildSubhead(data: WrappedData): string {
+  const top = data.sectorBreakdown?.[0];
+  const concentrated = top && top.pct >= 30;
+  const beat = data.spyComparison?.beat === true;
+  if (concentrated && beat) {
+    return `A concentrated, conviction-driven year. ${top!.sector} carried the book, and you let your winners run.`;
+  }
+  if (concentrated) {
+    return `A concentrated year built around ${top!.sector}, your highest-conviction position.`;
+  }
+  if (beat) {
+    return 'A diversified year that still cleared the benchmark.';
+  }
+  return 'Your year across every connected account, in one place.';
+}
+
+function StatCard({
+  label,
+  value,
+  valueColor,
+  sub,
+}: {
+  label: string;
+  value: string;
+  valueColor?: string;
+  sub?: string;
+}) {
+  return (
+    <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] px-5 py-[18px] transition-colors hover:border-[rgba(230,185,77,0.2)]">
+      <div
+        className="text-[12px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-[10px]"
+        style={MONO}
+      >
+        {label}
+      </div>
+      <div
+        className="text-[24px] font-bold tabular-nums leading-none"
+        style={{ ...MONO, color: valueColor ?? 'var(--color-text-primary)' }}
+      >
+        {value}
+      </div>
+      {sub && (
+        <div className="text-[15px] text-[var(--color-text-muted)] mt-[6px]" style={MONO}>
+          {sub}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WrappedSummary({
+  data,
+  onPlay,
+  onShareTwitter,
+}: {
+  data: WrappedData;
+  onPlay: () => void;
+  onShareTwitter: () => void;
+}) {
+  const year = data.periodLabel ?? new Date().getFullYear().toString();
+  const pct = data.totalReturn.pct;
+  const positive = pct >= 0;
+  const spyReturn = data.spyComparison?.spyReturn;
+  const alpha = spyReturn != null ? pct - spyReturn : null;
+  const beat = data.spyComparison?.beat === true;
+
+  const best = data.bestPosition;
+  const worst = data.worstPosition;
+  const topSector = data.sectorBreakdown?.[0] ?? null;
+  const nwChange = data.netWorthChange;
+
+  return (
+    <div className="px-6 py-7 md:px-8 max-w-[1100px] mx-auto">
+      {/* ── Hero gradient card ── */}
+      <div
+        className="rounded-[10px] border p-8 md:p-10 mb-[14px]"
+        style={{
+          borderColor: 'rgba(230,185,77,0.18)',
+          background: '#0A0A0A',
+          backgroundImage:
+            'radial-gradient(ellipse at top right, rgba(230,185,77,0.10), transparent 55%), radial-gradient(ellipse at bottom left, rgba(74,222,128,0.04), transparent 55%)',
+        }}
+      >
+        <div
+          className="text-[14px] uppercase tracking-[0.24em] text-[var(--color-gold)] mb-4"
+          style={MONO}
+        >
+          &#10022; Helm Wrapped &middot; {year}
+        </div>
+
+        <h1
+          className="font-bold tracking-[-0.03em] leading-[1.08] max-w-[640px] text-[var(--color-text-primary)]"
+          style={{ fontSize: '40px' }}
+        >
+          {beat && alpha != null ? (
+            <>
+              You grew{' '}
+              <span style={{ color: positive ? 'var(--color-positive)' : 'var(--color-negative-text)' }}>
+                {fmtPct1(pct)}
+              </span>{' '}
+              and beat the S&amp;P by{' '}
+              <span style={{ color: 'var(--color-gold)' }}>{fmt(Math.abs(alpha), 1)} points.</span>
+            </>
+          ) : (
+            <>
+              Your portfolio{' '}
+              <span style={{ color: positive ? 'var(--color-positive)' : 'var(--color-negative-text)' }}>
+                {pct >= 0 ? 'grew' : 'moved'} {fmtPct1(pct)}
+              </span>{' '}
+              this year.
+            </>
+          )}
+        </h1>
+
+        <p className="text-[15px] text-[var(--color-text-secondary)] mt-[14px] max-w-[600px] leading-[1.6]">
+          {buildSubhead(data)}
+        </p>
+
+        {/* Actions — Play full story + share. Wrapped is free/viral. */}
+        <div className="flex flex-wrap items-center gap-3 mt-7">
+          <button
+            type="button"
+            onClick={onPlay}
+            className="inline-flex items-center gap-2 rounded-md bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[15px] px-6 py-3 cursor-pointer transition-colors"
+          >
+            <Sparkles className="w-4 h-4" strokeWidth={2} />
+            Play your Wrapped
+          </button>
+          <button
+            type="button"
+            onClick={onShareTwitter}
+            className="inline-flex items-center gap-2 rounded-md border border-[var(--color-border-strong,rgba(255,255,255,0.12))] hover:border-[rgba(230,185,77,0.3)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-medium text-[15px] px-6 py-3 cursor-pointer transition-colors"
+          >
+            Post on X
+          </button>
+        </div>
+      </div>
+
+      {/* ── 4-stat grid ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+        <StatCard
+          label="Best pick"
+          value={best?.ticker ?? '---'}
+          valueColor="var(--color-positive)"
+          sub={best ? fmtPct1(best.returnPct) : undefined}
+        />
+        <StatCard
+          label="Worst pick"
+          value={worst?.ticker ?? '---'}
+          valueColor="var(--color-negative-text)"
+          sub={worst ? fmtPct1(worst.returnPct) : undefined}
+        />
+        <StatCard
+          label="Total gain"
+          value={fmtDollar(data.totalReturn.dollars)}
+          valueColor={
+            data.totalReturn.dollars >= 0
+              ? 'var(--color-positive)'
+              : 'var(--color-negative-text)'
+          }
+          sub={fmtPct1(pct)}
+        />
+        <StatCard
+          label="Dividends"
+          value={fmtDollar(data.totalDividends)}
+          sub={data.totalDividends > 0 ? 'received this year' : 'none this year'}
+        />
+      </div>
+
+      {/* ── 3-stat grid ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <StatCard
+          label="Trades"
+          value={String(data.tradeCount)}
+          sub={data.tradeCount === 1 ? 'this year' : 'this year'}
+        />
+        <StatCard
+          label="Net worth change"
+          value={nwChange ? fmtDollar(nwChange.change) : '---'}
+          valueColor={
+            nwChange && nwChange.change >= 0
+              ? 'var(--color-positive)'
+              : nwChange
+                ? 'var(--color-negative-text)'
+                : undefined
+          }
+          sub={nwChange ? fmtPct1(nwChange.changePct) : undefined}
+        />
+        <StatCard
+          label="Most conviction"
+          value={topSector?.sector ?? '---'}
+          valueColor="var(--color-gold)"
+          sub={topSector ? `${topSector.pct.toFixed(0)}% of the book` : undefined}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════
+// States: loading / empty (connect prompt)
+// ═══════════════════════════════════════════
+
+function WrappedLoading() {
+  return (
+    <div className="px-6 py-7 md:px-8 max-w-[1100px] mx-auto">
+      <div
+        className="rounded-[10px] border p-8 md:p-10 mb-[14px] animate-pulse"
+        style={{ borderColor: 'rgba(230,185,77,0.12)', background: 'var(--color-bg-surface)' }}
+      >
+        <div className="h-3 w-40 rounded bg-white/[0.06] mb-5" />
+        <div className="h-9 w-3/4 rounded bg-white/[0.06] mb-3" />
+        <div className="h-9 w-2/3 rounded bg-white/[0.06]" />
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] px-5 py-[18px] animate-pulse">
+            <div className="h-2.5 w-16 rounded bg-white/[0.06] mb-3" />
+            <div className="h-6 w-20 rounded bg-white/[0.06]" />
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] px-5 py-[18px] animate-pulse">
+            <div className="h-2.5 w-16 rounded bg-white/[0.06] mb-3" />
+            <div className="h-6 w-20 rounded bg-white/[0.06]" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ConnectEmpty() {
+  return (
+    <div className="flex min-h-[calc(100vh-200px)] items-center justify-center px-6 py-10">
+      <div className="max-w-[460px] text-center">
+        <div
+          className="mx-auto mb-[22px] inline-flex h-[60px] w-[60px] items-center justify-center rounded-[14px]"
+          style={{ background: 'rgba(230,185,77,0.06)', border: '1px solid rgba(230,185,77,0.18)' }}
+        >
+          <Link2 size={26} className="text-[var(--color-gold)]" strokeWidth={1.6} />
+        </div>
+        <h1 className="text-[24px] font-bold tracking-[-0.025em] leading-[1.1] text-[var(--color-text-primary)] mb-3">
+          Connect your brokerage
+        </h1>
+        <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
+          Wrapped turns a full year of your activity into a shareable story: your return versus the
+          S&amp;P, your best and worst picks, dividends, and where your conviction sat. Link an
+          account over a read-only connection to generate yours.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════
+// Main Page
+// ═══════════════════════════════════════════
+
+export default function WrappedPage() {
+  const router = useRouter();
+  const { dataState } = usePreview();
+  const [period] = useState<'quarter' | 'year'>('year');
+  const { data, loading, error } = useWrapped(period);
+  const [storyOpen, setStoryOpen] = useState(false);
+
+  const openStory = useCallback(() => setStoryOpen(true), []);
+  const closeStory = useCallback(() => setStoryOpen(false), []);
+
+  // Share-to-X from the summary view (slide 5 / share caption).
+  const handleShareTwitter = useCallback(() => {
+    if (!data) return;
+    const alpha =
+      data.spyComparison?.spyReturn != null
+        ? data.totalReturn.pct - data.spyComparison.spyReturn
+        : null;
+    const text =
+      data.spyComparison?.beat && alpha != null
+        ? `My portfolio returned ${fmtPct(data.totalReturn.pct)} this year — beat the S&P 500 by ${Math.abs(alpha).toFixed(1)} points.\n\nGet your Helm Wrapped free`
+        : `My portfolio returned ${fmtPct(data.totalReturn.pct)} this year.\n\nGet your Helm Wrapped free`;
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent('https://helmterminal.dev/wrapped')}`;
+    window.open(url, '_blank', 'width=550,height=420');
+  }, [data]);
+
+  // ── Empty: needs-data / no connection ──
+  if (dataState === 'empty') {
+    return <ConnectEmpty />;
+  }
+
+  // ── Loading ──
+  if (loading) {
+    return <WrappedLoading />;
+  }
+
+  // ── Error → recover to dashboard ──
+  if (error || !data) {
+    return (
+      <div className="flex min-h-[calc(100vh-200px)] flex-col items-center justify-center px-6 text-center">
+        <p className="text-[15px] text-[var(--color-text-secondary)] mb-4">
+          We could not generate your Wrapped right now.
+        </p>
+        <button
+          type="button"
+          onClick={() => router.push('/dashboard')}
+          className="text-[15px] text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] cursor-pointer"
+        >
+          Back to dashboard
+        </button>
+      </div>
+    );
+  }
+
+  // ── Summary view (default) + on-demand full-deck overlay ──
+  return (
+    <>
+      <WrappedSummary data={data} onPlay={openStory} onShareTwitter={handleShareTwitter} />
+      {storyOpen && <WrappedStory data={data} onClose={closeStory} />}
+    </>
   );
 }

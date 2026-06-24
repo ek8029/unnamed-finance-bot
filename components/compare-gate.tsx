@@ -61,7 +61,7 @@ export function CompareGate() {
 
         const data = await res.json();
 
-        if (data.tier === 'pro') {
+        if (data.tier === 'pro' || data.tier === 'max') {
           if (!cancelled) setState('allowed');
           return;
         }
@@ -98,7 +98,7 @@ export function CompareGate() {
           <HelmMark size={24} />
           <div className="h-px flex-1 bg-[var(--color-border-base)]" />
           <span
-            className="text-[12px] uppercase tracking-[0.2em] text-[var(--color-gold)] font-medium"
+            className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] font-medium"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             {state === 'anon-blocked' ? 'Free' : 'Pro'}
@@ -120,7 +120,7 @@ export function CompareGate() {
               Create free account
               <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
             </Link>
-            <div className="flex items-center justify-between text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+            <div className="flex items-center justify-between text-[13px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
               <Link
                 href="/login"
                 className="hover:text-[var(--color-text-secondary)] transition-colors duration-150"
@@ -141,10 +141,10 @@ export function CompareGate() {
               href="/pricing"
               className="group w-full flex items-center justify-center gap-2.5 px-8 py-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[15px] rounded-[var(--radius-md)] transition-colors duration-200 mb-4"
             >
-              Upgrade from $4.99/mo
+              Upgrade to Pro · $20/mo
               <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
             </Link>
-            <div className="flex items-center justify-between text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+            <div className="flex items-center justify-between text-[13px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
               <Link
                 href="/dashboard"
                 className="hover:text-[var(--color-text-secondary)] transition-colors duration-150"

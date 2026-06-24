@@ -92,7 +92,7 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
         {/* Compact Metrics */}
         <div className="space-y-3">
           <div>
-            <div className="flex justify-between type-label text-xs mb-1.5">
+            <div className="flex justify-between type-label text-[13px] mb-1.5">
               <span className="text-[var(--color-text-secondary)]">Debt-to-Asset</span>
               <span className="text-[var(--color-text-primary)] font-tabular">{(healthScore.debt_to_asset_ratio * 100).toFixed(1)}%</span>
             </div>
@@ -104,7 +104,7 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
           </div>
 
           <div>
-            <div className="flex justify-between type-label text-xs mb-1.5">
+            <div className="flex justify-between type-label text-[13px] mb-1.5">
               <span className="text-[var(--color-text-secondary)]">Savings Rate</span>
               <span className="text-[var(--color-text-primary)] font-tabular">{(healthScore.savings_rate * 100).toFixed(1)}%</span>
             </div>
@@ -116,7 +116,7 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
           </div>
 
           <div>
-            <div className="flex justify-between type-label text-xs mb-1.5">
+            <div className="flex justify-between type-label text-[13px] mb-1.5">
               <span className="text-[var(--color-text-secondary)]">Emergency Fund</span>
               <span className="text-[var(--color-text-primary)] font-tabular">{healthScore.emergency_fund_months.toFixed(1)} mo</span>
             </div>
@@ -128,7 +128,7 @@ export function FinancialHealthScore({ healthScore }: FinancialHealthScoreProps)
           </div>
 
           <div>
-            <div className="flex justify-between type-label text-xs mb-1.5">
+            <div className="flex justify-between type-label text-[13px] mb-1.5">
               <span className="text-[var(--color-text-secondary)]">Diversification</span>
               <span className="text-[var(--color-text-primary)] font-tabular">{(healthScore.portfolio_diversification * 100).toFixed(1)}%</span>
             </div>

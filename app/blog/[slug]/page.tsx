@@ -148,19 +148,19 @@ export default async function BlogPost({ params }: PageProps) {
           <div className="flex items-center gap-5">
             <Link
               href="/analyze"
-              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+              className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               Free Stock Analysis
             </Link>
             <Link
               href="/blog"
-              className="text-sm text-[var(--color-gold)] transition-colors"
+              className="text-[15px] text-[var(--color-gold)] transition-colors"
             >
               Blog
             </Link>
             <Link
               href="/login"
-              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+              className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               Sign in
             </Link>
@@ -176,7 +176,7 @@ export default async function BlogPost({ params }: PageProps) {
             {/* Back link */}
             <Link
               href="/blog"
-              className="inline-flex items-center gap-1.5 text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors mb-8"
+              className="inline-flex items-center gap-1.5 text-[14px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors mb-8"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               All posts
@@ -197,7 +197,7 @@ export default async function BlogPost({ params }: PageProps) {
               <h1 className="font-sans font-bold text-[32px] md:text-[40px] text-[var(--color-text-primary)] tracking-tight leading-[1.1] mb-4">
                 {post.title}
               </h1>
-              <div className="flex items-center gap-3 text-[13px] text-[var(--color-text-muted)] font-mono">
+              <div className="flex items-center gap-3 text-[14px] text-[var(--color-text-muted)] font-mono">
                 <span>{post.author}</span>
                 <span>&middot;</span>
                 <span>{formatDate(post.date)}</span>
@@ -246,7 +246,7 @@ export default async function BlogPost({ params }: PageProps) {
 
             {/* ── Disclaimer ── */}
             <div className="mt-8 pt-6 border-t border-[var(--color-border-subtle)]">
-              <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+              <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
                 This content is for educational purposes only and does not constitute financial, tax, or investment advice. Consult a licensed professional before making financial decisions. Helm Terminal is not a registered investment advisor.
               </p>
             </div>
@@ -257,7 +257,7 @@ export default async function BlogPost({ params }: PageProps) {
               <div className="flex items-center justify-between pt-4 border-t border-[var(--color-border-base)]">
                 <Link
                   href="/blog"
-                  className="inline-flex items-center gap-1.5 text-[14px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+                  className="inline-flex items-center gap-1.5 text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Back to all posts
@@ -266,7 +266,7 @@ export default async function BlogPost({ params }: PageProps) {
                   href={shareUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-[14px] text-[var(--color-text-secondary)] hover:text-[var(--color-gold)] transition-colors"
+                  className="inline-flex items-center gap-2 text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-gold)] transition-colors"
                 >
                   <Share2 className="w-4 h-4" />
                   Share on X

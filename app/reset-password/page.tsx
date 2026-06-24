@@ -91,29 +91,39 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)] relative overflow-hidden flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[var(--color-bg-inset,#060606)] relative overflow-hidden flex items-center justify-center px-4 py-12">
       {/* Grid background */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,_rgba(255,255,255,0.02)_1px,_transparent_1px),linear-gradient(to_bottom,_rgba(255,255,255,0.02)_1px,_transparent_1px)] bg-[length:64px_64px] opacity-40" />
       </div>
 
       <div className="relative w-full max-w-md">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <Link href="/" className="flex items-center gap-3 mb-3 group">
+        {/* Brand mark */}
+        <div className="flex flex-col items-center mb-9">
+          <Link href="/" className="flex flex-col items-center gap-4 group">
             <HelmMark size={44} />
-            <div>
-              <div className="text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">Helm</div>
-              <div className="type-eyebrow text-[var(--color-text-muted)]">Financial Intelligence</div>
+            <div
+              className="text-[22px] font-bold uppercase tracking-[0.42em] text-[var(--color-gold)] pl-[0.42em]"
+              style={{ fontFamily: 'var(--font-mono)' }}
+            >
+              Helm
             </div>
           </Link>
-          <p className="text-[var(--color-text-secondary)] mt-2">Set a new password</p>
+          <div
+            className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-[#6A6A6A] mt-3"
+            style={{ fontFamily: 'var(--font-mono)' }}
+          >
+            Financial Intelligence Terminal
+          </div>
+          <p className="text-[15px] text-[var(--color-text-secondary)] mt-4 text-center">Set a new password</p>
         </div>
 
-        {/* Card */}
-        <div className="relative">
-          <div className="absolute -inset-px rounded-xl border border-[var(--color-border-subtle)]" />
-          <div className="relative bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl p-8">
+        {/* Sovereign card */}
+        <div
+          className="relative rounded-xl border border-white/[0.07] bg-[var(--color-bg-surface,#131313)] p-8 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.7)]"
+          style={{ borderTop: '2px solid rgba(230,185,77,0.30)' }}
+        >
+          <div>
             {success ? (
               <div className="text-center space-y-4">
                 <div className="w-12 h-12 rounded-full bg-[var(--color-positive)]/10 border border-[var(--color-positive)]/20 flex items-center justify-center mx-auto">
@@ -121,17 +131,17 @@ export default function ResetPasswordPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Password updated</h2>
-                <p className="text-[var(--color-text-secondary)] text-sm">
+                <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">Password updated</h2>
+                <p className="text-[15px] text-[var(--color-text-secondary)]">
                   Redirecting you to the dashboard...
                 </p>
               </div>
             ) : !sessionReady ? (
               <div className="text-center space-y-4">
-                <p className="text-[var(--color-text-secondary)] text-sm">
+                <p className="text-[15px] text-[var(--color-text-secondary)]">
                   Verifying your reset link...
                 </p>
-                <p className="text-[var(--color-text-muted)] text-xs">
+                <p className="text-[var(--color-text-muted)] text-[13px]">
                   If this takes too long, your link may have expired.{' '}
                   <Link href="/forgot-password" className="text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors">
                     Request a new one
@@ -141,13 +151,13 @@ export default function ResetPasswordPage() {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
                 {error && (
-                  <div className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-lg text-sm">
+                  <div className="bg-[var(--color-negative-muted)] border border-[var(--color-negative-border)] text-[var(--color-negative-text)] px-4 py-3 rounded-md text-[15px]">
                     {error}
                   </div>
                 )}
 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                  <label htmlFor="password" className="block font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9A9A9A] mb-2">
                     New Password
                   </label>
                   <input
@@ -157,13 +167,13 @@ export default function ResetPasswordPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     autoComplete="new-password"
-                    className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]/30 focus:border-[var(--color-gold)] transition-colors"
+                    className="w-full px-4 py-3 bg-[var(--color-bg-inset,#060606)] border border-white/[0.07] rounded-md text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors"
                     placeholder="At least 8 characters"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                  <label htmlFor="confirmPassword" className="block font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9A9A9A] mb-2">
                     Confirm New Password
                   </label>
                   <input
@@ -173,7 +183,7 @@ export default function ResetPasswordPage() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     autoComplete="new-password"
-                    className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]/30 focus:border-[var(--color-gold)] transition-colors"
+                    className="w-full px-4 py-3 bg-[var(--color-bg-inset,#060606)] border border-white/[0.07] rounded-md text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors"
                     placeholder="Confirm your new password"
                   />
                 </div>
@@ -181,7 +191,7 @@ export default function ResetPasswordPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 px-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] disabled:opacity-50 text-[var(--color-bg-base)] font-semibold rounded-lg transition-colors"
+                  className="w-full py-3.5 px-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] disabled:opacity-50 text-[#0A0A0A] font-semibold rounded-md transition-colors"
                 >
                   {loading ? 'Updating...' : 'Update password'}
                 </button>

@@ -27,10 +27,10 @@ export function IntroCard({ data, active }: { data: WrappedData; active: boolean
           style={stagger(active, 2)}>
         Your {data.periodLabel}<br />in Review
       </h1>
-      <p className="text-[var(--color-text-muted)] text-sm mb-2" style={{ ...stagger(active, 3), ...MONO }}>
+      <p className="text-[var(--color-text-muted)] text-[15px] mb-2" style={{ ...stagger(active, 3), ...MONO }}>
         {data.periodRange}
       </p>
-      <div className="flex items-center gap-1.5 mt-8 text-[var(--color-text-muted)] text-xs animate-pulse"
+      <div className="flex items-center gap-1.5 mt-8 text-[var(--color-text-muted)] text-[13px] animate-pulse"
            style={stagger(active, 4)}>
         <span>Tap to begin</span>
         <ChevronRight className="w-3 h-3" />
@@ -68,14 +68,14 @@ export function NetWorthCard({ data, active }: { data: WrappedData; active: bool
       </p>
       <div className="flex items-center gap-6" style={stagger(active, 3)}>
         <div className="text-center">
-          <p className="text-xs text-[var(--color-text-muted)] mb-1" style={MONO}>Start</p>
+          <p className="text-[13px] text-[var(--color-text-muted)] mb-1" style={MONO}>Start</p>
           <p className="text-xl font-bold text-[var(--color-text-secondary)]" style={TNUM}>
             ${fmt(data.netWorthChange.start)}
           </p>
         </div>
         <div className="text-2xl text-[var(--color-text-muted)]">&rarr;</div>
         <div className="text-center">
-          <p className="text-xs text-[var(--color-text-muted)] mb-1" style={MONO}>Now</p>
+          <p className="text-[13px] text-[var(--color-text-muted)] mb-1" style={MONO}>Now</p>
           <p className="text-xl font-bold text-[var(--color-text-primary)]" style={TNUM}>
             ${fmt(data.netWorthChange.end)}
           </p>
@@ -118,14 +118,14 @@ export function ReturnCard({ data, active }: { data: WrappedData; active: boolea
           <p className="text-2xl font-bold text-[var(--color-text-primary)]" style={TNUM}>
             {data.positionCount}
           </p>
-          <p className="text-xs uppercase tracking-wider" style={MONO}>Positions</p>
+          <p className="text-[13px] uppercase tracking-wider" style={MONO}>Positions</p>
         </div>
         <div className="w-px h-8 bg-[var(--color-border-base)]" />
         <div className="text-center">
           <p className="text-2xl font-bold text-[var(--color-text-primary)]" style={TNUM}>
             ${fmt(data.portfolioValue)}
           </p>
-          <p className="text-xs uppercase tracking-wider" style={MONO}>Portfolio</p>
+          <p className="text-[13px] uppercase tracking-wider" style={MONO}>Portfolio</p>
         </div>
       </div>
       <CardBranding shareText={`My portfolio returned ${fmtPct(data.totalReturn.pct)} (${fmtDollars(data.totalReturn.dollars)}) this ${data.periodLabel.toLowerCase()}`} />

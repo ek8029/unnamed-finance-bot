@@ -76,7 +76,7 @@ export function AlertRow({
         />
         <div className={cn('w-1.5 h-1.5 rounded-full shrink-0', priorityConfig.dot)} style={priorityConfig.dotGlow ? { boxShadow: priorityConfig.dotGlow } : undefined} />
         <Icon className="w-3.5 h-3.5 shrink-0 text-[var(--color-text-muted)]" />
-        <span className="text-sm text-[var(--color-text-primary)] truncate flex-1">
+        <span className="text-[15px] text-[var(--color-text-primary)] truncate flex-1">
           {insight.title}
         </span>
         <span className={cn('type-eyebrow shrink-0', priorityConfig.labelClass)}>
@@ -97,7 +97,7 @@ export function AlertRow({
       {/* Expanded detail */}
       {open && (
         <div className="px-4 pb-4 pt-1 ml-[26px] border-l-2 border-[var(--color-border-base)] mr-4 space-y-3">
-          <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+          <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed">
             {insight.summary}
           </p>
 
@@ -121,14 +121,14 @@ export function AlertRow({
           <div className="flex items-center gap-4">
             <Link
               href={`/dashboard/chat?q=${encodeURIComponent(insight.suggestedFollowUp)}`}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors"
+              className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors"
             >
               Ask Helm about this
               <ArrowRight className="w-3 h-3" />
             </Link>
             <button
               onClick={() => onDismiss(insight.id)}
-              className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+              className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
             >
               Dismiss
             </button>

@@ -61,13 +61,13 @@ export default function AboutPage() {
           <div className="max-w-3xl mx-auto px-6 h-16 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5 group">
               <HelmMark size={24} />
-              <span className="font-semibold text-sm tracking-[0.12em] group-hover:text-[var(--color-gold)] transition-colors">
+              <span className="font-semibold text-[15px] tracking-[0.12em] group-hover:text-[var(--color-gold)] transition-colors">
                 HELM
               </span>
             </Link>
             <Link
               href="/signup"
-              className="h-9 px-5 rounded-full bg-[var(--color-gold)] text-[var(--color-text-inverse)] text-[13px] font-semibold flex items-center gap-1.5 hover:brightness-110 transition-all"
+              className="h-9 px-5 rounded-full bg-[var(--color-gold)] text-[var(--color-text-inverse)] text-[14px] font-semibold flex items-center gap-1.5 hover:brightness-110 transition-all"
             >
               Open terminal
               <ArrowRight className="w-3.5 h-3.5" />
@@ -132,7 +132,7 @@ export default function AboutPage() {
               AI-generated.
             </p>
 
-            <p className="text-[var(--color-text-muted)] text-[13px]">
+            <p className="text-[var(--color-text-muted)] text-[14px]">
               Company logos provided by{' '}
               <a
                 href="https://logo.dev"
@@ -151,19 +151,19 @@ export default function AboutPage() {
 
             <ul className="space-y-3 list-none" role="list">
               <li className="flex gap-3">
-                <span className="text-[var(--color-gold)] font-mono text-sm mt-0.5">01</span>
+                <span className="text-[var(--color-gold)] font-mono text-[15px] mt-0.5">01</span>
                 <span><strong className="text-[var(--color-text-primary)]">Transparency over polish.</strong> Show the data, the source, the timestamp. Let users verify.</span>
               </li>
               <li className="flex gap-3">
-                <span className="text-[var(--color-gold)] font-mono text-sm mt-0.5">02</span>
+                <span className="text-[var(--color-gold)] font-mono text-[15px] mt-0.5">02</span>
                 <span><strong className="text-[var(--color-text-primary)]">Rules before AI.</strong> Deterministic intelligence you can audit. LLMs for narrative, not decisions.</span>
               </li>
               <li className="flex gap-3">
-                <span className="text-[var(--color-gold)] font-mono text-sm mt-0.5">03</span>
+                <span className="text-[var(--color-gold)] font-mono text-[15px] mt-0.5">03</span>
                 <span><strong className="text-[var(--color-text-primary)]">Free by default.</strong> Core features stay free. Pro exists for advanced tax and earnings tools.</span>
               </li>
               <li className="flex gap-3">
-                <span className="text-[var(--color-gold)] font-mono text-sm mt-0.5">04</span>
+                <span className="text-[var(--color-gold)] font-mono text-[15px] mt-0.5">04</span>
                 <span><strong className="text-[var(--color-text-primary)]">No financial advice.</strong> Helm is informational. It shows you what your data says — you make the decisions.</span>
               </li>
             </ul>
@@ -174,12 +174,12 @@ export default function AboutPage() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <Link
                 href="/signup"
-                className="h-11 px-6 rounded-full bg-[var(--color-gold)] text-[var(--color-text-inverse)] text-sm font-semibold flex items-center gap-2 hover:brightness-110 transition-all"
+                className="h-11 px-6 rounded-full bg-[var(--color-gold)] text-[var(--color-text-inverse)] text-[15px] font-semibold flex items-center gap-2 hover:brightness-110 transition-all"
               >
                 Open your terminal
                 <ArrowRight className="w-4 h-4" />
               </Link>
-              <span className="text-sm text-[var(--color-text-muted)]">
+              <span className="text-[15px] text-[var(--color-text-muted)]">
                 Free forever. No credit card required.
               </span>
             </div>

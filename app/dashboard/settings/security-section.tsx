@@ -99,7 +99,7 @@ export function SecuritySection({
             <Lock className="w-5 h-5 text-[var(--color-text-muted)]" />
             <div>
               <p className="type-h3">Password</p>
-              <p className="text-[var(--color-text-secondary)] text-xs">Secure your account with a strong password</p>
+              <p className="text-[var(--color-text-secondary)] text-[13px]">Secure your account with a strong password</p>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={onOpenPasswordModal}>Change</Button>
@@ -116,7 +116,7 @@ export function SecuritySection({
               )}
               <div>
                 <p className="type-h3">Two-Factor Authentication</p>
-                <p className={`text-xs ${mfaEnabled ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-muted)]'}`}>
+                <p className={`text-[13px] ${mfaEnabled ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-muted)]'}`}>
                   {mfaLoading ? 'Checking...' : mfaEnabled ? 'Enabled via authenticator app' : 'Not yet enabled'}
                 </p>
               </div>
@@ -144,7 +144,7 @@ export function SecuritySection({
           {mfaEnrolling && mfaQrCode && (
             <div className="mt-4 pt-4 border-t border-[var(--color-border-subtle)] space-y-4">
               <div className="text-center">
-                <p className="text-sm text-[var(--color-text-secondary)] mb-3">
+                <p className="text-[15px] text-[var(--color-text-secondary)] mb-3">
                   Scan this QR code with your authenticator app (Google Authenticator, Authy, 1Password, etc.)
                 </p>
                 <div className="inline-block bg-white rounded-lg p-3">
@@ -154,9 +154,9 @@ export function SecuritySection({
 
               {/* Manual entry secret */}
               <div className="text-center">
-                <p className="text-xs text-[var(--color-text-muted)] mb-1.5">Or enter this code manually:</p>
+                <p className="text-[13px] text-[var(--color-text-muted)] mb-1.5">Or enter this code manually:</p>
                 <div className="inline-flex items-center gap-2">
-                  <code className="text-xs font-mono text-[var(--color-gold)] bg-[var(--color-bg-surface)] px-3 py-1.5 rounded border border-[var(--color-border-base)] select-all">
+                  <code className="text-[13px] font-mono text-[var(--color-gold)] bg-[var(--color-bg-surface)] px-3 py-1.5 rounded border border-[var(--color-border-base)] select-all">
                     {mfaSecret}
                   </code>
                   <button
@@ -171,7 +171,7 @@ export function SecuritySection({
               {/* Verify code */}
               <div className="space-y-3">
                 <div>
-                  <Label className="text-xs">Enter the 6-digit code from your app</Label>
+                  <Label className="text-[13px]">Enter the 6-digit code from your app</Label>
                   <Input
                     value={mfaVerifyCode}
                     onChange={(e) => setMfaVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -213,7 +213,7 @@ export function SecuritySection({
               <Monitor className="w-5 h-5 text-[var(--color-text-muted)]" />
               <div>
                 <p className="type-h3">Login Activity</p>
-                <p className="text-[var(--color-text-secondary)] text-xs">Recent sign-ins to your account</p>
+                <p className="text-[var(--color-text-secondary)] text-[13px]">Recent sign-ins to your account</p>
               </div>
             </div>
             <Button
@@ -229,7 +229,7 @@ export function SecuritySection({
           {showActivity && (
             <div className="mt-3 space-y-2">
               {loginActivity.length === 0 ? (
-                <p className="text-xs text-[var(--color-text-muted)] py-2">No recent login activity recorded</p>
+                <p className="text-[13px] text-[var(--color-text-muted)] py-2">No recent login activity recorded</p>
               ) : (
                 loginActivity.map((event) => (
                   <div
@@ -243,7 +243,7 @@ export function SecuritySection({
                         : 'bg-[var(--color-text-muted)]'
                       }`} />
                       <div>
-                        <p className="type-label text-xs text-[var(--color-text-primary)]">
+                        <p className="type-label text-[13px] text-[var(--color-text-primary)]">
                           {event.browser} on {event.os}
                           <span className="text-[var(--color-text-muted)] ml-1">({event.device})</span>
                         </p>
@@ -271,7 +271,7 @@ export function SecuritySection({
             <LogOut className="w-5 h-5 text-[var(--color-text-muted)]" />
             <div>
               <p className="type-h3">Sign Out Other Devices</p>
-              <p className="text-[var(--color-text-secondary)] text-xs">End all sessions except this one</p>
+              <p className="text-[var(--color-text-secondary)] text-[13px]">End all sessions except this one</p>
             </div>
           </div>
           <Button

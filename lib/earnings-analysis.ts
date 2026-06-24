@@ -284,7 +284,7 @@ export async function generateEarningsReport(userId: string): Promise<EarningsRe
   ]);
 
   const totalUpcomingExposure = upcoming.reduce((s, e) => s + e.position.totalValue, 0);
-  const recentNetImpact = recent.reduce((s, r) => s + r.estimatedImpact, 0);
+  const recentNetImpact = recent.reduce((s, r) => s + (r.actualDollarImpact ?? 0), 0);
 
   return { upcoming, recent, totalUpcomingExposure, recentNetImpact };
 }

@@ -47,12 +47,12 @@ export function FoundingMemberBanner() {
       <div className="relative mx-3 sm:mx-4 mt-4 mb-2 rounded-[var(--radius-md)] border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] px-3 sm:px-4 py-3 flex items-center justify-between gap-2 sm:gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <span
-            className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-gold)] shrink-0"
+            className="text-[12px] uppercase tracking-[0.15em] font-bold text-[var(--color-gold)] shrink-0"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             Founding Member
           </span>
-          <span className="text-[12px] sm:text-[13px] text-[var(--color-text-secondary)] truncate">
+          <span className="text-[13px] sm:text-[14px] text-[var(--color-text-secondary)] truncate">
             $4.99/mo locked forever.{' '}
             <span className="hidden sm:inline font-semibold text-[var(--color-text-primary)]">
               {spotsRemaining} of {FOUNDING_CAP} spots remaining.
@@ -63,7 +63,7 @@ export function FoundingMemberBanner() {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setShowCheckout(true)}
-            className="px-4 py-1.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[12px] font-semibold rounded-[var(--radius-md)] cursor-pointer transition-colors"
+            className="px-4 py-1.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[13px] font-semibold rounded-[var(--radius-md)] cursor-pointer transition-colors"
           >
             Claim your spot
           </button>
@@ -82,7 +82,7 @@ export function FoundingMemberBanner() {
 
       {showCheckout && (
         <CheckoutModal
-          billingPeriod="founding"
+          billingPeriod="pro"
           onClose={() => setShowCheckout(false)}
         />
       )}

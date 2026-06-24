@@ -194,7 +194,7 @@ export function WrappedLanding() {
     return (
       <div className="min-h-screen bg-[var(--color-bg-base)] flex flex-col items-center justify-center gap-5">
         <div className="w-8 h-8 border-2 border-[var(--color-gold)] border-t-transparent rounded-full animate-spin" />
-        <p className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>
+        <p className="text-[15px] text-[var(--color-text-muted)]" style={MONO}>
           Generating your Wrapped...
         </p>
       </div>
@@ -208,7 +208,7 @@ export function WrappedLanding() {
         <nav className="fixed top-0 left-0 right-0 z-50 px-6 md:px-10 py-5 flex items-center">
           <div className="flex items-center gap-2.5 opacity-60">
             <HelmMark size={18} />
-            <span className="text-[12px] font-bold uppercase tracking-[0.08em]">Helm</span>
+            <span className="text-[13px] font-bold uppercase tracking-[0.08em]">Helm</span>
           </div>
         </nav>
 
@@ -233,17 +233,17 @@ export function WrappedLanding() {
             <p className="text-[15px] text-white/50 leading-relaxed mb-2">
               We sent a confirmation link to <span className="text-white/80 font-medium">{email}</span>
             </p>
-            <p className="text-[14px] text-white/35 leading-relaxed mb-8">
+            <p className="text-[15px] text-white/35 leading-relaxed mb-8">
               Click the link, then this page will automatically continue to the next step.
             </p>
 
             {/* Polling indicator */}
-            <div className="flex items-center justify-center gap-2 text-[12px] text-white/40" style={MONO}>
+            <div className="flex items-center justify-center gap-2 text-[13px] text-white/40" style={MONO}>
               <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)] animate-pulse" />
               Waiting for confirmation...
             </div>
 
-            <p className="text-[12px] text-white/40 mt-8">
+            <p className="text-[13px] text-white/40 mt-8">
               Didn&apos;t get it? Check spam, or{' '}
               <button
                 onClick={() => setFlowState('signup')}
@@ -265,7 +265,7 @@ export function WrappedLanding() {
         <nav className="fixed top-0 left-0 right-0 z-50 px-6 md:px-10 py-5 flex items-center justify-between">
           <button onClick={() => setFlowState('landing')} className="flex items-center gap-2.5 opacity-60 hover:opacity-100 transition-opacity">
             <HelmMark size={18} />
-            <span className="text-[12px] font-bold uppercase tracking-[0.08em]">Helm</span>
+            <span className="text-[13px] font-bold uppercase tracking-[0.08em]">Helm</span>
           </button>
         </nav>
 
@@ -286,7 +286,7 @@ export function WrappedLanding() {
             {/* Google OAuth */}
             <button
               onClick={handleGoogleSignIn}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3.5 bg-white text-black text-[14px] font-semibold rounded-md hover:bg-white/90 transition-colors mb-4 cursor-pointer"
+              className="w-full flex items-center justify-center gap-3 px-4 py-3.5 bg-white text-black text-[15px] font-semibold rounded-md hover:bg-white/90 transition-colors mb-4 cursor-pointer"
             >
               <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
               Continue with Google
@@ -294,7 +294,7 @@ export function WrappedLanding() {
 
             <div className="flex items-center gap-3 my-5">
               <div className="flex-1 h-px bg-white/[0.08]" />
-              <span className="text-[12px] text-white/30" style={MONO}>or</span>
+              <span className="text-[13px] text-white/30" style={MONO}>or</span>
               <div className="flex-1 h-px bg-white/[0.08]" />
             </div>
 
@@ -307,7 +307,7 @@ export function WrappedLanding() {
                 placeholder="Full name (optional)"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors"
+                className="w-full px-4 py-3 bg-[var(--color-bg-inset)] border border-white/[0.07] rounded-md text-[15px] text-white placeholder-white/30 focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors"
                 autoComplete="name"
               />
               <label className="sr-only" htmlFor="wrapped-email">Email</label>
@@ -317,7 +317,7 @@ export function WrappedLanding() {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors"
+                className="w-full px-4 py-3 bg-[var(--color-bg-inset)] border border-white/[0.07] rounded-md text-[15px] text-white placeholder-white/30 focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors"
                 autoComplete="email"
                 required
               />
@@ -329,7 +329,7 @@ export function WrappedLanding() {
                   placeholder="Password (8+ characters)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-md text-[14px] text-white placeholder-white/30 focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors pr-11"
+                  className="w-full px-4 py-3 bg-[var(--color-bg-inset)] border border-white/[0.07] rounded-md text-[15px] text-white placeholder-white/30 focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors pr-11"
                   autoComplete="new-password"
                   minLength={8}
                   required
@@ -358,13 +358,13 @@ export function WrappedLanding() {
               )}
 
               {signupError && (
-                <p className="text-[13px] text-[#F87171]">{signupError}</p>
+                <p className="text-[14px] text-[#F87171]">{signupError}</p>
               )}
 
               <button
                 type="submit"
                 disabled={signupLoading || (!!captchaSiteKey && !captchaToken)}
-                className="w-full px-4 py-3.5 bg-[var(--color-gold)] text-black text-[14px] font-bold rounded-md hover:bg-[var(--color-gold-hi)] transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                className="w-full px-4 py-3.5 bg-[var(--color-gold)] text-black text-[15px] font-bold rounded-md hover:bg-[var(--color-gold-hi)] transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
                 {signupLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Creating account...</>
@@ -374,7 +374,7 @@ export function WrappedLanding() {
               </button>
             </form>
 
-            <p className="text-[12px] text-white/40 text-center mt-6">
+            <p className="text-[13px] text-white/40 text-center mt-6">
               Already have an account?{' '}
               <Link href="/login?redirect=/wrapped" className="text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors">
                 Log in
@@ -394,7 +394,7 @@ export function WrappedLanding() {
         <nav className="sticky top-0 z-50 h-14 px-5 flex items-center justify-between border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-base)]">
           <div className="flex items-center gap-2">
             <HelmMark size={20} />
-            <span className="text-[13px] font-bold uppercase tracking-tight">Helm</span>
+            <span className="text-[14px] font-bold uppercase tracking-tight">Helm</span>
           </div>
         </nav>
 
@@ -409,7 +409,7 @@ export function WrappedLanding() {
 
             <HelmMark size={36} />
 
-            <p className="text-[11px] tracking-[0.25em] text-[var(--color-gold)] uppercase mt-6 mb-3" style={MONO}>
+            <p className="font-semibold text-[12px] tracking-[0.18em] text-[var(--color-gold)] uppercase mt-6 mb-3" style={MONO}>
               Helm Wrapped
             </p>
 
@@ -418,7 +418,7 @@ export function WrappedLanding() {
             </h1>
 
             <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed mb-8 max-w-sm mx-auto">
-              Helm reads your portfolio history to build your personalized year in review. Read-only — we can never trade or move money.
+              Helm reads your portfolio history to build your personalized year in review. Read-only, we can never trade or move money.
             </p>
 
             {/* Plaid button */}
@@ -433,11 +433,11 @@ export function WrappedLanding() {
             </div>
 
             {plaidError && (
-              <p className="text-[13px] text-[var(--color-negative)] mt-3">{plaidError}</p>
+              <p className="text-[14px] text-[var(--color-negative)] mt-3">{plaidError}</p>
             )}
 
             {/* Trust signals */}
-            <div className="flex flex-col items-center gap-3 mt-8 text-[12px] text-[var(--color-text-muted)]">
+            <div className="flex flex-col items-center gap-3 mt-8 text-[13px] text-[var(--color-text-muted)]">
               <div className="flex items-center gap-2">
                 <Shield className="w-3.5 h-3.5 text-[var(--color-positive)]" />
                 <span>Read-only access &middot; Bank-level encryption</span>
@@ -457,15 +457,15 @@ export function WrappedLanding() {
       <nav className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 py-5 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 opacity-70 hover:opacity-100 transition-opacity">
           <HelmMark size={20} />
-          <span className="text-[13px] font-bold uppercase tracking-[0.06em]">Helm</span>
+          <span className="text-[14px] font-bold uppercase tracking-[0.06em]">Helm</span>
         </Link>
         <div className="flex items-center gap-6">
-          <Link href="/login?redirect=/wrapped" className="text-[13px] text-white/50 hover:text-white transition-colors" style={MONO}>
+          <Link href="/login?redirect=/wrapped" className="text-[14px] text-white/50 hover:text-white transition-colors" style={MONO}>
             Log in
           </Link>
           <button
             onClick={() => setFlowState('signup')}
-            className="text-[13px] text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] font-bold transition-colors cursor-pointer"
+            className="text-[14px] text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] font-bold transition-colors cursor-pointer"
             style={MONO}
           >
             Get yours &rarr;
@@ -483,7 +483,7 @@ export function WrappedLanding() {
         <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-[1fr_480px] gap-10 lg:gap-16 items-center pt-28 pb-16 lg:pt-0 lg:pb-0">
           {/* LEFT — massive headline */}
           <div>
-            <p className="text-[14px] tracking-[0.3em] text-[var(--color-gold)] uppercase mb-10" style={MONO}>
+            <p className="font-semibold text-[13px] tracking-[0.18em] text-[var(--color-gold)] uppercase mb-10" style={MONO}>
               Helm Wrapped &middot; 2025
             </p>
 
@@ -513,7 +513,7 @@ export function WrappedLanding() {
                 See my Wrapped
                 <ArrowRight className="w-5 h-5" />
               </button>
-              <span className="text-[14px] text-white/30" style={MONO}>or</span>
+              <span className="text-[15px] text-white/30" style={MONO}>or</span>
               <Link
                 href="/wrapped/demo"
                 className="text-[15px] text-white/50 hover:text-[var(--color-gold)] transition-colors font-medium"
@@ -522,12 +522,12 @@ export function WrappedLanding() {
               </Link>
             </div>
 
-            <Link href="/login?redirect=/wrapped" className="block text-[13px] text-white/40 hover:text-white transition-colors mt-6" style={MONO}>
+            <Link href="/login?redirect=/wrapped" className="block text-[14px] text-white/40 hover:text-white transition-colors mt-6" style={MONO}>
               I have an account &rarr;
             </Link>
 
-            <p className="text-[13px] text-white/40 mt-3" style={MONO}>Free &middot; 30 seconds &middot; Any brokerage</p>
-            <Link href="/wrapped/demo" className="block text-[13px] text-white/40 hover:text-[var(--color-gold)] transition-colors mt-3" style={MONO}>
+            <p className="text-[14px] text-white/40 mt-3" style={MONO}>Free &middot; 30 seconds &middot; Any brokerage</p>
+            <Link href="/wrapped/demo" className="block text-[14px] text-white/40 hover:text-[var(--color-gold)] transition-colors mt-3" style={MONO}>
               See a demo first &rarr;
             </Link>
           </div>
@@ -562,10 +562,10 @@ export function WrappedLanding() {
                     +28.41%
                   </p>
                   <div className="flex items-baseline justify-center gap-3 mt-2">
-                    <span style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }} className="text-[14px] text-[var(--color-gold)]">
+                    <span style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }} className="text-[15px] text-[var(--color-gold)]">
                       beat the market
                     </span>
-                    <span className="text-[12px] text-[var(--color-gold)] font-bold" style={MONO}>ALPHA +8.59%</span>
+                    <span className="text-[13px] text-[var(--color-gold)] font-bold" style={MONO}>ALPHA +8.59%</span>
                   </div>
                 </div>
 
@@ -604,11 +604,11 @@ export function WrappedLanding() {
                   <div className="p-2.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
                     <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>MVP</p>
                     <p className="text-[20px] font-bold text-[var(--color-gold)] mt-1" style={MONO}>NVDA</p>
-                    <p className="text-[12px] font-semibold text-[#4ADE80]" style={MONO}>+87.30%</p>
+                    <p className="text-[13px] font-semibold text-[#4ADE80]" style={MONO}>+87.30%</p>
                   </div>
                   <div className="p-2.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
                     <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>TYPE</p>
-                    <p className="text-[13px] font-bold text-[var(--color-gold)] mt-1 leading-tight" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>
+                    <p className="text-[14px] font-bold text-[var(--color-gold)] mt-1 leading-tight" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>
                       Active Trader
                     </p>
                   </div>
@@ -627,7 +627,7 @@ export function WrappedLanding() {
                   <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
                     <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>VILLAIN</p>
                     <p className="text-[20px] font-bold text-[#F87171] mt-1" style={MONO}>INTC</p>
-                    <p className="text-[12px] font-semibold text-[#F87171]" style={MONO}>-41.20%</p>
+                    <p className="text-[13px] font-semibold text-[#F87171]" style={MONO}>-41.20%</p>
                   </div>
                 </div>
 
@@ -647,14 +647,14 @@ export function WrappedLanding() {
           ══════════════════════════════════════ */}
       <section className="py-32 md:py-44 border-t border-white/[0.06]">
         <div className="max-w-[1400px] mx-auto px-6 md:px-12">
-          <p className="text-[14px] tracking-[0.3em] text-[var(--color-gold)] uppercase mb-16" style={MONO}>
+          <p className="font-semibold text-[13px] tracking-[0.18em] text-[var(--color-gold)] uppercase mb-16" style={MONO}>
             Seven slides. One portfolio.
           </p>
 
           {[
             { n: '01', label: 'Total return vs the S&P 500', accent: true },
             { n: '02', label: 'Your best and worst trade' },
-            { n: '03', label: 'How you traded — habits, timing, volume' },
+            { n: '03', label: 'How you traded: habits, timing, volume' },
             { n: '04', label: 'Sector conviction and allocation' },
             { n: '05', label: 'Your investor personality type', accent: true },
             { n: '06', label: 'A shareable card with your stats' },
@@ -681,7 +681,7 @@ export function WrappedLanding() {
           ══════════════════════════════════════ */}
       <section className="py-32 md:py-44 border-t border-white/[0.06]">
         <div className="max-w-[1400px] mx-auto px-6 md:px-12">
-          <p className="text-[14px] tracking-[0.3em] text-[var(--color-gold)] uppercase mb-16" style={MONO}>
+          <p className="font-semibold text-[13px] tracking-[0.18em] text-[var(--color-gold)] uppercase mb-16" style={MONO}>
             Three steps. Thirty seconds.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-14 md:gap-20">

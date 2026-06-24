@@ -39,11 +39,11 @@ export function CompareSearch() {
           onKeyDown={handleKeyDown}
           maxLength={5}
           aria-label="First ticker symbol"
-          className="flex-1 px-4 py-3 bg-white/[0.04] border border-[var(--color-border-base)] rounded-lg text-[15px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors text-center uppercase"
+          className="flex-1 px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[15px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-center uppercase"
           style={{ fontFamily: 'var(--font-mono)' }}
         />
         <span
-          className="text-[13px] font-semibold text-[var(--color-text-muted)] shrink-0"
+          className="text-[14px] font-semibold text-[var(--color-text-muted)] shrink-0"
           style={{ fontFamily: 'var(--font-mono)' }}
         >
           vs
@@ -56,19 +56,19 @@ export function CompareSearch() {
           onKeyDown={handleKeyDown}
           maxLength={5}
           aria-label="Second ticker symbol"
-          className="flex-1 px-4 py-3 bg-white/[0.04] border border-[var(--color-border-base)] rounded-lg text-[15px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)]/50 transition-colors text-center uppercase"
+          className="flex-1 px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[15px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-center uppercase"
           style={{ fontFamily: 'var(--font-mono)' }}
         />
         <button
           onClick={handleCompare}
           disabled={!isValid}
           aria-label="Compare stocks"
-          className="px-5 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] disabled:opacity-40 disabled:cursor-not-allowed text-[var(--color-bg-base)] text-[13px] font-semibold rounded-lg transition-colors shrink-0"
+          className="px-5 py-3 bg-[var(--color-gold)] hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all shrink-0"
         >
           Compare
         </button>
       </div>
-      <p className="text-[11px] text-[var(--color-text-muted)] text-center mt-2">
+      <p className="text-[12px] text-[var(--color-text-muted)] text-center mt-2">
         Enter any two US-listed ticker symbols (NYSE, NASDAQ, AMEX)
       </p>
     </div>

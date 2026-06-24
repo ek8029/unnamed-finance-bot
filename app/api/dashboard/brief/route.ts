@@ -252,7 +252,7 @@ export async function GET() {
       .maybeSingle();
 
     const tier = await getUserTier(user.id);
-    const isPro = tier === 'pro';
+    const isPro = tier === 'pro' || tier === 'max';
 
     // -- Thesis intelligence queries --
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();

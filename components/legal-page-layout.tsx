@@ -23,7 +23,7 @@ export function LegalPageLayout({ title, lastUpdated, children }: LegalPageLayou
           </Link>
           <Link
             href="/"
-            className="flex items-center gap-1.5 text-xs uppercase tracking-[0.15em] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+            className="flex items-center gap-1.5 text-[13px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Back

@@ -61,7 +61,7 @@ export function EvidenceTimeline({ evidence, defaultOpen = false }: { evidence: 
         <span className="font-mono text-[11.5px] font-semibold uppercase tracking-[0.18em] text-[#E6B94D]" style={MONO}>
           Timeline
         </span>
-        <span className="font-mono text-[11px] text-[#6A6A6A]" style={MONO}>
+        <span className="font-mono text-[12px] text-[#6A6A6A]" style={MONO}>
           {ordered.length} event{ordered.length === 1 ? '' : 's'}, newest first
         </span>
         <ChevronDown size={15} className={`ml-auto text-[#6A6A6A] transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -79,7 +79,7 @@ export function EvidenceTimeline({ evidence, defaultOpen = false }: { evidence: 
                     style={{ background: v.color, boxShadow: e.materiality === 'material' ? `0 0 8px ${v.color}66` : 'none' }}
                   />
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-[14px] font-semibold text-[#D6D6D6] tabular-nums" style={MONO}>
+                    <span className="font-mono text-[15px] font-semibold text-[#D6D6D6] tabular-nums" style={MONO}>
                       {fmtDate(e.date)}
                     </span>
                     <span
@@ -98,7 +98,7 @@ export function EvidenceTimeline({ evidence, defaultOpen = false }: { evidence: 
                     )}
                   </div>
                   <p className="text-[15px] leading-[1.55] text-[#E4E4E4] mt-1.5 mb-0">&ldquo;{e.excerpt}&rdquo;</p>
-                  <div className="flex items-center gap-1.5 mt-1.5 text-[12.5px] text-[#6A6A6A]">
+                  <div className="flex items-center gap-1.5 mt-1.5 text-[13.5px] text-[#6A6A6A]">
                     {e.source_url ? (
                       <a href={e.source_url} target="_blank" rel="noopener noreferrer" className="hover:text-[#E6B94D] transition-colors truncate max-w-[280px]">
                         {e.source_title}
@@ -107,7 +107,7 @@ export function EvidenceTimeline({ evidence, defaultOpen = false }: { evidence: 
                       <span className="truncate max-w-[280px]">{e.source_title}</span>
                     )}
                   </div>
-                  <div className="text-[12px] text-[#5A5A5A] mt-1 truncate">on: {e.pillarClaim}</div>
+                  <div className="text-[13px] text-[#5A5A5A] mt-1 truncate">on: {e.pillarClaim}</div>
                 </li>
               );
             })}

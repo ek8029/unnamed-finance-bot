@@ -62,7 +62,7 @@ function VerdictBadge({ verdict }: { verdict: string }) {
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.3, delay: 0.1 }}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-bold uppercase tracking-wider border ${config.color} ${config.border} ${config.bg}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[12px] font-bold uppercase tracking-wider border ${config.color} ${config.border} ${config.bg}`}
     >
       <Icon className="w-3 h-3" />
       {config.label}
@@ -173,9 +173,9 @@ export function HeroAnalysisDemo({ analyses }: { analyses: DemoAnalysis[] }) {
             className="text-[10px] font-mono text-[var(--color-text-muted)]"
           >
             {isAnalysis ? (
-              <Link href="/analyze" className="text-sm hover:text-[var(--color-gold)] transition-colors">Free — try any ticker →</Link>
+              <Link href="/analyze" className="text-[15px] hover:text-[var(--color-gold)] transition-colors">Free — try any ticker →</Link>
             ) : (
-              <Link href="/signup" className="text-sm hover:text-[var(--color-gold)] transition-colors">Free — create your dashboard →</Link>
+              <Link href="/signup" className="text-[15px] hover:text-[var(--color-gold)] transition-colors">Free — create your dashboard →</Link>
             )}
           </motion.div>
         </AnimatePresence>
@@ -219,7 +219,7 @@ function AnalysisContent({ ticker, analysis, computedAt }: { ticker: string; ana
         <div className="flex items-center gap-3">
           <div>
             <div className="font-mono font-bold text-xl text-[var(--color-text-primary)]">{ticker}</div>
-            {analysis.companyName && <div className="text-[11px] text-[var(--color-text-muted)]">{analysis.companyName}</div>}
+            {analysis.companyName && <div className="text-[12px] text-[var(--color-text-muted)]">{analysis.companyName}</div>}
           </div>
           <VerdictBadge verdict={analysis.verdict} />
         </div>
@@ -240,7 +240,7 @@ function AnalysisContent({ ticker, analysis, computedAt }: { ticker: string; ana
               <TrendingUp className="w-3 h-3 text-[var(--color-positive)]" />
               <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-positive)]">Bull Case</span>
             </div>
-            <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed line-clamp-2">{analysis.bullCase}</p>
+            <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed line-clamp-2">{analysis.bullCase}</p>
           </div>
         )}
         {analysis.bearCase && (
@@ -249,7 +249,7 @@ function AnalysisContent({ ticker, analysis, computedAt }: { ticker: string; ana
               <TrendingDown className="w-3 h-3 text-[var(--color-negative)]" />
               <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-negative)]">Bear Case</span>
             </div>
-            <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed line-clamp-2">{analysis.bearCase}</p>
+            <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed line-clamp-2">{analysis.bearCase}</p>
           </div>
         )}
       </div>
@@ -260,7 +260,7 @@ function AnalysisContent({ ticker, analysis, computedAt }: { ticker: string; ana
           {metrics.map((met, i) => (
             <div key={i} className="rounded bg-white/[0.02] border border-white/[0.04] px-2.5 py-2 text-center">
               <div className="text-[8px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5 truncate">{met.label}</div>
-              <div className="font-mono font-bold text-xs text-[var(--color-text-primary)]"><AnimatedValue value={met.value} /></div>
+              <div className="font-mono font-bold text-[13px] text-[var(--color-text-primary)]"><AnimatedValue value={met.value} /></div>
               {met.change && (
                 <div className={`text-[9px] font-mono ${met.change.startsWith('+') || met.change.startsWith('↑') ? 'text-[var(--color-positive)]' : met.change.startsWith('-') || met.change.startsWith('↓') ? 'text-[var(--color-negative)]' : 'text-[var(--color-text-muted)]'}`}>{met.change}</div>
               )}
@@ -276,14 +276,14 @@ function AnalysisContent({ ticker, analysis, computedAt }: { ticker: string; ana
           {news.map((item, i) => (
             <div key={i} className="flex items-start gap-2">
               <span className="w-1.5 h-1.5 rounded-full mt-[5px] shrink-0" style={{ background: item.sentiment === 'positive' ? 'var(--color-positive)' : item.sentiment === 'negative' ? 'var(--color-negative)' : 'var(--color-text-muted)' }} />
-              <p className="text-[11px] text-[var(--color-text-muted)] leading-snug line-clamp-1">{item.headline}</p>
+              <p className="text-[12px] text-[var(--color-text-muted)] leading-snug line-clamp-1">{item.headline}</p>
             </div>
           ))}
         </div>
       )}
 
       {/* CTA */}
-      <Link href={`/analyze/${ticker}`} className="flex items-center justify-center gap-2 py-2.5 -mx-2 sm:-mx-5 -mb-2 sm:-mb-5 text-xs font-mono uppercase tracking-wider text-[var(--color-gold)] hover:bg-[var(--color-gold)]/5 transition-colors border-t border-white/[0.06] group">
+      <Link href={`/analyze/${ticker}`} className="flex items-center justify-center gap-2 py-2.5 -mx-2 sm:-mx-5 -mb-2 sm:-mb-5 text-[13px] font-mono uppercase tracking-wider text-[var(--color-gold)] hover:bg-[var(--color-gold)]/5 transition-colors border-t border-white/[0.06] group">
         See full analysis <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
       </Link>
     </div>

@@ -41,7 +41,7 @@ export function TickerSearch({ basePath = '/analyze', size = 'md' }: { basePath?
       <button
         type="submit"
         disabled={!ticker.trim() || loading}
-        className={`bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded-md transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 ${isLg ? 'px-10 py-5 text-lg' : 'px-8 py-3.5 text-sm'}`}
+        className={`bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded-md transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 ${isLg ? 'px-10 py-5 text-lg' : 'px-8 py-3.5 text-[15px]'}`}
       >
         {loading ? (
           <>

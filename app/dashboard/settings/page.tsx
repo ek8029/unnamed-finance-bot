@@ -158,6 +158,114 @@ function getInstitutionColor(name: string): string {
   return `hsl(${hue}, 45%, 45%)`
 }
 
+const TIER_LABELS: Record<string, string> = {
+  free: 'Free',
+  pro: 'Pro',
+  max: 'Max',
+  lifetime: 'Lifetime',
+  annual: 'Pro · Annual',
+}
+
+const CURRENCY_LABELS: Record<string, string> = {
+  USD: 'USD ($)',
+  EUR: 'EUR (€)',
+  GBP: 'GBP (£)',
+  JPY: 'JPY (¥)',
+  CAD: 'CAD ($)',
+}
+
+const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' }
+
+// ── Presentational primitives (Sovereign Architect) ──
+
+function SettingsCard({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <section
+      className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5 sm:p-6"
+      style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.5)' }}
+    >
+      <div
+        className="text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-text-muted)] mb-[18px]"
+        style={MONO}
+      >
+        {label}
+      </div>
+      {children}
+    </section>
+  )
+}
+
+function SettingsRow({
+  title,
+  description,
+  control,
+  divider = false,
+  className = '',
+}: {
+  title: React.ReactNode
+  description?: React.ReactNode
+  control: React.ReactNode
+  divider?: boolean
+  className?: string
+}) {
+  return (
+    <div
+      className={`flex items-center justify-between gap-4 ${
+        divider ? 'pb-[18px] border-b border-[var(--color-border-subtle)] mb-[18px]' : ''
+      } ${className}`}
+    >
+      <div className="min-w-0">
+        <div className="text-[15px] font-semibold text-[var(--color-text-primary)]">{title}</div>
+        {description && (
+          <div className="text-[15px] text-[var(--color-text-muted)] mt-1">{description}</div>
+        )}
+      </div>
+      <div className="flex-shrink-0">{control}</div>
+    </div>
+  )
+}
+
+function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+  ariaLabel,
+}: {
+  options: readonly T[]
+  value: T
+  onChange: (value: T) => void
+  ariaLabel: string
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label={ariaLabel}
+      className="flex gap-1 text-[10px] uppercase tracking-[0.06em]"
+      style={MONO}
+    >
+      {options.map((opt) => {
+        const active = opt === value
+        return (
+          <button
+            key={opt}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(opt)}
+            className={`px-3 py-[7px] rounded-[5px] border motion-safe:transition-colors ${
+              active
+                ? 'bg-[var(--color-gold)]/10 border-[var(--color-gold)]/25 text-[var(--color-gold)]'
+                : 'border-[var(--color-border-base)] text-[var(--color-text-muted)] hover:border-[var(--color-gold)]/40'
+            }`}
+          >
+            {opt}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 // ═══════════════════════════════════════════════════════════
 // ██  SETTINGS PAGE
 // ═══════════════════════════════════════════════════════════
@@ -735,7 +843,7 @@ export default function SettingsPage() {
   const renderSectionHeader = (label: string) => (
     <div className="mb-2">
       <p
-        className="text-[11px] tracking-[0.12em] uppercase font-semibold text-[var(--color-text-muted)]"
+        className="text-[12px] tracking-[0.12em] uppercase font-semibold text-[var(--color-text-muted)]"
         style={{ fontFamily: 'var(--font-mono)' }}
       >
         {label}
@@ -744,75 +852,140 @@ export default function SettingsPage() {
   )
 
   // ── Profile ──
+  const tierLabel = TIER_LABELS[billing?.tier ?? tier] ?? 'Free'
   const renderProfile = () => (
-    <div className="space-y-8">
-      {renderSectionHeader('Profile')}
-      <h2 className="text-[24px] sm:text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
-        Personal information
-      </h2>
-      <p className="text-[14px] text-[var(--color-text-secondary)] -mt-4">
-        Manage your name, email, and contact information.
-      </p>
+    <div className="space-y-3.5">
+      {/* Identity card */}
+      <SettingsCard label="Profile">
+        <div className="flex items-center gap-4 pb-[18px] border-b border-[var(--color-border-subtle)] mb-[18px]">
+          <div
+            className="w-[46px] h-[46px] rounded-full flex items-center justify-center text-[15px] font-bold text-black flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg,#E6B94D,#1A2E3F)' }}
+          >
+            {getInitials(profile.name || profile.email || 'You')}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[15px] font-semibold text-[var(--color-text-primary)] truncate">
+              {profile.name || 'Your account'}
+            </div>
+            <div className="text-[14px] text-[var(--color-text-muted)] truncate" style={MONO}>
+              {profile.email}
+              {!tierLoading && (
+                <>
+                  {profile.email && ' · '}
+                  {tierLabel}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
 
-      <div className="space-y-5">
-        <div className="space-y-2">
-          <Label htmlFor="name" className="text-[14px]">Full name</Label>
-          <Input
-            id="name"
-            type="text"
-            value={profile.name}
-            onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-            className="bg-[var(--color-bg-elevated)] border-[var(--color-border-base)]"
-          />
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="name" className="text-[15px]">Full name</Label>
+            <Input
+              id="name"
+              type="text"
+              value={profile.name}
+              onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+              className="bg-[var(--color-bg-inset)] border-[var(--color-border-base)]"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-[15px]">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={profile.email}
+              disabled
+              className="bg-[var(--color-bg-inset)] border-[var(--color-border-base)] opacity-60"
+            />
+            <p className="text-[12px] text-[var(--color-text-muted)]">Contact support to change your email address</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone" className="text-[15px]">Phone number</Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={profile.phone}
+              onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+              className="bg-[var(--color-bg-inset)] border-[var(--color-border-base)]"
+            />
+          </div>
+          <Button
+            onClick={handleSaveProfile}
+            disabled={savingProfile || profileLoading}
+            className="bg-[var(--color-gold)] hover:bg-[var(--color-gold)]/90 text-black font-medium"
+          >
+            {savingProfile ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Save changes'
+            )}
+          </Button>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="email" className="text-[14px]">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={profile.email}
-            disabled
-            className="bg-[var(--color-bg-elevated)] border-[var(--color-border-base)] opacity-60"
-          />
-          <p className="text-[11px] text-[var(--color-text-muted)]">Contact support to change your email address</p>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="phone" className="text-[14px]">Phone number</Label>
-          <Input
-            id="phone"
-            type="tel"
-            value={profile.phone}
-            onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-            className="bg-[var(--color-bg-elevated)] border-[var(--color-border-base)]"
-          />
-        </div>
-        <Button
-          onClick={handleSaveProfile}
-          disabled={savingProfile || profileLoading}
-          className="bg-[var(--color-gold)] hover:bg-[var(--color-gold)]/90 text-black font-medium"
-        >
-          {savingProfile ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            'Save changes'
-          )}
-        </Button>
-      </div>
+      </SettingsCard>
+
+      {/* Display card — base currency, density, theme (persisted via settings context) */}
+      <SettingsCard label="Display">
+        <SettingsRow
+          divider
+          title="Base currency"
+          description="All values display in this currency."
+          control={
+            <select
+              value={settings.currency}
+              onChange={(e) => updateSettings({ currency: e.target.value as typeof settings.currency })}
+              aria-label="Base currency"
+              className="h-[34px] px-3.5 bg-[var(--color-bg-inset)] border border-[var(--color-border-base)] rounded-md text-[14px] text-[var(--color-text-primary)] cursor-pointer hover:border-[var(--color-gold)]/40 motion-safe:transition-colors focus:outline-none focus:border-[var(--color-gold)]/50"
+              style={MONO}
+            >
+              {(Object.keys(CURRENCY_LABELS) as (keyof typeof CURRENCY_LABELS)[]).map((c) => (
+                <option key={c} value={c}>{CURRENCY_LABELS[c]}</option>
+              ))}
+            </select>
+          }
+        />
+        <SettingsRow
+          divider
+          title="Density"
+          description="How tightly information is packed."
+          control={
+            <SegmentedControl
+              ariaLabel="Display density"
+              options={['Compact', 'Comfortable', 'Spacious'] as const}
+              value={(settings.density.charAt(0).toUpperCase() + settings.density.slice(1)) as 'Compact' | 'Comfortable' | 'Spacious'}
+              onChange={(v) => updateSettings({ density: v.toLowerCase() as typeof settings.density })}
+            />
+          }
+        />
+        <SettingsRow
+          title="Theme"
+          description="Dark is the terminal default."
+          control={
+            <SegmentedControl
+              ariaLabel="Theme"
+              options={['Dark', 'Light'] as const}
+              value={settings.theme === 'light' ? 'Light' : 'Dark'}
+              onChange={(v) => updateSettings({ theme: v.toLowerCase() as typeof settings.theme })}
+            />
+          }
+        />
+      </SettingsCard>
 
       {/* Security sub-section within Profile */}
-      <div className="pt-8 border-t border-[var(--color-border-subtle)]">
-        {renderSectionHeader('Security')}
-        <div className="space-y-3 mt-4">
+      <SettingsCard label="Security">
+        <div className="space-y-3">
           {/* Password */}
           <div className="flex items-center justify-between p-4 bg-[var(--color-bg-elevated)] rounded-lg border border-[var(--color-border-base)]">
             <div className="flex items-center gap-3">
               <Lock className="w-5 h-5 text-[var(--color-text-muted)]" />
               <div>
                 <p className="text-[15px] font-medium text-[var(--color-text-primary)]">Password</p>
-                <p className="text-[13px] text-[var(--color-text-secondary)]">Secure your account with a strong password</p>
+                <p className="text-[15px] text-[var(--color-text-secondary)]">Secure your account with a strong password</p>
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={() => setShowPasswordModal(true)}>
@@ -831,7 +1004,7 @@ export default function SettingsPage() {
                 )}
                 <div>
                   <p className="text-[15px] font-medium text-[var(--color-text-primary)]">Two-factor authentication</p>
-                  <p className={`text-[13px] ${mfaEnabled ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-muted)]'}`}>
+                  <p className={`text-[15px] ${mfaEnabled ? 'text-[var(--color-positive)]' : 'text-[var(--color-text-muted)]'}`}>
                     {mfaLoading ? 'Checking...' : mfaEnabled ? 'Enabled via authenticator app' : 'Not yet enabled'}
                   </p>
                 </div>
@@ -859,7 +1032,7 @@ export default function SettingsPage() {
             {mfaEnrolling && mfaQrCode && (
               <div className="mt-4 pt-4 border-t border-[var(--color-border-subtle)] space-y-4">
                 <div className="text-center">
-                  <p className="text-[13px] text-[var(--color-text-secondary)] mb-3">
+                  <p className="text-[15px] text-[var(--color-text-secondary)] mb-3">
                     Scan this QR code with your authenticator app
                   </p>
                   <div className="inline-block bg-white rounded-lg p-3">
@@ -867,9 +1040,9 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className="text-center">
-                  <p className="text-[11px] text-[var(--color-text-muted)] mb-1.5">Or enter this code manually:</p>
+                  <p className="text-[12px] text-[var(--color-text-muted)] mb-1.5">Or enter this code manually:</p>
                   <div className="inline-flex items-center gap-2">
-                    <code className="text-[12px] text-[var(--color-gold)] bg-[var(--color-bg-surface)] px-3 py-1.5 rounded border border-[var(--color-border-base)] select-all" style={{ fontFamily: 'var(--font-mono)' }}>
+                    <code className="text-[14px] text-[var(--color-gold)] bg-[var(--color-bg-surface)] px-3 py-1.5 rounded border border-[var(--color-border-base)] select-all" style={{ fontFamily: 'var(--font-mono)' }}>
                       {mfaSecret}
                     </code>
                     <button
@@ -882,7 +1055,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <Label className="text-[13px]">Enter the 6-digit code from your app</Label>
+                    <Label className="text-[15px]">Enter the 6-digit code from your app</Label>
                     <Input
                       value={mfaVerifyCode}
                       onChange={(e) => setMfaVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -920,7 +1093,7 @@ export default function SettingsPage() {
                 <Monitor className="w-5 h-5 text-[var(--color-text-muted)]" />
                 <div>
                   <p className="text-[15px] font-medium text-[var(--color-text-primary)]">Login activity</p>
-                  <p className="text-[13px] text-[var(--color-text-secondary)]">Recent sign-ins to your account</p>
+                  <p className="text-[15px] text-[var(--color-text-secondary)]">Recent sign-ins to your account</p>
                 </div>
               </div>
               <Button variant="outline" size="sm" onClick={handleFetchActivity} disabled={activityLoading}>
@@ -930,7 +1103,7 @@ export default function SettingsPage() {
             {showActivity && (
               <div className="mt-3 space-y-2">
                 {loginActivity.length === 0 ? (
-                  <p className="text-[13px] text-[var(--color-text-muted)] py-2">No recent login activity recorded</p>
+                  <p className="text-[15px] text-[var(--color-text-muted)] py-2">No recent login activity recorded</p>
                 ) : (
                   loginActivity.map((event) => (
                     <div
@@ -948,11 +1121,11 @@ export default function SettingsPage() {
                           }`}
                         />
                         <div>
-                          <p className="text-[13px] text-[var(--color-text-primary)]">
+                          <p className="text-[15px] text-[var(--color-text-primary)]">
                             {event.browser} on {event.os}
                             <span className="text-[var(--color-text-muted)] ml-1">({event.device})</span>
                           </p>
-                          <p className="text-[11px] text-[var(--color-text-muted)]">
+                          <p className="text-[12px] text-[var(--color-text-muted)]">
                             {event.ipAddress !== 'unknown' && `${event.ipAddress} · `}
                             {event.eventType === 'password_change'
                               ? 'Password changed'
@@ -962,7 +1135,7 @@ export default function SettingsPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 text-[11px] text-[var(--color-text-muted)]">
+                      <div className="flex items-center gap-1 text-[12px] text-[var(--color-text-muted)]">
                         <Clock className="w-3 h-3" />
                         {formatTimeAgo(event.createdAt)}
                       </div>
@@ -979,7 +1152,7 @@ export default function SettingsPage() {
               <LogOut className="w-5 h-5 text-[var(--color-text-muted)]" />
               <div>
                 <p className="text-[15px] font-medium text-[var(--color-text-primary)]">Sign out other devices</p>
-                <p className="text-[13px] text-[var(--color-text-secondary)]">End all sessions except this one</p>
+                <p className="text-[15px] text-[var(--color-text-secondary)]">End all sessions except this one</p>
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={handleRevokeOtherSessions} disabled={revokingOthers}>
@@ -987,19 +1160,21 @@ export default function SettingsPage() {
             </Button>
           </div>
         </div>
-      </div>
+      </SettingsCard>
     </div>
   )
 
   // ── Connected Accounts ──
   const renderAccounts = () => (
     <div className="space-y-8">
-      {renderSectionHeader('Connected Accounts')}
       <div>
-        <h2 className="text-[24px] sm:text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
+        <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-text-muted)] mb-2" style={MONO}>
+          Connected accounts
+        </div>
+        <h2 className="text-[24px] sm:text-[28px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
           Brokerages & banks
         </h2>
-        <p className="text-[14px] text-[var(--color-text-secondary)] mt-2">
+        <p className="text-[15px] text-[var(--color-text-muted)] mt-2">
           Helm connects via Plaid with read-only access. Your credentials are encrypted end-to-end and never touch our servers.
         </p>
       </div>
@@ -1011,13 +1186,13 @@ export default function SettingsPage() {
           size="sm"
           onClick={handleSyncAll}
           disabled={syncing}
-          className="text-[13px]"
+          className="text-[15px]"
         >
           {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <RefreshCcw className="w-3.5 h-3.5 mr-2" />}
           {syncing ? 'Syncing...' : 'Sync all'}
         </Button>
         {connectionHealth.lastSync && (
-          <span className="text-[12px] text-[var(--color-text-muted)]">
+          <span className="text-[14px] text-[var(--color-text-muted)]">
             Last sync: {formatTimeAgo(connectionHealth.lastSync)}
           </span>
         )}
@@ -1034,8 +1209,8 @@ export default function SettingsPage() {
         ) : accounts.length === 0 ? (
           <div className="text-center py-12 text-[var(--color-text-secondary)]">
             <Link className="w-10 h-10 mx-auto mb-3 text-[var(--color-text-muted)]" />
-            <p className="text-[14px] mb-1">No accounts connected</p>
-            <p className="text-[13px] text-[var(--color-text-muted)]">Link your first account to get started</p>
+            <p className="text-[15px] mb-1">No accounts connected</p>
+            <p className="text-[15px] text-[var(--color-text-muted)]">Link your first account to get started</p>
           </div>
         ) : (
           <>
@@ -1058,7 +1233,7 @@ export default function SettingsPage() {
                     {/* Left: logo + info */}
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div
-                        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-white font-semibold text-[13px]"
+                        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-white font-semibold text-[15px]"
                         style={{ backgroundColor: color, fontFamily: 'var(--font-sans)' }}
                       >
                         {initials}
@@ -1067,7 +1242,7 @@ export default function SettingsPage() {
                         <p className="text-[15px] font-medium text-[var(--color-text-primary)] truncate">
                           {item.institution_name || 'Unknown'}
                         </p>
-                        <p className="text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+                        <p className="text-[14px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
                           {institutionAccounts.length} account{institutionAccounts.length !== 1 ? 's' : ''}
                           {item.last_balances_sync && (
                             <span className="ml-2">
@@ -1085,19 +1260,19 @@ export default function SettingsPage() {
                           {fmtCurrency(Math.abs(totalBalance))}
                         </p>
                         {isHealthy && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-positive)] uppercase tracking-wider">
+                          <span className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--color-positive)] uppercase tracking-wider">
                             <CheckCircle2 className="w-3 h-3" />
                             Healthy
                           </span>
                         )}
                         {needsReconnect && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-warning-text)] uppercase tracking-wider">
+                          <span className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--color-warning-text)] uppercase tracking-wider">
                             <AlertCircle className="w-3 h-3" />
                             Reconnect
                           </span>
                         )}
                         {!isHealthy && !needsReconnect && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
+                          <span className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
                             {item.status}
                           </span>
                         )}
@@ -1121,7 +1296,7 @@ export default function SettingsPage() {
                                   onClick={() => {
                                     setAccountMenuOpen(null)
                                   }}
-                                  className="w-full text-left px-3 py-2 text-[13px] text-[var(--color-warning-text)] hover:bg-[var(--color-bg-elevated)] motion-safe:transition-colors flex items-center gap-2"
+                                  className="w-full text-left px-3 py-2 text-[15px] text-[var(--color-warning-text)] hover:bg-[var(--color-bg-elevated)] motion-safe:transition-colors flex items-center gap-2"
                                 >
                                   <RefreshCcw className="w-3.5 h-3.5" />
                                   Reconnect
@@ -1132,7 +1307,7 @@ export default function SettingsPage() {
                                   setAccountMenuOpen(null)
                                   setConfirmDisconnect(item.id)
                                 }}
-                                className="w-full text-left px-3 py-2 text-[13px] text-[var(--color-negative)] hover:bg-[var(--color-bg-elevated)] motion-safe:transition-colors flex items-center gap-2"
+                                className="w-full text-left px-3 py-2 text-[15px] text-[var(--color-negative)] hover:bg-[var(--color-bg-elevated)] motion-safe:transition-colors flex items-center gap-2"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                                 Disconnect
@@ -1177,14 +1352,14 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div
-                          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-white font-semibold text-[13px]"
+                          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-white font-semibold text-[15px]"
                           style={{ backgroundColor: color, fontFamily: 'var(--font-sans)' }}
                         >
                           {initials}
                         </div>
                         <div className="min-w-0">
                           <p className="text-[15px] font-medium text-[var(--color-text-primary)] truncate">{instName}</p>
-                          <p className="text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+                          <p className="text-[14px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
                             {accts.length} account{accts.length !== 1 ? 's' : ''}
                           </p>
                         </div>
@@ -1193,7 +1368,7 @@ export default function SettingsPage() {
                         <p className="text-[16px] font-semibold text-[var(--color-text-primary)] tabular-nums" style={{ fontFamily: 'var(--font-mono)' }}>
                           {fmtCurrency(Math.abs(totalBalance))}
                         </p>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-positive)] uppercase tracking-wider">
+                        <span className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--color-positive)] uppercase tracking-wider">
                           <CheckCircle2 className="w-3 h-3" />
                           Healthy
                         </span>
@@ -1216,7 +1391,7 @@ export default function SettingsPage() {
             </div>
             <div className="text-left">
               <p className="text-[15px] font-medium text-[var(--color-text-primary)]">Connect another account</p>
-              <p className="text-[12px] text-[var(--color-text-muted)]">12,000+ institutions via Plaid</p>
+              <p className="text-[14px] text-[var(--color-text-muted)]">12,000+ institutions via Plaid</p>
             </div>
           </div>
         </button>
@@ -1238,7 +1413,7 @@ export default function SettingsPage() {
             >
               <div className="flex-1 mr-4">
                 <p className="text-[15px] font-medium text-[var(--color-text-primary)]">{pref.label}</p>
-                <p className="text-[13px] text-[var(--color-text-secondary)]">{pref.description}</p>
+                <p className="text-[15px] text-[var(--color-text-secondary)]">{pref.description}</p>
               </div>
               <Switch
                 checked={syncPrefs[pref.key as keyof typeof syncPrefs]}
@@ -1260,7 +1435,7 @@ export default function SettingsPage() {
             <ShieldCheck className="w-5 h-5 text-[var(--color-positive)] mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-[15px] font-medium text-[var(--color-text-primary)]">Read-only access</p>
-              <p className="text-[13px] text-[var(--color-text-secondary)] mt-1">
+              <p className="text-[15px] text-[var(--color-text-secondary)] mt-1">
                 Helm can only view your account balances, transactions, and holdings. We cannot move money, make trades, or modify your accounts in any way. Your bank credentials are handled entirely by Plaid and never reach our servers.
               </p>
             </div>
@@ -1271,64 +1446,57 @@ export default function SettingsPage() {
   )
 
   // ── Notifications ──
-  const renderNotifications = () => (
-    <div className="space-y-8">
-      {renderSectionHeader('Notifications')}
-      <h2 className="text-[24px] sm:text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
-        Notification preferences
-      </h2>
-      <p className="text-[14px] text-[var(--color-text-secondary)] -mt-4">
-        Choose what you want to be notified about. Email and push delivery coming soon.
-      </p>
-
-      <div className="space-y-3">
-        {[
-          { key: 'marketAlerts', label: 'Market alerts', description: 'Price movements and market events' },
-          { key: 'transactionAlerts', label: 'Transaction alerts', description: 'Unusual transactions and spending' },
-          { key: 'budgetAlerts', label: 'Spending alerts', description: 'Get notified about unusual spending patterns' },
-          { key: 'taxReminders', label: 'Tax reminders', description: 'Tax deadlines and opportunities' },
-          { key: 'weeklyDigest', label: 'Weekly digest', description: 'Weekly summary of your finances' },
-          { key: 'monthlyReport', label: 'Monthly report', description: 'Comprehensive monthly analysis' },
-        ].map((notification) => (
-          <div
-            key={notification.key}
-            className="flex items-center justify-between p-4 bg-[var(--color-bg-elevated)] rounded-lg border border-[var(--color-border-base)]"
-          >
-            <div className="flex-1 mr-4">
-              <p className="text-[15px] font-medium text-[var(--color-text-primary)]">{notification.label}</p>
-              <p className="text-[13px] text-[var(--color-text-secondary)]">{notification.description}</p>
-            </div>
-            <Switch
-              checked={settings.notifications[notification.key as keyof typeof settings.notifications]}
-              onCheckedChange={() => handleNotificationChange(notification.key as keyof typeof settings.notifications)}
-              aria-label={notification.label}
+  const renderNotifications = () => {
+    const items = [
+      { key: 'marketAlerts', label: 'Market alerts', description: 'Price movements and market events' },
+      { key: 'transactionAlerts', label: 'Transaction alerts', description: 'Unusual transactions and spending' },
+      { key: 'budgetAlerts', label: 'Spending alerts', description: 'Get notified about unusual spending patterns' },
+      { key: 'taxReminders', label: 'Tax reminders', description: 'Tax deadlines and opportunities' },
+      { key: 'weeklyDigest', label: 'Weekly digest', description: 'Weekly summary of your finances' },
+      { key: 'monthlyReport', label: 'Monthly report', description: 'Comprehensive monthly analysis' },
+    ] as const
+    return (
+      <div className="space-y-3.5">
+        <SettingsCard label="Notifications">
+          <p className="text-[15px] text-[var(--color-text-muted)] -mt-2 mb-[18px]">
+            Choose what you want to be notified about. Email and push delivery coming soon.
+          </p>
+          {items.map((notification, i) => (
+            <SettingsRow
+              key={notification.key}
+              divider={i < items.length - 1}
+              title={notification.label}
+              description={notification.description}
+              control={
+                <Switch
+                  checked={settings.notifications[notification.key as keyof typeof settings.notifications]}
+                  onCheckedChange={() => handleNotificationChange(notification.key as keyof typeof settings.notifications)}
+                  aria-label={notification.label}
+                />
+              }
             />
-          </div>
-        ))}
+          ))}
+        </SettingsCard>
       </div>
-    </div>
-  )
+    )
+  }
 
   // ── Tax Settings ──
   const renderTax = () => (
-    <div className="space-y-8">
-      {renderSectionHeader('Tax Settings')}
-      <h2 className="text-[24px] sm:text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
-        Tax configuration
-      </h2>
-      <p className="text-[14px] text-[var(--color-text-secondary)] -mt-4">
-        Configure your tax bracket and filing preferences for accurate tax-loss harvesting analysis.
-      </p>
-
-      <div className="space-y-5">
+    <div className="space-y-3.5">
+      <SettingsCard label="Tax settings">
+        <p className="text-[15px] text-[var(--color-text-muted)] -mt-2 mb-5">
+          Configure your tax bracket and filing preferences for accurate tax-loss harvesting analysis.
+        </p>
+        <div className="space-y-5">
         <div className="space-y-2">
-          <Label className="text-[14px]">Filing status</Label>
+          <Label className="text-[15px]">Filing status</Label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {(['Single', 'Married Filing Jointly', 'Married Filing Separately', 'Head of Household'] as const).map((status) => (
               <button
                 key={status}
                 onClick={() => setFilingStatus(status)}
-                className={`p-3 rounded-lg border text-[13px] text-left motion-safe:transition-colors ${
+                className={`p-3 rounded-lg border text-[15px] text-left motion-safe:transition-colors ${
                   filingStatus === status
                     ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/10 text-[var(--color-gold)]'
                     : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold)]/50'
@@ -1341,13 +1509,13 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-[14px]">Federal tax bracket</Label>
+          <Label className="text-[15px]">Federal tax bracket</Label>
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {['10%', '12%', '22%', '24%', '32%', '35%', '37%'].map((bracket) => (
               <button
                 key={bracket}
                 onClick={() => setTaxBracket(bracket)}
-                className={`p-3 sm:p-2 rounded-lg border text-[13px] text-center motion-safe:transition-colors ${
+                className={`p-3 sm:p-2 rounded-lg border text-[15px] text-center motion-safe:transition-colors ${
                   taxBracket === bracket
                     ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/10 text-[var(--color-gold)]'
                     : 'border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold)]/50'
@@ -1361,7 +1529,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-[14px]">State</Label>
+          <Label className="text-[15px]">State</Label>
           <Input
             value={taxState}
             onChange={(e) => setTaxState(e.target.value)}
@@ -1371,115 +1539,108 @@ export default function SettingsPage() {
         </div>
 
         <div className="p-4 bg-[var(--color-bg-elevated)] rounded-lg border border-[var(--color-border-base)]">
-          <p className="text-[13px] text-[var(--color-text-muted)]">
+          <p className="text-[15px] text-[var(--color-text-muted)]">
             Tax settings are used to estimate tax-loss harvesting opportunities and projected tax liability. This is not tax advice. Consult a qualified tax professional for your specific situation.
           </p>
         </div>
 
-        <Button
-          onClick={handleSaveTaxSettings}
-          disabled={savingTax}
-          className="bg-[var(--color-gold)] hover:bg-[var(--color-gold)]/90 text-black font-medium"
-        >
-          {savingTax ? (
-            <>
-              <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            'Save tax settings'
-          )}
-        </Button>
-      </div>
+          <Button
+            onClick={handleSaveTaxSettings}
+            disabled={savingTax}
+            className="bg-[var(--color-gold)] hover:bg-[var(--color-gold)]/90 text-black font-medium"
+          >
+            {savingTax ? (
+              <>
+                <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Save tax settings'
+            )}
+          </Button>
+        </div>
+      </SettingsCard>
     </div>
   )
 
   // ── Data & Privacy ──
   const renderPrivacy = () => (
-    <div className="space-y-8">
-      {renderSectionHeader('Data & Privacy')}
-      <h2 className="text-[24px] sm:text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
-        Your data
-      </h2>
-      <p className="text-[14px] text-[var(--color-text-secondary)] -mt-4">
-        Control how your data is used and export or delete your information.
-      </p>
+    <div className="space-y-3.5">
+      <SettingsCard label="Data & privacy">
+        <SettingsRow
+          divider
+          title="Analytics"
+          description="Help improve Helm with anonymous usage data"
+          control={
+            <Switch
+              checked={settings.analyticsEnabled}
+              onCheckedChange={(checked) => updateSettings({ analyticsEnabled: checked })}
+              aria-label="Analytics"
+            />
+          }
+        />
+        <SettingsRow
+          title="Crash reporting"
+          description="Automatically report errors to help us fix issues"
+          control={
+            <Switch
+              checked={settings.crashReportingEnabled}
+              onCheckedChange={(checked) => updateSettings({ crashReportingEnabled: checked })}
+              aria-label="Crash reporting"
+            />
+          }
+        />
+      </SettingsCard>
 
-      <div className="space-y-3">
-        <div className="flex items-center justify-between p-4 bg-[var(--color-bg-elevated)] rounded-lg border border-[var(--color-border-base)]">
-          <div className="flex-1 mr-4">
-            <p className="text-[15px] font-medium text-[var(--color-text-primary)]">Analytics</p>
-            <p className="text-[13px] text-[var(--color-text-secondary)]">Help improve Helm with anonymous usage data</p>
-          </div>
-          <Switch
-            checked={settings.analyticsEnabled}
-            onCheckedChange={(checked) => updateSettings({ analyticsEnabled: checked })}
-            aria-label="Analytics"
-          />
-        </div>
-
-        <div className="flex items-center justify-between p-4 bg-[var(--color-bg-elevated)] rounded-lg border border-[var(--color-border-base)]">
-          <div className="flex-1 mr-4">
-            <p className="text-[15px] font-medium text-[var(--color-text-primary)]">Crash reporting</p>
-            <p className="text-[13px] text-[var(--color-text-secondary)]">Automatically report errors to help us fix issues</p>
-          </div>
-          <Switch
-            checked={settings.crashReportingEnabled}
-            onCheckedChange={(checked) => updateSettings({ crashReportingEnabled: checked })}
-            aria-label="Crash reporting"
-          />
-        </div>
-      </div>
-
-      <div className="pt-6 border-t border-[var(--color-border-subtle)] space-y-3">
-        <div className="flex items-center justify-between p-4 bg-[var(--color-bg-elevated)] rounded-lg border border-[var(--color-border-base)]">
-          <div className="flex items-center gap-3">
-            <Download className="w-5 h-5 text-[var(--color-text-muted)]" />
-            <div>
-              <p className="text-[15px] font-medium text-[var(--color-text-primary)]">Export your data</p>
-              <p className="text-[13px] text-[var(--color-text-secondary)]">Download all your financial data as JSON</p>
-            </div>
-          </div>
-          <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
-            {exporting ? (
-              <>
-                <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
-                Exporting...
-              </>
-            ) : (
-              'Export'
-            )}
-          </Button>
-        </div>
-
-        <div className="flex items-center justify-between p-4 bg-[var(--color-bg-elevated)] rounded-lg border border-[var(--color-border-base)]">
-          <div className="flex items-center gap-3">
-            <RotateCcw className="w-5 h-5 text-[var(--color-text-muted)]" />
-            <div>
-              <p className="text-[15px] font-medium text-[var(--color-text-primary)]">Reset all settings</p>
-              <p className="text-[13px] text-[var(--color-text-secondary)]">Restore all settings to their default values</p>
-            </div>
-          </div>
-          <Button variant="outline" size="sm" onClick={handleResetSettings}>
-            Reset
-          </Button>
-        </div>
-      </div>
+      <SettingsCard label="Your data">
+        <SettingsRow
+          divider
+          title={
+            <span className="flex items-center gap-3">
+              <Download className="w-5 h-5 text-[var(--color-text-muted)]" />
+              Export your data
+            </span>
+          }
+          description="Download all your financial data as JSON"
+          control={
+            <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+              {exporting ? (
+                <>
+                  <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                'Export'
+              )}
+            </Button>
+          }
+        />
+        <SettingsRow
+          title={
+            <span className="flex items-center gap-3">
+              <RotateCcw className="w-5 h-5 text-[var(--color-text-muted)]" />
+              Reset all settings
+            </span>
+          }
+          description="Restore all settings to their default values"
+          control={
+            <Button variant="outline" size="sm" onClick={handleResetSettings}>
+              Reset
+            </Button>
+          }
+        />
+      </SettingsCard>
     </div>
   )
 
   // ── Billing ──
   const renderBilling = () => (
-    <div className="space-y-8">
-      {renderSectionHeader('Billing')}
-      <h2 className="text-[24px] sm:text-[34px] font-semibold text-[var(--color-text-primary)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
-        Subscription
-      </h2>
-      <p className="text-[14px] text-[var(--color-text-secondary)] -mt-4">
-        Manage your plan and billing information.
-      </p>
-
-      <div className="space-y-4">
+    <div className="space-y-3.5">
+      <SettingsCard label="Billing">
+        <p className="text-[15px] text-[var(--color-text-muted)] -mt-2 mb-5">
+          Manage your plan and billing information.
+        </p>
+        <div className="space-y-4">
         {tierLoading || billing === null ? (
           <div className="p-6 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-lg">
             <div className="h-6 w-32 bg-white/5 rounded animate-pulse mb-2" />
@@ -1490,11 +1651,11 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-[18px] font-semibold text-[var(--color-text-primary)]">Lifetime Plan</p>
-                <p className="text-[14px] text-[var(--color-text-secondary)]">Lifetime access to all features</p>
+                <p className="text-[15px] text-[var(--color-text-secondary)]">Lifetime access to all features</p>
               </div>
               <Badge className="bg-[var(--color-gold)]/10 text-[var(--color-gold)] border-[var(--color-gold)]/30">Lifetime</Badge>
             </div>
-            <p className="text-[13px] text-[var(--color-text-muted)]">
+            <p className="text-[15px] text-[var(--color-text-muted)]">
               Unlimited AI analysis, tax-loss harvesting, earnings impact, Portfolio Wrapped, and full intelligence feed.
             </p>
           </div>
@@ -1506,7 +1667,7 @@ export default function SettingsPage() {
                   {billing.billingPeriod === 'annual' ? 'Pro Annual' : 'Pro Monthly'}
                 </p>
                 {billing.currentPeriodEnd && (
-                  <p className="text-[14px] text-[var(--color-text-secondary)] mt-0.5">
+                  <p className="text-[15px] text-[var(--color-text-secondary)] mt-0.5">
                     {billing.cancelAtPeriodEnd
                       ? `Cancels on ${new Date(billing.currentPeriodEnd).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
                       : `Renews on ${new Date(billing.currentPeriodEnd).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
@@ -1515,7 +1676,7 @@ export default function SettingsPage() {
               </div>
               <Badge className="bg-[var(--color-gold)]/10 text-[var(--color-gold)] border-[var(--color-gold)]/30">Active</Badge>
             </div>
-            <p className="text-[13px] text-[var(--color-text-muted)] mb-4">
+            <p className="text-[15px] text-[var(--color-text-muted)] mb-4">
               Unlimited AI analysis, tax-loss harvesting, earnings impact, Portfolio Wrapped, and full intelligence feed.
             </p>
             <Button variant="outline" size="sm" onClick={handleManageBilling}>
@@ -1527,7 +1688,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-[18px] font-semibold text-[var(--color-text-primary)]">Free Plan</p>
-                <p className="text-[14px] text-[var(--color-text-secondary)]">3 AI analyses per day, basic alerts</p>
+                <p className="text-[15px] text-[var(--color-text-secondary)]">3 AI analyses per day, basic alerts</p>
               </div>
               <Badge variant="outline">Free</Badge>
             </div>
@@ -1538,26 +1699,28 @@ export default function SettingsPage() {
             </a>
           </div>
         )}
-      </div>
+        </div>
+      </SettingsCard>
     </div>
   )
 
   // ── Danger Zone ──
   const renderDanger = () => (
-    <div className="space-y-8">
-      {renderSectionHeader('Danger Zone')}
-      <h2 className="text-[24px] sm:text-[34px] font-semibold text-[var(--color-negative)] leading-tight" style={{ fontFamily: 'var(--font-sans)' }}>
-        Danger zone
-      </h2>
-      <p className="text-[14px] text-[var(--color-text-secondary)] -mt-4">
-        Irreversible actions that affect your account and data.
-      </p>
-
-      <div className="p-4 sm:p-6 bg-[var(--color-negative)]/5 border border-[var(--color-negative)]/20 rounded-lg">
+    <div className="space-y-3.5">
+      <section
+        className="rounded-lg border border-[var(--color-negative)]/20 bg-[var(--color-bg-surface)] p-5 sm:p-6"
+        style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.5)' }}
+      >
+        <div
+          className="text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-negative-text)] mb-[18px]"
+          style={MONO}
+        >
+          Danger zone
+        </div>
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
           <div>
-            <p className="text-[16px] font-semibold text-[var(--color-negative)]">Delete account</p>
-            <p className="text-[13px] text-[var(--color-text-secondary)] mt-1">
+            <p className="text-[15px] font-semibold text-[var(--color-negative-text)]">Delete account</p>
+            <p className="text-[15px] text-[var(--color-text-muted)] mt-1">
               Permanently delete your account, all connected accounts, transaction history, portfolio data, insights, and settings. This action cannot be undone.
             </p>
           </div>
@@ -1570,7 +1733,7 @@ export default function SettingsPage() {
             Delete account
           </Button>
         </div>
-      </div>
+      </section>
     </div>
   )
 
@@ -1608,20 +1771,20 @@ export default function SettingsPage() {
           <div className="p-6 pb-4">
             <div className="flex items-center gap-2 mb-1">
               <span
-                className="text-[11px] tracking-[0.15em] uppercase font-semibold text-[var(--color-text-muted)]"
+                className="text-[12px] tracking-[0.15em] uppercase font-semibold text-[var(--color-text-muted)]"
                 style={{ fontFamily: 'var(--font-mono)' }}
               >
                 Helm
               </span>
-              <span className="text-[11px] text-[var(--color-text-muted)]">/</span>
+              <span className="text-[12px] text-[var(--color-text-muted)]">/</span>
               <span
-                className="text-[11px] tracking-[0.15em] uppercase font-semibold text-[var(--color-text-muted)]"
+                className="text-[12px] tracking-[0.15em] uppercase font-semibold text-[var(--color-text-muted)]"
                 style={{ fontFamily: 'var(--font-mono)' }}
               >
                 Settings
               </span>
             </div>
-            <h1 className="text-[20px] font-semibold text-[var(--color-text-primary)] mt-3" style={{ fontFamily: 'var(--font-sans)' }}>
+            <h1 className="text-[24px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)] mt-3" style={{ fontFamily: 'var(--font-sans)' }}>
               Preferences
             </h1>
           </div>
@@ -1640,7 +1803,7 @@ export default function SettingsPage() {
                         setActiveSection(item.id)
                         window.history.replaceState(null, '', `#${item.id}`)
                       }}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] motion-safe:transition-all relative ${
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[15px] motion-safe:transition-all relative ${
                         isActive
                           ? 'bg-[var(--color-gold)]/10 text-[var(--color-gold)] font-medium'
                           : isDanger
@@ -1694,7 +1857,7 @@ export default function SettingsPage() {
           {/* Mobile header */}
           <div className="lg:hidden mb-6">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] tracking-[0.15em] uppercase font-semibold text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+              <span className="text-[12px] tracking-[0.15em] uppercase font-semibold text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
                 Helm / Settings
               </span>
             </div>
@@ -1739,7 +1902,7 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <h2 className="text-[18px] font-semibold text-[var(--color-negative)]">Delete Account</h2>
-                  <p className="text-[13px] text-[var(--color-text-secondary)]">This action is permanent and irreversible</p>
+                  <p className="text-[15px] text-[var(--color-text-secondary)]">This action is permanent and irreversible</p>
                 </div>
               </div>
               <button
@@ -1756,14 +1919,14 @@ export default function SettingsPage() {
 
             <div className="p-6 space-y-4">
               <div className="p-3 bg-[var(--color-negative)]/5 border border-[var(--color-negative)]/20 rounded-lg">
-                <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed">
                   This will permanently delete your account, all linked accounts, transaction history,
                   portfolio data, insights, and settings. This cannot be undone.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="delete-password" className="text-[14px]">
+                <Label htmlFor="delete-password" className="text-[15px]">
                   {isOAuthOnly ? 'Type CONFIRM to verify' : 'Your password'}
                 </Label>
                 <Input
@@ -1777,7 +1940,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="delete-confirm" className="text-[14px]">
+                <Label htmlFor="delete-confirm" className="text-[15px]">
                   Type <span className="text-[var(--color-negative)]" style={{ fontFamily: 'var(--font-mono)' }}>DELETE</span> to confirm
                 </Label>
                 <Input
@@ -1835,12 +1998,12 @@ export default function SettingsPage() {
               </div>
               <div>
                 <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)]">Disconnect this institution?</h3>
-                <p className="text-[13px] text-[var(--color-text-secondary)]">
+                <p className="text-[15px] text-[var(--color-text-secondary)]">
                   {connectionHealth.items.find((i) => i.id === confirmDisconnect)?.institution_name || 'This institution'}
                 </p>
               </div>
             </div>
-            <p className="text-[13px] text-[var(--color-text-secondary)]">
+            <p className="text-[15px] text-[var(--color-text-secondary)]">
               This will remove all associated accounts, transactions, and holdings. This action cannot be undone.
             </p>
             <div className="flex gap-3">
@@ -1869,7 +2032,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border-base)]">
               <div>
                 <h2 className="text-[18px] font-semibold text-[var(--color-text-primary)]">Connect account</h2>
-                <p className="text-[13px] text-[var(--color-text-secondary)]">Link a new financial account via Plaid</p>
+                <p className="text-[15px] text-[var(--color-text-secondary)]">Link a new financial account via Plaid</p>
               </div>
               <button
                 className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] rounded-md hover:bg-[var(--color-bg-elevated)] motion-safe:transition-colors"
@@ -1880,19 +2043,19 @@ export default function SettingsPage() {
               </button>
             </div>
             <div className="px-6 py-6 space-y-6">
-              <p className="text-[13px] text-[var(--color-text-secondary)]">
+              <p className="text-[15px] text-[var(--color-text-secondary)]">
                 Connect your bank accounts, credit cards, and investment accounts securely using Plaid. Your credentials are encrypted end-to-end.
               </p>
 
               <div className="space-y-3">
-                <h3 className="text-[14px] font-medium text-[var(--color-text-primary)]">Supported account types</h3>
+                <h3 className="text-[15px] font-medium text-[var(--color-text-primary)]">Supported account types</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {['Checking & Savings', 'Credit Cards', 'Investment Accounts', 'Mortgages & Loans'].map((label) => (
                     <div
                       key={label}
                       className="flex items-center p-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg"
                     >
-                      <span className="text-[13px] text-[var(--color-text-primary)]">{label}</span>
+                      <span className="text-[15px] text-[var(--color-text-primary)]">{label}</span>
                     </div>
                   ))}
                 </div>

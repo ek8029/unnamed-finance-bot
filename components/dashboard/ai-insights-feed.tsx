@@ -153,7 +153,7 @@ export function AIInsightsFeed({ insights: initialInsights, holdings = [] }: AII
 
                   {/* Description */}
                   <p className={cn(
-                    "type-body text-xs text-[var(--color-text-secondary)] leading-relaxed",
+                    "type-body text-[13px] text-[var(--color-text-secondary)] leading-relaxed",
                     !isExpanded && "line-clamp-2"
                   )}>
                     {insight.description}
@@ -166,7 +166,7 @@ export function AIInsightsFeed({ insights: initialInsights, holdings = [] }: AII
                         <div className="type-eyebrow text-[var(--color-gold)] mb-1">
                           What this means
                         </div>
-                        <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                        <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
                           {insight.recommended_action}
                         </p>
                       </div>
@@ -202,7 +202,7 @@ export function AIInsightsFeed({ insights: initialInsights, holdings = [] }: AII
           {insights.length === 0 && (
             <div className="text-center py-12 text-[var(--color-text-secondary)]">
               <Lightbulb className="h-8 w-8 mx-auto mb-2 text-[var(--color-text-muted)]" />
-              <p className="type-body text-xs">No insights available</p>
+              <p className="type-body text-[13px]">No insights available</p>
             </div>
           )}
         </div>

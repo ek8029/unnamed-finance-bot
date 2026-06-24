@@ -74,7 +74,7 @@ export function CrossThesisSynthesis() {
         <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>
           How your theses connect
         </span>
-        <span className="font-mono text-[11px] tracking-[0.06em] text-[#6A6A6A] hidden sm:inline" style={MONO}>
+        <span className="font-mono text-[12px] tracking-[0.06em] text-[#6A6A6A] hidden sm:inline" style={MONO}>
           {clusters.length} shared driver{clusters.length === 1 ? '' : 's'} link{clusters.length === 1 ? 's' : ''} {positionCount} of your positions
         </span>
         <ChevronDown className={`ml-auto w-4 h-4 text-[#6A6A6A] transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -90,8 +90,8 @@ export function CrossThesisSynthesis() {
                 key={`${c.driver}-${i}`}
                 className="flex items-center gap-2.5 flex-1 min-w-[200px] rounded border border-white/[0.07] bg-[#0E0E0E] px-3 py-2"
               >
-                <span className="font-mono text-[13px] font-bold text-[#E6B94D] shrink-0" style={MONO}>{tickers.length}</span>
-                <span className="text-[12px] text-[#9A9A9A] truncate flex-1 min-w-0">{c.driver}</span>
+                <span className="font-mono text-[14px] font-bold text-[#E6B94D] shrink-0" style={MONO}>{tickers.length}</span>
+                <span className="text-[13px] text-[#9A9A9A] truncate flex-1 min-w-0">{c.driver}</span>
                 <span className="flex gap-1.5 shrink-0">
                   {tickers.slice(0, 4).map((t) => (
                     <span key={t} className="font-mono text-[9px] uppercase tracking-[0.08em] text-[#6A6A6A]" style={MONO}>{t}</span>
@@ -125,7 +125,7 @@ export function CrossThesisSynthesis() {
                         <Link
                           key={t}
                           href={`/dashboard/holdings/${t}`}
-                          className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] px-2 py-[3px] rounded border border-white/[0.1] text-[#FFD67A] hover:border-[rgba(230,185,77,0.4)] transition-colors"
+                          className="font-mono text-[12px] font-semibold uppercase tracking-[0.08em] px-2 py-[3px] rounded border border-white/[0.1] text-[#FFD67A] hover:border-[rgba(230,185,77,0.4)] transition-colors"
                           style={MONO}
                         >
                           {t}
@@ -137,7 +137,7 @@ export function CrossThesisSynthesis() {
                       {c.pillars.map((p) => (
                         <div key={p.pillarId} className="flex items-start gap-2.5">
                           <span className="mt-[2px] font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6A6A6A] shrink-0 w-[44px]" style={MONO}>{p.ticker}</span>
-                          <span className="text-[13px] leading-[1.5] text-[#9A9A9A] min-w-0">{p.claim}</span>
+                          <span className="text-[14px] leading-[1.5] text-[#9A9A9A] min-w-0">{p.claim}</span>
                         </div>
                       ))}
                     </div>

@@ -242,7 +242,7 @@ export function LoadingState() {
              style={{ animation: 'loading-ring 1.5s linear infinite' }} />
         <HelmMark size={56} />
       </div>
-      <p className="text-[var(--color-text-muted)] text-sm mt-10" style={MONO}>
+      <p className="text-[var(--color-text-muted)] text-[15px] mt-10" style={MONO}>
         Compiling your wrapped...
       </p>
     </div>

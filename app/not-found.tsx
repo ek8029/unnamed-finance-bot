@@ -20,7 +20,7 @@ export default function NotFound() {
 
       <div className="flex-1 flex items-center justify-center px-6">
         <div className="text-center max-w-md">
-          <p className="font-mono text-[var(--color-gold)] text-[13px] uppercase tracking-wider mb-4">
+          <p className="font-mono text-[var(--color-gold)] text-[14px] uppercase tracking-wider mb-4">
             404
           </p>
           <h1 className="font-sans font-bold text-[28px] text-[var(--color-text-primary)] tracking-tight mb-3">
@@ -32,21 +32,21 @@ export default function NotFound() {
           <div className="flex items-center justify-center gap-4">
             <Link
               href="/"
-              className="text-[14px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+              className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               Home
             </Link>
             <span className="text-[var(--color-border-base)]">&middot;</span>
             <Link
               href="/analyze"
-              className="text-[14px] text-[var(--color-gold)] hover:underline transition-colors"
+              className="text-[15px] text-[var(--color-gold)] hover:underline transition-colors"
             >
               Free Stock Analysis
             </Link>
             <span className="text-[var(--color-border-base)]">&middot;</span>
             <Link
               href="/blog"
-              className="text-[14px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+              className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               Blog
             </Link>

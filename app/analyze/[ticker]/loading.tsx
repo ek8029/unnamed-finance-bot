@@ -16,7 +16,7 @@ export default function AnalysisLoading() {
           </a>
           <a
             href="/analyze"
-            className="text-[12px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+            className="text-[13px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             Analyze

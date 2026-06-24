@@ -32,7 +32,7 @@ const POPULAR_TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'
 
 export default function AnalyzePage() {
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)] flex flex-col relative overflow-hidden">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -49,22 +49,22 @@ export default function AnalyzePage() {
       />
       <CinematicBg />
       {/* Nav */}
-      <nav className="relative z-10 glass-nav">
+      <nav className="relative z-10 border-b border-[var(--color-border-base)]">
         <div className="container mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2.5">
-            <HelmMark size={32} />
+          <Link href="/" className="flex items-center gap-2.5">
+            <HelmMark size={28} />
             <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
           </Link>
           <div className="flex items-center gap-5">
             <Link
               href="/analyze"
-              className="text-sm text-[var(--color-text-primary)] font-medium transition-colors"
+              className="text-[15px] text-[var(--color-text-primary)] font-medium transition-colors"
             >
               Analyze
             </Link>
             <Link
               href="/login"
-              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+              className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               Sign in
             </Link>
@@ -73,11 +73,11 @@ export default function AnalyzePage() {
       </nav>
 
       {/* Hero */}
-      <main className="relative flex-1 flex flex-col items-center justify-center px-6 py-20">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-20">
         <div className="max-w-2xl w-full text-center space-y-10">
           <div className="space-y-5">
-            <div className="text-sm uppercase tracking-[0.25em] font-medium text-[var(--color-gold)]" style={{ fontFamily: 'var(--font-mono)' }}>Free Stock Analysis</div>
-            <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.05]">
+            <div className="type-eyebrow text-[var(--color-gold)]">Free Stock Analysis</div>
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.05]">
               Institutional-grade<br />stock analysis
             </h1>
             <p className="text-lg text-[var(--color-text-secondary)] max-w-xl mx-auto leading-relaxed">
@@ -86,18 +86,18 @@ export default function AnalyzePage() {
           </div>
 
           {/* Command palette style search */}
-          <div className="sovereign-card rounded-lg p-7">
+          <div className="sovereign-card rounded p-7">
             <TickerSearch size="lg" />
           </div>
 
           <div className="space-y-4">
-            <div className="text-xs uppercase tracking-[0.15em] font-medium text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>Popular</div>
+            <div className="type-eyebrow text-[var(--color-text-muted)]">Popular</div>
             <div className="flex flex-wrap justify-center gap-2.5">
               {POPULAR_TICKERS.map((ticker) => (
                 <a
                   key={ticker}
                   href={`/analyze/${ticker}`}
-                  className="px-5 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-md text-[15px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-colors"
+                  className="px-5 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[15px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-gold-border)] transition-colors"
                   style={{ fontFamily: 'var(--font-mono)' }}
                 >
                   {ticker}

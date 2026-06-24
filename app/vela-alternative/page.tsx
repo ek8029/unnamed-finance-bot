@@ -43,7 +43,7 @@ const ROWS = [
   ['Status (June 2026)', 'Live, free to start', 'Private waitlist'],
   ['Citations', 'Verbatim, dated SEC + news', 'Paraphrased signals'],
   ['Cross-position risk', 'Shared-driver detection', 'Not offered'],
-  ['Pricing', '$4.99/mo founding', 'Not public'],
+  ['Pricing', '$20/mo Pro', 'Not public'],
 ];
 
 export default function VelaAlternativePage() {
@@ -86,9 +86,9 @@ export default function VelaAlternativePage() {
             <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
           </Link>
           <div className="flex items-center gap-5">
-            <Link href="/thesis-monitoring" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Thesis Monitoring</Link>
-            <Link href="/best-thesis-trackers" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Compare</Link>
-            <Link href="/signup" className="px-4 py-1.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Sign up</Link>
+            <Link href="/thesis-monitoring" className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Thesis Monitoring</Link>
+            <Link href="/best-thesis-trackers" className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Compare</Link>
+            <Link href="/signup" className="px-4 py-1.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Sign up</Link>
           </div>
         </div>
       </nav>
@@ -107,7 +107,7 @@ export default function VelaAlternativePage() {
         <div className="space-y-10 text-[var(--color-text-secondary)] text-[15px] leading-relaxed">
           <section>
             <div className="overflow-x-auto sovereign-card rounded">
-              <table className="w-full text-[14px] text-left border-collapse min-w-[480px]">
+              <table className="w-full text-[15px] text-left border-collapse min-w-[480px]">
                 <thead>
                   <tr className="border-b border-[var(--color-border-base)]">
                     <th className="p-3 font-semibold text-[var(--color-text-primary)]">&nbsp;</th>
@@ -126,7 +126,7 @@ export default function VelaAlternativePage() {
                 </tbody>
               </table>
             </div>
-            <p className="text-xs text-[var(--color-text-muted)] mt-2">Vela details from getvela.co, verified June 17, 2026; may change.</p>
+            <p className="text-[13px] text-[var(--color-text-muted)] mt-2">Vela details from getvela.co, verified June 17, 2026; may change.</p>
           </section>
 
           <section>
@@ -151,10 +151,10 @@ export default function VelaAlternativePage() {
           <section className="sovereign-card rounded p-6 md:p-8 text-center">
             <h2 className="text-[21px] font-bold text-[var(--color-text-primary)] mb-2">Start monitoring your thesis now.</h2>
             <p className="mb-5 max-w-xl mx-auto">No waitlist. Helm watches the reasons behind every position and tells you when one breaks. Free to start.</p>
-            <Link href="/signup" className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Take the helm</Link>
+            <Link href="/signup" className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Take the helm</Link>
           </section>
 
-          <p className="text-xs text-[var(--color-text-muted)] leading-relaxed border-t border-[var(--color-border-subtle)] pt-6">
+          <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed border-t border-[var(--color-border-subtle)] pt-6">
             Comparison reflects public information as of June 17, 2026 and is provided for general information, not financial advice. Verify current details with Vela directly. Helm Terminal is not a registered investment advisor.
           </p>
         </div>

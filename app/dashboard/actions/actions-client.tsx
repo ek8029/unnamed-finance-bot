@@ -1,35 +1,10 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import {
-  AlertTriangle,
-  TrendingDown,
-  TrendingUp,
-  CreditCard,
-  DollarSign,
-  Loader2,
-  RefreshCw,
-  Lightbulb,
-  Clock,
-  Archive,
-  X,
-  Check,
-  ChevronRight,
-  Flame,
-  PieChart,
-  BarChart3,
-  Receipt,
-  Wallet,
-  SlidersHorizontal,
-  FileText,
-  Sparkles,
-  CircleDot,
-  Inbox,
-  ArrowLeft,
-} from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
+import { Loader2, RefreshCw, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useFormat } from '@/hooks/use-format';
-import { ProBlur } from '@/components/pro-blur';
-import { STATUS_META } from '@/lib/thesis-palette';
+import { usePreview } from '@/lib/preview-context';
+import { tierAtLeast } from '@/lib/tier-shared';
 
 /* ──────────────────────────────────────────────────
    Types
@@ -44,6 +19,7 @@ export interface ActionItem {
   recommended_action?: string;
   estimated_impact?: number;
   source: string;
+  related_entity_type?: string | null;
   created_at: string;
   snoozed_until?: string | null;
   is_archived?: boolean;
@@ -54,187 +30,140 @@ export interface ActionItem {
   thesisCite?: { excerpt: string; sourceTitle: string; sourceUrl: string | null; publishedAt: string | null; whatItMeans: string | null };
 }
 
-type StatusTab = 'open' | 'snoozed' | 'done' | 'archived';
-type CategoryFilter = 'all' | 'high' | 'concentration' | 'earnings' | 'tax' | 'cash' | 'drift' | 'filings';
-type MobileView = 'list' | 'detail';
+type ChipFilter = 'all' | 'risk' | 'tax' | 'cash';
 
 /* ──────────────────────────────────────────────────
-   Constants
+   Item classification
    ────────────────────────────────────────────────── */
+
+const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 
 const priorityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
-const priorityConfig: Record<string, { label: string; className: string }> = {
-  critical: {
-    label: 'HIGH',
-    className: 'bg-[var(--color-negative-muted)] text-[var(--color-negative-text)] border-[var(--color-negative-border)]',
-  },
-  high: {
-    label: 'HIGH',
-    className: 'bg-[var(--color-negative-muted)] text-[var(--color-negative-text)] border-[var(--color-negative-border)]',
-  },
-  medium: {
-    label: 'MED',
-    className: 'bg-[var(--color-warning-muted)] text-[var(--color-warning-text)] border-[var(--color-warning-border)]',
-  },
-  low: {
-    label: 'LOW',
-    className: 'bg-[var(--color-info-muted)] text-[var(--color-info-text)] border-[var(--color-info-border)]',
-  },
+// Priority label + the left-accent / glyph color used on basic cards.
+const priorityMeta: Record<string, { label: string; color: string }> = {
+  critical: { label: 'HIGH', color: 'var(--color-negative-text)' },
+  high:     { label: 'HIGH', color: 'var(--color-negative-text)' },
+  medium:   { label: 'MED',  color: 'var(--color-warning-text)' },
+  low:      { label: 'LOW',  color: 'var(--color-text-muted)' },
 };
 
-const categoryConfig: Record<CategoryFilter, { icon: typeof Inbox; label: string; types: string[] }> = {
-  all:            { icon: Inbox,             label: 'All',            types: [] },
-  high:           { icon: Flame,             label: 'High Priority',  types: [] },
-  concentration:  { icon: PieChart,          label: 'Concentration',  types: ['concentration', 'portfolio'] },
-  earnings:       { icon: BarChart3,         label: 'Earnings',       types: ['earnings', 'market'] },
-  tax:            { icon: Receipt,           label: 'Tax',            types: ['tax'] },
-  cash:           { icon: Wallet,            label: 'Cash',           types: ['cash', 'spending'] },
-  drift:          { icon: SlidersHorizontal, label: 'Drift',          types: ['drift', 'rebalance'] },
-  filings:        { icon: FileText,          label: 'Filings',        types: ['filings', 'credit'] },
+function impactLabel(priority: string): string {
+  if (priority === 'critical' || priority === 'high') return 'High';
+  if (priority === 'medium') return 'Med';
+  return 'Low';
+}
+
+// Filter-chip routing. Tax-loss/credit -> Tax, cash/spending -> Cash, everything
+// risk-shaped (concentration, portfolio, earnings, market, drift) -> Risk.
+const CHIP_TYPES: Record<Exclude<ChipFilter, 'all'>, string[]> = {
+  risk: ['concentration', 'portfolio', 'earnings', 'market', 'drift', 'rebalance'],
+  tax:  ['tax', 'credit', 'filings'],
+  cash: ['cash', 'spending', 'subscription'],
 };
 
-const typeIcons: Record<string, typeof TrendingUp> = {
-  spending: TrendingDown,
-  portfolio: TrendingUp,
-  tax: DollarSign,
-  credit: CreditCard,
-  market: AlertTriangle,
-  concentration: PieChart,
-  earnings: BarChart3,
-  cash: Wallet,
-  drift: SlidersHorizontal,
-  filings: FileText,
+function matchesChip(action: ActionItem, chip: ChipFilter): boolean {
+  if (chip === 'all') return true;
+  return CHIP_TYPES[chip].includes(action.type);
+}
+
+// Max-only intelligence: agentic investigations + shared-exposure / thesis-risk items.
+// Shared-exposure rows are written with related_entity_type='thesis_risk'; agentic
+// investigation rows carry 'investigation'. A title prefix is the fallback signal.
+function isMaxItem(a: ActionItem): boolean {
+  const ret = (a.related_entity_type || '').toLowerCase();
+  if (ret === 'thesis_risk' || ret === 'investigation') return true;
+  return /^(shared risk:|helm investigated)/i.test(a.title);
+}
+
+function maxKind(a: ActionItem): 'investigation' | 'shared' {
+  const ret = (a.related_entity_type || '').toLowerCase();
+  if (ret === 'investigation' || /^helm investigated/i.test(a.title)) return 'investigation';
+  return 'shared';
+}
+
+const primaryCta: Record<string, string> = {
+  tax: 'Harvest',
+  credit: 'Review',
+  filings: 'Review',
+  cash: 'Sweep',
+  spending: 'Sweep',
+  earnings: 'Review',
+  market: 'Review',
+  concentration: 'Model it',
+  portfolio: 'Model it',
+  drift: 'Model it',
+  rebalance: 'Model it',
 };
 
-const categoryLabels: Record<string, string> = {
-  spending: 'Cash',
-  portfolio: 'Concentration',
-  tax: 'Tax',
-  credit: 'Filings',
-  market: 'Earnings',
-  concentration: 'Concentration',
-  earnings: 'Earnings',
-  cash: 'Cash',
-  drift: 'Drift',
-  filings: 'Filings',
+// Where each action's primary CTA takes the user — the surface that acts on it.
+const ctaHref: Record<string, string> = {
+  tax: '/dashboard/taxes',
+  credit: '/dashboard/accounts',
+  filings: '/dashboard/theses',
+  cash: '/dashboard/accounts',
+  spending: '/dashboard/transactions',
+  earnings: '/dashboard/earnings',
+  market: '/dashboard/brief',
+  concentration: '/dashboard/portfolio/factors',
+  portfolio: '/dashboard/portfolio/factors',
+  drift: '/dashboard/portfolio/factors',
+  rebalance: '/dashboard/portfolio/factors',
 };
-
-const statusTabs: { key: StatusTab; label: string }[] = [
-  { key: 'open', label: 'Open' },
-  { key: 'snoozed', label: 'Snoozed' },
-  { key: 'done', label: 'Done' },
-  { key: 'archived', label: 'Archive' },
-];
 
 /* ──────────────────────────────────────────────────
-   Helpers
+   Demo data
    ────────────────────────────────────────────────── */
 
-function relativeTime(dateStr: string): string {
-  const now = new Date();
-  const date = new Date(dateStr);
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-function actionIdShort(id: string): string {
-  return `ACT-${id.slice(0, 6).toUpperCase()}`;
-}
-
-function matchesCategory(action: ActionItem, category: CategoryFilter): boolean {
-  if (category === 'all') return true;
-  if (category === 'high') return action.priority === 'critical' || action.priority === 'high';
-  const cfg = categoryConfig[category];
-  return cfg.types.includes(action.type);
-}
+const DEMO_ACTIONS: ActionItem[] = [
+  { id: 'da-inv', type: 'concentration', priority: 'high', title: 'Helm investigated yesterday’s 4% drop across your semis', description: 'AMD’s MI300 guide triggered a sector-wide re-rate. Your NVDA and AVGO fell in sympathy, not on company news — the AI-infra thesis is intact, but the move was a shared-driver event.', source: 'ai_generated', related_entity_type: 'investigation', created_at: new Date().toISOString() },
+  { id: 'da-risk', type: 'concentration', priority: 'high', title: 'Shared risk: 34% of your book rides a single driver', description: 'NVDA, AVGO, MSFT and two ETFs all depend on hyperscaler spend continuing. A capex pause would hit them together — your diversification is thinner than it looks.', source: 'ai_generated', related_entity_type: 'thesis_risk', created_at: new Date().toISOString() },
+  { id: 'da-1', type: 'portfolio', priority: 'high', title: 'Trim NVDA to your 25% target', description: 'NVDA is 31% of the book. Selling ~$96k rebalances to plan and realizes long-term gains taxed at 15%.', estimated_impact: 96000, source: 'rule_based', created_at: new Date().toISOString() },
+  { id: 'da-2', type: 'earnings', priority: 'medium', title: 'Hedge earnings week or size down', description: '31% of the book reports Oct 24–27. Options imply ±6.8% average. Consider trimming or a protective collar.', source: 'rule_based', created_at: new Date().toISOString() },
+  { id: 'da-3', type: 'tax', priority: 'medium', title: 'Harvest $2,840 in losses', description: 'INTC and PYPL carry harvestable losses, conflict-free. Offsets realized gains and cuts ~$680 in tax.', estimated_impact: 680, source: 'rule_based', created_at: new Date().toISOString() },
+  { id: 'da-4', type: 'cash', priority: 'low', title: 'Put $11,240 idle cash to work', description: 'Spread across 3 accounts earning 0.01%. A T-bill ladder yields ~5.1% — about $573/yr.', estimated_impact: 573, source: 'rule_based', created_at: new Date().toISOString() },
+];
 
 /* ──────────────────────────────────────────────────
    Component
    ────────────────────────────────────────────────── */
 
-const DEMO_ACTIONS: ActionItem[] = [
-  { id: 'da-1', type: 'tax_loss_harvest', priority: 'high', title: 'Tax-loss harvesting opportunity: AMZN', description: 'AMZN is down 12% from your cost basis. This $1,793 unrealized loss could offset ~$580 in taxes this year. VTI is a same-category broad-market ETF, so swapping would not trigger a wash sale.', recommended_action: 'AMZN is 22% of this demo portfolio.', estimated_impact: 580, source: 'portfolio', created_at: new Date().toISOString() },
-  { id: 'da-2', type: 'concentration_risk', priority: 'medium', title: 'Technology sector concentration at 43%', description: 'Technology stocks (AAPL, MSFT, NVDA, GOOGL) make up 43% of your portfolio. A sector-specific downturn would have an outsized effect on returns at this concentration. Healthcare, energy, and international are the underweighted sectors here.', recommended_action: 'Tech is 78% of this demo portfolio.', source: 'portfolio', created_at: new Date().toISOString() },
-  { id: 'da-3', type: 'earnings_exposure', priority: 'medium', title: 'NVDA earnings report in 3 days', description: 'NVIDIA reports earnings this week and represents 12.5% of your portfolio ($23,120). High concentration in a single stock heading into earnings creates binary risk. Your position is large enough that a 10% post-earnings move would shift your portfolio by 1.25%.', recommended_action: 'NVDA earnings in 3 days; 12.5% of portfolio exposed.', source: 'portfolio', created_at: new Date().toISOString() },
-  { id: 'da-4', type: 'savings_positive', priority: 'low', title: 'Strong savings rate: 24% this month', description: 'You saved $3,420 this month, beating your 6-month average of $2,950 by 16%. Consistent savings at this rate compounds significantly over time.', source: 'cash_flow', created_at: new Date().toISOString() },
-];
-
 export function ActionsClient({ initialActions, isPro }: { initialActions: ActionItem[]; isPro: boolean }) {
-  const { formatCurrency, formatDate } = useFormat();
+  void isPro; // server already stripped recommended_action for non-pro; per-item gating is tier-driven below
+  const { formatCurrency } = useFormat();
+  const { tier } = usePreview();
+  const isMax = tierAtLeast(tier, 'max');
 
-  // Demo mode
+  // Demo mode (sessionStorage flag, set when exploring without a connection).
   const isDemo = typeof window !== 'undefined' && sessionStorage.getItem('helm_demo_mode') === '1';
   const effectiveActions = isDemo && initialActions.length === 0 ? DEMO_ACTIONS : initialActions;
 
-  // State
   const [actions, setActions] = useState<ActionItem[]>(
     [...effectiveActions].sort((a, b) => (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3))
   );
-  const [activeTab, setActiveTab] = useState<StatusTab>('open');
-  const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [chip, setChip] = useState<ChipFilter>('all');
   const [generating, setGenerating] = useState(false);
   const [actionLoading, setActionLoading] = useState<Set<string>>(new Set());
-  const [showSnoozeMenu, setShowSnoozeMenu] = useState(false);
-  const [mobileView, setMobileView] = useState<MobileView>('list');
 
-  // Filtered actions
-  const filteredActions = useMemo(() => {
-    return actions.filter(a => matchesCategory(a, activeCategory));
-  }, [actions, activeCategory]);
+  // Filtered + ordered: Max-only intelligence cards float to the top, then basics by priority.
+  const filtered = useMemo(() => {
+    return actions
+      .filter(a => matchesChip(a, chip))
+      .sort((a, b) => {
+        const am = isMaxItem(a) ? 0 : 1;
+        const bm = isMaxItem(b) ? 0 : 1;
+        if (am !== bm) return am - bm;
+        return (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3);
+      });
+  }, [actions, chip]);
 
-  // Selected action
-  const selectedAction = useMemo(() => {
-    if (!selectedId) return filteredActions[0] || null;
-    return filteredActions.find(a => a.id === selectedId) || filteredActions[0] || null;
-  }, [filteredActions, selectedId]);
+  const openCount = useMemo(() => actions.filter(a => matchesChip(a, 'all')).length, [actions]);
 
-  // Auto-select first item when filter changes
-  useEffect(() => {
-    if (filteredActions.length > 0 && !filteredActions.find(a => a.id === selectedId)) {
-      setSelectedId(filteredActions[0].id);
-    }
-  }, [filteredActions, selectedId]);
-
-  // Category counts
-  const categoryCounts = useMemo(() => {
-    const counts: Record<CategoryFilter, number> = {
-      all: actions.length,
-      high: actions.filter(a => a.priority === 'critical' || a.priority === 'high').length,
-      concentration: 0,
-      earnings: 0,
-      tax: 0,
-      cash: 0,
-      drift: 0,
-      filings: 0,
-    };
-    for (const a of actions) {
-      for (const [cat, cfg] of Object.entries(categoryConfig)) {
-        if (cat !== 'all' && cat !== 'high' && cfg.types.includes(a.type)) {
-          counts[cat as CategoryFilter]++;
-        }
-      }
-    }
-    return counts;
-  }, [actions]);
-
-  // Fetch actions by status tab
-  const fetchByStatus = useCallback(async (status: StatusTab) => {
-    setLoading(true);
+  const handleGenerate = useCallback(async () => {
+    setGenerating(true);
     try {
-      const params = new URLSearchParams();
-      if (status !== 'open') params.set('status', status);
-      const res = await fetch(`/api/insights?${params}`);
+      await fetch('/api/insights/generate', { method: 'POST' });
+      const res = await fetch('/api/insights');
       if (res.ok) {
         const data = await res.json();
         setActions(
@@ -243,45 +172,22 @@ export function ActionsClient({ initialActions, isPro }: { initialActions: Actio
               (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3)
           )
         );
-        setSelectedId(null);
       }
-    } catch (err) {
-      console.error('Failed to fetch actions:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const handleTabChange = (tab: StatusTab) => {
-    setActiveTab(tab);
-    setActiveCategory('all');
-    fetchByStatus(tab);
-  };
-
-  const handleGenerate = async () => {
-    setGenerating(true);
-    try {
-      await fetch('/api/insights/generate', { method: 'POST' });
-      await fetchByStatus(activeTab);
     } finally {
       setGenerating(false);
     }
-  };
+  }, []);
 
-  const handleAction = async (id: string, action: string, extra?: Record<string, unknown>) => {
+  const handleAction = useCallback(async (id: string, action: string) => {
     setActionLoading(prev => new Set(prev).add(id));
     try {
       const res = await fetch('/api/insights', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, action, ...extra }),
+        body: JSON.stringify({ id, action }),
       });
-      if (res.ok) {
-        // Remove from current list for dismiss/archive/snooze/not_useful/unarchive/useful(done)
-        if (['dismiss', 'archive', 'snooze', 'not_useful', 'unarchive', 'useful'].includes(action)) {
-          setActions(prev => prev.filter(a => a.id !== id));
-          if (selectedId === id) setSelectedId(null);
-        }
+      if (res.ok && ['dismiss', 'archive', 'useful', 'not_useful'].includes(action)) {
+        setActions(prev => prev.filter(a => a.id !== id));
       }
     } finally {
       setActionLoading(prev => {
@@ -289,614 +195,272 @@ export function ActionsClient({ initialActions, isPro }: { initialActions: Actio
         next.delete(id);
         return next;
       });
-      setShowSnoozeMenu(false);
     }
-  };
+  }, []);
 
-  const handleSelectAction = (id: string) => {
-    setSelectedId(id);
-    setMobileView('detail');
-  };
-
-  const handleMobileBack = () => {
-    setMobileView('list');
-  };
-
-  // Context grid data for detail pane
-  const getContextPairs = (action: ActionItem) => {
-    const pairs: { label: string; value: string }[] = [];
-    if (action.estimated_impact && action.estimated_impact > 0) {
-      pairs.push({ label: 'Est. Impact', value: formatCurrency(action.estimated_impact) });
-    }
-    pairs.push({ label: 'Category', value: categoryLabels[action.type] || action.type });
-    pairs.push({ label: 'Source', value: action.source === 'rule_based' ? 'Rule Engine' : action.source });
-    pairs.push({ label: 'Created', value: formatDate(action.created_at) });
-    if (action.snoozed_until) {
-      pairs.push({ label: 'Snoozed Until', value: formatDate(action.snoozed_until) });
-    }
-    return pairs;
-  };
+  /* ── All-clear empty state ────────────────────── */
+  if (filtered.length === 0) {
+    return (
+      <div className="px-5 py-6 md:px-7 md:pt-[26px] md:pb-[60px] max-w-[1100px] mx-auto">
+        <Header openCount={openCount} chip={chip} setChip={setChip} generating={generating} onGenerate={handleGenerate} />
+        <div className="min-h-[420px] flex items-center justify-center px-6 py-10">
+          <div className="max-w-[460px] text-center">
+            <div className="w-[60px] h-[60px] mx-auto mb-[22px] rounded-[14px] flex items-center justify-center bg-[rgba(74,222,128,0.06)] border border-[rgba(74,222,128,0.2)]">
+              <CheckCircle2 className="w-7 h-7" strokeWidth={1.6} style={{ color: 'var(--color-positive)' }} />
+            </div>
+            <h2 className="text-[24px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)] mb-3">
+              You&apos;re all clear
+            </h2>
+            <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
+              No actions need your attention. Helm keeps watching your book and will rank anything worth doing here.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-64px)] pb-16 md:pb-0">
-      {/* Top Bar: Title + Status Tabs + Generate */}
-      <div className="px-4 md:px-6 py-3 md:py-4 border-b border-[var(--color-border-base)]">
-        <div className="flex items-center justify-between mb-2 md:mb-0">
-          <h1 className="text-[17px] md:text-[20px] font-semibold tracking-tight text-[var(--color-text-primary)]">
-            Actions Inbox
-          </h1>
-          <button
-            onClick={handleGenerate}
-            disabled={generating}
-            aria-label="Analyze now - refresh actions"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 md:px-4 md:py-2 text-[12px] md:text-[14px] font-medium bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black rounded-md md:rounded-lg motion-safe:transition-colors disabled:opacity-50"
-          >
-            {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">Analyze Now</span>
-          </button>
-        </div>
-        {/* Status Tabs */}
-        <div
-          className="flex items-center gap-1 bg-[var(--color-bg-surface)] rounded-lg p-0.5 border border-[var(--color-border-subtle)] w-fit"
-          role="tablist"
-          aria-label="Action status"
-        >
-          {statusTabs.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => handleTabChange(tab.key)}
-              role="tab"
-              aria-selected={activeTab === tab.key}
-              className={`px-2.5 md:px-3 py-1 md:py-1.5 text-[12px] md:text-[14px] font-medium rounded-md motion-safe:transition-all motion-safe:duration-150 ${
-                activeTab === tab.key
-                  ? 'bg-[var(--color-bg-elevated)] text-[var(--color-text-primary)] shadow-sm'
-                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className="px-5 py-6 md:px-7 md:pt-[26px] md:pb-[60px] max-w-[1100px] mx-auto">
+      <Header openCount={openCount} chip={chip} setChip={setChip} generating={generating} onGenerate={handleGenerate} />
 
-      {/* Mobile: Horizontal Category Pills */}
-      <div className="md:hidden border-b border-[var(--color-border-base)] bg-[var(--color-bg-base)]">
-        <nav aria-label="Action categories" className="flex items-center gap-2 px-4 py-2.5 overflow-x-auto">
-          {(Object.keys(categoryConfig) as CategoryFilter[]).map(cat => {
-            const cfg = categoryConfig[cat];
-            const Icon = cfg.icon;
-            const count = categoryCounts[cat];
-            const isActive = activeCategory === cat;
-
-            return (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                aria-label={`Filter by ${cfg.label}`}
-                aria-current={isActive ? 'true' : undefined}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium rounded-full whitespace-nowrap flex-shrink-0 motion-safe:transition-colors ${
-                  isActive
-                    ? 'bg-[var(--color-gold-surface)] text-[var(--color-gold)] border border-[var(--color-gold-border)]'
-                    : 'bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border border-[var(--color-border-subtle)] hover:text-[var(--color-text-secondary)]'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-                <span>{cfg.label}</span>
-                {count > 0 && (
-                  <span className={`text-[11px] font-mono min-w-[16px] text-center rounded-full px-1 ${
-                    isActive
-                      ? 'text-[var(--color-gold)]'
-                      : 'text-[var(--color-text-muted)]'
-                  }`}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-
-      {/* 3-Pane Layout */}
-      <div className="flex flex-col md:flex-row flex-1 min-h-0">
-        {/* -- Left Rail: Category Filters (desktop only) -- */}
-        <nav
-          aria-label="Action categories"
-          className="hidden md:block w-[200px] flex-shrink-0 border-r border-[var(--color-border-base)] bg-[var(--color-bg-base)] py-3 overflow-y-auto"
-        >
-          <div className="px-3 mb-2">
-            <h2 className="type-eyebrow">Categories</h2>
-          </div>
-          {(Object.keys(categoryConfig) as CategoryFilter[]).map(cat => {
-            const cfg = categoryConfig[cat];
-            const Icon = cfg.icon;
-            const count = categoryCounts[cat];
-            const isActive = activeCategory === cat;
-
-            return (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                aria-label={`Filter by ${cfg.label}`}
-                aria-current={isActive ? 'true' : undefined}
-                className={`w-full flex items-center gap-3 px-3 py-2 text-left motion-safe:transition-colors ${
-                  isActive
-                    ? 'bg-[var(--color-gold-surface)] text-[var(--color-gold)] border-r-2 border-[var(--color-gold)]'
-                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-surface)]'
-                }`}
-              >
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                <span className="text-[14px] font-medium flex-1 truncate">{cfg.label}</span>
-                {count > 0 && (
-                  <span className={`text-[12px] font-mono min-w-[20px] text-center rounded-full px-1.5 py-0.5 ${
-                    isActive
-                      ? 'bg-[var(--color-gold-surface)] text-[var(--color-gold)]'
-                      : 'bg-[var(--color-bg-surface)] text-[var(--color-text-muted)]'
-                  }`}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* -- Middle Column: Action List -- */}
-        <section
-          aria-label="Action items"
-          className={`${
-            mobileView === 'detail' ? 'hidden' : 'flex'
-          } md:flex w-full md:w-[440px] flex-shrink-0 border-r border-[var(--color-border-base)] bg-[var(--color-bg-base)] flex-col min-h-0`}
-        >
-          {/* List Header */}
-          <div className="px-4 py-3 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
-            <h2 className="text-[13px] font-mono text-[var(--color-text-muted)] uppercase tracking-wider">
-              {filteredActions.length} {filteredActions.length === 1 ? 'action' : 'actions'}
-            </h2>
-            {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--color-text-muted)]" />}
-          </div>
-
-          {/* Scrollable List */}
-          <div className="flex-1 overflow-y-auto">
-            {filteredActions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-                <Lightbulb className="w-8 h-8 text-[var(--color-text-muted)] mb-3 opacity-40" />
-                <p className="text-[14px] text-[var(--color-text-muted)]">
-                  {activeTab === 'open' ? 'No open actions' : `No ${activeTab} actions`}
-                </p>
-                {activeTab === 'open' && (
-                  <p className="text-[13px] text-[var(--color-text-muted)] mt-1 opacity-60">
-                    Click Analyze Now to scan your data
-                  </p>
-                )}
-              </div>
+      <div className="flex flex-col gap-3">
+        {filtered.map(action =>
+          isMaxItem(action) ? (
+            isMax ? (
+              <MaxCard key={action.id} action={action} />
             ) : (
-              filteredActions.map(action => {
-                const isSelected = selectedAction?.id === action.id;
-                const pCfg = priorityConfig[action.priority] || priorityConfig.medium;
-
-                return (
-                  <button
-                    key={action.id}
-                    onClick={() => handleSelectAction(action.id)}
-                    className={`w-full text-left px-5 py-4 border-b border-[var(--color-border-subtle)] motion-safe:transition-all motion-safe:duration-100 relative ${
-                      isSelected
-                        ? 'bg-[var(--color-gold-surface)]'
-                        : 'hover:bg-[var(--color-bg-surface)]'
-                    }`}
-                  >
-                    {/* Gold left accent for selected */}
-                    {isSelected && (
-                      <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[var(--color-gold)] rounded-r-full" />
-                    )}
-
-                    {/* Row 1: Priority badge + Category + Timestamp */}
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`text-[12px] font-bold px-2 py-[2px] rounded border uppercase tracking-wide ${pCfg.className}`}>
-                        {pCfg.label}
-                      </span>
-                      <span className="text-[13px] font-mono text-[var(--color-text-muted)]">
-                        {categoryLabels[action.type] || action.type}
-                      </span>
-                      {action.thesisStatus && (
-                        <span
-                          className="text-[13px] font-mono uppercase tracking-wide"
-                          style={{ color: STATUS_META[action.thesisStatus].color }}
-                        >
-                          THESIS: {STATUS_META[action.thesisStatus].label.toUpperCase()}
-                        </span>
-                      )}
-                      <span className="text-[13px] text-[var(--color-text-muted)] ml-auto">
-                        {relativeTime(action.created_at)}
-                      </span>
-                    </div>
-
-                    {/* Row 2: Title */}
-                    <h3 className="text-[14px] sm:text-[16px] font-semibold text-[var(--color-text-primary)] leading-snug line-clamp-2">
-                      {action.title}
-                    </h3>
-
-                    {/* Row 3: Summary + Impact */}
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <p className="text-[13px] sm:text-[14px] text-[var(--color-text-muted)] truncate flex-1 leading-relaxed">
-                        {action.description}
-                      </p>
-                      {action.estimated_impact && action.estimated_impact > 0 && (
-                        <span className="text-[13px] sm:text-[15px] font-semibold text-[var(--color-positive)] font-tabular whitespace-nowrap">
-                          {formatCurrency(action.estimated_impact)}
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </section>
-
-        {/* -- Detail Pane -- */}
-        <main
-          aria-label="Action details"
-          className={`${
-            mobileView === 'list' ? 'hidden' : 'flex'
-          } md:flex flex-1 min-h-0 overflow-y-auto bg-[var(--color-bg-base)] flex-col`}
-        >
-          {selectedAction ? (
-            <DetailPane
-              action={selectedAction}
-              contextPairs={getContextPairs(selectedAction)}
-              activeTab={activeTab}
-              actionLoading={actionLoading}
-              showSnoozeMenu={showSnoozeMenu}
-              setShowSnoozeMenu={setShowSnoozeMenu}
-              onAction={handleAction}
-              formatCurrency={formatCurrency}
-              onMobileBack={handleMobileBack}
-              isPro={isPro}
-            />
+              <MaxTeaser key={action.id} action={action} />
+            )
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center px-8">
-              <Inbox className="w-12 h-12 text-[var(--color-text-muted)] mb-4 opacity-30" />
-              <p className="text-[15px] text-[var(--color-text-muted)]">
-                Select an action to view details
-              </p>
-            </div>
-          )}
-        </main>
+            <BasicCard
+              key={action.id}
+              action={action}
+              loading={actionLoading.has(action.id)}
+              onDismiss={() => handleAction(action.id, 'dismiss')}
+              formatCurrency={formatCurrency}
+            />
+          )
+        )}
       </div>
     </div>
   );
 }
 
 /* ──────────────────────────────────────────────────
-   Detail Pane Sub-component
+   Header (eyebrow + title + filter chips + Analyze)
    ────────────────────────────────────────────────── */
 
-interface DetailPaneProps {
-  action: ActionItem;
-  contextPairs: { label: string; value: string }[];
-  activeTab: StatusTab;
-  actionLoading: Set<string>;
-  showSnoozeMenu: boolean;
-  setShowSnoozeMenu: (show: boolean) => void;
-  onAction: (id: string, action: string, extra?: Record<string, unknown>) => void;
-  formatCurrency: (amount: number) => string;
-  onMobileBack: () => void;
-  isPro: boolean;
+const CHIPS: { key: ChipFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'risk', label: 'Risk' },
+  { key: 'tax', label: 'Tax' },
+  { key: 'cash', label: 'Cash' },
+];
+
+function Header({
+  openCount,
+  chip,
+  setChip,
+  generating,
+  onGenerate,
+}: {
+  openCount: number;
+  chip: ChipFilter;
+  setChip: (c: ChipFilter) => void;
+  generating: boolean;
+  onGenerate: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6 mb-5">
+      <div>
+        <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-[var(--color-text-muted)] mb-2" style={MONO}>
+          Actions · {openCount} open · ranked by impact
+        </div>
+        <h1 className="text-[26px] sm:text-[30px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)] leading-tight">
+          Your next best moves
+        </h1>
+      </div>
+
+      <div className="flex items-center gap-2.5">
+        <div className="flex gap-1.5 font-mono text-[10px] tracking-[0.06em] uppercase" style={MONO} role="tablist" aria-label="Filter actions">
+          {CHIPS.map(c => {
+            const active = chip === c.key;
+            return (
+              <button
+                key={c.key}
+                role="tab"
+                aria-selected={active}
+                onClick={() => setChip(c.key)}
+                className={`px-3 py-[7px] rounded-[5px] motion-safe:transition-colors ${
+                  active
+                    ? 'bg-[var(--color-gold-surface)] text-[var(--color-gold)] border border-[var(--color-gold-border)]'
+                    : 'border border-[var(--color-border-base)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
+                }`}
+              >
+                {c.label}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          onClick={onGenerate}
+          disabled={generating}
+          aria-label="Analyze now - refresh actions"
+          className="flex items-center gap-1.5 px-3 py-[7px] font-mono text-[10px] font-bold tracking-[0.06em] uppercase rounded-[5px] bg-[var(--color-gold)] hover:brightness-[1.06] text-black motion-safe:transition-all disabled:opacity-50"
+          style={MONO}
+        >
+          {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+          <span className="hidden sm:inline">Analyze</span>
+        </button>
+      </div>
+    </div>
+  );
 }
 
-function DetailPane({
+/* ──────────────────────────────────────────────────
+   Basic action card (Risk / Tax / Cash) — always visible
+   ────────────────────────────────────────────────── */
+
+function BasicCard({
   action,
-  contextPairs,
-  activeTab,
-  actionLoading,
-  showSnoozeMenu,
-  setShowSnoozeMenu,
-  onAction,
+  loading,
+  onDismiss,
   formatCurrency,
-  onMobileBack,
-  isPro,
-}: DetailPaneProps) {
-  const isLoading = actionLoading.has(action.id);
-  const pCfg = priorityConfig[action.priority] || priorityConfig.medium;
-  const Icon = typeIcons[action.type] || Lightbulb;
+}: {
+  action: ActionItem;
+  loading: boolean;
+  onDismiss: () => void;
+  formatCurrency: (n: number) => string;
+}) {
+  const meta = priorityMeta[action.priority] || priorityMeta.medium;
+  const cta = primaryCta[action.type] || 'Review';
+  const impactText =
+    action.estimated_impact && action.estimated_impact > 0
+      ? `Impact · ${formatCurrency(action.estimated_impact)}`
+      : `Impact · ${impactLabel(action.priority)}`;
 
   return (
-    <div className="max-w-[740px] mx-auto px-4 sm:px-5 md:px-8 py-4 sm:py-6 md:py-8">
-      {/* Mobile back button */}
-      <button
-        onClick={onMobileBack}
-        aria-label="Back to action list"
-        className="md:hidden flex items-center gap-1.5 text-[14px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] mb-4 motion-safe:transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back
-      </button>
+    <div
+      className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] shadow-[var(--shadow-card)] px-5 py-[18px] flex gap-4 items-start motion-safe:transition-colors hover:border-[rgba(230,185,77,0.2)]"
+      style={{ borderLeft: `2px solid ${meta.color}` }}
+    >
+      <span className="font-mono text-[9px] font-bold tracking-[0.12em] mt-[3px] min-w-[38px]" style={{ ...MONO, color: meta.color }}>
+        {meta.label}
+      </span>
 
-      {/* Header: Priority + Category + ID */}
-      <div className="flex items-center gap-3 mb-4">
-        <span className={`text-[12px] font-bold px-2 py-[2px] rounded border uppercase tracking-wide ${pCfg.className}`}>
-          {pCfg.label}
-        </span>
-        <div className="flex items-center gap-1.5 text-[13px] text-[var(--color-text-muted)]">
-          <Icon className="w-3.5 h-3.5" />
-          <span className="font-mono">{categoryLabels[action.type] || action.type}</span>
-        </div>
-        <span className="text-[12px] font-mono text-[var(--color-text-muted)] ml-auto">
-          {actionIdShort(action.id)}
-        </span>
+      <div className="flex-1 min-w-0">
+        <div className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1">{action.title}</div>
+        <p className="text-[14.5px] leading-[1.55] text-[var(--color-text-muted)]">{action.description}</p>
       </div>
 
-      {/* Title */}
-      <h2 className="text-[20px] sm:text-[28px] md:text-[36px] font-bold tracking-tight leading-[1.1] text-[var(--color-text-primary)] mb-4">
-        {action.title}
-      </h2>
-
-      {/* Summary */}
-      <p className="text-[14px] sm:text-[15px] leading-relaxed text-[var(--color-text-secondary)] mb-6 sm:mb-8">
-        {action.description}
-      </p>
-
-      {/* Action Buttons */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6 sm:mb-8">
-        {activeTab === 'archived' ? (
+      <div className="flex flex-col items-end gap-2 shrink-0">
+        <span className="font-mono text-[10px] text-[var(--color-text-muted)] whitespace-nowrap" style={MONO}>
+          {impactText}
+        </span>
+        <div className="flex gap-1.5">
           <button
-            onClick={() => onAction(action.id, 'unarchive')}
-            disabled={isLoading}
-            aria-label="Restore this action from archive"
-            className="flex items-center gap-2 px-5 py-2.5 text-[14px] font-semibold bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black rounded-lg motion-safe:transition-colors disabled:opacity-50"
+            onClick={onDismiss}
+            disabled={loading}
+            aria-label="Dismiss this action"
+            className="px-[11px] py-1.5 font-mono text-[9px] tracking-[0.08em] uppercase rounded border border-[var(--color-border-base)] bg-[rgba(255,255,255,0.03)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] motion-safe:transition-colors disabled:opacity-50"
+            style={MONO}
           >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
-            Restore Action
+            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Dismiss'}
           </button>
-        ) : (
-          <>
-            {/* Primary CTA */}
-            <button
-              onClick={() => onAction(action.id, 'useful')}
-              disabled={isLoading}
-              aria-label="Mark this action as complete"
-              className="flex items-center gap-2 px-5 py-2.5 text-[14px] font-semibold bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black rounded-lg motion-safe:transition-colors disabled:opacity-50"
-            >
-              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-              Mark Complete
-            </button>
-
-            {/* Snooze */}
-            <div className="relative">
-              <button
-                onClick={() => setShowSnoozeMenu(!showSnoozeMenu)}
-                disabled={isLoading}
-                aria-label="Snooze this action"
-                className="flex items-center gap-2 px-4 py-2.5 text-[14px] font-medium text-[var(--color-text-secondary)] bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] motion-safe:transition-colors disabled:opacity-50"
-              >
-                <Clock className="w-4 h-4" />
-                Snooze 7d
-              </button>
-              {showSnoozeMenu && (
-                <div className="absolute top-full left-0 mt-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-lg shadow-[var(--shadow-elevated)] z-20 py-1 min-w-[140px]">
-                  {[
-                    { label: '1 day', days: 1 },
-                    { label: '3 days', days: 3 },
-                    { label: '1 week', days: 7 },
-                    { label: '2 weeks', days: 14 },
-                    { label: '1 month', days: 30 },
-                  ].map(opt => (
-                    <button
-                      key={opt.days}
-                      onClick={() => onAction(action.id, 'snooze', { snooze_days: opt.days })}
-                      className="w-full text-left px-4 py-2 text-[14px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] motion-safe:transition-colors"
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Dismiss */}
-            <button
-              onClick={() => onAction(action.id, 'dismiss')}
-              disabled={isLoading}
-              aria-label="Dismiss this action"
-              className="flex items-center gap-2 px-4 py-2.5 text-[14px] font-medium text-[var(--color-text-muted)] bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] motion-safe:transition-colors disabled:opacity-50"
-            >
-              <X className="w-4 h-4" />
-              Dismiss
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* Details Grid */}
-      <div className="mb-6 sm:mb-8">
-        <h3 className="type-eyebrow mb-3">Details</h3>
-        <div className="border border-[var(--color-border-base)] rounded-lg overflow-hidden">
-          {contextPairs.map((pair, i) => (
-            <div
-              key={pair.label}
-              className={`flex flex-col sm:flex-row sm:items-center px-4 py-3 ${
-                i < contextPairs.length - 1 ? 'border-b border-[var(--color-border-subtle)]' : ''
-              }`}
-            >
-              <span className="text-[13px] font-mono text-[var(--color-text-muted)] sm:w-[140px] flex-shrink-0">
-                {pair.label}
-              </span>
-              <span className="text-[14px] text-[var(--color-text-primary)] font-medium">
-                {pair.value}
-              </span>
-            </div>
-          ))}
+          <a
+            href={ctaHref[action.type] || '/dashboard/portfolio'}
+            className="inline-flex items-center px-[11px] py-1.5 font-mono text-[9px] font-bold tracking-[0.08em] uppercase rounded border border-[var(--color-gold-border)] bg-[rgba(230,185,77,0.1)] text-[var(--color-gold)] hover:bg-[rgba(230,185,77,0.16)] motion-safe:transition-colors"
+            style={MONO}
+          >
+            {cta}
+          </a>
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Thesis interlace */}
-      {action.thesisStatus && (
-        <div className="mb-6 sm:mb-8">
-          <h3 className="type-eyebrow mb-3">Thesis</h3>
-          <div className="border border-[var(--color-border-base)] rounded-lg p-5">
-            {/* Conviction badge + ticker */}
-            <div className="flex items-center gap-2 mb-3">
-              <span
-                className="text-[13px] font-semibold px-2 py-[2px] rounded uppercase tracking-wide"
-                style={{
-                  color: STATUS_META[action.thesisStatus].color,
-                  backgroundColor: `${STATUS_META[action.thesisStatus].color}1A`,
-                }}
-              >
-                {STATUS_META[action.thesisStatus].label}
-              </span>
-              {action.ticker && (
-                <span className="text-[14px] font-mono text-[var(--color-text-secondary)]">
-                  {action.ticker}
-                </span>
-              )}
-            </div>
+/* ──────────────────────────────────────────────────
+   Max card (Investigation / Shared exposure) — Max tier
+   ────────────────────────────────────────────────── */
 
-            {/* Non-directive observational line tied to status */}
-            <p className="text-[14px] sm:text-[15px] leading-relaxed text-[var(--color-text-secondary)]">
-              {action.thesisStatus === 'broken'
-                ? 'The evidence behind this thesis no longer holds. Worth deciding whether you still want the position, not just acting on this one item.'
-                : action.thesisStatus === 'weakening'
-                ? 'This thesis is showing strain. Worth watching the next data point closely before it resolves either way.'
-                : 'This thesis still holds. Read this as a routine item, not a change in conviction.'}
-            </p>
+function MaxCard({ action }: { action: ActionItem }) {
+  const kind = maxKind(action);
+  const badge = kind === 'investigation' ? '✦ Investigation' : '✦ Shared exposure';
+  const ctaLabel = kind === 'investigation' ? 'View thesis' : 'Factor lens';
+  const href = kind === 'investigation' ? '/dashboard/theses' : '/dashboard/portfolio/factors';
 
-            {/* Verbatim contradiction cite */}
-            {action.thesisCite && (
-              <div className="mt-4">
-                <p className="text-[13px] text-[var(--color-text-muted)] mb-2">
-                  From{' '}
-                  {action.thesisCite.sourceUrl ? (
-                    <a
-                      href={action.thesisCite.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[var(--color-text-secondary)] underline hover:text-[var(--color-text-primary)] motion-safe:transition-colors"
-                    >
-                      {action.thesisCite.sourceTitle}
-                    </a>
-                  ) : (
-                    <span className="text-[var(--color-text-secondary)]">{action.thesisCite.sourceTitle}</span>
-                  )}
-                  {action.thesisCite.publishedAt
-                    ? ' · ' +
-                      new Date(action.thesisCite.publishedAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })
-                    : ''}
-                  :
-                </p>
-                <blockquote className="border-l-2 border-[var(--color-border-strong)] pl-3 text-[14px] sm:text-[15px] italic leading-relaxed text-[var(--color-text-primary)]">
-                  {action.thesisCite.excerpt}
-                </blockquote>
-                {action.thesisCite.whatItMeans && (
-                  <p className="text-[13px] sm:text-[14px] text-[var(--color-text-muted)] mt-2 leading-relaxed">
-                    {action.thesisCite.whatItMeans}
-                  </p>
-                )}
-              </div>
-            )}
+  return (
+    <div
+      className="rounded-lg border border-[rgba(255,214,122,0.22)] bg-[rgba(255,214,122,0.03)] shadow-[var(--shadow-card)] px-5 py-[18px] flex gap-4 items-start"
+      style={{ borderLeft: '2px solid #FFD67A' }}
+    >
+      <span
+        className="font-mono text-[8px] font-bold tracking-[0.1em] uppercase mt-px px-[7px] py-[3px] rounded-[3px] whitespace-nowrap"
+        style={{ ...MONO, background: 'rgba(255,214,122,0.12)', color: '#FFD67A' }}
+      >
+        {badge}
+      </span>
 
-            {/* Link to theses */}
-            <a
-              href="/dashboard/theses"
-              className="inline-flex items-center gap-1 text-[14px] font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] mt-4 motion-safe:transition-colors"
-            >
-              View thesis
-              <ChevronRight className="w-4 h-4" />
-            </a>
-          </div>
-        </div>
-      )}
+      <div className="flex-1 min-w-0">
+        <div className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1">{action.title}</div>
+        <p className="text-[14.5px] leading-[1.55] text-[var(--color-text-muted)]">{action.description}</p>
+      </div>
 
-      {/* Context */}
-      {action.recommended_action && (
-        <div className="mb-6 sm:mb-8">
-          <h3 className="type-eyebrow mb-3">Context</h3>
-          {isPro ? (
-            <div className="border border-[var(--color-gold-border)] rounded-lg p-5 bg-[var(--color-gold-surface)]">
-              <div className="flex items-start gap-3">
-                <Sparkles className="w-4 h-4 text-[var(--color-gold)] mt-0.5 flex-shrink-0" />
-                <p className="text-[14px] leading-relaxed text-[var(--color-text-primary)]">
-                  {action.recommended_action}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <ProBlur
-              label="Unlock full analysis"
-              description="See the evidence and figures behind this."
-              minHeight="80px"
-            >
-              <div className="border border-[var(--color-gold-border)] rounded-lg p-5 bg-[var(--color-gold-surface)]">
-                <div className="flex items-start gap-3">
-                  <Sparkles className="w-4 h-4 text-[var(--color-gold)] mt-0.5 flex-shrink-0" />
-                  <p className="text-[14px] leading-relaxed text-[var(--color-text-primary)]">
-                    Upgrade to Pro to see the evidence and figures behind this.
-                  </p>
-                </div>
-              </div>
-            </ProBlur>
-          )}
-        </div>
-      )}
+      <div className="flex flex-col items-end gap-2 shrink-0">
+        <span className="font-mono text-[10px]" style={{ ...MONO, color: '#FFD67A' }}>Max</span>
+        <a
+          href={href}
+          className="px-[11px] py-1.5 font-mono text-[9px] font-bold tracking-[0.08em] uppercase rounded border whitespace-nowrap motion-safe:transition-colors"
+          style={{ ...MONO, color: '#FFD67A', background: 'rgba(255,214,122,0.1)', borderColor: 'rgba(255,214,122,0.28)' }}
+        >
+          {ctaLabel}
+        </a>
+      </div>
+    </div>
+  );
+}
 
-      {/* Activity Timeline */}
-      <div>
-        <h3 className="type-eyebrow mb-3">Activity</h3>
-        <div className="relative pl-6">
-          {/* Timeline line */}
-          <div className="absolute left-[7px] top-2 bottom-2 w-px bg-[var(--color-border-base)]" />
+/* ──────────────────────────────────────────────────
+   Max teaser (below Max) — present but blurred + locked
+   ────────────────────────────────────────────────── */
 
-          {/* Created event */}
-          <div className="relative mb-4">
-            <div className="absolute left-[-19px] top-1.5 w-[11px] h-[11px] rounded-full border-2 border-[var(--color-border-strong)] bg-[var(--color-bg-base)]" />
-            <div>
-              <p className="text-[14px] text-[var(--color-text-primary)]">Action created</p>
-              <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">
-                {new Date(action.created_at).toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit',
-                })}
-              </p>
-            </div>
-          </div>
+function MaxTeaser({ action }: { action: ActionItem }) {
+  const kind = maxKind(action);
+  const tease =
+    kind === 'investigation'
+      ? 'Helm investigated a move across your book'
+      : 'A shared-exposure risk spans several holdings';
 
-          {/* Snoozed event if applicable */}
-          {action.snoozed_until && (
-            <div className="relative mb-4">
-              <div className="absolute left-[-19px] top-1.5 w-[11px] h-[11px] rounded-full border-2 border-[var(--color-warning-border)] bg-[var(--color-warning-muted)]" />
-              <div>
-                <p className="text-[14px] text-[var(--color-text-primary)]">Snoozed</p>
-                <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">
-                  Until {new Date(action.snoozed_until).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </p>
-              </div>
-            </div>
-          )}
+  return (
+    <div
+      className="rounded-lg border border-[rgba(255,214,122,0.18)] bg-[rgba(255,214,122,0.025)] px-5 py-4 flex gap-3.5 items-center"
+      style={{ borderLeft: '2px solid #FFD67A' }}
+    >
+      <span
+        className="font-mono text-[8px] font-bold tracking-[0.1em] px-[7px] py-[2px] rounded-[3px]"
+        style={{ ...MONO, background: 'rgba(255,214,122,0.12)', color: '#FFD67A' }}
+      >
+        MAX
+      </span>
 
-          {/* Current state */}
-          <div className="relative">
-            <div className="absolute left-[-19px] top-1.5 w-[11px] h-[11px] rounded-full border-2 border-[var(--color-gold-border)] bg-[var(--color-gold-surface)]" />
-            <div>
-              <p className="text-[14px] text-[var(--color-gold)]">
-                {activeTab === 'done' ? 'Completed' : activeTab === 'archived' ? 'Archived' : 'Awaiting action'}
-              </p>
-              <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">Now</p>
-            </div>
-          </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-[7px]">{tease}</div>
+        <div className="flex flex-col gap-1.5 select-none" style={{ filter: 'blur(3px)', opacity: 0.55 }} aria-hidden="true">
+          <div className="h-2 w-[90%] rounded-[3px] bg-[rgba(255,255,255,0.08)]" />
+          <div className="h-2 w-[72%] rounded-[3px] bg-[rgba(255,255,255,0.06)]" />
         </div>
       </div>
+
+      <a
+        href="/dashboard/settings"
+        className="flex items-center gap-1 font-mono text-[9px] tracking-[0.08em] uppercase whitespace-nowrap motion-safe:transition-colors hover:brightness-110"
+        style={{ ...MONO, color: '#FFD67A' }}
+      >
+        Unlock with Max
+        <ArrowRight className="w-3 h-3" />
+      </a>
     </div>
   );
 }

@@ -67,7 +67,7 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentag
           <div className="flex items-center justify-between">
             <DataPanelTitle>Net Worth</DataPanelTitle>
             {showChange && (
-              <div className="flex items-center gap-1.5 type-label text-xs">
+              <div className="flex items-center gap-1.5 type-label text-[13px]">
                 {isPositiveChange ? (
                   <TrendingUp className="h-3.5 w-3.5 text-[var(--color-positive)]" aria-hidden="true" />
                 ) : (
@@ -156,10 +156,10 @@ export function NetWorthCard({ currentNetWorth, netWorthHistory, changePercentag
               </div>
               {showChange && (
                 <div className="flex items-center gap-1.5">
-                  <span className={`font-tabular text-sm font-medium ${isPositiveChange ? 'text-[var(--color-positive)] glow-positive' : 'text-[var(--color-negative)] glow-negative'}`}>
+                  <span className={`font-tabular text-[15px] font-medium ${isPositiveChange ? 'text-[var(--color-positive)] glow-positive' : 'text-[var(--color-negative)] glow-negative'}`}>
                     {isPositiveChange ? '+' : '-'}{formatCurrency(isVisible ? animatedChange : Math.abs(change))}
                   </span>
-                  <span className="text-xs text-[var(--color-text-muted)]">this mo</span>
+                  <span className="text-[13px] text-[var(--color-text-muted)]">this mo</span>
                 </div>
               )}
             </div>

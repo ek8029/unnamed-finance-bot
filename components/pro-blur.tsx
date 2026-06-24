@@ -35,14 +35,14 @@ export function ProBlur({
           className="group flex items-center gap-2 px-3 py-1.5 rounded-[var(--radius-md)] border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] hover:bg-[rgba(230,185,77,0.12)] transition-colors cursor-pointer"
         >
           <Lock className="w-3 h-3 text-[var(--color-gold)]" />
-          <span className="text-[12px] font-medium text-[var(--color-gold)]" style={{ fontFamily: 'var(--font-mono)' }}>
+          <span className="text-[13px] font-medium text-[var(--color-gold)]" style={{ fontFamily: 'var(--font-mono)' }}>
             {label}
           </span>
         </button>
 
         {showCheckout && (
           <CheckoutModal
-            billingPeriod="founding"
+            billingPeriod="pro"
             onClose={() => setShowCheckout(false)}
           />
         )}
@@ -74,7 +74,7 @@ export function ProBlur({
                 {label}
               </p>
               {description && (
-                <p className="text-[14px] text-[var(--color-text-muted)] leading-relaxed">
+                <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed">
                   {description}
                 </p>
               )}
@@ -82,14 +82,14 @@ export function ProBlur({
 
             <button
               onClick={() => setShowCheckout(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[14px] rounded-[var(--radius-md)] cursor-pointer transition-colors"
+              className="flex items-center gap-2 px-5 py-2.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-colors"
             >
-              Upgrade for $4.99/mo
+              Upgrade to Pro · $20/mo
             </button>
 
             <Link
               href="/pricing"
-              className="text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+              className="text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
               style={{ fontFamily: 'var(--font-mono)' }}
             >
               See all plans
@@ -100,7 +100,7 @@ export function ProBlur({
 
       {showCheckout && (
         <CheckoutModal
-          billingPeriod="founding"
+          billingPeriod="pro"
           onClose={() => setShowCheckout(false)}
         />
       )}

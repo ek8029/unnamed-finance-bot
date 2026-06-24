@@ -60,11 +60,11 @@ export function AccountAggregation({ accounts }: AccountAggregationProps) {
                 </div>
               </div>
               <div className="text-right">
-                <div className={`type-data text-sm ${account.balance < 0 ? 'text-[var(--color-negative)]' : 'text-[var(--color-text-primary)]'}`}>
+                <div className={`type-data text-[15px] ${account.balance < 0 ? 'text-[var(--color-negative)]' : 'text-[var(--color-text-primary)]'}`}>
                   {formatCurrency(Math.abs(account.balance))}
                 </div>
                 {account.balance < 0 && (
-                  <div className="text-xs text-[var(--color-text-muted)] mt-1">Balance Due</div>
+                  <div className="text-[13px] text-[var(--color-text-muted)] mt-1">Balance Due</div>
                 )}
               </div>
             </div>

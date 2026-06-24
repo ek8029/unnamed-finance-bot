@@ -39,7 +39,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'Is there a free investment thesis tracker?',
-    a: 'Helm Terminal is free to start: portfolio aggregation, AI stock analysis, and the actions inbox are free. The thesis-monitoring layer is part of Helm Pro at $4.99/month for founding members. Competitor pricing was not public as of June 2026.',
+    a: 'Helm Terminal is free to start: portfolio aggregation, AI stock analysis, and the actions inbox are free. The thesis-monitoring layer is part of Helm Pro at $20/month. Competitor pricing was not public as of June 2026.',
   },
 ];
 
@@ -47,7 +47,7 @@ type Cell = string;
 const ROWS: { label: string; helm: Cell; vela: Cell; thesis: Cell; watch: Cell }[] = [
   { label: 'Status (June 2026)', helm: 'Live, shipping', vela: 'Private waitlist', thesis: 'Early access', watch: 'Not disclosed' },
   { label: 'Free tier', helm: 'Yes', vela: 'Not shown', thesis: 'Not shown', watch: 'Not disclosed' },
-  { label: 'Paid price', helm: '$4.99/mo founding', vela: 'Not public', thesis: 'Not public', watch: 'Not disclosed' },
+  { label: 'Paid price', helm: '$20/mo Pro', vela: 'Not public', thesis: 'Not public', watch: 'Not disclosed' },
   { label: 'Reads SEC filings', helm: 'Yes (EDGAR)', vela: 'Yes', thesis: 'No', watch: 'Not disclosed' },
   { label: 'Verbatim dated citations', helm: 'Yes', vela: 'No (paraphrased)', thesis: 'No', watch: 'Not disclosed' },
   { label: 'Shared-driver risk', helm: 'Yes', vela: 'No', thesis: 'No', watch: 'Not disclosed' },
@@ -101,9 +101,9 @@ export default function BestThesisTrackersPage() {
             <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
           </Link>
           <div className="flex items-center gap-5">
-            <Link href="/thesis-monitoring" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Thesis Monitoring</Link>
-            <Link href="/pricing" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Pricing</Link>
-            <Link href="/signup" className="px-4 py-1.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Sign up</Link>
+            <Link href="/thesis-monitoring" className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Thesis Monitoring</Link>
+            <Link href="/pricing" className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Pricing</Link>
+            <Link href="/signup" className="px-4 py-1.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Sign up</Link>
           </div>
         </div>
       </nav>
@@ -123,7 +123,7 @@ export default function BestThesisTrackersPage() {
           {/* Table */}
           <section>
             <div className="overflow-x-auto sovereign-card rounded">
-              <table className="w-full text-[13.5px] text-left border-collapse min-w-[640px]">
+              <table className="w-full text-[14.5px] text-left border-collapse min-w-[640px]">
                 <thead>
                   <tr className="border-b border-[var(--color-border-base)]">
                     <th className="p-3 font-semibold text-[var(--color-text-primary)]">&nbsp;</th>
@@ -146,14 +146,14 @@ export default function BestThesisTrackersPage() {
                 </tbody>
               </table>
             </div>
-            <p className="text-xs text-[var(--color-text-muted)] mt-2">Competitor details verified from public sites on June 17, 2026, and may change. ThesisWatch did not expose details to public crawls, so its cells are marked not disclosed.</p>
+            <p className="text-[13px] text-[var(--color-text-muted)] mt-2">Competitor details verified from public sites on June 17, 2026, and may change. ThesisWatch did not expose details to public crawls, so its cells are marked not disclosed.</p>
           </section>
 
           {/* Per-tool */}
           <section className="space-y-8">
             <div>
               <h2 className="text-[20px] font-bold text-[var(--color-text-primary)] mb-2">Helm Terminal</h2>
-              <p>Helm is a financial intelligence terminal whose flagship layer is thesis monitoring. You write the pillars behind each holding, and Helm scores SEC filings, earnings, news, and price against them every hour the market is open, flagging thesis drift with verbatim, dated citations. It is the only tool here that is live today, cites primary sources verbatim, and detects shared-driver risk across positions. The core terminal is free; the thesis layer is Pro at $4.99/month for founding members. <Link href="/thesis-monitoring" className="text-[var(--color-gold)] hover:underline">How it works.</Link></p>
+              <p>Helm is a financial intelligence terminal whose flagship layer is thesis monitoring. You write the pillars behind each holding, and Helm scores SEC filings, earnings, news, and price against them every hour the market is open, flagging thesis drift with verbatim, dated citations. It is the only tool here that is live today, cites primary sources verbatim, and detects shared-driver risk across positions. The core terminal is free; the thesis layer is Pro at $20/month. <Link href="/thesis-monitoring" className="text-[var(--color-gold)] hover:underline">How it works.</Link></p>
             </div>
             <div>
               <h2 className="text-[20px] font-bold text-[var(--color-text-primary)] mb-2">Vela</h2>
@@ -186,10 +186,10 @@ export default function BestThesisTrackersPage() {
           <section className="sovereign-card rounded p-6 md:p-8 text-center">
             <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-2">The one you can use today.</h2>
             <p className="mb-5 max-w-xl mx-auto">Helm watches the thesis behind every position and tells you, with dated citations, when it breaks. Free to start.</p>
-            <Link href="/signup" className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Take the helm</Link>
+            <Link href="/signup" className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Take the helm</Link>
           </section>
 
-          <p className="text-xs text-[var(--color-text-muted)] leading-relaxed border-t border-[var(--color-border-subtle)] pt-6">
+          <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed border-t border-[var(--color-border-subtle)] pt-6">
             Comparison reflects public information as of June 17, 2026 and is provided for general information, not financial advice. Verify current details with each provider. Helm Terminal is not a registered investment advisor.
           </p>
         </div>

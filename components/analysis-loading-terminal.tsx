@@ -63,7 +63,7 @@ export function AnalysisLoadingTerminal() {
   const doneTyping = typedLen >= fullCommand.length;
 
   return (
-    <div className="bg-[rgba(10,10,10,0.8)] border border-white/[0.06] rounded-lg px-6 py-5 font-mono text-sm max-w-lg w-full">
+    <div className="bg-[rgba(10,10,10,0.8)] border border-white/[0.06] rounded-lg px-6 py-5 font-mono text-[15px] max-w-lg w-full">
       {/* Command line */}
       <div className="flex items-center mb-4">
         <span className="text-[var(--color-gold)] mr-2">→</span>
@@ -92,7 +92,7 @@ export function AnalysisLoadingTerminal() {
                   animationDelay: '0ms',
                 }}
               >
-                <span className="text-[var(--color-text-muted)] text-xs w-[76px] text-right shrink-0">
+                <span className="text-[var(--color-text-muted)] text-[13px] w-[76px] text-right shrink-0">
                   [{step.tag}]
                 </span>
                 <span

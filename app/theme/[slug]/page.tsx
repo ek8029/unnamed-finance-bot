@@ -103,8 +103,8 @@ export default async function ThemePage({ params }: PageProps) {
             <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
           </Link>
           <div className="flex items-center gap-5">
-            <Link href="/thesis-monitoring" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Thesis Monitoring</Link>
-            <Link href="/signup" className="px-4 py-1.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Sign up</Link>
+            <Link href="/thesis-monitoring" className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Thesis Monitoring</Link>
+            <Link href="/signup" className="px-4 py-1.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Sign up</Link>
           </div>
         </div>
       </nav>
@@ -143,14 +143,14 @@ export default async function ThemePage({ params }: PageProps) {
                 <div key={i} className="sovereign-card rounded p-4">
                   <div className="flex items-baseline justify-between gap-3 mb-1.5">
                     <span className="text-[var(--color-text-primary)] font-semibold text-[15px]">{link.layer}</span>
-                    <span className="text-[var(--color-text-muted)] text-[12px]">{link.detail}</span>
+                    <span className="text-[var(--color-text-muted)] text-[13px]">{link.detail}</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {link.tickers.map((t) => (
                       <Link
                         key={t}
                         href={`/thesis-risks/${t}`}
-                        className="font-mono text-[12px] text-[var(--color-gold)] bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] px-2 py-0.5 rounded hover:brightness-110 transition-all"
+                        className="font-mono text-[13px] text-[var(--color-gold)] bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] px-2 py-0.5 rounded hover:brightness-110 transition-all"
                       >
                         {t}
                       </Link>
@@ -199,10 +199,10 @@ export default async function ThemePage({ params }: PageProps) {
           <section className="sovereign-card rounded p-6 md:p-8 text-center">
             <h2 className="text-[21px] font-bold text-[var(--color-text-primary)] mb-2">Watch what would break the thesis.</h2>
             <p className="mb-5 max-w-xl mx-auto">Helm monitors the reasons behind every position you hold and tells you when one starts to break. Free to start.</p>
-            <Link href="/signup" className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Take the helm</Link>
+            <Link href="/signup" className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Take the helm</Link>
           </section>
 
-          <p className="text-xs text-[var(--color-text-muted)] leading-relaxed border-t border-[var(--color-border-subtle)] pt-6">
+          <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed border-t border-[var(--color-border-subtle)] pt-6">
             This content is for educational purposes only and does not constitute financial, tax, or investment advice. Tickers are listed to illustrate a theme, not as recommendations. Helm Terminal is not a registered investment advisor.
           </p>
         </div>

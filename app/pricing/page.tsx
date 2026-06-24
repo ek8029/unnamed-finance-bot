@@ -8,66 +8,58 @@ import { CheckoutModal } from '@/components/checkout-modal';
 import { AnimatedSection } from '@/components/ui/animated-section';
 import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
+import { usePreview } from '@/lib/preview-context';
 
-type BillingPeriod = 'monthly' | 'annual' | 'lifetime' | 'founding';
-
-const PLANS: {
-  period: BillingPeriod;
-  label: string;
-  price: string;
-  unit: string;
-  note: string | null;
-  save: string | null;
-  badge: string | null;
-}[] = [
-  { period: 'founding', label: 'Founding Member', price: '$4.99', unit: '/mo', note: 'Locked at $4.99/mo forever', save: 'Save 67%', badge: '50 spots' },
-  { period: 'monthly',  label: 'Monthly',  price: '$14.99', unit: '/mo',   note: null,                save: null, badge: null },
-  { period: 'annual',   label: 'Annual',   price: '$9.99',  unit: '/mo',   note: 'Billed $119/year',  save: 'Save 33%', badge: null },
-  { period: 'lifetime', label: 'Lifetime', price: '$249',   unit: '',      note: 'One-time payment',  save: null, badge: null },
-];
+// Display tiers for the new model. The `period` maps onto the existing
+// Stripe billing-period keys so checkout keeps working unchanged.
+// TODO: needs STRIPE_PRICE_PRO / STRIPE_PRICE_MAX env for $20/$50
+type PaidPeriod = 'pro' | 'max';
 
 const freeFeatures = [
-  '5 AI stock analyses per day',
-  'Basic portfolio dashboard',
-  'Brokerage sync via Plaid',
-  'Portfolio Wrapped (annual summary)',
-  'Actions inbox (basic alerts)',
+  'Full terminal and portfolio dashboard',
+  'AI stock analysis',
+  'Connected brokerages via Plaid',
+  'Daily brief (general)',
+  'Actions inbox',
+  'Portfolio Wrapped',
 ];
 
 const proFeatures = [
-  'Unlimited AI stock analyses',
-  'Tax-loss harvesting with wash-sale detection',
+  'Thesis monitoring (theses, detail, cited evidence)',
   'Earnings exposure tracking',
-  'Full intelligence feed',
-  'Priority data refresh',
+  'Tax center with tax-loss harvesting',
+  'Conviction-led tailored brief',
   'Everything in Free',
+];
+
+const maxFeatures = [
+  'The agent (reassessment artifact, agentic investigation, shared-exposure)',
+  'Thesis Builder (pre-buy)',
+  'Factor lens',
+  'Coming: real-time, iOS, advisor',
+  'Everything in Pro',
 ];
 
 const faqItems = [
   {
     question: "What's included in the Free plan?",
     answer:
-      'You get 5 AI stock analyses per day, a portfolio dashboard with brokerage sync via Plaid, Portfolio Wrapped (your annual investment summary), and basic action alerts. No credit card required.',
+      'The full terminal: portfolio dashboard with brokerage sync via Plaid, AI stock analysis, the general daily brief, the actions inbox, and Portfolio Wrapped. No credit card required.',
   },
   {
     question: 'What does Pro add?',
     answer:
-      'Pro removes the analysis limit (unlimited AI stock analyses), adds tax-loss harvesting with wash-sale detection (typical savings: $500\u2013$3,000/year), earnings exposure tracking, the full intelligence feed, and priority data refresh.',
+      'Pro is $20/mo. It adds thesis monitoring (your theses, detailed views, and cited evidence), earnings exposure tracking, the tax center with tax-loss harvesting, and a conviction-led tailored brief.',
   },
   {
-    question: 'What are the pricing options for Pro?',
+    question: 'What does Max add?',
     answer:
-      'Founding Member at $4.99/mo (locked forever, 50 spots only), Monthly at $14.99/mo, Annual at $119/yr (save 33%), or Lifetime at $249 one-time. All options include the same Pro features.',
-  },
-  {
-    question: 'What is the Founding Member plan?',
-    answer:
-      'Early supporters get Pro for $4.99/mo \u2014 locked at that price forever, even when regular pricing increases. Only 50 spots available. Once they\u2019re gone, they\u2019re gone.',
+      'Max is $50/mo. It includes everything in Pro plus the agent (reassessment artifact, agentic investigation, and shared-exposure analysis), the Thesis Builder for pre-buy work, and the factor lens. Real-time data, iOS, and advisor features are coming.',
   },
   {
     question: 'Can I cancel anytime?',
     answer:
-      'Yes. Cancel monthly or annual subscriptions at any time. You keep access through the end of your billing period. No questions asked.',
+      'Yes. Cancel your subscription at any time. You keep access through the end of your billing period. No questions asked.',
   },
   {
     question: 'Is my data secure?',
@@ -79,11 +71,11 @@ const faqItems = [
 function FAQItem({ question, answer }: { question: string; answer: string }) {
   return (
     <details className="group sovereign-card rounded overflow-hidden">
-      <summary className="flex items-center justify-between cursor-pointer px-5 py-3 text-sm font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors list-none [&::-webkit-details-marker]:hidden">
+      <summary className="flex items-center justify-between cursor-pointer px-5 py-3 text-base font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors list-none [&::-webkit-details-marker]:hidden">
         {question}
         <ChevronDown className="w-4 h-4 text-[var(--color-text-muted)] transition-transform duration-200 group-open:rotate-180 shrink-0 ml-4" />
       </summary>
-      <div className="px-5 pb-3 text-sm text-[var(--color-text-secondary)] leading-relaxed">
+      <div className="px-5 pb-3 text-base text-[var(--color-text-secondary)] leading-relaxed">
         {answer}
       </div>
     </details>
@@ -91,10 +83,9 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 }
 
 export default function PricingPage() {
-  const [selected, setSelected] = useState<BillingPeriod>('founding');
-  const [showCheckout, setShowCheckout] = useState(false);
-
-  const plan = PLANS.find(p => p.period === selected)!;
+  // Which paid tier the checkout modal will open with.
+  const [checkoutPeriod, setCheckoutPeriod] = useState<PaidPeriod | null>(null);
+  const { tier } = usePreview();
 
   return (
     <main className="min-h-screen bg-[var(--color-bg-base)] bg-depth relative overflow-hidden">
@@ -134,10 +125,10 @@ export default function PricingPage() {
             <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
           </Link>
           <div className="flex items-center gap-5">
-            <Link href="/analyze" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Analyze</Link>
-            <Link href="/pricing" className="text-sm text-[var(--color-text-primary)] transition-colors">Pricing</Link>
-            <Link href="/blog" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Blog</Link>
-            <Link href="/login" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Sign in</Link>
+            <Link href="/analyze" className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Analyze</Link>
+            <Link href="/pricing" className="text-[15px] text-[var(--color-text-primary)] transition-colors">Pricing</Link>
+            <Link href="/blog" className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Blog</Link>
+            <Link href="/login" className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Sign in</Link>
           </div>
         </div>
       </nav>
@@ -147,146 +138,133 @@ export default function PricingPage() {
         <AnimatedSection delay={0}>
           <p className="type-eyebrow text-[var(--color-gold)] mb-3">Pricing</p>
           <h1 className="type-h1 text-[var(--color-text-primary)] mb-3">
-            Start free. Upgrade when you need more.
+            Three tiers. Zero percent of AUM.
           </h1>
           <p className="type-body text-[var(--color-text-secondary)] max-w-lg mx-auto">
-            Portfolio dashboard, brokerage sync, Wrapped, and 5 AI analyses per day — free forever. Pro unlocks unlimited analyses and advanced intelligence.
+            The full terminal is free. Pro adds thesis monitoring and tax intelligence. Max adds the agent.
           </p>
         </AnimatedSection>
       </section>
 
-      {/* ── Pricing — ProGate-style layout ── */}
+      {/* ── Tier cards: Free / Pro / Max ── */}
       <section className="relative container mx-auto px-6 pb-16">
-        <div className="max-w-lg mx-auto">
+        <div className="grid gap-6 lg:grid-cols-3 max-w-5xl mx-auto items-start">
 
-          {/* Free tier summary */}
+          {/* Free */}
           <AnimatedSection delay={100}>
-            <div className="sovereign-card rounded p-5 mb-6">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-[14px] font-bold text-[var(--color-text-primary)]">Free</span>
-                <div className="h-px flex-1 bg-[var(--color-border-base)]" />
-                <span className="text-[18px] font-bold tabular-nums text-[var(--color-text-primary)]" style={{ fontFamily: 'var(--font-mono)' }}>$0</span>
-                <span className="text-[13px] text-[var(--color-text-muted)]">forever</span>
+            <div className="sovereign-card rounded p-6 flex flex-col h-full">
+              <div className="mb-5">
+                <span className="text-[14px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-medium" style={{ fontFamily: 'var(--font-mono)' }}>
+                  Free
+                </span>
+                <div className="flex items-baseline gap-1.5 mt-3">
+                  <span className="text-[40px] font-bold tabular-nums text-[var(--color-text-primary)] leading-none" style={{ fontFamily: 'var(--font-mono)' }}>$0</span>
+                  <span className="text-[15px] text-[var(--color-text-muted)]">forever</span>
+                </div>
               </div>
-              <ul className="space-y-2">
+              <ul className="space-y-2.5 mb-6 flex-1">
                 {freeFeatures.map((f) => (
                   <li key={f} className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[var(--color-positive)] shrink-0 mt-0.5" />
-                    <span className="text-sm text-[var(--color-text-secondary)]">{f}</span>
+                    <span className="text-[15px] text-[var(--color-text-secondary)]">{f}</span>
                   </li>
                 ))}
               </ul>
               <Link
                 href="/signup"
-                className="block w-full text-center text-sm font-medium py-2.5 rounded-[var(--radius-md)] border border-[var(--color-border-strong)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors mt-5"
+                className="block w-full text-center text-base font-medium py-3 rounded-[var(--radius-md)] border border-[var(--color-border-strong)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-overlay)] transition-colors"
               >
-                Get Started Free
+                Get started free
               </Link>
             </div>
           </AnimatedSection>
 
-          {/* Pro — matches ProGate exactly */}
+          {/* Pro $20 — featured */}
           <AnimatedSection delay={200}>
-            <div className="mb-8">
-              {/* Eyebrow */}
-              <div className="flex items-center gap-3 mb-8">
-                <HelmMark size={24} />
-                <div className="h-px flex-1 bg-[var(--color-border-base)]" />
-                <span className="text-[12px] uppercase tracking-[0.2em] text-[var(--color-gold)] font-medium" style={{ fontFamily: 'var(--font-mono)' }}>
-                  Pro
-                </span>
+            <div className="sovereign-card rounded p-6 flex flex-col h-full border-[var(--color-gold-border)] bg-[var(--color-gold-surface)]">
+              <div className="mb-5">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-[14px] uppercase tracking-[0.2em] text-[var(--color-gold)] font-medium" style={{ fontFamily: 'var(--font-mono)' }}>
+                    Pro
+                  </span>
+                  <span className="text-[10px] uppercase tracking-wider font-semibold text-[var(--color-gold)] px-2 py-0.5 rounded-sm bg-[rgba(230,185,77,0.12)]" style={{ fontFamily: 'var(--font-mono)' }}>
+                    Most popular
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-1.5 mt-3">
+                  <span className="text-[40px] font-bold tabular-nums text-[var(--color-text-primary)] leading-none" style={{ fontFamily: 'var(--font-mono)' }}>$20</span>
+                  <span className="text-[15px] text-[var(--color-text-muted)]">/mo</span>
+                </div>
               </div>
-
-              {/* Headline */}
-              <h2 className="text-2xl sm:text-[28px] font-bold tracking-tight text-[var(--color-text-primary)] leading-tight mb-3">
-                Unlock advanced intelligence
-              </h2>
-              <p className="text-[16px] text-[var(--color-text-secondary)] leading-relaxed mb-4">
-                No limits, deeper intelligence, and tools built for serious investors.
-              </p>
-
-              {/* Pro feature list */}
-              <ul className="space-y-2 mb-10">
+              <ul className="space-y-2.5 mb-6 flex-1">
                 {proFeatures.map((f) => (
                   <li key={f} className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[var(--color-gold)] shrink-0 mt-0.5" />
-                    <span className="text-sm text-[var(--color-text-primary)]">{f}</span>
+                    <span className="text-[15px] text-[var(--color-text-primary)]">{f}</span>
                   </li>
                 ))}
               </ul>
-
-              {/* Plan options — radio cards identical to ProGate */}
-              <div className="space-y-3 mb-8">
-                {PLANS.map((p) => {
-                  const active = selected === p.period;
-                  return (
-                    <button
-                      key={p.period}
-                      onClick={() => setSelected(p.period)}
-                      className={`w-full flex items-center justify-between px-4 py-3 sm:px-5 sm:py-4 rounded-[var(--radius-md)] border cursor-pointer transition-colors duration-150 text-left ${
-                        active
-                          ? 'border-[var(--color-gold-border)] bg-[var(--color-gold-surface)]'
-                          : 'border-[var(--color-border-base)] bg-transparent hover:border-[var(--color-border-strong)]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        <div className={`w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center shrink-0 transition-colors duration-150 ${
-                          active ? 'border-[var(--color-gold)]' : 'border-[var(--color-border-strong)]'
-                        }`}>
-                          {active && <div className="w-[8px] h-[8px] rounded-full bg-[var(--color-gold)]" />}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2.5">
-                            <span className={`text-[16px] font-medium ${active ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>
-                              {p.label}
-                            </span>
-                            {p.save && (
-                              <span className="text-[10px] uppercase tracking-wider font-semibold text-[var(--color-positive)] px-2 py-0.5 rounded-sm bg-[rgba(74,222,128,0.08)]" style={{ fontFamily: 'var(--font-mono)' }}>
-                                {p.save}
-                              </span>
-                            )}
-                            {p.badge && (
-                              <span className="text-[10px] uppercase tracking-wider font-semibold text-[var(--color-gold)] px-2 py-0.5 rounded-sm bg-[rgba(230,185,77,0.08)]" style={{ fontFamily: 'var(--font-mono)' }}>
-                                {p.badge}
-                              </span>
-                            )}
-                          </div>
-                          {p.note && (
-                            <span className="text-[13px] text-[var(--color-text-muted)] mt-0.5 block" style={{ fontFamily: 'var(--font-mono)' }}>
-                              {p.note}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <span className={`text-[18px] font-bold tabular-nums ${active ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>
-                          {p.price}
-                        </span>
-                        <span className={`text-[13px] ${active ? 'text-[var(--color-text-secondary)]' : 'text-[var(--color-text-muted)]'}`}>
-                          {p.unit}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* CTA */}
-              <button
-                onClick={() => setShowCheckout(true)}
-                className="group w-full flex items-center justify-center gap-2.5 px-6 py-3 sm:px-8 sm:py-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-colors duration-200 mb-6"
-              >
-                Continue with {plan.label}
-                <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-              </button>
-
-              {/* Fine print */}
-              <div className="text-center text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
-                Cancel anytime &middot; Secure via Stripe
-              </div>
+              {tier === 'free' ? (
+                <button
+                  onClick={() => setCheckoutPeriod('pro')}
+                  className="group w-full flex items-center justify-center gap-2.5 px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-colors duration-200"
+                >
+                  Upgrade to Pro
+                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </button>
+              ) : (
+                <div className="w-full flex items-center justify-center px-6 py-3 border border-[var(--color-border-base)] text-[var(--color-text-muted)] font-semibold text-[15px] rounded-[var(--radius-md)]">
+                  {tier === 'pro' ? 'Current plan' : 'Included in Max'}
+                </div>
+              )}
             </div>
           </AnimatedSection>
+
+          {/* Max $50 — brighter gold accent */}
+          <AnimatedSection delay={300}>
+            <div className="sovereign-card rounded p-6 flex flex-col h-full" style={{ borderColor: 'rgba(255,214,122,0.45)' }}>
+              <div className="mb-5">
+                <span className="text-[14px] uppercase tracking-[0.2em] font-medium" style={{ fontFamily: 'var(--font-mono)', color: '#FFD67A' }}>
+                  Max
+                </span>
+                <div className="flex items-baseline gap-1.5 mt-3">
+                  <span className="text-[40px] font-bold tabular-nums leading-none" style={{ fontFamily: 'var(--font-mono)', color: '#FFD67A' }}>$50</span>
+                  <span className="text-[15px] text-[var(--color-text-muted)]">/mo</span>
+                </div>
+              </div>
+              <ul className="space-y-2.5 mb-6 flex-1">
+                {maxFeatures.map((f) => (
+                  <li key={f} className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#FFD67A' }} />
+                    <span className="text-[15px] text-[var(--color-text-primary)]">{f}</span>
+                  </li>
+                ))}
+              </ul>
+              {tier === 'max' ? (
+                <div className="w-full flex items-center justify-center px-6 py-3 border border-[var(--color-border-base)] text-[var(--color-text-muted)] font-semibold text-[15px] rounded-[var(--radius-md)]">
+                  Current plan
+                </div>
+              ) : (
+                <button
+                  onClick={() => setCheckoutPeriod('max')}
+                  className="group w-full flex items-center justify-center gap-2.5 px-6 py-3 font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-opacity duration-200 hover:opacity-90"
+                  style={{ background: '#FFD67A', color: 'var(--color-bg-base)' }}
+                >
+                  Upgrade to Max
+                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </button>
+              )}
+            </div>
+          </AnimatedSection>
+
         </div>
+
+        {/* Fine print */}
+        <AnimatedSection delay={400}>
+          <div className="text-center text-[14px] text-[var(--color-text-muted)] mt-8" style={{ fontFamily: 'var(--font-mono)' }}>
+            Cancel anytime &middot; Secure via Stripe
+          </div>
+        </AnimatedSection>
       </section>
 
       {/* ── FAQ ── */}
@@ -309,10 +287,10 @@ export default function PricingPage() {
 
       <LegalFooter />
 
-      {showCheckout && (
+      {checkoutPeriod && (
         <CheckoutModal
-          billingPeriod={selected}
-          onClose={() => setShowCheckout(false)}
+          billingPeriod={checkoutPeriod}
+          onClose={() => setCheckoutPeriod(null)}
         />
       )}
     </main>

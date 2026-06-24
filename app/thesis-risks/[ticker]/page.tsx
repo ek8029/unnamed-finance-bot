@@ -67,8 +67,8 @@ export default async function ThesisRisksPage({ params }: PageProps) {
       <main className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)] flex items-center justify-center px-6">
         <div className="text-center max-w-md">
           <h1 className="text-[22px] font-bold mb-3">No thesis snapshot for {symbol} yet</h1>
-          <p className="text-[var(--color-text-secondary)] text-sm mb-6">Run a fresh analysis to generate the bull case and its risks.</p>
-          <Link href={`/analyze/${symbol}`} className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded hover:brightness-110 transition-all">Analyze {symbol}</Link>
+          <p className="text-[var(--color-text-secondary)] text-[15px] mb-6">Run a fresh analysis to generate the bull case and its risks.</p>
+          <Link href={`/analyze/${symbol}`} className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded hover:brightness-110 transition-all">Analyze {symbol}</Link>
         </div>
       </main>
     );
@@ -139,9 +139,9 @@ export default async function ThesisRisksPage({ params }: PageProps) {
             <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
           </Link>
           <div className="flex items-center gap-5">
-            <Link href={`/analyze/${symbol}`} className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">{symbol} Analysis</Link>
-            <Link href="/thesis-monitoring" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Thesis Monitoring</Link>
-            <Link href="/signup" className="px-4 py-1.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Sign up</Link>
+            <Link href={`/analyze/${symbol}`} className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">{symbol} Analysis</Link>
+            <Link href="/thesis-monitoring" className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Thesis Monitoring</Link>
+            <Link href="/signup" className="px-4 py-1.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Sign up</Link>
           </div>
         </div>
       </nav>
@@ -207,15 +207,15 @@ export default async function ThesisRisksPage({ params }: PageProps) {
             <h2 className="text-[21px] font-bold text-[var(--color-text-primary)] mb-2">Track the {symbol} thesis, not just the price.</h2>
             <p className="mb-5 max-w-xl mx-auto">Helm watches the reasons behind {symbol} against live filings and earnings, and tells you when one breaks. Free to start.</p>
             <div className="flex items-center justify-center gap-3">
-              <Link href="/signup" className="px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Take the helm</Link>
-              <Link href={`/analyze/${symbol}`} className="px-5 py-2.5 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-bold text-xs uppercase tracking-[0.15em] rounded transition-colors">Full {symbol} analysis</Link>
+              <Link href="/signup" className="px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Take the helm</Link>
+              <Link href={`/analyze/${symbol}`} className="px-5 py-2.5 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-colors">Full {symbol} analysis</Link>
             </div>
           </section>
 
           {updated && (
-            <p className="text-xs text-[var(--color-text-muted)]">Thesis snapshot last computed {updated}. Sources: SEC EDGAR, market data, news.</p>
+            <p className="text-[13px] text-[var(--color-text-muted)]">Thesis snapshot last computed {updated}. Sources: SEC EDGAR, market data, news.</p>
           )}
-          <p className="text-xs text-[var(--color-text-muted)] leading-relaxed border-t border-[var(--color-border-subtle)] pt-6">
+          <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed border-t border-[var(--color-border-subtle)] pt-6">
             This content is for educational purposes only and does not constitute financial, tax, or investment advice. The bull and bear cases describe arguments some investors cite, not recommendations. Helm Terminal is not a registered investment advisor.
           </p>
         </div>

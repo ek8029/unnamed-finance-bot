@@ -11,7 +11,10 @@ interface ProGateProps {
   description: string;
 }
 
-type BillingPeriod = 'monthly' | 'annual' | 'lifetime' | 'founding';
+// `period` maps onto the existing Stripe billing-period keys so checkout
+// keeps working unchanged while we display the new $20 / $50 model.
+// TODO: needs STRIPE_PRICE_PRO / STRIPE_PRICE_MAX env for $20/$50
+type BillingPeriod = 'pro' | 'max';
 
 const PLANS: {
   period: BillingPeriod;
@@ -22,15 +25,13 @@ const PLANS: {
   save: string | null;
   badge: string | null;
 }[] = [
-  { period: 'founding', label: 'Founding Member', price: '$4.99', unit: '/mo', note: 'Locked at $4.99/mo forever', save: 'Save 67%', badge: '50 spots' },
-  { period: 'monthly',  label: 'Monthly',  price: '$14.99', unit: '/mo',   note: null,                save: null, badge: null },
-  { period: 'annual',   label: 'Annual',   price: '$9.99',  unit: '/mo',   note: 'Billed $119/year',  save: 'Save 33%', badge: null },
-  { period: 'lifetime', label: 'Lifetime', price: '$249',   unit: '',      note: 'One-time payment',  save: null, badge: null },
+  { period: 'pro', label: 'Pro', price: '$20', unit: '/mo', note: 'Thesis monitoring, earnings, tax center', save: null, badge: null },
+  { period: 'max', label: 'Max', price: '$50', unit: '/mo', note: 'Everything in Pro plus the agent', save: null, badge: null },
 ];
 
 export function ProGate({ feature, description }: ProGateProps) {
   const [showCheckout, setShowCheckout] = useState(false);
-  const [selected, setSelected] = useState<BillingPeriod>('founding');
+  const [selected, setSelected] = useState<BillingPeriod>('pro');
 
   const plan = PLANS.find(p => p.period === selected)!;
 
@@ -43,7 +44,7 @@ export function ProGate({ feature, description }: ProGateProps) {
           <HelmMark size={24} />
           <div className="h-px flex-1 bg-[var(--color-border-base)]" />
           <span
-            className="text-[12px] uppercase tracking-[0.2em] text-[var(--color-gold)] font-medium"
+            className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-gold)] font-medium"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             Pro
@@ -109,7 +110,7 @@ export function ProGate({ feature, description }: ProGateProps) {
                       )}
                     </div>
                     {p.note && (
-                      <span className="text-[13px] text-[var(--color-text-muted)] mt-0.5 block" style={{ fontFamily: 'var(--font-mono)' }}>
+                      <span className="text-[14px] text-[var(--color-text-muted)] mt-0.5 block" style={{ fontFamily: 'var(--font-mono)' }}>
                         {p.note}
                       </span>
                     )}
@@ -123,7 +124,7 @@ export function ProGate({ feature, description }: ProGateProps) {
                   }`}>
                     {p.price}
                   </span>
-                  <span className={`text-[13px] ${
+                  <span className={`text-[14px] ${
                     active ? 'text-[var(--color-text-secondary)]' : 'text-[var(--color-text-muted)]'
                   }`}>
                     {p.unit}
@@ -144,7 +145,7 @@ export function ProGate({ feature, description }: ProGateProps) {
         </button>
 
         {/* Fine print */}
-        <div className="flex items-center justify-between text-[12px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+        <div className="flex items-center justify-between text-[13px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
           <Link
             href="/dashboard"
             className="hover:text-[var(--color-text-secondary)] transition-colors duration-150 cursor-pointer"

@@ -222,12 +222,12 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
         </div>
         <div className="space-y-1.5">
           {affected.map(h => (
-            <div key={h.id} className="flex items-center justify-between text-xs">
+            <div key={h.id} className="flex items-center justify-between text-[13px]">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="type-mono font-semibold text-[var(--color-text-primary)]">
                   {h.ticker}
                 </span>
-                <span className="text-[var(--color-text-muted)] truncate text-[11px]">
+                <span className="text-[var(--color-text-muted)] truncate text-[12px]">
                   {h.asset_name}
                 </span>
               </div>
@@ -242,7 +242,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
             </div>
           ))}
         </div>
-        <div className="mt-2 pt-2 border-t border-[var(--color-border-subtle)] flex items-center justify-between text-xs">
+        <div className="mt-2 pt-2 border-t border-[var(--color-border-subtle)] flex items-center justify-between text-[13px]">
           <span className="text-[var(--color-text-muted)]">Total Exposure</span>
           <div className="flex items-center gap-2">
             <span className="type-mono font-medium text-[var(--color-text-primary)]">
@@ -282,7 +282,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
             Dividend Details
           </span>
         </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
           {cashAmount != null && (
             <div>
               <span className="text-[var(--color-text-muted)] block text-[10px]">Per Share</span>
@@ -323,7 +323,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
                 Your Position
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
               <div>
                 <span className="text-[var(--color-text-muted)] block text-[10px]">Shares Held</span>
                 <span className="type-mono text-[var(--color-text-primary)]">
@@ -364,7 +364,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
             Split Details
           </span>
         </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
           {ratio != null && (
             <div>
               <span className="text-[var(--color-text-muted)] block text-[10px]">Ratio</span>
@@ -389,7 +389,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
                 Your Position
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
               <div>
                 <span className="text-[var(--color-text-muted)] block text-[10px]">Current Shares</span>
                 <span className="type-mono text-[var(--color-text-primary)]">
@@ -419,7 +419,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
       <>
         {metaEntries.length > 0 && (
           <div className="mt-3 p-2 bg-[var(--color-bg-overlay)] rounded-md border border-[var(--color-border-base)]">
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-2 gap-2 text-[13px]">
               {metaEntries.slice(0, 4).map(([key, value]) => (
                 <div key={key}>
                   <span className="text-[var(--color-text-muted)] capitalize text-[10px]">
@@ -443,10 +443,10 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
                 Your Position
               </span>
             </div>
-            <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center justify-between text-[13px]">
               <div className="flex items-center gap-2">
                 <span className="type-mono font-semibold text-[var(--color-text-primary)]">{holding.ticker}</span>
-                <span className="text-[var(--color-text-muted)] text-[11px]">{holding.asset_name}</span>
+                <span className="text-[var(--color-text-muted)] text-[12px]">{holding.asset_name}</span>
               </div>
               <span className="type-mono text-[var(--color-text-primary)]">{formatCurrencyDetailed(holding.total_value)}</span>
             </div>
@@ -483,7 +483,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
         </div>
         <div className="flex flex-col items-center justify-center py-8 text-center">
           <AlertCircle className="h-8 w-8 text-[var(--color-negative)] mb-2" />
-          <p className="text-[var(--color-text-secondary)] text-sm">{error}</p>
+          <p className="text-[var(--color-text-secondary)] text-[15px]">{error}</p>
           <Button variant="outline" size="sm" className="mt-4" onClick={handleRefresh}>
             Try Again
           </Button>
@@ -502,7 +502,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
             <h2 className="type-h3 text-[var(--color-text-primary)]">Market Intelligence</h2>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="gold" className="text-xs">
+            <Badge variant="gold" className="text-[13px]">
               {intelligence.length} Updates
             </Badge>
             <Button
@@ -640,7 +640,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
 
                   {/* Description */}
                   <p className={cn(
-                    "type-body text-xs text-[var(--color-text-secondary)] leading-relaxed",
+                    "type-body text-[13px] text-[var(--color-text-secondary)] leading-relaxed",
                     !isExpanded && "line-clamp-2"
                   )}>
                     {item.description}
@@ -726,7 +726,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
           {intelligence.length === 0 && (
             <div className="text-center py-12 text-[var(--color-text-secondary)]">
               <Newspaper className="h-8 w-8 mx-auto mb-2 text-[var(--color-text-muted)]" />
-              <p className="type-body text-xs">No market intelligence available</p>
+              <p className="type-body text-[13px]">No market intelligence available</p>
             </div>
           )}
         </div>

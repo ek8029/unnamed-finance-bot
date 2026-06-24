@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import {
   AlertTriangle, CheckCircle2, ChevronDown,
-  Sparkles, Eye,
+  Sparkles, Link2,
 } from 'lucide-react';
 import { useFormat } from '@/hooks/use-format';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,9 +11,9 @@ import { useTaxData, useTaxOpportunities } from '@/hooks/use-financial-data';
 import type { TaxOpportunity, RealizedTransaction } from '@/hooks/use-financial-data';
 import { thesisTlhNote } from '@/lib/thesis-conviction';
 import { cn } from '@/lib/utils';
-import { useTier } from '@/hooks/use-tier';
-import { ProBlur } from '@/components/pro-blur';
 import { Form8949Preview } from '@/components/dashboard/form-8949-preview';
+import { TierLock } from '@/components/tier-lock';
+import { usePreview } from '@/lib/preview-context';
 import { TAX_RATE, LTCG_RATE_DEFAULT, ANNUAL_LOSS_DEDUCTION_CAP } from '@/lib/financial-config';
 
 // ── Constants ──
@@ -21,6 +21,13 @@ import { TAX_RATE, LTCG_RATE_DEFAULT, ANNUAL_LOSS_DEDUCTION_CAP } from '@/lib/fi
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 const TNUM: React.CSSProperties = { fontFeatureSettings: "'tnum' 1" };
 const CURRENT_YEAR = new Date().getFullYear();
+
+// Card surface used across the screen (Sovereign Architect default).
+const CARD: React.CSSProperties = {
+  background: 'var(--color-bg-surface)',
+  border: '1px solid var(--color-border-base)',
+  boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+};
 
 // ── Quarter helpers ──
 
@@ -133,19 +140,19 @@ function StackedBar({
       <div className="flex items-center gap-4 mt-2.5">
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-sm" style={{ background: '#5B8DEF' }} />
-          <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+          <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
             ST Gains
           </span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-sm" style={{ background: 'var(--color-gold)' }} />
-          <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+          <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
             LT Gains
           </span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-sm" style={{ background: 'var(--color-positive)' }} />
-          <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+          <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
             Dividends
           </span>
         </div>
@@ -170,11 +177,7 @@ function GridSkeleton() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       {[1, 2, 3, 4].map((i) => (
-        <div
-          key={i}
-          className="rounded-md p-5 animate-pulse"
-          style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
-        >
+        <div key={i} className="rounded-md p-5 animate-pulse" style={CARD}>
           <Skeleton className="h-3 w-24 mb-3" />
           <Skeleton className="h-8 w-32 mb-2" />
           <Skeleton className="h-3 w-20" />
@@ -186,10 +189,7 @@ function GridSkeleton() {
 
 function TableSkeleton() {
   return (
-    <div
-      className="rounded-md overflow-hidden"
-      style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
-    >
+    <div className="rounded-md overflow-hidden" style={CARD}>
       <div className="px-5 py-4 border-b border-[var(--color-border-subtle)]">
         <Skeleton className="h-4 w-48" />
       </div>
@@ -208,13 +208,71 @@ function TableSkeleton() {
   );
 }
 
+// ── Centered-panel empty states (shared "Connect your brokerage" vocabulary) ──
+
+function ConnectEmpty() {
+  return (
+    <div className="flex min-h-[calc(100vh-200px)] items-center justify-center px-6 py-10">
+      <div className="max-w-[460px] text-center">
+        <div
+          className="mx-auto mb-[22px] inline-flex h-[60px] w-[60px] items-center justify-center rounded-[14px]"
+          style={{ background: 'rgba(230,185,77,0.06)', border: '1px solid rgba(230,185,77,0.18)' }}
+        >
+          <Link2 size={26} className="text-[var(--color-gold)]" strokeWidth={1.6} />
+        </div>
+        <h1 className="text-[24px] font-bold tracking-[-0.025em] leading-[1.1] text-[var(--color-text-primary)] mb-3">
+          Connect your brokerage
+        </h1>
+        <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
+          Helm reads your tax lots over a read-only connection, then tracks realized gains and
+          flags wash-sale-safe harvesting opportunities here. Link an account to get started.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function NoHarvestEmpty() {
+  return (
+    <div className="flex items-center justify-center px-6 py-16">
+      <div className="max-w-[460px] text-center">
+        <div
+          className="mx-auto mb-[22px] inline-flex h-[60px] w-[60px] items-center justify-center rounded-[14px]"
+          style={{ background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.18)' }}
+        >
+          <CheckCircle2 size={26} className="text-[var(--color-positive)]" strokeWidth={1.6} />
+        </div>
+        <h2 className="text-[24px] font-bold tracking-[-0.025em] leading-[1.1] text-[var(--color-text-primary)] mb-3">
+          No harvestable losses right now
+        </h2>
+        <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
+          Helm scans your lots daily and flags wash-sale-safe harvesting opportunities here the
+          moment they appear.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ──
 
 export default function TaxesPage() {
+  return (
+    <TierLock
+      required="pro"
+      label="The Tax Center is a Pro feature"
+      blurb="Tax-lot tracking, wash-sale-safe harvesting, and an IRS-ready Form 8949 across your connected accounts."
+    >
+      <TaxesContent />
+    </TierLock>
+  );
+}
+
+function TaxesContent() {
   const { formatCurrency } = useFormat();
-  const { isPro, loading: tierLoading } = useTier();
+  const { dataState } = usePreview();
   const { data: taxData, loading: taxLoading } = useTaxData();
-  const { report: harvestReport, loading: harvestLoading, proRequired } = useTaxOpportunities();
+  const { report: harvestReport, loading: harvestLoading } = useTaxOpportunities();
 
   const loading = taxLoading || harvestLoading;
 
@@ -237,27 +295,36 @@ export default function TaxesPage() {
       : Math.max(0, combined) * LTCG_RATE_DEFAULT; // ST losses ate into LT gains
   }, [taxData]);
 
+  const realizedGains = useMemo(() => {
+    if (!taxData) return 0;
+    return taxData.realized.shortTermGains + taxData.realized.longTermGains;
+  }, [taxData]);
+
+  const realizedLosses = useMemo(() => {
+    if (!taxData) return 0;
+    return taxData.realized.shortTermLosses + taxData.realized.longTermLosses;
+  }, [taxData]);
+
   const realizedYTD = useMemo(() => {
     if (!taxData) return 0;
     return taxData.realized.netRealized;
   }, [taxData]);
 
-  // Derive harvestable totals: use pro data if available, else estimate from free taxData
+  // Derive harvestable totals from the pro report.
   const totalHarvestable = useMemo(() => {
     if (harvestReport) return harvestReport.totalHarvestableLoss;
     if (!taxData) return 0;
     return Math.abs(taxData.unrealized.totalLosses);
   }, [harvestReport, taxData]);
 
-  const lossPositionCount = useMemo(() => {
-    if (harvestReport) return harvestReport.opportunityCount;
-    if (!taxData) return 0;
-    return taxData.unrealized.positions.filter((p) => p.gainLoss < 0).length;
-  }, [harvestReport, taxData]);
-
   const washSafeCount = useMemo(() => {
     if (!harvestReport) return 0;
     return harvestReport.opportunities.filter((o) => !o.washSaleRisk).length;
+  }, [harvestReport]);
+
+  const washConflictCount = useMemo(() => {
+    if (!harvestReport) return 0;
+    return harvestReport.opportunities.filter((o) => o.washSaleRisk).length;
   }, [harvestReport]);
 
   // Lead with conviction: broken-thesis losses first (the exit and the tax move point
@@ -305,20 +372,22 @@ export default function TaxesPage() {
   // Realized transactions table toggle
   const [showRealizedTx, setShowRealizedTx] = useState(false);
 
-  // (Form 8949 preview is now a separate component below)
+  // ── Empty: connect your brokerage ───────────────────────────────────────
+  // No realized data and no harvest report and nothing loading → not connected.
+  // Also driven by the preview Empty toggle for localhost demos.
+  const hasNoData =
+    dataState === 'empty' ||
+    (!loading && !taxData && !harvestReport);
 
-  // ── Tier loading / ProGate ──
-
-  if (tierLoading) {
+  if (hasNoData) {
     return (
-      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 max-w-6xl animate-pulse">
-        <div className="h-8 bg-[var(--color-bg-elevated)] rounded w-1/4 mb-4" />
-        <div className="h-64 bg-[var(--color-bg-elevated)] rounded-xl" />
-      </div>
+      <main className="mx-auto max-w-6xl px-4 sm:px-6 py-4 sm:py-6" aria-label="Tax Center">
+        <ConnectEmpty />
+      </main>
     );
   }
 
-  const showProContent = isPro && !proRequired;
+  const harvestCount = harvestReport?.opportunityCount ?? 0;
 
   return (
     <main className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6 sm:space-y-8 max-w-6xl" aria-label="Tax Center">
@@ -327,183 +396,130 @@ export default function TaxesPage() {
       {loading ? (
         <HeaderSkeleton />
       ) : (
-        <div className="space-y-4">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2">
-            <span
-              className="text-[11px] uppercase tracking-[0.15em] font-semibold text-[var(--color-text-muted)]"
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-2.5">
+            {/* Eyebrow */}
+            <div
+              className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-gold)]"
               style={MONO}
             >
-              HELM
-            </span>
-            <span className="text-[11px] text-[var(--color-text-muted)]">/</span>
-            <span
-              className="text-[11px] uppercase tracking-[0.15em] font-semibold text-[var(--color-text-muted)]"
-              style={MONO}
-            >
-              TAX CENTER
-            </span>
-            <span className="text-[11px] text-[var(--color-text-muted)]">&middot;</span>
-            <span
-              className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)]"
-              style={MONO}
-            >
-              TY {CURRENT_YEAR}
-            </span>
+              ✦ Tax center · Pro
+            </div>
+
+            {/* Giant headline */}
+            <h1 className="text-[22px] sm:text-[30px] md:text-[36px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)] leading-[1.08]">
+              Keep more of what you earn
+            </h1>
+
+            {/* Subtitle */}
+            <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed max-w-2xl">
+              Helm tracks your tax lots and monitors wash-sale risk across your connected accounts.{' '}
+              <a
+                href="/tools/tlh-calculator"
+                className="text-[var(--color-gold)] hover:underline font-medium"
+              >
+                Try the TLH calculator
+              </a>
+            </p>
           </div>
 
-          {/* Giant headline */}
-          <h1 className="text-[20px] sm:text-[28px] md:text-[36px] font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.1]">
-            You owe an estimated{' '}
-            <span className="text-[var(--color-warning-text)]" style={TNUM}>
-              {formatCurrency(estimatedTaxDue)}
-            </span>{' '}
-            in capital gains tax this year.
-          </h1>
-
-          {/* Subtitle */}
-          <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed max-w-2xl">
-            Helm tracks your tax lots and monitors wash-sale risk across your connected accounts.
-            Review your quarterly breakdown and harvestable-loss positions below.{' '}
-            <a
-              href="/tools/tlh-calculator"
-              className="text-[var(--color-gold)] hover:underline font-medium"
+          {/* Year selector */}
+          <div
+            className="flex gap-[5px] text-[12px] tracking-[0.06em] shrink-0"
+            style={MONO}
+            role="group"
+            aria-label="Tax year"
+          >
+            <span
+              className="px-3 py-[7px] rounded-[5px] border border-[var(--color-border-base)] text-[var(--color-text-muted)]"
             >
-              Try the TLH calculator
-            </a>
-          </p>
-
+              {CURRENT_YEAR - 1}
+            </span>
+            <span
+              className="px-3 py-[7px] rounded-[5px] text-[var(--color-gold)]"
+              style={{ background: 'rgba(230,185,77,0.1)', border: '1px solid rgba(230,185,77,0.25)' }}
+              aria-current="true"
+            >
+              {CURRENT_YEAR}
+            </span>
+            <span
+              className="px-3 py-[7px] rounded-[5px] border border-[var(--color-border-base)] text-[var(--color-text-muted)]"
+            >
+              Projected
+            </span>
+          </div>
         </div>
       )}
 
-      {/* ─── 2. Tax Estimate Breakdown (4-col) ─── */}
+      {/* ─── 2. Realized summary (4-cell strip) ─── */}
       {loading ? (
         <GridSkeleton />
       ) : (
-        <section aria-label="Tax estimate" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* Estimated tax due — large card */}
-          <div
-            className="rounded-md p-5 col-span-1 sm:col-span-2 lg:col-span-1"
-            style={{
-              background: 'var(--color-bg-surface)',
-              border: '1px solid var(--color-border-base)',
-            }}
-          >
-            <span
-              className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+        <section
+          aria-label="Realized summary"
+          className="grid grid-cols-2 lg:grid-cols-4 rounded-md overflow-hidden"
+          style={CARD}
+        >
+          {/* Realized gains · YTD */}
+          <div className="p-[16px_18px] border-b lg:border-b-0 lg:border-r border-[var(--color-border-subtle)]">
+            <div
+              className="text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-[9px]"
               style={MONO}
             >
-              Estimated tax due
-            </span>
-            <p
-              className="text-[20px] sm:text-[28px] md:text-[48px] font-bold tracking-tight text-[var(--color-warning-text)] leading-none mt-2 mb-4"
-              style={{ ...TNUM, ...MONO }}
-            >
-              {formatCurrency(estimatedTaxDue)}
-            </p>
-
-            <StackedBar
-              shortTermGains={Math.max(0, shortTermNet)}
-              longTermGains={Math.max(0, longTermNet)}
-              dividends={0}
-            />
+              Realized gains · YTD
+            </div>
+            <div className="text-[20px] sm:text-[24px] font-bold text-[var(--color-positive)]" style={{ ...TNUM, ...MONO }}>
+              +{formatCurrency(realizedGains)}
+            </div>
           </div>
 
-          {/* Realized YTD */}
-          <div
-            className="rounded-md p-5"
-            style={{
-              background: 'var(--color-bg-surface)',
-              border: '1px solid var(--color-border-base)',
-            }}
-          >
-            <span
-              className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+          {/* Realized losses · YTD */}
+          <div className="p-[16px_18px] border-b lg:border-b-0 lg:border-r border-[var(--color-border-subtle)]">
+            <div
+              className="text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-[9px]"
               style={MONO}
             >
-              Realized YTD
-            </span>
-            <p
+              Realized losses · YTD
+            </div>
+            <div className="text-[20px] sm:text-[24px] font-bold text-[var(--color-negative-text)]" style={{ ...TNUM, ...MONO }}>
+              {formatCurrency(realizedLosses)}
+            </div>
+          </div>
+
+          {/* Net realized */}
+          <div className="p-[16px_18px] border-r border-[var(--color-border-subtle)] lg:border-r">
+            <div
+              className="text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-[9px]"
+              style={MONO}
+            >
+              Net realized
+            </div>
+            <div
               className={cn(
-                'text-[20px] sm:text-[28px] font-bold tracking-tight leading-none mt-2',
-                realizedYTD >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
+                'text-[20px] sm:text-[24px] font-bold',
+                realizedYTD >= 0 ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-negative-text)]',
               )}
               style={{ ...TNUM, ...MONO }}
             >
-              {realizedYTD >= 0 ? '+' : ''}
+              {realizedYTD >= 0 ? '' : ''}
               {formatCurrency(realizedYTD)}
-            </p>
-            <p className="text-[12px] text-[var(--color-text-muted)] mt-2" style={MONO}>
-              {lotCount} lot{lotCount !== 1 ? 's' : ''} closed
-            </p>
+              <span className="ml-2 align-middle text-[12px] text-[var(--color-text-muted)] font-medium">
+                {lotCount} lot{lotCount !== 1 ? 's' : ''} closed
+              </span>
+            </div>
           </div>
 
-          {/* Harvestable */}
-          <div
-            className="rounded-md p-5"
-            style={{
-              background: 'var(--color-bg-surface)',
-              border: '1px solid var(--color-border-base)',
-            }}
-          >
-            <span
-              className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+          {/* Est. tax owed */}
+          <div className="p-[16px_18px]">
+            <div
+              className="text-[9px] uppercase tracking-[0.12em] text-[var(--color-warning-text)] mb-[9px]"
               style={MONO}
             >
-              Harvestable
-            </span>
-            <p
-              className="text-[20px] sm:text-[28px] font-bold tracking-tight text-[var(--color-warning-text)] leading-none mt-2"
-              style={{ ...TNUM, ...MONO }}
-            >
-              {formatCurrency(Math.abs(totalHarvestable))}
-            </p>
-            <p className="text-[12px] text-[var(--color-text-muted)] mt-2" style={MONO}>
-              {showProContent
-                ? `${washSafeCount} wash-safe lot${washSafeCount !== 1 ? 's' : ''}`
-                : `${lossPositionCount} position${lossPositionCount !== 1 ? 's' : ''} at a loss`}
-            </p>
-          </div>
-
-          {/* Carryover loss */}
-          <div
-            className="rounded-md p-5"
-            style={{
-              background: 'var(--color-bg-surface)',
-              border: '1px solid var(--color-border-base)',
-            }}
-          >
-            <span
-              className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
-              style={MONO}
-            >
-              Carryover loss
-            </span>
-            {showProContent ? (
-              <>
-                <p
-                  className="text-[20px] sm:text-[28px] font-bold tracking-tight text-[var(--color-text-primary)] leading-none mt-2"
-                  style={{ ...TNUM, ...MONO }}
-                >
-                  {formatCurrency(carryoverLoss)}
-                </p>
-                <p className="text-[12px] text-[var(--color-text-muted)] mt-2" style={MONO}>
-                  from TY {CURRENT_YEAR - 1}
-                </p>
-              </>
-            ) : (
-              <>
-                <p
-                  className="text-[22px] font-bold tracking-tight text-[var(--color-text-muted)] leading-none mt-2"
-                  style={{ ...TNUM, ...MONO }}
-                >
-                  —
-                </p>
-                <p className="text-[12px] text-[var(--color-text-muted)] mt-2" style={MONO}>
-                  Pro feature
-                </p>
-              </>
-            )}
+              ⚠ Est. tax owed
+            </div>
+            <div className="text-[20px] sm:text-[24px] font-bold text-[var(--color-warning-text)]" style={{ ...TNUM, ...MONO }}>
+              {formatCurrency(estimatedTaxDue)}
+            </div>
           </div>
         </section>
       )}
@@ -511,22 +527,16 @@ export default function TaxesPage() {
       {/* ─── 2b. $3K Deduction Tracker (IRC §1211(b)) ─── */}
       {!loading && (
         <section aria-label="Ordinary income deduction tracker">
-          <div
-            className="rounded-md p-5"
-            style={{
-              background: 'var(--color-bg-surface)',
-              border: '1px solid var(--color-border-base)',
-            }}
-          >
+          <div className="rounded-md p-5" style={CARD}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-3">
               <span
-                className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+                className="text-[12px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
                 style={MONO}
               >
                 §1211(b) Ordinary Income Offset
               </span>
               <span
-                className="text-[12px] font-semibold text-[var(--color-text-primary)]"
+                className="text-[14px] font-semibold text-[var(--color-text-primary)]"
                 style={{ ...TNUM, ...MONO }}
               >
                 {formatCurrency(deductionUsed)} of {formatCurrency(ANNUAL_LOSS_DEDUCTION_CAP)}
@@ -541,7 +551,7 @@ export default function TaxesPage() {
                 }}
               />
             </div>
-            <p className="text-[12px] text-[var(--color-text-muted)] mt-2.5" style={MONO}>
+            <p className="text-[14px] text-[var(--color-text-muted)] mt-2.5" style={MONO}>
               {deductionUsed >= ANNUAL_LOSS_DEDUCTION_CAP
                 ? `Cap reached — excess losses carry forward to TY ${CURRENT_YEAR + 1} per IRC §1212(b).`
                 : deductionUsed > 0
@@ -553,76 +563,62 @@ export default function TaxesPage() {
       )}
 
       {/* ─── 3.9 Broken-thesis harvest callout (thesis users) ─── */}
-      {!loading && showProContent && brokenHarvests.length > 0 && (
+      {!loading && brokenHarvests.length > 0 && (
         <BrokenThesisCallout opps={brokenHarvests} formatCurrency={formatCurrency} />
       )}
 
-      {/* ─── 4. Harvest Opportunity Table ─── */}
+      {/* ─── 4. Tax-loss harvesting panel (gold-tinted) ─── */}
       {loading ? (
         <TableSkeleton />
-      ) : !showProContent ? (
-        <ProBlur
-          label="Unlock full harvest analysis"
-          description={`${lossPositionCount} position${lossPositionCount !== 1 ? 's' : ''} with ${formatCurrency(totalHarvestable)} in harvestable losses found. Upgrade to see lots, wash-sale flags, and estimated figures.`}
-          minHeight="280px"
-        >
-          {/* Placeholder rows for blur effect */}
-          <div className="rounded-md overflow-hidden" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}>
-            <div className="px-5 py-4 flex items-center gap-2.5 border-b border-[var(--color-border-subtle)]">
-              <Sparkles className="w-4 h-4 text-[var(--color-gold)]" />
-              <span className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-gold)]" style={MONO}>
-                Harvest Opportunity
-              </span>
-              <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/5 text-[var(--color-text-secondary)]" style={MONO}>
-                {lossPositionCount}
-              </span>
-            </div>
-            {Array.from({ length: Math.min(lossPositionCount, 4) }).map((_, i) => (
-              <div key={i} className="px-5 py-4 border-b border-[var(--color-border-subtle)] flex items-center gap-4">
-                <div className="w-10 h-4 bg-[var(--color-bg-elevated)] rounded" />
-                <div className="flex-1 h-4 bg-[var(--color-bg-elevated)] rounded" />
-                <div className="w-20 h-4 bg-[var(--color-bg-elevated)] rounded" />
-                <div className="w-20 h-4 bg-[var(--color-bg-elevated)] rounded" />
-                <div className="w-16 h-4 bg-[var(--color-bg-elevated)] rounded" />
-              </div>
-            ))}
-          </div>
-        </ProBlur>
-      ) : harvestReport && harvestReport.opportunityCount > 0 ? (
+      ) : harvestReport && harvestCount > 0 ? (
         <section
-          aria-label="Harvest opportunities"
-          className="rounded-md overflow-hidden"
+          aria-label="Tax-loss harvesting"
+          className="rounded-lg overflow-hidden"
           style={{
-            background: 'var(--color-bg-surface)',
-            border: '1px solid var(--color-border-base)',
+            background: 'rgba(230,185,77,0.02)',
+            border: '1px solid rgba(230,185,77,0.15)',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
           }}
         >
-          {/* Table header bar */}
-          <div className="px-5 py-4 flex items-center justify-between border-b border-[var(--color-border-subtle)]">
-            <div className="flex items-center gap-2.5">
-              <Sparkles className="w-4 h-4 text-[var(--color-gold)]" />
-              <span
-                className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-gold)]"
-                style={MONO}
-              >
-                Harvest Opportunity
-              </span>
-              <span
-                className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/5 text-[var(--color-text-secondary)]"
-                style={MONO}
-              >
-                {harvestReport.opportunityCount}
-              </span>
+          {/* Panel header: title + Available harvest */}
+          <div
+            className="px-5 sm:px-[22px] py-[18px] flex items-center justify-between gap-4"
+            style={{ borderBottom: '1px solid rgba(230,185,77,0.1)' }}
+          >
+            <div>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-[var(--color-gold)]" />
+                <span
+                  className="text-[10px] uppercase tracking-[0.16em] font-bold text-[var(--color-gold)]"
+                  style={MONO}
+                >
+                  Tax-loss harvesting
+                </span>
+              </div>
+              <div className="text-[15px] text-[var(--color-text-muted)] mt-1">
+                {harvestCount} lot{harvestCount !== 1 ? 's' : ''} sitting on losses
+                {washConflictCount > 0
+                  ? ` · ${washConflictCount} wash-sale conflict${washConflictCount !== 1 ? 's' : ''} flagged`
+                  : ' · no wash-sale conflicts'}
+              </div>
             </div>
-            {/* Wash sale legend — hidden on mobile, badges are self-explanatory */}
-            <span className="hidden sm:inline text-[11px] text-[var(--color-text-muted)]" style={MONO}>
-              <span className="text-[var(--color-positive)]">Clear</span> = no substantially-identical security detected
-              <span className="mx-1.5">|</span>
-              <span className="text-[var(--color-warning-text)]">Conflict</span> = wash sale risk detected
-            </span>
+            <div className="text-right shrink-0">
+              <div
+                className="text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-muted)]"
+                style={MONO}
+              >
+                Available harvest
+              </div>
+              <div
+                className="text-[22px] sm:text-[24px] font-bold text-[var(--color-positive)] mt-0.5"
+                style={{ ...TNUM, ...MONO }}
+              >
+                {formatCurrency(Math.abs(totalHarvestable))}
+              </div>
+            </div>
           </div>
 
-          {/* Table column headers */}
+          {/* Table column headers (desktop) */}
           <div
             className="hidden md:grid px-5 py-2.5 border-b border-[var(--color-border-subtle)]"
             style={{
@@ -653,44 +649,31 @@ export default function TaxesPage() {
             />
           ))}
 
-          {/* Table footer */}
+          {/* Panel footer: offset summary + Harvest CTA */}
           <div
-            className="px-5 py-3.5 flex items-center justify-between border-t border-[var(--color-border-subtle)]"
-            style={{ background: 'rgba(255,255,255,0.02)' }}
+            className="px-5 sm:px-[22px] py-[14px] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+            style={{ borderTop: '1px solid rgba(230,185,77,0.1)' }}
             aria-live="polite"
           >
             <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
-              {`All ${harvestReport.opportunityCount} opportunities`}
-            </span>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
-                Est. tax saving (total)
-              </span>
-              <span
-                className="text-[14px] font-bold text-[var(--color-positive)]"
-                style={{ ...TNUM, ...MONO }}
-              >
+              Harvesting the {washSafeCount} wash-safe lot{washSafeCount !== 1 ? 's' : ''} offsets an
+              estimated{' '}
+              <span className="text-[var(--color-positive)] font-semibold">
                 {formatCurrency(harvestReport.totalEstimatedSavings)}
-              </span>
-            </div>
+              </span>{' '}
+              in taxes this year.
+            </span>
+            <a
+              href="/tools/tlh-calculator"
+              className="self-start sm:self-auto px-4 py-[9px] rounded-[5px] text-[10px] font-bold uppercase tracking-[0.12em] motion-safe:transition-[filter] motion-safe:duration-150 hover:brightness-[1.08]"
+              style={{ background: 'var(--color-gold)', color: '#0A0A0A', ...MONO }}
+            >
+              Harvest {formatCurrency(Math.abs(totalHarvestable))}
+            </a>
           </div>
         </section>
       ) : (
-        <div
-          className="rounded-md p-8 text-center"
-          style={{
-            background: 'var(--color-bg-surface)',
-            border: '1px solid var(--color-border-base)',
-          }}
-        >
-          <CheckCircle2 className="w-8 h-8 text-[var(--color-positive)] mx-auto mb-3 opacity-60" />
-          <p className="text-[14px] font-medium text-[var(--color-text-primary)] mb-1">
-            No harvest opportunities
-          </p>
-          <p className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
-            All positions are currently at a gain. Tax-loss harvesting opportunities will appear when positions decline below cost basis.
-          </p>
-        </div>
+        <NoHarvestEmpty />
       )}
 
       {/* ─── 4b. Retirement Account Losses (Ineligible) ─── */}
@@ -698,15 +681,12 @@ export default function TaxesPage() {
         <section
           aria-label="Retirement account losses"
           className="rounded-md overflow-hidden"
-          style={{
-            background: 'var(--color-bg-surface)',
-            border: '1px solid var(--color-border-base)',
-          }}
+          style={CARD}
         >
           <div className="px-5 py-4 flex items-center justify-between border-b border-[var(--color-border-subtle)]">
             <div className="flex items-center gap-2.5">
               <span
-                className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-text-muted)]"
+                className="text-[12px] uppercase tracking-[0.15em] font-bold text-[var(--color-text-muted)]"
                 style={MONO}
               >
                 Retirement Account Losses
@@ -718,12 +698,12 @@ export default function TaxesPage() {
                 {harvestReport.retirementPositions.length}
               </span>
             </div>
-            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+            <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
               Not eligible for tax-loss harvesting
             </span>
           </div>
           <div className="px-5 py-3 bg-[var(--color-bg-elevated)]/30 border-b border-[var(--color-border-subtle)]">
-            <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed" style={MONO}>
+            <p className="text-[14px] text-[var(--color-text-muted)] leading-relaxed" style={MONO}>
               These positions are in tax-advantaged accounts (IRA, 401k, Roth, etc.). Losses in retirement accounts cannot be used for tax-loss harvesting because gains and losses within these accounts are not taxable events.
             </p>
           </div>
@@ -733,10 +713,10 @@ export default function TaxesPage() {
               className="px-4 sm:px-5 py-3.5 border-b border-[var(--color-border-subtle)] opacity-60"
             >
               <div className="flex items-center gap-2 sm:gap-3 mb-1.5 flex-wrap">
-                <span className="text-[14px] font-bold text-[var(--color-text-muted)]" style={MONO}>
+                <span className="text-[15px] font-bold text-[var(--color-text-muted)]" style={MONO}>
                   {pos.ticker}
                 </span>
-                <span className="text-[12px] sm:text-[13px] text-[var(--color-text-muted)] truncate flex-1 min-w-[60px]">
+                <span className="text-[14px] sm:text-[15px] text-[var(--color-text-muted)] truncate flex-1 min-w-[60px]">
                   {pos.securityName}
                 </span>
                 {pos.accountSubtype && (
@@ -750,16 +730,16 @@ export default function TaxesPage() {
               </div>
               <div className="grid grid-cols-3 gap-x-4">
                 <div>
-                  <span className="text-[11px] text-[var(--color-text-muted)] block" style={MONO}>Shares</span>
-                  <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>{pos.shares.toLocaleString()}</span>
+                  <span className="text-[12px] text-[var(--color-text-muted)] block" style={MONO}>Shares</span>
+                  <span className="text-[14px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>{pos.shares.toLocaleString()}</span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-[var(--color-text-muted)] block" style={MONO}>Unrealized</span>
-                  <span className="text-[12px] text-[var(--color-negative)]/60 tabular-nums" style={MONO}>{formatCurrency(pos.unrealizedLoss)}</span>
+                  <span className="text-[12px] text-[var(--color-text-muted)] block" style={MONO}>Unrealized</span>
+                  <span className="text-[14px] text-[var(--color-negative)]/60 tabular-nums" style={MONO}>{formatCurrency(pos.unrealizedLoss)}</span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-[var(--color-text-muted)] block" style={MONO}>Tax Savings</span>
-                  <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>$0 (exempt)</span>
+                  <span className="text-[12px] text-[var(--color-text-muted)] block" style={MONO}>Tax Savings</span>
+                  <span className="text-[14px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>$0 (exempt)</span>
                 </div>
               </div>
             </div>
@@ -767,27 +747,118 @@ export default function TaxesPage() {
         </section>
       )}
 
-      {/* ─── 2c. Short-Term vs Long-Term Breakdown ─── */}
+      {/* ─── 5. Realized this year + Estimated tax by holding period ─── */}
+      {!loading && (
+        <section aria-label="Realized lots and estimated tax" className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+          {/* Realized this year */}
+          <div className="rounded-lg p-5 sm:p-[20px_22px]" style={CARD}>
+            <div
+              className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)] mb-3.5"
+              style={MONO}
+            >
+              Realized this year
+            </div>
+            {taxData && taxData.realized.transactions.length > 0 ? (
+              <div className="flex flex-col">
+                {taxData.realized.transactions.slice(0, 6).map((tx, i) => {
+                  const isGain = tx.gainLoss >= 0;
+                  const dateLabel = new Date(tx.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short' });
+                  return (
+                    <div
+                      key={`${tx.ticker}-${tx.date}-${i}`}
+                      className={cn(
+                        'py-3 grid items-center gap-3.5',
+                        i > 0 && 'border-t border-[var(--color-border-subtle)]',
+                      )}
+                      style={{ gridTemplateColumns: '1fr auto auto' }}
+                    >
+                      <div className="min-w-0">
+                        <span
+                          className="text-[15px] font-bold"
+                          style={{ color: isGain ? 'var(--color-gold)' : 'var(--color-negative-text)', ...MONO }}
+                        >
+                          {tx.ticker}
+                        </span>{' '}
+                        <span className="text-[12px] text-[var(--color-text-muted)]">
+                          · sold {tx.shares.toLocaleString()} sh · {dateLabel}
+                        </span>
+                      </div>
+                      <span
+                        className="text-[9px] uppercase tracking-[0.08em] shrink-0"
+                        style={{
+                          color: tx.gainLossType === 'short_term'
+                            ? 'var(--color-warning-text)'
+                            : 'var(--color-text-muted)',
+                          ...MONO,
+                        }}
+                      >
+                        {tx.gainLossType === 'short_term' ? 'Short-term' : 'Long-term'}
+                      </span>
+                      <span
+                        className={cn(
+                          'text-[15px] font-semibold tabular-nums text-right shrink-0',
+                          isGain ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]',
+                        )}
+                        style={MONO}
+                      >
+                        {isGain ? '+' : ''}{formatCurrency(tx.gainLoss)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-[15px] text-[var(--color-text-muted)] py-2" style={MONO}>
+                No realized transactions yet this year.
+              </p>
+            )}
+          </div>
+
+          {/* Estimated tax by holding period */}
+          <div className="rounded-lg p-5 sm:p-[20px_22px]" style={CARD}>
+            <div
+              className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)] mb-4"
+              style={MONO}
+            >
+              Estimated tax · by holding period
+            </div>
+            <HoldingPeriodBars
+              longTermNet={Math.max(0, longTermNet)}
+              shortTermNet={Math.max(0, shortTermNet)}
+              formatCurrency={formatCurrency}
+            />
+            <div className="mt-[18px] pt-4 border-t border-[var(--color-border-subtle)] flex items-center justify-between">
+              <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>
+                After harvesting {formatCurrency(Math.abs(totalHarvestable))}
+              </span>
+              <span
+                className="text-[15px] font-bold text-[var(--color-positive)] tabular-nums"
+                style={MONO}
+              >
+                {harvestReport && harvestReport.totalEstimatedSavings > 0
+                  ? `−${formatCurrency(harvestReport.totalEstimatedSavings)} owed`
+                  : `${formatCurrency(estimatedTaxDue)} owed`}
+              </span>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ─── 5b. Short-Term vs Long-Term Breakdown ─── */}
       {!loading && (
         <section aria-label="Short-term vs long-term breakdown" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Short-term card */}
-          <div
-            className="rounded-md p-5"
-            style={{
-              background: 'var(--color-bg-surface)',
-              border: '1px solid var(--color-border-base)',
-            }}
-          >
+          <div className="rounded-md p-5" style={CARD}>
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-sm" style={{ background: '#5B8DEF' }} />
               <span
-                className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+                className="text-[12px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
                 style={MONO}
               >
                 Short-Term Realized
               </span>
               <span
-                className="ml-auto text-[12px] text-[var(--color-text-muted)]"
+                className="ml-auto text-[14px] text-[var(--color-text-muted)]"
                 style={MONO}
               >
                 ~{(TAX_RATE * 100).toFixed(0)}% rate
@@ -795,23 +866,23 @@ export default function TaxesPage() {
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
-                <span className="text-[12px] font-semibold text-[var(--color-positive)]" style={{ ...TNUM, ...MONO }}>
+                <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
+                <span className="text-[14px] font-semibold text-[var(--color-positive)]" style={{ ...TNUM, ...MONO }}>
                   +{formatCurrency(shortTermGains)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
-                <span className="text-[12px] font-semibold text-[var(--color-negative)]" style={{ ...TNUM, ...MONO }}>
+                <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
+                <span className="text-[14px] font-semibold text-[var(--color-negative)]" style={{ ...TNUM, ...MONO }}>
                   {formatCurrency(shortTermLosses)}
                 </span>
               </div>
               <div className="pt-1.5 mt-1 border-t border-[var(--color-border-subtle)]">
                 <div className="flex items-center justify-between">
-                  <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
+                  <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
                   <span
                     className={cn(
-                      'text-[14px] font-bold',
+                      'text-[15px] font-bold',
                       shortTermNet >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
                     )}
                     style={{ ...TNUM, ...MONO }}
@@ -824,23 +895,17 @@ export default function TaxesPage() {
           </div>
 
           {/* Long-term card */}
-          <div
-            className="rounded-md p-5"
-            style={{
-              background: 'var(--color-bg-surface)',
-              border: '1px solid var(--color-border-base)',
-            }}
-          >
+          <div className="rounded-md p-5" style={CARD}>
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-sm" style={{ background: 'var(--color-gold)' }} />
               <span
-                className="text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
+                className="text-[12px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
                 style={MONO}
               >
                 Long-Term Realized
               </span>
               <span
-                className="ml-auto text-[12px] text-[var(--color-text-muted)]"
+                className="ml-auto text-[14px] text-[var(--color-text-muted)]"
                 style={MONO}
               >
                 ~{(LTCG_RATE_DEFAULT * 100).toFixed(0)}% rate
@@ -848,23 +913,23 @@ export default function TaxesPage() {
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
-                <span className="text-[12px] font-semibold text-[var(--color-positive)]" style={{ ...TNUM, ...MONO }}>
+                <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
+                <span className="text-[14px] font-semibold text-[var(--color-positive)]" style={{ ...TNUM, ...MONO }}>
                   +{formatCurrency(longTermGains)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
-                <span className="text-[12px] font-semibold text-[var(--color-negative)]" style={{ ...TNUM, ...MONO }}>
+                <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
+                <span className="text-[14px] font-semibold text-[var(--color-negative)]" style={{ ...TNUM, ...MONO }}>
                   {formatCurrency(longTermLosses)}
                 </span>
               </div>
               <div className="pt-1.5 mt-1 border-t border-[var(--color-border-subtle)]">
                 <div className="flex items-center justify-between">
-                  <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
+                  <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
                   <span
                     className={cn(
-                      'text-[14px] font-bold',
+                      'text-[15px] font-bold',
                       longTermNet >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
                     )}
                     style={{ ...TNUM, ...MONO }}
@@ -878,7 +943,7 @@ export default function TaxesPage() {
         </section>
       )}
 
-      {/* ─── 3. Quarter Strip ─── */}
+      {/* ─── 6. Quarter Strip ─── */}
       {loading ? (
         <GridSkeleton />
       ) : (
@@ -909,7 +974,7 @@ export default function TaxesPage() {
                 }}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[14px] font-bold text-[var(--color-text-primary)]">
+                  <span className="text-[15px] font-bold text-[var(--color-text-primary)]">
                     {q.label}
                   </span>
                   <span className={cn('text-[10px] uppercase tracking-wider font-semibold', statusColor)} style={MONO}>
@@ -917,29 +982,29 @@ export default function TaxesPage() {
                   </span>
                 </div>
 
-                <p className="text-[12px] text-[var(--color-text-muted)] mb-3" style={MONO}>
+                <p className="text-[14px] text-[var(--color-text-muted)] mb-3" style={MONO}>
                   {q.range}
                 </p>
 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
-                    <span className="text-[12px] font-semibold text-[var(--color-positive)]" style={TNUM}>
+                    <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Gains</span>
+                    <span className="text-[14px] font-semibold text-[var(--color-positive)]" style={TNUM}>
                       +{formatCurrency(q.gains)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
-                    <span className="text-[12px] font-semibold text-[var(--color-negative)]" style={TNUM}>
+                    <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Losses</span>
+                    <span className="text-[14px] font-semibold text-[var(--color-negative)]" style={TNUM}>
                       {formatCurrency(q.losses)}
                     </span>
                   </div>
                   <div className="pt-1 mt-1 border-t border-[var(--color-border-subtle)]">
                     <div className="flex items-center justify-between">
-                      <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
+                      <span className="text-[14px] text-[var(--color-text-muted)]" style={MONO}>Net</span>
                       <span
                         className={cn(
-                          'text-[13px] font-bold',
+                          'text-[15px] font-bold',
                           q.net >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
                         )}
                         style={TNUM}
@@ -956,23 +1021,17 @@ export default function TaxesPage() {
         </section>
       )}
 
-      {/* ─── 3b. Realized Transactions Detail ─── */}
+      {/* ─── 6b. Realized Transactions Detail ─── */}
       {!loading && taxData && taxData.realized.transactions.length > 0 && (
         <section aria-label="Realized transactions">
-          <div
-            className="rounded-md overflow-hidden"
-            style={{
-              background: 'var(--color-bg-surface)',
-              border: '1px solid var(--color-border-base)',
-            }}
-          >
+          <div className="rounded-md overflow-hidden" style={CARD}>
             <button
               onClick={() => setShowRealizedTx((v) => !v)}
               className="w-full px-5 py-4 flex items-center justify-between border-b border-[var(--color-border-subtle)] cursor-pointer hover:bg-white/[0.02] motion-safe:transition-colors motion-safe:duration-100"
             >
               <div className="flex items-center gap-2.5">
                 <span
-                  className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-text-primary)]"
+                  className="text-[12px] uppercase tracking-[0.15em] font-bold text-[var(--color-text-primary)]"
                   style={MONO}
                 >
                   Realized Transactions
@@ -1028,22 +1087,22 @@ export default function TaxesPage() {
                           gap: '8px',
                         }}
                       >
-                        <span className="text-[12px] text-[var(--color-text-secondary)] tabular-nums" style={MONO}>
+                        <span className="text-[14px] text-[var(--color-text-secondary)] tabular-nums" style={MONO}>
                           {tx.date}
                         </span>
-                        <span className="text-[13px] font-bold text-[var(--color-text-primary)]" style={MONO}>
+                        <span className="text-[15px] font-bold text-[var(--color-text-primary)]" style={MONO}>
                           {tx.ticker}
                         </span>
                         <span />
-                        <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+                        <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
                           {formatCurrency(tx.proceeds)}
                         </span>
-                        <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+                        <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
                           {formatCurrency(tx.costBasis)}
                         </span>
                         <span
                           className={cn(
-                            'text-[12px] font-semibold tabular-nums',
+                            'text-[14px] font-semibold tabular-nums',
                             isGain ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
                           )}
                           style={MONO}
@@ -1067,7 +1126,7 @@ export default function TaxesPage() {
                       <div className="md:hidden px-4 py-3.5 border-b border-[var(--color-border-subtle)]">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-[13px] font-bold text-[var(--color-text-primary)]" style={MONO}>
+                            <span className="text-[15px] font-bold text-[var(--color-text-primary)]" style={MONO}>
                               {tx.ticker}
                             </span>
                             <span
@@ -1082,24 +1141,24 @@ export default function TaxesPage() {
                               {typeLabel}
                             </span>
                           </div>
-                          <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>
+                          <span className="text-[14px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>
                             {tx.date}
                           </span>
                         </div>
                         <div className="grid grid-cols-3 gap-x-4">
                           <div>
-                            <span className="text-[12px] text-[var(--color-text-muted)] block" style={MONO}>Proceeds</span>
-                            <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>{formatCurrency(tx.proceeds)}</span>
+                            <span className="text-[14px] text-[var(--color-text-muted)] block" style={MONO}>Proceeds</span>
+                            <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>{formatCurrency(tx.proceeds)}</span>
                           </div>
                           <div>
-                            <span className="text-[12px] text-[var(--color-text-muted)] block" style={MONO}>Basis</span>
-                            <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>{formatCurrency(tx.costBasis)}</span>
+                            <span className="text-[14px] text-[var(--color-text-muted)] block" style={MONO}>Basis</span>
+                            <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>{formatCurrency(tx.costBasis)}</span>
                           </div>
                           <div>
-                            <span className="text-[12px] text-[var(--color-text-muted)] block" style={MONO}>Gain/Loss</span>
+                            <span className="text-[14px] text-[var(--color-text-muted)] block" style={MONO}>Gain/Loss</span>
                             <span
                               className={cn(
-                                'text-[12px] font-semibold tabular-nums',
+                                'text-[14px] font-semibold tabular-nums',
                                 isGain ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]',
                               )}
                               style={MONO}
@@ -1118,44 +1177,82 @@ export default function TaxesPage() {
         </section>
       )}
 
-      {/* ─── 5. Form 8949 Preview ─── */}
+      {/* ─── 7. Form 8949 Preview ─── */}
       {!loading && (
         <div id="form-8949-section">
-          {showProContent ? (
-            <Form8949Preview />
-          ) : (
-            <ProBlur
-              label="Unlock Form 8949 preview"
-              description="See your IRS-ready short-term and long-term capital gains breakdown with CSV export."
-              minHeight="200px"
-            >
-              <div className="rounded-md p-6" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}>
-                <div className="flex items-center gap-2.5 mb-4">
-                  <Eye className="w-4 h-4 text-[var(--color-gold)]" />
-                  <span className="text-[11px] uppercase tracking-[0.15em] font-bold text-[var(--color-gold)]" style={MONO}>Form 8949 Preview</span>
-                </div>
-                <div className="space-y-3">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="flex gap-4">
-                      <div className="w-16 h-4 bg-[var(--color-bg-elevated)] rounded" />
-                      <div className="flex-1 h-4 bg-[var(--color-bg-elevated)] rounded" />
-                      <div className="w-24 h-4 bg-[var(--color-bg-elevated)] rounded" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </ProBlur>
-          )}
+          <Form8949Preview />
         </div>
       )}
 
       {/* Disclaimer */}
-      <p className="text-[11px] text-[var(--color-text-muted)] text-center leading-relaxed max-w-3xl mx-auto" style={MONO}>
+      <p className="text-[12px] text-[var(--color-text-muted)] text-center leading-relaxed max-w-3xl mx-auto" style={MONO}>
         All figures are estimates based on a {(TAX_RATE * 100).toFixed(0)}% blended tax rate and your connected portfolio data.
         This is not tax advice. Wash sale rules (IRC &sect;1091), the $3,000 annual deduction cap (IRC &sect;1211), and
         holding period requirements apply. Consult a qualified tax professional before making tax-related decisions.
       </p>
     </main>
+  );
+}
+
+// ── Estimated-tax-by-holding-period bars ──
+
+function HoldingPeriodBars({
+  longTermNet,
+  shortTermNet,
+  formatCurrency,
+}: {
+  longTermNet: number;
+  shortTermNet: number;
+  formatCurrency: (n: number) => string;
+}) {
+  const ltTax = longTermNet * LTCG_RATE_DEFAULT;
+  const stTax = shortTermNet * TAX_RATE;
+  const maxTax = Math.max(ltTax, stTax, 1);
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Long-term */}
+      <div>
+        <div className="flex justify-between mb-[7px]">
+          <span className="text-[14px] text-[var(--color-text-secondary)]">
+            Long-term gains · {(LTCG_RATE_DEFAULT * 100).toFixed(0)}% rate
+          </span>
+          <span className="text-[15px] font-semibold tabular-nums text-[var(--color-text-primary)]" style={MONO}>
+            {formatCurrency(ltTax)}
+          </span>
+        </div>
+        <div className="h-1.5 rounded-[3px] overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)' }}>
+          <div
+            className="h-full"
+            style={{ width: `${Math.min((ltTax / maxTax) * 100, 100)}%`, background: 'var(--color-positive)' }}
+          />
+        </div>
+        <div className="text-[10px] text-[var(--color-text-muted)] mt-[5px]" style={MONO}>
+          {formatCurrency(longTermNet)} taxed at preferential rate
+        </div>
+      </div>
+
+      {/* Short-term */}
+      <div>
+        <div className="flex justify-between mb-[7px]">
+          <span className="text-[14px] text-[var(--color-text-secondary)]">
+            Short-term gains · {(TAX_RATE * 100).toFixed(0)}% rate
+          </span>
+          <span className="text-[15px] font-semibold tabular-nums text-[var(--color-text-primary)]" style={MONO}>
+            {formatCurrency(stTax)}
+          </span>
+        </div>
+        <div className="h-1.5 rounded-[3px] overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)' }}>
+          <div
+            className="h-full"
+            style={{ width: `${Math.min((stTax / maxTax) * 100, 100)}%`, background: 'var(--color-warning-text)' }}
+          />
+        </div>
+        <div className="text-[10px] text-[var(--color-text-muted)] mt-[5px]" style={MONO}>
+          {formatCurrency(shortTermNet)} taxed at ordinary income
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1172,7 +1269,7 @@ function ConvictionChip({ status }: { status: 'intact' | 'weakening' | 'broken' 
   const c = CONVICTION_COLOR[status];
   return (
     <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-semibold shrink-0"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] uppercase tracking-wider font-semibold shrink-0"
       style={{ background: `${c}1A`, color: c, ...MONO }}
     >
       <span className="w-1.5 h-1.5 rounded-full" style={{ background: c }} />
@@ -1206,7 +1303,7 @@ function BrokenThesisCallout({
     >
       <div className="flex items-center gap-2 mb-2">
         <AlertTriangle className="w-4 h-4" style={{ color: red }} />
-        <span className="text-[11px] uppercase tracking-[0.15em] font-bold" style={{ color: red, ...MONO }}>
+        <span className="text-[12px] uppercase tracking-[0.15em] font-bold" style={{ color: red, ...MONO }}>
           Conviction Alert
         </span>
       </div>
@@ -1225,11 +1322,11 @@ function BrokenThesisCallout({
       </p>
       {lead.thesisCite && (
         <blockquote
-          className="mt-3 pl-3 text-[13px] text-[var(--color-text-secondary)] leading-relaxed"
+          className="mt-3 pl-3 text-[15px] text-[var(--color-text-secondary)] leading-relaxed"
           style={{ borderLeft: '2px solid rgba(248,113,113,0.4)' }}
         >
           &ldquo;{lead.thesisCite.excerpt}&rdquo;
-          <span className="block mt-1 text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+          <span className="block mt-1 text-[12px] text-[var(--color-text-muted)]" style={MONO}>
             {lead.thesisCite.sourceTitle}
             {lead.thesisCite.publishedAt ? ` · ${lead.thesisCite.publishedAt.slice(0, 10)}` : ''}
             {' · '}
@@ -1255,7 +1352,7 @@ function HarvestRow({
 
   const washSaleDetailText = opp.washSaleDetail
     ?? (isWashSafe
-      ? 'No substantially identical securities detected in your portfolio or recent transactions, per IRC \u00a71091.'
+      ? 'No substantially identical securities detected in your portfolio or recent transactions, per IRC §1091.'
       : null);
 
   const handleExpandToggle = (e: React.MouseEvent) => {
@@ -1279,40 +1376,40 @@ function HarvestRow({
         onClick={() => setExpanded((v) => !v)}
       >
         {/* Symbol */}
-        <span className="text-[14px] font-bold text-[var(--color-gold)]" style={MONO}>
+        <span className="text-[15px] font-bold text-[var(--color-gold)]" style={MONO}>
           {opp.ticker}
         </span>
 
         {/* Name + conviction */}
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-[13px] text-[var(--color-text-secondary)] truncate">
+          <span className="text-[15px] text-[var(--color-text-secondary)] truncate">
             {opp.securityName}
           </span>
           {opp.thesisStatus && <ConvictionChip status={opp.thesisStatus} />}
         </div>
 
         {/* Shares */}
-        <span className="text-[13px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+        <span className="text-[15px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
           {opp.shares.toLocaleString()}
         </span>
 
         {/* Basis */}
-        <span className="text-[13px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+        <span className="text-[15px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
           {formatCurrency(opp.costBasis)}
         </span>
 
         {/* Market value */}
-        <span className="text-[13px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+        <span className="text-[15px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
           {formatCurrency(opp.currentValue)}
         </span>
 
         {/* Unrealized */}
-        <span className="text-[13px] font-semibold text-[var(--color-negative)] tabular-nums" style={MONO}>
+        <span className="text-[15px] font-semibold text-[var(--color-negative)] tabular-nums" style={MONO}>
           {formatCurrency(opp.unrealizedLoss)}
         </span>
 
         {/* Est. saving */}
-        <span className="block text-right text-[13px] font-semibold text-[var(--color-positive)] tabular-nums" style={MONO}>
+        <span className="block text-right text-[15px] font-semibold text-[var(--color-positive)] tabular-nums" style={MONO}>
           {formatCurrency(opp.estimatedSavings)}
         </span>
 
@@ -1322,31 +1419,31 @@ function HarvestRow({
           onClick={handleExpandToggle}
           className="flex items-center gap-1 cursor-pointer"
           aria-expanded={expanded}
-          aria-label={`${isWashSafe ? 'Clear' : 'Conflict'} — show wash sale detail for ${opp.ticker}`}
+          aria-label={`${isWashSafe ? 'Eligible' : 'Wash-sale'} — show wash sale detail for ${opp.ticker}`}
         >
           {isWashSafe ? (
             <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-semibold"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[9px] uppercase tracking-[0.1em] font-bold"
               style={{
                 background: 'rgba(74, 222, 128, 0.08)',
                 color: 'var(--color-positive)',
+                border: '1px solid rgba(74,222,128,0.2)',
                 ...MONO,
               }}
             >
-              <CheckCircle2 className="w-3 h-3" />
-              Clear
+              Eligible
             </span>
           ) : (
             <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-semibold"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[9px] uppercase tracking-[0.1em] font-bold"
               style={{
-                background: 'rgba(251, 191, 36, 0.08)',
+                background: 'rgba(245, 158, 11, 0.1)',
                 color: 'var(--color-warning-text)',
+                border: '1px solid rgba(245,158,11,0.2)',
                 ...MONO,
               }}
             >
-              <AlertTriangle className="w-3 h-3" />
-              Conflict
+              Wash-sale
             </span>
           )}
           <ChevronDown
@@ -1361,7 +1458,7 @@ function HarvestRow({
         <div>
           {opp.holdingPeriod === 'short_term' ? (
             <span
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold"
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] uppercase tracking-wider font-semibold"
               style={{
                 background: 'rgba(251, 146, 60, 0.1)',
                 color: 'rgb(251, 146, 60)',
@@ -1372,7 +1469,7 @@ function HarvestRow({
             </span>
           ) : opp.holdingPeriod === 'long_term' ? (
             <span
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold"
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] uppercase tracking-wider font-semibold"
               style={{
                 background: 'rgba(74, 222, 128, 0.1)',
                 color: 'var(--color-positive)',
@@ -1383,7 +1480,7 @@ function HarvestRow({
             </span>
           ) : (
             <span
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold"
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] uppercase tracking-wider font-semibold"
               style={{
                 background: 'rgba(255,255,255,0.05)',
                 color: 'var(--color-text-muted)',
@@ -1406,7 +1503,7 @@ function HarvestRow({
             background: opp.washSaleRisk ? 'rgba(251, 191, 36, 0.03)' : 'rgba(74, 222, 128, 0.03)',
           }}
         >
-          <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
+          <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
             <span className="font-semibold text-[var(--color-text-primary)]">What this means: </span>
             {washSaleDetailText}
           </p>
@@ -1422,7 +1519,7 @@ function HarvestRow({
             background: opp.thesisStatus === 'broken' ? 'rgba(248,113,113,0.03)' : opp.thesisStatus === 'weakening' ? 'rgba(230,185,77,0.03)' : 'rgba(74,222,128,0.03)',
           }}
         >
-          <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
+          <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
             {thesisTlhNote(opp.thesisStatus)}
           </p>
         </div>
@@ -1435,17 +1532,17 @@ function HarvestRow({
         onClick={() => setExpanded((v) => !v)}
       >
         <div className="flex items-center gap-2 sm:gap-3 mb-2.5 flex-wrap">
-          <span className="text-[14px] font-bold text-[var(--color-gold)]" style={MONO}>
+          <span className="text-[15px] font-bold text-[var(--color-gold)]" style={MONO}>
             {opp.ticker}
           </span>
           {opp.thesisStatus && <ConvictionChip status={opp.thesisStatus} />}
-          <span className="text-[12px] sm:text-[13px] text-[var(--color-text-secondary)] truncate flex-1 min-w-[60px]">
+          <span className="text-[14px] sm:text-[15px] text-[var(--color-text-secondary)] truncate flex-1 min-w-[60px]">
             {opp.securityName}
           </span>
           {/* Holding period badge (mobile) */}
           {opp.holdingPeriod === 'short_term' ? (
             <span
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold shrink-0"
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] uppercase tracking-wider font-semibold shrink-0"
               style={{
                 background: 'rgba(251, 146, 60, 0.1)',
                 color: 'rgb(251, 146, 60)',
@@ -1456,7 +1553,7 @@ function HarvestRow({
             </span>
           ) : opp.holdingPeriod === 'long_term' ? (
             <span
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold shrink-0"
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] uppercase tracking-wider font-semibold shrink-0"
               style={{
                 background: 'rgba(74, 222, 128, 0.1)',
                 color: 'var(--color-positive)',
@@ -1472,31 +1569,31 @@ function HarvestRow({
             onClick={handleExpandToggle}
             className="inline-flex items-center gap-0.5 shrink-0 cursor-pointer"
             aria-expanded={expanded}
-            aria-label={`${isWashSafe ? 'Clear' : 'Conflict'} — show wash sale detail for ${opp.ticker}`}
+            aria-label={`${isWashSafe ? 'Eligible' : 'Wash-sale'} — show wash sale detail for ${opp.ticker}`}
           >
             {isWashSafe ? (
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-semibold"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[9px] uppercase tracking-[0.1em] font-bold"
                 style={{
                   background: 'rgba(74, 222, 128, 0.08)',
                   color: 'var(--color-positive)',
+                  border: '1px solid rgba(74,222,128,0.2)',
                   ...MONO,
                 }}
               >
-                <CheckCircle2 className="w-2.5 h-2.5" />
-                Clear
+                Eligible
               </span>
             ) : (
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-semibold"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[9px] uppercase tracking-[0.1em] font-bold"
                 style={{
-                  background: 'rgba(251, 191, 36, 0.08)',
+                  background: 'rgba(245, 158, 11, 0.1)',
                   color: 'var(--color-warning-text)',
+                  border: '1px solid rgba(245,158,11,0.2)',
                   ...MONO,
                 }}
               >
-                <AlertTriangle className="w-2.5 h-2.5" />
-                Conflict
+                Wash-sale
               </span>
             )}
             <ChevronDown
@@ -1509,32 +1606,32 @@ function HarvestRow({
         </div>
         <div className="grid grid-cols-2 gap-y-1.5 gap-x-4 pl-[26px]">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Shares</span>
-            <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+            <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Shares</span>
+            <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
               {opp.shares.toLocaleString()}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Basis</span>
-            <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+            <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Basis</span>
+            <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
               {formatCurrency(opp.costBasis)}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Mkt Value</span>
-            <span className="text-[12px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+            <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Mkt Value</span>
+            <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
               {formatCurrency(opp.currentValue)}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Unrealized</span>
-            <span className="text-[12px] font-semibold text-[var(--color-negative)] tabular-nums" style={MONO}>
+            <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Unrealized</span>
+            <span className="text-[14px] font-semibold text-[var(--color-negative)] tabular-nums" style={MONO}>
               {formatCurrency(opp.unrealizedLoss)}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>Est. saving</span>
-            <span className="text-[12px] font-semibold text-[var(--color-positive)] tabular-nums" style={MONO}>
+            <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Est. saving</span>
+            <span className="text-[14px] font-semibold text-[var(--color-positive)] tabular-nums" style={MONO}>
               {formatCurrency(opp.estimatedSavings)}
             </span>
           </div>
@@ -1549,7 +1646,7 @@ function HarvestRow({
               background: opp.washSaleRisk ? 'rgba(251, 191, 36, 0.03)' : 'rgba(74, 222, 128, 0.03)',
             }}
           >
-            <p className="text-[12px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
+            <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
               <span className="font-semibold text-[var(--color-text-primary)]">What this means: </span>
               {washSaleDetailText}
             </p>
@@ -1565,7 +1662,7 @@ function HarvestRow({
               background: opp.thesisStatus === 'broken' ? 'rgba(248,113,113,0.03)' : opp.thesisStatus === 'weakening' ? 'rgba(230,185,77,0.03)' : 'rgba(74,222,128,0.03)',
             }}
           >
-            <p className="text-[12px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
+            <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
               {thesisTlhNote(opp.thesisStatus)}
             </p>
           </div>

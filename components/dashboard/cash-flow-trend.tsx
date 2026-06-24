@@ -46,7 +46,7 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
       <DataPanelHeader className="!pt-3 !pb-1.5">
         <div className="flex items-center justify-between">
           <DataPanelTitle>Cash Flow</DataPanelTitle>
-          <div className="flex items-center gap-1.5 type-label text-xs">
+          <div className="flex items-center gap-1.5 type-label text-[13px]">
             {isPositive ? (
               <TrendingUp className="h-3.5 w-3.5 text-[var(--color-positive)]" aria-hidden="true" />
             ) : (
@@ -65,19 +65,19 @@ export function CashFlowTrend({ data }: CashFlowTrendProps) {
         <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3">
           <div>
             <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-0.5">Net Flow</div>
-            <div className="text-sm sm:text-xl font-bold font-tabular text-[var(--color-text-primary)]">
+            <div className="text-[15px] sm:text-xl font-bold font-tabular text-[var(--color-text-primary)]">
               {formatCurrency(currentMonth.netFlow)}
             </div>
           </div>
           <div>
             <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-0.5">Income</div>
-            <div className="text-sm sm:text-xl font-bold font-tabular text-[var(--color-positive)]">
+            <div className="text-[15px] sm:text-xl font-bold font-tabular text-[var(--color-positive)]">
               {formatCurrency(currentMonth.income)}
             </div>
           </div>
           <div>
             <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono mb-0.5">Expenses</div>
-            <div className="text-sm sm:text-xl font-bold font-tabular text-[var(--color-negative)]">
+            <div className="text-[15px] sm:text-xl font-bold font-tabular text-[var(--color-negative)]">
               {formatCurrency(currentMonth.expenses)}
             </div>
           </div>

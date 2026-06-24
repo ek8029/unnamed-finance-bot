@@ -119,7 +119,7 @@ export default function OAuthCallbackPage() {
             </div>
             <button
               onClick={() => router.push('/dashboard/accounts')}
-              className="px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded transition-colors text-sm"
+              className="px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold rounded transition-colors text-[15px]"
             >
               Back to Accounts
             </button>

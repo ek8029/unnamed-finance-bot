@@ -23,10 +23,10 @@ export function SectorBreakdownCard({ data, active }: { data: WrappedData; activ
         {data.sectorBreakdown.map((s, i) => (
           <div key={s.sector} style={stagger(active, i + 1)}>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-[var(--color-text-secondary)]" style={MONO}>
+              <span className="text-[13px] text-[var(--color-text-secondary)]" style={MONO}>
                 {s.sector}
               </span>
-              <span className="text-xs font-semibold text-[var(--color-text-primary)]" style={TNUM}>
+              <span className="text-[13px] font-semibold text-[var(--color-text-primary)]" style={TNUM}>
                 {s.pct.toFixed(0)}%
               </span>
             </div>
@@ -45,7 +45,7 @@ export function SectorBreakdownCard({ data, active }: { data: WrappedData; activ
           </div>
         ))}
       </div>
-      <CardBranding shareText={`My top sector: ${data.sectorBreakdown[0]?.sector} at ${data.sectorBreakdown[0]?.pct.toFixed(0)}%`} />
+      <CardBranding shareText={`My top sector: ${data.sectorBreakdown[0]?.sector} at ${data.sectorBreakdown[0]?.pct?.toFixed(0) ?? '0'}%`} />
     </div>
   );
 }
@@ -66,13 +66,13 @@ export function TopHoldingsCard({ data, active }: { data: WrappedData; active: b
           <div key={h.ticker} style={stagger(active, i + 1)}>
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-[var(--color-text-primary)]">{h.ticker}</span>
+                <span className="text-[15px] font-bold text-[var(--color-text-primary)]">{h.ticker}</span>
                 <span className="text-[10px] text-[var(--color-text-muted)] truncate max-w-[120px]" style={MONO}>
                   {h.name}
                 </span>
               </div>
               <div className="text-right">
-                <span className="text-xs font-semibold text-[var(--color-text-primary)]" style={TNUM}>
+                <span className="text-[13px] font-semibold text-[var(--color-text-primary)]" style={TNUM}>
                   ${fmt(h.value)}
                 </span>
                 <span className="text-[10px] text-[var(--color-text-muted)] ml-1.5" style={TNUM}>
@@ -124,7 +124,7 @@ export function DividendCard({ data, active }: { data: WrappedData; active: bool
       </p>
       <div className="mt-8 px-5 py-3 rounded-xl border border-[var(--color-positive)]/20 bg-[var(--color-positive)]/5"
            style={stagger(active, 4)}>
-        <p className="text-xs text-[var(--color-positive)]" style={MONO}>
+        <p className="text-[13px] text-[var(--color-positive)]" style={MONO}>
           In dividends & interest this {data.periodLabel.toLowerCase()}
         </p>
       </div>
@@ -173,7 +173,7 @@ export function TradingActivityCard({ data, active }: { data: WrappedData; activ
         )}
       </div>
       {data.mostActiveTradingDay && (
-        <p className="mt-4 text-xs text-[var(--color-text-muted)]"
+        <p className="mt-4 text-[13px] text-[var(--color-text-muted)]"
            style={{ ...stagger(active, 4), ...MONO }}>
           Peak activity: {new Date(data.mostActiveTradingDay.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
         </p>
@@ -204,7 +204,7 @@ export function TaxSavingsCard({ data, active }: { data: WrappedData; active: bo
       </p>
       <div className="mt-8 px-5 py-3 rounded-xl border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)]"
            style={stagger(active, 3)}>
-        <p className="text-xs text-[var(--color-gold)]" style={MONO}>
+        <p className="text-[13px] text-[var(--color-gold)]" style={MONO}>
           That&apos;s money back in your pocket
         </p>
       </div>

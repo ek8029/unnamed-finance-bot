@@ -38,7 +38,7 @@ function StatusChip({ status }: { status: PillarStatus }) {
   return (
     <span className="inline-flex items-center gap-1.5 px-2 py-[3px] rounded border border-white/[0.07] shrink-0" style={MONO}>
       <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: meta.color, boxShadow: dotGlow(status) }} />
-      <span className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: meta.color }}>
+      <span className="text-[12px] font-semibold uppercase tracking-[0.15em]" style={{ color: meta.color }}>
         {meta.label}
       </span>
     </span>
@@ -54,7 +54,7 @@ export function Reassessment({ investigation }: { investigation: Investigation |
           <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6A6A6A] mb-1" style={MONO}>
             Reassessment
           </div>
-          <p className="text-[14px] leading-[1.5] text-[#9A9A9A] m-0">
+          <p className="text-[15px] leading-[1.5] text-[#9A9A9A] m-0">
             No active reassessment. Every monitored pillar is holding.
           </p>
         </div>
@@ -95,7 +95,7 @@ export function Reassessment({ investigation }: { investigation: Investigation |
         {investigation.finding && (
           <div className="space-y-2">
             <SectionLabel>What the filings say</SectionLabel>
-            <p className="text-[13.5px] leading-[1.65] text-[#B8B8B8] m-0 border-l border-white/[0.08] pl-4">
+            <p className="text-[14.5px] leading-[1.65] text-[#B8B8B8] m-0 border-l border-white/[0.08] pl-4">
               {investigation.finding}
             </p>
           </div>
@@ -111,8 +111,8 @@ export function Reassessment({ investigation }: { investigation: Investigation |
                   <div className="flex items-start gap-2.5">
                     <StatusChip status={p.status} />
                     <div className="min-w-0 flex-1">
-                      <div className="text-[14px] font-semibold text-[#FAFAFA] leading-snug">{p.claim}</div>
-                      <p className="text-[12px] leading-[1.55] text-[#7A7A7A] mt-1.5 mb-0 italic">&ldquo;{p.excerpt}&rdquo;</p>
+                      <div className="text-[15px] font-semibold text-[#FAFAFA] leading-snug">{p.claim}</div>
+                      <p className="text-[13px] leading-[1.55] text-[#7A7A7A] mt-1.5 mb-0 italic">&ldquo;{p.excerpt}&rdquo;</p>
                     </div>
                   </div>
                 </div>

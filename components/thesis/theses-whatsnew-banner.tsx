@@ -30,15 +30,15 @@ export function ThesesWhatsNewBanner() {
       <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-[var(--color-gold)]" aria-hidden />
       <span className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] px-1.5 py-0.5 rounded bg-[var(--color-gold)] text-black" style={MONO}>New</span>
       <div className="flex-1 min-w-0">
-        <p className="text-[14px] font-semibold text-[#FAFAFA] leading-[1.3] m-0">Your conviction, watched.</p>
-        <p className="text-[12.5px] text-[#9A9A9A] leading-[1.4] mt-0.5 m-0">
+        <p className="text-[15px] font-semibold text-[#FAFAFA] leading-[1.3] m-0">Your conviction, watched.</p>
+        <p className="text-[13.5px] text-[#9A9A9A] leading-[1.4] mt-0.5 m-0">
           Helm&apos;s new agentic layer monitors filings, news and price against the <span className="italic">why</span> behind every position, and flags what strengthens or breaks it. Sourced, dated, every market hour.
         </p>
       </div>
       <Link
         href="/dashboard/theses"
         onClick={dismiss}
-        className="shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] px-3 py-1.5 rounded bg-transparent text-[var(--color-gold)] border border-[rgba(230,185,77,0.4)] hover:bg-[rgba(230,185,77,0.12)] transition-colors"
+        className="shrink-0 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] px-3 py-1.5 rounded bg-transparent text-[var(--color-gold)] border border-[rgba(230,185,77,0.4)] hover:bg-[rgba(230,185,77,0.12)] transition-colors"
         style={MONO}
       >
         Open Theses &rarr;

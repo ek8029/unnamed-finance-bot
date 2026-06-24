@@ -73,10 +73,10 @@ export function ThesisConvictionKpi() {
     <Link href="/dashboard/theses" className="block group">
       <div className="sovereign-card rounded border overflow-hidden p-3 md:p-5">
         <div className="flex items-center justify-between mb-1.5 md:mb-2">
-          <h3 className="text-[10px] md:text-xs uppercase tracking-widest text-[var(--color-text-muted)] font-mono leading-tight">
+          <h3 className="text-[10px] md:text-[13px] uppercase tracking-widest text-[var(--color-text-muted)] font-mono leading-tight">
             Thesis Conviction
           </h3>
-          <span className="text-[11px] font-mono text-[var(--color-text-muted)] group-hover:text-[var(--color-gold)] transition-colors whitespace-nowrap">
+          <span className="text-[12px] font-mono text-[var(--color-text-muted)] group-hover:text-[var(--color-gold)] transition-colors whitespace-nowrap">
             {total} tracked
           </span>
         </div>
@@ -87,7 +87,7 @@ export function ThesisConvictionKpi() {
               <span className="text-[17px] md:text-xl font-bold font-tabular leading-none" style={{ color: STATUS_META[b.key].color }}>
                 {b.count}
               </span>
-              <span className="text-[12px] text-[var(--color-text-muted)]">{STATUS_META[b.key].label}</span>
+              <span className="text-[13px] text-[var(--color-text-muted)]">{STATUS_META[b.key].label}</span>
             </span>
           ))}
         </div>
