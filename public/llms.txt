@@ -39,6 +39,7 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 - [Best Thesis Trackers 2026](https://helmterminal.dev/best-thesis-trackers): Honest comparison of thesis-monitoring tools (Helm vs Vela vs Thesis vs ThesisWatch)
 - [How Helm Detects Thesis Drift](https://helmterminal.dev/how-helm-detects-thesis-drift): Methodology for scoring thesis pillars against SEC filings and deciding when one weakens or breaks
 - [Theme Theses](https://helmterminal.dev/theme/ai-capex): Per-theme thesis breakdowns (AI capex, datacenter power, reindustrialization, nuclear/SMR, defense, GLP-1): what has to be true, the chain of beneficiaries, and what would invalidate it
+- [The Masthead](https://helmterminal.dev/caught): A running, dated public record of filing and news evidence Helm's agent caught against live investment theses, each with the verbatim source quote and a link to the source. Updated continuously.
 - [AI Stock Analysis](https://helmterminal.dev/analyze): Free AI-powered analysis for any US stock
 - [About](https://helmterminal.dev/about): Who built Helm and why
 - [Pricing](https://helmterminal.dev/pricing): Plans and features comparison
