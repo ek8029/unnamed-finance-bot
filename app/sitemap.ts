@@ -29,6 +29,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/about`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/blog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
     { url: `${base}/thesis-monitoring`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${base}/caught`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
     { url: `${base}/best-thesis-trackers`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
     { url: `${base}/how-helm-detects-thesis-drift`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/vela-alternative`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },

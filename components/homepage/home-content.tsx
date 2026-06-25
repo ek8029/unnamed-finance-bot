@@ -78,9 +78,8 @@ function Dot() {
 
 const NAV_LINKS = [
   { label: 'Analyze', href: '/analyze' },
+  { label: 'The Masthead', href: '/caught' },
   { label: 'Pricing', href: '#pricing' },
-  { label: 'Blog', href: '/blog' },
-  { label: 'Security', href: '/security' },
 ];
 
 /* ─── Pricing ───────────────────────────────────────────────────────────── */

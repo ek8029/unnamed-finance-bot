@@ -18,7 +18,7 @@ interface Particle {
   maxLife: number;
 }
 
-export function InteractiveGrid() {
+export function InteractiveGrid({ ambient = true }: { ambient?: boolean } = {}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouse = useRef({ x: -1000, y: -1000 });
   const raf = useRef(0);
@@ -110,6 +110,10 @@ export function InteractiveGrid() {
           const x = c * SPACING;
           const y = r * SPACING;
           const p = prox[c][r];
+          // The faint baseline dot drawn at every point is the static grid that
+          // bleeds under content. With ambient off, skip it so only the
+          // mouse-proximity grid (gold dots + lines) renders.
+          if (p <= 0.05 && !ambient) continue;
           ctx.beginPath();
           ctx.arc(x, y, 1 + p * 2.5, 0, Math.PI * 2);
           ctx.fillStyle =
@@ -135,7 +139,7 @@ export function InteractiveGrid() {
       window.removeEventListener('resize', resizeAndReallocate);
       window.removeEventListener('mousemove', onMouse);
     };
-  }, []);
+  }, [ambient]);
 
   return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />;
 }
