@@ -113,10 +113,11 @@ async function gatherSources(
  * Select the single most newsworthy content event for the run date across the
  * house-thesis universe. Returns null when nothing clears MIN_THRESHOLD.
  */
-export async function selectTopEvent(
+export async function selectTopEvents(
   runDate: string,
+  limit = 1,
   minThreshold: number = MIN_THRESHOLD,
-): Promise<ContentEvent | null> {
+): Promise<ContentEvent[]> {
   const db = await createServiceClient();
 
   const scored: Array<ScoredItem & { ticker: string; company: string }> = [];
@@ -151,25 +152,40 @@ export async function selectTopEvent(
     }
   }
 
-  if (scored.length === 0) return null;
-
   scored.sort((a, b) => b.score - a.score);
-  const top = scored[0];
-  if (top.score < minThreshold) return null;
 
-  return {
-    id: '', // filled on persist
-    ticker: top.ticker,
-    company: top.company,
-    pillarId: top.hit.pillarId,
-    pillarClaim: top.pillarClaim,
-    verdict: top.hit.verdict,
-    verbatimCite: top.hit.excerpt,
-    citeDate: top.hit.date,
-    sourceUrl: top.hit.url,
-    sourceType: top.hit.sourceType,
-    summary: top.hit.summary,
-    date: runDate,
-    newsworthiness: top.score,
-  };
+  // Keep the single best hit per ticker (variety), above threshold, up to limit.
+  const seen = new Set<string>();
+  const out: ContentEvent[] = [];
+  for (const top of scored) {
+    if (top.score < minThreshold) break; // sorted desc: nothing below clears it
+    if (seen.has(top.ticker)) continue;
+    seen.add(top.ticker);
+    out.push({
+      id: '', // filled on persist
+      ticker: top.ticker,
+      company: top.company,
+      pillarId: top.hit.pillarId,
+      pillarClaim: top.pillarClaim,
+      verdict: top.hit.verdict,
+      verbatimCite: top.hit.excerpt,
+      citeDate: top.hit.date,
+      sourceUrl: top.hit.url,
+      sourceType: top.hit.sourceType,
+      summary: top.hit.summary,
+      date: runDate,
+      newsworthiness: top.score,
+    });
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+/** Single most newsworthy event for the day (cron path). Null on a slow day. */
+export async function selectTopEvent(
+  runDate: string,
+  minThreshold: number = MIN_THRESHOLD,
+): Promise<ContentEvent | null> {
+  const [top] = await selectTopEvents(runDate, 1, minThreshold);
+  return top ?? null;
 }
