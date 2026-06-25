@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { isThesisUser } from '@/lib/thesis-access';
 import { useTier } from '@/hooks/use-tier';
+import { useAccounts } from '@/hooks/use-financial-data';
 import { usePreview } from '@/lib/preview-context';
 import { TIER_RANK, type Tier } from '@/lib/tier-shared';
 import {
@@ -169,6 +170,20 @@ export default function DashboardLayout({
   const [thesesVisited, setThesesVisited] = useState(true);
   const { isPro } = useTier();
   const { tier } = usePreview();
+  const { accounts } = useAccounts();
+  // Real connected institutions for the sidebar mini-panel (was hard-coded mock data).
+  const connectedInstitutions = (() => {
+    const map = new Map<string, number>();
+    for (const a of accounts) map.set(a.institution, (map.get(a.institution) ?? 0) + (a.balance ?? 0));
+    return [...map.entries()]
+      .map(([institution, balance]) => ({ institution, balance }))
+      .sort((a, b) => b.balance - a.balance);
+  })();
+  const fmtBal = (n: number) => {
+    const a = Math.abs(n);
+    const s = a >= 1000 ? `$${Math.round(a / 1000)}k` : `$${Math.round(a)}`;
+    return n < 0 ? `-${s}` : s;
+  };
   const [mobileRailOpen, setMobileRailOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -698,34 +713,45 @@ export default function DashboardLayout({
           {ACCOUNT_NAV.map((item) => <NavRow key={item.name} item={item} />)}
         </nav>
 
-        {/* ── Connected mini-panel ── */}
-        <div className="shrink-0 px-3.5 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-          <div
-            className="flex justify-between mb-2.5 text-[10px] uppercase"
-            style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.14em', color: '#7a7a7a' }}
+        {/* ── Connected mini-panel (real linked institutions) ── */}
+        {connectedInstitutions.length > 0 ? (
+          <div className="shrink-0 px-3.5 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+            <div
+              className="flex justify-between mb-2.5 text-[10px] uppercase"
+              style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.14em', color: '#7a7a7a' }}
+            >
+              <span>Connected · {connectedInstitutions.length}</span>
+              <span className="text-[var(--color-positive)]">● synced</span>
+            </div>
+            <div className="flex flex-col gap-[7px]">
+              {connectedInstitutions.slice(0, 4).map((acct) => (
+                <div key={acct.institution} className="flex items-center gap-2">
+                  <span
+                    className="w-4 h-4 rounded-[3px] flex items-center justify-center text-[8px] font-bold shrink-0"
+                    style={{ background: 'var(--color-gold-surface)', color: 'var(--color-gold)', fontFamily: 'var(--font-mono)' }}
+                  >
+                    {(acct.institution.trim()[0] || '?').toUpperCase()}
+                  </span>
+                  <span className="flex-1 text-[12px] text-[var(--color-text-secondary)] truncate">{acct.institution}</span>
+                  <span className="text-[10px] text-[var(--color-text-muted)] tabular-nums" style={{ fontFamily: 'var(--font-mono)' }}>{fmtBal(acct.balance)}</span>
+                </div>
+              ))}
+              {connectedInstitutions.length > 4 && (
+                <div className="pl-6 text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+                  +{connectedInstitutions.length - 4} more
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <Link
+            href="/dashboard/accounts"
+            className="shrink-0 block px-3.5 py-3 text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}
           >
-            <span>Connected · 4</span>
-            <span className="text-[var(--color-positive)]">● synced</span>
-          </div>
-          <div className="flex flex-col gap-[7px]">
-            {[
-              { initial: 'F', name: 'Fidelity', bal: '512k', bg: '#1B3B5F', fg: '#7AB8E8' },
-              { initial: 'R', name: 'Robinhood', bal: '318k', bg: '#0E3D2E', fg: '#4ADE80' },
-              { initial: 'S', name: 'Schwab', bal: '+2', bg: '#3A2A0E', fg: '#E6B94D' },
-            ].map((acct) => (
-              <div key={acct.name} className="flex items-center gap-2">
-                <span
-                  className="w-4 h-4 rounded-[3px] flex items-center justify-center text-[8px] font-bold shrink-0"
-                  style={{ background: acct.bg, color: acct.fg, fontFamily: 'var(--font-mono)' }}
-                >
-                  {acct.initial}
-                </span>
-                <span className="flex-1 text-[12px] text-[var(--color-text-secondary)] truncate">{acct.name}</span>
-                <span className="text-[10px] text-[var(--color-text-muted)] tabular-nums" style={{ fontFamily: 'var(--font-mono)' }}>{acct.bal}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+            + Connect an account
+          </Link>
+        )}
 
         {/* ── User row ── */}
         <div className="shrink-0 relative" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }} ref={menuRef}>
@@ -738,7 +764,7 @@ export default function DashboardLayout({
               style={{ background: 'linear-gradient(135deg,#E6B94D,#1A2E3F)' }}
               aria-hidden="true"
             >
-              {profile?.initials || 'JD'}
+              {profile?.initials || profile?.fullName?.trim()?.[0]?.toUpperCase() || ''}
             </div>
             <div className="flex-1 min-w-0 text-left">
               <div className="text-[14px] font-semibold truncate text-[var(--color-text-primary)]">

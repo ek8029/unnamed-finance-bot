@@ -246,6 +246,7 @@ interface BalanceHistoryPoint {
 }
 
 export function useAccounts() {
+  const isDemo = typeof window !== 'undefined' && sessionStorage.getItem('helm_demo_mode') === '1';
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [balanceHistory, setBalanceHistory] = useState<BalanceHistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -268,12 +269,26 @@ export function useAccounts() {
   };
 
   useEffect(() => {
-    fetchData();
+    if (!isDemo) fetchData();
+    else setLoading(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const refetch = () => {
     fetchData();
   };
+
+  if (isDemo) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const d = require('@/lib/demo-data');
+    return {
+      accounts: (d.DEMO_ACCOUNTS ?? []) as Account[],
+      balanceHistory: [] as BalanceHistoryPoint[],
+      loading: false,
+      error: null,
+      refetch,
+    };
+  }
 
   return { accounts, balanceHistory, loading, error, refetch };
 }
