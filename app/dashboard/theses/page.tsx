@@ -16,6 +16,9 @@ import { ThesisActions } from '@/components/thesis/thesis-actions';
 import { DemoConnectCta } from '@/components/demo/demo-connect-cta';
 import { RatifyQueue, type RatifyItem } from '@/components/thesis/ratify-queue';
 import { DriverMap, type NodeInfo } from '@/components/thesis/driver-map';
+import { ThesisCardsView, type CardThesis } from '@/components/thesis/thesis-cards-view';
+import { MaxUpgradeCard } from '@/components/max-upgrade-card';
+import { AgentActivity } from '@/components/thesis/agent-activity';
 import { summarizePillars, effectiveStatus, type ThesisSummary } from '@/lib/thesis-summary';
 import { STATUS_META, dotGlow, METER_ORDER, METER_COLORS, convictionColor, type PillarStatus } from '@/lib/thesis-palette';
 import { CompanyLogo } from '@/components/company-logo';
@@ -63,6 +66,7 @@ interface Holding {
   ticker: string;
   name: string;
   value?: number;
+  pl?: number; // unrealised gain/loss, dollars
 }
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
@@ -188,6 +192,8 @@ export default function ThesesPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   // Standings view toggle: show only theses with a broken or weakening pillar.
   const [breakingOnly, setBreakingOnly] = useState(false);
+  // Presentation: narrative cards (default) vs the dense standings table.
+  const [view, setView] = useState<'cards' | 'standings'>('cards');
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -220,10 +226,10 @@ export default function ThesesPage() {
       // Direct fetch instead of useHoldings() - the hook drags in 15s quote polling this page does not need.
       const res = await fetch('/api/holdings');
       if (!mountedRef.current || !res.ok) return;
-      const data = await res.json() as { holdings?: { ticker: string; asset_name?: string | null; total_value?: number | null }[] };
+      const data = await res.json() as { holdings?: { ticker: string; asset_name?: string | null; total_value?: number | null; unrealised_gain?: number | null }[] };
       if (!mountedRef.current) return;
       const raw = data.holdings ?? [];
-      setHoldings(raw.map((h) => ({ ticker: h.ticker, name: h.asset_name ?? h.ticker, value: h.total_value ?? undefined })));
+      setHoldings(raw.map((h) => ({ ticker: h.ticker, name: h.asset_name ?? h.ticker, value: h.total_value ?? undefined, pl: h.unrealised_gain ?? undefined })));
     } catch {
       // holdings section degrades gracefully - not fatal
     }
@@ -508,6 +514,22 @@ export default function ThesesPage() {
     </div>
   );
 
+  const isMax = tierAtLeast(previewTier, 'max');
+  const flaggedRow = rows.find((r) => r.worst === 'broken') ?? rows.find((r) => r.worst === 'weakening') ?? null;
+
+  const plByTicker = new Map<string, number>();
+  for (const h of holdings) if (h.pl != null) plByTicker.set(h.ticker.toUpperCase(), h.pl);
+  const cardTheses: CardThesis[] = bandedRows.flatMap((b) => b.rows).map((r) => ({
+    thesisId: r.t.id,
+    ticker: r.t.ticker,
+    name: nameByTicker.get(r.t.ticker.toUpperCase()),
+    status: r.worst,
+    intact: r.intact,
+    total: r.total,
+    statement: r.confirmedPillars[0]?.claim ?? r.t.notes ?? `${r.t.ticker} thesis`,
+    pl: plByTicker.get(r.t.ticker.toUpperCase()) ?? null,
+  }));
+
   let rank = 0; // global rank across bands
 
   return (
@@ -572,6 +594,28 @@ export default function ThesesPage() {
         </div>
       )}
 
+      {/* ── The agent, surfaced (Max) / unlock nudge (Pro) ── */}
+      {!noThesesYet && isMax && flaggedRow && (
+        <Link
+          href={`/dashboard/theses/${flaggedRow.t.id}`}
+          className="block rounded-lg p-5 no-underline transition-[filter] hover:brightness-[1.05]"
+          style={{ border: '1px solid rgba(230,185,77,0.25)', background: 'rgba(230,185,77,0.04)' }}
+        >
+          <div className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[0.16em]" style={{ ...MONO, color: '#FFD67A' }}>
+            ✦ Investigation · the agent
+          </div>
+          <div className="mb-1 text-[16px] font-semibold text-[#FAFAFA]">
+            Helm flagged {flaggedRow.t.ticker}: {flaggedRow.worst === 'broken' ? 'a pillar broke' : 'a pillar is weakening'}
+          </div>
+          <div className="text-[13.5px] text-[var(--color-text-secondary)]">
+            Open the reassessment to see what changed and the evidence behind it &rarr;
+          </div>
+        </Link>
+      )}
+      {!noThesesYet && isMax && <AgentActivity />}
+      {!noThesesYet && !isMax && <AgentActivity locked />}
+      {!noThesesYet && <MaxUpgradeCard />}
+
       {/* ── Section 2: Driver strip + openable map ── */}
       {!noThesesYet && <DriverMap nodes={nodeMap} />}
 
@@ -594,6 +638,19 @@ export default function ThesesPage() {
                   Breaking ({breakingCount})
                 </button>
               )}
+              <div className="inline-flex overflow-hidden rounded border border-white/[0.12]">
+                {(['cards', 'standings'] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setView(v)}
+                    className={`px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] transition-colors ${view === v ? 'bg-[var(--color-gold)] text-[#060606]' : 'text-[#9A9A9A] hover:text-[#CFCFCF]'}`}
+                    style={MONO}
+                  >
+                    {v}
+                  </button>
+                ))}
+              </div>
             </div>
             <span className="font-mono text-[10.5px] tracking-[0.08em] text-[#5A5A5A]" style={MONO}>
               intact pillars &middot; % of portfolio &middot; conviction
@@ -620,6 +677,9 @@ export default function ThesesPage() {
               ))}
             </div>
           )}
+          {view === 'cards' ? (
+            <ThesisCardsView theses={cardTheses} />
+          ) : (
           <div className="rounded-lg border border-white/[0.07] bg-[#0E0E0E] overflow-hidden">
             {bandedRows.map(({ band, rows: bandRows }) => (
               <div key={band}>
@@ -683,21 +743,24 @@ export default function ThesesPage() {
                         <ChevronDown className={`w-4 h-4 text-[#6A6A6A] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
                       </button>
 
-                      {/* One-click reassessment entry: visible on the collapsed row when the agent flagged a move. */}
+                      {/* One-click reassessment entry: shown beneath the collapsed row when the agent
+                          flagged a move, so it never overlaps the weight / status cluster. */}
                       {!open && (r.worst === 'broken' || r.worst === 'weakening') && (
-                        <Link
-                          href={`/dashboard/theses/${r.t.id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="absolute top-1/2 -translate-y-1/2 right-[148px] z-10 hidden lg:inline-flex items-center gap-1 px-2.5 py-1 rounded font-mono text-[10px] font-semibold uppercase tracking-[0.1em] no-underline"
-                          style={{
-                            fontFamily: 'var(--font-mono)',
-                            color: r.worst === 'broken' ? '#F87171' : '#E6B94D',
-                            background: r.worst === 'broken' ? 'rgba(248,113,113,0.10)' : 'rgba(230,185,77,0.10)',
-                            border: `1px solid ${r.worst === 'broken' ? 'rgba(248,113,113,0.30)' : 'rgba(230,185,77,0.30)'}`,
-                          }}
-                        >
-                          Reassessment &rsaquo;
-                        </Link>
+                        <div className="px-4 sm:px-5 pb-2.5 -mt-1.5">
+                          <Link
+                            href={`/dashboard/theses/${r.t.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded font-mono text-[10px] font-semibold uppercase tracking-[0.1em] no-underline"
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              color: r.worst === 'broken' ? '#F87171' : '#E6B94D',
+                              background: r.worst === 'broken' ? 'rgba(248,113,113,0.10)' : 'rgba(230,185,77,0.10)',
+                              border: `1px solid ${r.worst === 'broken' ? 'rgba(248,113,113,0.30)' : 'rgba(230,185,77,0.30)'}`,
+                            }}
+                          >
+                            Reassessment &rsaquo;
+                          </Link>
+                        </div>
                       )}
 
                       {open && (
@@ -720,6 +783,7 @@ export default function ThesesPage() {
               </div>
             ))}
           </div>
+          )}
         </section>
       )}
 

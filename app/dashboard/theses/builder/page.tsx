@@ -326,7 +326,7 @@ function BuilderInner() {
                           border: `1px solid ${p.confirmed ? 'rgba(74,222,128,0.30)' : 'var(--color-gold-border)'}`,
                         }}
                       >
-                        {i + 1}
+                        {p.confirmed ? '✓' : '●'}
                       </span>
                       <div className="min-w-0 flex-1 space-y-3">
                         <div className="relative">
