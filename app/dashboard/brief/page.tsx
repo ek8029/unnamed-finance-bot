@@ -18,6 +18,7 @@ import { STATUS_META } from '@/lib/thesis-palette';
 import { MacroStrip, type MacroItem } from '@/components/thesis/macro-strip';
 import { QuietState, type PillarSummary } from '@/components/thesis/quiet-state';
 import { DemoConnectCta } from '@/components/demo/demo-connect-cta';
+import { AgentHeartbeat } from '@/components/thesis/agent-activity';
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /*  Types                                                                      */
@@ -674,6 +675,9 @@ export default function BriefPage() {
         headline="Get this brief about your portfolio."
         sub="Connect your accounts for a daily conviction-led read on what actually moved your book, and why."
       />
+      <div className="mb-3.5">
+        <AgentHeartbeat />
+      </div>
 
       {/* ══ Market context strip (5 cells, real data only) ══ */}
       {marketCells.length > 0 && (

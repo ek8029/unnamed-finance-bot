@@ -16,6 +16,7 @@ import { tierAtLeast } from '@/lib/tier-shared';
 import { useLivePrices } from '@/hooks/use-live-prices';
 import posthog from 'posthog-js';
 import { DemoConnectCta } from '@/components/demo/demo-connect-cta';
+import { AgentHeartbeat } from '@/components/thesis/agent-activity';
 
 // ── Sovereign Architect tokens (local to this screen) ──────────────────────
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
@@ -641,6 +642,9 @@ export default function DashboardOverview() {
         headline="This is sample data. See your real net worth."
         sub="Connect your brokerages and Helm reconciles every account into one number, with your real risk, taxes, and conviction."
       />
+      <div className="mb-3.5">
+        <AgentHeartbeat />
+      </div>
       {showDemoBanner && (
         <div className="mb-4 flex flex-col items-start justify-between gap-2 rounded-md border border-[var(--color-info-border)] bg-[var(--color-info-muted)] px-4 py-2.5 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">

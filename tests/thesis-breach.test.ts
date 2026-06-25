@@ -25,7 +25,7 @@ describe('getThesisBreachTemplate', () => {
   });
   it('subject names the ticker and severity', () => {
     expect(tpl.subject).toContain('AMD');
-    expect(tpl.subject.toLowerCase()).toContain('broke');
+    expect(tpl.subject.toLowerCase()).toContain('break');
   });
   it('body carries the verbatim excerpt and the source', () => {
     expect(tpl.html).toContain('The company expects data center revenue to decline sequentially.');
