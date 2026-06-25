@@ -134,10 +134,19 @@ export function InteractiveGrid({ ambient = true }: { ambient?: boolean } = {}) 
     };
     window.addEventListener('mousemove', onMouse);
 
+    // Pause the draw loop while the tab is hidden so it stops consuming CPU/GPU and
+    // battery in the background; resume when the tab is visible again.
+    const onVisibility = () => {
+      cancelAnimationFrame(raf.current);
+      if (!document.hidden) raf.current = requestAnimationFrame(draw);
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
     return () => {
       cancelAnimationFrame(raf.current);
       window.removeEventListener('resize', resizeAndReallocate);
       window.removeEventListener('mousemove', onMouse);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [ambient]);
 

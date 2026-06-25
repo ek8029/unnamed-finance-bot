@@ -88,7 +88,7 @@ export function AgentActivity({ locked = false }: { locked?: boolean }) {
   if (locked && events.length === 0) return null;
 
   return (
-    <section className="relative rounded-lg border border-white/[0.07] bg-[#131313] overflow-hidden">
+    <section className="relative rounded-lg border border-white/[0.07] bg-[var(--color-bg-surface)] overflow-hidden">
       <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-white/[0.05]">
         <span className="text-[13px]" style={{ color: GOLD }}>✦</span>
         <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>
@@ -139,7 +139,7 @@ export function AgentActivity({ locked = false }: { locked?: boolean }) {
       )}
       {locked && (
         <>
-          <div className="pointer-events-none absolute inset-x-0 bottom-[54px] h-16 bg-gradient-to-t from-[#131313] to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-[54px] h-16 bg-gradient-to-t from-[var(--color-bg-surface)] to-transparent" />
           <Link
             href="/pricing"
             className="relative flex items-center justify-center gap-2 border-t border-white/[0.06] px-5 py-3.5 no-underline transition-colors hover:bg-[rgba(230,185,77,0.05)]"

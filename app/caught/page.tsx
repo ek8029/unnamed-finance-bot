@@ -45,9 +45,9 @@ interface QueueRow {
 }
 
 const VERDICT_META: Record<Verdict, { label: string; color: string; bg: string; border: string }> = {
-  supports: { label: 'Supports', color: '#4ADE80', bg: 'rgba(74,222,128,0.08)', border: 'rgba(74,222,128,0.30)' },
-  contradicts: { label: 'Contradicts', color: '#F87171', bg: 'rgba(248,113,113,0.08)', border: 'rgba(248,113,113,0.30)' },
-  neutral: { label: 'Context', color: '#9A9A9A', bg: 'rgba(154,154,154,0.08)', border: 'rgba(154,154,154,0.25)' },
+  supports: { label: 'Supports', color: 'var(--color-positive)', bg: 'var(--color-positive-muted)', border: 'var(--color-positive-border)' },
+  contradicts: { label: 'Contradicts', color: 'var(--color-negative-text)', bg: 'var(--color-negative-muted)', border: 'var(--color-negative-border)' },
+  neutral: { label: 'Context', color: 'var(--color-text-muted)', bg: 'var(--color-border-subtle)', border: 'var(--color-border-base)' },
 };
 
 function fmtDate(raw: string | null): string {
@@ -130,7 +130,7 @@ export default async function CaughtPage() {
         </header>
 
         {events.length === 0 ? (
-          <div className="rounded-xl border border-[var(--color-border-base)] bg-[#131313] p-8 text-center">
+          <div className="rounded-xl border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-8 text-center">
             <p className="text-[15px] text-[var(--color-text-secondary)] m-0">
               No catches published yet. The agent runs every market day; entries appear here as they clear review.
             </p>
@@ -140,9 +140,9 @@ export default async function CaughtPage() {
             {events.map((e, i) => {
               const v = VERDICT_META[e.verdict] ?? VERDICT_META.neutral;
               return (
-                <li key={i} className="rounded-xl border border-[var(--color-border-base)] bg-[#131313] p-6">
+                <li key={e.source_url ?? `${e.ticker}-${e.cite_date ?? i}`} className="rounded-xl border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-6">
                   <div className="mb-3 flex flex-wrap items-center gap-3">
-                    <span className="font-mono text-[15px] font-bold uppercase tracking-[0.06em] text-[var(--color-text-primary)]">{e.ticker}</span>
+                    <h2 className="m-0 font-mono text-[15px] font-bold uppercase tracking-[0.06em] text-[var(--color-text-primary)]">{e.ticker}</h2>
                     {e.company && e.company !== e.ticker && (
                       <span className="text-[13px] text-[var(--color-text-muted)]">{e.company}</span>
                     )}
@@ -169,8 +169,8 @@ export default async function CaughtPage() {
                     {e.source_url && (
                       <>
                         <span>&middot;</span>
-                        <a href={e.source_url} target="_blank" rel="noopener noreferrer" className="text-[var(--color-gold)] hover:underline">
-                          source &rarr;
+                        <a href={e.source_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-[44px] px-2 -mx-2 text-[var(--color-gold)] hover:underline">
+                          source &rarr;<span className="sr-only"> (opens in new tab)</span>
                         </a>
                       </>
                     )}
@@ -185,7 +185,7 @@ export default async function CaughtPage() {
           <p className="m-0 mb-4 text-[16px] text-[var(--color-text-primary)]">
             Helm watches these theses in public. It watches yours in private.
           </p>
-          <Link href="/signup" className="inline-flex px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">
+          <Link href="/signup" className="inline-flex items-center min-h-[44px] px-5 py-3 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">
             Take the Helm
           </Link>
         </div>
