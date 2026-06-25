@@ -15,6 +15,8 @@ type KindMeta = { label: string; color: string; bg: string; border: string };
 function kindBadge(kind: Investigation['trigger']['kind']): KindMeta {
   if (kind === 'new_filing') return { label: 'New filing', ...GOLD };
   if (kind === 'breach') return { label: 'Pillar broken', ...RED };
+  if (kind === 'pressure') return { label: 'Under pressure', ...GOLD };
+  if (kind === 'severe_move') return { label: 'Severe move', ...RED };
   return { label: 'Event', ...RED };
 }
 
@@ -112,7 +114,7 @@ export function Reassessment({ investigation }: { investigation: Investigation |
                     <StatusChip status={p.status} />
                     <div className="min-w-0 flex-1">
                       <div className="text-[15px] font-semibold text-[#FAFAFA] leading-snug">{p.claim}</div>
-                      <p className="text-[13px] leading-[1.55] text-[#7A7A7A] mt-1.5 mb-0 italic">&ldquo;{p.excerpt}&rdquo;</p>
+                      {p.excerpt && <p className="text-[13px] leading-[1.55] text-[#7A7A7A] mt-1.5 mb-0 italic">&ldquo;{p.excerpt}&rdquo;</p>}
                     </div>
                   </div>
                 </div>

@@ -13,7 +13,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PillarStatus } from '@/lib/thesis-status';
 
-export type TriggerKind = 'severe_move' | 'new_filing' | 'breach';
+export type TriggerKind = 'severe_move' | 'new_filing' | 'breach' | 'pressure';
 
 export interface InvEvidence {
   pillarId: string;
@@ -37,7 +37,7 @@ export interface Investigation {
   trigger: { kind: TriggerKind; headline: string; date: string | null };
   finding: string;
   affectedPillars: { claim: string; status: PillarStatus; excerpt: string }[];
-  priority: 'critical' | 'high';
+  priority: 'critical' | 'high' | 'watch';
 }
 
 const PRIMARY_SOURCES = new Set(['filing', 'form4', 'xbrl', 'price_move']);
@@ -121,6 +121,81 @@ export function buildInvestigation(thesisId: string, ticker: string, rows: InvEv
     finding,
     affectedPillars,
     priority: trigger.kind === 'severe_move' ? 'critical' : 'high',
+  };
+}
+
+/** Confirmed pillar with its effective status (status_override wins). */
+export interface ThesisPillar {
+  id: string;
+  claim: string;
+  status: PillarStatus;
+}
+
+/**
+ * Broadened reassessment for the thesis detail page. Returns the hard
+ * investigation when a real event exists (severe move / broken pillar with a
+ * live material contradiction); otherwise, for a thesis with any weakening or
+ * broken pillar, returns a lighter "pressure" reassessment grounded in whatever
+ * non-supporting evidence is stored (material or context), or a truthful status
+ * line when no excerpt exists. Returns null only when every pillar is intact, so
+ * the detail page never shows a blank "all holding" state for a flagged thesis.
+ */
+export function buildReassessment(
+  thesisId: string,
+  ticker: string,
+  rows: InvEvidence[],
+  pillars: ThesisPillar[],
+): Investigation | null {
+  const hard = buildInvestigation(thesisId, ticker, rows);
+  if (hard) return hard;
+
+  const flagged = pillars.filter((p) => p.status === 'weakening' || p.status === 'broken');
+  if (flagged.length === 0) return null;
+
+  const hasBroken = flagged.some((p) => p.status === 'broken');
+  const flaggedIds = new Set(flagged.map((p) => p.id));
+
+  // Strongest non-supporting evidence per flagged pillar.
+  const rank = (e: InvEvidence) =>
+    (e.verdict === 'contradicts' ? 4 : e.verdict === 'neutral' ? 1 : 0) +
+    (e.materiality === 'material' ? 2 : 0) +
+    (e.is_backfill ? 0 : 1);
+
+  const leadByPillar = new Map<string, InvEvidence>();
+  for (const e of rows) {
+    if (!flaggedIds.has(e.pillarId) || e.verdict === 'supports') continue;
+    const cur = leadByPillar.get(e.pillarId);
+    if (!cur || rank(e) > rank(cur)) leadByPillar.set(e.pillarId, e);
+  }
+
+  const affectedPillars = [...flagged]
+    .sort((a, b) => (a.status === 'broken' ? 0 : 1) - (b.status === 'broken' ? 0 : 1))
+    .map((p) => ({ claim: p.claim, status: p.status, excerpt: leadByPillar.get(p.id)?.excerpt ?? '' }));
+
+  const cites = [...leadByPillar.values()]
+    .sort((a, b) => rank(b) - rank(a))
+    .filter((e, i, arr) => arr.findIndex((x) => x.excerpt === e.excerpt) === i)
+    .slice(0, MAX_FINDING_CITES);
+
+  const finding = cites.length
+    ? cites
+        .map((c) => `${c.source_title}: "${c.excerpt}".${c.what_it_means ? ` ${c.what_it_means.trim()}` : ''}`)
+        .join(' ')
+        .trim()
+    : `No single event has triggered yet. ${flagged.length} pillar${flagged.length === 1 ? '' : 's'} ${hasBroken ? 'under stress' : 'weakening'}; Helm is reading new filings against ${flagged.length === 1 ? 'it' : 'them'}.`;
+
+  const lead = cites[0];
+  const headline = lead
+    ? lead.excerpt
+    : `${ticker} ${hasBroken ? 'has a pillar under stress' : 'is weakening'}, but no single event has triggered.`;
+
+  return {
+    thesisId,
+    ticker,
+    trigger: { kind: 'pressure', headline, date: lead?.published_at ?? null },
+    finding,
+    affectedPillars,
+    priority: hasBroken ? 'high' : 'watch',
   };
 }
 
@@ -208,7 +283,22 @@ export async function investigationForThesis(
   ticker: string,
 ): Promise<Investigation | null> {
   const rowsByThesis = await loadInvEvidence(db, [thesisId]);
-  return buildInvestigation(thesisId, ticker, rowsByThesis.get(thesisId) ?? []);
+  const rows = rowsByThesis.get(thesisId) ?? [];
+
+  // Confirmed pillars (incl. evidence-less ones) so a weakening pillar with no
+  // stored excerpt still surfaces as pressure rather than a blank reassessment.
+  const { data: pillarsRaw } = await db
+    .from('thesis_pillars')
+    .select('id, claim, status, status_override')
+    .eq('thesis_id', thesisId)
+    .eq('confirmed', true);
+  const pillars: ThesisPillar[] = ((pillarsRaw ?? []) as Record<string, unknown>[]).map((p) => ({
+    id: p.id as string,
+    claim: p.claim as string,
+    status: (p.status_override ?? p.status) as PillarStatus,
+  }));
+
+  return buildReassessment(thesisId, ticker, rows, pillars);
 }
 
 export async function generateInvestigations(
