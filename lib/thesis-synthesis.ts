@@ -11,6 +11,10 @@ import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 
 export const SYNTHESIS_MODEL = 'gpt-4o';
 
+// Bump when the synthesis prompt changes so cached clusters recompute (the cache
+// is keyed by the pillar-set hash, which is otherwise stable across prompt edits).
+export const SYNTHESIS_PROMPT_VERSION = 'v2-ticker-refs';
+
 export interface SynthPillarInput {
   id: string;
   ticker: string;
@@ -31,9 +35,9 @@ Identify clusters where pillars from 2 OR MORE DIFFERENT tickers depend on the s
 Rules:
 - Only group pillars that genuinely share a driver. Do not force connections.
 - Every cluster MUST span at least 2 different tickers.
-- Reference only the pillar numbers provided. Never invent pillars, tickers, facts, or numbers.
+- Use the pillar numbers ONLY to fill pillar_indices. Never write a pillar number in the rationale text. Never invent pillars, tickers, facts, or numbers.
 - driver: a short noun phrase naming a SPECIFIC EXTERNAL dependency. Valid drivers are a named end-market or customer segment (for example consumer discretionary spending, data-center capex, auto demand), a macro variable (the interest-rate path, oil prices), a named input cost or commodity, a regulation, or a specific technology demand (for example GLP-1 demand). Do NOT group on generic internal capabilities that every company has, such as operational efficiency, cost management, execution, margins, profitability, operating leverage, or capital allocation. Those are not shared drivers and must be omitted.
-- rationale: 1 to 2 neutral sentences describing how the listed pillars depend on that driver and that they would tend to move together. Describe the concentration only. Do NOT give advice or recommendations. Never use buy, sell, hold, trim, reduce, add, rebalance, or diversify. No em dashes.
+- rationale: 1 to 2 neutral sentences describing how the listed positions depend on that driver and that they would tend to move together. Refer to positions by ticker (e.g. NVDA, AMD), never by pillar number; do NOT write "Pillar 1" or "Pillars 2, 3". Describe the concentration only. Do NOT give advice or recommendations. Never use buy, sell, hold, trim, reduce, add, rebalance, or diversify. No em dashes.
 - Omit weak or single-ticker groupings entirely. If nothing genuinely connects, return an empty array.
 
 Respond with JSON exactly in this shape:
@@ -65,7 +69,7 @@ function isGenericDriver(driver: string): boolean {
 
 /** Stable hash of a pillar set (ticker+claim), for caching. */
 export function hashPillars(items: SynthPillarInput[]): string {
-  const s = items.map((i) => `${i.ticker}|${i.claim}`).sort().join('\n');
+  const s = SYNTHESIS_PROMPT_VERSION + '\n' + items.map((i) => `${i.ticker}|${i.claim}`).sort().join('\n');
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (Math.imul(h, 31) + s.charCodeAt(i)) | 0;
   return String(h);
