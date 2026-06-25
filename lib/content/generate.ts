@@ -56,5 +56,17 @@ Return JSON exactly: {"xThread":string[],"linkedinPost":string,"caption":string}
   const linkedinPost = typeof parsed.linkedinPost === 'string' ? parsed.linkedinPost : '';
   const caption = typeof parsed.caption === 'string' ? parsed.caption : '';
 
+  // Integrity guarantee: the post MUST carry the source quote verbatim (the validator
+  // enforces it, and it is the whole point of the format). The model reliably
+  // paraphrases instead of quoting, so insert the exact cite as an attributed line
+  // when it is absent rather than depending on the model to embed it.
+  const norm = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase();
+  const cite = event.verbatimCite.trim();
+  if (cite && !xThread.some((t) => norm(t).includes(norm(cite)))) {
+    const label = event.sourceType === 'filing' ? 'From the filing' : 'From the reporting';
+    // After the opening line so the hook still leads; falls back to front if empty.
+    xThread.splice(xThread.length > 0 ? 1 : 0, 0, `${label}: "${cite}"`);
+  }
+
   return { xThread, linkedinPost, caption, disclaimer: DISCLAIMER };
 }
