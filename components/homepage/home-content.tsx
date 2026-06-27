@@ -260,7 +260,7 @@ export default function HomeContent({ tickerTape }: HomeContentProps) {
 
       <main>
       {/* ── INTRO (full viewport) ── */}
-      <section className="h-screen flex flex-col items-center justify-center text-center relative px-10 max-sm:px-5 overflow-hidden">
+      <section className="min-h-screen flex flex-col items-center justify-center text-center relative px-10 max-sm:px-5 pt-[100px] pb-28 overflow-hidden">
         {/* Gold glow */}
         <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[700px] max-w-[120vw] pointer-events-none bg-[radial-gradient(ellipse_50%_50%_at_50%_50%,rgba(230,185,77,0.12),transparent_64%)]" />
 
@@ -301,7 +301,7 @@ export default function HomeContent({ tickerTape }: HomeContentProps) {
 
         {/* Scroll cue */}
         {!reducedMotion && (
-          <div className={`absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2.5 font-[family-name:var(--font-mono)] text-[9px] tracking-[0.22em] uppercase text-[var(--color-text-muted)] ${motionClass}`} style={motionStyle(1)}>
+          <div className={`absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2.5 font-[family-name:var(--font-mono)] text-[9px] tracking-[0.22em] uppercase text-[var(--color-text-muted)] [@media(max-height:760px)]:hidden ${motionClass}`} style={motionStyle(1)}>
             <span>Scroll</span>
             <div className="w-px h-10 bg-gradient-to-b from-[var(--color-gold)] to-transparent relative overflow-hidden">
               <div className="absolute top-[-50%] left-0 w-px h-[50%] bg-[var(--color-gold)] animate-[cue_1.8s_cubic-bezier(0.22,1,0.36,1)_infinite]" />
