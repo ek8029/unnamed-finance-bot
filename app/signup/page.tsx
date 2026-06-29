@@ -41,7 +41,7 @@ function SignupForm() {
   const formRenderedAt = useRef<number>(0);
   const captchaRef = useRef<HCaptcha | null>(null);
 
-  useEffect(() => { formRenderedAt.current = Date.now(); }, []);
+  useEffect(() => { formRenderedAt.current = Date.now(); posthog.capture('signup_page_viewed', { flow: isWrappedFlow ? 'wrapped' : 'default' }); }, []);
 
   // Capture UTM params into sessionStorage on mount
   useEffect(() => {

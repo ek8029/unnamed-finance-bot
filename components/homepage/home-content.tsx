@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import posthog from 'posthog-js';
 import { Menu, X } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
 import type { TickerTapeItem } from '@/lib/ticker-tape';
@@ -10,9 +12,20 @@ import { PriceFlash } from '@/components/price-flash';
 
 /* ─── Props ─────────────────────────────────────────────────────────────── */
 
+interface LatestCatch {
+  ticker: string;
+  company: string;
+  verdict: string;
+  verbatimCite: string;
+  sourceLabel: string;
+  dateISO: string;
+  dateLabel: string;
+}
+
 interface HomeContentProps {
   demoAnalyses: unknown[];
   tickerTape: TickerTapeItem[];
+  latestCatch?: LatestCatch | null;
 }
 
 /* ─── Scenes for the pinned MacBook stage ───────────────────────────────── */
@@ -78,7 +91,7 @@ function Dot() {
 
 const NAV_LINKS = [
   { label: 'Analyze', href: '/analyze' },
-  { label: 'The Masthead', href: '/caught' },
+  { label: 'The Masthead', href: '/masthead' },
   { label: 'Pricing', href: '#pricing' },
 ];
 
@@ -120,12 +133,22 @@ function Reveal({ children, className = '' }: { children: React.ReactNode; class
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════════════════════════ */
 
-export default function HomeContent({ tickerTape }: HomeContentProps) {
+export default function HomeContent({ tickerTape, latestCatch }: HomeContentProps) {
+  const router = useRouter();
   const [activeScene, setActiveScene] = useState(0);
   const stageRef = useRef<HTMLDivElement>(null);
   const [railVisible, setRailVisible] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [tickerInput, setTickerInput] = useState('');
+
+  function submitAnalyze(e: React.FormEvent) {
+    e.preventDefault();
+    const symbol = tickerInput.trim().toUpperCase().replace(/[^A-Z]/g, '');
+    if (!symbol) return;
+    posthog.capture('home_cta_clicked', { cta: 'analyze_try' });
+    router.push(`/analyze/${symbol}`);
+  }
 
   // Live overlay for the ticker tape: poll the public quotes endpoint
   // every 60s. Non-whitelisted (trending) tickers keep their SSR values.
@@ -229,7 +252,7 @@ export default function HomeContent({ tickerTape }: HomeContentProps) {
         </div>
 
         <div className="flex items-center gap-4 pointer-events-auto">
-          <Link href="/signup" className="font-[family-name:var(--font-mono)] text-[10px] font-bold tracking-[0.16em] uppercase text-black bg-[var(--color-gold)] px-4 py-[9px] rounded-[5px] hover:bg-[var(--color-gold-hi)] transition-colors">
+          <Link href="/signup" onClick={() => posthog.capture('home_cta_clicked', { cta: 'nav_signup' })} className="font-[family-name:var(--font-mono)] text-[10px] font-bold tracking-[0.16em] uppercase text-black bg-[var(--color-gold)] px-4 py-[9px] rounded-[5px] hover:bg-[var(--color-gold-hi)] transition-colors">
             Open terminal &rarr;
           </Link>
           {/* Mobile hamburger */}
@@ -291,10 +314,10 @@ export default function HomeContent({ tickerTape }: HomeContentProps) {
 
         {/* CTAs */}
         <div className={`relative flex gap-3.5 mt-8 flex-wrap justify-center ${motionClass}`} style={motionStyle(1.15)}>
-          <Link href="/signup" className="font-[family-name:var(--font-mono)] text-[12px] font-bold tracking-[0.16em] uppercase px-6 py-3 rounded-[5px] bg-[var(--color-gold)] text-black shadow-[0_6px_22px_rgba(230,185,77,0.22)] hover:bg-[var(--color-gold-hi)] transition-all min-h-[44px] flex items-center">
+          <Link href="/signup" onClick={() => posthog.capture('home_cta_clicked', { cta: 'hero_primary_signup' })} className="font-[family-name:var(--font-mono)] text-[12px] font-bold tracking-[0.16em] uppercase px-6 py-3 rounded-[5px] bg-[var(--color-gold)] text-black shadow-[0_6px_22px_rgba(230,185,77,0.22)] hover:bg-[var(--color-gold-hi)] transition-all min-h-[44px] flex items-center">
             Open the terminal &rarr;
           </Link>
-          <Link href="/brief" className="font-[family-name:var(--font-mono)] text-[12px] font-bold tracking-[0.16em] uppercase px-6 py-3 rounded-[5px] border border-[var(--color-border-strong)] text-[var(--color-text-primary)] hover:border-[rgba(255,255,255,0.28)] transition-all min-h-[44px] flex items-center">
+          <Link href="/brief" onClick={() => posthog.capture('home_cta_clicked', { cta: 'hero_secondary_brief' })} className="font-[family-name:var(--font-mono)] text-[12px] font-bold tracking-[0.16em] uppercase px-6 py-3 rounded-[5px] border border-[var(--color-border-strong)] text-[var(--color-text-primary)] hover:border-[rgba(255,255,255,0.28)] transition-all min-h-[44px] flex items-center">
             Read today&rsquo;s brief
           </Link>
         </div>
@@ -308,6 +331,39 @@ export default function HomeContent({ tickerTape }: HomeContentProps) {
             </div>
           </div>
         )}
+      </section>
+
+      {/* ── ANALYZE ANY TICKER (free, no-signup hook) ── */}
+      <section className="border-y border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] py-12 max-sm:py-10 px-10 max-sm:px-5">
+        <div className="max-w-[680px] mx-auto text-center">
+          <div className="font-[family-name:var(--font-mono)] text-[12px] tracking-[0.22em] uppercase text-[var(--color-gold)] mb-4">
+            Try it first
+          </div>
+          <h2 className="text-[clamp(1.5rem,3.4vw,2.25rem)] font-bold tracking-[-0.03em] leading-[1.08]">
+            Analyze any ticker, <em className="font-[family-name:var(--font-display-serif)] italic font-normal text-[var(--color-gold)]">free.</em>
+          </h2>
+          <form onSubmit={submitAnalyze} className="mt-7 flex gap-2.5 max-w-[420px] mx-auto flex-col sm:flex-row">
+            <input
+              value={tickerInput}
+              onChange={(e) => setTickerInput(e.target.value)}
+              aria-label="Stock ticker symbol"
+              placeholder="e.g. NVDA"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              className="flex-1 min-h-[44px] px-4 rounded-[5px] bg-[var(--color-bg-base)] border border-[var(--color-border-strong)] text-[var(--color-text-primary)] font-[family-name:var(--font-mono)] text-[15px] tracking-[0.08em] uppercase placeholder:text-[var(--color-text-muted)] placeholder:normal-case placeholder:tracking-normal focus:outline-none focus:border-[var(--color-gold-border)] transition-colors"
+            />
+            <button
+              type="submit"
+              className="min-h-[44px] px-6 rounded-[5px] bg-[var(--color-gold)] text-black font-[family-name:var(--font-mono)] text-[11px] font-bold tracking-[0.16em] uppercase hover:bg-[var(--color-gold-hi)] transition-colors whitespace-nowrap"
+            >
+              Analyze &rarr;
+            </button>
+          </form>
+          <p className="mt-4 font-[family-name:var(--font-mono)] text-[12px] tracking-[0.04em] text-[var(--color-text-muted)]">
+            Free AI analysis on any US ticker. No signup.
+          </p>
+        </div>
       </section>
 
       {/* ── PINNED MACBOOK STAGE (320vh scroll distance, desktop only) ── */}
@@ -456,6 +512,46 @@ export default function HomeContent({ tickerTape }: HomeContentProps) {
         </Reveal>
       </section>
 
+      {/* ── REAL CITED CATCH STRIP (shown, not told) ── */}
+      {latestCatch && (() => {
+        const broke = String(latestCatch.verdict).toLowerCase().includes('contradict');
+        const verdictLabel = broke ? 'Broke' : 'Held';
+        return (
+          <section className="max-w-[1240px] mx-auto px-10 max-sm:px-5 pb-[120px] max-sm:pb-16 -mt-[60px] max-sm:-mt-8">
+            <Reveal>
+              <div className="border border-[var(--color-border-base)] rounded-[10px] bg-[var(--color-bg-surface)] overflow-hidden">
+                <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[var(--color-border-base)] font-[family-name:var(--font-mono)] text-[10px] tracking-[0.16em] uppercase text-[var(--color-text-muted)] flex-wrap">
+                  <span className="w-[7px] h-[7px] rounded-full bg-[var(--color-gold)] shadow-[0_0_10px_var(--color-gold)]" />
+                  What the agent caught
+                  <span className="ml-auto text-[var(--color-text-secondary)]">{latestCatch.sourceLabel} &middot; {latestCatch.dateLabel}</span>
+                </div>
+                <div className="p-8 max-sm:p-5 grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-7 max-sm:gap-5 items-start">
+                  <div className="flex items-center gap-3 lg:flex-col lg:items-start">
+                    <span className="font-[family-name:var(--font-mono)] font-bold text-[var(--color-gold)] tracking-[0.06em] text-[19px]">{latestCatch.ticker}</span>
+                    <span className={`font-[family-name:var(--font-mono)] text-[10px] tracking-[0.14em] uppercase border px-2 py-1 rounded-[3px] whitespace-nowrap ${broke ? 'text-[var(--color-negative-text)] border-[rgba(248,113,113,0.3)]' : 'text-[var(--color-positive)] border-[rgba(74,222,128,0.3)]'}`}>{verdictLabel}</span>
+                  </div>
+                  <div>
+                    <blockquote className="text-[clamp(1.0625rem,1.7vw,1.375rem)] leading-snug text-[var(--color-text-primary)] font-[family-name:var(--font-display-serif)] italic">
+                      &ldquo;{latestCatch.verbatimCite}&rdquo;
+                    </blockquote>
+                    <div className="mt-4 font-[family-name:var(--font-mono)] text-[11px] tracking-[0.06em] text-[var(--color-text-muted)]">
+                      {latestCatch.company} &middot; {latestCatch.sourceLabel} &middot; {latestCatch.dateLabel}
+                    </div>
+                    <Link
+                      href="/masthead"
+                      onClick={() => posthog.capture('home_cta_clicked', { cta: 'catch_strip' })}
+                      className="inline-flex items-center gap-1.5 mt-5 font-[family-name:var(--font-mono)] text-[12px] font-bold tracking-[0.12em] uppercase text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors min-h-[44px]"
+                    >
+                      See the full record &rarr;
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+          </section>
+        );
+      })()}
+
       {/* ── SECURITY — Permission panel ── */}
       <section className="py-[120px] max-sm:py-16 max-w-[1240px] mx-auto px-10 max-sm:px-5">
         <Reveal>
@@ -576,10 +672,10 @@ export default function HomeContent({ tickerTape }: HomeContentProps) {
           Link your first account in two minutes. Read-only, no card. See your real exposure, your first brief, your first action.
         </p>
         <div className="relative flex gap-3.5 mt-10 flex-wrap justify-center">
-          <Link href="/signup" className="font-[family-name:var(--font-mono)] text-[13px] font-bold tracking-[0.16em] uppercase px-7 py-4 rounded-[5px] bg-[var(--color-gold)] text-black shadow-[0_6px_22px_rgba(230,185,77,0.22)] hover:bg-[var(--color-gold-hi)] transition-all min-h-[44px] flex items-center">
+          <Link href="/signup" onClick={() => posthog.capture('home_cta_clicked', { cta: 'outro_primary_signup' })} className="font-[family-name:var(--font-mono)] text-[13px] font-bold tracking-[0.16em] uppercase px-7 py-4 rounded-[5px] bg-[var(--color-gold)] text-black shadow-[0_6px_22px_rgba(230,185,77,0.22)] hover:bg-[var(--color-gold-hi)] transition-all min-h-[44px] flex items-center">
             Open the terminal &rarr;
           </Link>
-          <Link href="/analyze" className="font-[family-name:var(--font-mono)] text-[13px] font-bold tracking-[0.16em] uppercase px-7 py-4 rounded-[5px] border border-[var(--color-border-strong)] text-[var(--color-text-primary)] hover:border-[rgba(255,255,255,0.28)] transition-all min-h-[44px] flex items-center">
+          <Link href="/analyze" onClick={() => posthog.capture('home_cta_clicked', { cta: 'outro_secondary_analyze' })} className="font-[family-name:var(--font-mono)] text-[13px] font-bold tracking-[0.16em] uppercase px-7 py-4 rounded-[5px] border border-[var(--color-border-strong)] text-[var(--color-text-primary)] hover:border-[rgba(255,255,255,0.28)] transition-all min-h-[44px] flex items-center">
             Analyze a ticker
           </Link>
         </div>
