@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk, Instrument_Serif } from 'next/font/google';
+import { Inter, Space_Grotesk, Instrument_Serif, Newsreader, Fraunces } from 'next/font/google';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -23,6 +23,24 @@ const spaceGrotesk = Space_Grotesk({
 const instrumentSerif = Instrument_Serif({
   subsets: ['latin'],
   variable: '--font-display-serif',
+  weight: ['400'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+});
+
+// Alt editorial serifs for the /masthead-preview broadsheet. Loaded via next/font so they
+// are self-hosted and CSP-safe (style-src 'self' blocks the Google Fonts <link>).
+const newsreader = Newsreader({
+  subsets: ['latin'],
+  variable: '--font-newsreader',
+  weight: ['400'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+});
+
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-fraunces',
   weight: ['400'],
   style: ['normal', 'italic'],
   display: 'swap',
@@ -200,7 +218,7 @@ export default function RootLayout({
         />
         {/* FAQPage schema moved to homepage only — see components/homepage/home-content.tsx */}
       </head>
-      <body className={`${inter.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable} font-sans`}>
+      <body className={`${inter.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable} ${newsreader.variable} ${fraunces.variable} font-sans`}>
         <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-[var(--color-gold)] focus:text-[var(--color-bg-base)] focus:rounded focus:text-[15px] focus:font-semibold">
           Skip to main content
         </a>

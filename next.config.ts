@@ -35,6 +35,14 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      // The public catch feed was renamed /caught → /masthead ("The Masthead").
+      // Permanent (308) redirects preserve the SEO equity earned on the old URLs.
+      { source: '/caught', destination: '/masthead', permanent: true },
+      { source: '/caught/rss.xml', destination: '/masthead/rss.xml', permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;
