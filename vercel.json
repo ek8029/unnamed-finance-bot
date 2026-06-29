@@ -29,6 +29,10 @@
     {
       "path": "/api/cron/snapshots",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/citation-probe",
+      "schedule": "0 14 * * 1"
     }
   ]
 }
