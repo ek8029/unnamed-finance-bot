@@ -49,8 +49,8 @@ const SCENES = [
   {
     img: '/product/thesis.png',
     eyebrow: 'Thesis monitoring',
-    head: <>We watch <em>why</em> you bought. Not just the price.</>,
-    cap: <>Every pillar tracked <Dot /> alerted the morning one <b className="text-[var(--color-negative-text)]">cracks</b>, with the filing that broke it</>,
+    head: <>The agent watches <em>why</em> you bought. Not just the price.</>,
+    cap: <>Every pillar tracked against primary sources <Dot /> the agent flags the morning one <b className="text-[var(--color-negative-text)]">weakens</b>, filing attached</>,
     ambient: 'rgba(230,185,77,0.15)',
   },
   {
@@ -63,14 +63,14 @@ const SCENES = [
   {
     img: '/product/brief.png',
     eyebrow: 'The Daily Brief',
-    head: <>A brief written about <em>your</em> portfolio. Every morning.</>,
+    head: <>The agent files a brief on <em>your</em> portfolio. Every morning.</>,
     cap: <>Delivered <b>9:15 AM ET</b> <Dot /> what moved, what matters, what&rsquo;s next</>,
     ambient: 'rgba(124,167,232,0.13)',
   },
   {
     img: '/product/actions.png',
     eyebrow: 'Actions',
-    head: <>Every decision, <em>ranked</em> by what it&rsquo;s worth.</>,
+    head: <>The agent ranks every decision by <em>what it&rsquo;s worth</em>.</>,
     cap: <><b>14</b> open actions <Dot /> top opportunity <b className="text-[var(--color-positive)]">$960</b> in tax savings</>,
     ambient: 'rgba(230,185,77,0.15)',
   },
@@ -287,12 +287,10 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
         {/* Gold glow */}
         <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[700px] max-w-[120vw] pointer-events-none bg-[radial-gradient(ellipse_50%_50%_at_50%_50%,rgba(230,185,77,0.12),transparent_64%)]" />
 
-        <div className={`relative font-[family-name:var(--font-mono)] text-[13px] tracking-[0.34em] uppercase text-[var(--color-gold)] mb-6 ${motionClass}`} style={motionStyle(0.15)}>
-          Portfolio intelligence
-        </div>
+        <div className={`relative w-12 h-px bg-[var(--color-gold)] mb-7 ${motionClass}`} style={motionStyle(0.1)} />
 
-        <p className={`relative text-[var(--color-text-muted)] font-semibold text-[clamp(1rem,1.7vw,1.3rem)] tracking-[0.005em] mb-5 ${motionClass}`} style={motionStyle(0.3)}>
-          This is your money, understood.
+        <p className={`relative text-[var(--color-text-secondary)] font-semibold text-[clamp(1rem,1.7vw,1.3rem)] tracking-[0.005em] mb-11 ${motionClass}`} style={motionStyle(0.15)}>
+          An agentic terminal for your whole portfolio that tells you:
         </p>
 
         {/* The three beats */}
@@ -303,23 +301,33 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
               className={`font-extrabold tracking-[-0.05em] leading-[0.96] text-[clamp(2.75rem,10vw,9.125rem)] ${motionClass} ${i === 1 ? 'text-[var(--color-gold)]' : ''}`}
               style={motionStyle(0.42 + i * 0.2)}
             >
-              {text}<i className="font-[family-name:var(--font-display-serif)] italic font-normal text-[var(--color-gold)]">.</i>
+              {text}
             </span>
           ))}
         </h1>
 
-        <p className={`relative mt-8 text-[clamp(0.938rem,1.55vw,1.188rem)] text-[var(--color-text-muted)] max-w-[500px] leading-relaxed ${motionClass}`} style={motionStyle(1.05)}>
-          A terminal that reads your real holdings and tells you what to do next. <b className="text-[var(--color-text-primary)] font-semibold">Not another tracker.</b>
+        <p className={`relative mt-11 text-[clamp(0.875rem,1.4vw,1.063rem)] text-[var(--color-text-muted)] max-w-[620px] leading-relaxed ${motionClass}`} style={motionStyle(1.05)}>
+          A tracker lists what you own. A dashboard charts what it&rsquo;s worth.
+        </p>
+        <p className={`relative mt-4 text-[clamp(0.938rem,1.55vw,1.188rem)] text-[var(--color-text-primary)] max-w-[620px] leading-snug ${motionClass}`} style={motionStyle(1.15)}>
+          Helm reads every account: the exposure, the taxes, and the conviction behind each one, then tells you what to do.
+          <b className="block mt-2 text-[var(--color-text-primary)] font-semibold">An agentic AI analyst on every position.</b>
         </p>
 
         {/* CTAs */}
-        <div className={`relative flex gap-3.5 mt-8 flex-wrap justify-center ${motionClass}`} style={motionStyle(1.15)}>
+        <div className={`relative flex gap-3.5 mt-11 flex-wrap justify-center ${motionClass}`} style={motionStyle(1.15)}>
           <Link href="/signup" onClick={() => posthog.capture('home_cta_clicked', { cta: 'hero_primary_signup' })} className="font-[family-name:var(--font-mono)] text-[12px] font-bold tracking-[0.16em] uppercase px-6 py-3 rounded-[5px] bg-[var(--color-gold)] text-black shadow-[0_6px_22px_rgba(230,185,77,0.22)] hover:bg-[var(--color-gold-hi)] transition-all min-h-[44px] flex items-center">
             Open the terminal &rarr;
           </Link>
           <Link href="/brief" onClick={() => posthog.capture('home_cta_clicked', { cta: 'hero_secondary_brief' })} className="font-[family-name:var(--font-mono)] text-[12px] font-bold tracking-[0.16em] uppercase px-6 py-3 rounded-[5px] border border-[var(--color-border-strong)] text-[var(--color-text-primary)] hover:border-[rgba(255,255,255,0.28)] transition-all min-h-[44px] flex items-center">
             Read today&rsquo;s brief
           </Link>
+        </div>
+
+        {/* Agent on-watch status */}
+        <div className={`relative flex items-center gap-2 mt-5 font-[family-name:var(--font-mono)] text-[11px] tracking-[0.04em] text-[var(--color-text-muted)] ${motionClass}`} style={motionStyle(1.22)}>
+          <span className={`inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] shadow-[0_0_6px_var(--color-positive)] ${reducedMotion ? '' : 'animate-pulse'}`} />
+          <span>The agent is on watch{latestCatch ? ` · last catch ${latestCatch.dateLabel}` : ''}</span>
         </div>
 
         {/* Scroll cue */}
@@ -537,6 +545,9 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
                     <div className="mt-4 font-[family-name:var(--font-mono)] text-[11px] tracking-[0.06em] text-[var(--color-text-muted)]">
                       {latestCatch.company} &middot; {latestCatch.sourceLabel} &middot; {latestCatch.dateLabel}
                     </div>
+                    <div className="mt-1.5 font-[family-name:var(--font-mono)] text-[11px] tracking-[0.06em] text-[var(--color-text-muted)]">
+                      Filed by the Helm agent &middot; {latestCatch.dateLabel}
+                    </div>
                     <Link
                       href="/masthead"
                       onClick={() => posthog.capture('home_cta_clicked', { cta: 'catch_strip' })}
@@ -691,7 +702,7 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
             deterministic rule-based analysis over your full portfolio, and surfaces
             actionable insights: tax-loss harvesting opportunities with wash-sale
             detection, concentration risk alerts, earnings exposure, and cash flow
-            changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.
+            changes. Its flagship capability is <strong className="text-[var(--color-text-primary)]">thesis monitoring</strong>: you write the reasons (the &ldquo;pillars&rdquo;) you own each stock, and Helm&rsquo;s agent watches those reasons against SEC filings, earnings, and news, then flags you when one weakens, the failure mode known as thesis drift, citing the exact dated filing. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.
             Most features are free. Pro is $20/mo and Max is $50/mo.
           </p>
         </div>
@@ -729,7 +740,9 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
             '@context': 'https://schema.org',
             '@type': 'FAQPage',
             mainEntity: [
-              { '@type': 'Question', name: 'What is Helm Terminal?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal is a free, institutional-grade financial intelligence platform for individual investors. It aggregates brokerage and bank accounts via Plaid, runs deterministic rule-based analysis over your portfolio, and surfaces actionable insights like tax-loss harvesting opportunities, concentration risk, earnings exposure, and cash flow changes.' } },
+              { '@type': 'Question', name: 'What is Helm Terminal?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal is a free, institutional-grade financial intelligence platform for individual investors. It aggregates brokerage and bank accounts via Plaid, runs deterministic rule-based analysis over your portfolio, and surfaces actionable insights like tax-loss harvesting opportunities, concentration risk, earnings exposure, and cash flow changes. Its flagship capability is thesis monitoring: it tracks the specific reasons you own each stock against live SEC filings and news, and alerts you when your reasoning weakens or breaks (thesis drift), citing the exact dated source.' } },
+              { '@type': 'Question', name: 'What tool tells me when my investment thesis breaks?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal does this through thesis monitoring. You write the pillars behind each position, and Helm\'s agent watches them against SEC filings, earnings, and news, then alerts you with a verbatim, dated citation the moment a pillar weakens or breaks (thesis drift). It is live and shipped, not a waitlist.' } },
+              { '@type': 'Question', name: 'What is an agentic portfolio terminal?', acceptedAnswer: { '@type': 'Answer', text: 'An agentic portfolio terminal continuously watches your whole portfolio on your behalf, the exposure, the taxes, and the reasons behind each position, and surfaces what changed and what to do, instead of just charting what you own. Helm Terminal is an agentic terminal: an AI analyst on every position, monitoring each thesis against primary sources.' } },
               { '@type': 'Question', name: 'Is Helm Terminal free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Helm Terminal offers a free tier that includes AI stock analysis, a full portfolio dashboard with Plaid sync, net worth tracking, daily brief, and an actions inbox. Pro at $20/month adds thesis monitoring with cited evidence, earnings exposure tracking, and the tax center. Max at $50/month adds the agent, the Thesis Builder, and the factor lens.' } },
               { '@type': 'Question', name: 'Is Helm Terminal safe to use with my financial accounts?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal connects to your accounts through Plaid, a bank-grade financial data provider. The connection is read-only. Helm can never move money, execute trades, or modify your accounts. All data is encrypted in transit (TLS 1.3) and at rest (AES-256).' } },
             ],
