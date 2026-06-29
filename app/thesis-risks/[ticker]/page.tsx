@@ -6,6 +6,7 @@ import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { analyzeStock } from '@/lib/analyze-stock';
 import { INDEXABLE_TICKERS } from '@/lib/indexable-tickers';
+import { getTickerThesisData } from '@/lib/content/public-thesis';
 
 // Daily revalidation; reads the shared analysis_cache only (allowGenerate=false),
 // so these pages never trigger a fresh AI generation or extra API cost.
@@ -59,6 +60,8 @@ export default async function ThesisRisksPage({ params }: PageProps) {
   if (!symbol || symbol.length > 5) notFound();
 
   const { analysis, computedAt } = await analyzeStock(symbol, false);
+  // House tickers: enrich with the authored breaks-if + live status. null for others (no change).
+  const thesis = await getTickerThesisData(symbol);
 
   // No cached analysis available: send the reader to the live analysis page
   // rather than render a thin or empty page.
@@ -81,7 +84,9 @@ export default async function ThesisRisksPage({ params }: PageProps) {
   const faqs = [
     {
       q: `What could invalidate the ${symbol} thesis?`,
-      a: `The main risks to the ${analysis.companyName} thesis: ${analysis.bearCase}`,
+      a: thesis
+        ? `Each reason to own ${analysis.companyName} (${symbol}) has a defined breaking point. The bull case weakens if: ${thesis.pillars.map((p) => p.breaks_if).join('; ')}. Helm tracks these against SEC filings and news and flags the moment one is contradicted.`
+        : `The main risks to the ${analysis.companyName} thesis: ${analysis.bearCase}`,
     },
     {
       q: `What is the bull case for ${symbol}?`,
@@ -168,7 +173,23 @@ export default async function ThesisRisksPage({ params }: PageProps) {
           <section>
             <h2 className="text-[21px] font-bold text-[var(--color-text-primary)] mb-3">What could break it</h2>
             <div className="sovereign-card rounded p-5 border-l-2 border-[var(--color-gold)]">
-              <p className="text-[var(--color-text-primary)]">{analysis.bearCase}</p>
+              {thesis ? (
+                <div className="space-y-4">
+                  <p className="text-[14px] text-[var(--color-text-secondary)]">Helm tracks {thesis.pillars.length} reason{thesis.pillars.length === 1 ? '' : 's'} to own {symbol}. Each has a defined breaking point:</p>
+                  <ul className="space-y-3">
+                    {thesis.pillars.map((p, i) => (
+                      <li key={i} className="border-l border-[var(--color-border-strong)] pl-4">
+                        <p className="text-[var(--color-text-primary)] font-medium">{p.claim}</p>
+                        <p className="text-[14px] text-[var(--color-text-secondary)] mt-1"><span className="text-[var(--color-text-muted)]">Breaks if:</span> {p.breaks_if}</p>
+                        <span className="inline-block mt-1.5 text-[11px] font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)]">{p.statusLabel}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-[13px] text-[var(--color-text-muted)]">Live status and dated evidence on the <Link href={`/thesis/${symbol.toLowerCase()}`} className="text-[var(--color-gold)] hover:underline">{symbol} thesis page</Link> and <Link href="/masthead" className="text-[var(--color-gold)] hover:underline">The Masthead</Link>.</p>
+                </div>
+              ) : (
+                <p className="text-[var(--color-text-primary)]">{analysis.bearCase}</p>
+              )}
             </div>
           </section>
 

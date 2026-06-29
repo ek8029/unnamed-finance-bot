@@ -6,6 +6,7 @@ import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { analyzeStock } from '@/lib/analyze-stock';
 import { INDEXABLE_TICKERS } from '@/lib/indexable-tickers';
+import { getTickerThesisData } from '@/lib/content/public-thesis';
 
 // Daily revalidation; reads shared analysis_cache only (allowGenerate=false),
 // so these pages never trigger a fresh AI generation or extra API cost.
@@ -72,6 +73,9 @@ export default async function WhenToSellPage({ params }: PageProps) {
     );
   }
 
+  // House tickers: enrich with authored breaks-if + live status. null for others (no change).
+  const thesis = await getTickerThesisData(symbol);
+
   const faqs = [
     {
       q: `When should I sell ${symbol}?`,
@@ -79,7 +83,9 @@ export default async function WhenToSellPage({ params }: PageProps) {
     },
     {
       q: `What are the warning signs for ${symbol}?`,
-      a: `The main risks to watch: ${analysis.bearCase}`,
+      a: thesis
+        ? `Sell signals tie to the reasons you own ${symbol}. Each breaks if: ${thesis.pillars.map((p) => p.breaks_if).join('; ')}. Helm watches these against SEC filings and news and flags the moment one is contradicted.`
+        : `The main risks to watch: ${analysis.bearCase}`,
     },
     {
       q: `Is a falling ${symbol} price a reason to sell?`,
@@ -94,7 +100,7 @@ export default async function WhenToSellPage({ params }: PageProps) {
       headline: `When to Sell ${symbol}: A Thesis-Based Checklist`,
       description: `When to sell ${analysis.companyName} (${symbol}): the signals that mean your thesis broke.`,
       datePublished: '2026-06-17',
-      dateModified: '2026-06-17',
+      dateModified: thesis?.lastChecked ?? '2026-06-17',
       author: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
       publisher: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
       url: `https://helmterminal.dev/when-to-sell/${symbol}`,
@@ -182,7 +188,23 @@ export default async function WhenToSellPage({ params }: PageProps) {
           <section>
             <h2 className="text-[21px] font-bold text-[var(--color-text-primary)] mb-3">The signals that would break it</h2>
             <div className="sovereign-card rounded p-5 border-l-2 border-[var(--color-gold)]">
-              <p className="text-[var(--color-text-primary)]">{analysis.bearCase}</p>
+              {thesis ? (
+                <div className="space-y-4">
+                  <p className="text-[14px] text-[var(--color-text-secondary)]">Sell discipline ties to the {thesis.pillars.length} reason{thesis.pillars.length === 1 ? '' : 's'} you own {symbol}. Each has a defined breaking point:</p>
+                  <ul className="space-y-3">
+                    {thesis.pillars.map((p, i) => (
+                      <li key={i} className="border-l border-[var(--color-border-strong)] pl-4">
+                        <p className="text-[var(--color-text-primary)] font-medium">{p.claim}</p>
+                        <p className="text-[14px] text-[var(--color-text-secondary)] mt-1"><span className="text-[var(--color-text-muted)]">Breaks if:</span> {p.breaks_if}</p>
+                        <span className="inline-block mt-1.5 text-[11px] font-mono uppercase tracking-[0.1em] text-[var(--color-text-muted)]">{p.statusLabel}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-[13px] text-[var(--color-text-muted)]">Live status and dated evidence on the <Link href={`/thesis/${symbol.toLowerCase()}`} className="text-[var(--color-gold)] hover:underline">{symbol} thesis page</Link> and <Link href="/masthead" className="text-[var(--color-gold)] hover:underline">The Masthead</Link>.</p>
+                </div>
+              ) : (
+                <p className="text-[var(--color-text-primary)]">{analysis.bearCase}</p>
+              )}
             </div>
           </section>
 
