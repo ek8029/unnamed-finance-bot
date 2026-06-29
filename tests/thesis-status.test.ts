@@ -1,102 +1,132 @@
-// tests/thesis-status.test.ts
 import { describe, it, expect } from 'vitest';
-import { derivePillarStatus, type EvidenceForStatus } from '@/lib/thesis-status';
+import {
+  computePillarStatus,
+  computeThesisHealth,
+  type StatusCatch,
+  NORMALIZER,
+  SOURCE_WEIGHT,
+} from '../lib/content/thesis-status';
 
-const NOW = new Date('2026-06-11T00:00:00Z');
-const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86400_000).toISOString();
+const TODAY = '2026-06-28';
 
-function ev(overrides: Partial<EvidenceForStatus>): EvidenceForStatus {
-  return {
-    verdict: 'supports',
-    materiality: 'context',
-    source_type: 'news',
-    source_key: 'https://example.com/a',
-    is_backfill: false,
-    created_at: daysAgo(1),
-    ...overrides,
-  };
+function c(verdict: 'supports' | 'contradicts', dateISO: string, source: 'filing' | 'major_news' | 'minor_news' = 'filing'): StatusCatch {
+  return { verdict, dateISO, source_type: source };
 }
 
-describe('derivePillarStatus', () => {
-  it('returns unverified with no evidence', () => {
-    expect(derivePillarStatus([], null, NOW)).toBe('unverified');
+describe('computePillarStatus', () => {
+  it('no catches -> unverified', () => {
+    const r = computePillarStatus([], TODAY);
+    expect(r.status).toBe('unverified');
+    expect(r.inWindow).toBe(0);
+    expect(r.score).toBe(0);
   });
 
-  it('returns unverified when only backfill evidence exists', () => {
-    expect(derivePillarStatus([ev({ is_backfill: true })], null, NOW)).toBe('unverified');
+  it('only out-of-window support (>365d) -> unverified', () => {
+    const r = computePillarStatus([c('supports', '2025-01-01')], TODAY); // ~543d old
+    expect(r.status).toBe('unverified');
+    expect(r.inWindow).toBe(0);
   });
 
-  it('returns intact with supporting evidence', () => {
-    expect(derivePillarStatus([ev({})], null, NOW)).toBe('intact');
+  it('single fresh filing support -> intact, score ~ +1.0', () => {
+    const r = computePillarStatus([c('supports', TODAY)], TODAY);
+    expect(r.status).toBe('intact');
+    expect(r.score).toBeCloseTo(1.0, 5);
   });
 
-  it('returns intact with only context-level contradiction', () => {
-    expect(derivePillarStatus([ev({ verdict: 'contradicts', materiality: 'context' })], null, NOW)).toBe('intact');
+  it('single fresh filing contradiction -> weakening, score ~ -1.0', () => {
+    const r = computePillarStatus([c('contradicts', TODAY)], TODAY);
+    expect(r.score).toBeCloseTo(-1.0, 5);
+    expect(r.status).toBe('weakening');
   });
 
-  it('returns weakening with 1 material contradiction in 30d', () => {
-    expect(derivePillarStatus(
-      [ev({ verdict: 'contradicts', materiality: 'material' })], null, NOW,
-    )).toBe('weakening');
+  it('two fresh filing contradictions -> broken, score ~ -2.0', () => {
+    const r = computePillarStatus([c('contradicts', TODAY), c('contradicts', TODAY)], TODAY);
+    expect(r.score).toBeCloseTo(-2.0, 5);
+    expect(r.status).toBe('broken');
   });
 
-  it('ignores material contradictions older than 30d', () => {
-    expect(derivePillarStatus(
-      [ev({ verdict: 'contradicts', materiality: 'material', created_at: daysAgo(31) })], null, NOW,
-    )).toBe('intact');
+  it('multiple recent supports -> intact', () => {
+    const r = computePillarStatus(
+      [c('supports', TODAY), c('supports', '2026-06-20'), c('supports', '2026-05-01')],
+      TODAY,
+    );
+    expect(r.status).toBe('intact');
+    expect(r.inWindow).toBe(3);
   });
 
-  it('returns broken with 2 independent material contradictions, one primary', () => {
-    expect(derivePillarStatus([
-      ev({ verdict: 'contradicts', materiality: 'material', source_type: 'filing', source_key: 'acc-001' }),
-      ev({ verdict: 'contradicts', materiality: 'material', source_type: 'news', source_key: 'https://example.com/b' }),
-    ], null, NOW)).toBe('broken');
+  it('recency override: a fresh filing contradiction floors at weakening even amid older supports', () => {
+    // 3 older supports (still positive sum) + 1 fresh filing contradiction.
+    const r = computePillarStatus(
+      [
+        c('supports', '2026-04-01'),
+        c('supports', '2026-03-01'),
+        c('supports', '2026-02-01'),
+        c('contradicts', TODAY),
+      ],
+      TODAY,
+    );
+    // Without override the score may still bucket softer; override guarantees >= weakening.
+    expect(['weakening', 'broken']).toContain(r.status);
   });
 
-  it('a single SEVERE primary contradiction breaks a pillar on its own', () => {
-    expect(derivePillarStatus([
-      ev({ verdict: 'contradicts', materiality: 'material', source_type: 'price_move', source_key: 'price:PRIM:2026-05-06', severe: true }),
-    ], null, NOW)).toBe('broken');
+  it('override does NOT apply when the fresh contradiction is news, not a filing', () => {
+    // Strong fresh filing support + a fresh minor-news contradiction: should stay intact-ish.
+    const r = computePillarStatus(
+      [c('supports', TODAY, 'filing'), c('contradicts', TODAY, 'minor_news')],
+      TODAY,
+    );
+    // sum = +3 -1 = +2 ; S = +0.667 -> intact ; most-recent could be the news contradiction
+    // but override only triggers on a *filing* contradiction, so status stays intact.
+    expect(r.status).toBe('intact');
   });
 
-  it('a severe but non-primary contradiction does not break alone (stays weakening)', () => {
-    expect(derivePillarStatus([
-      ev({ verdict: 'contradicts', materiality: 'material', source_type: 'news', source_key: 'https://x.com/1', severe: true }),
-    ], null, NOW)).toBe('weakening');
+  it('decay: a half-life-old filing support is worth half a fresh one', () => {
+    const r = computePillarStatus([c('supports', '2026-02-28')], TODAY); // 120 days -> 1 half-life
+    expect(r.score).toBeCloseTo(0.5, 1);
+    expect(r.status).toBe('intact'); // 0.5 >= intact threshold
   });
 
-  it('a non-severe single primary contradiction stays weakening (no crying wolf)', () => {
-    expect(derivePillarStatus([
-      ev({ verdict: 'contradicts', materiality: 'material', source_type: 'price_move', source_key: 'price:X:1' }),
-    ], null, NOW)).toBe('weakening');
+  it('mixed recent supports + one news contradiction -> watch (mildly positive/neutral)', () => {
+    const r = computePillarStatus(
+      [c('supports', '2026-06-01', 'minor_news'), c('contradicts', '2026-06-10', 'minor_news')],
+      TODAY,
+    );
+    // roughly cancel -> small |S| -> watch
+    expect(r.status).toBe('watch');
   });
 
-  it('two news rewrites cannot break a thesis (no primary source)', () => {
-    expect(derivePillarStatus([
-      ev({ verdict: 'contradicts', materiality: 'material', source_key: 'https://a.com/1' }),
-      ev({ verdict: 'contradicts', materiality: 'material', source_key: 'https://b.com/2' }),
-    ], null, NOW)).toBe('weakening');
+  it('source weighting reflects constants (filing=3, major=2, minor=1)', () => {
+    expect(SOURCE_WEIGHT.filing).toBe(3);
+    expect(NORMALIZER).toBe(3);
+    const filing = computePillarStatus([c('supports', TODAY, 'filing')], TODAY).score;
+    const major = computePillarStatus([c('supports', TODAY, 'major_news')], TODAY).score;
+    const minor = computePillarStatus([c('supports', TODAY, 'minor_news')], TODAY).score;
+    expect(filing).toBeCloseTo(1.0, 5);
+    expect(major).toBeCloseTo(2 / 3, 5);
+    expect(minor).toBeCloseTo(1 / 3, 5);
   });
+});
 
-  it('same source_key twice is not independent', () => {
-    expect(derivePillarStatus([
-      ev({ verdict: 'contradicts', materiality: 'material', source_type: 'filing', source_key: 'acc-001' }),
-      ev({ verdict: 'contradicts', materiality: 'material', source_type: 'filing', source_key: 'acc-001' }),
-    ], null, NOW)).toBe('weakening');
+describe('computeThesisHealth', () => {
+  it('all intact -> intact', () => {
+    expect(computeThesisHealth(['intact', 'intact'])).toBe('intact');
   });
-
-  it('backfill contradictions never count toward status', () => {
-    expect(derivePillarStatus([
-      ev({ verdict: 'contradicts', materiality: 'material', source_type: 'filing', source_key: 'acc-1', is_backfill: true }),
-      ev({ verdict: 'contradicts', materiality: 'material', source_type: 'form4', source_key: 'acc-2', is_backfill: true }),
-      ev({}),
-    ], null, NOW)).toBe('intact');
+  it('any broken dominates', () => {
+    expect(computeThesisHealth(['intact', 'broken', 'weakening'])).toBe('broken');
   });
-
-  it('status_override wins over everything', () => {
-    expect(derivePillarStatus([
-      ev({ verdict: 'contradicts', materiality: 'material', source_type: 'filing', source_key: 'acc-1' }),
-      ev({ verdict: 'contradicts', materiality: 'material', source_type: 'form4', source_key: 'acc-2' }),
-    ], 'intact', NOW)).toBe('intact');
+  it('weakening over watch/intact', () => {
+    expect(computeThesisHealth(['intact', 'watch', 'weakening'])).toBe('weakening');
+  });
+  it('watch over intact', () => {
+    expect(computeThesisHealth(['intact', 'watch'])).toBe('watch');
+  });
+  it('intact when at least one intact and rest unverified', () => {
+    expect(computeThesisHealth(['unverified', 'intact', 'unverified'])).toBe('intact');
+  });
+  it('all unverified -> unverified', () => {
+    expect(computeThesisHealth(['unverified', 'unverified'])).toBe('unverified');
+  });
+  it('empty -> unverified', () => {
+    expect(computeThesisHealth([])).toBe('unverified');
   });
 });

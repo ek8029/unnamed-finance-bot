@@ -2,6 +2,36 @@ import type { MetadataRoute } from 'next';
 import { getAllPosts } from '@/lib/blog';
 import { INDEXABLE_TICKERS } from '@/lib/indexable-tickers';
 import { THEMES } from '@/lib/themes';
+import { HOUSE_THESES } from '@/lib/content/house-theses';
+import { createStaticServiceClient } from '@/lib/supabase/server';
+
+/**
+ * Latest approved-catch date per house-thesis ticker, for sitemap lastModified.
+ * One batched query (not one per ticker). Tickers with no catches yet are omitted
+ * and fall back to "now" at the call site.
+ */
+async function latestEvidenceByTicker(): Promise<Record<string, string>> {
+  try {
+    const db = createStaticServiceClient();
+    const { data } = await db
+      .from('content_queue')
+      .select('content_events!inner(ticker, cite_date, run_date)')
+      .eq('status', 'approved');
+    const out: Record<string, string> = {};
+    for (const r of (data ?? []) as unknown as {
+      content_events: { ticker: string; cite_date: string | null; run_date: string | null } | null;
+    }[]) {
+      const e = r.content_events;
+      if (!e) continue;
+      const d = (e.cite_date ?? e.run_date ?? '').slice(0, 10);
+      if (!d) continue;
+      if (!out[e.ticker] || d > out[e.ticker]) out[e.ticker] = d;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
 
 /** Popular comparison pairs for programmatic SEO. */
 const COMPARISON_PAIRS = [
@@ -17,8 +47,9 @@ const COMPARISON_PAIRS = [
   'UNH-vs-JNJ', 'XOM-vs-CVX', 'BND-vs-AGG', 'GLD-vs-SLV',
 ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = 'https://helmterminal.dev';
+  const evidenceDates = await latestEvidenceByTicker();
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: base, lastModified: new Date(), changeFrequency: 'weekly', priority: 1.0 },
@@ -29,7 +60,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/about`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/blog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
     { url: `${base}/thesis-monitoring`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
-    { url: `${base}/caught`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
+    { url: `${base}/masthead`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
     { url: `${base}/best-thesis-trackers`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
     { url: `${base}/how-helm-detects-thesis-drift`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/vela-alternative`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },
@@ -93,5 +124,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...blogPosts, ...tickerPages, ...comparePages, ...thesisRiskPages, ...whenToSellPages, ...themePages];
+  // Only list theses that have real evidence — empty pages stay out of the index until
+  // they fill up (the long-run play). evidenceDates omits tickers with no catches.
+  const thesisPages: MetadataRoute.Sitemap = HOUSE_THESES
+    .filter((t) => evidenceDates[t.ticker])
+    .map((t) => ({
+      url: `${base}/thesis/${t.ticker.toLowerCase()}`,
+      lastModified: new Date(`${evidenceDates[t.ticker]}T00:00:00Z`),
+      changeFrequency: 'daily' as const,
+      priority: 0.7,
+    }));
+
+  return [...staticRoutes, ...blogPosts, ...tickerPages, ...comparePages, ...thesisRiskPages, ...whenToSellPages, ...themePages, ...thesisPages];
 }
