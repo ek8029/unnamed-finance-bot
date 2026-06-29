@@ -61,7 +61,7 @@ export async function scoreItemsForPillars(
   if (pillars.length === 0 || sources.length === 0) return [];
 
   const pillarLines = pillars
-    .map((p, i) => `Pillar ${i + 1}: ${p.claim}`)
+    .map((p, i) => `Pillar ${i + 1}: ${p.claim}\n  Breaks if: ${p.breaks_if}`)
     .join('\n');
 
   const sourceLines = sources
@@ -78,6 +78,7 @@ Rules:
 - excerpt must be copied verbatim from the source text. Do not paraphrase or invent.
 - No invented numbers. No em dashes.
 - verdict: "supports", "contradicts", or "neutral" (neutral only if clearly relevant context).
+- Mark "contradicts" when the source materially advances the pillar's "Breaks if" condition: the metric moves the wrong way, guidance is cut, the named risk occurs, or the catalyst fails. Do not soften genuine bad news into "neutral" or "supports."
 - summary: one concise sentence explaining what the source means for the pillar.
 Respond with JSON exactly in this shape:
 { "evidence": [ { "pillar_index": <1-based pillar number>, "source_index": <1-based source number>, "verdict": "...", "excerpt": "...", "summary": "..." } ] }`;
