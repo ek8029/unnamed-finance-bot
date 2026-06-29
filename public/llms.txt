@@ -28,11 +28,9 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 - Contact form at helmterminal.dev/contact
 
 ## Pricing
-- Free: AI stock analysis (5/day), portfolio dashboard, net worth, actions inbox
-- Founding Member: $4.99/mo locked forever (50 spots) — everything in Pro, including the thesis-monitoring layer (pillar tracking, thesis-drift alerts, shared-driver risk)
-- Pro Monthly: $14.99/mo — tax-loss harvesting, earnings tracking, unlimited analyses
-- Pro Annual: $119/yr (save 33%)
-- Lifetime: $249 one-time payment
+- Free: full terminal, AI stock analysis, Plaid-linked brokerages, net worth, daily brief, actions inbox, Portfolio Wrapped
+- Pro: $20/mo. Thesis monitoring with cited evidence, earnings exposure, tax center with tax-loss harvesting, conviction-led tailored brief
+- Max: $50/mo. Everything in Pro plus the agent, the Thesis Builder (pre-buy thesis), and the factor lens
 
 ## Key Pages
 - [Thesis Monitoring](https://helmterminal.dev/thesis-monitoring): What thesis monitoring and thesis drift are, and how Helm tracks the reasons you own each stock against primary sources
@@ -40,6 +38,7 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 - [How Helm Detects Thesis Drift](https://helmterminal.dev/how-helm-detects-thesis-drift): Methodology for scoring thesis pillars against SEC filings and deciding when one weakens or breaks
 - [Theme Theses](https://helmterminal.dev/theme/ai-capex): Per-theme thesis breakdowns (AI capex, datacenter power, reindustrialization, nuclear/SMR, defense, GLP-1): what has to be true, the chain of beneficiaries, and what would invalidate it
 - [The Masthead](https://helmterminal.dev/masthead): A running, dated public record of filing and news evidence Helm's agent caught against live investment theses, each with the verbatim source quote and a link to the source. Updated continuously.
+- [Living Thesis Pages](https://helmterminal.dev/thesis/nvda): Per-stock living theses (NVDA, AAPL, MSFT, GOOGL, AMZN, META, TSLA, AMD, PLTR, COIN, MSTR, GME, AMC, OKLO and more at /thesis/[ticker]): the reasons to own it, the single fact that would break each one, a status computed from evidence, and every dated SEC-filing and news citation tested against it
 - [AI Stock Analysis](https://helmterminal.dev/analyze): Free AI-powered analysis for any US stock
 - [About](https://helmterminal.dev/about): Who built Helm and why
 - [Pricing](https://helmterminal.dev/pricing): Plans and features comparison
@@ -69,6 +68,7 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 - [For High-Net-Worth](https://helmterminal.dev/for/high-net-worth): Multi-account aggregation, tax-loss harvesting at scale
 
 ## Stock Analysis Coverage
+- 30+ living-thesis pages at helmterminal.dev/thesis/[TICKER]: authored pillars, "breaks if" conditions, computed pillar status (intact/watch/weakening/broken), and dated verbatim primary-source evidence
 - 500+ individual stock and ETF analysis pages at helmterminal.dev/analyze/[TICKER]
 - Includes mega-cap stocks, major ETFs (SPY, QQQ, VOO, VTI, etc.), sector ETFs, and popular growth stocks
 - Each page includes: valuation analysis, technical indicators, sentiment, risk assessment, analyst consensus, earnings data, and 6 FAQ pairs

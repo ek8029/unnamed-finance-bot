@@ -111,21 +111,33 @@ export default async function MastheadPage() {
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    name: 'The Masthead — what Helm caught',
+    '@type': 'CollectionPage',
+    name: 'The Masthead: what Helm caught',
     description: 'Filing and news evidence tested against public investment theses, with verbatim source quotes.',
-    itemListElement: events.map((e, i) => ({
-      '@type': 'ListItem',
-      position: i + 1,
-      item: {
-        '@type': 'CreativeWork',
-        name: `${e.ticker}: ${e.verdict} evidence on a live thesis`,
-        datePublished: e.cite_date ?? e.run_date ?? undefined,
-        about: e.company ?? e.ticker,
-        text: e.verbatim_cite,
-        ...(e.source_url ? { citation: e.source_url } : {}),
-      },
-    })),
+    url: 'https://helmterminal.dev/masthead',
+    isPartOf: { '@type': 'WebSite', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
+    publisher: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
+    ...(events.length && (events[0].cite_date ?? events[0].run_date)
+      ? { dateModified: events[0].cite_date ?? events[0].run_date }
+      : {}),
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: events.length,
+      itemListElement: events.map((e, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        url: `https://helmterminal.dev/thesis/${e.ticker.toLowerCase()}`,
+        item: {
+          '@type': 'CreativeWork',
+          name: `${e.ticker}: ${e.verdict} evidence on a live thesis`,
+          url: `https://helmterminal.dev/thesis/${e.ticker.toLowerCase()}`,
+          ...(e.cite_date ?? e.run_date ? { datePublished: e.cite_date ?? e.run_date } : {}),
+          about: { '@type': 'Corporation', name: e.company ?? e.ticker, tickerSymbol: e.ticker },
+          text: e.verbatim_cite,
+          ...(e.source_url ? { citation: { '@type': 'CreativeWork', url: e.source_url } } : {}),
+        },
+      })),
+    },
   };
 
   return (

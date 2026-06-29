@@ -56,11 +56,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://helmterminal.dev'),
-  title: 'Helm Terminal | Portfolio Intelligence for Individual Investors',
-  description: 'See what your brokerage app won\'t show you. Concentration risk, tax-loss harvesting, earnings exposure, and AI stock analysis across all your accounts. Free.',
+  title: 'Helm Terminal | Agentic Thesis Monitoring for Your Whole Portfolio',
+  description: 'An agentic terminal that watches your whole portfolio: the exposure, the taxes, and the thesis behind every position, then tells you what to do. Thesis monitoring with cited evidence, tax-loss harvesting, and free AI stock analysis.',
   openGraph: {
-    title: 'Helm Terminal | Portfolio Intelligence for Individual Investors',
-    description: 'Institutional-grade portfolio intelligence for individual investors. AI stock analysis, tax-loss harvesting, earnings tracking, and a unified view across all your accounts.',
+    title: 'Helm Terminal | Agentic Thesis Monitoring for Your Whole Portfolio',
+    description: 'An agentic AI analyst on every position. Helm monitors each thesis against SEC filings and news, surfaces tax-loss harvesting and earnings exposure, and tells you what to do, across all your accounts.',
     url: 'https://helmterminal.dev',
     siteName: 'Helm Terminal',
     type: 'website',
@@ -75,8 +75,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Helm Terminal | Portfolio Intelligence for Individual Investors',
-    description: 'Institutional-grade portfolio intelligence for individual investors. AI stock analysis, tax-loss harvesting, and a unified view across your accounts.',
+    title: 'Helm Terminal | Agentic Thesis Monitoring for Your Whole Portfolio',
+    description: 'An agentic AI analyst on every position: thesis monitoring with cited evidence, tax-loss harvesting, and free AI stock analysis across all your accounts.',
     images: ['/opengraph-image'],
   },
   alternates: {
@@ -126,10 +126,12 @@ export default function RootLayout({
               ],
               knowsAbout: [
                 'Portfolio Analysis',
+                'Investment Thesis Monitoring',
                 'Tax-Loss Harvesting',
                 'Net Worth Tracking',
                 'Financial Intelligence',
                 'AI Stock Analysis',
+                'Earnings Exposure Analysis',
                 'Cash Flow Monitoring',
               ],
             }),
@@ -146,7 +148,7 @@ export default function RootLayout({
               operatingSystem: 'Web',
               url: 'https://helmterminal.dev',
               description:
-                'AI-powered stock analysis, portfolio intelligence, and tax-loss harvesting for retail investors. Live-refreshed analysis based on real-time market data.',
+                'An agentic financial terminal that monitors your investment theses against dated filing and news evidence, plus AI stock analysis, portfolio intelligence, and tax-loss harvesting for retail investors.',
               offers: [
                 {
                   '@type': 'Offer',
@@ -180,14 +182,14 @@ export default function RootLayout({
                 },
               ],
               featureList: [
+                'Agentic thesis monitoring with cited evidence',
+                'Living investment theses tested against filings and news',
                 'Live AI stock analysis',
                 'Portfolio sync via Plaid',
                 'Tax-loss harvesting signals',
-                'Real-time market data',
-                'Risk intelligence and alerts',
-                'Sector comparison',
+                'Conviction-led daily brief',
                 'Earnings exposure tracking',
-                'Cash flow monitoring',
+                'Risk intelligence and alerts',
               ],
               publisher: {
                 '@type': 'Organization',

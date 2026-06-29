@@ -53,7 +53,7 @@ export async function generateMetadata({
   if (!ht) {
     return { title: `${symbol} thesis | Helm`, robots: 'noindex' };
   }
-  const title = `${symbol} thesis: is the case still intact? | Helm`;
+  const title = `Should you still hold ${symbol}? The thesis and what would break it | Helm`;
   const description = `Helm's living thesis on ${ht.company} (${symbol}): the reasons to own it, what would break each one, and the dated SEC-filing and news evidence tested against them. Research, not investment advice.`;
   // Index only once the thesis has real evidence. Empty, all-Unverified pages are thin
   // content; they flip indexable automatically as catches accrue (the long-run GEO play).
@@ -67,7 +67,7 @@ export async function generateMetadata({
     alternates: { canonical: `${BASE}/thesis/${symbol.toLowerCase()}` },
     robots: indexable ? undefined : 'noindex',
     openGraph: {
-      title: `${symbol} thesis — tracked against the evidence`,
+      title: `Should you still hold ${symbol}? The bull case, the breaks, the evidence`,
       description,
       url: `${BASE}/thesis/${symbol.toLowerCase()}`,
       type: 'article',
@@ -83,22 +83,77 @@ export default async function ThesisPage({ params }: { params: Promise<{ ticker:
 
   const health = STATUS_STYLE[data.health];
 
+  // FAQPage: answers the natural-language queries AI engines actually receive
+  // ("should I still hold X", "what would break the X thesis"), built ONLY from real
+  // authored pillars + computed status. No fabricated numbers, no buy/sell advice.
+  const evidenceCount = data.pillars.reduce((n, p) => n + p.catches.length, 0);
+  const healthPhrase =
+    data.health === 'intact' ? 'intact'
+    : data.health === 'watch' ? 'intact but worth watching'
+    : data.health === 'weakening' ? 'weakening'
+    : data.health === 'broken' ? 'broken'
+    : 'not yet verified against new evidence';
+  const faqLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: `Should you still hold ${data.company} (${data.ticker})?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: `Helm tracks ${data.pillars.length} reason${data.pillars.length === 1 ? '' : 's'} to own ${data.ticker}: ${data.pillars.map((p) => p.claim).join('; ')}. As of ${data.asOfDate ?? 'the latest evidence'}, the thesis reads ${healthPhrase}, based on dated SEC-filing and news evidence tested against each reason. This is research, not investment advice.`,
+        },
+      },
+      {
+        '@type': 'Question',
+        name: `What would break the ${data.ticker} bull case?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: `Each reason to own ${data.ticker} has a defined breaking point. The bull case weakens if: ${data.pillars.map((p) => p.breaks_if).join('; ')}. Helm watches these against new filings and news and flags the moment one is contradicted.`,
+        },
+      },
+      {
+        '@type': 'Question',
+        name: `Is the ${data.ticker} thesis still intact?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: `Helm's computed status for the ${data.ticker} thesis is ${healthPhrase}${data.asOfDate ? ` as of ${data.asOfDate}` : ''}, derived from ${evidenceCount} dated piece${evidenceCount === 1 ? '' : 's'} of evidence scored against its pillars. Each pillar is rated intact, watch, weakening, or broken.`,
+        },
+      },
+    ],
+  };
+
   // JSON-LD: an Article describing the thesis + a Claim per pillar carrying the latest
   // cited evidence. No fabricated counts — only real quotes/urls that exist in the DB.
+  const firstCatchDate = data.pillars
+    .flatMap((p) => p.catches.map((c) => c.dateISO))
+    .filter(Boolean)
+    .sort()[0];
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: `${data.ticker} thesis: is the case still intact?`,
     description: `Living investment thesis on ${data.company} (${data.ticker}), tested against dated filing and news evidence.`,
+    ...(firstCatchDate ? { datePublished: firstCatchDate } : {}),
     ...(data.asOfDate ? { dateModified: data.asOfDate } : {}),
+    author: { '@type': 'Organization', name: 'Helm Terminal', url: BASE },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Helm Terminal',
+      url: BASE,
+      logo: { '@type': 'ImageObject', url: `${BASE}/icon` },
+    },
     about: { '@type': 'Corporation', name: data.company, tickerSymbol: data.ticker },
-    publisher: { '@type': 'Organization', name: 'Helm Terminal', url: BASE },
     mainEntityOfPage: `${BASE}/thesis/${data.ticker.toLowerCase()}`,
     hasPart: data.pillars.map((p) => {
       const latest = p.catches[0];
       return {
         '@type': 'Claim',
         name: p.claim,
+        disambiguatingDescription: p.statusLabel,
+        about: { '@type': 'Corporation', name: data.company, tickerSymbol: data.ticker },
         ...(latest
           ? {
               ...(latest.dateISO ? { datePublished: latest.dateISO } : {}),
@@ -246,6 +301,7 @@ export default async function ThesisPage({ params }: { params: Promise<{ ticker:
       </div>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
     </main>
   );
 }

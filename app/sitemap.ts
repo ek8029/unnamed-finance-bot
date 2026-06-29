@@ -3,6 +3,7 @@ import { getAllPosts } from '@/lib/blog';
 import { INDEXABLE_TICKERS } from '@/lib/indexable-tickers';
 import { THEMES } from '@/lib/themes';
 import { HOUSE_THESES } from '@/lib/content/house-theses';
+import { getTickerThesisData } from '@/lib/content/public-thesis';
 import { createStaticServiceClient } from '@/lib/supabase/server';
 
 /**
@@ -124,10 +125,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  // Only list theses that have real evidence — empty pages stay out of the index until
-  // they fill up (the long-run play). evidenceDates omits tickers with no catches.
-  const thesisPages: MetadataRoute.Sitemap = HOUSE_THESES
-    .filter((t) => evidenceDates[t.ticker])
+  // Only list theses the page itself will allow to be indexed. Use the SAME gate as
+  // generateMetadata (health !== 'unverified') so the sitemap can never advertise a
+  // noindex page. evidenceDates pre-filters to tickers with catches, keeping this to a
+  // handful of reads.
+  const evidencedTheses = HOUSE_THESES.filter((t) => evidenceDates[t.ticker]);
+  const evidencedHealth = await Promise.all(
+    evidencedTheses.map((t) => getTickerThesisData(t.ticker)),
+  );
+  const thesisPages: MetadataRoute.Sitemap = evidencedTheses
+    .filter((_t, i) => evidencedHealth[i] != null && evidencedHealth[i]!.health !== 'unverified')
     .map((t) => ({
       url: `${base}/thesis/${t.ticker.toLowerCase()}`,
       lastModified: new Date(`${evidenceDates[t.ticker]}T00:00:00Z`),
