@@ -577,33 +577,35 @@ export default function DashboardOverview() {
               <Link2 size={20} className="text-[var(--color-gold)]" />
             </div>
             <h1 className="text-[26px] font-bold tracking-[-0.025em] leading-[1.15] text-[var(--color-text-primary)] mb-3">
-              Connect your brokerage
+              See Helm in action
             </h1>
             <p className="mx-auto mb-6 max-w-[420px] text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
-              Helm reads your accounts over a read-only Plaid connection. It can never move money or
-              place trades. Link an account to see your real net worth, allocation, and daily brief.
+              Explore a fully loaded demo portfolio right now, no account needed: net worth, allocation,
+              thesis intelligence, and the daily brief. Connect your real brokerage whenever you are ready
+              (read-only via Plaid, it can never move money or place trades).
             </p>
 
             <div className="flex flex-col items-center gap-3">
+              <button
+                onClick={() => {
+                  posthog.capture('demo_explored', { source: 'dashboard_empty' });
+                  enableDemo();
+                  router.refresh();
+                }}
+                className="w-full max-w-[280px] cursor-pointer rounded-[5px] bg-[var(--color-gold)] px-9 py-3.5 text-[15px] font-bold text-[var(--color-bg-base)] transition-all hover:brightness-110"
+              >
+                Explore the demo &rarr;
+              </button>
               <PlaidLinkButton
-                className="w-full max-w-[280px] rounded-[5px] px-9 py-3.5 text-[15px] font-bold"
+                className="w-full max-w-[280px] rounded-[5px] border border-[var(--color-border-strong)] bg-transparent px-9 py-3 text-[14px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                 onSuccess={() => router.refresh()}
                 onError={(msg) => setPlaidError(msg)}
                 onLinkError={(_code, message) => {
                   toast.error('Connection failed', message);
                 }}
               >
-                Connect account
+                Connect your brokerage
               </PlaidLinkButton>
-              <button
-                onClick={() => {
-                  enableDemo();
-                  router.refresh();
-                }}
-                className="cursor-pointer bg-transparent text-[15px] font-semibold text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-gold)]"
-              >
-                Explore with demo data →
-              </button>
             </div>
 
             {plaidError && <p className="mt-3 text-[15px] text-[var(--color-negative-text)]">{plaidError}</p>}
