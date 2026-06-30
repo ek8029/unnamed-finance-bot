@@ -60,9 +60,10 @@ export async function POST(request: Request) {
 
       if (existing) {
         duplicateItem = existing;
-        // Remove old plaid_item to prevent duplicate holdings.
-        // Linked accounts + holdings cascade-delete via FK.
-        await supabase.from('plaid_items').delete().eq('id', existing.id);
+        // Defer deleting the old item until the new connection is fully persisted
+        // (see below). Deleting first made a transient insert failure permanent:
+        // the user lost their working connection and got nothing back, ending at
+        // zero items. Insert-then-delete keeps the old connection as a safety net.
       }
     }
 
@@ -179,6 +180,13 @@ export async function POST(request: Request) {
     if (accountsError) {
       console.error('Error creating accounts:', accountsError);
       return NextResponse.json({ error: 'Failed to create accounts' }, { status: 500 });
+    }
+
+    // New connection is fully persisted — now it is safe to remove the superseded
+    // item. Linked accounts + holdings cascade-delete via FK. If this delete fails,
+    // the user simply keeps a harmless duplicate (far better than zero connections).
+    if (duplicateItem) {
+      await supabase.from('plaid_items').delete().eq('id', duplicateItem.id);
     }
 
     return NextResponse.json({
