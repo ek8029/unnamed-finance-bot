@@ -187,7 +187,7 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
   const priceId = sub.items.data[0]?.price?.id ?? null;
   const tier = tierForPriceId(priceId);
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('user_subscriptions')
     .update({
       ...(tier ? { tier, stripe_price_id: priceId, billing_period: tier } : {}),
@@ -195,11 +195,22 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
       current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq('stripe_customer_id', customerId);
+    .eq('stripe_customer_id', customerId)
+    .select('user_id');
 
   if (error) {
     console.error('[webhook][subscription.updated] DB update failed:', error);
     throw error;
+  }
+
+  // A 0-row update is silent in supabase-js. Surface it: this is how a cross-mode
+  // (test vs live) or otherwise-orphaned subscription event slips through unnoticed.
+  if (!data || data.length === 0) {
+    console.warn(
+      `[webhook][subscription.updated] No user_subscriptions row matched customer ${customerId} — ` +
+        `ignored. Likely a test-mode subscription absent from this database.`,
+    );
+    return;
   }
 
   console.log(
@@ -218,7 +229,7 @@ async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
 
   const supabase = await createServiceClient();
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('user_subscriptions')
     .update({
       tier: 'free',
@@ -229,11 +240,20 @@ async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
       cancel_at_period_end: false,
       updated_at: new Date().toISOString(),
     })
-    .eq('stripe_customer_id', customerId);
+    .eq('stripe_customer_id', customerId)
+    .select('user_id');
 
   if (error) {
     console.error('[webhook][subscription.deleted] DB update failed:', error);
     throw error;
+  }
+
+  if (!data || data.length === 0) {
+    console.warn(
+      `[webhook][subscription.deleted] No user_subscriptions row matched customer ${customerId} — ` +
+        `ignored. Likely a test-mode subscription absent from this database.`,
+    );
+    return;
   }
 
   console.log(`[webhook][subscription.deleted] Downgraded to free for customer ${customerId}`);
