@@ -3,6 +3,7 @@ import { getAllPosts } from '@/lib/blog';
 import { INDEXABLE_TICKERS } from '@/lib/indexable-tickers';
 import { THEMES } from '@/lib/themes';
 import { HOUSE_THESES } from '@/lib/content/house-theses';
+import { GLOSSARY } from '@/lib/glossary';
 import { getTickerThesisData } from '@/lib/content/public-thesis';
 import { createStaticServiceClient } from '@/lib/supabase/server';
 
@@ -61,6 +62,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/about`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/blog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
     { url: `${base}/thesis-monitoring`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${base}/glossary`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
     { url: `${base}/masthead`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
     { url: `${base}/best-thesis-trackers`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
     { url: `${base}/how-helm-detects-thesis-drift`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
@@ -142,5 +144,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-  return [...staticRoutes, ...blogPosts, ...tickerPages, ...comparePages, ...thesisRiskPages, ...whenToSellPages, ...themePages, ...thesisPages];
+  const glossaryPages: MetadataRoute.Sitemap = GLOSSARY.map((t) => ({
+    url: `${base}/glossary/${t.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }));
+
+  return [...staticRoutes, ...blogPosts, ...tickerPages, ...comparePages, ...thesisRiskPages, ...whenToSellPages, ...themePages, ...thesisPages, ...glossaryPages];
 }
