@@ -45,6 +45,11 @@ export async function DELETE() {
       }
     }
 
+    // Leave a surviving trail BEFORE the wipe — this endpoint deletes plaid_logs too,
+    // so without this an unexplained data loss has no evidence (exactly the situation
+    // that made a churned user's connection loss impossible to diagnose after the fact).
+    console.warn(`[plaid][reset] FULL account data wipe requested by user ${user.id} — removing all items, holdings, accounts, snapshots`);
+
     // 3. Delete all user financial data (order matters for FK constraints)
     await supabase.from('holdings').delete().eq('user_id', user.id);
     await supabase.from('transactions').delete().eq('user_id', user.id);

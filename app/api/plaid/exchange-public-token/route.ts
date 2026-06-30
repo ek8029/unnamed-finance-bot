@@ -148,7 +148,7 @@ export async function POST(request: Request) {
       });
 
     if (itemError) {
-      console.error('Error storing plaid item:', itemError);
+      console.error(`[plaid][CRITICAL] item store failed for user ${user.id} (${institutionName}):`, itemError.message);
       return NextResponse.json({ error: 'Failed to store connection' }, { status: 500 });
     }
 
@@ -182,7 +182,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create accounts' }, { status: 500 });
     }
 
-    // New connection is fully persisted — now it is safe to remove the superseded
+    // Tripwire: re-read the item we just inserted. supabase-js .insert() does not throw
+    // on a silent RLS/no-row failure, and this exact gap — link "succeeds" client-side
+    // but no row survives — is what churned a user undetected. If it's gone, shout and
+    // fail loudly rather than report success on a connection that does not exist.
+    const { data: persisted } = await supabase
+      .from('plaid_items')
+      .select('id')
+      .eq('plaid_item_id', itemId)
+      .maybeSingle();
+    if (!persisted) {
+      console.error(
+        `[plaid][CRITICAL] item ${itemId} not found after insert for user ${user.id} ` +
+          `(${institutionName}) — connection did not persist`,
+      );
+      return NextResponse.json({ error: 'Connection did not save. Please try again.' }, { status: 500 });
+    }
+
+    // New connection is verified persisted — now it is safe to remove the superseded
     // item. Linked accounts + holdings cascade-delete via FK. If this delete fails,
     // the user simply keeps a harmless duplicate (far better than zero connections).
     if (duplicateItem) {

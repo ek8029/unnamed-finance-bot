@@ -80,7 +80,8 @@ export async function DELETE(
       .eq('plaid_access_token', plaidItem.plaid_access_token)
       .eq('user_id', user.id);
 
-    // 4. Delete the plaid item
+    // 4. Delete the plaid item (leave a surviving trail in case a loss is later disputed)
+    console.warn(`[plaid][disconnect] item ${itemId} removed by user ${user.id} (${plaidItem.institution_name ?? 'unknown'})`);
     await supabase
       .from('plaid_items')
       .delete()
