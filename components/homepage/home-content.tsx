@@ -394,8 +394,8 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
           </div>
 
           {/* The MacBook */}
-          <div className="relative z-[2] flex justify-center items-center py-5" style={{ perspective: '2400px' }}>
-            <div className="w-[min(1360px,95vw,132vh)]" style={{ transform: 'rotateX(9deg)', transformOrigin: 'center 65%' }}>
+          <div className="relative z-[2] flex justify-center items-center py-3" style={{ perspective: '2400px' }}>
+            <div className="w-[min(1360px,95vw,104vh)]" style={{ transform: 'rotateX(9deg)', transformOrigin: 'center 65%' }}>
               <div className="relative rounded-[clamp(12px,1.5vw,22px)] p-[1.6%] shadow-[0_1px_0_rgba(255,255,255,0.08)_inset,0_60px_120px_rgba(0,0,0,0.75),0_0_0_1px_rgba(255,255,255,0.05),0_0_90px_rgba(230,185,77,0.05)]" style={{ background: 'linear-gradient(160deg,#26262a,#0d0d0f)' }}>
                 <span className="absolute top-[0.7%] left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#0a0a0a] shadow-[0_0_0_2px_#1a1a1c]" />
                 <div className="relative rounded-[clamp(5px,0.7vw,9px)] overflow-hidden aspect-video bg-black shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
