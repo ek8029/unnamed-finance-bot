@@ -93,6 +93,19 @@ export default async function ThesisPage({ params }: { params: Promise<{ ticker:
     : data.health === 'weakening' ? 'weakening'
     : data.health === 'broken' ? 'broken'
     : 'not yet verified against new evidence';
+
+  // A dated, extractable one-line verdict for the top of the page. This is the unit an
+  // answer engine quotes; without it, the page reads as prose and gets passed over.
+  const statusCounts = data.pillars.reduce(
+    (acc, p) => { acc[p.status] = (acc[p.status] ?? 0) + 1; return acc; },
+    {} as Record<string, number>,
+  );
+  const verdictBreakdown = [
+    statusCounts.intact ? `${statusCounts.intact} intact` : null,
+    statusCounts.watch ? `${statusCounts.watch} on watch` : null,
+    statusCounts.weakening ? `${statusCounts.weakening} weakening` : null,
+    statusCounts.broken ? `${statusCounts.broken} broken` : null,
+  ].filter(Boolean).join(', ');
   const faqLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -203,6 +216,11 @@ export default async function ThesisPage({ params }: { params: Promise<{ ticker:
             {data.asOfDate && <span>As of {fmtDate(data.asOfDate)}</span>}
             {data.lastChecked && <span>Last checked {fmtDate(data.lastChecked)}</span>}
           </div>
+          {data.health !== 'unverified' && (
+            <p className="mt-5 text-[17px] leading-[1.5] font-medium text-[var(--color-text-primary)]">
+              As of {fmtDate(data.asOfDate)}, the {data.ticker} thesis is {healthPhrase}: {data.pillars.length} pillar{data.pillars.length === 1 ? '' : 's'} tracked, {verdictBreakdown}.
+            </p>
+          )}
           <p className="mt-5 text-[16px] leading-[1.55] text-[var(--color-text-secondary)]">
             The reasons to own {data.ticker}, the single fact that would break each one, and the dated filing and news
             evidence Helm has tested against them. Status is computed from that evidence, not hand-set.
