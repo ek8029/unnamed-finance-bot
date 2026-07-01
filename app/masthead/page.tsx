@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
 import { createServiceClient } from '@/lib/supabase/server';
+import { getLatestPublished } from '@/lib/content/weekly-updates';
 
 // "The Masthead" — the public catch feed, presented as a dark financial broadsheet.
 // The same approved content_events that drive the social posts, exposed as a dated,
@@ -109,6 +110,8 @@ export default async function MastheadPage() {
     timeZone: 'UTC',
   });
 
+  const thisWeek = await getLatestPublished();
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
@@ -202,6 +205,23 @@ export default async function MastheadPage() {
           that moves them. Every entry carries the verbatim source quote, dated and linked. This is what the same agent
           does for your own holdings inside the terminal.
         </p>
+
+        {thisWeek && (
+          <Link
+            href="/this-week"
+            className="mx-auto mt-6 block max-w-[640px] border border-[var(--color-border-strong)] bg-[var(--color-bg-surface)] px-5 py-4 transition-colors hover:border-[var(--color-gold)]/40"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-gold)]">This Week at Helm</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                {new Date(thisWeek.week_of + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
+            </div>
+            <div className="mt-1.5 text-[17px] text-[var(--color-text-primary)]" style={{ fontFamily: SERIF }}>{thisWeek.title}</div>
+            {thisWeek.intro && <p className="mt-1 text-[13px] leading-[1.5] text-[var(--color-text-secondary)]">{thisWeek.intro}</p>}
+            <span className="mt-2 inline-block font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--color-gold)]">Read this week &rarr;</span>
+          </Link>
+        )}
 
         {lead === null ? (
           <div className="mt-10 border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-10 text-center">
