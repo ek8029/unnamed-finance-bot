@@ -8,6 +8,8 @@ export interface StudioPost {
   kind: string;
   /** Small context line, e.g. "NVDA · Jun 25". */
   meta?: string;
+  /** ISO date for sorting newest-first. */
+  date?: string;
   text: string;
 }
 
@@ -37,32 +39,71 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-export function StudioCards({ groups }: { groups: StudioGroup[] }) {
+function PostCard({ p }: { p: StudioPost }) {
   return (
-    <div className="space-y-12">
-      {groups.map((g) => (
-        <section key={g.title}>
-          <h2 className="text-[20px] font-bold text-[var(--color-text-primary)]">{g.title}</h2>
-          <p className="mt-1 mb-5 text-[14px] text-[var(--color-text-muted)]">{g.blurb}</p>
-          {g.posts.length === 0 ? (
-            <p className="text-[14px] text-[var(--color-text-muted)] italic">Nothing here today.</p>
-          ) : (
-            <div className="space-y-4">
-              {g.posts.map((p) => (
-                <div key={p.id} className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-4">
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
-                      {p.kind}{p.meta ? ` · ${p.meta}` : ''}
-                    </span>
-                    <CopyButton text={p.text} />
-                  </div>
-                  <pre className="whitespace-pre-wrap font-sans text-[14px] leading-relaxed text-[var(--color-text-secondary)]">{p.text}</pre>
+    <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-base)] p-4">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
+          {p.kind}{p.meta ? ` · ${p.meta}` : ''}
+        </span>
+        <CopyButton text={p.text} />
+      </div>
+      <pre className="whitespace-pre-wrap font-sans text-[14px] leading-relaxed text-[var(--color-text-secondary)]">{p.text}</pre>
+    </div>
+  );
+}
+
+export function StudioCards({ groups }: { groups: StudioGroup[] }) {
+  // Default: open the first section (the fresh catches), collapse the rest.
+  const [open, setOpen] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(groups.map((g, i) => [g.title, i === 0])),
+  );
+
+  return (
+    <div className="space-y-3">
+      {groups.map((g) => {
+        const posts = [...g.posts].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+        const isOpen = open[g.title] ?? false;
+        return (
+          <section
+            key={g.title}
+            className="overflow-hidden rounded-xl border border-[var(--color-border-base)] bg-[var(--color-bg-surface)]"
+          >
+            <button
+              onClick={() => setOpen((o) => ({ ...o, [g.title]: !o[g.title] }))}
+              className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.02]"
+            >
+              <div className="min-w-0">
+                <div className="flex items-center gap-2.5">
+                  <h2 className="text-[17px] font-bold text-[var(--color-text-primary)]">{g.title}</h2>
+                  <span className="rounded-full bg-[var(--color-gold)]/15 px-2 py-0.5 text-[11px] font-bold text-[var(--color-gold)]">
+                    {posts.length}
+                  </span>
                 </div>
-              ))}
-            </div>
-          )}
-        </section>
-      ))}
+                <p className="mt-0.5 truncate text-[13px] text-[var(--color-text-muted)]">{g.blurb}</p>
+              </div>
+              <svg
+                className={`shrink-0 text-[var(--color-text-muted)] transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            {isOpen && (
+              <div className="border-t border-[var(--color-border-base)] px-5 py-4">
+                {posts.length === 0 ? (
+                  <p className="text-[14px] italic text-[var(--color-text-muted)]">Nothing here today.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {posts.map((p) => <PostCard key={p.id} p={p} />)}
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        );
+      })}
     </div>
   );
 }

@@ -45,6 +45,7 @@ export default async function StudioPage() {
     .map((d) => ({ ticker: d!.ticker, healthLabel: d!.healthLabel }));
 
   const todayISO = new Date().toISOString().slice(0, 10);
+  const fmtDay = (d?: string | null) => (d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '');
 
   // Rotate the teardown set daily so it is not the same tickers every day.
   const dayIndex = Math.floor(Date.now() / 86400000) % Math.max(1, HOUSE_THESES.length);
@@ -54,22 +55,30 @@ export default async function StudioPage() {
     {
       title: 'What the agent caught',
       blurb: 'Your flagship X franchise. One real catch, one post. Nobody else can post these.',
-      posts: catches.map((c, i) => ({
-        id: `caught-${c.ticker}-${i}`,
-        kind: 'X / post',
-        meta: c.ticker,
-        text: catchToXPost(c),
-      })),
+      posts: catches.map((c, i) => {
+        const day = fmtDay(c.cite_date ?? c.run_date);
+        return {
+          id: `caught-${c.ticker}-${i}`,
+          kind: 'X / post',
+          meta: day ? `${c.ticker} · ${day}` : c.ticker,
+          date: c.cite_date ?? c.run_date ?? undefined,
+          text: catchToXPost(c),
+        };
+      }),
     },
     {
       title: 'Long form (LinkedIn / thread lead)',
       blurb: 'The same catches, expanded. For LinkedIn or as the opener of an X thread.',
-      posts: catches.slice(0, 5).map((c, i) => ({
-        id: `long-${c.ticker}-${i}`,
-        kind: 'LinkedIn',
-        meta: c.ticker,
-        text: catchToLongPost(c),
-      })),
+      posts: catches.slice(0, 5).map((c, i) => {
+        const day = fmtDay(c.cite_date ?? c.run_date);
+        return {
+          id: `long-${c.ticker}-${i}`,
+          kind: 'LinkedIn',
+          meta: day ? `${c.ticker} · ${day}` : c.ticker,
+          date: c.cite_date ?? c.run_date ?? undefined,
+          text: catchToLongPost(c),
+        };
+      }),
     },
     {
       title: 'Thesis teardowns',
@@ -78,6 +87,7 @@ export default async function StudioPage() {
         id: `teardown-${t.ticker}`,
         kind: 'X thread',
         meta: t.ticker,
+        date: todayISO,
         text: thesisTeardownX({ ticker: t.ticker, company: t.company, pillars: t.pillars }),
       })),
     },
@@ -85,7 +95,7 @@ export default async function StudioPage() {
       title: 'Thesis scoreboard',
       blurb: 'The always-on shareable number. Computed from real evidence.',
       posts: scoreData.length
-        ? [{ id: 'scoreboard', kind: 'X / post', text: scoreboardPost(scoreData, todayISO) }]
+        ? [{ id: 'scoreboard', kind: 'X / post', date: todayISO, text: scoreboardPost(scoreData, todayISO) }]
         : [],
     },
   ];
