@@ -39,7 +39,7 @@ const fmtCompact = (n: number) => {
   return `${sign}$${Math.round(abs)}`;
 };
 
-const TOTAL_SLIDES = 7;
+const TOTAL_SLIDES = 8;
 
 
 // ═══════════════════════════════════════════
@@ -255,6 +255,157 @@ function SlideBestWorst({ data }: { data: WrappedData | null }) {
           <p className="text-[clamp(32px,8vw,56px)] font-bold text-[#F87171] tabular-nums mt-2">{worst ? fmtPct(worst.returnPct) : '---'}</p>
           <p className="text-[15px] text-[var(--color-text-muted)] mt-2">{worst?.name ?? ''} &middot; {worst ? fmtDollar(worst.returnDollars) : ''}</p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════
+// Slide: BEST & WORST DAYS
+// Top 3 market days each, dollar + percent. (Ben's request.)
+// ═══════════════════════════════════════════
+
+function SlideBestWorstDays({ data }: { data: WrappedData | null }) {
+  const bestDays = data?.bestDays ?? [];
+  const worstDays = data?.worstDays ?? [];
+  const series = data?.daySeries ?? [];
+  const upDays = data?.upDays ?? 0;
+  const downDays = data?.downDays ?? 0;
+  const totalDays = upDays + downDays;
+  const hasData = bestDays.length > 0 || worstDays.length > 0;
+  const top = bestDays[0];
+  const bottom = worstDays[0];
+  const shortDate = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const weekday = (d?: string) => (d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' }) : '');
+
+  // ── Hero graph geometry. Plot band leaves headroom top/bottom for the floating labels. ──
+  const W = 340, H = 150, PADX = 10, TOP = 34, BOT = 116;
+  const vals = series.map((p) => p.v);
+  const lo = vals.length ? Math.min(...vals) : 0;
+  const hi = vals.length ? Math.max(...vals) : 1;
+  const span = hi - lo || 1;
+  const sx = (i: number) => PADX + (series.length > 1 ? (i / (series.length - 1)) * (W - 2 * PADX) : 0);
+  const sy = (v: number) => TOP + (1 - (v - lo) / span) * (BOT - TOP);
+  const linePath = series.map((p, i) => `${i ? 'L' : 'M'}${sx(i).toFixed(1)} ${sy(p.v).toFixed(1)}`).join(' ');
+  const areaPath = series.length > 1 ? `${linePath} L${sx(series.length - 1).toFixed(1)} ${BOT} L${sx(0).toFixed(1)} ${BOT} Z` : '';
+  const bi = series.findIndex((p) => p.date === top?.date);
+  const wi = series.findIndex((p) => p.date === bottom?.date);
+  const anchorFor = (x: number): 'start' | 'middle' | 'end' => (x < 44 ? 'start' : x > W - 44 ? 'end' : 'middle');
+  const [mode, setMode] = useState<'$' | '%'>('$');
+  const val = (d: { changeDollars: number; changePct: number }) => (mode === '$' ? fmtDollar(d.changeDollars) : fmtPct(d.changePct));
+  const restBest = bestDays.slice(1);
+  const restWorst = worstDays.slice(1);
+
+  return (
+    <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 overflow-hidden">
+      <div className="absolute -top-[15%] -right-[15%] w-[45vw] h-[45vw] rounded-full opacity-[0.05] blur-[200px] pointer-events-none" style={{ background: '#4ADE80' }} />
+      <div className="absolute -bottom-[15%] -left-[15%] w-[45vw] h-[45vw] rounded-full opacity-[0.05] blur-[200px] pointer-events-none" style={{ background: '#F87171' }} />
+
+      <style>{`
+        @keyframes bwdDraw { to { stroke-dashoffset: 0; } }
+        @keyframes bwdPop { from { opacity: 0; transform: scale(0.55); } to { opacity: 1; transform: scale(1); } }
+        @keyframes bwdFade { to { opacity: 1; } }
+        .bwd-line { stroke-dasharray: 1; stroke-dashoffset: 1; animation: bwdDraw 1.5s cubic-bezier(0.4,0,0.2,1) forwards; }
+        .bwd-area { opacity: 0; animation: bwdFade 1.6s ease-out forwards; }
+        .bwd-mark { opacity: 0; transform-box: fill-box; transform-origin: center; animation: bwdPop 0.55s cubic-bezier(0.34,1.56,0.64,1) 1.25s forwards; }
+        .bwd-label { opacity: 0; animation: bwdFade 0.5s ease-out 1.45s forwards; }
+      `}</style>
+
+      <div className="relative z-10 w-full max-w-md">
+        <p className="text-center text-[13px] tracking-[0.25em] text-[var(--color-gold)] mb-1.5" style={MONO}>YOUR BIGGEST DAYS</p>
+        <p className="text-center text-[15px] text-[var(--color-text-muted)] mb-5">Every high and low, mapped.</p>
+
+        {series.length > 1 ? (
+          <>
+            <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+              <defs>
+                <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--color-gold)" stopOpacity="0.20" />
+                  <stop offset="100%" stopColor="var(--color-gold)" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {areaPath && <path className="bwd-area" d={areaPath} fill="url(#sparkFill)" />}
+              <path className="bwd-line" pathLength={1} d={linePath} fill="none" stroke="var(--color-gold)" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" />
+              {bi >= 0 && (
+                <g className="bwd-mark">
+                  <circle cx={sx(bi)} cy={sy(series[bi].v)} r="9" fill="#4ADE80" opacity="0.18" />
+                  <circle cx={sx(bi)} cy={sy(series[bi].v)} r="4" fill="#4ADE80" />
+                </g>
+              )}
+              {wi >= 0 && (
+                <g className="bwd-mark">
+                  <circle cx={sx(wi)} cy={sy(series[wi].v)} r="9" fill="#F87171" opacity="0.18" />
+                  <circle cx={sx(wi)} cy={sy(series[wi].v)} r="4" fill="#F87171" />
+                </g>
+              )}
+              {top && bi >= 0 && (
+                <text className="bwd-label" x={sx(bi)} y={sy(series[bi].v) - 14} textAnchor={anchorFor(sx(bi))} fill="#4ADE80" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700 }}>
+                  {val(top)}
+                </text>
+              )}
+              {bottom && wi >= 0 && (
+                <text className="bwd-label" x={sx(wi)} y={sy(series[wi].v) + 22} textAnchor={anchorFor(sx(wi))} fill="#F87171" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700 }}>
+                  {val(bottom)}
+                </text>
+              )}
+            </svg>
+            <p className="text-center text-[11px] tracking-[0.2em] text-[var(--color-text-muted)] mt-1 mb-3" style={MONO}>PORTFOLIO VALUE &middot; {data?.periodLabel ?? ''}</p>
+          </>
+        ) : hasData ? (
+          <p className="text-center text-[15px] text-[var(--color-text-muted)] mb-3">
+            {top && (<>Best <span className="text-[#4ADE80] font-semibold tabular-nums">{val(top)}</span></>)}
+            {top && bottom && <span className="opacity-30"> &middot; </span>}
+            {bottom && (<>Worst <span className="text-[#F87171] font-semibold tabular-nums">{val(bottom)}</span></>)}
+          </p>
+        ) : null}
+
+        {hasData && (
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex rounded-full border border-white/[0.08] p-0.5">
+              {(['$', '%'] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={(e) => { e.stopPropagation(); setMode(m); }}
+                  className="px-4 py-1 rounded-full text-[12px] font-semibold transition-colors cursor-pointer"
+                  style={mode === m ? { background: 'rgba(230,185,77,0.15)', color: 'var(--color-gold)', ...MONO } : { color: 'var(--color-text-muted)', ...MONO }}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {totalDays > 0 && (
+          <div className="flex items-center justify-center gap-2.5 mb-6 flex-wrap">
+            <span className="px-3 py-1.5 rounded-full border border-white/[0.08] text-[13px]" style={MONO}>
+              <span className="text-[#4ADE80] font-semibold">{upDays}</span>
+              <span className="text-[var(--color-text-muted)]"> of {totalDays} days green</span>
+            </span>
+            {top && (
+              <span className="px-3 py-1.5 rounded-full border border-white/[0.08] text-[13px]" style={MONO}>
+                <span className="text-[var(--color-text-muted)]">best day was a </span>
+                <span className="text-[var(--color-gold)] font-semibold">{weekday(top.date)}</span>
+              </span>
+            )}
+          </div>
+        )}
+
+        {(restBest.length > 0 || restWorst.length > 0) && (
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[12px]" style={MONO}>
+            {restBest.map((d) => (
+              <span key={d.date} className="text-[var(--color-text-muted)]">{shortDate(d.date)} <span className="text-[#4ADE80] tabular-nums">{val(d)}</span></span>
+            ))}
+            {restBest.length > 0 && restWorst.length > 0 && <span className="opacity-20">&middot;</span>}
+            {restWorst.map((d) => (
+              <span key={d.date} className="text-[var(--color-text-muted)]">{shortDate(d.date)} <span className="text-[#F87171] tabular-nums">{val(d)}</span></span>
+            ))}
+          </div>
+        )}
+
+        {!hasData && (
+          <p className="text-center text-[15px] text-[var(--color-text-muted)]">Not enough history yet to rank your days. Check back next quarter.</p>
+        )}
       </div>
     </div>
   );
@@ -790,11 +941,12 @@ function WrappedStory({ data, onClose }: { data: WrappedData | null; onClose: ()
       0: `My investment year in review is ready.\n\nGet yours free`,
       1: `My portfolio returned ${fmtPct(data.totalReturn.pct)} this year${data.spyComparison.beat ? ` — beat the S&P 500 by ${(data.totalReturn.pct - (data.spyComparison.spyReturn ?? 0)).toFixed(1)}%` : ''}.\n\nGet your Wrapped free`,
       2: `Best trade: ${data.bestPosition?.ticker ?? '---'} at ${fmtPct(data.bestPosition?.returnPct ?? 0)}.\nWorst: ${data.worstPosition?.ticker ?? '---'} at ${fmtPct(data.worstPosition?.returnPct ?? 0)}.\n\nEvery investor has both.`,
-      3: `${data.tradeCount} trades this year.${data.totalDividends > 0 ? ` $${Math.round(data.totalDividends).toLocaleString()} in dividends.` : ''}\n\nMy Helm Wrapped`,
-      4: `My portfolio conviction: ${data.sectorBreakdown?.[0]?.sector ?? 'diversified'}.\n\nWhat's yours?`,
-      5: `${fmtPct(data.totalReturn.pct)} return\n${data.bestPosition?.ticker ?? '---'} was my MVP\n${data.tradeCount} trades\n\nGet yours free`,
+      3: `My best market day: ${data.bestDays?.[0] ? fmtDollar(data.bestDays[0].changeDollars) : '---'} (${data.bestDays?.[0] ? fmtPct(data.bestDays[0].changePct) : '---'}).\n\nMy Helm Wrapped`,
+      4: `${data.tradeCount} trades this year.${data.totalDividends > 0 ? ` $${Math.round(data.totalDividends).toLocaleString()} in dividends.` : ''}\n\nMy Helm Wrapped`,
+      5: `My portfolio conviction: ${data.sectorBreakdown?.[0]?.sector ?? 'diversified'}.\n\nWhat's yours?`,
+      6: `${fmtPct(data.totalReturn.pct)} return\n${data.bestPosition?.ticker ?? '---'} was my MVP\n${data.tradeCount} trades\n\nGet yours free`,
     };
-    const text = captions[currentSlide] ?? captions[5]!;
+    const text = captions[currentSlide] ?? captions[6]!;
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent('https://helmterminal.dev/wrapped')}`;
     window.open(url, '_blank', 'width=550,height=420');
   }, [data, currentSlide]);
@@ -806,10 +958,11 @@ function WrappedStory({ data, onClose }: { data: WrappedData | null; onClose: ()
       case 0: return <SlideCover data={data} onBegin={next} />;
       case 1: return <SlideReturn data={data} />;
       case 2: return <SlideBestWorst data={data} />;
-      case 3: return <SlideTradingHabits data={data} />;
-      case 4: return <SlideSectors data={data} />;
-      case 5: return <SlidePersonality data={data} />;
-      case 6: return <SlideShareCard data={data} onShareImage={handleShareImage} onShareTwitter={handleShareTwitter} onClose={onClose} />;
+      case 3: return <SlideBestWorstDays data={data} />;
+      case 4: return <SlideTradingHabits data={data} />;
+      case 5: return <SlideSectors data={data} />;
+      case 6: return <SlidePersonality data={data} />;
+      case 7: return <SlideShareCard data={data} onShareImage={handleShareImage} onShareTwitter={handleShareTwitter} onClose={onClose} />;
       default: return null;
     }
   }

@@ -833,6 +833,12 @@ export interface WrappedPosition {
   value: number;
 }
 
+export interface WrappedDay {
+  date: string;
+  changeDollars: number;
+  changePct: number;
+}
+
 export interface WrappedData {
   period: 'quarter' | 'year';
   periodLabel: string;
@@ -840,6 +846,11 @@ export interface WrappedData {
   totalReturn: { pct: number; dollars: number };
   bestPosition: WrappedPosition | null;
   worstPosition: WrappedPosition | null;
+  bestDays?: WrappedDay[];
+  worstDays?: WrappedDay[];
+  upDays?: number;
+  downDays?: number;
+  daySeries?: { date: string; v: number }[];
   totalDividends: number;
   tradeCount: number;
   spyComparison: { userReturn: number; spyReturn: number | null; beat: boolean | null };

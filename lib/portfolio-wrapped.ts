@@ -21,6 +21,12 @@ export interface WrappedPosition {
   value: number;
 }
 
+export interface WrappedDay {
+  date: string;          // snapshot_date of the day (later of the pair)
+  changeDollars: number; // market P/L move that day
+  changePct: number;     // move as % of prior day value
+}
+
 export interface InvestorPersonality {
   type: string;
   title: string;
@@ -35,6 +41,11 @@ export interface WrappedData {
   totalReturn: { pct: number; dollars: number };
   bestPosition: WrappedPosition | null;
   worstPosition: WrappedPosition | null;
+  bestDays: WrappedDay[];
+  worstDays: WrappedDay[];
+  upDays: number;
+  downDays: number;
+  daySeries: { date: string; v: number }[];
   totalDividends: number;
   tradeCount: number;
   spyComparison: { userReturn: number; spyReturn: number | null; beat: boolean | null };
@@ -184,6 +195,35 @@ function getPeriodDates(period: 'quarter' | 'year') {
 
 // ── Main export ──
 
+// ── Best / worst market days ──
+// Day change = delta of total_gain_loss between consecutive snapshots. This is
+// deposit-immune: a deposit raises total_value AND cost basis but not gain_loss,
+// so the delta reflects market move only (a deposit day can't fake a "best day").
+function computeBestWorstDays(
+  snapshots: { snapshot_date: string; total_value: number | null; total_gain_loss: number | null }[],
+): { bestDays: WrappedDay[]; worstDays: WrappedDay[]; upDays: number; downDays: number } {
+  const deltas: WrappedDay[] = [];
+  let upDays = 0;
+  let downDays = 0;
+  for (let i = 1; i < snapshots.length; i++) {
+    const gl = Number(snapshots[i].total_gain_loss ?? 0) - Number(snapshots[i - 1].total_gain_loss ?? 0);
+    const base = Number(snapshots[i - 1].total_value ?? 0);
+    if (gl === 0 || base <= 0) continue;
+    if (gl > 0) upDays++; else downDays++;
+    deltas.push({
+      date: snapshots[i].snapshot_date,
+      changeDollars: Math.round(gl * 100) / 100,
+      changePct: Math.round((gl / base) * 10000) / 100,
+    });
+  }
+  return {
+    bestDays: deltas.filter((d) => d.changeDollars > 0).sort((a, b) => b.changeDollars - a.changeDollars).slice(0, 3),
+    worstDays: deltas.filter((d) => d.changeDollars < 0).sort((a, b) => a.changeDollars - b.changeDollars).slice(0, 3),
+    upDays,
+    downDays,
+  };
+}
+
 export async function generateWrapped(
   userId: string,
   period: 'quarter' | 'year' = 'quarter',
@@ -265,6 +305,13 @@ export async function generateWrapped(
 
   // ── Total Return (cost-basis, not inflated by deposits/withdrawals) ──
   const snapshots = snapshotsResult.data || [];
+  const { bestDays, worstDays, upDays, downDays } = computeBestWorstDays(snapshots);
+  const rawSeries = snapshots
+    .map((s) => ({ date: s.snapshot_date, v: Number(s.total_value ?? 0) }))
+    .filter((p) => p.v > 0);
+  // Downsample to keep the sparkline payload small; always keep the last point.
+  const step = rawSeries.length > 80 ? Math.ceil(rawSeries.length / 80) : 1;
+  const daySeries = rawSeries.filter((_, i) => i % step === 0 || i === rawSeries.length - 1);
   let totalReturnPct = 0;
   let totalReturnDollars = 0;
 
@@ -433,6 +480,11 @@ export async function generateWrapped(
     totalReturn: { pct: totalReturnPct, dollars: totalReturnDollars },
     bestPosition,
     worstPosition,
+    bestDays,
+    worstDays,
+    upDays,
+    downDays,
+    daySeries,
     totalDividends,
     tradeCount,
     spyComparison,
