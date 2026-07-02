@@ -9,6 +9,7 @@
 
 const THESIS_ALLOWLIST = new Set<string>([
   'evank8029@gmail.com',
+  'test@helmterminal.dev',
 ]);
 
 export function isThesisUser(email?: string | null): boolean {
