@@ -82,9 +82,13 @@ export async function GET() {
     let cashFlowHistory = cashFlowHistoryResult.data || [];
 
     // Classify accounts using the SAME logic as computeSnapshots in plaid-sync.ts:
-    //   credit_card / loan / mortgage  → liability
+    //   credit_card / loan / mortgage  → liability (signed: negative = credit owed to user)
     //   brokerage                      → skip (investment value comes from holdings)
-    //   everything else (positive bal) → cash asset
+    //   crypto w/ holdings rows        → skip (coins already counted as holdings)
+    //   everything else                → cash asset
+    const accountsWithHoldings = new Set(
+      holdings.map((h: { account_id?: string | null }) => h.account_id).filter(Boolean),
+    );
     const cashAccounts: typeof accounts = [];
     const liabilityAccounts: typeof accounts = [];
     let cashAssets = 0;
@@ -96,9 +100,13 @@ export async function GET() {
 
       if (type === 'credit_card' || type === 'loan' || type === 'mortgage') {
         liabilityAccounts.push(a);
-        totalLiabilities += Math.abs(bal);
+        // Signed per Plaid convention: abs() would count a credit balance
+        // (money owed TO the user) as debt.
+        totalLiabilities += bal;
       } else if (type === 'brokerage') {
         // Skip — investment value comes from holdings below
+      } else if (type === 'crypto' && accountsWithHoldings.has(a.id)) {
+        // Skip — this account's coins are counted as holdings rows below
       } else {
         cashAccounts.push(a);
         cashAssets += bal;

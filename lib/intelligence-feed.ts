@@ -120,8 +120,8 @@ async function taxOpportunities(userId: string): Promise<FeedInsight[]> {
       source: 'tax',
       priority: report.totalEstimatedSavings > 500 ? 'high' : 'medium',
       title: `$${fmt(report.totalEstimatedSavings)} in potential tax savings identified`,
-      summary: `${report.opportunityCount} positions are at unrealized losses totaling $${fmt(Math.abs(report.totalHarvestableLoss))}. At a ${(report.taxRate * 100).toFixed(0)}% combined rate, that maps to roughly $${fmt(report.totalEstimatedSavings)} in offsettable tax. Not tax advice.`,
-      detail: `Tax-loss harvesting is a strategy some investors use to offset realized gains with realized losses. At a ${(report.taxRate * 100).toFixed(0)}% combined rate, $${fmt(Math.abs(report.totalHarvestableLoss))} in losses maps to roughly $${fmt(report.totalEstimatedSavings)}. Not tax advice.`,
+      summary: `${report.opportunityCount} positions are at unrealized losses totaling $${fmt(Math.abs(report.totalHarvestableLoss))}. Applied against this year's realized gains plus the $3,000 income deduction at a ${(report.taxRate * 100).toFixed(0)}% rate, that is roughly $${fmt(report.totalEstimatedSavings)} in offsettable tax. Not tax advice.`,
+      detail: `Tax-loss harvesting is a strategy some investors use to offset realized gains with realized losses. The estimate applies your usable losses (capped by this year's realized gains plus the $3,000 ordinary-income deduction) at a ${(report.taxRate * 100).toFixed(0)}% combined rate, giving roughly $${fmt(report.totalEstimatedSavings)}. Not tax advice.`,
       metrics: [
         { label: 'Total Losses', value: `$${fmt(Math.abs(report.totalHarvestableLoss))}` },
         { label: 'Est. Savings', value: `$${fmt(report.totalEstimatedSavings)}` },

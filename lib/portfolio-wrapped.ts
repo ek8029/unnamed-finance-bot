@@ -206,7 +206,17 @@ function computeBestWorstDays(
   let upDays = 0;
   let downDays = 0;
   for (let i = 1; i < snapshots.length; i++) {
-    const gl = Number(snapshots[i].total_gain_loss ?? 0) - Number(snapshots[i - 1].total_gain_loss ?? 0);
+    // A "day" must actually be a day: snapshot history has gaps (missed cron
+    // runs, backfills), and the delta across a multi-week gap is not a daily
+    // move — it once produced a "+$182K best day" spanning 37 calendar days.
+    // Allow up to 4 days so a Friday→Monday pair still counts.
+    const spanDays =
+      (Date.parse(snapshots[i].snapshot_date) - Date.parse(snapshots[i - 1].snapshot_date)) / 86400000;
+    if (!(spanDays > 0 && spanDays <= 4)) continue;
+    // Null gain_loss on either side means unknown, not zero — a null→value
+    // pair would fabricate the entire cumulative gain as one day's move.
+    if (snapshots[i].total_gain_loss == null || snapshots[i - 1].total_gain_loss == null) continue;
+    const gl = Number(snapshots[i].total_gain_loss) - Number(snapshots[i - 1].total_gain_loss);
     const base = Number(snapshots[i - 1].total_value ?? 0);
     if (gl === 0 || base <= 0) continue;
     if (gl > 0) upDays++; else downDays++;
@@ -412,10 +422,23 @@ export async function generateWrapped(
     }
   }
 
+  // Period-scoped, deposit-immune user return for the SPY comparison: delta of
+  // total_gain_loss across the period's snapshots over the starting value.
+  // totalReturnPct is since-purchase — comparing it to SPY's period return
+  // made "beat the S&P by X" wrong for any portfolio older than the period.
+  let periodReturnPct: number | null = null;
+  const glSnaps = snapshots.filter((s) => s.total_gain_loss != null && Number(s.total_value ?? 0) > 0);
+  if (glSnaps.length >= 2) {
+    const glDelta = Number(glSnaps[glSnaps.length - 1].total_gain_loss) - Number(glSnaps[0].total_gain_loss);
+    const base = Number(glSnaps[0].total_value);
+    if (base > 0) periodReturnPct = (glDelta / base) * 100;
+  }
+
   const spyComparison = {
-    userReturn: totalReturnPct,
+    userReturn: periodReturnPct ?? totalReturnPct,
     spyReturn,
-    beat: spyReturn != null ? totalReturnPct > spyReturn : null,
+    // Only claim beat/lost when both sides cover the same period.
+    beat: spyReturn != null && periodReturnPct != null ? periodReturnPct > spyReturn : null,
   };
 
   // ── Tax savings ──

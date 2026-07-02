@@ -616,17 +616,23 @@ export async function computeSnapshots(
   try {
     const { data: accounts } = await supabase
       .from('linked_accounts')
-      .select('account_type, current_balance')
+      .select('id, account_type, current_balance')
       .eq('user_id', userId)
       .eq('is_active', true);
 
     const { data: holdings } = await supabase
       .from('holdings')
-      .select('total_value')
+      .select('total_value, account_id')
       .eq('user_id', userId);
 
     const accts = accounts || [];
     const holdingsList = holdings || [];
+    // Accounts whose value is already represented by holdings rows — adding
+    // their balance on top would double-count (crypto accounts sync holdings
+    // like BTC-USD just as brokerages do).
+    const accountsWithHoldings = new Set(
+      holdingsList.map((h: { account_id: string | null }) => h.account_id).filter(Boolean),
+    );
 
     let cashBalance = 0;
     const investmentBalance = holdingsList.reduce((s: number, h: { total_value: number }) => s + Number(h.total_value), 0);
@@ -641,14 +647,20 @@ export async function computeSnapshots(
       const type = a.account_type;
 
       if (type === 'credit_card') {
-        creditCardDebt += Math.abs(bal);
-        totalLiabilities += Math.abs(bal);
+        // Signed, per Plaid convention: positive = owed, negative = credit
+        // balance in the user's favor. abs() would count a credit AS debt.
+        creditCardDebt += bal;
+        totalLiabilities += bal;
       } else if (type === 'loan' || type === 'mortgage') {
-        loanDebt += Math.abs(bal);
-        totalLiabilities += Math.abs(bal);
+        loanDebt += bal;
+        totalLiabilities += bal;
       } else if (type === 'crypto') {
-        cryptoBalance += bal;
-        totalAssets += bal;
+        if (!accountsWithHoldings.has(a.id)) {
+          // Only count the account balance when its coins are NOT already
+          // counted as holdings rows.
+          cryptoBalance += bal;
+          totalAssets += bal;
+        }
       } else if (type === 'brokerage') {
         // Skip brokerage account balance — investment value comes from
         // holdings below, which reflects latest market prices.
