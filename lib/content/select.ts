@@ -64,9 +64,12 @@ async function gatherSources(
 ): Promise<SourceDoc[]> {
   const sources: SourceDoc[] = [];
 
-  // 1. Recent SEC filings on/after runDate
+  // 1. Recent SEC filings from the last 3 days (not just runDate: the cron runs
+  //    after close, and a filing that landed yesterday is still fresh material —
+  //    the 35d verbatim-cite dedup in the cron prevents double-queueing).
+  const filingsSince = new Date(Date.parse(runDate) - 3 * 86400000).toISOString().slice(0, 10);
   try {
-    const filings = await getRecentFilings(ticker, runDate);
+    const filings = await getRecentFilings(ticker, filingsSince);
     for (const f of filings) {
       const text = await fetchFilingText(f.url, f.form);
       await new Promise((r) => setTimeout(r, 150)); // stay under SEC 10 req/s
@@ -82,14 +85,16 @@ async function gatherSources(
     // network/rate-limit: skip filings for this ticker
   }
 
-  // 2. Today's news for the ticker. market_news has no major/minor field, so
+  // 2. News for the ticker since yesterday (covers late-evening items and Monday
+  //    runs picking up weekend coverage). market_news has no major/minor field, so
   //    macro_tier='mover' rows are treated as major_news, the rest as minor_news.
+  const newsSince = new Date(Date.parse(runDate) - 1 * 86400000).toISOString().slice(0, 10);
   try {
     const { data: newsRows } = await db
       .from('market_news')
       .select('title, summary, url, published_at, macro_tier')
       .eq('primary_ticker', ticker)
-      .gte('published_at', runDate)
+      .gte('published_at', newsSince)
       .order('published_at', { ascending: false })
       .limit(50);
     for (const n of newsRows ?? []) {
@@ -188,4 +193,61 @@ export async function selectTopEvent(
 ): Promise<ContentEvent | null> {
   const [top] = await selectTopEvents(runDate, 1, minThreshold);
   return top ?? null;
+}
+
+/**
+ * Tier-3 fallback ("signal or noise"): when no pillar-relevant hit exists anywhere
+ * in the universe, take the most-covered house ticker of the day and produce a
+ * NEUTRAL event — "the market is loud on X today; none of the reasons we watch
+ * changed." verdict='neutral' keeps these off the public /thesis archive (it only
+ * accepts supports/contradicts); they exist for the daily social cadence.
+ * Cite = the top headline verbatim, so the cite-integrity validator still holds.
+ */
+export async function selectNoiseEvent(runDate: string): Promise<ContentEvent | null> {
+  const db = await createServiceClient();
+  const newsSince = new Date(Date.parse(runDate) - 1 * 86400000).toISOString().slice(0, 10);
+
+  const { data: rows } = await db
+    .from('market_news')
+    .select('primary_ticker, title, summary, url, published_at, macro_tier')
+    .in('primary_ticker', CONTENT_UNIVERSE)
+    .gte('published_at', newsSince)
+    .order('published_at', { ascending: false })
+    .limit(400);
+  if (!rows?.length) return null;
+
+  // Most-covered ticker wins; mover coverage counts double (attention proxy).
+  const weight = new Map<string, number>();
+  for (const r of rows) {
+    const t = String(r.primary_ticker).toUpperCase();
+    weight.set(t, (weight.get(t) ?? 0) + (r.macro_tier === 'mover' ? 2 : 1));
+  }
+  const ranked = [...weight.entries()].sort((a, b) => b[1] - a[1]);
+
+  for (const [ticker] of ranked) {
+    const thesis = getHouseThesis(ticker);
+    if (!thesis) continue;
+    // The cite is quoted in the post, so the headline must actually be ABOUT this
+    // name — primary_ticker tagging is loose (e.g. a CoreWeave story tagged AMZN).
+    const tickerRows = rows.filter((r) => String(r.primary_ticker).toUpperCase() === ticker && r.title);
+    const nameBits = [ticker, ...thesis.company.split(/\s+/).filter((w) => w.length > 3)];
+    const top = tickerRows.find((r) => nameBits.some((b) => String(r.title).toLowerCase().includes(b.toLowerCase())));
+    if (!top) continue;
+    return {
+      id: '',
+      ticker: thesis.ticker,
+      company: thesis.company,
+      pillarId: 'day-coverage',
+      pillarClaim: thesis.pillars.map((p) => p.claim).join(' · '),
+      verdict: 'neutral',
+      verbatimCite: String(top.title).trim(),
+      citeDate: (top.published_at as string) ?? runDate,
+      sourceUrl: top.url as string,
+      sourceType: top.macro_tier === 'mover' ? 'major_news' : 'minor_news',
+      summary: `Heaviest house-universe coverage today (${weight.get(ticker)} weighted stories). None of the watched pillars were touched by it.`,
+      date: runDate,
+      newsworthiness: 0,
+    };
+  }
+  return null;
 }

@@ -31,11 +31,18 @@ export async function generateContent(event: ContentEvent): Promise<GeneratedCon
   const system = `${INJECTION_GUARD}
 You are the voice of Helm Terminal on its company social accounts: a tenured market professional, not a marketer. Descriptive and analytical only, NEVER investment advice. Never use the words buy, sell, should, must, or recommend. BANNED words, never use any of them: game-changer, breakthrough, revolutionary, huge, massive, soaring, surging, exciting, unleash, supercharge. Use the provided quote VERBATIM; never invent quotes, numbers, or events. State only what the evidence supports; if something is uncertain, say so plainly.`;
 
+  // Tier-3 "signal or noise" events (verdict=neutral, from selectNoiseEvent): the
+  // story is not the news itself but the JUDGMENT that it does not touch the thesis.
+  const noiseInstruction = event.verdict === 'neutral'
+    ? `This is a SIGNAL-OR-NOISE post, not an evidence catch. ${event.ticker} has the heaviest coverage in our universe today (headline quoted in the event). The pillarClaim field lists every reason we watch this name. The verdict: today's coverage touches NONE of them. Structure the post as: what the market is loud about today, the specific reasons we actually watch, and the honest call that this is noise for the thesis. The confidence to call something noise IS the product. Do not manufacture drama or imply the coverage matters more than it does.
+`
+    : '';
+
   const user = `Event:
 ${fence(JSON.stringify(event), 'EVENT')}
 Voice guide:
 ${fence(VOICE_GUIDE, 'VOICE')}
-Every line must carry a specific fact or a precise judgment. Cut hedging and filler: no "may view", "could influence", "indicates", "reflects", or vague "developments". Do not pad to hit a count. Five sharp lines beat eight soft ones.
+${noiseInstruction}Every line must carry a specific fact or a precise judgment. Cut hedging and filler: no "may view", "could influence", "indicates", "reflects", or vague "developments". Do not pad to hit a count. Five sharp lines beat eight soft ones.
 Return JSON exactly: {"xThread":string[],"linkedinPost":string,"caption":string}. xThread 5-8 items, each a complete thought (no numbering, no "1/"). The X thread must end with this exact line: Full analysis at helmterminal.dev/analyze`;
 
   let parsed: LLMContent = {};
