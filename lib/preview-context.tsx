@@ -9,7 +9,8 @@
 // initialize from real entitlements (useTier) and `dataState` from real
 // account-connection status; the toggle becomes dev-only / removed.
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import type { Tier } from '@/lib/tier-shared';
 
 // In production the gates must reflect the user's REAL entitlement, not the dev
@@ -49,19 +50,41 @@ export function PreviewProvider({ children }: { children: React.ReactNode }) {
   });
 
   // Production: real subscription tier is the source of truth.
+  //
+  // This provider mounts at the ROOT (login page included), so the first fetch can
+  // run before any session exists (401), and password login is a server POST +
+  // client-side router.push — no remount, no client-side Supabase auth event. The
+  // old one-shot fetch therefore left a paying user stuck on tier='free' for the
+  // whole session (Lindzon bug). Fix: re-run the fetch on every route change until
+  // a real tier answer lands, retrying transient 401s on authed surfaces.
+  const pathname = usePathname();
+  const resolvedRef = useRef(false);
   useEffect(() => {
-    if (!IS_PROD) return;
+    if (!IS_PROD || resolvedRef.current) return;
     let cancelled = false;
-    fetch('/api/user/tier')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (!cancelled && (d?.tier === 'free' || d?.tier === 'pro' || d?.tier === 'max')) {
-          setTierState(d.tier);
-        }
-      })
-      .catch(() => {});
+    // /dashboard sits behind auth middleware, so a 401 there is a cookie race
+    // worth retrying; on public pages a 401 just means logged out.
+    const attempts = pathname?.startsWith('/dashboard') ? 3 : 1;
+
+    (async () => {
+      for (let attempt = 1; attempt <= attempts && !cancelled; attempt++) {
+        try {
+          const r = await fetch('/api/user/tier');
+          if (r.ok) {
+            const d = await r.json();
+            if (!cancelled && (d?.tier === 'free' || d?.tier === 'pro' || d?.tier === 'max')) {
+              resolvedRef.current = true;
+              setTierState(d.tier);
+            }
+            return;
+          }
+          if (r.status !== 401) return;
+        } catch { /* retry */ }
+        await new Promise((res) => setTimeout(res, 400 * attempt));
+      }
+    })();
     return () => { cancelled = true; };
-  }, []);
+  }, [pathname]);
 
   const setTier = (t: Tier) => { setTierState(t); if (!IS_PROD) localStorage.setItem(LS_TIER, t); };
   const setDataState = (d: DataState) => { setDataStateState(d); if (!IS_PROD) localStorage.setItem(LS_DS, d); };
