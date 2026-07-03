@@ -562,13 +562,22 @@ export default function ThesesPage() {
             <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-3" style={MONO}>Your conviction today</div>
             <h1 className="text-[clamp(27px,3vw,34px)] font-bold leading-[1.14] tracking-[-0.03em] text-[#FAFAFA] m-0">{verdictHeadline}</h1>
             <p className="mt-3.5 text-[16.5px] leading-[1.5] text-[#9A9A9A] max-w-[540px] m-0" style={{ ...SERIF, fontStyle: 'italic' }}>{verdictSub}</p>
-            <Link
-              href="/dashboard/theses/builder"
-              className="inline-block mt-4 font-mono text-[14px] font-semibold uppercase tracking-[0.12em] px-4 py-2.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors"
-              style={MONO}
-            >
-              Build a thesis
-            </Link>
+            <div className="mt-4 flex items-center gap-2.5 flex-wrap">
+              <Link
+                href="/dashboard/theses/builder"
+                className="inline-block font-mono text-[14px] font-semibold uppercase tracking-[0.12em] px-4 py-2.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors"
+                style={MONO}
+              >
+                Build a thesis
+              </Link>
+              <Link
+                href="/dashboard/theses/adopt"
+                className="inline-block font-mono text-[14px] font-semibold uppercase tracking-[0.12em] px-4 py-2.5 rounded bg-[var(--color-gold)] text-black hover:bg-[var(--color-gold-hi)] transition-colors"
+                style={MONO}
+              >
+                Follow a Helm thesis
+              </Link>
+            </div>
           </div>
 
           {totalPillarCount > 0 && (
