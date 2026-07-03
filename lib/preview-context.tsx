@@ -35,19 +35,22 @@ export function PreviewProvider({ children }: { children: React.ReactNode }) {
   // preview tier — no default-then-correct flash that briefly unlocks gated
   // surfaces (e.g. Factor Lens) before the lock paints. Defaults to the full
   // premium experience on the server / when nothing is stored.
-  const [tier, setTierState] = useState<Tier>(() => {
-    // Prod: gate-first (free) until the real entitlement loads — never leak
-    // paid content to a free user on first paint. Dev: localStorage toggle.
-    if (IS_PROD) return 'free';
-    if (typeof window === 'undefined') return 'max';
-    const t = localStorage.getItem(LS_TIER);
-    return t === 'free' || t === 'pro' || t === 'max' ? t : 'max';
-  });
-  const [dataState, setDataStateState] = useState<DataState>(() => {
-    if (IS_PROD || typeof window === 'undefined') return 'connected';
-    const d = localStorage.getItem(LS_DS);
-    return d === 'connected' || d === 'demo' || d === 'empty' ? d : 'connected';
-  });
+  // Prod: gate-first (free) until the real entitlement loads — never leak paid
+  // content to a free user on first paint. Dev: localStorage toggle, applied in
+  // an effect AFTER hydration — reading localStorage in the initializer made the
+  // server render (always 'max') disagree with the client and threw hydration
+  // errors on every dashboard page in dev.
+  const [tier, setTierState] = useState<Tier>(IS_PROD ? 'free' : 'max');
+  const [dataState, setDataStateState] = useState<DataState>('connected');
+  useEffect(() => {
+    if (IS_PROD) return;
+    try {
+      const t = localStorage.getItem(LS_TIER);
+      if (t === 'free' || t === 'pro' || t === 'max') setTierState(t);
+      const d = localStorage.getItem(LS_DS);
+      if (d === 'connected' || d === 'demo' || d === 'empty') setDataStateState(d);
+    } catch { /* ignore */ }
+  }, []);
 
   // Production: real subscription tier is the source of truth.
   //

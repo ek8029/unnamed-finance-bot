@@ -18,7 +18,8 @@ import { canGenerateAnon } from '@/lib/analyze-rate-limit';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /** Methodology version — bump when the analysis pipeline changes materially. */
-const METHODOLOGY_VERSION = 'v1.0';
+// Bare number — display sites prepend their own "v" (a 'v' here rendered "vv1.0").
+const METHODOLOGY_VERSION = '1.0';
 const DATA_SOURCES = ['finazon.io', 'sec-edgar', 'nasdaq-rss', 'yahoo-finance-rss'];
 
 /**
@@ -85,7 +86,7 @@ async function getCachedAnalysis(ticker: string): Promise<CachedAnalysisResult |
       analysis: data.analysis_json as StockAnalysis,
       computedAt: data.created_at,
       dataSources: (data.data_sources as string[]) || DATA_SOURCES,
-      methodologyVersion: (data.methodology_version as string) || METHODOLOGY_VERSION,
+      methodologyVersion: ((data.methodology_version as string) || METHODOLOGY_VERSION).replace(/^v/, ''),
     };
   } catch {
     return null;

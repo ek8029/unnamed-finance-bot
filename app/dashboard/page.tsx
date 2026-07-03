@@ -862,7 +862,7 @@ export default function DashboardOverview() {
         />
         <KpiTile
           label="Day change"
-          value={dayChange !== null ? `${dayChange >= 0 ? '+' : ''}${formatPercentage(dayChange)}` : '—'}
+          value={dayChange !== null ? formatPercentage(dayChange) : '—'}
           delta="today"
           tone={dayChange !== null ? (dayChange >= 0 ? 'positive' : 'negative') : 'muted'}
         />
@@ -886,7 +886,9 @@ export default function DashboardOverview() {
       </div>
 
       {/* ── Actions + Allocation + Movers ── */}
-      <div className="mb-3.5 grid grid-cols-1 gap-3.5 lg:grid-cols-[1.5fr_1fr_0.92fr]">
+      {/* minmax(0,…) so the donut/movers min-content can't steal width and crush
+          the actions column into a one-word-per-line strip at 1024-1440. */}
+      <div className="mb-3.5 grid grid-cols-1 gap-3.5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,0.92fr)]">
         {/* actions inbox */}
         <div className={`${CARD} px-5 py-[18px]`}>
           <div className="mb-1.5 flex items-center justify-between">
@@ -1048,7 +1050,9 @@ export default function DashboardOverview() {
           </button>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+          {/* min-width: on phones the table scrolls inside this container instead of
+              crushing names to one word per line and clipping the Day column. */}
+          <table className="w-full min-w-[560px] border-collapse">
             <thead>
               <tr>
                 {['Symbol', 'Name', 'Price', 'Day', 'Weight', 'Value'].map((h, i) => (

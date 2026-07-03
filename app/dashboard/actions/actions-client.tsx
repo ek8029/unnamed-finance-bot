@@ -393,7 +393,7 @@ function MaxCard({ action }: { action: ActionItem }) {
 
   return (
     <div
-      className="rounded-lg border border-[rgba(255,214,122,0.22)] bg-[rgba(255,214,122,0.03)] shadow-[var(--shadow-card)] px-5 py-[18px] flex gap-4 items-start"
+      className="rounded-lg border border-[rgba(255,214,122,0.22)] bg-[rgba(255,214,122,0.03)] shadow-[var(--shadow-card)] px-5 py-[18px] flex gap-4 items-start flex-wrap sm:flex-nowrap"
       style={{ borderLeft: '2px solid #FFD67A' }}
     >
       <span
@@ -403,7 +403,8 @@ function MaxCard({ action }: { action: ActionItem }) {
         {badge}
       </span>
 
-      <div className="flex-1 min-w-0">
+      {/* min-width forces a wrap on narrow screens instead of a one-word-per-line column */}
+      <div className="flex-1 min-w-[200px]">
         <div className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1">{action.title}</div>
         <p className="text-[14.5px] leading-[1.55] text-[var(--color-text-muted)]">{action.description}</p>
       </div>

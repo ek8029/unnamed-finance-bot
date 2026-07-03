@@ -534,24 +534,27 @@ export default function PortfolioPage() {
           {activeTab === 'Portfolio' && (() => {
             const topHolding = sortedByAllocation[0];
             return (
-              <div className="hidden lg:grid grid-cols-5 border border-[var(--color-border-base)] rounded-md bg-[var(--color-bg-surface)] overflow-hidden">
-                <div className="px-[18px] py-3.5 border-r border-[var(--color-border-subtle)]">
+              // auto-fit with a 150px floor: this pane's width depends on the intel
+              // panel + conviction rail, not the viewport, so fixed 5-col at any
+              // breakpoint can squeeze cells below a 6-figure P/L and collide values.
+              <div className="hidden lg:grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] border border-[var(--color-border-base)] rounded-md bg-[var(--color-bg-surface)] overflow-hidden">
+                <div className="px-[18px] py-3.5 border-r border-[var(--color-border-subtle)] min-w-0 whitespace-nowrap">
                   <div className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--color-text-muted)] mb-2">Positions</div>
                   <div className="text-[18px] font-bold tabular-nums text-[var(--color-text-primary)]">{holdings.length}</div>
                 </div>
-                <div className="px-[18px] py-3.5 border-r border-[var(--color-border-subtle)]">
+                <div className="px-[18px] py-3.5 border-r border-[var(--color-border-subtle)] min-w-0 whitespace-nowrap">
                   <div className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--color-text-muted)] mb-2">Day P/L</div>
                   <div className={`text-[18px] font-bold tabular-nums ${totalDayChange >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}>
                     {totalDayChange >= 0 ? '+' : '−'}{formatCurrency(Math.abs(totalDayChange))}
                   </div>
                 </div>
-                <div className="px-[18px] py-3.5 border-r border-[var(--color-border-subtle)]">
+                <div className="px-[18px] py-3.5 border-r border-[var(--color-border-subtle)] min-w-0 whitespace-nowrap">
                   <div className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--color-text-muted)] mb-2">Unrealized P/L</div>
                   <div className={`text-[18px] font-bold tabular-nums ${totalUnrealized >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}>
                     {totalUnrealized >= 0 ? '+' : '−'}{formatCurrency(Math.abs(totalUnrealized))}
                   </div>
                 </div>
-                <div className="px-[18px] py-3.5 border-r border-[var(--color-border-subtle)]">
+                <div className="px-[18px] py-3.5 border-r border-[var(--color-border-subtle)] min-w-0 whitespace-nowrap">
                   <div className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--color-text-muted)] mb-2">Unrealized %</div>
                   <div className={`text-[18px] font-bold tabular-nums ${unrealizedPct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}>
                     {unrealizedPct >= 0 ? '+' : '−'}{Math.abs(unrealizedPct).toFixed(2)}%
@@ -756,7 +759,7 @@ export default function PortfolioPage() {
                           {h.ticker}
                         </span>
                         <span className="text-[10px] sm:text-[12px] text-[var(--color-text-muted)] truncate">
-                          {h.shares} sh &middot; <PriceFlash value={h.current_price}>${h.current_price.toFixed(2)}</PriceFlash>
+                          {Number(h.shares.toFixed(2))} sh &middot; <PriceFlash value={h.current_price}>${h.current_price.toFixed(2)}</PriceFlash>
                         </span>
                       </div>
                       <div className="text-[12px] sm:text-[14px] text-[var(--color-text-muted)] mt-0.5 truncate">

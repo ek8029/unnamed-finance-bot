@@ -26,10 +26,12 @@ export function ThesesWhatsNewBanner() {
   };
 
   return (
-    <div className="relative flex items-center gap-3 px-4 sm:px-6 py-2.5 border-b border-[rgba(230,185,77,0.18)] bg-[rgba(230,185,77,0.06)]">
+    // flex-wrap + a real min-width on the text column: on narrow screens the CTA
+    // wraps to its own row instead of squeezing the copy to one word per line.
+    <div className="relative flex items-center gap-3 flex-wrap sm:flex-nowrap px-4 sm:px-6 py-2.5 border-b border-[rgba(230,185,77,0.18)] bg-[rgba(230,185,77,0.06)]">
       <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-[var(--color-gold)]" aria-hidden />
       <span className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] px-1.5 py-0.5 rounded bg-[var(--color-gold)] text-black" style={MONO}>New</span>
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-[220px]">
         <p className="text-[15px] font-semibold text-[#FAFAFA] leading-[1.3] m-0">Your conviction, watched.</p>
         <p className="text-[13.5px] text-[#9A9A9A] leading-[1.4] mt-0.5 m-0">
           Helm&apos;s new agentic layer monitors filings, news and price against the <span className="italic">why</span> behind every position, and flags what strengthens or breaks it. Sourced, dated, every market hour.

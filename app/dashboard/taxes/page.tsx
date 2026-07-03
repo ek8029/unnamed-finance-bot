@@ -1385,8 +1385,9 @@ function HarvestRow({
           {opp.ticker}
         </span>
 
-        {/* Name + conviction */}
-        <div className="flex items-center gap-2 min-w-0">
+        {/* Name + conviction. overflow-hidden keeps the shrink-0 chip clipping
+            inside this column instead of rendering over the Shares/Basis cells. */}
+        <div className="flex items-center gap-2 min-w-0 overflow-hidden">
           <span className="text-[15px] text-[var(--color-text-secondary)] truncate">
             {opp.securityName}
           </span>
