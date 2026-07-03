@@ -82,6 +82,15 @@ export async function GET(request: Request) {
       log.push(`[watchlist] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
     }
 
+    // Watch-my-tickers digests (no-account subscribers; send-only-if-news + Friday roundup)
+    try {
+      const { sendWatchDigests } = await import('@/lib/watch');
+      const watchResult = await sendWatchDigests();
+      log.push(`[watch] Sent ${watchResult.sent} digests (${watchResult.skipped} skipped, ${watchResult.errors} errors)`);
+    } catch (err) {
+      log.push(`[watch] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
+    }
+
     // ── Dedup — only gates Plaid sync + market data, never emails ──
 
     const { data: lastRun } = await serviceClient

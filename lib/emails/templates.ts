@@ -354,3 +354,74 @@ export function getThesisBreachTemplate(p: ThesisBreachParams): EmailTemplate {
     text: `I was monitoring ${p.ticker}, and new evidence broke one of your reasons for holding it.\n\nYour pillar: ${p.claim}\n\nWhat the record says: "${p.excerpt}"\nSource: ${p.sourceTitle}${p.sourceUrl ? ` (${p.sourceUrl})` : ''}\n\nReview the evidence: ${url}\n\nStatus is derived from sourced evidence, never invented. Not financial advice.`,
   };
 }
+
+/* ── Watch My Tickers: confirm + digest ── */
+
+export function getWatchConfirmTemplate(tickers: string[], confirmUrl: string): EmailTemplate {
+  const list = tickers.join(', ');
+  return {
+    subject: `Confirm your watch: ${list}`,
+    text: `Helm will read the filings, news, and price action on ${list} and email you when something changes.\n\nConfirm your email to start: ${confirmUrl}\n\nIf you didn't request this, ignore this email and nothing will be sent.`,
+    html: wrap(`
+      ${heading(`One click and Helm starts <span style="font-weight:700;color:#E6B94D;">watching.</span>`)}
+      ${subtext(`You asked Helm to watch <span style="color:#FAFAFA;font-family:monospace;">${escapeHtml(list)}</span>. We read the filings and the news so you don't have to, and email you only when something actually changes. Confirm to start:`)}
+      ${cta('Start watching my tickers', confirmUrl)}
+      <p style="margin:20px 0 0;font-size:11px;color:#525252;">If you didn't request this, ignore this email and nothing will be sent.</p>
+    `),
+  };
+}
+
+export interface WatchDigestTicker {
+  ticker: string;
+  verdict: string; // supports | contradicts | neutral | quiet
+  claim: string;
+  cite: string;
+  sourceUrl: string;
+  sourceType: string;
+}
+
+export function getWatchDigestTemplate(
+  items: WatchDigestTicker[],
+  opts: { unsubUrl: string; signupUrl: string; isRoundup: boolean },
+): EmailTemplate {
+  const active = items.filter((i) => i.verdict !== 'quiet');
+  const quiet = items.filter((i) => i.verdict === 'quiet');
+
+  const subject = opts.isRoundup
+    ? `Quiet week on ${items.map((i) => i.ticker).join(', ')} — that's the point`
+    : `Helm caught something on ${active.map((i) => i.ticker).join(', ')}`;
+
+  const itemHtml = active.map((i) => {
+    const color = i.verdict === 'contradicts' ? '#F87171' : i.verdict === 'supports' ? '#4ADE80' : '#8A8A8A';
+    const label = i.verdict === 'contradicts' ? 'a reason weakened' : i.verdict === 'supports' ? 'a reason held' : 'noted';
+    const src = i.sourceType === 'filing' ? 'From the filing' : 'From the reporting';
+    const safeUrl = /^https?:\/\//i.test(i.sourceUrl) ? i.sourceUrl : null;
+    return `
+      <div style="margin:0 0 22px;">
+        <p style="margin:0 0 4px;font-family:monospace;font-size:13px;"><span style="font-weight:700;color:#FAFAFA;">${escapeHtml(i.ticker)}</span> <span style="color:${color};text-transform:uppercase;font-size:10px;letter-spacing:0.12em;">&nbsp;${label}</span></p>
+        ${i.claim ? `<p style="margin:0 0 6px;font-size:13px;color:#8F8F8F;">Watched reason: ${escapeHtml(i.claim)}</p>` : ''}
+        <p style="margin:0 0 4px;font-size:14px;line-height:1.65;color:#D4D4D4;font-family:Georgia,'Times New Roman',serif;">&ldquo;${escapeHtml(i.cite)}&rdquo;</p>
+        <p style="margin:0;font-size:11px;color:#525252;">${src}${safeUrl ? ` &middot; <a href="${escapeHtml(safeUrl)}" style="color:#E6B94D;">source</a>` : ''}</p>
+      </div>`;
+  }).join('');
+
+  const quietHtml = quiet.length
+    ? `<p style="margin:0 0 18px;font-size:13px;color:#8F8F8F;">Quiet on <span style="font-family:monospace;color:#D4D4D4;">${escapeHtml(quiet.map((q) => q.ticker).join(', '))}</span> — nothing in the filings or reporting touched the reasons investors watch these names. No news is the product working.</p>`
+    : '';
+
+  const textItems = active.map((i) => `${i.ticker} — ${i.verdict === 'contradicts' ? 'a reason weakened' : 'a reason held'}\n"${i.cite}"\n${i.sourceUrl}`).join('\n\n');
+  const textQuiet = quiet.length ? `\n\nQuiet on ${quiet.map((q) => q.ticker).join(', ')} — nothing touched the watched reasons this week.` : '';
+
+  return {
+    subject,
+    text: `${opts.isRoundup ? 'Your weekly watch roundup.' : 'Helm caught something on your tickers.'}\n\n${textItems}${textQuiet}\n\nSee the full picture with a free account: ${opts.signupUrl}\n\nUnsubscribe: ${opts.unsubUrl}\n\nEvidence is quoted verbatim from public sources, never invented. Not financial advice.`,
+    html: wrap(`
+      ${heading(opts.isRoundup ? 'Quiet week. <span style="font-weight:700;color:#E6B94D;">That’s the point.</span>' : 'Helm caught <span style="font-weight:700;color:#E6B94D;">something.</span>')}
+      ${subtext(opts.isRoundup ? 'Helm read the filings and reporting on your tickers all week. Here is the honest verdict:' : 'New evidence landed on the tickers you watch:')}
+      ${itemHtml}
+      ${quietHtml}
+      ${cta('See the full picture — free account', opts.signupUrl)}
+      <p style="margin:24px 0 0;font-size:10px;color:#525252;">Evidence is quoted verbatim from public sources, never invented. Not financial advice. <a href="${escapeHtml(opts.unsubUrl)}" style="color:#525252;">Unsubscribe</a></p>
+    `),
+  };
+}
