@@ -72,7 +72,10 @@ function layoutWeb(
 ) {
   const reserveBottom = 54;
   const webH = H - reserveBottom;
-  const cy = webH * 0.6; // hub baseline; positions fan up, labels sit below
+  // Hubs pinned near the bottom: all the vertical room goes to the groups above
+  // them. (At 0.6*webH everything compressed into the middle band and read as
+  // clutter while half the canvas sat empty.)
+  const cy = webH - 56;
   const K = clusters.length;
 
   // ticker -> sorted cluster indices
@@ -88,7 +91,7 @@ function layoutWeb(
 
   // hubs on evenly spaced horizontal slots; the most-bridged hub takes the centre slot
   // (center-out assignment) so cross-hub lines stay short.
-  const padX = 84;
+  const padX = 60;
   const slotX = (k: number) => (K <= 1 ? W / 2 : padX + ((k + 0.5) / K) * (W - 2 * padX));
   const degree = clusters.map(() => 0);
   for (const [, s] of setOf) if (s.length > 1) for (const i of s) degree[i] += 1;
@@ -112,8 +115,8 @@ function layoutWeb(
   // hubs they connect. No force relaxation: the old fan+relax drifted nodes
   // away from their drivers and read as "random things everywhere".
   const raw = new Map<string, { x: number; y: number; r: number; status: PillarStatus | null; intact: number; total: number; bridge: boolean }>();
-  const rowH = 80;
-  const colW = 76;
+  const rowH = 96;
+  const colW = 98;
   let maxSoloRows = 1;
   for (const [key, tickers] of groups) {
     const s = key.split(',').map(Number);
@@ -126,11 +129,13 @@ function layoutWeb(
       const r = Math.floor(i / perRow);
       const inRow = Math.min(perRow, tickers.length - r * perRow);
       const x = h.x + ((i % perRow) - (inRow - 1) / 2) * colW;
-      const y = h.y - 66 - r * rowH;
+      const y = h.y - 92 - r * rowH;
       raw.set(t, { x, y, r: nodeR(t), ...meta(t), bridge: false });
     });
   }
-  const bandY = cy - 66 - maxSoloRows * rowH - 24;
+  // Bridge band floats well clear of the tallest solo grid — the separation IS
+  // the message: these names answer to more than one driver.
+  const bandY = cy - 92 - maxSoloRows * rowH - 58;
   let bi = 0;
   for (const [key, tickers] of groups) {
     const s = key.split(',').map(Number);
@@ -140,7 +145,7 @@ function layoutWeb(
     // that share a midpoint never stack on the same spot
     const ax = s.reduce((a, i) => a + rawHub[i].x, 0) / s.length + (bi % 2 === 0 ? 0 : 38);
     tickers.forEach((t, i) => {
-      raw.set(t, { x: ax + (i - (tickers.length - 1) / 2) * colW, y: bandY - (bi % 2) * 44, r: nodeR(t), ...meta(t), bridge: true });
+      raw.set(t, { x: ax + (i - (tickers.length - 1) / 2) * colW, y: bandY - (bi % 2) * 60, r: nodeR(t), ...meta(t), bridge: true });
     });
     bi++;
   }
@@ -299,7 +304,7 @@ export function Constellation({
   nodes: Record<string, NodeInfo>;
 }) {
   const W = 1000;
-  const H = 330;
+  const H = 470;
   const [failedLogos, setFailedLogos] = useState<Set<string>>(() => new Set());
   const layoutKey = JSON.stringify({ c: clusterTickers, t: Object.keys(nodes).sort() });
   const { hubs, nodePos, edges, standalones, dividerY, rowY } = useMemo(
@@ -313,7 +318,7 @@ export function Constellation({
 
   return (
     <div className="border-t border-white/[0.05] px-3 py-4">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 380 }} role="img" aria-label="Shared-driver web of your theses">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 540 }} role="img" aria-label="Shared-driver web of your theses">
         {/* spokes: faint straight lines, driver hub to each position it ties together */}
         {edges.map((e, i) => (
           <line key={`e-${i}`} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} stroke={EDGE} strokeWidth={e.bridge ? 1.5 : 1.25} opacity={e.bridge ? 0.9 : 0.6} />
