@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { WatchTickersCard } from '@/components/watch-tickers-card';
+import { ReasoningTrace } from '@/components/thesis/reasoning-trace';
 import { redirect } from 'next/navigation';
 import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
@@ -227,6 +229,11 @@ export default async function ThesisPage({ params }: { params: Promise<{ ticker:
           </p>
         </header>
 
+        {/* Minute-1 artifact: the agent's causal chain for the latest catch */}
+        <div className="mb-8">
+          <ReasoningTrace data={data} />
+        </div>
+
         <ol className="m-0 list-none space-y-8 p-0">
           {data.pillars.map((p) => {
             const s = STATUS_STYLE[p.status];
@@ -298,6 +305,11 @@ export default async function ThesisPage({ params }: { params: Promise<{ ticker:
           Research, not investment advice. Helm surfaces the evidence; you decide. This page tracks what to watch on the
           thesis, not whether to buy or sell.
         </p>
+
+        {/* Watch my tickers — no-account email capture (funnel middle step) */}
+        <div className="mt-10">
+          <WatchTickersCard ticker={data.ticker} />
+        </div>
 
         <div className="mt-10 rounded-xl border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] p-6 text-center">
           <p className="m-0 mb-4 text-[16px] text-[var(--color-text-primary)]">
