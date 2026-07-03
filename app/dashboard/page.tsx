@@ -12,6 +12,7 @@ import { useFinancialSummary, useIntelligence, useHoldings } from '@/hooks/use-f
 import { useFormat } from '@/hooks/use-format';
 import { useDemo } from '@/contexts/demo-context';
 import { usePreview } from '@/lib/preview-context';
+import { AgentFirstLook } from '@/components/agent-first-look';
 import { tierAtLeast } from '@/lib/tier-shared';
 import { useLivePrices } from '@/hooks/use-live-prices';
 import posthog from 'posthog-js';
@@ -886,6 +887,9 @@ export default function DashboardOverview() {
       </div>
 
       {/* ── Actions + Allocation + Movers ── */}
+      {/* The agent's first look — deterministic findings seconds after connect */}
+      <AgentFirstLook />
+
       {/* minmax(0,…) so the donut/movers min-content can't steal width and crush
           the actions column into a one-word-per-line strip at 1024-1440. */}
       <div className="mb-3.5 grid grid-cols-1 gap-3.5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,0.92fr)]">
