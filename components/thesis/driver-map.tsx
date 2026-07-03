@@ -106,78 +106,64 @@ function layoutWeb(
   const groups = new Map<string, string[]>();
   for (const [t, s] of setOf) { const k = s.join(','); if (!groups.has(k)) groups.set(k, []); groups.get(k)!.push(t); }
 
+  // Deterministic column layout — grouping IS the feature. Each driver's own
+  // positions sit in a tidy grid DIRECTLY ABOVE its hub; multi-driver positions
+  // (bridges) get their own band above all the columns, at the midpoint of the
+  // hubs they connect. No force relaxation: the old fan+relax drifted nodes
+  // away from their drivers and read as "random things everywhere".
   const raw = new Map<string, { x: number; y: number; r: number; status: PillarStatus | null; intact: number; total: number; bridge: boolean }>();
+  const rowH = 80;
+  const colW = 76;
+  let maxSoloRows = 1;
   for (const [key, tickers] of groups) {
     const s = key.split(',').map(Number);
     tickers.sort();
-    if (s.length === 1) {
-      // fan the hub's own positions upward
-      const h = rawHub[s[0]];
-      const m = tickers.length;
-      const span = Math.min(2.6, 0.8 + m * 0.6);
-      const MR = 116;
-      const lean = K > 1 ? Math.sign(h.x - W / 2) : 0;
-      const base = -Math.PI / 2 + lean * 0.5; // fan a hub's own positions outward, away from its bridges
-      tickers.forEach((t, i) => {
-        const frac = m === 1 ? 0 : i / (m - 1) - 0.5;
-        const ang = base + frac * span;
-        raw.set(t, { x: h.x + MR * Math.cos(ang), y: h.y + MR * Math.sin(ang), r: nodeR(t), ...meta(t), bridge: false });
-      });
-    } else {
-      // bridge: midway between the hubs it shares. Stack multiple bridges vertically
-      // (perpendicular to the horizontal hub axis) so a spoke to one bridge never passes
-      // through another, which would read as a false line between them.
-      const ax = s.reduce((a, i) => a + rawHub[i].x, 0) / s.length;
-      const ay = cy - 48;
-      const m = tickers.length;
-      tickers.forEach((t, i) => {
-        raw.set(t, { x: ax, y: ay + (i - (m - 1) / 2) * 70, r: nodeR(t), ...meta(t), bridge: true });
-      });
-    }
+    if (s.length !== 1) continue;
+    const h = rawHub[s[0]];
+    const perRow = tickers.length <= 3 ? tickers.length : Math.ceil(tickers.length / 2);
+    maxSoloRows = Math.max(maxSoloRows, Math.ceil(tickers.length / perRow));
+    tickers.forEach((t, i) => {
+      const r = Math.floor(i / perRow);
+      const inRow = Math.min(perRow, tickers.length - r * perRow);
+      const x = h.x + ((i % perRow) - (inRow - 1) / 2) * colW;
+      const y = h.y - 66 - r * rowH;
+      raw.set(t, { x, y, r: nodeR(t), ...meta(t), bridge: false });
+    });
+  }
+  const bandY = cy - 66 - maxSoloRows * rowH - 24;
+  let bi = 0;
+  for (const [key, tickers] of groups) {
+    const s = key.split(',').map(Number);
+    if (s.length === 1) continue;
+    tickers.sort();
+    // midpoint of its hubs; alternate a small offset so distinct bridge groups
+    // that share a midpoint never stack on the same spot
+    const ax = s.reduce((a, i) => a + rawHub[i].x, 0) / s.length + (bi % 2 === 0 ? 0 : 38);
+    tickers.forEach((t, i) => {
+      raw.set(t, { x: ax + (i - (tickers.length - 1) / 2) * colW, y: bandY - (bi % 2) * 44, r: nodeR(t), ...meta(t), bridge: true });
+    });
+    bi++;
   }
 
-  // relax: keep node circles from overlapping, AND push any node off a spoke it is not
-  // part of. A foreign hub->node spoke crossing an unrelated circle reads as a false line
-  // between two positions; this clears it.
-  const placed = [...raw.entries()];
-  const segClear = (px: number, py: number, ax: number, ay: number, bx: number, by: number) => {
-    const vx = bx - ax, vy = by - ay, wx = px - ax, wy = py - ay;
-    const len2 = vx * vx + vy * vy || 1;
-    const tt = Math.max(0, Math.min(1, (wx * vx + wy * vy) / len2));
-    const cxp = ax + tt * vx, cyp = ay + tt * vy;
-    return { d: Math.hypot(px - cxp, py - cyp), nx: px - cxp, ny: py - cyp };
-  };
-  for (let pass = 0; pass < 80; pass++) {
+  // Structured slots can still touch where adjacent hubs' grids meet. Resolve
+  // with HORIZONTAL nudges only — vertical pushes are what un-grouped nodes
+  // from their drivers in the old force layout.
+  const placed = [...raw.values()];
+  for (let pass = 0; pass < 40; pass++) {
     let moved = false;
     for (let i = 0; i < placed.length; i++) {
       for (let j = i + 1; j < placed.length; j++) {
-        const a = placed[i][1], b = placed[j][1];
-        let dx = b.x - a.x, dy = b.y - a.y;
-        let d = Math.hypot(dx, dy);
-        if (d === 0) { dx = 1; dy = 0; d = 1; }
-        const min = a.r + b.r + 12;
+        const a = placed[i], b = placed[j];
+        if (Math.abs(a.y - b.y) > (a.r + b.r) * 0.75) continue; // different rows never collide
+        const min = a.r + b.r + 10;
+        const dx = b.x - a.x;
+        const d = Math.abs(dx) || 1;
         if (d < min) {
-          const push = (min - d) / 2;
-          a.x -= (dx / d) * push; a.y -= (dy / d) * push;
-          b.x += (dx / d) * push; b.y += (dy / d) * push;
+          const push = (min - d) / 2 + 1;
+          const dir = dx >= 0 ? 1 : -1;
+          a.x -= dir * push;
+          b.x += dir * push;
           moved = true;
-        }
-      }
-    }
-    for (const [t, node] of placed) {
-      for (const [t2, n2] of placed) {
-        if (t2 === t) continue;
-        for (const hi of setOf.get(t2) ?? []) {
-          const h = rawHub[hi];
-          const clear = node.r + 9;
-          const { d, nx, ny } = segClear(node.x, node.y, h.x, h.y, n2.x, n2.y);
-          if (d < clear) {
-            let ux = nx, uy = ny, dd = d;
-            if (dd === 0) { ux = 0; uy = -1; dd = 1; }
-            const push = clear - dd;
-            node.x += (ux / dd) * push; node.y += (uy / dd) * push;
-            moved = true;
-          }
         }
       }
     }
