@@ -345,15 +345,18 @@ export async function generateThesisActions(
   if (lossTotal > 0) {
     const { data: ytdGains } = await db
       .from('capital_gains')
-      .select('gain_loss')
+      .select('gain_loss, gain_loss_type')
       .eq('user_id', userId)
       .eq('tax_year', new Date().getFullYear())
       .eq('transaction_type', 'sell');
-    const ytdNetRealized = ((ytdGains ?? []) as { gain_loss: number | null }[]).reduce(
-      (s, g) => s + Number(g.gain_loss || 0),
-      0,
-    );
-    const capped = estimateCappedTlhSavings({ totalLoss: lossTotal, ytdNetRealized, taxRate: TAX_RATE });
+    let stGainYtd = 0;
+    let ltGainYtd = 0;
+    for (const g of (ytdGains ?? []) as { gain_loss: number | null; gain_loss_type: string | null }[]) {
+      if (g.gain_loss_type === 'short_term') stGainYtd += Number(g.gain_loss || 0);
+      else ltGainYtd += Number(g.gain_loss || 0);
+    }
+    // Loss character unknown at this surface → unknownLoss (conservative LT treatment).
+    const capped = estimateCappedTlhSavings({ unknownLoss: lossTotal, stGainYtd, ltGainYtd, ordinaryRate: TAX_RATE });
     tlhCtx = { savingsPerLossDollar: capped.cappedSavings / lossTotal };
   }
 

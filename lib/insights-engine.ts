@@ -225,15 +225,18 @@ export async function generateInsights(
       // the brief and the tax center for the same user.
       const { data: ytdGains } = await supabase
         .from('capital_gains')
-        .select('gain_loss')
+        .select('gain_loss, gain_loss_type')
         .eq('user_id', userId)
         .eq('tax_year', new Date().getFullYear())
         .eq('transaction_type', 'sell');
-      const ytdNetRealized = (ytdGains ?? []).reduce(
-        (s: number, g: { gain_loss: number | null }) => s + Number(g.gain_loss || 0),
-        0,
-      );
-      const capped = estimateCappedTlhSavings({ totalLoss, ytdNetRealized, taxRate: TAX_RATE });
+      let stGainYtd = 0;
+      let ltGainYtd = 0;
+      for (const g of (ytdGains ?? []) as { gain_loss: number | null; gain_loss_type: string | null }[]) {
+        if (g.gain_loss_type === 'short_term') stGainYtd += Number(g.gain_loss || 0);
+        else ltGainYtd += Number(g.gain_loss || 0);
+      }
+      // Loss character unknown at this surface → unknownLoss (conservative LT treatment).
+      const capped = estimateCappedTlhSavings({ unknownLoss: totalLoss, stGainYtd, ltGainYtd, ordinaryRate: TAX_RATE });
       const estimatedSavings = Math.round(capped.cappedSavings);
       const carryforward = Math.round(capped.estimatedCarryforward);
       const tickers = losers.map((h: { ticker: string }) => h.ticker).join(', ');

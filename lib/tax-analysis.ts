@@ -557,35 +557,78 @@ export interface CappedTlhResult {
   remainingDeductibleLoss: number;
 }
 
+/**
+ * Schedule D netting (IRC §1222; §1211(b); §1212(b)), verified against the
+ * 2025 Schedule D instructions and Pub 550:
+ *   1. Same-character netting: ST losses vs ST gains, LT losses vs LT gains.
+ *   2. Cross-netting is mechanical; the savings RATE follows the GAIN being
+ *      absorbed, not the loss's character (§1222(11): the preferential rate
+ *      applies only to net LT gain in excess of net ST loss). An ST loss
+ *      absorbing LT gain saves at the LTCG rate; an LT loss absorbing ST gain
+ *      saves at the ordinary rate.
+ *   3. Remaining net loss deducts up to $3,000 against ordinary income at the
+ *      ordinary rate; the excess carries forward (ST consumed first by the
+ *      deduction per the Capital Loss Carryover Worksheet).
+ * Losses with unknown holding period are folded into the LT pool: LT losses
+ * reach the low-rate absorption first, so the estimate errs conservative.
+ * NIIT (3.8%) and state rates are deliberately excluded (see DISCLAIMER).
+ * Wash-sale-flagged lots must be excluded by the caller (§1091: deferred, not
+ * saved this year).
+ */
 export function estimateCappedTlhSavings(params: {
-  /** Total harvestable loss (sign-insensitive). */
-  totalLoss: number;
-  /** YTD net realized gains (+) / losses (−). */
-  ytdNetRealized: number;
-  taxRate?: number;
-  /** Per-lot ST/LT-aware uncapped total when the call site has it; defaults to abs(totalLoss) × taxRate. */
-  uncappedSavings?: number;
+  /** Harvestable losses by character (sign-insensitive). Unknown → conservative LT treatment. */
+  stLoss?: number;
+  ltLoss?: number;
+  unknownLoss?: number;
+  /** YTD net realized by character; negative = already-realized net losses. */
+  stGainYtd: number;
+  ltGainYtd: number;
+  ordinaryRate?: number;
+  ltcgRate?: number;
 }): CappedTlhResult {
-  const taxRate = params.taxRate ?? TAX_RATE;
-  const absLoss = Math.abs(params.totalLoss);
-  const uncapped = params.uncappedSavings ?? absLoss * taxRate;
-  const netAfterHarvest = params.ytdNetRealized - absLoss;
+  const ord = params.ordinaryRate ?? TAX_RATE;
+  const ltcg = params.ltcgRate ?? LTCG_RATE_DEFAULT;
 
-  if (netAfterHarvest >= 0) {
-    // Losses fully absorbed by gains — no cap hit.
-    return {
-      cappedSavings: uncapped,
-      deductibleThisYear: 0,
-      estimatedCarryforward: 0,
-      remainingDeductibleLoss: ANNUAL_LOSS_DEDUCTION_CAP,
-    };
-  }
+  // Loss pools: harvest candidates plus any already-realized YTD net losses.
+  let stLoss = Math.abs(params.stLoss ?? 0) + Math.max(0, -params.stGainYtd);
+  let ltLoss =
+    Math.abs(params.ltLoss ?? 0) + Math.abs(params.unknownLoss ?? 0) + Math.max(0, -params.ltGainYtd);
+  let stGain = Math.max(0, params.stGainYtd);
+  let ltGain = Math.max(0, params.ltGainYtd);
 
-  const netLoss = Math.abs(netAfterHarvest);
+  let savings = 0;
+
+  // 1. Same-character netting.
+  const stSame = Math.min(stLoss, stGain);
+  savings += stSame * ord;
+  stLoss -= stSame;
+  stGain -= stSame;
+
+  const ltSame = Math.min(ltLoss, ltGain);
+  savings += ltSame * ltcg;
+  ltLoss -= ltSame;
+  ltGain -= ltSame;
+
+  // 2. Cross-netting — valued at the absorbed gain's rate.
+  const stIntoLt = Math.min(stLoss, ltGain);
+  savings += stIntoLt * ltcg;
+  stLoss -= stIntoLt;
+  ltGain -= stIntoLt;
+
+  const ltIntoSt = Math.min(ltLoss, stGain);
+  savings += ltIntoSt * ord;
+  ltLoss -= ltIntoSt;
+  stGain -= ltIntoSt;
+
+  // 3. Net capital loss → $3,000 ordinary-income deduction; excess carries
+  //    forward (ST consumed first — affects carryforward character only,
+  //    which this dollar estimate does not need to split).
+  const netLoss = stLoss + ltLoss;
   const deductibleThisYear = Math.min(netLoss, ANNUAL_LOSS_DEDUCTION_CAP);
-  const gainsOffset = params.ytdNetRealized > 0 ? Math.min(absLoss, params.ytdNetRealized) : 0;
+  savings += deductibleThisYear * ord;
+
   return {
-    cappedSavings: gainsOffset * taxRate + deductibleThisYear * taxRate,
+    cappedSavings: savings,
     deductibleThisYear,
     estimatedCarryforward: Math.max(0, netLoss - ANNUAL_LOSS_DEDUCTION_CAP),
     remainingDeductibleLoss: Math.max(0, ANNUAL_LOSS_DEDUCTION_CAP - deductibleThisYear),
@@ -695,11 +738,27 @@ export async function generateTaxReport(
   //   4. If net negative → only $3,000 against ordinary income this year
   //   5. Remainder carries forward
 
+  // Character-split loss pools for the netted estimator. Wash-flagged lots are
+  // excluded: §1091 defers the loss into replacement basis, so counting it
+  // would overstate current-year savings.
+  let stLossPool = 0;
+  let ltLossPool = 0;
+  let unknownLossPool = 0;
+  for (const o of opportunities) {
+    if (o.washSaleRisk) continue;
+    const l = Math.abs(o.unrealizedLoss);
+    if (o.holdingPeriod === 'short_term') stLossPool += l;
+    else if (o.holdingPeriod === 'long_term') ltLossPool += l;
+    else unknownLossPool += l;
+  }
   const capped = estimateCappedTlhSavings({
-    totalLoss,
-    ytdNetRealized: ytdRealized.totalNet,
-    taxRate,
-    uncappedSavings,
+    stLoss: stLossPool,
+    ltLoss: ltLossPool,
+    unknownLoss: unknownLossPool,
+    stGainYtd: ytdRealized.shortTermNet,
+    ltGainYtd: ytdRealized.longTermNet,
+    ordinaryRate: taxRate,
+    ltcgRate,
   });
   const remainingDeductibleLoss = capped.remainingDeductibleLoss;
   const estimatedCarryforward = capped.estimatedCarryforward;
