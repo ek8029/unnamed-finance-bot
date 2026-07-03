@@ -858,7 +858,10 @@ export default function TransactionsPage() {
                       metaParts.push(`${Math.abs(tx.quantity).toLocaleString()} @ ${formatCurrencyDetailed(tx.price)}`);
                     }
 
-                    const isSync = tx.kind === 'OTHER';
+                    // "—" is only for rows that truly carry no amount (sync artifacts).
+                    // Ordinary bank spending (Amazon, Uber…) classifies as OTHER too and
+                    // was wrongly rendered amount-less while the day header showed a total.
+                    const isSync = tx.kind === 'OTHER' && !(Math.abs(tx.amount) > 0);
 
                     return (
                       <div

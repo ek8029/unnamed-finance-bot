@@ -13,6 +13,7 @@ import {
   STRONG_SAVINGS_RATE,
   ANNUAL_LOSS_DEDUCTION_CAP,
 } from '@/lib/financial-config';
+import { estimateCappedTlhSavings } from '@/lib/tax-analysis';
 import { formatCategoryName } from '@/lib/utils';
 import { detectRecurringCharges, persistRecurringCharges, toMonthlyAmount } from '@/lib/recurring-detection';
 
@@ -218,39 +219,42 @@ export async function generateInsights(
           s + Math.abs(Number(h.unrealised_gain_loss)),
         0,
       );
-      // Cap the deductible amount at $3,000 against ordinary income per IRC §1211(b).
-      // Losses first offset capital gains dollar-for-dollar (no limit), then up to
-      // $3,000 of ordinary income. Excess carries forward per IRC §1212(b).
-      const ANNUAL_CAP = ANNUAL_LOSS_DEDUCTION_CAP;
-      const deductibleThisYear = Math.min(totalLoss, ANNUAL_CAP);
-      const estimatedSavings = Math.round(deductibleThisYear * TAX_RATE);
-      // Full potential tax value of the harvestable losses (losses offset capital gains
-      // dollar-for-dollar, uncapped). The $3,000/yr cap below only limits the portion
-      // applied against ordinary income. Headline uses the full value so it tracks the
-      // user's actual loss size, not a flat $3k-cap figure that reads identically for everyone.
-      const fullTaxValue = Math.round(totalLoss * TAX_RATE);
-      const carryforward = Math.max(0, totalLoss - ANNUAL_CAP);
+      // ONE TLH formula everywhere: the capped math from tax-analysis (gains
+      // offset dollar-for-dollar + $3,000 ordinary-income cap, IRC §1211(b)).
+      // This headline previously used uncapped loss × rate and disagreed with
+      // the brief and the tax center for the same user.
+      const { data: ytdGains } = await supabase
+        .from('capital_gains')
+        .select('gain_loss')
+        .eq('user_id', userId)
+        .eq('tax_year', new Date().getFullYear())
+        .eq('transaction_type', 'sell');
+      const ytdNetRealized = (ytdGains ?? []).reduce(
+        (s: number, g: { gain_loss: number | null }) => s + Number(g.gain_loss || 0),
+        0,
+      );
+      const capped = estimateCappedTlhSavings({ totalLoss, ytdNetRealized, taxRate: TAX_RATE });
+      const estimatedSavings = Math.round(capped.cappedSavings);
+      const carryforward = Math.round(capped.estimatedCarryforward);
       const tickers = losers.map((h: { ticker: string }) => h.ticker).join(', ');
 
       let description = `You have $${totalLoss.toLocaleString()} in unrealized losses across ${tickers}.`;
-      if (totalLoss > ANNUAL_CAP) {
-        description += ` Up to $${ANNUAL_CAP.toLocaleString()} can offset ordinary income this year (IRC §1211(b)), ` +
-          `saving an estimated $${estimatedSavings.toLocaleString()} at your ${(TAX_RATE * 100).toFixed(0)}% rate. ` +
-          `The remaining $${carryforward.toLocaleString()} carries forward to future years.`;
-      } else {
-        description += ` This could save an estimated $${estimatedSavings.toLocaleString()} at your ${(TAX_RATE * 100).toFixed(0)}% combined rate.`;
+      description += ` Applied against this year's realized gains plus the $${ANNUAL_LOSS_DEDUCTION_CAP.toLocaleString()} income deduction (IRC §1211(b)), ` +
+        `that is an estimated $${estimatedSavings.toLocaleString()} in offsettable tax at a ${(TAX_RATE * 100).toFixed(0)}% rate.`;
+      if (carryforward > 0) {
+        description += ` About $${carryforward.toLocaleString()} would carry forward to future years.`;
       }
 
       candidates.push({
         insight_type: 'tax',
         priority: totalLoss > TAX_INSIGHT_HIGH_PRIORITY_LOSS ? 'high' : 'medium',
-        title: `$${fullTaxValue.toLocaleString()} in potential tax savings`,
+        title: `$${estimatedSavings.toLocaleString()} in potential tax savings`,
         description,
         recommended_action: `These positions (${tickers}) are at unrealized losses totaling $${totalLoss.toLocaleString()}. ` +
           `Tax-loss harvesting is a strategy investors use to offset gains. ` +
           `Wash-sale rule: repurchasing a substantially identical security within 30 days disallows the loss (IRC §1091). ` +
           `Not tax advice, consult a professional.`,
-        estimated_impact_amount: fullTaxValue,
+        estimated_impact_amount: estimatedSavings,
         confidence_score: 0.85,
         source_type: 'rule_based',
         related_entity_type: 'holding',

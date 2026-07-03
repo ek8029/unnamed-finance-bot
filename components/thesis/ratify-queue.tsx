@@ -105,7 +105,9 @@ export function RatifyQueue({ items, unthesed, confirmedCount, onChanged, onEdit
           </span>
           {total > 0 && (
             <span className="font-mono text-[12px] text-[#6A6A6A]" style={MONO}>
-              {confirmedCount} of {total} confirmed
+              {/* "18 of 18 confirmed" next to "Draft all (19)" read as a contradiction —
+                  they count different populations (theses vs un-thesed holdings). */}
+              {items.length > 0 ? `${confirmedCount} of ${total} confirmed` : `${confirmedCount} theses confirmed`}
             </span>
           )}
           {unthesed.length > 0 && (
@@ -116,7 +118,7 @@ export function RatifyQueue({ items, unthesed, confirmedCount, onChanged, onEdit
               className="ml-auto font-mono text-[10.5px] font-semibold uppercase tracking-[0.1em] px-3 py-1.5 rounded border border-[rgba(230,185,77,0.35)] text-[#E6B94D] hover:bg-[rgba(230,185,77,0.08)] transition-colors disabled:opacity-50"
               style={MONO}
             >
-              {drafting ? 'Drafting…' : `Draft all (${unthesed.length})`}
+              {drafting ? 'Drafting…' : `Draft ${unthesed.length} more from holdings`}
             </button>
           )}
         </div>

@@ -319,9 +319,14 @@ export async function generateWrapped(
   const rawSeries = snapshots
     .map((s) => ({ date: s.snapshot_date, v: Number(s.total_value ?? 0) }))
     .filter((p) => p.v > 0);
-  // Downsample to keep the sparkline payload small; always keep the last point.
+  // Downsample to keep the sparkline payload small; always keep the last point
+  // AND the best/worst-day dates — the slide places its markers by matching
+  // dates into this series, so a dropped date silently loses its marker.
+  const markerDates = new Set([...bestDays, ...worstDays].map((d) => d.date));
   const step = rawSeries.length > 80 ? Math.ceil(rawSeries.length / 80) : 1;
-  const daySeries = rawSeries.filter((_, i) => i % step === 0 || i === rawSeries.length - 1);
+  const daySeries = rawSeries.filter(
+    (p, i) => i % step === 0 || i === rawSeries.length - 1 || markerDates.has(p.date),
+  );
   let totalReturnPct = 0;
   let totalReturnDollars = 0;
 

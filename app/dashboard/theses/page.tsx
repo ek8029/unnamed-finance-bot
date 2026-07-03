@@ -450,16 +450,18 @@ export default function ThesesPage() {
           label="Unlock Theses with Pro"
           blurb="Write why you own each position. Helm scores SEC filings, news and price moves against your theses every market hour, and flags what strengthens or breaks them. Sourced, dated, auditable."
         >
+          {/* Preview shows only TRUE statements — no invented pillar counts or
+              conviction percentages, even behind the blur. */}
           <div className="space-y-6">
             <div>
-              <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-2.5" style={MONO}>Your conviction today</div>
-              <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.03em] text-[#FAFAFA] m-0">14 of 16 pillars intact. 2 weakening.</h1>
+              <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-2.5" style={MONO}>Theses</div>
+              <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.03em] text-[#FAFAFA] m-0">Every reason you own it, watched.</h1>
             </div>
             <div className="rounded-lg border border-white/[0.07] bg-[#0E0E0E] divide-y divide-white/[0.05]">
-              {(['NVDA', 'AMD', 'PLTR', 'META'] as const).map((t, i) => (
+              {(['NVDA', 'AMD', 'PLTR', 'META'] as const).map((t) => (
                 <div key={t} className="flex items-center justify-between px-5 py-3.5">
                   <span className="font-mono text-[17px] font-semibold text-[#FAFAFA]" style={MONO}>{t}</span>
-                  <span className="font-mono text-[15px] text-[#9A9A9A]" style={MONO}>{[92, 78, 41, 95][i]}% conviction</span>
+                  <span className="font-mono text-[15px] text-[#9A9A9A]" style={MONO}>filings · news · price, daily</span>
                 </div>
               ))}
             </div>

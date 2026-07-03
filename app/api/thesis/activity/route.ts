@@ -97,8 +97,18 @@ export async function GET() {
       });
     }
 
-    const lastScan = events[0]?.ts ?? null;
-    const res: ActivityResponse = { heartbeat: { count: tickerByThesis.size, lastScan }, events };
+    // One source read = one feed line. The same article scored against several
+    // pillars produced 2-3 identical rows ("AVGO … reinforces" xN) in the feed.
+    const seen = new Set<string>();
+    const deduped = events.filter((e) => {
+      const key = `${e.ticker}|${e.verdict}|${(e.source ?? e.sourceType).toLowerCase().trim()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    const lastScan = deduped[0]?.ts ?? null;
+    const res: ActivityResponse = { heartbeat: { count: tickerByThesis.size, lastScan }, events: deduped };
     return NextResponse.json(res);
   } catch (err) {
     console.error('[activity] unhandled error:', err);

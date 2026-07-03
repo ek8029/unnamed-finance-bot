@@ -50,6 +50,11 @@ export function derivePillarStatus(
   if (hasSeverePrimary) return 'broken';
 
   if (independent.length >= 2 && hasPrimary) return 'broken';
-  if (recentMaterialContradictions.length >= 1) return 'weakening';
+  // Weakening needs convergence: two independent material contradictions, or
+  // one from a PRIMARY source (a 10-Q line deserves a flag; a single news
+  // article does not). Before this rule, one news contradict among dozens of
+  // supports flagged "weakening" — 11 of 18 demo theses cried wolf at once.
+  // A lone news contradiction stays visible in the evidence trail, unalarmed.
+  if (independent.length >= 2 || hasPrimary) return 'weakening';
   return 'intact';
 }

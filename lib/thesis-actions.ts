@@ -16,7 +16,8 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PillarStatus } from '@/lib/thesis-status';
-import { TAX_RATE, ANNUAL_LOSS_DEDUCTION_CAP } from '@/lib/financial-config';
+import { TAX_RATE } from '@/lib/financial-config';
+import { estimateCappedTlhSavings } from '@/lib/tax-analysis';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -127,7 +128,14 @@ function groundingLine(cited: ActionEvidence[]): string {
 }
 
 /** Build one grounded, non-discretionary action from a situation + optional holding. */
-export function buildAction(pillar: PillarInput, holding?: HoldingSnapshot): ThesisAction {
+export interface TlhContext {
+  /** Capped savings per dollar of loss (capped pool / total losses), from the
+   *  ONE shared formula in tax-analysis. Keeps per-position numbers summing to
+   *  the same total the tax center and brief show. */
+  savingsPerLossDollar: number;
+}
+
+export function buildAction(pillar: PillarInput, holding?: HoldingSnapshot, tlh?: TlhContext): ThesisAction {
   const cited = topContradictions(pillar.evidence);
   const severe = cited.some((c) => c.severe);
   const kind = deriveActionKind(pillar.status, holding);
@@ -144,8 +152,10 @@ export function buildAction(pillar: PillarInput, holding?: HoldingSnapshot): The
   if (kind === 'harvest_loss') {
     insightType = 'tax';
     const loss = holding?.unrealisedGainLoss != null ? Math.abs(holding.unrealisedGainLoss) : 0;
-    const deductible = Math.min(loss, ANNUAL_LOSS_DEDUCTION_CAP);
-    estimatedImpact = Math.round(deductible * TAX_RATE);
+    // Position share of the ONE capped TLH pool (tax-analysis math). The old
+    // min(loss, $3,000) x rate ignored realized-gains offset and disagreed
+    // with the brief and the tax center for the same user.
+    estimatedImpact = Math.round(loss * (tlh?.savingsPerLossDollar ?? TAX_RATE));
     title = `Harvest the loss on ${t}?`;
     description =
       `Your ${t} thesis broke on the pillar "${pillar.claim}". ` +
@@ -196,9 +206,10 @@ export function buildAction(pillar: PillarInput, holding?: HoldingSnapshot): The
 export function buildThesisActions(
   pillars: PillarInput[],
   holdings: Map<string, HoldingSnapshot>,
+  tlh?: TlhContext,
 ): ThesisAction[] {
   const all = selectActionableSituations(pillars).map((p) =>
-    buildAction(p, holdings.get(p.ticker.toUpperCase())),
+    buildAction(p, holdings.get(p.ticker.toUpperCase()), tlh),
   );
   // One action per ticker: a thesis with two weakening pillars should surface a
   // single inbox item, not duplicates. Keep the highest-priority action; tie-break
@@ -323,7 +334,30 @@ export async function generateThesisActions(
     status: p.status_override ?? p.status,
     evidence: evidenceByPillar.get(p.id) ?? [],
   }));
-  const actions = buildThesisActions(pillarInputs, holdings);
+  // ONE TLH pool: capped savings (tax-analysis formula, gains offset + $3k cap)
+  // apportioned per dollar of loss, so per-position numbers sum to the same
+  // total the tax center and brief show.
+  const lossTotal = [...holdings.values()].reduce(
+    (s, h) => s + (h.unrealisedGainLoss != null && h.unrealisedGainLoss < 0 ? Math.abs(h.unrealisedGainLoss) : 0),
+    0,
+  );
+  let tlhCtx: TlhContext | undefined;
+  if (lossTotal > 0) {
+    const { data: ytdGains } = await db
+      .from('capital_gains')
+      .select('gain_loss')
+      .eq('user_id', userId)
+      .eq('tax_year', new Date().getFullYear())
+      .eq('transaction_type', 'sell');
+    const ytdNetRealized = ((ytdGains ?? []) as { gain_loss: number | null }[]).reduce(
+      (s, g) => s + Number(g.gain_loss || 0),
+      0,
+    );
+    const capped = estimateCappedTlhSavings({ totalLoss: lossTotal, ytdNetRealized, taxRate: TAX_RATE });
+    tlhCtx = { savingsPerLossDollar: capped.cappedSavings / lossTotal };
+  }
+
+  const actions = buildThesisActions(pillarInputs, holdings, tlhCtx);
   if (actions.length === 0) return { generated: 0, actions: [] };
 
   // 6. Dedup by THESIS: we now emit at most one action per thesis, so supersede every

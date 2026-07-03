@@ -35,9 +35,32 @@ describe('statusAsOf — honest timeline', () => {
     expect(statusAsOf([ev({ verdict: 'supports', source_published_at: daysBefore(10) })], NOW)).toBe('intact');
   });
 
-  it('fresh material contradiction (5d ago) => weakening', () => {
+  it('FIX B: a single fresh NEWS contradiction is noted, not alarmed => intact', () => {
+    // Weakening needs convergence (2 independent) or a primary source. One news
+    // article among the supports stays in the evidence trail without flagging.
     expect(
       statusAsOf([ev({ verdict: 'contradicts', source_published_at: daysBefore(5) })], NOW),
+    ).toBe('intact');
+  });
+
+  it('FIX B: a single fresh PRIMARY-source contradiction (filing) => weakening', () => {
+    expect(
+      statusAsOf(
+        [ev({ verdict: 'contradicts', source_type: 'filing', source_published_at: daysBefore(5) })],
+        NOW,
+      ),
+    ).toBe('weakening');
+  });
+
+  it('FIX B: two independent fresh news contradictions => weakening', () => {
+    expect(
+      statusAsOf(
+        [
+          ev({ verdict: 'contradicts', source_key: 'news-a', source_published_at: daysBefore(5) }),
+          ev({ verdict: 'contradicts', source_key: 'news-b', source_published_at: daysBefore(3) }),
+        ],
+        NOW,
+      ),
     ).toBe('weakening');
   });
 
@@ -103,8 +126,9 @@ describe('convictionTrend', () => {
 describe('recentTransitions', () => {
   it('detects an unverified -> weakening move and reports the driving publish date', () => {
     const movedDate = daysBefore(4);
+    // Primary source: under FIX B a lone news contradiction no longer weakens.
     const pillars = [
-      pillar([ev({ verdict: 'contradicts', source_published_at: movedDate })], { ticker: 'LULU' }),
+      pillar([ev({ verdict: 'contradicts', source_type: 'filing', source_published_at: movedDate })], { ticker: 'LULU' }),
     ];
     const t = recentTransitions(pillars, NOW, 14);
     expect(t).toHaveLength(1);

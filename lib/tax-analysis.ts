@@ -543,6 +543,55 @@ const DISCLAIMER = `This is not tax advice. Tax-loss harvesting estimates are ap
   `identical" by the IRS — consult a qualified tax professional before acting ` +
   `on any recommendation. Helm Terminal is not a registered tax advisor.`;
 
+// ── The single TLH savings formula (IRC §1211(b)) ──
+//
+// Pure and exported: every surface that quotes a TLH dollar (tax center, daily
+// brief, insights engine, thesis harvest actions) MUST route through this.
+// Before extraction, three surfaces shipped three different formulas and showed
+// the same user three different "savings" numbers.
+
+export interface CappedTlhResult {
+  cappedSavings: number;
+  deductibleThisYear: number;
+  estimatedCarryforward: number;
+  remainingDeductibleLoss: number;
+}
+
+export function estimateCappedTlhSavings(params: {
+  /** Total harvestable loss (sign-insensitive). */
+  totalLoss: number;
+  /** YTD net realized gains (+) / losses (−). */
+  ytdNetRealized: number;
+  taxRate?: number;
+  /** Per-lot ST/LT-aware uncapped total when the call site has it; defaults to abs(totalLoss) × taxRate. */
+  uncappedSavings?: number;
+}): CappedTlhResult {
+  const taxRate = params.taxRate ?? TAX_RATE;
+  const absLoss = Math.abs(params.totalLoss);
+  const uncapped = params.uncappedSavings ?? absLoss * taxRate;
+  const netAfterHarvest = params.ytdNetRealized - absLoss;
+
+  if (netAfterHarvest >= 0) {
+    // Losses fully absorbed by gains — no cap hit.
+    return {
+      cappedSavings: uncapped,
+      deductibleThisYear: 0,
+      estimatedCarryforward: 0,
+      remainingDeductibleLoss: ANNUAL_LOSS_DEDUCTION_CAP,
+    };
+  }
+
+  const netLoss = Math.abs(netAfterHarvest);
+  const deductibleThisYear = Math.min(netLoss, ANNUAL_LOSS_DEDUCTION_CAP);
+  const gainsOffset = params.ytdNetRealized > 0 ? Math.min(absLoss, params.ytdNetRealized) : 0;
+  return {
+    cappedSavings: gainsOffset * taxRate + deductibleThisYear * taxRate,
+    deductibleThisYear,
+    estimatedCarryforward: Math.max(0, netLoss - ANNUAL_LOSS_DEDUCTION_CAP),
+    remainingDeductibleLoss: Math.max(0, ANNUAL_LOSS_DEDUCTION_CAP - deductibleThisYear),
+  };
+}
+
 // ── Main export ──
 
 export async function generateTaxReport(
@@ -646,33 +695,15 @@ export async function generateTaxReport(
   //   4. If net negative → only $3,000 against ordinary income this year
   //   5. Remainder carries forward
 
-  const absHarvestableLoss = Math.abs(totalLoss);
-  const netAfterHarvest = ytdRealized.totalNet - absHarvestableLoss;
-
-  let remainingDeductibleLoss: number;
-  let estimatedCarryforward: number;
-  let cappedSavings: number;
-
-  if (netAfterHarvest >= 0) {
-    // Losses fully offset gains — no cap hit
-    remainingDeductibleLoss = ANNUAL_LOSS_DEDUCTION_CAP;
-    estimatedCarryforward = 0;
-    cappedSavings = uncappedSavings;
-  } else {
-    // Net loss scenario — cap applies to the ordinary-income portion
-    const netLoss = Math.abs(netAfterHarvest);
-    const deductibleThisYear = Math.min(netLoss, ANNUAL_LOSS_DEDUCTION_CAP);
-    estimatedCarryforward = Math.max(0, netLoss - ANNUAL_LOSS_DEDUCTION_CAP);
-    remainingDeductibleLoss = Math.max(0, ANNUAL_LOSS_DEDUCTION_CAP - deductibleThisYear);
-
-    // Savings = gains offset (dollar-for-dollar) + deductible portion × tax rate
-    const gainsOffset = ytdRealized.totalNet > 0
-      ? Math.min(absHarvestableLoss, ytdRealized.totalNet)
-      : 0;
-    const gainsOffsetSavings = gainsOffset * taxRate;
-    const ordinaryDeductionSavings = deductibleThisYear * taxRate;
-    cappedSavings = gainsOffsetSavings + ordinaryDeductionSavings;
-  }
+  const capped = estimateCappedTlhSavings({
+    totalLoss,
+    ytdNetRealized: ytdRealized.totalNet,
+    taxRate,
+    uncappedSavings,
+  });
+  const remainingDeductibleLoss = capped.remainingDeductibleLoss;
+  const estimatedCarryforward = capped.estimatedCarryforward;
+  const cappedSavings = capped.cappedSavings;
 
   return {
     totalHarvestableLoss: totalLoss,
