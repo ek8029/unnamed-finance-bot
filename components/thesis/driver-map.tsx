@@ -89,18 +89,38 @@ function layoutWeb(
   });
   for (const s of setOf.values()) s.sort((a, b) => a - b);
 
-  // hubs on evenly spaced horizontal slots; the most-bridged hub takes the centre slot
-  // (center-out assignment) so cross-hub lines stay short.
-  const padX = 60;
-  const slotX = (k: number) => (K <= 1 ? W / 2 : padX + ((k + 0.5) / K) * (W - 2 * padX));
-  const degree = clusters.map(() => 0);
-  for (const [, s] of setOf) if (s.length > 1) for (const i of s) degree[i] += 1;
-  const seq: number[] = [];
-  { const c = Math.floor((K - 1) / 2); seq.push(c); for (let d = 1; d < K; d++) { if (c - d >= 0) seq.push(c - d); if (c + d < K) seq.push(c + d); } }
-  const byDeg = clusters.map((_, i) => i).sort((a, b) => degree[b] - degree[a]);
-  const hubSlot = new Array<number>(K);
-  byDeg.forEach((hubIdx, rank) => { hubSlot[hubIdx] = seq[rank] ?? rank; });
-  const rawHub = clusters.map((_, i) => ({ x: slotX(hubSlot[i]), y: cy }));
+  // Two-layer "neural network" layout: tickers are the input layer (top row),
+  // drivers are the output layer (bottom row), straight edges between. Every
+  // line unambiguously runs ticker -> driver; a shared name is simply a ticker
+  // with 2-3 fanning edges. Barycenter sweeps order both layers so edges run
+  // as parallel as possible (minimal crossings).
+  const clustered = [...setOf.keys()].sort();
+  const nT = clustered.length;
+  const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+
+  let driverOrder = clusters.map((_, i) => i).sort((a, b) => clusterTickers[b].length - clusterTickers[a].length || a - b);
+  let tickerOrder = clustered;
+  for (let sweep = 0; sweep < 2; sweep++) {
+    const dSlot = new Map(driverOrder.map((d, s) => [d, s]));
+    tickerOrder = [...tickerOrder].sort(
+      (a, b) => avg((setOf.get(a) ?? []).map((d) => dSlot.get(d) ?? 0)) - avg((setOf.get(b) ?? []).map((d) => dSlot.get(d) ?? 0)) || (a < b ? -1 : 1),
+    );
+    const tSlot = new Map(tickerOrder.map((t, s) => [t, s]));
+    driverOrder = [...driverOrder].sort(
+      (a, b) =>
+        avg(clusterTickers[a].map((t) => tSlot.get(t.toUpperCase()) ?? 0)) -
+          avg(clusterTickers[b].map((t) => tSlot.get(t.toUpperCase()) ?? 0)) || a - b,
+    );
+  }
+  const tickerSlot = new Map(tickerOrder.map((t, s) => [t, s]));
+  const driverSlot = new Map(driverOrder.map((d, s) => [d, s]));
+
+  const padX = 74;
+  const ty = 58; // ticker layer baseline
+  const tX = (s: number) => (nT <= 1 ? W / 2 : padX + (s / (nT - 1)) * (W - 2 * padX));
+  const hubPad = padX + 70; // drivers slightly inset so edge fans stay inward
+  const hX = (s: number) => (K <= 1 ? W / 2 : hubPad + (s / (K - 1)) * (W - 2 * hubPad));
+  const rawHub = clusters.map((_, i) => ({ x: hX(driverSlot.get(i) ?? 0), y: cy }));
 
   const maxW = Math.max(1, ...Object.values(nodes).map((n) => n.weight ?? 0));
   const nodeR = (t: string) => { const w = nodes[t.toUpperCase()]?.weight ?? 0; return 22 + 9 * (w / maxW); };
@@ -109,71 +129,22 @@ function layoutWeb(
   const groups = new Map<string, string[]>();
   for (const [t, s] of setOf) { const k = s.join(','); if (!groups.has(k)) groups.set(k, []); groups.get(k)!.push(t); }
 
-  // Deterministic column layout — grouping IS the feature. Each driver's own
-  // positions sit in a tidy grid DIRECTLY ABOVE its hub; multi-driver positions
-  // (bridges) get their own band above all the columns, at the midpoint of the
-  // hubs they connect. No force relaxation: the old fan+relax drifted nodes
-  // away from their drivers and read as "random things everywhere".
+  // Input layer: every clustered ticker on one evenly spaced top row. Radii cap
+  // at the slot pitch so neighbours can never touch — no collision passes at all.
+  const slotPitch = nT > 1 ? (W - 2 * padX) / (nT - 1) : W;
+  const rCap = Math.max(15, Math.min(30, slotPitch / 2 - 7));
   const raw = new Map<string, { x: number; y: number; r: number; status: PillarStatus | null; intact: number; total: number; bridge: boolean }>();
-  const rowH = 96;
-  const colW = 98;
-  let maxSoloRows = 1;
-  for (const [key, tickers] of groups) {
-    const s = key.split(',').map(Number);
-    tickers.sort();
-    if (s.length !== 1) continue;
-    const h = rawHub[s[0]];
-    const perRow = tickers.length <= 3 ? tickers.length : Math.ceil(tickers.length / 2);
-    maxSoloRows = Math.max(maxSoloRows, Math.ceil(tickers.length / perRow));
-    tickers.forEach((t, i) => {
-      const r = Math.floor(i / perRow);
-      const inRow = Math.min(perRow, tickers.length - r * perRow);
-      const x = h.x + ((i % perRow) - (inRow - 1) / 2) * colW;
-      const y = h.y - 92 - r * rowH;
-      raw.set(t, { x, y, r: nodeR(t), ...meta(t), bridge: false });
+  for (const t of clustered) {
+    const s = setOf.get(t) ?? [];
+    raw.set(t, {
+      x: tX(tickerSlot.get(t) ?? 0),
+      y: ty,
+      r: Math.min(nodeR(t), rCap),
+      ...meta(t),
+      bridge: s.length > 1,
     });
   }
-  // Bridge band floats well clear of the tallest solo grid — the separation IS
-  // the message: these names answer to more than one driver.
-  const bandY = cy - 92 - maxSoloRows * rowH - 58;
-  let bi = 0;
-  for (const [key, tickers] of groups) {
-    const s = key.split(',').map(Number);
-    if (s.length === 1) continue;
-    tickers.sort();
-    // midpoint of its hubs; alternate a small offset so distinct bridge groups
-    // that share a midpoint never stack on the same spot
-    const ax = s.reduce((a, i) => a + rawHub[i].x, 0) / s.length + (bi % 2 === 0 ? 0 : 38);
-    tickers.forEach((t, i) => {
-      raw.set(t, { x: ax + (i - (tickers.length - 1) / 2) * colW, y: bandY - (bi % 2) * 60, r: nodeR(t), ...meta(t), bridge: true });
-    });
-    bi++;
-  }
-
-  // Structured slots can still touch where adjacent hubs' grids meet. Resolve
-  // with HORIZONTAL nudges only — vertical pushes are what un-grouped nodes
-  // from their drivers in the old force layout.
-  const placed = [...raw.values()];
-  for (let pass = 0; pass < 40; pass++) {
-    let moved = false;
-    for (let i = 0; i < placed.length; i++) {
-      for (let j = i + 1; j < placed.length; j++) {
-        const a = placed[i], b = placed[j];
-        if (Math.abs(a.y - b.y) > (a.r + b.r) * 0.75) continue; // different rows never collide
-        const min = a.r + b.r + 10;
-        const dx = b.x - a.x;
-        const d = Math.abs(dx) || 1;
-        if (d < min) {
-          const push = (min - d) / 2 + 1;
-          const dir = dx >= 0 ? 1 : -1;
-          a.x -= dir * push;
-          b.x += dir * push;
-          moved = true;
-        }
-      }
-    }
-    if (!moved) break;
-  }
+  void groups; // membership grouping is expressed by edge fan-out in this layout
 
   // fit hubs (+ label room) and nodes into the web band, filling the width
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -304,7 +275,7 @@ export function Constellation({
   nodes: Record<string, NodeInfo>;
 }) {
   const W = 1000;
-  const H = 470;
+  const H = 340;
   const [failedLogos, setFailedLogos] = useState<Set<string>>(() => new Set());
   const layoutKey = JSON.stringify({ c: clusterTickers, t: Object.keys(nodes).sort() });
   const { hubs, nodePos, edges, standalones, dividerY, rowY } = useMemo(
@@ -318,7 +289,7 @@ export function Constellation({
 
   return (
     <div className="border-t border-white/[0.05] px-3 py-4">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 540 }} role="img" aria-label="Shared-driver web of your theses">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 400 }} role="img" aria-label="Shared-driver web of your theses">
         {/* spokes: faint straight lines, driver hub to each position it ties together */}
         {edges.map((e, i) => (
           <line key={`e-${i}`} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} stroke={EDGE} strokeWidth={e.bridge ? 1.5 : 1.25} opacity={e.bridge ? 0.9 : 0.6} />
