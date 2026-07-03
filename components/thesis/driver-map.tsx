@@ -30,7 +30,7 @@ function nodeColor(status: PillarStatus | null): string {
   return STATUS_META[status].color;
 }
 
-function wrapDriver(s: string, maxLen = 20): string[] {
+function wrapDriver(s: string, maxLen = 18): string[] {
   const words = s.split(/\s+/);
   const lines: string[] = [];
   let cur = '';
@@ -39,10 +39,24 @@ function wrapDriver(s: string, maxLen = 20): string[] {
     if (t.length > maxLen && cur) { lines.push(cur); cur = w; } else { cur = t; }
   }
   if (cur) lines.push(cur);
-  return lines.length > 2 ? [lines[0], lines.slice(1).join(' ')] : lines;
+  // Hard cap at 3 bounded lines. The old version joined everything after line 1
+  // into ONE unbounded line, which overflowed the label pill and the viewBox.
+  if (lines.length > 3) {
+    const last = `${lines[2]} ${lines.slice(3).join(' ')}`;
+    lines.length = 2;
+    lines.push(last.length > maxLen ? `${last.slice(0, maxLen - 1).trimEnd()}…` : last);
+  }
+  return lines;
 }
 
-interface WebHub { x: number; y: number; lines: string[] }
+/** Label pill metrics — ONE formula for layout bounds, collision and render.
+ *  12px uppercase mono runs ~7.4px/char. */
+function pillMetrics(lines: string[]) {
+  const wMax = Math.max(...lines.map((l) => l.length));
+  return { pw: wMax * 7.4 + 18, ph: lines.length * 14 + 8 };
+}
+
+interface WebHub { x: number; y: number; labelX: number; lines: string[] }
 interface WebNode { x: number; y: number; r: number; status: PillarStatus | null; intact: number; total: number; bridge: boolean }
 interface WebEdge { x1: number; y1: number; x2: number; y2: number; bridge: boolean }
 
@@ -173,7 +187,13 @@ function layoutWeb(
   // fit hubs (+ label room) and nodes into the web band, filling the width
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   const acc = (x: number, y: number, r: number) => { minX = Math.min(minX, x - r); maxX = Math.max(maxX, x + r); minY = Math.min(minY, y - r); maxY = Math.max(maxY, y + r); };
-  rawHub.forEach((h) => { acc(h.x, h.y, 14); acc(h.x, h.y + 42, 8); });
+  rawHub.forEach((h, i) => {
+    acc(h.x, h.y, 14);
+    // reserve the REAL label pill footprint, not a token 8px circle — undersized
+    // bounds let edge hubs' labels scale outside the viewBox and clip.
+    const { pw, ph } = pillMetrics(wrapDriver(clusters[i].driver));
+    acc(h.x, h.y + 13 + ph / 2, Math.max(pw / 2, ph / 2));
+  });
   raw.forEach((n) => acc(n.x, n.y, n.r + 4));
   const sidePad = 36, padTop = 18, padBot = 16;
   const sc = Math.min((W - 2 * sidePad) / Math.max(1, maxX - minX), (webH - padTop - padBot) / Math.max(1, maxY - minY), 1.15);
@@ -181,9 +201,41 @@ function layoutWeb(
   const oy = padTop - minY * sc + ((webH - padTop - padBot) - (maxY - minY) * sc) / 2;
   const fit = (x: number, y: number) => ({ x: x * sc + ox, y: y * sc + oy });
 
-  const hubs: WebHub[] = rawHub.map((h, i) => { const f = fit(h.x, h.y); return { x: f.x, y: f.y, lines: wrapDriver(clusters[i].driver) }; });
+  const hubs: WebHub[] = rawHub.map((h, i) => {
+    const f = fit(h.x, h.y);
+    const lines = wrapDriver(clusters[i].driver);
+    const { pw } = pillMetrics(lines);
+    // clamp the pill fully inside the viewBox; the gold dot stays on the hub
+    const labelX = Math.min(Math.max(f.x, pw / 2 + 4), W - pw / 2 - 4);
+    return { x: f.x, y: f.y, labelX, lines };
+  });
   const nodePos = new Map<string, WebNode>();
   for (const [t, n] of raw) { const f = fit(n.x, n.y); nodePos.set(t, { x: f.x, y: f.y, r: n.r * sc, status: n.status, intact: n.intact, total: n.total, bridge: n.bridge }); }
+
+  // Keep position circles off the hub label pills. Labels are fixed-size text, so
+  // this must run AFTER fit — the raw-space relax pass can't see them, which is
+  // how a node ended up sitting on "Data center and semiconductor demand".
+  const labelBoxes = hubs.map((h) => {
+    const { pw, ph } = pillMetrics(h.lines);
+    return { x1: h.labelX - pw / 2, x2: h.labelX + pw / 2, y1: h.y + 13, y2: h.y + 13 + ph };
+  });
+  for (let pass = 0; pass < 16; pass++) {
+    let moved = false;
+    for (const n of nodePos.values()) {
+      for (const b of labelBoxes) {
+        const cx = Math.max(b.x1, Math.min(n.x, b.x2));
+        const cyq = Math.max(b.y1, Math.min(n.y, b.y2));
+        const d = Math.hypot(n.x - cx, n.y - cyq);
+        const clear = n.r + 7;
+        if (d < clear) {
+          n.y += (n.y < (b.y1 + b.y2) / 2 ? -1 : 1) * (clear - d + 1);
+          moved = true;
+        }
+      }
+      if (n.y < n.r + 4) n.y = n.r + 4; // never above the viewBox top
+    }
+    if (!moved) break;
+  }
 
   const edges: WebEdge[] = [];
   for (const [t, s] of setOf) {
@@ -230,7 +282,7 @@ export function DriverMap({ nodes }: { nodes: Record<string, NodeInfo> }) {
           {clusters.map((c, i) => (
             <span key={`${c.driver}-${i}`} className="inline-flex items-center gap-2 text-[15px] text-[#B4B4B4]">
               <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--color-gold)', boxShadow: '0 0 8px rgba(230,185,77,0.7)' }} />
-              <span className="truncate max-w-[260px]">{c.driver}</span>
+              <span className="truncate max-w-[340px]" title={c.driver}>{c.driver}</span>
               <span className="font-mono text-[15px] font-semibold text-[#FAFAFA]" style={MONO}>{clusterTickers[i].length}</span>
             </span>
           ))}
@@ -283,14 +335,15 @@ export function Constellation({
 
         {/* hubs: gold dot + glow, labelled pill below */}
         {hubs.map((h, i) => {
-          const wMax = Math.max(...h.lines.map((l) => l.length));
-          const pw = wMax * 6.6 + 16;
+          // pillMetrics is the same formula the layout used for bounds + node
+          // clearance, so what renders is exactly what was reserved.
+          const { pw, ph } = pillMetrics(h.lines);
           return (
             <g key={`h-${i}`}>
               <circle cx={h.x} cy={h.y} r={8} fill="#E6B94D" style={{ filter: 'drop-shadow(0 0 10px rgba(230,185,77,0.9))' }} />
-              <rect x={h.x - pw / 2} y={h.y + 13} width={pw} height={h.lines.length * 14 + 8} rx={3} fill="#0A0A0A" stroke="rgba(230,185,77,0.20)" strokeWidth={1} />
+              <rect x={h.labelX - pw / 2} y={h.y + 13} width={pw} height={ph} rx={3} fill="#0A0A0A" stroke="rgba(230,185,77,0.20)" strokeWidth={1} />
               {h.lines.map((ln, k) => (
-                <text key={k} x={h.x} y={h.y + 13 + 14 + k * 14} textAnchor="middle" fontSize={12} fill="#FFD67A" fontFamily="var(--font-mono)" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <text key={k} x={h.labelX} y={h.y + 13 + 14 + k * 14} textAnchor="middle" fontSize={12} fill="#FFD67A" fontFamily="var(--font-mono)" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   {ln}
                 </text>
               ))}
