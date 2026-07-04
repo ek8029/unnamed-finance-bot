@@ -234,6 +234,11 @@ export default async function ThesisPage({ params }: { params: Promise<{ ticker:
           <ReasoningTrace data={data} />
         </div>
 
+        {/* Watch my tickers — capture right after the trace, before the long pillar list */}
+        <div className="mb-8">
+          <WatchTickersCard ticker={data.ticker} />
+        </div>
+
         <ol className="m-0 list-none space-y-8 p-0">
           {data.pillars.map((p) => {
             const s = STATUS_STYLE[p.status];
@@ -305,11 +310,6 @@ export default async function ThesisPage({ params }: { params: Promise<{ ticker:
           Research, not investment advice. Helm surfaces the evidence; you decide. This page tracks what to watch on the
           thesis, not whether to buy or sell.
         </p>
-
-        {/* Watch my tickers — no-account email capture (funnel middle step) */}
-        <div className="mt-10">
-          <WatchTickersCard ticker={data.ticker} />
-        </div>
 
         <div className="mt-10 rounded-xl border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] p-6 text-center">
           <p className="m-0 mb-4 text-[16px] text-[var(--color-text-primary)]">

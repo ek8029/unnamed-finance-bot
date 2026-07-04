@@ -262,6 +262,11 @@ export default async function TickerAnalysisPage({ params }: Props) {
           methodologyVersion={methodologyVersion}
         />
 
+        {/* Watch my tickers — no-account email capture, right after the analysis */}
+        <section className="mt-8 max-w-3xl mx-auto">
+          <WatchTickersCard ticker={symbol} />
+        </section>
+
         {/* Answer-first Q&A section — extractable by LLMs */}
         <section className="mt-8 space-y-6 border-t border-[var(--color-border-subtle)] pt-6 max-w-3xl mx-auto">
           <h2 className="type-h2 text-[var(--color-text-primary)]">Common questions about {symbol}</h2>
@@ -271,11 +276,6 @@ export default async function TickerAnalysisPage({ params }: Props) {
               <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed">{f.answer}</p>
             </div>
           ))}
-        </section>
-
-        {/* Watch my tickers — no-account email capture (funnel middle step) */}
-        <section className="mt-8 max-w-3xl mx-auto">
-          <WatchTickersCard ticker={symbol} />
         </section>
 
         {/* Methodology + data provenance (YMYL / E-E-A-T) */}
