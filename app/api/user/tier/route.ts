@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getUserTier, checkAnalysisQuota } from '@/lib/tier';
+import { getSubscriptionInfo, checkAnalysisQuota } from '@/lib/tier';
 
 const NO_CACHE_HEADERS = {
   'Cache-Control': 'private, no-store, no-cache, must-revalidate',
@@ -14,10 +14,11 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const [tier, quota] = await Promise.all([
-    getUserTier(user.id),
+  const [sub, quota] = await Promise.all([
+    getSubscriptionInfo(user.id),
     checkAnalysisQuota(user.id),
   ]);
+  const tier = sub.tier;
 
   // Fetch billing fields from user_tiers table
   const { data } = await supabase
@@ -31,6 +32,7 @@ export async function GET() {
     // user_tiers is only consulted for billing display fields below.
     tier: tier || data?.tier || 'free',
     quota,
+    trialEndsAt: sub.trialEndsAt,
     billingPeriod: data?.billing_period || null,
     currentPeriodEnd: data?.current_period_end || null,
     cancelAtPeriodEnd: data?.cancel_at_period_end || false,

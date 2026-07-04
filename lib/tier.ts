@@ -26,15 +26,39 @@ export type ProFeature = (typeof PRO_FEATURES)[number];
 
 // ── Get user tier ──
 
-export async function getUserTier(userId: string): Promise<Tier> {
+export interface SubscriptionInfo {
+  tier: Tier;
+  /** Non-null while a Plaid-connect trial is active (tier already reflects it). */
+  trialEndsAt: string | null;
+}
+
+/**
+ * Effective subscription: applies the 14-day Pro trial lazily at read time.
+ * A trial row is tier='pro' + trial_ends_at set + no Stripe subscription;
+ * once trial_ends_at passes it reads as 'free' — no cron, no write needed.
+ * Paid checkouts clear trial_ends_at via the Stripe webhook upsert.
+ */
+export async function getSubscriptionInfo(userId: string): Promise<SubscriptionInfo> {
   const supabase = await createClient();
   const { data } = await supabase
     .from('user_subscriptions')
-    .select('tier')
+    .select('tier, trial_ends_at, stripe_subscription_id')
     .eq('user_id', userId)
     .maybeSingle();
 
-  return (data?.tier as Tier) ?? 'free';
+  const tier = (data?.tier as Tier) ?? 'free';
+  const trialEndsAt: string | null = data?.trial_ends_at ?? null;
+  if (trialEndsAt && !data?.stripe_subscription_id) {
+    if (new Date(trialEndsAt).getTime() > Date.now()) {
+      return { tier, trialEndsAt };
+    }
+    return { tier: 'free', trialEndsAt: null }; // trial expired, never paid
+  }
+  return { tier, trialEndsAt: null };
+}
+
+export async function getUserTier(userId: string): Promise<Tier> {
+  return (await getSubscriptionInfo(userId)).tier;
 }
 
 // ── Check analysis quota (for AI analysis endpoint) ──

@@ -140,6 +140,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         billing_period: billingPeriod,
         current_period_end: currentPeriodEnd,
         cancel_at_period_end: false,
+        trial_ends_at: null, // paid subscription supersedes any Plaid-connect trial
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'user_id' },
