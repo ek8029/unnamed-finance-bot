@@ -227,6 +227,12 @@ export default async function ThesisPage({ params }: { params: Promise<{ ticker:
             The reasons to own {data.ticker}, the single fact that would break each one, and the dated filing and news
             evidence Helm has tested against them. Status is computed from that evidence, not hand-set.
           </p>
+          <Link
+            href="/signup"
+            className="mt-3 inline-flex items-center gap-1.5 min-h-[44px] font-mono text-[13px] font-semibold text-[var(--color-gold)] hover:underline"
+          >
+            Watch your own {data.ticker} thesis &rarr;
+          </Link>
         </header>
 
         {/* Minute-1 artifact: the agent's causal chain for the latest catch */}
