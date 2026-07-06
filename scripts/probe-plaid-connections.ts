@@ -37,7 +37,7 @@ async function main() {
     const { count: acctCount } = await sb.from('linked_accounts').select('*', { count: 'exact', head: true }).eq('user_id', uid);
     const { data: holdings } = await sb.from('holdings').select(valueCol ?? 'id').eq('user_id', uid);
     const hCount = holdings?.length ?? 0;
-    const book = valueCol ? (holdings ?? []).reduce((s, h) => s + (Number((h as Record<string, unknown>)[valueCol]) || 0), 0) : 0;
+    const book = valueCol ? (holdings ?? []).reduce((s, h) => s + (Number((h as unknown as Record<string, unknown>)[valueCol]) || 0), 0) : 0;
 
     const { data: subRow } = await sb.from('user_subscriptions').select('tier').eq('user_id', uid).maybeSingle();
 
