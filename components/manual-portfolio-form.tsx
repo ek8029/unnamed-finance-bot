@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { Plus, Trash2, Loader2, Check } from 'lucide-react';
+import { useDemo } from '@/contexts/demo-context';
 
 interface HoldingRow {
   id: string;
@@ -37,6 +38,7 @@ export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortf
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const { disableDemo } = useDemo();
 
 
   const updateRow = useCallback((id: string, field: keyof HoldingRow, value: string) => {
@@ -103,6 +105,9 @@ export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortf
       }
 
       if (data.added > 0) {
+        // Real positions exist now — kill the sample-data overlay so the user
+        // lands on THEIR book, not the demo's (real user lost to this).
+        disableDemo();
         setSuccess(true);
         setTimeout(() => {
           onComplete?.();

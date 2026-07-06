@@ -372,7 +372,10 @@ export async function GET() {
         portfolio_diversification: healthScore.portfolio_diversification,
       },
       accounts: transformedAccounts,
-      hasPlaidConnection: (plaidItemsResult.data?.length ?? 0) > 0,
+      // "Connected" = the user has REAL data: a Plaid item OR manually entered
+      // holdings. Plaid-only checks sent manual-entry users to the empty/demo
+      // screen with their own book invisible (lost a real user to this).
+      hasPlaidConnection: (plaidItemsResult.data?.length ?? 0) > 0 || holdings.length > 0,
       holdings,
       insights: transformedInsights,
       netWorthHistory: transformedNetWorthHistory,
