@@ -1,6 +1,7 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { generateDigest, generateGenericDigest } from '@/lib/generate-digest';
 import { resend, FROM_EMAIL } from '@/lib/emails/resend';
+import { unsubUrl } from '@/lib/emails/unsubscribe';
 
 interface DigestCronResult {
   generated: number;
@@ -30,11 +31,15 @@ export async function runDigestCron(options: { force?: boolean } = {}): Promise<
 
   const { data: prefs } = await serviceClient
     .from('user_preferences')
-    .select('user_id, brief_delivery_time');
+    .select('user_id, brief_delivery_time, notification_daily_brief');
 
   const prefMap = new Map<string, string>();
+  // Users who turned the daily brief EMAIL off. The in-app brief still generates
+  // (that's a page they visit, not a push) — we only skip the resend send below.
+  const emailBriefDisabled = new Set<string>();
   for (const p of prefs ?? []) {
     if (p.brief_delivery_time) prefMap.set(p.user_id, p.brief_delivery_time);
+    if (p.notification_daily_brief === false) emailBriefDisabled.add(p.user_id);
   }
 
   const todayStart = new Date();
@@ -110,7 +115,7 @@ export async function runDigestCron(options: { force?: boolean } = {}): Promise<
       log.push(`[digest] Generic digest → ${usersWithoutHoldings.length} users (${genericResult.tokens} tokens)`);
 
       if (resend) {
-        await sendDigestEmails(usersWithoutHoldings, genericResult.digest, log);
+        await sendDigestEmails(usersWithoutHoldings.filter(u => !emailBriefDisabled.has(u.id)), genericResult.digest, log);
       }
     } catch (err) {
       log.push(`[digest] Generic digest failed: ${err instanceof Error ? err.message : 'unknown'}`);
@@ -132,7 +137,7 @@ export async function runDigestCron(options: { force?: boolean } = {}): Promise<
             generated_at: new Date().toISOString(),
           }, { onConflict: 'user_id' });
 
-        if (resend) {
+        if (resend && !emailBriefDisabled.has(user.id)) {
           await sendDigestEmail(user, result.digest, log);
         }
 
@@ -151,21 +156,23 @@ export async function runDigestCron(options: { force?: boolean } = {}): Promise<
 }
 
 async function sendDigestEmail(
-  user: { email: string; firstName: string },
+  user: { id: string; email: string; firstName: string },
   digest: string,
   log: string[],
 ) {
   if (!resend) return;
   try {
     const briefUrl = 'https://helmterminal.dev/dashboard/brief';
+    const unsub = unsubUrl(user.id, 'brief');
     const digestPreview = digest.split('\n\n')[0].slice(0, 200);
 
     await resend.emails.send({
       from: FROM_EMAIL,
       to: user.email,
       subject: 'Your morning brief is ready — The Current',
-      html: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body bgcolor="#FFFFFF" style="margin:0;padding:0;background:#FFFFFF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#FFFFFF"><tr><td align="center" valign="top" style="padding:40px 16px 48px;"><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width:500px;"><tr><td><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#1E1E1E" style="background:#1E1E1E;border-radius:8px;"><tr><td height="2" bgcolor="#E6B94D" style="height:2px;line-height:2px;font-size:0;background:#E6B94D;border-radius:8px 8px 0 0;">&nbsp;</td></tr><tr><td bgcolor="#1E1E1E" style="padding:36px 40px 16px;"><p style="margin:0;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:#E6B94D;font-family:monospace;">The Current</p></td></tr><tr><td bgcolor="#1E1E1E" style="padding:0 40px 24px;"><h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#FAFAFA;line-height:1.3;">Good morning, ${user.firstName}.</h1><p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:#8F8F8F;font-family:Georgia,'Times New Roman',serif;">${digestPreview}...</p><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td align="center" bgcolor="#E6B94D" style="border-radius:6px;"><a href="${briefUrl}" target="_blank" style="display:inline-block;padding:14px 32px;font-size:14px;font-weight:700;color:#0A0A0A;text-decoration:none;letter-spacing:0.02em;">Read full brief →</a></td></tr></table></td></tr><tr><td bgcolor="#1E1E1E" style="padding:0 40px 24px;"><p style="margin:0;font-size:10px;color:#525252;">AI-generated summary. Not financial advice.</p></td></tr></table></td></tr><tr><td style="padding:16px 0 0;text-align:center;"><p style="margin:0;font-size:10px;color:#8A8A8A;">Helm Terminal · <a href="https://helmterminal.dev" style="color:#8A8A8A;">helmterminal.dev</a></p></td></tr></table></td></tr></table></body></html>`,
-      text: `Good morning, ${user.firstName}.\n\n${digestPreview}...\n\nRead your full brief: ${briefUrl}\n\n— Helm Terminal`,
+      headers: { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
+      html: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body bgcolor="#FFFFFF" style="margin:0;padding:0;background:#FFFFFF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#FFFFFF"><tr><td align="center" valign="top" style="padding:40px 16px 48px;"><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width:500px;"><tr><td><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#1E1E1E" style="background:#1E1E1E;border-radius:8px;"><tr><td height="2" bgcolor="#E6B94D" style="height:2px;line-height:2px;font-size:0;background:#E6B94D;border-radius:8px 8px 0 0;">&nbsp;</td></tr><tr><td bgcolor="#1E1E1E" style="padding:36px 40px 16px;"><p style="margin:0;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:#E6B94D;font-family:monospace;">The Current</p></td></tr><tr><td bgcolor="#1E1E1E" style="padding:0 40px 24px;"><h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#FAFAFA;line-height:1.3;">Good morning, ${user.firstName}.</h1><p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:#8F8F8F;font-family:Georgia,'Times New Roman',serif;">${digestPreview}...</p><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td align="center" bgcolor="#E6B94D" style="border-radius:6px;"><a href="${briefUrl}" target="_blank" style="display:inline-block;padding:14px 32px;font-size:14px;font-weight:700;color:#0A0A0A;text-decoration:none;letter-spacing:0.02em;">Read full brief →</a></td></tr></table></td></tr><tr><td bgcolor="#1E1E1E" style="padding:0 40px 24px;"><p style="margin:0;font-size:10px;color:#525252;">AI-generated summary. Not financial advice.</p></td></tr></table></td></tr><tr><td style="padding:16px 0 0;text-align:center;"><p style="margin:0;font-size:10px;color:#8A8A8A;">Helm Terminal · <a href="https://helmterminal.dev" style="color:#8A8A8A;">helmterminal.dev</a></p><p style="margin:6px 0 0;font-size:10px;color:#666666;">You receive this because you have a Helm account. <a href="${unsub}" style="color:#8A8A8A;text-decoration:underline;">Unsubscribe from the daily brief</a></p></td></tr></table></td></tr></table></body></html>`,
+      text: `Good morning, ${user.firstName}.\n\n${digestPreview}...\n\nRead your full brief: ${briefUrl}\n\n— Helm Terminal\n\nUnsubscribe from the daily brief: ${unsub}`,
     });
     log.push(`[digest] Emailed ${user.email.slice(0, 4)}...`);
   } catch (emailErr) {
@@ -174,7 +181,7 @@ async function sendDigestEmail(
 }
 
 async function sendDigestEmails(
-  users: { email: string; firstName: string }[],
+  users: { id: string; email: string; firstName: string }[],
   digest: string,
   log: string[],
 ) {

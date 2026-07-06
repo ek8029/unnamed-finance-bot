@@ -38,8 +38,18 @@ export async function GET(request: Request) {
     const { data: { users }, error: usersError } = await serviceClient.auth.admin.listUsers({ perPage: 1000 });
     if (usersError) throw usersError;
 
+    // Users who turned Market alerts off in Settings. This email already carries
+    // a settings-link unsubscribe; now that link actually stops the send.
+    const { data: prefRows } = await serviceClient
+      .from('user_preferences')
+      .select('user_id, notification_market_alerts');
+    const marketAlertsOff = new Set(
+      (prefRows ?? []).filter(p => p.notification_market_alerts === false).map(p => p.user_id),
+    );
+
     for (const user of users) {
       if (!user.email) continue;
+      if (marketAlertsOff.has(user.id)) { skipped++; continue; }
 
       // Get user's watchlist
       const { data: watchlistRows } = await serviceClient

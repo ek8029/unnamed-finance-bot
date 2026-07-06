@@ -1448,18 +1448,14 @@ export default function SettingsPage() {
   // ── Notifications ──
   const renderNotifications = () => {
     const items = [
-      { key: 'marketAlerts', label: 'Market alerts', description: 'Price movements and market events' },
-      { key: 'transactionAlerts', label: 'Transaction alerts', description: 'Unusual transactions and spending' },
-      { key: 'budgetAlerts', label: 'Spending alerts', description: 'Get notified about unusual spending patterns' },
-      { key: 'taxReminders', label: 'Tax reminders', description: 'Tax deadlines and opportunities' },
-      { key: 'weeklyDigest', label: 'Weekly digest', description: 'Weekly summary of your finances' },
-      { key: 'monthlyReport', label: 'Monthly report', description: 'Comprehensive monthly analysis' },
+      { key: 'dailyBrief', label: 'Daily brief', description: 'The Current — your morning brief, emailed daily' },
+      { key: 'marketAlerts', label: 'Watchlist alerts', description: 'Email when a watchlist ticker moves more than 3%' },
     ] as const
     return (
       <div className="space-y-3.5">
         <SettingsCard label="Notifications">
           <p className="text-[15px] text-[var(--color-text-muted)] -mt-2 mb-[18px]">
-            Choose what you want to be notified about. Email and push delivery coming soon.
+            Choose which emails Helm sends you. Changes take effect immediately.
           </p>
           {items.map((notification, i) => (
             <SettingsRow
