@@ -422,7 +422,10 @@ export default function DashboardOverview() {
     const baseline = financialSummary?.changes?.net_worth_baseline_date;
     if (!baseline) return 'vs. last month';
     const ageDays = (Date.now() - new Date(`${baseline}T12:00:00`).getTime()) / 86400000;
-    if (ageDays >= 25) return 'vs. last month';
+    // Only claim "vs. last month" when the baseline is actually ~a month old.
+    // Snapshots have gaps, so the fallback baseline can be months back — labeling
+    // a 90-day change "vs. last month" was wrong. Outside the window, name the date.
+    if (ageDays >= 25 && ageDays <= 45) return 'vs. last month';
     return `since ${new Date(`${baseline}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
   }, [financialSummary]);
 

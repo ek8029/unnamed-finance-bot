@@ -196,7 +196,10 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
       current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq('stripe_customer_id', customerId)
+    // Match by customer OR subscription id — a customer id can drift (e.g. re-created
+    // customer, or the row was seeded via a path that stored a different id), and
+    // matching only on customer silently dropped the cancel/renewal sync.
+    .or(`stripe_customer_id.eq.${customerId},stripe_subscription_id.eq.${sub.id}`)
     .select('user_id');
 
   if (error) {
@@ -241,7 +244,9 @@ async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
       cancel_at_period_end: false,
       updated_at: new Date().toISOString(),
     })
-    .eq('stripe_customer_id', customerId)
+    // Match by customer OR subscription id (see subscription.updated) so a
+    // drifted customer id can't leave a cancelled user stuck on a paid tier.
+    .or(`stripe_customer_id.eq.${customerId},stripe_subscription_id.eq.${sub.id}`)
     .select('user_id');
 
   if (error) {

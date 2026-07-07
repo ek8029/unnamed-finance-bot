@@ -3,6 +3,7 @@
  * Extracted from app/api/plaid/sync/route.ts so it can be called
  * from API routes, webhooks, and the dashboard overview endpoint.
  */
+import { createClient as createServiceRoleClient } from '@supabase/supabase-js';
 import { plaidClient, mapPlaidAccountType } from '@/lib/plaid';
 import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
 import { extractPlaidError } from '@/lib/plaid-errors';
@@ -535,7 +536,16 @@ async function syncInvestmentTransactions(
     });
 
   if (investmentTxUpserts.length > 0) {
-    const { error: invError } = await supabase
+    // investment_transactions is service-write-only (RLS). syncPlaidItem also runs
+    // on the user-initiated dashboard path with a user client, which RLS blocks —
+    // so this specific write always goes through a service client, and investment
+    // history now populates immediately instead of only on the nightly cron.
+    const svc = createServiceRoleClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    );
+    const { error: invError } = await svc
       .from('investment_transactions')
       .upsert(investmentTxUpserts, {
         onConflict: 'plaid_investment_transaction_id',
