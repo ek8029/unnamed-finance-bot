@@ -95,10 +95,16 @@ export async function POST(request: Request) {
 
     if (existingInstitution) {
       institutionId = existingInstitution.id;
-      // Keep institution name in sync with what Plaid returns —
-      // prevents stale/wrong names from seed data or prior connections
+      // Keep institution name in sync with what Plaid returns — prevents the
+      // seed table's fake plaid_institution_ids (e.g. ins_11 seeded "Vanguard"
+      // but Plaid returns ins_11 for Charles Schwab) from mislabeling a real
+      // connection. MUST use the service client: `institutions` is a shared
+      // table and RLS silently no-ops a user-client update (supabase-js does not
+      // throw), which is exactly how every Schwab user ended up showing Vanguard.
       if (institutionName && institutionName !== 'Unknown Institution') {
-        await supabase.from('institutions').update({ name: institutionName }).eq('id', institutionId);
+        const admin = await createServiceClient();
+        const { error: nameErr } = await admin.from('institutions').update({ name: institutionName }).eq('id', institutionId);
+        if (nameErr) console.error(`[plaid] institution name sync failed for ${institutionId} (${institutionName}):`, nameErr.message);
       }
     } else {
       const uniqueSlug = plaidInstitutionId ? `${slug}-${plaidInstitutionId}` : `${slug}-${Date.now()}`;
