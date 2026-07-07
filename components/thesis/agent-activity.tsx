@@ -127,11 +127,8 @@ export function AgentActivity({ locked = false }: { locked?: boolean }) {
             );
             return (
               <li key={e.id}>
-                {e.flagged || e.broke ? (
-                  <Link href={`/dashboard/theses/${e.thesisId}`} className="block no-underline">{body}</Link>
-                ) : (
-                  body
-                )}
+                {/* Every activity row jumps to its thesis — not just broken/flagged ones. */}
+                <Link href={`/dashboard/theses/${e.thesisId}`} className="block no-underline">{body}</Link>
               </li>
             );
           })}
