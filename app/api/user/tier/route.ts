@@ -20,9 +20,12 @@ export async function GET() {
   ]);
   const tier = sub.tier;
 
-  // Fetch billing fields from user_tiers table
+  // Fetch billing display fields. These live on user_subscriptions — the old
+  // `user_tiers` table never existed (migration 021 is NAMED user_tiers but
+  // creates user_subscriptions), so this silently returned null for everyone and
+  // no user ever saw a renewal date or a pending cancellation.
   const { data } = await supabase
-    .from('user_tiers')
+    .from('user_subscriptions')
     .select('tier, billing_period, current_period_end, cancel_at_period_end')
     .eq('user_id', user.id)
     .maybeSingle();

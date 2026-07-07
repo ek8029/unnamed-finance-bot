@@ -56,11 +56,15 @@ export async function POST(request: NextRequest) {
 
       const { data: sub } = await supabase
         .from('user_subscriptions')
-        .select('tier')
+        .select('tier, trial_ends_at, stripe_subscription_id')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      const isPaid = sub && sub.tier && sub.tier !== 'free';
+      // Effective tier: an EXPIRED Plaid-connect trial (no Stripe sub) reads as
+      // free — trial expiry is lazy and never persisted, so reading the raw
+      // column would keep an expired-trial user out of re-engagement drip forever.
+      const trialExpired = !!sub?.trial_ends_at && !sub.stripe_subscription_id && new Date(sub.trial_ends_at) < now;
+      const isPaid = !!sub && !!sub.tier && sub.tier !== 'free' && !trialExpired;
 
       // Paid users don't get drip emails
       if (isPaid) {
