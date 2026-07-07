@@ -17,6 +17,7 @@ import { createClient } from '@/lib/supabase/server';
 import { analyzeStock } from '@/lib/analyze-stock';
 import { getFullTickerData } from '@/lib/financial-data';
 import { resolveSector } from '@/lib/portfolio-analysis';
+import { termSet, claimSharesDriver } from '@/lib/driver-match';
 import type { SynthCluster } from '@/lib/thesis-synthesis';
 
 // Assumption surfaced to the user verbatim: a "typical" new position for the
@@ -148,17 +149,6 @@ async function computeSectorConcentration(
   };
 }
 
-/** Lowercased word set for loose driver-term matching against free-text claims. */
-function termSet(text: string): Set<string> {
-  return new Set(
-    text
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, ' ')
-      .split(/\s+/)
-      .filter((w) => w.length >= 4), // skip stopword-ish short tokens
-  );
-}
-
 /**
  * (b) Shared-driver overlap. Reads the user's CACHED cluster synthesis (thesis_clusters)
  * and checks whether any candidate draft pillar leans on a driver those clusters already
@@ -202,15 +192,12 @@ async function computeSharedDriver(
     ];
     if (otherTickers.length === 0) continue;
 
-    const driverTerms = termSet(cluster.driver);
-    if (driverTerms.size === 0) continue;
+    if (termSet(cluster.driver).size === 0) continue;
 
-    // A candidate pillar matches the driver if it shares 2+ meaningful driver terms.
+    // A candidate pillar matches only when it shares a DISTINCTIVE (non-filler)
+    // driver term — generic words like "revenue"/"growth" can't manufacture one.
     for (const cp of candidatePillars) {
-      const claimTerms = termSet(cp.claim);
-      let shared = 0;
-      for (const term of driverTerms) if (claimTerms.has(term)) shared++;
-      if (shared >= 2 && !seenDrivers.has(cluster.driver)) {
+      if (claimSharesDriver(cluster.driver, cp.claim) && !seenDrivers.has(cluster.driver)) {
         seenDrivers.add(cluster.driver);
         matches.push({
           driver: cluster.driver,

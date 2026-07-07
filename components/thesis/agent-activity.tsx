@@ -6,6 +6,8 @@
 //   <AgentActivity />  — full feed (Theses page, Max).
 //   <AgentHeartbeat /> — one-line teaser (Overview / Brief, everyone).
 // Grounded: every line names the real source it read. No generated narrative.
+// Rows expand in place to show the exact reason (pillar claim) the source was
+// tested against, the verdict, and a link into the full thesis.
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -15,12 +17,13 @@ const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 const GOLD = '#E6B94D';
 const GREEN = '#4ADE80';
 const RED = '#F87171';
+const MUTE = '#7A7A7A';
 
 function eventColor(e: ActivityEvent): string {
   if (e.broke || e.flagged) return RED;
   if (e.verdict === 'contradicts') return GOLD;
   if (e.verdict === 'supports') return GREEN;
-  return '#7A7A7A';
+  return MUTE;
 }
 
 // First-person-implied agent voice. Verb leads; ticker prominent; verdict as outcome.
@@ -39,6 +42,37 @@ function eventOutcome(e: ActivityEvent): { text: string; color: string } {
   if (e.flagged) return { text: 'flagged', color: GOLD };
   if (e.verdict === 'contradicts') return { text: 'watching', color: GOLD };
   return { text: 'holds', color: GREEN };
+}
+
+// Status of the pillar this source was tested against — shown as a chip in the expand.
+function statusChip(status: ActivityEvent['pillarStatus']): { text: string; color: string } {
+  if (status === 'broken') return { text: 'pillar broken', color: RED };
+  if (status === 'weakening') return { text: 'pillar weakening', color: GOLD };
+  if (status === 'intact') return { text: 'pillar intact', color: GREEN };
+  return { text: 'unverified', color: MUTE };
+}
+
+function verdictChip(e: ActivityEvent): { text: string; color: string } {
+  if (e.verdict === 'contradicts') return { text: e.materiality === 'material' ? 'contradicts · material' : 'contradicts', color: GOLD };
+  if (e.verdict === 'supports') return { text: e.materiality === 'material' ? 'supports · material' : 'supports', color: GREEN };
+  return { text: 'neutral', color: MUTE };
+}
+
+function sourceKindLabel(t: string): string {
+  const m: Record<string, string> = { filing: 'SEC filing', form4: 'insider Form 4', xbrl: 'XBRL financials', news: 'news', price_move: 'price move' };
+  return m[t] ?? t;
+}
+
+function Chip({ text, color }: { text: string; color: string }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.1em]"
+      style={{ ...MONO, color, background: `${color}12`, border: `1px solid ${color}30` }}
+    >
+      <span className="inline-block h-1 w-1 rounded-full" style={{ background: color }} />
+      {text}
+    </span>
+  );
 }
 
 function fmtWhen(iso: string | null): string {
@@ -79,6 +113,7 @@ function useActivity() {
  */
 export function AgentActivity({ locked = false }: { locked?: boolean }) {
   const data = useActivity();
+  const [openId, setOpenId] = useState<string | null>(null);
   if (!data) return null;
   const { heartbeat } = data;
   // Locked preview shows only the top 2 events behind a fade.
@@ -111,24 +146,72 @@ export function AgentActivity({ locked = false }: { locked?: boolean }) {
             const color = eventColor(e);
             const outcome = eventOutcome(e);
             const line = eventLine(e);
-            const body = (
-              <div className="flex items-start gap-3 px-5 py-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors">
-                <span className="mt-[6px] inline-block h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 6px ${color}66` }} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-mono text-[10.5px] tabular-nums text-[#6A6A6A] shrink-0" style={MONO}>{fmtWhen(e.ts)}</span>
-                    <span className="text-[13.5px] leading-[1.45] text-[#D4D4D4] min-w-0">{line}</span>
-                  </div>
-                </div>
-                <span className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ ...MONO, color: outcome.color }}>
-                  {outcome.text}{e.flagged || e.broke ? ' →' : ''}
-                </span>
-              </div>
-            );
+            const open = !locked && openId === e.id;
             return (
-              <li key={e.id}>
-                {/* Every activity row jumps to its thesis — not just broken/flagged ones. */}
-                <Link href={`/dashboard/theses/${e.thesisId}`} className="block no-underline">{body}</Link>
+              <li key={e.id} className="border-b border-white/[0.04] last:border-0">
+                {/* Row toggles an inline detail panel — no navigation until you choose to. */}
+                <button
+                  type="button"
+                  onClick={() => !locked && setOpenId(open ? null : e.id)}
+                  aria-expanded={open}
+                  className={`flex w-full items-start gap-3 px-5 py-3 text-left transition-colors ${locked ? 'cursor-default' : 'hover:bg-white/[0.015]'}`}
+                >
+                  <span className="mt-[6px] inline-block h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color, boxShadow: `0 0 6px ${color}66` }} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-mono text-[10.5px] tabular-nums text-[#6A6A6A] shrink-0" style={MONO}>{fmtWhen(e.ts)}</span>
+                      <span className="text-[13.5px] leading-[1.45] text-[#D4D4D4] min-w-0">{line}</span>
+                    </div>
+                  </div>
+                  <span className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ ...MONO, color: outcome.color }}>
+                    {outcome.text}
+                  </span>
+                  {!locked && (
+                    <svg
+                      width="12" height="12" viewBox="0 0 12 12"
+                      className="mt-[5px] shrink-0 text-[#5A5A5A]"
+                      style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}
+                    >
+                      <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
+
+                {open && (
+                  <div className="px-5 pb-4">
+                    <div className="ml-[18px] space-y-3 rounded-md border border-white/[0.07] bg-black/25 px-4 py-3.5">
+                      <div className="space-y-1.5">
+                        <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6A6A6A]" style={MONO}>
+                          Tested against your reason
+                        </div>
+                        <p className="m-0 text-[13.5px] leading-[1.55] text-[#C8C8C8]">&ldquo;{e.claim}&rdquo;</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Chip {...statusChip(e.pillarStatus)} />
+                        <Chip {...verdictChip(e)} />
+                      </div>
+                      {e.source && (
+                        <div className="font-mono text-[11px] leading-[1.5] text-[#6A6A6A]" style={MONO}>
+                          {sourceKindLabel(e.sourceType)}:{' '}
+                          {e.url ? (
+                            <a href={e.url} target="_blank" rel="noopener noreferrer" className="text-[#9A9A9A] underline decoration-white/20 underline-offset-2 hover:text-[var(--color-gold)]" onClick={(ev) => ev.stopPropagation()}>
+                              {e.source} ↗
+                            </a>
+                          ) : (
+                            <span className="text-[#9A9A9A]">{e.source}</span>
+                          )}
+                        </div>
+                      )}
+                      <Link
+                        href={`/dashboard/theses/${e.thesisId}`}
+                        className="inline-flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-gold)] no-underline hover:opacity-80"
+                        style={MONO}
+                      >
+                        Open {e.ticker} thesis <span className="text-[12px]">&rarr;</span>
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </li>
             );
           })}
