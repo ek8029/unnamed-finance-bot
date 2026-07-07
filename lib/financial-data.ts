@@ -24,6 +24,7 @@ import {
   type StatementLineItem,
 } from '@/lib/edgar';
 import { CACHE_TTL as GLOBAL_CACHE_TTL, FINAZON_TS_RPM } from '@/lib/financial-config';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 // Statement types moved to lib/edgar.ts — re-exported for existing importers.
 export type { ReportedFinancials, StatementLineItem };
@@ -125,6 +126,37 @@ export interface NewsItem {
 /** Short TTL for quotes — 60s so the 60-second poll gets fresh data. */
 const QUOTE_CACHE_TTL = 60 * 1000;
 
+// Last-known price from our own DB (kept fresh by the daily market cron). This
+// is the resilience layer: Finazon's low-RPM endpoints 429 constantly under
+// public /analyze traffic, and a blank price is worse than a slightly stale one.
+// Price, day change, and everything derived from price (market cap, P/E) come back.
+async function getQuoteFromDb(upper: string): Promise<StockQuote | null> {
+  try {
+    const sb = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    );
+    const { data: mp } = await sb
+      .from('market_prices')
+      .select('open, high, low, close, price_date')
+      .eq('ticker', upper)
+      .order('price_date', { ascending: false })
+      .limit(2);
+    if (!mp || mp.length === 0 || !mp[0].close || Number(mp[0].close) <= 0) return null;
+    const c = Number(mp[0].close);
+    const pc = mp.length > 1 && Number(mp[1].close) > 0 ? Number(mp[1].close) : (Number(mp[0].open) || c);
+    const change = c - pc;
+    return {
+      c, d: change, dp: pc > 0 ? (change / pc) * 100 : 0,
+      h: Number(mp[0].high) || c, l: Number(mp[0].low) || c, o: Number(mp[0].open) || pc,
+      pc, t: Math.floor(new Date(mp[0].price_date).getTime() / 1000), date: String(mp[0].price_date),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function getQuote(symbol: string): Promise<StockQuote | null> {
   const upper = symbol.toUpperCase();
   const cacheKey = `quote:${upper}`;
@@ -140,9 +172,17 @@ export async function getQuote(symbol: string): Promise<StockQuote | null> {
     ({ price: c, prevClose: pc, high: h, low: l, open: o, date } = intraday);
   } else {
     const bars = await getDailyBars(upper, 2);
-    if (bars.length === 0) return null;
+    if (bars.length === 0) {
+      const db = await getQuoteFromDb(upper);
+      if (db) setCache(cacheKey, db, QUOTE_CACHE_TTL);
+      return db;
+    }
     const latest = bars[0];
-    if (!latest.close || latest.close <= 0) return null;
+    if (!latest.close || latest.close <= 0) {
+      const db = await getQuoteFromDb(upper);
+      if (db) setCache(cacheKey, db, QUOTE_CACHE_TTL);
+      return db;
+    }
     c = latest.close;
     pc = bars.length > 1 && bars[1].close > 0 ? bars[1].close : latest.open;
     h = latest.high;
