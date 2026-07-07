@@ -178,12 +178,36 @@ const RETIREMENT_SUBTYPES = new Set([
   '401a', '401k', '403b', '457b', 'pension',
   'ira', 'roth', 'roth 401k', 'traditional_ira', 'roth_ira', 'sep_ira', 'simple_ira',
   'keogh', 'profit_sharing_plan', 'thrift_savings_plan',
-  'education_savings_account', '529',
+  'education_savings_account', '529', 'hsa',
 ]);
 
-function isRetirementAccount(accountSubtype: string | null): boolean {
-  if (!accountSubtype) return false;
-  return RETIREMENT_SUBTYPES.has(accountSubtype.toLowerCase());
+// Account NAME patterns for tax-advantaged accounts. Plaid frequently leaves
+// account_subtype NULL, so the name is the only signal — a brokerage literally
+// named "…401(k)" or "Roth IRA" whose subtype is null was being treated as
+// taxable and told to harvest a loss that is not deductible. Deliberately does
+// NOT match ambiguous names like "Designated Beneficiary" (could be a taxable
+// TOD account) — err toward taxable rather than hide a legitimate harvest.
+const RETIREMENT_NAME_RE = /(401\s?\(?k\)?|403\s?\(?b\)?|\b457\b|\bira\b|roth|sep.?ira|simple.?ira|keogh|\btsp\b|thrift.?savings|\bpension\b|\bhsa\b|\b529\b|coverdell|profit.?sharing)/i;
+
+export function isRetirementAccount(accountSubtype: string | null, accountName?: string | null): boolean {
+  if (accountSubtype && RETIREMENT_SUBTYPES.has(accountSubtype.toLowerCase())) return true;
+  if (accountName && RETIREMENT_NAME_RE.test(accountName)) return true;
+  return false;
+}
+
+/** A loss is harvestable only if it is (1) in a taxable account, (2) a real
+ *  priced position, and (3) actually at an unrealized loss. Unpriced positions
+ *  (no market data → total_value 0) carry a phantom loss of -costBasis and must
+ *  never count. Shared by the Tax Center, Actions Inbox, and insights engine so
+ *  all three agree on what is harvestable. */
+export function isHarvestableLoss(
+  h: { unrealised_gain_loss: number | null; total_value: number | null },
+  account: { account_subtype?: string | null; account_name?: string | null } | null,
+): boolean {
+  if (isRetirementAccount(account?.account_subtype ?? null, account?.account_name ?? null)) return false;
+  if (h.unrealised_gain_loss == null || Number(h.unrealised_gain_loss) >= 0) return false;
+  if (h.total_value == null || Number(h.total_value) <= 0) return false;
+  return true;
 }
 
 interface RawHolding {
@@ -675,14 +699,14 @@ export async function generateTaxReport(
 
   // Build all positions with losses, tagged with account info
   const allPositions: HarvestablePosition[] = holdings
-    .filter((h) => h.total_cost_basis != null && h.unrealised_gain_loss != null)
+    .filter((h) => h.total_cost_basis != null && h.unrealised_gain_loss != null && Number(h.total_value) > 0)
     .map((h) => {
       const loss = h.unrealised_gain_loss!;
       const costBasis = h.total_cost_basis!;
       const sector = h.security?.sector || 'Unknown';
       const washSale = washSaleMap.get(h.ticker);
       const holdingPeriod = classifyHoldingPeriod(h.acquired_at);
-      const retirement = isRetirementAccount(h.account?.account_subtype ?? null);
+      const retirement = isRetirementAccount(h.account?.account_subtype ?? null, h.account?.account_name ?? null);
       // Retirement accounts have zero tax savings — losses aren't deductible
       const { savings, effectiveRate } = retirement
         ? { savings: 0, effectiveRate: 0 }

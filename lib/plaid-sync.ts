@@ -807,7 +807,10 @@ export async function computeSnapshots(
 
     // Atomic upsert — avoids race condition between dashboard auto-sync and
     // daily cron running concurrently (DELETE+INSERT was not atomic).
-    await supabase
+    // onConflict:'user_id' needs the UNIQUE(user_id) added in migration 052;
+    // before that it errored silently (unchecked), so the health score never
+    // persisted. Check the error now so a future failure is visible, not silent.
+    const { error: healthErr } = await supabase
       .from('financial_health_scores')
       .upsert({
         user_id: userId,
@@ -822,6 +825,7 @@ export async function computeSnapshots(
         diversification_score: divScore,
         calculated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
+    if (healthErr) console.error(`[plaid-sync] financial_health_scores upsert failed for ${userId}:`, healthErr.message);
 
     // Backfill historical snapshots for new users (runs once when ≤1 snapshot exists)
     await backfillHistoricalSnapshots(supabase, userId, {

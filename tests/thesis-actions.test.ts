@@ -38,8 +38,10 @@ function pillar(overrides: Partial<PillarInput>): PillarInput {
   };
 }
 
-const holdingLoss: HoldingSnapshot = { ticker: 'PRIM', totalValue: 8000, unrealisedGainLoss: -2500 };
-const holdingGain: HoldingSnapshot = { ticker: 'PRIM', totalValue: 12000, unrealisedGainLoss: 3000 };
+const holdingLoss: HoldingSnapshot = { ticker: 'PRIM', totalValue: 8000, unrealisedGainLoss: -2500, harvestableLoss: 2500 };
+const holdingGain: HoldingSnapshot = { ticker: 'PRIM', totalValue: 12000, unrealisedGainLoss: 3000, harvestableLoss: 0 };
+// Underwater but entirely in a retirement account → nothing is harvestable.
+const holdingRetirementLoss: HoldingSnapshot = { ticker: 'PRIM', totalValue: 8000, unrealisedGainLoss: -2500, harvestableLoss: 0 };
 
 describe('buildThesisActions one-per-ticker', () => {
   const noHoldings = new Map<string, HoldingSnapshot>();
@@ -60,7 +62,7 @@ describe('buildThesisActions one-per-ticker', () => {
         pillar({ ticker: 'XYZ', pillarId: 'p1', status: 'weakening' }),
         pillar({ ticker: 'XYZ', pillarId: 'p2', status: 'broken', evidence: [ev({ severe: true })] }),
       ],
-      new Map<string, HoldingSnapshot>([['XYZ', { ticker: 'XYZ', totalValue: 8000, unrealisedGainLoss: -2500 }]]),
+      new Map<string, HoldingSnapshot>([['XYZ', { ticker: 'XYZ', totalValue: 8000, unrealisedGainLoss: -2500, harvestableLoss: 2500 }]]),
     );
     expect(out).toHaveLength(1);
     expect(out[0].priority).toBe('critical');
@@ -128,6 +130,9 @@ describe('deriveActionKind', () => {
   });
   it('broken with no holding => trim', () => {
     expect(deriveActionKind('broken', undefined)).toBe('trim');
+  });
+  it('broken at a loss but only in a retirement account => trim (nothing harvestable)', () => {
+    expect(deriveActionKind('broken', holdingRetirementLoss)).toBe('trim');
   });
 });
 

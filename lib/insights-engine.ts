@@ -13,7 +13,7 @@ import {
   STRONG_SAVINGS_RATE,
   ANNUAL_LOSS_DEDUCTION_CAP,
 } from '@/lib/financial-config';
-import { estimateCappedTlhSavings } from '@/lib/tax-analysis';
+import { estimateCappedTlhSavings, isHarvestableLoss } from '@/lib/tax-analysis';
 import { formatCategoryName } from '@/lib/utils';
 import { detectRecurringCharges, persistRecurringCharges, toMonthlyAmount } from '@/lib/recurring-detection';
 
@@ -80,7 +80,7 @@ export async function generateInsights(
         supabase
           .from('holdings')
           .select(
-            'id, ticker, total_value, total_cost_basis, unrealised_gain_loss, shares, current_price',
+            'id, ticker, total_value, total_cost_basis, unrealised_gain_loss, shares, current_price, account:linked_accounts(account_name, account_subtype)',
           )
           .eq('user_id', userId),
         supabase
@@ -209,9 +209,12 @@ export async function generateInsights(
     }
 
     // Rule 3: Tax-loss harvesting (with $3,000 annual cap per IRC §1211(b))
+    // Only TAXABLE, priced positions at a loss — a loss in an IRA/401(k)/HSA is
+    // not deductible, and an unpriced position carries a phantom -costBasis loss.
+    // isHarvestableLoss is the shared classifier the Tax Center uses.
     const losers = holdings.filter(
-      (h: { unrealised_gain_loss: number | null }) =>
-        h.unrealised_gain_loss != null && Number(h.unrealised_gain_loss) < 0,
+      (h: { unrealised_gain_loss: number | null; total_value: number | null; account?: { account_name?: string | null; account_subtype?: string | null } | null }) =>
+        isHarvestableLoss(h, h.account ?? null),
     );
     if (losers.length > 0) {
       const totalLoss = losers.reduce(

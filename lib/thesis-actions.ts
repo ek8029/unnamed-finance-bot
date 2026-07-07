@@ -17,7 +17,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PillarStatus } from '@/lib/thesis-status';
 import { TAX_RATE } from '@/lib/financial-config';
-import { estimateCappedTlhSavings } from '@/lib/tax-analysis';
+import { estimateCappedTlhSavings, isHarvestableLoss } from '@/lib/tax-analysis';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -51,6 +51,10 @@ export interface HoldingSnapshot {
   ticker: string;
   totalValue: number;
   unrealisedGainLoss: number | null;
+  /** Sum of unrealized loss on this ticker in TAXABLE, priced accounts only —
+   *  the portion actually eligible for tax-loss harvesting (excludes IRA/401(k)/
+   *  HSA and unpriced positions). Drives harvest-vs-trim and the tax impact. */
+  harvestableLoss: number;
 }
 
 export interface ThesisAction {
@@ -104,7 +108,9 @@ export function selectActionableSituations(pillars: PillarInput[]): PillarInput[
 /** Archetype: weakening => watch; broken at a loss => harvest_loss; else trim. */
 export function deriveActionKind(status: PillarStatus, holding?: HoldingSnapshot): ActionKind {
   if (status === 'weakening') return 'watch';
-  const atLoss = holding != null && holding.unrealisedGainLoss != null && holding.unrealisedGainLoss < 0;
+  // Only a TAXABLE, priced loss is harvestable. A position underwater purely in
+  // an IRA/401(k) has harvestableLoss 0 → trim, not harvest (nothing to deduct).
+  const atLoss = holding != null && holding.harvestableLoss > 0;
   return atLoss ? 'harvest_loss' : 'trim';
 }
 
@@ -151,7 +157,7 @@ export function buildAction(pillar: PillarInput, holding?: HoldingSnapshot, tlh?
 
   if (kind === 'harvest_loss') {
     insightType = 'tax';
-    const loss = holding?.unrealisedGainLoss != null ? Math.abs(holding.unrealisedGainLoss) : 0;
+    const loss = holding?.harvestableLoss ?? 0;
     // Position share of the ONE capped TLH pool (tax-analysis math). The old
     // min(loss, $3,000) x rate ignored realized-gains offset and disagreed
     // with the brief and the tax center for the same user.
@@ -309,18 +315,26 @@ export async function generateThesisActions(
     evidenceByPillar.set(pid, arr);
   }
 
-  // 4. Holdings (ticker -> snapshot), for trim-vs-harvest + tax impact
+  // 4. Holdings (ticker -> snapshot), for trim-vs-harvest + tax impact. A ticker
+  // can appear in several accounts (taxable + IRA), so AGGREGATE across rows
+  // rather than overwrite, and track the harvestable (taxable+priced) loss
+  // separately from the total unrealized P/L.
   const { data: holdingsRaw } = await db
     .from('holdings')
-    .select('ticker, total_value, unrealised_gain_loss')
+    .select('ticker, total_value, unrealised_gain_loss, account:linked_accounts(account_name, account_subtype)')
     .eq('user_id', userId);
   const holdings = new Map<string, HoldingSnapshot>();
   for (const h of (holdingsRaw ?? []) as Record<string, unknown>[]) {
     const ticker = String(h.ticker).toUpperCase();
+    const ugl = h.unrealised_gain_loss != null ? Number(h.unrealised_gain_loss) : null;
+    const account = (h.account ?? null) as { account_name?: string | null; account_subtype?: string | null } | null;
+    const harvestable = isHarvestableLoss({ unrealised_gain_loss: ugl, total_value: h.total_value == null ? null : Number(h.total_value) }, account);
+    const prev = holdings.get(ticker);
     holdings.set(ticker, {
       ticker,
-      totalValue: Number(h.total_value),
-      unrealisedGainLoss: h.unrealised_gain_loss != null ? Number(h.unrealised_gain_loss) : null,
+      totalValue: (prev?.totalValue ?? 0) + (Number(h.total_value) || 0),
+      unrealisedGainLoss: ugl == null && prev?.unrealisedGainLoss == null ? null : (prev?.unrealisedGainLoss ?? 0) + (ugl ?? 0),
+      harvestableLoss: (prev?.harvestableLoss ?? 0) + (harvestable ? Math.abs(ugl as number) : 0),
     });
   }
 
@@ -337,10 +351,7 @@ export async function generateThesisActions(
   // ONE TLH pool: capped savings (tax-analysis formula, gains offset + $3k cap)
   // apportioned per dollar of loss, so per-position numbers sum to the same
   // total the tax center and brief show.
-  const lossTotal = [...holdings.values()].reduce(
-    (s, h) => s + (h.unrealisedGainLoss != null && h.unrealisedGainLoss < 0 ? Math.abs(h.unrealisedGainLoss) : 0),
-    0,
-  );
+  const lossTotal = [...holdings.values()].reduce((s, h) => s + h.harvestableLoss, 0);
   let tlhCtx: TlhContext | undefined;
   if (lossTotal > 0) {
     const { data: ytdGains } = await db
