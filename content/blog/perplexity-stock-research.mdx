@@ -1,0 +1,113 @@
+---
+title: "Perplexity for Stock Research in 2026: Strengths, Limits, and How to Use It"
+description: "Perplexity is the closest any AI chatbot has come to a real finance product: cited real-time answers, an earnings hub, even brokerage connections. Here is what it does well for stock research in 2026, where it breaks, and the one job it still cannot do: watch your portfolio."
+date: "2026-07-08"
+updated: "2026-07-08"
+author: "Evan Kim"
+tags: ["perplexity", "ai investing", "stock research", "perplexity finance", "ai"]
+published: true
+faq:
+  - q: "Is Perplexity good for stock research?"
+    a: "Yes, for a specific kind of research. Perplexity's near real-time index and citation-first answers make it the strongest chatbot for questions like what is moving a stock today, and independent tests in 2026 found it materially more accurate than ChatGPT on stock-specific questions. It is weakest on thinly covered small caps, where its numbers should be treated as unverified starting points."
+  - q: "Is Perplexity Finance free?"
+    a: "Mostly, yes. The Finance hub, including quotes, charts, the Earnings Hub, and the natural-language screener, is largely free to access. Pro at $20 per month adds a frontier-model picker, file uploads, and higher limits, and the Portfolio feature plus heavier agentic use effectively assume a paid tier."
+  - q: "Can Perplexity track my portfolio?"
+    a: "Partially. Perplexity launched a Plaid-based Portfolio feature around March 2026 that aggregates brokerage holdings read-only and layers AI analysis on top, with price and news alerts. What it does not do is remember why you own each position or continuously re-check those reasons against new filings, which is the monitoring job a tool like Helm Terminal is built for."
+  - q: "How accurate is Perplexity for financial data?"
+    a: "Strong on well-covered US large caps, and unreliable outside them. One May 2026 head-to-head test found it misread a thinly covered company's 10-K revenue by a factor of 1,000, and Perplexity's own developer forum documents financial-data hallucinations in its models. Treat any precise-sounding number on a smaller name as something to verify against the primary filing."
+  - q: "What is the difference between Perplexity and Helm Terminal?"
+    a: "They do different jobs. Perplexity is ask-first research: you pose a question about the market and get a cited answer at that moment. Helm Terminal is always-on monitoring of your own holdings: it re-reads new filings against the reasons you hold each position, flags broken theses with dated verbatim citations, and runs risk, tax, and earnings scans overnight. The two compose well: research in one, watching in the other."
+---
+
+Of the big AI chatbots, Perplexity is the only one that behaves like it actually wants to be a finance product. I asked it why a name on my watchlist sold off hard one morning, and it came back with the analyst action, the news story, and the filing behind the move, each with a clickable source I could check. None of the others do that as cleanly.
+
+I have also read a May 2026 head-to-head test in which Perplexity misread a small company's 10-K revenue by a factor of 1,000, then wrote a confident narrative about a 99.8% revenue collapse on top of its own error.
+
+Both of those things are true about the same tool, and holding both at once is the skill. Here is what Perplexity genuinely does well for stock research in 2026, where it breaks, and the one job it still cannot do.
+
+## What Perplexity actually gets right
+
+Perplexity's core trick is a web index that updates in near real time, bolted to answers that cite their sources. For stock research, that combination matters more than raw model intelligence. "What is happening with this stock right now" is exactly the question most chatbots fumble, and it is the question Perplexity was built for.
+
+Independent numbers back this up, with the usual grain of salt. One 2026 comparison put Perplexity around 94% accuracy on stock-specific questions versus roughly 81% for ChatGPT, crediting the freshness of its index. A separate editorial test of about 100 queries found Perplexity's citations checked out about 89% of the time, against about 76% for ChatGPT.
+
+Its single best retail use case is explaining moves. Ask why a stock dropped 6% today and it assembles the downgrade, the filing, and the headline into one cited answer. It is also a fast first pass on a new large-cap name: business model, recent results, key risks, with sources. Deep Research mode extends that into multi-source, long-form cited reports when you want breadth before doing your own work.
+
+## Perplexity Finance deserves real credit
+
+Most chatbot finance features are a demo. Perplexity's are not, and I want to credit that honestly, because pretending otherwise would be lazy.
+
+The Finance hub is free to access: quotes, candlestick charts with moving averages, market heatmaps, options and crypto data, fund and ETF pages. The Earnings Hub is the standout: an earnings calendar plus transcripts and slides, and it can transcribe and summarize a call in near real time while the call is still in session, pulling out revenue and EPS as they are said. Very few consumer tools do that well.
+
+It goes further. Around March 2026, Perplexity partnered with Plaid to launch Portfolio in the US and Canada: connect a brokerage, get read-only aggregation of holdings and transactions with AI analysis on top. There are watchlists with AI briefings and price alerts, insider and politician trade data, a natural-language screener for US and Indian equities, and Tasks, which run a recurring research query on a schedule. Under the hood, its agent reportedly has more than 40 live finance tools drawing on sources like SEC EDGAR, FactSet, S&P Global, LSEG, and Coinbase.
+
+Pricing is friendly. The Finance hub is largely free, Pro is $20 a month, and a $200-a-month Max tier gets agent features first. Perplexity is clearly positioning Finance as a free research terminal rather than a chatbot add-on, and of all the general AI tools, it is the closest to a real finance product.
+
+## Prompts and workflows that actually work
+
+Five patterns that consistently produce useful output.
+
+**Explain the move.** "Why did [TICKER] fall 6% today? Cite the specific news, filings, or analyst actions behind the move." This plays directly to the fresh index, and the citations let you verify instead of trust.
+
+**Digest the earnings call.** "Summarize [TICKER]'s earnings call: key metrics versus expectations, guidance changes, and management tone." Run it against the Earnings Hub transcript, live or archived.
+
+**Screen in plain English.** "Find US mid-caps with more than 20% revenue growth, positive free cash flow, trading below 15x forward earnings." One sentence in, a candidate list out. Treat it as a starting list to verify, not a conclusion.
+
+**Map the catalysts.** "Identify the hard catalysts (earnings, FDA decisions, M&A) and soft catalysts behind [TICKER]'s largest price moves over the past 12 months, quantify each move, and assess whether the reaction was justified." A published prompt pattern that forces the tool to connect price history to actual events.
+
+**Automate the morning read.** "Every weekday at 8am, brief me on overnight news, analyst rating changes, and upcoming earnings for my watchlist." Tasks delivers this as a recurring email or push notification, which is the closest Perplexity gets to working without being asked.
+
+## Where Perplexity breaks down for investing
+
+**It misreads financial documents.** In one May 2026 four-way test of ChatGPT, Claude, Perplexity, and Gemini, Perplexity read a thinly covered company's 10-K revenue without applying the "in thousands" denominator, got the number wrong by a factor of 1,000, and then built a confident story about a 99.8% revenue collapse. The error was not the scary part. The narrative on top of it was.
+
+**It is only reliable on well-trodden names.** The same test's verdict: best used for quick lookups on major, well-covered stocks. On small caps and thin coverage, treat every figure as an unverified starting point.
+
+**It retrieves, it does not reason about you.** Perplexity summarizes consensus. It does not think about your position size, your cost basis, or the logic of your thesis, and in testing, structured prompting only marginally improved that.
+
+**Precise numbers can still be hallucinated.** Perplexity's own developer forum has threads documenting financial-data hallucinations in its models. A P/E of 31.4 sounds too specific to be wrong, which is exactly why nobody checks it.
+
+**It answers, it does not watch.** Quotes are fetched when you ask, not streamed, and free-tier users get throttled at peak. The Plaid Portfolio is read-only aggregation, and alerts are price and news triggers. Nothing in the product remembers why you own something, and nothing re-tests that reason against new evidence between your sessions.
+
+## The one job Perplexity cannot do: watch your positions
+
+Here is my bias stated plainly. I am 21, I built Helm Terminal, and I built it because every AI research tool, including the best one, goes quiet the moment you stop asking questions.
+
+Perplexity will tell you anything about the market when you ask. It will not notice, on its own, that a filing published overnight undercuts the reason you own your third-largest position.
+
+Helm starts from the portfolio instead of the question. You connect brokerages through Plaid, read-only, so it can see holdings but can never trade or move money. Overnight it re-prices the book, re-reads new SEC filings and news against every position, runs risk, tax, and earnings scans, and writes a morning brief. You open a timestamped work log of what it did while you were away.
+
+The deepest layer is thesis monitoring. You write down the reasons you hold each position, and Helm re-checks those reasons against fresh filings. When one breaks, it flags the exact pillar with the cited source, verbatim and dated. It also catches the portfolio-level things no chat session sees: hidden concentration, positions leaning on the same underlying driver, tax-loss harvesting candidates in taxable accounts (retirement accounts correctly excluded), and upcoming earnings exposure across everything you hold.
+
+Both tools have a $20-a-month Pro tier, which makes the comparison clean: same price, different job. Perplexity answers questions about the market. Helm watches your book and shows its sources. It never tells you to buy or sell anything. It surfaces, you decide.
+
+<CTACard title="See the grounded version" description="Helm's free AI analysis on any US ticker, no account required. Then connect your accounts read-only and let it watch the whole book." buttonText="Analyze a stock free" buttonLink="/analyze" />
+
+## Perplexity vs Helm at a glance
+
+| | Perplexity | Helm Terminal |
+|---|---|---|
+| Core job | Ask-first market research with citations | Always-on monitoring of your holdings |
+| Interaction model | You ask, it answers | It works overnight, you read the log |
+| Earnings | Earnings Hub with live call transcription | Earnings exposure mapped across your holdings |
+| Portfolio connection | Plaid, read-only aggregation with AI analysis | Plaid, read-only, can never trade or move money |
+| Memory of why you hold | None | Thesis pillars you write, re-checked against filings |
+| Risk and tax | Not its job | Concentration, shared drivers, tax-loss candidates |
+| Price | Free hub, Pro $20/mo | Free to start, Pro $20/mo |
+
+## So how should you actually use Perplexity for stock research?
+
+Use it as your research desk. It is the best of the general AI tools at explaining what just happened and why, digesting earnings calls, and assembling a cited first pass on a well-covered name. Set up a Tasks briefing for your watchlist. Click the citations, especially before you repeat a number to anyone.
+
+Do not use it as a source of truth on thin names, and do not mistake the Portfolio feature for monitoring. Aggregation shows you what you own. It does not remember why, and it does not re-test that reason when a new filing lands.
+
+The setup that works is composition. Research the market in Perplexity. Have Helm watch what you actually hold, with a source cited on every flag. Neither tells you what to trade, and that is the point: better inputs, your decisions.
+
+<CTACard title="Have an AI analyst watch your book" description="Helm monitors your holdings for risk, taxes, earnings, and broken theses, and cites every source. Free to start, read-only." buttonText="Open the terminal" buttonLink="/analyze" />
+
+## Related reading
+
+- [Agentic portfolio intelligence: what an AI analyst actually does](/portfolio-intelligence)
+- [How to use ChatGPT for stock analysis in 2026](/blog/chatgpt-stock-analysis)
+- [The best AI for stock research in 2026](/blog/best-ai-for-stock-research)
+- [How to track an investment thesis](/blog/how-to-track-investment-thesis)

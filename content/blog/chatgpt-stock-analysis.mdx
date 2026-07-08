@@ -1,0 +1,81 @@
+---
+title: "How to Use ChatGPT for Stock Analysis in 2026 (Prompts + What It Can't Do)"
+description: "ChatGPT is a sharp research partner if you prompt it well, and a dangerous one if you do not understand its limits. Here are the prompts that actually work for stock analysis in 2026, where ChatGPT breaks down for investing, and the one job it cannot do: watch your portfolio."
+date: "2026-07-08"
+updated: "2026-07-08"
+author: "Evan Kim"
+tags: ["chatgpt", "ai investing", "stock analysis", "prompts", "ai"]
+published: true
+faq:
+  - q: "Can ChatGPT analyze stocks?"
+    a: "Yes, ChatGPT can analyze stocks well for structured reasoning tasks: breaking down fundamentals, walking through a valuation framework, laying out a bull and bear case, or comparing competitive moats. It is weakest at anything requiring live data or personalization. It does not have reliable real-time prices, it has no memory of what you own, and it can state figures confidently that are outdated or wrong, so every number it gives you needs to be verified against a primary source."
+  - q: "What is the best ChatGPT prompt for stock analysis?"
+    a: "The best prompts are specific and framework-based rather than open-ended. Instead of asking which stocks are good, ask it to break a named company into revenue growth, margins, debt, and competitive position and compare each to industry averages, or to lay out the three strongest bull points and the three that would break the thesis. Specificity is what turns ChatGPT from a tip generator into a useful analyst."
+  - q: "Is ChatGPT good for investing?"
+    a: "ChatGPT is good for the thinking part of investing: research structure, framework analysis, and pressure-testing your own reasoning. It is not good for the watching part: it cannot pull live data, monitor filings, remember your portfolio, or alert you when something changes. Most investors who get value from it use it as a research assistant and pair it with a tool that handles live data and portfolio monitoring."
+  - q: "Does ChatGPT have real-time stock data?"
+    a: "Not reliably. Some versions can browse the web for recent information, but ChatGPT is not a market data feed, and prices, multiples, and financials it quotes from memory are frequently stale. Always confirm any specific figure against a real source before acting on it."
+  - q: "ChatGPT or a dedicated stock analysis tool: which is better?"
+    a: "They do different jobs. ChatGPT is a flexible reasoning partner. A dedicated tool gives you verified live data and, in the case of a portfolio-intelligence tool like Helm Terminal, watches your actual holdings and cites its sources. The strongest setup is both: ChatGPT to think through a position, and a grounded tool to supply the facts and monitor your book."
+---
+
+I use ChatGPT for stock research almost every day, and I also watched it confidently tell me a company's revenue was a number that was two years old. Both of those things are true, and holding them at the same time is the whole skill.
+
+ChatGPT is a genuinely useful research partner if you prompt it well, and a genuinely dangerous one if you treat it like a data feed or a financial advisor. This is a practical guide to getting the good version: the prompts that work, the limits that bite, and the one job it cannot do no matter how well you prompt it.
+
+## Prompts that actually work
+
+The difference between a useless answer and a sharp one is specificity. "What are some good stocks" gets you generic mush. Framework prompts get you real analysis. Here are the ones I actually reuse.
+
+**Fundamental breakdown.** "Break down [company] into revenue growth, gross and operating margins, debt levels, and competitive position. Compare each metric to its industry average and list the three biggest strengths and three biggest weaknesses." This forces structure instead of a vibe.
+
+**Valuation framework.** "Evaluate [company]'s current valuation using P/E, P/S, and a simple DCF-style reasoning. Compare current multiples to the company's own five-year history and to two named peers. Conclude whether it looks cheap, fair, or expensive, and say what has to be true for the bull case to work."
+
+**The bear case.** "Give me the three strongest reasons to be bullish on [company] and the three specific things that, if they happened, would break the thesis. Be concrete about what evidence I should watch for." This is the most valuable prompt on the list, because it pressure-tests your own conviction instead of flattering it.
+
+**Competitive moat.** "Compare [company] to [competitor] on market share, unit economics, switching costs, and durability of advantage. Which one has the stronger moat, and why?"
+
+**Earnings digest.** "Here is the text of [company]'s latest earnings call. Summarize what changed versus the prior quarter, what management is worried about, and any guidance that would matter to a long-term holder." Paste the transcript in yourself, because this is exactly where ChatGPT's memory fails you.
+
+## Where ChatGPT breaks down for investing
+
+Now the limits, because they are the reason this article exists. Prompting cannot fix any of these.
+
+**It does not have reliable live data.** ChatGPT is not a market feed. Prices, multiples, and financials it recalls from memory are routinely stale, and even with browsing it is not built to be a source of record. Verify every specific number.
+
+**It has no memory of your portfolio.** Every session starts from zero. It does not know what you own, your cost basis, or the reasons you wrote down last quarter. It is a brilliant analyst with amnesia who only shows up when you knock.
+
+**It does not watch anything.** It answers when you ask. It cannot read the new 10-Q the morning it drops, notice your top three holdings quietly became 60% of your equity, or tell you a filing just contradicted the reason you bought a stock. Monitoring is not a prompting problem. It is a different kind of tool.
+
+**It can be confidently wrong.** The failure mode that costs people money is not obvious errors, it is plausible ones stated with total confidence. Treat every factual claim as a lead to verify, not an answer to act on.
+
+## The one job ChatGPT cannot do: watch your portfolio
+
+Here is my bias stated plainly. Everything above is why I built Helm Terminal, because the parts ChatGPT cannot do are exactly the parts that matter once you own a real portfolio.
+
+Think about what you are actually doing when you prompt ChatGPT for stock analysis. You are asking it to break down a company, weigh the bull and bear case, and tell you what to watch. Now imagine that running automatically, every day, against the specific stocks you own, with real data and the source behind every claim. That is the job.
+
+Helm connects to your brokerages through Plaid, read-only, so it can see your holdings but never trade or move money. Then:
+
+- **It reads filings and news against your actual holdings, every day**, and writes you a morning brief of what changed. Not a blank prompt box. A standing read.
+- **It watches the reasons you hold each position.** You write your thesis once, and Helm re-checks it against fresh filings. When a reason breaks, it flags the exact pillar and cites the source, so you are not taking its word for it.
+- **It catches the portfolio-level things a single-stock chat never sees:** hidden concentration, positions that share the same driver, harvestable tax losses, upcoming earnings exposure.
+
+ChatGPT is the reasoning. Helm is the watching, the live data, and the memory of your book. Use both. The free AI analysis at helmterminal.dev/analyze is a good place to see the grounded version of what you have been manually prompting for.
+
+<CTACard title="See the grounded version" description="Helm's AI analysis on any US ticker, with real data and no account. Then connect your accounts to have it watch your whole portfolio." buttonText="Analyze a stock free" buttonLink="/analyze" />
+
+## So how should you use ChatGPT for investing?
+
+Use it for the thinking. Framework analysis, bull and bear cases, pressure-testing a thesis, digesting a transcript you paste in yourself. It is excellent at all of that.
+
+Do not use it for the facts or the watching. Verify every number against a real source, and let a purpose-built tool handle live data and portfolio monitoring. The investors who get real edge from AI in 2026 are not the ones asking a chatbot for tips. They are the ones using AI to think more clearly and using grounded tools to stay informed about what they own.
+
+<CTACard title="Have an AI analyst watch your book" description="Helm monitors your holdings for risk, taxes, earnings, and broken theses, and cites every source. Free to start, read-only." buttonText="Open the terminal" buttonLink="/analyze" />
+
+## Related reading
+
+- [ChatGPT vs Claude vs Gemini vs Perplexity for stock research](/blog/best-ai-for-stock-research)
+- [How to use Claude for stock analysis](/blog/claude-stock-analysis)
+- [Perplexity for stock research: strengths and limits](/blog/perplexity-stock-research)
+- [Agentic portfolio intelligence: what an AI analyst actually does](/portfolio-intelligence)
