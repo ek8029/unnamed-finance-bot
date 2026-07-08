@@ -6,7 +6,8 @@
 //       ticker's sector, and where that weight lands if a typical position is added.
 //   (b) sharedDriver — whether the candidate's draft pillars lean on a driver the
 //       user's existing theses already depend on (hidden concentration before the buy).
-//   (c) bearCase — the bearish case some investors cite, from the cached analysis.
+//   (c) marketCase — the bull or bear case (whichever matches today's price move)
+//       some investors cite, from the cached analysis.
 //
 // Cost discipline: NO new OpenAI calls. draftPillars (upstream) and analyzeStock
 // (cached, allowGenerate=false) are the only model spend. The shared-driver check
@@ -40,6 +41,14 @@ export interface SharedDriverRisk {
   rationale: string;        // from the stored cluster synthesis
 }
 
+// The bull or bear case, picked to match today's move: bull on an up day, bear
+// on a down/flat day. Labelled honestly so the heading always matches the text.
+export interface MarketCase {
+  stance: 'bull' | 'bear';
+  text: string;
+  dayChangePct: number | null;
+}
+
 export interface PrebuyRisk {
   ticker: string;
   // null when the user has no holdings (can't compute concentration) — stated, not faked.
@@ -48,7 +57,7 @@ export interface PrebuyRisk {
   sharedDriver: SharedDriverRisk[];
   sharedDriverComputed: boolean; // false => no cached cluster set to compare against yet
   // null when no cached analysis exists (we never force generation here).
-  bearCase: string | null;
+  marketCase: MarketCase | null;
 }
 
 interface RawHoldingRow {
@@ -213,12 +222,36 @@ async function computeSharedDriver(
   return { matches, computed: true };
 }
 
-/** (c) Bear case from the cached analysis. Never forces generation (cost-safe). */
-async function computeBearCase(ticker: string): Promise<string | null> {
+/**
+ * (c) The bull/bear case from the cached analysis, picked to match today's price
+ * move: bull on an up day, bear on a down/flat day. Day move comes from the
+ * cached quote; never forces analysis generation (cost-safe). The stance always
+ * labels the text actually shown — if the preferred case is missing we fall back
+ * to the other and relabel, so the heading never lies.
+ */
+async function computeMarketCase(ticker: string): Promise<MarketCase | null> {
   try {
-    const { analysis } = await analyzeStock(ticker, false);
-    const bear = analysis?.bearCase;
-    return bear && bear.trim() ? bear.trim() : null;
+    const [{ analysis }, td] = await Promise.all([
+      analyzeStock(ticker, false),
+      getFullTickerData(ticker).catch(() => null),
+    ]);
+    if (!analysis) return null;
+
+    const dp = td?.quote?.dp;
+    const dayChangePct = typeof dp === 'number' && Number.isFinite(dp) ? dp : null;
+    const bull = analysis.bullCase?.trim() || '';
+    const bear = analysis.bearCase?.trim() || '';
+    const up = dayChangePct != null && dayChangePct > 0;
+
+    let stance: MarketCase['stance'];
+    let text: string;
+    if (up && bull) { stance = 'bull'; text = bull; }
+    else if (!up && bear) { stance = 'bear'; text = bear; }
+    else if (bear) { stance = 'bear'; text = bear; }
+    else if (bull) { stance = 'bull'; text = bull; }
+    else return null;
+
+    return { stance, text, dayChangePct };
   } catch {
     return null;
   }
@@ -230,10 +263,10 @@ export async function computePrebuyRisk(opts: ComputeOpts): Promise<PrebuyRisk> 
 
   const supabase = await createClient();
 
-  const [sectorConcentration, sharedDriverResult, bearCase] = await Promise.all([
+  const [sectorConcentration, sharedDriverResult, marketCase] = await Promise.all([
     computeSectorConcentration(supabase, opts.userId, ticker),
     computeSharedDriver(supabase, opts.userId, ticker, candidatePillars),
-    computeBearCase(ticker),
+    computeMarketCase(ticker),
   ]);
 
   return {
@@ -241,6 +274,6 @@ export async function computePrebuyRisk(opts: ComputeOpts): Promise<PrebuyRisk> 
     sectorConcentration,
     sharedDriver: sharedDriverResult.matches,
     sharedDriverComputed: sharedDriverResult.computed,
-    bearCase,
+    marketCase,
   };
 }

@@ -33,12 +33,17 @@ interface SharedDriverRisk {
   otherTickers: string[];
   rationale: string;
 }
+interface MarketCase {
+  stance: 'bull' | 'bear';
+  text: string;
+  dayChangePct: number | null;
+}
 interface PrebuyRisk {
   ticker: string;
   sectorConcentration: SectorConcentrationRisk | null;
   sharedDriver: SharedDriverRisk[];
   sharedDriverComputed: boolean;
-  bearCase: string | null;
+  marketCase: MarketCase | null;
 }
 
 const TICKER_RE = /^[A-Z.\-]{1,10}$/;
@@ -467,11 +472,28 @@ function BuilderInner() {
                   )}
                 </div>
 
-                {/* Bear case */}
+                {/* Market case — bull on an up day, bear on a down day */}
                 <div className="space-y-3">
-                  <RiskHeading>The bear case</RiskHeading>
-                  {risk?.bearCase ? (
-                    <p className="text-[15px] leading-[1.6] text-[var(--color-text-primary)] m-0 border-l-2 border-[var(--color-border-strong)] pl-4">{risk.bearCase}</p>
+                  <div className="flex items-center gap-2.5">
+                    <RiskHeading>
+                      {risk?.marketCase?.stance === 'bull' ? 'The bull case' : 'The bear case'}
+                    </RiskHeading>
+                    {risk?.marketCase?.dayChangePct != null && (
+                      <span
+                        className="font-mono text-[11px] font-semibold tabular-nums"
+                        style={{ color: risk.marketCase.stance === 'bull' ? 'var(--color-positive)' : 'var(--color-negative-text)' }}
+                      >
+                        {risk.marketCase.dayChangePct >= 0 ? '+' : ''}{risk.marketCase.dayChangePct.toFixed(2)}% today
+                      </span>
+                    )}
+                  </div>
+                  {risk?.marketCase ? (
+                    <p
+                      className="text-[15px] leading-[1.6] text-[var(--color-text-primary)] m-0 border-l-2 pl-4"
+                      style={{ borderColor: risk.marketCase.stance === 'bull' ? 'var(--color-positive)' : 'var(--color-negative-text)' }}
+                    >
+                      {risk.marketCase.text}
+                    </p>
                   ) : (
                     <p className="text-[15px] leading-[1.55] text-[var(--color-text-secondary)] m-0">
                       No cached analysis for {activeTicker} yet. Open it on Analyze to generate one.
