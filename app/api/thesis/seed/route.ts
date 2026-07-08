@@ -62,10 +62,22 @@ export async function POST(request: Request) {
         .maybeSingle();
 
       if (insertError || !inserted) {
-        console.error('[thesis/seed] insert thesis error:', insertError);
-        return NextResponse.json({ error: 'Failed to create thesis' }, { status: 500 });
+        // Unique violation = a concurrent draft (double-fired effect, double
+        // click) already created the row. Adopt it instead of failing the draft.
+        const { data: existing } = await supabase
+          .from('theses')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('ticker', ticker)
+          .maybeSingle();
+        if (!existing) {
+          console.error('[thesis/seed] insert thesis error:', insertError);
+          return NextResponse.json({ error: 'Failed to create thesis' }, { status: 500 });
+        }
+        thesis = existing;
+      } else {
+        thesis = inserted;
       }
-      thesis = inserted;
     }
 
     // Fetch existing pillars (dismissed rows intentionally included -- a dismissed draft must never be re-proposed)
@@ -87,12 +99,40 @@ export async function POST(request: Request) {
       return NextResponse.json({ thesis, pillars: pillars.filter((p: { lifecycle: string }) => p.lifecycle !== 'dismissed') });
     }
 
-    // Draft new pillars via AI
-    const drafted = await draftPillars(ticker);
+    // Draft new pillars via AI, grounded in what we already know:
+    // - every existing claim (incl. dismissed — those must never be re-proposed)
+    // - the securities row, so funds/ETFs get the vehicle-level prompt
+    const { data: sec } = await supabase
+      .from('securities')
+      .select('security_name, asset_class')
+      .eq('ticker', ticker)
+      .maybeSingle();
+
+    const drafted = await draftPillars(ticker, {
+      existingClaims: pillars.map((p: { claim: string }) => p.claim),
+      assetClass: (sec?.asset_class as string | null) ?? null,
+      securityName: (sec?.security_name as string | null) ?? null,
+    });
 
     let allPillars = pillars;
 
     if (drafted.length > 0) {
+      // Re-check right before insert: a concurrent request may have drafted
+      // pillars while our (slow) model call ran. Never double-insert drafts.
+      if (!resuggest) {
+        const { data: recheck } = await supabase
+          .from('thesis_pillars')
+          .select('*')
+          .eq('thesis_id', thesis.id)
+          .order('sort_order', { ascending: true });
+        if ((recheck ?? []).length > 0) {
+          return NextResponse.json({
+            thesis,
+            pillars: (recheck ?? []).filter((p: { lifecycle: string }) => p.lifecycle !== 'dismissed'),
+          });
+        }
+      }
+
       const maxExistingSortOrder =
         pillars.length > 0
           ? Math.max(...pillars.map((p: { sort_order: number }) => p.sort_order ?? 0))
@@ -102,16 +142,26 @@ export async function POST(request: Request) {
         thesis_id: thesis.id,
         user_id: user.id,
         claim: p.claim,
+        breaks_if: p.breaksIf,
         origin: 'ai_draft' as const,
         confirmed: false,
         status: 'unverified' as const,
         sort_order: maxExistingSortOrder + 1 + i,
       }));
 
-      const { data: insertedPillars, error: insertPillarsError } = await supabase
+      let { data: insertedPillars, error: insertPillarsError } = await supabase
         .from('thesis_pillars')
         .insert(toInsert)
         .select('*');
+
+      // Graceful pre-migration fallback: if the breaks_if column (migration 053)
+      // is not applied yet, retry without it rather than failing the draft.
+      if (insertPillarsError && /breaks_if/i.test(insertPillarsError.message ?? '')) {
+        const stripped = toInsert.map(({ breaks_if: _omit, ...rest }) => rest);
+        const retry = await supabase.from('thesis_pillars').insert(stripped).select('*');
+        insertedPillars = retry.data;
+        insertPillarsError = retry.error;
+      }
 
       if (insertPillarsError) {
         console.error('[thesis/seed] insert pillars error:', insertPillarsError);
@@ -121,14 +171,20 @@ export async function POST(request: Request) {
       allPillars = [...pillars, ...(insertedPillars ?? [])];
     }
 
-    // Auto-track: if user has no tracked theses and this ticker is their largest holding
+    // Auto-track: if user has no tracked theses and this ticker is their largest
+    // holding. Only when at least one CONFIRMED pillar exists — tracking implies
+    // the agent has user-vetted reasons to watch; a fresh unconfirmed draft must
+    // never produce a tracked-but-empty thesis.
+    const hasConfirmed = allPillars.some(
+      (p: { confirmed: boolean; lifecycle: string }) => p.confirmed && p.lifecycle !== 'dismissed',
+    );
     const { count: trackedCount, error: trackedCountError } = await supabase
       .from('theses')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
       .eq('tracked', true);
 
-    if (!trackedCountError && (trackedCount ?? 0) === 0) {
+    if (hasConfirmed && !trackedCountError && (trackedCount ?? 0) === 0) {
       const { data: largestHolding } = await supabase
         .from('holdings')
         .select('ticker, total_value')

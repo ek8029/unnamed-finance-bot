@@ -5,18 +5,30 @@
 // Reuses the existing thesis-write APIs end to end — no new write endpoints.
 'use client';
 
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Check, Lock, Pencil, Sparkles, TrendingDown, X } from 'lucide-react';
 import { TierLock } from '@/components/tier-lock';
+import { AnalysisLoadingTerminal } from '@/components/analysis-loading-terminal';
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
+
+// Steps mirror what the seed + pre-buy pipeline actually does.
+const DRAFT_STEPS = [
+  { tag: 'open', text: 'company profile & filings' },
+  { tag: 'read', text: 'what drives revenue & growth' },
+  { tag: 'draft', text: 'starting pillars for your review' },
+  { tag: 'scan', text: 'sector concentration in your book' },
+  { tag: 'map', text: 'shared drivers across your theses' },
+  { tag: 'pull', text: 'the bear case' },
+];
 
 interface DraftPillar {
   id: string;
   claim: string;
   confirmed: boolean;
+  breaks_if?: string | null;
 }
 
 interface SectorConcentrationRisk {
@@ -133,9 +145,9 @@ function BuilderInner() {
 
       const data = await res.json() as {
         thesis?: { tracked?: boolean };
-        pillars?: { id: string; claim: string; confirmed: boolean }[];
+        pillars?: { id: string; claim: string; confirmed: boolean; breaks_if?: string | null }[];
       };
-      const drafted = (data.pillars ?? []).map((p) => ({ id: p.id, claim: p.claim, confirmed: p.confirmed }));
+      const drafted = (data.pillars ?? []).map((p) => ({ id: p.id, claim: p.claim, confirmed: p.confirmed, breaks_if: p.breaks_if ?? null }));
       setPillars(drafted);
       setEditing(Object.fromEntries(drafted.map((p) => [p.id, p.claim])));
       setActiveTicker(tk);
@@ -210,6 +222,24 @@ function BuilderInner() {
     setTracking(true);
     setTrackError(null);
     try {
+      // Tracking means "these are my reasons — watch them." Confirm any
+      // still-unconfirmed drafts first so a tracked thesis always has
+      // user-vetted pillars for the agent to watch (the click on a reviewed,
+      // editable list IS the confirmation).
+      const unconfirmed = pillars.filter((p) => !p.confirmed);
+      for (const p of unconfirmed) {
+        const claim = (editing[p.id] ?? p.claim).trim();
+        if (!claim) continue;
+        const res = await fetch(`/api/thesis/pillars/${p.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ confirmed: true, claim }),
+        });
+        if (res.ok) {
+          setPillars((prev) => prev.map((x) => (x.id === p.id ? { ...x, confirmed: true, claim } : x)));
+        }
+      }
+
       // Create (idempotent) then flip tracked on via the existing ticker PATCH.
       await fetch('/api/thesis', {
         method: 'POST',
@@ -236,8 +266,13 @@ function BuilderInner() {
   }
 
   // Auto-draft when arriving with ?ticker= prefilled (e.g. from /analyze).
+  // Ref-guarded: React StrictMode double-invokes effects in dev, and two
+  // concurrent seeds raced (the loser 500'd with "Could not draft" while the
+  // winner's pillars landed seconds later).
+  const autoDrafted = useRef(false);
   useEffect(() => {
-    if (prefill && TICKER_RE.test(prefill)) {
+    if (prefill && TICKER_RE.test(prefill) && !autoDrafted.current) {
+      autoDrafted.current = true;
       void handleDraft();
     }
     // run once on mount for the prefill
@@ -290,6 +325,16 @@ function BuilderInner() {
       </form>
       {draftError && <p className="font-mono text-[13px] text-[var(--color-negative-text)] -mt-6" style={MONO}>{draftError}</p>}
 
+      {/* First draft in flight (e.g. arriving from /analyze): the agent terminal. */}
+      {drafting && !activeTicker && (
+        <div className="flex justify-center py-4">
+          <AnalysisLoadingTerminal
+            command={`helm draft ${ticker.trim().toUpperCase() || '···'}`}
+            steps={DRAFT_STEPS}
+          />
+        </div>
+      )}
+
       {activeTicker && (
         <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6">
           {/* Pillars column */}
@@ -305,9 +350,16 @@ function BuilderInner() {
             </div>
 
             {pillars.length === 0 ? (
-              <p className="font-mono text-[13px] text-[var(--color-text-secondary)]" style={MONO}>
-                {drafting ? 'Drafting pillars…' : 'No pillars yet. Draft again or pick another ticker.'}
-              </p>
+              drafting ? (
+                <AnalysisLoadingTerminal
+                  command={`helm draft ${(activeTicker ?? ticker.trim().toUpperCase()) || '···'}`}
+                  steps={DRAFT_STEPS}
+                />
+              ) : (
+                <p className="font-mono text-[13px] text-[var(--color-text-secondary)]" style={MONO}>
+                  No pillars yet. Draft again or pick another ticker.
+                </p>
+              )
             ) : (
               <div className="space-y-4">
                 {pillars.map((p, i) => (
@@ -337,12 +389,20 @@ function BuilderInner() {
                             rows={2}
                             maxLength={500}
                             disabled={p.confirmed}
-                            className="w-full resize-none bg-transparent text-[16px] leading-[1.55] text-[var(--color-text-primary)] focus:outline-none disabled:opacity-90"
+                            className="w-full resize-none bg-transparent pr-8 text-[16px] leading-[1.55] text-[var(--color-text-primary)] focus:outline-none disabled:opacity-90"
                           />
                           {!p.confirmed && (
                             <Pencil className="pointer-events-none absolute top-1 right-0 w-3.5 h-3.5 text-[var(--color-text-secondary)]/50" />
                           )}
                         </div>
+                        {p.breaks_if && (
+                          <p className="m-0 -mt-1 text-[12.5px] leading-[1.5] text-[var(--color-text-secondary)]">
+                            <span className="mr-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-gold)]" style={MONO}>
+                              breaks if
+                            </span>
+                            {p.breaks_if}
+                          </p>
+                        )}
                         <div className="flex flex-wrap items-center gap-2">
                           {p.confirmed ? (
                             <span className="inline-flex items-center gap-1.5 font-mono text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--color-positive)]" style={MONO}>
@@ -398,7 +458,14 @@ function BuilderInner() {
                   className="w-full font-mono text-[13px] font-semibold uppercase tracking-[0.12em] px-4 py-3.5 rounded-md bg-[var(--color-gold)] text-[var(--color-text-inverse)] hover:bg-[var(--color-gold-hi)] transition-colors disabled:opacity-50"
                   style={MONO}
                 >
-                  {tracked ? 'Thesis tracked' : tracking ? 'Tracking…' : 'Track this thesis'}
+                  {tracked
+                    ? 'Thesis tracked'
+                    : tracking
+                      ? 'Tracking…'
+                      : (() => {
+                          const n = pillars.filter((p) => !p.confirmed).length;
+                          return n > 0 ? `Confirm ${n} pillar${n === 1 ? '' : 's'} & track` : 'Track this thesis';
+                        })()}
                 </button>
                 {trackError && <p className="font-mono text-[13px] text-[var(--color-negative-text)]" style={MONO}>{trackError}</p>}
                 {tracked && (

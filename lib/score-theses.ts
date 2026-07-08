@@ -40,6 +40,8 @@ interface Pillar {
   thesis_id: string;
   user_id: string;
   claim: string;
+  /** The pillar's own kill criterion, drafted at seed time (migration 053). */
+  breaks_if?: string | null;
   confirmed: boolean;
   status: PillarStatus;
   status_override: PillarStatus | null;
@@ -202,7 +204,7 @@ export async function scoreOneThesis(
   // Fetch confirmed pillars for this thesis
   const { data: pillarsRaw, error: pillarsErr } = await db
     .from('thesis_pillars')
-    .select('id, thesis_id, user_id, claim, confirmed, status, status_override')
+    .select('*')
     .eq('thesis_id', thesisId)
     .eq('confirmed', true);
 
@@ -432,7 +434,9 @@ export async function scoreOneThesis(
 
   // Build LLM prompt
   const pillarLines = pillars
-    .map((p, i) => `Pillar ${i + 1}: ${p.claim}`)
+    // Include each pillar's own kill criterion so the judge knows exactly what
+    // evidence the user considers falsifying — sharper contradicts verdicts.
+    .map((p, i) => `Pillar ${i + 1}: ${p.claim}${p.breaks_if ? ` (breaks if: ${p.breaks_if})` : ''}`)
     .join('\n');
 
   const sourceLines = sortedCandidates

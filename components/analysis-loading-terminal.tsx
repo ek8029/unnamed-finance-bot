@@ -11,26 +11,42 @@ const STEPS = [
   { tag: 'generate', text: 'ai-powered analysis' },
 ];
 
-export function AnalysisLoadingTerminal() {
+interface LoadingStep {
+  tag: string;
+  text: string;
+}
+
+// Default (no props): sniffs the ticker from the /analyze or /compare URL and
+// types "helm analyze X" — the original behavior for the loading.tsx routes.
+// With props: any surface can reuse the terminal for its own long-running
+// agent work (e.g. the thesis builder's pillar draft).
+export function AnalysisLoadingTerminal({
+  command,
+  steps = STEPS,
+}: {
+  command?: string;
+  steps?: LoadingStep[];
+} = {}) {
   const [ticker, setTicker] = useState('');
   const [typedLen, setTypedLen] = useState(0);
   const [visibleSteps, setVisibleSteps] = useState(0);
   const [completedSteps, setCompletedSteps] = useState(0);
 
-  // Extract ticker from URL
+  // Extract ticker from URL (only when no explicit command was given)
   useEffect(() => {
+    if (command) return;
     // Match /analyze/AAPL, /dashboard/analyze/AAPL, or /compare/AAPL-vs-MSFT
     const analyzeMatch = window.location.pathname.match(/\/analyze\/([A-Za-z]{1,5})$/);
     const compareMatch = window.location.pathname.match(/\/compare\/([A-Za-z]{1,5})-vs-([A-Za-z]{1,5})$/);
     const match = analyzeMatch || (compareMatch ? [null, `${compareMatch[1]} vs ${compareMatch[2]}`] : null);
     if (match) setTicker(match[1].toUpperCase());
-  }, []);
+  }, [command]);
 
   // Orchestrate all animations via a single effect — fast, overlapping phases
   useEffect(() => {
-    if (!ticker) return;
+    if (!ticker && !command) return;
 
-    const cmd = `helm analyze ${ticker}`;
+    const cmd = command ?? `helm analyze ${ticker}`;
     const timeouts: ReturnType<typeof setTimeout>[] = [];
 
     // Phase 1: Type command (25ms/char → ~450ms)
@@ -40,7 +56,7 @@ export function AnalysisLoadingTerminal() {
 
     // Phase 2: Reveal steps (start right after typing, 180ms apart)
     const typeEndMs = cmd.length * 25 + 150;
-    for (let i = 0; i < STEPS.length; i++) {
+    for (let i = 0; i < steps.length; i++) {
       timeouts.push(
         setTimeout(() => setVisibleSteps(i + 1), typeEndMs + i * 180),
       );
@@ -49,16 +65,17 @@ export function AnalysisLoadingTerminal() {
     // Phase 3: Complete steps with varied delays (leave last 1 in-progress)
     const checkStartMs = typeEndMs + 500;
     const checkDelays = [0, 400, 900, 1800, 2800];
-    for (let i = 0; i < STEPS.length - 1; i++) {
+    for (let i = 0; i < steps.length - 1; i++) {
       timeouts.push(
-        setTimeout(() => setCompletedSteps(i + 1), checkStartMs + checkDelays[i]),
+        setTimeout(() => setCompletedSteps(i + 1), checkStartMs + (checkDelays[i] ?? 2800 + i * 600)),
       );
     }
 
     return () => timeouts.forEach(clearTimeout);
-  }, [ticker]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticker, command, steps.length]);
 
-  const fullCommand = `helm analyze ${ticker || '···'}`;
+  const fullCommand = command ?? `helm analyze ${ticker || '···'}`;
   const commandText = fullCommand.slice(0, typedLen);
   const doneTyping = typedLen >= fullCommand.length;
 
@@ -76,7 +93,7 @@ export function AnalysisLoadingTerminal() {
       {/* Steps */}
       {visibleSteps > 0 && (
         <div className="space-y-2 border-t border-white/[0.04] pt-3">
-          {STEPS.slice(0, visibleSteps).map((step, i) => {
+          {steps.slice(0, visibleSteps).map((step, i) => {
             const completed = i < completedSteps;
             const stepText =
               step.tag === 'fetch' && ticker
