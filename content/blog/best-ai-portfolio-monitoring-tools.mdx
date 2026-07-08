@@ -1,0 +1,106 @@
+---
+title: "Best AI Portfolio Monitoring Tools in 2026"
+description: "Most portfolio tools show you balances. The new wave of AI portfolio monitoring tools watches your whole book for you: risk, taxes, earnings, and whether the reasons you bought each stock still hold. I compared the real options for 2026."
+date: "2026-07-08"
+updated: "2026-07-08"
+author: "Evan Kim"
+tags: ["ai investing", "portfolio monitoring", "agentic", "portfolio intelligence", "tools"]
+published: true
+faq:
+  - q: "What is an AI portfolio monitoring tool?"
+    a: "An AI portfolio monitoring tool connects to your brokerage accounts and continuously watches your holdings for you, instead of only showing balances when you log in. The better ones read filings and news against the stocks you actually own, run risk, tax, and earnings scans automatically, and surface what changed and why. Think of it as an analyst working your book in the background rather than a dashboard you have to interrogate."
+  - q: "How is AI portfolio monitoring different from a robo-advisor?"
+    a: "A robo-advisor like Wealthfront or Betterment manages money for you: it picks the allocation and trades on your behalf (discretionary). AI portfolio monitoring is the opposite posture. It does not trade or move money. It watches the portfolio you already built, surfaces risks and opportunities, and leaves the decision to you. It is intelligence, not management."
+  - q: "Can AI monitor my investment thesis?"
+    a: "Yes, and this is the newest capability. Tools like Helm Terminal let you write down the reasons you hold each position, then re-check those reasons against fresh SEC filings and news every day. If a filing contradicts a reason you bought a stock, it flags the specific pillar that broke and cites the source. Most tools still only watch price, not the reasoning behind the position."
+  - q: "What is the best AI portfolio monitoring tool in 2026?"
+    a: "It depends on what you want watched. For pure balance and net-worth tracking, Empower (formerly Personal Capital) is fine. For an AI analyst that monitors risk, taxes, earnings, and your investment theses across every linked account, Helm Terminal is built specifically for that and is free to start. Many people run a tracker for balances and an intelligence layer like Helm for the analysis."
+  - q: "Are AI portfolio monitoring tools safe to connect to my accounts?"
+    a: "Reputable ones use read-only aggregation through Plaid, which means the tool can see balances and holdings but can never trade or move money. Helm Terminal, for example, is read-only by design. Always confirm a tool uses read-only access and does not sell your data before you connect anything."
+---
+
+I have accounts at more than one brokerage, a couple of retirement accounts, and the usual pile of positions I bought for reasons I was very sure about at the time. If you are reading this, you probably do too.
+
+Here is the problem nobody solves well: once you own that stuff, no one is watching it. Your brokerage shows you a balance. A tracker shows you a nicer balance. But the actual work of investing, the part where someone reads the new 10-Q, notices your top three holdings quietly became 60% of your equity, spots the tax-loss you could harvest before year end, and checks whether the reason you bought a stock still holds up, that part is on you. And most of us do not do it, because it is a second job.
+
+That gap is what the last two years of AI tooling have started to fill. A new category has shown up that I have been calling AI portfolio monitoring: tools that connect to your accounts and continuously watch your holdings, instead of waiting for you to log in and stare at them.
+
+I have tried most of them, and I ended up building one, so I will be upfront about that when we get there. First, what this category actually is and what is worth your time.
+
+## What "AI portfolio monitoring" actually means
+
+The phrase gets used loosely, so let me be specific. A real AI portfolio monitoring tool does three things a normal tracker does not:
+
+1. **It watches continuously, not on demand.** The work happens overnight and in the background, so when you open it there is already a read waiting for you, not a blank query box.
+2. **It reasons about your specific holdings.** Not the market in general. It reads filings and news against the stocks you actually own and tells you what it means for your book.
+3. **It surfaces, then explains.** It brings things to you unprompted, with the source it read, so you can trust the flag instead of taking it on faith.
+
+That last point is the line between an agent and a chatbot. A chatbot answers when you ask. An agent works while you are away and hands you the result. Keep that distinction in mind as we go through the options, because most tools that market themselves as AI are really just a chatbot bolted onto a dashboard.
+
+One more distinction, because it matters: monitoring is not management. A robo-advisor manages your money and trades for you. These tools do not touch your money. They watch it and inform you. That is a deliberate and, in my opinion, much healthier posture for someone who wants to stay in control of their own decisions.
+
+## Robo-advisors (Wealthfront, Betterment): management, not monitoring
+
+Worth addressing first because people conflate the two. Robo-advisors are genuinely good at what they do: set an allocation, auto-rebalance, harvest tax losses inside the accounts they manage. If you want to hand over a pot of money and not think about it, they are a fine answer.
+
+But they do not monitor a portfolio you built yourself, held across brokerages you chose, for reasons you hold conviction on. They replace your decisions rather than support them. If you are the kind of investor who can say why you own each position, a robo is not the tool. You want something that watches your reasoning, not something that overrides it.
+
+## Portfolio trackers (Empower, Kubera, Monarch): balances, thin intelligence
+
+This is where most people start, and for net worth it works. Empower (formerly Personal Capital) aggregates your accounts and shows a clean picture of what you have. Kubera is great if you hold crypto and alternative assets. Monarch is the budgeting-forward option.
+
+The ceiling is the same for all of them: they are very good at showing you the number and weak at telling you anything about it. You see that you own NVDA. You do not learn that NVDA plus your two other chip names now make up an outsized share of your equity, or that a filing this week undercut the growth story you bought it for. The intelligence layer is missing. That is the layer this whole article is about.
+
+## Research tools (Seeking Alpha, Koyfin): smart, but not about your book
+
+Seeking Alpha and Koyfin are legitimately useful and I still use them. Koyfin for data and fundamentals, Seeking Alpha for other people's arguments. But they are market-level tools. They analyze securities in the abstract, not your portfolio in particular, and nothing carries over from "here is a bearish take on this stock" to "here is what that means for the specific position you hold and the reason you bought it." You are the integration layer. You read the take, remember why you own the thing, and connect the dots yourself.
+
+## General AI chatbots (ChatGPT, Claude): capable, but they do not watch
+
+You can absolutely paste your holdings into ChatGPT or Claude and get a sharp analysis. I do it. But two things break down. First, it only happens when you remember to do it, which is the same on-demand problem trackers have. Second, the model has no standing memory of your book, your cost basis, or the reasons you wrote down six months ago, so every session starts from zero. A chatbot is a brilliant analyst with amnesia who only shows up when you knock. Useful, but not monitoring.
+
+## Helm Terminal: the agentic one (this is the one I build)
+
+Here is my bias stated plainly: the gap above is exactly what I built Helm Terminal to close, because I wanted it for my own accounts and it did not exist.
+
+Helm connects to your brokerages, banks, and cards through Plaid, read-only, so it can see your holdings but can never trade or move money. Then it does the work a monitoring tool should do:
+
+- **Overnight, it re-prices your book, re-reads new filings and news against every position, and runs risk, tax, and earnings scans.** When you open the daily brief, there is a log of what it did while you were away, timestamped, not a blank screen.
+- **You can write down the reasons you hold each stock, and it watches those reasons.** If a fresh 10-Q or 8-K contradicts one of them, it flags the specific pillar that broke and shows you the exact quote and source. This is the thesis-monitoring piece, and as far as I know nothing else does it for individuals.
+- **It ties intelligence to action.** A broken thesis on a position sitting at a loss shows up in the tax center as a harvest candidate. Concentration risk becomes a ranked action with the dollar figure attached. Everything it surfaces comes with the citation behind it.
+- **You can point it at your whole book on demand and watch it work**, step by step, across concentration, tax, earnings, sector tilt, and every thesis, in real time.
+
+I am not going to tell you it manages your money, because it deliberately does not. It is an analyst that works your book every day and hands you what it found. For the specific problem of "something changed in my portfolio and I want to know before it costs me," I think it is the sharpest tool in this list, and it is free to start.
+
+<CTACard title="Try the free AI stock analysis" description="See the analysis engine on any ticker, no account required. Then connect your accounts to have Helm monitor your whole book." buttonText="Analyze a stock free" buttonLink="/analyze" />
+
+## Side-by-side
+
+| What it does | Robo-advisor | Tracker | Research tool | ChatGPT / Claude | Helm Terminal |
+| --- | --- | --- | --- | --- | --- |
+| Watches your book continuously | Manages, not watches | No | No | No | Yes |
+| Reasons about your specific holdings | No | No | No | If you paste them | Yes |
+| Monitors your investment thesis | No | No | No | No | Yes |
+| Risk / tax / earnings scans on your book | Inside its accounts | Limited | No | On request | Yes, automatic |
+| Cites the source behind every flag | No | No | Sometimes | Sometimes | Yes |
+| Trades / moves your money | Yes | No | No | No | No (read-only) |
+| Free to start | No | Free tier | Free tier | Free tier | Yes |
+
+## So what should you actually use?
+
+**If you want to hand off the decisions entirely:** a robo-advisor. Nothing here beats it for pure set-and-forget.
+
+**If you just want to see your net worth in one place:** a tracker like Empower is enough. Do not overpay for intelligence you will not use.
+
+**If you research your own positions and want to keep control but stop missing things:** that is the case for an agentic monitoring tool. You hold conviction, you make the calls, and you let an AI analyst watch the book so a broken thesis or a concentration creep or a harvestable loss does not slip past you. That is the specific job Helm is built for.
+
+The honest summary: trackers show you the past, robos take the wheel, and AI portfolio monitoring sits in the middle, keeping you informed and in control. That middle is where most self-directed investors actually live, and until recently nothing served it well.
+
+<CTACard title="Have an AI analyst watch your portfolio" description="Helm monitors your holdings for risk, taxes, earnings, and broken theses, and shows its work. Free to start, read-only, no card required." buttonText="Open the terminal" buttonLink="/analyze" />
+
+## Related reading
+
+- [Agentic portfolio intelligence: what an AI analyst actually does](/portfolio-intelligence)
+- [How to track an investment thesis](/blog/how-to-track-investment-thesis)
+- [Best portfolio trackers in 2026](/blog/best-portfolio-trackers)
+- [Best Bloomberg Terminal alternatives in 2026](/blog/best-bloomberg-terminal-alternatives)
