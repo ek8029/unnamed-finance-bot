@@ -22,13 +22,13 @@ export interface WorklogStep {
 export interface WorklogResponse {
   ranAt: string | null;
   steps: WorklogStep[];
-  summary: { theses: number; positions: number; accounts: number; sources: number; flags: number };
+  summary: { theses: number; accounts: number; sources: number; flags: number };
 }
 
 const EMPTY: WorklogResponse = {
   ranAt: null,
   steps: [],
-  summary: { theses: 0, positions: 0, accounts: 0, sources: 0, flags: 0 },
+  summary: { theses: 0, accounts: 0, sources: 0, flags: 0 },
 };
 
 // Look back far enough to always catch the most recent cron cycle, even over a
@@ -70,21 +70,12 @@ export async function GET() {
       });
     }
 
-    // ── Re-priced positions ──
-    const { count: positionCount } = await supabase
-      .from('holdings').select('id', { count: 'exact', head: true }).eq('user_id', uid);
+    // ── Run timestamp — anchors the scan line only. The overnight price refresh
+    //    is automatic plumbing, not agent work, so it is never shown as a step.
     const { data: perf } = await supabase
       .from('portfolio_performance').select('calculated_at')
       .eq('user_id', uid).order('calculated_at', { ascending: false }).limit(1).maybeSingle();
     const priceTs = (perf?.calculated_at as string | undefined) ?? null;
-    if ((positionCount ?? 0) > 0 && priceTs) {
-      steps.push({
-        id: 'price', ts: priceTs, kind: 'price',
-        label: `Re-priced your ${positionCount} positions`,
-        detail: 'fresh marks and day change',
-        href: '/dashboard/portfolio', emphasis: false,
-      });
-    }
 
     // ── Re-read filings / news against theses ──
     const { data: ev } = await supabase
@@ -155,19 +146,6 @@ export async function GET() {
       });
     }
 
-    // ── Wrote the brief ──
-    const { data: dg } = await supabase
-      .from('brief_digests').select('generated_at').eq('user_id', uid).maybeSingle();
-    const briefTs = dg?.generated_at as string | undefined;
-    if (briefTs && briefTs >= since) {
-      steps.push({
-        id: 'brief', ts: briefTs, kind: 'brief',
-        label: 'Wrote your morning brief',
-        detail: 'led by conviction, not headlines',
-        href: '/dashboard/brief', emphasis: false,
-      });
-    }
-
     steps.sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
 
     const res: WorklogResponse = {
@@ -175,7 +153,6 @@ export async function GET() {
       steps,
       summary: {
         theses: thesesCount ?? 0,
-        positions: positionCount ?? 0,
         accounts: accountCount,
         sources: filings + news + priceMoves,
         flags: flagCount,

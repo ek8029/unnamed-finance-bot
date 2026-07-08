@@ -56,7 +56,6 @@ export function AgentWorklog() {
 
   const segs: string[] = [];
   if (summary.accounts > 0) segs.push(`${summary.accounts} account${summary.accounts === 1 ? '' : 's'}`);
-  if (summary.positions > 0) segs.push(`${summary.positions} position${summary.positions === 1 ? '' : 's'}`);
   if (summary.sources > 0) segs.push(`${summary.sources} source${summary.sources === 1 ? '' : 's'} read`);
   if (summary.flags > 0) segs.push(`${summary.flags} flagged`);
 

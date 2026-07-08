@@ -67,3 +67,31 @@ export function getSourceTier(source: string | null): SourceTier {
 
   return 'other';
 }
+
+/**
+ * Head-to-head "Stock A vs Stock B — which is the better buy" comparison /
+ * listicle clickbait. These are opinion pieces, not primary evidence about a
+ * thesis pillar, and the scorer was labeling them "supports" for whichever
+ * ticker they attached to regardless of which side the article favored (e.g.
+ * "Nvidia vs AMD: Which Is the Better Buy" scored as SUPPORTING AMD; "Micron vs
+ * Apple: MU Is the Better Buy" scored as supporting an Apple-silicon pillar).
+ * Used to exclude such headlines from thesis scoring entirely.
+ */
+export function isComparisonHeadline(title: string | null | undefined): boolean {
+  if (!title) return false;
+  const t = title.toLowerCase();
+
+  // "vs / versus", but NOT the legitimate earnings framing "beat vs estimates".
+  const hasVs =
+    /\bvs\.?\b|\bversus\b/.test(t) &&
+    !/\bvs\.?\s+(estimates?|consensus|expectations?|forecasts?|street|guidance|prior|last year|year[- ]ago)\b/.test(t);
+
+  // A "which one wins / better buy" judgment — the clickbait tell.
+  const verdict =
+    /\b(better buy|better than|better positioned?|the better\b|is the better|one winner|wins the\b|crush\w*|dominat\w*|which\b[^.?!]*\b(buy|win|reward|better|to own)|better\b[^.?!]{0,24}\bstock\b)\b/.test(t);
+
+  if (hasVs && verdict) return true;
+  // "A Better Buy Than B" style without an explicit "vs".
+  if (/\bbetter buy\b|\bbetter than\b/.test(t)) return true;
+  return false;
+}

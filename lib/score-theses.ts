@@ -15,6 +15,7 @@ import { extractFilingSection, stripFilingHtml } from '@/lib/filing-extract';
 import { derivePillarStatus, type EvidenceForStatus, type PillarStatus } from '@/lib/thesis-status';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import type { BreachEvent } from '@/lib/thesis-breach';
+import { isComparisonHeadline } from '@/lib/news-quality';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SCORE_MODEL = 'gpt-4o-mini';
@@ -282,6 +283,12 @@ export async function scoreOneThesis(
     for (const n of newsRows ?? []) {
       const sourceKey = n.url as string;
       if (existingSourceKeys.has(sourceKey)) continue;
+      // Skip head-to-head "X vs Y / better buy" comparison clickbait — it's
+      // opinion, not primary thesis evidence, and the scorer mis-signs it.
+      if (isComparisonHeadline(n.title as string)) {
+        log.push(`[${ticker}] skipped comparison headline: ${(n.title as string) ?? ''}`);
+        continue;
+      }
       candidates.push({
         source_type: 'news',
         source_key: sourceKey,
