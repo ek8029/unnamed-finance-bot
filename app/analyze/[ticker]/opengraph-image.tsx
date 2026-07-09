@@ -49,7 +49,11 @@ export default async function Image({ params }: { params: Promise<{ ticker: stri
               lineHeight: 1,
             }}
           >
-            ${symbol}
+            {/* Single template-literal child, NOT `${'{'}symbol{'}'}` prefixed with a
+                literal $: JSX text + expression = TWO child nodes, and satori
+                throws on multi-child elements without display:flex. That one
+                character 500'd every /analyze OG image for months (GSC 5xx). */}
+            {`$${symbol}`}
           </div>
           <div
             style={{
