@@ -4,7 +4,11 @@
 // a second send impossible. testTo sends a single preview email and stamps
 // nothing.
 import { createServiceClient } from '@/lib/supabase/server';
-import { resend, FROM_EMAIL } from '@/lib/emails/resend';
+import { resend } from '@/lib/emails/resend';
+
+// Founder-personal sender: real inbox (replies land with Evan) and the Google
+// Workspace profile photo gives the Gmail avatar. Transactional stays on hello@.
+const NEWSLETTER_FROM = 'Evan from Helm <evan@helmterminal.dev>';
 import { buildWeeklyEmailHtml, type WeeklyEmailInput } from '@/lib/emails/weekly-update-html';
 
 export async function sendWeeklyUpdate(
@@ -26,7 +30,7 @@ export async function sendWeeklyUpdate(
   // Test path: one email to the requester, no publish/emailed_at requirements.
   if (opts.testTo) {
     const { error: sendErr } = await resend.emails.send({
-      from: FROM_EMAIL,
+      from: NEWSLETTER_FROM,
       to: opts.testTo.email,
       subject: `[TEST] ${subject}`,
       html: buildWeeklyEmailHtml(u as WeeklyEmailInput, opts.testTo.userId),
@@ -62,7 +66,7 @@ export async function sendWeeklyUpdate(
     const chunk = recipients.slice(i, i + 100);
     const { error: sendErr } = await resend.batch.send(
       chunk.map((r) => ({
-        from: FROM_EMAIL,
+        from: NEWSLETTER_FROM,
         to: r.email,
         subject,
         html: buildWeeklyEmailHtml(u as WeeklyEmailInput, r.id),
