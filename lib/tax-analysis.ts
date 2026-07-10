@@ -415,17 +415,20 @@ async function checkWashSaleRisk(
 
     // Also check regular transactions (buys) for related tickers
     if (!result.has(ticker)) {
+      // Buys of related tickers live in investment_transactions (which has
+      // ticker/name); the old query hit `transactions` on two columns that
+      // don't exist there, so this check silently never ran.
       const { data: relatedBuys } = await supabase
-        .from('transactions')
-        .select('name, transaction_date, amount')
+        .from('investment_transactions')
+        .select('name, ticker, transaction_date')
         .eq('user_id', userId)
-        .in('ticker_symbol', relatedTickerList)
+        .in('ticker', relatedTickerList)
         .gte('transaction_date', windowStart)
-        .lt('amount', 0); // negative = buy
+        .eq('transaction_type', 'buy');
 
       if (relatedBuys && relatedBuys.length > 0) {
         const tx = relatedBuys[0];
-        const matchedTicker = relatedTickerList.find(t => tx.name?.includes(t));
+        const matchedTicker = tx.ticker ?? relatedTickerList.find(t => tx.name?.includes(t));
         const match = relatedTickers.find(r => r.ticker === matchedTicker);
         if (match) {
           let washSaleDetail: string;

@@ -415,7 +415,7 @@ export async function updatePortfolioPerformance(
     const { data: spySec } = await supabase
       .from('securities')
       .select('id')
-      .eq('ticker_symbol', 'SPY')
+      .eq('ticker', 'SPY')
       .maybeSingle();
 
     if (spySec?.id) {
