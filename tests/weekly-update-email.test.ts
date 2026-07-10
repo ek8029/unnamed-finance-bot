@@ -5,7 +5,7 @@ import { signUnsub, verifyUnsub } from '../lib/emails/unsubscribe';
 describe('mdToEmailHtml', () => {
   it('renders paragraphs and bold', () => {
     const html = mdToEmailHtml('Hello **world**.\n\nSecond para.');
-    expect(html).toContain('<strong style="color:#FAFAFA;">world</strong>');
+    expect(html).toContain('<strong style="color:#111111;">world</strong>');
     expect((html.match(/<p /g) ?? []).length).toBe(2);
   });
   it('renders bullet groups', () => {
