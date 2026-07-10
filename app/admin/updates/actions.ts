@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { isThesisUser } from '@/lib/thesis-access';
 import { submitToIndexNow } from '@/lib/indexnow';
+import { sendWeeklyUpdate } from '@/lib/emails/weekly-update';
 
 async function assertAdmin() {
   const supabase = await createClient();
@@ -63,6 +64,23 @@ export async function setPublished(week_of: string, publish: boolean): Promise<{
   revalidatePath(`/this-week/${week_of}`);
   revalidatePath('/masthead');
   return { ok: true };
+}
+
+/** Email a published update to all subscribed users. Once per update, ever. */
+export async function emailUpdate(week_of: string): Promise<{ ok: boolean; sent?: number; error?: string }> {
+  await assertAdmin();
+  const res = await sendWeeklyUpdate(week_of);
+  revalidatePath('/admin/updates');
+  return res;
+}
+
+/** Send a single [TEST] copy of the update to the signed-in admin. No stamps. */
+export async function emailUpdateTest(week_of: string): Promise<{ ok: boolean; sent?: number; error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!isThesisUser(user?.email)) throw new Error('Unauthorized');
+  if (!user?.email) return { ok: false, error: 'No admin email' };
+  return sendWeeklyUpdate(week_of, { testTo: { userId: user.id, email: user.email } });
 }
 
 export async function deleteUpdate(week_of: string): Promise<{ ok: boolean; error?: string }> {

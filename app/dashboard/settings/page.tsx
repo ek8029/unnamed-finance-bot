@@ -1449,6 +1449,7 @@ export default function SettingsPage() {
   const renderNotifications = () => {
     const items = [
       { key: 'dailyBrief', label: 'Daily brief', description: 'The Current — your morning brief, emailed daily' },
+      { key: 'weeklyUpdate', label: 'This Week at Helm', description: 'The weekly product update, emailed when published' },
       { key: 'marketAlerts', label: 'Watchlist alerts', description: 'Email when a watchlist ticker moves more than 3%' },
     ] as const
     return (

@@ -14,6 +14,7 @@ export type NumberFormat = 'US' | 'EU' | 'UK'
 
 export interface NotificationPreferences {
   dailyBrief: boolean
+  weeklyUpdate: boolean
   marketAlerts: boolean
   transactionAlerts: boolean
   budgetAlerts: boolean
@@ -97,6 +98,7 @@ const DEFAULT_SETTINGS: Settings = {
   // Notifications
   notifications: {
     dailyBrief: true,
+    weeklyUpdate: true,
     marketAlerts: true,
     transactionAlerts: true,
     budgetAlerts: true,
@@ -149,6 +151,7 @@ function apiToSettings(prefs: Record<string, unknown>): Settings {
     numberFormat: (prefs.number_format as Settings['numberFormat']) || DEFAULT_SETTINGS.numberFormat,
     notifications: {
       dailyBrief: prefs.notification_daily_brief as boolean ?? DEFAULT_SETTINGS.notifications.dailyBrief,
+      weeklyUpdate: prefs.notification_weekly_update as boolean ?? DEFAULT_SETTINGS.notifications.weeklyUpdate,
       marketAlerts: prefs.notification_market_alerts as boolean ?? DEFAULT_SETTINGS.notifications.marketAlerts,
       transactionAlerts: prefs.notification_transaction_alerts as boolean ?? DEFAULT_SETTINGS.notifications.transactionAlerts,
       budgetAlerts: prefs.notification_budget_alerts as boolean ?? DEFAULT_SETTINGS.notifications.budgetAlerts,
@@ -187,6 +190,7 @@ function settingsToApi(settings: Settings): Record<string, unknown> {
     date_format: settings.dateFormat,
     number_format: settings.numberFormat,
     notification_daily_brief: settings.notifications.dailyBrief,
+    notification_weekly_update: settings.notifications.weeklyUpdate,
     notification_market_alerts: settings.notifications.marketAlerts,
     notification_transaction_alerts: settings.notifications.transactionAlerts,
     notification_budget_alerts: settings.notifications.budgetAlerts,

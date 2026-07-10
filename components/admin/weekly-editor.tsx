@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { WeeklyUpdate } from '@/lib/content/weekly-updates';
-import { saveUpdate, setPublished, deleteUpdate } from '@/app/admin/updates/actions';
+import { saveUpdate, setPublished, deleteUpdate, emailUpdate, emailUpdateTest } from '@/app/admin/updates/actions';
 
 function mondayISO(): string {
   const d = new Date();
@@ -142,6 +142,37 @@ export function WeeklyEditor({ updates, marketDraft }: { updates: WeeklyUpdate[]
             <button disabled={busy} onClick={() => onPublish(false)} className="rounded-[6px] border border-[var(--color-border-strong)] px-4 py-2 text-[13px] font-semibold text-[var(--color-text-muted)] disabled:opacity-50">Unpublish</button>
           ) : (
             <button disabled={busy} onClick={() => onPublish(true)} className="rounded-[6px] bg-[var(--color-gold)] px-4 py-2 text-[13px] font-bold text-[var(--color-bg-base)] disabled:opacity-50">Publish</button>
+          )}
+          {existing && (
+            <button
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                setMsg('');
+                const res = await emailUpdateTest(form.week_of);
+                setBusy(false);
+                setMsg(res.ok ? 'Test email sent to you.' : `Error: ${res.error}`);
+              }}
+              className="rounded-[6px] border border-[var(--color-border-strong)] px-4 py-2 text-[13px] font-semibold text-[var(--color-text-primary)] disabled:opacity-50"
+            >
+              Send test to me
+            </button>
+          )}
+          {existing?.status === 'published' && (
+            <button
+              disabled={busy}
+              onClick={async () => {
+                if (!confirm('Email this update to all subscribed users? It sends once and cannot be repeated.')) return;
+                setBusy(true);
+                setMsg('');
+                const res = await emailUpdate(form.week_of);
+                setBusy(false);
+                setMsg(res.ok ? `Emailed to ${res.sent} subscribers.` : `Error: ${res.error}`);
+              }}
+              className="rounded-[6px] border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] px-4 py-2 text-[13px] font-bold text-[var(--color-gold)] disabled:opacity-50"
+            >
+              Email subscribers
+            </button>
           )}
           <button onClick={onCopyResend} className="rounded-[6px] border border-[var(--color-border-strong)] px-4 py-2 text-[13px] font-semibold text-[var(--color-text-primary)]">{copied ? 'Copied' : 'Copy for Resend'}</button>
           {existing && (

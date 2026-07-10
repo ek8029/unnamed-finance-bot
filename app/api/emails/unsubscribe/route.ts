@@ -11,12 +11,14 @@ export const dynamic = 'force-dynamic';
 const KIND_FIELDS: Record<UnsubKind, Record<string, boolean>> = {
   brief: { notification_daily_brief: false },
   market: { notification_market_alerts: false },
-  all: { notification_daily_brief: false, notification_market_alerts: false, notification_email: false },
+  weekly: { notification_weekly_update: false },
+  all: { notification_daily_brief: false, notification_market_alerts: false, notification_weekly_update: false, notification_email: false },
 };
 
 const LABEL: Record<UnsubKind, string> = {
   brief: 'the daily brief',
   market: 'watchlist alerts',
+  weekly: 'the weekly update',
   all: 'all emails',
 };
 

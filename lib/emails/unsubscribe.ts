@@ -3,7 +3,7 @@
 // signature; the route recomputes the signature to authorize the opt-out.
 import { createHmac } from 'crypto';
 
-export type UnsubKind = 'brief' | 'market' | 'all';
+export type UnsubKind = 'brief' | 'market' | 'weekly' | 'all';
 
 // Server-only secret. CRON_SECRET is always set in prod (the cron won't run
 // without it) and never ships to the client.
