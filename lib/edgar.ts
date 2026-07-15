@@ -59,29 +59,57 @@ interface TickerEntry {
 
 const TICKER_MAP_TTL = 24 * 60 * 60 * 1000;
 
-async function getCik(symbol: string): Promise<string | null> {
-  const upper = symbol.toUpperCase();
-  let map = getCached<Map<string, number>>('edgar:tickers');
-  if (!map) {
+// Single-flight + last-good fallback for the ticker→CIK registry. Concurrent
+// callers on a cold cache must share ONE fetch: SEC rate-limits (429) the
+// company_tickers.json file when a portfolio's worth of tickers request it
+// simultaneously, which nulled out fundamentals for every holding at once.
+let tickerMapInFlight: Promise<Map<string, number> | null> | null = null;
+let tickerMapLastGood: Map<string, number> | null = null;
+
+async function fetchTickerMap(): Promise<Map<string, number> | null> {
+  for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const res = await fetch('https://www.sec.gov/files/company_tickers.json', {
         headers: { 'User-Agent': UA, Accept: 'application/json' },
         cache: 'no-store',
       });
+      if (res.status === 429 || res.status === 503) {
+        console.error(`EDGAR company_tickers ${res.status}, attempt ${attempt}/3`);
+        await new Promise((r) => setTimeout(r, 400 * attempt));
+        continue;
+      }
       if (!res.ok) {
         console.error(`EDGAR company_tickers error: ${res.status}`);
         return null;
       }
       const data: Record<string, TickerEntry> = await res.json();
-      map = new Map();
+      const map = new Map<string, number>();
       for (const entry of Object.values(data)) {
         map.set(entry.ticker.toUpperCase(), entry.cik_str);
       }
       setCache('edgar:tickers', map, TICKER_MAP_TTL);
+      tickerMapLastGood = map;
+      return map;
     } catch (error) {
       console.error('EDGAR company_tickers failed:', error);
       return null;
     }
+  }
+  return null;
+}
+
+async function getCik(symbol: string): Promise<string | null> {
+  const upper = symbol.toUpperCase();
+  let map = getCached<Map<string, number>>('edgar:tickers');
+  if (!map) {
+    if (!tickerMapInFlight) {
+      tickerMapInFlight = fetchTickerMap().finally(() => {
+        tickerMapInFlight = null;
+      });
+    }
+    // A stale registry beats none: ticker→CIK mappings are near-immutable.
+    map = (await tickerMapInFlight) ?? tickerMapLastGood;
+    if (!map) return null;
   }
   const cik = map.get(upper);
   return cik != null ? String(cik).padStart(10, '0') : null;

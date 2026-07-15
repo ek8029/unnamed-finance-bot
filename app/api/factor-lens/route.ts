@@ -79,8 +79,11 @@ export async function GET() {
     const toEnrich = aggregated.slice(0, MAX_ENRICHED);
 
     // Enrich the top holdings with fundamentals (Finazon + EDGAR, no OpenAI).
-    const enrichedTop = await Promise.all(
-      toEnrich.map(async (agg): Promise<EnrichedHolding> => {
+    // Chunked, not one big Promise.all: a full-parallel burst 429s both SEC
+    // (~10 req/s) and Finazon, which blanked size/style/quality for most
+    // holdings. Chunks of 5 with a short breather stay under both limits.
+    const ENRICH_BATCH = 5;
+    const enrichOne = async (agg: (typeof toEnrich)[number]): Promise<EnrichedHolding> => {
         try {
           const data = await getFullTickerData(agg.ticker);
           const m = data.financials?.metric ?? {};
@@ -108,8 +111,16 @@ export async function GET() {
             sector: agg.sector ?? null,
           };
         }
-      }),
-    );
+    };
+
+    const enrichedTop: EnrichedHolding[] = [];
+    for (let i = 0; i < toEnrich.length; i += ENRICH_BATCH) {
+      const chunk = toEnrich.slice(i, i + ENRICH_BATCH);
+      enrichedTop.push(...(await Promise.all(chunk.map(enrichOne))));
+      if (i + ENRICH_BATCH < toEnrich.length) {
+        await new Promise((r) => setTimeout(r, 300));
+      }
+    }
 
     // Holdings beyond the cap pass through without metrics (partial).
     const rest: EnrichedHolding[] = aggregated.slice(MAX_ENRICHED).map((agg) => ({
