@@ -31,6 +31,30 @@ interface EvidenceRow {
   source_type: string;
   what_it_means: string | null;
   source_published_at: string | null;
+  created_at: string;
+}
+
+function EvidenceItem({ e }: { e: EvidenceRow }) {
+  return (
+    <div>
+      {e.source_url ? (
+        <a
+          href={e.source_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-mono text-[12px] uppercase tracking-[0.1em] text-[#9A9A9A] hover:text-[#E6B94D] transition-colors"
+          style={MONO}
+        >
+          {e.source_title}
+        </a>
+      ) : (
+        <span className="font-mono text-[12px] uppercase tracking-[0.1em] text-[#6A6A6A]" style={MONO}>
+          {e.source_title}
+        </span>
+      )}
+      <p className="text-[14.5px] leading-[1.55] text-[#7A7A7A] mt-1 mb-0 italic">&ldquo;{e.excerpt}&rdquo;</p>
+    </div>
+  );
 }
 
 const SEVERITY: Record<PillarStatus, number> = { broken: 0, weakening: 1, unverified: 2, intact: 3 };
@@ -98,7 +122,7 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
   if (pillarIds.length > 0) {
     const { data: evidenceRaw } = await supabase
       .from('pillar_evidence')
-      .select('pillar_id, excerpt, source_title, source_url, verdict, materiality, source_type, what_it_means, source_published_at')
+      .select('pillar_id, excerpt, source_title, source_url, verdict, materiality, source_type, what_it_means, source_published_at, created_at')
       .in('pillar_id', pillarIds);
     evidenceByPillar = new Map();
     for (const e of (evidenceRaw ?? []) as EvidenceRow[]) {
@@ -175,41 +199,34 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
                     <StatusChip status={p.eff} />
                     <div className="min-w-0 flex-1">
                       <div className="text-[16px] font-semibold text-[#FAFAFA] leading-snug">{p.claim}</div>
-                      {/* Evidence collapses per pillar so the page stays scannable: intact pillars
-                          fold away; broken/weakening open by default — they are why you are here. */}
-                      {evidence.length > 0 && (
-                        <details className="mt-2.5 group" open={p.eff === 'broken' || p.eff === 'weakening'}>
-                          <summary
-                            className="cursor-pointer list-none [&::-webkit-details-marker]:hidden inline-flex items-center gap-2 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] text-[#9A9A9A] hover:text-[#FAFAFA] transition-colors select-none"
-                            style={MONO}
-                          >
-                            <span className="text-[10px] text-[#6A6A6A] transition-transform group-open:rotate-90">&#9656;</span>
-                            {evidence.length} source{evidence.length === 1 ? '' : 's'}
-                          </summary>
-                          <div className="mt-2.5 space-y-2.5 border-l border-white/[0.07] pl-4">
-                            {evidence.map((e, i) => (
-                              <div key={i}>
-                                {e.source_url ? (
-                                  <a
-                                    href={e.source_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-mono text-[12px] uppercase tracking-[0.1em] text-[#9A9A9A] hover:text-[#E6B94D] transition-colors"
-                                    style={MONO}
-                                  >
-                                    {e.source_title}
-                                  </a>
-                                ) : (
-                                  <span className="font-mono text-[12px] uppercase tracking-[0.1em] text-[#6A6A6A]" style={MONO}>
-                                    {e.source_title}
-                                  </span>
-                                )}
-                                <p className="text-[14.5px] leading-[1.55] text-[#7A7A7A] mt-1 mb-0 italic">&ldquo;{e.excerpt}&rdquo;</p>
-                              </div>
-                            ))}
+                      {/* Newest one or two receipts stay visible so the pillar reads at a glance;
+                          the long tail folds behind a native <details> toggle (no client JS). */}
+                      {evidence.length > 0 && (() => {
+                        const sorted = [...evidence].sort((a, b) =>
+                          (b.source_published_at ?? b.created_at).localeCompare(a.source_published_at ?? a.created_at),
+                        );
+                        const visible = sorted.slice(0, 2);
+                        const rest = sorted.slice(2);
+                        return (
+                          <div className="mt-3 space-y-2.5 border-l border-white/[0.07] pl-4">
+                            {visible.map((e, i) => <EvidenceItem key={i} e={e} />)}
+                            {rest.length > 0 && (
+                              <details className="group">
+                                <summary
+                                  className="cursor-pointer list-none [&::-webkit-details-marker]:hidden inline-flex items-center gap-2 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] text-[#9A9A9A] hover:text-[#FAFAFA] transition-colors select-none"
+                                  style={MONO}
+                                >
+                                  <span className="text-[10px] text-[#6A6A6A] transition-transform group-open:rotate-90">&#9656;</span>
+                                  {rest.length} more source{rest.length === 1 ? '' : 's'}
+                                </summary>
+                                <div className="mt-2.5 space-y-2.5">
+                                  {rest.map((e, i) => <EvidenceItem key={i} e={e} />)}
+                                </div>
+                              </details>
+                            )}
                           </div>
-                        </details>
-                      )}
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
