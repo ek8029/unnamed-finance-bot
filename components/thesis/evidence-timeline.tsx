@@ -19,6 +19,8 @@ export interface TimelineEvidence {
   source_title: string;
   source_url: string | null;
   pillarClaim: string;
+  /** F1 impact gloss (what_it_means): rendered above the verbatim excerpt when present. */
+  whatItMeans?: string | null;
 }
 
 const SOURCE_LABEL: Record<TimelineEvidence['source_type'], string> = {
@@ -47,9 +49,15 @@ const when = (e: TimelineEvidence) => e.date ?? '';
 
 export function EvidenceTimeline({ evidence, defaultOpen = false }: { evidence: TimelineEvidence[]; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
+  // F2: material-first feed. Default hides context-grade rows so a 10-Q line and
+  // a blog mention never weigh the same at a glance; "All" restores the full trail.
+  const [showAll, setShowAll] = useState(false);
   if (evidence.length === 0) return null;
 
-  const ordered = [...evidence].sort((a, b) => when(b).localeCompare(when(a)));
+  const materialCount = evidence.filter((e) => e.materiality === 'material').length;
+  // No material rows yet: an empty default feed reads as "nothing happened", so show all.
+  const filtered = showAll || materialCount === 0 ? evidence : evidence.filter((e) => e.materiality === 'material');
+  const ordered = [...filtered].sort((a, b) => when(b).localeCompare(when(a)));
 
   return (
     <div className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] overflow-hidden">
@@ -69,6 +77,26 @@ export function EvidenceTimeline({ evidence, defaultOpen = false }: { evidence: 
 
       {open && (
         <div className="px-5 pb-5 pt-1">
+          {materialCount > 0 && materialCount < evidence.length && (
+            <div className="flex items-center gap-1.5 mb-3">
+              {([false, true] as const).map((all) => (
+                <button
+                  key={String(all)}
+                  type="button"
+                  onClick={() => setShowAll(all)}
+                  className="px-2 py-[3px] rounded font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em] transition-colors"
+                  style={{
+                    ...MONO,
+                    color: showAll === all ? '#E6B94D' : '#6A6A6A',
+                    background: showAll === all ? 'rgba(230,185,77,0.10)' : 'transparent',
+                    border: `1px solid ${showAll === all ? 'rgba(230,185,77,0.30)' : 'rgba(255,255,255,0.08)'}`,
+                  }}
+                >
+                  {all ? `All (${evidence.length})` : `Material (${materialCount})`}
+                </button>
+              ))}
+            </div>
+          )}
           <ol className="relative ml-1 border-l border-white/[0.10]">
             {ordered.map((e, i) => {
               const v = VERDICT[e.verdict];
@@ -97,6 +125,12 @@ export function EvidenceTimeline({ evidence, defaultOpen = false }: { evidence: 
                       </span>
                     )}
                   </div>
+                  {e.whatItMeans && (
+                    <p className="text-[13.5px] leading-[1.5] mt-1.5 mb-0">
+                      <span className="font-semibold" style={{ color: '#E6B94D' }}>For this pillar: </span>
+                      <span className="text-[#9A9A9A]">{e.whatItMeans}</span>
+                    </p>
+                  )}
                   <p className="text-[15px] leading-[1.55] text-[#E4E4E4] mt-1.5 mb-0">&ldquo;{e.excerpt}&rdquo;</p>
                   <div className="flex items-center gap-1.5 mt-1.5 text-[13.5px] text-[#6A6A6A]">
                     {e.source_url ? (

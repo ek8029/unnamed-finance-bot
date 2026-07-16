@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { nextLifecycle, type Lifecycle } from '@/lib/thesis-lifecycle';
+import { bumpThesisVersion, isMaterialPillarPatch } from '@/lib/thesis-version';
 
 const VALID_STATUS_OVERRIDES = new Set(['unverified', 'intact', 'weakening', 'broken']);
 
@@ -115,6 +116,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'Failed to update pillar' }, { status: 500 });
     }
 
+    // F4 provenance: a claim-text change is a material edit of the thesis itself.
+    if (isMaterialPillarPatch(body, typeof updates.claim === 'string' && updates.claim !== pillar.claim)) {
+      await bumpThesisVersion(supabase, pillar.thesis_id as string);
+    }
+
     return NextResponse.json({ pillar: updated });
   } catch (err) {
     console.error('[thesis/pillars] PATCH unhandled error:', err);
@@ -141,7 +147,7 @@ export async function DELETE(
 
     const { data: pillar, error: fetchError } = await supabase
       .from('thesis_pillars')
-      .select('id, origin, confirmed')
+      .select('id, origin, confirmed, thesis_id')
       .eq('id', id)
       .eq('user_id', user.id)
       .maybeSingle();
@@ -179,6 +185,9 @@ export async function DELETE(
       console.error('[thesis/pillars] DELETE error:', deleteError);
       return NextResponse.json({ error: 'Failed to delete pillar' }, { status: 500 });
     }
+
+    // F4 provenance: removing a real pillar is a material edit (dismissed drafts above are not).
+    await bumpThesisVersion(supabase, pillar.thesis_id as string);
 
     return NextResponse.json({ success: true });
   } catch (err) {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { getUserTier } from '@/lib/tier';
+import { bumpThesisVersion } from '@/lib/thesis-version';
 
 function parseTicker(raw: string): { ticker: string } | { error: string } {
   const ticker = raw.trim().toUpperCase();
@@ -361,6 +362,9 @@ export async function POST(
       console.error('[thesis/ticker] POST pillar insert error:', insertError);
       return NextResponse.json({ error: 'Failed to insert pillar' }, { status: 500 });
     }
+
+    // F4 provenance: adding a pillar is a material edit of the thesis.
+    await bumpThesisVersion(supabase, thesis.id as string);
 
     return NextResponse.json({ pillar }, { status: 201 });
   } catch (err) {

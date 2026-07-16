@@ -4,6 +4,8 @@ import { analyzeStock } from '@/lib/analyze-stock';
 import { getFullTickerData } from '@/lib/financial-data';
 import { createClient } from '@/lib/supabase/server';
 import { AnalysisTerminal } from '@/app/analyze/[ticker]/analysis-terminal';
+import { deriveThesisVerdict, VERDICT_META } from '@/lib/thesis-verdict';
+import type { PillarStatus } from '@/lib/thesis-status';
 
 // Research → thesis bridge. The research tab used to dead-end: you studied a
 // name and the loop stopped there. This strip closes it — route the research
@@ -13,6 +15,7 @@ import { AnalysisTerminal } from '@/app/analyze/[ticker]/analysis-terminal';
 async function getThesisBridge(symbol: string): Promise<{
   variant: 'thesis' | 'draft' | 'held' | 'research';
   thesisId?: string;
+  verdictLabel?: string;
 } | null> {
   try {
     const supabase = await createClient();
@@ -26,7 +29,20 @@ async function getThesisBridge(symbol: string): Promise<{
 
     // Only a TRACKED thesis is genuinely being watched — an untracked row is a
     // draft in progress and must not be presented as agent coverage.
-    if (thesis && thesis.tracked) return { variant: 'thesis', thesisId: thesis.id as string };
+    if (thesis && thesis.tracked) {
+      const { data: pillars } = await supabase
+        .from('thesis_pillars')
+        .select('status, status_override, lifecycle')
+        .eq('thesis_id', thesis.id)
+        .eq('confirmed', true);
+      const counts: Record<PillarStatus, number> = { unverified: 0, intact: 0, weakening: 0, broken: 0 };
+      for (const p of (pillars ?? []) as { status: PillarStatus; status_override: PillarStatus | null; lifecycle: string }[]) {
+        if (p.lifecycle === 'dismissed') continue;
+        counts[p.status_override ?? p.status]++;
+      }
+      const verdictLabel = VERDICT_META[deriveThesisVerdict(counts)].label;
+      return { variant: 'thesis', thesisId: thesis.id as string, verdictLabel };
+    }
     if (thesis) return { variant: 'draft' };
     if (held) return { variant: 'held' };
     return { variant: 'research' };
@@ -35,10 +51,10 @@ async function getThesisBridge(symbol: string): Promise<{
   }
 }
 
-function ThesisBridge({ symbol, bridge }: { symbol: string; bridge: { variant: 'thesis' | 'draft' | 'held' | 'research'; thesisId?: string } }) {
+function ThesisBridge({ symbol, bridge }: { symbol: string; bridge: { variant: 'thesis' | 'draft' | 'held' | 'research'; thesisId?: string; verdictLabel?: string } }) {
   const copy = {
     thesis: {
-      label: 'Thesis on file',
+      label: bridge.verdictLabel ? `Thesis on file · ${bridge.verdictLabel}` : 'Thesis on file',
       line: `Helm is watching your reasons for holding ${symbol} against fresh filings and news.`,
       cta: 'Open your thesis',
       href: `/dashboard/theses/${bridge.thesisId}`,

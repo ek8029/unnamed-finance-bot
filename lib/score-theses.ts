@@ -455,7 +455,7 @@ Rules:
 - verdict: "supports", "contradicts", or "neutral" (neutral only if clearly relevant context).
 - materiality: "material" (changes the thesis outlook) or "context" (informative background).
 - why: one concise sentence explaining the connection.
-- what_it_means: one concise sentence on investment implication.
+- what_it_means: one concise sentence, addressed to the holder in second person ("your"), on what this does to the pillar's standing. Describe state only, never recommend an action (no buy, sell, trim, or consider). Do not introduce facts absent from the cited source.
 - consider: optional, only if there is a meaningful counterpoint.
 Respond with JSON exactly in this shape:
 { "evidence": [ { "pillar_index": <1-based pillar number>, "source_index": <1-based source number>, "verdict": "...", "materiality": "...", "excerpt": "...", "why": "...", "what_it_means": "...", "consider": "..." } ] }`;

@@ -20,6 +20,8 @@ import { ThesisCardsView, type CardThesis } from '@/components/thesis/thesis-car
 import { MaxUpgradeCard } from '@/components/max-upgrade-card';
 import { AgentActivity } from '@/components/thesis/agent-activity';
 import { summarizePillars, effectiveStatus, type ThesisSummary } from '@/lib/thesis-summary';
+import { deriveThesisVerdict, verdictSentence } from '@/lib/thesis-verdict';
+import { VerdictLine } from '@/components/thesis/verdict-chip';
 import { STATUS_META, dotGlow, METER_ORDER, METER_COLORS, convictionColor, type PillarStatus } from '@/lib/thesis-palette';
 import { CompanyLogo } from '@/components/company-logo';
 
@@ -783,6 +785,12 @@ export default function ThesesPage() {
                             <button type="button" onClick={() => handleDeleteThesis(r.t.ticker)} className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#6A6A6A] hover:text-[#F87171] transition-colors" style={MONO}>
                               Delete thesis
                             </button>
+                          </div>
+                          <div className="mb-4">
+                            <VerdictLine
+                              verdict={deriveThesisVerdict(r.summary.statusCounts)}
+                              sentence={verdictSentence(r.confirmedPillars.map((cp) => ({ claim: cp.claim, status: cp.status_override ?? cp.status })))}
+                            />
                           </div>
                           <ThesisActions key={`actions-${r.t.id}`} thesisId={r.t.id} className="mb-4" />
                           <WhyIOwnThis key={r.t.ticker} ticker={r.t.ticker} bare />

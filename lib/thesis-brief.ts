@@ -8,6 +8,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PillarStatus } from '@/lib/thesis-status';
+import { verdictSentence } from '@/lib/thesis-verdict';
 import { recentTransitions, type HistoryPillar, type HistoryEvidence, type Transition } from '@/lib/thesis-history';
 
 export interface BriefPillarState {
@@ -22,6 +23,8 @@ export interface ThesisBriefData {
   needsAttention: { ticker: string; status: PillarStatus; claim: string }[];
   moved: Transition[];
   headline: string;
+  /** Per-thesis "on balance" sentence for the worst-standing ticker (spec F3); null when nothing needs attention. */
+  onBalance: { ticker: string; sentence: string } | null;
 }
 
 const MAX_ATTENTION = 6;
@@ -58,7 +61,16 @@ export function summarizeThesisState(
 
   const trackedCount = new Set(pillars.map((p) => p.ticker)).size;
 
-  return { trackedCount, counts, needsAttention, moved, headline: headlineFor(counts, trackedCount) };
+  // One "on balance" sentence for the worst-standing thesis, reused verbatim
+  // from the theses page templates so the two surfaces never disagree.
+  let onBalance: ThesisBriefData['onBalance'] = null;
+  const worstTicker = needsAttention[0]?.ticker;
+  if (worstTicker) {
+    const thesisPillars = pillars.filter((p) => p.ticker === worstTicker);
+    onBalance = { ticker: worstTicker, sentence: verdictSentence(thesisPillars) };
+  }
+
+  return { trackedCount, counts, needsAttention, moved, headline: headlineFor(counts, trackedCount), onBalance };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -76,6 +88,7 @@ export async function composeThesisBrief(
     needsAttention: [],
     moved: [],
     headline: 'No tracked theses yet.',
+    onBalance: null,
   };
 
   const { data: theses } = await db

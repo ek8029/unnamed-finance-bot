@@ -44,6 +44,8 @@ interface Thesis {
   tracked: boolean;
   notes: string | null;
   last_scanned_at?: string | null;
+  version?: number | null;
+  version_updated_at?: string | null;
 }
 
 const STATUS_META: Record<PillarStatus, { label: string; color: string }> = {
@@ -564,6 +566,7 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
       source_title: e.source_title,
       source_url: e.source_url,
       pillarClaim: p.claim,
+      whatItMeans: e.what_it_means,
     })),
   );
 
@@ -600,8 +603,17 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
     <section className={bare ? '' : 'rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5'}>
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--color-gold)]">
-            Why I Own This
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--color-gold)]">
+              Why I Own This
+            </span>
+            {/* F4 provenance pill: your thesis, versioned like the document it is. */}
+            {phase === 'ready' && thesis && typeof thesis.version === 'number' && (
+              <span className="font-mono text-[10px] tracking-[0.08em] text-[#6A6A6A] px-1.5 py-[2px] rounded border border-white/[0.08]" style={MONO}>
+                v{thesis.version}
+                {thesis.version_updated_at ? ` · edited ${fmtDate(thesis.version_updated_at)}` : ''}
+              </span>
+            )}
           </div>
           {phase === 'ready' && (
             <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed mt-2 max-w-[520px] m-0">

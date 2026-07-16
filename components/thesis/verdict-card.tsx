@@ -128,8 +128,10 @@ export function VerdictCard({
           </div>
         )}
 
-        {/* What it means */}
+        {/* F1 impact gloss: the read on YOUR pillar, above the verbatim receipts.
+            The quote below stays untouched — the gloss interprets, never replaces. */}
         <p className="text-[16px] leading-[1.55] font-medium text-[#FAFAFA] m-0 mb-[14px]">
+          <span className="font-semibold" style={{ color: '#E6B94D' }}>For your {item.ticker} pillar: </span>
           {item.whatItMeans}
         </p>
 
