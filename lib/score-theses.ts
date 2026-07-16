@@ -16,6 +16,7 @@ import { derivePillarStatus, type EvidenceForStatus, type PillarStatus } from '@
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import type { BreachEvent } from '@/lib/thesis-breach';
 import { isComparisonHeadline } from '@/lib/news-quality';
+import { isHedgedConnection } from '@/lib/evidence-quality';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SCORE_MODEL = 'gpt-4o-mini';
@@ -512,6 +513,12 @@ Respond with JSON exactly in this shape:
 
     // Validate required strings
     if (!row.why || !row.what_it_means || !row.excerpt) continue;
+
+    // Guard: hedged connection = loose thematic match, not evidence (KO fairlife case).
+    if (isHedgedConnection(row.why, row.verdict as 'supports' | 'contradicts' | 'neutral')) {
+      log.push(`[${ticker}] Dropping row: hedged connection "${row.why.slice(0, 90)}" for ${candidate?.source_key ?? `source ${si}`}`);
+      continue;
+    }
 
     let verdict = row.verdict as 'supports' | 'contradicts' | 'neutral';
     let materiality = row.materiality as 'material' | 'context';
