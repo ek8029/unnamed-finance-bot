@@ -1,0 +1,115 @@
+---
+title: "Thesis Tracking Apps in 2026: The Honest Landscape"
+description: "Thesis tracking is finally becoming a real software category. I mapped every thesis tracking app I could find in 2026, which ones are actually live, how they price, and what each one is really built for, including where our own tool fits and where it does not."
+date: "2026-07-16"
+updated: "2026-07-16"
+author: "Evan Kim"
+tags: ["thesis tracking", "investment thesis", "thesis monitoring", "tools", "alternatives"]
+published: true
+faq:
+  - q: "What is a thesis tracking app?"
+    a: "A thesis tracking app records the reasons you bought each stock, the thesis, and helps you check whether those reasons still hold as new filings, earnings, and news arrive. Simpler ones are structured journals you update by hand. Automated ones, like Helm Terminal and MyThesis, monitor sources against your thesis and alert you when a pillar weakens or breaks."
+  - q: "Which thesis tracking apps are actually available in 2026?"
+    a: "As of July 2026, two automated thesis monitors are live: Helm Terminal (free to start, $20/month Pro for the thesis layer on unlimited holdings) and MyThesis (from $49.99/month for 5 holdings). Vela is in private waitlist, Thesis (usethesis.com) is in early access, and newer entrants like thesisai.app and subthesis.app cover thesis generation and journaling rather than monitoring."
+  - q: "What is the best free thesis tracker?"
+    a: "For automated monitoring, Helm Terminal is free to start, and its paid thesis layer covers unlimited holdings at $20/month. MyThesis has a free tier limited to one holding. For pure manual journaling, a notes app or spreadsheet is free and works, it just will not watch anything for you."
+  - q: "Do thesis tracking apps connect to your brokerage?"
+    a: "Most do not. MyThesis uses manually entered holdings, and the journaling tools track whatever you type in. Helm Terminal connects to 12,000+ institutions via Plaid with read-only access, so the theses attach to the positions you actually hold, and Thesis (usethesis.com) lists Plaid sync in early access."
+  - q: "What should a thesis tracking app show you when a thesis breaks?"
+    a: "The evidence itself. A useful break alert tells you which specific pillar was hit, quotes the dated line from the filing or article that hit it, and links the source so you can verify before acting. Alerts that only name a source or paraphrase a signal make you re-do the research the tool was supposed to have done."
+---
+
+For years, "track your investment thesis" meant a notes app, a spreadsheet column, or a memory. That is finally changing. There are now at least six tools claiming some version of the job, and in the last few weeks one of them started running paid ads, which is usually the sign a category is becoming real.
+
+I build one of these tools, so read everything here with that bias in mind. But I also spend a lot of time watching this space, and most of what is written about it is either a waitlist landing page or marketing. Here is the honest map as of July 2026: what exists, what is actually live, what each one is for, and how they price.
+
+## The category, in one sentence
+
+A thesis tracker watches the reasons you own a stock, not just the price. You write down why you hold a position, the pillars, and the tool helps you notice when the facts underneath those reasons change: a lost contract, a margin reversal, a new risk factor in the 10-K. If you want the full background on why price alone misses this, I wrote up [how thesis drift works](/blog/thesis-drift) separately.
+
+Within that one sentence, the tools split into three very different jobs:
+
+1. **Automated monitors** read filings, earnings, and news against your thesis and alert you. This is the hard version of the job.
+2. **Journals** give you structure for writing theses and updating them by hand.
+3. **Generators** draft a thesis for you from data, with monitoring promised later.
+
+Knowing which job you actually need does most of the work of choosing.
+
+## The landscape
+
+| Tool | Status (July 2026) | Job | Pricing | Brokerage sync | Cites evidence |
+| --- | --- | --- | --- | --- | --- |
+| Helm Terminal | Live | Automated monitor, whole portfolio | Free start, $20/mo Pro, unlimited holdings | Plaid + manual | Verbatim, dated quotes |
+| MyThesis | Live | Automated monitor, per holding | $49.99/mo for 5, $89.99 for 10, $199.99 for 25 | Manual only | Source named, not quoted |
+| Vela | Private waitlist | Automated monitor | Not public | Plaid (optional) | Paraphrased signals |
+| Thesis (usethesis.com) | Early access | Journal | Not public | Plaid | No |
+| ThesisWatch | Not disclosed | Thesis management | Not disclosed | Not disclosed | Not disclosed |
+| thesisai.app | Invite-only MVP | Generator | Not public | Not shown | Not shown |
+| subthesis.app | Live | Journal | Not public | Not shown | No |
+
+Statuses and pricing verified from public sites in June and July 2026 and may change. Only two of the seven will take your money for automated monitoring today.
+
+## MyThesis: the live specialist
+
+MyThesis (mythesis.ai) launched recently and is the newest live entrant. It is a focused thesis-alert tool: you enter holdings manually, write or refine a thesis with per-pillar structure, and get an alert feed with a status chip per thesis (Supported or Challenged) and severity tags on each alert. The UI is clean and the scope is deliberate.
+
+Two things to know before subscribing. First, the meter: pricing scales with how many holdings you watch, and at 25 positions you are paying $199.99 a month, about $2,400 a year, for thesis alerts alone. Second, alerts name their source but do not quote the underlying document, so verifying a "Challenged" verdict means doing the lookup yourself. If you hold three or four high-conviction names and want a dedicated alert feed for exactly those, it is a reasonable tool. The [full MyThesis comparison](/mythesis-alternative) covers the math at different portfolio sizes.
+
+## Vela: the closest pitch, still gated
+
+Vela (getvela.co) has the sharpest one-liner in the category: know when your thesis breaks. It reads filings and maps signals to your thesis drivers. As of July 2026 it remains in private waitlist with no public pricing, and its interpretations are paraphrased rather than quoted. If it opens up, it will be a serious entrant. Today you cannot use it.
+
+## Thesis (usethesis.com): the structured journal
+
+Thesis is a note-first tracker: remember why you invested, log events against positions, sync holdings via Plaid. It does not read filings for you, which makes it a journal rather than a monitor, and several features were still marked coming soon in early access. If your discipline problem is writing things down rather than watching sources, a journal may honestly be all you need.
+
+## The newcomers: thesisai.app and subthesis.app
+
+Two smaller entrants round out the map. thesisai.app is an invite-only MVP focused on generating a thesis from data, the opposite end of the pipeline from monitoring one. subthesis.app is a lightweight thesis journal. Both are early, both are worth a look if their specific slice is your exact need, and neither monitors sources against your reasoning today.
+
+## Helm Terminal: the whole-book agent
+
+Here is where I stop being a neutral guide, because Helm is mine and I built its thesis layer for my own portfolio first.
+
+The design difference is that Helm does not treat thesis tracking as a standalone product. It is one layer of an agent that watches your whole book. You connect brokerages through Plaid (read-only, it can never trade or move money) or add holdings manually. You write the pillars behind each position, or Helm drafts them and you edit what you actually believe. Then, every trading day, Helm scores new SEC filings, earnings, news, and price against each pillar.
+
+Three things fall out of that design:
+
+- **Receipts.** When a pillar weakens, the alert quotes the exact dated line from the filing or article, not a paraphrase, not just a source name. You verify in one click. We keep a public log of these calls with their evidence at [the masthead](/masthead).
+- **Cross-position risk.** Because Helm sees the whole book, it can flag when several holdings secretly rest on the same pillar, the shared-driver problem that makes a "diversified" portfolio break all at once.
+- **Context.** The same position that carries your thesis also gets tax-loss harvesting detection, concentration scans, and earnings exposure, so a weakening thesis shows up next to what it means for your taxes and risk, in one place.
+
+Pricing is flat: the terminal is free to start, and the thesis layer is Pro at $20 a month for unlimited holdings. Whether you watch 5 positions or 50, the price does not move.
+
+<CTACard
+  title="See thesis monitoring on a real position"
+  description="Run a free AI analysis on any US ticker, no account needed, then connect your portfolio and let Helm watch the reasons you own every position."
+  href="/analyze"
+  buttonText="Analyze a stock free"
+/>
+
+## How to choose
+
+**If you hold a few high-conviction names and want a dedicated alert feed:** MyThesis does that today. Check the per-holding math against your position count first.
+
+**If you mostly need writing discipline:** Thesis (usethesis.com) or subthesis.app, or honestly a well-kept journal. Do not pay for monitoring you will not use.
+
+**If you want to be notified when it opens:** Vela's waitlist. The pitch is right; the product is not public.
+
+**If you want the thesis watched as part of your whole portfolio, with quoted evidence:** that is the job Helm was built for, and the one I would obviously point you to. The [thesis monitoring page](/thesis-monitoring) explains the methodology, including how pillars are scored and what counts as a break.
+
+One suggestion whichever way you go: before you pick a tool, write down the two or three falsifiable reasons you own your largest position, and the single fact that would break each one. That half hour of work is the highest-value part of thesis tracking, and every tool on this list works better when you bring it.
+
+<CTACard
+  title="Your whole portfolio, one flat price"
+  description="Helm watches the thesis behind every holding, quotes the evidence verbatim, and runs taxes, risk, and earnings on the same book. Free to start."
+  href="/signup"
+  buttonText="Take the helm"
+/>
+
+## Related reading
+
+- [Thesis drift: how the reasons you bought a stock quietly disappear](/blog/thesis-drift)
+- [How to track your investment thesis (and actually keep it honest)](/blog/how-to-track-investment-thesis)
+- [Best investment thesis trackers in 2026, compared](/best-thesis-trackers)
+- [Why your investment thesis needs receipts, not just alerts](/blog/investment-thesis-alerts)

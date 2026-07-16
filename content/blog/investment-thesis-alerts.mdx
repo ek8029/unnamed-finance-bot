@@ -1,0 +1,101 @@
+---
+title: "Why Your Investment Thesis Needs Receipts, Not Just Alerts"
+description: "Thesis alert tools are multiplying, but most alerts stop at a severity tag and a source name. Here is why a thesis alert without the verbatim, dated evidence behind it makes you re-do the work, and what a receipt actually looks like."
+date: "2026-07-16"
+updated: "2026-07-16"
+author: "Evan Kim"
+tags: ["investment thesis", "thesis alerts", "thesis monitoring", "evidence", "sell-discipline"]
+published: true
+faq:
+  - q: "What is an investment thesis alert?"
+    a: "An investment thesis alert is a notification that new information, a filing, an earnings result, a news event, conflicts with one of the reasons you own a stock. Unlike a price alert, it fires on the substance of your reasoning: if you own a company because government revenue is sticky and a major contract is cancelled, the alert points at that pillar specifically."
+  - q: "Why do thesis alerts need citations?"
+    a: "Because a thesis alert is an argument about your money. Before you act on 'your thesis is challenged,' you need to see the claim behind it: the exact sentence from the filing or article, with its date and a link. An alert that only names its source or paraphrases a signal forces you to re-do the research to verify it, which defeats the point of automated monitoring."
+  - q: "What is the difference between a severity tag and evidence?"
+    a: "A severity tag (material vs minor, challenged vs supported) is the tool's opinion about how much an event matters. Evidence is the dated primary-source text the opinion rests on. Tags are useful for sorting; they are not verifiable on their own. Good monitoring gives you both: the verdict for triage, and the verbatim quote so you can check the verdict."
+  - q: "Which thesis monitoring tools quote their sources verbatim?"
+    a: "As of July 2026, Helm Terminal is the only live thesis monitor that quotes the exact dated line from SEC filings and news in every alert. MyThesis names the source behind an alert without quoting it, and Vela, still in private waitlist, presents paraphrased interpretations of filings."
+  - q: "Can I see real examples of evidence-backed thesis alerts?"
+    a: "Yes. Helm publishes a running public log of the calls its monitoring made, each with the dated primary-source evidence behind it, at helmterminal.dev/masthead. The per-stock living thesis pages, like helmterminal.dev/thesis/pltr, show every pillar, what would break it, and the verbatim citations tested against it."
+---
+
+A new kind of notification is showing up in investors' inboxes: the thesis alert. Not "AAPL is down 4%," but "your thesis on AAPL has been challenged." Tools that watch the reasons you own a stock are finally real, I mapped [the whole landscape](/blog/thesis-tracking-apps) separately, and the alert feed is the heart of every one of them.
+
+So here is the question that decides whether any of these tools deserve your trust: when the alert arrives, what is actually in it?
+
+## The anatomy of a thesis alert
+
+Every thesis alert makes three claims stacked on top of each other:
+
+1. **Something happened.** A filing dropped, a contract was cancelled, guidance was cut.
+2. **It touches your reasoning.** The event lands on a specific pillar of your thesis, not just on the ticker.
+3. **It matters this much.** A verdict or severity: challenged, supported, material, minor.
+
+Most tools present these top-down. You see the verdict first, maybe a severity tag, a one-line summary, and a source name. "Thesis challenged. Material. Per a news report." Clean, scannable, and completely unverifiable as delivered.
+
+The problem is that each claim in the stack inherits the reliability of the one below it. The verdict is only as good as the pillar mapping, and the pillar mapping is only as good as the underlying fact. If you cannot see the fact, the exact words, from the dated document, you cannot audit anything above it. You are trusting the whole stack on reputation.
+
+## Why "per a news source" is not enough
+
+Imagine your analyst walks in and says "I think your Palantir thesis is in trouble, something about a contract, I read it somewhere." You would send them back for the document.
+
+Now the software version. Say you own Palantir on two pillars: government revenue stays sticky, and margins keep expanding. Two real events land in the same week: a European government ends an intelligence contract, and a UK review opens on a large health-service deal. A good monitor should tell you three things: both events hit the government-revenue pillar specifically, not the margin pillar; here is the dated line from each source saying exactly what happened; and here is the verdict in light of it.
+
+An alert that says "PLTR thesis challenged, material, per news" technically covered the same events. But to act on it, you now have to go find the articles, confirm the details, and decide whether the mapping to your pillar was even right. The tool did the cheap part, noticing, and left you the expensive part, verifying. That is the work you were paying it to do.
+
+There is a well-known result from forecasting research that applies here: accountability improves judgment. Forecasts with receipts attached are forecasts someone can score later. The same is true of alerts. A monitor that quotes its evidence is exposing itself to being checked, and that exposure is precisely what makes it trustworthy.
+
+<ProTip>
+A quick test for any thesis tool: find one alert and ask, could I verify this in one click without leaving the alert? If the answer is no, the tool is asking for trust it has not earned yet.
+</ProTip>
+
+## What a receipt looks like
+
+A receipt, in this context, is the smallest unit of evidence that lets you verify the claim yourself:
+
+| Element | Alert without receipts | Alert with receipts |
+| --- | --- | --- |
+| The event | One-line paraphrase | Verbatim quote from the document |
+| The source | Named ("per AP News") | Linked, with the document type |
+| The date | Sometimes | Always, on the quote itself |
+| The pillar hit | Often just the ticker | The specific reason, named |
+| The verdict | Challenged / supported | Same, but auditable against the quote |
+
+The verdict and severity tags are genuinely useful, sorting a feed by materiality is how you triage a busy earnings week. The point is not tags versus quotes. It is that tags without quotes are opinions, and quotes turn them back into checkable claims.
+
+This is also why paraphrasing is a quiet failure mode even when the source is linked. A paraphrase is an interpretation, and interpretations drift exactly at the moments that matter most, when the language in a filing is hedged, lawyerly, and deliberately precise. Risk factors in a 10-K are written the way they are for a reason. You want those words, not a summary of them.
+
+## Receipts in public
+
+This standard is easy to claim and expensive to meet, which is why I think tools should have to demonstrate it in public, ours included.
+
+Helm publishes a running log of the calls its thesis monitoring made, each entry with the dated primary-source evidence behind it, at [the masthead](/masthead). And every [living thesis page](/thesis/pltr) shows the full chain for a single stock: the pillars, the single fact that would break each one, the current computed status, and every verbatim citation that has been tested against the thesis, confirming or contradicting. Not because the calls are always right, they will not be, but because a monitoring tool that keeps its evidence private is asking you to grade its homework without seeing it.
+
+<CTACard
+  title="See the receipts for yourself"
+  description="Pick any living thesis page and read the actual dated citations behind each pillar's status. Then run a free analysis on a stock you own."
+  href="/analyze"
+  buttonText="Analyze a stock free"
+/>
+
+## The habit this builds
+
+The deeper reason receipts matter is what they do to you, not the tool.
+
+When every alert carries its evidence, your review loop changes shape. Instead of "the app says my thesis is challenged, do I believe the app," the question becomes "this specific dated fact contradicts this specific reason I wrote down, does it?" That is the actual investing decision, the one you would want to be making anyway, and the tool has just teed it up with the document open to the right line.
+
+Over a few quarters this compounds into something like sell-discipline. You wrote falsifiable pillars, you defined what would break them, and you have been shown the evidence each time one was tested. Whether you hold or sell, you did it for a reason you can point to. That paper trail is worth more than any single alert, and it is the part no severity tag can give you. If you have not set up that structure yet, start with [how to track your investment thesis](/blog/how-to-track-investment-thesis), the tooling comes second.
+
+<CTACard
+  title="Thesis alerts with the evidence attached"
+  description="Helm watches the reasons you own every position and quotes the exact dated line from the filing or article when one weakens. Free to start."
+  href="/thesis-monitoring"
+  buttonText="See how thesis monitoring works"
+/>
+
+## Related reading
+
+- [Thesis tracking apps in 2026: the honest landscape](/blog/thesis-tracking-apps)
+- [Thesis drift: how the reasons you bought a stock quietly disappear](/blog/thesis-drift)
+- [How to track your investment thesis](/blog/how-to-track-investment-thesis)
+- [Best investment thesis trackers in 2026, compared](/best-thesis-trackers)
