@@ -10,6 +10,9 @@ import { isHedgedConnection, isOperationsPillar, OPERATIONAL_INCIDENT, type Evid
 
 const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
 const DELETE = process.argv.includes('--delete');
+// Tier 1: hedged-why rows with context materiality only — zero direct status-math
+// impact (material rows and heuristic-only ops flags stay for manual review).
+const DELETE_TIER1 = process.argv.includes('--delete-tier1');
 
 interface FlaggedRow {
   id: string;
@@ -75,12 +78,17 @@ async function main() {
     }
   }
 
-  if (DELETE && flagged.length) {
-    const ids = flagged.map((f) => f.id);
+  const tier1 = flagged.filter((f) => f.flags.includes('hedged-why') && f.materiality === 'context');
+  const review = flagged.filter((f) => !tier1.includes(f));
+  console.log(`\ntier1 (hedged, non-material): ${tier1.length}; held for review (material or ops-heuristic-only): ${review.length}`);
+
+  const toDelete = DELETE ? flagged : DELETE_TIER1 ? tier1 : [];
+  if (toDelete.length) {
+    const ids = toDelete.map((f) => f.id);
     const { error: delErr } = await db.from('pillar_evidence').delete().in('id', ids);
-    console.log(delErr ? `DELETE ERR ${delErr.message}` : `\nDELETED ${ids.length} rows`);
+    console.log(delErr ? `DELETE ERR ${delErr.message}` : `\nDELETED ${ids.length} rows (statuses self-heal on next scan)`);
   } else {
-    console.log('\n(dry run; pass --delete to remove flagged rows)');
+    console.log('\n(dry run; --delete-tier1 removes hedged non-material rows, --delete removes all flagged)');
   }
 }
 main().catch((e) => { console.error(e); process.exit(1); });
