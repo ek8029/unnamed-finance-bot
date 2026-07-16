@@ -447,12 +447,14 @@ export async function scoreOneThesis(
 You are a senior equity analyst judging whether each source bears on each thesis pillar.
 A single source can bear on more than one pillar. For each pillar a source genuinely relates to, produce a separate evidence row.
 Rules:
-- Only emit rows where the source clearly bears on the pillar.
+- Only emit rows where the source clearly bears on the pillar's MECHANISM, the causal claim itself, not merely a brand, product, or segment the pillar covers. A pillar about growth drivers or consumer demand is NOT affected by every event at a covered brand. Emitting no row for a source is the correct output when nothing clearly bears.
+- If connecting the source to the pillar requires hedging ("may affect", "could impact", "underscores potential"), the connection is too weak: OMIT the row.
+- Operational incidents (cybersecurity events, ransomware, recalls, lawsuits, outages) bear only on pillars explicitly about operations, execution, supply chain, costs, or margins, and only when the disclosed impact is concrete. They do not bear on demand, growth-driver, or market-position pillars unless the filing itself quantifies or links the incident to those outcomes.
 - Assign each source to the pillar it most DIRECTLY affects. A change to a specific contract, customer, segment, or revenue stream bears on the pillar about THAT revenue (e.g. a government contract win or loss bears on a "government revenue" pillar), not merely a downstream "margin" or "valuation" pillar. Only also tag a downstream pillar when the source genuinely speaks to it too.
 - Filings (10-K, 10-Q) are authoritative primary sources. When a filing supports or contradicts a pillar, cite the filing, even if a news item makes a similar point. Use news for points the filings do not cover. Sources are tagged [filing], [form4], [xbrl], [news], [price_move].
 - excerpt must be copied verbatim from the source text. Do not paraphrase or invent.
 - No invented numbers. No em dashes.
-- verdict: "supports", "contradicts", or "neutral" (neutral only if clearly relevant context).
+- verdict: "supports", "contradicts", or "neutral". Neutral is RARE: only when the source speaks directly to the pillar's mechanism and confirms the status quo. Never use neutral to file a loose thematic association; omit instead.
 - materiality: "material" (changes the thesis outlook) or "context" (informative background).
 - why: one concise sentence explaining the connection.
 - what_it_means: one concise sentence, addressed to the holder in second person ("your"), on what this does to the pillar's standing. Describe state only, never recommend an action (no buy, sell, trim, or consider). Do not introduce facts absent from the cited source.

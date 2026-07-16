@@ -205,8 +205,10 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
                         const sorted = [...evidence].sort((a, b) =>
                           (b.source_published_at ?? b.created_at).localeCompare(a.source_published_at ?? a.created_at),
                         );
-                        const visible = sorted.slice(0, 2);
-                        const rest = sorted.slice(2);
+                        // Neutral rows never earn a visible slot: they are context, not signal.
+                        const visible = sorted.filter((e) => e.verdict !== 'neutral').slice(0, 2);
+                        const visibleSet = new Set(visible);
+                        const rest = sorted.filter((e) => !visibleSet.has(e));
                         return (
                           <div className="mt-3 space-y-2.5 border-l border-white/[0.07] pl-4">
                             {visible.map((e, i) => <EvidenceItem key={i} e={e} />)}
@@ -217,7 +219,7 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
                                   style={MONO}
                                 >
                                   <span className="text-[10px] text-[#6A6A6A] transition-transform group-open:rotate-90">&#9656;</span>
-                                  {rest.length} more source{rest.length === 1 ? '' : 's'}
+                                  {visible.length > 0 ? `${rest.length} more source${rest.length === 1 ? '' : 's'}` : `${rest.length} source${rest.length === 1 ? '' : 's'}`}
                                 </summary>
                                 <div className="mt-2.5 space-y-2.5">
                                   {rest.map((e, i) => <EvidenceItem key={i} e={e} />)}
