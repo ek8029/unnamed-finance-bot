@@ -146,6 +146,27 @@ export async function GET() {
       });
     }
 
+    // ── Investigations the agent ran on its own (E1) ──
+    // Tolerates migration 056 not being applied: query error → no steps.
+    const { data: memos } = await supabase
+      .from('thesis_investigations')
+      .select('id, thesis_id, trigger_kind, memo, created_at, theses(ticker)')
+      .eq('user_id', uid)
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(3);
+    for (const m of memos ?? []) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ticker = (m as any).theses?.ticker ?? '';
+      const headline = ((m.memo as { headline?: string } | null)?.headline ?? '').slice(0, 120);
+      steps.push({
+        id: `inv-${m.id}`, ts: m.created_at as string, kind: 'flag',
+        label: `Investigated ${ticker}: wrote a memo`,
+        detail: headline || 'evidence moved a thesis pillar',
+        href: `/dashboard/theses/${m.thesis_id}`, emphasis: true,
+      });
+    }
+
     steps.sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
 
     const res: WorklogResponse = {

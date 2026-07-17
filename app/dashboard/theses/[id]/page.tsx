@@ -134,6 +134,23 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
 
   const investigation = await investigationForThesis(supabase, id, thesis.ticker);
 
+  // E1 agent memo: latest ready investigation, if migration 056 is applied
+  // (query error → null, page renders without the card).
+  const { data: memoRow } = await supabase
+    .from('thesis_investigations')
+    .select('trigger_kind, memo, model, created_at')
+    .eq('thesis_id', id)
+    .eq('status', 'ready')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const agentMemo = (memoRow?.memo ?? null) as null | {
+    headline: string;
+    timeline: { date: string; event: string; quote: string; sourceTitle?: string; sourceUrl?: string | null }[];
+    breaks_if_test: { condition: string; result: string; reasoning: string };
+    watch_next: string[];
+  };
+
   // Conviction summary (mirror the theses page: intact fraction drives color + %).
   const summary = summarizePillars(
     pillars.map((p) => ({ confirmed: true, status: p.status, status_override: p.status_override, lifecycle: 'active' })),
@@ -178,6 +195,56 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
           </div>
         )}
       </div>
+
+      {/* E1 agent investigation memo — the artifact the agent wrote on its own
+          when this thesis moved. Verbatim receipts; state, never advice. */}
+      {agentMemo && (
+        <section className="rounded-lg border border-[rgba(230,185,77,0.25)] bg-[var(--color-bg-elevated,#131313)] p-5 sm:p-6 space-y-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>
+              ✦ Agent investigation
+            </span>
+            <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-[#6A6A6A]" style={MONO}>
+              {String(memoRow?.trigger_kind ?? '').replace('_', ' ')} · {new Date(memoRow?.created_at as string).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </span>
+          </div>
+          <p className="m-0 text-[17px] font-semibold leading-[1.4] text-[#FAFAFA]">{agentMemo.headline}</p>
+
+          <ol className="m-0 p-0 list-none space-y-3 border-l border-white/[0.10] ml-1">
+            {agentMemo.timeline.map((t, i) => (
+              <li key={i} className="relative pl-5">
+                <span className="absolute -left-[4px] top-[7px] w-[7px] h-[7px] rounded-full bg-[#6A6A6A]" />
+                <div className="font-mono text-[12.5px] font-semibold text-[#D6D6D6] tabular-nums" style={MONO}>{t.date}</div>
+                <div className="text-[14.5px] leading-[1.5] text-[#C9C9C9]">{t.event}</div>
+                <p className="text-[13.5px] leading-[1.55] text-[#7A7A7A] mt-0.5 mb-0 italic">&ldquo;{t.quote}&rdquo;{t.sourceTitle ? <span className="not-italic text-[#5A5A5A]"> · {t.sourceTitle}</span> : null}</p>
+              </li>
+            ))}
+          </ol>
+
+          {agentMemo.breaks_if_test.reasoning && (
+            <div className="rounded border border-white/[0.07] bg-[#060606] px-4 py-3">
+              <div className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] mb-1" style={{ ...MONO, color: agentMemo.breaks_if_test.result === 'met' ? '#F87171' : agentMemo.breaks_if_test.result === 'partial' ? '#E6B94D' : '#9A9A9A' }}>
+                Break condition: {agentMemo.breaks_if_test.result.replace('_', ' ')}
+              </div>
+              {agentMemo.breaks_if_test.condition && (
+                <div className="text-[13px] text-[#6A6A6A] mb-1">&ldquo;{agentMemo.breaks_if_test.condition}&rdquo;</div>
+              )}
+              <p className="m-0 text-[14px] leading-[1.55] text-[#9A9A9A]">{agentMemo.breaks_if_test.reasoning}</p>
+            </div>
+          )}
+
+          {agentMemo.watch_next.length > 0 && (
+            <div>
+              <div className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#6A6A6A] mb-1.5" style={MONO}>Watching next</div>
+              <ul className="m-0 pl-4 space-y-1">
+                {agentMemo.watch_next.map((w, i) => (
+                  <li key={i} className="text-[14px] leading-[1.5] text-[#9A9A9A]">{w}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Reassessment */}
       <Reassessment investigation={investigation} />

@@ -17,6 +17,8 @@ import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import type { BreachEvent } from '@/lib/thesis-breach';
 import { isComparisonHeadline } from '@/lib/news-quality';
 import { isHedgedConnection } from '@/lib/evidence-quality';
+import { reviewEscalations, needsEscalation, ESCALATION_MODEL, ESCALATION_CAP } from '@/lib/judge-escalation';
+import { runInvestigation, classifyTrigger, type InvestigationTrigger } from '@/lib/investigation-memo';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SCORE_MODEL = 'gpt-4o-mini';
@@ -65,6 +67,7 @@ interface LLMEvidenceRow {
   source_index: number;
   verdict: string;
   materiality: string;
+  confidence?: string; // 'high' | 'low' — E2 escalation trigger
   why: string;
   what_it_means: string;
   consider?: string;
@@ -457,11 +460,12 @@ Rules:
 - No invented numbers. No em dashes.
 - verdict: "supports", "contradicts", or "neutral". Neutral is RARE: only when the source speaks directly to the pillar's mechanism and confirms the status quo. Never use neutral to file a loose thematic association; omit instead.
 - materiality: "material" (changes the thesis outlook) or "context" (informative background).
+- confidence: "high" or "low". Use "low" when the connection or the materiality call required judgment you are not certain of.
 - why: one concise sentence explaining the connection.
 - what_it_means: one concise sentence, addressed to the holder in second person ("your"), on what this does to the pillar's standing. Describe state only, never recommend an action (no buy, sell, trim, or consider). Do not introduce facts absent from the cited source.
 - consider: optional, only if there is a meaningful counterpoint.
 Respond with JSON exactly in this shape:
-{ "evidence": [ { "pillar_index": <1-based pillar number>, "source_index": <1-based source number>, "verdict": "...", "materiality": "...", "excerpt": "...", "why": "...", "what_it_means": "...", "consider": "..." } ] }`;
+{ "evidence": [ { "pillar_index": <1-based pillar number>, "source_index": <1-based source number>, "verdict": "...", "materiality": "...", "confidence": "...", "excerpt": "...", "why": "...", "what_it_means": "...", "consider": "..." } ] }`;
 
   const userPrompt = `Thesis pillars:\n${fence(pillarLines, 'PILLARS')}\n\nSources:\n${fence(sourceLines, 'SOURCES')}`;
 
@@ -487,6 +491,8 @@ Respond with JSON exactly in this shape:
 
   // Validate and build insert rows
   const toInsert: Record<string, unknown>[] = [];
+  // E2: per-row metadata that never reaches the DB, aligned with toInsert by index.
+  const rowMeta: { confidence?: string; pillarClaim: string }[] = [];
   const validVerdicts = new Set(['supports', 'contradicts', 'neutral']);
   const validMaterialities = new Set(['material', 'context']);
 
@@ -542,6 +548,7 @@ Respond with JSON exactly in this shape:
       materiality = 'context';
     }
 
+    rowMeta.push({ confidence: typeof row.confidence === 'string' ? row.confidence : undefined, pillarClaim: pillar.claim });
     toInsert.push({
       pillar_id: pillar.id,
       user_id: user_id,
@@ -560,6 +567,50 @@ Respond with JSON exactly in this shape:
         ? !(candidate.source_published_at != null && candidate.source_published_at >= liveCutoff)
         : isBackfill,
     });
+  }
+
+  // E2: two-speed judge. Material or low-confidence rows get a senior review
+  // from the stronger model before they can touch status math. Reviewer can
+  // keep, downgrade to context, or reject; failures keep the original verdict.
+  const escalationIdx = toInsert
+    .map((r, i) => (needsEscalation({ materiality: r.materiality as string, confidence: rowMeta[i]?.confidence }) ? i : -1))
+    .filter((i) => i >= 0)
+    .slice(0, ESCALATION_CAP);
+  for (const r of toInsert) r.judged_by = model;
+  if (escalationIdx.length > 0) {
+    const actions = await reviewEscalations(
+      openai,
+      escalationIdx.map((i) => ({
+        pillarClaim: rowMeta[i].pillarClaim,
+        verdict: toInsert[i].verdict as 'supports' | 'contradicts' | 'neutral',
+        materiality: toInsert[i].materiality as 'material' | 'context',
+        excerpt: toInsert[i].excerpt as string,
+        why: toInsert[i].why as string,
+      })),
+      log,
+    );
+    const rejected = new Set<number>();
+    actions.forEach((action, k) => {
+      const i = escalationIdx[k];
+      if (action === 'reject') {
+        rejected.add(i);
+        log.push(`[${ticker}] Escalation rejected row for ${toInsert[i].source_key}`);
+      } else {
+        toInsert[i].judged_by = ESCALATION_MODEL;
+        if (action === 'downgrade') toInsert[i].materiality = 'context';
+      }
+    });
+    if (rejected.size > 0) {
+      for (let i = toInsert.length - 1; i >= 0; i--) {
+        if (rejected.has(i)) toInsert.splice(i, 1);
+      }
+    }
+  }
+
+  // Migration-056 tolerance: if judged_by does not exist yet, strip it so the
+  // upsert cannot fail on an unapplied migration.
+  if (toInsert.length > 0 && !(await hasJudgedByColumn(db))) {
+    for (const r of toInsert) delete r.judged_by;
   }
 
   // Upsert evidence
@@ -586,6 +637,7 @@ Respond with JSON exactly in this shape:
   };
 
   // Recompute status per confirmed pillar
+  const investigationTriggers: InvestigationTrigger[] = [];
   for (const pillar of pillars) {
     try {
       const { data: evidenceRows } = await db
@@ -604,6 +656,29 @@ Respond with JSON exactly in this shape:
       }));
 
       const newStatus = derivePillarStatus(evidence, pillar.status_override);
+
+      // E1: a live, derived move to weakening/broken triggers a bounded
+      // investigation after the pillar loop (never on backfill or override).
+      if (
+        (newStatus === 'weakening' || newStatus === 'broken') &&
+        newStatus !== pillar.status &&
+        !pillar.status_override &&
+        !isBackfill
+      ) {
+        const recentContra = (evidenceRows ?? [])
+          .filter((e) => !e.is_backfill)
+          .map((e) => ({ source_type: e.source_type as string, verdict: e.verdict as string }));
+        investigationTriggers.push({
+          userId: user_id,
+          thesisId,
+          pillarId: pillar.id,
+          ticker,
+          pillarClaim: pillar.claim,
+          breaksIf: pillar.breaks_if ?? null,
+          newStatus,
+          triggerKind: classifyTrigger(recentContra),
+        });
+      }
 
       if (newStatus !== pillar.status) {
         const { error: statusErr } = await db
@@ -645,10 +720,26 @@ Respond with JSON exactly in this shape:
     }
   }
 
+  // E1: run bounded investigations for this scan's live status moves. Caps and
+  // failures are handled inside runInvestigation; a memo error never fails a scan.
+  for (const trigger of investigationTriggers) {
+    await runInvestigation(db, openai, trigger, log);
+  }
+
   // Always bump last_scanned_at
   await bumpLastScanned(db, thesisId);
 
   return { evidenceAdded, statusChanges, breaches };
+}
+
+// Migration-056 runtime detection, cached per process: one cheap probe select
+// decides whether judged_by can be written. Deploy-before-migration stays safe.
+let judgedByColumnKnown: boolean | null = null;
+async function hasJudgedByColumn(db: SupabaseClient): Promise<boolean> {
+  if (judgedByColumnKnown !== null) return judgedByColumnKnown;
+  const { error } = await db.from('pillar_evidence').select('judged_by').limit(1);
+  judgedByColumnKnown = !error;
+  return judgedByColumnKnown;
 }
 
 async function bumpLastScanned(db: SupabaseClient, thesisId: string): Promise<void> {
