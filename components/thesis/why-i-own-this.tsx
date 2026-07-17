@@ -198,9 +198,12 @@ function ConfirmedPillarRow({
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(pillar.claim);
   const [busy, setBusy] = useState(false);
+  const [readOpen, setReadOpen] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
 
   const eff = effectiveStatus(pillar);
   const flagged = (pillar.status === 'weakening' || pillar.status === 'broken') && !pillar.status_override;
+  const overridden = !!pillar.status_override;
 
   const saveClaim = async () => {
     if (text.trim().length === 0 || busy) return;
@@ -210,8 +213,21 @@ function ConfirmedPillarRow({
     if (ok) setEditing(false);
   };
 
+  // Set (or clear) the holder's manual read. Setting fires the transient
+  // confirmation; clearing hands the pillar back to the agent silently.
+  const setOverride = async (status: PillarStatus | null) => {
+    setReadOpen(false);
+    const ok = await onPatch(pillar.id, { status_override: status });
+    if (ok && status) {
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 4000);
+    }
+  };
+
+  const READ_OPTIONS: PillarStatus[] = ['intact', 'weakening', 'broken'];
+
   return (
-    <div className="border-t border-[var(--color-border-subtle)]">
+    <div className="group border-t border-[var(--color-border-subtle)]">
       <div className="flex items-start gap-4 py-3">
         <div className="pt-0.5 shrink-0">
           <StatusChip status={eff} />
@@ -226,14 +242,18 @@ function ConfirmedPillarRow({
               </div>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => { setText(pillar.claim); setEditing(true); }}
-              title="Click to edit"
-              className="block w-full text-left text-[15.5px] font-medium leading-[1.4] tracking-[-0.01em] text-[#FAFAFA] cursor-text"
-            >
-              {pillar.claim}
-            </button>
+            <div className="flex items-start gap-2">
+              <button
+                type="button"
+                onClick={() => { setText(pillar.claim); setEditing(true); }}
+                title="Click to edit"
+                className="flex-1 text-left text-[15.5px] font-medium leading-[1.4] tracking-[-0.01em] text-[#FAFAFA] cursor-text"
+              >
+                {pillar.claim}
+              </button>
+              {/* Edit affordance: the claim is clickable, this makes it visible on hover. */}
+              <span aria-hidden className="mt-0.5 shrink-0 text-[13px] text-[#6A6A6A] opacity-0 group-hover:opacity-70 transition-opacity">&#9998;</span>
+            </div>
           )}
 
           {eff === 'unverified' && !editing && pillar.evidence.some((e) => e.verdict === 'supports') && (
@@ -249,7 +269,7 @@ function ConfirmedPillarRow({
               </span>
               <button
                 type="button"
-                onClick={() => onPatch(pillar.id, { status_override: 'intact' })}
+                onClick={() => setOverride('intact')}
                 className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9A9A9A] border border-white/[0.14] rounded px-2.5 py-1.5 hover:text-[#FAFAFA] transition-colors whitespace-nowrap"
               >
                 Keep intact, I disagree
@@ -257,13 +277,16 @@ function ConfirmedPillarRow({
             </div>
           )}
 
-          {pillar.status_override && !editing && (
+          {overridden && !editing && (
             <div className="mt-2.5">
               <div className="flex items-center gap-3 font-mono text-[12px] tracking-[0.04em] text-[#6A6A6A]">
-                <span>You marked this intact on {fmtDate(pillar.status_changed_at)}</span>
+                <span>You set this to {STATUS_META[eff].label} on {fmtDate(pillar.status_changed_at)}</span>
+                {!readOpen && (
+                  <button type="button" onClick={() => setReadOpen(true)} className="underline underline-offset-2 hover:text-[#9A9A9A] transition-colors">Change</button>
+                )}
                 <button
                   type="button"
-                  onClick={() => onPatch(pillar.id, { status_override: null })}
+                  onClick={() => setOverride(null)}
                   className="underline underline-offset-2 hover:text-[#9A9A9A] transition-colors"
                 >
                   Undo
@@ -275,6 +298,56 @@ function ConfirmedPillarRow({
                 <span className="text-[var(--color-gold)]">✦</span>
                 <span>Helm weighs your call when reading new evidence here.</span>
               </div>
+            </div>
+          )}
+
+          {/* Manual read control — quiet at rest, fades in on row hover when the
+              agent hasn't flagged and you haven't overridden. This is the entry
+              point that feeds E5 steering, so it must be findable, not buried. */}
+          {!flagged && !overridden && !editing && (
+            <div className={`mt-2 transition-opacity ${readOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}`}>
+              {!readOpen && (
+                <button type="button" onClick={() => setReadOpen(true)} className="font-mono text-[11.5px] tracking-[0.05em] text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors">
+                  Your read &#9662;
+                </button>
+              )}
+            </div>
+          )}
+
+          {readOpen && !editing && (
+            <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+              <span className="font-mono text-[11px] tracking-[0.04em] text-[#6A6A6A] mr-0.5">Your read:</span>
+              {READ_OPTIONS.map((s) => {
+                const active = eff === s;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setOverride(s)}
+                    className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] rounded px-2 py-1 border transition-colors"
+                    style={{
+                      color: active ? STATUS_META[s].color : '#9A9A9A',
+                      borderColor: active ? `${STATUS_META[s].color}59` : 'rgba(255,255,255,0.14)',
+                      background: active ? `${STATUS_META[s].color}14` : 'transparent',
+                    }}
+                  >
+                    {STATUS_META[s].label}
+                  </button>
+                );
+              })}
+              {overridden && (
+                <button type="button" onClick={() => setOverride(null)} className="font-mono text-[10.5px] uppercase tracking-[0.08em] rounded px-2 py-1 border border-white/[0.14] text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors">
+                  Agent&rsquo;s call
+                </button>
+              )}
+              <button type="button" onClick={() => setReadOpen(false)} className="font-mono text-[11px] tracking-[0.04em] text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors ml-0.5">cancel</button>
+            </div>
+          )}
+
+          {justSaved && (
+            <div className="mt-1.5 flex items-center gap-1.5 text-[11.5px] text-[#4ADE80]">
+              <span>&#10003;</span>
+              <span>Saved. This is now your read, and Helm weighs it going forward.</span>
             </div>
           )}
         </div>
