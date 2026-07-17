@@ -258,15 +258,23 @@ function ConfirmedPillarRow({
           )}
 
           {pillar.status_override && !editing && (
-            <div className="mt-2.5 flex items-center gap-3 font-mono text-[12px] tracking-[0.04em] text-[#6A6A6A]">
-              <span>You marked this intact on {fmtDate(pillar.status_changed_at)}</span>
-              <button
-                type="button"
-                onClick={() => onPatch(pillar.id, { status_override: null })}
-                className="underline underline-offset-2 hover:text-[#9A9A9A] transition-colors"
-              >
-                Undo
-              </button>
+            <div className="mt-2.5">
+              <div className="flex items-center gap-3 font-mono text-[12px] tracking-[0.04em] text-[#6A6A6A]">
+                <span>You marked this intact on {fmtDate(pillar.status_changed_at)}</span>
+                <button
+                  type="button"
+                  onClick={() => onPatch(pillar.id, { status_override: null })}
+                  className="underline underline-offset-2 hover:text-[#9A9A9A] transition-colors"
+                >
+                  Undo
+                </button>
+              </div>
+              {/* E5 steering indicator: shown ONLY where an override actually exists,
+                  because that is exactly when the holder's call feeds the judge. */}
+              <div className="mt-1 flex items-center gap-1.5 text-[11.5px] text-[#7A7A7A]">
+                <span className="text-[var(--color-gold)]">✦</span>
+                <span>Helm weighs your call when reading new evidence here.</span>
+              </div>
             </div>
           )}
         </div>
