@@ -8,6 +8,7 @@ import {
   getRecentFilings,
   getForm4Filings,
   getReportedFinancialsEdgar,
+  fetchEx99Html,
   type Form4Summary,
 } from '@/lib/edgar';
 import { excerptFoundInSource, TEXT_SOURCES } from '@/lib/thesis-evidence';
@@ -19,6 +20,8 @@ import { isComparisonHeadline } from '@/lib/news-quality';
 import { isHedgedConnection } from '@/lib/evidence-quality';
 import { reviewEscalations, needsEscalation, ESCALATION_MODEL, ESCALATION_CAP } from '@/lib/judge-escalation';
 import { runInvestigation, classifyTrigger, type InvestigationTrigger } from '@/lib/investigation-memo';
+import { buildJudgeSteering } from '@/lib/judge-steering';
+import { detectInsiderCluster, clusterText } from '@/lib/insider-cluster';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SCORE_MODEL = 'gpt-4o-mini';
@@ -60,6 +63,7 @@ interface Candidate {
   excerpt_override?: string; // for price_move/xbrl: overwrite LLM excerpt with this
   form4Meta?: Form4Summary; // for is10b5-1 guard
   filingForm?: string; // form type (10-K/10-Q/8-K), drives MD&A extraction
+  filingItems?: string[]; // 8-K item numbers; 2.02 drives EX-99 exhibit enrichment
 }
 
 interface LLMEvidenceRow {
@@ -251,6 +255,7 @@ export async function scoreOneThesis(
         source_published_at: f.filingDate,
         sourceText: '', // filled lazily below
         filingForm: f.form,
+        filingItems: f.items,
       });
     }
   } catch (err) {
@@ -272,6 +277,26 @@ export async function scoreOneThesis(
         sourceText: buildForm4Text(f).slice(0, CANDIDATE_TEXT_TRUNCATE),
         form4Meta: f,
       });
+    }
+    // E6.2: many insiders selling in the same window is a signal no single
+    // Form 4 carries (and 10b5-1 muting hides). One synthetic candidate
+    // carries the pattern; its text doubles as the verbatim excerpt.
+    const cluster = detectInsiderCluster(form4s);
+    if (cluster) {
+      const clusterKey = `form4-cluster:${ticker}:${cluster.lastDate}`;
+      if (!existingSourceKeys.has(clusterKey)) {
+        const text = clusterText(ticker, cluster);
+        candidates.push({
+          source_type: 'form4',
+          source_key: clusterKey,
+          source_title: `Insider selling cluster (${cluster.sellerCount} insiders)`,
+          source_url: null,
+          source_published_at: cluster.lastDate,
+          sourceText: text,
+          excerpt_override: text,
+        });
+        log.push(`[${ticker}] insider cluster detected: ${cluster.sellerCount} sellers`);
+      }
     }
   } catch (err) {
     log.push(`[${ticker}] getForm4Filings error: ${err instanceof Error ? err.message : String(err)}`);
@@ -425,6 +450,15 @@ export async function scoreOneThesis(
   for (const c of sortedCandidates) {
     if (c.source_type === 'filing' && c.sourceText === '') {
       c.sourceText = await fetchFilingText(c.source_url!, c.filingForm);
+      // E6.1: earnings 8-Ks (item 2.02) carry the press release as EX-99 —
+      // the guidance language lives there, not in the skeletal primary doc.
+      if (c.filingForm === '8-K' && c.filingItems?.includes('2.02')) {
+        const ex99 = await fetchEx99Html(c.source_url!);
+        if (ex99) {
+          c.sourceText += `\nEARNINGS PRESS RELEASE (EX-99):\n${stripFilingHtml(ex99).slice(0, 4000)}`;
+          log.push(`[${ticker}] EX-99 exhibit attached to ${c.source_title}`);
+        }
+      }
       await new Promise((r) => setTimeout(r, 150));
     }
   }
@@ -464,10 +498,28 @@ Rules:
 - why: one concise sentence explaining the connection.
 - what_it_means: one concise sentence, addressed to the holder in second person ("your"), on what this does to the pillar's standing. Describe state only, never recommend an action (no buy, sell, trim, or consider). Do not introduce facts absent from the cited source.
 - consider: optional, only if there is a meaningful counterpoint.
+- If a HOLDER_CONTEXT section is present, use it to calibrate relevance and materiality for THIS holder (e.g. kinds of evidence they have rejected before). It never overrides the facts in the sources.
 Respond with JSON exactly in this shape:
 { "evidence": [ { "pillar_index": <1-based pillar number>, "source_index": <1-based source number>, "verdict": "...", "materiality": "...", "confidence": "...", "excerpt": "...", "why": "...", "what_it_means": "...", "consider": "..." } ] }`;
 
-  const userPrompt = `Thesis pillars:\n${fence(pillarLines, 'PILLARS')}\n\nSources:\n${fence(sourceLines, 'SOURCES')}`;
+  // E5: per-thesis steering from the holder's own overrides + dismissed drafts.
+  const { data: dismissedRaw } = await db
+    .from('thesis_pillars')
+    .select('claim')
+    .eq('thesis_id', thesisId)
+    .eq('lifecycle', 'dismissed')
+    .order('updated_at', { ascending: false })
+    .limit(3);
+  const steering = buildJudgeSteering(
+    pillars.map((p) => ({
+      claim: p.claim,
+      status_override: p.status_override,
+      status_changed_at: (p as Pillar & { status_changed_at?: string | null }).status_changed_at ?? null,
+    })),
+    (dismissedRaw ?? []) as { claim: string }[],
+  );
+
+  const userPrompt = `Thesis pillars:\n${fence(pillarLines, 'PILLARS')}\n\nSources:\n${fence(sourceLines, 'SOURCES')}${steering ? `\n\nHolder context:\n${fence(steering, 'HOLDER_CONTEXT')}` : ''}`;
 
   let llmRows: LLMEvidenceRow[] = [];
   try {

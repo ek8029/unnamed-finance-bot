@@ -14,6 +14,8 @@ import {
   getWatchDigestTemplate,
   type WatchDigestTicker,
 } from '@/lib/emails/templates';
+import { captureServer } from '@/lib/posthog-server';
+import { getTickerThesisData } from '@/lib/content/public-thesis';
 
 const MAX_TICKERS = 5;
 const SITE = 'https://helmterminal.dev';
@@ -81,6 +83,7 @@ export async function subscribeWatch(email: string, rawTickers: string[]): Promi
     }
   }
 
+  captureServer('watch_subscribed', cleanEmail, { tickers: tickers.length, revived: !!existing });
   return { ok: true };
 }
 
@@ -92,10 +95,13 @@ export async function confirmWatch(token: string): Promise<boolean> {
     .update({ confirmed_at: new Date().toISOString() })
     .eq('confirm_token', token)
     .is('confirmed_at', null)
-    .select('id');
+    .select('id, email');
   if (error) return false;
   // Re-clicking an already-confirmed link is fine: treat as success if the row exists.
-  if (data && data.length > 0) return true;
+  if (data && data.length > 0) {
+    captureServer('watch_confirmed', (data[0].email as string) ?? token, {});
+    return true;
+  }
   const { data: already } = await supabase
     .from('watch_subscriptions')
     .select('id')
@@ -153,6 +159,16 @@ export async function sendWatchDigests(now = new Date()): Promise<{ sent: number
     catchesByTicker.set(e.ticker, arr);
   }
 
+  // E3 delta: per-ticker thesis health for house-thesis tickers, computed once
+  // per digest run. The chip the paid product shows is the chip the email shows.
+  const healthByTicker = new Map<string, string>();
+  for (const t of allTickers) {
+    try {
+      const data = await getTickerThesisData(t);
+      if (data) healthByTicker.set(t, data.healthLabel);
+    } catch { /* no house thesis or fetch issue — line simply omitted */ }
+  }
+
   let sent = 0, skipped = 0, errors = 0;
   for (const sub of subs) {
     const lastSent = sub.last_digest_at ? new Date(sub.last_digest_at) : null;
@@ -171,9 +187,10 @@ export async function sendWatchDigests(now = new Date()): Promise<{ sent: number
           cite: top.verbatim_cite,
           sourceUrl: top.source_url,
           sourceType: top.source_type,
+          health: healthByTicker.get(t),
         });
       } else if (isFriday) {
-        items.push({ ticker: t, verdict: 'quiet', claim: '', cite: '', sourceUrl: '', sourceType: '' });
+        items.push({ ticker: t, verdict: 'quiet', claim: '', cite: '', sourceUrl: '', sourceType: '', health: healthByTicker.get(t) });
       }
     }
 

@@ -378,6 +378,8 @@ export interface WatchDigestTicker {
   cite: string;
   sourceUrl: string;
   sourceType: string;
+  /** Computed house-thesis health label (e.g. "Intact", "Under pressure"); omitted when no house thesis. */
+  health?: string;
 }
 
 export function getWatchDigestTemplate(
@@ -398,7 +400,7 @@ export function getWatchDigestTemplate(
     const safeUrl = /^https?:\/\//i.test(i.sourceUrl) ? i.sourceUrl : null;
     return `
       <div style="margin:0 0 22px;">
-        <p style="margin:0 0 4px;font-family:monospace;font-size:13px;"><span style="font-weight:700;color:#FAFAFA;">${escapeHtml(i.ticker)}</span> <span style="color:${color};text-transform:uppercase;font-size:10px;letter-spacing:0.12em;">&nbsp;${label}</span></p>
+        <p style="margin:0 0 4px;font-family:monospace;font-size:13px;"><span style="font-weight:700;color:#FAFAFA;">${escapeHtml(i.ticker)}</span> <span style="color:${color};text-transform:uppercase;font-size:10px;letter-spacing:0.12em;">&nbsp;${label}</span>${i.health ? `<span style="color:#8F8F8F;font-size:10px;text-transform:uppercase;letter-spacing:0.12em;">&nbsp;&middot;&nbsp;thesis: ${escapeHtml(i.health)}</span>` : ''}</p>
         ${i.claim ? `<p style="margin:0 0 6px;font-size:13px;color:#8F8F8F;">Watched reason: ${escapeHtml(i.claim)}</p>` : ''}
         <p style="margin:0 0 4px;font-size:14px;line-height:1.65;color:#D4D4D4;font-family:Georgia,'Times New Roman',serif;">&ldquo;${escapeHtml(i.cite)}&rdquo;</p>
         <p style="margin:0;font-size:11px;color:#525252;">${src}${safeUrl ? ` &middot; <a href="${escapeHtml(safeUrl)}" style="color:#E6B94D;">source</a>` : ''}</p>

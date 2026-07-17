@@ -389,6 +389,36 @@ export async function getRecentFilings(symbol: string, sinceDate?: string): Prom
   return sinceDate ? filings.filter(f => f.filingDate >= sinceDate) : filings;
 }
 
+/**
+ * E6.1: fetch the raw HTML of the first EX-99 exhibit in a filing's folder
+ * (earnings press releases ride 8-K item 2.02 as EX-99.1 — free guidance
+ * language the primary document lacks). Returns '' on any miss; callers strip
+ * and truncate. Only works for direct Archives URLs.
+ */
+export async function fetchEx99Html(filingUrl: string): Promise<string> {
+  try {
+    if (!filingUrl.includes('/Archives/edgar/data/')) return '';
+    const folder = filingUrl.slice(0, filingUrl.lastIndexOf('/'));
+    const idxRes = await fetch(`${folder}/index.json`, {
+      headers: { 'User-Agent': UA, Accept: 'application/json' },
+      cache: 'no-store',
+    });
+    if (!idxRes.ok) return '';
+    const idx = await idxRes.json() as { directory?: { item?: { name?: string }[] } };
+    const matches = (idx.directory?.item ?? []).filter(
+      (i) => typeof i.name === 'string' && /ex[-._]?99/i.test(i.name!) && /\.html?$/i.test(i.name!),
+    );
+    // Prefer EX-99.1 (the press release) over later exhibits (presentations etc.).
+    const ex = matches.find((i) => /99[-._]?1\b|991/i.test(i.name!)) ?? matches[0];
+    if (!ex?.name) return '';
+    const docRes = await fetch(`${folder}/${ex.name}`, { headers: { 'User-Agent': UA } });
+    if (!docRes.ok) return '';
+    return await docRes.text();
+  } catch {
+    return '';
+  }
+}
+
 export interface EdgarCompanyProfile {
   name: string;
   sicDescription: string | null;
