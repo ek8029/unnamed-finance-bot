@@ -48,3 +48,7 @@ Thumbs.db
 __pycache__/
 *.pyc
 .env.local
+
+# Fundraise material and in-progress specs stay local
+docs/fundraise/
+docs/superpowers/specs/2026-07-16-ai-expansion-master.md
