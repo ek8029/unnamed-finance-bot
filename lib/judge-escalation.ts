@@ -39,17 +39,20 @@ Respond with JSON exactly: { "reviews": [ { "index": <1-based finding number>, "
 
 /**
  * Review a batch of escalation candidates in one call.
- * Returns one action per input row (aligned by index).
- * Any failure (API error, malformed output, missing index) resolves to "keep".
+ * Returns one action per input row (aligned by index) plus `reviewed`: whether
+ * the senior model actually ran. On API/parse failure `reviewed` is false and
+ * all actions are "keep" (evidence is never lost) — the caller must NOT attribute
+ * those rows to the escalation model when reviewed is false.
  */
 export async function reviewEscalations(
   openai: OpenAI,
   rows: EscalationInput[],
   log: string[],
   model: string = ESCALATION_MODEL,
-): Promise<EscalationAction[]> {
+): Promise<{ actions: EscalationAction[]; reviewed: boolean }> {
   const actions: EscalationAction[] = rows.map(() => 'keep');
-  if (rows.length === 0) return actions;
+  if (rows.length === 0) return { actions, reviewed: true };
+  let reviewed = true;
 
   const findings = rows
     .map((r, i) =>
@@ -77,7 +80,8 @@ export async function reviewEscalations(
       }
     }
   } catch (err) {
+    reviewed = false;
     log.push(`[escalation] review failed, keeping original verdicts: ${err instanceof Error ? err.message : String(err)}`);
   }
-  return actions;
+  return { actions, reviewed };
 }

@@ -630,7 +630,7 @@ Respond with JSON exactly in this shape:
     .slice(0, ESCALATION_CAP);
   for (const r of toInsert) r.judged_by = model;
   if (escalationIdx.length > 0) {
-    const actions = await reviewEscalations(
+    const { actions, reviewed } = await reviewEscalations(
       openai,
       escalationIdx.map((i) => ({
         pillarClaim: rowMeta[i].pillarClaim,
@@ -647,7 +647,9 @@ Respond with JSON exactly in this shape:
       if (action === 'reject') {
         rejected.add(i);
         log.push(`[${ticker}] Escalation rejected row for ${toInsert[i].source_key}`);
-      } else {
+      } else if (reviewed) {
+        // Only attribute to the escalation model when it actually ran; on failure
+        // the row keeps its original (mini) judged_by stamp set above.
         toInsert[i].judged_by = ESCALATION_MODEL;
         if (action === 'downgrade') toInsert[i].materiality = 'context';
       }
@@ -790,8 +792,11 @@ let judgedByColumnKnown: boolean | null = null;
 async function hasJudgedByColumn(db: SupabaseClient): Promise<boolean> {
   if (judgedByColumnKnown !== null) return judgedByColumnKnown;
   const { error } = await db.from('pillar_evidence').select('judged_by').limit(1);
-  judgedByColumnKnown = !error;
-  return judgedByColumnKnown;
+  // Only cache a definitive answer. A transient error (timeout, pooler blip) must
+  // NOT poison the cache for the instance lifetime — re-probe next call instead.
+  if (!error) judgedByColumnKnown = true;
+  else if (error.code === '42703') judgedByColumnKnown = false; // undefined_column
+  return judgedByColumnKnown ?? false;
 }
 
 async function bumpLastScanned(db: SupabaseClient, thesisId: string): Promise<void> {

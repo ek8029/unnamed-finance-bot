@@ -92,8 +92,11 @@ let investigationsTableKnown: boolean | null = null;
 async function hasInvestigationsTable(db: AnyClient): Promise<boolean> {
   if (investigationsTableKnown !== null) return investigationsTableKnown;
   const { error } = await db.from('thesis_investigations').select('id').limit(1);
-  investigationsTableKnown = !error;
-  return investigationsTableKnown;
+  // Only cache a definitive answer; a transient error must not disable E1 for the
+  // instance lifetime. 42P01 = undefined_table (migration genuinely not applied).
+  if (!error) investigationsTableKnown = true;
+  else if (error.code === '42P01') investigationsTableKnown = false;
+  return investigationsTableKnown ?? false;
 }
 
 async function underDailyCaps(db: AnyClient, userId: string, thesisId: string): Promise<boolean> {
@@ -220,19 +223,18 @@ export async function runInvestigation(
       watch_next: (Array.isArray(parsed.watch_next) ? parsed.watch_next : []).filter((w): w is string => typeof w === 'string').slice(0, 3),
     };
 
-    const linted = [memo.headline, memo.breaks_if_test.reasoning, ...memo.watch_next].join(' ');
+    // Lint every model-authored prose field. timeline[].event is the model's own
+    // words (rendered prominently) and must be covered; quote is a verbatim source
+    // citation, not model prose, so it is deliberately excluded.
+    const linted = [memo.headline, memo.breaks_if_test.reasoning, ...memo.watch_next, ...memo.timeline.map((t) => t.event)].join(' ');
     if (hasAdviceLanguage(linted)) {
       log.push(`[${trigger.ticker}] investigation discarded: advice language`);
       return null;
     }
 
-    // --- Supersede + insert ---
-    await db
-      .from('thesis_investigations')
-      .update({ status: 'superseded' })
-      .eq('pillar_id', trigger.pillarId)
-      .eq('status', 'ready');
-
+    // --- Insert first, then supersede older ready memos ---
+    // Insert-before-supersede so a failed insert never leaves the pillar with its
+    // previous memo superseded and no ready replacement (a transient empty card).
     const { data: inserted, error: insErr } = await db
       .from('thesis_investigations')
       .insert({
@@ -250,6 +252,13 @@ export async function runInvestigation(
       log.push(`[${trigger.ticker}] investigation insert error: ${insErr?.message ?? 'no row'}`);
       return null;
     }
+
+    await db
+      .from('thesis_investigations')
+      .update({ status: 'superseded' })
+      .eq('pillar_id', trigger.pillarId)
+      .eq('status', 'ready')
+      .neq('id', inserted.id);
     log.push(`[${trigger.ticker}] investigation memo written (${trigger.triggerKind}, ${timeline.length} receipts)`);
     return inserted.id as string;
   } catch (err) {

@@ -35,36 +35,45 @@ function mockOpenAI(content: string | null, shouldThrow = false): OpenAI {
 }
 
 describe('reviewEscalations', () => {
-  it('applies keep/downgrade/reject by index', async () => {
+  it('applies keep/downgrade/reject by index and marks reviewed', async () => {
     const log: string[] = [];
     const ai = mockOpenAI(JSON.stringify({ reviews: [
       { index: 1, action: 'reject', reason: 'indirect' },
       { index: 2, action: 'downgrade', reason: 'background' },
     ] }));
-    const actions = await reviewEscalations(ai, ROWS, log);
+    const { actions, reviewed } = await reviewEscalations(ai, ROWS, log);
     expect(actions).toEqual(['reject', 'downgrade']);
+    expect(reviewed).toBe(true);
   });
-  it('API failure keeps all originals', async () => {
+  it('API failure keeps all originals and reports not reviewed', async () => {
     const log: string[] = [];
-    const actions = await reviewEscalations(mockOpenAI(null, true), ROWS, log);
+    const { actions, reviewed } = await reviewEscalations(mockOpenAI(null, true), ROWS, log);
     expect(actions).toEqual(['keep', 'keep']);
+    expect(reviewed).toBe(false);
     expect(log.some((l) => l.includes('review failed'))).toBe(true);
   });
-  it('malformed output keeps originals', async () => {
-    const actions = await reviewEscalations(mockOpenAI('{"nope": true}'), ROWS, []);
+  it('malformed-but-parseable output keeps originals, still reviewed', async () => {
+    const { actions, reviewed } = await reviewEscalations(mockOpenAI('{"nope": true}'), ROWS, []);
     expect(actions).toEqual(['keep', 'keep']);
+    expect(reviewed).toBe(true);
+  });
+  it('non-JSON output reports not reviewed', async () => {
+    const { actions, reviewed } = await reviewEscalations(mockOpenAI('not json at all'), ROWS, []);
+    expect(actions).toEqual(['keep', 'keep']);
+    expect(reviewed).toBe(false);
   });
   it('out-of-range or invalid actions are ignored', async () => {
     const ai = mockOpenAI(JSON.stringify({ reviews: [
       { index: 9, action: 'reject' },
       { index: 1, action: 'explode' },
     ] }));
-    const actions = await reviewEscalations(ai, ROWS, []);
+    const { actions } = await reviewEscalations(ai, ROWS, []);
     expect(actions).toEqual(['keep', 'keep']);
   });
   it('empty input short-circuits without a call', async () => {
     const ai = mockOpenAI(null, true);
-    const actions = await reviewEscalations(ai, [], []);
+    const { actions, reviewed } = await reviewEscalations(ai, [], []);
     expect(actions).toEqual([]);
+    expect(reviewed).toBe(true);
   });
 });
