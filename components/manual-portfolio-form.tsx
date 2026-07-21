@@ -12,6 +12,9 @@ interface HoldingRow {
 }
 
 interface ManualPortfolioFormProps {
+  /** Preview/review surfaces pass this to render the real form while blocking the
+   *  write, so a reviewer can walk the screen without adding holdings to their book. */
+  readOnly?: boolean;
   onComplete?: () => void;
   compact?: boolean;
 }
@@ -29,7 +32,7 @@ function createEmptyRow(): HoldingRow {
   return { id: crypto.randomUUID(), ticker: '', shares: '', costBasis: '' };
 }
 
-export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortfolioFormProps) {
+export function ManualPortfolioForm({ onComplete, compact = false, readOnly = false }: ManualPortfolioFormProps) {
   const [rows, setRows] = useState<HoldingRow[]>([
     createEmptyRow(),
     createEmptyRow(),
@@ -61,6 +64,10 @@ export function ManualPortfolioForm({ onComplete, compact = false }: ManualPortf
 
   const handleSubmit = async () => {
     setError(null);
+    if (readOnly) {
+      setError('Preview mode: holdings are not saved here.');
+      return;
+    }
     const validRows = rows.filter(r => r.ticker.trim() && r.shares.trim());
 
     if (validRows.length === 0) {

@@ -3,6 +3,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { plaidClient, mapPlaidAccountType } from '@/lib/plaid';
 import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
 import { extractPlaidError } from '@/lib/plaid-errors';
+import { grantFirstConnectTrial } from '@/lib/grant-connect-trial';
 
 export async function POST(request: Request) {
   try {
@@ -212,33 +213,9 @@ export async function POST(request: Request) {
       await supabase.from('plaid_items').delete().eq('id', duplicateItem.id);
     }
 
-    // 14-day Pro trial on first connect. Only for free users who have never had
-    // a trial (trial_ends_at doubles as the has-trialed marker, so reconnecting
-    // never restarts the clock). Non-blocking: a failed grant must not fail the link.
-    try {
-      const admin = await createServiceClient();
-      const { data: sub } = await admin
-        .from('user_subscriptions')
-        .select('tier, trial_ends_at')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if ((!sub || sub.tier === 'free') && !sub?.trial_ends_at) {
-        const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
-        const { error: trialError } = await admin
-          .from('user_subscriptions')
-          .upsert(
-            { user_id: user.id, tier: 'pro', trial_ends_at: trialEndsAt, updated_at: new Date().toISOString() },
-            { onConflict: 'user_id' },
-          );
-        if (trialError) {
-          console.error(`[plaid][trial] grant failed for user ${user.id}:`, trialError.message);
-        } else {
-          console.log(`[plaid][trial] 14-day Pro trial started for user ${user.id} (ends ${trialEndsAt})`);
-        }
-      }
-    } catch (trialErr) {
-      console.error('[plaid][trial] grant threw:', trialErr instanceof Error ? trialErr.message : trialErr);
-    }
+    // 14-day Pro trial on first connect. Shared with the manual-entry path so both
+    // routes to "real holdings on file" unlock the Pro-gated thesis layer.
+    await grantFirstConnectTrial(user.id, 'plaid');
 
     return NextResponse.json({
       success: true,

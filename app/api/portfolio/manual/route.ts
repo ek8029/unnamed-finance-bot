@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { grantFirstConnectTrial } from '@/lib/grant-connect-trial';
 import { getQuote } from '@/lib/financial-data';
 
 /**
@@ -178,6 +179,14 @@ export async function POST(req: NextRequest) {
     }
 
     const successCount = results.filter(r => r.success).length;
+
+    // Same 14-day Pro trial the Plaid path grants. Manual entry is real activation,
+    // and without it these users stay free, which silently hides the Pro-gated
+    // thesis layer (hasThesisAccess -> requirePro) during onboarding. Idempotent
+    // and non-blocking, so repeat submissions never restart the clock or fail here.
+    if (successCount > 0) {
+      await grantFirstConnectTrial(user.id, 'manual');
+    }
 
     return NextResponse.json({
       success: true,

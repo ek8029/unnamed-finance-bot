@@ -42,6 +42,11 @@ import { LegalFooter } from '@/components/legal-footer';
 import { FinancialDisclaimer } from '@/components/financial-disclaimer';
 import { ThesesWhatsNewBanner } from '@/components/thesis/theses-whatsnew-banner';
 import { OnboardingFlow } from '@/components/onboarding/onboarding-flow';
+import { OnboardingFlowV2 } from '@/components/onboarding/onboarding-flow-v2';
+
+// Value-first onboarding cohort. Flip NEXT_PUBLIC_ONBOARDING_V2=1 to serve the
+// scan-before-connect flow; default keeps the legacy tour until scan->link reads positive.
+const ONBOARDING_V2 = process.env.NEXT_PUBLIC_ONBOARDING_V2 === '1';
 import { GuidedTour } from '@/components/onboarding/guided-tour';
 import { DisclaimerModal } from '@/components/legal/disclaimer-modal';
 import { MobileBottomNav } from '@/components/mobile-bottom-nav';
@@ -579,7 +584,7 @@ export default function DashboardLayout({
   return (
     <DemoProvider>
     <>
-    <OnboardingFlow />
+    {ONBOARDING_V2 ? <OnboardingFlowV2 /> : <OnboardingFlow />}
     <GuidedTour />
     <DisclaimerModal />
     <div
