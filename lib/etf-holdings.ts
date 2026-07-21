@@ -103,8 +103,13 @@ export const SINGLE_STOCK_MAP: Record<string, SingleStockProduct> = {
   // ── Leverage Shares 2x Long ──
   CRWG: { underlying: 'CRWV', leverage: 2, name: 'Leverage Shares 2x Long CoreWeave' },
   ASMG: { underlying: 'ASML', leverage: 2, name: 'Leverage Shares 2x Long ASML' },
+  // Launched 12 May 2026, Cboe. Verified against the issuer's product page.
+  AMAU: { underlying: 'AMAT', leverage: 2, name: 'Leverage Shares 2X Long AMAT Daily' },
 
   // ── REX / T-REX 2x Long ──
+  // Underlying is the SK Hynix ADR, which trades under SKHY. Verified against
+  // the issuer (REX Shares / Tuttle Capital) product listing.
+  HYNX: { underlying: 'SKHY', leverage: 2, name: 'T-REX 2X Long SK Hynix Daily Target' },
   FEBL: { underlying: 'META', leverage: 2, name: 'T-Rex 2X Long META Daily' },
   FLYL: { underlying: 'UBER', leverage: 2, name: 'T-Rex 2X Long UBER Daily' },
   NFLL: { underlying: 'NFLX', leverage: 2, name: 'T-Rex 2X Long NFLX Daily' },
