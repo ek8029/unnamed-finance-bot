@@ -8,12 +8,12 @@ describe('canonicalTicker', () => {
     expect(canonicalTicker(' NVDA ')).toBe('NVDA');
   });
 
-  it('collapses the Schwab variant symbol onto the real ticker', () => {
-    expect(canonicalTicker('SKHYV')).toBe('SKHY');
-  });
-
-  it('collapses the OTC unsponsored ADR onto the real ticker', () => {
-    expect(canonicalTicker('HXSCL')).toBe('SKHY');
+  it('does NOT alias a symbol on a name match alone', () => {
+    // SKHYV shares a security_name with SKHY, but the account holder confirmed
+    // he holds no SKHY. Equivalence must be proven (CUSIP/ISIN, or the holder
+    // checking a statement), never inferred, so unverified symbols pass through.
+    expect(canonicalTicker('SKHYV')).toBe('SKHYV');
+    expect(canonicalTicker('HXSCL')).toBe('HXSCL');
   });
 
   it('collapses a full security description used in place of a ticker', () => {
@@ -31,9 +31,9 @@ describe('canonicalTicker', () => {
     expect(canonicalTicker('')).toBe('');
   });
 
-  it('treats variants as the same position', () => {
-    expect(isSamePosition('SKHY', 'SKHYV')).toBe(true);
+  it('treats unrelated symbols as different positions', () => {
     expect(isSamePosition('SKHY', 'AAPL')).toBe(false);
+    expect(isSamePosition('AAPL', 'aapl')).toBe(true);
   });
 
   it('recognises descriptions vs symbols', () => {
@@ -49,15 +49,15 @@ describe('portfolio look-through with broker variants (Ben regression)', () => {
     const exposure = computePortfolioLookthrough(
       [
         { ticker: 'SKHY', totalValue: 10_000 },
-        { ticker: 'SKHYV', totalValue: 20_000 },
         { ticker: 'Sk Hynix Inc Xxxsponsored Trd Reg Way1 Adr Reps 0.1 Ord Shs', totalValue: 20_000 },
       ],
       100_000,
     );
 
+    // A row whose "ticker" is really the security description folds into the
+    // instrument it describes. Unverified SYMBOL variants deliberately do not.
     expect(exposure.has('SKHY')).toBe(true);
-    expect(exposure.has('SKHYV')).toBe(false);
-    expect(exposure.get('SKHY')!.totalWeight).toBeCloseTo(50, 5); // 50k of 100k
+    expect(exposure.get('SKHY')!.totalWeight).toBeCloseTo(30, 5); // 30k of 100k
   });
 
   it('still splits genuinely different positions', () => {

@@ -10,12 +10,15 @@
 // rows: each brokerage row stays as reported (auditable against a statement),
 // and only the analytics layer collapses them.
 
-/** Variant symbol -> canonical exchange ticker. */
-const ALIASES: Record<string, string> = {
-  SKHYV: 'SKHY',   // Schwab variant for SK Hynix ADR
-  HXSCL: 'SKHY',   // unsponsored SK Hynix ADR, OTC
-  HXSCF: 'SKHY',
-};
+/** Variant symbol -> canonical exchange ticker.
+ *
+ *  Deliberately empty. SKHYV was mapped to SKHY on inference from a matching
+ *  security_name, and the user who reported the original issue confirmed he
+ *  holds no SKHY at all, so displaying his position under that symbol would be
+ *  wrong. Only add an entry here when the equivalence is CONFIRMED (matching
+ *  CUSIP/ISIN, or the account holder verifying against a statement), never from
+ *  a name match alone. */
+const ALIASES: Record<string, string> = {};
 
 /**
  * Some rows arrive with a full security description instead of a ticker

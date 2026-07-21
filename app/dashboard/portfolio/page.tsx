@@ -13,7 +13,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useFormat } from '@/hooks/use-format';
 import { computePortfolioLookthrough } from '@/lib/etf-holdings';
-import { CONCENTRATION_THRESHOLDS } from '@/lib/financial-config';
 import { ScrollHint } from '@/components/ui/scroll-hint';
 import { PriceFlash } from '@/components/price-flash';
 
@@ -241,9 +240,14 @@ export default function PortfolioPage() {
     if (holdings.length === 0 || totalValue <= 0) return [];
     const holdingsInput = holdings.map(h => ({ ticker: h.ticker, totalValue: h.total_value }));
     const exposureMap = computePortfolioLookthrough(holdingsInput, totalValue);
+    // True Exposure is a peer view of Positions: the SAME book, with ETFs and
+    // leveraged products looked through to their underlyings. It previously
+    // hid any direct position under the 10% concentration threshold, so a user
+    // could not tell "filtered" from "missing" and correctly reported it as
+    // data loss. Concentration filtering belongs on the Concentration tab,
+    // which already exists. Show everything here.
     const entries = Array.from(exposureMap.entries())
       .map(([ticker, data]) => ({ ticker, ...data }))
-      .filter(e => e.indirectWeight > 0 || e.totalWeight > CONCENTRATION_THRESHOLDS.medium)
       .sort((a, b) => b.totalWeight - a.totalWeight);
     return entries;
   }, [holdings, totalValue]);
@@ -1690,6 +1694,17 @@ function TrueExposureSection({ lookthrough, open, onToggle, formatCurrency }: {
 
       {open && (
         <div className="border-t border-[var(--color-border-subtle)]">
+          {/* State the list is complete. It previously hid direct positions under
+              10%, which was indistinguishable from a position going missing and
+              got reported as a data bug. */}
+          <p className="px-4 pt-3 pb-1 text-[11px] leading-relaxed text-[var(--color-text-muted)] m-0">
+            {(() => {
+              const withIndirect = lookthrough.filter((e) => e.indirectWeight > 0).length;
+              return withIndirect > 0
+                ? `Every position you hold, with funds and leveraged products looked through to what they actually own. ${withIndirect} of ${lookthrough.length} carry exposure you do not hold directly.`
+                : 'Every position you hold. None of them carry exposure through funds or leveraged products.';
+            })()}
+          </p>
           <ScrollHint>
             <table className="w-full min-w-[500px]">
               <thead>
