@@ -9,6 +9,8 @@
  * Sources: Fund prospectuses, SSGA, Vanguard, iShares, Invesco, ProShares, Direxion.
  */
 
+import { canonicalTicker } from './ticker-alias';
+
 // ── Single-Stock ETFs & Leveraged Single-Stock Products ──
 // These track a SINGLE underlying stock. Leverage multiplier included.
 
@@ -629,7 +631,10 @@ export function computePortfolioLookthrough(
   const exposure = new Map<string, { directWeight: number; indirectWeight: number; totalWeight: number; sources: string[] }>();
 
   for (const holding of holdings) {
-    const upper = holding.ticker.toUpperCase();
+    // Canonical form first: a position reported under a broker variant symbol
+    // must aggregate with the same position reported under its real ticker,
+    // otherwise true exposure understates it.
+    const upper = canonicalTicker(holding.ticker);
     const directAllocation = portfolioValue > 0 ? (holding.totalValue / portfolioValue) * 100 : 0;
 
     // Check for underlying exposures

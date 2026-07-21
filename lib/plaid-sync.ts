@@ -9,6 +9,7 @@ import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
 import { extractPlaidError } from '@/lib/plaid-errors';
 import { summarizeCashFlow, countsAsCashFlow } from '@/lib/cash-flow';
 import { aggregateHoldingLots } from '@/lib/holdings-aggregate';
+import { canonicalTicker } from '@/lib/ticker-alias';
 import { InvestmentTransaction, RemovedTransaction, Transaction } from 'plaid';
 import {
   EMERGENCY_FUND_MONTHS,
@@ -271,13 +272,28 @@ export async function syncPlaidItem(
         cost_basis: number | null;
       }[] = [];
 
+      // Brokerages can return the SAME economic position under several Plaid
+      // security records (a real ticker, a broker variant symbol, and a record
+      // with no ticker at all where we fall back to the security name). Left
+      // alone that becomes two or three holdings rows for one position, which
+      // both fragments exposure and double-counts portfolio value.
+      const seenLots = new Set<string>();
+
       for (const holding of plaidHoldings) {
         const security = securityMap.get(holding.security_id);
         if (!security) continue;
 
-        const ticker = security.ticker_symbol || security.name || 'UNKNOWN';
+        // Canonicalise before anything else, so variant symbols and
+        // name-as-ticker rows resolve to one security and one holding.
+        const ticker = canonicalTicker(security.ticker_symbol || security.name || 'UNKNOWN');
         const linkedAccountId = linkedAccountMap.get(holding.account_id);
         if (!linkedAccountId) continue;
+
+        // Same account + same position + same size + same value = the same lot
+        // reported more than once. Keep the first, drop the rest.
+        const lotKey = `${holding.account_id}|${ticker}|${holding.quantity}|${holding.institution_value ?? ''}`;
+        if (seenLots.has(lotKey)) continue;
+        seenLots.add(lotKey);
 
         // Collect security upsert (deduped by ticker)
         if (!securitiesUpserts.has(ticker)) {
@@ -335,6 +351,14 @@ export async function syncPlaidItem(
           const linkedAccountId = linkedAccountMap.get(h.plaid_account_id);
           if (!securityId || !linkedAccountId) return null;
 
+          // Brokerages keep reporting closed positions at quantity 0. Persisting
+          // them produced "ghost" holdings: rows that render in the positions
+          // list but contribute nothing to value or exposure, which reads to the
+          // user as a position that silently vanished from their totals.
+          // Note: only EXACTLY zero is dropped. Negative quantities are short
+          // positions and must be kept.
+          if (Number(h.quantity) === 0) return null;
+
           const totalValue = h.institution_value ?? (h.quantity * (h.close_price ?? 0));
           const currentPrice = h.close_price
             ?? (h.quantity > 0 && h.institution_value
@@ -360,6 +384,12 @@ export async function syncPlaidItem(
             unrealised_gain_loss_pct: totalCostBasis && Number(totalCostBasis) > 0
               ? (totalValue - Number(totalCostBasis)) / Number(totalCostBasis)
               : null,
+            // Plaid is a real price writer, so it must stamp freshness too.
+            // Previously only the Finazon refresh set this, which made every
+            // instrument Finazon does not cover (mutual funds, money market,
+            // OTC ADRs, broker pool codes) look weeks stale when it had in fact
+            // just been repriced from the brokerage.
+            last_updated_at: new Date().toISOString(),
           };
         })
         .filter(Boolean);
@@ -374,6 +404,19 @@ export async function syncPlaidItem(
 
         if (holdingsError) console.error('[plaid-sync] holdings upsert failed:', holdingsError.message);
         holdingsSynced = holdingsError ? 0 : holdingsUpserts.length;
+
+        // Clear ghosts left by earlier syncs, so existing books self-heal on the
+        // next run rather than needing a one-off cleanup. Zero-quantity rows are
+        // never written above, so anything still at zero is stale by definition.
+        if (!holdingsError) {
+          const { error: ghostError, count: ghostsCleared } = await supabase
+            .from('holdings')
+            .delete({ count: 'exact' })
+            .eq('user_id', userId)
+            .eq('shares', 0);
+          if (ghostError) console.error('[plaid-sync] ghost cleanup failed:', ghostError.message);
+          else if (ghostsCleared) console.log(`[plaid-sync] cleared ${ghostsCleared} zero-share holding(s) for user ${userId}`);
+        }
 
         // ── Reconcile manual holdings ──
         // If a ticker now exists in a Plaid-linked account, remove the

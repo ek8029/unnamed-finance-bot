@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { parseDateLocal, formatMonthLabel } from '@/lib/date-format';
 import { resolveSector } from '@/lib/portfolio-analysis';
+import { canonicalTicker } from '@/lib/ticker-alias';
 
 export async function GET() {
   try {
@@ -67,7 +68,9 @@ export async function GET() {
     }>();
 
     for (const holding of holdings || []) {
-      const ticker = holding.ticker;
+      // Collapse broker symbol variants (SKHYV, description-as-ticker) onto the
+      // canonical ticker so one economic position aggregates as one row.
+      const ticker = canonicalTicker(holding.ticker);
       const existing = tickerMap.get(ticker);
       const shares = Number(holding.shares || 0);
       const value = Number(holding.total_value || 0);
