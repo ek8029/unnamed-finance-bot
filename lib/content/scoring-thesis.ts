@@ -12,8 +12,10 @@
 // /testing/thesis-v2 so the density and the clustering can be judged before any
 // house-scoping migration is run.
 
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createStaticServiceClient } from '@/lib/supabase/server';
 import { getHouseThesis } from './house-theses';
+import { classifyClaim } from './claim-type';
 import {
   clusterByMechanism,
   type ClusterItem,
@@ -24,11 +26,11 @@ import {
 
 /* ── source classification ─────────────────────────────────────────────── */
 
-// Outlets that report a fact first-hand or carry the company's own words.
-// Everything else that arrives as `news` is treated as opinion, which the
-// corroboration ladder deliberately refuses to escalate on. Yahoo and Nasdaq
-// dominate the feed (741 of 1,000 sampled) and syndicate both kinds, so they
-// cannot be trusted as primary without reading the byline.
+// Wires and press-release distributors carry the primary text itself, so the
+// domain settles it. For everything else the domain settles nothing: Yahoo and
+// Nasdaq are 741 of 1,000 sampled rows and syndicate reporting and opinion
+// alike, which is why classifying by domain filed "France ended Palantir's
+// contract with its intelligence agency" as analyst opinion.
 const PRIMARY_NEWS_DOMAINS = new Set([
   'globenewswire.com', 'prnewswire.com', 'businesswire.com', 'sec.gov',
   'reuters.com', 'apnews.com', 'wsj.com', 'bloomberg.com', 'cnbc.com',
@@ -44,13 +46,35 @@ function domainOf(url: string | null): string {
   }
 }
 
-export function classifySource(sourceType: string, url: string | null): SourceClass {
+const VALID_SOURCE_CLASSES = new Set<SourceClass>([
+  'company_filing', 'primary_news', 'analyst_opinion', 'insider', 'xbrl', 'price',
+]);
+
+/**
+ * What kind of independent confirmation this piece of evidence is.
+ *
+ * `stored` is the judge's own call, made at scoring time with the whole source
+ * in front of it, and it wins whenever it is present. Rows scored before that
+ * field existed fall back to reading the claim out of the text, which lands
+ * around 80% on a blind sample. A mistake there is survivable: `primary_news`
+ * still cannot escalate a pillar on its own, so a misread only counts when a
+ * genuinely different class agrees with it.
+ */
+export function classifySource(
+  sourceType: string,
+  url: string | null,
+  text = '',
+  stored?: string | null,
+): SourceClass {
+  if (stored && VALID_SOURCE_CLASSES.has(stored as SourceClass)) return stored as SourceClass;
   switch (sourceType) {
     case 'filing': return 'company_filing';
     case 'xbrl': return 'xbrl';
     case 'form4': return 'insider';
     case 'price_move': return 'price';
-    default: return PRIMARY_NEWS_DOMAINS.has(domainOf(url)) ? 'primary_news' : 'analyst_opinion';
+    default:
+      if (PRIMARY_NEWS_DOMAINS.has(domainOf(url))) return 'primary_news';
+      return classifyClaim(text) === 'reported_event' ? 'primary_news' : 'analyst_opinion';
   }
 }
 
@@ -156,12 +180,28 @@ export interface ScoringThesisData {
 
 /* ── read ──────────────────────────────────────────────────────────────── */
 
+// `pillar_evidence.source_class` arrives with the migration that lets the judge
+// emit it. Until that is applied this reads without the column, so the page
+// works against today's database and picks the field up the moment it exists.
+// Same probe-and-cache shape as hasJudgedByColumn in score-theses.ts.
+let sourceClassColumnKnown: boolean | null = null;
+
+async function hasSourceClassColumn(db: SupabaseClient): Promise<boolean> {
+  if (sourceClassColumnKnown !== null) return sourceClassColumnKnown;
+  const { error } = await db.from('pillar_evidence').select('source_class').limit(1);
+  // Cache only a definitive answer: a pooler blip must not poison it for the
+  // lifetime of the instance.
+  if (!error) sourceClassColumnKnown = true;
+  else if (error.code === '42703') sourceClassColumnKnown = false; // undefined_column
+  return sourceClassColumnKnown ?? false;
+}
+
 interface PillarRow { id: string; thesis_id: string; claim: string; breaks_if: string | null; origin: string }
 interface EvidenceRow {
   id: string; pillar_id: string; user_id: string; verdict: string; materiality: string;
   source_type: string; source_key: string; source_title: string; source_url: string | null;
   source_published_at: string | null; excerpt: string; why: string; what_it_means: string;
-  consider: string | null; created_at: string; is_backfill: boolean;
+  consider: string | null; created_at: string; is_backfill: boolean; source_class?: string | null;
 }
 
 const normClaim = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
@@ -200,9 +240,15 @@ export async function getScoringThesisData(ticker: string): Promise<ScoringThesi
     .in('thesis_id', theses.map((t) => t.id as string));
   if (!pillarRows?.length) return base;
 
+  const withClass = await hasSourceClassColumn(db);
+  const EV_COLS =
+    'id, pillar_id, user_id, verdict, materiality, source_type, source_key, source_title, source_url, ' +
+    'source_published_at, excerpt, why, what_it_means, consider, created_at, is_backfill' +
+    (withClass ? ', source_class' : '');
+
   const { data: evRows } = await db
     .from('pillar_evidence')
-    .select('id, pillar_id, user_id, verdict, materiality, source_type, source_key, source_title, source_url, source_published_at, excerpt, why, what_it_means, consider, created_at, is_backfill')
+    .select(EV_COLS)
     .in('pillar_id', (pillarRows as PillarRow[]).map((p) => p.id))
     .order('source_published_at', { ascending: false });
 
@@ -238,7 +284,12 @@ export async function getScoringThesisData(ticker: string): Promise<ScoringThesi
       seen.copies++;
       continue;
     }
-    const sourceClass = classifySource(e.source_type, e.source_url);
+    const sourceClass = classifySource(
+      e.source_type,
+      e.source_url,
+      `${e.source_title} ${e.excerpt}`,
+      e.source_class,
+    );
     findings.set(fk, {
       id: e.id,
       text: `${e.source_title} ${e.excerpt}`,

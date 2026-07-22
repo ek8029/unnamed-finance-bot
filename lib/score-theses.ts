@@ -71,6 +71,8 @@ interface LLMEvidenceRow {
   source_index: number;
   verdict: string;
   materiality: string;
+  /** 'reported_event' | 'opinion', news only — drives source_class (migration 057). */
+  claim_type?: string;
   confidence?: string; // 'high' | 'low' — E2 escalation trigger
   why: string;
   what_it_means: string;
@@ -494,13 +496,14 @@ Rules:
 - No invented numbers. No em dashes.
 - verdict: "supports", "contradicts", or "neutral". Neutral is RARE: only when the source speaks directly to the pillar's mechanism and confirms the status quo. Never use neutral to file a loose thematic association; omit instead.
 - materiality: "material" (changes the thesis outlook) or "context" (informative background).
+- claim_type: for [news] sources ONLY, "reported_event" if the excerpt reports something that has actually happened or been formally announced (a contract ended, a plant shut, results published, a price changed), or "opinion" if it is a view, forecast, rating, price target or argument about what may happen. A rating change IS an opinion however factually it is written up. Where it was published is irrelevant; judge the claim itself. Omit for non-news sources.
 - confidence: "high" or "low". Use "low" when the connection or the materiality call required judgment you are not certain of.
 - why: one concise sentence explaining the connection.
 - what_it_means: one concise sentence, addressed to the holder in second person ("your"), on what this does to the pillar's standing. Describe state only, never recommend an action (no buy, sell, trim, or consider). Do not introduce facts absent from the cited source.
 - consider: optional, only if there is a meaningful counterpoint.
 - If a HOLDER_CONTEXT section is present, use it to calibrate relevance and materiality for THIS holder (e.g. kinds of evidence they have rejected before). It never overrides the facts in the sources.
 Respond with JSON exactly in this shape:
-{ "evidence": [ { "pillar_index": <1-based pillar number>, "source_index": <1-based source number>, "verdict": "...", "materiality": "...", "confidence": "...", "excerpt": "...", "why": "...", "what_it_means": "...", "consider": "..." } ] }`;
+{ "evidence": [ { "pillar_index": <1-based pillar number>, "source_index": <1-based source number>, "verdict": "...", "materiality": "...", "claim_type": "...", "confidence": "...", "excerpt": "...", "why": "...", "what_it_means": "...", "consider": "..." } ] }`;
 
   // E5: per-thesis steering from the holder's own overrides + dismissed drafts.
   const { data: dismissedRaw } = await db
@@ -606,6 +609,7 @@ Respond with JSON exactly in this shape:
       user_id: user_id,
       verdict,
       materiality,
+      source_class: sourceClassOf(candidate.source_type, row.claim_type),
       source_type: candidate.source_type,
       source_key: candidate.source_key,
       source_title: candidate.source_title,
@@ -665,6 +669,11 @@ Respond with JSON exactly in this shape:
   // upsert cannot fail on an unapplied migration.
   if (toInsert.length > 0 && !(await hasJudgedByColumn(db))) {
     for (const r of toInsert) delete r.judged_by;
+  }
+  // Same tolerance for migration 057. Until it is applied the read layer infers
+  // source class from the claim text instead.
+  if (toInsert.length > 0 && !(await hasSourceClassColumn(db))) {
+    for (const r of toInsert) delete r.source_class;
   }
 
   // Upsert evidence
@@ -789,6 +798,34 @@ Respond with JSON exactly in this shape:
 // Migration-056 runtime detection, cached per process: one cheap probe select
 // decides whether judged_by can be written. Deploy-before-migration stays safe.
 let judgedByColumnKnown: boolean | null = null;
+/**
+ * What kind of independent confirmation this evidence is (migration 057).
+ *
+ * Everything except news is settled by the source type. For news the judge
+ * answers the only question that matters, which is whether the excerpt reports
+ * something that happened or argues a view. An unrecognised or missing answer
+ * falls back to opinion, so a row can never escalate a pillar by default.
+ */
+function sourceClassOf(sourceType: string, claimType: unknown): string {
+  switch (sourceType) {
+    case 'filing': return 'company_filing';
+    case 'xbrl': return 'xbrl';
+    case 'form4': return 'insider';
+    case 'price_move': return 'price';
+    default: return claimType === 'reported_event' ? 'primary_news' : 'analyst_opinion';
+  }
+}
+
+let sourceClassColumnKnown: boolean | null = null;
+
+async function hasSourceClassColumn(db: SupabaseClient): Promise<boolean> {
+  if (sourceClassColumnKnown !== null) return sourceClassColumnKnown;
+  const { error } = await db.from('pillar_evidence').select('source_class').limit(1);
+  if (!error) sourceClassColumnKnown = true;
+  else if (error.code === '42703') sourceClassColumnKnown = false; // undefined_column
+  return sourceClassColumnKnown ?? false;
+}
+
 async function hasJudgedByColumn(db: SupabaseClient): Promise<boolean> {
   if (judgedByColumnKnown !== null) return judgedByColumnKnown;
   const { error } = await db.from('pillar_evidence').select('judged_by').limit(1);
