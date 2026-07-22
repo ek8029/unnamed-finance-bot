@@ -352,11 +352,44 @@ async function fetchSubmissions(cik: string): Promise<any | null> {
 }
 
 /**
+ * Forms that describe how the BUSINESS is performing.
+ *
+ * Everything else EDGAR carries is largely offering paperwork: prospectus
+ * supplements (424B*), free writing prospectuses (FWP), registration statements.
+ * Those describe securities the company is issuing, not how the business is
+ * doing, and their text is boilerplate risk language ("investing in the notes
+ * involves a number of risks"). A frequent issuer files dozens a week: measured
+ * 2026-07-22, 297 of 347 filing-sourced evidence rows were offering paperwork,
+ * and JPM had 131 of 136 findings on one pillar from 424B2 and FWP alone.
+ *
+ * Excluding them is not only noise reduction. The recent-filings window is
+ * bounded, so for a bank the 10-Q was being pushed out of it entirely.
+ */
+export const BUSINESS_FORMS = ['10-K', '10-Q', '8-K', '20-F', '40-F', '6-K'];
+
+/**
+ * When filtering by form we scan the WHOLE recent array rather than a slice.
+ * JPM's holds 25,450 filings for one year, of which 22,130 are 424B2 and only
+ * 29 are 10-K/10-Q/8-K, so any fixed depth misses the quarterly report. The
+ * array is already in memory, so this costs a string compare per entry.
+ */
+
+function formMatches(form: string, allowed: string[]): boolean {
+  const f = form.toUpperCase().replace(/\s+/g, '');
+  // EDGAR emits amendments as "10-K/A".
+  return allowed.some((a) => f === a || f.startsWith(a + '/'));
+}
+
+/**
  * Fetch a company's recent EDGAR filings (newest first), optionally
  * filtered to those on/after `sinceDate` (YYYY-MM-DD).
+ *
+ * `forms` restricts to specific form types and, crucially, scans deeper than the
+ * result cap, so a company that files a lot of offering paperwork cannot push
+ * its own quarterly report out of the window.
  */
-export async function getRecentFilings(symbol: string, sinceDate?: string): Promise<EdgarFiling[]> {
-  const cacheKey = `edgar:filings:${symbol.toUpperCase()}`;
+export async function getRecentFilings(symbol: string, sinceDate?: string, forms?: string[]): Promise<EdgarFiling[]> {
+  const cacheKey = 'edgar:filings:' + symbol.toUpperCase() + (forms ? ':' + forms.join(',') : '');
   let filings = getCached<EdgarFiling[]>(cacheKey);
 
   if (!filings) {
@@ -370,8 +403,10 @@ export async function getRecentFilings(symbol: string, sinceDate?: string): Prom
     if (!recent?.form) return [];
 
     const cikNum = String(Number(cik)); // strip leading zeros for archive URLs
+    const scanTo = forms ? recent.form.length : Math.min(recent.form.length, 100);
     filings = [];
-    for (let i = 0; i < recent.form.length && i < 100; i++) {
+    for (let i = 0; i < scanTo && filings.length < 100; i++) {
+      if (forms && !formMatches(String(recent.form[i] || ''), forms)) continue;
       const accession = (recent.accessionNumber?.[i] || '').replace(/-/g, '');
       const doc = recent.primaryDocument?.[i] || '';
       filings.push({

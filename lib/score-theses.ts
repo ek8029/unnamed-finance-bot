@@ -6,6 +6,7 @@ import OpenAI from 'openai';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   getRecentFilings,
+  BUSINESS_FORMS,
   getForm4Filings,
   getReportedFinancialsEdgar,
   fetchEx99Html,
@@ -244,7 +245,7 @@ export async function scoreOneThesis(
 
   // 1. Recent SEC filings
   try {
-    const filings = await getRecentFilings(ticker, since);
+    const filings = await getRecentFilings(ticker, since, BUSINESS_FORMS);
     for (const f of filings) {
       // source_key = filing URL: EdgarFiling exposes no accession number; URL is stable + unique per filing
       const sourceKey = f.url;
