@@ -63,8 +63,19 @@ function computeBefore(holdings: { ticker: string; totalValue: number }[], total
 export default async function ExposureBeforeAfter({ searchParams }: { searchParams: Promise<{ email?: string }> }) {
   if (process.env.NODE_ENV === 'production') notFound();
 
+  // No default account. This repository is public, so a real user's address must
+  // never be a literal here, however convenient the shortcut is locally.
   const { email } = await searchParams;
-  const target = email ?? 'benjaminlpittman@gmail.com';
+  const target = email?.trim();
+  if (!target) {
+    return (
+      <div className="min-h-dvh bg-[#060606] p-10 text-[#FAFAFA]">
+        <p className="text-[14px] m-0">
+          Pass an account to compare, e.g. <span style={MONO}>/testing/exposure?email=someone@example.com</span>
+        </p>
+      </div>
+    );
+  }
 
   const db = createStaticServiceClient();
   const { data: profile } = await db.from('user_profiles').select('id, email').eq('email', target).maybeSingle();

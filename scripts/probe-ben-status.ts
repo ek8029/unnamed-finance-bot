@@ -12,14 +12,18 @@ import { computePortfolioLookthrough } from '../lib/etf-holdings';
 
 const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
 
-const BEN = 'benjaminlpittman@gmail.com';
-/** The five Ben said were missing, plus the leveraged SK Hynix he actually holds. */
-const REPORTED_MISSING = ['BE', 'LLY', 'NBIS', 'SPCX', 'WDC', 'HYNX'];
+// Passed in, never hardcoded: this repository is public.
+// Usage: npx tsx scripts/probe-ben-status.ts <email> [TICKER,TICKER,...]
+const TARGET_EMAIL = process.argv[2];
+const REPORTED_MISSING = (process.argv[3] ?? 'BE,LLY,NBIS,SPCX,WDC,HYNX').split(',').map((t) => t.trim().toUpperCase());
 
 async function main() {
+  if (!TARGET_EMAIL) {
+    return console.log('Usage: npx tsx scripts/probe-ben-status.ts <email> [TICKER,TICKER,...]');
+  }
   const { data: users } = await db.auth.admin.listUsers({ perPage: 500 });
-  const ben = (users?.users ?? []).find((u) => (u.email ?? '') === BEN);
-  if (!ben) return console.log('Ben not found');
+  const ben = (users?.users ?? []).find((u) => (u.email ?? '') === TARGET_EMAIL);
+  if (!ben) return console.log(`No user for ${TARGET_EMAIL}`);
 
   // ---- 1. ghosts, globally and since the cleanup -------------------------
   const { data: allZero } = await db
