@@ -25,6 +25,14 @@ export const SOURCE_CLASS_LABEL: Record<SourceClass, string> = {
 /** Classes that can carry a claim on their own. The ladder requires one to escalate. */
 const PRIMARY_CLASSES = new Set<SourceClass>(['company_filing', 'xbrl', 'primary_news']);
 
+/**
+ * The company's own words about its own business. Nobody has to corroborate a
+ * 10-Q; an outlet's read of one always does. A price move is deliberately NOT
+ * here: the price is the thing a thesis is supposed to explain, not evidence
+ * about it.
+ */
+const SELF_DISCLOSURE = new Set<SourceClass>(['company_filing', 'xbrl']);
+
 export type EvidenceClass = 'realized' | 'emerging' | 'speculative';
 export type LadderStatus = 'watch' | 'weakening' | 'broken';
 
@@ -36,6 +44,9 @@ export interface ClusterItem {
   evidenceClass: EvidenceClass;
   /** YYYY-MM-DD */
   dateISO: string;
+  /** Large enough to stand on its own, e.g. a >=20% adverse move or withdrawn
+   *  guidance. Matches the severity rule the shipped status engine already has. */
+  severe?: boolean;
 }
 
 export interface Mechanism<T extends ClusterItem = ClusterItem> {
@@ -99,8 +110,16 @@ export function salientEntities(text: string): string[] {
 export function ladderCeiling(
   classes: SourceClass[],
   evidenceClasses: EvidenceClass[],
+  severe = false,
 ): { maxStatus: LadderStatus; reason: string } {
   const distinct = [...new Set(classes)];
+  // Severity outranks corroboration. A 38% single-day fall against a pillar that
+  // says the share price holds up does not need a second opinion, and an early
+  // version of this ladder capping that at watch is why the shipped engine and
+  // this one are run side by side.
+  if (severe) {
+    return { maxStatus: 'broken', reason: 'a severe move that needs no corroboration' };
+  }
   if (evidenceClasses.includes('realized')) {
     return { maxStatus: 'broken', reason: 'a realized change is in the reported numbers' };
   }
@@ -110,6 +129,13 @@ export function ladderCeiling(
   }
   if (distinct.length >= 2) {
     return { maxStatus: 'watch', reason: 'corroborated, but no primary source yet' };
+  }
+  // The company contradicting its own thesis in its own disclosure needs nobody
+  // to corroborate it. Capping that at watch was the one place this ladder was
+  // less accurate than the engine it is meant to correct, which is exactly the
+  // kind of thing running both over the same evidence is for.
+  if (SELF_DISCLOSURE.has(distinct[0])) {
+    return { maxStatus: 'weakening', reason: 'the company disclosed this itself' };
   }
   return { maxStatus: 'watch', reason: 'a single source class, however many times it was repeated' };
 }
@@ -246,7 +272,11 @@ export function clusterByMechanism<T extends ClusterItem>(items: T[]): Mechanism
     const members = [...c.members].sort((a, b) => b.dateISO.localeCompare(a.dateISO));
     const classes = members.map((m) => m.sourceClass);
     const distinct = [...new Set(classes)];
-    const { maxStatus, reason } = ladderCeiling(classes, members.map((m) => m.evidenceClass));
+    const { maxStatus, reason } = ladderCeiling(
+      classes,
+      members.map((m) => m.evidenceClass),
+      members.some((m) => m.severe),
+    );
 
     const shown = new Map([...c.seen].map(([k, n]) => [display.get(k) ?? k, n]));
     const label =

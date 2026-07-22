@@ -11,9 +11,23 @@ const EXPERIMENTS = [
   {
     href: '/testing/thesis-v2',
     title: 'Thesis Intelligence v2',
-    date: '2026-07-21',
+    date: '2026-07-22',
     blurb:
-      'Two alert lanes, mechanism clustering, realized vs emerging, thesis-relative headlines. Rendered on real approved catches. Spec: docs/superpowers/specs/2026-07-21-thesis-intelligence-v2.md',
+      'The scoring pipeline instead of the social one, collapsed into mechanisms with a corroboration ladder. Every quote real. Spec: docs/superpowers/specs/2026-07-21-thesis-intelligence-v2.md',
+  },
+  {
+    href: '/testing/thesis-v2/compare',
+    title: 'Thesis v2 · engine comparison',
+    date: '2026-07-22',
+    blurb:
+      'The shipped status engine beside the v2 ladder over identical evidence, with every contradiction they were handed. 7 of 80 pillars change. Some of them the shipped engine gets right.',
+  },
+  {
+    href: '/testing/exposure',
+    title: 'True Exposure before/after',
+    date: '2026-07-22',
+    blurb:
+      'A real book through the pre-fix logic (10% concentration filter, HYNX and AMAU unmapped) beside the shipped logic. Pass ?email= to pick the account.',
   },
   {
     href: '/testing/onboarding',

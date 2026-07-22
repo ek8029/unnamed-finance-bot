@@ -89,6 +89,24 @@ export function classifyEvidence(
   return primarySource || sourceClass === 'primary_news' ? 'emerging' : 'speculative';
 }
 
+/**
+ * Big enough to stand alone. The shipped status engine already breaks a pillar
+ * on a single severe primary contradiction; the ladder has to honour the same
+ * rule or it will talk a real collapse back down to "watch". PRIM fell 38.2% in
+ * a day against a pillar that said its share price holds up, and an earlier
+ * version of this file called that intact.
+ */
+// Deliberately identical to the rule in score-theses.ts, so the two engines are
+// compared on the same footing rather than one being handed a capability the
+// other lacks. That constant is currently copied in score-theses, thesis-actions
+// and thesis-investigation; this is a fourth copy and the set wants extracting.
+const SEVERE_MOVE_PCT = 20;
+
+export function isSevere(rawSourceType: string, excerpt: string): boolean {
+  if (rawSourceType !== 'price_move') return false;
+  return Number(excerpt.match(/(\d+(?:\.\d+)?)\s?%/)?.[1] ?? 0) >= SEVERE_MOVE_PCT;
+}
+
 /* ── shapes ────────────────────────────────────────────────────────────── */
 
 export interface ScoredCatch extends ClusterItem {
@@ -102,6 +120,12 @@ export interface ScoredCatch extends ClusterItem {
   url: string | null;
   /** How many per-user copies of this same finding were folded together. */
   copies: number;
+  /** Raw fields the shipped status engine consumes, kept so both engines can be
+   *  run over identical evidence and compared. */
+  sourceKey: string;
+  rawSourceType: string;
+  isBackfill: boolean;
+  createdAt: string;
 }
 
 export interface ScoredPillar {
@@ -137,7 +161,7 @@ interface EvidenceRow {
   id: string; pillar_id: string; user_id: string; verdict: string; materiality: string;
   source_type: string; source_key: string; source_title: string; source_url: string | null;
   source_published_at: string | null; excerpt: string; why: string; what_it_means: string;
-  consider: string | null; created_at: string;
+  consider: string | null; created_at: string; is_backfill: boolean;
 }
 
 const normClaim = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
@@ -178,7 +202,7 @@ export async function getScoringThesisData(ticker: string): Promise<ScoringThesi
 
   const { data: evRows } = await db
     .from('pillar_evidence')
-    .select('id, pillar_id, user_id, verdict, materiality, source_type, source_key, source_title, source_url, source_published_at, excerpt, why, what_it_means, consider, created_at')
+    .select('id, pillar_id, user_id, verdict, materiality, source_type, source_key, source_title, source_url, source_published_at, excerpt, why, what_it_means, consider, created_at, is_backfill')
     .in('pillar_id', (pillarRows as PillarRow[]).map((p) => p.id))
     .order('source_published_at', { ascending: false });
 
@@ -221,6 +245,7 @@ export async function getScoringThesisData(ticker: string): Promise<ScoringThesi
       sourceClass,
       evidenceClass: classifyEvidence(sourceClass, e.excerpt, hasKillCriterion),
       dateISO: (e.source_published_at ?? e.created_at).slice(0, 10),
+      severe: isSevere(e.source_type, e.excerpt),
       verdict: e.verdict as ScoredCatch['verdict'],
       materiality: e.materiality as ScoredCatch['materiality'],
       title: e.source_title,
@@ -230,6 +255,10 @@ export async function getScoringThesisData(ticker: string): Promise<ScoringThesi
       consider: e.consider,
       url: e.source_url,
       copies: 1,
+      sourceKey: e.source_key,
+      rawSourceType: e.source_type,
+      isBackfill: e.is_backfill,
+      createdAt: e.created_at,
     });
     byGroup.set(gk, findings);
   }

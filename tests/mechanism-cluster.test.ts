@@ -25,6 +25,19 @@ describe('ladderCeiling', () => {
     expect(r.maxStatus).toBe('watch');
   });
 
+  it('lets the company contradict its own thesis without corroboration', () => {
+    const r = ladderCeiling(['company_filing'], ['emerging']);
+    expect(r.maxStatus).toBe('weakening');
+    expect(r.reason).toContain('disclosed this itself');
+  });
+
+  it('does not treat a price move as self-disclosure', () => {
+    // The price is what a thesis explains, not evidence about it. Ten red days
+    // are not the company saying anything.
+    const r = ladderCeiling(Array(10).fill('price'), Array(10).fill('emerging'));
+    expect(r.maxStatus).toBe('watch');
+  });
+
   it('is the fix for three minor news outweighing one filing', () => {
     const threeNews = ladderCeiling(['primary_news', 'primary_news', 'primary_news'], ['emerging', 'emerging', 'emerging']);
     const oneFiling = ladderCeiling(['company_filing'], ['realized']);
