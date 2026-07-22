@@ -9,6 +9,7 @@ import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
 import { extractPlaidError } from '@/lib/plaid-errors';
 import { summarizeCashFlow, countsAsCashFlow } from '@/lib/cash-flow';
 import { aggregateHoldingLots } from '@/lib/holdings-aggregate';
+import { planStalePrune } from '@/lib/holdings-prune';
 import { canonicalTicker } from '@/lib/ticker-alias';
 import { InvestmentTransaction, RemovedTransaction, Transaction } from 'plaid';
 import {
@@ -344,12 +345,22 @@ export async function syncPlaidItem(
         dbSecurities.map((s: { ticker: string; id: string }) => [s.ticker, s.id])
       );
 
+      // Any holding we could not resolve to a security or an account. It is
+      // still a position the user holds; we simply cannot write it. Pruning must
+      // be disabled when this happens, because a row we failed to map looks
+      // exactly like a row Plaid stopped reporting, and one of those is safe to
+      // delete while the other is somebody's money.
+      let unmappedHoldings = 0;
+
       // Build holdings upsert array
       const holdingsUpserts = aggregateHoldingLots(holdingsByTicker)
         .map(h => {
           const securityId = tickerToSecurityId.get(h.ticker);
           const linkedAccountId = linkedAccountMap.get(h.plaid_account_id);
-          if (!securityId || !linkedAccountId) return null;
+          if (!securityId || !linkedAccountId) {
+            unmappedHoldings++;
+            return null;
+          }
 
           // Brokerages keep reporting closed positions at quantity 0. Persisting
           // them produced "ghost" holdings: rows that render in the positions
@@ -416,6 +427,44 @@ export async function syncPlaidItem(
             .eq('shares', 0);
           if (ghostError) console.error('[plaid-sync] ghost cleanup failed:', ghostError.message);
           else if (ghostsCleared) console.log(`[plaid-sync] cleared ${ghostsCleared} zero-share holding(s) for user ${userId}`);
+        }
+
+        // Drop positions this account has stopped reporting entirely. The
+        // decision of what is safe to delete lives in lib/holdings-prune.ts and
+        // is tested there; this only carries it out.
+        {
+          const plan = planStalePrune(
+            holdingsUpserts as unknown as { account_id: string; security_id: string }[],
+            { unmappedHoldings, upsertFailed: !!holdingsError },
+          );
+          if (!plan.prune) {
+            if (unmappedHoldings > 0 || holdingsError) {
+              console.warn(`[plaid-sync] not pruning stale positions for user ${userId}: ${plan.reason}`);
+            }
+          } else {
+            for (const a of plan.skippedAccounts) {
+              console.warn(`[plaid-sync] account ${a} has too many positions to prune safely`);
+            }
+            for (const [accountId, securityIds] of plan.keepByAccount) {
+              const { data: dropped, error: pruneError } = await supabase
+                .from('holdings')
+                .delete()
+                .eq('user_id', userId)
+                .eq('account_id', accountId)
+                .not('security_id', 'in', `(${securityIds.join(',')})`)
+                .select('ticker, total_value');
+              if (pruneError) {
+                console.error('[plaid-sync] stale-position prune failed:', pruneError.message);
+              } else if (dropped && dropped.length > 0) {
+                const rows = dropped as unknown as { ticker: string; total_value: number | null }[];
+                const value = rows.reduce((sum, d) => sum + Number(d.total_value ?? 0), 0);
+                console.log(
+                  `[plaid-sync] dropped ${rows.length} position(s) no longer reported for user ${userId}: ` +
+                    `${rows.map((d) => d.ticker).join(', ')} ($${Math.round(value).toLocaleString()})`,
+                );
+              }
+            }
+          }
         }
 
         // ── Reconcile manual holdings ──
