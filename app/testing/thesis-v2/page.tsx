@@ -16,7 +16,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getScoringThesisData, type ScoredCatch, type ScoredPillar } from '@/lib/content/scoring-thesis';
-import { SOURCE_CLASS_LABEL, type LadderStatus } from '@/lib/content/mechanism-cluster';
+import { SOURCE_CLASS_LABEL, type LadderStatus, type Mechanism } from '@/lib/content/mechanism-cluster';
 
 export const metadata = { title: 'Thesis v2', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
@@ -87,7 +87,7 @@ function CatchRow({ c }: { c: ScoredCatch }) {
   const w = weight(c);
   return (
     <details className="group border-t border-white/[0.05] first:border-t-0">
-      <summary className="list-none cursor-pointer px-4 sm:px-5 py-3.5 hover:bg-white/[0.02] min-h-[44px]">
+      <summary className="list-none cursor-pointer px-3.5 sm:px-4 py-3.5 hover:bg-white/[0.02] min-h-[44px]">
         <div className="flex items-center gap-2 flex-wrap mb-1.5">
           <Chip tone={tone}>{VERDICT_LABEL[c.verdict] ?? c.verdict}</Chip>
           <span className="text-[9.5px] uppercase tracking-[0.12em] text-[#8A8A8A]" style={MONO}>
@@ -108,7 +108,7 @@ function CatchRow({ c }: { c: ScoredCatch }) {
         </span>
       </summary>
 
-      <div className="px-4 sm:px-5 pb-4 -mt-1">
+      <div className="px-3.5 sm:px-4 pb-4 -mt-1">
         <p className="text-[14px] leading-[1.55] text-[#9A9A9A] m-0 border-l-2 pl-3" style={{ borderColor: `${tone}55` }}>
           &ldquo;{c.excerpt}&rdquo;
         </p>
@@ -139,6 +139,70 @@ function CatchRow({ c }: { c: ScoredCatch }) {
   );
 }
 
+/**
+ * One mechanism, collapsed to a single line until asked. The line has to carry
+ * enough to decide whether to open it: what the story is, how far it can push
+ * the pillar, and how independently it is corroborated.
+ *
+ * Mechanisms that can move the pillar open by default. Everything else stays
+ * shut, which is the difference between a monitor and a firehose.
+ */
+function MechanismBlock({
+  m,
+  pillarSize,
+  defaultOpen,
+}: {
+  m: Mechanism<ScoredCatch>;
+  pillarSize: number;
+  defaultOpen: boolean;
+}) {
+  const tone = LADDER_TONE[m.maxStatus];
+  const contra = m.items.filter((c) => c.verdict === 'contradicts').length;
+  const unseparated = m.mentions > 8 && m.mentions / pillarSize > 0.25;
+
+  return (
+    <details open={defaultOpen} className="group rounded-md border border-white/[0.06] overflow-hidden">
+      <summary className="list-none cursor-pointer px-3.5 py-3 min-h-[44px] hover:bg-white/[0.02]">
+        <div className="flex items-baseline gap-2 flex-wrap">
+          <span className="text-[13px] leading-none text-[#8A8A8A] group-open:rotate-90 transition-transform inline-block" style={MONO}>
+            ▸
+          </span>
+          <span className="text-[14px] font-semibold text-[#FAFAFA]">{m.label}</span>
+          <Chip tone={tone}>{LADDER_LABEL[m.maxStatus]}</Chip>
+          {contra > 0 && (
+            <span className="text-[10.5px] uppercase tracking-[0.12em] text-[#F87171]" style={MONO}>
+              {contra} against
+            </span>
+          )}
+          <span className="ml-auto text-[11px] text-[#6A6A6A] whitespace-nowrap" style={MONO}>
+            {m.confirmations}× confirmed · {m.mentions} {m.mentions === 1 ? 'mention' : 'mentions'}
+          </span>
+        </div>
+        <p className="mt-1.5 ml-[18px] text-[12.5px] leading-[1.5] text-[#8A8A8A] m-0">
+          {m.sourceClasses.map((s) => SOURCE_CLASS_LABEL[s]).join(' · ')} — {m.ladderReason}
+          {m.firstSeen !== m.lastSeen && (
+            <span className="text-[#6A6A6A]" style={MONO}> · {m.firstSeen} to {m.lastSeen}</span>
+          )}
+        </p>
+      </summary>
+
+      {unseparated && (
+        <p className="px-3.5 pb-2 text-[12px] leading-[1.5] text-[#E6B94D] m-0">
+          This grouping did not separate. Entity overlap is standing in for a real mechanism enum, and it holds up on
+          names with distinct external actors far better than on financials, where most coverage shares one vocabulary.
+        </p>
+      )}
+      {/* Indent so a finding reads as evidence FOR the mechanism above it,
+          rather than as a sibling of it. */}
+      <div className="border-t border-white/[0.05] bg-[#080808] pl-[18px]">
+        {m.items.map((c) => (
+          <CatchRow key={c.id} c={c} />
+        ))}
+      </div>
+    </details>
+  );
+}
+
 function PillarBlock({ p }: { p: ScoredPillar }) {
   const contra = p.catches.filter((c) => c.verdict === 'contradicts').length;
   const decisive = p.catches.filter((c) => weight(c) === 'decisive').length;
@@ -146,6 +210,13 @@ function PillarBlock({ p }: { p: ScoredPillar }) {
     const rank = { watch: 0, weakening: 1, broken: 2 } as const;
     return rank[x.maxStatus] > rank[m] ? x.maxStatus : m;
   }, 'watch');
+
+  // A single uncorroborated mention is the firehose. It is kept, because
+  // dropping evidence is how you miss the first sign of something, but it is
+  // not worth a row of its own until something confirms it.
+  const live = p.mechanisms.filter((m) => m.maxStatus !== 'watch' || m.mentions > 1);
+  const quiet = p.mechanisms.filter((m) => m.maxStatus === 'watch' && m.mentions === 1);
+  const movers = p.mechanisms.filter((m) => m.maxStatus !== 'watch').length;
 
   return (
     <section className="mt-4 rounded-lg border border-white/[0.07] bg-[#0B0B0B] overflow-hidden">
@@ -165,50 +236,51 @@ function PillarBlock({ p }: { p: ScoredPillar }) {
         <div className="mt-3 flex items-center gap-2 flex-wrap">
           <Chip tone={LADDER_TONE[topCeiling]}>ceiling: {LADDER_LABEL[topCeiling]}</Chip>
           <span className="text-[11px] text-[#6A6A6A]" style={MONO}>
-            {p.catches.length} findings · {p.mechanisms.length} mechanisms · {contra} against · {decisive} decisive
+            {movers} of {p.mechanisms.length} mechanisms can move this pillar · {p.catches.length} findings ·{' '}
+            {contra} against · {decisive} decisive
           </span>
         </div>
       </div>
 
-      {/* §5 mechanisms: the compression layer */}
-      <div className="px-4 sm:px-5 py-4 border-b border-white/[0.05]">
+      {/* §5 mechanisms: the compression layer, and the unit the reader opens */}
+      <div className="px-4 sm:px-5 py-4">
         <SectionLabel prototype>Mechanisms</SectionLabel>
         <p className="mt-1.5 mb-3 text-[12.5px] leading-relaxed text-[#7A7A7A]">
           One story reported five times is one mechanism with five mentions, not five alerts. Repetition inside a source
-          class adds recency, never weight, which is what stops three news items outweighing one filing.
+          class adds recency, never weight, which is what stops three news items outweighing one filing. Anything that
+          can move the pillar is open; the rest waits until you ask.
         </p>
+
         <div className="space-y-2.5">
-          {p.mechanisms.map((m, i) => (
-            <div key={i} className="rounded-md border border-white/[0.06] p-3.5">
-              <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                <span className="text-[14px] font-semibold text-[#FAFAFA]">{m.label}</span>
-                <Chip tone={LADDER_TONE[m.maxStatus]}>{LADDER_LABEL[m.maxStatus]}</Chip>
-              </div>
-              <p className="mt-1.5 text-[11.5px] text-[#6A6A6A] m-0" style={MONO}>
-                {m.confirmations} independent {m.confirmations === 1 ? 'confirmation' : 'confirmations'} across{' '}
-                {m.mentions} {m.mentions === 1 ? 'mention' : 'mentions'}
-                {m.firstSeen !== m.lastSeen && ` · ${m.firstSeen} to ${m.lastSeen}`}
-              </p>
-              <p className="mt-1 text-[12.5px] leading-[1.5] text-[#8A8A8A] m-0">
-                {m.sourceClasses.map((s) => SOURCE_CLASS_LABEL[s]).join(' · ')} — {m.ladderReason}
-              </p>
-              {m.mentions > 8 && m.mentions / p.catches.length > 0.25 && (
-                <p className="mt-1.5 text-[12px] leading-[1.5] text-[#E6B94D] m-0">
-                  This grouping did not separate. Entity overlap is standing in for a real mechanism enum, and it holds
-                  up on names with distinct external actors far better than on financials, where most coverage shares
-                  the same vocabulary.
-                </p>
-              )}
-            </div>
+          {live.map((m, i) => (
+            <MechanismBlock
+              key={`${m.label}-${i}`}
+              m={m}
+              pillarSize={p.catches.length}
+              // Anything that can move the pillar opens. If nothing can, the
+              // best-corroborated one still opens, so the pillar is never a
+              // wall of shut drawers.
+              defaultOpen={m.maxStatus !== 'watch' || (movers === 0 && i === 0)}
+            />
           ))}
         </div>
-      </div>
 
-      {/* §7 findings, each expanding to its receipt */}
-      <div>
-        {p.catches.map((c) => (
-          <CatchRow key={c.id} c={c} />
-        ))}
+        {quiet.length > 0 && (
+          <details className="group mt-2.5 rounded-md border border-white/[0.06] border-dashed">
+            <summary className="list-none cursor-pointer px-3.5 py-3 min-h-[44px] flex items-baseline gap-2 flex-wrap hover:bg-white/[0.02]">
+              <span className="text-[13px] leading-none text-[#8A8A8A] group-open:rotate-90 transition-transform inline-block" style={MONO}>▸</span>
+              <span className="text-[13.5px] text-[#8A8A8A]">
+                {quiet.length} single mentions nothing has confirmed
+              </span>
+              <span className="ml-auto text-[11px] text-[#5F5F5F]" style={MONO}>kept, not counted</span>
+            </summary>
+            <div className="border-t border-white/[0.05] bg-[#080808]">
+              {quiet.map((m) => (
+                <CatchRow key={m.items[0].id} c={m.items[0]} />
+              ))}
+            </div>
+          </details>
+        )}
       </div>
     </section>
   );

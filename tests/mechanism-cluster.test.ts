@@ -169,6 +169,16 @@ describe('clusterByMechanism', () => {
     expect(ftc?.maxStatus).toBe('weakening');
   });
 
+  it('treats a name spelled two ways as one entity', () => {
+    // "Nvidia" and "NVIDIA" split one mechanism into two rows on the live page.
+    const clusters = clusterByMechanism([
+      item('a', 'Nvidia Blackwell shipments accelerate', 'primary_news'),
+      item('b', 'NVIDIA BLACKWELL supply improves further', 'primary_news'),
+    ]);
+    expect(clusters).toHaveLength(1);
+    expect(clusters[0].label).toBe('Nvidia Blackwell');
+  });
+
   it('counts repetition inside one class as recency, never as extra weight', () => {
     const items = Array.from({ length: 12 }, (_, i) =>
       item(`r${i}`, `Rival silicon substitution accelerates, Broadcom TPU note ${i}`, 'analyst_opinion', 'speculative'),

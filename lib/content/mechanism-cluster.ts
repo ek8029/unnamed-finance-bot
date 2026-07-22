@@ -188,13 +188,33 @@ export function clusterByMechanism<T extends ClusterItem>(items: T[]): Mechanism
   if (items.length === 0) return [];
 
   const ordered = [...items].sort((a, b) => a.dateISO.localeCompare(b.dateISO) || a.id.localeCompare(b.id));
-  const entsOf = new Map(ordered.map((i) => [i.id, salientEntities(i.text)]));
+
+  // Match on a case-folded key: "Nvidia" and "NVIDIA" are one company, and
+  // treating them as two entities split one mechanism into two rows. The most
+  // frequent original spelling is kept for display.
+  const display = new Map<string, string>();
+  const spelling = new Map<string, Map<string, number>>();
+  const entsOf = new Map<string, string[]>();
+  for (const i of ordered) {
+    const keys: string[] = [];
+    for (const e of salientEntities(i.text)) {
+      const k = e.toLowerCase();
+      keys.push(k);
+      const forms = spelling.get(k) ?? new Map<string, number>();
+      forms.set(e, (forms.get(e) ?? 0) + 1);
+      spelling.set(k, forms);
+    }
+    entsOf.set(i.id, [...new Set(keys)]);
+  }
+  for (const [k, forms] of spelling) {
+    display.set(k, [...forms.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0]);
+  }
 
   // Drop the entities that everything mentions: they name the subject, not a mechanism.
   const generic = new Set<string>();
   if (ordered.length >= MIN_CORPUS_FOR_DF) {
     const df = new Map<string, number>();
-    for (const i of ordered) for (const e of new Set(entsOf.get(i.id)!)) df.set(e, (df.get(e) ?? 0) + 1);
+    for (const i of ordered) for (const e of entsOf.get(i.id)!) df.set(e, (df.get(e) ?? 0) + 1);
     for (const [e, n] of df) if (n / ordered.length > GENERIC_ENTITY_DF) generic.add(e);
   }
 
@@ -228,8 +248,9 @@ export function clusterByMechanism<T extends ClusterItem>(items: T[]): Mechanism
     const distinct = [...new Set(classes)];
     const { maxStatus, reason } = ladderCeiling(classes, members.map((m) => m.evidenceClass));
 
+    const shown = new Map([...c.seen].map(([k, n]) => [display.get(k) ?? k, n]));
     const label =
-      nameMechanism(c.seen, members.length, members[0].text) || salientEntities(members[0].text)[0] || 'Unlabelled';
+      nameMechanism(shown, members.length, members[0].text) || salientEntities(members[0].text)[0] || 'Unlabelled';
 
     const dates = members.map((m) => m.dateISO).filter(Boolean).sort();
     out.push({
@@ -245,8 +266,15 @@ export function clusterByMechanism<T extends ClusterItem>(items: T[]): Mechanism
     });
   }
 
-  // Most-corroborated first, then most-discussed, then most recent.
+  // What can actually move the pillar first, then best-corroborated, then most
+  // discussed, then most recent. A collapsed list is only useful if the top of
+  // it is the part that matters.
+  const rank: Record<LadderStatus, number> = { broken: 2, weakening: 1, watch: 0 };
   return out.sort(
-    (a, b) => b.confirmations - a.confirmations || b.mentions - a.mentions || b.lastSeen.localeCompare(a.lastSeen),
+    (a, b) =>
+      rank[b.maxStatus] - rank[a.maxStatus] ||
+      b.confirmations - a.confirmations ||
+      b.mentions - a.mentions ||
+      b.lastSeen.localeCompare(a.lastSeen),
   );
 }
