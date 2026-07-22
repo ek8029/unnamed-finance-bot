@@ -1,262 +1,303 @@
-// /testing/thesis-v2 — the Thesis Intelligence v2 concepts rendered on REAL
-// approved catches (same source as /thesis/[ticker]).
+// /testing/thesis-v2 — Thesis Intelligence v2 rendered on the SCORING pipeline.
 //
-// HONESTY RULE: everything here is computed from real DB rows. Where a concept
-// needs a field the schema doesn't have yet (mechanism_id, magnitude,
-// evidence_class, headline), it is DERIVED BY A LABELLED PROTOTYPE HEURISTIC and
-// marked as such on screen. Nothing is invented and nothing mock is dressed as real.
+// Dev only (404s in production). Reads `pillar_evidence` (2,208 rows) instead of
+// `content_events` (43 rows all time), which is the §0 blocker in the spec: the
+// public pages are plumbed to the daily social-content pipeline, so NVDA shows
+// one catch while the scoring pipeline holds 115.
+//
+// Nothing here writes and nothing is wired into a public page. It exists to
+// answer one question before any house-scoping migration is run: at real
+// density, does mechanism clustering keep volume from turning into noise?
+//
+// HONESTY RULE: every quote, date, source, verdict and materiality below is a
+// real DB row. Fields the schema does not have yet (mechanism, evidence class,
+// headline) are DERIVED BY A LABELLED HEURISTIC and marked PROTOTYPE on screen.
 
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getTickerThesisData, type PublicPillar, type PublicCatch } from '@/lib/content/public-thesis';
+import { getScoringThesisData, type ScoredCatch, type ScoredPillar } from '@/lib/content/scoring-thesis';
+import { SOURCE_CLASS_LABEL, type LadderStatus } from '@/lib/content/mechanism-cluster';
 
 export const metadata = { title: 'Thesis v2', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
 
 const MONO = { fontFamily: 'var(--font-mono)' } as const;
-// Tickers with enough approved evidence to evaluate density and clustering.
-const PICKS = ['MSTR', 'GME', 'NVDA', 'TSM', 'AVGO', 'LCID', 'AAPL', 'NFLX'];
 
-const STATUS_TONE: Record<string, string> = {
-  intact: '#4ADE80', watch: '#E6B94D', weakening: '#E6B94D', broken: '#F87171', unverified: '#6A6A6A',
+// Tickers with enough scored evidence to judge density and clustering.
+const PICKS = ['JPM', 'AMZN', 'AMD', 'AAPL', 'META', 'AVGO', 'PLTR', 'MSFT', 'NVDA', 'MU', 'TSLA', 'GOOGL'];
+
+const LADDER_TONE: Record<LadderStatus, string> = { broken: '#F87171', weakening: '#E6B94D', watch: '#8A8A8A' };
+const LADDER_LABEL: Record<LadderStatus, string> = {
+  broken: 'can break the pillar',
+  weakening: 'can weaken the pillar',
+  watch: 'watch only',
 };
 
-/* ── Prototype heuristics (stand in for fields the schema doesn't have yet) ── */
-
-// §4 realized vs emerging. Real rule would come from the judge answering
-// "has breaks_if been met, or is it just more likely?"
-function evidenceClass(c: PublicCatch): 'realized' | 'emerging' | 'speculative' {
-  const t = c.verbatimCite.toLowerCase();
-  const hedged = /\b(could|may|might|expects?|projected|forecast|potential|risk of|would)\b/.test(t);
-  const hasPastNumber = /\b(totaled|reported|increased|declined|rose|fell|was|were|recorded|had)\b/.test(t);
-  if (c.sourceType === 'filing' && hasPastNumber && !hedged) return 'realized';
-  if (hedged) return c.sourceType === 'filing' ? 'emerging' : 'speculative';
-  return c.sourceType === 'filing' ? 'realized' : 'emerging';
+/* §3 weight — what a catch DOES to the pillar, from the judge's own materiality
+   crossed with whether the change has actually landed in reported numbers. */
+type Weight = 'context' | 'contributing' | 'decisive';
+const WEIGHT_MEANING: Record<Weight, string> = {
+  decisive: 'material and already in the reported numbers, so it can move the pillar alone',
+  contributing: 'material, but needs a second independent source to move anything',
+  context: 'shown for completeness, deliberately moves nothing',
+};
+function weight(c: ScoredCatch): Weight {
+  if (c.materiality === 'context') return 'context';
+  return c.evidenceClass === 'realized' ? 'decisive' : 'contributing';
 }
 
-// §3 magnitude. Real rule would be judge-emitted.
-function magnitude(c: PublicCatch): 'routine' | 'material' | 'major' {
-  const t = c.verbatimCite;
-  if (/\$\s?\d+(\.\d+)?\s?(b|billion)/i.test(t) || /\b\d{2,}(\.\d+)?\s?(percent|%)/.test(t)) return 'major';
-  if (/\$\s?\d/.test(t) || /\b\d+(\.\d+)?\s?(percent|%)/.test(t)) return 'material';
-  return 'routine';
+const VERDICT_TONE: Record<string, string> = { supports: '#4ADE80', contradicts: '#F87171', neutral: '#8A8A8A' };
+const VERDICT_LABEL: Record<string, string> = {
+  supports: 'Supports',
+  contradicts: 'Against',
+  neutral: 'Company news',
+};
+
+/* ── small presentational pieces ───────────────────────────────────────── */
+
+function Chip({ tone, children }: { tone: string; children: React.ReactNode }) {
+  return (
+    <span
+      className="text-[9.5px] font-semibold uppercase tracking-[0.14em] px-1.5 py-0.5 rounded whitespace-nowrap"
+      style={{ ...MONO, color: tone, background: `${tone}14` }}
+    >
+      {children}
+    </span>
+  );
 }
 
-// §5 mechanism clustering. Real version = per-pillar enum from breaks_if + 10-K
-// risk factors, picked by the judge. Here: cluster on shared salient entities.
-const STOP = new Set(['The', 'This', 'That', 'These', 'Those', 'As', 'For', 'And', 'But', 'Our', 'We', 'In', 'On', 'At', 'It', 'A', 'An', 'Of', 'To', 'Its', 'Company', 'Inc', 'Corp']);
-function entities(text: string): string[] {
-  const caps = text.match(/\b[A-Z][A-Za-z0-9.&-]{1,}\b/g) ?? [];
-  return [...new Set(caps.filter((w) => !STOP.has(w) && w.length > 1))];
-}
-function clusterByMechanism(catches: PublicCatch[]) {
-  const clusters: { key: string; label: string; items: PublicCatch[] }[] = [];
-  for (const c of catches) {
-    const ents = entities(c.verbatimCite);
-    const hit = clusters.find((cl) => ents.some((e) => cl.key.includes(e)));
-    if (hit) { hit.items.push(c); hit.key = [...new Set([...hit.key.split('|'), ...ents])].join('|'); }
-    else clusters.push({ key: ents.join('|'), label: ents.slice(0, 2).join(' + ') || 'Unlabelled', items: [c] });
-  }
-  return clusters.sort((a, b) => b.items.length - a.items.length);
+function SectionLabel({ children, prototype }: { children: React.ReactNode; prototype?: boolean }) {
+  return (
+    <div className="flex items-baseline gap-2 flex-wrap">
+      <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#6A6A6A]" style={MONO}>
+        {children}
+      </span>
+      {prototype && (
+        <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#E6B94D]" style={MONO}>
+          Prototype
+        </span>
+      )}
+    </div>
+  );
 }
 
-// §2 thesis-relative headline. Real version writes this at judge time with a
-// per-pillar `shorthand`; this is a mechanical stand-in to evaluate the format.
-function headline(c: PublicCatch, pillarShorthand: string): string {
-  const subject = entities(c.verbatimCite)[0] ?? 'New evidence';
-  const verb = c.verdict === 'contradicts' ? 'cuts into' : 'puts fresh numbers behind';
-  return `${subject} ${verb} your ${pillarShorthand}`;
-}
-function shorthand(claim: string): string {
-  const w = claim.split(/\s+/).slice(0, 4).join(' ').replace(/[,.]$/, '');
-  return `${w.toLowerCase()} call`;
+/** §7 breakdown: the receipt under every finding. This is where we beat a summary. */
+function CatchRow({ c }: { c: ScoredCatch }) {
+  const tone = VERDICT_TONE[c.verdict] ?? '#8A8A8A';
+  const w = weight(c);
+  return (
+    <details className="group border-t border-white/[0.05] first:border-t-0">
+      <summary className="list-none cursor-pointer px-4 sm:px-5 py-3.5 hover:bg-white/[0.02] min-h-[44px]">
+        <div className="flex items-center gap-2 flex-wrap mb-1.5">
+          <Chip tone={tone}>{VERDICT_LABEL[c.verdict] ?? c.verdict}</Chip>
+          <span className="text-[9.5px] uppercase tracking-[0.12em] text-[#8A8A8A]" style={MONO}>
+            {w} · {c.evidenceClass}
+          </span>
+          {c.copies > 1 && (
+            <span className="text-[9.5px] uppercase tracking-[0.12em] text-[#5F5F5F]" style={MONO}>
+              {c.copies} user copies folded
+            </span>
+          )}
+          <span className="ml-auto text-[10.5px] text-[#5F5F5F] whitespace-nowrap" style={MONO}>
+            {SOURCE_CLASS_LABEL[c.sourceClass]} · {c.dateISO}
+          </span>
+        </div>
+        <p className="text-[14.5px] leading-[1.4] font-semibold text-[#FAFAFA] m-0">{c.title}</p>
+        <span className="mt-1 inline-block text-[11px] text-[#6A6A6A] group-open:hidden" style={MONO}>
+          show the receipt ▾
+        </span>
+      </summary>
+
+      <div className="px-4 sm:px-5 pb-4 -mt-1">
+        <p className="text-[14px] leading-[1.55] text-[#9A9A9A] m-0 border-l-2 pl-3" style={{ borderColor: `${tone}55` }}>
+          &ldquo;{c.excerpt}&rdquo;
+        </p>
+        <dl className="mt-3 space-y-2 m-0">
+          <div>
+            <dt className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#6A6A6A]" style={MONO}>Why it attaches</dt>
+            <dd className="mt-0.5 ml-0 text-[13.5px] leading-[1.5] text-[#B8B8B8]">{c.why}</dd>
+          </div>
+          <div>
+            <dt className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#6A6A6A]" style={MONO}>What it means</dt>
+            <dd className="mt-0.5 ml-0 text-[13.5px] leading-[1.5] text-[#B8B8B8]">{c.whatItMeans}</dd>
+          </div>
+          {c.consider && (
+            <div>
+              <dt className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#6A6A6A]" style={MONO}>Consider</dt>
+              <dd className="mt-0.5 ml-0 text-[13.5px] leading-[1.5] text-[#B8B8B8]">{c.consider}</dd>
+            </div>
+          )}
+        </dl>
+        {c.url && (
+          <a href={c.url} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center min-h-[44px] text-[11px] text-[#E6B94D] hover:brightness-110" style={MONO}>
+            source ↗
+          </a>
+        )}
+      </div>
+    </details>
+  );
 }
 
-// §6 synthesis, derived from COMPUTED statuses only, never a free-form take.
-function synthesize(ticker: string, pillars: PublicPillar[]): string {
-  const strong = pillars.filter((p) => p.status === 'intact');
-  const weak = pillars.filter((p) => p.status === 'weakening' || p.status === 'broken');
-  const watch = pillars.filter((p) => p.status === 'watch');
-  if (!strong.length && !weak.length && !watch.length) return `No approved evidence has landed on ${ticker} yet.`;
-  const parts: string[] = [];
-  if (strong.length) parts.push(`${strong.length} of ${pillars.length} pillars are holding on current evidence`);
-  if (weak.length) parts.push(`${weak.length} ${weak.length === 1 ? 'is' : 'are'} under real pressure`);
-  if (watch.length) parts.push(`${watch.length} ${watch.length === 1 ? 'is' : 'are'} worth watching`);
-  const carrier = strong[0]?.claim ?? watch[0]?.claim;
-  const tail = weak.length && carrier ? ` The thesis is being carried by "${carrier}", not by the pillars under pressure.` : '';
-  return `${parts.join(', ')}.${tail}`;
+function PillarBlock({ p }: { p: ScoredPillar }) {
+  const contra = p.catches.filter((c) => c.verdict === 'contradicts').length;
+  const decisive = p.catches.filter((c) => weight(c) === 'decisive').length;
+  const topCeiling = p.mechanisms.reduce<LadderStatus>((m, x) => {
+    const rank = { watch: 0, weakening: 1, broken: 2 } as const;
+    return rank[x.maxStatus] > rank[m] ? x.maxStatus : m;
+  }, 'watch');
+
+  return (
+    <section className="mt-4 rounded-lg border border-white/[0.07] bg-[#0B0B0B] overflow-hidden">
+      <div className="px-4 sm:px-5 py-4 border-b border-white/[0.05]">
+        <p className="text-[16px] leading-[1.4] font-semibold text-[#FAFAFA] m-0">{p.claim}</p>
+        {p.breaksIf ? (
+          <p className="mt-2 text-[13px] leading-[1.5] text-[#8A8A8A] m-0">
+            <span className="text-[#E6B94D] uppercase tracking-[0.08em] text-[10.5px]" style={MONO}>Breaks if </span>
+            {p.breaksIf}
+          </p>
+        ) : (
+          <p className="mt-2 text-[12.5px] leading-[1.5] text-[#F87171] m-0">
+            No kill criterion on this pillar, so realized-vs-emerging cannot be answered honestly. 164 of 171 user
+            pillars are in this state; every hand-authored house pillar has one.
+          </p>
+        )}
+        <div className="mt-3 flex items-center gap-2 flex-wrap">
+          <Chip tone={LADDER_TONE[topCeiling]}>ceiling: {LADDER_LABEL[topCeiling]}</Chip>
+          <span className="text-[11px] text-[#6A6A6A]" style={MONO}>
+            {p.catches.length} findings · {p.mechanisms.length} mechanisms · {contra} against · {decisive} decisive
+          </span>
+        </div>
+      </div>
+
+      {/* §5 mechanisms: the compression layer */}
+      <div className="px-4 sm:px-5 py-4 border-b border-white/[0.05]">
+        <SectionLabel prototype>Mechanisms</SectionLabel>
+        <p className="mt-1.5 mb-3 text-[12.5px] leading-relaxed text-[#7A7A7A]">
+          One story reported five times is one mechanism with five mentions, not five alerts. Repetition inside a source
+          class adds recency, never weight, which is what stops three news items outweighing one filing.
+        </p>
+        <div className="space-y-2.5">
+          {p.mechanisms.map((m, i) => (
+            <div key={i} className="rounded-md border border-white/[0.06] p-3.5">
+              <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                <span className="text-[14px] font-semibold text-[#FAFAFA]">{m.label}</span>
+                <Chip tone={LADDER_TONE[m.maxStatus]}>{LADDER_LABEL[m.maxStatus]}</Chip>
+              </div>
+              <p className="mt-1.5 text-[11.5px] text-[#6A6A6A] m-0" style={MONO}>
+                {m.confirmations} independent {m.confirmations === 1 ? 'confirmation' : 'confirmations'} across{' '}
+                {m.mentions} {m.mentions === 1 ? 'mention' : 'mentions'}
+                {m.firstSeen !== m.lastSeen && ` · ${m.firstSeen} to ${m.lastSeen}`}
+              </p>
+              <p className="mt-1 text-[12.5px] leading-[1.5] text-[#8A8A8A] m-0">
+                {m.sourceClasses.map((s) => SOURCE_CLASS_LABEL[s]).join(' · ')} — {m.ladderReason}
+              </p>
+              {m.mentions > 8 && m.mentions / p.catches.length > 0.25 && (
+                <p className="mt-1.5 text-[12px] leading-[1.5] text-[#E6B94D] m-0">
+                  This grouping did not separate. Entity overlap is standing in for a real mechanism enum, and it holds
+                  up on names with distinct external actors far better than on financials, where most coverage shares
+                  the same vocabulary.
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* §7 findings, each expanding to its receipt */}
+      <div>
+        {p.catches.map((c) => (
+          <CatchRow key={c.id} c={c} />
+        ))}
+      </div>
+    </section>
+  );
 }
+
+/* ── page ──────────────────────────────────────────────────────────────── */
 
 export default async function ThesisV2({ searchParams }: { searchParams: Promise<{ t?: string }> }) {
   if (process.env.NODE_ENV === 'production') notFound();
   const { t } = await searchParams;
-  const ticker = (t ?? 'MSTR').toUpperCase();
-  const data = await getTickerThesisData(ticker);
+  const ticker = (t ?? 'AMZN').toUpperCase();
+  const data = await getScoringThesisData(ticker);
 
-  const all = data ? data.pillars.flatMap((p) => p.catches) : [];
-  const thesisLane = all;                 // every approved catch is pillar-bound today
-  const companyLaneCount = 0;             // §1 lane doesn't exist in the schema yet
-  const clusters = clusterByMechanism(all);
+  const folded = data.rawRows - data.dedupedRows;
+  const mechanisms = data.pillars.reduce((s, p) => s + p.mechanisms.length, 0);
 
   return (
-    <div className="min-h-dvh bg-[#060606] px-5 sm:px-6 py-12">
+    <div className="min-h-dvh bg-[#060606] px-4 sm:px-6 py-12">
       <div className="max-w-3xl mx-auto">
-        <Link href="/testing" className="text-[12px] text-[#6A6A6A] hover:text-[#FAFAFA]" style={MONO}>← Testing</Link>
+        <Link href="/testing" className="inline-flex items-center min-h-[44px] text-[12px] text-[#6A6A6A] hover:text-[#FAFAFA]" style={MONO}>
+          ← Testing
+        </Link>
 
-        {/* ticker switcher */}
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-1 flex flex-wrap gap-2">
           {PICKS.map((p) => (
             <Link key={p} href={`/testing/thesis-v2?t=${p}`}
-              className={`px-3 h-[32px] inline-flex items-center rounded-full border text-[12px] tracking-[0.1em] ${
-                p === ticker ? 'border-[rgba(230,185,77,0.4)] bg-[rgba(230,185,77,0.08)] text-[#E6B94D]' : 'border-white/[0.08] text-[#8A8A8A] hover:text-[#FAFAFA]'
-              }`} style={MONO}>{p}</Link>
+              className={`px-3 min-h-[44px] inline-flex items-center rounded-full border text-[12px] tracking-[0.1em] ${
+                p === ticker
+                  ? 'border-[rgba(230,185,77,0.4)] bg-[rgba(230,185,77,0.08)] text-[#E6B94D]'
+                  : 'border-white/[0.08] text-[#8A8A8A] hover:text-[#FAFAFA]'
+              }`} style={MONO}>
+              {p}
+            </Link>
           ))}
         </div>
 
-        <div className="mt-4 rounded-md border border-[rgba(230,185,77,0.25)] bg-[rgba(230,185,77,0.05)] px-4 py-3">
-          <p className="text-[12.5px] leading-relaxed text-[#C8C8C8] m-0">
-            All catches, quotes, dates, sources and pillar statuses below are <strong>real</strong> (same data as /thesis/{ticker.toLowerCase()}).
-            Fields the schema does not have yet (mechanism, magnitude, evidence class, headline) are marked
-            <span className="text-[#E6B94D]"> PROTOTYPE</span> and computed by a labelled heuristic so the format can be judged.
-          </p>
+        <div className="mt-5 flex items-baseline gap-3 flex-wrap">
+          <h1 className="text-[30px] font-bold tracking-tight text-[#FAFAFA] m-0">{data.ticker}</h1>
+          {data.company && <span className="text-[14px] text-[#8A8A8A]">{data.company}</span>}
+          <span className="ml-auto text-[11px] text-[#6A6A6A]" style={MONO}>
+            last scan {data.lastScan ? data.lastScan.slice(0, 10) : 'never'}
+          </span>
         </div>
 
-        {!data ? (
-          <p className="mt-10 text-[15px] text-[#8A8A8A]">No house thesis for {ticker}.</p>
+        {/* §0 the whole argument, in numbers, on this ticker */}
+        <section className="mt-4 rounded-lg border border-[rgba(230,185,77,0.25)] bg-[rgba(230,185,77,0.05)] px-4 py-4">
+          <SectionLabel>§0 pipeline comparison</SectionLabel>
+          <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3">
+            {[
+              { n: data.publicRows, l: 'public page today', s: 'content_events' },
+              { n: data.dedupedRows, l: 'scoring pipeline', s: 'pillar_evidence' },
+              { n: mechanisms, l: 'mechanisms', s: 'after clustering' },
+              { n: data.contributingUsers, l: 'scans folded', s: `${folded} duplicate rows` },
+            ].map((x) => (
+              <div key={x.l}>
+                <div className="text-[24px] font-bold text-[#FAFAFA] leading-none" style={MONO}>{x.n}</div>
+                <div className="mt-1 text-[11.5px] text-[#C8C8C8]">{x.l}</div>
+                <div className="text-[10.5px] text-[#7A7A7A]" style={MONO}>{x.s}</div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3.5 mb-0 text-[12.5px] leading-relaxed text-[#C8C8C8]">
+            Every quote, date, source, verdict and materiality below is a real row. Mechanism grouping, evidence class
+            and weight are <span className="text-[#E6B94D]">PROTOTYPE</span> heuristics standing in for fields the schema
+            does not have yet. Nothing on this page writes, and no public page reads it.
+          </p>
+        </section>
+
+        {/* §3 legend, so the tiers are not just words */}
+        <section className="mt-4 rounded-lg border border-white/[0.07] bg-[#0B0B0B] px-4 sm:px-5 py-4">
+          <SectionLabel>What the weights mean</SectionLabel>
+          <dl className="mt-2.5 space-y-1.5 m-0">
+            {(['decisive', 'contributing', 'context'] as const).map((w) => (
+              <div key={w} className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
+                <dt className="w-[110px] shrink-0 text-[11px] uppercase tracking-[0.12em] text-[#E6B94D]" style={MONO}>{w}</dt>
+                <dd className="ml-0 text-[13px] leading-[1.5] text-[#9A9A9A]">{WEIGHT_MEANING[w]}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        {data.pillars.length === 0 ? (
+          <p className="mt-10 text-[15px] text-[#8A8A8A]">
+            No scored evidence for {data.ticker}. {data.hasHouseThesis
+              ? 'A house thesis exists but nobody tracks this ticker, so the scorer has never run on it. That gap closes when house theses are scored under a system user.'
+              : 'No house thesis and no user tracks it.'}
+          </p>
         ) : (
-          <>
-            {/* ── header ── */}
-            <div className="mt-8 flex items-baseline gap-3 flex-wrap">
-              <h1 className="text-[30px] font-bold tracking-tight text-[#FAFAFA] m-0">{data.ticker}</h1>
-              <span className="text-[14px] text-[#8A8A8A]">{data.company}</span>
-              <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] px-2 py-1 rounded"
-                style={{ ...MONO, color: STATUS_TONE[data.health], background: `${STATUS_TONE[data.health]}14` }}>
-                {data.healthLabel}
-              </span>
-              <span className="ml-auto text-[11px] text-[#6A6A6A]" style={MONO}>
-                {all.length} approved {all.length === 1 ? 'catch' : 'catches'} · as of {data.asOfDate ?? 'n/a'}
-              </span>
-            </div>
-
-            {/* ── §6 synthesis ── */}
-            <section className="mt-6 rounded-lg border border-white/[0.07] bg-[#0B0B0B] p-5">
-              <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#6A6A6A] mb-2" style={MONO}>
-                Thesis analysis · derived from computed statuses
-              </div>
-              <p className="text-[15.5px] leading-[1.55] text-[#D8D8D8] m-0">{synthesize(data.ticker, data.pillars)}</p>
-            </section>
-
-            {/* ── §7 analysis breakdown ── */}
-            <section className="mt-4 rounded-lg border border-white/[0.07] bg-[#0B0B0B] p-5">
-              <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#6A6A6A] mb-4" style={MONO}>
-                Analysis breakdown
-              </div>
-              <div className="space-y-5">
-                {data.pillars.map((p) => (
-                  <div key={p.id} className="border-l-2 pl-4" style={{ borderColor: STATUS_TONE[p.status] }}>
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ ...MONO, color: STATUS_TONE[p.status] }}>
-                        {p.statusLabel}
-                      </span>
-                      <span className="text-[11px] text-[#5F5F5F]" style={MONO}>
-                        {p.catches.length} {p.catches.length === 1 ? 'alert' : 'alerts'}
-                      </span>
-                    </div>
-                    <p className="mt-1.5 text-[15px] leading-[1.45] text-[#D8D8D8] m-0">{p.claim}</p>
-                    <p className="mt-1.5 text-[13px] leading-[1.5] text-[#7A7A7A] m-0">
-                      <span className="text-[#E6B94D] uppercase tracking-[0.08em] text-[10.5px]" style={MONO}>Breaks if </span>{p.breaks_if}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* ── §5 mechanism clusters ── */}
-            <section className="mt-4 rounded-lg border border-white/[0.07] bg-[#0B0B0B] p-5">
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#6A6A6A]" style={MONO}>Mechanism clusters</span>
-                <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#E6B94D]" style={MONO}>Prototype</span>
-              </div>
-              <p className="text-[12.5px] text-[#7A7A7A] leading-relaxed mt-0 mb-4">
-                One story reported five times should be one row with five confirmations, not five alerts. Clustered here on shared entities; the real version uses a per-pillar mechanism enum.
-              </p>
-              {clusters.length === 0 ? (
-                <p className="text-[13px] text-[#6A6A6A] m-0" style={MONO}>No catches to cluster.</p>
-              ) : (
-                <div className="space-y-3">
-                  {clusters.map((cl, i) => {
-                    const classes = [...new Set(cl.items.map((c) => c.sourceLabel))];
-                    const gated = classes.length >= 2 ? 'may weaken' : 'watch only';
-                    return (
-                      <div key={i} className="rounded-md border border-white/[0.06] p-3.5">
-                        <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                          <span className="text-[14px] font-semibold text-[#FAFAFA]">{cl.label}</span>
-                          <span className="text-[11px] text-[#6A6A6A]" style={MONO}>
-                            {cl.items.length} confirmation{cl.items.length === 1 ? '' : 's'} · {classes.length} source class{classes.length === 1 ? '' : 'es'} · ladder: {gated}
-                          </span>
-                        </div>
-                        <p className="mt-2 text-[13.5px] leading-[1.5] text-[#9A9A9A] m-0">
-                          Latest: &ldquo;{cl.items[0].verbatimCite.slice(0, 150)}{cl.items[0].verbatimCite.length > 150 ? '…' : ''}&rdquo;
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-
-            {/* ── §1/2/3/4 alert rows ── */}
-            <section className="mt-4 rounded-lg border border-white/[0.07] bg-[#0B0B0B] overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-white/[0.05] flex items-baseline gap-2 flex-wrap">
-                <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#6A6A6A]" style={MONO}>Alerts</span>
-                <span className="text-[11px] text-[#5F5F5F]" style={MONO}>
-                  {thesisLane.length} thesis · {companyLaneCount} company (lane not in schema yet)
-                </span>
-              </div>
-              {all.length === 0 ? (
-                <p className="px-5 py-6 text-[13px] text-[#6A6A6A] m-0" style={MONO}>
-                  No approved catches. This is the approval-queue problem from §0 of the spec, not a detection problem.
-                </p>
-              ) : (
-                <div className="divide-y divide-white/[0.05]">
-                  {data.pillars.flatMap((p) =>
-                    p.catches.map((c) => {
-                      const cls = evidenceClass(c);
-                      const mag = magnitude(c);
-                      const contra = c.verdict === 'contradicts';
-                      const tone = contra ? '#F87171' : '#4ADE80';
-                      return (
-                        <div key={c.id} className="px-5 py-4">
-                          <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                            <span className="text-[9.5px] font-semibold uppercase tracking-[0.14em] px-1.5 py-0.5 rounded" style={{ ...MONO, color: tone, background: `${tone}14` }}>
-                              Thesis alert
-                            </span>
-                            <span className="text-[9.5px] uppercase tracking-[0.12em]" style={{ ...MONO, color: tone }}>
-                              {contra ? '▼' : '▲'} {mag}
-                            </span>
-                            <span className="text-[9.5px] uppercase tracking-[0.12em] text-[#8A8A8A]" style={MONO}>{cls}</span>
-                            <span className="ml-auto text-[10.5px] text-[#5F5F5F]" style={MONO}>{c.sourceLabel} · {c.dateISO}</span>
-                          </div>
-                          <p className="text-[15px] leading-[1.4] font-semibold text-[#FAFAFA] m-0">
-                            {headline(c, shorthand(p.claim))}
-                            <span className="ml-2 text-[8.5px] font-semibold uppercase tracking-[0.14em] text-[#E6B94D] align-middle" style={MONO}>Prototype</span>
-                          </p>
-                          <p className="mt-2 text-[14px] leading-[1.5] text-[#9A9A9A] m-0 border-l-2 pl-3" style={{ borderColor: `${tone}55` }}>
-                            &ldquo;{c.verbatimCite}&rdquo;
-                          </p>
-                          {c.sourceUrl && (
-                            <a href={c.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-block mt-2 text-[11px] text-[#E6B94D] hover:brightness-110" style={MONO}>
-                              source ↗
-                            </a>
-                          )}
-                        </div>
-                      );
-                    }),
-                  )}
-                </div>
-              )}
-            </section>
-          </>
+          data.pillars.map((p) => <PillarBlock key={p.key} p={p} />)
         )}
       </div>
     </div>
