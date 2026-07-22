@@ -1,7 +1,7 @@
 """
-Render docs/mucker-reference.md into a styled .docx on the Desktop.
+Render docs/fundraise/mucker-reference.md into a styled .docx on the Desktop.
 
-Living workflow: edit the Markdown master (docs/mucker-reference.md) over time,
+Living workflow: edit the Markdown master (docs/fundraise/mucker-reference.md) over time,
 then re-run this to refresh the Word doc.
 
     python scripts/render-mucker-doc.py
@@ -21,7 +21,7 @@ DARK = RGBColor(0x1A, 0x1A, 0x1A)
 GREY = RGBColor(0x55, 0x55, 0x55)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, "..", "docs", "mucker-reference.md")
+SRC = os.path.join(HERE, "..", "docs", "fundraise", "mucker-reference.md")
 DEFAULT_OUT = os.path.join(os.path.expanduser("~"), "Desktop", "Helm Mucker Reference.docx")
 
 
