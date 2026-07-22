@@ -7,7 +7,9 @@ import Stripe from 'stripe';
 async function main() {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
   const { data: users } = await sb.auth.admin.listUsers({ perPage: 1000 });
-  const noah = users?.users.find((u) => u.email === 'n.a.kincer@gmail.com');
+  const target = (process.argv[2] ?? '').toLowerCase();
+  if (!target) return console.log('Usage: npx tsx scripts/probe-noah-sub.ts <email>');
+  const noah = users?.users.find((u) => (u.email ?? '').toLowerCase() === target);
   if (!noah) { console.log('no user'); return; }
 
   const { data: sub } = await sb.from('user_subscriptions').select('*').eq('user_id', noah.id).maybeSingle();

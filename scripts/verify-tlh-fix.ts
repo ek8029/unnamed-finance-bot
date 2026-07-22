@@ -4,7 +4,8 @@ import { isHarvestableLoss } from '../lib/tax-analysis';
 async function main() {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
   const { data: users } = await sb.auth.admin.listUsers({ perPage: 1000 });
-  for (const email of ['paulwpittman@gmail.com','benjaminlpittman@gmail.com','svbmn.fin01@gmail.com','brett@jelinek.com']) {
+  // Usage: npx tsx scripts/verify-tlh-fix.ts <email> [email...]
+  for (const email of process.argv.slice(2)) {
     const u = users?.users.find(x => x.email?.toLowerCase() === email); if (!u) continue;
     const { data: hs } = await sb.from('holdings').select('ticker, unrealised_gain_loss, total_value, account:linked_accounts(account_name, account_subtype)').eq('user_id', u.id);
     let oldPool = 0, newPool = 0, retirementExcluded = 0, unpricedExcluded = 0;

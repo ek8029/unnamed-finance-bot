@@ -1,6 +1,6 @@
 // One-off: grant a 14-day Pro trial to specific users (pre-trial-feature connectors).
 // Requires migration 049 (user_subscriptions.trial_ends_at) applied first.
-// Run: npx tsx scripts/grant-trial.ts brett@jelinek.com svbmn.fin01@gmail.com
+// Run: npx tsx scripts/grant-trial.ts <email> [email...]
 import { config } from 'dotenv';
 config({ path: '.env.local' });
 import { createClient } from '@supabase/supabase-js';

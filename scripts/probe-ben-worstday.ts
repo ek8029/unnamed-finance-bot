@@ -6,7 +6,9 @@ import { createClient } from '@supabase/supabase-js';
 async function main() {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
   const { data: users } = await sb.auth.admin.listUsers({ perPage: 1000 });
-  const ben = users?.users.find((u) => u.email === 'benjaminlpittman@gmail.com');
+  const target = (process.argv[2] ?? '').toLowerCase();
+  if (!target) return console.log('Usage: npx tsx scripts/probe-ben-worstday.ts <email>');
+  const ben = users?.users.find((u) => (u.email ?? '').toLowerCase() === target);
   if (!ben) return;
 
   const { data: snaps } = await sb

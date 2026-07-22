@@ -1,11 +1,12 @@
 // Full audit of one user's holdings/accounts rows — is the census undercounting?
-// Run: npx tsx scripts/probe-cameron.ts cameronazizi14@gmail.com
+// Run: npx tsx scripts/probe-cameron.ts <email>
 import { config } from 'dotenv';
 config({ path: '.env.local' });
 import { createClient } from '@supabase/supabase-js';
 
 async function main() {
-  const email = (process.argv[2] ?? 'cameronazizi14@gmail.com').toLowerCase();
+  const email = (process.argv[2] ?? '').toLowerCase();
+  if (!email) return console.log('Usage: npx tsx scripts/probe-cameron.ts <email>');
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
   const { data: users } = await sb.auth.admin.listUsers({ perPage: 1000 });
   const u = users?.users.find((x) => x.email?.toLowerCase() === email);

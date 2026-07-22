@@ -6,7 +6,8 @@ import { config } from 'dotenv';
 config({ path: '.env.local' });
 import { createClient } from '@supabase/supabase-js';
 
-const EMAIL = 'brett@jelinek.com';
+// Usage: npx tsx scripts/suppress-brett-emails.ts <email>
+const EMAIL = process.argv[2] ?? '';
 
 async function main() {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
