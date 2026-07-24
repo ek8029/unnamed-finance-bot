@@ -9,6 +9,20 @@ export const metadata = { title: 'Testing', robots: { index: false, follow: fals
 
 const EXPERIMENTS = [
   {
+    href: '/testing/research',
+    title: 'Research · grounded analyst',
+    date: '2026-07-23',
+    blurb:
+      'The research tab rebuilt to answer from what the agent already found (catches, memos, cross-thesis risk, actions) plus the real book and live prices. Every claim shows its receipt, nothing invented. Pass ?email= to pick the account.',
+  },
+  {
+    href: '/testing/theses',
+    title: 'Theses v2 · a real account',
+    date: '2026-07-23',
+    blurb:
+      'A whole account’s theses through the v2 model — standings, then each thesis collapsed into mechanisms with a corroboration ladder and receipts. Pass ?email= to pick the account.',
+  },
+  {
     href: '/testing/thesis-v2',
     title: 'Thesis Intelligence v2',
     date: '2026-07-22',
