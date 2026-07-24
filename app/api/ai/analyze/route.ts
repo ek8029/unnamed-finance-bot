@@ -8,6 +8,8 @@ import { checkAnalysisQuota, recordAnalysisUsage } from '@/lib/tier';
 import { TAX_RATE } from '@/lib/financial-config';
 import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
+import { getAgentFindings } from '@/lib/research/findings';
+import { detectTopics } from '@/lib/research/query-parse';
 import OpenAI from 'openai';
 
 function getOpenAIClient() {
@@ -661,6 +663,31 @@ export async function POST(req: NextRequest) {
     if (portfolio.positionCount > 0) {
       dataContext = formatPortfolioContext(portfolio);
     }
+  }
+
+  // What the agent already surfaced (A-shape, 2026-07-24): give the model
+  // Helm's own findings so answers reference real catches — with their dates
+  // and sources — instead of re-deriving from market data. The session client
+  // scopes every read to the user's own rows under RLS. Additive: any failure
+  // here must never break the answer.
+  try {
+    const topics = detectTopics(userQuery);
+    if (tickers.length > 0 || topics.length > 0 || queryType === 'portfolio_review') {
+      const findings = await getAgentFindings(supabase, user.id, tickers, topics);
+      if (findings.length > 0) {
+        const lines = findings.slice(0, 8).map((f) => {
+          let line = `- [${f.ticker ?? 'portfolio'} · ${f.date ?? 'n/a'}] ${f.summary}`;
+          if (f.quote) line += ` — "${f.quote.slice(0, 180)}"`;
+          line += ` (${f.source})`;
+          return line;
+        });
+        dataContext +=
+          `${dataContext ? '\n\n' : ''}=== WHAT HELM ALREADY FOUND (the agent's own findings on this user's book; ` +
+          `reference the date and source when you use one, and NEVER invent a finding) ===\n${lines.join('\n')}`;
+      }
+    }
+  } catch {
+    /* findings are additive — the answer proceeds without them */
   }
 
   // ── Build LLM messages ──

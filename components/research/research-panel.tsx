@@ -1,19 +1,21 @@
 'use client';
 
-// The research panel grafted into the dashboard: where you stand, the value
-// Helm has surfaced, and the feed of what the agent found — all read-only.
+// The research layer inside /dashboard/chat, A-shape (2026-07-24): the chat is
+// the surface. This adds three quiet things above it — a plain-English standing
+// line, the value ledger, and the agent's findings as clickable chips that seed
+// questions. No feed, no wall of cards.
 //
-// Deliberately no LLM call and no "ask" affordance yet: the council's sequencing
-// is to prove people pull on the feed before spending on grounded Q&A. Renders
-// nothing when the user is below Max or has no findings, so it never adds noise.
+// Read-only + deterministic on view (no LLM cost). Renders nothing below Max or
+// when there is nothing to show, so the page is unchanged for everyone else.
 
 import { useCallback, useEffect, useState } from 'react';
 import posthog from 'posthog-js';
 import type { Finding, ValueLedger } from '@/lib/research/types';
 import type { Standing } from '@/lib/research/standing';
-import { StandingStrip } from './standing-strip';
 import { ValueLedgerCard } from './value-ledger-card';
-import { FindingsFeed } from './findings-feed';
+import { FindingChips } from './finding-chips';
+
+const MONO = { fontFamily: 'var(--font-mono)' } as const;
 
 interface FeedResponse {
   locked: boolean;
@@ -22,7 +24,7 @@ interface FeedResponse {
   standing?: Standing;
 }
 
-export function ResearchPanel() {
+export function ResearchPanel({ onAsk }: { onAsk: (question: string) => void }) {
   const [data, setData] = useState<FeedResponse | null>(null);
 
   const load = useCallback((firstLoad = false) => {
@@ -52,35 +54,56 @@ export function ResearchPanel() {
 
   if (!data || data.locked) return null;
 
+  const standing = data.standing;
+  const ledger = data.ledger;
+  const findings = data.findings ?? [];
   const hasAnything =
-    (data.findings?.length ?? 0) > 0 ||
-    (data.ledger?.surfacedTotal ?? 0) > 0 ||
-    (data.ledger?.realizedTotal ?? 0) > 0 ||
-    (data.standing?.checks.length ?? 0) > 0;
+    findings.length > 0 ||
+    (ledger?.surfacedTotal ?? 0) > 0 ||
+    (ledger?.realizedTotal ?? 0) > 0 ||
+    !!standing?.headline;
   if (!hasAnything) return null;
 
   return (
-    <div className="space-y-4 mt-5 mb-6">
-      {data.standing && data.standing.checks.length > 0 && <StandingStrip standing={data.standing} />}
-      {data.ledger && (data.ledger.surfacedTotal > 0 || (data.ledger.realizedTotal ?? 0) > 0) && (
+    <div className="space-y-4 mt-5 mb-2">
+      {/* the one thing, in plain English */}
+      {standing?.headline && (
+        <p className="text-[15px] leading-[1.5] text-[var(--color-text-primary)] m-0">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-gold)] mr-2" style={MONO}>
+            Where you stand
+          </span>
+          {standing.headline}
+        </p>
+      )}
+
+      {ledger && (ledger.surfacedTotal > 0 || (ledger.realizedTotal ?? 0) > 0) && (
         <ValueLedgerCard
-          ledger={data.ledger}
+          ledger={ledger}
           canRecord
           onRecorded={() => load()}
-          onAsk={() => {
+          onAsk={(q) => {
             try {
               posthog.capture('research_ledger_breakdown_clicked');
             } catch {
               /* analytics only */
             }
+            onAsk(q);
           }}
         />
       )}
-      {data.findings && data.findings.length > 0 && (
-        <div className="rounded-lg border border-white/[0.07] bg-[#0A0A0A] p-4 sm:p-5">
-          {/* read-only: no onAsk, so cards render static with their source links */}
-          <FindingsFeed findings={data.findings} />
-        </div>
+
+      {findings.length > 0 && (
+        <FindingChips
+          findings={findings}
+          onAsk={(q) => {
+            try {
+              posthog.capture('research_finding_chip_clicked');
+            } catch {
+              /* analytics only */
+            }
+            onAsk(q);
+          }}
+        />
       )}
     </div>
   );

@@ -338,11 +338,12 @@ function ResearchChatContent() {
         <QuotaIndicator />
       </div>
 
-      {/* What Helm found — read-only research panel (standing, value ledger,
-          findings). Renders nothing below Max or with no findings, so this
-          wrapper collapses to zero height and the layout is unchanged. */}
-      <div className="shrink-0 max-h-[55vh] overflow-y-auto custom-scrollbar px-4 sm:px-7">
-        <ResearchPanel />
+      {/* Research layer, A-shape: standing line + ledger + finding chips that
+          seed questions into this chat. Compact by design — no feed. Renders
+          nothing below Max or with nothing to show, so this wrapper collapses
+          to zero height and the layout is unchanged. */}
+      <div className="shrink-0 px-4 sm:px-7">
+        <ResearchPanel onAsk={(q) => sendMessage(q)} />
       </div>
 
       {/* Messages Area */}

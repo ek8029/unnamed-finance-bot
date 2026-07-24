@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { investigationForThesis } from '@/lib/thesis-investigation';
+import { getStoryNotes } from '@/lib/content/mechanism-graft';
 import { summarizePillars } from '@/lib/thesis-summary';
 import { STATUS_META, dotGlow, convictionColor, type PillarStatus } from '@/lib/thesis-palette';
 import { CompanyLogo } from '@/components/company-logo';
@@ -23,6 +24,7 @@ interface PillarRow {
 
 interface EvidenceRow {
   pillar_id: string;
+  source_key: string;
   excerpt: string;
   source_title: string;
   source_url: string | null;
@@ -34,7 +36,7 @@ interface EvidenceRow {
   created_at: string;
 }
 
-function EvidenceItem({ e }: { e: EvidenceRow }) {
+function EvidenceItem({ e, storyNote }: { e: EvidenceRow; storyNote?: { label: string; reports: number } }) {
   return (
     <div>
       {e.source_url ? (
@@ -53,6 +55,11 @@ function EvidenceItem({ e }: { e: EvidenceRow }) {
         </span>
       )}
       <p className="text-[14.5px] leading-[1.55] text-[#7A7A7A] mt-1 mb-0 italic">&ldquo;{e.excerpt}&rdquo;</p>
+      {storyNote && (
+        <p className="text-[11px] text-[#5F5F5F] mt-1 mb-0">
+          One of {storyNote.reports} reports on the same story: {storyNote.label}
+        </p>
+      )}
     </div>
   );
 }
@@ -122,7 +129,7 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
   if (pillarIds.length > 0) {
     const { data: evidenceRaw } = await supabase
       .from('pillar_evidence')
-      .select('pillar_id, excerpt, source_title, source_url, verdict, materiality, source_type, what_it_means, source_published_at, created_at')
+      .select('pillar_id, source_key, excerpt, source_title, source_url, verdict, materiality, source_type, what_it_means, source_published_at, created_at')
       .in('pillar_id', pillarIds);
     evidenceByPillar = new Map();
     for (const e of (evidenceRaw ?? []) as EvidenceRow[]) {
@@ -131,6 +138,11 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
       evidenceByPillar.set(e.pillar_id, arr);
     }
   }
+
+  // Judged story grouping (mechanism cache), humanized: an evidence row that is
+  // part of a multi-report story carries one muted line under it. Any failure
+  // returns an empty map and the page renders exactly as before.
+  const storyNotes = await getStoryNotes(thesis.ticker, pillars.map((p) => p.claim));
 
   const investigation = await investigationForThesis(supabase, id, thesis.ticker);
 
@@ -278,7 +290,7 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
                         const rest = sorted.filter((e) => !visibleSet.has(e));
                         return (
                           <div className="mt-3 space-y-2.5 border-l border-white/[0.07] pl-4">
-                            {visible.map((e, i) => <EvidenceItem key={i} e={e} />)}
+                            {visible.map((e, i) => <EvidenceItem key={i} e={e} storyNote={storyNotes.get(e.source_key)} />)}
                             {rest.length > 0 && (
                               <details className="group">
                                 <summary
@@ -289,7 +301,7 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
                                   {visible.length > 0 ? `${rest.length} more source${rest.length === 1 ? '' : 's'}` : `${rest.length} source${rest.length === 1 ? '' : 's'}`}
                                 </summary>
                                 <div className="mt-2.5 space-y-2.5">
-                                  {rest.map((e, i) => <EvidenceItem key={i} e={e} />)}
+                                  {rest.map((e, i) => <EvidenceItem key={i} e={e} storyNote={storyNotes.get(e.source_key)} />)}
                                 </div>
                               </details>
                             )}
