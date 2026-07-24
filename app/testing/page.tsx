@@ -9,6 +9,13 @@ export const metadata = { title: 'Testing', robots: { index: false, follow: fals
 
 const EXPERIMENTS = [
   {
+    href: '/testing/app',
+    title: 'Lab shell · browse it like the product',
+    date: '2026-07-24',
+    blurb:
+      'Everything new behind one dashboard-style shell: sidebar, one persistent account (picked once, cookie), Research and Theses v2 as pages, deep-dive labs a click away. The closest thing to walking the next version of the site.',
+  },
+  {
     href: '/testing/research',
     title: 'Research · grounded analyst',
     date: '2026-07-23',

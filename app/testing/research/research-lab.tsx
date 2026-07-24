@@ -47,7 +47,15 @@ function questionForFinding(f: Finding): string {
   return `About ${subject}: ${f.summary} — what does this mean and what should I understand about it?`;
 }
 
-export function ResearchLab({ initialEmail }: { initialEmail: string }) {
+export function ResearchLab({
+  initialEmail,
+  embedded = false,
+}: {
+  initialEmail: string;
+  /** Inside the lab shell: chrome + account come from the shell, so the
+   *  back-link, page header and account row are omitted. */
+  embedded?: boolean;
+}) {
   const [email, setEmail] = useState(initialEmail);
   const [findings, setFindings] = useState<Finding[]>([]);
   const [feedLoading, setFeedLoading] = useState(false);
@@ -126,13 +134,15 @@ export function ResearchLab({ initialEmail }: { initialEmail: string }) {
   }
 
   return (
-    <div className="min-h-dvh bg-[#060606] px-4 sm:px-6 py-10">
-      <div className="max-w-3xl mx-auto">
-        <Link href="/testing" className="inline-flex items-center min-h-[44px] text-[12px] text-[#6A6A6A] hover:text-[#FAFAFA]" style={MONO}>
-          ← Testing
-        </Link>
+    <div className={embedded ? '' : 'min-h-dvh bg-[#060606] px-4 sm:px-6 py-10'}>
+      <div className={embedded ? '' : 'max-w-3xl mx-auto'}>
+        {!embedded && (
+          <Link href="/testing" className="inline-flex items-center min-h-[44px] text-[12px] text-[#6A6A6A] hover:text-[#FAFAFA]" style={MONO}>
+            ← Testing
+          </Link>
+        )}
 
-        <div className="mt-1">
+        <div className={embedded ? '' : 'mt-1'}>
           <div className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[#E6B94D]" style={MONO}>
             Research · grounded analyst
           </div>
@@ -143,27 +153,29 @@ export function ResearchLab({ initialEmail }: { initialEmail: string }) {
           </p>
         </div>
 
-        {/* account picker */}
-        <div className="mt-5 flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] uppercase tracking-[0.14em] text-[#6A6A6A]" style={MONO}>Account</span>
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && loadFeed(email)}
-            placeholder="you@example.com"
-            className="flex-1 min-w-[200px] bg-[#0B0B0B] border border-white/[0.1] rounded px-3 py-2 text-[13px] text-[#FAFAFA] outline-none focus:border-[rgba(230,185,77,0.4)]"
-            style={MONO}
-          />
-          <button
-            type="button"
-            onClick={() => loadFeed(email)}
-            disabled={feedLoading || !email.trim()}
-            className="px-3 py-2 rounded border border-white/[0.14] text-[12px] text-[#B8B8B8] hover:text-[#FAFAFA] disabled:opacity-40"
-            style={MONO}
-          >
-            {feedLoading ? 'Loading…' : 'Load'}
-          </button>
-        </div>
+        {/* account picker — the shell owns the account when embedded */}
+        {!embedded && (
+          <div className="mt-5 flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] uppercase tracking-[0.14em] text-[#6A6A6A]" style={MONO}>Account</span>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && loadFeed(email)}
+              placeholder="you@example.com"
+              className="flex-1 min-w-[200px] bg-[#0B0B0B] border border-white/[0.1] rounded px-3 py-2 text-[13px] text-[#FAFAFA] outline-none focus:border-[rgba(230,185,77,0.4)]"
+              style={MONO}
+            />
+            <button
+              type="button"
+              onClick={() => loadFeed(email)}
+              disabled={feedLoading || !email.trim()}
+              className="px-3 py-2 rounded border border-white/[0.14] text-[12px] text-[#B8B8B8] hover:text-[#FAFAFA] disabled:opacity-40"
+              style={MONO}
+            >
+              {feedLoading ? 'Loading…' : 'Load'}
+            </button>
+          </div>
+        )}
 
         {feedError && <p className="mt-3 text-[13px] text-[#F87171]" style={MONO}>{feedError}</p>}
 

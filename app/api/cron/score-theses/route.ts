@@ -5,6 +5,7 @@ import { sendBreachAlerts } from '@/lib/thesis-breach';
 import { generateThesisActions } from '@/lib/thesis-actions';
 import { generateInvestigations } from '@/lib/thesis-investigation';
 import { generateCrossThesisRisks } from '@/lib/cross-thesis-risk';
+import { rejudgeStaleMechanisms } from '@/lib/content/judge-runner';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -69,6 +70,22 @@ export async function GET(request: Request) {
       result.log.push(`[agentic] generation skipped: ${err instanceof Error ? err.message : 'unknown'}`);
     }
 
+    // Re-judge mechanism groupings whose evidence changed this run (cache-keyed
+    // by finding-set hash, so quiet days cost zero calls). Capped per run —
+    // anything past the cap is picked up tomorrow. Fail-isolated like the rest.
+    let mechanismsJudged = 0;
+    try {
+      const rj = await rejudgeStaleMechanisms(serviceClient, {
+        cap: 8,
+        tickers: ticker ? [ticker] : undefined,
+      });
+      mechanismsJudged = rj.judged;
+      result.log.push(`[mechanisms] judged ${rj.judged}, fresh ${rj.skippedFresh}, checked ${rj.pillarsChecked}`);
+      for (const e of rj.errors) result.log.push(`[mechanisms] ${e}`);
+    } catch (err) {
+      result.log.push(`[mechanisms] rejudge skipped: ${err instanceof Error ? err.message : 'unknown'}`);
+    }
+
     return NextResponse.json({
       ok: true,
       ticker: ticker ?? 'all',
@@ -79,6 +96,7 @@ export async function GET(request: Request) {
       actionsGenerated,
       investigationsGenerated,
       risksGenerated,
+      mechanismsJudged,
       log: result.log,
     });
   } catch (err) {
