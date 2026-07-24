@@ -23,6 +23,8 @@ import {
   type Mechanism,
   type SourceClass,
 } from './mechanism-cluster';
+import { toMechanisms } from './mechanism-judge';
+import { evidenceHash, readMechanismCache, scopeKey } from './mechanism-cache';
 
 /* ── source classification ─────────────────────────────────────────────── */
 
@@ -328,6 +330,17 @@ export async function getScoringThesisData(ticker: string): Promise<ScoringThesi
     });
   }
   pillars.sort((a, b) => b.catches.length - a.catches.length);
+
+  // Prefer the judged grouping where a fresh cache row exists (script/cron
+  // writes it; migration 058). Hash mismatch or no row = keep the heuristic.
+  // The page path never makes a model call.
+  const cache = await readMechanismCache(db, pillars.map((p) => scopeKey(SYM, p.key)));
+  for (const p of pillars) {
+    const hit = cache.get(scopeKey(SYM, p.key));
+    if (!hit || hit.evidenceHash !== evidenceHash(p.catches.map((c) => c.id))) continue;
+    const judged = toMechanisms(hit.groups, p.catches);
+    if (judged.length > 0) p.mechanisms = judged;
+  }
 
   base.pillars = pillars;
   base.dedupedRows = pillars.reduce((s, p) => s + p.catches.length, 0);

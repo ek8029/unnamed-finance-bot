@@ -218,15 +218,19 @@ export async function GET(request: Request) {
           await updatePortfolioPerformance(serviceClient, userId);
           log.push(`[perf] Updated portfolio_performance for user ${userId.slice(0, 8)}...`);
 
-          // Write a daily portfolio snapshot for the chart
+          // Write a daily portfolio snapshot for the chart. Include the
+          // per-holding detail (holdings_snapshot was always in the schema but
+          // never populated): share counts are what let a return calc tell a
+          // deposit from a gain, so an honest vs-benchmark series needs them.
           const { data: userHoldings } = await serviceClient
             .from('holdings')
-            .select('total_value, unrealised_gain_loss')
+            .select('ticker, shares, total_value, total_cost_basis, unrealised_gain_loss')
             .eq('user_id', userId);
 
           if (userHoldings && userHoldings.length > 0) {
             const totalValue = userHoldings.reduce((s: number, h: { total_value: number }) => s + Number(h.total_value), 0);
             const totalGainLoss = userHoldings.reduce((s: number, h: { unrealised_gain_loss: number | null }) => s + Number(h.unrealised_gain_loss || 0), 0);
+            const totalCostBasis = userHoldings.reduce((s: number, h: { total_cost_basis: number | null }) => s + Number(h.total_cost_basis || 0), 0);
             const today = new Date().toISOString().split('T')[0];
 
             await serviceClient
@@ -236,6 +240,12 @@ export async function GET(request: Request) {
                 snapshot_date: today,
                 total_value: totalValue,
                 total_gain_loss: totalGainLoss,
+                total_cost_basis: totalCostBasis,
+                holdings_snapshot: userHoldings.map((h: { ticker: string; shares: number | null; total_value: number }) => ({
+                  ticker: h.ticker,
+                  shares: h.shares != null ? Number(h.shares) : null,
+                  value: Number(h.total_value),
+                })),
               }, { onConflict: 'user_id,snapshot_date' });
 
             log.push(`[snapshots] Wrote portfolio_snapshots for user ${userId.slice(0, 8)}...`);
