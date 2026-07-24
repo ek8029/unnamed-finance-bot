@@ -5,7 +5,7 @@
 // same unit. Every field shown is a real DB row; mechanism / evidence-class /
 // headline are derived by a labelled heuristic and marked PROTOTYPE on screen.
 
-import { SOURCE_CLASS_LABEL, type LadderStatus, type Mechanism } from '@/lib/content/mechanism-cluster';
+import { SOURCE_CLASS_LABEL, convergence, type LadderStatus, type Mechanism } from '@/lib/content/mechanism-cluster';
 import type { ScoredCatch, ScoredPillar } from '@/lib/content/scoring-thesis';
 
 export const MONO = { fontFamily: 'var(--font-mono)' } as const;
@@ -216,6 +216,9 @@ export function PillarBlock({ p }: { p: ScoredPillar }) {
         )}
         <div className="mt-3 flex items-center gap-2 flex-wrap">
           <Chip tone={LADDER_TONE[ceiling]}>ceiling: {LADDER_LABEL[ceiling]}</Chip>
+          {convergence(p.mechanisms).converging && (
+            <Chip tone="#F87171">converging: {convergence(p.mechanisms).adverseMechanisms} independent mechanisms</Chip>
+          )}
           <span className="text-[11px] text-[#6A6A6A]" style={MONO}>
             {movers} of {p.mechanisms.length} mechanisms can move this pillar · {p.catches.length} findings ·{' '}
             {contra} against · {decisive} decisive

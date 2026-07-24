@@ -155,7 +155,7 @@ function RecentTable({
               <HeadCell>Date</HeadCell>
               <HeadCell>Symbol</HeadCell>
               <HeadCell align="right">EPS actual</HeadCell>
-              <HeadCell align="right">vs est.</HeadCell>
+              <HeadCell align="right">vs yr ago</HeadCell>
               <HeadCell align="right">Your position</HeadCell>
               <HeadCell align="right">Impact</HeadCell>
             </tr>
@@ -164,10 +164,11 @@ function RecentTable({
             {rows.map((r, i) => {
               const last = i === rows.length - 1;
               const border = last ? 'none' : '1px solid var(--color-border-subtle)';
-              const hasComparison = r.epsEstimate != null;
+              // Filing-sourced YoY comparison (no consensus vendor, no fake estimate).
+              const hasComparison = r.epsYoyPct != null;
               const surpriseColor = !hasComparison
                 ? 'var(--color-text-muted)'
-                : r.beat ? 'var(--color-positive)' : 'var(--color-negative-text)';
+                : (r.epsYoyPct ?? 0) >= 0 ? 'var(--color-positive)' : 'var(--color-negative-text)';
               const impact = r.actualDollarImpact ?? 0;
               return (
                 <tr key={`${r.ticker}-${i}`} className="group hover:bg-white/[0.015] transition-colors">
@@ -196,8 +197,8 @@ function RecentTable({
                   </td>
                   <td className="p-0" style={{ borderBottom: border }}>
                     <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-right text-[15px] font-semibold" style={{ ...MONO, ...TNUM, color: surpriseColor }}>
-                      {hasComparison && r.surprisePct != null
-                        ? `${r.surprisePct >= 0 ? '+' : ''}${r.surprisePct.toFixed(1)}%`
+                      {hasComparison
+                        ? `${(r.epsYoyPct ?? 0) >= 0 ? '+' : ''}${(r.epsYoyPct ?? 0).toFixed(1)}% YoY`
                         : <span className="text-[var(--color-text-muted)]">—</span>}
                     </Link>
                   </td>
@@ -440,8 +441,8 @@ function EarningsContent() {
       {/* Methodology / no-black-boxes footnote */}
       {(upcoming.length > 0 || recent.length > 0) && (
         <p className="text-[10px] text-[var(--color-text-muted)] leading-[1.6]" style={MONO}>
-          Dates and consensus pulled from SEC filings and the earnings calendar. Impact estimates use
-          a simplified model (1% EPS surprise ≈ 0.5% move) and are not financial advice.
+          Dates and EPS figures come from SEC filings (XBRL). The comparison shown is year-over-year,
+          not analyst consensus. Impact estimates use a simplified model and are not financial advice.
         </p>
       )}
     </main>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ceilingForMembers, type ClusterItem } from '@/lib/content/mechanism-cluster';
+import { ceilingForMembers, convergence, type ClusterItem, type Mechanism } from '@/lib/content/mechanism-cluster';
 
 const item = (over: Partial<ClusterItem>): ClusterItem => ({
   id: Math.random().toString(36).slice(2),
@@ -55,5 +55,34 @@ describe('ceilingForMembers (polarity-aware ladder)', () => {
       item({ sourceClass: 'analyst_opinion' }),
     ]);
     expect(maxStatus).toBe('weakening');
+  });
+});
+
+describe('convergence', () => {
+  const mech = (maxStatus: Mechanism['maxStatus']): Mechanism => ({
+    label: 'm',
+    items: [],
+    sourceClasses: [],
+    confirmations: 0,
+    mentions: 0,
+    firstSeen: '',
+    lastSeen: '',
+    maxStatus,
+    ladderReason: '',
+  });
+
+  it('flags two or more independent adverse mechanisms', () => {
+    expect(convergence([mech('weakening'), mech('weakening'), mech('watch')])).toEqual({
+      converging: true,
+      adverseMechanisms: 2,
+    });
+  });
+
+  it('one adverse mechanism is not convergence, however loud', () => {
+    expect(convergence([mech('broken'), mech('watch'), mech('watch')]).converging).toBe(false);
+  });
+
+  it('watch-only pillars never converge', () => {
+    expect(convergence([mech('watch'), mech('watch')]).converging).toBe(false);
   });
 });

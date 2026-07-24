@@ -705,6 +705,10 @@ export interface RecentEarning {
   date: string;
   epsActual: number | null;
   epsEstimate: number | null;
+  /** Filing-sourced year-over-year EPS comparison (XBRL); no consensus vendor. */
+  epsYearAgo?: number | null;
+  epsYoyPct?: number | null;
+  epsQuarterEnd?: string | null;
   surprisePct: number | null;
   beat: boolean;
   position: EarningsPosition;

@@ -320,6 +320,91 @@ export async function getReportedFinancialsEdgar(symbol: string): Promise<Report
   return valid;
 }
 
+// ── Quarterly EPS (companyfacts) ──
+
+export interface QuarterlyEps {
+  /** Quarter end date, YYYY-MM-DD. */
+  end: string;
+  eps: number;
+  /** Same quarter a year earlier, when the filer reported one. */
+  yearAgoEps: number | null;
+  /** YoY growth in percent, null when the year-ago quarter is missing or ~0. */
+  yoyGrowthPct: number | null;
+  form: string;
+  filed: string;
+}
+
+/**
+ * Latest reported quarterly EPS with its year-ago comparison, from XBRL
+ * companyfacts. This is the ACTUAL, filing-sourced. EDGAR carries no analyst
+ * consensus, so beat/miss-vs-estimate is deliberately not modelled here —
+ * year-over-year is the comparison a filing can actually ground.
+ */
+export async function getQuarterlyEps(symbol: string): Promise<QuarterlyEps | null> {
+  const cacheKey = `edgar:qeps:${symbol.toUpperCase()}`;
+  const cached = getCached<QuarterlyEps | null>(cacheKey);
+  if (cached !== null && cached !== undefined) return cached;
+
+  const cik = await getCik(symbol);
+  if (!cik) return null;
+
+  let factsData: CompanyFacts;
+  try {
+    const res = await fetch(`https://data.sec.gov/api/xbrl/companyfacts/CIK${cik}.json`, {
+      headers: { 'User-Agent': UA, Accept: 'application/json' },
+      cache: 'no-store',
+    });
+    if (!res.ok) return null; // 404 = no XBRL facts (ETFs, funds) — expected
+    factsData = await res.json();
+  } catch {
+    return null;
+  }
+
+  const gaap = factsData.facts?.['us-gaap'];
+  const concept = gaap?.['EarningsPerShareDiluted'] ?? gaap?.['EarningsPerShareBasic'];
+  if (!concept) return null;
+
+  // Quarterly facts: ~3-month durations. Same end date appears across many
+  // filings (original + comparatives); latest filed wins.
+  const byEnd = new Map<string, XbrlFact>();
+  for (const facts of Object.values(concept.units)) {
+    for (const f of facts) {
+      if (!f.start || !f.end) continue;
+      const days = (new Date(f.end).getTime() - new Date(f.start).getTime()) / 86400000;
+      if (days < 80 || days > 100) continue;
+      const seen = byEnd.get(f.end);
+      if (!seen || f.filed > seen.filed) byEnd.set(f.end, f);
+    }
+  }
+  if (byEnd.size === 0) return null;
+
+  const ends = [...byEnd.keys()].sort().reverse();
+  const latestEnd = ends[0];
+  const latest = byEnd.get(latestEnd)!;
+
+  // Year-ago quarter: end date 330-400 days before the latest quarter's end.
+  const latestMs = new Date(latestEnd).getTime();
+  const yearAgoEnd = ends.find((e) => {
+    const d = (latestMs - new Date(e).getTime()) / 86400000;
+    return d >= 330 && d <= 400;
+  });
+  const yearAgo = yearAgoEnd ? byEnd.get(yearAgoEnd)! : null;
+
+  const result: QuarterlyEps = {
+    end: latestEnd,
+    eps: latest.val,
+    yearAgoEps: yearAgo?.val ?? null,
+    yoyGrowthPct:
+      yearAgo && Math.abs(yearAgo.val) > 0.01
+        ? ((latest.val - yearAgo.val) / Math.abs(yearAgo.val)) * 100
+        : null,
+    form: latest.form,
+    filed: latest.filed,
+  };
+  setCache(cacheKey, result, FACTS_TTL);
+  return result;
+}
+
 // ── Company profile (submissions endpoint) ──
 
 // ── Recent filings (8-K material events) ──

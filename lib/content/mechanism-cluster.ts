@@ -166,6 +166,21 @@ export function ceilingForMembers<T extends ClusterItem>(
   );
 }
 
+/**
+ * Convergence: several INDEPENDENT corroborated adverse mechanisms attacking
+ * the same pillar. The ladder scores each mechanism alone, so "one story, five
+ * outlets" stays one weakening — but three separate weakening stories are more
+ * than any of them alone. Deliberately a FLAG, not a status escalation:
+ * promoting converging pillars to broken would be claiming a failure no single
+ * piece of evidence supports (the pillar is under attack, not disproven).
+ */
+export function convergence<T extends ClusterItem>(
+  mechanisms: Mechanism<T>[],
+): { converging: boolean; adverseMechanisms: number } {
+  const adverse = mechanisms.filter((m) => m.maxStatus !== 'watch').length;
+  return { converging: adverse >= 2, adverseMechanisms: adverse };
+}
+
 /* ── clustering ────────────────────────────────────────────────────────── */
 
 /**

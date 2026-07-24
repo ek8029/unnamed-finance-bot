@@ -6,6 +6,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { getEdgarEarnings } from '@/lib/earnings-edgar';
+import { getQuarterlyEps } from '@/lib/edgar';
 import {
   getCompanyProfile,
   getQuote,
@@ -40,6 +41,12 @@ export interface UpcomingEarningsEvent {
 }
 
 export interface RecentEarningsResult {
+  /** Filing-sourced quarterly EPS comparison (XBRL). Estimate-vs-actual needs a
+   *  consensus vendor Helm doesn't have; year-over-year is what a filing can
+   *  ground, so that is what we show. */
+  epsYearAgo?: number | null;
+  epsYoyPct?: number | null;
+  epsQuarterEnd?: string | null;
   ticker: string;
   companyName: string;
   date: string;
@@ -216,10 +223,11 @@ async function getRecentEarnings(
 
       const pos = holdingsMap.get(ticker)!;
 
-      // Fetch live quote + profile once per ticker
-      const [quote, profile] = await Promise.all([
+      // Fetch live quote + profile + filing-sourced EPS once per ticker
+      const [quote, profile, qEps] = await Promise.all([
         getQuote(ticker),
         pos.securityName === ticker ? getCompanyProfile(ticker) : null,
+        getQuarterlyEps(ticker).catch(() => null),
       ]);
 
       // Use live price for position value
@@ -252,8 +260,13 @@ async function getRecentEarnings(
         ticker,
         companyName,
         date: lastReportDate,
-        epsActual: null,
+        // Actual from XBRL. Estimate stays null: EDGAR carries no analyst
+        // consensus and we don't fake one — YoY is the grounded comparison.
+        epsActual: qEps?.eps ?? null,
         epsEstimate: null,
+        epsYearAgo: qEps?.yearAgoEps ?? null,
+        epsYoyPct: qEps?.yoyGrowthPct ?? null,
+        epsQuarterEnd: qEps?.end ?? null,
         surprisePct: null,
         beat: false,
         position: exposurePosition,
