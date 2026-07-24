@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useTier } from '@/hooks/use-tier';
 import { FinancialDisclaimer } from '@/components/financial-disclaimer';
+import { ResearchPanel } from '@/components/research/research-panel';
 
 // ── Types ──
 
@@ -335,6 +336,13 @@ function ResearchChatContent() {
           </div>
         </div>
         <QuotaIndicator />
+      </div>
+
+      {/* What Helm found — read-only research panel (standing, value ledger,
+          findings). Renders nothing below Max or with no findings, so this
+          wrapper collapses to zero height and the layout is unchanged. */}
+      <div className="shrink-0 max-h-[55vh] overflow-y-auto custom-scrollbar px-4 sm:px-7">
+        <ResearchPanel />
       </div>
 
       {/* Messages Area */}
