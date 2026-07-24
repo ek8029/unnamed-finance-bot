@@ -7,7 +7,7 @@
 // is to prove people pull on the feed before spending on grounded Q&A. Renders
 // nothing when the user is below Max or has no findings, so it never adds noise.
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import posthog from 'posthog-js';
 import type { Finding, ValueLedger } from '@/lib/research/types';
 import type { Standing } from '@/lib/research/standing';
@@ -25,14 +25,13 @@ interface FeedResponse {
 export function ResearchPanel() {
   const [data, setData] = useState<FeedResponse | null>(null);
 
-  useEffect(() => {
-    let alive = true;
+  const load = useCallback((firstLoad = false) => {
     fetch('/api/research/feed')
       .then((r) => (r.ok ? r.json() : null))
       .then((d: FeedResponse | null) => {
-        if (!alive || !d) return;
+        if (!d) return;
         setData(d);
-        if (!d.locked) {
+        if (firstLoad && !d.locked) {
           try {
             posthog.capture('research_panel_viewed', {
               findings: d.findings?.length ?? 0,
@@ -45,25 +44,29 @@ export function ResearchPanel() {
         }
       })
       .catch(() => {});
-    return () => {
-      alive = false;
-    };
   }, []);
+
+  useEffect(() => {
+    load(true);
+  }, [load]);
 
   if (!data || data.locked) return null;
 
   const hasAnything =
     (data.findings?.length ?? 0) > 0 ||
     (data.ledger?.surfacedTotal ?? 0) > 0 ||
+    (data.ledger?.realizedTotal ?? 0) > 0 ||
     (data.standing?.checks.length ?? 0) > 0;
   if (!hasAnything) return null;
 
   return (
     <div className="space-y-4 mt-5 mb-6">
       {data.standing && data.standing.checks.length > 0 && <StandingStrip standing={data.standing} />}
-      {data.ledger && data.ledger.surfacedTotal > 0 && (
+      {data.ledger && (data.ledger.surfacedTotal > 0 || (data.ledger.realizedTotal ?? 0) > 0) && (
         <ValueLedgerCard
           ledger={data.ledger}
+          canRecord
+          onRecorded={() => load()}
           onAsk={() => {
             try {
               posthog.capture('research_ledger_breakdown_clicked');

@@ -20,10 +20,12 @@ function brief(over: Partial<PortfolioBrief> = {}): PortfolioBrief {
     ...over,
   };
 }
-const emptyLedger: ValueLedger = { surfacedTotal: 0, lines: [] };
+const emptyLedger: ValueLedger = { surfacedTotal: 0, lines: [], realizedTotal: 0, realized: [] };
 const harvestLedger: ValueLedger = {
   surfacedTotal: 5000,
   lines: [{ label: 'TLH surfaced', amount: 5000, kind: 'tax_harvest', date: null }],
+  realizedTotal: 0,
+  realized: [],
 };
 
 describe('computeStanding', () => {

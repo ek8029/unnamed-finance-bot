@@ -150,9 +150,22 @@ export interface LedgerLine {
   detail?: string;
 }
 
+export interface RealizedLine {
+  id: string;
+  label: string;
+  amount: number;
+  kind: 'tlh_harvest' | 'other';
+  ticker: string | null;
+  date: string;
+}
+
 export interface ValueLedger {
+  /** Helm's computed potential — an estimate, never called "returns". */
   surfacedTotal: number;
   lines: LedgerLine[];
+  /** What the user recorded actually executing. Their record, not our claim. */
+  realizedTotal: number;
+  realized: RealizedLine[];
 }
 
 export async function getValueLedger(
@@ -207,5 +220,31 @@ export async function getValueLedger(
   }
 
   const surfacedTotal = lines.reduce((s, l) => s + l.amount, 0);
-  return { surfacedTotal, lines };
+
+  // Realized events (user-recorded executions, migration 059). Missing table =
+  // empty realized side; the surfaced side still renders.
+  const realized: RealizedLine[] = [];
+  try {
+    const { data } = await db
+      .from('value_events')
+      .select('id, kind, amount, ticker, note, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    for (const r of data ?? []) {
+      realized.push({
+        id: String(r.id),
+        label: String(r.note || (r.kind === 'tlh_harvest' ? 'Tax-loss harvest executed' : 'Realized')),
+        amount: Math.round(Number(r.amount)),
+        kind: r.kind as RealizedLine['kind'],
+        ticker: r.ticker ? String(r.ticker).toUpperCase() : null,
+        date: String(r.created_at).slice(0, 10),
+      });
+    }
+  } catch {
+    /* table not applied yet — surfaced-only ledger */
+  }
+  const realizedTotal = realized.reduce((s, l) => s + l.amount, 0);
+
+  return { surfacedTotal, lines, realizedTotal, realized };
 }
