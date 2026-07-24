@@ -15,7 +15,7 @@
 
 import OpenAI from 'openai';
 import { fence, INJECTION_GUARD, clampText } from '@/lib/prompt-safety';
-import { ladderCeiling, type ClusterItem, type Mechanism } from './mechanism-cluster';
+import { ceilingForMembers, type ClusterItem, type Mechanism } from './mechanism-cluster';
 
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
@@ -177,11 +177,7 @@ export function toMechanisms<T extends ClusterItem & { severe?: boolean }>(
     if (members.length === 0) continue;
 
     const distinct = [...new Set(members.map((m) => m.sourceClass))];
-    const { maxStatus, reason } = ladderCeiling(
-      members.map((m) => m.sourceClass),
-      members.map((m) => m.evidenceClass),
-      members.some((m) => m.severe),
-    );
+    const { maxStatus, reason } = ceilingForMembers(members);
     const dates = members.map((m) => m.dateISO).filter(Boolean).sort();
 
     out.push({

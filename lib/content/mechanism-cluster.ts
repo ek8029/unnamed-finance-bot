@@ -47,6 +47,10 @@ export interface ClusterItem {
   /** Large enough to stand on its own, e.g. a >=20% adverse move or withdrawn
    *  guidance. Matches the severity rule the shipped status engine already has. */
   severe?: boolean;
+  /** The judge's verdict on the finding. Only contradicting evidence can push a
+   *  pillar down the ladder; omitted = treated as contradicting (older callers
+   *  fed catches only). */
+  verdict?: 'supports' | 'contradicts' | 'neutral';
 }
 
 export interface Mechanism<T extends ClusterItem = ClusterItem> {
@@ -138,6 +142,28 @@ export function ladderCeiling(
     return { maxStatus: 'weakening', reason: 'the company disclosed this itself' };
   }
   return { maxStatus: 'watch', reason: 'a single source class, however many times it was repeated' };
+}
+
+/**
+ * Polarity-aware ceiling for a mechanism's members: only CONTRADICTING evidence
+ * can push a pillar down the ladder. A mechanism made of supporting or neutral
+ * findings confirms the pillar, whatever its corroboration — feeding it to the
+ * ladder is how "Record services revenues" ends up labelled "can weaken the
+ * pillar" (caught the day the judged grouping went live). Items without a
+ * verdict are treated as contradicting, which preserves older catch-only feeds.
+ */
+export function ceilingForMembers<T extends ClusterItem>(
+  members: T[],
+): { maxStatus: LadderStatus; reason: string } {
+  const adverse = members.filter((m) => m.verdict === undefined || m.verdict === 'contradicts');
+  if (adverse.length === 0) {
+    return { maxStatus: 'watch', reason: 'supporting or neutral evidence only — nothing here weakens the pillar' };
+  }
+  return ladderCeiling(
+    adverse.map((m) => m.sourceClass),
+    adverse.map((m) => m.evidenceClass),
+    adverse.some((m) => m.severe),
+  );
 }
 
 /* ── clustering ────────────────────────────────────────────────────────── */
@@ -272,11 +298,7 @@ export function clusterByMechanism<T extends ClusterItem>(items: T[]): Mechanism
     const members = [...c.members].sort((a, b) => b.dateISO.localeCompare(a.dateISO));
     const classes = members.map((m) => m.sourceClass);
     const distinct = [...new Set(classes)];
-    const { maxStatus, reason } = ladderCeiling(
-      classes,
-      members.map((m) => m.evidenceClass),
-      members.some((m) => m.severe),
-    );
+    const { maxStatus, reason } = ceilingForMembers(members);
 
     const shown = new Map([...c.seen].map(([k, n]) => [display.get(k) ?? k, n]));
     const label =
