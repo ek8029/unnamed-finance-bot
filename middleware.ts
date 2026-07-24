@@ -83,7 +83,14 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith(path)
   );
 
-  if (isProtectedPath && !user) {
+  // Dev-only lab impersonation: the page-level supabase client resolves the
+  // helm_lab_email cookie to a real account (read-only, see lib/supabase/server),
+  // so the dashboard must be reachable without a session on localhost. Hard
+  // NODE_ENV gate — dead branch on every production build.
+  const labImpersonating =
+    process.env.NODE_ENV !== 'production' && !!request.cookies.get('helm_lab_email')?.value;
+
+  if (isProtectedPath && !user && !labImpersonating) {
     const redirectUrl = new URL('/login', request.url);
     redirectUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(redirectUrl);

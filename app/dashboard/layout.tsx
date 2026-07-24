@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
+import { LabImpersonationBanner } from '@/components/lab-impersonation-banner';
 import { ZoomShell } from '@/components/zoom-shell';
 import { useSettings } from '@/contexts/settings-context';
 import { DemoProvider, useDemo } from '@/contexts/demo-context';
@@ -960,6 +961,9 @@ export default function DashboardLayout({
 
       {/* ── Mobile Bottom Tab Bar (hidden on wrapped — full-screen experience) ── */}
       {!isWrappedPage && <MobileBottomNav />}
+
+      {/* Dev-only: shows while lab impersonation is active, renders nothing in prod */}
+      <LabImpersonationBanner />
     </div>
     </>
     </DemoProvider>

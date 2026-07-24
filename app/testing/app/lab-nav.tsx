@@ -51,10 +51,17 @@ export function LabNav({ email }: { email: string }) {
       </a>
 
       <div className="px-5 pt-4 pb-1.5 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[#5F5F5F]" style={MONO}>
-        Live product
+        The real site, as this account
       </div>
+      <a href="/dashboard" className="flex items-baseline gap-2 px-5 py-2.5 text-[13.5px] text-[#B8B8B8] hover:text-[#FAFAFA] hover:bg-white/[0.02] transition-colors">
+        <span>Dashboard</span>
+        <span className="ml-auto text-[9px] uppercase tracking-[0.12em] text-[#5F5F5F]" style={MONO}>read-only</span>
+      </a>
       <a href="/dashboard/chat" className="flex px-5 py-2.5 text-[13.5px] text-[#B8B8B8] hover:text-[#FAFAFA] hover:bg-white/[0.02] transition-colors">
-        Dashboard (sign in)
+        Research
+      </a>
+      <a href="/dashboard/theses" className="flex px-5 py-2.5 text-[13.5px] text-[#B8B8B8] hover:text-[#FAFAFA] hover:bg-white/[0.02] transition-colors">
+        Theses
       </a>
       <a href="/dashboard/earnings" className="flex items-baseline gap-2 px-5 py-2.5 text-[13.5px] text-[#B8B8B8] hover:text-[#FAFAFA] hover:bg-white/[0.02] transition-colors">
         <span>Earnings</span>

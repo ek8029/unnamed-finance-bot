@@ -6,11 +6,93 @@
  */
 
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient, type SupabaseClient, type User } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
+
+/**
+ * Dev-only lab impersonation: with the `helm_lab_email` cookie set (picked in
+ * /testing/app), every server component and API route resolves auth to that
+ * account and reads run under the service role — so the REAL dashboard renders
+ * any user's book on localhost, pixel-identical, no login.
+ *
+ * Safety:
+ *  - Hard NODE_ENV gate: dead code on any production build (Vercel previews
+ *    included). The cookie is only ever written by the dev-only lab shell.
+ *  - READ-ONLY: insert/update/upsert/delete throw loudly. Browsing another
+ *    user's real rows is a preview; writing to them is never acceptable.
+ */
+async function createImpersonatedClient(email: string): Promise<SupabaseClient | null> {
+  const svc = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  );
+
+  const { data: profile } = await svc
+    .from('user_profiles')
+    .select('id, email')
+    .eq('email', email.toLowerCase())
+    .maybeSingle();
+  if (!profile) return null;
+
+  const user = {
+    id: String(profile.id),
+    email: String(profile.email),
+    aud: 'authenticated',
+    role: 'authenticated',
+    app_metadata: {},
+    user_metadata: {},
+    created_at: '',
+  } as User;
+
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  // Pure telemetry the product writes as a side effect of normal browsing
+  // (e.g. the chat records a usage row per question). Blocking these would 500
+  // the surfaces being previewed, so they no-op silently instead — nothing a
+  // user would recognise as their data.
+  const TELEMETRY_TABLES = new Set(['analysis_usage']);
+
+  const client = svc as any;
+  const origFrom = client.from.bind(client);
+  client.from = (table: string) => {
+    const qb = origFrom(table);
+    for (const m of ['insert', 'update', 'upsert', 'delete'] as const) {
+      qb[m] = () => {
+        if (m === 'insert' && TELEMETRY_TABLES.has(table)) {
+          return Promise.resolve({ data: null, error: null });
+        }
+        throw new Error(`[lab] impersonation is read-only: ${m} on ${table} blocked`);
+      };
+    }
+    return qb;
+  };
+  client.auth.getUser = async () => ({ data: { user }, error: null });
+  client.auth.getSession = async () => ({
+    data: { session: { user, access_token: 'lab', token_type: 'bearer' } },
+    error: null,
+  });
+  if (client.auth.mfa) {
+    client.auth.mfa.getAuthenticatorAssuranceLevel = async () => ({
+      data: { currentLevel: 'aal1', nextLevel: 'aal1' },
+      error: null,
+    });
+  }
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+  return client as SupabaseClient;
+}
 
 export async function createClient() {
   const cookieStore = await cookies();
+
+  // Dev-only lab impersonation (see above). Falls through to the real session
+  // client when the cookie is absent or the email resolves to no account.
+  if (process.env.NODE_ENV !== 'production') {
+    const labEmail = cookieStore.get('helm_lab_email')?.value;
+    if (labEmail) {
+      const impersonated = await createImpersonatedClient(decodeURIComponent(labEmail));
+      if (impersonated) return impersonated;
+    }
+  }
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

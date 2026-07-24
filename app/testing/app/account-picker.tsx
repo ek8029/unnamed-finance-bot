@@ -17,8 +17,10 @@ export function AccountPicker({ current }: { current: string }) {
   function apply() {
     const email = value.trim().toLowerCase();
     if (!email) return;
-    // Dev-only cookie, path-scoped to the lab shell. Not a credential.
-    document.cookie = `helm_lab_email=${encodeURIComponent(email)}; path=/testing/app; max-age=2592000; samesite=lax`;
+    // Dev-only cookie, site-wide path: the REAL /dashboard pages read it too
+    // (read-only impersonation in lib/supabase/server, NODE_ENV-gated). Not a
+    // credential — it does nothing on production builds.
+    document.cookie = `helm_lab_email=${encodeURIComponent(email)}; path=/; max-age=2592000; samesite=lax`;
     setEditing(false);
     router.refresh();
   }
