@@ -1,30 +1,105 @@
-// A whole account's theses through the Thesis v2 model — the body shared by the
-// standalone lab page (/testing/theses) and the lab shell (/testing/app/theses).
-// Server component; caller supplies the account email and the surrounding chrome.
+// Theses as a terminal table (v3 proposal, 2026-07-25).
+//
+// Three rounds of feedback killed the previous shapes: separated per-ticker
+// sections scroll forever, drawer hierarchies read as an internal tool, and
+// ladder jargon means nothing to a user. This is the opposite: every thesis is
+// ONE row in ONE dense table — ticker, a plain-English status word, pillar
+// count, the single thing that matters right now, last activity. A row expands
+// INLINE to pillar status lines with the freshest receipt under each. Nothing
+// navigates away; nothing repeats; no term of art survives to the screen.
 
 import { createStaticServiceClient } from '@/lib/supabase/server';
-import { getScoringThesisData, type ScoringThesisData } from '@/lib/content/scoring-thesis';
-import { PillarBlock, SectionLabel, Chip, MONO, LADDER_TONE, LADDER_LABEL, topCeiling } from '@/components/testing/thesis-v2-blocks';
-import type { LadderStatus } from '@/lib/content/mechanism-cluster';
+import { getScoringThesisData, type ScoringThesisData, type ScoredPillar } from '@/lib/content/scoring-thesis';
+import { topCeiling } from '@/components/testing/thesis-v2-blocks';
+import { convergence, type LadderStatus } from '@/lib/content/mechanism-cluster';
 
+const MONO = { fontFamily: 'var(--font-mono)' } as const;
 const MAX_THESES = 8;
 
+/* Plain-English status vocabulary — the ladder stays internal. */
+const STATUS_WORD: Record<LadderStatus, string> = {
+  watch: 'steady',
+  weakening: 'under pressure',
+  broken: 'breaking',
+};
+const STATUS_TONE: Record<LadderStatus, string> = {
+  watch: '#4ADE80',
+  weakening: '#E6B94D',
+  broken: '#F87171',
+};
+const RANK: Record<LadderStatus, number> = { broken: 0, weakening: 1, watch: 2 };
+
 function thesisCeiling(d: ScoringThesisData): LadderStatus {
-  return d.pillars.reduce<LadderStatus>((worst, p) => {
-    const c = topCeiling(p.mechanisms);
-    const rank = { watch: 0, weakening: 1, broken: 2 } as const;
-    return rank[c] > rank[worst] ? c : worst;
-  }, 'watch');
+  return d.pillars.reduce<LadderStatus>(
+    (worst, p) => (RANK[topCeiling(p.mechanisms)] < RANK[worst] ? topCeiling(p.mechanisms) : worst),
+    'watch',
+  );
+}
+
+/** The one thing that matters on this thesis right now, in one sentence. */
+function headline(d: ScoringThesisData): string {
+  // Worst pillar first; inside it, the strongest adverse mechanism's label.
+  const pillars = [...d.pillars].sort(
+    (a, b) => RANK[topCeiling(a.mechanisms)] - RANK[topCeiling(b.mechanisms)],
+  );
+  const worst = pillars[0];
+  if (!worst) return 'No scored evidence yet.';
+  const worstStatus = topCeiling(worst.mechanisms);
+  if (worstStatus === 'watch') {
+    const latest = d.pillars.flatMap((p) => p.catches)[0];
+    return latest ? `Quiet. Latest: ${latest.title}` : 'Quiet. Nothing challenges this thesis.';
+  }
+  const mover = worst.mechanisms.find((m) => m.maxStatus === worstStatus);
+  const conv = convergence(worst.mechanisms);
+  const base = mover ? mover.label : 'Multiple reports';
+  return conv.converging
+    ? `${base} — and ${conv.adverseMechanisms - 1} more independent ${conv.adverseMechanisms - 1 === 1 ? 'issue' : 'issues'} on the same pillar`
+    : base;
+}
+
+function pillarStateLine(p: ScoredPillar): { status: LadderStatus; line: string } {
+  const status = topCeiling(p.mechanisms);
+  if (status === 'watch') return { status, line: 'nothing confirmed against it' };
+  const mover = p.mechanisms.find((m) => m.maxStatus === status);
+  const classes = mover?.sourceClasses.length ?? 0;
+  const corroboration =
+    classes >= 2 ? `${classes} independent source types` : 'a single source so far';
+  return { status, line: `${mover?.label ?? 'multiple reports'} · ${corroboration}` };
+}
+
+function PillarLine({ p }: { p: ScoredPillar }) {
+  const { status, line } = pillarStateLine(p);
+  // Freshest receipt: prefer the strongest adverse mechanism's newest item.
+  const mover = p.mechanisms.find((m) => m.maxStatus === status && status !== 'watch');
+  const receipt = mover?.items[0] ?? p.catches[0];
+
+  return (
+    <div className="py-2.5 border-t border-white/[0.04] first:border-t-0">
+      <div className="flex items-baseline gap-2.5">
+        <span className="mt-[1px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: STATUS_TONE[status] }} />
+        <span className="text-[13.5px] leading-[1.45] text-[#DADADA] min-w-0">{p.claim}</span>
+      </div>
+      <div className="ml-4 mt-0.5 text-[11.5px] text-[#7A7A7A]">{line}</div>
+      {receipt && (
+        <div className="ml-4 mt-1.5 text-[12px] leading-[1.5] text-[#6A6A6A]">
+          <span style={MONO} className="text-[10.5px] text-[#5F5F5F]">{receipt.dateISO} · </span>
+          {receipt.url ? (
+            <a href={receipt.url} target="_blank" rel="noopener noreferrer" className="hover:text-[#E6B94D] transition-colors">
+              {receipt.title}
+            </a>
+          ) : (
+            receipt.title
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export async function ThesesV2Body({ email }: { email: string }) {
   const target = email.trim().toLowerCase();
   if (!target) {
-    return (
-      <p className="text-[14px] text-[#8A8A8A] m-0">
-        Pick an account to see its theses through the v2 model.
-      </p>
-    );
+    return <p className="text-[14px] text-[#8A8A8A] m-0">Pick an account to see its theses.</p>;
   }
 
   const db = createStaticServiceClient();
@@ -42,82 +117,88 @@ export async function ThesesV2Body({ email }: { email: string }) {
     .order('tracked', { ascending: false });
 
   const tickers = [...new Set((theses ?? []).map((t) => String(t.ticker).toUpperCase()))].slice(0, MAX_THESES);
-  const data = await Promise.all(tickers.map((t) => getScoringThesisData(t)));
+  const data = (await Promise.all(tickers.map((t) => getScoringThesisData(t)))).filter((d) => d.pillars.length > 0);
 
-  const totalPillars = data.reduce((s, d) => s + d.pillars.length, 0);
-  const totalMechanisms = data.reduce((s, d) => s + d.pillars.reduce((n, p) => n + p.mechanisms.length, 0), 0);
+  const rows = data
+    .map((d) => ({ d, ceiling: thesisCeiling(d) }))
+    .sort((a, b) => RANK[a.ceiling] - RANK[b.ceiling]);
+
+  const pressured = rows.filter((r) => r.ceiling !== 'watch').length;
 
   return (
     <div>
-      <div>
-        <div className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[#E6B94D]" style={MONO}>
-          Theses · v2 model
-        </div>
-        <h1 className="mt-2 text-[30px] font-bold tracking-tight text-[#FAFAFA]">Your theses</h1>
-        <p className="mt-2 text-[13px] text-[#8A8A8A]">
-          {profile.email} · {tickers.length} {tickers.length === 1 ? 'thesis' : 'theses'} · {totalPillars} pillars ·{' '}
-          {totalMechanisms} mechanisms after clustering
-        </p>
+      <div className="flex items-baseline gap-3 flex-wrap">
+        <h1 className="text-[26px] font-bold tracking-tight text-[#FAFAFA] m-0">Theses</h1>
+        <span className="text-[12.5px] text-[#8A8A8A]">
+          {pressured === 0
+            ? `All ${rows.length} steady. Nothing needs your attention.`
+            : `${pressured} of ${rows.length} under pressure.`}
+        </span>
+        <span className="ml-auto text-[10.5px] text-[#5F5F5F]" style={MONO}>v3 proposal · terminal table</span>
       </div>
 
-      {tickers.length === 0 ? (
-        <p className="mt-8 text-[14px] text-[#8A8A8A]">This account has no theses.</p>
-      ) : (
-        <>
-          {/* overview: one line per thesis, worst ceiling first */}
-          <section className="mt-6 rounded-lg border border-white/[0.07] bg-[#0B0B0B] overflow-hidden">
-            <div className="px-4 py-3 border-b border-white/[0.05]">
-              <SectionLabel>Standings</SectionLabel>
-            </div>
-            {data
-              .map((d) => ({ d, ceiling: thesisCeiling(d) }))
-              .sort((a, b) => {
-                const rank = { broken: 0, weakening: 1, watch: 2 } as const;
-                return rank[a.ceiling] - rank[b.ceiling];
-              })
-              .map(({ d, ceiling }) => {
-                const movers = d.pillars.reduce(
-                  (n, p) => n + p.mechanisms.filter((m) => m.maxStatus !== 'watch').length,
-                  0,
-                );
-                return (
-                  <a
-                    key={d.ticker}
-                    href={`#${d.ticker}`}
-                    className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.02]"
-                  >
-                    <span className="w-[64px] shrink-0 text-[14px] font-semibold text-[#FAFAFA]" style={MONO}>{d.ticker}</span>
-                    <Chip tone={LADDER_TONE[ceiling]}>{LADDER_LABEL[ceiling]}</Chip>
-                    <span className="ml-auto text-[11px] text-[#6A6A6A]" style={MONO}>
-                      {d.pillars.length} pillars · {movers} moving
-                    </span>
-                  </a>
-                );
-              })}
-          </section>
+      <div className="mt-4 rounded-lg border border-white/[0.08] bg-[#0A0A0A] overflow-hidden">
+        {/* header row */}
+        <div className="flex items-center gap-3 px-4 py-2 border-b border-white/[0.06] text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[#5F5F5F]" style={MONO}>
+          <span className="w-[64px] shrink-0">Ticker</span>
+          <span className="w-[120px] shrink-0">Status</span>
+          <span className="w-[72px] shrink-0 text-right">Pillars OK</span>
+          <span className="flex-1 min-w-0">What matters right now</span>
+          <span className="w-[76px] shrink-0 text-right">Last scan</span>
+        </div>
 
-          {/* full theses, stacked */}
-          <div className="mt-8 space-y-10">
-            {data.map((d) => (
-              <section key={d.ticker} id={d.ticker} className="scroll-mt-4">
-                <div className="flex items-baseline gap-3 flex-wrap">
-                  <h2 className="text-[24px] font-bold tracking-tight text-[#FAFAFA] m-0">{d.ticker}</h2>
-                  {d.company && <span className="text-[13px] text-[#8A8A8A]">{d.company}</span>}
-                  <Chip tone={LADDER_TONE[thesisCeiling(d)]}>{LADDER_LABEL[thesisCeiling(d)]}</Chip>
-                  <span className="ml-auto text-[11px] text-[#6A6A6A]" style={MONO}>
-                    {d.dedupedRows} findings · last scan {d.lastScan ? d.lastScan.slice(0, 10) : 'never'}
+        {rows.map(({ d, ceiling }) => {
+          const okPillars = d.pillars.filter((p) => topCeiling(p.mechanisms) === 'watch').length;
+          return (
+            <details key={d.ticker} className="group border-b border-white/[0.05] last:border-b-0">
+              <summary className="list-none cursor-pointer flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors">
+                <span className="w-[64px] shrink-0 text-[14.5px] font-semibold text-[#FAFAFA]" style={MONO}>
+                  {d.ticker}
+                </span>
+                <span className="w-[120px] shrink-0 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_TONE[ceiling] }} />
+                  <span className="text-[12px] font-semibold" style={{ ...MONO, color: STATUS_TONE[ceiling] }}>
+                    {STATUS_WORD[ceiling]}
                   </span>
+                </span>
+                <span className="w-[72px] shrink-0 text-right text-[12.5px] text-[#8A8A8A]" style={MONO}>
+                  {okPillars}/{d.pillars.length}
+                </span>
+                <span className="flex-1 min-w-0 truncate text-[13px] text-[#B8B8B8]">{headline(d)}</span>
+                <span className="w-[76px] shrink-0 text-right text-[10.5px] text-[#5F5F5F]" style={MONO}>
+                  {d.lastScan ? d.lastScan.slice(5, 10) : '—'}
+                </span>
+              </summary>
+
+              {/* inline expansion: pillars as status lines, freshest receipt each */}
+              <div className="px-4 pb-3 pl-[76px] bg-[#080808]">
+                {[...d.pillars]
+                  .sort((a, b) => RANK[topCeiling(a.mechanisms)] - RANK[topCeiling(b.mechanisms)])
+                  .map((p) => (
+                    <PillarLine key={p.key} p={p} />
+                  ))}
+                <div className="pt-2.5 border-t border-white/[0.04]">
+                  <a
+                    href="/dashboard/theses"
+                    className="text-[11px] text-[#E6B94D] hover:brightness-110"
+                    style={MONO}
+                  >
+                    full history & evidence →
+                  </a>
                 </div>
-                {d.pillars.length === 0 ? (
-                  <p className="mt-3 text-[13px] text-[#7A7A7A]">No scored evidence on this thesis yet.</p>
-                ) : (
-                  d.pillars.map((p) => <PillarBlock key={p.key} p={p} />)
-                )}
-              </section>
-            ))}
-          </div>
-        </>
-      )}
+              </div>
+            </details>
+          );
+        })}
+
+        {rows.length === 0 && (
+          <p className="px-4 py-6 text-[13.5px] text-[#8A8A8A] m-0">No theses with scored evidence on this account.</p>
+        )}
+      </div>
+
+      <p className="mt-3 text-[11px] leading-[1.6] text-[#5F5F5F] m-0" style={MONO}>
+        {profile.email} · every status derives from cited evidence; open a row for the receipts.
+      </p>
     </div>
   );
 }
