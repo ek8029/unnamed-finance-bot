@@ -182,7 +182,14 @@ interface Position {
   plPct: number | null;
 }
 
-export async function ThesesV2Body({ email }: { email: string }) {
+export async function ThesesV2Body({
+  email,
+  labTags = true,
+}: {
+  email: string;
+  /** false on the real site: hides the proposal tag and the account footer. */
+  labTags?: boolean;
+}) {
   const target = email.trim().toLowerCase();
   if (!target) {
     return <p className="text-[14px] text-[#8A8A8A] m-0">Pick an account to see its theses.</p>;
@@ -257,7 +264,9 @@ export async function ThesesV2Body({ email }: { email: string }) {
     <div>
       <div className="flex items-baseline gap-3 flex-wrap">
         <h1 className="text-[28px] font-bold tracking-tight text-[#FAFAFA] m-0">Theses</h1>
-        <span className="ml-auto text-[11.5px] text-[#5F5F5F]" style={MONO}>v3.2 proposal · terminal table</span>
+        {labTags && (
+          <span className="ml-auto text-[11.5px] text-[#5F5F5F]" style={MONO}>v3.2 proposal · terminal table</span>
+        )}
       </div>
 
       {/* ── Summary band: the book, in dollars ── */}
@@ -385,7 +394,7 @@ export async function ThesesV2Body({ email }: { email: string }) {
       </div>
 
       <p className="mt-3 text-[12px] leading-[1.6] text-[#5F5F5F] m-0" style={MONO}>
-        {profile.email} · every status derives from cited evidence; open a row for the receipts.
+        {labTags ? `${profile.email} · ` : ''}every status derives from cited evidence; open a row for the receipts.
       </p>
     </div>
   );
