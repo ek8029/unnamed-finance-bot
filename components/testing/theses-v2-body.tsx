@@ -67,11 +67,59 @@ function pillarStateLine(p: ScoredPillar): { status: LadderStatus; line: string 
   return { status, line: `${mover?.label ?? 'multiple reports'} · ${corroboration}` };
 }
 
+/** One mechanism as one line: the story, how corroborated, receipts a click away. */
+function StoryLine({ m }: { m: ScoredPillar['mechanisms'][number] }) {
+  const adverse = m.maxStatus !== 'watch';
+  const tone = STATUS_TONE[m.maxStatus];
+  const corroboration =
+    m.sourceClasses.length >= 2
+      ? `${m.sourceClasses.length} independent source types`
+      : 'single source';
+
+  return (
+    <details className="group/story">
+      <summary className="list-none cursor-pointer flex items-baseline gap-2 py-1 hover:bg-white/[0.02] rounded px-1 -mx-1">
+        <span className="mt-[1px] w-1 h-1 rounded-full shrink-0" style={{ background: adverse ? tone : '#3F3F3F' }} />
+        <span className={`text-[12.5px] leading-[1.45] min-w-0 truncate ${adverse ? 'text-[#C8C8C8]' : 'text-[#8A8A8A]'}`}>
+          {m.label}
+        </span>
+        <span className="ml-auto shrink-0 text-[10.5px] text-[#5F5F5F]" style={MONO}>
+          {m.mentions} {m.mentions === 1 ? 'report' : 'reports'} · {corroboration}
+        </span>
+      </summary>
+      <div className="ml-3 pb-1.5 space-y-1">
+        {m.items.slice(0, 2).map((c) => (
+          <div key={c.id} className="text-[11.5px] leading-[1.5] text-[#6A6A6A]">
+            <span style={MONO} className="text-[10px] text-[#5F5F5F]">{c.dateISO} · </span>
+            {c.url ? (
+              <a href={c.url} target="_blank" rel="noopener noreferrer" className="hover:text-[#E6B94D] transition-colors">
+                {c.title}
+              </a>
+            ) : (
+              c.title
+            )}
+            {c.excerpt && (
+              <span className="block text-[11px] text-[#5F5F5F] italic mt-0.5">&ldquo;{c.excerpt.slice(0, 160)}&rdquo;</span>
+            )}
+          </div>
+        ))}
+        {m.items.length > 2 && (
+          <div className="text-[10.5px] text-[#5F5F5F]" style={MONO}>+{m.items.length - 2} more reports</div>
+        )}
+      </div>
+    </details>
+  );
+}
+
 function PillarLine({ p }: { p: ScoredPillar }) {
   const { status, line } = pillarStateLine(p);
-  // Freshest receipt: prefer the strongest adverse mechanism's newest item.
-  const mover = p.mechanisms.find((m) => m.maxStatus === status && status !== 'watch');
-  const receipt = mover?.items[0] ?? p.catches[0];
+
+  // The stories under this pillar, adverse first, quiet single-mention noise
+  // compressed to one count line. Mechanisms stay — as one clean line each.
+  const adverse = p.mechanisms.filter((m) => m.maxStatus !== 'watch');
+  const corroboratedQuiet = p.mechanisms.filter((m) => m.maxStatus === 'watch' && m.mentions > 1);
+  const singles = p.mechanisms.length - adverse.length - corroboratedQuiet.length;
+  const shown = [...adverse, ...corroboratedQuiet].slice(0, 4);
 
   return (
     <div className="py-2.5 border-t border-white/[0.04] first:border-t-0">
@@ -80,15 +128,16 @@ function PillarLine({ p }: { p: ScoredPillar }) {
         <span className="text-[13.5px] leading-[1.45] text-[#DADADA] min-w-0">{p.claim}</span>
       </div>
       <div className="ml-4 mt-0.5 text-[11.5px] text-[#7A7A7A]">{line}</div>
-      {receipt && (
-        <div className="ml-4 mt-1.5 text-[12px] leading-[1.5] text-[#6A6A6A]">
-          <span style={MONO} className="text-[10.5px] text-[#5F5F5F]">{receipt.dateISO} · </span>
-          {receipt.url ? (
-            <a href={receipt.url} target="_blank" rel="noopener noreferrer" className="hover:text-[#E6B94D] transition-colors">
-              {receipt.title}
-            </a>
-          ) : (
-            receipt.title
+
+      {shown.length > 0 && (
+        <div className="ml-4 mt-1.5">
+          {shown.map((m, i) => (
+            <StoryLine key={`${m.label}-${i}`} m={m} />
+          ))}
+          {singles > 0 && (
+            <div className="text-[10.5px] text-[#4A4A4A] py-1" style={MONO}>
+              +{singles} single mentions nothing has confirmed
+            </div>
           )}
         </div>
       )}
