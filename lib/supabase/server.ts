@@ -67,8 +67,14 @@ async function createImpersonatedClient(email: string): Promise<SupabaseClient |
     return qb;
   };
   client.auth.getUser = async () => ({ data: { user }, error: null });
+  // supabase-js sends the session's access_token as the Authorization header on
+  // every PostgREST request, so this MUST be a real JWT — the service key keeps
+  // reads on service-role access. ('lab' here = "Expected 3 parts in JWT" on
+  // every query, tier silently falling back to free.)
   client.auth.getSession = async () => ({
-    data: { session: { user, access_token: 'lab', token_type: 'bearer' } },
+    data: {
+      session: { user, access_token: process.env.SUPABASE_SERVICE_ROLE_KEY!, token_type: 'bearer' },
+    },
     error: null,
   });
   if (client.auth.mfa) {

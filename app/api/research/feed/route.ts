@@ -23,8 +23,10 @@ export async function GET() {
   if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const tier = await getUserTier(user.id);
-  // 200 with locked:true so the client can render a nudge instead of an error.
-  if (!tierAtLeast(tier, 'max')) {
+  // Pro and up: the rail's first real audience is the handful of pro users
+  // (Ben, Paul, the thesis cohort). 200 with locked:true so the client renders
+  // nothing instead of an error.
+  if (!tierAtLeast(tier, 'pro')) {
     return NextResponse.json({ locked: true, tier });
   }
 

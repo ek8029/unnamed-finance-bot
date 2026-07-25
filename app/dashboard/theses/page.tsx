@@ -194,8 +194,9 @@ export default function ThesesPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   // Standings view toggle: show only theses with a broken or weakening pillar.
   const [breakingOnly, setBreakingOnly] = useState(false);
-  // Presentation: narrative cards (default) vs the dense standings table.
-  const [view, setView] = useState<'cards' | 'standings'>('cards');
+  // Presentation: dense standings table (default — one scannable screen, no
+  // per-ticker scrolling; 2026-07-24 feedback) vs narrative cards.
+  const [view, setView] = useState<'cards' | 'standings'>('standings');
 
   const mountedRef = useRef(true);
   useEffect(() => {

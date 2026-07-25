@@ -29,7 +29,10 @@ export async function GET(request: Request) {
     let query = supabase
       .from('insights')
       .select('id, insight_type, priority, title, description, recommended_action, estimated_impact_amount, source_type, created_at, expires_at, snoozed_until, is_archived, is_dismissed, is_useful, related_entity_type, related_entity_ids')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      // Helm is an intelligence layer, not a budgeting app (2026-07-24):
+      // recurring-charge / spending / credit detections never reach a surface.
+      .in('insight_type', ['portfolio', 'market', 'tax']);
 
     if (status === 'snoozed') {
       // Currently snoozed items

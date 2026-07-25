@@ -191,33 +191,11 @@ export async function getValueLedger(
     }
   }
 
-  // Any insight that carries an estimated dollar impact — EXCEPT tax insights,
-  // which are the agent's stored version of the harvest number computed above.
-  // Counting both double-counts the tax savings (caught on Ben + Paul).
-  try {
-    const now = new Date().toISOString();
-    const { data } = await db
-      .from('insights')
-      .select('title, insight_type, estimated_impact_amount, created_at, expires_at, is_dismissed')
-      .eq('user_id', userId)
-      .eq('is_dismissed', false)
-      .neq('insight_type', 'tax')
-      .not('estimated_impact_amount', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(20);
-    for (const r of (data ?? []).filter((r) => !r.expires_at || String(r.expires_at) > now)) {
-      const amount = Math.round(Number(r.estimated_impact_amount));
-      if (!amount) continue;
-      lines.push({
-        label: String(r.title),
-        amount,
-        kind: 'insight',
-        date: String(r.created_at).slice(0, 10),
-      });
-    }
-  } catch {
-    /* insights unavailable — ledger still shows harvest line */
-  }
+  // Deliberately NOTHING else. Insight impact amounts are not surfaced value:
+  // tax insights duplicate the harvest line (double-count, caught on Ben+Paul)
+  // and spending detections would count a recurring charge as dollars Helm
+  // "surfaced" ($24,942 autopay, caught on test@ 2026-07-24). The surfaced
+  // column stays the one number that is deterministic and defensible: TLH.
 
   const surfacedTotal = lines.reduce((s, l) => s + l.amount, 0);
 

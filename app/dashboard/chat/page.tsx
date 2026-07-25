@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useTier } from '@/hooks/use-tier';
 import { FinancialDisclaimer } from '@/components/financial-disclaimer';
-import { ResearchPanel } from '@/components/research/research-panel';
+import { ResearchRail } from '@/components/research/research-rail';
 
 // ── Types ──
 
@@ -324,7 +324,9 @@ function ResearchChatContent() {
   );
 
   return (
-    <div className="flex flex-col h-full max-w-[860px] w-full mx-auto">
+    <div className="flex h-full w-full">
+    {/* Chat column — unchanged shipped layout; the research rail sits beside it */}
+    <div className="flex flex-col h-full max-w-[860px] w-full mx-auto min-w-0">
       {/* Header */}
       <div className="shrink-0 flex items-end justify-between gap-5 px-4 sm:px-7 pt-5 pb-3.5 border-b border-[var(--color-border-subtle)]">
         <div>
@@ -336,14 +338,6 @@ function ResearchChatContent() {
           </div>
         </div>
         <QuotaIndicator />
-      </div>
-
-      {/* Research layer, A-shape: standing line + ledger + finding chips that
-          seed questions into this chat. Compact by design — no feed. Renders
-          nothing below Max or with nothing to show, so this wrapper collapses
-          to zero height and the layout is unchanged. */}
-      <div className="shrink-0 px-4 sm:px-7">
-        <ResearchPanel onAsk={(q) => sendMessage(q)} />
       </div>
 
       {/* Messages Area */}
@@ -491,6 +485,11 @@ function ResearchChatContent() {
           <FinancialDisclaimer />
         </div>
       </div>
+    </div>
+
+    {/* Intelligence rail: where you stand, the TLH ledger, and the agent's
+        actual findings — each one seeds a question into this chat. */}
+    <ResearchRail onAsk={(q) => sendMessage(q)} />
     </div>
   );
 }

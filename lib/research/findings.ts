@@ -176,9 +176,12 @@ export async function getAgentFindings(
         .select('id, insight_type, title, description, estimated_impact_amount, created_at, expires_at, is_dismissed')
         .eq('user_id', userId)
         .eq('is_dismissed', false)
+        // Intelligence only, never budgeting: spending/credit detections
+        // ("new monthly charge to KFC") are not findings (2026-07-24).
+        .in('insight_type', ['portfolio', 'market', 'tax'])
         .order('created_at', { ascending: false })
         .limit(MAX_ACTIONS * 3);
-      // Browse mode pulls every type; a scoped question narrows to the topic's types.
+      // Browse mode keeps all intelligence types; a scoped question narrows further.
       if (insightTypes.length > 0 && !opts.browseAll) q = q.in('insight_type', insightTypes);
       const { data: ins } = await q;
       const now = new Date().toISOString();
