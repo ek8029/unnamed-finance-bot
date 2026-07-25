@@ -101,22 +101,22 @@ function StoryLine({ m }: { m: ScoredPillar['mechanisms'][number] }) {
     <details className="group/story">
       <summary className="list-none cursor-pointer flex items-baseline gap-2 py-1 hover:bg-white/[0.02] rounded px-1 -mx-1">
         <span className="mt-[1px] w-1 h-1 rounded-full shrink-0" style={{ background: adverse ? tone : '#3F3F3F' }} />
-        <span className={`text-[12.5px] leading-[1.45] min-w-0 truncate ${adverse ? 'text-[#C8C8C8]' : 'text-[#8A8A8A]'}`}>
+        <span className={`text-[13.5px] leading-[1.45] min-w-0 truncate ${adverse ? 'text-[#C8C8C8]' : 'text-[#8A8A8A]'}`}>
           {m.label}
         </span>
         {fresh && (
-          <span className="shrink-0 text-[8.5px] font-bold uppercase tracking-[0.14em] px-1 py-[1px] rounded bg-[rgba(230,185,77,0.15)] text-[#E6B94D]" style={MONO}>
+          <span className="shrink-0 text-[9.5px] font-bold uppercase tracking-[0.14em] px-1 py-[1px] rounded bg-[rgba(230,185,77,0.15)] text-[#E6B94D]" style={MONO}>
             new
           </span>
         )}
-        <span className="ml-auto shrink-0 text-[10.5px] text-[#5F5F5F]" style={MONO}>
+        <span className="ml-auto shrink-0 text-[11.5px] text-[#5F5F5F]" style={MONO}>
           {m.mentions} {m.mentions === 1 ? 'report' : 'reports'} · {corroboration}
         </span>
       </summary>
       <div className="ml-3 pb-1.5 space-y-1">
         {m.items.slice(0, 2).map((c) => (
-          <div key={c.id} className="text-[11.5px] leading-[1.5] text-[#6A6A6A]">
-            <span style={MONO} className="text-[10px] text-[#5F5F5F]">{c.dateISO} · </span>
+          <div key={c.id} className="text-[12.5px] leading-[1.5] text-[#6A6A6A]">
+            <span style={MONO} className="text-[11px] text-[#5F5F5F]">{c.dateISO} · </span>
             {c.url ? (
               <a href={c.url} target="_blank" rel="noopener noreferrer" className="hover:text-[#E6B94D] transition-colors">
                 {c.title}
@@ -125,12 +125,12 @@ function StoryLine({ m }: { m: ScoredPillar['mechanisms'][number] }) {
               c.title
             )}
             {c.excerpt && (
-              <span className="block text-[11px] text-[#5F5F5F] italic mt-0.5">&ldquo;{c.excerpt.slice(0, 160)}&rdquo;</span>
+              <span className="block text-[12px] text-[#5F5F5F] italic mt-0.5">&ldquo;{c.excerpt.slice(0, 160)}&rdquo;</span>
             )}
           </div>
         ))}
         {m.items.length > 2 && (
-          <div className="text-[10.5px] text-[#5F5F5F]" style={MONO}>+{m.items.length - 2} more reports</div>
+          <div className="text-[11.5px] text-[#5F5F5F]" style={MONO}>+{m.items.length - 2} more reports</div>
         )}
       </div>
     </details>
@@ -148,12 +148,12 @@ function PillarLine({ p }: { p: ScoredPillar }) {
     <div className="py-2.5 border-t border-white/[0.04] first:border-t-0">
       <div className="flex items-baseline gap-2.5">
         <span className="mt-[1px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: STATUS_TONE[status] }} />
-        <span className="text-[13.5px] leading-[1.45] text-[#DADADA] min-w-0">{p.claim}</span>
+        <span className="text-[14.5px] leading-[1.45] text-[#DADADA] min-w-0">{p.claim}</span>
       </div>
-      <div className="ml-4 mt-0.5 text-[11.5px] text-[#7A7A7A]">{line}</div>
+      <div className="ml-4 mt-0.5 text-[12.5px] text-[#7A7A7A]">{line}</div>
       {p.breaksIf && (
-        <div className="ml-4 mt-1 text-[11.5px] leading-[1.5] text-[#8A8A8A]">
-          <span className="text-[#E6B94D] uppercase tracking-[0.08em] text-[9.5px] font-semibold" style={MONO}>
+        <div className="ml-4 mt-1 text-[12.5px] leading-[1.5] text-[#8A8A8A]">
+          <span className="text-[#E6B94D] uppercase tracking-[0.08em] text-[10.5px] font-semibold" style={MONO}>
             Breaks if{' '}
           </span>
           {p.breaksIf}
@@ -166,7 +166,7 @@ function PillarLine({ p }: { p: ScoredPillar }) {
             <StoryLine key={`${m.label}-${i}`} m={m} />
           ))}
           {singles > 0 && (
-            <div className="text-[10.5px] text-[#4A4A4A] py-1" style={MONO}>
+            <div className="text-[11.5px] text-[#4A4A4A] py-1" style={MONO}>
               +{singles} single mentions nothing has confirmed
             </div>
           )}
@@ -256,8 +256,8 @@ export async function ThesesV2Body({ email }: { email: string }) {
   return (
     <div>
       <div className="flex items-baseline gap-3 flex-wrap">
-        <h1 className="text-[26px] font-bold tracking-tight text-[#FAFAFA] m-0">Theses</h1>
-        <span className="ml-auto text-[10.5px] text-[#5F5F5F]" style={MONO}>v3.2 proposal · terminal table</span>
+        <h1 className="text-[28px] font-bold tracking-tight text-[#FAFAFA] m-0">Theses</h1>
+        <span className="ml-auto text-[11.5px] text-[#5F5F5F]" style={MONO}>v3.2 proposal · terminal table</span>
       </div>
 
       {/* ── Summary band: the book, in dollars ── */}
@@ -292,20 +292,20 @@ export async function ThesesV2Body({ email }: { email: string }) {
           },
         ].map((s) => (
           <div key={s.label} className="bg-[#0A0A0A] px-4 py-3.5">
-            <div className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[#5F5F5F]" style={MONO}>
+            <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#5F5F5F]" style={MONO}>
               {s.label}
             </div>
-            <div className="mt-1 text-[19px] font-bold leading-none" style={{ ...MONO, color: s.tone }}>
+            <div className="mt-1 text-[22px] font-bold leading-none" style={{ ...MONO, color: s.tone }}>
               {s.value}
             </div>
-            <div className="mt-1 text-[10.5px] text-[#6A6A6A] truncate" style={MONO}>{s.sub}</div>
+            <div className="mt-1 text-[11.5px] text-[#6A6A6A] truncate" style={MONO}>{s.sub}</div>
           </div>
         ))}
       </div>
 
       {/* ── The table ── */}
       <div className="mt-4 rounded-lg border border-white/[0.08] bg-[#0A0A0A] overflow-hidden">
-        <div className="flex items-center gap-3 px-4 py-2 border-b border-white/[0.06] text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[#5F5F5F]" style={MONO}>
+        <div className="flex items-center gap-3 px-4 py-2 border-b border-white/[0.06] text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#5F5F5F]" style={MONO}>
           <span className="w-[64px] shrink-0">Ticker</span>
           <span className="w-[110px] shrink-0 text-right">Position · P/L</span>
           <span className="w-[118px] shrink-0">Status</span>
@@ -322,36 +322,36 @@ export async function ThesesV2Body({ email }: { email: string }) {
             <details key={d.ticker} className="group border-b border-white/[0.05] last:border-b-0">
               <summary className="list-none cursor-pointer flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors">
                 <span className="w-[64px] shrink-0 flex items-center gap-1.5">
-                  <span className="text-[14.5px] font-semibold text-[#FAFAFA]" style={MONO}>{d.ticker}</span>
+                  <span className="text-[15.5px] font-semibold text-[#FAFAFA]" style={MONO}>{d.ticker}</span>
                   {hasFresh && <span className="w-1 h-1 rounded-full bg-[#E6B94D]" title="new evidence this week" />}
                 </span>
                 <span className="w-[110px] shrink-0 text-right">
                   {pos ? (
                     <>
-                      <span className="block text-[12.5px] text-[#DADADA] leading-tight" style={MONO}>{money(pos.value)}</span>
+                      <span className="block text-[13.5px] text-[#DADADA] leading-tight" style={MONO}>{money(pos.value)}</span>
                       {pos.pl != null && (
-                        <span className="block text-[10.5px] leading-tight" style={{ ...MONO, color: pos.pl >= 0 ? '#4ADE80' : '#F87171' }}>
+                        <span className="block text-[11.5px] leading-tight" style={{ ...MONO, color: pos.pl >= 0 ? '#4ADE80' : '#F87171' }}>
                           {pos.pl >= 0 ? '+' : ''}{money(pos.pl).replace('$-', '-$')}
                         </span>
                       )}
                     </>
                   ) : (
-                    <span className="text-[10.5px] text-[#5F5F5F]" style={MONO}>not held</span>
+                    <span className="text-[11.5px] text-[#5F5F5F]" style={MONO}>not held</span>
                   )}
                 </span>
                 <span className="w-[118px] shrink-0 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_TONE[ceiling] }} />
-                  <span className="text-[11.5px] font-semibold" style={{ ...MONO, color: STATUS_TONE[ceiling] }}>
+                  <span className="text-[12.5px] font-semibold" style={{ ...MONO, color: STATUS_TONE[ceiling] }}>
                     {STATUS_WORD[ceiling]}
                   </span>
                 </span>
-                <span className="w-[76px] shrink-0 text-right text-[11.5px]" style={MONO}>
+                <span className="w-[76px] shrink-0 text-right text-[12.5px]" style={MONO}>
                   <span className="text-[#4ADE80]">{t.supports}</span>
                   <span className="text-[#5F5F5F]"> / </span>
                   <span className={t.against > 0 ? 'text-[#F87171]' : 'text-[#5F5F5F]'}>{t.against}</span>
                 </span>
-                <span className="flex-1 min-w-0 truncate text-[13px] text-[#B8B8B8]">{headline(d)}</span>
-                <span className="w-[64px] shrink-0 text-right text-[10.5px] text-[#5F5F5F]" style={MONO}>
+                <span className="flex-1 min-w-0 truncate text-[14px] text-[#B8B8B8]">{headline(d)}</span>
+                <span className="w-[64px] shrink-0 text-right text-[11.5px] text-[#5F5F5F]" style={MONO}>
                   {nextEarn ? nextEarn.slice(5) : '—'}
                 </span>
               </summary>
@@ -359,7 +359,7 @@ export async function ThesesV2Body({ email }: { email: string }) {
               <div className="px-4 pb-3 pl-[76px] bg-[#080808]">
                 {/* the thesis, in the user's own words when they wrote them */}
                 {statement && (
-                  <p className="pt-2.5 text-[12.5px] leading-[1.55] text-[#9A9A9A] italic m-0">&ldquo;{statement}&rdquo;</p>
+                  <p className="pt-2.5 text-[13.5px] leading-[1.55] text-[#9A9A9A] italic m-0">&ldquo;{statement}&rdquo;</p>
                 )}
                 {[...d.pillars]
                   .sort((a, b) => RANK[topCeiling(a.mechanisms)] - RANK[topCeiling(b.mechanisms)])
@@ -367,10 +367,10 @@ export async function ThesesV2Body({ email }: { email: string }) {
                     <PillarLine key={p.key} p={p} />
                   ))}
                 <div className="pt-2.5 border-t border-white/[0.04] flex items-center gap-4">
-                  <a href="/dashboard/theses" className="text-[11px] text-[#E6B94D] hover:brightness-110" style={MONO}>
+                  <a href="/dashboard/theses" className="text-[12px] text-[#E6B94D] hover:brightness-110" style={MONO}>
                     full history & evidence →
                   </a>
-                  <span className="ml-auto text-[10px] text-[#4A4A4A]" style={MONO}>
+                  <span className="ml-auto text-[11px] text-[#4A4A4A]" style={MONO}>
                     {d.dedupedRows} receipts on file · last scan {d.lastScan ? d.lastScan.slice(0, 10) : 'never'}
                   </span>
                 </div>
@@ -380,11 +380,11 @@ export async function ThesesV2Body({ email }: { email: string }) {
         })}
 
         {rows.length === 0 && (
-          <p className="px-4 py-6 text-[13.5px] text-[#8A8A8A] m-0">No theses with scored evidence on this account.</p>
+          <p className="px-4 py-6 text-[14.5px] text-[#8A8A8A] m-0">No theses with scored evidence on this account.</p>
         )}
       </div>
 
-      <p className="mt-3 text-[11px] leading-[1.6] text-[#5F5F5F] m-0" style={MONO}>
+      <p className="mt-3 text-[12px] leading-[1.6] text-[#5F5F5F] m-0" style={MONO}>
         {profile.email} · every status derives from cited evidence; open a row for the receipts.
       </p>
     </div>

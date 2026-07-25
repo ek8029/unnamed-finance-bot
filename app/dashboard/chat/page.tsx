@@ -19,6 +19,8 @@ import {
 import { useTier } from '@/hooks/use-tier';
 import { FinancialDisclaimer } from '@/components/financial-disclaimer';
 import { ResearchRail } from '@/components/research/research-rail';
+import { GroundedAnswerView } from '@/components/research/grounded-answer';
+import type { GroundedAnswer } from '@/lib/research/types';
 
 // ── Types ──
 
@@ -372,7 +374,20 @@ function ResearchChatContent() {
                   </div>
                 ) : (
                   <div className="w-full sm:max-w-[88%]">
-                    {message.analysis ? (
+                    {message.analysis && (message.analysis as { type?: string }).type === 'grounded_answer' ? (
+                      <div>
+                        <HelmLabel />
+                        <div
+                          className="px-4 py-3.5 rounded-lg"
+                          style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
+                        >
+                          <GroundedAnswerView
+                            answer={message.analysis as unknown as GroundedAnswer}
+                            onFollowUp={sendMessage}
+                          />
+                        </div>
+                      </div>
+                    ) : message.analysis ? (
                       <AnalysisCard analysis={message.analysis} onFollowUp={sendMessage} />
                     ) : (
                       <div>

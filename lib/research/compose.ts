@@ -136,7 +136,12 @@ export async function composeAnswer(
     parsed = { answer: raw };
   }
 
-  const answer = String(parsed.answer ?? '').trim();
+  // The model sometimes "cites" a context section name ("[HARVESTABLE LOSSES]")
+  // instead of a finding id. Those aren't citations — strip them from the prose
+  // rather than render bracket noise. Real ids ([catch:...], [inv:...]) survive.
+  const answer = String(parsed.answer ?? '')
+    .replace(/\s?\[(?![a-z_]+:)[^\]]*\]/g, '')
+    .trim();
   // Trust ids the model listed, plus any [id] tokens it left inline in the prose.
   const citedIds = [...new Set([...extractCitedIds(parsed.citedIds), ...extractCitedIds(answer)])];
   const citations = validateCitations(citedIds, ctx.findings);

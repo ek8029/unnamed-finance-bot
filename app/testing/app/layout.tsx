@@ -49,7 +49,7 @@ export default async function LabShellLayout({ children }: { children: React.Rea
 
       {/* content */}
       <main className="flex-1 min-w-0 px-5 sm:px-8 py-8">
-        <div className="max-w-3xl">{children}</div>
+        <div className="max-w-[1180px]">{children}</div>
       </main>
     </div>
   );

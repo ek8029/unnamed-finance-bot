@@ -9,7 +9,9 @@ import { TAX_RATE } from '@/lib/financial-config';
 import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import { getAgentFindings } from '@/lib/research/findings';
-import { detectTopics } from '@/lib/research/query-parse';
+import { detectTopics, wantsGroundedAnswer } from '@/lib/research/query-parse';
+import { retrieveContext } from '@/lib/research/retrieve';
+import { composeAnswer } from '@/lib/research/compose';
 import OpenAI from 'openai';
 
 function getOpenAIClient() {
@@ -578,6 +580,39 @@ export async function POST(req: NextRequest) {
   const tickers = extractTickers(userQuery);
   const queryType = classifyQuery(userQuery, tickers);
   const responseType = RESPONSE_TYPE_MAP[queryType];
+
+  // ── Grounded conversational path (2026-07-25) ──
+  // Own-book, topic and finding-seeded questions get the grounded engine:
+  // retrieve the agent's real findings + the whole book + tax context, compose
+  // prose that cites findings by id, drop any citation that wasn't retrieved.
+  // Clean single-ticker analysis keeps its card — that template earns its keep.
+  // This is what makes the chat a conversation instead of a form.
+  const groundedTopics = detectTopics(userQuery);
+  if (queryType !== 'stock_analysis' && wantsGroundedAnswer(userQuery, groundedTopics)) {
+    try {
+      const context = await retrieveContext(supabase, user.id, userQuery);
+      const history = Array.isArray(conversationHistory)
+        ? conversationHistory
+            .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+            .slice(-6)
+        : [];
+      const grounded = await composeAnswer(context, history);
+      if (grounded.answer) {
+        await recordAnalysisUsage(user.id);
+        return NextResponse.json({
+          analysis: grounded,
+          queryType,
+          rawQuery: userQuery,
+          quota: quota.limit != null
+            ? { used: quota.used + 1, limit: quota.limit, remaining: Math.max(0, (quota.remaining ?? 0) - 1) }
+            : undefined,
+        });
+      }
+    } catch (err) {
+      // Grounded path is additive: any failure falls through to the card flow.
+      console.error('grounded path failed, falling back:', err instanceof Error ? err.message : err);
+    }
+  }
 
   // ── Fetch data based on query type ──
   let dataContext = '';

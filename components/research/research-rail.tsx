@@ -52,34 +52,34 @@ function FindingRow({ f, onAsk }: { f: Finding; onAsk: (q: string) => void }) {
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: tone }} />
           {f.ticker && (
-            <span className="text-[11px] font-semibold text-[var(--color-text-primary)]" style={MONO}>{f.ticker}</span>
+            <span className="text-[12px] font-semibold text-[var(--color-text-primary)]" style={MONO}>{f.ticker}</span>
           )}
-          <span className="text-[9.5px] uppercase tracking-[0.12em] text-[var(--color-text-muted)]" style={MONO}>
+          <span className="text-[10.5px] uppercase tracking-[0.12em] text-[var(--color-text-muted)]" style={MONO}>
             {FINDING_KIND_LABEL[f.kind]}
           </span>
-          <span className="ml-auto text-[10px] text-[var(--color-text-muted)] shrink-0" style={MONO}>{f.date ?? ''}</span>
+          <span className="ml-auto text-[11px] text-[var(--color-text-muted)] shrink-0" style={MONO}>{f.date ?? ''}</span>
         </div>
-        <p className="mt-1 text-[12.5px] leading-[1.45] text-[var(--color-text-secondary)] m-0 line-clamp-2">
+        <p className="mt-1 text-[13.5px] leading-[1.45] text-[var(--color-text-secondary)] m-0 line-clamp-2">
           {f.summary}
         </p>
       </summary>
       <div className="px-3.5 pb-3 -mt-0.5">
         {f.quote && (
-          <p className="text-[11.5px] leading-[1.5] text-[var(--color-text-muted)] border-l-2 pl-2.5 m-0 italic" style={{ borderColor: `${tone}55` }}>
+          <p className="text-[12.5px] leading-[1.5] text-[var(--color-text-muted)] border-l-2 pl-2.5 m-0 italic" style={{ borderColor: `${tone}55` }}>
             &ldquo;{f.quote.slice(0, 220)}&rdquo;
           </p>
         )}
         <div className="mt-2 flex items-center gap-3">
-          <span className="text-[10.5px] text-[var(--color-text-muted)] min-w-0 truncate" style={MONO}>{f.source}</span>
+          <span className="text-[11.5px] text-[var(--color-text-muted)] min-w-0 truncate" style={MONO}>{f.source}</span>
           {f.url && (
-            <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-[10.5px] text-[var(--color-gold)] hover:brightness-110 shrink-0" style={MONO}>
+            <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-[11.5px] text-[var(--color-gold)] hover:brightness-110 shrink-0" style={MONO}>
               source ↗
             </a>
           )}
           <button
             type="button"
             onClick={() => onAsk(questionForFinding(f))}
-            className="ml-auto text-[10.5px] font-semibold text-[var(--color-gold)] hover:brightness-110 shrink-0"
+            className="ml-auto text-[11.5px] font-semibold text-[var(--color-gold)] hover:brightness-110 shrink-0"
             style={MONO}
           >
             ask →
@@ -131,17 +131,17 @@ export function ResearchRail({ onAsk }: { onAsk: (question: string) => void }) {
       {/* where you stand */}
       {standing && standing.checks.length > 0 && (
         <div className="px-4 pt-5 pb-4 border-b border-[var(--color-border-subtle)]">
-          <div className="text-[9.5px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)] mb-2" style={MONO}>
+          <div className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)] mb-2" style={MONO}>
             Where you stand
           </div>
-          <p className="text-[13.5px] leading-[1.5] font-semibold text-[var(--color-text-primary)] m-0">
+          <p className="text-[14.5px] leading-[1.5] font-semibold text-[var(--color-text-primary)] m-0">
             {standing.headline}
           </p>
           <div className="mt-2.5 space-y-1.5">
             {standing.checks.map((c) => (
               <div key={c.label} className="flex items-baseline gap-2">
                 <span className="mt-[1px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: STATUS_TONE[c.status] }} />
-                <span className="text-[11.5px] leading-[1.45] text-[var(--color-text-secondary)]">{c.detail}</span>
+                <span className="text-[12.5px] leading-[1.45] text-[var(--color-text-secondary)]">{c.detail}</span>
               </div>
             ))}
           </div>
@@ -170,7 +170,7 @@ export function ResearchRail({ onAsk }: { onAsk: (question: string) => void }) {
       {/* the agent's actual findings */}
       {findings.length > 0 && (
         <div className="flex-1">
-          <div className="px-4 pt-4 pb-2 text-[9.5px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]" style={MONO}>
+          <div className="px-4 pt-4 pb-2 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]" style={MONO}>
             What Helm found · {findings.length}
           </div>
           <div>
