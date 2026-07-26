@@ -31,13 +31,20 @@ export default async function ThesesTablePage() {
 
   return (
     <main className="mx-auto px-4 sm:px-7 py-[26px] pb-[60px] max-w-[1240px]">
-      <div className="mb-3 flex items-center gap-3">
+      <div className="mb-3 flex items-center gap-4">
         <Link
           href="/dashboard/theses"
           className="text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
           style={MONO}
         >
           ← classic view
+        </Link>
+        <Link
+          href="/dashboard/theses/overview"
+          className="text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+          style={MONO}
+        >
+          overview view
         </Link>
       </div>
       <ThesesV2Body email={user.email} labTags={false} />

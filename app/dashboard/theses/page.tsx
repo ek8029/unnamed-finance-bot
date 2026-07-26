@@ -671,6 +671,13 @@ export default function ThesesPage() {
                 >
                   table · new
                 </Link>
+                <Link
+                  href="/dashboard/theses/overview"
+                  className="px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9A9A9A] hover:text-[#CFCFCF] transition-colors border-l border-white/[0.12]"
+                  style={MONO}
+                >
+                  overview · new
+                </Link>
               </div>
             </div>
             <span className="font-mono text-[10.5px] tracking-[0.08em] text-[#5A5A5A]" style={MONO}>
