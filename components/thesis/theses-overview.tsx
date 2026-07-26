@@ -217,6 +217,11 @@ export function ThesesOverview({
                 {r.statement && r.status !== 'watch' && (
                   <p className="pt-2.5 text-[13.5px] leading-[1.55] text-[#9A9A9A] italic m-0">&ldquo;{r.statement}&rdquo;</p>
                 )}
+                {r.pillars.length === 0 && (
+                  <p className="pt-2.5 text-[13px] text-[#7A7A7A] m-0">
+                    No evidence filed yet — Helm scans this thesis daily and the first receipts land here.
+                  </p>
+                )}
                 {r.pillars.map((p, i) => (
                   <Pillar key={i} p={p} />
                 ))}

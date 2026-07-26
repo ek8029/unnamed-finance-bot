@@ -25,7 +25,7 @@ export const metadata = { title: 'Theses · Overview' };
 export const dynamic = 'force-dynamic';
 
 const MONO = { fontFamily: 'var(--font-mono)' } as const;
-const MAX_THESES = 8;
+const MAX_THESES = 30;
 
 interface SynthClusterRow {
   driver: string;
@@ -61,7 +61,7 @@ export default async function ThesesOverviewPage() {
   );
 
   const tickers = [...new Set((theses ?? []).map((t) => String(t.ticker).toUpperCase()))].slice(0, MAX_THESES);
-  const data = (await Promise.all(tickers.map((t) => getScoringThesisData(t)))).filter((d) => d.pillars.length > 0);
+  const data = await Promise.all(tickers.map((t) => getScoringThesisData(t)));
 
   const earnings = new Map<string, string | null>();
   await Promise.allSettled(

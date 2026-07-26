@@ -15,7 +15,7 @@ import { convergence, type LadderStatus } from '@/lib/content/mechanism-cluster'
 import { getEdgarEarnings } from '@/lib/earnings-edgar';
 
 const MONO = { fontFamily: 'var(--font-mono)' } as const;
-const MAX_THESES = 8;
+const MAX_THESES = 30;
 
 /* Plain-English status vocabulary — the ladder stays internal. */
 const STATUS_WORD: Record<LadderStatus, string> = {
@@ -227,7 +227,7 @@ export async function ThesesV2Body({
   );
 
   const tickers = [...new Set((theses ?? []).map((t) => String(t.ticker).toUpperCase()))].slice(0, MAX_THESES);
-  const data = (await Promise.all(tickers.map((t) => getScoringThesisData(t)))).filter((d) => d.pillars.length > 0);
+  const data = await Promise.all(tickers.map((t) => getScoringThesisData(t)));
 
   // Next earnings per ticker (EDGAR, cached ~1h). Best effort.
   const earnings = new Map<string, string | null>();
@@ -369,6 +369,11 @@ export async function ThesesV2Body({
                 {/* the thesis, in the user's own words when they wrote them */}
                 {statement && (
                   <p className="pt-2.5 text-[13.5px] leading-[1.55] text-[#9A9A9A] italic m-0">&ldquo;{statement}&rdquo;</p>
+                )}
+                {d.pillars.length === 0 && (
+                  <p className="pt-2.5 text-[13px] text-[#7A7A7A] m-0">
+                    No evidence filed yet — Helm scans this thesis daily and the first receipts land here.
+                  </p>
                 )}
                 {[...d.pillars]
                   .sort((a, b) => RANK[topCeiling(a.mechanisms)] - RANK[topCeiling(b.mechanisms)])
