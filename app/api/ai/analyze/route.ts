@@ -9,7 +9,7 @@ import { TAX_RATE } from '@/lib/financial-config';
 import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import { getAgentFindings } from '@/lib/research/findings';
-import { detectTopics, wantsGroundedAnswer } from '@/lib/research/query-parse';
+import { detectTopics, isAdviceAsk, wantsGroundedAnswer } from '@/lib/research/query-parse';
 import { retrieveContext } from '@/lib/research/retrieve';
 import { composeAnswer } from '@/lib/research/compose';
 import OpenAI from 'openai';
@@ -598,7 +598,7 @@ export async function POST(req: NextRequest) {
             .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
             .slice(-6)
         : [];
-      const grounded = await composeAnswer(context, history);
+      const grounded = await composeAnswer(context, history, { adviceAsk: isAdviceAsk(userQuery) });
       if (grounded.answer) {
         await recordAnalysisUsage(user.id);
         return NextResponse.json({

@@ -79,10 +79,22 @@ export function wantsGroundedAnswer(query: string, topics: Topic[]): boolean {
   // Findings vocabulary: questions about what the agent has surfaced are
   // own-book by construction, even with no pronoun ("which ticker is
   // challenged?", "any theses breaking?"). Stems, same as the topic patterns.
-  if (/\b(challeng|weaken|breaking|broken|under pressure|in trouble|thes[ie]s|flagged|surfaced|finding)/i.test(query)) {
+  // Naming Helm itself ("what did Helm find?") is the same class of question.
+  if (/\b(challeng|weaken|breaking|broken|under pressure|in trouble|thes[ie]s|flagged|surfaced|finding|helm)/i.test(query)) {
     return true;
   }
   // "which ticker/position/holding ..." has no referent except the user's own
   // book — a cold analysis question names its ticker instead of asking which.
   return /\bwhich (ticker|position|holding|stock)s?\b/i.test(query);
+}
+
+/**
+ * An advice-shaped ask ("should I sell my AAPL?"). The composer can't answer
+ * it as asked — detection lets the route tell the model to say so up front and
+ * lay out the position's state instead of drifting into "factors to consider".
+ */
+export function isAdviceAsk(query: string): boolean {
+  return /\bshould (?:i|we)\b.*\b(sell|buy|trim|add|exit|hold|dump|keep|get out|double down)\b|\bworth (?:selling|buying|holding|keeping)\b/i.test(
+    query,
+  );
 }

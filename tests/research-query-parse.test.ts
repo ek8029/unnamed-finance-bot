@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractTickers, detectTopics, topicToInsightTypes, wantsGroundedAnswer } from '@/lib/research/query-parse';
+import { extractTickers, detectTopics, isAdviceAsk, topicToInsightTypes, wantsGroundedAnswer } from '@/lib/research/query-parse';
 
 describe('extractTickers', () => {
   it('picks explicit caps tickers and drops stopwords', () => {
@@ -62,5 +62,23 @@ describe('wantsGroundedAnswer', () => {
   it('is true for which-position phrasing', () => {
     expect(wantsGroundedAnswer('which holding is doing worst?', [])).toBe(true);
     expect(wantsGroundedAnswer('which positions have findings against them?', [])).toBe(true);
+  });
+  it('is true when the question names Helm', () => {
+    expect(wantsGroundedAnswer('what did helm find this week?', [])).toBe(true);
+    expect(wantsGroundedAnswer('has Helm noticed anything?', [])).toBe(true);
+  });
+});
+
+describe('isAdviceAsk', () => {
+  it('catches should-I decision asks', () => {
+    expect(isAdviceAsk('Should I sell my AAPL?')).toBe(true);
+    expect(isAdviceAsk('should we buy more nvda here?')).toBe(true);
+    expect(isAdviceAsk('should I just hold through earnings?')).toBe(true);
+    expect(isAdviceAsk('is it worth selling now?')).toBe(true);
+  });
+  it('does not fire on state questions', () => {
+    expect(isAdviceAsk('which ticker is challenged and by what?')).toBe(false);
+    expect(isAdviceAsk('how much could I harvest in tax losses?')).toBe(false);
+    expect(isAdviceAsk('should I worry about concentration?')).toBe(false);
   });
 });
