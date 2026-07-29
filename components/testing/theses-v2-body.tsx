@@ -203,9 +203,10 @@ export async function ThesesV2Body({
     .maybeSingle();
   if (!profile) return <p className="text-[14px] text-[#FAFAFA] m-0">No account for {target}</p>;
 
-  const [{ data: theses }, { data: holdings }] = await Promise.all([
+  const [{ data: theses }, { data: holdings }, { data: clusterRow }] = await Promise.all([
     db.from('theses').select('ticker, tracked, notes').eq('user_id', profile.id).order('tracked', { ascending: false }),
     db.from('holdings').select('ticker, total_value, unrealised_gain_loss, unrealised_gain_loss_pct').eq('user_id', profile.id),
+    db.from('thesis_clusters').select('clusters').eq('user_id', profile.id).maybeSingle(),
   ]);
 
   // The user's money behind each thesis (multiple lots fold into one line).
@@ -312,6 +313,57 @@ export async function ThesesV2Body({
         ))}
       </div>
 
+      {/* ── Shared forces: cross-thesis drivers, absorbed from the overview
+             (council verdict 2026-07-27). Server-rendered chips; rationale one
+             click down; only shown when a driver links 2+ theses on screen. ── */}
+      {(() => {
+        interface SynthClusterRow {
+          driver: string;
+          pillars: { ticker: string }[];
+          rationale: string;
+        }
+        const statusOfTicker = new Map(rows.map((r) => [r.d.ticker, r.ceiling]));
+        const forces = (((clusterRow?.clusters as SynthClusterRow[] | null) ?? [])
+          .map((c) => ({
+            name: c.driver,
+            rationale: c.rationale,
+            tickers: [...new Set((c.pillars ?? []).map((p) => p.ticker.toUpperCase()))].filter((t) =>
+              statusOfTicker.has(t),
+            ),
+          }))
+          .filter((c) => c.tickers.length >= 2)
+          .map((c) => ({
+            ...c,
+            tone: c.tickers.reduce<LadderStatus>(
+              (worst, t) => (RANK[statusOfTicker.get(t) ?? 'watch'] < RANK[worst] ? (statusOfTicker.get(t) ?? 'watch') : worst),
+              'watch',
+            ),
+          })));
+        if (forces.length === 0) return null;
+        return (
+          <div className="mt-4">
+            <div className="flex items-baseline gap-2">
+              <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#5F5F5F]" style={MONO}>
+                Shared forces
+              </span>
+              <span className="text-[12px] text-[#6A6A6A]">several theses hang on the same driver</span>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {forces.map((f) => (
+                <details key={f.name} className="rounded-lg border border-white/[0.08] bg-[#0A0A0A]">
+                  <summary className="list-none cursor-pointer px-3 py-2 hover:bg-white/[0.02] flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_TONE[f.tone] }} />
+                    <span className="text-[13.5px] font-semibold text-[#DADADA]">{f.name}</span>
+                    <span className="text-[11.5px] text-[#6A6A6A]" style={MONO}>{f.tickers.join(' · ')}</span>
+                  </summary>
+                  <p className="px-3 pb-2.5 text-[12.5px] leading-[1.5] text-[#8A8A8A] max-w-[520px] m-0">{f.rationale}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── The table ── */}
       <div className="mt-4 rounded-lg border border-white/[0.08] bg-[#0A0A0A] overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-2 border-b border-white/[0.06] text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#5F5F5F]" style={MONO}>
@@ -381,7 +433,7 @@ export async function ThesesV2Body({
                     <PillarLine key={p.key} p={p} />
                   ))}
                 <div className="pt-2.5 border-t border-white/[0.04] flex items-center gap-4">
-                  <a href="/dashboard/theses" className="text-[12px] text-[#E6B94D] hover:brightness-110" style={MONO}>
+                  <a href="/dashboard/theses/classic" className="text-[12px] text-[#E6B94D] hover:brightness-110" style={MONO}>
                     full history & evidence →
                   </a>
                   <span className="ml-auto text-[11px] text-[#4A4A4A]" style={MONO}>

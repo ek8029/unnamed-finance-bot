@@ -226,7 +226,7 @@ export function ThesesOverview({
                   <Pillar key={i} p={p} />
                 ))}
                 <div className="pt-2.5 border-t border-white/[0.04] flex items-center gap-4">
-                  <a href="/dashboard/theses" className="text-[12px] text-[#E6B94D] hover:brightness-110" style={MONO}>
+                  <a href="/dashboard/theses/classic" className="text-[12px] text-[#E6B94D] hover:brightness-110" style={MONO}>
                     full history & evidence →
                   </a>
                   <span className="ml-auto text-[11px] text-[#4A4A4A]" style={MONO}>

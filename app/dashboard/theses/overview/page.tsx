@@ -157,7 +157,7 @@ export default async function ThesesOverviewPage() {
     <main className="mx-auto px-4 sm:px-7 py-[26px] pb-[60px] max-w-[1240px]">
       <div className="mb-3 flex items-center gap-4">
         <Link
-          href="/dashboard/theses"
+          href="/dashboard/theses/classic"
           className="text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
           style={MONO}
         >
