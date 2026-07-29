@@ -175,6 +175,20 @@ export async function composeAnswer(
     ? parsed.followUps.filter((x): x is string => typeof x === 'string').slice(0, 3)
     : [];
 
+  // Fill remaining follow-up slots from the highest-signal findings the answer
+  // did NOT cite — deterministic next questions that keep the thread on the
+  // agent's real work instead of dead-ending.
+  if (followUps.length < 3) {
+    const citedSet = new Set(citations.map((f) => f.id));
+    for (const f of ctx.findings) {
+      if (followUps.length >= 3) break;
+      if (citedSet.has(f.id) || !f.ticker) continue;
+      if (f.verdict !== 'contradicts' && f.kind !== 'action') continue;
+      if (followUps.some((q) => q.includes(f.ticker as string))) continue;
+      followUps.push(`What's challenging ${f.ticker}?`);
+    }
+  }
+
   return {
     type: 'grounded_answer',
     answer,

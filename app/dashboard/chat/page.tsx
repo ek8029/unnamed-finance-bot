@@ -21,6 +21,7 @@ import { FinancialDisclaimer } from '@/components/financial-disclaimer';
 import { ResearchRail } from '@/components/research/research-rail';
 import { GroundedAnswerView } from '@/components/research/grounded-answer';
 import type { GroundedAnswer } from '@/lib/research/types';
+import { chipsFromFindings } from '@/lib/research/chips';
 import posthog from 'posthog-js';
 
 // ── Types ──
@@ -85,6 +86,20 @@ function ResearchChatContent() {
       setLiveQuota({ used: quota.used, limit: quota.limit, remaining: quota.remaining ?? 0 });
     }
   }, [quota]);
+
+  // Findings-driven opening chips: when the agent has real findings on this
+  // book, the empty state suggests questions those findings can actually
+  // answer, in plain language, instead of the generic list.
+  const [liveChips, setLiveChips] = useState<string[] | null>(null);
+  useEffect(() => {
+    fetch('/api/research/feed')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d || d.locked || !Array.isArray(d.findings) || d.findings.length === 0) return;
+        setLiveChips(chipsFromFindings(d.findings, d.ledger));
+      })
+      .catch(() => {});
+  }, []);
 
   // Hydrate from session storage on mount — skip if we have a ?q= auto-query
   useEffect(() => {
@@ -325,7 +340,7 @@ function ResearchChatContent() {
           Ask about any stock, or ask Helm to analyze your portfolio with real dollar amounts from your connected accounts. Every answer is sourced.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {SUGGESTED_QUERIES.map((q) => (
+          {(liveChips ?? SUGGESTED_QUERIES).map((q) => (
             <button
               key={q}
               onClick={() => sendMessage(q)}

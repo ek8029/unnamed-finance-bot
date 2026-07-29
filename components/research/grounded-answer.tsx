@@ -5,13 +5,17 @@
 // uses). The citations ARE the point — the answer is only as trustworthy as the
 // findings it stood on, so they are shown, not hidden.
 
+import { useId } from 'react';
 import type { GroundedAnswer } from '@/lib/research/types';
 import { FindingCard } from './finding-card';
 
 const MONO = { fontFamily: 'var(--font-mono)' } as const;
 
-/** Rewrite [catch:uuid] tokens in the prose to [1], [2]… against the cited set. */
-function renderProse(answer: string, refIndex: Map<string, number>) {
+/**
+ * Rewrite [catch:uuid] tokens in the prose to tappable [1], [2]… refs that
+ * scroll to their receipt card — the cite-gate made visible.
+ */
+function renderProse(answer: string, refIndex: Map<string, number>, uid: string) {
   const parts = answer.split(/(\[[a-z_]+:[^\]]+\])/gi);
   return parts.map((part, i) => {
     const m = part.match(/^\[([a-z_]+:[^\]]+)\]$/i);
@@ -19,8 +23,18 @@ function renderProse(answer: string, refIndex: Map<string, number>) {
     const n = refIndex.get(m[1].trim());
     if (!n) return null; // dropped, unvalidated citation
     return (
-      <sup key={i} className="text-[10px] font-semibold text-[#E6B94D]" style={MONO}>
-        [{n}]
+      <sup key={i}>
+        <button
+          type="button"
+          title="view the source"
+          onClick={() =>
+            document.getElementById(`${uid}-ref-${n}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+          className="text-[10px] font-semibold text-[#E6B94D] hover:brightness-125 cursor-pointer"
+          style={MONO}
+        >
+          [{n}]
+        </button>
       </sup>
     );
   });
@@ -33,6 +47,7 @@ export function GroundedAnswerView({
   answer: GroundedAnswer;
   onFollowUp: (q: string) => void;
 }) {
+  const uid = useId();
   const refIndex = new Map(answer.citations.map((f, i) => [f.id, i + 1]));
 
   return (
@@ -44,7 +59,7 @@ export function GroundedAnswerView({
       )}
 
       <div className="text-[15px] leading-[1.6] text-[#DADADA] whitespace-pre-wrap">
-        {renderProse(answer.answer, refIndex)}
+        {renderProse(answer.answer, refIndex, uid)}
       </div>
 
       {answer.citations.length > 0 && (
@@ -54,7 +69,9 @@ export function GroundedAnswerView({
           </div>
           <div className="space-y-2">
             {answer.citations.map((f, i) => (
-              <FindingCard key={f.id} finding={f} index={i + 1} />
+              <div key={f.id} id={`${uid}-ref-${i + 1}`}>
+                <FindingCard finding={f} index={i + 1} />
+              </div>
             ))}
           </div>
         </div>
