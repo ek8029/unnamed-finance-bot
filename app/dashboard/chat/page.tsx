@@ -318,12 +318,6 @@ function ResearchChatContent() {
   const EmptyState = () => (
     <div className="flex-1 flex items-center justify-center px-6 min-h-0">
       <div className="text-center max-w-xl mx-auto">
-        <div
-          className="w-12 h-12 rounded-lg mx-auto mb-5 flex items-center justify-center"
-          style={{ background: 'var(--color-gold-surface)', border: '1px solid var(--color-gold-border)' }}
-        >
-          <Sparkles className="w-5 h-5 text-[var(--color-gold)]" strokeWidth={1.6} />
-        </div>
         <h2 className="text-[22px] font-bold tracking-[-0.02em] text-[var(--color-text-primary)] mb-2">
           Your portfolio, in plain language
         </h2>
