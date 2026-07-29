@@ -73,5 +73,16 @@ export function topicToInsightTypes(topics: Topic[]): string[] {
  */
 export function wantsGroundedAnswer(query: string, topics: Topic[]): boolean {
   if (topics.length > 0) return true;
-  return /\b(my|mine|i own|i hold|why is|what did you|what changed|what have you|should i worry|am i)\b/i.test(query);
+  if (/\b(my|mine|i own|i hold|why is|what did you|what changed|what have you|should i worry|am i)\b/i.test(query)) {
+    return true;
+  }
+  // Findings vocabulary: questions about what the agent has surfaced are
+  // own-book by construction, even with no pronoun ("which ticker is
+  // challenged?", "any theses breaking?"). Stems, same as the topic patterns.
+  if (/\b(challeng|weaken|breaking|broken|under pressure|in trouble|thes[ie]s|flagged|surfaced|finding)/i.test(query)) {
+    return true;
+  }
+  // "which ticker/position/holding ..." has no referent except the user's own
+  // book — a cold analysis question names its ticker instead of asking which.
+  return /\bwhich (ticker|position|holding|stock)s?\b/i.test(query);
 }

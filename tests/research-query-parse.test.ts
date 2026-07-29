@@ -52,4 +52,15 @@ describe('wantsGroundedAnswer', () => {
   it('is false for a cold ticker analysis with no topic', () => {
     expect(wantsGroundedAnswer('bull case on the stock', [])).toBe(false);
   });
+  it('is true for findings-vocabulary questions without own-book pronouns', () => {
+    expect(wantsGroundedAnswer('which ticker is challenged and by what?', [])).toBe(true);
+    expect(wantsGroundedAnswer('what is weakening right now?', [])).toBe(true);
+    expect(wantsGroundedAnswer('any theses breaking?', [])).toBe(true);
+    expect(wantsGroundedAnswer('what has helm flagged lately?', [])).toBe(true);
+    expect(wantsGroundedAnswer('anything under pressure?', [])).toBe(true);
+  });
+  it('is true for which-position phrasing', () => {
+    expect(wantsGroundedAnswer('which holding is doing worst?', [])).toBe(true);
+    expect(wantsGroundedAnswer('which positions have findings against them?', [])).toBe(true);
+  });
 });

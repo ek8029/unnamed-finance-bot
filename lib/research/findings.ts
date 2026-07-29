@@ -168,8 +168,11 @@ export async function getAgentFindings(
   }
 
   // ── Actions inbox (insights) ──
+  // Always pulled: a topic-less, ticker-less question ("which ticker is
+  // challenged?") is a whole-book question, and the weakening/broken-thesis
+  // alerts live here. Capped at MAX_ACTIONS and intelligence-only regardless.
   const insightTypes = topicToInsightTypes(topics);
-  if (insightTypes.length > 0 || wanted.size > 0 || opts.browseAll) {
+  {
     try {
       let q = db
         .from('insights')
