@@ -21,6 +21,7 @@ import { FinancialDisclaimer } from '@/components/financial-disclaimer';
 import { ResearchRail } from '@/components/research/research-rail';
 import { GroundedAnswerView } from '@/components/research/grounded-answer';
 import type { GroundedAnswer } from '@/lib/research/types';
+import posthog from 'posthog-js';
 
 // ── Types ──
 
@@ -164,6 +165,26 @@ function ResearchChatContent() {
       // Update live quota from response
       if (data.quota) {
         setLiveQuota({ used: data.quota.used, limit: data.quota.limit, remaining: data.quota.remaining });
+      }
+
+      // Instrument the grounded path: did the question get a grounded answer,
+      // and did that answer actually lean on the agent's findings?
+      const groundedAnswer =
+        data.analysis && (data.analysis as { type?: string }).type === 'grounded_answer'
+          ? (data.analysis as GroundedAnswer)
+          : null;
+      if (groundedAnswer) {
+        try {
+          posthog.capture('research_question_asked', { cited: groundedAnswer.citations.length });
+          if (groundedAnswer.citations.length > 0) {
+            posthog.capture('research_finding_referenced', {
+              count: groundedAnswer.citations.length,
+              kinds: [...new Set(groundedAnswer.citations.map((c) => c.kind))],
+            });
+          }
+        } catch {
+          /* analytics only */
+        }
       }
 
       const assistantMessage: Message = {

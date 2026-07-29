@@ -4,7 +4,7 @@ import { getPortfolioSummary, formatPortfolioContext, type PortfolioSummary } fr
 import { generateTaxReport, type TaxHarvestReport } from '@/lib/tax-analysis';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
-import { checkAnalysisQuota, recordAnalysisUsage } from '@/lib/tier';
+import { checkAnalysisQuota, recordAnalysisUsage, tierAtLeast } from '@/lib/tier';
 import { TAX_RATE } from '@/lib/financial-config';
 import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
@@ -549,12 +549,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Check daily analysis quota (free: 3/day, pro: unlimited)
+  // Check daily analysis quota (free: 5/day, pro: fair-use ceiling)
   const quota = await checkAnalysisQuota(user.id);
   if (!quota.allowed) {
     return NextResponse.json(
       {
-        error: 'Daily analysis limit reached. Upgrade to Pro for unlimited analyses.',
+        error: tierAtLeast(quota.tier, 'pro')
+          ? 'Daily analysis limit reached. Your quota resets at midnight UTC.'
+          : 'Daily analysis limit reached. Upgrade to Pro for unlimited analyses.',
         code: 'QUOTA_EXCEEDED',
         quota: { used: quota.used, limit: quota.limit, remaining: 0 },
       },

@@ -2,8 +2,8 @@
  * User tier & quota utilities.
  *
  * Free tier: 5 AI analyses per day, basic alerts, core dashboard.
- * Pro tier:  Unlimited analyses, full intelligence feed,
- *            tax-loss harvesting, earnings impact, Portfolio Wrapped.
+ * Pro tier:  Unlimited analyses (fair-use daily ceiling), full intelligence
+ *            feed, tax-loss harvesting, earnings impact, Portfolio Wrapped.
  */
 
 import { createClient } from '@/lib/supabase/server';
@@ -12,6 +12,10 @@ import { tierAtLeast, TIER_RANK, type Tier } from '@/lib/tier-shared';
 export { tierAtLeast, TIER_RANK, type Tier };
 
 const FREE_DAILY_ANALYSIS_LIMIT = 5;
+// Fair-use ceiling for Pro: effectively unlimited for a human, but bounds the
+// cost of the grounded chat path (a real LLM call per question) against loops
+// or abuse.
+const PRO_DAILY_ANALYSIS_LIMIT = 100;
 
 // ── Features gated behind Pro ──
 export const PRO_FEATURES = [
@@ -68,14 +72,12 @@ export interface QuotaCheck {
   used: number;
   limit: number | null; // null = unlimited
   remaining: number | null;
+  tier: Tier;
 }
 
 export async function checkAnalysisQuota(userId: string): Promise<QuotaCheck> {
   const tier = await getUserTier(userId);
-
-  if (tierAtLeast(tier, 'pro')) {
-    return { allowed: true, used: 0, limit: null, remaining: null };
-  }
+  const dailyLimit = tierAtLeast(tier, 'pro') ? PRO_DAILY_ANALYSIS_LIMIT : FREE_DAILY_ANALYSIS_LIMIT;
 
   const supabase = await createClient();
   const todayStart = new Date();
@@ -88,13 +90,14 @@ export async function checkAnalysisQuota(userId: string): Promise<QuotaCheck> {
     .gte('created_at', todayStart.toISOString());
 
   const used = count ?? 0;
-  const remaining = Math.max(0, FREE_DAILY_ANALYSIS_LIMIT - used);
+  const remaining = Math.max(0, dailyLimit - used);
 
   return {
-    allowed: used < FREE_DAILY_ANALYSIS_LIMIT,
+    allowed: used < dailyLimit,
     used,
-    limit: FREE_DAILY_ANALYSIS_LIMIT,
+    limit: dailyLimit,
     remaining,
+    tier,
   };
 }
 
