@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractCitedIds, validateCitations } from '@/lib/research/grounding';
+import { expandGroupedCitations, extractCitedIds, validateCitations } from '@/lib/research/grounding';
 import type { Finding } from '@/lib/research/types';
 
 const F = (id: string): Finding => ({
@@ -46,5 +46,20 @@ describe('validateCitations', () => {
 
   it('returns [] when nothing valid is cited', () => {
     expect(validateCitations(['nope:1'], findings)).toEqual([]);
+  });
+});
+
+describe('expandGroupedCitations', () => {
+  it('splits a comma-grouped bracket into single-id brackets', () => {
+    expect(expandGroupedCitations('Supported [catch:aa, catch:bb].')).toBe('Supported [catch:aa][catch:bb].');
+  });
+
+  it('handles three grouped ids and uneven spacing', () => {
+    expect(expandGroupedCitations('[action:a,action:b , inv:c]')).toBe('[action:a][action:b][inv:c]');
+  });
+
+  it('leaves single citations and plain text alone', () => {
+    const text = 'One catch [catch:aa] and prose, with a comma.';
+    expect(expandGroupedCitations(text)).toBe(text);
   });
 });

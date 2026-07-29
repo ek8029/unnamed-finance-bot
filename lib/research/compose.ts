@@ -9,7 +9,7 @@ import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import { hasAdviceLanguage } from '@/lib/investigation-memo';
 import { FINDING_KIND_LABEL, type Finding, type GroundedAnswer, type ResearchContext } from './types';
-import { extractCitedIds, validateCitations } from './grounding';
+import { expandGroupedCitations, extractCitedIds, validateCitations } from './grounding';
 
 let _client: OpenAI | null = null;
 function getClient(): OpenAI {
@@ -30,12 +30,17 @@ You are a senior analyst at Helm Intelligence. You answer the user's question ab
 
 GROUNDING RULES (non-negotiable):
 1. Answer ONLY from the provided context. Never invent a finding, a number, a filing, or a quote.
-2. When you rely on a FINDING, cite it inline by its id in square brackets, e.g. [catch:1a2b]. Cite every finding you use.
+2. When you rely on a FINDING, cite it inline by its id in square brackets, copying the id character-for-character from the context. Never shorten, merge, or invent an id — a citation whose id is not copied exactly gets discarded. Cite every finding you use, and only findings (never a context section name or a number).
 3. If the findings do not cover the question, say so plainly ("Helm hasn't surfaced a finding on that yet") and answer only from the holdings and market data you were given, clearly as general context.
 4. Use specific numbers from the context. Prefer the user's real dollar values and the finding quotes over generalities.
 5. Describe state and evidence. Do not tell the user to buy, sell, trim, add, or exit. No advisability judgments.
 6. The VALUE SURFACED block is dollars Helm FLAGGED (e.g. potential tax savings), not investment returns or performance. Never say Helm "made" or "earned" the user money; say "surfaced" or "flagged". Tax figures are estimates before wash-sale checks, not tax advice.
-7. Be concise and direct, like a research note. 2 to 5 short paragraphs or tight bullets.
+
+SHAPE RULES (these matter as much as grounding — a templated answer reads as machine output and kills trust):
+7. Match the answer's size and structure to the question. A narrow factual ask ("how much could I harvest?") gets one or two direct sentences with the number up front — not paragraphs. Only a genuinely broad ask earns multiple paragraphs. Use a list only when the content is truly a list.
+8. Lead with the answer itself. Never open by restating the question or describing the portfolio before answering ("Your portfolio remains stable..." as an opener is banned).
+9. Banned as sentence or paragraph openers: "Notably", "Additionally", "Furthermore", "Overall", "In terms of", "Looking ahead", "It's worth noting", "It's important to". Connect ideas the way a person talking would, or just start the next sentence.
+10. No closing summary sentence. When the substance is done, stop. Never end with a reassurance ("your portfolio remains resilient") or a recap.
 
 Respond with valid JSON, no markdown fences:
 {
@@ -44,6 +49,17 @@ Respond with valid JSON, no markdown fences:
   "followUps": ["a natural next question the user might ask", "another"]
 }
 followUps are questions the USER would type next, informational not directive.`;
+
+/**
+ * Drop a trailing recap sentence the model tacked on despite the prompt
+ * ("Overall, ..."). Deterministic backstop for the shape rules — only the
+ * final sentence, only when it opens with a recap marker.
+ */
+export function stripClosingRecap(text: string): string {
+  return text
+    .replace(/(?:^|(?<=[.!?])\s+)(?:Overall|In summary|In conclusion|All in all)\b[^.!?]*[.!?]\s*$/i, '')
+    .trimEnd();
+}
 
 export function formatFinding(f: Finding): string {
   const bits = [`[${f.id}]`, `(${FINDING_KIND_LABEL[f.kind]}`];
@@ -139,9 +155,11 @@ export async function composeAnswer(
   // The model sometimes "cites" a context section name ("[HARVESTABLE LOSSES]")
   // instead of a finding id. Those aren't citations — strip them from the prose
   // rather than render bracket noise. Real ids ([catch:...], [inv:...]) survive.
-  const answer = String(parsed.answer ?? '')
-    .replace(/\s?\[(?![a-z_]+:)[^\]]*\]/g, '')
-    .trim();
+  const answer = stripClosingRecap(
+    expandGroupedCitations(String(parsed.answer ?? ''))
+      .replace(/\s?\[(?![a-z_]+:)[^\]]*\]/g, '')
+      .trim(),
+  );
   // Trust ids the model listed, plus any [id] tokens it left inline in the prose.
   const citedIds = [...new Set([...extractCitedIds(parsed.citedIds), ...extractCitedIds(answer)])];
   const citations = validateCitations(citedIds, ctx.findings);

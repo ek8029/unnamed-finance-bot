@@ -51,7 +51,7 @@ export interface InvestigationTrigger {
 
 /** Advice-language lint: memos describe state, never action. */
 export function hasAdviceLanguage(text: string): boolean {
-  return /\b(?:buy|sell(?!-)|trim|exit the position|add to the position|consider (?:selling|buying|trimming|adding|exiting))\b/i.test(text);
+  return /\b(?:buy|sell(?!-)|trim|exit the position|add to the position|advis(?:able|ed)|consider (?:selling|buying|trimming|adding|exiting))\b/i.test(text);
 }
 
 interface EvidenceRow {

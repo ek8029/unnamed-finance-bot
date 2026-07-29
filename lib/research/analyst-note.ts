@@ -9,11 +9,11 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
 import { INJECTION_GUARD } from '@/lib/prompt-safety';
 import { hasAdviceLanguage } from '@/lib/investigation-memo';
-import { formatFinding } from './compose';
+import { formatFinding, stripClosingRecap } from './compose';
 import { getRecentFindings } from './findings';
 import { getPortfolioBrief, getTaxContext, getValueLedger } from './account';
 import { computeStanding } from './standing';
-import { extractCitedIds, validateCitations } from './grounding';
+import { expandGroupedCitations, extractCitedIds, validateCitations } from './grounding';
 import type { AnalystNote, Finding } from './types';
 
 let _client: OpenAI | null = null;
@@ -41,9 +41,15 @@ Shape of the note, in plain prose (no markdown headings, no bullets unless a lis
 2. What the agent found this week and what it means for their actual positions — real dollar values, specific findings.
 3. Close with what next week holds (earnings on file, pillars under pressure, anything unresolved). If the week was quiet, say so honestly — a quiet week is a finding, not a failure.
 
+VOICE RULES (a templated memo reads as machine output — the whole point is that it reads written):
+- Open with the specific thing itself, not a portfolio status report. "This week, your portfolio..." and "Your portfolio remained stable..." are banned openers. Let the week's most concrete fact carry the first sentence.
+- Banned as sentence or paragraph openers: "Notably", "Additionally", "Furthermore", "Overall", "In terms of", "Looking ahead", "It's worth noting". Connect ideas the way a person would, or just start the next sentence.
+- No closing reassurance or recap ("your portfolio remains resilient"). End on the concrete forward item and stop.
+- Structure should follow the week's content, not a fixed rubric: a week dominated by one finding is one long thread, a scattered week is short strands. No two weeks should read alike.
+
 GROUNDING RULES (non-negotiable):
 1. Write ONLY from the provided context. Never invent a finding, a number, a filing, or a quote.
-2. When you rely on a FINDING, cite it inline by its id in square brackets, e.g. [catch:1a2b]. Cite every finding you use.
+2. When you rely on a FINDING, cite it inline by its id in square brackets, copying the id character-for-character from the context. Never shorten, merge, or invent an id — a citation whose id is not copied exactly gets discarded. Cite every finding you use.
 3. Use the user's real dollar values and the finding quotes over generalities.
 4. Describe state and evidence. Do not tell the user to buy, sell, trim, add, or exit. No advisability judgments.
 5. The VALUE SURFACED block is dollars Helm FLAGGED (e.g. potential tax savings), not investment returns. Never say Helm "made" or "earned" the user money; say "surfaced" or "flagged". Tax figures are estimates before wash-sale checks, not tax advice.
@@ -126,29 +132,58 @@ export async function composeWeeklyNote(
     parts.push(`=== STANDING FINDINGS (older, cite by id only if needed) ===\n${background.map(formatFinding).join('\n\n')}`);
   }
 
-  const completion = await getClient().chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
+  // gpt-4o, not mini: the note is ~8 calls a WEEK (one per pro user), and the
+  // memo's written voice is the product. Mini kept ignoring the voice rules
+  // (skeleton connectors, recap closers) and mangling citation UUIDs; the chat
+  // path stays on mini because its volume economics are different.
+  //
+  // One retry when the draft trips the advice guard: this memo is a push
+  // artifact, so a flagged draft gets rewritten once before we settle.
+  let parsed: { title?: string; body?: string; citedIds?: unknown } | null = null;
+  let body = '';
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const messages: OpenAI.ChatCompletionMessageParam[] = [
       { role: 'system', content: NOTE_SYSTEM_PROMPT },
       { role: 'user', content: `${parts.join('\n\n')}\n\nWrite this week's note.` },
-    ],
-    temperature: 0.4,
-    max_tokens: 1100,
-    response_format: { type: 'json_object' },
-  });
+    ];
+    if (attempt > 0 && body) {
+      messages.push(
+        { role: 'assistant', content: JSON.stringify(parsed) },
+        {
+          role: 'user',
+          content:
+            'That draft used advice language (words like "advised", "caution is advised", buy/sell/trim). Rewrite the note describing state and evidence only — no advisability judgments anywhere. Keep the same facts and citations.',
+        },
+      );
+    }
 
-  const raw = completion.choices[0]?.message?.content ?? '';
-  let parsed: { title?: string; body?: string; citedIds?: unknown };
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return null;
+    const completion = await getClient().chat.completions.create({
+      model: 'gpt-4o',
+      messages,
+      temperature: 0.6,
+      max_tokens: 1600,
+      response_format: { type: 'json_object' },
+    });
+
+    const raw = completion.choices[0]?.message?.content ?? '';
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      console.error(
+        `[analyst-note] JSON parse failed (finish_reason=${completion.choices[0]?.finish_reason}, ${raw.length} chars)`,
+      );
+      return null;
+    }
+
+    body = stripClosingRecap(
+      expandGroupedCitations(String(parsed?.body ?? ''))
+        .replace(/\s?\[(?![a-z_]+:)[^\]]*\]/g, '')
+        .trim(),
+    );
+    if (!body) return null;
+    if (!hasAdviceLanguage(body)) break;
   }
-
-  const body = String(parsed.body ?? '')
-    .replace(/\s?\[(?![a-z_]+:)[^\]]*\]/g, '')
-    .trim();
-  if (!body) return null;
+  if (!parsed || !body) return null;
 
   const citedIds = [...new Set([...extractCitedIds(parsed.citedIds), ...extractCitedIds(body)])];
   const citations = validateCitations(citedIds, given);

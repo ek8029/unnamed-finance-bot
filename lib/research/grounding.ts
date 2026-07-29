@@ -5,6 +5,23 @@
 
 import type { Finding } from './types';
 
+/**
+ * Models sometimes group citations into one bracket ("[catch:a, catch:b]").
+ * Expand those into adjacent single-id brackets so extraction and rendering
+ * treat each citation on its own; a grouped token would otherwise fail the id
+ * lookup and silently drop every citation in it.
+ */
+export function expandGroupedCitations(text: string): string {
+  return text.replace(/\[([a-z_]+:[^\]]+)\]/gi, (m, inner: string) => {
+    if (!inner.includes(',')) return m;
+    return inner
+      .split(/\s*,\s*/)
+      .filter(Boolean)
+      .map((id) => `[${id.trim()}]`)
+      .join('');
+  });
+}
+
 /** Pull `[id]`-style tokens out of a model's raw citation list or prose. */
 export function extractCitedIds(raw: unknown): string[] {
   if (Array.isArray(raw)) {
