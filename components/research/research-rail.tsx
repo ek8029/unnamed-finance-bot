@@ -12,10 +12,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import posthog from 'posthog-js';
-import type { Finding, ValueLedger } from '@/lib/research/types';
+import type { AnalystNote, Finding, ValueLedger } from '@/lib/research/types';
 import type { Standing } from '@/lib/research/standing';
 import { FINDING_KIND_LABEL } from '@/lib/research/types';
 import { ValueLedgerCard } from './value-ledger-card';
+import { AnalystNoteCard } from './analyst-note-card';
 
 const MONO = { fontFamily: 'var(--font-mono)' } as const;
 
@@ -37,6 +38,7 @@ interface FeedResponse {
   findings?: Finding[];
   ledger?: ValueLedger;
   standing?: Standing;
+  note?: AnalystNote | null;
 }
 
 function questionForFinding(f: Finding): string {
@@ -122,12 +124,30 @@ export function ResearchRail({ onAsk }: { onAsk: (question: string) => void }) {
   const findings = data.findings ?? [];
   const ledger = data.ledger;
   const standing = data.standing;
+  const note = data.note ?? null;
   const hasAnything =
+    note != null ||
     findings.length > 0 || (ledger?.surfacedTotal ?? 0) > 0 || (ledger?.realizedTotal ?? 0) > 0 || (standing?.checks.length ?? 0) > 0;
   if (!hasAnything) return null;
 
   return (
     <aside className="hidden xl:flex flex-col w-[340px] shrink-0 border-l border-[var(--color-border-subtle)] h-full overflow-y-auto custom-scrollbar">
+      {/* the weekly note — the agent's written memo, the rail's headline */}
+      {note && (
+        <div className="border-b border-[var(--color-border-subtle)]">
+          <AnalystNoteCard
+            note={note}
+            onOpen={() => {
+              try {
+                posthog.capture('research_note_opened', { weekStart: note.weekStart });
+              } catch {
+                /* analytics only */
+              }
+            }}
+          />
+        </div>
+      )}
+
       {/* where you stand */}
       {standing && standing.checks.length > 0 && (
         <div className="px-4 pt-5 pb-4 border-b border-[var(--color-border-subtle)]">

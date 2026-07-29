@@ -11,6 +11,7 @@ import { getUserTier, tierAtLeast } from '@/lib/tier';
 import { getPortfolioBrief, getValueLedger } from '@/lib/research/account';
 import { getRecentFindings } from '@/lib/research/findings';
 import { computeStanding } from '@/lib/research/standing';
+import { getLatestNote } from '@/lib/research/analyst-note';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,11 +32,12 @@ export async function GET() {
   }
 
   const brief = await getPortfolioBrief(supabase, user.id);
-  const [findings, ledger] = await Promise.all([
+  const [findings, ledger, note] = await Promise.all([
     getRecentFindings(supabase, user.id),
     getValueLedger(supabase, user.id, brief),
+    getLatestNote(supabase, user.id),
   ]);
   const standing = computeStanding(brief, findings, ledger);
 
-  return NextResponse.json({ locked: false, tier, findings, ledger, standing });
+  return NextResponse.json({ locked: false, tier, findings, ledger, standing, note });
 }

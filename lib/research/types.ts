@@ -45,6 +45,23 @@ export interface Finding {
 
 export type Topic = 'tax' | 'risk' | 'concentration' | 'earnings' | 'performance';
 
+/**
+ * The weekly analyst note: a written memo composed once a week from the
+ * agent's findings on the user's book. Citations are snapshots taken at
+ * compose time so the receipts render forever, unchanged.
+ */
+export interface AnalystNote {
+  id: string;
+  /** Monday of the covered week, YYYY-MM-DD. */
+  weekStart: string;
+  title: string;
+  /** Prose with inline [kind:id] citations, same grammar as GroundedAnswer. */
+  body: string;
+  citations: Finding[];
+  createdAt: string;
+  adviceFlag?: boolean;
+}
+
 // The book read and the value ledger live in the data layer (service-role
 // reads); re-exported here so consumers get them from one place.
 export type { PortfolioBrief, BriefHolding, ValueLedger, LedgerLine } from './account';

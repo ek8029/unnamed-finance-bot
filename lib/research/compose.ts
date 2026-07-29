@@ -45,7 +45,7 @@ Respond with valid JSON, no markdown fences:
 }
 followUps are questions the USER would type next, informational not directive.`;
 
-function formatFinding(f: Finding): string {
+export function formatFinding(f: Finding): string {
   const bits = [`[${f.id}]`, `(${FINDING_KIND_LABEL[f.kind]}`];
   if (f.ticker) bits.push(`· ${f.ticker}`);
   if (f.verdict) bits.push(`· ${f.verdict}`);

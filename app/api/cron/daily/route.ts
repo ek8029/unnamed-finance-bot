@@ -4,10 +4,12 @@ import { syncPlaidItem, computeSnapshots, type PlaidItemForSync, type SyncResult
 import { refreshMarketPrices, enrichMarketData, refreshMarketNews, updatePortfolioPerformance } from '@/lib/market-sync';
 import { generateInsights } from '@/lib/insights-engine';
 import { runDigestCron } from '@/lib/digest-cron';
+import { composeWeeklyNote, saveAnalystNote } from '@/lib/research/analyst-note';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-export const maxDuration = 60;
+// 120 leaves headroom for the Friday analyst-note pass (an LLM call per pro user).
+export const maxDuration = 120;
 
 interface CronSyncResult extends SyncResult {
   user_id: string;
@@ -263,6 +265,50 @@ export async function GET(request: Request) {
       }
     }
 
+    // ── Weekly analyst note (Fridays ET) — the agent writes each pro user a
+    //    short memo from the week's findings. Capped and per-user tolerant so
+    //    a bad book can't take the cron down. ──
+    let analystNotesWritten = 0;
+    const etWeekday = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short' }).format(new Date());
+    if (etWeekday === 'Fri') {
+      try {
+        // Non-free subscriptions, minus expired never-paid trials (mirrors
+        // getSubscriptionInfo, which is session-bound and unusable here).
+        const { data: subs } = await serviceClient
+          .from('user_subscriptions')
+          .select('user_id, tier, trial_ends_at, stripe_subscription_id')
+          .neq('tier', 'free');
+        const eligible = (subs ?? [])
+          .filter((s) => {
+            if (s.trial_ends_at && !s.stripe_subscription_id) {
+              return new Date(s.trial_ends_at).getTime() > Date.now();
+            }
+            return true;
+          })
+          .slice(0, 8);
+
+        for (const sub of eligible) {
+          try {
+            const draft = await composeWeeklyNote(serviceClient, sub.user_id);
+            if (!draft) continue;
+            const { error } = await saveAnalystNote(serviceClient, sub.user_id, draft);
+            if (error) {
+              log.push(`[note] Save failed for ${String(sub.user_id).slice(0, 8)}...: ${error.message}`);
+              // Table not migrated yet — no point trying the rest.
+              if (error.message.includes('analyst_notes')) break;
+              continue;
+            }
+            analystNotesWritten++;
+            log.push(`[note] Wrote weekly note for ${String(sub.user_id).slice(0, 8)}... (${draft.citations.length} citations)`);
+          } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
+            log.push(`[note] Compose failed for ${String(sub.user_id).slice(0, 8)}...: ${msg}`);
+          }
+        }
+      } catch (error) {
+        console.error('[cron/daily] Weekly note pass failed:', error);
+      }
+    }
 
     const summary = {
       success: true,
@@ -272,6 +318,7 @@ export async function GET(request: Request) {
       users_processed: userItemMap.size,
       prices_refreshed: pricesRefreshed,
       insights_generated: insightsGenerated,
+      analyst_notes_written: analystNotesWritten,
       drip_emails_sent: dripResult.sent,
       digests_generated: digestResult.generated,
       log,
