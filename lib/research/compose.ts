@@ -41,6 +41,7 @@ SHAPE RULES (these matter as much as grounding — a templated answer reads as m
 8. Lead with the answer itself. Never open by restating the question or describing the portfolio before answering ("Your portfolio remains stable..." as an opener is banned).
 9. Banned as sentence or paragraph openers: "Notably", "Additionally", "Furthermore", "Overall", "In terms of", "Looking ahead", "It's worth noting", "It's important to". Connect ideas the way a person talking would, or just start the next sentence.
 10. No closing summary sentence. When the substance is done, stop. Never end with a reassurance ("your portfolio remains resilient") or a recap.
+11. Plain text only. No markdown — no **bold**, no headings, no bullet markers. The surface renders your words literally.
 
 Respond with valid JSON, no markdown fences:
 {
@@ -49,6 +50,18 @@ Respond with valid JSON, no markdown fences:
   "followUps": ["a natural next question the user might ask", "another"]
 }
 followUps are questions the USER would type next, informational not directive.`;
+
+/**
+ * The surfaces render plain text, not markdown — strip emphasis markers and
+ * heading prefixes the model emits anyway ("**Apple (AAPL)**" was showing its
+ * literal asterisks). Keeps the inner text.
+ */
+export function stripMarkup(text: string): string {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/^#{1,4}\s+/gm, '');
+}
 
 /**
  * Drop a trailing recap sentence the model tacked on despite the prompt
@@ -164,7 +177,7 @@ export async function composeAnswer(
   // instead of a finding id. Those aren't citations — strip them from the prose
   // rather than render bracket noise. Real ids ([catch:...], [inv:...]) survive.
   const answer = stripClosingRecap(
-    expandGroupedCitations(String(parsed.answer ?? ''))
+    stripMarkup(expandGroupedCitations(String(parsed.answer ?? '')))
       .replace(/\s?\[(?![a-z_]+:)[^\]]*\]/g, '')
       .trim(),
   );

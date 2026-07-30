@@ -9,7 +9,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
 import { INJECTION_GUARD } from '@/lib/prompt-safety';
 import { hasAdviceLanguage } from '@/lib/investigation-memo';
-import { formatFinding, stripClosingRecap } from './compose';
+import { formatFinding, stripClosingRecap, stripMarkup } from './compose';
 import { getRecentFindings } from './findings';
 import { getPortfolioBrief, getTaxContext, getValueLedger } from './account';
 import { computeStanding } from './standing';
@@ -47,6 +47,7 @@ VOICE RULES (a templated memo reads as machine output — the whole point is tha
 - Banned as sentence or paragraph openers: "Notably", "Additionally", "Furthermore", "Overall", "In terms of", "Looking ahead", "It's worth noting". Connect ideas the way a person would, or just start the next sentence.
 - No closing reassurance or recap ("your portfolio remains resilient"). End on the concrete forward item and stop.
 - Structure should follow the week's content, not a fixed rubric: a week dominated by one finding is one long thread, a scattered week is short strands. No two weeks should read alike.
+- Plain text only. No markdown — no **bold**, no headings, no bullet markers. The surface renders your words literally.
 
 GROUNDING RULES (non-negotiable):
 1. Write ONLY from the provided context. Never invent a finding, a number, a filing, or a quote.
@@ -211,7 +212,7 @@ export async function composeWeeklyNote(
     }
 
     body = stripClosingRecap(
-      expandGroupedCitations(String(parsed?.body ?? ''))
+      stripMarkup(expandGroupedCitations(String(parsed?.body ?? '')))
         .replace(/\s?\[(?![a-z_]+:)[^\]]*\]/g, '')
         .trim(),
     );
@@ -225,7 +226,7 @@ export async function composeWeeklyNote(
 
   return {
     weekStart: weekStartOf(),
-    title: String(parsed.title ?? '').trim().slice(0, 120) || 'This week on your book',
+    title: stripMarkup(String(parsed.title ?? '')).trim().slice(0, 120) || 'This week on your book',
     body,
     citations,
     stats: {

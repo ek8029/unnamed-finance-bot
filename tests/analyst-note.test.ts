@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { weekStartOf } from '@/lib/research/analyst-note';
-import { stripClosingRecap } from '@/lib/research/compose';
+import { stripClosingRecap, stripMarkup } from '@/lib/research/compose';
 
 describe('weekStartOf', () => {
   it('returns the same Monday for a Monday', () => {
@@ -45,5 +45,22 @@ describe('stripClosingRecap', () => {
 
   it('handles a recap that is the whole text', () => {
     expect(stripClosingRecap('Overall, a quiet week.')).toBe('');
+  });
+});
+
+describe('stripMarkup', () => {
+  it('unwraps bold company names', () => {
+    expect(stripMarkup('**Apple (AAPL)** gained while **Microsoft (MSFT)** slid.')).toBe(
+      'Apple (AAPL) gained while Microsoft (MSFT) slid.',
+    );
+  });
+
+  it('unwraps __underscore__ emphasis and strips heading prefixes', () => {
+    expect(stripMarkup('## This Week\n__Azure__ accelerated.')).toBe('This Week\nAzure accelerated.');
+  });
+
+  it('leaves plain text and citations alone', () => {
+    const text = 'AAPL weakened [action:abc-123]. P&L is +$15,327.';
+    expect(stripMarkup(text)).toBe(text);
   });
 });
