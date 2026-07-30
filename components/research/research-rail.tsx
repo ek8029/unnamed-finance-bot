@@ -14,6 +14,7 @@ import { useCallback, useEffect, useState } from 'react';
 import posthog from 'posthog-js';
 import type { AnalystNote, Finding, ValueLedger } from '@/lib/research/types';
 import type { Standing } from '@/lib/research/standing';
+import type { StandingQuestion } from '@/lib/research/standing-questions';
 import { FINDING_KIND_LABEL } from '@/lib/research/types';
 import { ValueLedgerCard } from './value-ledger-card';
 import { AnalystNoteCard } from './analyst-note-card';
@@ -39,6 +40,7 @@ interface FeedResponse {
   ledger?: ValueLedger;
   standing?: Standing;
   note?: AnalystNote | null;
+  watched?: StandingQuestion[];
 }
 
 function questionForFinding(f: Finding): string {
@@ -127,6 +129,7 @@ export function ResearchRail({ onAsk }: { onAsk: (question: string) => void }) {
   const note = data.note ?? null;
   const hasAnything =
     note != null ||
+    (data.watched?.length ?? 0) > 0 ||
     findings.length > 0 || (ledger?.surfacedTotal ?? 0) > 0 || (ledger?.realizedTotal ?? 0) > 0 || (standing?.checks.length ?? 0) > 0;
   if (!hasAnything) return null;
 
@@ -184,6 +187,42 @@ export function ResearchRail({ onAsk }: { onAsk: (question: string) => void }) {
               onAsk(q);
             }}
           />
+        </div>
+      )}
+
+      {/* watched questions — the standing obligations */}
+      {(data.watched?.length ?? 0) > 0 && (
+        <div className="px-4 py-4 border-b border-[var(--color-border-subtle)]">
+          <div className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)] mb-2" style={MONO}>
+            Watching · {data.watched!.length}
+          </div>
+          <div className="space-y-2">
+            {data.watched!.map((w) => (
+              <div key={w.id} className="flex items-start gap-2 group">
+                <span className="mt-[6px] w-1.5 h-1.5 rounded-full shrink-0 bg-[var(--color-gold)]" />
+                <button
+                  type="button"
+                  onClick={() => onAsk(w.question)}
+                  className="text-left text-[12.5px] leading-[1.45] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors min-w-0"
+                >
+                  {w.question}
+                </button>
+                <button
+                  type="button"
+                  title="stop watching"
+                  onClick={() => {
+                    fetch(`/api/research/standing-questions?id=${w.id}`, { method: 'DELETE' })
+                      .then(() => load())
+                      .catch(() => {});
+                  }}
+                  className="ml-auto shrink-0 text-[12px] text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 hover:text-[var(--color-negative-text)] transition-opacity"
+                  style={MONO}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

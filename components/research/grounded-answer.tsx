@@ -5,7 +5,8 @@
 // uses). The citations ARE the point — the answer is only as trustworthy as the
 // findings it stood on, so they are shown, not hidden.
 
-import { useId } from 'react';
+import { useId, useState } from 'react';
+import posthog from 'posthog-js';
 import type { GroundedAnswer } from '@/lib/research/types';
 import { FindingCard } from './finding-card';
 
@@ -43,12 +44,37 @@ function renderProse(answer: string, refIndex: Map<string, number>, uid: string)
 export function GroundedAnswerView({
   answer,
   onFollowUp,
+  question,
 }: {
   answer: GroundedAnswer;
   onFollowUp: (q: string) => void;
+  /** The user question this answer replies to — enables "watch this". */
+  question?: string;
 }) {
   const uid = useId();
   const refIndex = new Map(answer.citations.map((f, i) => [f.id, i + 1]));
+  const [watchState, setWatchState] = useState<'idle' | 'saving' | 'watching' | 'error'>('idle');
+
+  const watch = async () => {
+    if (!question || watchState === 'saving' || watchState === 'watching') return;
+    setWatchState('saving');
+    try {
+      const res = await fetch('/api/research/standing-questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question }),
+      });
+      if (!res.ok) throw new Error('save failed');
+      setWatchState('watching');
+      try {
+        posthog.capture('research_question_watched');
+      } catch {
+        /* analytics only */
+      }
+    } catch {
+      setWatchState('error');
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -77,8 +103,8 @@ export function GroundedAnswerView({
         </div>
       )}
 
-      {answer.followUps.length > 0 && (
-        <div className="flex flex-wrap gap-2 pt-1">
+      {(answer.followUps.length > 0 || question) && (
+        <div className="flex flex-wrap gap-2 pt-1 items-center">
           {answer.followUps.map((q) => (
             <button
               key={q}
@@ -89,6 +115,22 @@ export function GroundedAnswerView({
               {q}
             </button>
           ))}
+          {question && (
+            <button
+              type="button"
+              onClick={watch}
+              disabled={watchState === 'saving' || watchState === 'watching'}
+              title="Helm re-checks this question as new evidence lands and reports the change in your weekly note"
+              className={`px-3 py-1.5 rounded-full border text-[12px] transition-colors text-left ${
+                watchState === 'watching'
+                  ? 'border-[rgba(230,185,77,0.5)] text-[#E6B94D] cursor-default'
+                  : 'border-white/[0.1] text-[#B8B8B8] hover:border-[rgba(230,185,77,0.4)] hover:text-[#E6B94D]'
+              }`}
+              style={MONO}
+            >
+              {watchState === 'watching' ? 'watching ✓' : watchState === 'saving' ? 'saving…' : watchState === 'error' ? 'watch failed — retry' : 'watch this'}
+            </button>
+          )}
         </div>
       )}
     </div>

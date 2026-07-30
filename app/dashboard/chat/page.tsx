@@ -378,7 +378,7 @@ function ResearchChatContent() {
       ) : (
         <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
           <div className="px-4 sm:px-7 py-6 flex flex-col gap-5">
-            {messages.map((message) => (
+            {messages.map((message, mi) => (
               <div
                 key={message.id}
                 className={cn(
@@ -414,6 +414,7 @@ function ResearchChatContent() {
                           <GroundedAnswerView
                             answer={message.analysis as unknown as GroundedAnswer}
                             onFollowUp={sendMessage}
+                            question={messages[mi - 1]?.role === 'user' ? messages[mi - 1].content : undefined}
                           />
                         </div>
                       </div>

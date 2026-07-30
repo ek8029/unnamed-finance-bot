@@ -13,6 +13,7 @@ import { formatFinding, stripClosingRecap } from './compose';
 import { getRecentFindings } from './findings';
 import { getPortfolioBrief, getTaxContext, getValueLedger } from './account';
 import { computeStanding } from './standing';
+import { getStandingQuestions, runStandingQuestion, type StandingDelta } from './standing-questions';
 import { expandGroupedCitations, extractCitedIds, validateCitations } from './grounding';
 import type { AnalystNote, Finding } from './types';
 
@@ -71,6 +72,7 @@ export interface AnalystNoteDraft {
     findings: number;
     freshFindings: number;
     surfacedTotal: number;
+    watchedDeltas: number;
     adviceFlag: boolean;
   };
 }
@@ -99,6 +101,29 @@ export async function composeWeeklyNote(
   // quiet week can still reference the standing picture.
   const background = findings.filter((f) => (f.date ?? '') < weekAgo).slice(0, 8);
   const given = [...fresh, ...background];
+
+  // Watched questions: re-run each (fresh retrieval + snapshot diff, no LLM)
+  // and hand the composer whatever NEW evidence arrived since the last run.
+  // Their findings join the citable set so the note can receipt them.
+  const deltas: StandingDelta[] = [];
+  const watched = (await getStandingQuestions(db, userId)).slice(0, 5);
+  for (const sq of watched) {
+    try {
+      const delta = await runStandingQuestion(db, userId, sq);
+      if (delta.newFindings.length > 0) deltas.push(delta);
+    } catch {
+      /* one bad question must not sink the note */
+    }
+  }
+  const givenIds = new Set(given.map((f) => f.id));
+  for (const d of deltas) {
+    for (const f of d.newFindings) {
+      if (!givenIds.has(f.id)) {
+        given.push(f);
+        givenIds.add(f.id);
+      }
+    }
+  }
 
   const parts: string[] = [];
   const holdings = brief.holdings
@@ -130,6 +155,16 @@ export async function composeWeeklyNote(
   );
   if (background.length > 0) {
     parts.push(`=== STANDING FINDINGS (older, cite by id only if needed) ===\n${background.map(formatFinding).join('\n\n')}`);
+  }
+  if (deltas.length > 0) {
+    parts.push(
+      `=== WATCHED QUESTIONS — NEW EVIDENCE (the user asked to watch these; report each delta, cite by id) ===\n${deltas
+        .map(
+          (d) =>
+            `Watching: "${d.question.question}"\nNew since last check:\n${d.newFindings.map(formatFinding).join('\n\n')}`,
+        )
+        .join('\n\n---\n\n')}`,
+    );
   }
 
   // gpt-4o, not mini: the note is ~8 calls a WEEK (one per pro user), and the
@@ -197,6 +232,7 @@ export async function composeWeeklyNote(
       findings: findings.length,
       freshFindings: fresh.length,
       surfacedTotal: Math.round(ledger.surfacedTotal),
+      watchedDeltas: deltas.length,
       adviceFlag: hasAdviceLanguage(body),
     },
   };
