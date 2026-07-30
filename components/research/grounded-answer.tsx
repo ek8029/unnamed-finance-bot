@@ -9,6 +9,7 @@ import { useId, useState } from 'react';
 import posthog from 'posthog-js';
 import type { GroundedAnswer } from '@/lib/research/types';
 import { FindingCard } from './finding-card';
+import { withBold } from './rich-text';
 
 const MONO = { fontFamily: 'var(--font-mono)' } as const;
 
@@ -20,7 +21,7 @@ function renderProse(answer: string, refIndex: Map<string, number>, uid: string)
   const parts = answer.split(/(\[[a-z_]+:[^\]]+\])/gi);
   return parts.map((part, i) => {
     const m = part.match(/^\[([a-z_]+:[^\]]+)\]$/i);
-    if (!m) return <span key={i}>{part}</span>;
+    if (!m) return <span key={i}>{withBold(part, i)}</span>;
     const n = refIndex.get(m[1].trim());
     if (!n) return null; // dropped, unvalidated citation
     return (

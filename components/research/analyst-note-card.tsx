@@ -6,6 +6,7 @@
 // rendered tighter because the rail is narrow.
 
 import type { AnalystNote } from '@/lib/research/types';
+import { withBold } from './rich-text';
 
 const MONO = { fontFamily: 'var(--font-mono)' } as const;
 
@@ -13,7 +14,7 @@ function renderProse(body: string, refIndex: Map<string, number>) {
   const parts = body.split(/(\[[a-z_]+:[^\]]+\])/gi);
   return parts.map((part, i) => {
     const m = part.match(/^\[([a-z_]+:[^\]]+)\]$/i);
-    if (!m) return <span key={i}>{part}</span>;
+    if (!m) return <span key={i}>{withBold(part, i)}</span>;
     const n = refIndex.get(m[1].trim());
     if (!n) return null; // dropped, unvalidated citation
     return (

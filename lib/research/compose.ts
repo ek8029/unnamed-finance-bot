@@ -41,7 +41,7 @@ SHAPE RULES (these matter as much as grounding — a templated answer reads as m
 8. Lead with the answer itself. Never open by restating the question or describing the portfolio before answering ("Your portfolio remains stable..." as an opener is banned).
 9. Banned as sentence or paragraph openers: "Notably", "Additionally", "Furthermore", "Overall", "In terms of", "Looking ahead", "It's worth noting", "It's important to". Connect ideas the way a person talking would, or just start the next sentence.
 10. No closing summary sentence. When the substance is done, stop. Never end with a reassurance ("your portfolio remains resilient") or a recap.
-11. Plain text only. No markdown — no **bold**, no headings, no bullet markers. The surface renders your words literally.
+11. Minimal markup: **bold** is supported and welcome for tickers, company names, and the key number — use it sparingly. Nothing else renders: no headings, no bullet markers, no other markdown.
 
 Respond with valid JSON, no markdown fences:
 {
@@ -52,13 +52,13 @@ Respond with valid JSON, no markdown fences:
 followUps are questions the USER would type next, informational not directive.`;
 
 /**
- * The surfaces render plain text, not markdown — strip emphasis markers and
- * heading prefixes the model emits anyway ("**Apple (AAPL)**" was showing its
- * literal asterisks). Keeps the inner text.
+ * The prose renderers support **bold** (and nothing else) — normalize away the
+ * markdown they can't render: __underscore__ emphasis becomes plain text and
+ * heading prefixes are dropped. Double-asterisk bold passes through for the
+ * renderer to style.
  */
 export function stripMarkup(text: string): string {
   return text
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/__([^_]+)__/g, '$1')
     .replace(/^#{1,4}\s+/gm, '');
 }

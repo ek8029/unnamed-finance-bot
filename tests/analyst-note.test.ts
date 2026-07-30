@@ -49,10 +49,9 @@ describe('stripClosingRecap', () => {
 });
 
 describe('stripMarkup', () => {
-  it('unwraps bold company names', () => {
-    expect(stripMarkup('**Apple (AAPL)** gained while **Microsoft (MSFT)** slid.')).toBe(
-      'Apple (AAPL) gained while Microsoft (MSFT) slid.',
-    );
+  it('keeps **bold** intact for the renderer', () => {
+    const text = '**Apple (AAPL)** gained while **Microsoft (MSFT)** slid.';
+    expect(stripMarkup(text)).toBe(text);
   });
 
   it('unwraps __underscore__ emphasis and strips heading prefixes', () => {

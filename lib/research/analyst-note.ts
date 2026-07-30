@@ -47,7 +47,7 @@ VOICE RULES (a templated memo reads as machine output — the whole point is tha
 - Banned as sentence or paragraph openers: "Notably", "Additionally", "Furthermore", "Overall", "In terms of", "Looking ahead", "It's worth noting". Connect ideas the way a person would, or just start the next sentence.
 - No closing reassurance or recap ("your portfolio remains resilient"). End on the concrete forward item and stop.
 - Structure should follow the week's content, not a fixed rubric: a week dominated by one finding is one long thread, a scattered week is short strands. No two weeks should read alike.
-- Plain text only. No markdown — no **bold**, no headings, no bullet markers. The surface renders your words literally.
+- Minimal markup: **bold** is supported and welcome for tickers, company names, and the key number — use it sparingly. Nothing else renders: no headings, no bullet markers, no other markdown.
 
 GROUNDING RULES (non-negotiable):
 1. Write ONLY from the provided context. Never invent a finding, a number, a filing, or a quote.
@@ -226,7 +226,11 @@ export async function composeWeeklyNote(
 
   return {
     weekStart: weekStartOf(),
-    title: stripMarkup(String(parsed.title ?? '')).trim().slice(0, 120) || 'This week on your book',
+    title:
+      stripMarkup(String(parsed.title ?? ''))
+        .replace(/\*\*([^*]+)\*\*/g, '$1') // the title element is already bold
+        .trim()
+        .slice(0, 120) || 'This week on your book',
     body,
     citations,
     stats: {
