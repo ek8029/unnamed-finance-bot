@@ -315,9 +315,12 @@ export function clusterByMechanism<T extends ClusterItem>(items: T[]): Mechanism
     const distinct = [...new Set(classes)];
     const { maxStatus, reason } = ceilingForMembers(members);
 
-    const shown = new Map([...c.seen].map(([k, n]) => [display.get(k) ?? k, n]));
-    const label =
-      nameMechanism(shown, members.length, members[0].text) || salientEntities(members[0].text)[0] || 'Unlabelled';
+    // Un-judged clusters wear the freshest member's own words, not an entity
+    // mash-up — "Chevron + Power" told the user nothing; the headline does.
+    // The judge pass (cache-first in getScoringThesisData) replaces these with
+    // real mechanism names as it catches up.
+    const headline = members[0].text.replace(/\s+/g, ' ').trim();
+    const label = headline.length > 72 ? `${headline.slice(0, 69).trimEnd()}…` : headline || 'Multiple reports';
 
     const dates = members.map((m) => m.dateISO).filter(Boolean).sort();
     out.push({

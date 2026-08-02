@@ -163,7 +163,6 @@ describe('clusterByMechanism', () => {
     const clusters = clusterByMechanism(items);
     expect(clusters.length).toBeGreaterThan(1);
     expect(clusters[0].mentions).toBeLessThan(30);
-    expect(clusters[0].label).not.toContain('Amazon');
   });
 
   it('still groups a genuinely shared story inside a mixed corpus', () => {
@@ -189,7 +188,9 @@ describe('clusterByMechanism', () => {
       item('b', 'NVIDIA BLACKWELL supply improves further', 'primary_news'),
     ]);
     expect(clusters).toHaveLength(1);
-    expect(clusters[0].label).toBe('Nvidia Blackwell');
+    // Un-judged labels are the freshest member's own words (entity mash-ups
+    // like "Wisconsin + Center" told the user nothing); the judge pass renames.
+    expect(clusters[0].label).toBe(clusters[0].items[0].text);
   });
 
   it('counts repetition inside one class as recency, never as extra weight', () => {
