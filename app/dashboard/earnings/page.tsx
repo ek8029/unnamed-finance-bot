@@ -5,6 +5,7 @@
 // useEarnings() is preserved untouched; only the markup and states are new.
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { useFormat } from '@/hooks/use-format';
 import { useEarnings } from '@/hooks/use-financial-data';
 import type { UpcomingEarning, RecentEarning } from '@/hooks/use-financial-data';
@@ -47,6 +48,41 @@ function HeadCell({ children, align = 'left' }: { children: React.ReactNode; ali
   );
 }
 
+// Both tables run long (the calendar reaches months out) — page them instead
+// of scrolling forever. Arrows live at the card's foot.
+const PAGE_SIZE = 10;
+
+function Pager({ page, pages, onPage }: { page: number; pages: number; onPage: (p: number) => void }) {
+  if (pages <= 1) return null;
+  return (
+    <div className="flex items-center justify-center gap-5 px-5 py-2.5 border-t border-[var(--color-border-subtle)]">
+      <button
+        type="button"
+        onClick={() => onPage(page - 1)}
+        disabled={page === 0}
+        aria-label="Previous page"
+        className="px-3 py-1.5 text-[14px] text-[var(--color-text-secondary)] hover:text-[var(--color-gold)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        style={MONO}
+      >
+        ←
+      </button>
+      <span className="text-[11px] text-[var(--color-text-muted)]" style={{ ...MONO, ...TNUM }}>
+        {page + 1} / {pages}
+      </span>
+      <button
+        type="button"
+        onClick={() => onPage(page + 1)}
+        disabled={page >= pages - 1}
+        aria-label="Next page"
+        className="px-3 py-1.5 text-[14px] text-[var(--color-text-secondary)] hover:text-[var(--color-gold)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        style={MONO}
+      >
+        →
+      </button>
+    </div>
+  );
+}
+
 function timeLabel(t: UpcomingEarning['time']): string {
   if (t === 'before_open') return 'Before open';
   if (t === 'after_close') return 'After close';
@@ -62,11 +98,15 @@ function fmtDateCell(iso: string): string {
 }
 
 // ── Upcoming earnings table ──
-// Columns mirror the mockup exactly: Date · Symbol · Time · Cons. EPS · Implied
-// move · Your exposure. Rows link to Analyze. Implied move has no EDGAR source,
-// so it renders honestly as a muted placeholder rather than a fabricated figure.
+// Date · Symbol · Time · Your exposure, paged. Consensus EPS and implied move
+// were dropped rather than shown as a column of em-dashes — EDGAR carries no
+// analyst estimates and no options data; the columns return when a real
+// estimates vendor lands.
 
 function UpcomingTable({ rows }: { rows: UpcomingEarning[] }) {
+  const [page, setPage] = useState(0);
+  const pages = Math.ceil(rows.length / PAGE_SIZE);
+  const shown = rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   return (
     <div className="rounded-lg overflow-hidden" style={CARD}>
       <div className="overflow-x-auto">
@@ -76,14 +116,12 @@ function UpcomingTable({ rows }: { rows: UpcomingEarning[] }) {
               <HeadCell>Date</HeadCell>
               <HeadCell>Symbol</HeadCell>
               <HeadCell>Time</HeadCell>
-              <HeadCell align="right">Cons. EPS</HeadCell>
-              <HeadCell align="right">Implied move</HeadCell>
               <HeadCell align="right">Your exposure</HeadCell>
             </tr>
           </thead>
           <tbody>
-            {rows.map((e, i) => {
-              const last = i === rows.length - 1;
+            {shown.map((e, i) => {
+              const last = i === shown.length - 1;
               const border = last ? 'none' : '1px solid var(--color-border-subtle)';
               return (
                 <tr key={`${e.ticker}-${i}`} className="group hover:bg-white/[0.015] transition-colors">
@@ -109,16 +147,6 @@ function UpcomingTable({ rows }: { rows: UpcomingEarning[] }) {
                     </Link>
                   </td>
                   <td className="p-0" style={{ borderBottom: border }}>
-                    <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px] text-right text-[15px] text-[var(--color-text-primary)]" style={{ ...MONO, ...TNUM }}>
-                      {e.epsEstimate != null ? `$${e.epsEstimate.toFixed(2)}` : <span className="text-[var(--color-text-muted)]">—</span>}
-                    </Link>
-                  </td>
-                  <td className="p-0" style={{ borderBottom: border }}>
-                    <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px] text-right text-[15px] text-[var(--color-text-muted)]" style={{ ...MONO, ...TNUM }}>
-                      —
-                    </Link>
-                  </td>
-                  <td className="p-0" style={{ borderBottom: border }}>
                     <Link href={`/dashboard/analyze/${e.ticker}`} className="block px-5 py-[14px] text-right text-[15px] font-semibold text-[var(--color-text-primary)]" style={{ ...MONO, ...TNUM }}>
                       {e.position.allocationPct.toFixed(1)}%
                     </Link>
@@ -129,6 +157,7 @@ function UpcomingTable({ rows }: { rows: UpcomingEarning[] }) {
           </tbody>
         </table>
       </div>
+      <Pager page={page} pages={pages} onPage={setPage} />
     </div>
   );
 }
@@ -146,6 +175,9 @@ function RecentTable({
   isPro: boolean;
   formatCurrency: (n: number) => string;
 }) {
+  const [page, setPage] = useState(0);
+  const pages = Math.ceil(rows.length / PAGE_SIZE);
+  const shown = rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   return (
     <div className="rounded-lg overflow-hidden" style={CARD}>
       <div className="overflow-x-auto">
@@ -161,8 +193,8 @@ function RecentTable({
             </tr>
           </thead>
           <tbody>
-            {rows.map((r, i) => {
-              const last = i === rows.length - 1;
+            {shown.map((r, i) => {
+              const last = i === shown.length - 1;
               const border = last ? 'none' : '1px solid var(--color-border-subtle)';
               // Filing-sourced YoY comparison (no consensus vendor, no fake estimate).
               const hasComparison = r.epsYoyPct != null;
@@ -179,8 +211,12 @@ function RecentTable({
                   </td>
                   <td className="p-0" style={{ borderBottom: border }}>
                     <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] flex items-center gap-2">
+                      {/* Icon mirrors the YoY column: EPS grew vs the same
+                          quarter last year or it shrank. (beat/miss needs a
+                          consensus vendor we don't have — it was hardcoded
+                          false, which painted a red X on every row.) */}
                       {hasComparison && (
-                        r.beat
+                        (r.epsYoyPct ?? 0) >= 0
                           ? <CheckCircle2 className="w-3 h-3 shrink-0" style={{ color: 'var(--color-positive)' }} />
                           : <XCircle className="w-3 h-3 shrink-0" style={{ color: 'var(--color-negative-text)' }} />
                       )}
@@ -232,6 +268,7 @@ function RecentTable({
           </tbody>
         </table>
       </div>
+      <Pager page={page} pages={pages} onPage={setPage} />
     </div>
   );
 }
@@ -345,7 +382,7 @@ function EarningsContent() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-2" style={MONO}>
-            Earnings · Next 14 days
+            Earnings
           </div>
           <h1 className="text-[28px] sm:text-[32px] font-bold tracking-[-0.025em] leading-[1.08] text-[var(--color-text-primary)]">
             What&apos;s reporting, and your exposure
