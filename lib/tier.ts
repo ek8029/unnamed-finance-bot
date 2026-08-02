@@ -34,6 +34,8 @@ export interface SubscriptionInfo {
   tier: Tier;
   /** Non-null while a Plaid-connect trial is active (tier already reflects it). */
   trialEndsAt: string | null;
+  /** When a never-paid trial ended (so the UI can show the post-trial receipt). */
+  lapsedTrialEndedAt: string | null;
 }
 
 /**
@@ -54,11 +56,13 @@ export async function getSubscriptionInfo(userId: string): Promise<SubscriptionI
   const trialEndsAt: string | null = data?.trial_ends_at ?? null;
   if (trialEndsAt && !data?.stripe_subscription_id) {
     if (new Date(trialEndsAt).getTime() > Date.now()) {
-      return { tier, trialEndsAt };
+      return { tier, trialEndsAt, lapsedTrialEndedAt: null };
     }
-    return { tier: 'free', trialEndsAt: null }; // trial expired, never paid
+    // Trial expired, never paid — surface when it ended so the app can show
+    // the post-trial receipt instead of lapsing silently.
+    return { tier: 'free', trialEndsAt: null, lapsedTrialEndedAt: trialEndsAt };
   }
-  return { tier, trialEndsAt: null };
+  return { tier, trialEndsAt: null, lapsedTrialEndedAt: null };
 }
 
 export async function getUserTier(userId: string): Promise<Tier> {

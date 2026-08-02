@@ -36,6 +36,7 @@ export async function GET() {
     tier: tier || data?.tier || 'free',
     quota,
     trialEndsAt: sub.trialEndsAt,
+    lapsedTrialEndedAt: sub.lapsedTrialEndedAt,
     billingPeriod: data?.billing_period || null,
     currentPeriodEnd: data?.current_period_end || null,
     cancelAtPeriodEnd: data?.cancel_at_period_end || false,

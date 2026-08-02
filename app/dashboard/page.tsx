@@ -13,7 +13,6 @@ import { useFormat } from '@/hooks/use-format';
 import { useDemo } from '@/contexts/demo-context';
 import { usePreview } from '@/lib/preview-context';
 import { AgentFirstLook } from '@/components/agent-first-look';
-import { TrialBanner } from '@/components/trial-banner';
 import { tierAtLeast } from '@/lib/tier-shared';
 import { useLivePrices } from '@/hooks/use-live-prices';
 import posthog from 'posthog-js';
@@ -892,7 +891,6 @@ export default function DashboardOverview() {
 
       {/* ── Actions + Allocation + Movers ── */}
       {/* The agent's first look — deterministic findings seconds after connect */}
-      <TrialBanner />
       <AgentFirstLook />
 
       {/* minmax(0,…) so the donut/movers min-content can't steal width and crush

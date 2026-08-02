@@ -36,6 +36,7 @@ import {
 import { cn } from '@/lib/utils';
 import { HelmMark } from '@/components/helm-mark';
 import { LabImpersonationBanner } from '@/components/lab-impersonation-banner';
+import { TrialBanner } from '@/components/trial-banner';
 import { ZoomShell } from '@/components/zoom-shell';
 import { useSettings } from '@/contexts/settings-context';
 import { DemoProvider, useDemo } from '@/contexts/demo-context';
@@ -922,6 +923,8 @@ export default function DashboardLayout({
           isChatPage && "min-h-0 flex flex-col"
         )}>
           <ConnectBanner />
+          {/* Trial lifecycle strip — countdown, last-48h urgency, post-lapse receipt */}
+          <TrialBanner />
           {/* FoundingMemberBanner removed: founding tier retired (Free / Pro $20 / Max $50) */}
           {thesisEntitled && pathname !== '/dashboard/theses' && <ThesesWhatsNewBanner />}
           <div
