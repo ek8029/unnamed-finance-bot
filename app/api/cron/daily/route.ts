@@ -5,6 +5,7 @@ import { refreshMarketPrices, enrichMarketData, refreshMarketNews, updatePortfol
 import { generateInsights } from '@/lib/insights-engine';
 import { runDigestCron } from '@/lib/digest-cron';
 import { composeWeeklyNote, saveAnalystNote } from '@/lib/research/analyst-note';
+import { isOpenAccessWindow } from '@/lib/tier';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -274,18 +275,28 @@ export async function GET(request: Request) {
       try {
         // Non-free subscriptions, minus expired never-paid trials (mirrors
         // getSubscriptionInfo, which is session-bound and unusable here).
-        const { data: subs } = await serviceClient
-          .from('user_subscriptions')
-          .select('user_id, tier, trial_ends_at, stripe_subscription_id')
-          .neq('tier', 'free');
-        const eligible = (subs ?? [])
-          .filter((s) => {
-            if (s.trial_ends_at && !s.stripe_subscription_id) {
-              return new Date(s.trial_ends_at).getTime() > Date.now();
-            }
-            return true;
-          })
-          .slice(0, 8);
+        // During the open-access window everyone reads as Max, so the note
+        // goes to every user with a book instead (same cap).
+        let eligible: { user_id: string }[];
+        if (isOpenAccessWindow()) {
+          const { data: hu } = await serviceClient.from('holdings').select('user_id');
+          eligible = [...new Set((hu ?? []).map((h) => h.user_id as string))]
+            .map((user_id) => ({ user_id }))
+            .slice(0, 8);
+        } else {
+          const { data: subs } = await serviceClient
+            .from('user_subscriptions')
+            .select('user_id, tier, trial_ends_at, stripe_subscription_id')
+            .neq('tier', 'free');
+          eligible = (subs ?? [])
+            .filter((s) => {
+              if (s.trial_ends_at && !s.stripe_subscription_id) {
+                return new Date(s.trial_ends_at).getTime() > Date.now();
+              }
+              return true;
+            })
+            .slice(0, 8);
+        }
 
         for (const sub of eligible) {
           try {

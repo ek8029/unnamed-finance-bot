@@ -28,6 +28,17 @@ export const PRO_FEATURES = [
 
 export type ProFeature = (typeof PRO_FEATURES)[number];
 
+// ── Open-access window ──
+// Every signed-in account reads as Max through Aug 10 (Will/Mucker signs up
+// this week — nobody gets manually comped, nothing is written to the DB, and
+// when the date passes, normal tiers resume silently). Runtime-only override:
+// Stripe rows, trial rows, and billing display fields are untouched.
+const OPEN_ACCESS_UNTIL = Date.parse('2026-08-11T07:00:00Z'); // ≈ midnight PT Aug 10→11
+
+export function isOpenAccessWindow(): boolean {
+  return Date.now() < OPEN_ACCESS_UNTIL;
+}
+
 // ── Get user tier ──
 
 export interface SubscriptionInfo {
@@ -45,6 +56,9 @@ export interface SubscriptionInfo {
  * Paid checkouts clear trial_ends_at via the Stripe webhook upsert.
  */
 export async function getSubscriptionInfo(userId: string): Promise<SubscriptionInfo> {
+  if (isOpenAccessWindow()) {
+    return { tier: 'max', trialEndsAt: null, lapsedTrialEndedAt: null };
+  }
   const supabase = await createClient();
   const { data } = await supabase
     .from('user_subscriptions')
