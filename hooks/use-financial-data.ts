@@ -643,6 +643,9 @@ export interface TaxOpportunity {
   lossPct: number;
   estimatedSavings: number;
   holdingPeriod: 'short_term' | 'long_term' | 'unknown';
+  /** Days until this lot crosses to long-term; 0 = already long-term, null = unknown. */
+  daysToLongTerm: number | null;
+  longTermFrom: string | null;
   effectiveTaxRate: number;
   replacement: { ticker: string; name: string; reason: string } | null;
   washSaleRisk: boolean;

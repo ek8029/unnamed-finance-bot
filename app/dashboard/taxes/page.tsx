@@ -568,6 +568,17 @@ function TaxesContent() {
                   ? `Net capital losses offset capital gains without limit, then up to ${formatCurrency(lossCap)} of ordinary income per year (IRC §1211(b): $3,000, or $1,500 married filing separately). ${filingStatus ? `Using your "${filingStatus}" filing status.` : 'Helm assumes $3,000 — set your filing status in Settings.'} ${formatCurrency(Math.max(0, lossCap - deductionUsed))} remaining; the excess carries forward indefinitely under IRC §1212(b).`
                   : 'No net capital losses to offset ordinary income this year.'}
             </p>
+
+            <NettingOrder
+              shortTermNet={shortTermNet}
+              longTermNet={longTermNet}
+              formatCurrency={formatCurrency}
+            />
+
+            <CarryforwardBank
+              carryforward={carryoverLoss}
+              formatCurrency={formatCurrency}
+            />
           </div>
         </section>
       )}
@@ -655,6 +666,8 @@ function TaxesContent() {
             <HarvestRow
               key={opp.ticker}
               opp={opp}
+              ordinaryRate={ordinaryRate}
+              ltcgRate={ltcgRate}
               formatCurrency={formatCurrency}
             />
           ))}
@@ -1382,6 +1395,177 @@ function HoldingPeriodBars({
   );
 }
 
+// ── Netting order (IRC §1222(11)) ──
+//
+// Two users with identical losses get different savings, and the headline looks
+// arbitrary until you can see why: losses hit their OWN character first, and
+// only the leftover crosses over. Short-term gain is taxed at the ordinary rate,
+// so which side absorbs a loss decides what it is worth.
+
+function NettingOrder({
+  shortTermNet,
+  longTermNet,
+  formatCurrency,
+}: {
+  shortTermNet: number;
+  longTermNet: number;
+  formatCurrency: (n: number) => string;
+}) {
+  if (shortTermNet === 0 && longTermNet === 0) return null;
+
+  const crossover =
+    shortTermNet < 0 && longTermNet > 0
+      ? `Your net short-term loss offsets long-term gain next, so ${formatCurrency(Math.min(Math.abs(shortTermNet), longTermNet))} of that gain is absorbed before any preferential rate applies.`
+      : longTermNet < 0 && shortTermNet > 0
+        ? `Your net long-term loss offsets short-term gain next, so ${formatCurrency(Math.min(Math.abs(longTermNet), shortTermNet))} of ordinary-rate gain is absorbed.`
+        : 'Nothing crosses over: neither character is a net loss this year.';
+
+  const col = (label: string, value: number, rateNote: string) => (
+    <div className="flex-1 min-w-0">
+      <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--color-text-muted)]" style={MONO}>
+        {label}
+      </div>
+      <div
+        className={cn(
+          'text-[14px] font-semibold tabular-nums mt-0.5',
+          value >= 0 ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-negative)]',
+        )}
+        style={MONO}
+      >
+        {value >= 0 ? '+' : ''}{formatCurrency(value)}
+      </div>
+      <div className="text-[10px] text-[var(--color-text-muted)] mt-0.5" style={MONO}>
+        {rateNote}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="mt-4 pt-3.5" style={{ borderTop: '1px solid var(--color-border-subtle)' }}>
+      <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-muted)] mb-2.5" style={MONO}>
+        Netting order · IRC §1222(11)
+      </div>
+      <div className="flex gap-5">
+        {col('Short-term net', shortTermNet, 'ordinary rate')}
+        {col('Long-term net', longTermNet, 'preferential rate')}
+      </div>
+      <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed mt-2.5" style={MONO}>
+        Each character nets against itself first. {crossover}
+      </p>
+    </div>
+  );
+}
+
+// ── Carryforward bank (IRC §1212(b)) ──
+//
+// The number that compounds. Losses beyond the annual cap are not lost — they
+// carry indefinitely and keep their character. Helm does not read prior-year
+// returns, so it says what it knows and names the gap rather than showing a
+// bank that looks complete and is not.
+
+function CarryforwardBank({
+  carryforward,
+  formatCurrency,
+}: {
+  carryforward: number;
+  formatCurrency: (n: number) => string;
+}) {
+  if (carryforward <= 0) return null;
+  return (
+    <div className="mt-3.5 pt-3.5" style={{ borderTop: '1px solid var(--color-border-subtle)' }}>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-muted)]" style={MONO}>
+          Carryforward bank · IRC §1212(b)
+        </span>
+        <span className="text-[14px] font-semibold text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+          {formatCurrency(carryforward)}
+        </span>
+      </div>
+      <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed mt-1.5" style={MONO}>
+        Carried to future years from this year&rsquo;s net loss. It never expires and keeps its short-term or
+        long-term character, so it offsets future gains of the same kind first. Helm does not read your prior
+        returns, so carryovers from earlier years are not included here.
+      </p>
+    </div>
+  );
+}
+
+// ── Holding-period clock (IRC §1222(3)) ──
+//
+// A short-term loss is worth MORE than a long-term one, because it absorbs
+// short-term gain at the ordinary rate first. So a lot about to cross the
+// one-year line is the opposite of the usual "hold for the discount" intuition,
+// and nothing else in the product says so. States arithmetic, never a directive.
+
+function HoldingPeriodClock({
+  opp,
+  ordinaryRate,
+  ltcgRate,
+  formatCurrency,
+}: {
+  opp: TaxOpportunity;
+  ordinaryRate: number;
+  ltcgRate: number;
+  formatCurrency: (n: number) => string;
+}) {
+  const days = opp.daysToLongTerm;
+  if (days == null) {
+    return (
+      <span>
+        Helm has no acquisition date for this lot, so its holding period is unknown and the estimate above
+        uses the long-term rate. Check your 1099-B.
+      </span>
+    );
+  }
+  if (days === 0) {
+    return (
+      <span>
+        Held more than one year, so this is a long-term loss (IRC §1222(4)). It offsets long-term gain first,
+        at an assumed {(ltcgRate * 100).toFixed(0)}%.
+      </span>
+    );
+  }
+
+  const loss = Math.abs(opp.unrealizedLoss);
+  const delta = loss * (ordinaryRate - ltcgRate);
+  return (
+    <span>
+      {days} day{days === 1 ? '' : 's'} to long-term
+      {opp.longTermFrom ? ` (${opp.longTermFrom})` : ''}. While it stays short-term this loss offsets
+      short-term gain at an assumed {(ordinaryRate * 100).toFixed(0)}% instead of {(ltcgRate * 100).toFixed(0)}%,
+      a difference of about {formatCurrency(delta)} on {formatCurrency(loss)} of loss. Unlike a gain, a loss is
+      worth more while it is short-term.
+    </span>
+  );
+}
+
+// ── Wash-sale window (IRC §1091) ──
+//
+// The 61-day window is symmetric and users only ever hear about the forward
+// half. A strip makes the shape of the rule visible: 30 days before the sale,
+// the sale, 30 days after.
+
+function WashSaleWindow({ state }: { state: 'none' | 'advisory' | 'flagged' }) {
+  const color =
+    state === 'flagged' ? 'var(--color-warning-text)'
+      : state === 'advisory' ? 'var(--color-gold)'
+        : 'var(--color-positive)';
+  return (
+    <div className="mt-2.5">
+      <div className="flex items-center gap-1" aria-hidden="true">
+        <div className="h-1 flex-1 rounded-l-[2px]" style={{ background: color, opacity: 0.35 }} />
+        <div className="w-1.5 h-2.5 rounded-[1px] shrink-0" style={{ background: color }} />
+        <div className="h-1 flex-1 rounded-r-[2px]" style={{ background: color, opacity: 0.18 }} />
+      </div>
+      <div className="flex items-center justify-between mt-1 text-[10px] text-[var(--color-text-muted)]" style={MONO}>
+        <span>30 days before · Helm checks this half</span>
+        <span>sale</span>
+        <span>30 days after · Helm cannot see this half</span>
+      </div>
+    </div>
+  );
+}
+
 // ── Conviction helpers (thesis-aware TLH) ──
 
 const CONVICTION_COLOR: Record<'intact' | 'weakening' | 'broken', string> = {
@@ -1468,9 +1652,13 @@ function BrokenThesisCallout({
 
 function HarvestRow({
   opp,
+  ordinaryRate,
+  ltcgRate,
   formatCurrency,
 }: {
   opp: TaxOpportunity;
+  ordinaryRate: number;
+  ltcgRate: number;
   formatCurrency: (n: number) => string;
 }) {
   const washState: 'none' | 'advisory' | 'flagged' =
@@ -1640,6 +1828,16 @@ function HarvestRow({
             <span className="font-semibold text-[var(--color-text-primary)]">What this means: </span>
             {washSaleDetailText}
           </p>
+          <WashSaleWindow state={washState} />
+          <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed mt-2.5" style={MONO}>
+            <span className="font-semibold text-[var(--color-text-secondary)]">Holding period: </span>
+            <HoldingPeriodClock
+              opp={opp}
+              ordinaryRate={ordinaryRate}
+              ltcgRate={ltcgRate}
+              formatCurrency={formatCurrency}
+            />
+          </p>
         </div>
       )}
 
@@ -1782,6 +1980,16 @@ function HarvestRow({
             <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
               <span className="font-semibold text-[var(--color-text-primary)]">What this means: </span>
               {washSaleDetailText}
+            </p>
+            <WashSaleWindow state={washState} />
+            <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed mt-2.5" style={MONO}>
+              <span className="font-semibold text-[var(--color-text-secondary)]">Holding period: </span>
+              <HoldingPeriodClock
+                opp={opp}
+                ordinaryRate={ordinaryRate}
+                ltcgRate={ltcgRate}
+                formatCurrency={formatCurrency}
+              />
             </p>
           </div>
         )}

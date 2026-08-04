@@ -53,6 +53,8 @@ interface Form8949Data {
   transactionCount: number;
   incompleteCount: number;
   unclassifiedCount: number;
+  retirementExcludedCount: number;
+  unlinkedAccountCount: number;
   caveats: string[];
 }
 
@@ -619,12 +621,11 @@ export function Form8949Preview() {
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="w-3 h-3 text-[var(--color-warning-text)] mt-0.5 shrink-0" />
                   <p className="text-[10px] text-[var(--color-text-muted)] leading-relaxed" style={MONO}>
-                    This worksheet is not a filed Form 8949. It does not select the required Part I box (A/B/C) or Part II
-                    box (D/E/F), does not compute column (f) codes or column (g) adjustments including wash-sale code W, and
-                    column (b) is derived from your transaction feed rather than from lot-level acquisition records. It may
-                    not include all reportable transactions, and it cannot distinguish dispositions inside IRAs, 401(k)s or
-                    HSAs, which do not belong on Form 8949 at all. Reconcile every row against your 1099-B and consult a
-                    qualified CPA or tax professional before filing.
+                    {data.caveats.map((c, i) => (
+                      <span key={i} className="block mb-1 last:mb-0">
+                        {c}
+                      </span>
+                    ))}
                   </p>
                 </div>
               </div>

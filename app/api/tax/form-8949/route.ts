@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { requirePro } from '@/lib/tier';
+import { isRetirementAccount } from '@/lib/tax-analysis';
 import { NextResponse } from 'next/server';
 
 // ── Types ──
@@ -51,6 +52,10 @@ interface Form8949Response {
   incompleteCount: number;
   /** Sells whose holding period was not classified; reported as short-term. */
   unclassifiedCount: number;
+  /** Retirement-account dispositions excluded — they do not belong on Form 8949. */
+  retirementExcludedCount: number;
+  /** Rows with no account link, so their tax status could not be verified. */
+  unlinkedAccountCount: number;
   caveats: string[];
 }
 
@@ -137,7 +142,10 @@ export async function GET(request: Request) {
     // Fetch all sell transactions for the reported tax year
     const { data: sells, error: queryError } = await supabase
       .from('capital_gains')
-      .select('ticker, transaction_date, shares, proceeds, cost_basis, gain_loss, gain_loss_type')
+      .select(`
+        ticker, transaction_date, shares, proceeds, cost_basis, gain_loss, gain_loss_type,
+        account_id, account:linked_accounts(account_name, account_subtype)
+      `)
       .eq('user_id', user.id)
       .eq('tax_year', taxYear)
       .eq('transaction_type', 'sell')
@@ -148,7 +156,29 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch capital gains' }, { status: 500 });
     }
 
-    const transactions = sells ?? [];
+    // IRC §408(e)(1): retirement accounts are exempt from tax, so dispositions
+    // inside them are not reported on Form 8949 or Schedule D. Rows with no
+    // account link cannot be classified — they stay in, and the artifact says so
+    // rather than silently assuming they were taxable.
+    type SellRow = (typeof sells extends (infer R)[] | null ? R : never);
+    const allSells = (sells ?? []) as SellRow[];
+    let retirementExcludedCount = 0;
+    let unlinkedAccountCount = 0;
+    const transactions = allSells.filter((tx) => {
+      const rel = (tx as { account?: unknown }).account ?? null;
+      const acc = (Array.isArray(rel) ? rel[0] : rel) as
+        | { account_name?: string | null; account_subtype?: string | null }
+        | null;
+      if (!acc) {
+        unlinkedAccountCount++;
+        return true;
+      }
+      if (isRetirementAccount(acc.account_subtype ?? null, acc.account_name ?? null)) {
+        retirementExcludedCount++;
+        return false;
+      }
+      return true;
+    });
 
     // Every recorded acquisition date per ticker. Column (b) must describe the
     // lot actually disposed of; taking the earliest buy on record stamped a
@@ -242,9 +272,21 @@ export async function GET(request: Request) {
         + 'and cannot tell whether basis was reported to the IRS.',
       'Specific-lot identification is not implemented. Column (b) is derived from your transaction feed, '
         + 'not from lot-level acquisition records.',
-      'Helm cannot distinguish dispositions inside IRAs, 401(k)s, HSAs or 529s, which are exempt under '
-        + 'IRC §408(e)(1) and do not belong on Form 8949 at all. Remove any that appear here.',
     ];
+    if (retirementExcludedCount > 0) {
+      caveats.push(
+        `${retirementExcludedCount} disposition${retirementExcludedCount === 1 ? '' : 's'} inside a retirement `
+        + 'account were excluded. IRC §408(e)(1) exempts those accounts, so their trades do not belong on '
+        + 'Form 8949 or Schedule D.',
+      );
+    }
+    if (unlinkedAccountCount > 0) {
+      caveats.push(
+        `${unlinkedAccountCount} row${unlinkedAccountCount === 1 ? ' has' : 's have'} no account link, so Helm `
+        + 'cannot tell whether the trade happened in a taxable or a tax-advantaged account. Remove any '
+        + 'IRA, 401(k), HSA or 529 activity by hand.',
+      );
+    }
     if (unclassifiedCount > 0) {
       caveats.push(
         `${unclassifiedCount} transaction${unclassifiedCount === 1 ? ' has' : 's have'} no holding period `
@@ -269,6 +311,8 @@ export async function GET(request: Request) {
       transactionCount: transactions.length,
       incompleteCount,
       unclassifiedCount,
+      retirementExcludedCount,
+      unlinkedAccountCount,
       caveats,
     };
 

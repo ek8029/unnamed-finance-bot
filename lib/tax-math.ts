@@ -289,6 +289,41 @@ export function classifyHoldingPeriod(acquiredAt: string | null): 'short_term' |
 
 export type HoldingPeriod = 'short_term' | 'long_term' | 'unknown';
 
+/**
+ * Whole days until a position crosses from short-term to long-term.
+ *
+ * Same anniversary rule as classifyHoldingPeriod: long-term begins the day AFTER
+ * the one-year anniversary, so on the anniversary itself this returns 1, not 0.
+ * Returns 0 for a position already long-term and null when the acquisition date
+ * is unknown.
+ */
+export function daysToLongTerm(acquiredAt: string | null): number | null {
+  if (!acquiredAt) return null;
+  const acquired = new Date(acquiredAt + 'T00:00:00Z');
+  if (Number.isNaN(acquired.getTime())) return null;
+  const longTermFrom = Date.UTC(
+    acquired.getUTCFullYear() + 1,
+    acquired.getUTCMonth(),
+    acquired.getUTCDate() + 1,
+  );
+  const today = new Date();
+  const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  if (todayUtc >= longTermFrom) return 0;
+  return Math.round((longTermFrom - todayUtc) / 86_400_000);
+}
+
+/** The date a position becomes long-term, ISO yyyy-mm-dd, or null if unknown. */
+export function longTermFromDate(acquiredAt: string | null): string | null {
+  if (!acquiredAt) return null;
+  const acquired = new Date(acquiredAt + 'T00:00:00Z');
+  if (Number.isNaN(acquired.getTime())) return null;
+  return new Date(Date.UTC(
+    acquired.getUTCFullYear() + 1,
+    acquired.getUTCMonth(),
+    acquired.getUTCDate() + 1,
+  )).toISOString().slice(0, 10);
+}
+
 export interface LossCharacterSplit {
   stLoss: number;
   ltLoss: number;

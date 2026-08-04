@@ -31,6 +31,8 @@ import { createClient } from '@/lib/supabase/server';
 import {
   estimateCappedTlhSavings,
   classifyHoldingPeriod,
+  daysToLongTerm,
+  longTermFromDate,
   resolveTaxProfile,
   type TaxProfile,
 } from '@/lib/tax-math';
@@ -62,6 +64,13 @@ export interface HarvestablePosition {
   estimatedSavings: number;
   /** Whether this is likely a short-term or long-term position */
   holdingPeriod: 'short_term' | 'long_term' | 'unknown';
+  /** Whole days until the position crosses to long-term. 0 = already there,
+   *  null = Helm has no acquisition date. A short-term LOSS is worth more
+   *  against short-term gains, so crossing can cost the user money — the
+   *  arithmetic is stated, never a recommendation. */
+  daysToLongTerm: number | null;
+  /** ISO date the position becomes long-term (IRC §1222(3) anniversary rule). */
+  longTermFrom: string | null;
   /** Effective tax rate applied (STCG rate or LTCG rate) */
   effectiveTaxRate: number;
   replacement: ReplacementSecurity | null;
@@ -662,6 +671,8 @@ export {
   estimateTaxOnRealizedGains,
   classifyHoldingPeriod,
   splitLossByCharacter,
+  daysToLongTerm,
+  longTermFromDate,
 } from '@/lib/tax-math';
 export type { CappedTlhResult } from '@/lib/tax-math';
 
@@ -760,6 +771,8 @@ export async function generateTaxReport(
         lossPct: costBasis > 0 ? (loss / costBasis) * 100 : 0,
         estimatedSavings: savings,
         holdingPeriod,
+        daysToLongTerm: daysToLongTerm(h.acquired_at),
+        longTermFrom: longTermFromDate(h.acquired_at),
         effectiveTaxRate: effectiveRate,
         replacement: retirement ? null : findReplacement(h.ticker, sector),
         washSaleRisk: retirement ? false : (washSale?.risk ?? false),
