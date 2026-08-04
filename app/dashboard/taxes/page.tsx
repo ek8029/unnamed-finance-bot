@@ -8,7 +8,7 @@ import {
 import { useFormat } from '@/hooks/use-format';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTaxData, useTaxOpportunities } from '@/hooks/use-financial-data';
-import type { TaxOpportunity, RealizedTransaction } from '@/hooks/use-financial-data';
+import type { TaxOpportunity, RealizedTransaction, TaxHarvestReport } from '@/hooks/use-financial-data';
 import { thesisTlhNote } from '@/lib/thesis-conviction';
 import { cn } from '@/lib/utils';
 import { DemoConnectCta } from '@/components/demo/demo-connect-cta';
@@ -647,20 +647,17 @@ function TaxesContent() {
             />
           ))}
 
-          {/* Panel footer: offset summary + Harvest CTA */}
+          {/* Panel footer: §1211(b) waterfall + Harvest CTA */}
           <div
-            className="px-5 sm:px-[22px] py-[14px] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+            className="px-5 sm:px-[22px] py-[14px] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4"
             style={{ borderTop: '1px solid rgba(230,185,77,0.1)' }}
             aria-live="polite"
           >
-            <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
-              Harvesting the {washSafeCount} wash-safe lot{washSafeCount !== 1 ? 's' : ''} offsets an
-              estimated{' '}
-              <span className="text-[var(--color-positive)] font-semibold">
-                {formatCurrency(harvestReport.totalEstimatedSavings)}
-              </span>{' '}
-              in taxes this year.
-            </span>
+            <HarvestLadder
+              report={harvestReport}
+              lotCount={washSafeCount}
+              formatCurrency={formatCurrency}
+            />
             <a
               href="/tools/tlh-calculator"
               className="self-start sm:self-auto px-4 py-[9px] rounded-[5px] text-[10px] font-bold uppercase tracking-[0.12em] motion-safe:transition-[filter] motion-safe:duration-150 hover:brightness-[1.08]"
@@ -1188,6 +1185,103 @@ function TaxesContent() {
           ?? 'Estimates only, not tax advice. Helm Terminal is not a registered tax advisor, CPA, or tax return preparer. Consult a qualified tax professional before acting.'}
       </p>
     </main>
+  );
+}
+
+// ── The §1211(b) harvest ladder ──
+//
+// A single "estimated savings" figure hides the mechanism and reads as a
+// worthless number: $960 on $305,427 of losses looks broken until you see that
+// the other $302,427 is banked and offsets future gains without limit. The
+// gain-offset row is the uncapped lever — when the user has realized gains it
+// fills and the headline jumps, which is the feature teaching itself.
+
+function HarvestLadder({
+  report,
+  lotCount,
+  formatCurrency,
+}: {
+  report: TaxHarvestReport;
+  lotCount: number;
+  formatCurrency: (n: number) => string;
+}) {
+  const cap = report.annualCap;
+  const found = Math.abs(report.totalHarvestableLoss);
+  const rows: { label: string; amount: number; note: string; emphasis: boolean }[] = [
+    {
+      label: 'Offsets realized gains this year',
+      amount: cap.gainsOffset,
+      note: cap.gainsOffset > 0 ? 'no limit — IRC §1211(b)' : 'no limit, but you have no realized gains yet',
+      emphasis: true,
+    },
+    {
+      label: 'Deducts against ordinary income',
+      amount: cap.ordinaryIncomeOffset,
+      note: `annual cap ${formatCurrency(cap.annualDeductionCap)} (assumed; $1,500 if married filing separately)`,
+      emphasis: false,
+    },
+    {
+      label: 'Carries forward to future years',
+      amount: cap.estimatedCarryforward,
+      note: 'never expires — IRC §1212(b)',
+      emphasis: false,
+    },
+  ];
+
+  return (
+    <div className="min-w-0 flex-1">
+      <div className="flex items-baseline justify-between gap-3 mb-2">
+        <span className="text-[12px] text-[var(--color-text-secondary)]" style={MONO}>
+          Harvestable losses found
+        </span>
+        <span className="text-[15px] font-semibold text-[var(--color-text-primary)] tabular-nums" style={MONO}>
+          {formatCurrency(found)}
+          <span className="text-[11px] text-[var(--color-text-muted)] font-normal ml-2">
+            {lotCount} position{lotCount !== 1 ? 's' : ''}
+          </span>
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-1.5 pl-3" style={{ borderLeft: '1px solid var(--color-border-subtle)' }}>
+        {rows.map((r) => (
+          <div key={r.label} className="flex items-baseline justify-between gap-3">
+            <span
+              className={cn(
+                'text-[11px] leading-snug',
+                r.emphasis ? 'text-[var(--color-text-secondary)]' : 'text-[var(--color-text-muted)]',
+              )}
+              style={MONO}
+            >
+              {r.label}
+              <span className="text-[10px] text-[var(--color-text-muted)] ml-1.5">· {r.note}</span>
+            </span>
+            <span
+              className={cn(
+                'text-[12px] tabular-nums shrink-0',
+                r.amount > 0 ? 'text-[var(--color-text-primary)] font-semibold' : 'text-[var(--color-text-muted)]',
+              )}
+              style={MONO}
+            >
+              {formatCurrency(r.amount)}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-2.5 text-[11px] text-[var(--color-text-muted)] leading-relaxed" style={MONO}>
+        Estimated tax reduced this year:{' '}
+        <span className="text-[var(--color-positive)] font-semibold">
+          {formatCurrency(report.totalEstimatedSavings)}
+        </span>{' '}
+        at an assumed {(report.taxRate * 100).toFixed(0)}% ordinary and {(report.ltcgRate * 100).toFixed(0)}% long-term rate.
+        {cap.baselineSavings > 0 && (
+          <>
+            {' '}You already have {formatCurrency(cap.baselineSavings)} of that from losses realized earlier this
+            year, so the figure above is what harvesting adds.
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 

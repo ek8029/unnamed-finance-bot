@@ -662,6 +662,10 @@ export interface AnnualCapInfo {
   estimatedCarryforward: number;
   cappedSavings: number;
   uncappedSavings: number;
+  gainsOffset: number;
+  ordinaryIncomeOffset: number;
+  totalPositionSavings: number;
+  baselineSavings: number;
 }
 
 export interface TaxHarvestReport {

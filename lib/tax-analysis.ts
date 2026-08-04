@@ -96,6 +96,15 @@ export interface AnnualCapInfo {
   /** Year-1 tax savings (capped) vs the full uncapped amount */
   cappedSavings: number;
   uncappedSavings: number;
+  /** IRC §1211(b) waterfall, for the harvest ladder. Loss absorbed by realized
+   *  capital gains — uncapped, and the lever that actually moves the number. */
+  gainsOffset: number;
+  /** Loss deducted against ordinary income this year, subject to the cap. */
+  ordinaryIncomeOffset: number;
+  /** Whole-position current-year benefit, including losses already realized. */
+  totalPositionSavings: number;
+  /** Benefit the user already has without harvesting anything more. */
+  baselineSavings: number;
 }
 
 export interface TaxHarvestReport {
@@ -682,6 +691,10 @@ export async function generateTaxReport(
         estimatedCarryforward: 0,
         cappedSavings: 0,
         uncappedSavings: 0,
+        gainsOffset: 0,
+        ordinaryIncomeOffset: 0,
+        totalPositionSavings: 0,
+        baselineSavings: 0,
       },
       disclaimer: DISCLAIMER,
     };
@@ -798,6 +811,10 @@ export async function generateTaxReport(
       estimatedCarryforward,
       cappedSavings,
       uncappedSavings,
+      gainsOffset: capped.gainsOffset,
+      ordinaryIncomeOffset: capped.ordinaryIncomeOffset,
+      totalPositionSavings: capped.totalPositionSavings,
+      baselineSavings: capped.baselineSavings,
     },
     disclaimer: DISCLAIMER,
   };
