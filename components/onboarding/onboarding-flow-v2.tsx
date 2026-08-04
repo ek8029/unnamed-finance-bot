@@ -152,6 +152,8 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
   const { tier } = usePreview(); // dev: driven by the free/pro/max toggle; prod: real entitlement
   const [show, setShow] = useState(false);
   const [phase, setPhase] = useState<Phase>(jumpTo ?? 'welcome');
+  // Plaid exchange failures were silent — the modal closed and nothing happened.
+  const [linkError, setLinkError] = useState<string | null>(null);
   const [hasPlaid, setHasPlaid] = useState<boolean | null>(harness ? false : null);
   const [preview, setPreview] = useState(!!harness);
 
@@ -825,10 +827,16 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                       <div onClickCapture={() => track('onb_link_started')}>
                         <PlaidLinkButton
                           onSuccess={handleConnected}
+                          onError={(msg) => setLinkError(msg || 'Connection failed — please try again.')}
                           className="w-full flex items-center justify-center gap-2 h-[52px] rounded-md bg-[var(--color-gold)] text-black text-[15px] font-semibold hover:brightness-110 transition-all cursor-pointer"
                         >
                           Connect a brokerage
                         </PlaidLinkButton>
+                        {linkError && (
+                          <p className="mt-2.5 text-[13px] text-[var(--color-negative-text)] text-center m-0">
+                            {linkError}
+                          </p>
+                        )}
                       </div>
                     )}
 
@@ -966,6 +974,15 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                     style={{ strokeDasharray: 30, strokeDashoffset: 30, animation: 'onb-check 0.4s ease-out 0.1s forwards' }} />
                 </svg>
                 <h1 className="text-[36px] font-bold text-[var(--color-text-primary)]">You&apos;re in</h1>
+                {/* Several non-demo paths land here with no timer — without a
+                    button this was a dead-end overlay until a manual reload. */}
+                <button
+                  type="button"
+                  onClick={() => dismiss(true)}
+                  className="mt-7 px-8 py-3 rounded-md bg-[var(--color-gold)] text-black text-[15px] font-semibold hover:brightness-110 transition-all"
+                >
+                  Open the terminal &rarr;
+                </button>
               </div>
             </div>
           )}

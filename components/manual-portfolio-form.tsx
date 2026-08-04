@@ -108,7 +108,15 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
       }
 
       if (data.failed?.length > 0) {
-        setError(`Could not find: ${data.failed.map((f: { ticker: string }) => f.ticker).join(', ')}`);
+        // Stay on the form so the failures are actually seen — flipping to the
+        // success screen hid them and the user believed everything saved.
+        if (data.added > 0) disableDemo();
+        setError(
+          `Saved ${data.added ?? 0} position${data.added === 1 ? '' : 's'}, but could not find: ${data.failed
+            .map((f: { ticker: string }) => f.ticker)
+            .join(', ')}. Fix or remove those rows and save again.`,
+        );
+        return;
       }
 
       if (data.added > 0) {

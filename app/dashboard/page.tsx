@@ -602,7 +602,7 @@ export default function DashboardOverview() {
               </button>
               <PlaidLinkButton
                 className="w-full max-w-[280px] rounded-[5px] border border-[var(--color-border-strong)] bg-transparent px-9 py-3 text-[14px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                onSuccess={() => router.refresh()}
+                onSuccess={() => window.location.reload()} /* router.refresh() keeps client state — holdings never appeared without F5 */
                 onError={(msg) => setPlaidError(msg)}
                 onLinkError={(_code, message) => {
                   toast.error('Connection failed', message);

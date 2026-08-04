@@ -12,6 +12,10 @@ import { getQuote } from '@/lib/financial-data';
  * Creates a "Manual Portfolio" linked_account if one doesn't exist,
  * upserts securities, and inserts holdings with live prices.
  */
+// Serial quote lookups with retries across up to 50 rows can exceed the
+// default 60s — a timeout mid-insert plus a resubmit duplicated every lot.
+export const maxDuration = 120;
+
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();

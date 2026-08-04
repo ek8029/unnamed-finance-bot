@@ -175,11 +175,12 @@ export function useFinancialSummary() {
           return; // Already synced recently this session
         }
 
-        sessionStorage.setItem('helm_last_auto_sync', String(Date.now()));
-
         // Fire-and-forget background sync, then generate insights
         const res = await fetch('/api/plaid/sync', { method: 'POST' });
         if (res.ok) {
+          // Throttle only on success — stamping before the fetch pinned an
+          // empty portfolio for an hour when the first sync failed.
+          sessionStorage.setItem('helm_last_auto_sync', String(Date.now()));
           // Generate fresh insights from updated data
           await Promise.all([
             fetch('/api/insights/generate', { method: 'POST' }).catch(() => {}),

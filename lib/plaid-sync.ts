@@ -104,20 +104,30 @@ export async function syncPlaidItem(
   const allModified: Transaction[] = [];
   const allRemoved: RemovedTransaction[] = [];
 
-  while (hasMore && iterations < MAX_SYNC_ITERATIONS) {
-    iterations++;
-    const response = await plaidClient.transactionsSync({
-      access_token: accessToken,
-      cursor: cursor,
-      count: 500,
-    });
+  // Guarded like balances and holdings: a transactions error right after link
+  // (PRODUCT_NOT_READY is routine) must not abort the whole sync — holdings
+  // never imported when this threw, including via the recovery webhook.
+  try {
+    while (hasMore && iterations < MAX_SYNC_ITERATIONS) {
+      iterations++;
+      const response = await plaidClient.transactionsSync({
+        access_token: accessToken,
+        cursor: cursor,
+        count: 500,
+      });
 
-    allAdded.push(...response.data.added);
-    allModified.push(...response.data.modified);
-    allRemoved.push(...response.data.removed);
+      allAdded.push(...response.data.added);
+      allModified.push(...response.data.modified);
+      allRemoved.push(...response.data.removed);
 
-    hasMore = response.data.has_more;
-    cursor = response.data.next_cursor;
+      hasMore = response.data.has_more;
+      cursor = response.data.next_cursor;
+    }
+  } catch (err) {
+    console.error(
+      '[plaid-sync] transactions sync failed (continuing to holdings):',
+      err instanceof Error ? err.message : err,
+    );
   }
 
   // Process added transactions
