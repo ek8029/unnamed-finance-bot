@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getQuote } from '@/lib/financial-data';
 import { rateLimit } from '@/lib/rate-limit';
+import { DEFAULT_WATCHLIST_TICKERS, materializeDefaultWatchlist } from '@/lib/watchlist-defaults';
 
-const DEFAULT_TICKERS = ['SPY', 'QQQ', 'VIXY', 'TLT'];
+const DEFAULT_TICKERS = [...DEFAULT_WATCHLIST_TICKERS];
 const MAX_WATCHLIST_SIZE = 20;
 const TICKER_REGEX = /^[A-Z]{1,5}$/;
 
@@ -101,6 +102,11 @@ export async function POST(request: Request) {
       );
     }
 
+    // The four defaults are shown to users who have no rows yet. Persist them
+    // before the first add, otherwise adding one ticker drops the user from
+    // four visible tickers to one — the list appears to collapse.
+    await materializeDefaultWatchlist(supabase, user.id);
+
     // Check current watchlist size
     const { count } = await supabase
       .from('user_watchlist')
@@ -172,6 +178,10 @@ export async function DELETE(request: Request) {
         { status: 400 },
       );
     }
+
+    // Removing a default only works if the default is a real row; otherwise the
+    // delete matched nothing and the ticker reappeared on the next read.
+    await materializeDefaultWatchlist(supabase, user.id);
 
     const { error: deleteError } = await supabase
       .from('user_watchlist')

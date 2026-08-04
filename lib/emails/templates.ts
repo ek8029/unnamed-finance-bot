@@ -305,7 +305,7 @@ export function getWatchlistAlertTemplate(movers: WatchlistMover[], userName?: s
     text: `Hey ${name},\n\n${movers.length} ticker${movers.length > 1 ? 's' : ''} on your watchlist moved significantly today:\n\n${movers.map(m => `${m.ticker}: $${m.price.toFixed(2)} (${m.changePct >= 0 ? '+' : ''}${m.changePct.toFixed(2)}%)`).join('\n')}\n\nView details: ${DASHBOARD_URL}\n\n- Helm Terminal`,
     html: wrap(`
       ${heading(`Watchlist alert, ${name}.`)}
-      ${subtext(`${movers.length} ticker${movers.length > 1 ? 's' : ''} on your watchlist moved more than 3% today.`)}
+      ${subtext(`${movers.length} ticker${movers.length > 1 ? 's' : ''} on your watchlist made an unusually large move today.`)}
       <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin:16px 0;">
         <tr>
           <td style="padding:8px 12px;font-family:monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#525252;border-bottom:1px solid rgba(255,255,255,0.1);">Ticker</td>

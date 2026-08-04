@@ -3,12 +3,11 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getQuote } from '@/lib/financial-data';
 import { resend, FROM_EMAIL } from '@/lib/emails/resend';
 import { getWatchlistAlertTemplate, type WatchlistMover } from '@/lib/emails/templates';
+import { alertThresholdFor } from '@/lib/watchlist-defaults';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-const MOVE_THRESHOLD = 3; // alert on >=3% daily move
-const DEFAULT_TICKERS = ['SPY', 'QQQ', 'VIXY', 'TLT'];
 
 /**
  * GET /api/cron/watchlist-alerts
@@ -51,22 +50,26 @@ export async function GET(request: Request) {
       if (!user.email) continue;
       if (marketAlertsOff.has(user.id)) { skipped++; continue; }
 
-      // Get user's watchlist
+      // Only users who actually built a watchlist. This used to fall back to
+      // an implicit SPY/QQQ/VIXY/TLT default, which meant every signup who had
+      // never opened the watchlist got market alerts about tickers they never
+      // chose — unsolicited mail, and VIXY clears 3% often enough to make it a
+      // near-daily send.
       const { data: watchlistRows } = await serviceClient
         .from('user_watchlist')
         .select('ticker')
         .eq('user_id', user.id);
 
-      const tickers = (watchlistRows && watchlistRows.length > 0)
-        ? watchlistRows.map(r => r.ticker)
-        : DEFAULT_TICKERS;
+      const tickers = (watchlistRows ?? []).map(r => r.ticker);
+      if (tickers.length === 0) { skipped++; continue; }
 
       // Fetch quotes for watchlist
       const movers: WatchlistMover[] = [];
       for (const ticker of tickers) {
         try {
           const q = await getQuote(ticker);
-          if (q && q.c > 0 && Math.abs(q.dp) >= MOVE_THRESHOLD) {
+          // Per-ticker threshold: a 3% day is noise on a volatility product.
+          if (q && q.c > 0 && Math.abs(q.dp) >= alertThresholdFor(ticker)) {
             movers.push({ ticker, price: q.c, changePct: q.dp });
           }
         } catch {
