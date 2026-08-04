@@ -404,7 +404,7 @@ export default function DashboardLayout({
     href === '/dashboard/analyze' ? pathname.startsWith('/dashboard/analyze') : pathname === href;
 
   // Tier badge on the user row (Free muted / Pro gold / Max bright-gold).
-  const planLabel = ({ free: 'Free tier', pro: 'Pro · Annual', max: 'Max · Annual' } as const)[tier];
+  const planLabel = ({ free: 'Free tier', pro: 'Pro', max: 'Max' } as const)[tier];
   const tierBadgeColor = tier === 'max' ? '#FFD67A' : tier === 'pro' ? 'var(--color-gold)' : 'var(--color-text-muted)';
 
   /* Shared nav-item renderer (top-level rows). */

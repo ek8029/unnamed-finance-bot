@@ -27,7 +27,12 @@ export async function grantFirstConnectTrial(userId: string, source: 'plaid' | '
     if (sub?.trial_ends_at) return;
     if (sub && sub.tier !== 'free') return;
 
-    const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+    // During the open-access window everything is already unlocked, so a trial
+    // started now would burn invisibly — start the 14-day clock at window end
+    // so the user gets the full trial (and its countdown) once tiers resume.
+    const { isOpenAccessWindow, openAccessWindowEnd } = await import('@/lib/tier');
+    const base = isOpenAccessWindow() ? openAccessWindowEnd() : Date.now();
+    const trialEndsAt = new Date(base + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
     const { error } = await admin
       .from('user_subscriptions')
       .upsert(

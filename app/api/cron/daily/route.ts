@@ -9,8 +9,9 @@ import { isOpenAccessWindow } from '@/lib/tier';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-// 120 leaves headroom for the Friday analyst-note pass (an LLM call per pro user).
-export const maxDuration = 120;
+// Headroom for the Friday analyst-note pass (an LLM call + standing-question
+// re-runs per user) on top of sync/prices/digest. Vercel Pro allows 300.
+export const maxDuration = 300;
 
 interface CronSyncResult extends SyncResult {
   user_id: string;

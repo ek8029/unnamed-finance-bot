@@ -8,7 +8,7 @@ import { CheckoutModal } from '@/components/checkout-modal';
 import { AnimatedSection } from '@/components/ui/animated-section';
 import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
-import { usePreview } from '@/lib/preview-context';
+import { useTier } from '@/hooks/use-tier';
 
 // Display tiers for the new model. The `period` maps onto the existing
 // Stripe billing-period keys so checkout keeps working unchanged.
@@ -85,7 +85,11 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 export default function PricingPage() {
   // Which paid tier the checkout modal will open with.
   const [checkoutPeriod, setCheckoutPeriod] = useState<PaidPeriod | null>(null);
-  const { tier } = usePreview();
+  // Purchase logic runs on the REAL subscription tier — during the open-access
+  // window everyone's features read as Max, but nobody has bought anything,
+  // and "Current plan" on an unpurchased tier reads as billing that
+  // doesn't exist (and kills the buy buttons for a week).
+  const { realTier: tier } = useTier();
 
   return (
     <main className="min-h-screen bg-[var(--color-bg-base)] bg-depth relative overflow-hidden">

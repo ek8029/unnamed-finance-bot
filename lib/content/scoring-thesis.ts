@@ -210,7 +210,7 @@ const normClaim = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, '').repl
 /** Same article + same finding, judged separately for two users, is one finding. */
 const findingKey = (e: EvidenceRow) => `${e.source_key}|${normClaim(e.excerpt).slice(0, 120)}`;
 
-export async function getScoringThesisData(ticker: string): Promise<ScoringThesisData> {
+export async function getScoringThesisData(ticker: string, userId?: string): Promise<ScoringThesisData> {
   const SYM = ticker.toUpperCase().replace(/[^A-Z]/g, '');
   const db = createStaticServiceClient();
   const house = getHouseThesis(SYM);
@@ -232,7 +232,13 @@ export async function getScoringThesisData(ticker: string): Promise<ScoringThesi
     publicRows: publicRows ?? 0,
   };
 
-  const { data: theses } = await db.from('theses').select('id, user_id').eq('ticker', SYM);
+  // When a userId is given, scope to THAT user's thesis only — the corpus-wide
+  // aggregation is for the lab/testing views. Without the filter, the default
+  // /dashboard/theses table showed every user's claims, breaks-ifs, and
+  // evidence to everyone holding the same ticker.
+  let thesesQuery = db.from('theses').select('id, user_id').eq('ticker', SYM);
+  if (userId) thesesQuery = thesesQuery.eq('user_id', userId);
+  const { data: theses } = await thesesQuery;
   if (!theses?.length) return base;
   base.contributingUsers = new Set(theses.map((t) => t.user_id as string)).size;
 

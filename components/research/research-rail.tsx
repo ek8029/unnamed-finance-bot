@@ -45,7 +45,10 @@ interface FeedResponse {
 
 function questionForFinding(f: Finding): string {
   const subject = f.ticker ? `my ${f.ticker} position` : 'my portfolio';
-  return `Helm flagged this on ${subject}: "${f.summary}" — what does it mean for me?`;
+  // Summaries are model-written and unbounded; the analyze API rejects
+  // queries over 500 chars, so keep the built-in button's output well under.
+  const gist = f.summary.length > 220 ? `${f.summary.slice(0, 217).trimEnd()}…` : f.summary;
+  return `Helm flagged this on ${subject}: "${gist}" — what does it mean for me?`;
 }
 
 function FindingRow({ f, onAsk }: { f: Finding; onAsk: (q: string) => void }) {

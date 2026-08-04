@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getSubscriptionInfo, checkAnalysisQuota } from '@/lib/tier';
+import { getSubscriptionInfo, getRealSubscriptionInfo, checkAnalysisQuota, isOpenAccessWindow } from '@/lib/tier';
 
 const NO_CACHE_HEADERS = {
   'Cache-Control': 'private, no-store, no-cache, must-revalidate',
@@ -14,8 +14,9 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const [sub, quota] = await Promise.all([
+  const [sub, realSub, quota] = await Promise.all([
     getSubscriptionInfo(user.id),
+    getRealSubscriptionInfo(user.id),
     checkAnalysisQuota(user.id),
   ]);
   const tier = sub.tier;
@@ -37,6 +38,10 @@ export async function GET() {
     quota,
     trialEndsAt: sub.trialEndsAt,
     lapsedTrialEndedAt: sub.lapsedTrialEndedAt,
+    // Billing/purchase surfaces need the tier as the table has it — the
+    // open-access window unlocks features, it does not create subscriptions.
+    realTier: realSub.tier,
+    openAccess: isOpenAccessWindow(),
     billingPeriod: data?.billing_period || null,
     currentPeriodEnd: data?.current_period_end || null,
     cancelAtPeriodEnd: data?.cancel_at_period_end || false,

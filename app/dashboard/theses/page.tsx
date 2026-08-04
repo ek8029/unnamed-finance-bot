@@ -28,10 +28,14 @@ export default async function ThesesDefaultPage() {
     return <ClassicThesesPage />;
   }
 
+  // Tracked theses only: /api/thesis/seed writes draft rows before the user
+  // confirms, and an abandoned draft must not eject a new user out of the
+  // classic onboarding into a table showing an unscanned "steady" row.
   const { count } = await supabase
     .from('theses')
     .select('id', { count: 'exact', head: true })
-    .eq('user_id', user.id);
+    .eq('user_id', user.id)
+    .eq('tracked', true);
 
   // Zero theses: onboarding/drafting live on classic. The table would be an
   // empty band and dead columns — a state problem, not a view preference.

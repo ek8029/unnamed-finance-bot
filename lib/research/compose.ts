@@ -208,6 +208,11 @@ export async function composeAnswer(
     answer,
     citations,
     followUps,
-    adviceFlag: hasAdviceLanguage(answer),
+    // The guard's bare \bbuy\b/\bsell\b would trip on the compliant opener
+    // ("Helm does not make buy or sell recommendations") — neutralize
+    // recommendation-disclaimer phrasing before testing.
+    adviceFlag: hasAdviceLanguage(
+      answer.replace(/\b(?:buy|sell|trim|exit)\b[^.!?]*?recommendations?/gi, 'recommendations'),
+    ),
   };
 }

@@ -19,6 +19,8 @@ const STOP_WORDS = new Set([
   'TAX', 'ETF', 'EPS', 'YOY', 'QOQ', 'CEO', 'CFO', 'IPO', 'SEC', 'FED', 'ATH',
   'YTD', 'ROI', 'RISK', 'SELL', 'HOLD', 'GAIN', 'LOSS', 'DOWN', 'THIS', 'THAT',
   'WITH', 'FROM', 'HAVE', 'DOES', 'YEAR', 'TLH', 'DID', 'SEE', 'BUY', 'TERM',
+  'AI', // "my AI exposure" is a theme, not C3.ai
+
 ]);
 
 // Common tickers that show up in lowercase in natural questions.

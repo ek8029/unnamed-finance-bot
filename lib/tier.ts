@@ -39,6 +39,11 @@ export function isOpenAccessWindow(): boolean {
   return Date.now() < OPEN_ACCESS_UNTIL;
 }
 
+/** Window end (ms epoch) — trials granted during the window start from here. */
+export function openAccessWindowEnd(): number {
+  return OPEN_ACCESS_UNTIL;
+}
+
 // ── Get user tier ──
 
 export interface SubscriptionInfo {
@@ -59,6 +64,15 @@ export async function getSubscriptionInfo(userId: string): Promise<SubscriptionI
   if (isOpenAccessWindow()) {
     return { tier: 'max', trialEndsAt: null, lapsedTrialEndedAt: null };
   }
+  return getRealSubscriptionInfo(userId);
+}
+
+/**
+ * The subscription as the table actually has it — ignores the open-access
+ * window. Billing/purchase surfaces must use this: the window unlocks
+ * features, it does not create subscriptions.
+ */
+export async function getRealSubscriptionInfo(userId: string): Promise<SubscriptionInfo> {
   const supabase = await createClient();
   const { data } = await supabase
     .from('user_subscriptions')

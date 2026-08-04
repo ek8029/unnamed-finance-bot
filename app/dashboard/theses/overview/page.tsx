@@ -61,7 +61,7 @@ export default async function ThesesOverviewPage() {
   );
 
   const tickers = [...new Set((theses ?? []).map((t) => String(t.ticker).toUpperCase()))].slice(0, MAX_THESES);
-  const data = await Promise.all(tickers.map((t) => getScoringThesisData(t)));
+  const data = await Promise.all(tickers.map((t) => getScoringThesisData(t, user.id)));
 
   const earnings = new Map<string, string | null>();
   await Promise.allSettled(

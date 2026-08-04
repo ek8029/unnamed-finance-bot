@@ -63,10 +63,12 @@ export async function GET(request: NextRequest) {
                 theme: 'dark',
                 currency: 'USD',
               }, { onConflict: 'user_id' }),
+              // Insert-only: overwriting here reset a trial/paid tier back to
+              // 'free' whenever the day-0 drip-log row was missing.
               serviceClient.from('user_subscriptions').upsert({
                 user_id: user.id,
                 tier: 'free',
-              }, { onConflict: 'user_id' }),
+              }, { onConflict: 'user_id', ignoreDuplicates: true }),
             ]);
 
             // Send Day 0 welcome email

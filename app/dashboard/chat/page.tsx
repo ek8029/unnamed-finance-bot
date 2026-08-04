@@ -168,7 +168,7 @@ function ResearchChatContent() {
       });
 
       if (!res.ok) {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({} as Record<string, never>));
         if (err.code === 'QUOTA_EXCEEDED' && err.quota) {
           setLiveQuota({ used: err.quota.used, limit: err.quota.limit, remaining: 0 });
         }
@@ -267,7 +267,7 @@ function ResearchChatContent() {
     })
       .then(async (res) => {
         if (!res.ok) {
-          const err = await res.json();
+          const err = await res.json().catch(() => ({} as Record<string, never>));
           throw new Error(err.error || 'Analysis failed');
         }
         return res.json();

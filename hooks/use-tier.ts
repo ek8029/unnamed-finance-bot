@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 
 export interface TierInfo {
   tier: 'free' | 'pro' | 'max';
+  /** Tier as the subscriptions table has it — ignores the open-access window. */
+  realTier?: 'free' | 'pro' | 'max';
   quota: {
     allowed: boolean;
     used: number;
@@ -47,6 +49,7 @@ export function useTier() {
   const tier = data?.tier ?? 'free';
   return {
     tier,
+    realTier: data?.realTier ?? tier,
     quota: data?.quota ?? null,
     isPro: tier === 'pro' || tier === 'max', // max is a superset of pro
     isMax: tier === 'max',

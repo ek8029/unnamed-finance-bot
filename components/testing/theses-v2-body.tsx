@@ -219,7 +219,12 @@ export async function ThesesV2Body({
     const prev = positions.get(t) ?? { value: 0, pl: null, plPct: null };
     positions.set(t, {
       value: prev.value + value,
-      pl: (prev.pl ?? 0) + Number(h.unrealised_gain_loss ?? 0),
+      // Unknown cost basis stays null — coercing it to 0 painted a confident
+      // green "+$0" on transfer-in positions Plaid has no basis for.
+      pl:
+        h.unrealised_gain_loss != null
+          ? (prev.pl ?? 0) + Number(h.unrealised_gain_loss)
+          : prev.pl,
       plPct: h.unrealised_gain_loss_pct != null ? Number(h.unrealised_gain_loss_pct) : prev.plPct,
     });
   }
@@ -228,7 +233,7 @@ export async function ThesesV2Body({
   );
 
   const tickers = [...new Set((theses ?? []).map((t) => String(t.ticker).toUpperCase()))].slice(0, MAX_THESES);
-  const data = await Promise.all(tickers.map((t) => getScoringThesisData(t)));
+  const data = await Promise.all(tickers.map((t) => getScoringThesisData(t, profile.id as string)));
 
   // Next earnings per ticker (EDGAR, cached ~1h). Best effort.
   const earnings = new Map<string, string | null>();

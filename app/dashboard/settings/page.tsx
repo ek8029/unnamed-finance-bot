@@ -312,6 +312,7 @@ export default function SettingsPage() {
   // ── Billing state ──
   const [billing, setBilling] = useState<{
     tier: string
+    realTier?: string
     billingPeriod: string | null
     currentPeriodEnd: string | null
     cancelAtPeriodEnd: boolean
@@ -1643,7 +1644,7 @@ export default function SettingsPage() {
             <div className="h-6 w-32 bg-white/5 rounded animate-pulse mb-2" />
             <div className="h-4 w-24 bg-white/5 rounded animate-pulse" />
           </div>
-        ) : billing.tier === 'lifetime' ? (
+        ) : (billing.realTier ?? billing.tier) === 'lifetime' ? (
           <div className="p-6 bg-[var(--color-bg-elevated)] border border-[var(--color-gold)]/30 rounded-lg">
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -1656,12 +1657,12 @@ export default function SettingsPage() {
               Unlimited AI analysis, tax-loss harvesting, earnings impact, Portfolio Wrapped, and full intelligence feed.
             </p>
           </div>
-        ) : billing.tier === 'pro' ? (
+        ) : (billing.realTier ?? billing.tier) === 'pro' || (billing.realTier ?? billing.tier) === 'max' ? (
           <div className="p-6 bg-[var(--color-bg-elevated)] border border-[var(--color-gold)]/30 rounded-lg">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-[18px] font-semibold text-[var(--color-text-primary)]">
-                  {billing.billingPeriod === 'annual' ? 'Pro Annual' : 'Pro Monthly'}
+                  {(billing.realTier ?? billing.tier) === 'max' ? 'Max' : 'Pro'}{billing.billingPeriod === 'annual' ? ' Annual' : ' Monthly'}
                 </p>
                 {billing.currentPeriodEnd && (
                   <p className="text-[15px] text-[var(--color-text-secondary)] mt-0.5">
@@ -1685,7 +1686,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-[18px] font-semibold text-[var(--color-text-primary)]">Free Plan</p>
-                <p className="text-[15px] text-[var(--color-text-secondary)]">3 AI analyses per day, basic alerts</p>
+                <p className="text-[15px] text-[var(--color-text-secondary)]">5 AI analyses per day, basic alerts</p>
               </div>
               <Badge variant="outline">Free</Badge>
             </div>

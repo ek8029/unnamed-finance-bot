@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     // 3. Already-Pro guard
     const { data: subscription, error: subError } = await serviceClient
       .from('user_subscriptions')
-      .select('tier, stripe_customer_id, stripe_subscription_id')
+      .select('tier, stripe_customer_id, stripe_subscription_id, trial_ends_at')
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -56,7 +56,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const currentTier = (subscription?.tier ?? 'free') as 'free' | 'pro' | 'max';
+    // A trial row carries tier='pro' with no Stripe subscription — for purchase
+    // purposes that user is free, otherwise trialing users get "You already
+    // have Pro" and can never convert (and a lapsed trial could never buy).
+    const isTrialRow = !!subscription?.trial_ends_at && !subscription?.stripe_subscription_id;
+    const currentTier = isTrialRow ? 'free' : ((subscription?.tier ?? 'free') as 'free' | 'pro' | 'max');
 
     // Block buying a tier you already hold or exceed (pro->pro, max->anything).
     // Pro->Max falls through (tierAtLeast('pro','max') is false) so it's allowed.

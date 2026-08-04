@@ -14,6 +14,9 @@ import { retrieveContext } from '@/lib/research/retrieve';
 import { composeAnswer } from '@/lib/research/compose';
 import OpenAI from 'openai';
 
+// The grounded path can run retrieval + two model calls; default 60s is tight.
+export const maxDuration = 120;
+
 function getOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY is not configured');
@@ -149,6 +152,9 @@ const STOP_WORDS = new Set([
   'I', 'A', 'MY', 'ME', 'WE', 'HE', 'IT', 'AN', 'TO', 'IN', 'ON', 'AT', 'BY',
   'OR', 'OF', 'IF', 'SO', 'AS', 'UP', 'NO', 'VS', 'AND', 'FOR', 'BUT', 'NOT',
   'NOR', 'YET', 'THE',
+  // Themes people ask about that are also listed tickers ("my AI exposure"
+  // is not C3.ai; "how does TLH work" is not the Treasury ETF).
+  'AI', 'TLH',
   // Verbs
   'IS', 'AM', 'BE', 'DO', 'HAS', 'CAN', 'WAS', 'ARE', 'GOT', 'GET', 'LET',
   'SAY', 'SET', 'PUT', 'RUN', 'USE', 'TRY', 'ASK', 'OWN', 'PAY', 'CUT',
@@ -593,6 +599,12 @@ export async function POST(req: NextRequest) {
   if (queryType !== 'stock_analysis' && wantsGroundedAnswer(userQuery, groundedTopics)) {
     try {
       const context = await retrieveContext(supabase, user.id, userQuery);
+      // No book yet → the card flow owns this: it has the real
+      // connect-your-brokerage empty state; the grounded engine would compose
+      // "no findings" prose with no pointer to connecting an account.
+      if (!context.portfolio || context.portfolio.positionCount === 0) {
+        throw new Error('no holdings — card flow handles the empty state');
+      }
       const history = Array.isArray(conversationHistory)
         ? conversationHistory
             .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
@@ -833,6 +845,17 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('AI analysis failed:', error instanceof Error ? error.message : 'Unknown error');
-    return NextResponse.json({ error: 'Analysis failed. Please try again.' }, { status: 500 });
+    // Billing/auth failures at the AI provider are not retryable — telling the
+    // user "try again" on those just burns their patience.
+    const status = (error as { status?: number }).status;
+    const notRetryable = status === 401 || status === 402 || status === 429;
+    return NextResponse.json(
+      {
+        error: notRetryable
+          ? 'The analysis service is temporarily unavailable. We are on it — check back shortly.'
+          : 'Analysis failed. Please try again.',
+      },
+      { status: 500 },
+    );
   }
 }
