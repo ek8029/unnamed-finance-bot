@@ -5,6 +5,7 @@ import { refreshMarketPrices, enrichMarketData, refreshMarketNews, updatePortfol
 import { generateInsights } from '@/lib/insights-engine';
 import { runDigestCron } from '@/lib/digest-cron';
 import { composeWeeklyNote, saveAnalystNote } from '@/lib/research/analyst-note';
+import { commitStandingSnapshots } from '@/lib/research/standing-questions';
 import { isOpenAccessWindow } from '@/lib/tier';
 
 export const dynamic = 'force-dynamic';
@@ -310,6 +311,11 @@ export async function GET(request: Request) {
               if (error.message.includes('analyst_notes')) break;
               continue;
             }
+            // Only now is it safe to advance the watched-question snapshots:
+            // the note that reports their new findings is durably stored. Any
+            // earlier and a failure above would mark those findings seen
+            // without ever telling the user about them.
+            await commitStandingSnapshots(serviceClient, draft.pendingSnapshots);
             analystNotesWritten++;
             log.push(`[note] Wrote weekly note for ${String(sub.user_id).slice(0, 8)}... (${draft.citations.length} citations)`);
           } catch (error) {

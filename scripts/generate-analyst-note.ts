@@ -11,6 +11,7 @@ import { config } from 'dotenv';
 config({ path: '.env.local' });
 import { createClient } from '@supabase/supabase-js';
 import { composeWeeklyNote, saveAnalystNote } from '@/lib/research/analyst-note';
+import { commitStandingSnapshots } from '@/lib/research/standing-questions';
 
 async function main() {
   const email = (process.argv[2] ?? '').toLowerCase();
@@ -47,9 +48,20 @@ async function main() {
 
   if (save) {
     const { error } = await saveAnalystNote(db, profile.id as string, draft);
-    console.log(error ? `\nSAVE FAILED: ${error.message}` : '\nSaved to analyst_notes.');
+    if (error) {
+      // Snapshots stay put, so next run re-reports the same new findings.
+      console.log(`
+SAVE FAILED: ${error.message}`);
+    } else {
+      const n = await commitStandingSnapshots(db, draft.pendingSnapshots);
+      console.log(`
+Saved to analyst_notes. Advanced ${n} standing-question snapshot(s).`);
+    }
   } else {
-    console.log('\n(dry run — pass --save to store)');
+    // A dry run must never advance a snapshot: the delta it just printed
+    // has not been reported to anyone.
+    console.log(`
+(dry run, pass --save to store; ${draft.pendingSnapshots.length} snapshot(s) left unadvanced)`);
   }
 }
 

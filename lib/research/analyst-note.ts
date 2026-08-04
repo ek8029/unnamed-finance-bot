@@ -13,7 +13,12 @@ import { formatFinding, stripClosingRecap, stripMarkup } from './compose';
 import { getRecentFindings } from './findings';
 import { getPortfolioBrief, getTaxContext, getValueLedger } from './account';
 import { computeStanding } from './standing';
-import { getStandingQuestions, runStandingQuestion, type StandingDelta } from './standing-questions';
+import {
+  getStandingQuestions,
+  evaluateStandingQuestion,
+  type StandingDelta,
+  type StandingSnapshot,
+} from './standing-questions';
 import { expandGroupedCitations, extractCitedIds, validateCitations } from './grounding';
 import type { AnalystNote, Finding } from './types';
 
@@ -69,6 +74,10 @@ export interface AnalystNoteDraft {
   title: string;
   body: string;
   citations: Finding[];
+  /** Standing-question snapshots this note consumed. The caller MUST commit
+   *  these only after the note is durably stored (commitStandingSnapshots).
+   *  Advancing them earlier marks findings seen that were never reported. */
+  pendingSnapshots: StandingSnapshot[];
   stats: {
     findings: number;
     freshFindings: number;
@@ -106,11 +115,16 @@ export async function composeWeeklyNote(
   // Watched questions: re-run each (fresh retrieval + snapshot diff, no LLM)
   // and hand the composer whatever NEW evidence arrived since the last run.
   // Their findings join the citable set so the note can receipt them.
+  // Nothing is persisted here. The snapshots ride along on the draft and are
+  // committed by the caller once the note is saved, so a failure anywhere
+  // between here and the write cannot silently swallow a week's new evidence.
   const deltas: StandingDelta[] = [];
+  const pendingSnapshots: StandingSnapshot[] = [];
   const watched = (await getStandingQuestions(db, userId)).slice(0, 5);
   for (const sq of watched) {
     try {
-      const delta = await runStandingQuestion(db, userId, sq);
+      const delta = await evaluateStandingQuestion(db, userId, sq);
+      pendingSnapshots.push(delta.snapshot);
       if (delta.newFindings.length > 0) deltas.push(delta);
     } catch {
       /* one bad question must not sink the note */
@@ -233,6 +247,7 @@ export async function composeWeeklyNote(
         .slice(0, 120) || 'This week on your book',
     body,
     citations,
+    pendingSnapshots,
     stats: {
       findings: findings.length,
       freshFindings: fresh.length,
