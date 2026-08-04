@@ -171,7 +171,7 @@ export default function PortfolioPage() {
     id: string; ticker: string; asset_name: string; shares: number;
     current_price: number; total_value: number; day_change_percentage: number | null;
     portfolio_allocation: number; sector?: string; asset_class?: string;
-    cost_basis?: number; unrealised_gain?: number;
+    cost_basis?: number; unrealised_gain?: number; basis_incomplete?: boolean;
   }[] = holdingsData.holdings ?? [];
 
   const allocation: { name: string; value: number; percentage: number }[] = holdingsData.allocation ?? [];
@@ -203,6 +203,12 @@ export default function PortfolioPage() {
     () => holdings.reduce((sum, h) => sum + (h.unrealised_gain ?? 0), 0),
     [holdings],
   );
+  // Positions the broker gave no cost basis for. They contribute 0 to the total
+  // above, so the total is incomplete rather than wrong, and the UI says which.
+  const missingBasisCount = useMemo(
+    () => holdings.filter((h) => h.basis_incomplete || h.unrealised_gain == null).length,
+    [holdings],
+  );
   const totalCostBasis = useMemo(
     () => holdings.reduce((sum, h) => sum + ((h.cost_basis ?? 0) * h.shares), 0),
     [holdings],
@@ -230,7 +236,7 @@ export default function PortfolioPage() {
     shares: h.shares, current_price: h.current_price, total_value: h.total_value,
     day_change_percentage: h.day_change_percentage, portfolio_allocation: h.portfolio_allocation,
     sector: h.sector, asset_class: h.asset_class, cost_basis: h.cost_basis,
-    unrealised_gain: h.unrealised_gain,
+    unrealised_gain: h.unrealised_gain, basis_incomplete: h.basis_incomplete,
   }));
 
   const transformedAllocation = allocation.map(a => ({
@@ -559,6 +565,14 @@ export default function PortfolioPage() {
                   <div className={`text-[18px] font-bold tabular-nums ${totalUnrealized >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}>
                     {totalUnrealized >= 0 ? '+' : '−'}{formatCurrency(Math.abs(totalUnrealized))}
                   </div>
+                  {missingBasisCount > 0 && (
+                    <div
+                      className="font-mono text-[9px] text-[var(--color-text-muted)] mt-1"
+                      title="Your broker did not report a cost basis for these positions, so they are excluded from this total rather than counted as flat."
+                    >
+                      excludes {missingBasisCount} without basis
+                    </div>
+                  )}
                 </div>
                 <div className="px-[18px] py-3.5 border-r border-[var(--color-border-subtle)] min-w-0 whitespace-nowrap">
                   <div className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--color-text-muted)] mb-2">Unrealized %</div>
@@ -1047,6 +1061,7 @@ export default function PortfolioPage() {
                   {filteredPositions.map((h, idx) => {
                     const avgCost = h.cost_basis ?? 0;
                     const dayPct = h.day_change_percentage ?? 0;
+                    const plKnown = h.unrealised_gain != null && !h.basis_incomplete;
                     const pl = h.unrealised_gain ?? 0;
                     const allocPct = h.portfolio_allocation;
                     const sparkPath = generateSparklinePath(h.ticker);
@@ -1135,11 +1150,20 @@ export default function PortfolioPage() {
                         </td>
                         {/* P/L */}
                         <td className="pl-2 pr-5 py-2 text-right">
-                          <span className={`font-mono text-[15px] tabular-nums ${
-                            pl >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
-                          }`}>
-                            {pl >= 0 ? '+' : ''}{formatCurrency(pl)}
-                          </span>
+                          {plKnown ? (
+                            <span className={`font-mono text-[15px] tabular-nums ${
+                              pl >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'
+                            }`}>
+                              {pl >= 0 ? '+' : ''}{formatCurrency(pl)}
+                            </span>
+                          ) : (
+                            <span
+                              className="font-mono text-[15px] tabular-nums text-[var(--color-text-muted)]"
+                              title="Your broker did not report a cost basis for at least one lot of this position, so P/L cannot be computed."
+                            >
+                              &mdash;
+                            </span>
+                          )}
                         </td>
                       </tr>
                     );

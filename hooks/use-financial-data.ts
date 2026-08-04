@@ -65,6 +65,9 @@ interface Holding {
   asset_class?: string;
   cost_basis?: number;
   unrealised_gain?: number;
+  /** At least one lot in this position has no cost basis from the broker, so
+   *  P/L is unknowable. Render a dash, never a zero — a zero reads as flat. */
+  basis_incomplete?: boolean;
 }
 
 interface NetWorthDataPoint {

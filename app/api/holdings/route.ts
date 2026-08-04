@@ -61,6 +61,9 @@ export async function GET() {
       totalShares: number;
       totalValue: number;
       totalCostBasis: number;
+      /** True when ANY lot in this group has no cost basis at all. The group's
+       *  gain is then unknowable, not zero — see basisMissing handling below. */
+      basisMissing: boolean;
       current_price: number;
       day_change_pct: number | null;
       sector?: string;
@@ -74,13 +77,27 @@ export async function GET() {
       const existing = tickerMap.get(ticker);
       const shares = Number(holding.shares || 0);
       const value = Number(holding.total_value || 0);
-      const costBasis = holding.average_cost_basis ? Number(holding.average_cost_basis) * shares : 0;
+      // total_cost_basis is TOTAL dollars and is the authoritative column;
+      // average_cost_basis is PER SHARE. Prefer the total, fall back to the
+      // per-share figure, and treat a lot with neither as UNKNOWN rather than
+      // zero. Coercing a missing basis to 0 made those shares read as free, so
+      // a ticker held in two accounts where one lot lacked basis reported a
+      // gain overstated by that lot's entire cost.
+      const rowBasis =
+        holding.total_cost_basis != null
+          ? Number(holding.total_cost_basis)
+          : holding.average_cost_basis != null
+            ? Number(holding.average_cost_basis) * shares
+            : null;
+      const costBasis = rowBasis ?? 0;
+      const rowBasisMissing = rowBasis == null || !Number.isFinite(rowBasis);
 
       if (existing) {
         existing.ids.push(holding.id);
         existing.totalShares += shares;
         existing.totalValue += value;
-        existing.totalCostBasis += costBasis;
+        existing.totalCostBasis += rowBasisMissing ? 0 : costBasis;
+        if (rowBasisMissing) existing.basisMissing = true;
         // Use latest price
         if (Number(holding.current_price || 0) > 0) {
           existing.current_price = Number(holding.current_price);
@@ -97,7 +114,8 @@ export async function GET() {
           asset_name: holding.security?.security_name || ticker,
           totalShares: shares,
           totalValue: value,
-          totalCostBasis: costBasis,
+          totalCostBasis: rowBasisMissing ? 0 : costBasis,
+          basisMissing: rowBasisMissing,
           current_price: Number(holding.current_price || 0),
           day_change_pct: holding.day_change_pct != null ? Number(holding.day_change_pct) : null,
           // Look through leveraged/single-stock products to their underlying
@@ -114,13 +132,12 @@ export async function GET() {
 
     // Transform aggregated data to match frontend expectations
     const transformedHoldings = [...tickerMap.values()].map(agg => {
-      const weightedAvgCost = agg.totalShares > 0 && agg.totalCostBasis > 0
-        ? agg.totalCostBasis / agg.totalShares
-        : null;
-      const unrealisedGain = weightedAvgCost
-        ? agg.totalValue - agg.totalCostBasis
-        : null;
-      const unrealisedPct = agg.totalCostBasis > 0
+      // A partial basis is worse than none: it silently overstates the gain by
+      // whatever the unpriced lots cost. Report unknown instead.
+      const basisKnown = !agg.basisMissing && agg.totalShares > 0 && agg.totalCostBasis > 0;
+      const weightedAvgCost = basisKnown ? agg.totalCostBasis / agg.totalShares : null;
+      const unrealisedGain = basisKnown ? agg.totalValue - agg.totalCostBasis : null;
+      const unrealisedPct = basisKnown
         ? ((agg.totalValue - agg.totalCostBasis) / agg.totalCostBasis) * 100
         : null;
 
@@ -139,6 +156,9 @@ export async function GET() {
         cost_basis: weightedAvgCost,
         unrealised_gain: unrealisedGain,
         unrealised_pct: unrealisedPct,
+        /** At least one lot in this position has no cost basis from the broker,
+         *  so P/L cannot be computed for it. The UI shows a dash, not a zero. */
+        basis_incomplete: agg.basisMissing,
       };
     }).sort((a, b) => b.total_value - a.total_value);
 
