@@ -10,8 +10,8 @@ function brief(over: Partial<PortfolioBrief> = {}): PortfolioBrief {
     totalUnrealized: 10000,
     positionCount: 3,
     holdings: [
-      { ticker: 'AAA', value: 15000, pct: 15, unrealizedGainLoss: 2000, costBasis: 13000, sector: 'Technology' },
-      { ticker: 'BBB', value: 12000, pct: 12, unrealizedGainLoss: -1000, costBasis: 13000, sector: 'Healthcare' },
+      { ticker: 'AAA', value: 15000, pct: 15, unrealizedGainLoss: 2000, costBasis: 13000, sector: 'Technology', accounts: [] },
+      { ticker: 'BBB', value: 12000, pct: 12, unrealizedGainLoss: -1000, costBasis: 13000, sector: 'Healthcare', accounts: [] },
     ],
     sectorAllocation: [
       { sector: 'Technology', pct: 40 },
@@ -30,7 +30,7 @@ const harvestLedger: ValueLedger = {
 
 describe('computeStanding', () => {
   it('flags a large single-name concentration and leads with it', () => {
-    const b = brief({ holdings: [{ ticker: 'NVDA', value: 34000, pct: 34, unrealizedGainLoss: 5000, costBasis: 29000, sector: 'Technology' }] });
+    const b = brief({ holdings: [{ ticker: 'NVDA', value: 34000, pct: 34, unrealizedGainLoss: 5000, costBasis: 29000, sector: 'Technology', accounts: [] }] });
     const s = computeStanding(b, [], emptyLedger);
     const conc = s.checks.find((c) => c.label === 'Concentration')!;
     expect(conc.status).toBe('flag');

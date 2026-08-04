@@ -14,6 +14,8 @@ export interface BriefHolding {
   unrealizedGainLoss: number | null;
   costBasis: number | null;
   sector: string | null;
+  /** Account names this position spans (multi-brokerage books hold one name in 2+). */
+  accounts: string[];
 }
 
 export interface PortfolioBrief {
@@ -35,30 +37,50 @@ export async function getPortfolioBrief(
     const { data, error } = await db
       .from('holdings')
       .select(
-        'ticker, total_value, unrealised_gain_loss, total_cost_basis, portfolio_allocation_pct, securities(sector)',
+        'ticker, total_value, unrealised_gain_loss, total_cost_basis, portfolio_allocation_pct, securities(sector), linked_accounts(account_name)',
       )
       .eq('user_id', userId)
       .order('total_value', { ascending: false });
     if (error || !data || data.length === 0) return null;
 
     const totalValue = data.reduce((s, h) => s + Number(h.total_value ?? 0), 0);
-    const holdings: BriefHolding[] = data.map((h) => {
+    // Fold per-account rows into one line per ticker — a multi-brokerage user
+    // (the ICP) holds the same name in 2+ accounts, and unfolded rows both
+    // duplicate the ticker in the model's context and understate single-name
+    // concentration (the standing check reads the top row's pct).
+    const byTicker = new Map<string, BriefHolding>();
+    for (const h of data) {
       const sec = h.securities as { sector?: string | null } | { sector?: string | null }[] | null;
       const sector = Array.isArray(sec) ? (sec[0]?.sector ?? null) : (sec?.sector ?? null);
-      return {
-        ticker: String(h.ticker).toUpperCase(),
-        value: Number(h.total_value ?? 0),
-        pct:
-          h.portfolio_allocation_pct != null
-            ? Number(h.portfolio_allocation_pct)
-            : totalValue > 0
-              ? (Number(h.total_value ?? 0) / totalValue) * 100
-              : 0,
-        unrealizedGainLoss: h.unrealised_gain_loss != null ? Number(h.unrealised_gain_loss) : null,
-        costBasis: h.total_cost_basis != null ? Number(h.total_cost_basis) : null,
-        sector,
-      };
-    });
+      const acc = h.linked_accounts as { account_name?: string | null } | { account_name?: string | null }[] | null;
+      const accountName = Array.isArray(acc) ? (acc[0]?.account_name ?? null) : (acc?.account_name ?? null);
+      const ticker = String(h.ticker).toUpperCase();
+      const value = Number(h.total_value ?? 0);
+      const gain = h.unrealised_gain_loss != null ? Number(h.unrealised_gain_loss) : null;
+      const basis = h.total_cost_basis != null ? Number(h.total_cost_basis) : null;
+      const prev = byTicker.get(ticker);
+      if (!prev) {
+        byTicker.set(ticker, {
+          ticker,
+          value,
+          pct: 0,
+          unrealizedGainLoss: gain,
+          costBasis: basis,
+          sector,
+          accounts: accountName ? [accountName] : [],
+        });
+      } else {
+        prev.value += value;
+        prev.unrealizedGainLoss =
+          gain != null ? (prev.unrealizedGainLoss ?? 0) + gain : prev.unrealizedGainLoss;
+        prev.costBasis = basis != null ? (prev.costBasis ?? 0) + basis : prev.costBasis;
+        prev.sector = prev.sector ?? sector;
+        if (accountName && !prev.accounts.includes(accountName)) prev.accounts.push(accountName);
+      }
+    }
+    const holdings: BriefHolding[] = [...byTicker.values()]
+      .map((h) => ({ ...h, pct: totalValue > 0 ? (h.value / totalValue) * 100 : 0 }))
+      .sort((a, b) => b.value - a.value);
 
     const totalCostBasis = holdings.reduce((s, h) => s + (h.costBasis ?? 0), 0);
     const totalUnrealized = holdings.reduce((s, h) => s + (h.unrealizedGainLoss ?? 0), 0);

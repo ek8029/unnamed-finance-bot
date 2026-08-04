@@ -134,7 +134,7 @@ export async function composeWeeklyNote(
           h.unrealizedGainLoss != null
             ? `, unrealized ${h.unrealizedGainLoss >= 0 ? '+' : ''}$${Math.round(h.unrealizedGainLoss).toLocaleString()}`
             : ''
-        })`,
+        }${h.accounts.length > 1 ? `, across ${h.accounts.join(' + ')}` : ''})`,
     )
     .join('\n');
   parts.push(

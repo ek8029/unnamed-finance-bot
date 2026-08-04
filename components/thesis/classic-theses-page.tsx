@@ -252,7 +252,12 @@ export function ClassicThesesPage() {
   // Portfolio weights (node size + Standings weight column). Degrades to undefined.
   const totalValue = holdings.reduce((s, h) => s + (h.value ?? 0), 0);
   const weightByTicker = new Map<string, number>();
-  if (totalValue > 0) for (const h of holdings) if (h.value) weightByTicker.set(h.ticker.toUpperCase(), (h.value / totalValue) * 100);
+  // Accumulate, don't overwrite — the same ticker held in 2+ accounts is one
+  // position, and last-lot-wins under-reported multi-brokerage weights.
+  if (totalValue > 0) for (const h of holdings) if (h.value) {
+    const k = h.ticker.toUpperCase();
+    weightByTicker.set(k, (weightByTicker.get(k) ?? 0) + (h.value / totalValue) * 100);
+  }
 
   // Standings rows
   const rows: Row[] = summaries.map(({ t, summary }) => {
@@ -523,7 +528,10 @@ export function ClassicThesesPage() {
   const flaggedRow = rows.find((r) => r.worst === 'broken') ?? rows.find((r) => r.worst === 'weakening') ?? null;
 
   const plByTicker = new Map<string, number>();
-  for (const h of holdings) if (h.pl != null) plByTicker.set(h.ticker.toUpperCase(), h.pl);
+  for (const h of holdings) if (h.pl != null) {
+    const k = h.ticker.toUpperCase();
+    plByTicker.set(k, (plByTicker.get(k) ?? 0) + h.pl);
+  }
   const cardTheses: CardThesis[] = bandedRows.flatMap((b) => b.rows).map((r) => ({
     thesisId: r.t.id,
     ticker: r.t.ticker,

@@ -99,7 +99,9 @@ function formatContext(ctx: ResearchContext): string {
             h.unrealizedGainLoss != null
               ? `, unrealized ${h.unrealizedGainLoss >= 0 ? '+' : ''}$${Math.round(h.unrealizedGainLoss).toLocaleString()}`
               : ''
-          }${h.sector ? `, ${h.sector}` : ''})`,
+          }${h.sector ? `, ${h.sector}` : ''}${
+            h.accounts.length > 1 ? `, across ${h.accounts.join(' + ')}` : ''
+          })`,
       )
       .join('\n');
     const sectors = p.sectorAllocation
