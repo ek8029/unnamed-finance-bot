@@ -214,14 +214,37 @@ export async function refreshMarketPrices(
 
 export async function recalcAllocations(supabase: AnyClient, log: string[]) {
   try {
-    const { data: allHoldings } = await supabase
-      .from('holdings')
-      .select('id, user_id, total_value');
+    // This is a GLOBAL read across every user's holdings, and PostgREST caps an
+    // unbounded select at 1000 rows and returns them without complaint. Past
+    // that ceiling the tail of the table simply vanished: allocations for the
+    // users in it were computed from a partial book, or never recomputed at
+    // all, with no error anywhere. Page explicitly instead.
+    const PAGE_SIZE = 1000;
+    const MAX_PAGES = 200; // 200k holdings — a backstop, not a real limit
+    const allHoldings: { id: string; user_id: string; total_value: number }[] = [];
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const from = page * PAGE_SIZE;
+      const { data, error } = await supabase
+        .from('holdings')
+        .select('id, user_id, total_value')
+        .order('id', { ascending: true })
+        .range(from, from + PAGE_SIZE - 1);
+      if (error) {
+        console.error('[allocations] holdings page fetch failed:', error.message);
+        return;
+      }
+      if (!data || data.length === 0) break;
+      allHoldings.push(...(data as { id: string; user_id: string; total_value: number }[]));
+      if (data.length < PAGE_SIZE) break;
+      if (page === MAX_PAGES - 1) {
+        console.error('[allocations] hit the page cap — some holdings were not reallocated');
+      }
+    }
 
-    if (!allHoldings || allHoldings.length === 0) return;
+    if (allHoldings.length === 0) return;
 
     const userHoldings = new Map<string, { id: string; total_value: number }[]>();
-    for (const h of allHoldings as { id: string; user_id: string; total_value: number }[]) {
+    for (const h of allHoldings) {
       const existing = userHoldings.get(h.user_id) || [];
       existing.push({ id: h.id, total_value: Number(h.total_value) });
       userHoldings.set(h.user_id, existing);

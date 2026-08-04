@@ -34,17 +34,43 @@ export async function GET(request: Request) {
   const log: string[] = [];
 
   try {
-    const { data: { users }, error: usersError } = await serviceClient.auth.admin.listUsers({ perPage: 1000 });
-    if (usersError) throw usersError;
+    // listUsers caps at 1000 per page and silently returns only the first page,
+    // so past 1000 signups the newest users would never be considered.
+    const users: { id: string; email?: string; user_metadata?: { full_name?: string } }[] = [];
+    for (let page = 1; page <= 50; page++) {
+      const { data, error: usersError } = await serviceClient.auth.admin.listUsers({ page, perPage: 1000 });
+      if (usersError) throw usersError;
+      const batch = data?.users ?? [];
+      users.push(...batch);
+      if (batch.length < 1000) break;
+    }
 
     // Users who turned Market alerts off in Settings. This email already carries
     // a settings-link unsubscribe; now that link actually stops the send.
-    const { data: prefRows } = await serviceClient
-      .from('user_preferences')
-      .select('user_id, notification_market_alerts');
-    const marketAlertsOff = new Set(
-      (prefRows ?? []).filter(p => p.notification_market_alerts === false).map(p => p.user_id),
-    );
+    //
+    // This read MUST be complete. An unbounded select tops out at 1000 rows, and
+    // a truncated opt-out set means people who explicitly turned these emails off
+    // start receiving them again — the one failure mode that is not recoverable
+    // by trying again tomorrow. Page it.
+    const marketAlertsOff = new Set<string>();
+    for (let page = 0; page < 200; page++) {
+      const from = page * 1000;
+      const { data: prefRows, error: prefError } = await serviceClient
+        .from('user_preferences')
+        .select('user_id, notification_market_alerts')
+        .order('user_id', { ascending: true })
+        .range(from, from + 999);
+      if (prefError) {
+        // Fail closed: without a verified opt-out list, send nothing.
+        console.error('[watchlist-alerts] preference fetch failed, skipping run:', prefError.message);
+        return NextResponse.json({ sent: 0, skipped: 0, error: 'preferences unavailable' });
+      }
+      const batch = prefRows ?? [];
+      for (const p of batch) {
+        if (p.notification_market_alerts === false) marketAlertsOff.add(p.user_id);
+      }
+      if (batch.length < 1000) break;
+    }
 
     for (const user of users) {
       if (!user.email) continue;

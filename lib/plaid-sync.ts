@@ -380,11 +380,24 @@ export async function syncPlaidItem(
           // positions and must be kept.
           if (Number(h.quantity) === 0) return null;
 
-          const totalValue = h.institution_value ?? (h.quantity * (h.close_price ?? 0));
-          const currentPrice = h.close_price
-            ?? (h.quantity > 0 && h.institution_value
-              ? h.institution_value / h.quantity
-              : 0);
+          // ONE source of truth per row, with the other derived from it.
+          //
+          // total_value used to prefer the broker's institution_value while
+          // current_price preferred Plaid's security-level close_price. When
+          // those two disagree (different valuation times, accrued interest,
+          // share-class marks) the stored row failed shares x price ==
+          // total_value: the positions table showed a price and a value that
+          // did not multiply out, and unrealised P/L jumped the moment live
+          // prices loaded and recomputed on the other basis.
+          //
+          // The broker's own mark wins when present. It is what the user's
+          // statement says, and it covers securities Plaid has no close price
+          // for at all. refreshMarketPrices later moves both fields together,
+          // so the invariant holds from here on.
+          const brokerMark =
+            h.institution_value != null && h.quantity !== 0 ? Number(h.institution_value) : null;
+          const totalValue = brokerMark ?? h.quantity * (h.close_price ?? 0);
+          const currentPrice = brokerMark != null ? brokerMark / h.quantity : (h.close_price ?? 0);
           const totalCostBasis = h.cost_basis;
 
           return {
