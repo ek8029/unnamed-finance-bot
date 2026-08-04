@@ -3,55 +3,56 @@
 5 statutory specialists + adversarial review. 36 candidates, 24 confirmed.
 Sources fetched from irs.gov / law.cornell.edu per finding.
 
-## Status — 2026-08-04 (commits 40326cc, e714aab)
+## Status — 2026-08-04 (40326cc, e714aab, 482a580, 1a5d191)
 
-**Fixed.** All five P0s and every P1 except the two noted below.
-- Wash-sale detection reads `investment_transactions` instead of the unwritten
+**All 24 findings addressed except one, which is disclosed rather than fixed.**
+
+Detection and claims
+- Wash-sale screening reads `investment_transactions` instead of the unwritten
   `capital_gains`; covers same-ticker and related buys, DRIP reinvestments, and
-  retirement-account purchases (Rev. Rul. 2008-5 language).
-- Holding a related security is advisory, not a flag, and no longer drops the
-  lot from the savings pool. A prior sell no longer flags.
-- Every clearance claim removed: "Eligible" → "No conflict", no "wash-sale-safe"
-  or "IRS-ready" anywhere, public TLH calculator and drip email rewritten.
-- Both halves of the 61-day window stated on every harvest surface.
-- Engine DISCLAIMER rendered on /dashboard/taxes, extended to NIIT/state/MFS/lot ID.
-- `estimateCappedTlhSavings` reports the MARGINAL benefit of the harvest.
-- Retirement losses excluded from research/note/ledger harvest totals.
+  retirement-account purchases (Rev. Rul. 2008-5).
+- Holding a related security is advisory, not a flag, and no longer drops the lot
+  from the savings pool. A prior sell no longer flags.
+- No surface claims a §1091 clearance. "Eligible" → "No conflict"; no
+  "wash-sale-safe" or "IRS-ready" anywhere, including the public TLH calculator
+  and the Pro drip email. Both halves of the 61-day window stated everywhere a
+  harvest is suggested.
+- The disclaimer is generated from the rates and cap actually applied, so it can
+  never describe a different calculation than the screen, and it names NIIT,
+  state tax, MFS, DRIP, unlinked accounts, and specific-lot ID.
+
+Math
+- `estimateCappedTlhSavings` reports the MARGINAL benefit of the proposed
+  harvest, not a §1211(b) deduction the user already had.
+- Retirement losses excluded from research chat, weekly note, and value ledger.
 - One `estimateTaxOnRealizedGains` with §1222(11) netting, shared by the client
-  Tax Center and the server engine (pure math extracted to `lib/tax-math.ts`).
+  Tax Center and the server engine (pure math in `lib/tax-math.ts`).
 - `classifyHoldingPeriod` on the IRS anniversary rule; unknown-character losses
   valued at the LT rate, not the nonexistent 23.5% midpoint.
-- Form 8949: lot-constrained column (b), box C/F designation, column (f) added,
+- Filing status and tax bracket from settings are now APPLIED: MFS gets the
+  $1,500 cap, and a user's own bracket drives the ordinary rate with the §1(h)
+  band derived from it.
+- All four surfaces pass real loss character (`splitLossByCharacter`) instead of
+  pooling everything as unknown/long-term.
+
+Form 8949
+- Lot-constrained column (b), box C/F designation with why, column (f) added,
   column (g) prints NOT COMPUTED, (h) derived from (d)−(e), unclassified rows to
-  Part I, selectable tax year, caveats inside the CSV.
-- §1211(b) harvest ladder shipped on /dashboard/taxes.
+  Part I, selectable tax year, caveats inside the CSV and rendered in the UI.
+- Migration 062 adds `capital_gains.account_id`; retirement dispositions are
+  filtered out (§408(e)(1)) and rows with no account link are counted and named.
 
-**Still open** (all disclosed on-screen, none silently wrong):
-- `lib/financial-config.ts:25` — the $3,000 cap is deploy-wide; MFS ($1,500) is
-  collected in settings but not applied. Copy now says "assumed".
-- `lib/research/account.ts:241`, `lib/insights-engine.ts:242`,
-  `lib/thesis-actions.ts:370` — still pass `unknownLoss` rather than real loss
-  character, so these surfaces can quote a lower figure than the Tax Center.
-- `lib/tax-analysis.ts:515` — IRC §1223(3) wash-sale holding-period tacking is
-  disclosed but not computed (needs specific-lot identification).
-- `app/api/tax/form-8949/route.ts:94` — `capital_gains` has no account link, so
-  IRA dispositions cannot be filtered out. Stated on the artifact.
-- Remaining display specs: holding-period clock, wash-sale window calendar,
-  carryforward bank, netting order (`docs/superpowers/specs/2026-08-04-tax-mechanics-displays.md`).
+Displays shipped
+- §1211(b) harvest ladder, holding-period clock, wash-sale window strip, netting
+  order, carryforward bank.
 
-## P0 - lib/tax-analysis.ts:345
-**Statute:** IRC 1091(a)  
-**Source:** https://www.law.cornell.edu/uscode/text/26/1091
-
-**Issue:** The primary same-ticker wash-sale check queries `capital_gains`, a table no production code path ever writes; real Plaid buys land in `investment_transactions`, which is never queried for the harvested ticker itself, so acquisitions inside the 30-day-before window are structurally undetectable and every position is labeled wash-safe.
-
-> In the case of any loss claimed to have been sustained from any sale or other disposition of shares of stock or securities where it appears that, within a period beginning 30 days before the date of such sale or disposition and ending 30 days after such date, the taxpayer has acquired (by purchase or by an exchange on which the entire amount of gain or loss was recognized by law), or has entered into a contract or option so to acquire, substantially identical stock or securities, then no deduction shall be allowed under section 165
-
-**Current:** checkWashSaleRisk() computes windowStart = today - 30d and queries `capital_gains` filtered `.in('ticker', tickers)`. Grep across the repo shows the ONLY writers of `capital_gains` are scripts/seed-losses.ts:223 and scripts/seed-test-user.ts:670 (demo seeding); there is no INSERT, UPSERT, or DB trigger populating it from Plaid. lib/plaid-sync.ts:651 upserts real brokerage buys/sells into `investment_transactions` (migration 039, `transaction_type` = Plaid subtype 'buy'). The one `investment_transactions` query in this function (line 422) filters `.in('ticker', relatedTickerList)` — a list built by getRelatedTickers(), which by construction EXCLUDES the ticker itself (`if (t !== upper)`) — and is gated behind `if (relatedTickers.length === 0) continue;`, so it never runs for tickers outside SHARE_CLASSES / SINGLE_STOCK_MAP / INDEX_GROUPS. The `transactions` query at line 368 assigns `rece
-
-**Correct:** Query `investment_transactions` for the harvested ticker itself (and its related tickers) with transaction_type in ('buy','transfer in','reinvestment') over transaction_date >= today-30d, across ALL of the user's linked accounts including retirement ones. Either backfill `capital_gains` from `investment_transactions` or drop `capital_gains` from the detection path entirely. Until same-ticker buy detection actually runs against populated data, the UI must not assert that no substantially identical securities were detected and must not use the phrase 'wash-sale-safe'; it should say only that Helm found no acquisition in the data it has, and name the gap.
-
-**Harm:** A user who bought more of the same ticker two weeks ago — dollar-cost averaging, an RSU vest, a rebalance — is affirmatively told the lot is 'Eligible' with 'no substantially identical securities detected,' sells to harvest, and the entire loss is disallowed under 1091(a). Helm's headline 'offsets an estimated $X in taxes this year' is then wrong by the full amount of that lot.
+**Open — one item, deliberately.**
+- `lib/tax-analysis.ts` — IRC §1223(3) wash-sale holding-period tacking is not
+  computed. It requires specific-lot identification, and Plaid returns average
+  cost basis with no lot-level acquisition records. The disclaimer states that
+  holding periods come from the broker's acquisition date and do not reflect
+  tacking, so a lot shown as short-term may in fact be long-term. Fixing this
+  needs a lot-tracking layer, not a patch.
 
 ---
 
