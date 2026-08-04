@@ -17,7 +17,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PillarStatus } from '@/lib/thesis-status';
 import { TAX_RATE } from '@/lib/financial-config';
-import { estimateCappedTlhSavings, isHarvestableLoss } from '@/lib/tax-analysis';
+import { isHarvestableLoss } from '@/lib/tax-analysis';
+import { estimateCappedTlhSavings, splitLossByCharacter } from '@/lib/tax-math';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -325,14 +326,24 @@ export async function generateThesisActions(
   // separately from the total unrealized P/L.
   const { data: holdingsRaw } = await db
     .from('holdings')
-    .select('ticker, total_value, unrealised_gain_loss, account:linked_accounts(account_name, account_subtype)')
+    .select('ticker, total_value, unrealised_gain_loss, acquired_at, account:linked_accounts(account_name, account_subtype)')
     .eq('user_id', userId);
   const holdings = new Map<string, HoldingSnapshot>();
+  // Per-LOT harvestable losses, kept unfolded so holding period survives the
+  // ticker-level aggregation above (one name can sit in two accounts with two
+  // acquisition dates, and the character decides the rate).
+  const harvestLots: { loss: number; acquiredAt: string | null }[] = [];
   for (const h of (holdingsRaw ?? []) as Record<string, unknown>[]) {
     const ticker = String(h.ticker).toUpperCase();
     const ugl = h.unrealised_gain_loss != null ? Number(h.unrealised_gain_loss) : null;
     const account = (h.account ?? null) as { account_name?: string | null; account_subtype?: string | null } | null;
     const harvestable = isHarvestableLoss({ unrealised_gain_loss: ugl, total_value: h.total_value == null ? null : Number(h.total_value) }, account);
+    if (harvestable) {
+      harvestLots.push({
+        loss: Math.abs(ugl as number),
+        acquiredAt: h.acquired_at == null ? null : String(h.acquired_at),
+      });
+    }
     const prev = holdings.get(ticker);
     holdings.set(ticker, {
       ticker,
@@ -370,8 +381,17 @@ export async function generateThesisActions(
       if (g.gain_loss_type === 'short_term') stGainYtd += Number(g.gain_loss || 0);
       else ltGainYtd += Number(g.gain_loss || 0);
     }
-    // Loss character unknown at this surface → unknownLoss (conservative LT treatment).
-    const capped = estimateCappedTlhSavings({ unknownLoss: lossTotal, stGainYtd, ltGainYtd, ordinaryRate: TAX_RATE });
+    // Real IRC §1222 character per lot, so the per-position dollars here agree
+    // with the Tax Center instead of being pooled as long-term.
+    const character = splitLossByCharacter(harvestLots);
+    const capped = estimateCappedTlhSavings({
+      stLoss: character.stLoss,
+      ltLoss: character.ltLoss,
+      unknownLoss: character.unknownLoss,
+      stGainYtd,
+      ltGainYtd,
+      ordinaryRate: TAX_RATE,
+    });
     tlhCtx = { savingsPerLossDollar: capped.cappedSavings / lossTotal };
   }
 

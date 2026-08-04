@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { estimateCappedTlhSavings, estimateTaxOnRealizedGains } from '@/lib/tax-math';
+import {
+  estimateCappedTlhSavings,
+  estimateTaxOnRealizedGains,
+  resolveTaxProfile,
+  annualLossCapFor,
+  classifyHoldingPeriod,
+  splitLossByCharacter,
+} from '@/lib/tax-math';
 
 // Schedule D netting per IRC §1222/§1211(b)/§1212(b) — worked examples.
 // ord = 32%, ltcg = 15% passed explicitly so config changes don't move tests.
@@ -107,5 +114,103 @@ describe('estimateTaxOnRealizedGains — IRC §1222(11) netting', () => {
     // The analyze-route bug quoted $16,000 on this book; §1(h) says $7,500.
     expect(estimateTaxOnRealizedGains({ stNet: 0, ltNet: 50_000, ...RATES }))
       .toBeCloseTo(7_500, 6);
+  });
+});
+
+describe('resolveTaxProfile — IRC §1211(b)(1) filing status and §1(h) bands', () => {
+  it('halves the cap for married filing separately', () => {
+    expect(annualLossCapFor('Married Filing Separately')).toBe(1_500);
+    expect(annualLossCapFor('Single')).toBe(3_000);
+    expect(annualLossCapFor(null)).toBe(3_000);
+  });
+
+  it('applies the MFS cap end to end, not just in the label', () => {
+    const cap = annualLossCapFor('Married Filing Separately');
+    const r = estimateCappedTlhSavings({ ltLoss: 10_000, stGainYtd: 0, ltGainYtd: 0, annualCap: cap, ...RATES });
+    expect(r.ordinaryIncomeOffset).toBe(1_500);
+    expect(r.cappedSavings).toBeCloseTo(1_500 * 0.32, 6);
+    expect(r.estimatedCarryforward).toBe(8_500);
+  });
+
+  it("uses the user's bracket when they set one", () => {
+    const p = resolveTaxProfile({ filing_status: 'Single', tax_bracket: '24%' });
+    expect(p.ordinaryRate).toBeCloseTo(0.24, 6);
+    expect(p.ltcgRate).toBeCloseTo(0.15, 6);
+    expect(p.fromSettings).toBe(true);
+  });
+
+  it('derives the §1(h) band from the ordinary bracket', () => {
+    expect(resolveTaxProfile({ tax_bracket: '12%' }).ltcgRate).toBe(0);
+    expect(resolveTaxProfile({ tax_bracket: '32%' }).ltcgRate).toBe(0.15);
+    expect(resolveTaxProfile({ tax_bracket: '37%' }).ltcgRate).toBe(0.20);
+  });
+
+  it('falls back to defaults on missing or nonsense input', () => {
+    for (const prefs of [null, {}, { tax_bracket: '' }, { tax_bracket: 'abc' }, { tax_bracket: '900%' }]) {
+      const p = resolveTaxProfile(prefs);
+      expect(p.fromSettings).toBe(false);
+      expect(p.ordinaryRate).toBeCloseTo(0.32, 6);
+      expect(p.ltcgRate).toBeCloseTo(0.15, 6);
+      expect(p.annualLossCap).toBe(3_000);
+    }
+  });
+});
+
+describe('classifyHoldingPeriod — IRS anniversary rule (IRC §1222(3))', () => {
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const daysAgo = (n: number) => {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() - n);
+    return iso(d);
+  };
+  const yearsAgoPlus = (extraDays: number) => {
+    const now = new Date();
+    const d = new Date(Date.UTC(now.getUTCFullYear() - 1, now.getUTCMonth(), now.getUTCDate() - extraDays));
+    return iso(d);
+  };
+
+  it('is short-term ON the one-year anniversary — one year is not MORE than one year', () => {
+    expect(classifyHoldingPeriod(yearsAgoPlus(0))).toBe('short_term');
+  });
+
+  it('is long-term the day after the anniversary', () => {
+    expect(classifyHoldingPeriod(yearsAgoPlus(1))).toBe('long_term');
+  });
+
+  it('is short-term the day before the anniversary', () => {
+    expect(classifyHoldingPeriod(yearsAgoPlus(-1))).toBe('short_term');
+  });
+
+  it('handles recent buys and missing dates', () => {
+    expect(classifyHoldingPeriod(daysAgo(30))).toBe('short_term');
+    expect(classifyHoldingPeriod(null)).toBe('unknown');
+    expect(classifyHoldingPeriod('not-a-date')).toBe('unknown');
+  });
+});
+
+describe('splitLossByCharacter', () => {
+  it('buckets each lot by its own acquisition date', () => {
+    const now = new Date();
+    const old = new Date(Date.UTC(now.getUTCFullYear() - 3, now.getUTCMonth(), now.getUTCDate()))
+      .toISOString().slice(0, 10);
+    const recent = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 10))
+      .toISOString().slice(0, 10);
+    const r = splitLossByCharacter([
+      { loss: -1_000, acquiredAt: old },
+      { loss: 2_000, acquiredAt: recent },
+      { loss: 500, acquiredAt: null },
+      { loss: 0, acquiredAt: recent },
+    ]);
+    expect(r.ltLoss).toBe(1_000);
+    expect(r.stLoss).toBe(2_000);
+    expect(r.unknownLoss).toBe(500);
+    expect(r.total).toBe(3_500);
+  });
+
+  it('character changes the answer — the discrepancy the surfaces used to show', () => {
+    const st = estimateCappedTlhSavings({ stLoss: 5_000, stGainYtd: 5_000, ltGainYtd: 5_000, ...RATES });
+    const unknown = estimateCappedTlhSavings({ unknownLoss: 5_000, stGainYtd: 5_000, ltGainYtd: 5_000, ...RATES });
+    expect(st.cappedSavings).toBeCloseTo(1_600, 6);  // absorbs ST gain at 32%
+    expect(unknown.cappedSavings).toBeCloseTo(750, 6); // pooled LT, absorbs LT gain at 15%
   });
 });

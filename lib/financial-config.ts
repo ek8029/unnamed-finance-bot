@@ -9,18 +9,29 @@
 
 // ── Tax ──
 
-/** Combined federal + state SHORT-TERM capital gains / ordinary income rate for estimates. */
+/**
+ * FEDERAL ordinary-income / short-term capital gains rate used when the user has
+ * not told us their bracket. Federal only — state and local tax are excluded
+ * from every estimate, and the disclaimer says so. (This comment used to claim
+ * "combined federal + state", which contradicted the disclaimer on the same
+ * screen; the numbers were always federal-only.)
+ *
+ * Superseded per user by `tax_bracket` in settings — see resolveTaxProfile().
+ */
 export const TAX_RATE = Number(process.env.TAX_RATE_BLENDED) || 0.32;
 
-/** Default LONG-TERM capital gains rate (15% federal is the most common bracket). */
+/** Default FEDERAL long-term capital gains rate. IRC §1(h) sets 0/15/20 by
+ *  taxable income; 15% is the middle band and the most common. */
 export const LTCG_RATE_DEFAULT = Number(process.env.LTCG_RATE) || 0.15;
 
 /**
- * IRC §1211(b): Net capital losses can offset up to $3,000 of ordinary
- * income per year ($1,500 for married filing separately). Excess carries
- * forward indefinitely per IRC §1212(b).
+ * IRC §1211(b): net capital losses offset capital gains without limit, then up
+ * to $3,000 of ordinary income per year ($1,500 for a married individual filing
+ * separately). Excess carries forward indefinitely per IRC §1212(b).
  *
- * Default assumes single/MFJ. Override via env for MFS users: TAX_ANNUAL_LOSS_CAP=1500
+ * This is the DEFAULT only. The statutory amount depends on filing status, which
+ * is per user and cannot come from a deploy-wide env var — resolveTaxProfile()
+ * reads `user_preferences.filing_status` and returns $1,500 for MFS.
  */
 export const ANNUAL_LOSS_DEDUCTION_CAP = Number(process.env.TAX_ANNUAL_LOSS_CAP) || 3_000;
 

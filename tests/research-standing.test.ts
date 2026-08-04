@@ -9,6 +9,7 @@ function brief(over: Partial<PortfolioBrief> = {}): PortfolioBrief {
     totalCostBasis: 90000,
     totalUnrealized: 10000,
     positionCount: 3,
+    harvestableLoss: { stLoss: 0, ltLoss: 1000, unknownLoss: 0, total: 1000 },
     holdings: [
       { ticker: 'AAA', value: 15000, pct: 15, unrealizedGainLoss: 2000, costBasis: 13000, sector: 'Technology', accounts: [], taxableUnrealizedGainLoss: 2000 },
       { ticker: 'BBB', value: 12000, pct: 12, unrealizedGainLoss: -1000, costBasis: 13000, sector: 'Healthcare', accounts: [], taxableUnrealizedGainLoss: -1000 },

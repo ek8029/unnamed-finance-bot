@@ -6,11 +6,13 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TAX_RATE, LTCG_RATE_DEFAULT } from '@/lib/financial-config';
+import { isRetirementAccount } from '@/lib/tax-analysis';
 import {
   estimateCappedTlhSavings,
   estimateTaxOnRealizedGains,
-  isRetirementAccount,
-} from '@/lib/tax-analysis';
+  splitLossByCharacter,
+  type LossCharacterSplit,
+} from '@/lib/tax-math';
 
 export interface BriefHolding {
   ticker: string;
@@ -32,6 +34,10 @@ export interface PortfolioBrief {
   totalCostBasis: number;
   totalUnrealized: number;
   positionCount: number;
+  /** Harvestable dollars split by IRC §1222 holding period, computed per LOT
+   *  before the by-ticker fold — one name can sit in two accounts with two
+   *  acquisition dates, and character decides the rate the loss saves at. */
+  harvestableLoss: LossCharacterSplit;
   holdings: BriefHolding[]; // full book, richest first
   sectorAllocation: { sector: string; pct: number }[];
 }
@@ -46,7 +52,7 @@ export async function getPortfolioBrief(
     const { data, error } = await db
       .from('holdings')
       .select(
-        'ticker, total_value, unrealised_gain_loss, total_cost_basis, portfolio_allocation_pct, securities(sector), linked_accounts(account_name, account_subtype)',
+        'ticker, total_value, unrealised_gain_loss, total_cost_basis, portfolio_allocation_pct, acquired_at, securities(sector), linked_accounts(account_name, account_subtype)',
       )
       .eq('user_id', userId)
       .order('total_value', { ascending: false });
@@ -58,6 +64,7 @@ export async function getPortfolioBrief(
     // duplicate the ticker in the model's context and understate single-name
     // concentration (the standing check reads the top row's pct).
     const byTicker = new Map<string, BriefHolding>();
+    const harvestLots: { loss: number; acquiredAt: string | null }[] = [];
     for (const h of data) {
       const sec = h.securities as { sector?: string | null } | { sector?: string | null }[] | null;
       const sector = Array.isArray(sec) ? (sec[0]?.sector ?? null) : (sec?.sector ?? null);
@@ -71,6 +78,12 @@ export async function getPortfolioBrief(
       const gain = h.unrealised_gain_loss != null ? Number(h.unrealised_gain_loss) : null;
       const basis = h.total_cost_basis != null ? Number(h.total_cost_basis) : null;
       const taxableGain = retirement ? null : gain;
+      if (taxableGain != null && taxableGain < 0 && value > 0) {
+        harvestLots.push({
+          loss: Math.abs(taxableGain),
+          acquiredAt: h.acquired_at == null ? null : String(h.acquired_at),
+        });
+      }
       const prev = byTicker.get(ticker);
       if (!prev) {
         byTicker.set(ticker, {
@@ -112,7 +125,15 @@ export async function getPortfolioBrief(
       .map(([sector, val]) => ({ sector, pct: totalValue > 0 ? (val / totalValue) * 100 : 0 }))
       .sort((a, b) => b.pct - a.pct);
 
-    return { totalValue, totalCostBasis, totalUnrealized, positionCount: holdings.length, holdings, sectorAllocation };
+    return {
+      totalValue,
+      totalCostBasis,
+      totalUnrealized,
+      positionCount: holdings.length,
+      harvestableLoss: splitLossByCharacter(harvestLots),
+      holdings,
+      sectorAllocation,
+    };
   } catch {
     return null;
   }
@@ -177,9 +198,11 @@ export async function getTaxContext(
   if (brief) {
     const losers = brief.holdings.filter((h) => (h.taxableUnrealizedGainLoss ?? 0) < 0);
     if (losers.length > 0) {
-      const totalLoss = losers.reduce((s, h) => s + Math.abs(h.taxableUnrealizedGainLoss ?? 0), 0);
+      const totalLoss = brief.harvestableLoss.total;
       const capped = estimateCappedTlhSavings({
-        unknownLoss: totalLoss,
+        stLoss: brief.harvestableLoss.stLoss,
+        ltLoss: brief.harvestableLoss.ltLoss,
+        unknownLoss: brief.harvestableLoss.unknownLoss,
         stGainYtd: stYtd,
         ltGainYtd: ltYtd,
       });
@@ -261,9 +284,7 @@ export async function getValueLedger(
 
   // Harvestable tax savings from current losses (the deterministic dollar).
   if (brief) {
-    const totalLoss = brief.holdings
-      .filter((h) => (h.taxableUnrealizedGainLoss ?? 0) < 0)
-      .reduce((s, h) => s + Math.abs(h.taxableUnrealizedGainLoss ?? 0), 0);
+    const totalLoss = brief.harvestableLoss.total;
     if (totalLoss > 0) {
       lines.push({
         label: 'Tax-loss harvesting surfaced (taxable accounts, estimate)',
@@ -272,8 +293,13 @@ export async function getValueLedger(
         // ignoring realized gains would understate it just as badly (losses
         // offset gains without limit; only the excess hits the $3,000 cap).
         amount: Math.round(
-          estimateCappedTlhSavings({ unknownLoss: totalLoss, stGainYtd: stYtd, ltGainYtd: ltYtd })
-            .cappedSavings,
+          estimateCappedTlhSavings({
+            stLoss: brief.harvestableLoss.stLoss,
+            ltLoss: brief.harvestableLoss.ltLoss,
+            unknownLoss: brief.harvestableLoss.unknownLoss,
+            stGainYtd: stYtd,
+            ltGainYtd: ltYtd,
+          }).cappedSavings,
         ),
         kind: 'tax_harvest',
         date: null,

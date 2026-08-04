@@ -1,3 +1,4 @@
+import { splitLossByCharacter } from '@/lib/tax-math';
 import { computePortfolioLookthrough } from '@/lib/etf-holdings';
 import {
   TAX_RATE,
@@ -81,7 +82,7 @@ export async function generateInsights(
         supabase
           .from('holdings')
           .select(
-            'id, ticker, total_value, total_cost_basis, unrealised_gain_loss, shares, current_price, account:linked_accounts(account_name, account_subtype)',
+            'id, ticker, total_value, total_cost_basis, unrealised_gain_loss, shares, current_price, acquired_at, account:linked_accounts(account_name, account_subtype)',
           )
           .eq('user_id', userId),
         supabase
@@ -239,8 +240,23 @@ export async function generateInsights(
         if (g.gain_loss_type === 'short_term') stGainYtd += Number(g.gain_loss || 0);
         else ltGainYtd += Number(g.gain_loss || 0);
       }
-      // Loss character unknown at this surface → unknownLoss (conservative LT treatment).
-      const capped = estimateCappedTlhSavings({ unknownLoss: totalLoss, stGainYtd, ltGainYtd, ordinaryRate: TAX_RATE });
+      // Split by IRC §1222 holding period. Dumping everything into unknownLoss
+      // pooled it as long-term, so this surface could quote half what the Tax
+      // Center quoted for the same harvest on the same day.
+      const character = splitLossByCharacter(
+        (losers as { unrealised_gain_loss: number; acquired_at?: string | null }[]).map((h) => ({
+          loss: Number(h.unrealised_gain_loss),
+          acquiredAt: h.acquired_at ?? null,
+        })),
+      );
+      const capped = estimateCappedTlhSavings({
+        stLoss: character.stLoss,
+        ltLoss: character.ltLoss,
+        unknownLoss: character.unknownLoss,
+        stGainYtd,
+        ltGainYtd,
+        ordinaryRate: TAX_RATE,
+      });
       const estimatedSavings = Math.round(capped.cappedSavings);
       const carryforward = Math.round(capped.estimatedCarryforward);
       const tickers = losers.map((h: { ticker: string }) => h.ticker).join(', ');

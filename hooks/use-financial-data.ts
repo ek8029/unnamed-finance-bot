@@ -672,11 +672,17 @@ export interface TaxHarvestReport {
   totalHarvestableLoss: number;
   totalEstimatedSavings: number;
   opportunityCount: number;
+  /** Ordinary/short-term rate actually applied — the user's bracket when set. */
   taxRate: number;
+  /** Long-term rate actually applied. */
   ltcgRate: number;
   opportunities: TaxOpportunity[];
   retirementPositions: TaxOpportunity[];
   annualCap: AnnualCapInfo;
+  /** Filing status from settings, or null. Drives the §1211(b) cap. */
+  filingStatus: string | null;
+  /** True when taxRate/ltcgRate came from settings rather than app defaults. */
+  ratesFromSettings: boolean;
   disclaimer: string;
 }
 

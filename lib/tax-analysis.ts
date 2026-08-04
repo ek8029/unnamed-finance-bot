@@ -28,7 +28,12 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
-import { estimateCappedTlhSavings } from '@/lib/tax-math';
+import {
+  estimateCappedTlhSavings,
+  classifyHoldingPeriod,
+  resolveTaxProfile,
+  type TaxProfile,
+} from '@/lib/tax-math';
 import type { ActionCite } from '@/lib/thesis-conviction';
 import {
   TAX_RATE,
@@ -117,8 +122,12 @@ export interface TaxHarvestReport {
   opportunities: HarvestablePosition[];
   /** Positions with losses in retirement accounts — shown as ineligible */
   retirementPositions: HarvestablePosition[];
-  /** $3,000 annual deduction cap analysis */
+  /** IRC §1211(b) annual deduction cap analysis, resolved for this user */
   annualCap: AnnualCapInfo;
+  /** Filing status from settings, or null if the user has not set one. */
+  filingStatus: string | null;
+  /** True when the rates above came from the user's settings, not app defaults. */
+  ratesFromSettings: boolean;
   /** Legal disclaimer — MUST be displayed to users */
   disclaimer: string;
 }
@@ -560,39 +569,6 @@ async function fetchYtdRealizedGains(userId: string): Promise<{
 }
 
 /**
- * Determine holding period from acquired_at, on the IRS anniversary rule.
- *
- * Per the Form 8949 instructions and Topic No. 409: "count from the day AFTER
- * the day you acquired the asset up to and including the day you disposed of
- * it", and long-term requires MORE than one year (IRC §1222(3)). So a position
- * is long-term only once the evaluation date is strictly after the one-year
- * anniversary — on the anniversary itself it is still short-term.
- *
- * Elapsed-day arithmetic (diffDays > 365) got this wrong twice: it flipped to
- * long-term at noon on the anniversary in a non-leap window, and a full day
- * early across a leap year, which made the badge time-of-day dependent.
- * Compare date-only values so the clock cannot move the answer.
- */
-function classifyHoldingPeriod(acquiredAt: string | null): 'short_term' | 'long_term' | 'unknown' {
-  if (!acquiredAt) return 'unknown';
-  try {
-    const acquired = new Date(acquiredAt + 'T00:00:00Z');
-    if (Number.isNaN(acquired.getTime())) return 'unknown';
-    // Long-term begins the day AFTER the one-year anniversary.
-    const longTermFrom = new Date(Date.UTC(
-      acquired.getUTCFullYear() + 1,
-      acquired.getUTCMonth(),
-      acquired.getUTCDate() + 1,
-    ));
-    const today = new Date();
-    const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
-    return todayUtc >= longTermFrom.getTime() ? 'long_term' : 'short_term';
-  } catch {
-    return 'unknown';
-  }
-}
-
-/**
  * Calculate tax savings for a given loss amount, accounting for the
  * different tax rates on short-term vs long-term capital losses.
  *
@@ -628,26 +604,51 @@ function calculateSavings(
 
 // ── Tax savings calculation ──
 
-const DISCLAIMER = `Estimates only, not tax advice. Helm Terminal is not a registered tax ` +
-  `advisor, CPA, or tax return preparer. Figures assume a default ${(TAX_RATE * 100).toFixed(0)}% ordinary ` +
-  `and short-term rate and a default ${(LTCG_RATE_DEFAULT * 100).toFixed(0)}% long-term rate — not your ` +
-  `actual brackets, which depend on your taxable income and filing status (IRC ` +
-  `§1(h)). The $${ANNUAL_LOSS_DEDUCTION_CAP.toLocaleString()} annual deduction cap (IRC §1211(b)) assumes you are not ` +
-  `married filing separately, whose statutory limit is $1,500. Excluded: the 3.8% ` +
-  `net investment income tax (IRC §1411, which applies above $200,000 single / ` +
-  `$250,000 joint MAGI), AMT, state and local tax, and prior-year loss carryovers. ` +
-  `Wash-sale screening (IRC §1091) is a 30-day BACKWARD lookback across the ` +
-  `accounts you have linked. It does not see purchases you make in the 30 days ` +
-  `AFTER a sale, automatic dividend reinvestments, purchases in accounts you have ` +
-  `not linked, or purchases by your spouse — any of which can disallow a loss ` +
-  `shown here as harvestable. A purchase inside your IRA or Roth IRA is worse than ` +
-  `an ordinary wash sale: under Rev. Rul. 2008-5 the loss is disallowed with no ` +
-  `basis restoration. Specific-lot identification is not implemented, so holding ` +
-  `periods come from your broker's acquisition date and do not reflect wash-sale ` +
-  `tacking under IRC §1223(3). Replacement security suggestions have not been ` +
-  `validated as "not substantially identical" by the IRS. Cost basis comes from ` +
-  `your brokerage feed and may differ from your Form 1099-B. Consult a qualified ` +
-  `tax professional before acting.`;
+/**
+ * The disclosure that MUST reach the screen. Built from the rates and cap that
+ * were actually applied, so it can never describe a different calculation than
+ * the one the user is looking at.
+ */
+function buildDisclaimer(
+  ordinaryRate: number,
+  ltcgRate: number,
+  annualCap: number,
+  profile: TaxProfile | null,
+): string {
+  const rateBasis = profile?.fromSettings
+    ? `Figures use the ${(ordinaryRate * 100).toFixed(0)}% ordinary bracket you set in settings and a `
+      + `${(ltcgRate * 100).toFixed(0)}% long-term rate derived from it. IRC §1(h) ties the 0/15/20 long-term `
+      + `bands to taxable income, which Helm does not know, so the long-term rate is an approximation.`
+    : `Figures assume a default ${(ordinaryRate * 100).toFixed(0)}% ordinary and short-term rate and a default `
+      + `${(ltcgRate * 100).toFixed(0)}% long-term rate — not your actual brackets, which depend on your taxable `
+      + `income and filing status (IRC §1(h)). Set them in Settings to use your own.`;
+
+  const capBasis = profile?.filingStatus
+    ? `The $${annualCap.toLocaleString()} annual ordinary-income deduction cap (IRC §1211(b)) reflects the `
+      + `"${profile.filingStatus}" filing status you set in settings.`
+    : `The $${annualCap.toLocaleString()} annual ordinary-income deduction cap (IRC §1211(b)) assumes you are not `
+      + `married filing separately, whose statutory limit is $1,500. Set your filing status in Settings.`;
+
+  return `Estimates only, not tax advice. Helm Terminal is not a registered tax `
+    + `advisor, CPA, or tax return preparer. ${rateBasis} ${capBasis} Excluded: the 3.8% `
+    + `net investment income tax (IRC §1411, which applies above $200,000 single / `
+    + `$250,000 joint MAGI), AMT, state and local tax, and prior-year loss carryovers. `
+    + `Wash-sale screening (IRC §1091) is a 30-day BACKWARD lookback across the `
+    + `accounts you have linked. It does not see purchases you make in the 30 days `
+    + `AFTER a sale, automatic dividend reinvestments, purchases in accounts you have `
+    + `not linked, or purchases by your spouse — any of which can disallow a loss `
+    + `shown here as harvestable. A purchase inside your IRA or Roth IRA is worse than `
+    + `an ordinary wash sale: under Rev. Rul. 2008-5 the loss is disallowed with no `
+    + `basis restoration. Specific-lot identification is not implemented, so holding `
+    + `periods come from your broker's acquisition date and do not reflect wash-sale `
+    + `tacking under IRC §1223(3). Replacement security suggestions have not been `
+    + `validated as "not substantially identical" by the IRS. Cost basis comes from `
+    + `your brokerage feed and may differ from your Form 1099-B. Consult a qualified `
+    + `tax professional before acting.`;
+}
+
+/** Default-rate disclosure, for the paths that never resolve a user profile. */
+const DISCLAIMER = buildDisclaimer(TAX_RATE, LTCG_RATE_DEFAULT, ANNUAL_LOSS_DEDUCTION_CAP, null);
 
 // ── The single TLH savings formula (IRC §1211(b)) ──
 //
@@ -659,21 +660,48 @@ const DISCLAIMER = `Estimates only, not tax advice. Helm Terminal is not a regis
 export {
   estimateCappedTlhSavings,
   estimateTaxOnRealizedGains,
+  classifyHoldingPeriod,
+  splitLossByCharacter,
 } from '@/lib/tax-math';
 export type { CappedTlhResult } from '@/lib/tax-math';
 
 // ── Main export ──
 
+/**
+ * Rates and the §1211(b) cap the user actually told us about.
+ *
+ * Settings collects filing status and tax bracket under a header promising they
+ * are used "for accurate tax-loss harvesting analysis", and nothing read them:
+ * a married-filing-separately user saw a $3,000 cap when the statute gives them
+ * $1,500, and a 24%-bracket user saw every figure priced at 32%.
+ */
+async function fetchTaxProfile(userId: string): Promise<TaxProfile> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from('user_preferences')
+      .select('filing_status, tax_bracket')
+      .eq('user_id', userId)
+      .maybeSingle();
+    return resolveTaxProfile(data ?? null);
+  } catch {
+    return resolveTaxProfile(null);
+  }
+}
+
 export async function generateTaxReport(
   userId: string,
-  taxRate: number = TAX_RATE,
+  taxRateOverride?: number,
 ): Promise<TaxHarvestReport> {
-  const ltcgRate = LTCG_RATE_DEFAULT;
-
-  const [holdings, ytdRealized] = await Promise.all([
+  const [holdings, ytdRealized, profile] = await Promise.all([
     fetchHoldingsWithLosses(userId),
     fetchYtdRealizedGains(userId),
+    fetchTaxProfile(userId),
   ]);
+
+  const taxRate = taxRateOverride ?? profile.ordinaryRate;
+  const ltcgRate = profile.ltcgRate;
+  const annualCap = profile.annualLossCap;
 
   if (holdings.length === 0) {
     return {
@@ -685,9 +713,9 @@ export async function generateTaxReport(
       opportunities: [],
       retirementPositions: [],
       annualCap: {
-        annualDeductionCap: ANNUAL_LOSS_DEDUCTION_CAP,
+        annualDeductionCap: annualCap,
         ytdNetRealized: ytdRealized.totalNet,
-        remainingDeductibleLoss: ANNUAL_LOSS_DEDUCTION_CAP,
+        remainingDeductibleLoss: annualCap,
         estimatedCarryforward: 0,
         cappedSavings: 0,
         uncappedSavings: 0,
@@ -696,6 +724,8 @@ export async function generateTaxReport(
         totalPositionSavings: 0,
         baselineSavings: 0,
       },
+      filingStatus: profile.filingStatus,
+      ratesFromSettings: profile.fromSettings,
       disclaimer: DISCLAIMER,
     };
   }
@@ -791,6 +821,7 @@ export async function generateTaxReport(
     ltGainYtd: ytdRealized.longTermNet,
     ordinaryRate: taxRate,
     ltcgRate,
+    annualCap,
   });
   const remainingDeductibleLoss = capped.remainingDeductibleLoss;
   const estimatedCarryforward = capped.estimatedCarryforward;
@@ -805,7 +836,7 @@ export async function generateTaxReport(
     opportunities,
     retirementPositions,
     annualCap: {
-      annualDeductionCap: ANNUAL_LOSS_DEDUCTION_CAP,
+      annualDeductionCap: annualCap,
       ytdNetRealized: ytdRealized.totalNet,
       remainingDeductibleLoss,
       estimatedCarryforward,
@@ -816,6 +847,8 @@ export async function generateTaxReport(
       totalPositionSavings: capped.totalPositionSavings,
       baselineSavings: capped.baselineSavings,
     },
-    disclaimer: DISCLAIMER,
+    filingStatus: profile.filingStatus,
+    ratesFromSettings: profile.fromSettings,
+    disclaimer: buildDisclaimer(taxRate, ltcgRate, annualCap, profile),
   };
 }

@@ -279,6 +279,15 @@ function TaxesContent() {
 
   const loading = taxLoading || harvestLoading;
 
+  // Rates and the §1211(b) cap the report actually applied. Reading the module
+  // constants here would put a different number on screen than in the math for
+  // any user who set a bracket or a filing status.
+  const ordinaryRate = harvestReport?.taxRate ?? TAX_RATE;
+  const ltcgRate = harvestReport?.ltcgRate ?? LTCG_RATE_DEFAULT;
+  const lossCap = harvestReport?.annualCap.annualDeductionCap ?? ANNUAL_LOSS_DEDUCTION_CAP;
+  const ratesAreYours = harvestReport?.ratesFromSettings ?? false;
+  const filingStatus = harvestReport?.filingStatus ?? null;
+
   // ── Derived calculations ──
 
   const estimatedTaxDue = useMemo(() => {
@@ -286,8 +295,8 @@ function TaxesContent() {
     const stNet = taxData.realized.shortTermGains + taxData.realized.shortTermLosses;
     const ltNet = taxData.realized.longTermGains + taxData.realized.longTermLosses;
     // One implementation of IRC §1222(11) netting, shared with the engine.
-    return estimateTaxOnRealizedGains({ stNet, ltNet });
-  }, [taxData]);
+    return estimateTaxOnRealizedGains({ stNet, ltNet, ordinaryRate, ltcgRate });
+  }, [taxData, ordinaryRate, ltcgRate]);
 
   const realizedGains = useMemo(() => {
     if (!taxData) return 0;
@@ -356,8 +365,8 @@ function TaxesContent() {
     if (!taxData) return 0;
     const net = taxData.realized.netRealized;
     if (net >= 0) return 0; // gains exceed losses, no ordinary income offset
-    return Math.min(Math.abs(net), ANNUAL_LOSS_DEDUCTION_CAP);
-  }, [taxData]);
+    return Math.min(Math.abs(net), lossCap);
+  }, [taxData, lossCap]);
 
   // ST / LT net breakdowns
   const shortTermNet = shortTermGains + shortTermLosses;
@@ -537,23 +546,26 @@ function TaxesContent() {
                 className="text-[14px] font-semibold text-[var(--color-text-primary)]"
                 style={{ ...TNUM, ...MONO }}
               >
-                {formatCurrency(deductionUsed)} of {formatCurrency(ANNUAL_LOSS_DEDUCTION_CAP)} (assumed)
+                {formatCurrency(deductionUsed)} of {formatCurrency(lossCap)}
+                <span className="text-[10px] text-[var(--color-text-muted)] font-normal ml-1.5">
+                  {filingStatus ? `· ${filingStatus}` : '· assumed'}
+                </span>
               </span>
             </div>
             <div className="w-full h-2.5 rounded-sm overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
               <div
                 className="h-full rounded-sm motion-safe:transition-all motion-safe:duration-300"
                 style={{
-                  width: `${Math.min((deductionUsed / ANNUAL_LOSS_DEDUCTION_CAP) * 100, 100)}%`,
-                  background: deductionUsed >= ANNUAL_LOSS_DEDUCTION_CAP ? 'var(--color-gold)' : 'var(--color-positive)',
+                  width: `${Math.min((deductionUsed / lossCap) * 100, 100)}%`,
+                  background: deductionUsed >= lossCap ? 'var(--color-gold)' : 'var(--color-positive)',
                 }}
               />
             </div>
             <p className="text-[14px] text-[var(--color-text-muted)] mt-2.5" style={MONO}>
-              {deductionUsed >= ANNUAL_LOSS_DEDUCTION_CAP
+              {deductionUsed >= lossCap
                 ? `Cap reached — excess losses carry forward to TY ${CURRENT_YEAR + 1} per IRC §1212(b).`
                 : deductionUsed > 0
-                  ? `Net capital losses offset capital gains without limit, then up to ${formatCurrency(ANNUAL_LOSS_DEDUCTION_CAP)} of ordinary income per year ($1,500 if married filing separately, IRC \u00a71211(b)). Helm assumes ${formatCurrency(ANNUAL_LOSS_DEDUCTION_CAP)}. ${formatCurrency(ANNUAL_LOSS_DEDUCTION_CAP - deductionUsed)} remaining; the excess carries forward indefinitely under IRC \u00a71212(b).`
+                  ? `Net capital losses offset capital gains without limit, then up to ${formatCurrency(lossCap)} of ordinary income per year (IRC §1211(b): $3,000, or $1,500 married filing separately). ${filingStatus ? `Using your "${filingStatus}" filing status.` : 'Helm assumes $3,000 — set your filing status in Settings.'} ${formatCurrency(Math.max(0, lossCap - deductionUsed))} remaining; the excess carries forward indefinitely under IRC §1212(b).`
                   : 'No net capital losses to offset ordinary income this year.'}
             </p>
           </div>
@@ -820,6 +832,8 @@ function TaxesContent() {
             <HoldingPeriodBars
               longTermNet={longTermNet}
               shortTermNet={shortTermNet}
+              ordinaryRate={ordinaryRate}
+              ltcgRate={ltcgRate}
               formatCurrency={formatCurrency}
             />
             <div className="mt-[18px] pt-4 border-t border-[var(--color-border-subtle)] flex items-center justify-between">
@@ -856,7 +870,7 @@ function TaxesContent() {
                 className="ml-auto text-[14px] text-[var(--color-text-muted)]"
                 style={MONO}
               >
-                ~{(TAX_RATE * 100).toFixed(0)}% rate
+                {ratesAreYours ? 'your' : 'assumed'} {(ordinaryRate * 100).toFixed(0)}% rate
               </span>
             </div>
             <div className="space-y-1.5">
@@ -903,7 +917,7 @@ function TaxesContent() {
                 className="ml-auto text-[14px] text-[var(--color-text-muted)]"
                 style={MONO}
               >
-                ~{(LTCG_RATE_DEFAULT * 100).toFixed(0)}% rate
+                {ratesAreYours ? 'your' : 'assumed'} {(ltcgRate * 100).toFixed(0)}% rate
               </span>
             </div>
             <div className="space-y-1.5">
@@ -1217,7 +1231,9 @@ function HarvestLadder({
     {
       label: 'Deducts against ordinary income',
       amount: cap.ordinaryIncomeOffset,
-      note: `annual cap ${formatCurrency(cap.annualDeductionCap)} (assumed; $1,500 if married filing separately)`,
+      note: report.filingStatus
+        ? `annual cap ${formatCurrency(cap.annualDeductionCap)} for ${report.filingStatus}`
+        : `annual cap ${formatCurrency(cap.annualDeductionCap)} (assumed; $1,500 if married filing separately)`,
       emphasis: false,
     },
     {
@@ -1273,7 +1289,8 @@ function HarvestLadder({
         <span className="text-[var(--color-positive)] font-semibold">
           {formatCurrency(report.totalEstimatedSavings)}
         </span>{' '}
-        at an assumed {(report.taxRate * 100).toFixed(0)}% ordinary and {(report.ltcgRate * 100).toFixed(0)}% long-term rate.
+        at {report.ratesFromSettings ? 'your' : 'an assumed'} {(report.taxRate * 100).toFixed(0)}% ordinary and{' '}
+        {(report.ltcgRate * 100).toFixed(0)}% long-term rate.
         {cap.baselineSavings > 0 && (
           <>
             {' '}You already have {formatCurrency(cap.baselineSavings)} of that from losses realized earlier this
@@ -1290,21 +1307,30 @@ function HarvestLadder({
 function HoldingPeriodBars({
   longTermNet,
   shortTermNet,
+  ordinaryRate,
+  ltcgRate,
   formatCurrency,
 }: {
   longTermNet: number;
   shortTermNet: number;
+  ordinaryRate: number;
+  ltcgRate: number;
   formatCurrency: (n: number) => string;
 }) {
   // IRC §1222(11): a net loss in one character absorbs the other BEFORE any
   // rate applies. Flooring each side at zero and taxing it independently made
   // this card contradict the netted estimate printed inches below it.
-  const totalTax = estimateTaxOnRealizedGains({ stNet: shortTermNet, ltNet: longTermNet });
+  const totalTax = estimateTaxOnRealizedGains({
+    stNet: shortTermNet,
+    ltNet: longTermNet,
+    ordinaryRate,
+    ltcgRate,
+  });
   const grossTax =
-    Math.max(0, longTermNet) * LTCG_RATE_DEFAULT + Math.max(0, shortTermNet) * TAX_RATE;
+    Math.max(0, longTermNet) * ltcgRate + Math.max(0, shortTermNet) * ordinaryRate;
   const share = grossTax > 0 ? totalTax / grossTax : 0;
-  const ltTax = Math.max(0, longTermNet) * LTCG_RATE_DEFAULT * share;
-  const stTax = Math.max(0, shortTermNet) * TAX_RATE * share;
+  const ltTax = Math.max(0, longTermNet) * ltcgRate * share;
+  const stTax = Math.max(0, shortTermNet) * ordinaryRate * share;
   const maxTax = Math.max(ltTax, stTax, 1);
 
   return (
@@ -1313,7 +1339,7 @@ function HoldingPeriodBars({
       <div>
         <div className="flex justify-between mb-[7px]">
           <span className="text-[14px] text-[var(--color-text-secondary)]">
-            Long-term gains · {(LTCG_RATE_DEFAULT * 100).toFixed(0)}% rate
+            Long-term gains · {(ltcgRate * 100).toFixed(0)}% rate
           </span>
           <span className="text-[15px] font-semibold tabular-nums text-[var(--color-text-primary)]" style={MONO}>
             {formatCurrency(ltTax)}
@@ -1336,7 +1362,7 @@ function HoldingPeriodBars({
       <div>
         <div className="flex justify-between mb-[7px]">
           <span className="text-[14px] text-[var(--color-text-secondary)]">
-            Short-term gains · {(TAX_RATE * 100).toFixed(0)}% rate
+            Short-term gains · {(ordinaryRate * 100).toFixed(0)}% rate
           </span>
           <span className="text-[15px] font-semibold tabular-nums text-[var(--color-text-primary)]" style={MONO}>
             {formatCurrency(stTax)}

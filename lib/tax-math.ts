@@ -5,6 +5,58 @@
 
 import { TAX_RATE, LTCG_RATE_DEFAULT, ANNUAL_LOSS_DEDUCTION_CAP } from '@/lib/financial-config';
 
+// ── Per-user tax profile ──
+
+export interface TaxProfile {
+  /** Ordinary / short-term rate. */
+  ordinaryRate: number;
+  /** IRC §1(h) long-term rate. */
+  ltcgRate: number;
+  /** IRC §1211(b) annual ordinary-income deduction limit. */
+  annualLossCap: number;
+  filingStatus: string | null;
+  /** True when the rates came from the user's own settings rather than defaults. */
+  fromSettings: boolean;
+}
+
+/** IRC §1211(b)(1): "$3,000 ($1,500 in the case of a married individual filing
+ *  a separate return)". Settings collects filing status; this applies it. */
+export function annualLossCapFor(filingStatus: string | null | undefined): number {
+  const f = (filingStatus ?? '').trim().toLowerCase();
+  if (f === 'married filing separately' || f === 'mfs') return ANNUAL_LOSS_DEDUCTION_CAP / 2;
+  return ANNUAL_LOSS_DEDUCTION_CAP;
+}
+
+/**
+ * Resolve rates and the §1211(b) cap from what the user told us in settings.
+ *
+ * The long-term rate is DERIVED from the ordinary bracket, not stored: IRC §1(h)
+ * ties the 0/15/20 bands to taxable income, and the ordinary bracket is the only
+ * income signal Helm has. The mapping is the standard approximation (0% within
+ * the 10/12% brackets, 20% at 37%, 15% between) and is disclosed as an estimate.
+ */
+export function resolveTaxProfile(
+  prefs: { filing_status?: string | null; tax_bracket?: string | null } | null,
+): TaxProfile {
+  const filingStatus = prefs?.filing_status ?? null;
+  const annualLossCap = annualLossCapFor(filingStatus);
+
+  const bracketRaw = (prefs?.tax_bracket ?? '').replace('%', '').trim();
+  const bracket = bracketRaw ? Number(bracketRaw) / 100 : NaN;
+  if (!Number.isFinite(bracket) || bracket <= 0 || bracket > 0.5) {
+    return {
+      ordinaryRate: TAX_RATE,
+      ltcgRate: LTCG_RATE_DEFAULT,
+      annualLossCap,
+      filingStatus,
+      fromSettings: false,
+    };
+  }
+
+  const ltcgRate = bracket <= 0.12 ? 0 : bracket >= 0.37 ? 0.20 : 0.15;
+  return { ordinaryRate: bracket, ltcgRate, annualLossCap, filingStatus, fromSettings: true };
+}
+
 export interface CappedTlhResult {
   /** MARGINAL current-year benefit of the proposed harvest: the whole-position
    *  figure minus the baseline the user already has from losses realized YTD.
@@ -43,6 +95,7 @@ function runNetting(
   ltGainYtd: number,
   ord: number,
   ltcg: number,
+  annualCap: number,
 ): NettedScenario {
   let stLoss = stLossIn;
   let ltLoss = ltLossIn;
@@ -81,14 +134,14 @@ function runNetting(
   //    forward (ST consumed first — affects carryforward character only,
   //    which this dollar estimate does not need to split).
   const netLoss = stLoss + ltLoss;
-  const deductibleThisYear = Math.min(netLoss, ANNUAL_LOSS_DEDUCTION_CAP);
+  const deductibleThisYear = Math.min(netLoss, annualCap);
   savings += deductibleThisYear * ord;
 
   return {
     savings,
     gainsOffset,
     deductibleThisYear,
-    carryforward: Math.max(0, netLoss - ANNUAL_LOSS_DEDUCTION_CAP),
+    carryforward: Math.max(0, netLoss - annualCap),
   };
 }
 
@@ -120,9 +173,12 @@ export function estimateCappedTlhSavings(params: {
   ltGainYtd: number;
   ordinaryRate?: number;
   ltcgRate?: number;
+  /** IRC §1211(b) limit for THIS user. $1,500 when married filing separately. */
+  annualCap?: number;
 }): CappedTlhResult {
   const ord = params.ordinaryRate ?? TAX_RATE;
   const ltcg = params.ltcgRate ?? LTCG_RATE_DEFAULT;
+  const annualCap = params.annualCap ?? ANNUAL_LOSS_DEDUCTION_CAP;
 
   // Already-realized YTD net losses belong in the netting — they legitimately
   // consume the §1211(b) cap and change the marginal answer — but they are NOT
@@ -143,6 +199,7 @@ export function estimateCappedTlhSavings(params: {
     params.ltGainYtd,
     ord,
     ltcg,
+    annualCap,
   );
   const baseline = runNetting(
     realizedStLoss,
@@ -151,6 +208,7 @@ export function estimateCappedTlhSavings(params: {
     params.ltGainYtd,
     ord,
     ltcg,
+    annualCap,
   );
 
   return {
@@ -159,7 +217,7 @@ export function estimateCappedTlhSavings(params: {
     baselineSavings: baseline.savings,
     deductibleThisYear: total.deductibleThisYear,
     estimatedCarryforward: total.carryforward,
-    remainingDeductibleLoss: Math.max(0, ANNUAL_LOSS_DEDUCTION_CAP - total.deductibleThisYear),
+    remainingDeductibleLoss: Math.max(0, annualCap - total.deductibleThisYear),
     gainsOffset: total.gainsOffset,
     ordinaryIncomeOffset: total.deductibleThisYear,
     carryforward: total.carryforward,
@@ -194,4 +252,71 @@ export function estimateTaxOnRealizedGains(params: {
   // One character is a net loss; it absorbs the other before any rate applies.
   const combined = stNet + ltNet;
   return stNet > 0 ? combined * ord : combined * ltcg;
+}
+
+/**
+ * Determine holding period from acquired_at, on the IRS anniversary rule.
+ *
+ * Per the Form 8949 instructions and Topic No. 409: "count from the day AFTER
+ * the day you acquired the asset up to and including the day you disposed of
+ * it", and long-term requires MORE than one year (IRC §1222(3)). So a position
+ * is long-term only once the evaluation date is strictly after the one-year
+ * anniversary — on the anniversary itself it is still short-term.
+ *
+ * Elapsed-day arithmetic (diffDays > 365) got this wrong twice: it flipped to
+ * long-term at noon on the anniversary in a non-leap window, and a full day
+ * early across a leap year, which made the badge time-of-day dependent.
+ * Compare date-only values so the clock cannot move the answer.
+ */
+export function classifyHoldingPeriod(acquiredAt: string | null): 'short_term' | 'long_term' | 'unknown' {
+  if (!acquiredAt) return 'unknown';
+  try {
+    const acquired = new Date(acquiredAt + 'T00:00:00Z');
+    if (Number.isNaN(acquired.getTime())) return 'unknown';
+    // Long-term begins the day AFTER the one-year anniversary.
+    const longTermFrom = new Date(Date.UTC(
+      acquired.getUTCFullYear() + 1,
+      acquired.getUTCMonth(),
+      acquired.getUTCDate() + 1,
+    ));
+    const today = new Date();
+    const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    return todayUtc >= longTermFrom.getTime() ? 'long_term' : 'short_term';
+  } catch {
+    return 'unknown';
+  }
+}
+
+export type HoldingPeriod = 'short_term' | 'long_term' | 'unknown';
+
+export interface LossCharacterSplit {
+  stLoss: number;
+  ltLoss: number;
+  unknownLoss: number;
+  total: number;
+}
+
+/**
+ * Split harvestable losses by IRC §1222 holding period.
+ *
+ * Which character a loss carries decides which gain it absorbs and therefore the
+ * rate at which it saves tax (§1222(11)). Four surfaces used to dump every
+ * dollar into `unknownLoss`, which the estimator pools with long-term, so the
+ * Actions Inbox, the brief, and the chat could show half what the Tax Center
+ * showed for the same harvest on the same day.
+ */
+export function splitLossByCharacter(
+  rows: { loss: number; acquiredAt: string | null }[],
+): LossCharacterSplit {
+  const out: LossCharacterSplit = { stLoss: 0, ltLoss: 0, unknownLoss: 0, total: 0 };
+  for (const r of rows) {
+    const l = Math.abs(r.loss);
+    if (l === 0) continue;
+    out.total += l;
+    const period = classifyHoldingPeriod(r.acquiredAt);
+    if (period === 'short_term') out.stLoss += l;
+    else if (period === 'long_term') out.ltLoss += l;
+    else out.unknownLoss += l;
+  }
+  return out;
 }
