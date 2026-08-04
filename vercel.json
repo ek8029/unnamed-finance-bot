@@ -15,7 +15,7 @@
   ],
   "crons": [
     {
-      "path": "/api/cron/daily",
+      "path": "/api/cron/daily?force=true",
       "schedule": "15 13 * * *"
     },
     {

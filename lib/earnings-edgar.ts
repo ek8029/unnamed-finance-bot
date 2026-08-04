@@ -7,7 +7,7 @@
  * earnings calendar APIs.
  */
 
-import { getRecentFilings } from '@/lib/edgar';
+import { getRecentFilings, BUSINESS_FORMS } from '@/lib/edgar';
 
 export interface EdgarEarnings {
   lastReportDate: string | null;    // YYYY-MM-DD, most recent 8-K item 2.02
@@ -20,7 +20,10 @@ export interface EdgarEarnings {
  */
 export async function getEdgarEarnings(ticker: string): Promise<EdgarEarnings> {
   try {
-    const filings = await getRecentFilings(ticker);
+    // Business forms only, deep-scanned — without this, frequent issuers
+    // (JPM's ~22k 424B2/FWP) crowd the 8-K/10-Q out of the first 100 filings
+    // and the earnings calendar silently shows nothing for them.
+    const filings = await getRecentFilings(ticker, undefined, BUSINESS_FORMS);
     const releases = filings
       .filter((f) => f.form === '8-K' && f.items.includes('2.02'))
       .sort((a, b) => (a.filingDate < b.filingDate ? 1 : -1));

@@ -107,15 +107,26 @@ async function getUserHoldings(userId: string): Promise<Map<string, UserPosition
   const map = new Map<string, UserPosition>();
 
   for (const h of data as unknown as RawHolding[]) {
-    map.set(h.ticker, {
-      ticker: h.ticker,
-      securityName: h.security?.security_name || h.ticker,
-      shares: h.shares,
-      currentPrice: h.current_price,
-      totalValue: h.total_value || 0,
-      allocationPct: h.portfolio_allocation_pct ?? (totalValue > 0 ? ((h.total_value || 0) / totalValue) * 100 : 0),
-      sector: h.security?.sector || 'Unknown',
-    });
+    // Aggregate multi-account lots — last-row-wins collapsed a two-brokerage
+    // position to its smallest lot, understating earnings exposure.
+    const prev = map.get(h.ticker);
+    const rowValue = h.total_value || 0;
+    const rowPct = h.portfolio_allocation_pct ?? (totalValue > 0 ? (rowValue / totalValue) * 100 : 0);
+    if (prev) {
+      prev.shares += h.shares;
+      prev.totalValue += rowValue;
+      prev.allocationPct += rowPct;
+    } else {
+      map.set(h.ticker, {
+        ticker: h.ticker,
+        securityName: h.security?.security_name || h.ticker,
+        shares: h.shares,
+        currentPrice: h.current_price,
+        totalValue: rowValue,
+        allocationPct: rowPct,
+        sector: h.security?.sector || 'Unknown',
+      });
+    }
   }
 
   return map;

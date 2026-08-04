@@ -371,7 +371,9 @@ export function useHoldings() {
           current_price: q.price,
           total_value,
           day_change_percentage: q.dayChangePct ?? h.day_change_percentage,
-          unrealised_gain: h.cost_basis != null ? total_value - h.cost_basis : h.unrealised_gain,
+          // cost_basis here is PER-SHARE (see /api/holdings) — subtracting it
+          // raw showed unrealized gain ≈ the position's full market value.
+          unrealised_gain: h.cost_basis != null ? total_value - h.cost_basis * h.shares : h.unrealised_gain,
         };
       });
       const total = patched.reduce((sum, h) => sum + (h.total_value || 0), 0);

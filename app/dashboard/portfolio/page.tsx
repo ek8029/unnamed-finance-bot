@@ -1105,18 +1105,11 @@ export default function PortfolioPage() {
                             {dayPct >= 0 ? '+' : ''}{dayPct.toFixed(2)}%
                           </span>
                         </td>
-                        {/* 30D SPARKLINE */}
+                        {/* 30D — real history not wired yet; the old sparkline
+                            was pseudo-random from the ticker's charCodes, i.e.
+                            a fake chart on a real-money surface. */}
                         <td className="px-2 py-2">
-                          <svg width="80" height="24" viewBox="0 0 80 24" fill="none" className="block">
-                            <path
-                              d={sparkPath}
-                              stroke={sparkTrend ? 'var(--color-positive)' : 'var(--color-negative)'}
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              fill="none"
-                            />
-                          </svg>
+                          <span className="font-mono text-[11px] text-[var(--color-text-muted)]">—</span>
                         </td>
                         {/* VALUE */}
                         <td className="px-2 py-2 text-right">

@@ -189,7 +189,7 @@ function RecentTable({
               <HeadCell align="right">EPS actual</HeadCell>
               <HeadCell align="right">vs yr ago</HeadCell>
               <HeadCell align="right">Your position</HeadCell>
-              <HeadCell align="right">Impact</HeadCell>
+              <HeadCell align="right">Today</HeadCell>
             </tr>
           </thead>
           <tbody>
