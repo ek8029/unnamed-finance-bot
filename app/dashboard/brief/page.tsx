@@ -477,10 +477,10 @@ export default function BriefPage() {
       const tickers = harvestCandidates.slice(0, 3).map(h => h.ticker).join(', ');
       out.push({
         category: 'Tax',
-        meta: 'Actionable',
+        meta: 'For review',
         headline: `${harvestCandidates.length} position${harvestCandidates.length > 1 ? 's' : ''} down more than 3% today`,
-        body: `${tickers}${harvestCandidates.length > 3 ? ` and ${harvestCandidates.length - 3} more` : ''} carry potential harvestable losses. The Tax Center checks cost basis and wash-sale windows before you act.`,
-        action: { label: 'Open harvester', href: '/dashboard/taxes' },
+        body: `${tickers}${harvestCandidates.length > 3 ? ` and ${harvestCandidates.length - 3} more` : ''} moved down today. That is a price move, not a tax loss: a harvestable loss requires the position to be below your cost basis in a taxable account. The Tax Center checks basis, account type, and the wash-sale window.`,
+        action: { label: 'Open Tax Center', href: '/dashboard/taxes' },
         source: 'Source · Helm tax engine',
       });
     }

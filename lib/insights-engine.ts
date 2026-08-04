@@ -1,6 +1,7 @@
 import { computePortfolioLookthrough } from '@/lib/etf-holdings';
 import {
   TAX_RATE,
+  LTCG_RATE_DEFAULT,
   TAX_INSIGHT_HIGH_PRIORITY_LOSS,
   CONCENTRATION_THRESHOLDS,
   SPENDING_SPIKE_FACTOR,
@@ -246,7 +247,9 @@ export async function generateInsights(
 
       let description = `You have $${totalLoss.toLocaleString()} in unrealized losses across ${tickers}.`;
       description += ` Applied against this year's realized gains plus the $${ANNUAL_LOSS_DEDUCTION_CAP.toLocaleString()} income deduction (IRC §1211(b)), ` +
-        `that is an estimated $${estimatedSavings.toLocaleString()} in offsettable tax at a ${(TAX_RATE * 100).toFixed(0)}% rate.`;
+        `that is an estimated $${estimatedSavings.toLocaleString()} in offsettable tax. ` +
+        `The rate follows the character of the gain each loss absorbs (IRC §1(h)): ordinary for short-term, ` +
+        `${(LTCG_RATE_DEFAULT * 100).toFixed(0)}% for long-term.`;
       if (carryforward > 0) {
         description += ` About $${carryforward.toLocaleString()} would carry forward to future years.`;
       }
@@ -258,7 +261,8 @@ export async function generateInsights(
         description,
         recommended_action: `These positions (${tickers}) are at unrealized losses totaling $${totalLoss.toLocaleString()}. ` +
           `Tax-loss harvesting is a strategy investors use to offset gains. ` +
-          `Wash-sale rule: repurchasing a substantially identical security within 30 days disallows the loss (IRC §1091). ` +
+          `Wash-sale rule (IRC §1091): acquiring a substantially identical security in the 30 days BEFORE a loss sale, on the day of the sale, or in the 30 days after it disallows the loss. ` +
+          `That is a 61-day window, and it covers buys in any of your accounts, automatic dividend reinvestment, and purchases by your IRA. ` +
           `Not tax advice, consult a professional.`,
         estimated_impact_amount: estimatedSavings,
         confidence_score: 0.85,

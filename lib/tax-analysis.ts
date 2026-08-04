@@ -2,16 +2,25 @@
  * Tax-loss harvesting analysis — production-grade implementation.
  *
  * IRS compliance checklist:
- *   ✅ Wash sale rule: 61-day window (30 before + day of + 30 after) per IRC §1091
+ *   ✅ Wash sale screening: 30-day BACKWARD lookback per IRC §1091, across every
+ *      linked account including retirement ones, reading investment_transactions
  *   ✅ $3,000 annual deduction cap per IRC §1211(b) with carryforward estimate
  *   ✅ Short-term vs long-term distinction (holding period > 1 year for LTCG)
  *   ✅ Differentiated tax rates (STCG at ordinary income rate, LTCG at 0/15/20%)
  *   ✅ Replacement security suggestions with "substantially identical" warnings
  *   ✅ YTD realized gain/loss netting for cap calculation
- *   ⚠️ Cross-account wash sale aggregation — NOT implemented (requires multi-account)
- *   ⚠️ Specific lot identification — NOT implemented (uses average cost basis)
- *   ⚠️ NIIT/AMT — NOT implemented (requires full income picture)
- *   ⚠️ Dividend reinvestment wash sales — NOT implemented (requires DRIP data)
+ *   ⚠️ The FORWARD half of the §1091 window — unknowable; a purchase made in the
+ *      30 days after a sale disallows the loss and Helm cannot see it in advance
+ *   ⚠️ Unlinked accounts and a spouse's purchases — §1091 is tested at the
+ *      taxpayer level, so anything outside the linked set is invisible
+ *   ⚠️ DRIP — detected only when the broker reports a reinvestment row
+ *   ⚠️ Specific lot identification — NOT implemented (uses average cost basis),
+ *      so IRC §1223(3) wash-sale holding-period tacking is not reflected
+ *   ⚠️ NIIT/AMT/state — NOT implemented (requires full income picture)
+ *   ⚠️ Per-user filing status — the §1211(b) cap is a deploy-wide constant, so
+ *      married-filing-separately ($1,500) is not applied
+ *
+ * A clear result is NEVER a §1091 clearance. No surface may say 'wash-sale-safe'.
  *
  * IMPORTANT: This is informational software, NOT tax advice. All calculations
  * are estimates. Users must consult a qualified tax professional before acting
@@ -19,6 +28,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
+import { estimateCappedTlhSavings } from '@/lib/tax-math';
 import type { ActionCite } from '@/lib/thesis-conviction';
 import {
   TAX_RATE,
@@ -50,8 +60,14 @@ export interface HarvestablePosition {
   /** Effective tax rate applied (STCG rate or LTCG rate) */
   effectiveTaxRate: number;
   replacement: ReplacementSecurity | null;
+  /** True only when Helm observed an acquisition inside the 30-day lookback.
+   *  Ownership of a related security alone never sets this: IRC §1091 requires
+   *  an acquisition, not a holding. */
   washSaleRisk: boolean;
   washSaleDetail: string | null;
+  /** 'flagged' = acquisition found in the window; 'advisory' = a related
+   *  security is held but no acquisition was seen; 'none' = nothing surfaced. */
+  washSaleSeverity: 'none' | 'advisory' | 'flagged';
   /** Account context for retirement filtering */
   accountName: string | null;
   accountSubtype: string | null;
@@ -308,31 +324,104 @@ function getRelatedTickers(ticker: string): { ticker: string; relationship: stri
   return related;
 }
 
+type WashSaleSeverity = 'flagged' | 'advisory';
+
+interface WashSaleFinding {
+  /** True only when Helm actually observed an acquisition inside the window.
+   *  Never set by mere ownership of a related security — IRC §1091 requires an
+   *  ACQUISITION, not a holding. */
+  risk: boolean;
+  severity: WashSaleSeverity;
+  detail: string;
+}
+
+interface AcquisitionRow {
+  ticker: string | null;
+  name: string | null;
+  transaction_type: string | null;
+  transaction_date: string;
+  account: { account_name: string | null; account_subtype: string | null } | null;
+}
+
 /**
- * Wash sale detection: check for BOTH recent sells AND recent buys of the
- * same tickers within the 61-day window (30 days before + 30 days after).
+ * Classify a Plaid investment-transaction type as an acquisition for IRC §1091.
  *
- * Per IRC §1091, a wash sale occurs when you sell a security at a loss AND
- * buy a "substantially identical" security within 30 days before OR after
- * the sale. This function checks:
+ * §1091(a) is triggered when the taxpayer "has acquired (by purchase or by an
+ * exchange on which the entire amount of gain or loss was recognized by law)
+ * ... substantially identical stock or securities". Buys qualify. Automatic
+ * dividend reinvestments are purchases too, and are the most common inadvertent
+ * trigger for buy-and-hold investors. Transfers, contributions and deposits are
+ * ambiguous in Plaid's feed (either a purchase or a move of an existing lot), so
+ * they are surfaced with that ambiguity stated rather than dropped.
+ */
+function classifyAcquisition(type: string | null): 'purchase' | 'reinvestment' | 'ambiguous' | null {
+  const t = (type ?? '').toLowerCase().trim();
+  if (!t) return null;
+  if (t.includes('reinvest')) return 'reinvestment';
+  if (t === 'buy' || t.startsWith('buy ')) return 'purchase';
+  if (t === 'transfer' || t === 'contribution' || t === 'deposit') return 'ambiguous';
+  return null;
+}
+
+/** Build the user-facing explanation for a detected in-window acquisition. */
+function describeAcquisition(
+  ticker: string,
+  row: AcquisitionRow,
+  relationship: string | null,
+  confidence: 'definite' | 'likely' | 'possible',
+): WashSaleFinding {
+  const kind = classifyAcquisition(row.transaction_type);
+  const acquired = row.ticker ?? ticker;
+  const retirement = isRetirementAccount(
+    row.account?.account_subtype ?? null,
+    row.account?.account_name ?? null,
+  );
+
+  const how =
+    kind === 'reinvestment'
+      ? `an automatic reinvestment into ${acquired} settled on ${row.transaction_date}`
+      : kind === 'ambiguous'
+        ? `a ${row.transaction_type} of ${acquired} on ${row.transaction_date} — your brokerage feed does not say whether that was a purchase or a move of shares you already held`
+        : `${acquired} was purchased on ${row.transaction_date}`;
+
+  const scope = !relationship
+    ? ''
+    : confidence === 'definite'
+      ? ` ${relationship}, so §1091 treats it as substantially identical.`
+      : confidence === 'likely'
+        ? ` ${relationship}. Professional consensus treats these as substantially identical; the IRS has not ruled.`
+        : ` ${relationship}. The IRS has not ruled on whether these are substantially identical under IRC §1091 — confirm with a tax professional.`;
+
+  const basis = retirement
+    ? ` That purchase sits in ${row.account?.account_name ?? 'a retirement account'}. Under Rev. Rul. 2008-5 a purchase by your IRA or Roth IRA disallows the loss permanently: §1091(d) does not restore it and your IRA basis is not increased, so the deduction is gone rather than deferred.`
+    : ` A disallowed loss is added to the basis of the replacement shares under IRC §1091(d) and the prior holding period tacks on under IRC §1223(3), so the deduction is deferred rather than lost.`;
+
+  return {
+    risk: true,
+    severity: 'flagged',
+    detail:
+      `Wash-sale conflict found in Helm's 30-day lookback: ${how}.${scope}` +
+      ` IRC §1091 disallows the loss when substantially identical stock is acquired in the 30 days before the sale, on the day of the sale, or in the 30 days after it — 61 days in total.${basis}`,
+  };
+}
+
+/**
+ * Detect acquisitions inside the wash-sale window for each candidate ticker.
  *
- *   1. Recent SELLS: if user sold the same ticker in the last 30 days,
- *      a repurchase now would trigger a wash sale.
- *   2. Recent BUYS: if user already bought the same ticker in the last 30
- *      days, selling now would trigger a wash sale because the buy is within
- *      the 30-day window.
- *   3. Cross-product: related tickers (same share class, leveraged products,
- *      same-index ETFs) that could trigger wash sale concerns.
+ * Reads `investment_transactions`, the table Plaid sync actually writes. The
+ * previous implementation queried `capital_gains`, which only demo seed scripts
+ * write, so same-ticker purchases (dollar-cost averaging, RSU vests, rebalances)
+ * were structurally undetectable and every position was reported as clear.
  *
- * What we CANNOT check: future purchases. If the user harvests a loss today
- * and buys the same ticker 15 days later, that's a wash sale we can only
- * warn about, not prevent.
+ * Hard limits, disclosed to the user rather than papered over: this is a
+ * BACKWARD 30-day lookback only, it sees linked accounts only, and it cannot see
+ * a spouse's purchases. A negative result is not a §1091 clearance.
  */
 async function checkWashSaleRisk(
   userId: string,
   tickers: string[],
-): Promise<Map<string, { risk: boolean; detail: string }>> {
-  const result = new Map<string, { risk: boolean; detail: string }>();
+): Promise<Map<string, WashSaleFinding>> {
+  const result = new Map<string, WashSaleFinding>();
   if (tickers.length === 0) return result;
 
   const supabase = await createClient();
@@ -340,135 +429,88 @@ async function checkWashSaleRisk(
     .toISOString()
     .split('T')[0];
 
-  // Check BOTH sells and buys in the 30-day lookback window
-  const { data: recentTransactions } = await supabase
-    .from('capital_gains')
-    .select('ticker, transaction_date, transaction_type')
+  // Every candidate plus the securities we treat as related, resolved once so
+  // the whole window is fetched in a single query instead of one per ticker.
+  const relatedByTicker = new Map<string, ReturnType<typeof getRelatedTickers>>();
+  const searchTickers = new Set<string>();
+  const candidateSet = new Set(tickers.map((t) => t.toUpperCase()));
+  for (const ticker of tickers) {
+    searchTickers.add(ticker.toUpperCase());
+    const related = getRelatedTickers(ticker);
+    relatedByTicker.set(ticker, related);
+    for (const r of related) searchTickers.add(r.ticker.toUpperCase());
+  }
+
+  const { data: rows } = await supabase
+    .from('investment_transactions')
+    .select(`
+      ticker, name, transaction_type, transaction_date,
+      account:linked_accounts(account_name, account_subtype)
+    `)
     .eq('user_id', userId)
     .gte('transaction_date', windowStart)
-    .in('ticker', tickers);
+    .in('ticker', [...searchTickers])
+    .order('transaction_date', { ascending: false });
 
-  if (recentTransactions) {
-    for (const tx of recentTransactions) {
-      const existing = result.get(tx.ticker);
-      const txType = tx.transaction_type === 'sell' ? 'Sold' : 'Bought';
-      const detail = `${txType} on ${tx.transaction_date} — within 30-day wash sale window. ` +
-        `Per IRC §1091, selling at a loss now may trigger a wash sale. ` +
-        `The disallowed loss would be added to the cost basis of the replacement shares.`;
+  // Group acquisitions by ticker. Retirement-account purchases are deliberately
+  // NOT filtered out: an IRA buy is the case Rev. Rul. 2008-5 makes the most
+  // damaging, and this is the one place the engine can catch it.
+  const acquisitionsByTicker = new Map<string, AcquisitionRow[]>();
+  for (const row of (rows ?? []) as unknown as AcquisitionRow[]) {
+    if (!row.ticker || !classifyAcquisition(row.transaction_type)) continue;
+    const key = row.ticker.toUpperCase();
+    const list = acquisitionsByTicker.get(key);
+    if (list) list.push(row);
+    else acquisitionsByTicker.set(key, [row]);
+  }
 
-      if (!existing || tx.transaction_type === 'buy') {
-        // Buy transactions are higher risk (buying within 30 days of a loss sale)
-        result.set(tx.ticker, { risk: true, detail });
-      }
+  // Related securities the user currently holds, for the advisory branch below.
+  const heldRelated = new Set<string>();
+  if (searchTickers.size > candidateSet.size) {
+    const { data: held } = await supabase
+      .from('holdings')
+      .select('ticker')
+      .eq('user_id', userId)
+      .in('ticker', [...searchTickers]);
+    for (const h of held ?? []) {
+      if (h.ticker) heldRelated.add(String(h.ticker).toUpperCase());
     }
   }
 
-  // Also check for any transactions where user bought shares
-  // in the LAST 30 days (via regular transactions table, not just capital_gains)
-  const { data: recentPurchases } = await supabase
-    .from('transactions')
-    .select('description, merchant_name, transaction_date, amount')
-    .eq('user_id', userId)
-    .gte('transaction_date', windowStart)
-    .gt('amount', 0); // positive = inflow (could be a purchase settlement)
-
-  // Note: we can't reliably detect stock purchases from the transactions table
-  // because Plaid categorizes them as transfers. This is a known limitation.
-  // The capital_gains check above is the primary detection mechanism.
-
-  // ── Cross-product wash sale detection ──
-  // Check related tickers (share classes, leveraged products, same-index ETFs)
   for (const ticker of tickers) {
-    // Skip if already flagged from same-ticker detection
-    if (result.has(ticker)) continue;
-
-    const relatedTickers = getRelatedTickers(ticker);
-    if (relatedTickers.length === 0) continue;
-
-    const relatedTickerList = relatedTickers.map(r => r.ticker);
-
-    // Query capital_gains for sells/buys of related tickers
-    const { data: relatedTxns } = await supabase
-      .from('capital_gains')
-      .select('ticker, transaction_date, gain_loss')
-      .eq('user_id', userId)
-      .in('ticker', relatedTickerList)
-      .gte('transaction_date', windowStart);
-
-    if (relatedTxns && relatedTxns.length > 0) {
-      for (const tx of relatedTxns) {
-        const match = relatedTickers.find(r => r.ticker === tx.ticker);
-        if (match) {
-          let washSaleDetail: string;
-          if (match.confidence === 'definite') {
-            washSaleDetail = `Wash sale triggered: ${match.relationship}. Transaction on ${tx.transaction_date}.`;
-          } else if (match.confidence === 'likely') {
-            washSaleDetail = `Likely wash sale per professional consensus (no IRS ruling): ${match.relationship}. Transaction on ${tx.transaction_date}.`;
-          } else {
-            washSaleDetail = `Potential wash sale concern: ${match.relationship}. The IRS has not ruled on whether single-stock leveraged ETFs are 'substantially identical' to the underlying stock per IRC \u00a71091. Consult a tax professional. Transaction on ${tx.transaction_date}.`;
-          }
-          result.set(ticker, { risk: true, detail: washSaleDetail });
-          break;
-        }
-      }
+    // 1. The same security acquired inside the window — the clearest trigger.
+    const own = acquisitionsByTicker.get(ticker.toUpperCase());
+    if (own && own.length > 0) {
+      result.set(ticker, describeAcquisition(ticker, own[0], null, 'definite'));
+      continue;
     }
 
-    // Also check regular transactions (buys) for related tickers
-    if (!result.has(ticker)) {
-      // Buys of related tickers live in investment_transactions (which has
-      // ticker/name); the old query hit `transactions` on two columns that
-      // don't exist there, so this check silently never ran.
-      const { data: relatedBuys } = await supabase
-        .from('investment_transactions')
-        .select('name, ticker, transaction_date')
-        .eq('user_id', userId)
-        .in('ticker', relatedTickerList)
-        .gte('transaction_date', windowStart)
-        .eq('transaction_type', 'buy');
-
-      if (relatedBuys && relatedBuys.length > 0) {
-        const tx = relatedBuys[0];
-        const matchedTicker = tx.ticker ?? relatedTickerList.find(t => tx.name?.includes(t));
-        const match = relatedTickers.find(r => r.ticker === matchedTicker);
-        if (match) {
-          let washSaleDetail: string;
-          if (match.confidence === 'definite') {
-            washSaleDetail = `Wash sale triggered: ${match.relationship}. Buy on ${tx.transaction_date}.`;
-          } else if (match.confidence === 'likely') {
-            washSaleDetail = `Likely wash sale per professional consensus (no IRS ruling): ${match.relationship}. Buy on ${tx.transaction_date}.`;
-          } else {
-            washSaleDetail = `Potential wash sale concern: ${match.relationship}. The IRS has not ruled on whether single-stock leveraged ETFs are 'substantially identical' to the underlying stock per IRC \u00a71091. Consult a tax professional. Buy on ${tx.transaction_date}.`;
-          }
-          result.set(ticker, { risk: true, detail: washSaleDetail });
-        }
-      }
+    // 2. A related security acquired inside the window.
+    const related = relatedByTicker.get(ticker) ?? [];
+    let flagged = false;
+    for (const match of related) {
+      const matchRows = acquisitionsByTicker.get(match.ticker.toUpperCase());
+      if (!matchRows || matchRows.length === 0) continue;
+      result.set(ticker, describeAcquisition(ticker, matchRows[0], match.relationship, match.confidence));
+      flagged = true;
+      break;
     }
+    if (flagged) continue;
 
-    // Check if user CURRENTLY HOLDS a related product
-    // Selling NVDA at a loss while holding NVDL is a wash sale concern
-    // even without any recent transactions
-    if (!result.has(ticker)) {
-      const { data: heldRelated } = await supabase
-        .from('holdings')
-        .select('ticker, total_value')
-        .eq('user_id', userId)
-        .in('ticker', relatedTickerList);
-
-      if (heldRelated && heldRelated.length > 0) {
-        const held = heldRelated[0];
-        const match = relatedTickers.find(r => r.ticker === held.ticker);
-        if (match) {
-          let washSaleDetail: string;
-          if (match.confidence === 'definite') {
-            washSaleDetail = `Wash sale risk: you currently hold ${held.ticker} (${match.relationship}). Selling ${ticker} at a loss while holding ${held.ticker} triggers a wash sale per IRC §1091.`;
-          } else if (match.confidence === 'likely') {
-            washSaleDetail = `Likely wash sale risk: you currently hold ${held.ticker} (${match.relationship}). Selling ${ticker} at a loss while holding ${held.ticker} likely triggers a wash sale per professional consensus. No definitive IRS ruling.`;
-          } else {
-            washSaleDetail = `Potential wash sale concern: you currently hold ${held.ticker} (${match.relationship}). The IRS has not ruled on whether selling ${ticker} at a loss while holding ${held.ticker} constitutes a wash sale under IRC §1091. Consult a tax professional.`;
-          }
-          result.set(ticker, { risk: true, detail: washSaleDetail });
-        }
-      }
+    // 3. Advisory only. The user holds a related security but Helm saw no
+    //    acquisition inside the window. Ownership is not a wash sale — §1091
+    //    requires an acquisition — so this must not set risk, must not badge the
+    //    row, and must not drop the lot from the savings pool.
+    const heldMatch = related.find((r) => heldRelated.has(r.ticker.toUpperCase()));
+    if (heldMatch) {
+      result.set(ticker, {
+        risk: false,
+        severity: 'advisory',
+        detail:
+          `You also hold ${heldMatch.ticker} (${heldMatch.relationship}). Holding it is not itself a wash sale:` +
+          ` IRC §1091 is triggered only by acquiring substantially identical stock in the 30 days before or the 30 days after a sale.` +
+          ` Helm found no such acquisition in your linked accounts in the last 30 days. A purchase of ${heldMatch.ticker} inside that window, including one Helm cannot see, would disallow the loss.`,
+      });
     }
   }
 
@@ -509,18 +551,33 @@ async function fetchYtdRealizedGains(userId: string): Promise<{
 }
 
 /**
- * Determine holding period from acquired_at date.
- * Long-term: held for more than 1 year (365 days + 1 day per IRC §1222).
+ * Determine holding period from acquired_at, on the IRS anniversary rule.
+ *
+ * Per the Form 8949 instructions and Topic No. 409: "count from the day AFTER
+ * the day you acquired the asset up to and including the day you disposed of
+ * it", and long-term requires MORE than one year (IRC §1222(3)). So a position
+ * is long-term only once the evaluation date is strictly after the one-year
+ * anniversary — on the anniversary itself it is still short-term.
+ *
+ * Elapsed-day arithmetic (diffDays > 365) got this wrong twice: it flipped to
+ * long-term at noon on the anniversary in a non-leap window, and a full day
+ * early across a leap year, which made the badge time-of-day dependent.
+ * Compare date-only values so the clock cannot move the answer.
  */
 function classifyHoldingPeriod(acquiredAt: string | null): 'short_term' | 'long_term' | 'unknown' {
   if (!acquiredAt) return 'unknown';
   try {
-    const acquired = new Date(acquiredAt + 'T12:00:00');
-    const now = new Date();
-    const diffMs = now.getTime() - acquired.getTime();
-    const diffDays = diffMs / (1000 * 60 * 60 * 24);
-    // IRC §1222: long-term = held for MORE than 1 year (366+ days)
-    return diffDays > 365 ? 'long_term' : 'short_term';
+    const acquired = new Date(acquiredAt + 'T00:00:00Z');
+    if (Number.isNaN(acquired.getTime())) return 'unknown';
+    // Long-term begins the day AFTER the one-year anniversary.
+    const longTermFrom = new Date(Date.UTC(
+      acquired.getUTCFullYear() + 1,
+      acquired.getUTCMonth(),
+      acquired.getUTCDate() + 1,
+    ));
+    const today = new Date();
+    const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    return todayUtc >= longTermFrom.getTime() ? 'long_term' : 'short_term';
   } catch {
     return 'unknown';
   }
@@ -544,14 +601,15 @@ function calculateSavings(
   const absLoss = Math.abs(loss);
   // Short-term losses save at the ordinary income rate (higher)
   // Long-term losses save at the LTCG rate (lower)
-  // Unknown defaults to the blended rate (conservative middle ground)
+  // Unknown holding period is valued at the LONG-TERM rate, matching how
+  // estimateCappedTlhSavings pools unknownLoss. The old (stcg + ltcg) / 2
+  // midpoint was 23.5%, a rate that does not exist in IRC §1(h), and it made
+  // the per-row figures fail to sum to the headline the same page showed.
   let effectiveRate: number;
   if (holdingPeriod === 'short_term') {
     effectiveRate = stcgRate;
-  } else if (holdingPeriod === 'long_term') {
-    effectiveRate = ltcgRate;
   } else {
-    effectiveRate = (stcgRate + ltcgRate) / 2; // Conservative blend
+    effectiveRate = ltcgRate;
   }
   return {
     savings: absLoss * effectiveRate,
@@ -561,14 +619,26 @@ function calculateSavings(
 
 // ── Tax savings calculation ──
 
-const DISCLAIMER = `This is not tax advice. Tax-loss harvesting estimates are approximate and ` +
-  `may not reflect your specific tax situation. The $3,000 annual deduction cap ` +
-  `(IRC §1211(b)), wash sale rules (IRC §1091), and holding period requirements ` +
-  `(IRC §1222) are factored into these estimates, but cross-account wash sale ` +
-  `aggregation, AMT, NIIT (3.8% surtax), and state-specific rules are not. ` +
-  `Replacement security suggestions have not been validated as "not substantially ` +
-  `identical" by the IRS — consult a qualified tax professional before acting ` +
-  `on any recommendation. Helm Terminal is not a registered tax advisor.`;
+const DISCLAIMER = `Estimates only, not tax advice. Helm Terminal is not a registered tax ` +
+  `advisor, CPA, or tax return preparer. Figures assume a default ${(TAX_RATE * 100).toFixed(0)}% ordinary ` +
+  `and short-term rate and a default ${(LTCG_RATE_DEFAULT * 100).toFixed(0)}% long-term rate — not your ` +
+  `actual brackets, which depend on your taxable income and filing status (IRC ` +
+  `§1(h)). The $${ANNUAL_LOSS_DEDUCTION_CAP.toLocaleString()} annual deduction cap (IRC §1211(b)) assumes you are not ` +
+  `married filing separately, whose statutory limit is $1,500. Excluded: the 3.8% ` +
+  `net investment income tax (IRC §1411, which applies above $200,000 single / ` +
+  `$250,000 joint MAGI), AMT, state and local tax, and prior-year loss carryovers. ` +
+  `Wash-sale screening (IRC §1091) is a 30-day BACKWARD lookback across the ` +
+  `accounts you have linked. It does not see purchases you make in the 30 days ` +
+  `AFTER a sale, automatic dividend reinvestments, purchases in accounts you have ` +
+  `not linked, or purchases by your spouse — any of which can disallow a loss ` +
+  `shown here as harvestable. A purchase inside your IRA or Roth IRA is worse than ` +
+  `an ordinary wash sale: under Rev. Rul. 2008-5 the loss is disallowed with no ` +
+  `basis restoration. Specific-lot identification is not implemented, so holding ` +
+  `periods come from your broker's acquisition date and do not reflect wash-sale ` +
+  `tacking under IRC §1223(3). Replacement security suggestions have not been ` +
+  `validated as "not substantially identical" by the IRS. Cost basis comes from ` +
+  `your brokerage feed and may differ from your Form 1099-B. Consult a qualified ` +
+  `tax professional before acting.`;
 
 // ── The single TLH savings formula (IRC §1211(b)) ──
 //
@@ -577,90 +647,11 @@ const DISCLAIMER = `This is not tax advice. Tax-loss harvesting estimates are ap
 // Before extraction, three surfaces shipped three different formulas and showed
 // the same user three different "savings" numbers.
 
-export interface CappedTlhResult {
-  cappedSavings: number;
-  deductibleThisYear: number;
-  estimatedCarryforward: number;
-  remainingDeductibleLoss: number;
-}
-
-/**
- * Schedule D netting (IRC §1222; §1211(b); §1212(b)), verified against the
- * 2025 Schedule D instructions and Pub 550:
- *   1. Same-character netting: ST losses vs ST gains, LT losses vs LT gains.
- *   2. Cross-netting is mechanical; the savings RATE follows the GAIN being
- *      absorbed, not the loss's character (§1222(11): the preferential rate
- *      applies only to net LT gain in excess of net ST loss). An ST loss
- *      absorbing LT gain saves at the LTCG rate; an LT loss absorbing ST gain
- *      saves at the ordinary rate.
- *   3. Remaining net loss deducts up to $3,000 against ordinary income at the
- *      ordinary rate; the excess carries forward (ST consumed first by the
- *      deduction per the Capital Loss Carryover Worksheet).
- * Losses with unknown holding period are folded into the LT pool: LT losses
- * reach the low-rate absorption first, so the estimate errs conservative.
- * NIIT (3.8%) and state rates are deliberately excluded (see DISCLAIMER).
- * Wash-sale-flagged lots must be excluded by the caller (§1091: deferred, not
- * saved this year).
- */
-export function estimateCappedTlhSavings(params: {
-  /** Harvestable losses by character (sign-insensitive). Unknown → conservative LT treatment. */
-  stLoss?: number;
-  ltLoss?: number;
-  unknownLoss?: number;
-  /** YTD net realized by character; negative = already-realized net losses. */
-  stGainYtd: number;
-  ltGainYtd: number;
-  ordinaryRate?: number;
-  ltcgRate?: number;
-}): CappedTlhResult {
-  const ord = params.ordinaryRate ?? TAX_RATE;
-  const ltcg = params.ltcgRate ?? LTCG_RATE_DEFAULT;
-
-  // Loss pools: harvest candidates plus any already-realized YTD net losses.
-  let stLoss = Math.abs(params.stLoss ?? 0) + Math.max(0, -params.stGainYtd);
-  let ltLoss =
-    Math.abs(params.ltLoss ?? 0) + Math.abs(params.unknownLoss ?? 0) + Math.max(0, -params.ltGainYtd);
-  let stGain = Math.max(0, params.stGainYtd);
-  let ltGain = Math.max(0, params.ltGainYtd);
-
-  let savings = 0;
-
-  // 1. Same-character netting.
-  const stSame = Math.min(stLoss, stGain);
-  savings += stSame * ord;
-  stLoss -= stSame;
-  stGain -= stSame;
-
-  const ltSame = Math.min(ltLoss, ltGain);
-  savings += ltSame * ltcg;
-  ltLoss -= ltSame;
-  ltGain -= ltSame;
-
-  // 2. Cross-netting — valued at the absorbed gain's rate.
-  const stIntoLt = Math.min(stLoss, ltGain);
-  savings += stIntoLt * ltcg;
-  stLoss -= stIntoLt;
-  ltGain -= stIntoLt;
-
-  const ltIntoSt = Math.min(ltLoss, stGain);
-  savings += ltIntoSt * ord;
-  ltLoss -= ltIntoSt;
-  stGain -= ltIntoSt;
-
-  // 3. Net capital loss → $3,000 ordinary-income deduction; excess carries
-  //    forward (ST consumed first — affects carryforward character only,
-  //    which this dollar estimate does not need to split).
-  const netLoss = stLoss + ltLoss;
-  const deductibleThisYear = Math.min(netLoss, ANNUAL_LOSS_DEDUCTION_CAP);
-  savings += deductibleThisYear * ord;
-
-  return {
-    cappedSavings: savings,
-    deductibleThisYear,
-    estimatedCarryforward: Math.max(0, netLoss - ANNUAL_LOSS_DEDUCTION_CAP),
-    remainingDeductibleLoss: Math.max(0, ANNUAL_LOSS_DEDUCTION_CAP - deductibleThisYear),
-  };
-}
+export {
+  estimateCappedTlhSavings,
+  estimateTaxOnRealizedGains,
+} from '@/lib/tax-math';
+export type { CappedTlhResult } from '@/lib/tax-math';
 
 // ── Main export ──
 
@@ -730,6 +721,7 @@ export async function generateTaxReport(
         replacement: retirement ? null : findReplacement(h.ticker, sector),
         washSaleRisk: retirement ? false : (washSale?.risk ?? false),
         washSaleDetail: retirement ? null : (washSale?.detail ?? null),
+        washSaleSeverity: retirement ? 'none' : (washSale?.severity ?? 'none'),
         accountName: h.account?.account_name ?? null,
         accountSubtype: h.account?.account_subtype ?? null,
         isRetirement: retirement,

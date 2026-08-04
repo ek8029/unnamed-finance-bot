@@ -16,6 +16,7 @@ import { Form8949Preview } from '@/components/dashboard/form-8949-preview';
 import { TierLock } from '@/components/tier-lock';
 import { usePreview } from '@/lib/preview-context';
 import { TAX_RATE, LTCG_RATE_DEFAULT, ANNUAL_LOSS_DEDUCTION_CAP } from '@/lib/financial-config';
+import { estimateTaxOnRealizedGains } from '@/lib/tax-math';
 
 // ── Constants ──
 
@@ -226,7 +227,8 @@ function ConnectEmpty() {
         </h1>
         <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
           Helm reads your tax lots over a read-only connection, then tracks realized gains and
-          flags wash-sale-safe harvesting opportunities here. Link an account to get started.
+          flags harvesting candidates here, each screened against a 30-day wash-sale lookback.
+          Link an account to get started.
         </p>
       </div>
     </div>
@@ -247,8 +249,8 @@ function NoHarvestEmpty() {
           No harvestable losses right now
         </h2>
         <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
-          Helm scans your lots daily and flags wash-sale-safe harvesting opportunities here the
-          moment they appear.
+          Helm scans your lots daily and flags harvesting candidates here the moment they
+          appear, each screened against a 30-day wash-sale lookback.
         </p>
       </div>
     </div>
@@ -262,7 +264,7 @@ export default function TaxesPage() {
     <TierLock
       required="pro"
       label="The Tax Center is a Pro feature"
-      blurb="Tax-lot tracking, wash-sale-safe harvesting, and an IRS-ready Form 8949 across your connected accounts."
+      blurb="Harvestable losses with 30-day wash-sale screening, and a Form 8949 worksheet you can reconcile against your 1099-B."
     >
       <TaxesContent />
     </TierLock>
@@ -283,17 +285,8 @@ function TaxesContent() {
     if (!taxData) return 0;
     const stNet = taxData.realized.shortTermGains + taxData.realized.shortTermLosses;
     const ltNet = taxData.realized.longTermGains + taxData.realized.longTermLosses;
-    // Net ST losses can offset LT gains and vice versa per IRC §1(h)
-    if (stNet + ltNet <= 0) return 0;
-    if (stNet >= 0 && ltNet >= 0) {
-      return stNet * TAX_RATE + ltNet * LTCG_RATE_DEFAULT;
-    }
-    // One category has net loss that offsets the other
-    const combined = stNet + ltNet;
-    // If ST net is positive after netting, it's taxed at ST rate; if LT is what remains, LT rate
-    return stNet > 0
-      ? Math.max(0, combined) * TAX_RATE   // LT losses ate into ST gains
-      : Math.max(0, combined) * LTCG_RATE_DEFAULT; // ST losses ate into LT gains
+    // One implementation of IRC §1222(11) netting, shared with the engine.
+    return estimateTaxOnRealizedGains({ stNet, ltNet });
   }, [taxData]);
 
   const realizedGains = useMemo(() => {
@@ -544,7 +537,7 @@ function TaxesContent() {
                 className="text-[14px] font-semibold text-[var(--color-text-primary)]"
                 style={{ ...TNUM, ...MONO }}
               >
-                {formatCurrency(deductionUsed)} of {formatCurrency(ANNUAL_LOSS_DEDUCTION_CAP)}
+                {formatCurrency(deductionUsed)} of {formatCurrency(ANNUAL_LOSS_DEDUCTION_CAP)} (assumed)
               </span>
             </div>
             <div className="w-full h-2.5 rounded-sm overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
@@ -560,7 +553,7 @@ function TaxesContent() {
               {deductionUsed >= ANNUAL_LOSS_DEDUCTION_CAP
                 ? `Cap reached — excess losses carry forward to TY ${CURRENT_YEAR + 1} per IRC §1212(b).`
                 : deductionUsed > 0
-                  ? `Net capital losses offset up to $3,000 of ordinary income. ${formatCurrency(ANNUAL_LOSS_DEDUCTION_CAP - deductionUsed)} remaining.`
+                  ? `Net capital losses offset capital gains without limit, then up to ${formatCurrency(ANNUAL_LOSS_DEDUCTION_CAP)} of ordinary income per year ($1,500 if married filing separately, IRC \u00a71211(b)). Helm assumes ${formatCurrency(ANNUAL_LOSS_DEDUCTION_CAP)}. ${formatCurrency(ANNUAL_LOSS_DEDUCTION_CAP - deductionUsed)} remaining; the excess carries forward indefinitely under IRC \u00a71212(b).`
                   : 'No net capital losses to offset ordinary income this year.'}
             </p>
           </div>
@@ -604,7 +597,7 @@ function TaxesContent() {
                 {harvestCount} lot{harvestCount !== 1 ? 's' : ''} sitting on losses
                 {washConflictCount > 0
                   ? ` · ${washConflictCount} wash-sale conflict${washConflictCount !== 1 ? 's' : ''} flagged`
-                  : ' · no wash-sale conflicts'}
+                  : ' · none flagged by the 30-day lookback'}
               </div>
             </div>
             <div className="text-right shrink-0">
@@ -828,8 +821,8 @@ function TaxesContent() {
               Estimated tax · by holding period
             </div>
             <HoldingPeriodBars
-              longTermNet={Math.max(0, longTermNet)}
-              shortTermNet={Math.max(0, shortTermNet)}
+              longTermNet={longTermNet}
+              shortTermNet={shortTermNet}
               formatCurrency={formatCurrency}
             />
             <div className="mt-[18px] pt-4 border-t border-[var(--color-border-subtle)] flex items-center justify-between">
@@ -1191,9 +1184,8 @@ function TaxesContent() {
 
       {/* Disclaimer */}
       <p className="text-[12px] text-[var(--color-text-muted)] text-center leading-relaxed max-w-3xl mx-auto" style={MONO}>
-        All figures are estimates based on a {(TAX_RATE * 100).toFixed(0)}% blended tax rate and your connected portfolio data.
-        This is not tax advice. Wash sale rules (IRC &sect;1091), the $3,000 annual deduction cap (IRC &sect;1211), and
-        holding period requirements apply. Consult a qualified tax professional before making tax-related decisions.
+        {harvestReport?.disclaimer
+          ?? 'Estimates only, not tax advice. Helm Terminal is not a registered tax advisor, CPA, or tax return preparer. Consult a qualified tax professional before acting.'}
       </p>
     </main>
   );
@@ -1210,8 +1202,15 @@ function HoldingPeriodBars({
   shortTermNet: number;
   formatCurrency: (n: number) => string;
 }) {
-  const ltTax = longTermNet * LTCG_RATE_DEFAULT;
-  const stTax = shortTermNet * TAX_RATE;
+  // IRC §1222(11): a net loss in one character absorbs the other BEFORE any
+  // rate applies. Flooring each side at zero and taxing it independently made
+  // this card contradict the netted estimate printed inches below it.
+  const totalTax = estimateTaxOnRealizedGains({ stNet: shortTermNet, ltNet: longTermNet });
+  const grossTax =
+    Math.max(0, longTermNet) * LTCG_RATE_DEFAULT + Math.max(0, shortTermNet) * TAX_RATE;
+  const share = grossTax > 0 ? totalTax / grossTax : 0;
+  const ltTax = Math.max(0, longTermNet) * LTCG_RATE_DEFAULT * share;
+  const stTax = Math.max(0, shortTermNet) * TAX_RATE * share;
   const maxTax = Math.max(ltTax, stTax, 1);
 
   return (
@@ -1233,7 +1232,9 @@ function HoldingPeriodBars({
           />
         </div>
         <div className="text-[10px] text-[var(--color-text-muted)] mt-[5px]" style={MONO}>
-          {formatCurrency(longTermNet)} taxed at preferential rate
+          {longTermNet > 0
+            ? `${formatCurrency(longTermNet)} net long-term gain, after netting against short-term`
+            : `${formatCurrency(longTermNet)} net long-term loss — offsets short-term gain first`}
         </div>
       </div>
 
@@ -1352,12 +1353,18 @@ function HarvestRow({
   opp: TaxOpportunity;
   formatCurrency: (n: number) => string;
 }) {
-  const isWashSafe = !opp.washSaleRisk;
+  const washState: 'none' | 'advisory' | 'flagged' =
+    opp.washSaleSeverity ?? (opp.washSaleRisk ? 'flagged' : 'none');
+  const isWashSafe = washState !== 'flagged';
+  const washBadge = washState === 'flagged' ? 'Wash-sale' : washState === 'advisory' ? 'Check' : 'No conflict';
   const [expanded, setExpanded] = useState(false);
 
   const washSaleDetailText = opp.washSaleDetail
     ?? (isWashSafe
-      ? 'No substantially identical securities detected in your portfolio or recent transactions, per IRC §1091.'
+      ? 'Helm found no purchase of this security, or of one we treat as related, in your linked accounts in the last 30 days. '
+        + 'That is not a wash-sale clearance. IRC §1091 also disallows the loss if a substantially identical security is acquired in the 30 days AFTER the sale, '
+        + 'by your IRA or Roth IRA (Rev. Rul. 2008-5, where the loss is permanently disallowed and is not added to basis), by your spouse, in an account you have not linked, '
+        + 'or through automatic dividend reinvestment. Helm cannot see those.'
       : null);
 
   const handleExpandToggle = (e: React.MouseEvent) => {
@@ -1425,19 +1432,19 @@ function HarvestRow({
           onClick={handleExpandToggle}
           className="flex items-center gap-1 cursor-pointer"
           aria-expanded={expanded}
-          aria-label={`${isWashSafe ? 'Eligible' : 'Wash-sale'} — show wash sale detail for ${opp.ticker}`}
+          aria-label={`${washBadge} — show wash sale detail for ${opp.ticker}`}
         >
           {isWashSafe ? (
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[9px] uppercase tracking-[0.1em] font-bold"
               style={{
-                background: 'rgba(74, 222, 128, 0.08)',
-                color: 'var(--color-positive)',
-                border: '1px solid rgba(74,222,128,0.2)',
+                background: washState === 'advisory' ? 'rgba(230, 185, 77, 0.08)' : 'rgba(74, 222, 128, 0.08)',
+                color: washState === 'advisory' ? 'var(--color-gold)' : 'var(--color-positive)',
+                border: washState === 'advisory' ? '1px solid rgba(230,185,77,0.2)' : '1px solid rgba(74,222,128,0.2)',
                 ...MONO,
               }}
             >
-              Eligible
+              {washBadge}
             </span>
           ) : (
             <span
@@ -1505,8 +1512,8 @@ function HarvestRow({
         <div
           className="hidden md:block px-5 py-3 border-b border-[var(--color-border-subtle)]"
           style={{
-            borderLeft: `3px solid ${opp.washSaleRisk ? 'var(--color-warning-text)' : 'var(--color-positive)'}`,
-            background: opp.washSaleRisk ? 'rgba(251, 191, 36, 0.03)' : 'rgba(74, 222, 128, 0.03)',
+            borderLeft: `3px solid ${washState === 'flagged' ? 'var(--color-warning-text)' : washState === 'advisory' ? 'var(--color-gold)' : 'var(--color-positive)'}`,
+            background: washState === 'none' ? 'rgba(74, 222, 128, 0.03)' : 'rgba(251, 191, 36, 0.03)',
           }}
         >
           <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
@@ -1575,19 +1582,19 @@ function HarvestRow({
             onClick={handleExpandToggle}
             className="inline-flex items-center gap-0.5 shrink-0 cursor-pointer"
             aria-expanded={expanded}
-            aria-label={`${isWashSafe ? 'Eligible' : 'Wash-sale'} — show wash sale detail for ${opp.ticker}`}
+            aria-label={`${washBadge} — show wash sale detail for ${opp.ticker}`}
           >
             {isWashSafe ? (
               <span
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[9px] uppercase tracking-[0.1em] font-bold"
                 style={{
-                  background: 'rgba(74, 222, 128, 0.08)',
-                  color: 'var(--color-positive)',
-                  border: '1px solid rgba(74,222,128,0.2)',
+                  background: washState === 'advisory' ? 'rgba(230, 185, 77, 0.08)' : 'rgba(74, 222, 128, 0.08)',
+                  color: washState === 'advisory' ? 'var(--color-gold)' : 'var(--color-positive)',
+                  border: washState === 'advisory' ? '1px solid rgba(230,185,77,0.2)' : '1px solid rgba(74,222,128,0.2)',
                   ...MONO,
                 }}
               >
-                Eligible
+                {washBadge}
               </span>
             ) : (
               <span
@@ -1648,8 +1655,8 @@ function HarvestRow({
           <div
             className="mt-2.5 ml-[26px] px-3 py-2.5 rounded-sm"
             style={{
-              borderLeft: `3px solid ${opp.washSaleRisk ? 'var(--color-warning-text)' : 'var(--color-positive)'}`,
-              background: opp.washSaleRisk ? 'rgba(251, 191, 36, 0.03)' : 'rgba(74, 222, 128, 0.03)',
+              borderLeft: `3px solid ${washState === 'flagged' ? 'var(--color-warning-text)' : washState === 'advisory' ? 'var(--color-gold)' : 'var(--color-positive)'}`,
+              background: washState === 'none' ? 'rgba(74, 222, 128, 0.03)' : 'rgba(251, 191, 36, 0.03)',
             }}
           >
             <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>

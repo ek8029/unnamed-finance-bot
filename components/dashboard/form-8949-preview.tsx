@@ -21,13 +21,20 @@ interface Form8949Row {
   dateSold: string;
   proceeds: number;
   costBasis: number;
-  adjustment: number;
+  /** Column (g). null = NOT COMPUTED — never printed as 0.00. */
+  adjustment: number | null;
+  /** Column (f) adjustment code, empty until (g) is computed. */
+  code: string;
   gainLoss: number;
+  acquisitionUnknown: boolean;
+  incomplete: boolean;
 }
 
 interface Form8949Part {
   label: string;
   subtitle: string;
+  box: 'C' | 'F';
+  boxNote: string;
   rows: Form8949Row[];
   totalProceeds: number;
   totalCostBasis: number;
@@ -44,55 +51,64 @@ interface Form8949Data {
   grandTotalCostBasis: number;
   grandTotalGainLoss: number;
   transactionCount: number;
+  incompleteCount: number;
+  unclassifiedCount: number;
+  caveats: string[];
 }
 
 // ── CSV generation ──
 
 function generateCSV(data: Form8949Data): string {
-  const header = 'Part,Description,Date Acquired,Date Sold,Proceeds,Cost or Other Basis,Adjustment,Gain or Loss';
-  const lines: string[] = [header];
+  // The caveats travel INSIDE the file. They are the thing that reaches the
+  // preparer; leaving them behind in the UI is how a zeroed wash-sale
+  // adjustment ends up transcribed onto a filed return.
+  const lines: string[] = [
+    `"Helm Terminal — Form 8949 WORKSHEET (not a filing copy) — tax year ${data.taxYear}"`,
+    ...data.caveats.map((c) => `"${c.replace(/"/g, "''")}"`),
+    '',
+    'Part,Box,Description,Date Acquired,Date Sold,Proceeds,Cost or Other Basis,Code (f),Adjustment (g),Gain or Loss',
+  ];
 
-  const formatRow = (partLabel: string, row: Form8949Row): string => {
+  const formatRow = (partLabel: string, box: string, row: Form8949Row): string => {
     return [
       `"${partLabel}"`,
+      `"${box}"`,
       `"${row.description}"`,
-      `"${row.dateAcquired}"`,
+      `"${row.dateAcquired || 'UNKNOWN — see 1099-B'}"`,
       `"${row.dateSold}"`,
       row.proceeds.toFixed(2),
       row.costBasis.toFixed(2),
-      row.adjustment.toFixed(2),
+      `"${row.code}"`,
+      row.adjustment == null ? '"NOT COMPUTED"' : row.adjustment.toFixed(2),
       row.gainLoss.toFixed(2),
     ].join(',');
   };
 
+  const totalsRow = (part: Form8949Part): Form8949Row => ({
+    description: '',
+    dateAcquired: '',
+    dateSold: '',
+    proceeds: part.totalProceeds,
+    costBasis: part.totalCostBasis,
+    adjustment: null,
+    code: '',
+    gainLoss: part.totalGainLoss,
+    acquisitionUnknown: false,
+    incomplete: false,
+  });
+
   if (data.partI.rows.length > 0) {
     for (const row of data.partI.rows) {
-      lines.push(formatRow('Short-Term', row));
+      lines.push(formatRow('Short-Term', data.partI.box, row));
     }
-    lines.push(formatRow('Short-Term TOTALS', {
-      description: '',
-      dateAcquired: '',
-      dateSold: '',
-      proceeds: data.partI.totalProceeds,
-      costBasis: data.partI.totalCostBasis,
-      adjustment: data.partI.totalAdjustment,
-      gainLoss: data.partI.totalGainLoss,
-    }));
+    lines.push(formatRow('Short-Term TOTALS', data.partI.box, totalsRow(data.partI)));
   }
 
   if (data.partII.rows.length > 0) {
     for (const row of data.partII.rows) {
-      lines.push(formatRow('Long-Term', row));
+      lines.push(formatRow('Long-Term', data.partII.box, row));
     }
-    lines.push(formatRow('Long-Term TOTALS', {
-      description: '',
-      dateAcquired: '',
-      dateSold: '',
-      proceeds: data.partII.totalProceeds,
-      costBasis: data.partII.totalCostBasis,
-      adjustment: data.partII.totalAdjustment,
-      gainLoss: data.partII.totalGainLoss,
-    }));
+    lines.push(formatRow('Long-Term TOTALS', data.partII.box, totalsRow(data.partII)));
   }
 
   return lines.join('\n');
@@ -174,8 +190,17 @@ function PartTable({
             <span className="text-[13px] text-[var(--color-text-primary)] truncate" style={MONO}>
               {row.description}
             </span>
-            <span className="text-[13px] text-[var(--color-text-secondary)] tabular-nums" style={MONO}>
-              {row.dateAcquired}
+            <span
+              className={cn(
+                'text-[13px] tabular-nums',
+                row.acquisitionUnknown
+                  ? 'text-[var(--color-warning-text)]'
+                  : 'text-[var(--color-text-secondary)]',
+              )}
+              style={MONO}
+              title={row.acquisitionUnknown ? 'No acquisition record on or before the sale date. Take column (b) from your 1099-B.' : undefined}
+            >
+              {row.dateAcquired || 'see 1099-B'}
             </span>
             <span className="text-[13px] text-[var(--color-text-secondary)] tabular-nums" style={MONO}>
               {row.dateSold}
@@ -223,7 +248,7 @@ function PartTable({
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>Acquired</span>
                 <span className="text-[12px] text-[var(--color-text-secondary)] tabular-nums" style={MONO}>
-                  {row.dateAcquired}
+                  {row.dateAcquired || 'see 1099-B'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -459,7 +484,7 @@ export function Form8949Preview() {
                     className="text-[10px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
                     style={MONO}
                   >
-                    IRS Form 8949
+                    Form 8949 worksheet (not a filing copy)
                   </span>
                   <span className="text-[10px] text-[var(--color-text-muted)]" style={MONO}>
                     &middot; TY {data.taxYear} &middot; {data.transactionCount} transaction{data.transactionCount !== 1 ? 's' : ''}
@@ -513,8 +538,11 @@ export function Form8949Preview() {
                     Part I &mdash; Short-term
                   </span>
                   <span className="text-[10px] text-[var(--color-text-muted)] ml-2" style={MONO}>
-                    Held one year or less
+                    Held one year or less &middot; Box {data.partI.box} assumed
                   </span>
+                  <p className="text-[10px] text-[var(--color-text-muted)] leading-relaxed mt-1" style={MONO}>
+                    {data.partI.boxNote}
+                  </p>
                 </div>
                 <PartTable part={data.partI} formatCurrency={formatCurrency} />
               </div>
@@ -529,8 +557,11 @@ export function Form8949Preview() {
                     Part II &mdash; Long-term
                   </span>
                   <span className="text-[10px] text-[var(--color-text-muted)] ml-2" style={MONO}>
-                    Held more than one year
+                    Held more than one year &middot; Box {data.partII.box} assumed
                   </span>
+                  <p className="text-[10px] text-[var(--color-text-muted)] leading-relaxed mt-1" style={MONO}>
+                    {data.partII.boxNote}
+                  </p>
                 </div>
                 <PartTable part={data.partII} formatCurrency={formatCurrency} />
               </div>
@@ -588,9 +619,12 @@ export function Form8949Preview() {
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="w-3 h-3 text-[var(--color-warning-text)] mt-0.5 shrink-0" />
                   <p className="text-[10px] text-[var(--color-text-muted)] leading-relaxed" style={MONO}>
-                    For informational purposes only. This preview is generated from your connected account data and may not
-                    include all reportable transactions. Adjustments (column g) are not computed. Confirm all figures with your
-                    1099-B and consult a qualified CPA or tax professional before filing.
+                    This worksheet is not a filed Form 8949. It does not select the required Part I box (A/B/C) or Part II
+                    box (D/E/F), does not compute column (f) codes or column (g) adjustments including wash-sale code W, and
+                    column (b) is derived from your transaction feed rather than from lot-level acquisition records. It may
+                    not include all reportable transactions, and it cannot distinguish dispositions inside IRAs, 401(k)s or
+                    HSAs, which do not belong on Form 8949 at all. Reconcile every row against your 1099-B and consult a
+                    qualified CPA or tax professional before filing.
                   </p>
                 </div>
               </div>

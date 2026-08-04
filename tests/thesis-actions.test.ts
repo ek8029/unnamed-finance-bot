@@ -143,6 +143,10 @@ describe('buildAction', () => {
     expect(a.insightType).toBe('tax');
     expect(a.estimatedImpact).toBeGreaterThan(0);
     expect(a.recommendedAction.toLowerCase()).toContain('wash sale');
+    // IRC 1091 is symmetric: the copy must state the 30 days BEFORE the sale,
+    // not only the forward half users already know about.
+    expect(a.recommendedAction.toLowerCase()).toContain('30 days before the sale');
+    expect(a.recommendedAction.toLowerCase()).toContain('61-day');
     expect(a.recommendedAction.toLowerCase()).toContain('you decide');
     expect(a.citedExcerpts.length).toBeGreaterThan(0);
     noEmDash(a.recommendedAction);

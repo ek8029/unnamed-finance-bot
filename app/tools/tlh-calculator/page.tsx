@@ -105,7 +105,7 @@ export default function TLHCalculatorPage() {
           </div>
           <div>
             <h2 className="type-h2 mb-2.5">How does the wash-sale rule work?</h2>
-            <p>The IRS wash-sale rule prevents claiming a loss if you buy a &ldquo;substantially identical&rdquo; security within 30 days before or after the sale. You can replace it with a similar-but-not-identical fund to maintain exposure while harvesting the loss. Helm Pro detects wash-sale violations across your linked accounts automatically.</p>
+            <p>The IRS wash-sale rule prevents claiming a loss if you buy a &ldquo;substantially identical&rdquo; security within 30 days before or after the sale. You can replace it with a similar-but-not-identical fund to maintain exposure while harvesting the loss. Helm Pro screens the accounts you link for purchases of the same or a related security in the 30 days before a candidate sale, and flags what it finds. It cannot see accounts you have not linked, purchases made by your IRA or your spouse, or purchases you make after the sale, all of which can still trigger &sect;1091, so confirm with your tax professional.</p>
           </div>
           <div>
             <h2 className="type-h2 mb-2.5">Who benefits most?</h2>
@@ -113,7 +113,7 @@ export default function TLHCalculatorPage() {
           </div>
           <div>
             <h2 className="type-h2 mb-2.5">How Helm automates this</h2>
-            <p>Helm Pro connects to your brokerage via Plaid and continuously scans for tax-loss harvesting opportunities with wash-sale rule awareness. Instead of spreadsheets with 200+ tax lots, Helm surfaces harvestable losses, flags risks, and suggests replacements — for <span className="font-mono text-[var(--color-text-primary)]">$20/mo</span>.</p>
+            <p>Helm Pro connects to your brokerage via Plaid and continuously scans for tax-loss harvesting candidates, screening each one against a 30-day wash-sale lookback across the accounts you have linked. Instead of spreadsheets with 200+ tax lots, Helm surfaces harvestable losses, flags risks, and suggests replacements — for <span className="font-mono text-[var(--color-text-primary)]">$20/mo</span>.</p>
           </div>
         </div>
       </section>

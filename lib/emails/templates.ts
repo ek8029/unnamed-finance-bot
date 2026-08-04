@@ -234,7 +234,7 @@ export function getTemplate(dayIndex: number, userName?: string): EmailTemplate 
         ${dividerLine()}
         ${sectionLabel('What Pro adds')}
         ${bulletItem('Thesis monitoring', 'Cited evidence the moment a thesis starts to break.')}
-        ${bulletItem('Tax center', 'Wash-sale-aware tax-loss harvesting.')}
+        ${bulletItem('Tax center', 'Harvestable losses with 30-day wash-sale screening.')}
         ${bulletItem('Earnings exposure', 'Know when your holdings report, before they move.')}
         ${bulletItem('Tailored brief', 'Conviction-led, built around your positions.')}
         <div style="height:12px;"></div>

@@ -6,7 +6,11 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TAX_RATE, LTCG_RATE_DEFAULT } from '@/lib/financial-config';
-import { estimateCappedTlhSavings } from '@/lib/tax-analysis';
+import {
+  estimateCappedTlhSavings,
+  estimateTaxOnRealizedGains,
+  isRetirementAccount,
+} from '@/lib/tax-analysis';
 
 export interface BriefHolding {
   ticker: string;
@@ -17,6 +21,10 @@ export interface BriefHolding {
   sector: string | null;
   /** Account names this position spans (multi-brokerage books hold one name in 2+). */
   accounts: string[];
+  /** Unrealized gain/loss from TAXABLE accounts only. A loss inside an IRA,
+   *  401(k), HSA or 529 produces no current deduction (IRC §408(e)(1)), so it
+   *  must never enter a harvestable total. Null when no taxable row was priced. */
+  taxableUnrealizedGainLoss: number | null;
 }
 
 export interface PortfolioBrief {
@@ -38,7 +46,7 @@ export async function getPortfolioBrief(
     const { data, error } = await db
       .from('holdings')
       .select(
-        'ticker, total_value, unrealised_gain_loss, total_cost_basis, portfolio_allocation_pct, securities(sector), linked_accounts(account_name)',
+        'ticker, total_value, unrealised_gain_loss, total_cost_basis, portfolio_allocation_pct, securities(sector), linked_accounts(account_name, account_subtype)',
       )
       .eq('user_id', userId)
       .order('total_value', { ascending: false });
@@ -53,12 +61,16 @@ export async function getPortfolioBrief(
     for (const h of data) {
       const sec = h.securities as { sector?: string | null } | { sector?: string | null }[] | null;
       const sector = Array.isArray(sec) ? (sec[0]?.sector ?? null) : (sec?.sector ?? null);
-      const acc = h.linked_accounts as { account_name?: string | null } | { account_name?: string | null }[] | null;
-      const accountName = Array.isArray(acc) ? (acc[0]?.account_name ?? null) : (acc?.account_name ?? null);
+      type AccRel = { account_name?: string | null; account_subtype?: string | null };
+      const acc = h.linked_accounts as AccRel | AccRel[] | null;
+      const accRow = Array.isArray(acc) ? (acc[0] ?? null) : acc;
+      const accountName = accRow?.account_name ?? null;
+      const retirement = isRetirementAccount(accRow?.account_subtype ?? null, accountName);
       const ticker = String(h.ticker).toUpperCase();
       const value = Number(h.total_value ?? 0);
       const gain = h.unrealised_gain_loss != null ? Number(h.unrealised_gain_loss) : null;
       const basis = h.total_cost_basis != null ? Number(h.total_cost_basis) : null;
+      const taxableGain = retirement ? null : gain;
       const prev = byTicker.get(ticker);
       if (!prev) {
         byTicker.set(ticker, {
@@ -69,11 +81,16 @@ export async function getPortfolioBrief(
           costBasis: basis,
           sector,
           accounts: accountName ? [accountName] : [],
+          taxableUnrealizedGainLoss: taxableGain,
         });
       } else {
         prev.value += value;
         prev.unrealizedGainLoss =
           gain != null ? (prev.unrealizedGainLoss ?? 0) + gain : prev.unrealizedGainLoss;
+        prev.taxableUnrealizedGainLoss =
+          taxableGain != null
+            ? (prev.taxableUnrealizedGainLoss ?? 0) + taxableGain
+            : prev.taxableUnrealizedGainLoss;
         prev.costBasis = basis != null ? (prev.costBasis ?? 0) + basis : prev.costBasis;
         prev.sector = prev.sector ?? sector;
         if (accountName && !prev.accounts.includes(accountName)) prev.accounts.push(accountName);
@@ -143,10 +160,13 @@ export async function getTaxContext(
         `Short-term net: ${st >= 0 ? '+' : ''}$${Math.round(st).toLocaleString()}`,
         `Long-term net: ${lt >= 0 ? '+' : ''}$${Math.round(lt).toLocaleString()}`,
         `Net realized: ${net >= 0 ? '+' : ''}$${Math.round(net).toLocaleString()}`,
-        // Character matters: long-term gains are taxed at LTCG, not ordinary.
+        // Character matters, and so does netting: IRC §1222(11) requires ST and
+        // LT to offset each other BEFORE a rate applies. Flooring each side at
+        // zero independently told a user with a $10k ST loss and a $20k LT gain
+        // they owed tax on the full gain.
         `Estimated tax on realized gains: $${Math.round(
-          Math.max(0, st) * TAX_RATE + Math.max(0, lt) * LTCG_RATE_DEFAULT,
-        ).toLocaleString()} (short-term at ${Math.round(TAX_RATE * 100)}%, long-term at ${Math.round(LTCG_RATE_DEFAULT * 100)}%)`,
+          estimateTaxOnRealizedGains({ stNet: st, ltNet: lt }),
+        ).toLocaleString()} (short-term at ${Math.round(TAX_RATE * 100)}%, long-term at ${Math.round(LTCG_RATE_DEFAULT * 100)}%, after §1222(11) netting; federal only, excludes the §1411 NIIT and state tax)`,
       );
     }
   } catch {
@@ -155,24 +175,29 @@ export async function getTaxContext(
 
   // Harvestable, from current unrealized losses.
   if (brief) {
-    const losers = brief.holdings.filter((h) => (h.unrealizedGainLoss ?? 0) < 0);
+    const losers = brief.holdings.filter((h) => (h.taxableUnrealizedGainLoss ?? 0) < 0);
     if (losers.length > 0) {
-      const totalLoss = losers.reduce((s, h) => s + Math.abs(h.unrealizedGainLoss ?? 0), 0);
+      const totalLoss = losers.reduce((s, h) => s + Math.abs(h.taxableUnrealizedGainLoss ?? 0), 0);
+      const capped = estimateCappedTlhSavings({
+        unknownLoss: totalLoss,
+        stGainYtd: stYtd,
+        ltGainYtd: ltYtd,
+      });
       lines.push(
         '',
-        '=== HARVESTABLE LOSSES (current unrealized, positions in the red) ===',
+        '=== HARVESTABLE LOSSES (unrealized, TAXABLE accounts only) ===',
         `Total harvestable loss: $${Math.round(totalLoss).toLocaleString()} across ${losers.length} positions`,
         // IRC §1211(b): losses offset capital gains without limit, but only
         // $3,000 of net loss deducts against ordinary income per year — a flat
         // rate × total loss overstates year-one savings, sometimes by a lot.
-        `Estimated tax savings if realized this year: $${Math.round(
-          estimateCappedTlhSavings({ unknownLoss: totalLoss, stGainYtd: stYtd, ltGainYtd: ltYtd })
-            .cappedSavings,
-        ).toLocaleString()} (losses beyond the annual cap carry forward)`,
+        `Estimated tax savings if realized this year: $${Math.round(capped.cappedSavings).toLocaleString()}`,
+        capped.estimatedCarryforward > 0
+          ? `Carries forward to future years: $${Math.round(capped.estimatedCarryforward).toLocaleString()} (IRC §1212(b), never expires)`
+          : 'Nothing carries forward at this loss level — the losses are absorbed this year.',
         ...losers
           .slice(0, 8)
-          .map((h) => `  ${h.ticker}: unrealized -$${Math.round(Math.abs(h.unrealizedGainLoss ?? 0)).toLocaleString()}`),
-        'Note: estimate at a blended rate, before wash-sale checks. Not tax advice.',
+          .map((h) => `  ${h.ticker}: unrealized -$${Math.round(Math.abs(h.taxableUnrealizedGainLoss ?? 0)).toLocaleString()}`),
+        `Note: estimate. Losses first offset realized capital gains dollar-for-dollar (IRC §1211(b)); only the excess is deductible against ordinary income, capped at $3,000/year, with the rest carrying forward under IRC §1212(b). Assumes a ${(TAX_RATE * 100).toFixed(0)}% ordinary rate and a ${(LTCG_RATE_DEFAULT * 100).toFixed(0)}% long-term rate. Taxable accounts only — losses inside IRAs, 401(k)s, HSAs and 529s are excluded because those accounts are tax-exempt under IRC §408(e)(1) and produce no current deduction. Before wash-sale checks. Not tax advice.`,
       );
     }
   }
@@ -237,11 +262,11 @@ export async function getValueLedger(
   // Harvestable tax savings from current losses (the deterministic dollar).
   if (brief) {
     const totalLoss = brief.holdings
-      .filter((h) => (h.unrealizedGainLoss ?? 0) < 0)
-      .reduce((s, h) => s + Math.abs(h.unrealizedGainLoss ?? 0), 0);
+      .filter((h) => (h.taxableUnrealizedGainLoss ?? 0) < 0)
+      .reduce((s, h) => s + Math.abs(h.taxableUnrealizedGainLoss ?? 0), 0);
     if (totalLoss > 0) {
       lines.push({
-        label: 'Tax-loss harvesting surfaced',
+        label: 'Tax-loss harvesting surfaced (taxable accounts, estimate)',
         // §1211(b)-capped and netted against this year's realized gains — a
         // flat rate on the full loss overstated the year-one benefit, but
         // ignoring realized gains would understate it just as badly (losses

@@ -75,7 +75,7 @@ export function TaxInsightDrawer({
           {[
             'Review your current tax bracket and expected income',
             'Consider holding periods for long-term vs short-term gains',
-            'Ensure compliance with wash-sale rules (30-day period)',
+            'Wash-sale rule: a substantially identical purchase in the 30 days before or after a loss sale disallows it (61 days total, IRC §1091)',
             'Consult with a tax professional for your specific situation',
           ].map((item, index) => (
             <div key={index} className="flex items-start gap-2 text-[13px] text-[var(--color-text-secondary)]">

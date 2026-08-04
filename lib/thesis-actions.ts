@@ -168,9 +168,13 @@ export function buildAction(pillar: PillarInput, holding?: HoldingSnapshot, tlh?
       `The position is down ${fmtMoney(loss)}, so the loss is real and harvestable now.`;
     recommendedAction =
       `Consider selling ${t} to harvest the loss, then reallocating to a similar but not ` +
-      `substantially identical asset to keep your exposure. Do not repurchase ${t} within 30 days ` +
-      `or you trigger a wash sale (IRC 1091). This is not tax advice; consult a qualified ` +
-      `professional. You decide whether to act, and nothing is executed for you.`;
+      `substantially identical asset to keep your exposure. IRC 1091 disallows the loss if a ` +
+      `substantially identical security is acquired in the 30 days BEFORE the sale, on the day ` +
+      `of the sale, or in the 30 days after it: a 61-day wash sale window. Check for recent buys, ` +
+      `automatic dividend reinvestment, and purchases inside an IRA or 401(k) before selling; a ` +
+      `purchase by your IRA disallows the loss permanently with no basis restoration ` +
+      `(Rev. Rul. 2008-5). This is not tax advice; consult a qualified professional. You decide ` +
+      `whether to act, and nothing is executed for you.`;
   } else if (kind === 'trim') {
     title = `Trim ${t}?`;
     description =

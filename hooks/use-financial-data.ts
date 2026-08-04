@@ -647,6 +647,7 @@ export interface TaxOpportunity {
   replacement: { ticker: string; name: string; reason: string } | null;
   washSaleRisk: boolean;
   washSaleDetail: string | null;
+  washSaleSeverity: 'none' | 'advisory' | 'flagged';
   accountName: string | null;
   accountSubtype: string | null;
   isRetirement: boolean;

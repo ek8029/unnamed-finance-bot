@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getPortfolioSummary, formatPortfolioContext, type PortfolioSummary } from '@/lib/portfolio-analysis';
-import { generateTaxReport, type TaxHarvestReport } from '@/lib/tax-analysis';
+import { generateTaxReport, estimateTaxOnRealizedGains, type TaxHarvestReport } from '@/lib/tax-analysis';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { checkAnalysisQuota, recordAnalysisUsage, tierAtLeast } from '@/lib/tier';
-import { TAX_RATE } from '@/lib/financial-config';
+import { TAX_RATE, LTCG_RATE_DEFAULT } from '@/lib/financial-config';
 import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import { getAgentFindings } from '@/lib/research/findings';
@@ -319,7 +319,15 @@ function buildTaxContext(
     lines.push(`Short-term gains: +$${fmt(stGains)} | Short-term losses: -$${fmt(Math.abs(stLosses))}`);
     lines.push(`Long-term gains: +$${fmt(ltGains)} | Long-term losses: -$${fmt(Math.abs(ltLosses))}`);
     lines.push(`Net realized: $${fmt(net)}`);
-    lines.push(`Estimated tax on realized gains (${(TAX_RATE * 100).toFixed(0)}% blended): $${fmt(Math.max(0, net) * TAX_RATE)}`);
+    // IRC §1222(11): short-term and long-term net against each other first, and
+    // the §1(h) preferential rate reaches only the residual net long-term gain.
+    // Applying TAX_RATE to the whole net overstated a long-term book by ~113%.
+    const stNetRealized = stGains + stLosses;
+    const ltNetRealized = ltGains + ltLosses;
+    lines.push(
+      `Estimated tax on realized gains (short-term at ${(TAX_RATE * 100).toFixed(0)}%, long-term at ${(LTCG_RATE_DEFAULT * 100).toFixed(0)}%, after §1222(11) netting): ` +
+      `$${fmt(estimateTaxOnRealizedGains({ stNet: stNetRealized, ltNet: ltNetRealized }))}`,
+    );
     lines.push('', 'TRANSACTIONS:');
     for (const g of sells) {
       lines.push(`  ${g.ticker} | ${g.transaction_date} | ${g.shares} shares | Proceeds: $${fmt(g.proceeds)} | Cost: $${fmt(g.cost_basis)} | ${Number(g.gain_loss) >= 0 ? '+' : ''}$${fmt(Number(g.gain_loss))} (${g.gain_loss_type})`);
@@ -418,7 +426,7 @@ ADDITIONAL TAX RULES:
 - Use a ${(TAX_RATE * 100).toFixed(0)}% blended federal+state rate for estimates unless the user specifies otherwise.
 - Distinguish short-term (ordinary income rates, up to 37%) vs long-term (0/15/20%) clearly.
 - Explain the $3,000/year capital loss deduction limit and carryover rules when relevant.
-- Explain wash sale mechanics neutrally (repurchasing a substantially identical security within 30 days disallows the loss).
+- Explain wash sale mechanics neutrally: acquiring a substantially identical security in the 30 days BEFORE a loss sale, on the day of the sale, or in the 30 days after it disallows the loss (61 days total, IRC §1091). A purchase inside an IRA or Roth IRA disallows it permanently with no basis restoration (Rev. Rul. 2008-5).
 - State which positions are at an unrealized loss and the dollar amounts. Do NOT instruct the user to harvest, sell, or trim. Tax-loss harvesting is a strategy some investors use to offset gains; present it as neutral education, not a directive.
 
 Respond with this JSON structure:

@@ -40,11 +40,11 @@ export async function getConvictionByTicker(
 export function thesisTlhNote(status: Conviction): string {
   switch (status) {
     case 'broken':
-      return 'Your thesis on this position is broken. Beyond the tax loss, consider whether you still want to own it at all, rather than simply rebuying after the wash-sale window.';
+      return 'Your thesis on this position is broken. The tax loss and the conviction signal point the same way; what you do with the position is your call. IRC §1091 disallows a realized loss if a substantially identical security is acquired in the 30 days before or after the sale, in any of your accounts or by your IRA.';
     case 'weakening':
-      return 'Your thesis here is weakening. If you harvest, consider waiting out the wash-sale window before rebuying, and watch the next data point closely.';
+      return 'Your thesis here is weakening, and the next data point is the one to watch. If a loss is realized, the IRC §1091 61-day window applies: a substantially identical purchase in the 30 days before or after the sale disallows the loss.';
     case 'intact':
-      return 'Your thesis is intact. This looks like a tax move, not a change of conviction. Consider rebuying after the wash-sale window to stay positioned.';
+      return 'Your thesis is intact, so a harvest here reads as a tax move rather than a change of conviction. Note that IRC §1091 disallows the loss if a substantially identical security is acquired in the 30 days before or after the sale, in any of your accounts, by your spouse, or by your IRA. An IRA repurchase is worse than an ordinary wash sale: Rev. Rul. 2008-5 disallows the loss with no basis restoration.';
   }
 }
 
