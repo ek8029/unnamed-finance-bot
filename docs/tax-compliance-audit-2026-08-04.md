@@ -3,6 +3,42 @@
 5 statutory specialists + adversarial review. 36 candidates, 24 confirmed.
 Sources fetched from irs.gov / law.cornell.edu per finding.
 
+## Status — 2026-08-04 (commits 40326cc, e714aab)
+
+**Fixed.** All five P0s and every P1 except the two noted below.
+- Wash-sale detection reads `investment_transactions` instead of the unwritten
+  `capital_gains`; covers same-ticker and related buys, DRIP reinvestments, and
+  retirement-account purchases (Rev. Rul. 2008-5 language).
+- Holding a related security is advisory, not a flag, and no longer drops the
+  lot from the savings pool. A prior sell no longer flags.
+- Every clearance claim removed: "Eligible" → "No conflict", no "wash-sale-safe"
+  or "IRS-ready" anywhere, public TLH calculator and drip email rewritten.
+- Both halves of the 61-day window stated on every harvest surface.
+- Engine DISCLAIMER rendered on /dashboard/taxes, extended to NIIT/state/MFS/lot ID.
+- `estimateCappedTlhSavings` reports the MARGINAL benefit of the harvest.
+- Retirement losses excluded from research/note/ledger harvest totals.
+- One `estimateTaxOnRealizedGains` with §1222(11) netting, shared by the client
+  Tax Center and the server engine (pure math extracted to `lib/tax-math.ts`).
+- `classifyHoldingPeriod` on the IRS anniversary rule; unknown-character losses
+  valued at the LT rate, not the nonexistent 23.5% midpoint.
+- Form 8949: lot-constrained column (b), box C/F designation, column (f) added,
+  column (g) prints NOT COMPUTED, (h) derived from (d)−(e), unclassified rows to
+  Part I, selectable tax year, caveats inside the CSV.
+- §1211(b) harvest ladder shipped on /dashboard/taxes.
+
+**Still open** (all disclosed on-screen, none silently wrong):
+- `lib/financial-config.ts:25` — the $3,000 cap is deploy-wide; MFS ($1,500) is
+  collected in settings but not applied. Copy now says "assumed".
+- `lib/research/account.ts:241`, `lib/insights-engine.ts:242`,
+  `lib/thesis-actions.ts:370` — still pass `unknownLoss` rather than real loss
+  character, so these surfaces can quote a lower figure than the Tax Center.
+- `lib/tax-analysis.ts:515` — IRC §1223(3) wash-sale holding-period tacking is
+  disclosed but not computed (needs specific-lot identification).
+- `app/api/tax/form-8949/route.ts:94` — `capital_gains` has no account link, so
+  IRA dispositions cannot be filtered out. Stated on the artifact.
+- Remaining display specs: holding-period clock, wash-sale window calendar,
+  carryforward bank, netting order (`docs/superpowers/specs/2026-08-04-tax-mechanics-displays.md`).
+
 ## P0 - lib/tax-analysis.ts:345
 **Statute:** IRC 1091(a)  
 **Source:** https://www.law.cornell.edu/uscode/text/26/1091
