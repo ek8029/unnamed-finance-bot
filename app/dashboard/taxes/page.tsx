@@ -569,6 +569,8 @@ function TaxesContent() {
                   : 'No net capital losses to offset ordinary income this year.'}
             </p>
 
+            <TaxProfilePrompt ratesAreYours={ratesAreYours} filingStatus={filingStatus} />
+
             <NettingOrder
               shortTermNet={shortTermNet}
               longTermNet={longTermNet}
@@ -1391,6 +1393,53 @@ function HoldingPeriodBars({
           {formatCurrency(shortTermNet)} taxed at ordinary income
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Tax profile prompt ──
+//
+// Settings drives the ordinary rate, the derived §1(h) band, and the §1211(b)
+// cap. Until a user fills it in, every figure on this page is priced at Helm's
+// defaults, and an MFS filer is shown twice the deduction the statute allows.
+// The page labels those numbers "assumed" but never said they were fixable.
+// Disappears once both are set.
+
+function TaxProfilePrompt({
+  ratesAreYours,
+  filingStatus,
+}: {
+  ratesAreYours: boolean;
+  filingStatus: string | null;
+}) {
+  if (ratesAreYours && filingStatus) return null;
+
+  const missing = !ratesAreYours && !filingStatus
+    ? 'your tax bracket and filing status'
+    : !ratesAreYours
+      ? 'your tax bracket'
+      : 'your filing status';
+
+  const consequence = !filingStatus
+    ? 'Filing status sets the annual deduction limit, which is $1,500 rather than $3,000 if you file separately from your spouse.'
+    : 'Your bracket sets the rate applied to short-term gains and losses, and the long-term rate derived from it.';
+
+  return (
+    <div
+      className="mt-4 pt-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+      style={{ borderTop: '1px solid var(--color-border-subtle)' }}
+    >
+      <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed" style={MONO}>
+        <span className="text-[var(--color-gold)]">These figures use assumed rates.</span>{' '}
+        Helm does not know {missing}. {consequence}
+      </p>
+      <a
+        href="/dashboard/settings#tax"
+        className="self-start sm:self-auto shrink-0 text-[10px] uppercase tracking-[0.12em] font-bold text-[var(--color-gold)] hover:underline"
+        style={MONO}
+      >
+        Set them &rarr;
+      </a>
     </div>
   );
 }
