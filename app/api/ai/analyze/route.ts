@@ -9,7 +9,7 @@ import { TAX_RATE, LTCG_RATE_DEFAULT } from '@/lib/financial-config';
 import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import { getAgentFindings } from '@/lib/research/findings';
-import { detectTopics, isAdviceAsk, wantsGroundedAnswer } from '@/lib/research/query-parse';
+import { detectTopics, isAdviceAsk, isMoveExplanation, wantsGroundedAnswer } from '@/lib/research/query-parse';
 import { retrieveContext } from '@/lib/research/retrieve';
 import { composeAnswer } from '@/lib/research/compose';
 import OpenAI from 'openai';
@@ -604,7 +604,14 @@ export async function POST(req: NextRequest) {
   // Clean single-ticker analysis keeps its card — that template earns its keep.
   // This is what makes the chat a conversation instead of a form.
   const groundedTopics = detectTopics(userQuery);
-  if (queryType !== 'stock_analysis' && wantsGroundedAnswer(userQuery, groundedTopics)) {
+  // The card keeps CLEAN single-ticker analysis ("analyze PLTR") — that
+  // template earns its keep. But naming a ticker used to hand the card every
+  // question that mentioned one, including "why is PLTR up today", which the
+  // card cannot answer: it recites multiples and closes on "positive market
+  // sentiment" while the actual reason sits unread in the headlines beside it.
+  // A move question is about a specific day's evidence, so it goes grounded.
+  const cardOwnsIt = queryType === 'stock_analysis' && !isMoveExplanation(userQuery);
+  if (!cardOwnsIt && wantsGroundedAnswer(userQuery, groundedTopics)) {
     try {
       const context = await retrieveContext(supabase, user.id, userQuery);
       // No book yet → the card flow owns this: it has the real

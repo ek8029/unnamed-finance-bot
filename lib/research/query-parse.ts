@@ -75,6 +75,10 @@ export function topicToInsightTypes(topics: Topic[]): string[] {
  */
 export function wantsGroundedAnswer(query: string, topics: Topic[]): boolean {
   if (topics.length > 0) return true;
+  // "Why did this move" is an evidence question, not a company-profile
+  // question, so it belongs to the grounded engine even when the query names a
+  // ticker and nothing else.
+  if (isMoveExplanation(query)) return true;
   if (/\b(my|mine|i own|i hold|why is|what did you|what changed|what have you|should i worry|am i)\b/i.test(query)) {
     return true;
   }
@@ -88,6 +92,31 @@ export function wantsGroundedAnswer(query: string, topics: Topic[]): boolean {
   // "which ticker/position/holding ..." has no referent except the user's own
   // book — a cold analysis question names its ticker instead of asking which.
   return /\bwhich (ticker|position|holding|stock)s?\b/i.test(query);
+}
+
+/**
+ * "Why is PLTR up so much today", "what happened to NVDA", "why did MU tank".
+ *
+ * These name a ticker, so the classifier calls them stock_analysis and the card
+ * flow claims them — but a card answers what a company IS (market cap, P/E,
+ * bull case) and cannot answer what happened on a specific day. The result was
+ * a template that recited multiples and closed with "positive market sentiment"
+ * while the real reason sat unread in the headlines beside it.
+ */
+export function isMoveExplanation(query: string): boolean {
+  // "what's" has no space, so a `what ` prefix silently misses every
+  // contraction, which is how most people actually type it. Both apostrophes
+  // matter too: phones produce the typographic one. Plain regex literals on
+  // purpose -- building these from strings adds a second escaping layer where
+  // \\s silently degrades to a literal 's'.
+  if (/\bwhat(?:['’]s|\s+(?:is|has))?\s+(?:happened|going on|happening)\b/i.test(query)) return true;
+  const asksWhy = /\b(?:why|how come|what(?:['’]s|\s+(?:is|has))?\s+(?:driving|behind))\b/i.test(query);
+  // Stems, not whole words: surg -> surging/surged, rall -> rally/rallied.
+  const namesAMove =
+    /\b(up|down|surg|spik|jump|soar|plung|drop|fall|fell|tank|rall|mov|slid|slump|pop|crash|climb|gain|sink|rip|red|green)/i.test(
+      query,
+    );
+  return asksWhy && namesAMove;
 }
 
 /**
