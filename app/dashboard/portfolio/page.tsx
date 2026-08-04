@@ -1021,10 +1021,14 @@ export default function PortfolioPage() {
                 />
               </div>
             ) : (<>
-            <ScrollHint>
+            {/* Cap the table at a share of the VIEWPORT, not a row count: a px cap
+                that shows 12 rows on a laptop shows 12 on a 3840px display too.
+                Below the cap the table scrolls itself, so the rest of the page
+                stays reachable no matter how many positions the user holds. */}
+            <ScrollHint maxHeight="min(68vh, 900px)">
               <table className="w-full min-w-[1060px]">
-                <thead>
-                  <tr className="bg-[var(--color-bg-elevated)]/60">
+                <thead className="sticky top-0 z-10">
+                  <tr className="bg-[var(--color-bg-surface)] shadow-[0_1px_0_0_var(--color-border-subtle)]">
                     <th className="text-left pl-5 pr-2 py-2.5 w-[100px]">
                       <ColHeader label="Symbol" sortId="ticker" />
                     </th>

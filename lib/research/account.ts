@@ -23,6 +23,10 @@ export interface BriefHolding {
   sector: string | null;
   /** Account names this position spans (multi-brokerage books hold one name in 2+). */
   accounts: string[];
+  /** Today's move, percent. DB stores a decimal fraction; this is x100 so it
+   *  matches every other percentage in the research context. Null when the
+   *  position has no price feed. */
+  dayChangePct: number | null;
   /** Unrealized gain/loss from TAXABLE accounts only. A loss inside an IRA,
    *  401(k), HSA or 529 produces no current deduction (IRC §408(e)(1)), so it
    *  must never enter a harvestable total. Null when no taxable row was priced. */
@@ -52,7 +56,7 @@ export async function getPortfolioBrief(
     const { data, error } = await db
       .from('holdings')
       .select(
-        'ticker, total_value, unrealised_gain_loss, total_cost_basis, portfolio_allocation_pct, acquired_at, securities(sector), linked_accounts(account_name, account_subtype)',
+        'ticker, total_value, unrealised_gain_loss, total_cost_basis, portfolio_allocation_pct, acquired_at, day_change_pct, securities(sector), linked_accounts(account_name, account_subtype)',
       )
       .eq('user_id', userId)
       .order('total_value', { ascending: false });
@@ -77,6 +81,8 @@ export async function getPortfolioBrief(
       const value = Number(h.total_value ?? 0);
       const gain = h.unrealised_gain_loss != null ? Number(h.unrealised_gain_loss) : null;
       const basis = h.total_cost_basis != null ? Number(h.total_cost_basis) : null;
+      // day_change_pct is a DECIMAL FRACTION in the DB (0.0124 = 1.24%).
+      const dayPct = h.day_change_pct != null ? Number(h.day_change_pct) * 100 : null;
       const taxableGain = retirement ? null : gain;
       if (taxableGain != null && taxableGain < 0 && value > 0) {
         harvestLots.push({
@@ -95,6 +101,7 @@ export async function getPortfolioBrief(
           sector,
           accounts: accountName ? [accountName] : [],
           taxableUnrealizedGainLoss: taxableGain,
+          dayChangePct: dayPct,
         });
       } else {
         prev.value += value;
@@ -106,6 +113,9 @@ export async function getPortfolioBrief(
             : prev.taxableUnrealizedGainLoss;
         prev.costBasis = basis != null ? (prev.costBasis ?? 0) + basis : prev.costBasis;
         prev.sector = prev.sector ?? sector;
+        // Same security in two accounts moves the same percent; take whichever
+        // lot has a price feed.
+        prev.dayChangePct = prev.dayChangePct ?? dayPct;
         if (accountName && !prev.accounts.includes(accountName)) prev.accounts.push(accountName);
       }
     }

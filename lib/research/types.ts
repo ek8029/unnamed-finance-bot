@@ -7,14 +7,17 @@
 // and a `GroundedAnswer` may only cite `Finding`s that were retrieved for the
 // query.
 
-/** Where a finding came from in the agent's own output tables. */
-export type FindingKind = 'catch' | 'investigation' | 'cross_thesis' | 'action';
+/** Where a finding came from. The first four are the agent's own output
+ *  tables; 'news' is a live headline minted as a finding so the model can cite
+ *  it instead of reading it as uncitable background text. */
+export type FindingKind = 'catch' | 'investigation' | 'cross_thesis' | 'action' | 'news';
 
 export const FINDING_KIND_LABEL: Record<FindingKind, string> = {
   catch: 'Thesis catch',
   investigation: 'Investigation',
   cross_thesis: 'Cross-thesis risk',
   action: 'Actions inbox',
+  news: 'Headline',
 };
 
 /**

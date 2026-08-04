@@ -15,6 +15,7 @@ export const KIND_TONE: Record<Finding['kind'], string> = {
   investigation: '#7CA9F2',
   cross_thesis: '#F87171',
   action: '#4ADE80',
+  news: '#8A8A8A',
 };
 
 function Header({ finding: f, index }: { finding: Finding; index?: number }) {
