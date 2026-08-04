@@ -118,6 +118,12 @@ export async function getTaxContext(
 ): Promise<string> {
   const lines: string[] = [];
 
+  // YTD realized by character — needed BELOW for the harvestable estimate too,
+  // so it must outlive the try block (harvested losses offset realized gains
+  // without limit before IRC 1211(b)'s ordinary-income cap applies).
+  let stYtd = 0;
+  let ltYtd = 0;
+
   // Realized, from capital_gains.
   try {
     const { data } = await db
@@ -129,6 +135,8 @@ export async function getTaxContext(
     if (sells.length > 0) {
       const st = sells.filter((g) => g.gain_loss_type === 'short_term').reduce((s, g) => s + Number(g.gain_loss), 0);
       const lt = sells.filter((g) => g.gain_loss_type === 'long_term').reduce((s, g) => s + Number(g.gain_loss), 0);
+      stYtd = st;
+      ltYtd = lt;
       const net = st + lt;
       lines.push(
         `=== REALIZED CAPITAL GAINS (${year} YTD) ===`,
@@ -158,7 +166,8 @@ export async function getTaxContext(
         // $3,000 of net loss deducts against ordinary income per year — a flat
         // rate × total loss overstates year-one savings, sometimes by a lot.
         `Estimated tax savings if realized this year: $${Math.round(
-          estimateCappedTlhSavings({ unknownLoss: totalLoss, stGainYtd: 0, ltGainYtd: 0 }).cappedSavings,
+          estimateCappedTlhSavings({ unknownLoss: totalLoss, stGainYtd: stYtd, ltGainYtd: ltYtd })
+            .cappedSavings,
         ).toLocaleString()} (losses beyond the annual cap carry forward)`,
         ...losers
           .slice(0, 8)
