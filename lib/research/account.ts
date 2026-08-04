@@ -5,7 +5,8 @@
 // self-contained equivalents. All reads are user-scoped and best-effort.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { TAX_RATE } from '@/lib/financial-config';
+import { TAX_RATE, LTCG_RATE_DEFAULT } from '@/lib/financial-config';
+import { estimateCappedTlhSavings } from '@/lib/tax-analysis';
 
 export interface BriefHolding {
   ticker: string;
@@ -134,7 +135,10 @@ export async function getTaxContext(
         `Short-term net: ${st >= 0 ? '+' : ''}$${Math.round(st).toLocaleString()}`,
         `Long-term net: ${lt >= 0 ? '+' : ''}$${Math.round(lt).toLocaleString()}`,
         `Net realized: ${net >= 0 ? '+' : ''}$${Math.round(net).toLocaleString()}`,
-        `Estimated tax on realized gains (~${Math.round(TAX_RATE * 100)}% blended): $${Math.round(Math.max(0, net) * TAX_RATE).toLocaleString()}`,
+        // Character matters: long-term gains are taxed at LTCG, not ordinary.
+        `Estimated tax on realized gains: $${Math.round(
+          Math.max(0, st) * TAX_RATE + Math.max(0, lt) * LTCG_RATE_DEFAULT,
+        ).toLocaleString()} (short-term at ${Math.round(TAX_RATE * 100)}%, long-term at ${Math.round(LTCG_RATE_DEFAULT * 100)}%)`,
       );
     }
   } catch {
@@ -150,7 +154,12 @@ export async function getTaxContext(
         '',
         '=== HARVESTABLE LOSSES (current unrealized, positions in the red) ===',
         `Total harvestable loss: $${Math.round(totalLoss).toLocaleString()} across ${losers.length} positions`,
-        `Estimated tax savings if realized (~${Math.round(TAX_RATE * 100)}% blended): $${Math.round(totalLoss * TAX_RATE).toLocaleString()}`,
+        // IRC §1211(b): losses offset capital gains without limit, but only
+        // $3,000 of net loss deducts against ordinary income per year — a flat
+        // rate × total loss overstates year-one savings, sometimes by a lot.
+        `Estimated tax savings if realized this year: $${Math.round(
+          estimateCappedTlhSavings({ unknownLoss: totalLoss, stGainYtd: 0, ltGainYtd: 0 }).cappedSavings,
+        ).toLocaleString()} (losses beyond the annual cap carry forward)`,
         ...losers
           .slice(0, 8)
           .map((h) => `  ${h.ticker}: unrealized -$${Math.round(Math.abs(h.unrealizedGainLoss ?? 0)).toLocaleString()}`),
@@ -197,6 +206,25 @@ export async function getValueLedger(
 ): Promise<ValueLedger> {
   const lines: LedgerLine[] = [];
 
+  // This year's realized gains by character — harvested losses offset these
+  // dollar-for-dollar before the $3,000 ordinary-income cap applies.
+  let stYtd = 0;
+  let ltYtd = 0;
+  try {
+    const { data: cg } = await db
+      .from('capital_gains')
+      .select('transaction_type, gain_loss, gain_loss_type')
+      .eq('user_id', userId)
+      .eq('tax_year', new Date().getFullYear());
+    for (const g of (cg ?? []) as CapGainRow[]) {
+      if (g.transaction_type !== 'sell') continue;
+      if (g.gain_loss_type === 'short_term') stYtd += Number(g.gain_loss);
+      else ltYtd += Number(g.gain_loss);
+    }
+  } catch {
+    /* no capital_gains table — treat as no realized gains */
+  }
+
   // Harvestable tax savings from current losses (the deterministic dollar).
   if (brief) {
     const totalLoss = brief.holdings
@@ -205,10 +233,20 @@ export async function getValueLedger(
     if (totalLoss > 0) {
       lines.push({
         label: 'Tax-loss harvesting surfaced',
-        amount: Math.round(totalLoss * TAX_RATE),
+        // §1211(b)-capped and netted against this year's realized gains — a
+        // flat rate on the full loss overstated the year-one benefit, but
+        // ignoring realized gains would understate it just as badly (losses
+        // offset gains without limit; only the excess hits the $3,000 cap).
+        amount: Math.round(
+          estimateCappedTlhSavings({ unknownLoss: totalLoss, stGainYtd: stYtd, ltGainYtd: ltYtd })
+            .cappedSavings,
+        ),
         kind: 'tax_harvest',
         date: null,
-        detail: `~${Math.round(TAX_RATE * 100)}% blended on $${Math.round(totalLoss).toLocaleString()} of unrealized losses`,
+        detail:
+          stYtd + ltYtd > 0
+            ? `offsets $${Math.round(stYtd + ltYtd).toLocaleString()} of realized gains, then the annual cap; from $${Math.round(totalLoss).toLocaleString()} of unrealized losses`
+            : `deductible this year from $${Math.round(totalLoss).toLocaleString()} of unrealized losses; the rest carries forward`,
       });
     }
   }

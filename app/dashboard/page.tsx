@@ -640,7 +640,19 @@ export default function DashboardOverview() {
       : financialSummary?.portfolio_value || 0);
   const portfolioValue =
     !isDemo && liveHoldingsValue > 0 ? liveHoldingsValue : financialSummary?.portfolio_value || 0;
-  const dayChange = financialSummary?.changes?.portfolio ?? null;
+  // Real intraday change, derived from each holding's day move. The old source
+  // (financialSummary.changes.portfolio) is measured against LAST MONTH's
+  // snapshot — it printed a month-to-date return under a "today" label.
+  const dayChange = (() => {
+    if (isDemo || holdings.length === 0) return financialSummary?.changes?.portfolio ?? null;
+    let moved = 0;
+    for (const h of holdings) {
+      const p = (h.day_change_percentage ?? 0) / 100;
+      moved += (h.total_value * p) / (1 + p); // value - prior close
+    }
+    const prior = liveHoldingsValue - moved;
+    return prior > 0 ? (moved / prior) * 100 : null;
+  })();
 
   return (
     <div className={`mx-auto stagger-fade-in ${SCREEN_PAD}`} style={SCREEN}>

@@ -412,9 +412,21 @@ export async function GET() {
       .order('published_at', { ascending: false })
       .limit(2);
 
+    // portfolio_allocation_pct is each row's share of the WHOLE book, so
+    // summing every row always yielded 100 — "your portfolio is 100% equities"
+    // for everyone. Sum only the equity-like rows.
     const equityPct = Math.min(
       100,
-      Math.round(holdings.reduce((sum, h) => sum + h.portfolio_allocation_pct, 0)),
+      Math.round(
+        holdings
+          .filter((h) => {
+            const c = String(
+              (h.security as { asset_class?: string } | null | undefined)?.asset_class ?? '',
+            ).toLowerCase();
+            return c === '' || c === 'equity' || c === 'etf' || c === 'stock';
+          })
+          .reduce((sum, h) => sum + (h.portfolio_allocation_pct ?? 0), 0),
+      ),
     );
     const exposureLine = holdings.length > 0
       ? `Your portfolio is ${equityPct}% equities.`

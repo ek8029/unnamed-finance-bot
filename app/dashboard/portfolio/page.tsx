@@ -193,7 +193,9 @@ export default function PortfolioPage() {
       },
       0,
     );
-    const dayChangePercentage = totalValue > 0 ? (totalDayChange / totalValue) * 100 : 0;
+    // Percent change measures against the PRIOR close, not the post-move value.
+  const priorCloseValue = totalValue - totalDayChange;
+  const dayChangePercentage = priorCloseValue > 0 ? (totalDayChange / priorCloseValue) * 100 : 0;
     return { totalDayChange, dayChangePercentage };
   }, [holdings, totalValue]);
 
