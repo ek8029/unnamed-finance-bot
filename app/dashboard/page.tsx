@@ -18,6 +18,7 @@ import { useLivePrices } from '@/hooks/use-live-prices';
 import posthog from 'posthog-js';
 import { DemoConnectCta } from '@/components/demo/demo-connect-cta';
 import { AgentHeartbeat } from '@/components/thesis/agent-activity';
+import { TodaysDelta } from '@/components/dashboard/todays-delta';
 
 // ── Sovereign Architect tokens (local to this screen) ──────────────────────
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
@@ -662,6 +663,12 @@ export default function DashboardOverview() {
       />
       <div className="mb-3.5">
         <AgentHeartbeat />
+      </div>
+      {/* What changed since they last looked. This page is the only surface
+          every retained user opens, so it is the only place a finding reliably
+          reaches them. */}
+      <div className="mb-3.5">
+        <TodaysDelta isDemo={isDemo} />
       </div>
       {showDemoBanner && (
         <div className="mb-4 flex flex-col items-start justify-between gap-2 rounded-md border border-[var(--color-info-border)] bg-[var(--color-info-muted)] px-4 py-2.5 sm:flex-row sm:items-center">
