@@ -11,14 +11,16 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getFullTickerData, getQuote } from '@/lib/financial-data';
+import { getCompanyNews, getQuote } from '@/lib/financial-data';
 
 export const dynamic = 'force-dynamic';
 
 /** Below this, a move is noise and saying so is the honest answer. */
 const MOVE_THRESHOLD_PCT = 2;
-/** How many stored-column candidates to re-price live before ranking. */
-const LIVE_CHECK_LIMIT = 6;
+/** How many stored-column candidates to re-price live before ranking.
+ *  Each is a vendor round-trip, and the stored column is a good enough
+ *  pre-filter that checking beyond the top few buys accuracy nobody sees. */
+const LIVE_CHECK_LIMIT = 3;
 /** A headline older than this relative to the session is not an explanation. */
 const HEADLINE_MAX_AGE_DAYS = 2;
 
@@ -91,15 +93,26 @@ export async function GET() {
       .sort((a, b) => Math.abs(b[1].pct as number) - Math.abs(a[1].pct as number))
       .slice(0, LIVE_CHECK_LIMIT);
 
-    const quoted = (
-      await Promise.all(
+    // ONE wave, not two. The headline used to be fetched only after every
+    // quote resolved, so the user waited for two serial vendor round-trips to
+    // read one line. The stored column already names the likely top mover, so
+    // its news is fetched alongside the quotes and kept only if the live
+    // re-rank agrees.
+    const likelyTop = candidates[0]?.[0] ?? null;
+    const [quotes, likelyTopNews] = await Promise.all([
+      Promise.all(
         candidates.map(async ([ticker, v]) => {
           const q = await getQuote(ticker).catch(() => null);
           if (!q || !Number.isFinite(q.dp)) return null;
           return { ticker, value: v.value, pct: q.dp, sessionDate: q.date ?? null };
         }),
-      )
-    ).filter(Boolean) as { ticker: string; value: number; pct: number; sessionDate: string | null }[];
+      ),
+      likelyTop ? getCompanyNews(likelyTop).catch(() => null) : Promise.resolve(null),
+    ]);
+
+    const quoted = quotes.filter(Boolean) as {
+      ticker: string; value: number; pct: number; sessionDate: string | null;
+    }[];
 
     const ranked = quoted.sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct));
     const today = todayET();
@@ -130,13 +143,16 @@ export async function GET() {
     // answer, so a news failure must not blank the whole line.
     let headline: DashboardDelta['headline'] = null;
     try {
-      const td = await getFullTickerData(ticker);
+      // Already fetched above when the live ranking agrees with the stored
+      // column, which is the overwhelmingly common case. When it disagrees the
+      // move ships without a headline rather than paying a second round-trip.
+      const news = ticker === likelyTop ? likelyTopNews : null;
       // A headline from last week does not explain today's move. Bound it to
       // the session being reported, or show the move with no explanation.
       const cutoff = sessionDate
         ? new Date(new Date(sessionDate + 'T00:00:00Z').getTime() - HEADLINE_MAX_AGE_DAYS * 86_400_000)
         : null;
-      const first = td?.news?.find((n) => {
+      const first = news?.find((n) => {
         if (!n.headline || !n.url) return false;
         if (!cutoff || !n.datetime) return true;
         return new Date(n.datetime * 1000) >= cutoff;
