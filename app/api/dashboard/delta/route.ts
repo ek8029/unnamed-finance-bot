@@ -11,12 +11,26 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getFullTickerData } from '@/lib/financial-data';
+import { getFullTickerData, getQuote } from '@/lib/financial-data';
 
 export const dynamic = 'force-dynamic';
 
 /** Below this, a move is noise and saying so is the honest answer. */
 const MOVE_THRESHOLD_PCT = 2;
+/** How many stored-column candidates to re-price live before ranking. */
+const LIVE_CHECK_LIMIT = 6;
+/** A headline older than this relative to the session is not an explanation. */
+const HEADLINE_MAX_AGE_DAYS = 2;
+
+/** Today in the exchange's timezone, YYYY-MM-DD. */
+function todayET(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
 
 export interface DashboardDelta {
   /** null when nothing on the book moved enough to be worth a sentence. */
@@ -33,6 +47,12 @@ export interface DashboardDelta {
   nextLargestPct: number | null;
   headline: { title: string; source: string; url: string; date: string | null } | null;
   positionsChecked: number;
+  /** The trading session these numbers describe (YYYY-MM-DD, ET). The stored
+   *  day_change_pct column is only as fresh as the last price refresh, so the
+   *  line must never assert "Today" without checking. */
+  sessionDate: string | null;
+  /** True when sessionDate is today in ET — i.e. "Today" is an honest label. */
+  isToday: boolean;
 }
 
 export async function GET() {
@@ -63,38 +83,64 @@ export async function GET() {
       }
     }
 
-    const ranked = [...byTicker.entries()]
+    // The stored column is only as fresh as the last price refresh, so it is
+    // used ONLY to pick candidates cheaply. Everything reported is re-priced
+    // live below — otherwise the line labels yesterday's move as today's.
+    const candidates = [...byTicker.entries()]
       .filter(([, v]) => v.pct != null && v.value > 0)
-      .sort((a, b) => Math.abs(b[1].pct as number) - Math.abs(a[1].pct as number));
+      .sort((a, b) => Math.abs(b[1].pct as number) - Math.abs(a[1].pct as number))
+      .slice(0, LIVE_CHECK_LIMIT);
+
+    const quoted = (
+      await Promise.all(
+        candidates.map(async ([ticker, v]) => {
+          const q = await getQuote(ticker).catch(() => null);
+          if (!q || !Number.isFinite(q.dp)) return null;
+          return { ticker, value: v.value, pct: q.dp, sessionDate: q.date ?? null };
+        }),
+      )
+    ).filter(Boolean) as { ticker: string; value: number; pct: number; sessionDate: string | null }[];
+
+    const ranked = quoted.sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct));
+    const today = todayET();
+    const sessionDate = ranked[0]?.sessionDate ?? null;
 
     const empty: DashboardDelta = {
       mover: null,
       otherMovers: 0,
-      nextLargestPct: ranked.length > 0 ? (ranked[0][1].pct as number) : null,
+      nextLargestPct: ranked.length > 0 ? ranked[0].pct : null,
       headline: null,
       positionsChecked: byTicker.size,
+      sessionDate,
+      isToday: sessionDate === today,
     };
 
     const top = ranked[0];
-    if (!top || Math.abs(top[1].pct as number) < MOVE_THRESHOLD_PCT) {
+    if (!top || Math.abs(top.pct) < MOVE_THRESHOLD_PCT) {
       return NextResponse.json(empty);
     }
 
-    const [ticker, { value, pct }] = top;
-    const changePct = pct as number;
+    const { ticker, value, pct: changePct } = top;
     // Back out today's dollar move from the position's CURRENT value.
     const dollarImpact = value - value / (1 + changePct / 100);
 
-    const others = ranked
-      .slice(1)
-      .filter(([, v]) => Math.abs(v.pct as number) >= MOVE_THRESHOLD_PCT);
+    const others = ranked.slice(1).filter((r) => Math.abs(r.pct) >= MOVE_THRESHOLD_PCT);
 
     // One headline, best effort. A move with no explanation is still a useful
     // answer, so a news failure must not blank the whole line.
     let headline: DashboardDelta['headline'] = null;
     try {
       const td = await getFullTickerData(ticker);
-      const first = td?.news?.find((n) => n.headline && n.url);
+      // A headline from last week does not explain today's move. Bound it to
+      // the session being reported, or show the move with no explanation.
+      const cutoff = sessionDate
+        ? new Date(new Date(sessionDate + 'T00:00:00Z').getTime() - HEADLINE_MAX_AGE_DAYS * 86_400_000)
+        : null;
+      const first = td?.news?.find((n) => {
+        if (!n.headline || !n.url) return false;
+        if (!cutoff || !n.datetime) return true;
+        return new Date(n.datetime * 1000) >= cutoff;
+      });
       if (first) {
         headline = {
           title: first.headline,
@@ -110,9 +156,11 @@ export async function GET() {
     return NextResponse.json({
       mover: { ticker, changePct, dollarImpact, positionValue: value },
       otherMovers: others.length,
-      nextLargestPct: ranked[1] ? (ranked[1][1].pct as number) : null,
+      nextLargestPct: ranked[1] ? ranked[1].pct : null,
       headline,
       positionsChecked: byTicker.size,
+      sessionDate,
+      isToday: sessionDate === today,
     } satisfies DashboardDelta);
   } catch (error) {
     console.error('[dashboard/delta]', error);

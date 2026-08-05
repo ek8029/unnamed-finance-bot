@@ -29,6 +29,8 @@ export function TodaysDelta({ isDemo = false }: { isDemo?: boolean }) {
           has_mover: Boolean((d as DashboardDelta).mover),
           has_headline: Boolean((d as DashboardDelta).headline),
           ticker: (d as DashboardDelta).mover?.ticker ?? null,
+          session_date: (d as DashboardDelta).sessionDate,
+          is_today: (d as DashboardDelta).isToday,
         });
       })
       .catch(() => {});
@@ -40,6 +42,25 @@ export function TodaysDelta({ isDemo = false }: { isDemo?: boolean }) {
   const fmt = (n: number) =>
     `$${Math.round(Math.abs(n)).toLocaleString('en-US')}`;
 
+  // Never say "Today" for a session that isn't today. Markets close, weekends
+  // happen, and a stale label on a fresh-looking number is worse than no line
+  // at all — it is the same class of error as the tax figures we just spent a
+  // day removing.
+  const label = (() => {
+    if (data.isToday) return 'Today';
+    if (!data.sessionDate) return 'Latest session';
+    const d = new Date(data.sessionDate + 'T12:00:00Z');
+    const todayET = new Date(
+      new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date()) + 'T12:00:00Z',
+    );
+    const daysAgo = Math.round((todayET.getTime() - d.getTime()) / 86_400_000);
+    if (daysAgo === 1) return 'Yesterday';
+    if (daysAgo > 1 && daysAgo < 7) {
+      return d.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
+    }
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  })();
+
   // Nothing moved: that IS the answer, and saying it plainly is the whole point
   // of putting this here. A user who checks daily wants "you're fine" as much
   // as they want news.
@@ -50,7 +71,7 @@ export function TodaysDelta({ isDemo = false }: { isDemo?: boolean }) {
         style={{ background: 'var(--color-bg-surface)' }}
       >
         <p className="text-[13px] text-[var(--color-text-secondary)]" style={MONO}>
-          <span className="text-[var(--color-text-muted)]">Today · </span>
+          <span className="text-[var(--color-text-muted)]">{label} · </span>
           Nothing on your book moved more than 2%
           {data.nextLargestPct != null && Math.abs(data.nextLargestPct) >= 0.1
             ? ` (largest ${data.nextLargestPct >= 0 ? '+' : ''}${data.nextLargestPct.toFixed(1)}%)`
@@ -75,7 +96,7 @@ export function TodaysDelta({ isDemo = false }: { isDemo?: boolean }) {
       }}
     >
       <p className="text-[14px] leading-relaxed text-[var(--color-text-secondary)]" style={MONO}>
-        <span className="text-[var(--color-text-muted)]">Today · </span>
+        <span className="text-[var(--color-text-muted)]">{label} · </span>
         <span className="font-bold text-[var(--color-text-primary)]">{m.ticker}</span>{' '}
         <span style={{ color: tone }} className="font-semibold tabular-nums">
           {up ? '+' : ''}{m.changePct.toFixed(2)}%
@@ -88,6 +109,11 @@ export function TodaysDelta({ isDemo = false }: { isDemo?: boolean }) {
         {data.otherMovers === 0 && (
           <span className="text-[var(--color-text-muted)]">
             {' '}Nothing else on your book moved more than 2%.
+          </span>
+        )}
+        {!data.isToday && (
+          <span className="text-[var(--color-text-muted)]">
+            {' '}Markets have not moved this position since.
           </span>
         )}
         {data.otherMovers > 0 && (
