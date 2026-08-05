@@ -451,13 +451,13 @@ export function useHoldings() {
         if (res.ok) {
           sessionStorage.setItem(PRICE_REFRESH_KEY, String(Date.now()));
           setLastRefreshed(new Date().toLocaleTimeString());
-
-          const holdingsRes = await fetch('/api/holdings');
-          if (holdingsRes.ok) {
-            const data = await holdingsRes.json();
-            applyHoldingsData(data);
-          }
         }
+        // No holdings re-fetch here. This POST exists to PERSIST prices to the
+        // DB; what the user sees is already covered by pollQuotes(), which
+        // overlays live last-trade prices immediately after the first holdings
+        // load and every 30s after. Re-fetching the whole book behind a
+        // vendor round-trip put a second full payload on the critical path for
+        // data that was about to be overwritten by the live overlay anyway.
 
         // Fire-and-forget: news + enrichment
         fetch('/api/market/news/refresh', { method: 'POST' }).catch(() => {});
@@ -472,8 +472,13 @@ export function useHoldings() {
     // Live overlay immediately after holdings land (covers after-hours:
     // show last trade), and again after the heavy refresh re-fetch so the
     // DB snapshot never stomps fresher live prices.
+    // Render path: holdings, then the live overlay. Nothing else blocks it.
     fetchData().then(() => pollQuotes());
-    autoRefreshPrices().then(() => pollQuotes());
+    // Persistence path: deliberately NOT awaited by anything the user is
+    // waiting on. It hits the market-data vendor once per ticker, which on a
+    // 55-holding book is seconds — measured LCP p90 on /dashboard was 8.0s
+    // with this in the critical path.
+    void autoRefreshPrices();
 
     // Poll every 30s while the page is open — keeps prices live during
     // market hours without the user needing to do anything. Read-only:
