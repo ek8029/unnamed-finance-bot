@@ -174,11 +174,32 @@ const THEMES: Record<Variant, Theme> = {
 const ThemeCtx = createContext<Theme>(THEMES.terminal);
 const useTheme = () => useContext(ThemeCtx);
 
+/* ── First-run flows ──────────────────────────────────────────────────────
+   Both open on the same scan and the same verbatim receipt. They differ only
+   in what they ask for at the end — which is the step the web funnel says
+   loses 20 of 39 people.
+
+   CONNECT  the web flow, ported: scan -> profile -> connect a brokerage.
+            Asks for credentials before Helm has proved anything.
+   WATCH    only possible on a phone. Push means Helm can be USEFUL with zero
+            credentials, so the brokerage leaves onboarding entirely: scan ->
+            add two more names -> turn on notifications -> a working app. The
+            credential ask becomes an earned upgrade after Helm has actually
+            caught something, instead of a gate before it has caught anything. */
+
+type Flow = 'connect' | 'watch';
+
+const FLOWS: Record<Flow, { label: string; note: string }> = {
+  connect: { label: 'Connect-first', note: 'Scan → profile → brokerage. The web flow, ported.' },
+  watch:   { label: 'Watchlist-first', note: 'Scan → watchlist → push. No credentials at all.' },
+};
+
 export function PhoneAppMock({ email }: { email: string }) {
   const [tab, setTab] = useState<Tab>('brief');
   const [profile, setProfile] = useState<ProfileKey>('moderate');
   const [view, setView] = useState<'onboard' | 'app' | 'lock'>('onboard');
   const [variant, setVariant] = useState<Variant>('terminal');
+  const [flow, setFlow] = useState<Flow>('connect');
   const [sheet, setSheet] = useState<SheetData | null>(null);
   const [d, setD] = useState<Record<string, Any>>({});
   const [loading, setLoading] = useState(true);
@@ -304,7 +325,7 @@ export function PhoneAppMock({ email }: { email: string }) {
 
       <Phone>
         {view === 'onboard' ? (
-          <Onboarding profile={profile} setProfile={setProfile} onDone={() => setView('app')} />
+          <Onboarding key={flow} flow={flow} profile={profile} setProfile={setProfile} onDone={() => setView('app')} />
         ) : view === 'lock' ? (
           <LockScreen findings={findings} brief={d.brief} />
         ) : (
@@ -352,6 +373,31 @@ export function PhoneAppMock({ email }: { email: string }) {
           <p className="m-0 mt-2.5 text-[11px] leading-[1.55] text-[#6A6A6A]">
             Same data, same copy, three visual languages. Judge on Book and Inbox — density is
             where they actually differ.
+          </p>
+        </Panel>
+
+        <Panel title="First-run flow">
+          <div className="space-y-1.5">
+            {(Object.keys(FLOWS) as Flow[]).map(f => {
+              const on = flow === f;
+              return (
+                <button key={f} onClick={() => { setFlow(f); setView('onboard'); }}
+                  className="w-full rounded px-3 py-2 text-left transition-colors"
+                  style={{
+                    background: on ? 'rgba(230,185,77,0.10)' : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${on ? 'rgba(230,185,77,0.4)' : 'rgba(255,255,255,0.05)'}`,
+                  }}>
+                  <p className="m-0 text-[12px] font-semibold" style={{ color: on ? GOLD : '#D8D8D8', ...MONO }}>
+                    {FLOWS[f].label}
+                  </p>
+                  <p className="m-0 mt-0.5 text-[10.5px] leading-[1.45] text-[#6A6A6A]">{FLOWS[f].note}</p>
+                </button>
+              );
+            })}
+          </div>
+          <p className="m-0 mt-2.5 text-[11px] leading-[1.55] text-[#6A6A6A]">
+            Same scan, same evidence. They differ in what gets asked for at the end — the step
+            where 20 of 39 leave on web.
           </p>
         </Panel>
 
@@ -816,15 +862,24 @@ function Sheet({ data, onClose }: { data: SheetData; onClose: () => void }) {
 // reason now attached to it.
 
 const HOUSE_PICKS = ['NVDA', 'TSM', 'AVGO', 'MU', 'META', 'AAPL'];
-type Step = 'ask' | 'scanning' | 'catch' | 'profile' | 'connect';
+type Step = 'ask' | 'scanning' | 'catch' | 'profile' | 'connect' | 'watchlist' | 'push';
 
-function Onboarding({ profile, setProfile, onDone }: {
-  profile: ProfileKey; setProfile: (p: ProfileKey) => void; onDone: () => void;
+function Onboarding({ flow, profile, setProfile, onDone }: {
+  flow: Flow; profile: ProfileKey; setProfile: (p: ProfileKey) => void; onDone: () => void;
 }) {
   const [step, setStep] = useState<Step>('ask');
   const [ticker, setTicker] = useState('');
   const [typed, setTyped] = useState('');
   const [scan, setScan] = useState<Any>(null);
+  const [watch, setWatch] = useState<string[]>([]);
+  const [addTyped, setAddTyped] = useState('');
+
+  const addWatch = (sym: string) => {
+    const t = sym.trim().toUpperCase();
+    if (!t || watch.includes(t)) return;
+    setWatch(w => [...w, t]);
+    setAddTyped('');
+  };
 
   const run = async (sym: string) => {
     const t = sym.trim().toUpperCase();
@@ -835,6 +890,7 @@ function Onboarding({ profile, setProfile, onDone }: {
       const r = await fetch(`/api/scan/ticker?symbol=${encodeURIComponent(t)}`);
       setScan(r.ok ? await r.json() : null);
     } catch { setScan(null); }
+    setWatch([t]);
     setStep('catch');
   };
 
@@ -945,11 +1001,98 @@ function Onboarding({ profile, setProfile, onDone }: {
             </>
           )}
 
-          <button onClick={() => setStep('profile')}
+          <button onClick={() => setStep(flow === 'watch' ? 'watchlist' : 'profile')}
             className="mb-7 mt-8 w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
             style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
             Continue
           </button>
+        </div>
+      )}
+
+      {/* Watchlist-first: no credentials asked for, ever. Push is what makes a
+          credential-free product actually work, which is why this flow only
+          exists on a phone. */}
+      {step === 'watchlist' && (
+        <div className="flex flex-1 flex-col px-7 pt-14">
+          <Kicker>No account needed</Kicker>
+          <p className="m-0 mt-3 text-[25px] font-semibold leading-[1.25] tracking-[-0.02em]" style={{ color: INK, ...SANS }}>
+            What else should<br />Helm watch?
+          </p>
+          <p className="m-0 mt-3 text-[13px] leading-[1.6] text-[#8A8A8A]" style={SANS}>
+            It reads every one of these the way it just read {ticker}, and tells you when
+            something lands.
+          </p>
+
+          <div className="mt-5 flex flex-wrap gap-1.5">
+            {watch.map(w => (
+              <span key={w} className="flex items-center gap-1.5 rounded-full px-3 py-[7px] text-[12px]"
+                style={{ background: 'rgba(230,185,77,0.13)', color: GOLD, ...MONO }}>
+                {w}
+                <button onClick={() => setWatch(list => list.filter(x => x !== w))} aria-label={`Remove ${w}`}>
+                  <X size={11} />
+                </button>
+              </span>
+            ))}
+          </div>
+
+          <input value={addTyped} onChange={e => setAddTyped(e.target.value.toUpperCase().slice(0, 5))}
+            onKeyDown={e => { if (e.key === 'Enter') addWatch(addTyped); }}
+            placeholder="ADD A TICKER" spellCheck={false}
+            className="mt-4 w-full rounded-[12px] px-4 py-3 text-[15px] tracking-[0.08em] outline-none"
+            style={{ background: 'rgba(255,255,255,0.055)', border: '1px solid rgba(255,255,255,0.09)', color: INK, ...MONO }} />
+
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {HOUSE_PICKS.filter(t => !watch.includes(t)).slice(0, 5).map(t => (
+              <button key={t} onClick={() => addWatch(t)}
+                className="rounded-full px-3 py-[6px] text-[11.5px] transition-colors hover:text-[#FAFAFA]"
+                style={{ background: 'rgba(255,255,255,0.05)', color: '#9A9A9A', ...MONO }}>+ {t}</button>
+            ))}
+          </div>
+
+          <button onClick={() => setStep('push')} disabled={watch.length < 2}
+            className="mb-7 mt-auto w-full rounded-[12px] py-3.5 text-[14px] font-semibold transition-opacity disabled:opacity-30"
+            style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
+            {watch.length < 2 ? 'Add one more' : `Watch these ${watch.length}`}
+          </button>
+        </div>
+      )}
+
+      {step === 'push' && (
+        <div className="flex flex-1 flex-col px-7 pt-16">
+          <Kicker>One switch</Kicker>
+          <p className="m-0 mt-3 text-[25px] font-semibold leading-[1.28] tracking-[-0.02em]" style={{ color: INK, ...SANS }}>
+            Helm reaches you<br />when it finds something.
+          </p>
+          <p className="m-0 mt-3.5 text-[13.5px] leading-[1.65] text-[#8A8A8A]" style={SANS}>
+            Not a daily digest, not a market recap. A notification only when evidence lands on
+            one of your {watch.length} names, with the quote attached.
+          </p>
+
+          <div className="mt-6 rounded-[18px] px-4 py-3.5" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}>
+            <div className="mb-1.5 flex items-center gap-2">
+              <div className="grid h-[18px] w-[18px] place-items-center rounded-[5px] text-[9px] font-bold text-[#0A0A0A]"
+                style={{ background: `linear-gradient(135deg, #FFD67A, ${GOLD})` }}>H</div>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.11em] text-[#D2D2D2]" style={MONO}>Helm</span>
+              <span className="ml-auto text-[10.5px] text-[#8A8A8A]" style={SANS}>now</span>
+            </div>
+            <p className="m-0 text-[13px] leading-[1.45]" style={{ color: INK, ...SANS }}>
+              {watch[0]} — a filing contradicts one of the claims Helm tracks on it.
+            </p>
+          </div>
+          <p className="m-0 mt-2 text-[10.5px] text-[#5F5F5F]" style={MONO}>what one looks like</p>
+
+          <div className="mb-7 mt-auto">
+            <button onClick={onDone} className="w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
+              style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
+              Turn on notifications
+            </button>
+            <button onClick={onDone} className="mt-2 w-full py-2.5 text-[12.5px]" style={{ color: '#7A7A7A', ...SANS }}>
+              Not yet
+            </button>
+            <p className="m-0 mt-3 text-center text-[11px] leading-[1.5] text-[#5F5F5F]" style={SANS}>
+              Connect a brokerage whenever you want. Helm works without one.
+            </p>
+          </div>
         </div>
       )}
 
