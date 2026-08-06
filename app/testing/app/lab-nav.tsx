@@ -37,6 +37,7 @@ export function LabNav({ email }: { email: string }) {
       </div>
       {item('/testing/app/research', 'Research', 'v2')}
       {item('/testing/app/theses', 'Theses', 'v2')}
+      {item('/testing/app/phone', 'Phone', 'mock')}
 
       <div className="px-5 pt-4 pb-1.5 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[#5F5F5F]" style={MONO}>
         Deep dives
