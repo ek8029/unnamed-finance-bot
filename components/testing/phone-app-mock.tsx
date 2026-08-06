@@ -187,11 +187,12 @@ const useTheme = () => useContext(ThemeCtx);
             credential ask becomes an earned upgrade after Helm has actually
             caught something, instead of a gate before it has caught anything. */
 
-type Flow = 'connect' | 'watch';
+type Flow = 'connect' | 'watch' | 'catch';
 
 const FLOWS: Record<Flow, { label: string; note: string }> = {
   connect: { label: 'Connect-first', note: 'Scan → profile → brokerage. The web flow, ported.' },
   watch:   { label: 'Watchlist-first', note: 'Scan → watchlist → push. No credentials at all.' },
+  catch:   { label: 'Catch-first', note: 'Opens on real catches. Nothing typed, nothing asked.' },
 };
 
 export function PhoneAppMock({ email }: { email: string }) {
@@ -862,17 +863,38 @@ function Sheet({ data, onClose }: { data: SheetData; onClose: () => void }) {
 // reason now attached to it.
 
 const HOUSE_PICKS = ['NVDA', 'TSM', 'AVGO', 'MU', 'META', 'AAPL'];
-type Step = 'ask' | 'scanning' | 'catch' | 'profile' | 'connect' | 'watchlist' | 'push';
+type Step = 'ask' | 'scanning' | 'catch' | 'profile' | 'connect' | 'watchlist' | 'push' | 'feed' | 'own';
 
 function Onboarding({ flow, profile, setProfile, onDone }: {
   flow: Flow; profile: ProfileKey; setProfile: (p: ProfileKey) => void; onDone: () => void;
 }) {
-  const [step, setStep] = useState<Step>('ask');
+  const [step, setStep] = useState<Step>(flow === 'catch' ? 'feed' : 'ask');
   const [ticker, setTicker] = useState('');
   const [typed, setTyped] = useState('');
   const [scan, setScan] = useState<Any>(null);
   const [watch, setWatch] = useState<string[]>([]);
   const [addTyped, setAddTyped] = useState('');
+  const [feed, setFeed] = useState<Any[] | null>(null);
+
+  // Catch-first opens on evidence Helm has already filed, so the corpus is
+  // fetched before the user does anything at all. Real scans, real receipts —
+  // a fabricated feed here would be the exact credibility bug this product
+  // exists to avoid.
+  useEffect(() => {
+    if (flow !== 'catch') return;
+    let live = true;
+    (async () => {
+      const results = await Promise.all(HOUSE_PICKS.slice(0, 5).map(async t => {
+        try {
+          const r = await fetch(`/api/scan/ticker?symbol=${t}`);
+          return r.ok ? await r.json() : null;
+        } catch { return null; }
+      }));
+      if (!live) return;
+      setFeed(results.filter(r => r?.house && r?.receipt?.verbatimCite));
+    })();
+    return () => { live = false; };
+  }, [flow]);
 
   const addWatch = (sym: string) => {
     const t = sym.trim().toUpperCase();
@@ -1005,6 +1027,109 @@ function Onboarding({ flow, profile, setProfile, onDone }: {
             className="mb-7 mt-8 w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
             style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
             Continue
+          </button>
+        </div>
+      )}
+
+      {/* Catch-first: nothing typed, nothing asked. The intelligence layer is
+          the first thing on screen instead of the thing nobody navigates to,
+          and the watchlist falls out of browsing rather than being requested. */}
+      {step === 'feed' && (
+        <div className="hm-scroll flex-1 overflow-y-auto px-6 pt-8">
+          <Kicker>The record</Kicker>
+          <p className="m-0 mt-3 text-[23px] font-semibold leading-[1.28] tracking-[-0.02em]" style={{ color: INK, ...SANS }}>
+            Claims, checked<br />against the filings.
+          </p>
+          <p className="m-0 mt-3 text-[12.5px] leading-[1.6] text-[#8A8A8A]" style={SANS}>
+            Each of these is a reason someone owns a stock, and the evidence Helm found for or
+            against it. Some hold. Some are under pressure. No account needed to read them.
+          </p>
+
+          {feed === null && (
+            <p className="mt-10 text-center text-[12px] uppercase tracking-[0.16em] text-[#4A4A4A]" style={MONO}>
+              reading the corpus
+            </p>
+          )}
+
+          {feed?.length === 0 && (
+            <p className="mt-10 text-center text-[13px] leading-[1.65] text-[#5F5F5F]" style={SANS}>
+              Nothing filed against the tracked names right now.
+            </p>
+          )}
+
+          <div className="mt-6 space-y-3">
+            {feed?.map((c: Any, i: number) => (
+              <div key={c.ticker} className="rounded-[13px] px-4 py-4 hm-rise" style={{
+                animationDelay: `${i * 70}ms`,
+                background: 'linear-gradient(rgba(255,255,255,0.05), rgba(255,255,255,0.02))',
+                border: '1px solid rgba(255,255,255,0.065)',
+              }}>
+                <div className="flex items-center gap-2">
+                  <span className="text-[13.5px] font-bold" style={{ color: INK, ...MONO }}>{c.ticker}</span>
+                  <StatusChip status={String(c.health ?? '')} />
+                  {c.company && <span className="ml-auto truncate text-[11px] text-[#6A6A6A]" style={SANS}>{c.company}</span>}
+                </div>
+                {c.pillar?.claim && (
+                  <p className="m-0 mt-2.5 text-[12.5px] leading-[1.55] text-[#B4B4B4]" style={SANS}>{c.pillar.claim}</p>
+                )}
+                <p className="m-0 mt-3 text-[12.5px] leading-[1.6] text-[#E4E4E4]" style={SANS}>
+                  “{c.receipt.verbatimCite}”
+                </p>
+                <p className="m-0 mt-2 text-[10px] text-[#7A7A7A]" style={MONO}>
+                  {c.receipt.sourceLabel}{c.receipt.dateISO ? ` · ${c.receipt.dateISO}` : ''}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {feed && feed.length > 0 && (
+            <button onClick={() => setStep('own')}
+              className="mb-7 mt-7 w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
+              style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
+              Do you own any of these?
+            </button>
+          )}
+        </div>
+      )}
+
+      {step === 'own' && (
+        <div className="flex flex-1 flex-col px-7 pt-14">
+          <Kicker>Still no account</Kicker>
+          <p className="m-0 mt-3 text-[25px] font-semibold leading-[1.25] tracking-[-0.02em]" style={{ color: INK, ...SANS }}>
+            Which of these<br />do you hold?
+          </p>
+          <p className="m-0 mt-3 text-[13px] leading-[1.6] text-[#8A8A8A]" style={SANS}>
+            Helm keeps reading them for you. Tap any that apply, or add your own.
+          </p>
+
+          <div className="mt-5 flex flex-wrap gap-1.5">
+            {[...new Set([...(feed ?? []).map((c: Any) => String(c.ticker)), ...HOUSE_PICKS])].map(t => {
+              const on = watch.includes(t);
+              return (
+                <button key={t} onClick={() => setWatch(w => on ? w.filter(x => x !== t) : [...w, t])}
+                  className="rounded-full px-3.5 py-[8px] text-[12px] transition-colors"
+                  style={{
+                    background: on ? 'rgba(230,185,77,0.15)' : 'rgba(255,255,255,0.05)',
+                    color: on ? GOLD : '#9A9A9A',
+                    border: `1px solid ${on ? 'rgba(230,185,77,0.4)' : 'transparent'}`,
+                    ...MONO,
+                  }}>
+                  {t}
+                </button>
+              );
+            })}
+          </div>
+
+          <input value={addTyped} onChange={e => setAddTyped(e.target.value.toUpperCase().slice(0, 5))}
+            onKeyDown={e => { if (e.key === 'Enter') addWatch(addTyped); }}
+            placeholder="ADD YOUR OWN" spellCheck={false}
+            className="mt-4 w-full rounded-[12px] px-4 py-3 text-[15px] tracking-[0.08em] outline-none"
+            style={{ background: 'rgba(255,255,255,0.055)', border: '1px solid rgba(255,255,255,0.09)', color: INK, ...MONO }} />
+
+          <button onClick={() => { setTicker(watch[0] ?? ''); setStep('push'); }} disabled={watch.length === 0}
+            className="mb-7 mt-auto w-full rounded-[12px] py-3.5 text-[14px] font-semibold transition-opacity disabled:opacity-30"
+            style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
+            {watch.length === 0 ? 'Pick at least one' : `Watch ${watch.length}`}
           </button>
         </div>
       )}
