@@ -18,7 +18,7 @@
 // and where their book sits. "NVDA is 31%, your cap is 20%" is arithmetic.
 // "Trim NVDA" is advice, and advice needs a license we don't have.
 
-import { useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Newspaper, Layers, Inbox, Crosshair, Landmark, X, ChevronRight } from 'lucide-react';
 
 const SANS = { fontFamily: 'var(--font-sans)' } as const;
@@ -96,10 +96,89 @@ function heatColor(changePct: number): string {
 
 interface Finding { id: string; title: string; body: string; foot?: string; severity: 'high' | 'med' | 'low' }
 
+/* ── Visual directions ────────────────────────────────────────────────────
+   Three languages for the same data, so the choice gets made by looking
+   rather than by describing. Each has an actual lineage:
+
+   TERMINAL   Where it stands now. Elevated cards, gold used freely, generous
+              radii. Reads modern and app-like; the risk is that "dark card
+              with a colored accent" is the most-generated look on earth.
+   INSTRUMENT Braun / Vignelli. No card ever. Hairline rules, tight grid, one
+              accent used once per screen, numbers carry all the weight.
+              Reads as a professional tool, not an app.
+   DISPATCH   Broadsheet. Helm as a publication rather than a dashboard.
+              Big type, real whitespace, findings read as filed reports.
+              Fewer objects, each one larger. */
+
+type Variant = 'terminal' | 'instrument' | 'dispatch';
+
+interface Theme {
+  label: string;
+  note: string;
+  card: (accent?: string) => React.CSSProperties;
+  cardClass: string;
+  hero: number;
+  heroWeight: number;
+  kicker: React.CSSProperties;
+  kickerClass: string;
+  rule: 'hairline' | 'label' | 'heavy';
+  pad: string;
+  /** Gold on structural chrome, or reserved for the single most important thing. */
+  accentChrome: boolean;
+}
+
+const THEMES: Record<Variant, Theme> = {
+  terminal: {
+    label: 'Terminal',
+    note: 'Elevated cards, gold throughout. Where it stands now.',
+    card: accent => ({
+      background: 'linear-gradient(rgba(255,255,255,0.052), rgba(255,255,255,0.022))',
+      border: '1px solid rgba(255,255,255,0.065)',
+      ...(accent ? { borderLeft: `2px solid ${accent}` } : {}),
+    }),
+    cardClass: 'mb-2.5 rounded-[13px] px-4 py-3.5',
+    hero: 44, heroWeight: 600,
+    kicker: { color: 'rgba(230,185,77,0.85)' },
+    kickerClass: 'text-[10px] font-medium uppercase tracking-[0.13em]',
+    rule: 'label', pad: 'px-6', accentChrome: true,
+  },
+  instrument: {
+    label: 'Instrument',
+    note: 'No cards. Hairlines, tight grid, one accent per screen.',
+    card: accent => ({
+      background: 'transparent',
+      borderBottom: '1px solid rgba(255,255,255,0.08)',
+      ...(accent ? { borderLeft: `2px solid ${accent}`, paddingLeft: 11 } : {}),
+    }),
+    cardClass: 'mb-0 px-0 py-4',
+    hero: 40, heroWeight: 500,
+    kicker: { color: '#6A6A6A' },
+    kickerClass: 'text-[9px] font-semibold uppercase tracking-[0.22em]',
+    rule: 'hairline', pad: 'px-5', accentChrome: false,
+  },
+  dispatch: {
+    label: 'Dispatch',
+    note: 'Broadsheet. Big type, real whitespace, fewer objects.',
+    card: accent => ({
+      background: 'transparent',
+      borderTop: `1px solid ${accent ?? 'rgba(255,255,255,0.12)'}`,
+    }),
+    cardClass: 'mb-0 px-0 pb-7 pt-4',
+    hero: 54, heroWeight: 500,
+    kicker: { color: '#8A8A8A' },
+    kickerClass: 'text-[11px] font-normal tracking-[0.02em]',
+    rule: 'heavy', pad: 'px-7', accentChrome: false,
+  },
+};
+
+const ThemeCtx = createContext<Theme>(THEMES.terminal);
+const useTheme = () => useContext(ThemeCtx);
+
 export function PhoneAppMock({ email }: { email: string }) {
   const [tab, setTab] = useState<Tab>('brief');
   const [profile, setProfile] = useState<ProfileKey>('moderate');
   const [view, setView] = useState<'onboard' | 'app' | 'lock'>('onboard');
+  const [variant, setVariant] = useState<Variant>('terminal');
   const [sheet, setSheet] = useState<SheetData | null>(null);
   const [d, setD] = useState<Record<string, Any>>({});
   const [loading, setLoading] = useState(true);
@@ -206,6 +285,7 @@ export function PhoneAppMock({ email }: { email: string }) {
   const open: Open = s => setSheet(s);
 
   return (
+    <ThemeCtx.Provider value={THEMES[variant]}>
     <div className="flex flex-wrap items-start gap-9">
       <style>{`
         @keyframes hmRise { from { opacity:0; transform:translateY(9px) } to { opacity:1; transform:none } }
@@ -250,6 +330,31 @@ export function PhoneAppMock({ email }: { email: string }) {
       </Phone>
 
       <aside className="w-[330px] min-w-[280px] space-y-5">
+        <Panel title="Direction">
+          <div className="space-y-1.5">
+            {(Object.keys(THEMES) as Variant[]).map(v => {
+              const on = variant === v;
+              return (
+                <button key={v} onClick={() => setVariant(v)}
+                  className="w-full rounded px-3 py-2 text-left transition-colors"
+                  style={{
+                    background: on ? 'rgba(230,185,77,0.10)' : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${on ? 'rgba(230,185,77,0.4)' : 'rgba(255,255,255,0.05)'}`,
+                  }}>
+                  <p className="m-0 text-[12px] font-semibold" style={{ color: on ? GOLD : '#D8D8D8', ...MONO }}>
+                    {THEMES[v].label}
+                  </p>
+                  <p className="m-0 mt-0.5 text-[10.5px] leading-[1.45] text-[#6A6A6A]">{THEMES[v].note}</p>
+                </button>
+              );
+            })}
+          </div>
+          <p className="m-0 mt-2.5 text-[11px] leading-[1.55] text-[#6A6A6A]">
+            Same data, same copy, three visual languages. Judge on Book and Inbox — density is
+            where they actually differ.
+          </p>
+        </Panel>
+
         <Panel title="View">
           <div className="flex gap-1.5">
             {([['onboard', 'First run'], ['app', 'App'], ['lock', 'Lock']] as const).map(([v, label]) => (
@@ -289,12 +394,14 @@ export function PhoneAppMock({ email }: { email: string }) {
         </Panel>
       </aside>
     </div>
+    </ThemeCtx.Provider>
   );
 }
 
 /* ── Brief · the open. Shortest screen in the app. ────────────────────── */
 
 function BriefScreen({ brief, open }: { brief: Any; open: Open }) {
+  const t = useTheme();
   if (!brief) return <Empty>No brief for this account yet.</Empty>;
   const p = brief.portfolio ?? {};
   const chg = Number(p.overnightChangePct ?? 0);
@@ -304,9 +411,9 @@ function BriefScreen({ brief, open }: { brief: Any; open: Open }) {
   const lede = digest.split(/(?<=\.)\s+/)[0] ?? '';
 
   return (
-    <div className="px-6 pt-7 pb-6">
+    <div className={`${t.pad} pb-6 pt-7`}>
       <Kicker>The Current</Kicker>
-      <p className="m-0 mt-3.5 text-[44px] leading-[0.95] hm-rise" style={{ color: INK, ...FIG }}>
+      <p className="m-0 mt-3.5 leading-[0.95] hm-rise" style={{ color: INK, ...FIG, fontSize: t.hero, fontWeight: t.heroWeight }}>
         {money(p.totalValue ?? 0)}
       </p>
       <div className="mt-3 flex items-center gap-2 hm-rise" style={{ animationDelay: '60ms' }}>
@@ -393,6 +500,7 @@ function BriefScreen({ brief, open }: { brief: Any; open: Open }) {
 /* ── Book · three facts, then the list on request. ────────────────────── */
 
 function BookScreen({ holdings, brief, open }: { holdings: Any[]; brief: Any; open: Open }) {
+  const t = useTheme();
   const [all, setAll] = useState(false);
 
   const rows = useMemo(() => {
@@ -416,9 +524,9 @@ function BookScreen({ holdings, brief, open }: { holdings: Any[]; brief: Any; op
   const dayPct = Number(brief?.portfolio?.overnightChangePct ?? 0);
 
   return (
-    <div className="px-6 pt-7 pb-6">
+    <div className={`${t.pad} pb-6 pt-7`}>
       <Kicker>Book</Kicker>
-      <p className="m-0 mt-3.5 text-[40px] leading-[0.95] hm-rise" style={{ color: INK, ...FIG }}>{money(total)}</p>
+      <p className="m-0 mt-3.5 leading-[0.95] hm-rise" style={{ color: INK, ...FIG, fontSize: t.hero, fontWeight: t.heroWeight }}>{money(total)}</p>
       <p className="m-0 mt-2.5 text-[12.5px] tabular-nums hm-rise" style={{ animationDelay: '60ms', color: tone(dayPct), ...MONO }}>
         {pct(dayPct, 2)} <span className="text-[#6A6A6A]">today · {rows.length} positions</span>
       </p>
@@ -470,11 +578,12 @@ function BookScreen({ holdings, brief, open }: { holdings: Any[]; brief: Any; op
 function InboxScreen({ findings, profile, setProfile, open }: {
   findings: Finding[]; profile: ProfileKey; setProfile: (p: ProfileKey) => void; open: Open;
 }) {
+  const t = useTheme();
   const SEV = { high: NEG, med: GOLD, low: '#5A5A5A' } as const;
   const LABEL = { high: 'Attention', med: 'Watch', low: 'Note' } as const;
 
   return (
-    <div className="px-6 pt-7 pb-6">
+    <div className={`${t.pad} pb-6 pt-7`}>
       <Kicker>Inbox</Kicker>
       <p className="m-0 mt-3 max-w-[280px] text-[21px] font-semibold leading-[1.28] tracking-[-0.02em] hm-rise" style={{ color: INK, ...SANS }}>
         {findings.length === 0 ? 'Nothing crossed your lines.' : `${findings.length} thing${findings.length === 1 ? '' : 's'} while you were gone.`}
@@ -519,6 +628,7 @@ function InboxScreen({ findings, profile, setProfile, open }: {
 /* ── Theses · intact is noise. Show what moved. ───────────────────────── */
 
 function ThesesScreen({ theses, brief, open }: { theses: Any[]; brief: Any; open: Open }) {
+  const t = useTheme();
   const [all, setAll] = useState(false);
   const list = theses ?? [];
   if (!list.length) return <Empty>No theses on this account yet.</Empty>;
@@ -531,7 +641,7 @@ function ThesesScreen({ theses, brief, open }: { theses: Any[]; brief: Any; open
   const s = brief?.pillarSummary ?? {};
 
   return (
-    <div className="px-6 pt-7 pb-6">
+    <div className={`${t.pad} pb-6 pt-7`}>
       <Kicker>Theses · {list.length} tracked</Kicker>
       <div className="mt-4 flex gap-2">
         {([['intact', POS], ['weakening', GOLD], ['broken', NEG]] as const).map(([k, c], i) => (
@@ -590,14 +700,15 @@ function ThesesScreen({ theses, brief, open }: { theses: Any[]; brief: Any; open
 /* ── Taxes ────────────────────────────────────────────────────────────── */
 
 function TaxesScreen({ taxes, open }: { taxes: Any; open: Open }) {
+  const t = useTheme();
   if (!taxes) return <Empty>Tax center needs Pro on this account.</Empty>;
   const ops: Any[] = taxes.opportunities ?? [];
   const cap = taxes.annualCap ?? {};
 
   return (
-    <div className="px-6 pt-7 pb-6">
+    <div className={`${t.pad} pb-6 pt-7`}>
       <Kicker>Estimated tax saved</Kicker>
-      <p className="m-0 mt-3.5 text-[44px] leading-[0.95] hm-rise" style={{ color: POS, ...FIG }}>
+      <p className="m-0 mt-3.5 leading-[0.95] hm-rise" style={{ color: POS, ...FIG, fontSize: t.hero, fontWeight: t.heroWeight }}>
         {money(taxes.totalEstimatedSavings ?? 0)}
       </p>
       <p className="m-0 mt-2.5 text-[12px] text-[#7A7A7A] hm-rise" style={{ animationDelay: '60ms', ...MONO }}>
@@ -1043,16 +1154,10 @@ function TabBar({ tab, setTab, badge }: { tab: Tab; setTab: (t: Tab) => void; ba
 function Tappable({ children, onClick, delay = 0, accent, bare }: {
   children: React.ReactNode; onClick: () => void; delay?: number; accent?: string; bare?: boolean;
 }) {
+  const t = useTheme();
   return (
-    <button onClick={onClick} className={`hm-tap hm-rise ${bare ? '' : 'mb-2.5 rounded-[13px] px-4 py-3.5'}`}
-      style={{
-        animationDelay: `${delay}ms`,
-        ...(bare ? {} : {
-          background: 'linear-gradient(rgba(255,255,255,0.052), rgba(255,255,255,0.022))',
-          border: '1px solid rgba(255,255,255,0.065)',
-          ...(accent ? { borderLeft: `2px solid ${accent}` } : {}),
-        }),
-      }}>
+    <button onClick={onClick} className={`hm-tap hm-rise ${bare ? '' : t.cardClass}`}
+      style={{ animationDelay: `${delay}ms`, ...(bare ? {} : t.card(accent)) }}>
       {children}
     </button>
   );
@@ -1092,14 +1197,26 @@ function StatusChip({ status }: { status: string }) {
 }
 
 function Kicker({ children }: { children: React.ReactNode }) {
+  const t = useTheme();
   return (
-    <p className="m-0 text-[10px] font-medium uppercase tracking-[0.13em] hm-fade" style={{ color: 'rgba(230,185,77,0.85)', ...MONO }}>
-      {children}
-    </p>
+    <p className={`m-0 hm-fade ${t.kickerClass}`} style={{ ...t.kicker, ...MONO }}>{children}</p>
   );
 }
 
 function Rule({ label }: { label: string }) {
+  const t = useTheme();
+  if (t.rule === 'hairline') {
+    return (
+      <div className="mb-2.5 mt-6 flex items-baseline justify-between border-b pb-1.5" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
+        <span className="text-[8.5px] font-semibold uppercase tracking-[0.24em] text-[#7A7A7A]" style={MONO}>{label}</span>
+      </div>
+    );
+  }
+  if (t.rule === 'heavy') {
+    return (
+      <p className="m-0 mb-4 mt-9 text-[17px] font-semibold tracking-[-0.01em]" style={{ color: INK, ...SANS }}>{label}</p>
+    );
+  }
   return (
     <div className="mb-3 mt-7 flex items-center gap-2.5">
       <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#6A6A6A]" style={MONO}>{label}</span>
