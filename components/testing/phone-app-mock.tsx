@@ -738,8 +738,8 @@ function Onboarding({ profile, setProfile, onDone }: {
             Name something<br />you own.
           </p>
           <p className="m-0 mt-3 text-[13.5px] leading-[1.6] text-[#8A8A8A] hm-rise" style={{ animationDelay: '80ms', ...SANS }}>
-            No account yet. Helm will read what has actually been filed about it and show you
-            what it found.
+            No account yet. Helm reads the filings and reporting on it, then shows you the
+            evidence it found and where it came from.
           </p>
 
           <div className="mt-7 hm-rise" style={{ animationDelay: '140ms' }}>
@@ -772,7 +772,7 @@ function Onboarding({ profile, setProfile, onDone }: {
         <div className="flex flex-1 flex-col justify-center px-7">
           <p className="m-0 text-[11px] uppercase tracking-[0.18em]" style={{ color: GOLD, ...MONO }}>Scanning {ticker}</p>
           <div className="mt-5 space-y-2.5">
-            {['Pulling filings', 'Reading the disclosure', 'Matching claims to evidence', 'Checking what changed'].map((l, i) => (
+            {['Pulling filings and reporting', 'Reading the source', 'Matching claims to evidence', 'Checking what changed'].map((l, i) => (
               <p key={l} className="m-0 text-[13px] text-[#7A7A7A] hm-fade" style={{ animationDelay: `${i * 260}ms`, ...MONO }}>
                 <span style={{ color: POS }}>✓</span> {l}
               </p>
@@ -825,11 +825,11 @@ function Onboarding({ profile, setProfile, onDone }: {
             <>
               <Kicker>Watching {ticker}</Kicker>
               <p className="m-0 mt-3 text-[19px] font-semibold leading-[1.35]" style={{ color: INK, ...SANS }}>
-                No filed evidence on {ticker} yet.
+                No evidence on {ticker} yet.
               </p>
               <p className="m-0 mt-3 text-[13.5px] leading-[1.65] text-[#8A8A8A]" style={SANS}>
-                Helm will not invent one. It watches from here, and the moment something is
-                filed that bears on it, that lands in your inbox with the quote attached.
+                Helm will not invent one. It watches from here, and the moment something lands
+                that bears on it, it reaches you with the quote attached.
               </p>
             </>
           )}
