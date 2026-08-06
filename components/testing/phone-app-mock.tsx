@@ -20,8 +20,18 @@ import { Newspaper, Layers, Inbox, Crosshair, Landmark } from 'lucide-react';
 
 const SANS = { fontFamily: 'var(--font-sans)' } as const;
 const MONO = { fontFamily: 'var(--font-mono)' } as const;
-const SERIF = { fontFamily: 'var(--font-display-serif)' } as const;
-const READ = { fontFamily: 'var(--font-newsreader)' } as const;
+
+// Hero figures. A trading surface sets its numbers in the same grotesk it sets
+// everything else in — tight, heavy, tabular. Instrument Serif is a display
+// ACCENT in this design system, and putting it on the primary figure is the
+// "make it look premium" reflex that reads instantly as generated. Two
+// typefaces on screen: Inter for language, Space Grotesk for data.
+const FIG = {
+  fontFamily: 'var(--font-mono)',
+  fontWeight: 600,
+  letterSpacing: '-0.035em',
+  fontVariantNumeric: 'tabular-nums',
+} as const;
 
 const GOLD = '#E6B94D';
 const POS = '#4ADE80';
@@ -274,7 +284,7 @@ function BriefScreen({ brief }: { brief: Any }) {
   return (
     <div className="px-6 pt-7 pb-6">
       <Kicker>The Current</Kicker>
-      <p className="mt-3 mb-0 text-[52px] leading-[0.88] tracking-[-0.02em] hm-rise" style={{ color: INK, ...SERIF }}>
+      <p className="mt-3.5 mb-0 text-[44px] leading-[0.95] hm-rise" style={{ color: INK, ...FIG }}>
         {money(p.totalValue ?? 0)}
       </p>
       <div className="mt-3 flex items-center gap-2 hm-rise" style={{ animationDelay: '60ms' }}>
@@ -289,7 +299,7 @@ function BriefScreen({ brief }: { brief: Any }) {
       </div>
 
       {brief.digest && (
-        <p className="mt-5 mb-0 text-[15px] leading-[1.62] text-[#C4C4C4] hm-fade" style={{ animationDelay: '120ms', ...READ }}>
+        <p className="mt-5 mb-0 text-[13.5px] leading-[1.65] text-[#B4B4B4] hm-fade" style={{ animationDelay: '120ms', ...SANS }}>
           {String(brief.digest).slice(0, 320)}{String(brief.digest).length > 320 ? '…' : ''}
         </p>
       )}
@@ -383,7 +393,7 @@ function BookScreen({ holdings, brief }: { holdings: Any[]; brief: Any }) {
   return (
     <div className="px-6 pt-7 pb-6">
       <Kicker>Book · {rows.length} positions</Kicker>
-      <p className="mt-3 mb-0 text-[46px] leading-[0.9] tracking-[-0.02em] hm-rise" style={{ color: INK, ...SERIF }}>
+      <p className="mt-3.5 mb-0 text-[40px] leading-[0.95] hm-rise" style={{ color: INK, ...FIG }}>
         {money(total)}
       </p>
       {brief?.portfolio && (
@@ -432,7 +442,7 @@ function InboxScreen({ findings, profile, setProfile }: {
   return (
     <div className="px-6 pt-7 pb-6">
       <Kicker>Inbox</Kicker>
-      <p className="mt-3 mb-0 text-[26px] leading-[1.15] tracking-[-0.01em] hm-rise" style={{ color: INK, ...SERIF }}>
+      <p className="mt-3 mb-0 max-w-[280px] text-[21px] font-semibold leading-[1.28] tracking-[-0.02em] hm-rise" style={{ color: INK, ...SANS }}>
         {findings.length === 0 ? 'Nothing crossed your lines.' : `${findings.length} thing${findings.length === 1 ? '' : 's'} while you were gone.`}
       </p>
 
@@ -489,7 +499,7 @@ function ThesesScreen({ theses, brief }: { theses: Any[]; brief: Any }) {
         {([['intact', POS], ['weakening', GOLD], ['broken', NEG]] as const).map(([k, c], i) => (
           <div key={k} className="flex-1 rounded-[11px] px-3 py-2.5 hm-rise"
             style={{ animationDelay: `${i * 60}ms`, background: 'linear-gradient(rgba(255,255,255,0.05), rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="m-0 text-[24px] leading-none" style={{ color: c, ...SERIF }}>{s[k] ?? 0}</p>
+            <p className="m-0 text-[22px] leading-none" style={{ color: c, ...FIG }}>{s[k] ?? 0}</p>
             <p className="m-0 mt-1.5 text-[9px] uppercase tracking-[0.13em] text-[#6A6A6A]" style={MONO}>{k}</p>
           </div>
         ))}
@@ -532,7 +542,7 @@ function TaxesScreen({ taxes }: { taxes: Any }) {
   return (
     <div className="px-6 pt-7 pb-6">
       <Kicker>Estimated tax saved</Kicker>
-      <p className="mt-3 mb-0 text-[52px] leading-[0.88] tracking-[-0.02em] hm-rise" style={{ color: POS, ...SERIF }}>
+      <p className="mt-3.5 mb-0 text-[44px] leading-[0.95] hm-rise" style={{ color: POS, ...FIG }}>
         {money(taxes.totalEstimatedSavings ?? 0)}
       </p>
       <p className="mt-2.5 m-0 text-[12px] text-[#7A7A7A] hm-rise" style={{ animationDelay: '60ms', ...MONO }}>
@@ -550,7 +560,7 @@ function TaxesScreen({ taxes }: { taxes: Any }) {
         <Card key={o.ticker} delay={190 + i * 55} accent={POS}>
           <div className="flex items-baseline gap-2">
             <span className="text-[13.5px] font-bold" style={{ color: INK, ...MONO }}>{o.ticker}</span>
-            <span className="ml-auto text-[17px] tabular-nums" style={{ color: POS, ...SERIF }}>{money(o.estimatedSavings ?? 0)}</span>
+            <span className="ml-auto text-[16px]" style={{ color: POS, ...FIG }}>{money(o.estimatedSavings ?? 0)}</span>
           </div>
           <p className="mt-2 m-0 text-[12px] leading-[1.55] text-[#A4A4A4]" style={SANS}>
             {money(o.unrealizedLoss ?? 0)} unrealized loss ·{' '}
@@ -732,7 +742,7 @@ function StatusChip({ status }: { status: string }) {
 
 function Kicker({ children }: { children: React.ReactNode }) {
   return (
-    <p className="m-0 text-[9.5px] font-semibold uppercase tracking-[0.2em] hm-fade" style={{ color: GOLD, ...MONO }}>
+    <p className="m-0 text-[10px] font-medium uppercase tracking-[0.13em] hm-fade" style={{ color: 'rgba(230,185,77,0.85)', ...MONO }}>
       {children}
     </p>
   );
