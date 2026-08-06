@@ -99,7 +99,7 @@ interface Finding { id: string; title: string; body: string; foot?: string; seve
 export function PhoneAppMock({ email }: { email: string }) {
   const [tab, setTab] = useState<Tab>('brief');
   const [profile, setProfile] = useState<ProfileKey>('moderate');
-  const [view, setView] = useState<'app' | 'lock'>('app');
+  const [view, setView] = useState<'onboard' | 'app' | 'lock'>('onboard');
   const [sheet, setSheet] = useState<SheetData | null>(null);
   const [d, setD] = useState<Record<string, Any>>({});
   const [loading, setLoading] = useState(true);
@@ -223,7 +223,9 @@ export function PhoneAppMock({ email }: { email: string }) {
       `}</style>
 
       <Phone>
-        {view === 'lock' ? (
+        {view === 'onboard' ? (
+          <Onboarding profile={profile} setProfile={setProfile} onDone={() => setView('app')} />
+        ) : view === 'lock' ? (
           <LockScreen findings={findings} brief={d.brief} />
         ) : (
           <div className="relative flex h-full flex-col">
@@ -250,14 +252,18 @@ export function PhoneAppMock({ email }: { email: string }) {
       <aside className="w-[330px] min-w-[280px] space-y-5">
         <Panel title="View">
           <div className="flex gap-1.5">
-            {(['app', 'lock'] as const).map(v => (
+            {([['onboard', 'First run'], ['app', 'App'], ['lock', 'Lock']] as const).map(([v, label]) => (
               <button key={v} onClick={() => setView(v)}
-                className={`flex-1 rounded px-3 py-2 text-[11.5px] transition-colors ${view === v ? 'text-[#0A0A0A] font-semibold' : 'bg-white/[0.04] text-[#B8B8B8] hover:text-[#FAFAFA]'}`}
+                className={`flex-1 rounded px-2 py-2 text-[11px] transition-colors ${view === v ? 'text-[#0A0A0A] font-semibold' : 'bg-white/[0.04] text-[#B8B8B8] hover:text-[#FAFAFA]'}`}
                 style={{ background: view === v ? GOLD : undefined, ...MONO }}>
-                {v === 'app' ? 'App' : 'Lock screen'}
+                {label}
               </button>
             ))}
           </div>
+          <p className="m-0 mt-2.5 text-[11px] leading-[1.55] text-[#6A6A6A]">
+            First run is the cold open — no account, no book. Value lands on screen before
+            anything is asked for.
+          </p>
         </Panel>
 
         <Panel title={`Rules · ${rules.label}`}>
@@ -685,6 +691,232 @@ function Sheet({ data, onClose }: { data: SheetData; onClose: () => void }) {
 
         {data.foot && <p className="m-0 mt-5 text-[11px] leading-[1.6] text-[#5F5F5F]" style={SANS}>{data.foot}</p>}
       </div>
+    </div>
+  );
+}
+
+/* ── First run · value before the ask. ────────────────────────────────── */
+
+// The web funnel says 95% of people who reach the scan step type a ticker and
+// read the card — and then 20 of 39 leave at the brokerage ask. So the cold
+// open leads with the catch and earns the ask afterwards: scan a name they
+// already care about, put a VERBATIM filing citation with its source and date
+// on screen, then ask how they invest, and only then ask for accounts — with a
+// reason now attached to it.
+
+const HOUSE_PICKS = ['NVDA', 'TSM', 'AVGO', 'MU', 'META', 'AAPL'];
+type Step = 'ask' | 'scanning' | 'catch' | 'profile' | 'connect';
+
+function Onboarding({ profile, setProfile, onDone }: {
+  profile: ProfileKey; setProfile: (p: ProfileKey) => void; onDone: () => void;
+}) {
+  const [step, setStep] = useState<Step>('ask');
+  const [ticker, setTicker] = useState('');
+  const [typed, setTyped] = useState('');
+  const [scan, setScan] = useState<Any>(null);
+
+  const run = async (sym: string) => {
+    const t = sym.trim().toUpperCase();
+    if (!t) return;
+    setTicker(t);
+    setStep('scanning');
+    try {
+      const r = await fetch(`/api/scan/ticker?symbol=${encodeURIComponent(t)}`);
+      setScan(r.ok ? await r.json() : null);
+    } catch { setScan(null); }
+    setStep('catch');
+  };
+
+  return (
+    <div className="flex h-full flex-col">
+      <StatusBar />
+
+      {step === 'ask' && (
+        <div className="flex flex-1 flex-col px-7 pt-20">
+          <span className="text-[22px] font-bold tracking-[0.03em]" style={{ color: INK, ...SANS }}>HELM</span>
+          <p className="m-0 mt-8 text-[27px] font-semibold leading-[1.22] tracking-[-0.02em] hm-rise" style={{ color: INK, ...SANS }}>
+            Name something<br />you own.
+          </p>
+          <p className="m-0 mt-3 text-[13.5px] leading-[1.6] text-[#8A8A8A] hm-rise" style={{ animationDelay: '80ms', ...SANS }}>
+            No account yet. Helm will read what has actually been filed about it and show you
+            what it found.
+          </p>
+
+          <div className="mt-7 hm-rise" style={{ animationDelay: '140ms' }}>
+            <input value={typed} onChange={e => setTyped(e.target.value.toUpperCase().slice(0, 5))}
+              onKeyDown={e => { if (e.key === 'Enter') run(typed); }}
+              placeholder="TICKER" spellCheck={false}
+              className="w-full rounded-[12px] px-4 py-3.5 text-[17px] tracking-[0.08em] outline-none"
+              style={{ background: 'rgba(255,255,255,0.055)', border: '1px solid rgba(255,255,255,0.09)', color: INK, ...MONO }} />
+            <button onClick={() => run(typed)} disabled={!typed.trim()}
+              className="mt-2.5 w-full rounded-[12px] py-3.5 text-[14px] font-semibold transition-opacity disabled:opacity-30"
+              style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
+              Scan it
+            </button>
+          </div>
+
+          <p className="m-0 mb-2.5 mt-8 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#5F5F5F]" style={MONO}>
+            or start here
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {HOUSE_PICKS.map(t => (
+              <button key={t} onClick={() => run(t)}
+                className="rounded-full px-3.5 py-[7px] text-[12px] transition-colors hover:text-[#FAFAFA]"
+                style={{ background: 'rgba(255,255,255,0.055)', color: '#B0B0B0', ...MONO }}>{t}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {step === 'scanning' && (
+        <div className="flex flex-1 flex-col justify-center px-7">
+          <p className="m-0 text-[11px] uppercase tracking-[0.18em]" style={{ color: GOLD, ...MONO }}>Scanning {ticker}</p>
+          <div className="mt-5 space-y-2.5">
+            {['Pulling filings', 'Reading the disclosure', 'Matching claims to evidence', 'Checking what changed'].map((l, i) => (
+              <p key={l} className="m-0 text-[13px] text-[#7A7A7A] hm-fade" style={{ animationDelay: `${i * 260}ms`, ...MONO }}>
+                <span style={{ color: POS }}>✓</span> {l}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {step === 'catch' && (
+        <div className="hm-scroll flex-1 overflow-y-auto px-7 pt-8">
+          {scan?.house ? (
+            <>
+              <Kicker>What Helm found</Kicker>
+              <div className="mt-3 flex items-baseline gap-2.5">
+                <span className="text-[26px] font-semibold" style={{ color: INK, ...FIG }}>{scan.ticker}</span>
+                <StatusChip status={String(scan.health ?? '')} />
+              </div>
+              {scan.company && <p className="m-0 mt-1 text-[12.5px] text-[#7A7A7A]" style={SANS}>{scan.company}</p>}
+
+              {scan.pillar?.claim && (
+                <p className="m-0 mt-5 text-[15px] leading-[1.55] hm-rise" style={{ color: '#DCDCDC', ...SANS }}>
+                  {scan.pillar.claim}
+                </p>
+              )}
+
+              {scan.receipt?.verbatimCite && (
+                <div className="mt-5 rounded-[12px] px-4 py-4 hm-rise" style={{
+                  animationDelay: '90ms',
+                  background: 'linear-gradient(rgba(230,185,77,0.07), rgba(230,185,77,0.02))',
+                  border: '1px solid rgba(230,185,77,0.16)',
+                }}>
+                  <p className="m-0 text-[9px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'rgba(230,185,77,0.9)', ...MONO }}>
+                    The receipt
+                  </p>
+                  <p className="m-0 mt-2.5 text-[13px] leading-[1.65] text-[#E4E4E4]" style={SANS}>
+                    “{scan.receipt.verbatimCite}”
+                  </p>
+                  <p className="m-0 mt-3 text-[10.5px] text-[#8A8A8A]" style={MONO}>
+                    {scan.receipt.sourceLabel}{scan.receipt.dateISO ? ` · ${scan.receipt.dateISO}` : ''}
+                  </p>
+                </div>
+              )}
+
+              <p className="m-0 mt-5 text-[12.5px] leading-[1.6] text-[#7A7A7A]" style={SANS}>
+                That is one claim on {scan.ticker}, checked against what was actually filed.
+                {scan.pillarCount > 1 ? ` Helm tracks ${scan.pillarCount} on this name.` : ''}
+              </p>
+            </>
+          ) : (
+            <>
+              <Kicker>Watching {ticker}</Kicker>
+              <p className="m-0 mt-3 text-[19px] font-semibold leading-[1.35]" style={{ color: INK, ...SANS }}>
+                No filed evidence on {ticker} yet.
+              </p>
+              <p className="m-0 mt-3 text-[13.5px] leading-[1.65] text-[#8A8A8A]" style={SANS}>
+                Helm will not invent one. It watches from here, and the moment something is
+                filed that bears on it, that lands in your inbox with the quote attached.
+              </p>
+            </>
+          )}
+
+          <button onClick={() => setStep('profile')}
+            className="mb-7 mt-8 w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
+            style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
+            Continue
+          </button>
+        </div>
+      )}
+
+      {step === 'profile' && (
+        <div className="flex flex-1 flex-col px-7 pt-16">
+          <Kicker>Two taps</Kicker>
+          <p className="m-0 mt-3 text-[25px] font-semibold leading-[1.25] tracking-[-0.02em]" style={{ color: INK, ...SANS }}>
+            How do you invest?
+          </p>
+          <p className="m-0 mt-3 text-[13px] leading-[1.6] text-[#8A8A8A]" style={SANS}>
+            Sets the lines Helm measures your book against. Change it whenever you like.
+          </p>
+
+          <div className="mt-6 space-y-2">
+            {(Object.keys(PROFILES) as ProfileKey[]).map((k, i) => {
+              const on = profile === k;
+              return (
+                <button key={k} onClick={() => setProfile(k)}
+                  className="hm-tap hm-rise rounded-[12px] px-4 py-3.5"
+                  style={{
+                    animationDelay: `${i * 60}ms`,
+                    background: on ? 'rgba(230,185,77,0.10)' : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${on ? 'rgba(230,185,77,0.42)' : 'rgba(255,255,255,0.07)'}`,
+                  }}>
+                  <p className="m-0 text-[14.5px] font-semibold" style={{ color: on ? GOLD : INK, ...SANS }}>
+                    {PROFILES[k].label}
+                  </p>
+                  <p className="m-0 mt-1 text-[11.5px] text-[#7A7A7A]" style={MONO}>
+                    max {PROFILES[k].maxPosition}% in one name · {PROFILES[k].maxSector}% in one sector
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          <button onClick={() => setStep('connect')}
+            className="mb-7 mt-auto w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
+            style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
+            Continue
+          </button>
+        </div>
+      )}
+
+      {step === 'connect' && (
+        <div className="flex flex-1 flex-col px-7 pt-16">
+          <Kicker>Last step</Kicker>
+          <p className="m-0 mt-3 text-[25px] font-semibold leading-[1.28] tracking-[-0.02em]" style={{ color: INK, ...SANS }}>
+            Helm is watching {ticker}.<br />Give it the rest.
+          </p>
+          <p className="m-0 mt-3.5 text-[13.5px] leading-[1.65] text-[#8A8A8A]" style={SANS}>
+            Connect your brokerages and it reads every position you hold the same way, against
+            the {PROFILES[profile].label.toLowerCase()} lines you just set.
+          </p>
+
+          <div className="mt-6 space-y-2.5">
+            {[
+              'Read-only. Helm can never trade or move money.',
+              'Every finding arrives with the quote it came from.',
+              'Disconnect in one tap, any time.',
+            ].map((l, i) => (
+              <p key={l} className="m-0 flex gap-2.5 text-[12.5px] leading-[1.5] text-[#9A9A9A] hm-rise"
+                style={{ animationDelay: `${i * 70}ms`, ...SANS }}>
+                <span style={{ color: POS }}>✓</span>{l}
+              </p>
+            ))}
+          </div>
+
+          <div className="mb-7 mt-auto">
+            <button onClick={onDone} className="w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
+              style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
+              Connect accounts
+            </button>
+            <button onClick={onDone} className="mt-2 w-full py-2.5 text-[12.5px]" style={{ color: '#7A7A7A', ...SANS }}>
+              Look around first
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
