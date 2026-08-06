@@ -163,9 +163,14 @@ describe('classifyHoldingPeriod — IRS anniversary rule (IRC §1222(3))', () =>
     d.setUTCDate(d.getUTCDate() - n);
     return iso(d);
   };
+  // Build the fixture from the LOCAL calendar date, because that is the frame
+  // classifyHoldingPeriod evaluates "today" in. Deriving it from UTC instead
+  // made these assertions flip every evening after 8pm ET, once UTC rolled to
+  // the next day while local had not: the anniversary landed a day apart from
+  // the date being classified against.
   const yearsAgoPlus = (extraDays: number) => {
     const now = new Date();
-    const d = new Date(Date.UTC(now.getUTCFullYear() - 1, now.getUTCMonth(), now.getUTCDate() - extraDays));
+    const d = new Date(Date.UTC(now.getFullYear() - 1, now.getMonth(), now.getDate() - extraDays));
     return iso(d);
   };
 
