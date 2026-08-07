@@ -957,6 +957,23 @@ function Sheet({ data, onClose }: { data: SheetData; onClose: () => void }) {
 // reason now attached to it.
 
 const HOUSE_PICKS = ['NVDA', 'TSM', 'AVGO', 'MU', 'META', 'AAPL'];
+
+/** Statuses that mean "a person should look at this again". */
+const CHANGED = new Set(['watch', 'weakening', 'broken', 'contradicted']);
+
+interface HouseStatus { ticker: string; company: string; health: string; lastChecked: string | null }
+
+/** Small counts read better as words in a headline than as digits. */
+function spell(n: number, lead = false): string {
+  const w = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'][n] ?? String(n);
+  return lead ? w[0].toUpperCase() + w.slice(1) : w;
+}
+
+function shortDate(iso: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${d.getUTCDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()]}`;
+}
 type Step = 'ask' | 'scanning' | 'catch' | 'profile' | 'connect' | 'watchlist' | 'push' | 'feed' | 'own' | 'auth'
   | 'pick' | 'working' | 'finding' | 'shot';
 
@@ -1095,6 +1112,25 @@ function Onboarding({ flow, entry, profile, setProfile, taxExample, onDone }: {
   // account, /api/portfolio/import never writes, and rendering a canned result
   // here would make this a picture of a feature instead of the feature.
   const [shotFrom, setShotFrom] = useState<Step>('connect');
+
+  // Status for the opening grid. Cheap (one indexed read per name, no model),
+  // cached 5 minutes, and status-only on purpose: no claims or citations about
+  // a company the user has not chosen yet.
+  const [live, setLive] = useState<HouseStatus[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/scan/house?symbols=${HOUSE_PICKS.join(',')}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (!cancelled && d?.statuses) setLive(d.statuses); })
+      .catch(() => { /* the grid degrades to the plain ask */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  const changedCount = live.filter(s => CHANGED.has(s.health)).length;
+  const lastChecked = (() => {
+    const dates = live.map(s => s.lastChecked).filter((d): d is string => !!d).sort();
+    return dates.length ? shortDate(dates[dates.length - 1]) : null;
+  })();
   const shotInput = useRef<HTMLInputElement>(null);
   const [shotRows, setShotRows] = useState<{ ticker: string; shares: number; costBasis: number | null }[]>([]);
   const [shotBusy, setShotBusy] = useState(false);
@@ -1246,36 +1282,71 @@ function Onboarding({ flow, entry, profile, setProfile, taxExample, onDone }: {
         </div>
       )}
 
-      {/* Catch-first, inverted. The council was unanimous: leading with a real
-          harvest figure from somebody ELSE's account reads as a
-          results-not-typical ad, and the outsider lens said plainly that it
-          felt like a trick. So the first interaction now comes before any
-          reading, and every number after it is about a name the user chose. */}
+      {/* The opening screen used to be an inert form: six dead chips asking a
+          question before the product had shown it could do anything, which is
+          why it read as valueless. The grid is now the information. Each name
+          carries its REAL current status and the headline counts them, so Helm
+          is visibly already running before the first tap, and picking becomes
+          choosing which live thing to open rather than filling in a field.
+
+          Status only. No claims, no citations, nothing about a name the user
+          has not chosen — that was the testimonial problem. And if the status
+          call fails the screen degrades to the plain ask rather than inventing
+          a number. */}
       {step === 'pick' && (
         <div className="flex flex-1 flex-col px-6 pt-8">
           <Lockup size={22} />
-          <p className="m-0 mt-9 text-[27px] font-semibold leading-[1.22] tracking-[-0.02em] hm-rise" style={{ color: INK, ...SANS }}>
-            Which of these<br />do you own?
-          </p>
-          <p className="m-0 mt-3 text-[13px] leading-[1.6] text-[#8A8A8A] hm-rise" style={{ animationDelay: '70ms', ...SANS }}>
-            Pick one and Helm will show you what it found. No account, no sign-up.
-          </p>
 
-          <div className="mt-7 flex flex-wrap gap-2">
+          {live.length > 0 ? (
+            <>
+              <p className="m-0 mt-8 text-[27px] font-semibold leading-[1.2] tracking-[-0.022em] hm-rise" style={{ color: INK, ...SANS }}>
+                {changedCount === 0 ? (
+                  <>All {spell(live.length)} still<br />hold up today.</>
+                ) : (
+                  <>
+                    <span style={{ color: GOLD }}>{spell(changedCount, true)}</span> of these {spell(live.length)}<br />changed.
+                  </>
+                )}
+              </p>
+              <p className="m-0 mt-3 text-[13px] leading-[1.6] text-[#8A8A8A] hm-rise" style={{ animationDelay: '70ms', ...SANS }}>
+                Helm read their filings while you were doing something else. Pick one you own and
+                see exactly what it found.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="m-0 mt-9 text-[27px] font-semibold leading-[1.22] tracking-[-0.02em] hm-rise" style={{ color: INK, ...SANS }}>
+                Which of these<br />do you own?
+              </p>
+              <p className="m-0 mt-3 text-[13px] leading-[1.6] text-[#8A8A8A] hm-rise" style={{ animationDelay: '70ms', ...SANS }}>
+                Pick one and Helm will show you what it found. No account, no sign-up.
+              </p>
+            </>
+          )}
+
+          <div className="mt-7 grid grid-cols-2 gap-2">
             {HOUSE_PICKS.map((t, i) => {
               const on = watch.includes(t);
+              const st = live.find(s => s.ticker === t);
+              const changed = st ? CHANGED.has(st.health) : false;
               return (
-                <button key={t} onClick={() => setWatch(w => on ? w.filter(x => x !== t) : [...w, t])}
-                  className="hm-rise rounded-[11px] px-4 text-[14px] transition-colors"
+                <button key={t} onClick={() => setWatch(w => (on ? w.filter(x => x !== t) : [...w, t]))}
+                  className="hm-rise flex flex-col items-start justify-center rounded-[11px] px-3.5 text-left transition-colors"
                   style={{
-                    minHeight: 46, minWidth: 88,
+                    minHeight: 58,
                     animationDelay: `${i * 45}ms`,
                     background: on ? 'color-mix(in srgb, var(--hm-accent) 14%, transparent)' : 'rgba(255,255,255,0.05)',
-                    color: on ? GOLD : '#B4B4B4',
                     border: `1px solid ${on ? 'color-mix(in srgb, var(--hm-accent) 42%, transparent)' : 'transparent'}`,
-                    ...MONO,
                   }}>
-                  {t}
+                  <span className="flex w-full items-center gap-1.5">
+                    <span className="text-[14px]" style={{ color: on ? GOLD : INK, ...MONO }}>{t}</span>
+                    {changed && (
+                      <span className="ml-auto shrink-0 rounded-full" style={{ width: 6, height: 6, background: GOLD }} />
+                    )}
+                  </span>
+                  <span className="mt-0.5 truncate text-[10.5px] text-[#7A7A7A]" style={SANS}>
+                    {st ? (changed ? 'something changed' : 'still holds up') : 'tap to scan'}
+                  </span>
                 </button>
               );
             })}
@@ -1283,9 +1354,15 @@ function Onboarding({ flow, entry, profile, setProfile, taxExample, onDone }: {
 
           <input value={addTyped} onChange={e => setAddTyped(e.target.value.toUpperCase().slice(0, 5))}
             onKeyDown={e => { if (e.key === 'Enter') addWatch(addTyped); }}
-            placeholder="OR TYPE ONE" spellCheck={false}
-            className="mt-4 w-full rounded-[11px] px-4 py-3 text-[14px] tracking-[0.08em] outline-none"
+            placeholder="OR TYPE ANY US TICKER" spellCheck={false}
+            className="mt-2.5 w-full rounded-[11px] px-4 py-3 text-[13px] tracking-[0.06em] outline-none"
             style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: INK, ...MONO }} />
+
+          {lastChecked && (
+            <p className="m-0 mt-3.5 text-[10.5px] text-[#5F5F5F]" style={MONO}>
+              last checked {lastChecked} · filings and reporting
+            </p>
+          )}
 
           <button onClick={runPicked} disabled={watch.length === 0}
             className="mb-7 mt-auto w-full rounded-[12px] py-3.5 text-[14px] font-semibold transition-opacity disabled:opacity-25"
@@ -1508,15 +1585,26 @@ function Onboarding({ flow, entry, profile, setProfile, taxExample, onDone }: {
               style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
               Turn on notifications
             </button>
-            <button onClick={() => { setShotFrom('push'); setStep('shot'); }} className="mt-2 w-full py-2.5 text-[12.5px]"
-              style={{ color: GOLD, ...SANS }}>
-              Add the rest of your book from a screenshot
-            </button>
+            <p className="m-0 mb-2 mt-4 text-[11px] uppercase tracking-[0.14em] text-[#5F5F5F]" style={MONO}>
+              or give Helm the rest of your book
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setStep('connect')}
+                className="flex-1 rounded-[11px] py-3 text-[12.5px] font-medium"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: INK, ...SANS }}>
+                Connect a brokerage
+              </button>
+              <button onClick={() => { setShotFrom('push'); setStep('shot'); }}
+                className="flex-1 rounded-[11px] py-3 text-[12.5px] font-medium"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: INK, ...SANS }}>
+                Send a screenshot
+              </button>
+            </div>
             <button onClick={() => setStep('auth')} className="mt-2 w-full py-2.5 text-[12.5px]" style={{ color: '#7A7A7A', ...SANS }}>
               Not yet
             </button>
             <p className="m-0 mt-3 text-center text-[11px] leading-[1.5] text-[#5F5F5F]" style={SANS}>
-              Connect a brokerage whenever you want. Helm works without one.
+              Neither is required. Helm keeps working on the names you picked either way.
             </p>
           </div>
         </div>
@@ -1683,13 +1771,13 @@ function Onboarding({ flow, entry, profile, setProfile, taxExample, onDone }: {
 
       {step === 'connect' && (
         <div className="flex flex-1 flex-col px-7 pt-16">
-          <Kicker>Last step</Kicker>
+          <Kicker>Your whole book</Kicker>
           <p className="m-0 mt-3 text-[25px] font-semibold leading-[1.28] tracking-[-0.02em]" style={{ color: INK, ...SANS }}>
             Helm is watching {ticker}.<br />Give it the rest.
           </p>
           <p className="m-0 mt-3.5 text-[13.5px] leading-[1.65] text-[#8A8A8A]" style={SANS}>
-            Connect your brokerages and it reads every position you hold the same way, against
-            the {PROFILES[profile].label.toLowerCase()} lines you just set.
+            Connect your brokerages and Helm reads every position you hold the
+            same way, and tells you when one of them stops holding up.
           </p>
 
           <div className="mt-6 space-y-2.5">
