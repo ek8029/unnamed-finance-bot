@@ -34,7 +34,21 @@ const FIG = {
   fontVariantNumeric: 'tabular-nums',
 } as const;
 
-const GOLD = '#E6B94D';
+/* Accent is a CSS variable so one switch drives every surface. The council's
+   sharpest unprompted finding — from two independent lenses, one of them with
+   no finance background at all — was that gold on near-black is the visual
+   grammar of prop-firm and signals-group apps, i.e. the apps that take your
+   money, and that Astor bought blue because blue is what trust costs. Worth
+   testing rather than arguing about. */
+const GOLD = 'var(--hm-accent)';
+
+type Palette = 'gold' | 'steel' | 'paper';
+
+const PALETTES: Record<Palette, { label: string; note: string; accent: string }> = {
+  gold:  { label: 'Gold',  note: 'Current. Warm, high contrast, terminal.', accent: '#E6B94D' },
+  steel: { label: 'Steel', note: 'Cold and institutional without chasing Astor’s blue.', accent: '#8FA9BF' },
+  paper: { label: 'Paper', note: 'No accent colour at all. Only +/- carries hue.', accent: '#D8DCE0' },
+};
 const POS = '#4ADE80';
 const NEG = '#F87171';
 const INK = '#FAFAFA';
@@ -138,7 +152,7 @@ const THEMES: Record<Variant, Theme> = {
     }),
     cardClass: 'mb-2.5 rounded-[13px] px-4 py-3.5',
     hero: 44, heroWeight: 600,
-    kicker: { color: 'rgba(230,185,77,0.85)' },
+    kicker: { color: 'color-mix(in srgb, var(--hm-accent) 85%, transparent)' },
     kickerClass: 'text-[10px] font-medium uppercase tracking-[0.13em]',
     rule: 'label', pad: 'px-6', accentChrome: true,
   },
@@ -201,6 +215,7 @@ export function PhoneAppMock({ email }: { email: string }) {
   const [view, setView] = useState<'onboard' | 'app' | 'lock'>('onboard');
   const [variant, setVariant] = useState<Variant>('terminal');
   const [flow, setFlow] = useState<Flow>('connect');
+  const [palette, setPalette] = useState<Palette>('gold');
   const [sheet, setSheet] = useState<SheetData | null>(null);
   const [overlay, setOverlay] = useState<null | 'account' | 'paywall' | 'auth'>(null);
   const [d, setD] = useState<Record<string, Any>>({});
@@ -309,7 +324,8 @@ export function PhoneAppMock({ email }: { email: string }) {
 
   return (
     <ThemeCtx.Provider value={THEMES[variant]}>
-    <div className="flex flex-wrap items-start gap-9">
+    <div className="flex flex-wrap items-start gap-9"
+      style={{ ['--hm-accent' as string]: PALETTES[palette].accent }}>
       <style>{`
         @keyframes hmRise { from { opacity:0; transform:translateY(9px) } to { opacity:1; transform:none } }
         @keyframes hmFade { from { opacity:0 } to { opacity:1 } }
@@ -327,7 +343,8 @@ export function PhoneAppMock({ email }: { email: string }) {
 
       <Phone>
         {view === 'onboard' ? (
-          <Onboarding key={flow} flow={flow} profile={profile} setProfile={setProfile} onDone={() => setView('app')} />
+          <Onboarding key={flow} flow={flow} profile={profile} setProfile={setProfile}
+            taxExample={d.taxes?.totalEstimatedSavings} onDone={() => setView('app')} />
         ) : view === 'lock' ? (
           <LockScreen findings={findings} brief={d.brief} />
         ) : (
@@ -366,6 +383,28 @@ export function PhoneAppMock({ email }: { email: string }) {
       </Phone>
 
       <aside className="w-[330px] min-w-[280px] space-y-5">
+        <Panel title="Accent">
+          <div className="flex gap-1.5">
+            {(Object.keys(PALETTES) as Palette[]).map(p => (
+              <button key={p} onClick={() => setPalette(p)}
+                className="flex-1 rounded px-2 py-2 text-[11px] transition-colors"
+                style={{
+                  background: palette === p ? PALETTES[p].accent : 'rgba(255,255,255,0.04)',
+                  color: palette === p ? '#0A0A0A' : '#B8B8B8',
+                  fontWeight: palette === p ? 600 : 400,
+                  ...MONO,
+                }}>
+                {PALETTES[p].label}
+              </button>
+            ))}
+          </div>
+          <p className="m-0 mt-2.5 text-[11px] leading-[1.55] text-[#6A6A6A]">{PALETTES[palette].note}</p>
+          <p className="m-0 mt-2 text-[11px] leading-[1.55] text-[#6A6A6A]">
+            Two council lenses, one with no finance background, independently called gold on
+            black the grammar of signals-group apps. Testing beats arguing.
+          </p>
+        </Panel>
+
         <Panel title="Direction">
           <div className="space-y-1.5">
             {(Object.keys(THEMES) as Variant[]).map(v => {
@@ -374,8 +413,8 @@ export function PhoneAppMock({ email }: { email: string }) {
                 <button key={v} onClick={() => setVariant(v)}
                   className="w-full rounded px-3 py-2 text-left transition-colors"
                   style={{
-                    background: on ? 'rgba(230,185,77,0.10)' : 'rgba(255,255,255,0.03)',
-                    border: `1px solid ${on ? 'rgba(230,185,77,0.4)' : 'rgba(255,255,255,0.05)'}`,
+                    background: on ? 'color-mix(in srgb, var(--hm-accent) 10%, transparent)' : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${on ? 'color-mix(in srgb, var(--hm-accent) 40%, transparent)' : 'rgba(255,255,255,0.05)'}`,
                   }}>
                   <p className="m-0 text-[12px] font-semibold" style={{ color: on ? GOLD : '#D8D8D8', ...MONO }}>
                     {THEMES[v].label}
@@ -399,8 +438,8 @@ export function PhoneAppMock({ email }: { email: string }) {
                 <button key={f} onClick={() => { setFlow(f); setView('onboard'); }}
                   className="w-full rounded px-3 py-2 text-left transition-colors"
                   style={{
-                    background: on ? 'rgba(230,185,77,0.10)' : 'rgba(255,255,255,0.03)',
-                    border: `1px solid ${on ? 'rgba(230,185,77,0.4)' : 'rgba(255,255,255,0.05)'}`,
+                    background: on ? 'color-mix(in srgb, var(--hm-accent) 10%, transparent)' : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${on ? 'color-mix(in srgb, var(--hm-accent) 40%, transparent)' : 'rgba(255,255,255,0.05)'}`,
                   }}>
                   <p className="m-0 text-[12px] font-semibold" style={{ color: on ? GOLD : '#D8D8D8', ...MONO }}>
                     {FLOWS[f].label}
@@ -613,7 +652,7 @@ function BookScreen({ holdings, brief, open }: { holdings: Any[]; brief: Any; op
             <div className="mt-[7px] flex items-center gap-2">
               <div className="h-[3px] flex-1 overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }}>
                 <div className="h-full rounded-full hm-grow"
-                  style={{ width: `${(r.value / top) * 100}%`, background: `linear-gradient(90deg, ${GOLD}, rgba(230,185,77,0.4))`, animationDelay: `${Math.min(i * 20, 340)}ms` }} />
+                  style={{ width: `${(r.value / top) * 100}%`, background: `linear-gradient(90deg, ${GOLD}, color-mix(in srgb, var(--hm-accent) 40%, transparent))`, animationDelay: `${Math.min(i * 20, 340)}ms` }} />
               </div>
               <span className="w-[36px] text-right text-[10px] tabular-nums text-[#5F5F5F]" style={MONO}>
                 {((r.value / total) * 100).toFixed(1)}%
@@ -879,8 +918,9 @@ function Sheet({ data, onClose }: { data: SheetData; onClose: () => void }) {
 const HOUSE_PICKS = ['NVDA', 'TSM', 'AVGO', 'MU', 'META', 'AAPL'];
 type Step = 'ask' | 'scanning' | 'catch' | 'profile' | 'connect' | 'watchlist' | 'push' | 'feed' | 'own' | 'auth';
 
-function Onboarding({ flow, profile, setProfile, onDone }: {
-  flow: Flow; profile: ProfileKey; setProfile: (p: ProfileKey) => void; onDone: () => void;
+function Onboarding({ flow, profile, setProfile, taxExample, onDone }: {
+  flow: Flow; profile: ProfileKey; setProfile: (p: ProfileKey) => void;
+  taxExample?: number; onDone: () => void;
 }) {
   const [step, setStep] = useState<Step>(flow === 'catch' ? 'feed' : 'ask');
   const [ticker, setTicker] = useState('');
@@ -1004,10 +1044,10 @@ function Onboarding({ flow, profile, setProfile, onDone }: {
               {scan.receipt?.verbatimCite && (
                 <div className="mt-5 rounded-[12px] px-4 py-4 hm-rise" style={{
                   animationDelay: '90ms',
-                  background: 'linear-gradient(rgba(230,185,77,0.07), rgba(230,185,77,0.02))',
-                  border: '1px solid rgba(230,185,77,0.16)',
+                  background: 'linear-gradient(color-mix(in srgb, var(--hm-accent) 7%, transparent), color-mix(in srgb, var(--hm-accent) 2%, transparent))',
+                  border: '1px solid color-mix(in srgb, var(--hm-accent) 16%, transparent)',
                 }}>
-                  <p className="m-0 text-[9px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'rgba(230,185,77,0.9)', ...MONO }}>
+                  <p className="m-0 text-[9px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'color-mix(in srgb, var(--hm-accent) 90%, transparent)', ...MONO }}>
                     The receipt
                   </p>
                   <p className="m-0 mt-2.5 text-[13px] leading-[1.65] text-[#E4E4E4]" style={SANS}>
@@ -1050,13 +1090,33 @@ function Onboarding({ flow, profile, setProfile, onDone }: {
           and the watchlist falls out of browsing rather than being requested. */}
       {step === 'feed' && (
         <div className="hm-scroll flex-1 overflow-y-auto px-6 pt-8">
-          <Kicker>The record</Kicker>
-          <p className="m-0 mt-3 text-[23px] font-semibold leading-[1.28] tracking-[-0.02em]" style={{ color: INK, ...SANS }}>
-            Claims, checked<br />against the filings.
+          {/* Money first. The one sentence a person parses in a second, and the
+              one thing Astor does not do at all. Real figure from a real book
+              Helm watches — labelled as an example, because inventing a number
+              for a stranger's portfolio would be the exact fabrication this
+              product exists to refuse. */}
+          {typeof taxExample === 'number' && taxExample > 0 && (
+            <>
+              <Kicker>What Helm found this week</Kicker>
+              <p className="m-0 mt-3 leading-[0.95] hm-rise" style={{ color: POS, fontSize: 46, ...FIG }}>
+                {money(taxExample)}
+              </p>
+              <p className="m-0 mt-3 text-[13px] leading-[1.6] text-[#9A9A9A] hm-rise" style={{ animationDelay: '60ms', ...SANS }}>
+                in tax it can save, on one real book it watches. Losses it can harvest, with the
+                wash-sale window on each. Yours will be a different number.
+              </p>
+              <div className="mt-6 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
+            </>
+          )}
+
+          <p className={`m-0 ${typeof taxExample === 'number' && taxExample > 0 ? 'mt-6' : ''}`}>
+            <Kicker>And it reads the reasons</Kicker>
           </p>
-          <p className="m-0 mt-3 text-[12.5px] leading-[1.6] text-[#8A8A8A]" style={SANS}>
-            Each of these is a reason someone owns a stock, and the evidence Helm found for or
-            against it. Some hold. Some are under pressure. No account needed to read them.
+          <p className="m-0 mt-3 text-[19px] font-semibold leading-[1.32] tracking-[-0.02em]" style={{ color: INK, ...SANS }}>
+            Why you own it, checked against the filings.
+          </p>
+          <p className="m-0 mt-2.5 text-[12.5px] leading-[1.6] text-[#8A8A8A]" style={SANS}>
+            Some hold. Some are under pressure. No account needed to read them.
           </p>
 
           {feed === null && (
@@ -1123,9 +1183,9 @@ function Onboarding({ flow, profile, setProfile, onDone }: {
                 <button key={t} onClick={() => setWatch(w => on ? w.filter(x => x !== t) : [...w, t])}
                   className="rounded-full px-3.5 py-[8px] text-[12px] transition-colors"
                   style={{
-                    background: on ? 'rgba(230,185,77,0.15)' : 'rgba(255,255,255,0.05)',
+                    background: on ? 'color-mix(in srgb, var(--hm-accent) 15%, transparent)' : 'rgba(255,255,255,0.05)',
                     color: on ? GOLD : '#9A9A9A',
-                    border: `1px solid ${on ? 'rgba(230,185,77,0.4)' : 'transparent'}`,
+                    border: `1px solid ${on ? 'color-mix(in srgb, var(--hm-accent) 40%, transparent)' : 'transparent'}`,
                     ...MONO,
                   }}>
                   {t}
@@ -1165,7 +1225,7 @@ function Onboarding({ flow, profile, setProfile, onDone }: {
           <div className="mt-5 flex flex-wrap gap-1.5">
             {watch.map(w => (
               <span key={w} className="flex items-center gap-1.5 rounded-full px-3 py-[7px] text-[12px]"
-                style={{ background: 'rgba(230,185,77,0.13)', color: GOLD, ...MONO }}>
+                style={{ background: 'color-mix(in srgb, var(--hm-accent) 13%, transparent)', color: GOLD, ...MONO }}>
                 {w}
                 <button onClick={() => setWatch(list => list.filter(x => x !== w))} aria-label={`Remove ${w}`}>
                   <X size={11} />
@@ -1292,8 +1352,8 @@ function Onboarding({ flow, profile, setProfile, onDone }: {
                   className="hm-tap hm-rise rounded-[12px] px-4 py-3.5"
                   style={{
                     animationDelay: `${i * 60}ms`,
-                    background: on ? 'rgba(230,185,77,0.10)' : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${on ? 'rgba(230,185,77,0.42)' : 'rgba(255,255,255,0.07)'}`,
+                    background: on ? 'color-mix(in srgb, var(--hm-accent) 10%, transparent)' : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${on ? 'color-mix(in srgb, var(--hm-accent) 42%, transparent)' : 'rgba(255,255,255,0.07)'}`,
                   }}>
                   <p className="m-0 text-[14.5px] font-semibold" style={{ color: on ? GOLD : INK, ...SANS }}>
                     {PROFILES[k].label}
@@ -1487,8 +1547,8 @@ function Paywall({ onClose }: { onClose: () => void }) {
             return (
               <button key={k} onClick={() => setPlan(k)} className="hm-tap rounded-[12px] px-4 py-3.5"
                 style={{
-                  background: on ? 'rgba(230,185,77,0.10)' : 'rgba(255,255,255,0.035)',
-                  border: `1px solid ${on ? 'rgba(230,185,77,0.42)' : 'rgba(255,255,255,0.07)'}`,
+                  background: on ? 'color-mix(in srgb, var(--hm-accent) 10%, transparent)' : 'rgba(255,255,255,0.035)',
+                  border: `1px solid ${on ? 'color-mix(in srgb, var(--hm-accent) 42%, transparent)' : 'rgba(255,255,255,0.07)'}`,
                 }}>
                 <div className="flex items-baseline">
                   <span className="text-[14px] font-semibold" style={{ color: on ? GOLD : INK, ...SANS }}>{name}</span>
@@ -1575,7 +1635,7 @@ function Phone({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative shrink-0" style={{ width: 393, height: 852 }}>
       <div className="pointer-events-none absolute -inset-16 -z-10"
-        style={{ background: 'radial-gradient(50% 40% at 50% 30%, rgba(230,185,77,0.10), transparent 70%)' }} />
+        style={{ background: 'radial-gradient(50% 40% at 50% 30%, color-mix(in srgb, var(--hm-accent) 10%, transparent), transparent 70%)' }} />
       <div className="absolute -left-[13px] top-[132px] h-[30px] w-[3px] rounded-l" style={{ background: '#232326' }} />
       <div className="absolute -left-[13px] top-[186px] h-[54px] w-[3px] rounded-l" style={{ background: '#232326' }} />
       <div className="absolute -left-[13px] top-[254px] h-[54px] w-[3px] rounded-l" style={{ background: '#232326' }} />
@@ -1655,7 +1715,7 @@ function Tappable({ children, onClick, delay = 0, accent, bare }: {
 
 function More({ children }: { children: React.ReactNode }) {
   return (
-    <span className="mt-2.5 inline-flex items-center gap-1 text-[11px]" style={{ color: 'rgba(230,185,77,0.9)', ...MONO }}>
+    <span className="mt-2.5 inline-flex items-center gap-1 text-[11px]" style={{ color: 'color-mix(in srgb, var(--hm-accent) 90%, transparent)', ...MONO }}>
       {children}<ChevronRight size={11} />
     </span>
   );
