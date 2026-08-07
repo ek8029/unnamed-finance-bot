@@ -20,6 +20,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Newspaper, Layers, Inbox, Crosshair, Landmark, X, ChevronRight, User, Apple } from 'lucide-react';
+import { HelmMark } from '@/components/helm-mark';
 
 const SANS = { fontFamily: 'var(--font-sans)' } as const;
 const MONO = { fontFamily: 'var(--font-mono)' } as const;
@@ -214,7 +215,7 @@ export function PhoneAppMock({ email }: { email: string }) {
   const [profile, setProfile] = useState<ProfileKey>('moderate');
   const [view, setView] = useState<'onboard' | 'app' | 'lock'>('onboard');
   const [variant, setVariant] = useState<Variant>('terminal');
-  const [flow, setFlow] = useState<Flow>('connect');
+  const [flow, setFlow] = useState<Flow>('catch');
   const [palette, setPalette] = useState<Palette>('gold');
   const [sheet, setSheet] = useState<SheetData | null>(null);
   const [overlay, setOverlay] = useState<null | 'account' | 'paywall' | 'auth'>(null);
@@ -976,7 +977,7 @@ function Onboarding({ flow, profile, setProfile, taxExample, onDone }: {
 
       {step === 'ask' && (
         <div className="flex flex-1 flex-col px-7 pt-20">
-          <span className="text-[22px] font-bold tracking-[0.03em]" style={{ color: INK, ...SANS }}>HELM</span>
+          <Lockup />
           <p className="m-0 mt-8 text-[27px] font-semibold leading-[1.22] tracking-[-0.02em] hm-rise" style={{ color: INK, ...SANS }}>
             Name something<br />you own.
           </p>
@@ -1089,7 +1090,8 @@ function Onboarding({ flow, profile, setProfile, taxExample, onDone }: {
           the first thing on screen instead of the thing nobody navigates to,
           and the watchlist falls out of browsing rather than being requested. */}
       {step === 'feed' && (
-        <div className="hm-scroll flex-1 overflow-y-auto px-6 pt-8">
+        <div className="hm-scroll flex-1 overflow-y-auto px-6 pt-7">
+          <div className="mb-7"><Lockup size={24} /></div>
           {/* Money first. The one sentence a person parses in a second, and the
               one thing Astor does not do at all. Real figure from a real book
               Helm watches — labelled as an example, because inventing a number
@@ -1269,8 +1271,7 @@ function Onboarding({ flow, profile, setProfile, taxExample, onDone }: {
 
           <div className="mt-6 rounded-[18px] px-4 py-3.5" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}>
             <div className="mb-1.5 flex items-center gap-2">
-              <div className="grid h-[18px] w-[18px] place-items-center rounded-[5px] text-[9px] font-bold text-[#0A0A0A]"
-                style={{ background: `linear-gradient(135deg, #FFD67A, ${GOLD})` }}>H</div>
+              <AppIcon size={18} />
               <span className="text-[11px] font-semibold uppercase tracking-[0.11em] text-[#D2D2D2]" style={MONO}>Helm</span>
               <span className="ml-auto text-[10.5px] text-[#8A8A8A]" style={SANS}>now</span>
             </div>
@@ -1300,7 +1301,8 @@ function Onboarding({ flow, profile, setProfile, taxExample, onDone }: {
           lesser one. Placed last on purpose: every flow delivers its value
           before an account is requested. */}
       {step === 'auth' && (
-        <div className="flex flex-1 flex-col px-7 pt-16">
+        <div className="flex flex-1 flex-col px-7 pt-14">
+          <div className="mb-8"><Lockup size={24} /></div>
           <Kicker>Keep it</Kicker>
           <p className="m-0 mt-3 text-[25px] font-semibold leading-[1.28] tracking-[-0.02em]" style={{ color: INK, ...SANS }}>
             Save what Helm<br />is watching for you.
@@ -1619,8 +1621,7 @@ function Notif({ body, dim, delay }: { body: string; dim?: boolean; delay: numbe
     <div className="rounded-[20px] px-4 py-3.5 hm-rise"
       style={{ animationDelay: `${delay}ms`, background: dim ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.11)', backdropFilter: 'blur(24px)' }}>
       <div className="mb-1.5 flex items-center gap-2">
-        <div className="grid h-[19px] w-[19px] place-items-center rounded-[5.5px] text-[9.5px] font-bold text-[#0A0A0A]"
-          style={{ background: `linear-gradient(135deg, #FFD67A, ${GOLD})` }}>H</div>
+        <AppIcon />
         <span className="text-[11.5px] font-semibold uppercase tracking-[0.11em] text-[#D2D2D2]" style={MONO}>Helm</span>
         <span className="ml-auto text-[11px] text-[#8A8A8A]" style={SANS}>now</span>
       </div>
@@ -1743,6 +1744,33 @@ function StatusChip({ status }: { status: string }) {
   return (
     <span className="rounded-[4px] px-1.5 py-[2px] text-[9px] font-semibold uppercase tracking-[0.11em]"
       style={{ color: c, background: `${c}1A`, ...MONO }}>{status}</span>
+  );
+}
+
+/** Mark plus wordmark. The mono variant paints from currentColor, so the mark
+ *  follows the accent switcher instead of pinning the brand to gold. */
+function Lockup({ size = 26 }: { size?: number }) {
+  return (
+    <span className="flex items-center gap-2.5">
+      <span style={{ color: GOLD, display: 'inline-flex' }}>
+        <HelmMark size={size} variant="mono" />
+      </span>
+      <span className="text-[21px] font-bold tracking-[0.04em]" style={{ color: INK, ...SANS }}>HELM</span>
+    </span>
+  );
+}
+
+/** The app icon as iOS renders it in a notification: rounded square, mark inside. */
+function AppIcon({ size = 19 }: { size?: number }) {
+  return (
+    <span className="grid place-items-center" style={{
+      width: size, height: size, borderRadius: size * 0.28,
+      background: 'linear-gradient(150deg, #1C1C20, #0B0B0D)',
+      border: '1px solid rgba(255,255,255,0.10)',
+      color: GOLD,
+    }}>
+      <HelmMark size={Math.round(size * 0.68)} variant="mono" />
+    </span>
   );
 }
 
