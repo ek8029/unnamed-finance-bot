@@ -7,7 +7,7 @@
 
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { createClient as createSupabaseClient, type SupabaseClient, type User } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 
 /**
  * Dev-only lab impersonation: with the `helm_lab_email` cookie set (picked in
@@ -98,6 +98,29 @@ export async function createClient() {
       const impersonated = await createImpersonatedClient(decodeURIComponent(labEmail));
       if (impersonated) return impersonated;
     }
+  }
+
+  /**
+   * Native clients (the iOS app) cannot participate in Next's cookie session,
+   * so they present the Supabase access token as a Bearer instead. Every API
+   * route already goes through this function, so they all gain it at once and
+   * none of them need to know which kind of client is calling.
+   *
+   * This grants NO extra privilege. It uses the ANON key, so RLS applies
+   * exactly as it does on the web: the JWT *is* the identity, an expired or
+   * forged one resolves to no user, and auth.getUser() still validates the
+   * token against Supabase rather than trusting its claims.
+   */
+  const authHeader = (await headers()).get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    return createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: { headers: { Authorization: authHeader } },
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      },
+    );
   }
 
   return createServerClient(
