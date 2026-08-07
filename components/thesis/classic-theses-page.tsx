@@ -17,7 +17,6 @@ import { DemoConnectCta } from '@/components/demo/demo-connect-cta';
 import { RatifyQueue, type RatifyItem } from '@/components/thesis/ratify-queue';
 import { DriverMap, type NodeInfo } from '@/components/thesis/driver-map';
 import { ThesisCardsView, type CardThesis } from '@/components/thesis/thesis-cards-view';
-import { MaxUpgradeCard } from '@/components/max-upgrade-card';
 import { AgentActivity } from '@/components/thesis/agent-activity';
 import { summarizePillars, effectiveStatus, type ThesisSummary } from '@/lib/thesis-summary';
 import { deriveThesisVerdict, verdictSentence } from '@/lib/thesis-verdict';
@@ -524,7 +523,7 @@ export function ClassicThesesPage() {
     </div>
   );
 
-  const isMax = tierAtLeast(previewTier, 'max');
+  const isMax = tierAtLeast(previewTier, 'pro');
   const flaggedRow = rows.find((r) => r.worst === 'broken') ?? rows.find((r) => r.worst === 'weakening') ?? null;
 
   const plByTicker = new Map<string, number>();
@@ -636,7 +635,6 @@ export function ClassicThesesPage() {
       )}
       {!noThesesYet && isMax && <AgentActivity />}
       {!noThesesYet && !isMax && <AgentActivity locked />}
-      {!noThesesYet && <MaxUpgradeCard />}
 
       {/* ── Section 2: Driver strip + openable map ── */}
       {!noThesesYet && <DriverMap nodes={nodeMap} />}

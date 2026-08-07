@@ -8,8 +8,8 @@
 
 import { createClient } from '@/lib/supabase/server';
 
-import { tierAtLeast, TIER_RANK, type Tier } from '@/lib/tier-shared';
-export { tierAtLeast, TIER_RANK, type Tier };
+import { tierAtLeast, TIER_RANK, normalizeTier, type Tier } from '@/lib/tier-shared';
+export { tierAtLeast, TIER_RANK, normalizeTier, type Tier };
 
 const FREE_DAILY_ANALYSIS_LIMIT = 5;
 // Fair-use ceiling for Pro: effectively unlimited for a human, but bounds the
@@ -62,7 +62,7 @@ export interface SubscriptionInfo {
  */
 export async function getSubscriptionInfo(userId: string): Promise<SubscriptionInfo> {
   if (isOpenAccessWindow()) {
-    return { tier: 'max', trialEndsAt: null, lapsedTrialEndedAt: null };
+    return { tier: 'pro', trialEndsAt: null, lapsedTrialEndedAt: null };
   }
   return getRealSubscriptionInfo(userId);
 }
@@ -80,7 +80,8 @@ export async function getRealSubscriptionInfo(userId: string): Promise<Subscript
     .eq('user_id', userId)
     .maybeSingle();
 
-  const tier = (data?.tier as Tier) ?? 'free';
+  // Rows written before Max was retired still say 'max'; they read as Pro.
+  const tier = normalizeTier(data?.tier);
   const trialEndsAt: string | null = data?.trial_ends_at ?? null;
   if (trialEndsAt && !data?.stripe_subscription_id) {
     if (new Date(trialEndsAt).getTime() > Date.now()) {
@@ -147,9 +148,4 @@ export async function requirePro(userId: string): Promise<{ allowed: boolean }> 
   return { allowed: tierAtLeast(tier, 'pro') };
 }
 
-// ── Check if user has Max-tier access ──
-
-export async function requireMax(userId: string): Promise<{ allowed: boolean }> {
-  const tier = await getUserTier(userId);
-  return { allowed: tierAtLeast(tier, 'max') };
-}
+// requireMax is gone with the Max tier. Everything it gated is Pro now.

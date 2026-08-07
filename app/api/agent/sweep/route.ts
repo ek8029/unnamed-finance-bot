@@ -99,7 +99,7 @@ export async function GET() {
           return { detail: `${er.upcoming.length} upcoming · ${fmtUsd(er.totalUpcomingExposure)} exposed`, found: er.upcoming.length };
         });
 
-        // 6. Thesis cross-check (Max — reasons vs fresh evidence).
+        // 6. Thesis cross-check (Pro — reasons vs fresh evidence).
         if (canThesis) {
           await step('thesis', 'Cross-checking your theses', async () => {
             const { actions } = await generateThesisActions(supabase, uid);
@@ -107,7 +107,7 @@ export async function GET() {
             return { detail: `${actions.length} action${actions.length === 1 ? '' : 's'} on weakening reasons`, found: actions.length };
           });
         } else {
-          send({ type: 'step', id: 'thesis', label: 'Cross-checking your theses', status: 'skipped', detail: 'Max feature' });
+          send({ type: 'step', id: 'thesis', label: 'Cross-checking your theses', status: 'skipped', detail: 'Pro feature' });
         }
 
         await pace(250);

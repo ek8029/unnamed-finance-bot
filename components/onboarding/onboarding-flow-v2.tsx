@@ -118,12 +118,11 @@ const AGENT_JOBS = [
 ];
 
 // Per-tier unlocks — copy mirrors the real gates in lib/tier.ts. The strip
-// highlights the previewed tier (usePreview), so the free/pro/max dev toggle
+// highlights the previewed tier (usePreview), so the free/pro dev toggle
 // demos the differences and prod shows the user's real entitlement.
 const TIERS: { key: Tier; name: string; price: string; unlocks: string[] }[] = [
   { key: 'free', name: 'Free', price: '$0', unlocks: ['Every account in one place', '5 AI analyses a day', 'Daily market brief'] },
-  { key: 'pro', name: 'Pro', price: '$20/mo', unlocks: ['Thesis tracking', 'Tax-loss harvesting', 'Earnings watch', 'Your personalized brief'] },
-  { key: 'max', name: 'Max', price: '$50/mo', unlocks: ['The autonomous agent', 'Cross-position risk', 'Factor lens + thesis builder', 'Agent reassessments'] },
+  { key: 'pro', name: 'Pro', price: '$20/mo', unlocks: ['Thesis tracking', 'Tax-loss harvesting', 'Earnings watch', 'The agent, watching every position'] },
 ];
 
 // Preview mode (?onbv2preview=1 or the /testing/onboarding harness): forces the

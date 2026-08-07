@@ -117,7 +117,7 @@ const PORTFOLIO_CHILDREN: NavItem[] = [
   { name: 'Manual entry', href: '/dashboard/portfolio/add', icon: PenLine },
   { name: 'Research', href: '/dashboard/chat', icon: MessageSquare },
   { name: 'Earnings', href: '/dashboard/earnings', icon: BarChart3, tier: 'pro' },
-  { name: 'Factor lens', href: '/dashboard/portfolio/factors', icon: Layers, tier: 'max' },
+  { name: 'Factor lens', href: '/dashboard/portfolio/factors', icon: Layers, tier: 'pro' },
 ];
 
 const INTELLIGENCE_NAV: NavItem[] = [
@@ -403,9 +403,9 @@ export default function DashboardLayout({
   const isActive = (href: string) =>
     href === '/dashboard/analyze' ? pathname.startsWith('/dashboard/analyze') : pathname === href;
 
-  // Tier badge on the user row (Free muted / Pro gold / Max bright-gold).
-  const planLabel = ({ free: 'Free tier', pro: 'Pro', max: 'Max' } as const)[tier];
-  const tierBadgeColor = tier === 'max' ? '#FFD67A' : tier === 'pro' ? 'var(--color-gold)' : 'var(--color-text-muted)';
+  // Tier badge on the user row (Free muted / Pro gold).
+  const planLabel = ({ free: 'Free tier', pro: 'Pro' } as const)[tier];
+  const tierBadgeColor = tier === 'pro' ? 'var(--color-gold)' : 'var(--color-text-muted)';
 
   /* Shared nav-item renderer (top-level rows). */
   function NavRow({ item }: { item: NavItem }) {
@@ -450,11 +450,11 @@ export default function DashboardLayout({
             className="shrink-0 rounded-[3px] px-[5px] py-[1px] text-[8px] font-bold tracking-[0.08em]"
             style={{
               fontFamily: 'var(--font-mono)',
-              background: item.tier === 'max' ? 'rgba(255,214,122,0.12)' : 'rgba(230,185,77,0.1)',
-              color: item.tier === 'max' ? '#FFD67A' : 'var(--color-gold)',
+              background: 'rgba(230,185,77,0.1)',
+              color: 'var(--color-gold)',
             }}
           >
-            {item.tier === 'max' ? 'MAX' : 'PRO'}
+            {'PRO'}
           </span>
         )}
         {showNewBadge && (
@@ -694,11 +694,11 @@ export default function DashboardLayout({
                           className="shrink-0 rounded-[3px] px-[5px] py-[1px] text-[8px] font-bold tracking-[0.08em]"
                           style={{
                             fontFamily: 'var(--font-mono)',
-                            background: child.tier === 'max' ? 'rgba(255,214,122,0.12)' : 'rgba(230,185,77,0.1)',
-                            color: child.tier === 'max' ? '#FFD67A' : 'var(--color-gold)',
+                            background: 'rgba(230,185,77,0.1)',
+                            color: 'var(--color-gold)',
                           }}
                         >
-                          {child.tier === 'max' ? 'MAX' : 'PRO'}
+                          {'PRO'}
                         </span>
                       )}
                     </Link>
@@ -925,7 +925,7 @@ export default function DashboardLayout({
           <ConnectBanner />
           {/* Trial lifecycle strip — countdown, last-48h urgency, post-lapse receipt */}
           <TrialBanner />
-          {/* FoundingMemberBanner removed: founding tier retired (Free / Pro $20 / Max $50) */}
+          {/* Founding and Max tiers both retired. Free / Pro $20. */}
           {thesisEntitled && pathname !== '/dashboard/theses' && <ThesesWhatsNewBanner />}
           <div
             key={pathname}

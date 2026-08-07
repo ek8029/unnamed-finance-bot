@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { generateEarningsReport } from '@/lib/earnings-analysis';
-import { getUserTier } from '@/lib/tier';
+import { getUserTier, tierAtLeast } from '@/lib/tier';
 import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { getThesisEarningsContext } from '@/lib/thesis-conviction';
 
@@ -35,7 +35,7 @@ export async function GET() {
 
     // Free users: return observation data only (dates, tickers, exposure, EPS)
     // Strip impact/scenario fields that constitute Pro recommendations
-    if (tier !== 'pro' && tier !== 'max') {
+    if (!tierAtLeast(tier, 'pro')) {
       return NextResponse.json({
         ...report,
         isPro: false,

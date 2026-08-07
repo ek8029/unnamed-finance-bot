@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getTickerSectorOverride } from '@/lib/market-classify';
 import { getQuote } from '@/lib/financial-data';
 import { rateLimit } from '@/lib/rate-limit';
-import { getUserTier } from '@/lib/tier';
+import { getUserTier, tierAtLeast } from '@/lib/tier';
 import { getUnderlyingExposure } from '@/lib/etf-holdings';
 import { composeThesisBrief } from '@/lib/thesis-brief';
 import { hasThesisAccess } from '@/lib/thesis-access-server';
@@ -252,7 +252,7 @@ export async function GET() {
       .maybeSingle();
 
     const tier = await getUserTier(user.id);
-    const isPro = tier === 'pro' || tier === 'max';
+    const isPro = tierAtLeast(tier, 'pro');
 
     // -- Thesis intelligence queries --
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();

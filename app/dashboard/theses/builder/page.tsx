@@ -591,8 +591,8 @@ export default function BuilderPage() {
   return (
     <Suspense fallback={null}>
       <TierLock
-        required="max"
-        label="Unlock the Thesis Builder with Max"
+        required="pro"
+        label="Unlock the Thesis Builder with Pro"
         blurb="Stress-test a name before you buy. Draft a starting set of pillars to edit and make your own, see the sector concentration it would add, the drivers it shares with what you already hold, and the bear case. Then track it."
       >
         <BuilderInner />

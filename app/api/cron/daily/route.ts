@@ -277,7 +277,7 @@ export async function GET(request: Request) {
       try {
         // Non-free subscriptions, minus expired never-paid trials (mirrors
         // getSubscriptionInfo, which is session-bound and unusable here).
-        // During the open-access window everyone reads as Max, so the note
+        // During the open-access window everyone reads as Pro, so the note
         // goes to every user with a book instead (same cap).
         let eligible: { user_id: string }[];
         if (isOpenAccessWindow()) {

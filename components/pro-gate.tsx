@@ -12,9 +12,9 @@ interface ProGateProps {
 }
 
 // `period` maps onto the existing Stripe billing-period keys so checkout
-// keeps working unchanged while we display the new $20 / $50 model.
-// TODO: needs STRIPE_PRICE_PRO / STRIPE_PRICE_MAX env for $20/$50
-type BillingPeriod = 'pro' | 'max';
+// keeps working unchanged. Pro is the only paid tier.
+
+type BillingPeriod = 'pro';
 
 const PLANS: {
   period: BillingPeriod;
@@ -25,8 +25,7 @@ const PLANS: {
   save: string | null;
   badge: string | null;
 }[] = [
-  { period: 'pro', label: 'Pro', price: '$20', unit: '/mo', note: 'Thesis monitoring, earnings, tax center', save: null, badge: null },
-  { period: 'max', label: 'Max', price: '$50', unit: '/mo', note: 'Everything in Pro plus the agent', save: null, badge: null },
+  { period: 'pro', label: 'Pro', price: '$20', unit: '/mo', note: 'Thesis monitoring, the agent, earnings, tax center', save: null, badge: null },
 ];
 
 export function ProGate({ feature, description }: ProGateProps) {

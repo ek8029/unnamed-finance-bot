@@ -100,7 +100,6 @@ const NAV_LINKS = [
 const TIERS = [
   { name: 'Free', price: '$0', sub: 'Forever, no card', features: ['Full terminal access', 'AI analysis, any US ticker', 'Connected brokerages', 'Daily brief', 'Actions inbox', 'Portfolio Wrapped'], cta: 'Start free', featured: false },
   { name: 'Pro', price: '$20', priceSuffix: '/mo', sub: 'Thesis monitoring and tax intelligence', features: ['Everything in Free', 'Thesis monitoring with cited evidence', 'Earnings exposure', 'Tax center with TLH', 'Conviction-led tailored brief'], cta: 'Upgrade to Pro', featured: true, chip: 'Most popular' },
-  { name: 'Max', price: '$50', priceSuffix: '/mo', sub: 'Everything in Pro plus the agent', features: ['Everything in Pro', 'The agent', 'Thesis Builder (pre-buy)', 'Factor lens', 'Coming: real-time, iOS, advisor'], cta: 'Upgrade to Max', featured: false },
 ];
 
 /* ─── Reveal hook ───────────────────────────────────────────────────────── */
@@ -637,7 +636,7 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
               </h2>
             </div>
             <div className="font-[family-name:var(--font-mono)] text-[12px] text-[var(--color-text-muted)] tracking-[0.08em] text-right max-w-[300px]">
-              Pro is $20/mo. Max is $50/mo.
+              Pro is $20/mo.
               <div className="h-0.5 bg-[var(--color-border-base)] mt-3 relative">
                 <span className="absolute inset-0 w-[40%] bg-[var(--color-gold)]" />
               </div>
@@ -703,7 +702,7 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
             actionable insights: tax-loss harvesting opportunities with wash-sale
             detection, concentration risk alerts, earnings exposure, and cash flow
             changes. Its flagship capability is <strong className="text-[var(--color-text-primary)]">thesis monitoring</strong>: you write the reasons (the &ldquo;pillars&rdquo;) you own each stock, and Helm&rsquo;s agent watches those reasons against SEC filings, earnings, and news, then flags you when one weakens, the failure mode known as thesis drift, citing the exact dated filing. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.
-            Most features are free. Pro is $20/mo and Max is $50/mo.
+            Most features are free. Pro is $20/mo.
           </p>
         </div>
       </section>
@@ -743,7 +742,7 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
               { '@type': 'Question', name: 'What is Helm Terminal?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal is a free, institutional-grade financial intelligence platform for individual investors. It aggregates brokerage and bank accounts via Plaid, runs deterministic rule-based analysis over your portfolio, and surfaces actionable insights like tax-loss harvesting opportunities, concentration risk, earnings exposure, and cash flow changes. Its flagship capability is thesis monitoring: it tracks the specific reasons you own each stock against live SEC filings and news, and alerts you when your reasoning weakens or breaks (thesis drift), citing the exact dated source.' } },
               { '@type': 'Question', name: 'What tool tells me when my investment thesis breaks?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal does this through thesis monitoring. You write the pillars behind each position, and Helm\'s agent watches them against SEC filings, earnings, and news, then alerts you with a verbatim, dated citation the moment a pillar weakens or breaks (thesis drift). It is live and shipped, not a waitlist.' } },
               { '@type': 'Question', name: 'What is an agentic portfolio terminal?', acceptedAnswer: { '@type': 'Answer', text: 'An agentic portfolio terminal continuously watches your whole portfolio on your behalf, the exposure, the taxes, and the reasons behind each position, and surfaces what changed and what to do, instead of just charting what you own. Helm Terminal is an agentic terminal: an AI analyst on every position, monitoring each thesis against primary sources.' } },
-              { '@type': 'Question', name: 'Is Helm Terminal free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Helm Terminal offers a free tier that includes AI stock analysis, a full portfolio dashboard with Plaid sync, net worth tracking, daily brief, and an actions inbox. Pro at $20/month adds thesis monitoring with cited evidence, earnings exposure tracking, and the tax center. Max at $50/month adds the agent, the Thesis Builder, and the factor lens.' } },
+              { '@type': 'Question', name: 'Is Helm Terminal free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Helm Terminal offers a free tier that includes AI stock analysis, a full portfolio dashboard with Plaid sync, net worth tracking, daily brief, and an actions inbox. Pro at $20/month adds thesis monitoring with cited evidence, the agent, the Thesis Builder, the factor lens, earnings exposure tracking, and the tax center.' } },
               { '@type': 'Question', name: 'Is Helm Terminal safe to use with my financial accounts?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal connects to your accounts through Plaid, a bank-grade financial data provider. The connection is read-only. Helm can never move money, execute trades, or modify your accounts. All data is encrypted in transit (TLS 1.3) and at rest (AES-256).' } },
             ],
           }),

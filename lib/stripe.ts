@@ -30,37 +30,33 @@ export function getStripe(): Stripe {
 /** @deprecated Use getStripe() instead — this crashes at build time if key is missing */
 export const stripe = null as unknown as Stripe;
 
-// Two paid tiers, both recurring monthly subscriptions:
+// ONE paid tier, a recurring monthly subscription:
 //   Pro  $20/mo  -> STRIPE_PRICE_PRO
-//   Max  $50/mo  -> STRIPE_PRICE_MAX
-// The `billingPeriod` field on checkout/webhook now carries the tier name.
-export type BillingPeriod = 'pro' | 'max';
-
-const BILLING_PERIOD_TO_PRICE: Record<BillingPeriod, string | undefined> = {
-  pro: process.env.STRIPE_PRICE_PRO,
-  max: process.env.STRIPE_PRICE_MAX,
-};
+// Max is retired. Its old price ID still resolves, so anyone mid-subscription
+// on it keeps working and simply reads as Pro; nothing new can be sold at it.
+// The `billingPeriod` field on checkout/webhook carries the tier name.
+export type BillingPeriod = 'pro';
 
 /** Map a billing period (tier) to its Stripe Price ID. Returns null if invalid/unset. */
 export function getPriceId(billingPeriod: string): string | null {
-  const priceId = BILLING_PERIOD_TO_PRICE[billingPeriod as BillingPeriod];
-  return priceId ?? null;
+  return billingPeriod === 'pro' ? (process.env.STRIPE_PRICE_PRO ?? null) : null;
 }
 
 /** Validate a billing period string. */
 export function isValidBillingPeriod(value: string): value is BillingPeriod {
-  return value === 'pro' || value === 'max';
+  return value === 'pro';
 }
 
-/** Both tiers are subscriptions. Kept for the checkout-session mode argument. */
+/** Kept for the checkout-session mode argument. */
 export function getCheckoutMode(_billingPeriod: BillingPeriod): 'payment' | 'subscription' {
   return 'subscription';
 }
 
-/** Resolve which tier a Stripe Price ID corresponds to (webhook source of truth). */
-export function tierForPriceId(priceId: string | null | undefined): 'pro' | 'max' | null {
+/** Resolve which tier a Stripe Price ID corresponds to (webhook source of truth).
+ *  The retired Max price maps to 'pro' so existing subscribers keep access. */
+export function tierForPriceId(priceId: string | null | undefined): 'pro' | null {
   if (!priceId) return null;
-  if (priceId === process.env.STRIPE_PRICE_MAX) return 'max';
   if (priceId === process.env.STRIPE_PRICE_PRO) return 'pro';
+  if (priceId === process.env.STRIPE_PRICE_MAX) return 'pro';
   return null;
 }

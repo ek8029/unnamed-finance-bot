@@ -447,9 +447,9 @@ export default function FactorLensPage() {
     };
   }, []);
 
-  // Factor lens is a Max feature; drive gating off the preview tier (redesign source of truth).
+  // Factor lens moved into Pro when Max was retired; gating still reads the preview tier.
   void isPro; void isThesisUser; void profileEmail; // real-entitlement gating swaps in during the pricing phase
-  const entitled = tierAtLeast(previewTier, 'max');
+  const entitled = tierAtLeast(previewTier, 'pro');
 
   useEffect(() => {
     // Non-entitled users get the lock immediately — never fetch (no wasted
@@ -501,11 +501,11 @@ export default function FactorLensPage() {
       </div>
 
       {/* Gate FIRST: non-entitled users see the lock instantly — no data fetch,
-          no loading spinner to wait through. Everything below is for Max. */}
+          no loading spinner to wait through. Everything below is for Pro. */}
       {!entitled ? (
         <TierLock
-          required="max"
-          label="Unlock Factor Lens with Max"
+          required="pro"
+          label="Unlock Factor Lens with Pro"
           blurb="See the style and factor exposure hiding in your portfolio."
         >
           <div className="h-[420px]" />

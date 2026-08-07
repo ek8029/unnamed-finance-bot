@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { getUserTier } from '@/lib/tier';
+import { getUserTier, tierAtLeast } from '@/lib/tier';
 import { ActionsClient, type ActionItem } from './actions-client';
 
 /** Strip volatile dollar amounts and percentages for stable dedup */
@@ -20,7 +20,7 @@ export default async function ActionsPage() {
 
   if (user) {
     const tier = await getUserTier(user.id);
-    isPro = tier === 'pro' || tier === 'max';
+    isPro = tierAtLeast(tier, 'pro');
     // No Plaid connections = no actions
     const { data: plaidItems } = await supabase
       .from('plaid_items')

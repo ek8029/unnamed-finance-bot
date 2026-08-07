@@ -12,8 +12,8 @@ import { useTier } from '@/hooks/use-tier';
 
 // Display tiers for the new model. The `period` maps onto the existing
 // Stripe billing-period keys so checkout keeps working unchanged.
-// TODO: needs STRIPE_PRICE_PRO / STRIPE_PRICE_MAX env for $20/$50
-type PaidPeriod = 'pro' | 'max';
+// Pro is the only paid tier. Max was retired Aug 2026.
+type PaidPeriod = 'pro';
 
 const freeFeatures = [
   'Full terminal and portfolio dashboard',
@@ -29,16 +29,12 @@ const proFeatures = [
   'Earnings exposure tracking',
   'Tax center with tax-loss harvesting',
   'Conviction-led tailored brief',
+  'The agent (reassessment, investigation, shared exposure)',
+  'Thesis Builder (pre-buy)',
+  'Factor lens',
   'Everything in Free',
 ];
 
-const maxFeatures = [
-  'The agent (reassessment artifact, agentic investigation, shared-exposure)',
-  'Thesis Builder (pre-buy)',
-  'Factor lens',
-  'Coming: real-time, iOS, advisor',
-  'Everything in Pro',
-];
 
 const faqItems = [
   {
@@ -49,12 +45,7 @@ const faqItems = [
   {
     question: 'What does Pro add?',
     answer:
-      'Pro is $20/mo. It adds thesis monitoring (your theses, detailed views, and cited evidence), earnings exposure tracking, the tax center with tax-loss harvesting, and a conviction-led tailored brief.',
-  },
-  {
-    question: 'What does Max add?',
-    answer:
-      'Max is $50/mo. It includes everything in Pro plus the agent (reassessment artifact, agentic investigation, and shared-exposure analysis), the Thesis Builder for pre-buy work, and the factor lens. Real-time data, iOS, and advisor features are coming.',
+      'Pro is $20/mo. It adds thesis monitoring (your theses, detailed views, and cited evidence), the agent, the Thesis Builder, the factor lens, earnings exposure tracking, the tax center with tax-loss harvesting, and a conviction-led tailored brief.',
   },
   {
     question: 'Can I cancel anytime?',
@@ -86,7 +77,7 @@ export default function PricingPage() {
   // Which paid tier the checkout modal will open with.
   const [checkoutPeriod, setCheckoutPeriod] = useState<PaidPeriod | null>(null);
   // Purchase logic runs on the REAL subscription tier — during the open-access
-  // window everyone's features read as Max, but nobody has bought anything,
+  // window everyone's features read as Pro, but nobody has bought anything,
   // and "Current plan" on an unpurchased tier reads as billing that
   // doesn't exist (and kills the buy buttons for a week).
   const { realTier: tier } = useTier();
@@ -145,14 +136,14 @@ export default function PricingPage() {
             Three tiers. Zero percent of AUM.
           </h1>
           <p className="type-body text-[var(--color-text-secondary)] max-w-lg mx-auto">
-            The full terminal is free. Pro adds thesis monitoring and tax intelligence. Max adds the agent.
+            The full terminal is free. Pro adds thesis monitoring, the agent, and tax intelligence.
           </p>
         </AnimatedSection>
       </section>
 
-      {/* ── Tier cards: Free / Pro / Max ── */}
+      {/* ── Tier cards: Free / Pro ── */}
       <section className="relative container mx-auto px-6 pb-16">
-        <div className="grid gap-6 lg:grid-cols-3 max-w-5xl mx-auto items-start">
+        <div className="grid gap-6 lg:grid-cols-2 max-w-3xl mx-auto items-start">
 
           {/* Free */}
           <AnimatedSection delay={100}>
@@ -218,48 +209,12 @@ export default function PricingPage() {
                 </button>
               ) : (
                 <div className="w-full flex items-center justify-center px-6 py-3 border border-[var(--color-border-base)] text-[var(--color-text-muted)] font-semibold text-[15px] rounded-[var(--radius-md)]">
-                  {tier === 'pro' ? 'Current plan' : 'Included in Max'}
+                  Current plan
                 </div>
               )}
             </div>
           </AnimatedSection>
 
-          {/* Max $50 — brighter gold accent */}
-          <AnimatedSection delay={300}>
-            <div className="sovereign-card rounded p-6 flex flex-col h-full" style={{ borderColor: 'rgba(255,214,122,0.45)' }}>
-              <div className="mb-5">
-                <span className="text-[14px] uppercase tracking-[0.2em] font-medium" style={{ fontFamily: 'var(--font-mono)', color: '#FFD67A' }}>
-                  Max
-                </span>
-                <div className="flex items-baseline gap-1.5 mt-3">
-                  <span className="text-[40px] font-bold tabular-nums leading-none" style={{ fontFamily: 'var(--font-mono)', color: '#FFD67A' }}>$50</span>
-                  <span className="text-[15px] text-[var(--color-text-muted)]">/mo</span>
-                </div>
-              </div>
-              <ul className="space-y-2.5 mb-6 flex-1">
-                {maxFeatures.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5">
-                    <Check className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#FFD67A' }} />
-                    <span className="text-[15px] text-[var(--color-text-primary)]">{f}</span>
-                  </li>
-                ))}
-              </ul>
-              {tier === 'max' ? (
-                <div className="w-full flex items-center justify-center px-6 py-3 border border-[var(--color-border-base)] text-[var(--color-text-muted)] font-semibold text-[15px] rounded-[var(--radius-md)]">
-                  Current plan
-                </div>
-              ) : (
-                <button
-                  onClick={() => setCheckoutPeriod('max')}
-                  className="group w-full flex items-center justify-center gap-2.5 px-6 py-3 font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-opacity duration-200 hover:opacity-90"
-                  style={{ background: '#FFD67A', color: 'var(--color-bg-base)' }}
-                >
-                  Upgrade to Max
-                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-                </button>
-              )}
-            </div>
-          </AnimatedSection>
 
         </div>
 

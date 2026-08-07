@@ -3,7 +3,7 @@
 // "What Helm did" — the agent activity feed. Surfaces the monitor's real scan work
 // (live pillar_evidence rows) as a timestamped stream so the product reads as an
 // analyst working for you, not a dashboard you query. Two surfaces share one fetch:
-//   <AgentActivity />  — full feed (Theses page, Max).
+//   <AgentActivity />  — full feed (Theses page, Pro).
 //   <AgentHeartbeat /> — one-line teaser (Overview / Brief, everyone).
 // Grounded: every line names the real source it read. No generated narrative.
 // Rows expand in place to show the exact reason (pillar claim) the source was
@@ -108,7 +108,7 @@ function useActivity() {
 
 /**
  * Full feed — Theses page.
- * locked=true renders a faded 2-event preview with a Max unlock gate (pro tier),
+ * locked=true renders a faded 2-event preview with a Pro unlock gate,
  * proving the agent is working instead of showing a blank upgrade card.
  */
 export function AgentActivity({ locked = false }: { locked?: boolean }) {
@@ -228,7 +228,7 @@ export function AgentActivity({ locked = false }: { locked?: boolean }) {
             <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-gold)]" style={MONO}>
               Unlock the full agent log
             </span>
-            <span className="font-mono text-[11px] text-[#6A6A6A]" style={MONO}>· Max</span>
+            <span className="font-mono text-[11px] text-[#6A6A6A]" style={MONO}>· Pro</span>
             <span className="ml-1 text-[12px] text-[#6A6A6A]">&rarr;</span>
           </Link>
         </>

@@ -132,7 +132,7 @@ export function ActionsClient({ initialActions, isPro }: { initialActions: Actio
   void isPro; // server already stripped recommended_action for non-pro; per-item gating is tier-driven below
   const { formatCurrency } = useFormat();
   const { tier } = usePreview();
-  const isMax = tierAtLeast(tier, 'max');
+  const isMax = tierAtLeast(tier, 'pro');
 
   // Demo mode (sessionStorage flag, set when exploring without a connection).
   const isDemo = typeof window !== 'undefined' && sessionStorage.getItem('helm_demo_mode') === '1';

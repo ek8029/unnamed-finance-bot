@@ -122,9 +122,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
   }
 
-  // Tier from the purchased price (source of truth); fall back to the metadata
-  // tier name if the price isn't recognized.
-  const tier = tierForPriceId(stripePriceId) ?? (billingPeriod === 'max' ? 'max' : 'pro');
+  // Tier from the purchased price (source of truth). Only Pro is sellable, and
+  // the retired Max price also resolves to Pro, so the fallback is Pro too.
+  const tier = tierForPriceId(stripePriceId) ?? 'pro';
 
   const supabase = await createServiceClient();
 
@@ -184,7 +184,7 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
 
   const supabase = await createServiceClient();
 
-  // Reflect plan switches (Pro <-> Max) — derive tier from the active price.
+  // Derive tier from the active price (the retired Max price reads as Pro).
   const priceId = sub.items.data[0]?.price?.id ?? null;
   const tier = tierForPriceId(priceId);
 

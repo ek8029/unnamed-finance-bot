@@ -6,7 +6,7 @@ import {
   isValidBillingPeriod,
   getCheckoutMode,
 } from '@/lib/stripe';
-import { tierAtLeast } from '@/lib/tier-shared';
+import { tierAtLeast, normalizeTier } from '@/lib/tier-shared';
 
 /**
  * POST /api/stripe/checkout
@@ -60,38 +60,11 @@ export async function POST(req: NextRequest) {
     // purposes that user is free, otherwise trialing users get "You already
     // have Pro" and can never convert (and a lapsed trial could never buy).
     const isTrialRow = !!subscription?.trial_ends_at && !subscription?.stripe_subscription_id;
-    const currentTier = isTrialRow ? 'free' : ((subscription?.tier ?? 'free') as 'free' | 'pro' | 'max');
+    const currentTier = isTrialRow ? 'free' : normalizeTier(subscription?.tier);
 
-    // Block buying a tier you already hold or exceed (pro->pro, max->anything).
-    // Pro->Max falls through (tierAtLeast('pro','max') is false) so it's allowed.
+    // Only Pro exists now, so any current holder of it is already at the top.
     if (tierAtLeast(currentTier, billingPeriod)) {
-      return NextResponse.json(
-        { error: `You already have ${currentTier === 'max' ? 'Max' : 'Pro'}.` },
-        { status: 400 },
-      );
-    }
-
-    // Pro -> Max for a user with a LIVE subscription: swap the price on the
-    // existing subscription (prorated) instead of creating a second one — no
-    // double billing. The subscription.updated webhook flips tier to 'max'.
-    if (currentTier === 'pro' && billingPeriod === 'max' && subscription?.stripe_subscription_id) {
-      const maxPrice = getPriceId('max');
-      if (!maxPrice) {
-        console.error('[checkout] STRIPE_PRICE_MAX not configured');
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-      }
-      const sub = await getStripe().subscriptions.retrieve(subscription.stripe_subscription_id);
-      const itemId = sub.items.data[0]?.id;
-      if (!itemId) {
-        console.error('[checkout] No subscription item to upgrade:', subscription.stripe_subscription_id);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-      }
-      await getStripe().subscriptions.update(subscription.stripe_subscription_id, {
-        items: [{ id: itemId, price: maxPrice }],
-        proration_behavior: 'create_prorations',
-        metadata: { supabase_user_id: user.id, billing_period: 'max' },
-      });
-      return NextResponse.json({ upgraded: true });
+      return NextResponse.json({ error: 'You already have Pro.' }, { status: 400 });
     }
 
     // 4. Find or create Stripe customer

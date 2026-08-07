@@ -38,15 +38,15 @@ export function PreviewProvider({ children }: { children: React.ReactNode }) {
   // Prod: gate-first (free) until the real entitlement loads — never leak paid
   // content to a free user on first paint. Dev: localStorage toggle, applied in
   // an effect AFTER hydration — reading localStorage in the initializer made the
-  // server render (always 'max') disagree with the client and threw hydration
+  // server render (always 'pro') disagree with the client and threw hydration
   // errors on every dashboard page in dev.
-  const [tier, setTierState] = useState<Tier>(IS_PROD ? 'free' : 'max');
+  const [tier, setTierState] = useState<Tier>(IS_PROD ? 'free' : 'pro');
   const [dataState, setDataStateState] = useState<DataState>('connected');
   useEffect(() => {
     if (IS_PROD) return;
     try {
       const t = localStorage.getItem(LS_TIER);
-      if (t === 'free' || t === 'pro' || t === 'max') setTierState(t);
+      if (t === 'free' || t === 'pro') setTierState(t);
       const d = localStorage.getItem(LS_DS);
       if (d === 'connected' || d === 'demo' || d === 'empty') setDataStateState(d);
     } catch { /* ignore */ }

@@ -1,6 +1,6 @@
 'use client';
 // Tier lock: blurred faux-preview behind a centered lock card. Pro lock = gold
-// #E6B94D, Max lock = brighter gold #FFD67A (per the redesign spec). Reads the
+// #E6B94D. Reads the
 // current tier from the preview context; renders children when entitled.
 
 import { tierAtLeast, TIER_META } from '@/lib/tier-shared';
@@ -14,7 +14,7 @@ export function TierLock({
   blurb,
   children,
 }: {
-  required: 'pro' | 'max';
+  required: 'pro';
   label?: string;
   blurb?: string;
   children: React.ReactNode;

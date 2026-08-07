@@ -6,7 +6,7 @@
 import { usePreview, type DataState } from '@/lib/preview-context';
 import type { Tier } from '@/lib/tier-shared';
 
-const TIERS: Tier[] = ['free', 'pro', 'max'];
+const TIERS: Tier[] = ['free', 'pro'];
 const STATES: DataState[] = ['connected', 'demo', 'empty'];
 
 export function PreviewToggle() {
