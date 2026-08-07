@@ -917,39 +917,33 @@ function Sheet({ data, onClose }: { data: SheetData; onClose: () => void }) {
 // reason now attached to it.
 
 const HOUSE_PICKS = ['NVDA', 'TSM', 'AVGO', 'MU', 'META', 'AAPL'];
-type Step = 'ask' | 'scanning' | 'catch' | 'profile' | 'connect' | 'watchlist' | 'push' | 'feed' | 'own' | 'auth';
+type Step = 'ask' | 'scanning' | 'catch' | 'profile' | 'connect' | 'watchlist' | 'push' | 'feed' | 'own' | 'auth'
+  | 'pick' | 'working' | 'finding';
+
+/** Plain language. "Intact" and "watch" are our words, not a normal person's. */
+function plainStatus(status: string): string {
+  const s = status.toLowerCase();
+  if (s === 'broken' || s === 'contradicted') return 'no longer true';
+  if (s === 'weakening') return 'weakening';
+  if (s === 'watch') return 'something changed';
+  if (s === 'intact' || s === 'confirmed') return 'still holds up';
+  return 'not enough evidence yet';
+}
 
 function Onboarding({ flow, profile, setProfile, taxExample, onDone }: {
   flow: Flow; profile: ProfileKey; setProfile: (p: ProfileKey) => void;
   taxExample?: number; onDone: () => void;
 }) {
-  const [step, setStep] = useState<Step>(flow === 'catch' ? 'feed' : 'ask');
+  const [step, setStep] = useState<Step>(flow === 'catch' ? 'pick' : 'ask');
   const [ticker, setTicker] = useState('');
   const [typed, setTyped] = useState('');
   const [scan, setScan] = useState<Any>(null);
   const [watch, setWatch] = useState<string[]>([]);
   const [addTyped, setAddTyped] = useState('');
-  const [feed, setFeed] = useState<Any[] | null>(null);
-
-  // Catch-first opens on evidence Helm has already filed, so the corpus is
-  // fetched before the user does anything at all. Real scans, real receipts —
-  // a fabricated feed here would be the exact credibility bug this product
-  // exists to avoid.
-  useEffect(() => {
-    if (flow !== 'catch') return;
-    let live = true;
-    (async () => {
-      const results = await Promise.all(HOUSE_PICKS.slice(0, 5).map(async t => {
-        try {
-          const r = await fetch(`/api/scan/ticker?symbol=${t}`);
-          return r.ok ? await r.json() : null;
-        } catch { return null; }
-      }));
-      if (!live) return;
-      setFeed(results.filter(r => r?.house && r?.receipt?.verbatimCite));
-    })();
-    return () => { live = false; };
-  }, [flow]);
+  // The five-way prefetch that fed the old gallery is gone with it. Scanning
+  // every house name on mount cost five vendor round-trips to render evidence
+  // about companies the user had not chosen, which is exactly the testimonial
+  // problem. One scan now, on the name they picked.
 
   const addWatch = (sym: string) => {
     const t = sym.trim().toUpperCase();
@@ -969,6 +963,20 @@ function Onboarding({ flow, profile, setProfile, taxExample, onDone }: {
     } catch { setScan(null); }
     setWatch([t]);
     setStep('catch');
+  };
+
+  /** Catch-first scans the FIRST name the user picked. The finding has to be
+   *  about something they actually own, or the screen is a testimonial. */
+  const runPicked = async () => {
+    const t = watch[0];
+    if (!t) return;
+    setTicker(t);
+    setStep('working');
+    try {
+      const r = await fetch(`/api/scan/ticker?symbol=${encodeURIComponent(t)}`);
+      setScan(r.ok ? await r.json() : null);
+    } catch { setScan(null); }
+    setStep('finding');
   };
 
   return (
@@ -1086,108 +1094,33 @@ function Onboarding({ flow, profile, setProfile, taxExample, onDone }: {
         </div>
       )}
 
-      {/* Catch-first: nothing typed, nothing asked. The intelligence layer is
-          the first thing on screen instead of the thing nobody navigates to,
-          and the watchlist falls out of browsing rather than being requested. */}
-      {step === 'feed' && (
-        <div className="hm-scroll flex-1 overflow-y-auto px-6 pt-7">
-          <div className="mb-7"><Lockup size={24} /></div>
-          {/* Money first. The one sentence a person parses in a second, and the
-              one thing Astor does not do at all. Real figure from a real book
-              Helm watches — labelled as an example, because inventing a number
-              for a stranger's portfolio would be the exact fabrication this
-              product exists to refuse. */}
-          {typeof taxExample === 'number' && taxExample > 0 && (
-            <>
-              <Kicker>What Helm found this week</Kicker>
-              <p className="m-0 mt-3 leading-[0.95] hm-rise" style={{ color: POS, fontSize: 46, ...FIG }}>
-                {money(taxExample)}
-              </p>
-              <p className="m-0 mt-3 text-[13px] leading-[1.6] text-[#9A9A9A] hm-rise" style={{ animationDelay: '60ms', ...SANS }}>
-                in tax it can save, on one real book it watches. Losses it can harvest, with the
-                wash-sale window on each. Yours will be a different number.
-              </p>
-              <div className="mt-6 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
-            </>
-          )}
-
-          <p className={`m-0 ${typeof taxExample === 'number' && taxExample > 0 ? 'mt-6' : ''}`}>
-            <Kicker>And it reads the reasons</Kicker>
+      {/* Catch-first, inverted. The council was unanimous: leading with a real
+          harvest figure from somebody ELSE's account reads as a
+          results-not-typical ad, and the outsider lens said plainly that it
+          felt like a trick. So the first interaction now comes before any
+          reading, and every number after it is about a name the user chose. */}
+      {step === 'pick' && (
+        <div className="flex flex-1 flex-col px-6 pt-8">
+          <Lockup size={22} />
+          <p className="m-0 mt-9 text-[27px] font-semibold leading-[1.22] tracking-[-0.02em] hm-rise" style={{ color: INK, ...SANS }}>
+            Which of these<br />do you own?
           </p>
-          <p className="m-0 mt-3 text-[19px] font-semibold leading-[1.32] tracking-[-0.02em]" style={{ color: INK, ...SANS }}>
-            Why you own it, checked against the filings.
-          </p>
-          <p className="m-0 mt-2.5 text-[12.5px] leading-[1.6] text-[#8A8A8A]" style={SANS}>
-            Some hold. Some are under pressure. No account needed to read them.
+          <p className="m-0 mt-3 text-[13px] leading-[1.6] text-[#8A8A8A] hm-rise" style={{ animationDelay: '70ms', ...SANS }}>
+            Pick one and Helm will show you what it found. No account, no sign-up.
           </p>
 
-          {feed === null && (
-            <p className="mt-10 text-center text-[12px] uppercase tracking-[0.16em] text-[#4A4A4A]" style={MONO}>
-              reading the corpus
-            </p>
-          )}
-
-          {feed?.length === 0 && (
-            <p className="mt-10 text-center text-[13px] leading-[1.65] text-[#5F5F5F]" style={SANS}>
-              Nothing filed against the tracked names right now.
-            </p>
-          )}
-
-          <div className="mt-6 space-y-3">
-            {feed?.map((c: Any, i: number) => (
-              <div key={c.ticker} className="rounded-[13px] px-4 py-4 hm-rise" style={{
-                animationDelay: `${i * 70}ms`,
-                background: 'linear-gradient(rgba(255,255,255,0.05), rgba(255,255,255,0.02))',
-                border: '1px solid rgba(255,255,255,0.065)',
-              }}>
-                <div className="flex items-center gap-2">
-                  <span className="text-[13.5px] font-bold" style={{ color: INK, ...MONO }}>{c.ticker}</span>
-                  <StatusChip status={String(c.health ?? '')} />
-                  {c.company && <span className="ml-auto truncate text-[11px] text-[#6A6A6A]" style={SANS}>{c.company}</span>}
-                </div>
-                {c.pillar?.claim && (
-                  <p className="m-0 mt-2.5 text-[12.5px] leading-[1.55] text-[#B4B4B4]" style={SANS}>{c.pillar.claim}</p>
-                )}
-                <p className="m-0 mt-3 text-[12.5px] leading-[1.6] text-[#E4E4E4]" style={SANS}>
-                  “{c.receipt.verbatimCite}”
-                </p>
-                <p className="m-0 mt-2 text-[10px] text-[#7A7A7A]" style={MONO}>
-                  {c.receipt.sourceLabel}{c.receipt.dateISO ? ` · ${c.receipt.dateISO}` : ''}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {feed && feed.length > 0 && (
-            <button onClick={() => setStep('own')}
-              className="mb-7 mt-7 w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
-              style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
-              Do you own any of these?
-            </button>
-          )}
-        </div>
-      )}
-
-      {step === 'own' && (
-        <div className="flex flex-1 flex-col px-7 pt-14">
-          <Kicker>Still no account</Kicker>
-          <p className="m-0 mt-3 text-[25px] font-semibold leading-[1.25] tracking-[-0.02em]" style={{ color: INK, ...SANS }}>
-            Which of these<br />do you hold?
-          </p>
-          <p className="m-0 mt-3 text-[13px] leading-[1.6] text-[#8A8A8A]" style={SANS}>
-            Helm keeps reading them for you. Tap any that apply, or add your own.
-          </p>
-
-          <div className="mt-5 flex flex-wrap gap-1.5">
-            {[...new Set([...(feed ?? []).map((c: Any) => String(c.ticker)), ...HOUSE_PICKS])].map(t => {
+          <div className="mt-7 flex flex-wrap gap-2">
+            {HOUSE_PICKS.map((t, i) => {
               const on = watch.includes(t);
               return (
                 <button key={t} onClick={() => setWatch(w => on ? w.filter(x => x !== t) : [...w, t])}
-                  className="rounded-full px-3.5 py-[8px] text-[12px] transition-colors"
+                  className="hm-rise rounded-[11px] px-4 text-[14px] transition-colors"
                   style={{
-                    background: on ? 'color-mix(in srgb, var(--hm-accent) 15%, transparent)' : 'rgba(255,255,255,0.05)',
-                    color: on ? GOLD : '#9A9A9A',
-                    border: `1px solid ${on ? 'color-mix(in srgb, var(--hm-accent) 40%, transparent)' : 'transparent'}`,
+                    minHeight: 46, minWidth: 88,
+                    animationDelay: `${i * 45}ms`,
+                    background: on ? 'color-mix(in srgb, var(--hm-accent) 14%, transparent)' : 'rgba(255,255,255,0.05)',
+                    color: on ? GOLD : '#B4B4B4',
+                    border: `1px solid ${on ? 'color-mix(in srgb, var(--hm-accent) 42%, transparent)' : 'transparent'}`,
                     ...MONO,
                   }}>
                   {t}
@@ -1198,14 +1131,100 @@ function Onboarding({ flow, profile, setProfile, taxExample, onDone }: {
 
           <input value={addTyped} onChange={e => setAddTyped(e.target.value.toUpperCase().slice(0, 5))}
             onKeyDown={e => { if (e.key === 'Enter') addWatch(addTyped); }}
-            placeholder="ADD YOUR OWN" spellCheck={false}
-            className="mt-4 w-full rounded-[12px] px-4 py-3 text-[15px] tracking-[0.08em] outline-none"
-            style={{ background: 'rgba(255,255,255,0.055)', border: '1px solid rgba(255,255,255,0.09)', color: INK, ...MONO }} />
+            placeholder="OR TYPE ONE" spellCheck={false}
+            className="mt-4 w-full rounded-[11px] px-4 py-3 text-[14px] tracking-[0.08em] outline-none"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: INK, ...MONO }} />
 
-          <button onClick={() => { setTicker(watch[0] ?? ''); setStep('push'); }} disabled={watch.length === 0}
-            className="mb-7 mt-auto w-full rounded-[12px] py-3.5 text-[14px] font-semibold transition-opacity disabled:opacity-30"
+          <button onClick={runPicked} disabled={watch.length === 0}
+            className="mb-7 mt-auto w-full rounded-[12px] py-3.5 text-[14px] font-semibold transition-opacity disabled:opacity-25"
             style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
-            {watch.length === 0 ? 'Pick at least one' : `Watch ${watch.length}`}
+            {watch.length === 0 ? 'Pick one' : `Show me ${watch[0]}`}
+          </button>
+        </div>
+      )}
+
+      {/* Motion as proof, not decoration: the only available evidence that
+          something is actually running behind the screen. Real request, real
+          latency, real step names. */}
+      {step === 'working' && (
+        <div className="flex flex-1 flex-col justify-center px-7">
+          <p className="m-0 text-[11px] uppercase tracking-[0.18em]" style={{ color: GOLD, ...MONO }}>Reading {ticker}</p>
+          <div className="mt-5 space-y-2.5">
+            {['Pulling its filings', 'Finding the reasons people own it', 'Checking each against the record'].map((l, i) => (
+              <p key={l} className="m-0 text-[13px] text-[#7A7A7A] hm-fade" style={{ animationDelay: `${i * 320}ms`, ...MONO }}>
+                <span style={{ color: POS }}>✓</span> {l}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {step === 'finding' && (
+        <div className="hm-scroll flex-1 overflow-y-auto px-6 pt-8">
+          {scan?.house ? (
+            <>
+              <Kicker>What Helm found on {scan.ticker}</Kicker>
+              <p className="m-0 mt-3.5 text-[21px] font-semibold leading-[1.34] tracking-[-0.01em] hm-rise" style={{ color: INK, ...SANS }}>
+                {plainStatus(String(scan.health ?? ''))}.
+              </p>
+              {scan.pillar?.claim && (
+                <p className="m-0 mt-4 text-[13.5px] leading-[1.6] text-[#A8A8A8] hm-rise" style={{ animationDelay: '60ms', ...SANS }}>
+                  People own {scan.ticker} because: {String(scan.pillar.claim).replace(/\.$/, '')}.
+                </p>
+              )}
+
+              {scan.receipt?.verbatimCite && (
+                <div className="mt-5 hm-rise" style={{ animationDelay: '120ms', borderLeft: `2px solid ${GOLD}`, paddingLeft: 14 }}>
+                  <p className="m-0 text-[15px] leading-[1.6]" style={{ color: '#EDEDED', ...SANS }}>
+                    “{scan.receipt.verbatimCite}”
+                  </p>
+                  <p className="m-0 mt-2.5 text-[11px] text-[#7A7A7A]" style={MONO}>
+                    {scan.receipt.sourceLabel}{scan.receipt.dateISO ? ` · ${scan.receipt.dateISO}` : ''}
+                  </p>
+                </div>
+              )}
+
+              <p className="m-0 mt-6 text-[12.5px] leading-[1.6] text-[#7A7A7A]" style={SANS}>
+                Helm keeps reading {scan.ticker}
+                {scan.pillarCount > 1 ? ` and the other ${scan.pillarCount - 1} reasons people hold it` : ''},
+                and tells you the moment one stops being true.
+              </p>
+            </>
+          ) : (
+            <>
+              <Kicker>Watching {ticker}</Kicker>
+              <p className="m-0 mt-3.5 text-[21px] font-semibold leading-[1.34]" style={{ color: INK, ...SANS }}>
+                Nothing filed on {ticker} yet.
+              </p>
+              <p className="m-0 mt-3.5 text-[13.5px] leading-[1.65] text-[#8A8A8A]" style={SANS}>
+                Helm will not invent one. It starts reading from here, and the moment something
+                lands that bears on it, you get the quote.
+              </p>
+            </>
+          )}
+
+          {/* The number, now that it has a job. Second, in context, and plainly
+              labelled as somebody else's — never the opening claim. And the
+              outsider could not work out why selling a loser saves money, so
+              the mechanism gets one sentence in normal words. */}
+          {typeof taxExample === 'number' && taxExample > 0 && (
+            <div className="mt-7 rounded-[13px] px-4 py-4"
+              style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="m-0 text-[12.5px] leading-[1.6] text-[#A8A8A8]" style={SANS}>
+                Once your accounts are connected, Helm also finds losses worth selling. Selling
+                something that is down locks in the loss, and that loss cuts your tax bill — you
+                just have to wait 30 days before buying it back.
+              </p>
+              <p className="m-0 mt-3 text-[13px]" style={{ color: POS, ...MONO }}>
+                {money(taxExample)} <span className="text-[#7A7A7A]">found on one portfolio it watches</span>
+              </p>
+            </div>
+          )}
+
+          <button onClick={() => setStep('push')}
+            className="mb-7 mt-7 w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
+            style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
+            Keep watching {ticker}
           </button>
         </div>
       )}
