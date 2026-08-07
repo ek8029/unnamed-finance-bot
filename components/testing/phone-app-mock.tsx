@@ -19,7 +19,7 @@
 // "Trim NVDA" is advice, and advice needs a license we don't have.
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { Newspaper, Layers, Inbox, Crosshair, Landmark, X, ChevronRight } from 'lucide-react';
+import { Newspaper, Layers, Inbox, Crosshair, Landmark, X, ChevronRight, User, Apple } from 'lucide-react';
 
 const SANS = { fontFamily: 'var(--font-sans)' } as const;
 const MONO = { fontFamily: 'var(--font-mono)' } as const;
@@ -202,6 +202,7 @@ export function PhoneAppMock({ email }: { email: string }) {
   const [variant, setVariant] = useState<Variant>('terminal');
   const [flow, setFlow] = useState<Flow>('connect');
   const [sheet, setSheet] = useState<SheetData | null>(null);
+  const [overlay, setOverlay] = useState<null | 'account' | 'paywall' | 'auth'>(null);
   const [d, setD] = useState<Record<string, Any>>({});
   const [loading, setLoading] = useState(true);
 
@@ -345,8 +346,21 @@ export function PhoneAppMock({ email }: { email: string }) {
                 {tab === 'taxes'  && <TaxesScreen taxes={d.taxes} open={open} />}
               </div>
             )}
+            {/* Account access. Not a sixth tab — iOS tops out at five, and the
+                guideline-mandated surfaces (deletion, privacy, restore) belong
+                behind a control rather than in primary navigation. */}
+            <button onClick={() => setOverlay('account')}
+              className="absolute right-5 top-[52px] z-30 grid h-[30px] w-[30px] place-items-center rounded-full"
+              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.09)' }}
+              aria-label="Account">
+              <User size={14} color="#9A9A9A" />
+            </button>
             <TabBar tab={tab} setTab={setTab} badge={findings.length} />
             {sheet && <Sheet data={sheet} onClose={() => setSheet(null)} />}
+            {overlay === 'account' && (
+              <AccountScreen profile={profile} onClose={() => setOverlay(null)} onUpgrade={() => setOverlay('paywall')} />
+            )}
+            {overlay === 'paywall' && <Paywall onClose={() => setOverlay(null)} />}
           </div>
         )}
       </Phone>
@@ -863,7 +877,7 @@ function Sheet({ data, onClose }: { data: SheetData; onClose: () => void }) {
 // reason now attached to it.
 
 const HOUSE_PICKS = ['NVDA', 'TSM', 'AVGO', 'MU', 'META', 'AAPL'];
-type Step = 'ask' | 'scanning' | 'catch' | 'profile' | 'connect' | 'watchlist' | 'push' | 'feed' | 'own';
+type Step = 'ask' | 'scanning' | 'catch' | 'profile' | 'connect' | 'watchlist' | 'push' | 'feed' | 'own' | 'auth';
 
 function Onboarding({ flow, profile, setProfile, onDone }: {
   flow: Flow; profile: ProfileKey; setProfile: (p: ProfileKey) => void; onDone: () => void;
@@ -1207,17 +1221,56 @@ function Onboarding({ flow, profile, setProfile, onDone }: {
           <p className="m-0 mt-2 text-[10.5px] text-[#5F5F5F]" style={MONO}>what one looks like</p>
 
           <div className="mb-7 mt-auto">
-            <button onClick={onDone} className="w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
+            <button onClick={() => setStep('auth')} className="w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
               style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
               Turn on notifications
             </button>
-            <button onClick={onDone} className="mt-2 w-full py-2.5 text-[12.5px]" style={{ color: '#7A7A7A', ...SANS }}>
+            <button onClick={() => setStep('auth')} className="mt-2 w-full py-2.5 text-[12.5px]" style={{ color: '#7A7A7A', ...SANS }}>
               Not yet
             </button>
             <p className="m-0 mt-3 text-center text-[11px] leading-[1.5] text-[#5F5F5F]" style={SANS}>
               Connect a brokerage whenever you want. Helm works without one.
             </p>
           </div>
+        </div>
+      )}
+
+      {/* 4.8 — Helm offers Google sign-in on web, so Sign in with Apple is
+          mandatory on iOS and must be presented as an equivalent option, not a
+          lesser one. Placed last on purpose: every flow delivers its value
+          before an account is requested. */}
+      {step === 'auth' && (
+        <div className="flex flex-1 flex-col px-7 pt-16">
+          <Kicker>Keep it</Kicker>
+          <p className="m-0 mt-3 text-[25px] font-semibold leading-[1.28] tracking-[-0.02em]" style={{ color: INK, ...SANS }}>
+            Save what Helm<br />is watching for you.
+          </p>
+          <p className="m-0 mt-3.5 text-[13.5px] leading-[1.65] text-[#8A8A8A]" style={SANS}>
+            So your names, your rules and your findings survive a new phone.
+          </p>
+
+          <div className="mt-7 space-y-2.5">
+            <button onClick={onDone}
+              className="flex w-full items-center justify-center gap-2 rounded-[12px] py-3.5 text-[14.5px] font-medium"
+              style={{ background: '#FFFFFF', color: '#000000', ...SANS }}>
+              <Apple size={16} fill="#000" strokeWidth={0} /> Sign in with Apple
+            </button>
+            <button onClick={onDone}
+              className="w-full rounded-[12px] py-3.5 text-[14px] font-medium"
+              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.11)', color: INK, ...SANS }}>
+              Continue with Google
+            </button>
+            <button onClick={onDone}
+              className="w-full rounded-[12px] py-3.5 text-[14px] font-medium"
+              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.11)', color: INK, ...SANS }}>
+              Continue with email
+            </button>
+          </div>
+
+          <p className="m-0 mt-auto pb-7 text-center text-[10.5px] leading-[1.6] text-[#5F5F5F]" style={SANS}>
+            By continuing you agree to the Terms of Use and Privacy Policy. Helm is not a
+            registered investment adviser and does not make recommendations.
+          </p>
         </div>
       )}
 
@@ -1286,16 +1339,185 @@ function Onboarding({ flow, profile, setProfile, onDone }: {
           </div>
 
           <div className="mb-7 mt-auto">
-            <button onClick={onDone} className="w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
+            <button onClick={() => setStep('auth')} className="w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
               style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
               Connect accounts
             </button>
-            <button onClick={onDone} className="mt-2 w-full py-2.5 text-[12.5px]" style={{ color: '#7A7A7A', ...SANS }}>
+            <button onClick={() => setStep('auth')} className="mt-2 w-full py-2.5 text-[12.5px]" style={{ color: '#7A7A7A', ...SANS }}>
               Look around first
             </button>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Account · the screens App Review actually requires ───────────────────
+   Skipped in earlier passes because none of it is interesting, which is
+   exactly why it gets found at submission instead of now.
+
+   5.1.1(v)  in-app account deletion. Absent = automatic rejection. The backend
+             already exists at /api/auth/delete-account.
+   5.1.1(i)  privacy policy reachable inside the app.
+   3.1.2     auto-renewing subscriptions must show length, price, what is
+             included, a restore path, and links to Terms and Privacy.
+   3.2.1     financial apps get extra scrutiny; the not-an-adviser line has to
+             live somewhere a reviewer can find it. */
+
+function AccountScreen({ profile, onClose, onUpgrade }: {
+  profile: ProfileKey; onClose: () => void; onUpgrade: () => void;
+}) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const Item = ({ label, value, danger, onClick }: { label: string; value?: string; danger?: boolean; onClick?: () => void }) => (
+    <button onClick={onClick} className="hm-tap flex w-full items-center justify-between py-[13px]"
+      style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <span className="text-[13.5px]" style={{ color: danger ? NEG : '#DADADA', ...SANS }}>{label}</span>
+      <span className="flex items-center gap-1.5">
+        {value && <span className="text-[12.5px] text-[#7A7A7A]" style={MONO}>{value}</span>}
+        {onClick && <ChevronRight size={13} color="#5A5A5A" />}
+      </span>
+    </button>
+  );
+
+  return (
+    <div className="hm-up absolute inset-0 z-40 flex flex-col" style={{ background: '#060606' }}>
+      <StatusBar />
+      <div className="flex items-center px-6 pb-2 pt-4">
+        <p className="m-0 text-[19px] font-semibold tracking-[-0.01em]" style={{ color: INK, ...SANS }}>Account</p>
+        <button onClick={onClose} className="ml-auto grid h-7 w-7 place-items-center rounded-full"
+          style={{ background: 'rgba(255,255,255,0.07)' }} aria-label="Close"><X size={13} color="#9A9A9A" /></button>
+      </div>
+
+      <div className="hm-scroll flex-1 overflow-y-auto px-6 pb-8">
+        <Rule label="Subscription" />
+        <Item label="Plan" value="Free" />
+        <Item label="Upgrade to Pro" onClick={onUpgrade} />
+        {/* 3.1.1 — a restore path is mandatory wherever IAP exists. */}
+        <Item label="Restore purchases" onClick={() => {}} />
+        <Item label="Manage subscription" value="iOS Settings" onClick={() => {}} />
+
+        <Rule label="How Helm reads your book" />
+        <Item label="Risk profile" value={PROFILES[profile].label} onClick={() => {}} />
+        <Item label="Notifications" value="On" onClick={() => {}} />
+        <Item label="Connected accounts" value="0" onClick={() => {}} />
+
+        <Rule label="Legal" />
+        <Item label="Privacy Policy" onClick={() => {}} />
+        <Item label="Terms of Use" onClick={() => {}} />
+        <Item label="Disclosures" onClick={() => {}} />
+
+        {/* 3.2.1 — the not-an-adviser line, where a reviewer will look for it. */}
+        <p className="m-0 mt-5 text-[11px] leading-[1.6] text-[#5F5F5F]" style={SANS}>
+          Helm is not a registered investment adviser and does not provide investment advice or
+          recommendations. It reports what your holdings are and what has been filed or reported
+          about them, measured against rules you choose. Nothing here is a recommendation to buy
+          or sell any security.
+        </p>
+
+        <Rule label="Account" />
+        <Item label="Sign out" onClick={() => {}} />
+        {/* 5.1.1(v) — absent, this is an automatic rejection. */}
+        <Item label="Delete account" danger onClick={() => setConfirmDelete(true)} />
+
+        {confirmDelete && (
+          <div className="mt-4 rounded-[13px] px-4 py-4"
+            style={{ background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.22)' }}>
+            <p className="m-0 text-[13px] font-semibold" style={{ color: NEG, ...SANS }}>Delete your account?</p>
+            <p className="m-0 mt-2 text-[12px] leading-[1.6] text-[#A4A4A4]" style={SANS}>
+              This permanently removes your account, every linked brokerage, your holdings,
+              transaction history, theses and findings. It cannot be undone.
+            </p>
+            <div className="mt-3.5 flex gap-2">
+              <button onClick={() => setConfirmDelete(false)}
+                className="flex-1 rounded-[10px] py-2.5 text-[12.5px]"
+                style={{ background: 'rgba(255,255,255,0.06)', color: '#DADADA', ...SANS }}>Keep it</button>
+              <button className="flex-1 rounded-[10px] py-2.5 text-[12.5px] font-semibold"
+                style={{ background: NEG, color: '#0A0A0A', ...SANS }}>Delete permanently</button>
+            </div>
+          </div>
+        )}
+
+        <p className="m-0 mt-7 text-[10.5px] text-[#4A4A4A]" style={MONO}>Helm Financial, Corp. · v1.0.0</p>
+      </div>
+    </div>
+  );
+}
+
+/* 3.1.2 — every element on this screen is required for an auto-renewing
+   subscription: name, length, price, what is included, restore, and links to
+   both Terms and Privacy. Missing any one of them is a rejection. */
+function Paywall({ onClose }: { onClose: () => void }) {
+  const [plan, setPlan] = useState<'monthly' | 'annual'>('annual');
+
+  return (
+    <div className="absolute inset-0 z-50 flex flex-col justify-end">
+      <button onClick={onClose} className="absolute inset-0 hm-fade" style={{ background: 'rgba(0,0,0,0.66)' }} aria-label="Close" />
+      <div className="hm-up hm-scroll relative max-h-[88%] overflow-y-auto rounded-t-[26px] px-6 pb-9 pt-5"
+        style={{ background: 'linear-gradient(#17171A, #0D0D0F 42%)', borderTop: '1px solid rgba(255,255,255,0.10)' }}>
+        <div className="mx-auto mb-5 h-[4px] w-[38px] rounded-full" style={{ background: 'rgba(255,255,255,0.18)' }} />
+        <button onClick={onClose} className="absolute right-5 top-5 grid h-7 w-7 place-items-center rounded-full"
+          style={{ background: 'rgba(255,255,255,0.07)' }} aria-label="Close"><X size={13} color="#9A9A9A" /></button>
+
+        <Kicker>Helm Pro</Kicker>
+        <p className="m-0 mt-3 text-[22px] font-semibold leading-[1.3] tracking-[-0.02em]" style={{ color: INK, ...SANS }}>
+          Every position, read the same way.
+        </p>
+
+        <div className="mt-5 space-y-2">
+          {[
+            'Tax-loss harvesting with wash-sale windows',
+            'Thesis monitoring across every holding',
+            'Earnings exposure before the print',
+            'Unlimited connected brokerages',
+          ].map(f => (
+            <p key={f} className="m-0 flex gap-2.5 text-[12.5px] leading-[1.5] text-[#B4B4B4]" style={SANS}>
+              <span style={{ color: POS }}>✓</span>{f}
+            </p>
+          ))}
+        </div>
+
+        <div className="mt-5 space-y-2">
+          {([
+            ['annual', 'Annual', '$119.99 / year', '$10.00 per month, billed yearly'],
+            ['monthly', 'Monthly', '$19.99 / month', 'Billed monthly'],
+          ] as const).map(([k, name, price, sub]) => {
+            const on = plan === k;
+            return (
+              <button key={k} onClick={() => setPlan(k)} className="hm-tap rounded-[12px] px-4 py-3.5"
+                style={{
+                  background: on ? 'rgba(230,185,77,0.10)' : 'rgba(255,255,255,0.035)',
+                  border: `1px solid ${on ? 'rgba(230,185,77,0.42)' : 'rgba(255,255,255,0.07)'}`,
+                }}>
+                <div className="flex items-baseline">
+                  <span className="text-[14px] font-semibold" style={{ color: on ? GOLD : INK, ...SANS }}>{name}</span>
+                  <span className="ml-auto text-[13.5px]" style={{ color: on ? GOLD : '#DADADA', ...MONO }}>{price}</span>
+                </div>
+                <p className="m-0 mt-1 text-[11px] text-[#7A7A7A]" style={SANS}>{sub}</p>
+              </button>
+            );
+          })}
+        </div>
+
+        <button className="mt-5 w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
+          style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
+          Subscribe
+        </button>
+        <button className="mt-2 w-full py-2 text-[12.5px]" style={{ color: '#8A8A8A', ...SANS }}>
+          Restore purchases
+        </button>
+
+        <p className="m-0 mt-4 text-[10.5px] leading-[1.6] text-[#5F5F5F]" style={SANS}>
+          Payment is charged to your Apple Account at confirmation. The subscription renews
+          automatically unless cancelled at least 24 hours before the end of the current period.
+          Manage or cancel in iOS Settings.
+        </p>
+        <div className="mt-3 flex gap-4">
+          <button className="text-[11px] underline" style={{ color: '#8A8A8A', ...SANS }}>Terms of Use</button>
+          <button className="text-[11px] underline" style={{ color: '#8A8A8A', ...SANS }}>Privacy Policy</button>
+        </div>
+      </div>
     </div>
   );
 }
