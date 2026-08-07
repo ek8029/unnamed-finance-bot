@@ -975,9 +975,15 @@ function shortDate(iso: string): string {
   return `${d.getUTCDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()]}`;
 }
 type Step = 'ask' | 'scanning' | 'catch' | 'profile' | 'connect' | 'watchlist' | 'push' | 'feed' | 'own' | 'auth'
-  | 'pick' | 'working' | 'finding' | 'shot';
+  | 'pick' | 'working' | 'finding' | 'shot' | 'book';
 
 /** Plain language. "Intact" and "watch" are our words, not a normal person's. */
+/** One trailing period, never two, and never a letter eaten by a greedy dot. */
+function endSentence(s: string): string {
+  const t = s.trim().replace(/\.+$/, '');
+  return t ? t + '.' : '';
+}
+
 function plainStatus(status: string): string {
   const s = status.toLowerCase();
   // Verb phrases, not adjectives: they have to complete "The reason people own
@@ -987,47 +993,6 @@ function plainStatus(status: string): string {
   if (s === 'watch') return 'just changed';
   if (s === 'intact' || s === 'confirmed') return 'still holds up';
   return 'has nothing filed against it yet';
-}
-
-/** Three pages, one job each, none of them scrolling.
- *
- *  The finding was a single column that ran past the fold on a small phone, so
- *  the claim, the proof and the offer competed for the same screen and the
- *  action lost. Split, each gets a whole screen and nothing is clipped.
- *
- *  Rules, not dots. Dots read as a carousel of ads; a segmented rule reads as
- *  a document with a length. */
-function Pager({ index, setIndex, pages }: {
-  index: number; setIndex: (n: number) => void; pages: React.ReactNode[];
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      <div ref={ref}
-        onScroll={() => {
-          const el = ref.current;
-          if (el && el.offsetWidth) setIndex(Math.round(el.scrollLeft / el.offsetWidth));
-        }}
-        className="hm-scroll flex flex-1 snap-x snap-mandatory overflow-x-auto overflow-y-hidden">
-        {pages.map((p, n) => (
-          <div key={n} className="flex w-full shrink-0 snap-center flex-col px-6 pt-8">{p}</div>
-        ))}
-      </div>
-      <div className="flex justify-center gap-1.5 pb-6 pt-3">
-        {pages.map((_, n) => (
-          <button key={n} aria-label={`Page ${n + 1} of ${pages.length}`}
-            onClick={() => ref.current?.scrollTo({ left: n * ref.current.offsetWidth, behavior: 'smooth' })}
-            className="px-1.5 py-3">
-            <span className="block" style={{
-              height: 2, width: 26,
-              background: n === index ? GOLD : 'rgba(255,255,255,0.15)',
-              transition: 'background .25s ease',
-            }} />
-          </button>
-        ))}
-      </div>
-    </div>
-  );
 }
 
 /** The one number on the whole cold open earns a beat of attention by arriving
@@ -1055,7 +1020,6 @@ function Onboarding({ flow, entry, profile, setProfile, taxExample, onDone }: {
 }) {
   const clip = flow === 'catch' && entry === 'clip';
   const [step, setStep] = useState<Step>(flow !== 'catch' ? 'ask' : clip ? 'working' : 'pick');
-  const [page, setPage] = useState(0);
   const [ticker, setTicker] = useState('');
   const [typed, setTyped] = useState('');
   const [scan, setScan] = useState<Any>(null);
@@ -1091,7 +1055,6 @@ function Onboarding({ flow, entry, profile, setProfile, taxExample, onDone }: {
    *  up, or the screen is a testimonial. */
   const runFor = async (t: string) => {
     setTicker(t);
-    setPage(0);
     setStep('working');
     // The three checks take 1.14s to play out. A scan that returns faster than
     // that flashes the screen and reads as a loading animation with nothing
@@ -1393,113 +1356,93 @@ function Onboarding({ flow, entry, profile, setProfile, taxExample, onDone }: {
         </div>
       )}
 
-      {/* The finding, paged. Claim, then proof, then what Helm does about it.
-          Each page holds one idea and ends inside the screen, so nothing that
-          matters is ever behind a scroll on the run that has to convert. */}
-      {step === 'finding' && (scan?.house ? (
-        <Pager index={page} setIndex={setPage} pages={[
+      {/* ONE screen. The pager that used to live here split this into three
+          pages holding one small thing each, which turned an overflow problem
+          into 900px of dead space per page. Everything that earns the tap is
+          visible at once: what changed, why people hold it, the quote that
+          settles it, and what happens next.
 
-          <div key="claim" className="flex flex-1 flex-col">
-            {clip && (
-              <p className="m-0 mb-5 text-[10px] uppercase tracking-[0.14em] text-[#6A6A6A]" style={MONO}>
-                from helmterminal.dev/thesis/{String(scan.ticker).toLowerCase()}
-              </p>
-            )}
-            <Kicker>{scan.company ? String(scan.company) : scan.ticker}</Kicker>
-            <p className="m-0 mt-4 text-[26px] font-semibold leading-[1.22] tracking-[-0.022em] hm-rise" style={{ color: INK, ...SANS }}>
-              The reason people own {scan.ticker}{' '}
-              <span style={{ color: GOLD }}>{plainStatus(String(scan.health ?? ''))}</span>.
-            </p>
-            {scan.pillar?.claim && (
-              <p className="m-0 mt-5 text-[14px] leading-[1.62] text-[#A8A8A8] hm-rise" style={{ animationDelay: '90ms', ...SANS }}>
-                {String(scan.pillar.claim).replace(/\.$/, '')}.
-              </p>
-            )}
-            <p className="m-0 mb-3 mt-auto text-[11px] text-[#5F5F5F]" style={MONO}>swipe for the evidence</p>
-          </div>,
-
-          <div key="proof" className="flex flex-1 flex-col">
-            <Kicker>Why Helm says so</Kicker>
-            {scan.receipt?.verbatimCite ? (
-              <>
-                <p className="m-0 mt-5 text-[17px] leading-[1.55] hm-rise" style={{ color: '#EDEDED', ...SANS }}>
-                  &ldquo;{scan.receipt.verbatimCite}&rdquo;
+          The tax figure is gone from here. It is somebody else's number, and
+          the only place that is honest is as a reason to hand over YOUR book,
+          which is the next screen. */}
+      {step === 'finding' && (
+        <div className="flex flex-1 flex-col px-6 pt-7">
+          {scan?.house ? (
+            <>
+              {clip && (
+                <p className="m-0 mb-3 text-[10px] uppercase tracking-[0.14em] text-[#6A6A6A]" style={MONO}>
+                  from helmterminal.dev/thesis/{String(scan.ticker).toLowerCase()}
                 </p>
-                <div className="mt-5 hm-rise" style={{ animationDelay: '90ms', borderTop: `1px solid ${GOLD}`, paddingTop: 10 }}>
-                  <p className="m-0 text-[11.5px]" style={{ color: '#9A9A9A', ...MONO }}>
+              )}
+              <Kicker>{scan.company ? String(scan.company) : scan.ticker}</Kicker>
+              <p className="m-0 mt-3 text-[23px] font-semibold leading-[1.22] tracking-[-0.022em] hm-rise" style={{ color: INK, ...SANS }}>
+                The reason people own {scan.ticker}{' '}
+                <span style={{ color: GOLD }}>{plainStatus(String(scan.health ?? ''))}</span>.
+              </p>
+              {scan.pillar?.claim && (
+                <p className="m-0 mt-3 text-[13px] leading-[1.55] text-[#9A9A9A] hm-rise" style={{ animationDelay: '70ms', ...SANS }}>
+                  {endSentence(String(scan.pillar.claim))}
+                </p>
+              )}
+
+              {scan.receipt?.verbatimCite && (
+                <div className="mt-5 hm-rise" style={{ animationDelay: '140ms', borderLeft: `2px solid ${GOLD}`, paddingLeft: 13 }}>
+                  <p className="m-0 text-[14.5px] leading-[1.5]" style={{ color: '#EDEDED', ...SANS }}>
+                    &ldquo;{scan.receipt.verbatimCite}&rdquo;
+                  </p>
+                  <p className="m-0 mt-2 text-[10.5px]" style={{ color: '#7A7A7A', ...MONO }}>
                     {scan.receipt.sourceLabel}{scan.receipt.dateISO ? ` · ${scan.receipt.dateISO}` : ''}
                   </p>
                 </div>
-              </>
-            ) : (
-              <p className="m-0 mt-5 text-[14px] leading-[1.62] text-[#A8A8A8]" style={SANS}>
-                Nothing has landed on this claim yet. Helm will not write one to fill the space.
+              )}
+
+              {Array.isArray(scan.pillars) && scan.pillars.length > 1 && (
+                <div className="mt-6">
+                  <p className="m-0 text-[10px] uppercase tracking-[0.15em] text-[#5F5F5F]" style={MONO}>
+                    the other {scan.pillars.length - 1} reasons people hold it
+                  </p>
+                  {scan.pillars.slice(1).map((p: Any, n: number) => (
+                    <div key={n} className="flex items-start gap-2.5 pt-3">
+                      <span className="mt-[6px] shrink-0 rounded-full" style={{
+                        width: 5, height: 5,
+                        background: CHANGED.has(String(p.status)) ? GOLD : p.status === 'intact' ? POS : '#3A3A3A',
+                      }} />
+                      <div className="min-w-0 flex-1">
+                        <p className="m-0 text-[12.5px] leading-[1.45] text-[#B4B4B4]" style={SANS}>
+                          {endSentence(String(p.claim ?? ''))}
+                        </p>
+                        <p className="m-0 mt-0.5 text-[10.5px] text-[#6A6A6A]" style={MONO}>
+                          {plainStatus(String(p.status ?? ""))}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <p className="m-0 mt-6 text-[11.5px] leading-[1.5] text-[#6A6A6A]" style={SANS}>
+                Helm rechecks all {scan.pillarCount} against new filings every day. Every line it
+                shows you is a quote from a document with a date on it.
               </p>
-            )}
-            <p className="m-0 mb-3 mt-auto text-[11.5px] leading-[1.6] text-[#7A7A7A]" style={SANS}>
-              Every line Helm shows you is a quote from a document with a date on it. It never
-              paraphrases and it never guesses.
-            </p>
-          </div>,
+            </>
+          ) : (
+            <>
+              <Kicker>Watching {ticker}</Kicker>
+              <p className="m-0 mt-3 text-[23px] font-semibold leading-[1.24] tracking-[-0.02em]" style={{ color: INK, ...SANS }}>
+                Nothing filed on {ticker} yet.
+              </p>
+              <p className="m-0 mt-3.5 text-[13px] leading-[1.6] text-[#8A8A8A]" style={SANS}>
+                Helm will not invent one. It starts reading from here, and the moment something
+                lands that bears on it, you get the quote.
+              </p>
+            </>
+          )}
 
-          <div key="next" className="flex flex-1 flex-col">
-            <Kicker>From here</Kicker>
-            <p className="m-0 mt-4 text-[21px] font-semibold leading-[1.3] tracking-[-0.015em]" style={{ color: INK, ...SANS }}>
-              Helm keeps reading {scan.ticker}
-              {scan.pillarCount > 1 ? ` and the other ${scan.pillarCount - 1} reasons people hold it` : ''}.
-            </p>
-            <p className="m-0 mt-3.5 text-[13.5px] leading-[1.62] text-[#8A8A8A]" style={SANS}>
-              You hear from it the moment one stops being true. Not before, and not on a schedule.
-            </p>
-
-            {/* The number, now that it has a job. Third, in context, and plainly
-                somebody else's. Never the opening claim. The outsider could not
-                work out why selling a loser saves money, so the mechanism gets
-                one sentence in normal words. */}
-            {typeof taxExample === 'number' && taxExample > 0 && (
-              <div className="mt-6 rounded-[13px] px-4 py-4"
-                style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <p className="m-0 text-[12.5px] leading-[1.6] text-[#A8A8A8]" style={SANS}>
-                  Connect your accounts and Helm also finds losses worth selling. Selling something
-                  that is down locks in the loss, and that loss cuts your tax bill. You just have to
-                  wait 30 days before buying it back.
-                </p>
-                <p className="m-0 mt-3 text-[15px]" style={{ color: POS, ...FIG }}>
-                  <CountUp to={taxExample} active={page === 2} />{' '}
-                  <span className="text-[11.5px] text-[#7A7A7A]" style={MONO}>on one portfolio it watches</span>
-                </p>
-              </div>
-            )}
-
-            <div className="mb-3 mt-auto pt-6">
-              <button onClick={() => setStep('push')}
-                className="w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
-                style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
-                Keep watching {ticker}
-              </button>
-              <button onClick={() => { setScan(null); setStep('pick'); }}
-                className="w-full pt-2.5 text-[12px]" style={{ minHeight: 34, color: '#6E6E6E', ...SANS }}>
-                Try a different one
-              </button>
-            </div>
-          </div>,
-
-        ]} />
-      ) : (
-        <div className="flex flex-1 flex-col px-6 pt-8">
-          <Kicker>Watching {ticker}</Kicker>
-          <p className="m-0 mt-4 text-[24px] font-semibold leading-[1.24] tracking-[-0.02em]" style={{ color: INK, ...SANS }}>
-            Nothing filed on {ticker} yet.
-          </p>
-          <p className="m-0 mt-4 text-[13.5px] leading-[1.65] text-[#8A8A8A]" style={SANS}>
-            Helm will not invent one. It starts reading from here, and the moment something lands
-            that bears on it, you get the quote.
-          </p>
-          <div className="mb-7 mt-auto">
-            <button onClick={() => setStep('push')}
+          <div className="mb-7 mt-auto pt-6">
+            <button onClick={() => setStep('book')}
               className="w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
               style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
-              Keep watching {ticker}
+              Do this for everything I own
             </button>
             <button onClick={() => { setScan(null); setStep('pick'); }}
               className="w-full pt-2.5 text-[12px]" style={{ minHeight: 34, color: '#6E6E6E', ...SANS }}>
@@ -1507,7 +1450,69 @@ function Onboarding({ flow, entry, profile, setProfile, taxExample, onDone }: {
             </button>
           </div>
         </div>
-      ))}
+      )}
+
+      {/* THE BOOK, before the permission ask. Notifications used to come first,
+          which spent the moment of maximum reason on a system prompt and left
+          the ask abstract: "we will tell you when NVDA changes" is a thin
+          promise next to "we will read all 23 of your positions this way".
+          The book is what the product is for, so it goes here, one screen after
+          the proof, with three ways in and none of them required. */}
+      {step === 'book' && (
+        <div className="flex flex-1 flex-col px-6 pt-9">
+          <Kicker>The rest of it</Kicker>
+          <p className="m-0 mt-3 text-[24px] font-semibold leading-[1.22] tracking-[-0.022em]" style={{ color: INK, ...SANS }}>
+            Helm can read every<br />position you hold<br />the same way.
+          </p>
+          <p className="m-0 mt-3.5 text-[13px] leading-[1.6] text-[#8A8A8A]" style={SANS}>
+            One name is a demo. Your whole book is the product: concentration, earnings you have
+            exposure to, and losses worth harvesting.
+          </p>
+
+          {/* Somebody else's number, in the one place it is honest: a reason to
+              hand over your own book, not a claim about what yours holds. */}
+          {typeof taxExample === 'number' && taxExample > 0 && (
+            <div className="mt-5 rounded-[13px] px-4 py-3.5"
+              style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="m-0 text-[15px]" style={{ color: POS, ...FIG }}>
+                <CountUp to={taxExample} active />
+              </p>
+              <p className="m-0 mt-1 text-[11.5px] leading-[1.5] text-[#7A7A7A]" style={SANS}>
+                in losses worth selling, found on one book Helm watches. Selling something that is
+                down cuts your tax bill. You wait 30 days, then buy it back.
+              </p>
+            </div>
+          )}
+
+          <div className="mt-5 space-y-2">
+            {([
+              ['connect', 'Connect a brokerage', 'Read-only. Helm can never trade or move money.'],
+              ['shot', 'Send a screenshot', 'No password. The image is read once and not stored.'],
+              ['manual', 'Type them in', 'Slowest, and it works for anything.'],
+            ] as const).map(([to, label, note], i) => (
+              <button key={to}
+                onClick={() => {
+                  if (to === 'shot') { setShotFrom('book'); setStep('shot'); }
+                  else setStep(to === 'connect' ? 'connect' : 'auth');
+                }}
+                className="hm-rise w-full rounded-[12px] px-4 py-3 text-left"
+                style={{
+                  animationDelay: `${i * 60}ms`,
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.09)',
+                }}>
+                <p className="m-0 text-[14px] font-medium" style={{ color: INK, ...SANS }}>{label}</p>
+                <p className="m-0 mt-0.5 text-[11px] leading-[1.4] text-[#7A7A7A]" style={SANS}>{note}</p>
+              </button>
+            ))}
+          </div>
+
+          <button onClick={() => setStep('push')}
+            className="mb-7 mt-auto w-full py-3 text-[12.5px]" style={{ color: '#7A7A7A', ...SANS }}>
+            Just watch {ticker} for now
+          </button>
+        </div>
+      )}
 
       {/* Watchlist-first: no credentials asked for, ever. Push is what makes a
           credential-free product actually work, which is why this flow only
@@ -1565,7 +1570,7 @@ function Onboarding({ flow, entry, profile, setProfile, taxExample, onDone }: {
           </p>
           <p className="m-0 mt-3.5 text-[13.5px] leading-[1.65] text-[#8A8A8A]" style={SANS}>
             Not a daily digest, not a market recap. A notification only when evidence lands on
-            one of your {watch.length} names, with the quote attached.
+            the names Helm is watching for you, with the quote attached.
           </p>
 
           <div className="mt-6 rounded-[18px] px-4 py-3.5" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}>
@@ -1585,26 +1590,11 @@ function Onboarding({ flow, entry, profile, setProfile, taxExample, onDone }: {
               style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
               Turn on notifications
             </button>
-            <p className="m-0 mb-2 mt-4 text-[11px] uppercase tracking-[0.14em] text-[#5F5F5F]" style={MONO}>
-              or give Helm the rest of your book
-            </p>
-            <div className="flex gap-2">
-              <button onClick={() => setStep('connect')}
-                className="flex-1 rounded-[11px] py-3 text-[12.5px] font-medium"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: INK, ...SANS }}>
-                Connect a brokerage
-              </button>
-              <button onClick={() => { setShotFrom('push'); setStep('shot'); }}
-                className="flex-1 rounded-[11px] py-3 text-[12.5px] font-medium"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: INK, ...SANS }}>
-                Send a screenshot
-              </button>
-            </div>
             <button onClick={() => setStep('auth')} className="mt-2 w-full py-2.5 text-[12.5px]" style={{ color: '#7A7A7A', ...SANS }}>
               Not yet
             </button>
             <p className="m-0 mt-3 text-center text-[11px] leading-[1.5] text-[#5F5F5F]" style={SANS}>
-              Neither is required. Helm keeps working on the names you picked either way.
+              You can change this later in Settings.
             </p>
           </div>
         </div>
