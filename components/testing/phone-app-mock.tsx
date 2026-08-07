@@ -958,7 +958,7 @@ function Sheet({ data, onClose }: { data: SheetData; onClose: () => void }) {
 
 const HOUSE_PICKS = ['NVDA', 'TSM', 'AVGO', 'MU', 'META', 'AAPL'];
 type Step = 'ask' | 'scanning' | 'catch' | 'profile' | 'connect' | 'watchlist' | 'push' | 'feed' | 'own' | 'auth'
-  | 'pick' | 'working' | 'finding';
+  | 'pick' | 'working' | 'finding' | 'shot';
 
 /** Plain language. "Intact" and "watch" are our words, not a normal person's. */
 function plainStatus(status: string): string {
@@ -1090,6 +1090,37 @@ function Onboarding({ flow, entry, profile, setProfile, taxExample, onDone }: {
   };
 
   const runPicked = () => { if (watch[0]) runFor(watch[0]); };
+
+  // Screenshot import, wired to the REAL endpoint. The lab runs as a signed-in
+  // account, /api/portfolio/import never writes, and rendering a canned result
+  // here would make this a picture of a feature instead of the feature.
+  const [shotFrom, setShotFrom] = useState<Step>('connect');
+  const shotInput = useRef<HTMLInputElement>(null);
+  const [shotRows, setShotRows] = useState<{ ticker: string; shares: number; costBasis: number | null }[]>([]);
+  const [shotBusy, setShotBusy] = useState(false);
+  const [shotErr, setShotErr] = useState<string | null>(null);
+
+  const runShot = async (file: File) => {
+    setShotBusy(true);
+    setShotErr(null);
+    try {
+      const dataUrl = await new Promise<string>((res, rej) => {
+        const fr = new FileReader();
+        fr.onload = () => res(String(fr.result));
+        fr.onerror = () => rej(fr.error);
+        fr.readAsDataURL(file);
+      });
+      const r = await fetch('/api/portfolio/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageDataUrl: dataUrl }),
+      });
+      const d = await r.json();
+      if (!r.ok) { setShotErr(d.error ?? 'Could not read that image.'); return; }
+      setShotRows(d.rows ?? []);
+    } catch { setShotErr('Could not read that image.'); }
+    finally { setShotBusy(false); }
+  };
 
   // Arriving from a thesis page skips the ask entirely: the link already said
   // which company this is about.
@@ -1477,6 +1508,10 @@ function Onboarding({ flow, entry, profile, setProfile, taxExample, onDone }: {
               style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
               Turn on notifications
             </button>
+            <button onClick={() => { setShotFrom('push'); setStep('shot'); }} className="mt-2 w-full py-2.5 text-[12.5px]"
+              style={{ color: GOLD, ...SANS }}>
+              Add the rest of your book from a screenshot
+            </button>
             <button onClick={() => setStep('auth')} className="mt-2 w-full py-2.5 text-[12.5px]" style={{ color: '#7A7A7A', ...SANS }}>
               Not yet
             </button>
@@ -1567,6 +1602,85 @@ function Onboarding({ flow, entry, profile, setProfile, taxExample, onDone }: {
         </div>
       )}
 
+      {/* The brokerage ask is where the funnel actually collapses: 39 of 41
+          read the scan card, 8 start a Plaid link, 6 finish. Meanwhile 21 users
+          typed their positions in BY HAND against 7 who linked. People who want
+          this route around the credential wall rather than give up at it, so
+          the wall gets a door: a screenshot carries no password.
+
+          This is not a mock. It posts the image to the real
+          /api/portfolio/import and renders whatever the extractor actually
+          returns, because a fake result here would be a demo of a feature
+          rather than the feature. Nothing is written either way. */}
+      {step === 'shot' && (
+        <div className="flex flex-1 flex-col px-6 pt-10">
+          <Kicker>No login needed</Kicker>
+          <p className="m-0 mt-3.5 text-[24px] font-semibold leading-[1.24] tracking-[-0.02em]" style={{ color: INK, ...SANS }}>
+            Screenshot your<br />holdings screen.
+          </p>
+          <p className="m-0 mt-3.5 text-[13px] leading-[1.62] text-[#8A8A8A]" style={SANS}>
+            Open your brokerage app, screenshot the list of what you own, and send it here. Helm
+            reads the positions off the picture. No password, and the image is not stored.
+          </p>
+
+          {shotRows.length === 0 ? (
+            <>
+              <button onClick={() => shotInput.current?.click()} disabled={shotBusy}
+                className="mt-7 w-full rounded-[13px] py-8 text-[13.5px] transition-colors"
+                style={{
+                  border: '1px dashed rgba(255,255,255,0.16)',
+                  background: 'rgba(255,255,255,0.035)',
+                  color: shotBusy ? '#7A7A7A' : INK, ...SANS,
+                }}>
+                {shotBusy ? 'Reading your positions' : 'Choose a screenshot'}
+              </button>
+              {shotErr && <p className="m-0 mt-3 text-[12.5px] leading-[1.55]" style={{ color: NEG, ...SANS }}>{shotErr}</p>}
+            </>
+          ) : (
+            <>
+              <p className="m-0 mt-6 text-[11px] uppercase tracking-[0.16em]" style={{ color: GOLD, ...MONO }}>
+                {shotRows.length} position{shotRows.length === 1 ? '' : 's'} found
+              </p>
+              <div className="hm-scroll mt-3 flex-1 overflow-y-auto">
+                {shotRows.map((r, i) => (
+                  <div key={`${r.ticker}-${i}`} className="flex items-baseline justify-between py-2.5"
+                    style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <span className="text-[14px]" style={{ color: INK, ...MONO }}>{r.ticker}</span>
+                    <span className="text-[13px] text-[#9A9A9A]" style={FIG}>
+                      {r.shares} sh
+                      <span className="ml-3 text-[#6A6A6A]">
+                        {r.costBasis == null ? 'basis not shown' : `@ ${money(r.costBasis)}`}
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="m-0 mt-3 text-[11.5px] leading-[1.55] text-[#7A7A7A]" style={SANS}>
+                Check these against your account before saving. Helm never fills in a cost it could
+                not see, so anything blank stays blank rather than becoming a wrong tax number.
+              </p>
+            </>
+          )}
+
+          <input ref={shotInput} type="file" accept="image/png,image/jpeg,image/webp" className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) void runShot(f); e.target.value = ''; }} />
+
+          <div className="mb-7 mt-6">
+            <button onClick={() => setStep(shotRows.length ? 'auth' : shotFrom)}
+              className="w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
+              style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
+              {shotRows.length ? 'Looks right' : 'Back'}
+            </button>
+            {shotRows.length > 0 && (
+              <button onClick={() => { setShotRows([]); setShotErr(null); }}
+                className="mt-2 w-full py-2.5 text-[12.5px]" style={{ color: '#7A7A7A', ...SANS }}>
+                Try another screenshot
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {step === 'connect' && (
         <div className="flex flex-1 flex-col px-7 pt-16">
           <Kicker>Last step</Kicker>
@@ -1595,6 +1709,10 @@ function Onboarding({ flow, entry, profile, setProfile, taxExample, onDone }: {
             <button onClick={() => setStep('auth')} className="w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
               style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
               Connect accounts
+            </button>
+            <button onClick={() => { setShotFrom('connect'); setStep('shot'); }} className="mt-2 w-full rounded-[12px] py-3.5 text-[13.5px] font-medium"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: INK, ...SANS }}>
+              Send a screenshot instead
             </button>
             <button onClick={() => setStep('auth')} className="mt-2 w-full py-2.5 text-[12.5px]" style={{ color: '#7A7A7A', ...SANS }}>
               Look around first
