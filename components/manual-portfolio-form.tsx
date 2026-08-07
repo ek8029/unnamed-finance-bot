@@ -15,6 +15,10 @@ interface ManualPortfolioFormProps {
   /** Preview/review surfaces pass this to render the real form while blocking the
    *  write, so a reviewer can walk the screen without adding holdings to their book. */
   readOnly?: boolean;
+  /** Rows extracted from a screenshot or CSV. They land here UNSAVED so the user
+   *  reviews and corrects them; the import never writes on its own. Remount the
+   *  form (change its key) to seed it again. */
+  seedRows?: { ticker: string; shares: number; costBasis: number | null }[];
   onComplete?: () => void;
   compact?: boolean;
 }
@@ -32,12 +36,19 @@ function createEmptyRow(): HoldingRow {
   return { id: crypto.randomUUID(), ticker: '', shares: '', costBasis: '' };
 }
 
-export function ManualPortfolioForm({ onComplete, compact = false, readOnly = false }: ManualPortfolioFormProps) {
-  const [rows, setRows] = useState<HoldingRow[]>([
-    createEmptyRow(),
-    createEmptyRow(),
-    createEmptyRow(),
-  ]);
+export function ManualPortfolioForm({ onComplete, compact = false, readOnly = false, seedRows }: ManualPortfolioFormProps) {
+  const [rows, setRows] = useState<HoldingRow[]>(() =>
+    seedRows?.length
+      ? seedRows.map(r => ({
+          id: crypto.randomUUID(),
+          ticker: r.ticker,
+          shares: String(r.shares),
+          // Basis the source did not carry stays EMPTY. A zero here would read
+          // as "bought at $0" and manufacture a gain the user never had.
+          costBasis: r.costBasis == null ? '' : String(Number(r.costBasis.toFixed(4))),
+        }))
+      : [createEmptyRow(), createEmptyRow(), createEmptyRow()],
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);

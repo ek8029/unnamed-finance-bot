@@ -1,10 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ManualPortfolioForm } from '@/components/manual-portfolio-form';
+import { PortfolioImport } from '@/components/portfolio-import';
+import type { ImportedRow } from '@/lib/portfolio-import';
 
 export default function AddHoldingsPage() {
   const router = useRouter();
+  // An import SEEDS the form; it never saves. The key remount is what lets a
+  // second import replace the first instead of stacking onto it.
+  const [seed, setSeed] = useState<{ rows: ImportedRow[]; n: number } | null>(null);
 
   return (
     <div className="px-6 sm:px-7 py-7 pb-16 max-w-[1100px] mx-auto">
@@ -30,7 +36,18 @@ export default function AddHoldingsPage() {
         </div>
       </div>
 
+      <PortfolioImport onExtracted={(rows) => setSeed(prev => ({ rows, n: (prev?.n ?? 0) + 1 }))} />
+
+      {seed && seed.rows.length > 0 && (
+        <p className="mb-3 text-[14px] text-[var(--color-text-secondary)]">
+          Found {seed.rows.length} position{seed.rows.length === 1 ? '' : 's'}. Check them against
+          your account, fix anything wrong, then save.
+        </p>
+      )}
+
       <ManualPortfolioForm
+        key={seed?.n ?? 0}
+        seedRows={seed?.rows}
         onComplete={() => router.push('/dashboard/portfolio')}
       />
     </div>
