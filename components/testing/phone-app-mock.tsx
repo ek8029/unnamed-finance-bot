@@ -972,10 +972,16 @@ function Onboarding({ flow, profile, setProfile, taxExample, onDone }: {
     if (!t) return;
     setTicker(t);
     setStep('working');
-    try {
-      const r = await fetch(`/api/scan/ticker?symbol=${encodeURIComponent(t)}`);
-      setScan(r.ok ? await r.json() : null);
-    } catch { setScan(null); }
+    // The three checks take 1.14s to play out. A scan that returns faster than
+    // that flashes the screen and reads as a loading animation with nothing
+    // behind it, so the sequence is allowed to finish before the finding lands.
+    const [r] = await Promise.all([
+      fetch(`/api/scan/ticker?symbol=${encodeURIComponent(t)}`)
+        .then(res => (res.ok ? res.json() : null))
+        .catch(() => null),
+      new Promise(res => setTimeout(res, 1200)),
+    ]);
+    setScan(r);
     setStep('finding');
   };
 
@@ -1212,7 +1218,7 @@ function Onboarding({ flow, profile, setProfile, taxExample, onDone }: {
               style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.07)' }}>
               <p className="m-0 text-[12.5px] leading-[1.6] text-[#A8A8A8]" style={SANS}>
                 Once your accounts are connected, Helm also finds losses worth selling. Selling
-                something that is down locks in the loss, and that loss cuts your tax bill — you
+                something that is down locks in the loss, and that loss cuts your tax bill. You
                 just have to wait 30 days before buying it back.
               </p>
               <p className="m-0 mt-3 text-[13px]" style={{ color: POS, ...MONO }}>
@@ -1221,11 +1227,22 @@ function Onboarding({ flow, profile, setProfile, taxExample, onDone }: {
             </div>
           )}
 
-          <button onClick={() => setStep('push')}
-            className="mb-7 mt-7 w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
-            style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
-            Keep watching {ticker}
-          </button>
+          {/* Pinned, not appended. The citation plus the tax box runs past one
+              screen on a small phone, which put the only action below the fold
+              on the one screen that has to convert. It stays on top of the
+              scroll instead, fading the content out under it. */}
+          <div className="sticky bottom-0 -mx-6 mt-7 px-6 pb-7 pt-4"
+            style={{ background: 'linear-gradient(to top, #060606 68%, transparent)' }}>
+            <button onClick={() => setStep('push')}
+              className="w-full rounded-[12px] py-3.5 text-[14px] font-semibold"
+              style={{ background: GOLD, color: '#0A0A0A', ...SANS }}>
+              Keep watching {ticker}
+            </button>
+            <button onClick={() => { setScan(null); setStep('pick'); }}
+              className="w-full pt-2.5 text-[12px]" style={{ minHeight: 34, color: '#6E6E6E', ...SANS }}>
+              Try a different one
+            </button>
+          </div>
         </div>
       )}
 
@@ -1295,7 +1312,7 @@ function Onboarding({ flow, profile, setProfile, taxExample, onDone }: {
               <span className="ml-auto text-[10.5px] text-[#8A8A8A]" style={SANS}>now</span>
             </div>
             <p className="m-0 text-[13px] leading-[1.45]" style={{ color: INK, ...SANS }}>
-              {watch[0]} — a filing contradicts one of the claims Helm tracks on it.
+              {watch[0]}: a filing contradicts one of the claims Helm tracks on it.
             </p>
           </div>
           <p className="m-0 mt-2 text-[10.5px] text-[#5F5F5F]" style={MONO}>what one looks like</p>
