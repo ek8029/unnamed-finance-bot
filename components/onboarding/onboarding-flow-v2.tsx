@@ -165,14 +165,17 @@ type Phase = 'welcome' | 'input' | 'scan' | 'card' | 'reasons' | 'howItWorks' | 
  *  channels. `ai_assistant` is the one that earns the whole feature: an AI
  *  citing Helm leaves no referrer and no UTM, so 034's utm_* columns are blind
  *  to the exact channel the SEO/GEO bet is built on. */
+/** Short enough to sit in a two-column tile without wrapping to three lines.
+ *  The slugs are shared with the iOS app so both surfaces aggregate into one
+ *  column rather than two vocabularies. */
 const ACQUISITION_OPTIONS: { slug: string; label: string }[] = [
-  { slug: 'ai_assistant', label: 'An AI assistant (ChatGPT, Claude, Perplexity)' },
-  { slug: 'google', label: 'Google search' },
-  { slug: 'friend', label: 'A friend or colleague' },
-  { slug: 'blog_newsletter', label: 'A blog or newsletter' },
-  { slug: 'hacker_news', label: 'Hacker News' },
+  { slug: 'ai_assistant', label: 'AI assistant' },
+  { slug: 'google', label: 'Google' },
+  { slug: 'friend', label: 'A friend' },
   { slug: 'reddit', label: 'Reddit' },
+  { slug: 'blog_newsletter', label: 'Blog or newsletter' },
   { slug: 'x', label: 'X' },
+  { slug: 'hacker_news', label: 'Hacker News' },
   { slug: 'social', label: 'TikTok or LinkedIn' },
   { slug: 'other', label: 'Something else' },
 ];
@@ -964,13 +967,16 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                     Helm is one person. Knowing what actually works decides what gets built next.
                   </p>
 
-                  <div className="mt-6 space-y-2">
+                  {/* A two-column grid of tiles, not nine full-width rows. The
+                      grid reads as a quick pick; the list read as a form, and a
+                      form at the end of onboarding is a toll booth. */}
+                  <div className="mt-6 grid grid-cols-2 gap-2">
                     {ACQUISITION_OPTIONS.map((o) => {
                       const on = acqSource === o.slug;
                       return (
                         <button key={o.slug}
                           onClick={() => { setAcqSource(o.slug); if (o.slug !== 'other') void submitAttribution(o.slug); }}
-                          className={`w-full text-left rounded-lg border px-4 py-3 text-[15px] transition-colors ${
+                          className={`text-left rounded-lg border px-4 min-h-[56px] flex items-center text-[14.5px] leading-[1.3] transition-colors ${
                             on
                               ? 'border-[var(--color-gold)] bg-[rgba(230,185,77,0.07)] text-[var(--color-text-primary)]'
                               : 'border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]'
