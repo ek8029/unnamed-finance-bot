@@ -210,6 +210,36 @@ const normClaim = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, '').repl
 /** Same article + same finding, judged separately for two users, is one finding. */
 const findingKey = (e: EvidenceRow) => `${e.source_key}|${normClaim(e.excerpt).slice(0, 120)}`;
 
+/**
+ * Title and excerpt as one string, without saying the same thing twice.
+ *
+ * A synthetic row writes both fields from the same sentence — a price move has
+ * title "Price move: PRIM fell 38.2% on 2026-06-23" and excerpt "PRIM fell
+ * 38.2% on 2026-06-23" — so the naive join produced
+ * "Price move: PRIM fell 38.2% on 2026-06-23 PRIM fell 38.2% on 2026-06-23".
+ * clusterByMechanism labels an un-judged cluster with this text, so that
+ * stutter was the headline on the worst row of the theses board, on the phone
+ * and on the web.
+ *
+ * Containment is checked on the normalised forms so punctuation and casing do
+ * not hide an overlap; the ORIGINAL text is what gets returned.
+ */
+export function joinTitleExcerpt(title: string | null, excerpt: string | null): string {
+  const t = (title ?? '').replace(/\s+/g, ' ').trim();
+  const x = (excerpt ?? '').replace(/\s+/g, ' ').trim();
+  if (!t) return x;
+  if (!x) return t;
+  const nt = normClaim(t);
+  const nx = normClaim(x);
+  // A side with no alphanumeric content at all carries no information, so the
+  // other side wins rather than a label of "***".
+  if (!nt) return x;
+  if (!nx) return t;
+  if (nt.includes(nx)) return t;
+  if (nx.includes(nt)) return x;
+  return `${t} ${x}`;
+}
+
 export async function getScoringThesisData(ticker: string, userId?: string): Promise<ScoringThesisData> {
   const SYM = ticker.toUpperCase().replace(/[^A-Z]/g, '');
   const db = createStaticServiceClient();
@@ -300,7 +330,7 @@ export async function getScoringThesisData(ticker: string, userId?: string): Pro
     );
     findings.set(fk, {
       id: e.id,
-      text: `${e.source_title} ${e.excerpt}`,
+      text: joinTitleExcerpt(e.source_title, e.excerpt),
       sourceClass,
       evidenceClass: classifyEvidence(sourceClass, e.excerpt, hasKillCriterion),
       dateISO: (e.source_published_at ?? e.created_at).slice(0, 10),
