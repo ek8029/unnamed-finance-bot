@@ -9,85 +9,19 @@
 // one-line stories with receipts a click down.
 
 import { createStaticServiceClient } from '@/lib/supabase/server';
-import { getScoringThesisData, type ScoringThesisData, type ScoredPillar } from '@/lib/content/scoring-thesis';
+import { getScoringThesisData, type ScoredPillar } from '@/lib/content/scoring-thesis';
 import { topCeiling } from '@/components/testing/thesis-v2-blocks';
-import { convergence, type LadderStatus } from '@/lib/content/mechanism-cluster';
+import { type LadderStatus } from '@/lib/content/mechanism-cluster';
+import {
+  RANK, STATUS_TONE, STATUS_WORD, headline, isFresh, pillarStateLine, tally, thesisCeiling,
+} from '@/lib/content/thesis-board';
 import { getEdgarEarnings } from '@/lib/earnings-edgar';
 
 const MONO = { fontFamily: 'var(--font-mono)' } as const;
 const MAX_THESES = 30;
 
-/* Plain-English status vocabulary — the ladder stays internal. */
-const STATUS_WORD: Record<LadderStatus, string> = {
-  watch: 'steady',
-  weakening: 'under pressure',
-  broken: 'breaking',
-};
-const STATUS_TONE: Record<LadderStatus, string> = {
-  watch: '#4ADE80',
-  weakening: '#E6B94D',
-  broken: '#F87171',
-};
-const RANK: Record<LadderStatus, number> = { broken: 0, weakening: 1, watch: 2 };
-
-const NEW_DAYS = 7;
-const isFresh = (dateISO: string) =>
-  Date.now() - new Date(dateISO).getTime() < NEW_DAYS * 86400000;
-
 const money = (n: number) =>
   n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M` : `$${Math.round(n).toLocaleString()}`;
-
-function thesisCeiling(d: ScoringThesisData): LadderStatus {
-  return d.pillars.reduce<LadderStatus>(
-    (worst, p) => (RANK[topCeiling(p.mechanisms)] < RANK[worst] ? topCeiling(p.mechanisms) : worst),
-    'watch',
-  );
-}
-
-function tally(d: ScoringThesisData): { supports: number; against: number } {
-  let supports = 0;
-  let against = 0;
-  for (const p of d.pillars)
-    for (const c of p.catches) {
-      if (c.verdict === 'supports') supports++;
-      else if (c.verdict === 'contradicts') against++;
-    }
-  return { supports, against };
-}
-
-/** The one thing that matters on this thesis right now, in one sentence. */
-function headline(d: ScoringThesisData): string {
-  const pillars = [...d.pillars].sort(
-    (a, b) => RANK[topCeiling(a.mechanisms)] - RANK[topCeiling(b.mechanisms)],
-  );
-  const worst = pillars[0];
-  if (!worst) return 'No scored evidence yet.';
-  const worstStatus = topCeiling(worst.mechanisms);
-  if (worstStatus === 'watch') {
-    const t = tally(d);
-    if (t.supports > 0) return `Holding up: ${t.supports} pieces of supporting evidence, ${t.against} against.`;
-    const latest = d.pillars.flatMap((p) => p.catches)[0];
-    return latest ? `Quiet. Latest: ${latest.title}` : 'Quiet. Nothing challenges this thesis.';
-  }
-  const mover = worst.mechanisms.find((m) => m.maxStatus === worstStatus);
-  const conv = convergence(worst.mechanisms);
-  const base = mover ? mover.label : 'Multiple reports';
-  return conv.converging
-    ? `${base} — and ${conv.adverseMechanisms - 1} more independent ${conv.adverseMechanisms - 1 === 1 ? 'issue' : 'issues'} on the same pillar`
-    : base;
-}
-
-function pillarStateLine(p: ScoredPillar): { status: LadderStatus; line: string } {
-  const status = topCeiling(p.mechanisms);
-  const supports = p.catches.filter((c) => c.verdict === 'supports').length;
-  const against = p.catches.filter((c) => c.verdict === 'contradicts').length;
-  const sides = `${supports} supporting · ${against} against`;
-  if (status === 'watch') return { status, line: sides };
-  const mover = p.mechanisms.find((m) => m.maxStatus === status);
-  const classes = mover?.sourceClasses.length ?? 0;
-  const corroboration = classes >= 2 ? `${classes} independent source types` : 'a single source so far';
-  return { status, line: `${mover?.label ?? 'multiple reports'} · ${corroboration} · ${sides}` };
-}
 
 /** One mechanism as one line: the story, how corroborated, receipts a click away. */
 function StoryLine({ m }: { m: ScoredPillar['mechanisms'][number] }) {
