@@ -121,6 +121,52 @@ async function extractFromImage(dataUrl: string): Promise<{ rows: ImportedRow[];
   return { rows, skipped };
 }
 
+const TEXT_PROMPT = `Read this description of someone's investment holdings.
+
+Return ONLY a JSON object of the form:
+{"rows":[{"ticker":"AAPL","shares":"10","unitCost":"150.00","totalCost":null}]}
+
+Rules:
+- One entry per position described.
+- "ticker" is the exchange symbol. If a company is named but you are not certain
+  of its symbol, omit that row rather than guessing.
+- "shares" is the quantity. If they give a dollar amount instead of a share
+  count ("about $10k in Tesla"), OMIT the row: a share count cannot be inferred
+  from a dollar amount without a price, and inventing one is worse than nothing.
+- "unitCost" is cost PER SHARE ("at $185", "bought at 150").
+- "totalCost" is the TOTAL cost of the position.
+- Put each value in the field matching what was actually said. Never convert
+  between them, never divide, never multiply.
+- Use null for anything not stated. Do not infer or estimate.`;
+
+async function extractFromText(text: string): Promise<{ rows: ImportedRow[]; skipped: ImportSkip[] }> {
+  const res = await getOpenAI().chat.completions.create({
+    model: VISION_MODEL,
+    temperature: 0,
+    max_tokens: 1500,
+    response_format: { type: 'json_object' },
+    messages: [{ role: 'user', content: `${TEXT_PROMPT}\n\n---\n${text}` }],
+  });
+  const raw = res.choices[0]?.message?.content;
+  if (!raw) return { rows: [], skipped: [] };
+
+  let parsed: { rows?: VisionRow[] };
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { rows: [], skipped: [{ raw: 'model output', reason: 'could not read the response' }] };
+  }
+
+  const rows: ImportedRow[] = [];
+  const skipped: ImportSkip[] = [];
+  for (const r of (parsed.rows ?? []).slice(0, IMPORT_MAX_ROWS)) {
+    const out = toRow(str(r.ticker) ?? '', str(r.shares) ?? '', str(r.unitCost), str(r.totalCost));
+    if ('reason' in out) skipped.push(out);
+    else rows.push(out);
+  }
+  return { rows, skipped };
+}
+
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -141,13 +187,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'That file is too large. Export just the holdings table.' }, { status: 413 });
     }
     const { rows, skipped } = parseHoldingsCsv(csv);
-    if (rows.length === 0 && skipped.length === 0) {
+    if (rows.length > 0 || skipped.length > 0) {
+      return NextResponse.json({ rows: mergeLots(rows), skipped, source: 'csv' });
+    }
+
+    // Not a table. People paste prose — "50 shares of Apple at $185, and about
+    // $10k in Tesla" — and typing a position in a sentence is faster than
+    // filling three fields per row. Same normaliser, so prose cannot smuggle a
+    // number past the checks the CSV path applies.
+    if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
         { error: 'No holdings found. The file needs a symbol column and a quantity column.' },
         { status: 422 },
       );
     }
-    return NextResponse.json({ rows: mergeLots(rows), skipped, source: 'csv' });
+    if (limiter) {
+      try {
+        const { success } = await limiter.limit(user.id);
+        if (!success) {
+          return NextResponse.json({ error: 'Too many imports in the last hour. Try again later.' }, { status: 429 });
+        }
+      } catch (e) {
+        console.error('[portfolio-import] rate-limit check failed (allowing):', e);
+      }
+    }
+    try {
+      const out = await extractFromText(csv.slice(0, 6000));
+      if (out.rows.length === 0) {
+        return NextResponse.json(
+          { error: 'No holdings found in that. Try "40 shares of AAPL at $150".', skipped: out.skipped },
+          { status: 422 },
+        );
+      }
+      return NextResponse.json({ rows: mergeLots(out.rows), skipped: out.skipped, source: 'text' });
+    } catch {
+      console.error('[portfolio-import] text extraction failed');
+      return NextResponse.json({ error: 'Could not read that. Try a CSV or a screenshot.' }, { status: 500 });
+    }
   }
 
   if (!image) {
