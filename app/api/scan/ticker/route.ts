@@ -85,6 +85,9 @@ export async function GET(request: Request) {
         // cited evidence. Powers both the "Watching" card (no catch yet) and the
         // expandable "all pillars + evidence" view on receipt cards.
         pillars: data.pillars.map((p) => ({
+          // The house pillar id, so a caller can adopt the specific claims a
+          // person recognises as their own (POST /api/thesis/adopt pillarIds).
+          id: p.id,
           claim: p.claim,
           breaksIf: p.breaks_if,
           status: p.status,

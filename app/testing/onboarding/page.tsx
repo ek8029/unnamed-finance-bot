@@ -16,11 +16,13 @@ const PHASES = [
   ['input', 'Ticker input'],
   ['scan', 'Scan'],
   ['card', 'Intelligence card'],
+  ['reasons', 'Why do you own it'],
   ['howItWorks', 'How Helm works'],
   ['connect', 'Connect'],
   ['manual', 'Manual entry'],
   ['synced', 'Synced'],
   ['ratify', 'Confirm theses'],
+  ['attribution', 'How did you find us'],
   ['done', 'Done'],
 ] as const;
 

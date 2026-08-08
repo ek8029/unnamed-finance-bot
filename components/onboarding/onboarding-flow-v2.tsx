@@ -52,6 +52,8 @@ interface ScanResult {
   pillar?: { claim: string; status: Health; statusLabel: string } | null;
   receipt?: { verbatimCite: string; dateISO: string; sourceLabel: string; sourceUrl: string | null; verdict: 'supports' | 'contradicts' } | null;
   pillars?: Array<{
+    /** House pillar id — what the reasons step adopts. */
+    id?: string;
     claim: string;
     breaksIf: string;
     status: Health;
@@ -142,7 +144,38 @@ const PREVIEW_FALLBACK: RatifyDraft[] = [
   { ticker: 'AAPL', name: 'sample', thesisId: 'sample-aapl', topClaim: 'Services keeps compounding and lifts gross margin', moreCount: 1, draftPillarIds: [], confirmed: false },
 ];
 
-type Phase = 'welcome' | 'input' | 'scan' | 'card' | 'howItWorks' | 'connect' | 'manual' | 'synced' | 'ratify' | 'done';
+type Phase = 'welcome' | 'input' | 'scan' | 'card' | 'reasons' | 'howItWorks' | 'connect' | 'manual' | 'synced' | 'ratify' | 'attribution' | 'done';
+
+/* ── The reasons step (recognition, not authoring) ─────────────────────────
+   `ratify` already asks people to TAP claims rather than write them, but it
+   sits after the holdings wall: of 41 entrants only ~6 ever reached it, so its
+   1 confirmation is ~17% of who got there, not a broken screen. The step was
+   starved, not broken.
+
+   So this runs the same recognition move one screen after the scan, on the
+   ticker the person just chose, BEFORE any brokerage ask — the point at which
+   20 of 39 currently leave. The claims are the house pillars, verbatim, each
+   already carrying its own kill criterion.
+
+   "Something else" is not optional politeness. A forced choice among three
+   house claims produces a thesis the user never held, and every later alert
+   would argue with a belief that was never theirs. */
+
+/** Self-report options. Deliberately NOT Astor's list — these are Helm's real
+ *  channels. `ai_assistant` is the one that earns the whole feature: an AI
+ *  citing Helm leaves no referrer and no UTM, so 034's utm_* columns are blind
+ *  to the exact channel the SEO/GEO bet is built on. */
+const ACQUISITION_OPTIONS: { slug: string; label: string }[] = [
+  { slug: 'ai_assistant', label: 'An AI assistant (ChatGPT, Claude, Perplexity)' },
+  { slug: 'google', label: 'Google search' },
+  { slug: 'friend', label: 'A friend or colleague' },
+  { slug: 'blog_newsletter', label: 'A blog or newsletter' },
+  { slug: 'hacker_news', label: 'Hacker News' },
+  { slug: 'reddit', label: 'Reddit' },
+  { slug: 'x', label: 'X' },
+  { slug: 'social', label: 'TikTok or LinkedIn' },
+  { slug: 'other', label: 'Something else' },
+];
 
 /** `harness` is the /testing/onboarding review surface: forces preview (no writes),
  *  skips the no-connection gate, and lets a reviewer jump straight to any screen. */
@@ -165,6 +198,17 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
   const [note, setNote] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
+  // reasons step
+  const [picked, setPicked] = useState<Set<string>>(() => new Set());
+  const [customReason, setCustomReason] = useState('');
+  const [showCustom, setShowCustom] = useState(false);
+  const [adopted, setAdopted] = useState(false);
+
+  // attribution step
+  const [acqSource, setAcqSource] = useState<string | null>(null);
+  const [acqDetail, setAcqDetail] = useState('');
+  const [askedAttribution, setAskedAttribution] = useState(false);
+
   // Harness drives phase from the toolbar.
   useEffect(() => { if (jumpTo) setPhase(jumpTo); }, [jumpTo]);
 
@@ -173,9 +217,19 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
   useEffect(() => {
     if (!harness) return;
     if (phase === 'card' && !scan) { setTicker((t) => t || 'NVDA'); setPhase('scan'); }
+    // 'reasons' reads the scan's pillars, so it needs the same backfill. The
+    // scan lands on 'card'; the effect below carries it the last step.
+    if (phase === 'reasons' && !scan) { setTicker((t) => t || 'NVDA'); setPhase('scan'); }
     // Landing on 'scan' with no ticker would fetch ?symbol= and 400.
     if (phase === 'scan' && !ticker) setTicker('NVDA');
   }, [harness, phase, scan, ticker]);
+
+  // Harness only: the backfill above routes through 'scan' -> 'card'. If the
+  // reviewer asked for 'reasons', finish the trip once the scan exists.
+  useEffect(() => {
+    if (!harness || jumpTo !== 'reasons') return;
+    if (phase === 'card' && scan) setPhase('reasons');
+  }, [harness, jumpTo, phase, scan]);
 
   useEffect(() => {
     if (harness) { setShow(true); return; }
@@ -208,6 +262,18 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
     const t = setTimeout(() => setPhase('input'), 1600);
     return () => clearTimeout(t);
   }, [show, phase]);
+
+  // Ask attribution once, on the way out. Intercepting 'done' catches every
+  // route that reaches the end — connect, manual, ratify, and the several
+  // early-outs where a prerequisite was missing — without threading the
+  // question through each of them. The flag makes it strictly once, so
+  // attribution -> done cannot bounce back.
+  useEffect(() => {
+    if (harness || phase !== 'done' || askedAttribution) return;
+    setAskedAttribution(true);
+    track('onb_attribution_shown');
+    setPhase('attribution');
+  }, [harness, phase, askedAttribution]);
 
   // scan: run the real engine while the /analyze-style terminal plays (~2.4s floor)
   useEffect(() => {
@@ -379,6 +445,67 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
 
     return () => { cancelled = true; };
   }, [phase, preview, harness, drafts]);
+
+  /** Adopt the house claims the person recognised as their own. */
+  async function adoptReasons() {
+    if (busy || !scan) return;
+    const ids = [...picked];
+    const custom = showCustom ? customReason.trim() : '';
+    if (ids.length === 0 && !custom) return;
+
+    track('onb_reasons_adopted', {
+      ticker: scan.ticker,
+      picked: ids.length,
+      custom: !!custom,
+      offered: scan.pillars?.length ?? 0,
+    });
+
+    if (preview) { setAdopted(true); setPhase('howItWorks'); return; }
+
+    setBusy('reasons');
+    try {
+      const res = await fetch('/api/thesis/adopt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticker: scan.ticker, pillarIds: ids, customReason: custom || undefined }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok) {
+        setAdopted(true);
+        // Free tier watches one thesis. Say so rather than implying the cron
+        // picked it up.
+        if (data && data.tracked === false) {
+          setNote(`${scan.ticker} is saved. Watching every position is part of Pro, so only your first thesis is being monitored for now.`);
+        }
+      } else if (res.status === 409) {
+        setAdopted(true); // already had one; nothing to do, not an error to show
+      } else {
+        setNote(data?.error ?? 'Could not save that. You can add it from the Theses page.');
+      }
+    } catch {
+      setNote('Could not reach Helm. You can add this from the Theses page later.');
+    } finally {
+      setBusy(null);
+      setPhase('howItWorks');
+    }
+  }
+
+  async function submitAttribution(slug: string) {
+    setAcqSource(slug);
+    // "Something else" opens a box; do not submit until they finish.
+    if (slug === 'other' && !acqDetail.trim()) return;
+    track('onb_attribution_answered', { source: slug });
+    if (!preview) {
+      try {
+        await fetch('/api/user/acquisition', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ source: slug, detail: acqDetail.trim() || undefined }),
+        });
+      } catch { /* never block finishing onboarding on an analytics write */ }
+    }
+    setPhase('done');
+  }
 
   async function confirmDraft(d: RatifyDraft) {
     if (busy || d.confirmed) return;
@@ -699,10 +826,190 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                   <button onClick={() => setPhase('input')} className="text-[14px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors min-h-[44px]" style={MONO}>
                     Scan another
                   </button>
-                  <button onClick={() => setPhase('howItWorks')}
-                    className="flex items-center gap-2 px-6 min-h-[48px] bg-[var(--color-gold)] text-black text-[15px] font-semibold rounded-md hover:brightness-110 transition-all">
-                    Watch my whole book <ArrowRight className="w-4 h-4" />
+                  {/* Recognition before the brokerage ask. This is the screen
+                      where 20 of 39 currently leave, and the smaller ask —
+                      "which of these are yours" — is the one they can answer
+                      without handing over a credential. Falls through to the
+                      old copy when the ticker has no house pillars to offer. */}
+                  {scan.house && (scan.pillars?.length ?? 0) > 0 ? (
+                    <button onClick={() => { track('onb_reasons_shown', { ticker: scan.ticker }); setPhase('reasons'); }}
+                      className="flex items-center gap-2 px-6 min-h-[48px] bg-[var(--color-gold)] text-black text-[15px] font-semibold rounded-md hover:brightness-110 transition-all">
+                      Watch {scan.ticker} for me <ArrowRight className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button onClick={() => setPhase('howItWorks')}
+                      className="flex items-center gap-2 px-6 min-h-[48px] bg-[var(--color-gold)] text-black text-[15px] font-semibold rounded-md hover:brightness-110 transition-all">
+                      Watch my whole book <ArrowRight className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ═══ REASONS — recognition, not authoring ═══ */}
+          {phase === 'reasons' && scan && (
+            <>
+              <div className="flex-1 overflow-y-auto px-5 sm:px-8 py-8">
+                <div className="max-w-xl mx-auto">
+                  <div className="text-[11px] tracking-[0.18em] uppercase text-[var(--color-text-muted)]" style={MONO}>
+                    {scan.company ?? scan.ticker}
+                  </div>
+                  <h2 className="mt-3 text-[clamp(22px,4.5vw,32px)] leading-[1.15] text-[var(--color-text-primary)]"
+                    style={{ fontFamily: 'var(--font-display-serif)' }}>
+                    Why do you own {scan.ticker}?
+                  </h2>
+                  <p className="mt-3 text-[15px] leading-[1.6] text-[var(--color-text-secondary)]">
+                    These are the reasons Helm already watches on {scan.ticker}. Pick the ones that are
+                    yours. Helm rechecks them against the company&apos;s own reports and tells you when one
+                    stops holding.
+                  </p>
+
+                  <div className="mt-6 space-y-2.5">
+                    {(scan.pillars ?? []).map((p, i) => {
+                      const id = p.id ?? String(i);
+                      const on = picked.has(id);
+                      return (
+                        <button
+                          key={id}
+                          onClick={() => setPicked((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(id)) next.delete(id); else next.add(id);
+                            return next;
+                          })}
+                          className={`w-full text-left rounded-lg border p-4 transition-colors ${
+                            on
+                              ? 'border-[var(--color-gold)] bg-[rgba(230,185,77,0.07)]'
+                              : 'border-[var(--color-border-base)] hover:border-[var(--color-border-strong)]'
+                          }`}>
+                          <div className="flex items-start gap-3">
+                            <span className={`mt-[3px] w-[18px] h-[18px] shrink-0 rounded border flex items-center justify-center ${
+                              on ? 'border-[var(--color-gold)] bg-[var(--color-gold)]' : 'border-[var(--color-border-strong)]'
+                            }`}>
+                              {on && <Check className="w-3 h-3 text-black" />}
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block text-[15px] leading-[1.5] text-[var(--color-text-primary)]">{p.claim}</span>
+                              {!!p.breaksIf && (
+                                <span className="block mt-1.5 text-[13px] leading-[1.5] text-[var(--color-text-muted)]">
+                                  <span className="text-[var(--color-gold)] uppercase tracking-[0.08em] text-[10.5px] font-semibold" style={MONO}>
+                                    Breaks if{' '}
+                                  </span>
+                                  {p.breaksIf}
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+
+                    {/* The escape. Without it a forced pick produces a thesis
+                        the person never held, and every later alert argues with
+                        a belief that was never theirs. */}
+                    {!showCustom ? (
+                      <button onClick={() => setShowCustom(true)}
+                        className="w-full text-left rounded-lg border border-dashed border-[var(--color-border-base)] p-4 text-[15px] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] transition-colors">
+                        Something else →
+                      </button>
+                    ) : (
+                      <div className="rounded-lg border border-[var(--color-border-base)] p-4">
+                        <label className="block text-[13px] text-[var(--color-text-muted)] mb-2">
+                          In your own words
+                        </label>
+                        <textarea
+                          value={customReason}
+                          onChange={(e) => setCustomReason(e.target.value.slice(0, 300))}
+                          rows={2}
+                          autoFocus
+                          placeholder={`I own ${scan.ticker} because…`}
+                          className="w-full bg-transparent text-[15px] leading-[1.5] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] outline-none resize-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {note && <p className="mt-4 text-[13px] text-[var(--color-text-muted)]">{note}</p>}
+                </div>
+              </div>
+
+              <div className="shrink-0 sticky bottom-0 bg-[#050505]/92 backdrop-blur-md border-t border-[var(--color-border-base)] px-5 sm:px-8 py-4" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+                <div className="flex items-center justify-between max-w-xl mx-auto gap-4">
+                  <button onClick={() => { track('onb_reasons_skipped', { ticker: scan.ticker }); setPhase('howItWorks'); }}
+                    className="text-[14px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors min-h-[44px]" style={MONO}>
+                    Skip
                   </button>
+                  <button
+                    onClick={adoptReasons}
+                    disabled={busy === 'reasons' || (picked.size === 0 && !(showCustom && customReason.trim()))}
+                    className="flex items-center gap-2 px-6 min-h-[48px] bg-[var(--color-gold)] text-black text-[15px] font-semibold rounded-md hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                    {busy === 'reasons' ? 'Saving…' : 'Tell me if this stops being true'}
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ═══ ATTRIBUTION — asked after value, never before ═══ */}
+          {phase === 'attribution' && (
+            <>
+              <div className="flex-1 overflow-y-auto px-5 sm:px-8 py-8">
+                <div className="max-w-xl mx-auto">
+                  <h2 className="text-[clamp(20px,4vw,28px)] leading-[1.2] text-[var(--color-text-primary)]"
+                    style={{ fontFamily: 'var(--font-display-serif)' }}>
+                    One last thing. How did you find Helm?
+                  </h2>
+                  <p className="mt-3 text-[15px] leading-[1.6] text-[var(--color-text-secondary)]">
+                    Helm is one person. Knowing what actually works decides what gets built next.
+                  </p>
+
+                  <div className="mt-6 space-y-2">
+                    {ACQUISITION_OPTIONS.map((o) => {
+                      const on = acqSource === o.slug;
+                      return (
+                        <button key={o.slug}
+                          onClick={() => { setAcqSource(o.slug); if (o.slug !== 'other') void submitAttribution(o.slug); }}
+                          className={`w-full text-left rounded-lg border px-4 py-3 text-[15px] transition-colors ${
+                            on
+                              ? 'border-[var(--color-gold)] bg-[rgba(230,185,77,0.07)] text-[var(--color-text-primary)]'
+                              : 'border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]'
+                          }`}>
+                          {o.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {acqSource === 'other' && (
+                    <div className="mt-3 rounded-lg border border-[var(--color-border-base)] p-4">
+                      <input
+                        value={acqDetail}
+                        onChange={(e) => setAcqDetail(e.target.value.slice(0, 200))}
+                        autoFocus
+                        placeholder="Where did you hear about it?"
+                        onKeyDown={(e) => { if (e.key === 'Enter' && acqDetail.trim()) void submitAttribution('other'); }}
+                        className="w-full bg-transparent text-[15px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] outline-none"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="shrink-0 sticky bottom-0 bg-[#050505]/92 backdrop-blur-md border-t border-[var(--color-border-base)] px-5 sm:px-8 py-4" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+                <div className="flex items-center justify-between max-w-xl mx-auto gap-4">
+                  {/* Never gate finishing on an analytics answer. */}
+                  <button onClick={() => { track('onb_attribution_skipped'); setPhase('done'); }}
+                    className="text-[14px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors min-h-[44px]" style={MONO}>
+                    Skip
+                  </button>
+                  {acqSource === 'other' && (
+                    <button onClick={() => void submitAttribution('other')}
+                      disabled={!acqDetail.trim()}
+                      className="flex items-center gap-2 px-6 min-h-[48px] bg-[var(--color-gold)] text-black text-[15px] font-semibold rounded-md hover:brightness-110 transition-all disabled:opacity-40">
+                      Done <ArrowRight className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             </>

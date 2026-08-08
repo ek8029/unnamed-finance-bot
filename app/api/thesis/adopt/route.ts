@@ -1,12 +1,27 @@
-// POST /api/thesis/adopt { ticker } — FOLLOW a house thesis verbatim.
-// Creates the user's thesis with provenance (source='house', house_ref) and
-// copies the house pillars as confirmed, origin='house'. The inherited catch
-// history stays where it honestly lives: the public /thesis/[ticker] page —
-// it is Helm's track record, never presented as the user's own.
+// POST /api/thesis/adopt { ticker, pillarIds?, customReason? }
+//
+// ADOPT a house thesis. Provenance stays explicit (source='house', house_ref,
+// origin='house'): this is Helm's reasoning being followed, not the user's own
+// history. The inherited catch history stays where it honestly lives, on the
+// public /thesis/[ticker] page — it is Helm's track record, never presented as
+// the user's.
+//
+// RECOGNITION, NOT AUTHORING. `pillarIds` lets the caller adopt only the reasons
+// that are actually theirs. Picking which claims you hold is what makes it your
+// thesis instead of Helm's opinion, and it is the difference between a later
+// alert landing on a belief you held and one arguing with a belief you never
+// did. Omit `pillarIds` to take the whole thesis (the /dashboard/theses/adopt
+// grid does this).
+//
+// `customReason` is the "something else" escape. A forced choice among three
+// house claims is worse than no thesis.
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getUserTier } from '@/lib/tier';
 import { getHouseThesis } from '@/lib/content/house-theses';
+
+const MAX_REASON = 300;
 
 export async function POST(request: Request) {
   try {
@@ -14,16 +29,30 @@ export async function POST(request: Request) {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    let body: { ticker?: unknown };
+    let body: { ticker?: unknown; pillarIds?: unknown; customReason?: unknown };
     try { body = await request.json(); } catch { return NextResponse.json({ error: 'Bad request' }, { status: 400 }); }
     const ticker = typeof body.ticker === 'string' ? body.ticker.trim().toUpperCase() : '';
     const house = ticker ? getHouseThesis(ticker) : undefined;
     if (!house) return NextResponse.json({ error: 'No house thesis for that ticker' }, { status: 404 });
 
+    // Which house claims the user recognised as their own. Unknown ids are
+    // dropped rather than erroring: a stale client must not block adoption.
+    const wanted = Array.isArray(body.pillarIds)
+      ? new Set(body.pillarIds.filter((x): x is string => typeof x === 'string'))
+      : null;
+    const chosen = wanted ? house.pillars.filter((p) => wanted.has(p.id)) : house.pillars;
+
+    const rawReason = typeof body.customReason === 'string' ? body.customReason.trim() : '';
+    const customReason = rawReason ? rawReason.slice(0, MAX_REASON) : null;
+
+    if (chosen.length === 0 && !customReason) {
+      return NextResponse.json({ error: 'Pick at least one reason' }, { status: 400 });
+    }
+
     // Existing thesis with pillars => nothing to adopt over (never clobber user work).
     const { data: existing } = await supabase
       .from('theses')
-      .select('id')
+      .select('id, tracked')
       .eq('user_id', user.id)
       .eq('ticker', ticker)
       .maybeSingle();
@@ -37,6 +66,29 @@ export async function POST(request: Request) {
       }
     }
 
+    // Free tier tracks ONE thesis. This route used to set tracked=true
+    // unconditionally, which walked straight around the gate that
+    // PATCH /api/thesis/[ticker] enforces. Adopting is still allowed at the cap
+    // — the thesis is created untracked and the response says so, rather than
+    // silently implying the cron is watching it.
+    let tracked = true;
+    if (!existing?.tracked) {
+      const tier = await getUserTier(user.id);
+      if (tier === 'free') {
+        const { count } = await supabase
+          .from('theses')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('tracked', true);
+        if ((count ?? 0) >= 1) tracked = false;
+      }
+    }
+
+    const partial = chosen.length < house.pillars.length;
+    const notes = partial || customReason
+      ? `Adopted from Helm's ${ticker} thesis (${new Date().toISOString().slice(0, 10)}).`
+      : `Follows Helm's ${ticker} thesis (adopted ${new Date().toISOString().slice(0, 10)}).`;
+
     let thesisId = existing?.id as string | undefined;
     if (!thesisId) {
       const { data: inserted, error: insErr } = await supabase
@@ -44,10 +96,10 @@ export async function POST(request: Request) {
         .insert({
           user_id: user.id,
           ticker,
-          tracked: true,
+          tracked,
           source: 'house',
           house_ref: ticker,
-          notes: `Follows Helm's ${ticker} thesis (adopted ${new Date().toISOString().slice(0, 10)}).`,
+          notes,
         })
         .select('id')
         .maybeSingle();
@@ -59,28 +111,48 @@ export async function POST(request: Request) {
     } else {
       await supabase
         .from('theses')
-        .update({ tracked: true, source: 'house', house_ref: ticker })
+        .update({ tracked, source: 'house', house_ref: ticker, notes })
         .eq('id', thesisId);
     }
 
-    const { error: pillarErr } = await supabase.from('thesis_pillars').insert(
-      house.pillars.map((p, i) => ({
+    const rows = chosen.map((p, i) => ({
+      thesis_id: thesisId,
+      user_id: user.id,
+      claim: p.claim,
+      // The kill criterion came across on every house pillar and was being
+      // dropped here. It is the field that makes a pillar falsifiable, and
+      // barely any user-authored pillar has one.
+      breaks_if: p.breaks_if,
+      origin: 'house',
+      confirmed: true,
+      lifecycle: 'confirmed',
+      status: 'unverified',
+      sort_order: i,
+    }));
+
+    // Their own words, when the house claims did not cover it. No kill
+    // criterion: Helm did not write this one and must not invent a test for it.
+    if (customReason) {
+      rows.push({
         thesis_id: thesisId,
         user_id: user.id,
-        claim: p.claim,
-        origin: 'house',
+        claim: customReason,
+        breaks_if: null as unknown as string,
+        origin: 'user',
         confirmed: true,
         lifecycle: 'confirmed',
         status: 'unverified',
-        sort_order: i,
-      })),
-    );
+        sort_order: rows.length,
+      });
+    }
+
+    const { error: pillarErr } = await supabase.from('thesis_pillars').insert(rows);
     if (pillarErr) {
       console.error('[adopt] pillar insert failed:', pillarErr);
       return NextResponse.json({ error: 'Failed to copy pillars' }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, ticker, pillars: house.pillars.length });
+    return NextResponse.json({ ok: true, ticker, pillars: rows.length, tracked, partial });
   } catch (err) {
     console.error('[adopt] unhandled:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
