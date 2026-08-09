@@ -28,12 +28,25 @@ export const PRO_FEATURES = [
 
 export type ProFeature = (typeof PRO_FEATURES)[number];
 
-// ── Open-access window ──
-// Every signed-in account reads as Max through Aug 10 (Will/Mucker signs up
-// this week — nobody gets manually comped, nothing is written to the DB, and
-// when the date passes, normal tiers resume silently). Runtime-only override:
-// Stripe rows, trial rows, and billing display fields are untouched.
-const OPEN_ACCESS_UNTIL = Date.parse('2026-08-11T07:00:00Z'); // ≈ midnight PT Aug 10→11
+// ── Open-access window (ENDED) ──
+//
+// Every signed-in account used to read as Pro regardless of what the table
+// said. It was opened so a specific investor could look around without being
+// comped in the database, on the reasoning that revenue was coming from a
+// raise rather than from the product. He never signed up, the raise has not
+// landed, and free-for-everyone is now the thing standing between Helm and its
+// first arm's-length payer, so the window is closed.
+//
+// Closing it does NOT downgrade anyone who was really given access. Of 152
+// subscription rows, 138 are free (these are the accounts the window was
+// silently upgrading), 4 are permanent comps with no Stripe subscription, 4
+// are manual trials still running, and 1 is a live paid subscription. Only the
+// 138 change, and they change to what the table already says they are.
+//
+// Kept as a dated constant rather than deleted: it is the honest record of why
+// every metric before this date shows universal Pro access, and re-opening it
+// for a demo is a one-line date change.
+const OPEN_ACCESS_UNTIL = Date.parse('2026-08-09T00:00:00Z'); // closed 2026-08-09
 
 export function isOpenAccessWindow(): boolean {
   return Date.now() < OPEN_ACCESS_UNTIL;

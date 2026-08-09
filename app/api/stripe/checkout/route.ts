@@ -9,6 +9,17 @@ import {
 import { tierAtLeast, normalizeTier } from '@/lib/tier-shared';
 
 /**
+ * Length of the card-required free trial, in days.
+ *
+ * Seven, matching what Astor runs, and short for a reason: Helm's core event
+ * fires roughly every seven to eight weeks per tracked thesis, so a trial is
+ * never long enough to guarantee an adverse finding lands inside it. What has
+ * to land inside it is the tax number, which is computed on day one from the
+ * book rather than waiting on the news.
+ */
+const TRIAL_DAYS = 7;
+
+/**
  * POST /api/stripe/checkout
  *
  * Creates a Stripe Embedded Checkout session for upgrading to Pro.
@@ -129,11 +140,38 @@ export async function POST(req: NextRequest) {
     }
 
     // 7. Create Checkout Session
+    //
+    // TRIAL WITH A CARD. Stripe collects the payment method up front and does
+    // not charge until the trial ends, which is the difference that matters:
+    // the manual trials granted in July had no card on file, so converting
+    // required the person to come back and actively subscribe, and almost
+    // nobody does. `missing_payment_method: 'cancel'` means a trial that
+    // somehow reaches the end without one lapses instead of erroring.
+    //
+    // Nothing downstream needed changing. The webhook derives tier from the
+    // purchased price rather than from payment status, so a `trialing`
+    // subscription reads as Pro immediately, and `current_period_end` is the
+    // trial end date. If it lapses, customer.subscription.deleted already
+    // downgrades to free.
+    //
+    // Subscription mode only: lifetime is a one-time payment and cannot trial.
+    const mode = getCheckoutMode(billingPeriod);
     const session = await getStripe().checkout.sessions.create({
       ui_mode: 'embedded',
-      mode: getCheckoutMode(billingPeriod),
+      mode,
       customer: stripeCustomerId,
       line_items: [{ price: priceId, quantity: 1 }],
+      ...(mode === 'subscription'
+        ? {
+            payment_method_collection: 'always' as const,
+            subscription_data: {
+              trial_period_days: TRIAL_DAYS,
+              trial_settings: {
+                end_behavior: { missing_payment_method: 'cancel' as const },
+              },
+            },
+          }
+        : {}),
       return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev'}/dashboard?upgrade=success&session_id={CHECKOUT_SESSION_ID}`,
       metadata: {
         supabase_user_id: user.id,
