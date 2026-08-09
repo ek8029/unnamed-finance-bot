@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { getUserTier } from '@/lib/tier';
 import { bumpThesisVersion } from '@/lib/thesis-version';
+import { triggerBackfill } from '@/lib/thesis-backfill-trigger';
 
 function parseTicker(raw: string): { ticker: string } | { error: string } {
   const ticker = raw.trim().toUpperCase();
@@ -194,26 +195,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'Failed to update thesis' }, { status: 500 });
     }
 
-    // Fire-and-forget backfill on track enable. Aborts after 3s; the backfill
-    // route continues processing server-side. Silently skipped if it fails
-    // (backfill re-triggers on next track toggle or manual call).
+    // Backfill on track enable, so the thesis has a record the moment it starts
+    // being watched. Shared with the onboarding seed path, which used to track
+    // without ever backfilling.
     if (body.tracked === true && thesis.tracked === false) {
-      try {
-        const backfillUrl = new URL('/api/thesis/backfill', request.url);
-        const controller = new AbortController();
-        setTimeout(() => controller.abort(), 3000);
-        fetch(backfillUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            cookie: request.headers.get('cookie') ?? '',
-          },
-          body: JSON.stringify({ ticker }),
-          signal: controller.signal,
-        }).catch(() => {});
-      } catch {
-        // never block the PATCH response on backfill
-      }
+      triggerBackfill(request, ticker);
     }
 
     return NextResponse.json({ thesis: updated });

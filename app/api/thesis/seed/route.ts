@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { draftPillars } from '@/lib/thesis-seed';
 import { rateLimit } from '@/lib/rate-limit';
+import { triggerBackfill, ONBOARDING_AUTO_TRACK_CAP } from '@/lib/thesis-backfill-trigger';
 
 export async function POST(request: Request) {
   try {
@@ -171,10 +172,22 @@ export async function POST(request: Request) {
       allPillars = [...pillars, ...(insertedPillars ?? [])];
     }
 
-    // Auto-track: if user has no tracked theses and this ticker is their largest
-    // holding. Only when at least one CONFIRMED pillar exists — tracking implies
-    // the agent has user-vetted reasons to watch; a fresh unconfirmed draft must
-    // never produce a tracked-but-empty thesis.
+    // Auto-track what the user confirmed, up to a cap, and load its history.
+    //
+    // This used to require that the ticker be the user's single LARGEST holding
+    // and that they had zero tracked theses. It almost never fired. Of twelve
+    // real users holding theses, five had nothing monitored at all, and every
+    // one of them was a trial user: they confirmed a thesis, the app saved it,
+    // and the agent never looked at it again. Nothing in the UI said so.
+    //
+    // It also tracked without backfilling, because the backfill trigger lived
+    // only in the PATCH route. So even the user who picked their largest
+    // holding got a thesis with an empty record, and adverse findings arrive at
+    // roughly half a per thesis per month, so a fortnight showed them nothing.
+    //
+    // Confirming a pillar is still the bar: tracking implies the agent has
+    // user-vetted reasons to watch, and an unconfirmed draft must never produce
+    // a tracked-but-empty thesis.
     const hasConfirmed = allPillars.some(
       (p: { confirmed: boolean; lifecycle: string }) => p.confirmed && p.lifecycle !== 'dismissed',
     );
@@ -184,24 +197,22 @@ export async function POST(request: Request) {
       .eq('user_id', user.id)
       .eq('tracked', true);
 
-    if (hasConfirmed && !trackedCountError && (trackedCount ?? 0) === 0) {
-      const { data: largestHolding } = await supabase
-        .from('holdings')
-        .select('ticker, total_value')
-        .eq('user_id', user.id)
-        .order('total_value', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+    if (
+      hasConfirmed &&
+      !trackedCountError &&
+      !thesis.tracked &&
+      (trackedCount ?? 0) < ONBOARDING_AUTO_TRACK_CAP
+    ) {
+      const { error: updateError } = await supabase
+        .from('theses')
+        .update({ tracked: true })
+        .eq('id', thesis.id);
 
-      if (largestHolding?.ticker === ticker) {
-        const { error: updateError } = await supabase
-          .from('theses')
-          .update({ tracked: true })
-          .eq('id', thesis.id);
-
-        if (!updateError) {
-          thesis = { ...thesis, tracked: true };
-        }
+      if (!updateError) {
+        thesis = { ...thesis, tracked: true };
+        // Twelve months of history, so the thesis has a record immediately
+        // rather than waiting on the next thing to happen in the market.
+        triggerBackfill(request, ticker);
       }
     }
 
