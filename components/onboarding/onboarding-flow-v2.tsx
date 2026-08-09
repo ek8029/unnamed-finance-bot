@@ -174,10 +174,11 @@ const ACQUISITION_OPTIONS: { slug: string; label: string }[] = [
   { slug: 'google', label: 'Google' },
   { slug: 'friend', label: 'A friend' },
   { slug: 'reddit', label: 'Reddit' },
-  { slug: 'blog_newsletter', label: 'Blog or newsletter' },
   { slug: 'x', label: 'X' },
-  { slug: 'hacker_news', label: 'Hacker News' },
+  { slug: 'linkedin', label: 'LinkedIn' },
   { slug: 'tiktok', label: 'TikTok' },
+  { slug: 'hacker_news', label: 'Hacker News' },
+  { slug: 'blog_newsletter', label: 'Blog or newsletter' },
   { slug: 'other', label: 'Something else' },
 ];
 

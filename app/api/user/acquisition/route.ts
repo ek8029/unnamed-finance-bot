@@ -22,9 +22,9 @@ const SOURCES = new Set([
   'reddit',
   'x',
   'tiktok',
-  // Retired in favour of 'tiktok' once LinkedIn moved under "something else":
-  // there is no licensed LinkedIn mark to put on a tile, and a combined
-  // "TikTok or LinkedIn" answer could not tell the two channels apart anyway.
+  'linkedin',
+  // Retired: 'social' was a combined "TikTok or LinkedIn" tile, which could not
+  // tell the two channels apart in the data. They are separate options now.
   // Still accepted because a phone can be running an older bundle.
   'social',
   'other',
