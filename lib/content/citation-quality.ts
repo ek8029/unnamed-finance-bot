@@ -47,23 +47,62 @@ const BOILERPLATE: { re: RegExp; name: string }[] = [
 /** News-only defects. The corpus is 96% news, and its junk has a different
  *  shape from a filing's: not boilerplate, but somebody's opinion or a broker's
  *  rating dressed as a finding about the business. */
-const NEWS_JUNK: { re: RegExp; name: string }[] = [
+const NEWS_JUNK: { re: RegExp; name: string; maxStart?: number }[] = [
   // A columnist writing in the first person is not evidence about a company.
-  { re: /(?:I|we|my|me)\s+(?:keep|kept|bought|sold|own|love|like|think|believe|would|am|have been)/i, name: 'first-person-opinion' },
-  { re: /(?:here(?:'|’)?s why|why I|my take|I(?:'|’)?(?:m|ve))/i, name: 'first-person-opinion' },
-  // A rating change is a fact about an analyst, not about the underlying.
-  { re: /(?:upgraded?|downgraded?|reiterated?|initiated coverage)[^.]{0,60}(?:to|from)\s+(?:buy|sell|hold|neutral|overweight|underweight|outperform)/i, name: 'analyst-rating' },
-  { re: /price target/i, name: 'analyst-rating' },
-  { re: /analysts?\s+(?:expect|estimate|forecast|predict|say|see)/i, name: 'analyst-opinion' },
+  { re: /\b(?:I|we|my)\s+(?:keep|kept|bought|sold|own|owned|love|like|think|believe|would|am|have been)\b/i, name: 'first-person-opinion' },
+  { re: /\b(?:here(?:'|’)?s why|why I\b|my take\b|I(?:'|’)(?:m|ve)\b)/i, name: 'first-person-opinion' },
+  // A rating change and a price target are facts about an analyst, not about
+  // the underlying business. They can move the stock, but they are not evidence
+  // for or against somebody's reasoning about the company.
+  { re: /\b(?:upgraded?|downgraded?|reiterated?|initiated coverage)\b[^.]{0,60}\b(?:to|from)\s+(?:buy|sell|hold|neutral|overweight|underweight|outperform|market perform)\b/i, name: 'analyst-rating' },
+  { re: /\bprice targets?\b/i, name: 'analyst-rating' },
+  { re: /\banalysts?\s+(?:expect|estimate|forecast|predict|say|see)\b/i, name: 'analyst-opinion', maxStart: 40 },
   // Ranked listicles and promotional roundups.
-  { re: /(?:\d+\s+(?:best|top|worst)|best\s+stocks?\s+to\s+buy|top\s+\d+\s+stocks?)/i, name: 'listicle' },
+  { re: /\b(?:\d+\s+(?:best|top|worst)|best\s+stocks?\s+to\s+buy|top\s+\d+\s+stocks?)\b/i, name: 'listicle' },
 ];
 
-/** Something checkable: a figure, a percentage, or a date. */
-const HAS_FIGURE = /\d/;
-const HAS_MONTH = /\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\b/i;
+/** Corporate self-description with no content. True of every company on every
+ *  day, so it can neither support nor contradict anybody's reasoning. */
+const PUFFERY: { re: RegExp; name: string }[] = [
+  { re: /\bwell[-\s]positioned\b/i, name: 'puffery' },
+  { re: /\bpoised (?:for|to)\b/i, name: 'puffery' },
+  { re: /\bremains? (?:confident|optimistic) (?:about|in|that)\b/i, name: 'puffery' },
+  { re: /\bcommitted to (?:delivering|driving|creating|building)\b/i, name: 'puffery' },
+];
 
-export interface CitationDefect { code: string; detail: string }
+/** A filing describing its own structure or accounting policy. Real MD&A, not
+ *  boilerplate, but it reports no event and no change, so it is not evidence.
+ *
+ *  This replaced a heuristic that demanded a figure or a date in any filing
+ *  citation. That rule read as reasonable and was wrong: on the real corpus it
+ *  killed "we are reaffirming our fiscal year revenue guidance range and
+ *  raising our full year guidance ranges", "Broadcom to develop and supply a
+ *  range of custom ASIC silicon products for use in multiple generations of
+ *  Apple products", and "the increase in costs and expenses was primarily due
+ *  to increases in employee compensation, including severance expenses" —
+ *  6 of the 12 rows it touched were genuine findings. An explicit list of junk
+ *  shapes is checkable against the corpus; "has a number in it" is not. */
+const FILING_DESCRIPTIVE: { re: RegExp; name: string }[] = [
+  { re: /\bwe have (?:two|three|four|five|six|\d+) (?:operating|reportable) segments\b/i, name: 'segment-description' },
+  { re: /\bour (?:operating|reportable) segments are\b/i, name: 'segment-description' },
+  { re: /\brevenue is (?:generally )?recognized\b/i, name: 'accounting-policy' },
+  { re: /\bare unsecured and unsubordinated obligations\b/i, name: 'prospectus-terms' },
+  { re: /\bwhich we refer to as\b/i, name: 'defined-term' },
+];
+
+export interface CitationDefect {
+  code: string;
+  detail: string;
+  /** `hard` means the citation says nothing and is safe to delete outright.
+   *  `soft` means the text is real but presented badly — reject it at ingest,
+   *  where a better sentence from the same source is one retry away, but do
+   *  not purge it from rows already written. The chopped-clause rule is the
+   *  reason this distinction exists: "the UK government has formally launched
+   *  a comprehensive review of its £330 million NHS contract with Palantir"
+   *  starts mid-sentence and is still one of the most material findings in
+   *  the corpus. */
+  severity: 'hard' | 'soft';
+}
 
 /**
  * Returns the reason this citation is not evidence, or null if it passes.
@@ -79,19 +118,41 @@ export function citationDefect(
   sourceType?: string,
 ): CitationDefect | null {
   const raw = (excerpt ?? '').replace(/\s+/g, ' ').trim();
-  if (!raw) return { code: 'empty', detail: 'no excerpt' };
+  if (!raw) return { code: 'empty', detail: 'no excerpt', severity: 'hard' };
 
   // price_move and xbrl rows are system-generated strings, not prose lifted from
   // a document. They are exempt: they would fail the verb test by design.
   if (sourceType === 'price_move' || sourceType === 'xbrl') return null;
 
   for (const b of BOILERPLATE) {
-    if (b.re.test(raw)) return { code: 'boilerplate', detail: b.name };
+    if (b.re.test(raw)) return { code: 'boilerplate', detail: b.name, severity: 'hard' };
+  }
+
+  for (const p of PUFFERY) {
+    if (p.re.test(raw)) return { code: 'boilerplate', detail: p.name, severity: 'hard' };
+  }
+
+  if (sourceType === 'filing') {
+    for (const f of FILING_DESCRIPTIVE) {
+      if (f.re.test(raw)) return { code: 'unfalsifiable', detail: f.name, severity: 'hard' };
+    }
   }
 
   if (sourceType === 'news') {
     for (const n of NEWS_JUNK) {
-      if (n.re.test(raw)) return { code: 'news-noise', detail: n.name };
+      // An analyst's outlook quoted as a trailing clause does not make the
+      // sentence about the analyst. "Broadcom's Tomahawk 6 ASIC, 102.4Tbps
+      // across 64 ports of 1.6Tbps - which industry analysts expect to make up
+      // the majority of new AI ports by 2027" is evidence about a product;
+      // "Analysts expect tariff refunds to offset the discounts" is not. The
+      // difference is whether the analyst is the subject, so this rule only
+      // fires near the start of the excerpt.
+      if (n.maxStart != null) {
+        const m = n.re.exec(raw);
+        if (m && m.index <= n.maxStart) return { code: 'news-noise', detail: n.name, severity: 'hard' };
+        continue;
+      }
+      if (n.re.test(raw)) return { code: 'news-noise', detail: n.name, severity: 'hard' };
     }
   }
 
@@ -99,7 +160,7 @@ export function citationDefect(
 
   // A caption, a table footnote, or an event with its subject cut off.
   if (words.length < 10) {
-    return { code: 'fragment', detail: `${words.length} words` };
+    return { code: 'fragment', detail: `${words.length} words`, severity: 'hard' };
   }
   // A short noun phrase that exists only to introduce a defined term. The same
   // event written properly ("Strategy announced a new $21.0 billion offering of
@@ -107,20 +168,12 @@ export function citationDefect(
   // version does not. A verb-list test caught this too, but it mis-dropped 252
   // real findings on verbs that were simply not in the list.
   if (words.length < 12 && /\((?:the|collectively)[^)]*["“”][^)]*\)\.?$/.test(raw)) {
-    return { code: 'fragment', detail: 'defined-term stub' };
+    return { code: 'fragment', detail: 'defined-term stub', severity: 'hard' };
   }
-  // Mid-sentence starts are almost always a chopped clause. A leading figure is
-  // fine ("$21.0 billion of notes were issued"), a leading lowercase word is not.
+  // Mid-sentence starts are a chopped clause: reject at ingest, but soft,
+  // because the words that are there are usually true and sometimes material.
   if (/^[a-z]/.test(raw)) {
-    return { code: 'fragment', detail: 'starts mid-sentence' };
-  }
-
-  // A material claim drawn from a FILING with nothing checkable in it is an
-  // assertion, not evidence. Scoped to filings on purpose: a news headline
-  // ("Services segment hits record revenues") is a legitimate finding without a
-  // figure in the sentence, and an earlier cut of this rule dropped 353 of them.
-  if (sourceType === 'filing' && verdict !== 'neutral' && !HAS_FIGURE.test(raw) && !HAS_MONTH.test(raw)) {
-    return { code: 'unfalsifiable', detail: 'filing claim with no figure or date' };
+    return { code: 'fragment', detail: 'starts mid-sentence', severity: 'soft' };
   }
 
   return null;

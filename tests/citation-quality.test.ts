@@ -52,23 +52,76 @@ describe('citationDefect — the other boilerplate shapes', () => {
 });
 
 describe('citationDefect — the material bar', () => {
-  // Scoped to filings: a news headline is a legitimate finding without a figure
-  // in the sentence, and an unscoped version of this rule dropped 353 of them.
-  it('rejects a supporting claim from a FILING with nothing checkable in it', () => {
-    expect(pass('The Company believes its strategy remains well positioned for the future.', 'supports', 'filing')?.code)
+  it('kills puffery, whatever it was filed under', () => {
+    for (const t of ['filing', 'news', undefined]) {
+      expect(pass('The Company believes its strategy remains well positioned for the future.', 'supports', t)?.code)
+        .toBe('boilerplate');
+    }
+  });
+
+  it('kills a filing describing its own segments or accounting policy', () => {
+    expect(pass('We have two operating segments, commercial and government, which were determined by the chief operating decision maker.', 'supports', 'filing')?.code)
+      .toBe('unfalsifiable');
+    expect(pass('Revenue is generally recognized over the contract term on a ratable basis, consistent with prior periods.', 'supports', 'filing')?.code)
       .toBe('unfalsifiable');
   });
 
-  it('leaves the same sentence alone when it came from news', () => {
-    expect(pass('The Company believes its strategy remains well positioned for the future.', 'supports', 'news')).toBeNull();
+  // These four are the real rows a "filing needs a figure or a date" rule
+  // deleted. Any future version of that idea has to keep them.
+  const realMdna = [
+    'We are reaffirming our fiscal year revenue guidance range and raising our full year guidance ranges for adjusted operating margin.',
+    'Broadcom to develop and supply a range of custom ASIC silicon products for use in multiple generations of Apple products.',
+    'The increase in costs and expenses was primarily due to increases in employee compensation, including severance expenses.',
+    'Volume growth was driven primarily by continued resilience in consumer spending and ongoing expansion in digital commerce.',
+  ];
+  for (const s of realMdna) {
+    it(`keeps real MD&A: ${s.slice(0, 46)}…`, () => expect(pass(s, 'supports', 'filing')).toBeNull());
+  }
+});
+
+describe('citationDefect — news noise', () => {
+  it('kills a columnist writing in the first person', () => {
+    expect(pass('I keep hitting the buy button on Advanced Micro Devices because every quarter Lisa Su gives me a fresh reason.', 'supports', 'news')?.detail)
+      .toBe('first-person-opinion');
   });
 
-  it('allows the same sentence as neutral context', () => {
-    expect(pass('The Company believes its strategy remains well positioned for the future.', 'neutral')).toBeNull();
+  it('kills a rating change and a price target', () => {
+    expect(pass('Citi has upgraded Advanced Micro Devices to Buy from Neutral, raising its price target to $575 from $460.', 'supports', 'news')?.detail)
+      .toBe('analyst-rating');
   });
 
-  it('accepts a date instead of a figure', () => {
-    expect(pass('The transaction was completed in September and remains subject to review.', 'supports', 'filing')).toBeNull();
+  it('kills a listicle placement', () => {
+    expect(pass('Broadcom Inc. (NASDAQ:AVGO) is one of the 10 Best AI Chip Stocks to Buy for the Long Term.', 'supports', 'news')?.detail)
+      .toBe('listicle');
+  });
+
+  it('kills a sentence whose subject is what analysts think', () => {
+    expect(pass('Analysts expect tariff refunds and lower fuel costs to offset the discounts, leaving profit guidance intact.', 'supports', 'news')?.detail)
+      .toBe('analyst-opinion');
+  });
+
+  // The same words as a trailing clause do not make the sentence about the
+  // analyst. This row is evidence about a product.
+  it('keeps an analyst outlook quoted at the end of a sentence about the business', () => {
+    expect(pass('These platforms are based on Broadcom\'s Tomahawk 6 ASIC with a total capacity of 102.4Tbps across 64 ports of 1.6Tbps - which industry analysts expect to make up the majority of new AI ports deployed by 2027.', 'supports', 'news'))
+      .toBeNull();
+  });
+
+  it('leaves filings alone: news rules do not apply to them', () => {
+    expect(pass('The Company raised its price target range for the segment during the period ended June 30, 2026.', 'supports', 'filing')).toBeNull();
+  });
+});
+
+describe('citationDefect — severity', () => {
+  it('marks a chopped clause soft, because the words in it are usually true', () => {
+    const d = pass('the UK government has formally launched a comprehensive review of its £330 million NHS contract with Palantir Technologies.', 'contradicts', 'news');
+    expect(d?.detail).toBe('starts mid-sentence');
+    expect(d?.severity).toBe('soft');
+  });
+
+  it('marks boilerplate hard', () => {
+    expect(pass('Actual results may differ materially from these forward-looking statements due to various factors.', 'contradicts', 'filing')?.severity)
+      .toBe('hard');
   });
 });
 
