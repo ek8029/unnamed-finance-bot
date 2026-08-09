@@ -7,11 +7,11 @@ import { CinematicBg } from '@/components/cinematic-bg';
 export const metadata: Metadata = {
   title: 'MyThesis Alternative Without the Per-Holding Meter | Helm Terminal',
   description:
-    'Looking for a mythesis.ai alternative? MyThesis charges $49.99 to $199.99/month based on how many holdings you watch. Helm Terminal monitors your whole portfolio at $20/month flat, with verbatim dated SEC citations.',
+    'Looking for a mythesis.ai alternative? MyThesis charges $4.99 per holding per month, so the bill grows with every position you add. Helm Terminal monitors your whole portfolio at $20/month flat, with verbatim dated SEC citations.',
   openGraph: {
     title: 'A MyThesis Alternative Without the Per-Holding Meter',
     description:
-      'MyThesis meters by holding, up to $199.99/month for 25 positions. Helm watches your whole book at $20/month flat, with verbatim dated citations.',
+      'MyThesis meters by holding at $4.99 each per month. Helm watches your whole book at $20/month flat, with verbatim dated citations.',
     url: 'https://helmterminal.dev/mythesis-alternative',
     siteName: 'Helm Terminal',
     type: 'article',
@@ -31,7 +31,7 @@ const FAQS = [
   },
   {
     q: 'What is the difference between MyThesis and Helm Terminal?',
-    a: 'Both monitor investment theses and are live as of July 2026. MyThesis is a dedicated thesis-alert tool: manually entered holdings, per-pillar status, an alert feed, priced per holding from $49.99/month for 5 positions. Helm runs thesis monitoring inside a whole-portfolio agent: brokerage sync via Plaid, tax-loss harvesting, concentration and earnings scans, and a daily brief, at $20/month flat, and every thesis alert quotes the underlying filing or article verbatim with its date.',
+    a: 'Both monitor investment theses and are live as of August 2026. MyThesis is a dedicated thesis-alert tool: manually entered holdings, per-pillar status, an alert feed, priced at $4.99 per holding per month with the first holding free. Helm runs thesis monitoring inside a whole-portfolio agent: brokerage sync via Plaid, tax-loss harvesting, concentration and earnings scans, and a daily brief, at $20/month flat, and every thesis alert quotes the underlying filing or article verbatim with its date.',
   },
   {
     q: 'Does Helm Terminal track investment theses like MyThesis?',
@@ -39,7 +39,7 @@ const FAQS = [
   },
   {
     q: 'How many holdings can I monitor on Helm vs MyThesis?',
-    a: 'MyThesis meters by position: $49.99/month covers 5 holdings, $89.99 covers 10, and $199.99 covers 25. Helm Pro covers your entire portfolio at $20/month with no per-holding cap, whether you hold 5 positions or 60.',
+    a: 'MyThesis meters by position at $4.99 per holding per month, with the first holding free (observed August 9, 2026). Ten holdings is $44.91/month and 25 is $119.76/month. Helm Pro covers your entire portfolio at $20/month with no per-holding cap, whether you hold 5 positions or 60.',
   },
   {
     q: 'Does MyThesis connect to my brokerage?',
@@ -47,11 +47,15 @@ const FAQS = [
   },
 ];
 
+// MyThesis pricing observed on mythesis.ai/pricing, 2026-08-09: $4.99 per
+// holding per month, first holding free. Their earlier bundled tiers ($49.99
+// for 5, $89.99 for 10, $199.99 for 25) are no longer offered. Re-check before
+// citing, and keep the observed date in the copy.
 const COST_ROWS = [
-  ['5 holdings', '$49.99/mo ($600/yr)', '$20/mo ($240/yr)'],
-  ['10 holdings', '$89.99/mo ($1,080/yr)', '$20/mo ($240/yr)'],
-  ['25 holdings', '$199.99/mo ($2,400/yr)', '$20/mo ($240/yr)'],
-  ['40 holdings', 'Not offered (25 max)', '$20/mo ($240/yr)'],
+  ['5 holdings', '$19.96/mo ($239.52/yr)', '$20/mo ($240/yr)'],
+  ['10 holdings', '$44.91/mo ($538.92/yr)', '$20/mo ($240/yr)'],
+  ['25 holdings', '$119.76/mo ($1,437.12/yr)', '$20/mo ($240/yr)'],
+  ['60 holdings', '$294.41/mo ($3,532.92/yr)', '$20/mo ($240/yr)'],
 ];
 
 export default function MyThesisAlternativePage() {
@@ -61,7 +65,7 @@ export default function MyThesisAlternativePage() {
       '@type': 'Article',
       headline: 'A MyThesis Alternative Without the Per-Holding Meter',
       description:
-        'MyThesis charges by how many holdings you watch, up to $199.99/month for 25. Helm Terminal monitors the whole portfolio at $20/month flat, with verbatim dated SEC citations.',
+        'MyThesis charges $4.99 per holding per month, so the bill scales with the size of your book. Helm Terminal monitors the whole portfolio at $20/month flat, with verbatim dated SEC citations.',
       datePublished: '2026-07-16',
       dateModified: '2026-07-16',
       author: { '@type': 'Person', name: 'Evan Kim', url: 'https://helmterminal.dev/about', jobTitle: 'Founder' },
@@ -109,7 +113,7 @@ export default function MyThesisAlternativePage() {
             Looking for a mythesis.ai alternative?
           </h1>
           <p className="text-[17px] leading-[1.55] text-[var(--color-text-secondary)]">
-            MyThesis is a clean, dedicated thesis-alert tool, and it is live, which already puts it ahead of most of this category. The catch is the meter: it charges by how many holdings you watch, up to $199.99 a month for 25 positions. Helm Terminal watches your whole portfolio, thesis monitoring included, at $20 a month flat.
+            MyThesis is a clean, dedicated thesis-alert tool, and it is live, which already puts it ahead of most of this category. The catch is the meter: as of August 9, 2026 it charges $4.99 per holding per month, with your first holding free, and there is no cap. At five holdings that is $19.96 and the two products cost the same. At 25 it is $119.76, and at 60 it is $294.41. Helm Terminal watches your whole portfolio, thesis monitoring included, at $20 a month flat, so the gap widens with every position you own.
           </p>
         </header>
 

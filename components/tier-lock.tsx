@@ -3,24 +3,42 @@
 // #E6B94D. Reads the
 // current tier from the preview context; renders children when entitled.
 
+import { useEffect } from 'react';
 import { tierAtLeast, TIER_META } from '@/lib/tier-shared';
 import { usePreview } from '@/lib/preview-context';
 import { Lock } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import posthog from 'posthog-js';
 
 export function TierLock({
   required,
   label,
   blurb,
+  surface,
   children,
 }: {
   required: 'pro';
   label?: string;
   blurb?: string;
+  /** Which gated screen this is. Defaults to the pathname. */
+  surface?: string;
   children: React.ReactNode;
 }) {
   const { tier } = usePreview();
-  if (tierAtLeast(tier, required)) return <>{children}</>;
+  const pathname = usePathname();
+  const entitled = tierAtLeast(tier, required);
+  const where = surface ?? pathname ?? 'unknown';
+
+  // The paywall shipped with no instrumentation at all, so "did anyone even see
+  // it" was unanswerable. Fire on mount rather than on render: React runs the
+  // render body twice in strict mode and that would double every count.
+  useEffect(() => {
+    if (entitled) return;
+    posthog.capture('paywall_hit', { surface: where, required, tier });
+  }, [entitled, where, required, tier]);
+
+  if (entitled) return <>{children}</>;
 
   const meta = TIER_META[required];
   return (
@@ -54,11 +72,15 @@ export function TierLock({
           {blurb && <p className="text-[14px] leading-[1.55] text-[#8A8A8A] m-0 mb-4">{blurb}</p>}
           <Link
             href="/pricing"
+            onClick={() => posthog.capture('paywall_cta_clicked', { surface: where, required, tier })}
             className="inline-flex items-center justify-center rounded-md px-4 py-2 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] mt-1"
             style={{ background: meta.color, color: '#0A0A0A', fontFamily: 'var(--font-mono)' }}
           >
-            Unlock with {meta.label} · {meta.price}
+            Start 14 day free trial
           </Link>
+          <p className="text-[11px] text-[#6E6E6E] mt-2.5 mb-0">
+            Then {meta.price}. Cancel any time before the trial ends.
+          </p>
         </div>
       </div>
     </div>

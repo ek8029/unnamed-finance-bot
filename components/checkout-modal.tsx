@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
 import { X, Loader2, Check } from 'lucide-react';
+import posthog from 'posthog-js';
 
 // Initialize once at module level
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
@@ -31,6 +32,9 @@ export function CheckoutModal({ billingPeriod, onClose }: CheckoutModalProps) {
     let cancelled = false;
     (async () => {
       try {
+        // The gap between paywall_cta_clicked and this is the pricing page;
+        // the gap between this and trial_started is the Stripe form itself.
+        posthog.capture('checkout_started', { plan: billingPeriod });
         const res = await fetch('/api/stripe/checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -27,11 +27,11 @@ export const metadata: Metadata = {
 const FAQS: { q: string; a: string }[] = [
   {
     q: 'What is the best investment thesis tracker in 2026?',
-    a: 'Helm Terminal is the only thesis-monitoring tool in this comparison that watches your whole portfolio on flat pricing, cites verbatim, dated SEC filings rather than paraphrased signals, and detects shared-driver risk across positions. MyThesis (mythesis.ai) is the other live paid option, but it meters by holding, starting at $49.99/month for 5 positions. Vela and Thesis (UseThesis) are still waitlist or early access as of July 2026.',
+    a: 'Helm Terminal is the only thesis-monitoring tool in this comparison that watches your whole portfolio on flat pricing, cites verbatim, dated SEC filings rather than paraphrased signals, and detects shared-driver risk across positions. MyThesis (mythesis.ai) is the other live paid option, but it meters by holding at $4.99 each per month, so the bill scales with the size of your book. Vela and Thesis (UseThesis) are still waitlist or early access as of July 2026.',
   },
   {
     q: 'Which thesis trackers are actually available right now?',
-    a: 'As of July 2026, two are live: Helm Terminal (free to start) and MyThesis (paid, from $49.99/month for 5 holdings). Vela (getvela.co) is in private waitlist. Thesis (usethesis.com) is in early access with several features marked "coming soon." Confirm current status on each site before signing up.',
+    a: 'As of August 2026, three are live: Helm Terminal (free to start), MyThesis (paid, $4.99 per holding per month with the first free), and ThesisLoop (paid, $60/year or $200/year). Vela (getvela.co) is in private waitlist. Thesis (usethesis.com) is in early access with several features marked "coming soon." Confirm current status and pricing on each site before signing up.',
   },
   {
     q: 'Which thesis tracker cites SEC filings with sources?',
@@ -39,11 +39,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'Is there a free investment thesis tracker?',
-    a: 'Helm Terminal is free to start: portfolio aggregation, AI stock analysis, and the actions inbox are free. The thesis-monitoring layer is part of Helm Pro at $20/month for your whole portfolio. MyThesis has a free tier limited to 1 holding; paid plans start at $49.99/month for 5 holdings. Other competitor pricing was not public as of July 2026.',
+    a: 'Helm Terminal is free to start: portfolio aggregation, AI stock analysis, and the actions inbox are free. The thesis-monitoring layer is part of Helm Pro at $20/month for your whole portfolio. MyThesis gives you your first holding free and charges $4.99 per holding per month after that. ThesisLoop is $60/year or $200/year. Vela and Thesis had not published pricing as of August 2026.',
   },
   {
     q: 'How is MyThesis different from Helm Terminal?',
-    a: 'Both monitor investment theses and are live today. MyThesis is a dedicated thesis-alert tool priced per holding ($49.99/month for 5, $89.99 for 10, $199.99 for 25) with manually entered positions. Helm runs thesis monitoring inside a broader portfolio agent: brokerage aggregation via Plaid, tax-loss harvesting, concentration and earnings scans, and a daily brief, at $20/month flat for unlimited holdings, with verbatim dated citations behind every alert.',
+    a: 'Both monitor investment theses and are live today. MyThesis is a dedicated thesis-alert tool priced at $4.99 per holding per month, first holding free, with manually entered positions, so 10 holdings is $44.91/month and 25 is $119.76/month. Helm runs thesis monitoring inside a broader portfolio agent: brokerage aggregation via Plaid, tax-loss harvesting, concentration and earnings scans, and a daily brief, at $20/month flat for unlimited holdings, with verbatim dated citations behind every alert.',
   },
 ];
 
@@ -51,7 +51,7 @@ type Cell = string;
 const ROWS: { label: string; helm: Cell; mythesis: Cell; vela: Cell; thesis: Cell; watch: Cell }[] = [
   { label: 'Status (July 2026)', helm: 'Live, shipping', mythesis: 'Live, shipping', vela: 'Private waitlist', thesis: 'Early access', watch: 'Not disclosed' },
   { label: 'Free tier', helm: 'Yes', mythesis: '1 holding', vela: 'Not shown', thesis: 'Not shown', watch: 'Not disclosed' },
-  { label: 'Paid price', helm: '$20/mo, unlimited holdings', mythesis: '$49.99/mo for 5 holdings', vela: 'Not public', thesis: 'Not public', watch: 'Not disclosed' },
+  { label: 'Paid price', helm: '$20/mo, unlimited holdings', mythesis: '$4.99/mo per holding, 1st free', vela: 'Not public', thesis: 'Not public', watch: 'Not disclosed' },
   { label: 'Reads SEC filings', helm: 'Yes (EDGAR)', mythesis: 'Not shown', vela: 'Yes', thesis: 'No', watch: 'Not disclosed' },
   { label: 'Verbatim dated citations', helm: 'Yes', mythesis: 'No (source named only)', vela: 'No (paraphrased)', thesis: 'No', watch: 'Not disclosed' },
   { label: 'Shared-driver risk', helm: 'Yes', mythesis: 'No', vela: 'No', thesis: 'No', watch: 'Not disclosed' },
@@ -164,7 +164,7 @@ export default function BestThesisTrackersPage() {
             </div>
             <div>
               <h2 className="text-[20px] font-bold text-[var(--color-text-primary)] mb-2">MyThesis</h2>
-              <p>MyThesis (mythesis.ai) is the newest live entrant: a dedicated thesis-alert tool with a status chip per thesis (Supported or Challenged), a per-pillar breakdown, an alert feed tagged by severity, and versioned theses. It is a focused take on one job and it does that job cleanly. The tradeoffs are structural: holdings are entered manually (no brokerage sync), alerts name their source but do not quote the underlying document, and pricing meters by position, $49.99/month for 5 holdings, $89.99 for 10, $199.99 for 25, with a free tier of 1. A good fit if you hold a few positions and want a standalone thesis alert feed. If you want the thesis layer inside a whole-portfolio agent, or you hold more than a handful of names, the per-holding math turns against it quickly. <Link href="/mythesis-alternative" className="text-[var(--color-gold)] hover:underline">Full MyThesis vs Helm breakdown.</Link></p>
+              <p>MyThesis (mythesis.ai) is the newest live entrant: a dedicated thesis-alert tool with a status chip per thesis (Supported or Challenged), a per-pillar breakdown, an alert feed tagged by severity, and versioned theses. It is a focused take on one job and it does that job cleanly. The tradeoffs are structural: holdings are entered manually (no brokerage sync), alerts name their source but do not quote the underlying document, and pricing meters by position at $4.99 per holding per month with the first one free (observed August 9, 2026). A good fit if you hold a few positions and want a standalone thesis alert feed. If you want the thesis layer inside a whole-portfolio agent, or you hold more than a handful of names, the per-holding math turns against it quickly. <Link href="/mythesis-alternative" className="text-[var(--color-gold)] hover:underline">Full MyThesis vs Helm breakdown.</Link></p>
             </div>
             <div>
               <h2 className="text-[20px] font-bold text-[var(--color-text-primary)] mb-2">Vela</h2>

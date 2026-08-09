@@ -11,6 +11,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import posthog from 'posthog-js';
 import type { Tier } from '@/lib/tier-shared';
 
 // In production the gates must reflect the user's REAL entitlement, not the dev
@@ -78,6 +79,17 @@ export function PreviewProvider({ children }: { children: React.ReactNode }) {
             if (!cancelled && (d?.tier === 'free' || d?.tier === 'pro' || d?.tier === 'max')) {
               resolvedRef.current = true;
               setTierState(d.tier);
+              // Stamp the real entitlement onto the person. Person-on-events is
+              // enabled on this project, so every event ingested after this
+              // point carries the tier it was sent under, which is the only way
+              // to tell a free user's funnel from a trialing one's. `realTier`
+              // rather than `tier`: a trial row reads as pro for features, but
+              // for analytics we want what the table says, plus the trial date
+              // to separate trialing from paid.
+              posthog.setPersonProperties({
+                tier: d.realTier ?? d.tier,
+                trial_ends_at: d.trialEndsAt ?? null,
+              });
             }
             return;
           }

@@ -133,10 +133,11 @@ export default function PricingPage() {
         <AnimatedSection delay={0}>
           <p className="type-eyebrow text-[var(--color-gold)] mb-3">Pricing</p>
           <h1 className="type-h1 text-[var(--color-text-primary)] mb-3">
-            Three tiers. Zero percent of AUM.
+            Two tiers. Zero percent of AUM.
           </h1>
           <p className="type-body text-[var(--color-text-secondary)] max-w-lg mx-auto">
-            The full terminal is free. Pro adds thesis monitoring, the agent, and tax intelligence.
+            The full terminal is free. Pro adds thesis monitoring, the agent, and tax intelligence,
+            and starts with a 14 day free trial.
           </p>
         </AnimatedSection>
       </section>
@@ -190,6 +191,9 @@ export default function PricingPage() {
                   <span className="text-[40px] font-bold tabular-nums text-[var(--color-text-primary)] leading-none" style={{ fontFamily: 'var(--font-mono)' }}>$20</span>
                   <span className="text-[15px] text-[var(--color-text-muted)]">/mo</span>
                 </div>
+                <p className="mt-2 text-[13px] text-[var(--color-text-muted)]">
+                  Free for 14 days. Card required, nothing charged until the trial ends, cancel any time before then.
+                </p>
               </div>
               <ul className="space-y-2.5 mb-6 flex-1">
                 {proFeatures.map((f) => (
@@ -204,7 +208,7 @@ export default function PricingPage() {
                   onClick={() => setCheckoutPeriod('pro')}
                   className="group w-full flex items-center justify-center gap-2.5 px-6 py-3 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-colors duration-200"
                 >
-                  Upgrade to Pro
+                  Start 14 day free trial
                   <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </button>
               ) : (

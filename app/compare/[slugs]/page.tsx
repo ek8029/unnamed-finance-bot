@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { analyzeStock } from '@/lib/analyze-stock';
+import { isCanonicalPair, isCuratedPair } from '@/lib/comparison-pairs';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import { HelmMark } from '@/components/helm-mark';
 import { CinematicBg } from '@/components/cinematic-bg';
@@ -116,6 +117,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: { card: 'summary_large_image', title, description },
     alternates: { canonical: `https://helmterminal.dev/compare/${ticker1}-vs-${ticker2}` },
+    robots: isCanonicalPair(ticker1, ticker2)
+      ? { index: true, follow: true }
+      : { index: false, follow: true },
   };
 }
 
@@ -129,10 +133,16 @@ export default async function ComparePage({ params }: Props) {
 
   const { ticker1, ticker2 } = parsed;
 
+  // Cost guard: an arbitrary pair may serve from cache but never pay for a
+  // fresh generation, so crawling /compare/ANY-vs-ANY costs nothing. Both
+  // analyses come back null for an uncached arbitrary pair, which falls
+  // through to the notFound() below.
+  const allowGenerate = isCuratedPair(ticker1, ticker2);
+
   // Fetch data for both tickers in parallel
   const [result1, result2, td1, td2] = await Promise.all([
-    analyzeStock(ticker1),
-    analyzeStock(ticker2),
+    analyzeStock(ticker1, allowGenerate),
+    analyzeStock(ticker2, allowGenerate),
     getFullTickerData(ticker1),
     getFullTickerData(ticker2),
   ]);

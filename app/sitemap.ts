@@ -6,6 +6,7 @@ import { HOUSE_THESES } from '@/lib/content/house-theses';
 import { GLOSSARY } from '@/lib/glossary';
 import { getTickerThesisData } from '@/lib/content/public-thesis';
 import { createStaticServiceClient } from '@/lib/supabase/server';
+import { COMPARISON_PAIRS } from '@/lib/comparison-pairs';
 
 /**
  * Latest approved-catch date per house-thesis ticker, for sitemap lastModified.
@@ -34,20 +35,6 @@ async function latestEvidenceByTicker(): Promise<Record<string, string>> {
     return {};
   }
 }
-
-/** Popular comparison pairs for programmatic SEO. */
-const COMPARISON_PAIRS = [
-  // Original 10
-  'AAPL-vs-MSFT', 'GOOGL-vs-META', 'VOO-vs-VTI', 'NVDA-vs-AMD',
-  'TSLA-vs-RIVN', 'JPM-vs-GS', 'AMZN-vs-GOOGL', 'SPY-vs-QQQ',
-  'NFLX-vs-DIS', 'CRM-vs-ADBE',
-  // High-search additions
-  'NVDA-vs-MSFT', 'AAPL-vs-GOOGL', 'AMZN-vs-MSFT', 'META-vs-GOOGL',
-  'SCHD-vs-VYM', 'VOO-vs-SPY', 'VTI-vs-SPY', 'QQQ-vs-VOO',
-  'NVDA-vs-AAPL', 'TSLA-vs-NVDA', 'AMD-vs-INTC', 'SOFI-vs-HOOD',
-  'PLTR-vs-SNOW', 'COIN-vs-MARA', 'BA-vs-RTX', 'V-vs-MA',
-  'UNH-vs-JNJ', 'XOM-vs-CVX', 'BND-vs-AGG', 'GLD-vs-SLV',
-];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = 'https://helmterminal.dev';

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getStripe, tierForPriceId } from '@/lib/stripe';
 import { createServiceClient } from '@/lib/supabase/server';
+import { captureServer } from '@/lib/posthog-server';
 
 /**
  * POST /api/stripe/webhook
@@ -13,7 +14,12 @@ import { createServiceClient } from '@/lib/supabase/server';
  *   checkout.session.completed    → activate Pro
  *   customer.subscription.updated → sync renewal / cancel state
  *   customer.subscription.deleted → downgrade to free
+ *   invoice.payment_succeeded     → log + capture the conversion
  *   invoice.payment_failed        → log only
+ *
+ * ⚠️ invoice.payment_succeeded must also be enabled on the endpoint in the
+ * Stripe dashboard. Adding the case here does nothing until Stripe is told to
+ * send it.
  */
 
 // Required so Next.js doesn't parse the body — Stripe needs the raw bytes
@@ -57,6 +63,10 @@ export async function POST(request: NextRequest) {
 
       case 'customer.subscription.deleted':
         await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+        break;
+
+      case 'invoice.payment_succeeded':
+        await handlePaymentSucceeded(event.data.object as Stripe.Invoice);
         break;
 
       case 'invoice.payment_failed':
@@ -171,7 +181,53 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     console.error('[webhook][checkout.completed] Failed to send Pro welcome email:', emailErr);
   }
 
+  // With the card-required trial this is the card-on-file moment, not the
+  // money moment. The eight no-card trials granted in July converted at zero
+  // precisely because this event could not exist for them.
+  captureServer('trial_started', userId, {
+    plan: billingPeriod,
+    trial: billingPeriod !== 'lifetime',
+    current_period_end: currentPeriodEnd,
+  });
+
   console.log(`[webhook][checkout.completed] Pro activated for user ${userId}`);
+}
+
+/**
+ * invoice.payment_succeeded
+ * The only event in the system that means an arm's-length yes. `billing_reason`
+ * separates the first charge after a trial from an ordinary renewal, which is
+ * the difference between "someone converted" and "someone stayed".
+ */
+async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
+  const customerId =
+    typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id ?? null;
+  if (!customerId) return;
+
+  const supabase = await createServiceClient();
+  const { data } = await supabase
+    .from('user_subscriptions')
+    .select('user_id')
+    .eq('stripe_customer_id', customerId)
+    .maybeSingle();
+
+  if (!data?.user_id) {
+    console.warn(
+      `[webhook][invoice.payment_succeeded] No row matched customer ${customerId} — not captured.`,
+    );
+    return;
+  }
+
+  captureServer('trial_charge_succeeded', data.user_id, {
+    billing_reason: invoice.billing_reason ?? null,
+    amount_paid: invoice.amount_paid,
+    currency: invoice.currency,
+  });
+
+  console.log(
+    `[webhook][invoice.payment_succeeded] ${invoice.amount_paid} ${invoice.currency} ` +
+      `for user ${data.user_id} (${invoice.billing_reason})`,
+  );
 }
 
 /**
@@ -260,6 +316,10 @@ async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
         `ignored. Likely a test-mode subscription absent from this database.`,
     );
     return;
+  }
+
+  for (const row of data) {
+    if (row.user_id) captureServer('subscription_canceled', row.user_id, {});
   }
 
   console.log(`[webhook][subscription.deleted] Downgraded to free for customer ${customerId}`);

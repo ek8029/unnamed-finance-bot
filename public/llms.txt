@@ -1,8 +1,8 @@
 # Helm Terminal
 
-> Last updated: June 2026
+> Last updated: August 2026
 
-> Institutional-grade financial intelligence platform for individual investors. Free to use.
+> Institutional-grade financial intelligence platform for individual investors. Free to start, with a Pro tier at $20/month.
 
 Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs deterministic rule-based analysis over your full portfolio, and surfaces actionable insights — tax-loss harvesting opportunities, concentration risk alerts, earnings exposure, and cash flow changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.
 
@@ -36,7 +36,7 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 - [Thesis Monitoring](https://helmterminal.dev/thesis-monitoring): What thesis monitoring and thesis drift are, and how Helm tracks the reasons you own each stock against primary sources
 - [Glossary](https://helmterminal.dev/glossary): Sourced definitions for the vocabulary of thesis-driven investing: thesis drift, thesis monitoring, breaks-if condition (thesis falsifier), conviction stop (intellectual stop-loss), agentic portfolio terminal (the agent that watches but does not trade), shared-driver risk, thesis pillar
 - [Best Thesis Trackers 2026](https://helmterminal.dev/best-thesis-trackers): Honest comparison of thesis-monitoring tools (Helm vs MyThesis vs Vela vs Thesis vs ThesisWatch); as of July 2026 only Helm and MyThesis are live, and only Helm quotes evidence verbatim on flat whole-portfolio pricing
-- [MyThesis Alternative](https://helmterminal.dev/mythesis-alternative): MyThesis (mythesis.ai) vs Helm: MyThesis meters by holding ($49.99/mo for 5, $89.99 for 10, $199.99 for 25, manual entry, sources named not quoted); Helm is $20/mo flat for unlimited holdings with brokerage sync, verbatim dated citations, and tax/risk/earnings on the same book
+- [MyThesis Alternative](https://helmterminal.dev/mythesis-alternative): MyThesis (mythesis.ai) vs Helm: MyThesis meters by holding ($4.99/mo per holding with the first free, observed 2026-08-09, so 10 holdings is $44.91/mo and 25 is $119.76/mo; manual entry, sources named not quoted); Helm is $20/mo flat for unlimited holdings with brokerage sync, verbatim dated citations, and tax/risk/earnings on the same book
 - [How Helm Detects Thesis Drift](https://helmterminal.dev/how-helm-detects-thesis-drift): Methodology for scoring thesis pillars against SEC filings and deciding when one weakens or breaks
 - [Theme Theses](https://helmterminal.dev/theme/ai-capex): Per-theme thesis breakdowns (AI capex, datacenter power, reindustrialization, nuclear/SMR, defense, GLP-1): what has to be true, the chain of beneficiaries, and what would invalidate it
 - [The Masthead](https://helmterminal.dev/masthead): A running, dated public record of filing and news evidence Helm's agent caught against live investment theses, each with the verbatim source quote and a link to the source. Updated continuously.
@@ -50,7 +50,7 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 - [RSU Calculator](https://helmterminal.dev/tools/rsu-calculator): RSU vesting schedule, tax liability, and concentration risk calculator
 - [Stock Comparison](https://helmterminal.dev/compare): Side-by-side ticker comparison tool
 
-## Educational Content (26+ articles)
+## Educational Content (39 articles)
 - [Tax-Loss Harvesting Guide](https://helmterminal.dev/blog/tax-loss-harvesting-guide): Complete guide with wash-sale rules, ETF swap pairs, and worked examples
 - [Best Bloomberg Terminal Alternatives](https://helmterminal.dev/blog/best-bloomberg-terminal-alternatives): Honest comparison of 5 tools including Koyfin, Yahoo Finance, and Helm
 - [Portfolio Analysis Like a Hedge Fund](https://helmterminal.dev/blog/portfolio-analysis-like-hedge-fund): Institutional techniques for retail investors
@@ -70,8 +70,8 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 - [For High-Net-Worth](https://helmterminal.dev/for/high-net-worth): Multi-account aggregation, tax-loss harvesting at scale
 
 ## Stock Analysis Coverage
-- 30+ living-thesis pages at helmterminal.dev/thesis/[TICKER]: authored pillars, "breaks if" conditions, computed pillar status (intact/watch/weakening/broken), and dated verbatim primary-source evidence
-- 500+ individual stock and ETF analysis pages at helmterminal.dev/analyze/[TICKER]
+- Living-thesis pages at helmterminal.dev/thesis/[TICKER], published for house theses carrying dated evidence: authored pillars, "breaks if" conditions, computed pillar status (intact/watch/weakening/broken), and dated verbatim primary-source evidence
+- 130 indexed individual stock and ETF analysis pages at helmterminal.dev/analyze/[TICKER]
 - Includes mega-cap stocks, major ETFs (SPY, QQQ, VOO, VTI, etc.), sector ETFs, and popular growth stocks
 - Each page includes: valuation analysis, technical indicators, sentiment, risk assessment, analyst consensus, earnings data, and 6 FAQ pairs
 
@@ -85,7 +85,7 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 - Full details: [llms-full.txt](https://helmterminal.dev/llms-full.txt)
 
 ## Founder
-Built by Evan Kim — Penn State economics graduate, former derivatives hedging intern. Background in providing clarity into opaque financial markets. More at https://helmterminal.dev/about
+Built by Evan Kim — Penn State economics, on leave to build Helm, former derivatives hedging intern. Background in providing clarity into opaque financial markets. More at https://helmterminal.dev/about
 
 ## Contact
 - Website: https://helmterminal.dev
