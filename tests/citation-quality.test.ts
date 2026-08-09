@@ -112,6 +112,25 @@ describe('citationDefect — news noise', () => {
   });
 });
 
+describe('citationDefect — short lines that are not captions', () => {
+  // Both are material CONTRADICTING rows, the rarest thing in the corpus, and
+  // a word-count rule was about to delete both.
+  it('keeps a short line that carries a figure', () => {
+    expect(pass('North America revenue declined 3% while China grew 30%.', 'contradicts', 'news')).toBeNull();
+    expect(pass('Apple China iPhone Sell-In Drops 19%', 'contradicts', 'news')).toBeNull();
+  });
+
+  it('is unwilling to DELETE a short line with nothing checkable, only to reject it at ingest', () => {
+    const d = pass('AMD isn\'t growing nearly as fast as rival Nvidia.', 'contradicts', 'news');
+    expect(d?.code).toBe('fragment');
+    expect(d?.severity).toBe('soft');
+  });
+
+  it('still deletes something too short to be a sentence at all', () => {
+    expect(pass('lower renewables revenue', 'contradicts', 'news')?.severity).toBe('hard');
+  });
+});
+
 describe('citationDefect — severity', () => {
   it('marks a chopped clause soft, because the words in it are usually true', () => {
     const d = pass('the UK government has formally launched a comprehensive review of its £330 million NHS contract with Palantir Technologies.', 'contradicts', 'news');

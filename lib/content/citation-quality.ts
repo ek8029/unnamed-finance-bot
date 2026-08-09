@@ -159,8 +159,17 @@ export function citationDefect(
   const words = raw.split(/\s+/).filter(Boolean);
 
   // A caption, a table footnote, or an event with its subject cut off.
+  //
+  // Length alone is the wrong test and a purge proved it: "North America
+  // revenue declined 3% while China grew 30%." and "Apple China iPhone Sell-In
+  // Drops 19%" are nine and six words, and both are material contradicting
+  // evidence. A short line that carries a figure is a headline, not a caption.
+  // So the bar is length AND whether there is anything checkable in it, and
+  // the ambiguous middle is soft: rejected at ingest, where a better sentence
+  // from the same article is one retry away, but not deleted retroactively.
   if (words.length < 10) {
-    return { code: 'fragment', detail: `${words.length} words`, severity: 'hard' };
+    if (words.length < 6) return { code: 'fragment', detail: `${words.length} words`, severity: 'hard' };
+    if (!/\d/.test(raw)) return { code: 'fragment', detail: `${words.length} words, nothing checkable`, severity: 'soft' };
   }
   // A short noun phrase that exists only to introduce a defined term. The same
   // event written properly ("Strategy announced a new $21.0 billion offering of
