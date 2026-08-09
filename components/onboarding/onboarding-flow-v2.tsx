@@ -23,6 +23,7 @@ import { ArrowRight, PenLine, Check, ExternalLink, ShieldCheck, Lock, Building2,
 import { ManualPortfolioForm } from '@/components/manual-portfolio-form';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
 import { AnalysisLoadingTerminal } from '@/components/analysis-loading-terminal';
+import { SourceIcon } from '@/components/onboarding/source-icon';
 import { usePreview } from '@/lib/preview-context';
 import { tierAtLeast, type Tier } from '@/lib/tier-shared';
 
@@ -976,11 +977,12 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                       return (
                         <button key={o.slug}
                           onClick={() => { setAcqSource(o.slug); if (o.slug !== 'other') void submitAttribution(o.slug); }}
-                          className={`text-left rounded-lg border px-4 min-h-[56px] flex items-center text-[14.5px] leading-[1.3] transition-colors ${
+                          className={`text-left rounded-lg border px-4 min-h-[56px] flex items-center gap-2.5 text-[14px] leading-[1.3] transition-colors ${
                             on
                               ? 'border-[var(--color-gold)] bg-[rgba(230,185,77,0.07)] text-[var(--color-text-primary)]'
                               : 'border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]'
                           }`}>
+                          <SourceIcon slug={o.slug} selected={on} />
                           {o.label}
                         </button>
                       );
