@@ -11,13 +11,30 @@ import { tierAtLeast, normalizeTier } from '@/lib/tier-shared';
 /**
  * Length of the card-required free trial, in days.
  *
- * Seven, matching what Astor runs, and short for a reason: Helm's core event
- * fires roughly every seven to eight weeks per tracked thesis, so a trial is
- * never long enough to guarantee an adverse finding lands inside it. What has
- * to land inside it is the tax number, which is computed on day one from the
- * book rather than waiting on the news.
+ * FOURTEEN, not the seven Astor runs, and the difference is arithmetic rather
+ * than taste. Adverse findings arrive at roughly 0.57 per tracked thesis per
+ * month, so the chance that at least one lands inside the trial is:
+ *
+ *              7 days    14 days
+ *   1 thesis    12.5%     23.4%
+ *   3 theses    30.4%     55.0%
+ *   5 theses    48.6%     73.6%
+ *
+ * A seven-day trial for someone tracking one thesis is an 87% chance of a
+ * window in which the product visibly does nothing. Astor can run seven days
+ * because its value is continuous; Helm's arrives episodically, and copying a
+ * competitor's number without copying its cadence ships a trial that cannot
+ * fire.
+ *
+ * This does not mean the trial sells the interrupt. It should sell the
+ * harvestable-loss figure, which is computed from the book on day one and waits
+ * on nothing. Fourteen days is the hedge, not the plan.
+ *
+ * ⚠️ The 0.57 rate was measured on a corpus that has since had boilerplate
+ * purged out of it, so the real rate is probably LOWER, which argues for longer
+ * rather than shorter. Re-derive it before treating this number as settled.
  */
-const TRIAL_DAYS = 7;
+const TRIAL_DAYS = 14;
 
 /**
  * POST /api/stripe/checkout

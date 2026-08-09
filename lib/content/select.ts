@@ -8,6 +8,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { getRecentFilings } from '@/lib/edgar';
 import { extractFilingSection, stripFilingHtml } from '@/lib/filing-extract';
 import { excerptFoundInSource } from '@/lib/thesis-evidence';
+import { citationDefect } from '@/lib/content/citation-quality';
 import { CONTENT_UNIVERSE } from './universe';
 import { getHouseThesis } from './house-theses';
 import { scoreItemsForPillars, type SourceDoc, type ScoredHit } from './score-helper';
@@ -140,6 +141,17 @@ export async function selectTopEvents(
       if (hit.verdict === 'neutral') continue;
       // Verbatim guard at selection: drop fabricated quotes.
       if (!excerptFoundInSource(hit.excerpt, hit.sourceText)) continue;
+      // Evidence guard at selection. `excerptFoundInSource` proves the sentence
+      // is really in the document; it says nothing about whether the sentence
+      // means anything. This gate was written and wired into score-theses and
+      // NOT into here, which is why /masthead has been publicly showing MSTR's
+      // safe-harbor paragraph, "fluctuations in the price of Bitcoin and the
+      // risk factors discussed under the caption Risk Factors", scored as a
+      // BROKEN pillar. That is boilerplate present in every filing the company
+      // has ever made, on the one page whose entire argument is that nothing on
+      // it can be faked. Soft defects are dropped here too: this feeds a public
+      // permanent page, so the bar is higher than it is for a stored row.
+      if (citationDefect(hit.excerpt, hit.verdict, hit.sourceType)) continue;
 
       const pillar = thesis.pillars.find((p) => p.id === hit.pillarId);
       if (!pillar) continue;
