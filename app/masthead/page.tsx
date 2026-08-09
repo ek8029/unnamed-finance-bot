@@ -2,8 +2,15 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
-import { createServiceClient } from '@/lib/supabase/server';
 import { getLatestPublished } from '@/lib/content/weekly-updates';
+import {
+  getApprovedCatches,
+  partitionByAge,
+  catchDate,
+  catchUrl,
+  catchJsonLd,
+  type Catch,
+} from '@/lib/content/masthead';
 
 // "The Masthead" — the public catch feed, presented as a dark financial broadsheet.
 // The same approved content_events that drive the social posts, exposed as a dated,
@@ -31,25 +38,7 @@ export const revalidate = 1800;
 // broadsheet face chosen in the /masthead-preview harness; Georgia is the fallback.
 const SERIF = 'var(--font-newsreader), Georgia, serif';
 
-type Verdict = 'supports' | 'contradicts' | 'neutral';
-
-interface EventCols {
-  id: string;
-  pillar_id: string | null;
-  ticker: string;
-  company: string | null;
-  pillar_claim: string;
-  verdict: Verdict;
-  verbatim_cite: string;
-  cite_date: string | null;
-  source_url: string | null;
-  source_type: string;
-  run_date: string | null;
-}
-interface QueueRow {
-  decided_at: string | null;
-  content_events: EventCols | null;
-}
+type Verdict = Catch['verdict'];
 
 const VERDICT_META: Record<Verdict, { label: string; color: string; bg: string; border: string }> = {
   supports: { label: 'Thesis holds', color: 'var(--color-positive)', bg: 'var(--color-positive-muted)', border: 'var(--color-positive-border)' },
@@ -70,7 +59,7 @@ function sourceLabel(t: string): string {
 
 // Honest, verdict-driven headline derived only from the catch's own real fields. A
 // contradiction "broke"; a confirmation "held"; anything else "was tested". No fabrication.
-function leadHeadline(e: EventCols): string {
+function leadHeadline(e: Catch): string {
   const subject = e.company && e.company !== e.ticker ? e.company : e.ticker;
   if (e.verdict === 'contradicts') return `A reason to own ${subject} just broke.`;
   if (e.verdict === 'supports') return `A reason to own ${subject} held.`;
@@ -78,25 +67,13 @@ function leadHeadline(e: EventCols): string {
 }
 
 export default async function MastheadPage() {
-  const db = await createServiceClient();
-  const { data } = await db
-    .from('content_queue')
-    .select(
-      'decided_at, content_events(id, pillar_id, ticker, company, pillar_claim, verdict, verbatim_cite, cite_date, source_url, source_type, run_date)',
-    )
-    .eq('status', 'approved')
-    .order('decided_at', { ascending: false })
-    .limit(50);
-
-  const rows = ((data ?? []) as unknown as QueueRow[]).filter((r) => r.content_events);
-  // Only surface catches from the last 30 days; older ones drop off automatically.
-  const cutoff30 = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
-  const events = rows
-    .map((r) => r.content_events as EventCols)
-    .filter((e) => (e.cite_date ?? e.run_date ?? '').slice(0, 10) >= cutoff30);
-  // Newest catch first by the event's own date (cite_date, falling back to run_date).
-  // ISO date strings sort lexically, so localeCompare gives chronological order.
-  events.sort((a, b) => (b.cite_date ?? b.run_date ?? '').localeCompare(a.cite_date ?? a.run_date ?? ''));
+  // The front page shows the last 30 days, as it always has. What changed is
+  // that everything older is now reachable instead of deleted: the archive
+  // below lists it, and every entry has its own URL. A dated record of what the
+  // agent caught is worth more the longer it runs, so nothing ages out of
+  // existence.
+  const all = await getApprovedCatches();
+  const { recent: events, archive } = partitionByAge(all, 30);
 
   const lead = events[0] ?? null;
   const rest = events.slice(1);
@@ -126,19 +103,15 @@ export default async function MastheadPage() {
     mainEntity: {
       '@type': 'ItemList',
       numberOfItems: events.length,
+      // Each item points at its own permalink and is typed as a Claim whose
+      // appearance is a Quotation, so the markup says what the page says: the
+      // sentence is someone else's, published on a date, in a document you can
+      // open. CreativeWork.text said none of that.
       itemListElement: events.map((e, i) => ({
         '@type': 'ListItem',
         position: i + 1,
-        url: `https://helmterminal.dev/thesis/${e.ticker.toLowerCase()}`,
-        item: {
-          '@type': 'CreativeWork',
-          name: `${e.ticker}: ${e.verdict} evidence on a live thesis`,
-          url: `https://helmterminal.dev/thesis/${e.ticker.toLowerCase()}`,
-          ...(e.cite_date ?? e.run_date ? { datePublished: e.cite_date ?? e.run_date } : {}),
-          about: { '@type': 'Corporation', name: e.company ?? e.ticker, tickerSymbol: e.ticker },
-          text: e.verbatim_cite,
-          ...(e.source_url ? { citation: { '@type': 'CreativeWork', url: e.source_url } } : {}),
-        },
+        url: catchUrl(e),
+        item: catchJsonLd(e),
       })),
     },
   };
@@ -265,7 +238,7 @@ export default async function MastheadPage() {
                       <span className="tabular-nums">{fmtDate(lead.cite_date ?? lead.run_date)}</span>
                       <span aria-hidden>&middot;</span>
                       <Link
-                        href={`/thesis/${lead.ticker.toLowerCase()}#c-${lead.id}`}
+                        href={`/masthead/${lead.id}`}
                         className="inline-flex items-center min-h-[44px] -my-[11px] pr-1 text-[var(--color-gold)] hover:underline"
                       >
                         {lead.ticker}
@@ -341,7 +314,7 @@ export default async function MastheadPage() {
                         <div className="mb-3 flex flex-wrap items-center gap-3">
                           <h3 className="m-0 font-mono text-[15px] font-bold uppercase tracking-[0.06em] text-[var(--color-text-primary)]">
                             <Link
-                              href={`/thesis/${e.ticker.toLowerCase()}#c-${e.id}`}
+                              href={`/masthead/${e.id}`}
                               className="inline-flex items-center min-h-[44px] -my-[11px] pr-1 hover:text-[var(--color-gold)] transition-colors"
                             >
                               {e.ticker}
@@ -397,6 +370,64 @@ export default async function MastheadPage() {
             )}
           </>
         )}
+
+        {/* ── The archive ── */}
+        {archive.length > 0 && (
+          <section className="mt-12">
+            <div
+              className="pb-3 italic"
+              style={{ fontFamily: SERIF, fontSize: '22px', borderBottom: '2px solid var(--color-border-strong)' }}
+            >
+              The archive
+            </div>
+            <p className="mt-4 mb-5 max-w-[680px] text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
+              Everything the agent has caught before the last thirty days, oldest evidence still
+              standing. Each entry keeps its own page and its own date, so a quote can be checked
+              against the document it came from at any time.
+            </p>
+            <ol className="m-0 list-none p-0">
+              {archive.map((e) => {
+                const v = VERDICT_META[e.verdict] ?? VERDICT_META.neutral;
+                return (
+                  <li key={e.id} className="border-b border-[var(--color-border-base)]">
+                    <Link
+                      href={`/masthead/${e.id}`}
+                      className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-3.5 transition-colors hover:bg-[var(--color-bg-surface)]"
+                    >
+                      <span className="font-mono text-[13px] font-bold uppercase tracking-[0.06em] text-[var(--color-text-primary)]">
+                        {e.ticker}
+                      </span>
+                      <span
+                        className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em]"
+                        style={{ color: v.color }}
+                      >
+                        {v.label}
+                      </span>
+                      <span className="min-w-[180px] flex-1 truncate text-[13px] text-[var(--color-text-secondary)]">
+                        {e.pillar_claim}
+                      </span>
+                      <span className="ml-auto font-mono text-[11px] tabular-nums text-[var(--color-text-muted)]">
+                        {fmtDate(catchDate(e))}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        )}
+
+        {/* ── Feed ── */}
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+          <span>Follow the record</span>
+          <span aria-hidden>&middot;</span>
+          <a
+            href="/masthead/rss.xml"
+            className="inline-flex min-h-[44px] items-center px-1 text-[var(--color-gold)] underline underline-offset-4 hover:no-underline"
+          >
+            RSS feed
+          </a>
+        </div>
 
         {/* ── Colophon ── */}
         <div className="mt-10 border-t border-[var(--color-border-strong)] pt-6 text-center">

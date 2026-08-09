@@ -81,6 +81,15 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: 'https://helmterminal.dev',
+    // The Masthead feed existed for weeks with nothing on the site pointing at
+    // it: no autodiscovery link, no mention in llms.txt, no link on the page
+    // itself. Perplexity and OAI-SearchBot both retrieve live, so a dated feed
+    // they can poll is worth more than another static page.
+    types: {
+      'application/rss+xml': [
+        { url: 'https://helmterminal.dev/masthead/rss.xml', title: 'The Masthead — Helm Terminal' },
+      ],
+    },
   },
   robots: {
     index: true,

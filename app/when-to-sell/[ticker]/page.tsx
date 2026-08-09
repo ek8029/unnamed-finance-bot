@@ -59,7 +59,7 @@ export default async function WhenToSellPage({ params }: PageProps) {
   const symbol = clean(ticker);
   if (!symbol || symbol.length > 5) notFound();
 
-  const { analysis } = await analyzeStock(symbol, false);
+  const { analysis, computedAt } = await analyzeStock(symbol, false);
 
   if (!analysis) {
     return (
@@ -99,8 +99,12 @@ export default async function WhenToSellPage({ params }: PageProps) {
       '@type': 'Article',
       headline: `When to Sell ${symbol}: A Thesis-Based Checklist`,
       description: `When to sell ${analysis.companyName} (${symbol}): the signals that mean your thesis broke.`,
+      // datePublished is genuinely fixed: that is when this page shipped.
+      // dateModified is not, and it used to fall back to the same literal, so
+      // 130 URLs told crawlers they had never changed since June. The snapshot
+      // these pages are built from carries its own timestamp; use it.
       datePublished: '2026-06-17',
-      dateModified: thesis?.lastChecked ?? '2026-06-17',
+      dateModified: thesis?.lastChecked ?? computedAt ?? '2026-06-17',
       author: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
       publisher: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
       url: `https://helmterminal.dev/when-to-sell/${symbol}`,

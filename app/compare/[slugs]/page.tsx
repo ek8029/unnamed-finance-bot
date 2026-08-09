@@ -139,18 +139,24 @@ export default async function ComparePage({ params }: Props) {
   // through to the notFound() below.
   const allowGenerate = isCuratedPair(ticker1, ticker2);
 
-  // Fetch data for both tickers in parallel
-  const [result1, result2, td1, td2] = await Promise.all([
+  // Analyses first, and bail before touching the market-data vendor. Fetching
+  // all four together meant an arbitrary pair still spent two Finnhub calls on
+  // a page that was about to 404, which is the same drain as the generation
+  // itself, just cheaper per hit.
+  const [result1, result2] = await Promise.all([
     analyzeStock(ticker1, allowGenerate),
     analyzeStock(ticker2, allowGenerate),
-    getFullTickerData(ticker1),
-    getFullTickerData(ticker2),
   ]);
 
   const a1 = result1.analysis;
   const a2 = result2.analysis;
 
   if (!a1 && !a2) notFound();
+
+  const [td1, td2] = await Promise.all([
+    getFullTickerData(ticker1),
+    getFullTickerData(ticker2),
+  ]);
 
   const name1 = a1?.companyName || td1.profile?.name || ticker1;
   const name2 = a2?.companyName || td2.profile?.name || ticker2;

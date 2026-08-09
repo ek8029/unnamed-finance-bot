@@ -31,7 +31,7 @@ export async function approveDraft(id: string): Promise<void> {
   // Grab the affected ticker so we can revalidate + notify the exact public surfaces.
   const { data: row } = await db
     .from('content_queue')
-    .select('content_events(ticker)')
+    .select('content_events(id, ticker)')
     .eq('id', id)
     .maybeSingle();
   await db
@@ -40,7 +40,14 @@ export async function approveDraft(id: string): Promise<void> {
     .eq('id', id);
   revalidatePath('/admin/content');
   revalidatePath('/masthead');
-  const ticker = (row?.content_events as { ticker?: string } | null)?.ticker;
+  const event = row?.content_events as { id?: string; ticker?: string } | null;
+  const ticker = event?.ticker;
+  // The catch's own permalink is the most citable URL of the set: a dated
+  // verbatim quote at a stable address. Submit it first.
+  if (event?.id) {
+    revalidatePath(`/masthead/${event.id}`);
+    void submitToIndexNow([`/masthead/${event.id}`]);
+  }
   if (ticker) {
     const slug = ticker.toLowerCase();
     // Refresh the ISR pages now instead of waiting out the revalidate window...

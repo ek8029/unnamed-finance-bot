@@ -42,9 +42,11 @@ const PERSON_SCHEMA = {
     name: 'The Pennsylvania State University',
     department: 'Economics',
   },
-  sameAs: [
-    // TODO: Add personal LinkedIn, GitHub, X when ready
-  ],
+  // Deliberately empty, and it costs something: assistants weight independent
+  // corroboration when resolving a person, and this entity currently has none.
+  // NOT to be filled with a personal LinkedIn, which is a standing no. A GitHub
+  // or a personal X would both work and are Evan's call to make.
+  sameAs: [],
 };
 
 export default function AboutPage() {

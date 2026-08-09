@@ -7,6 +7,7 @@ import { GLOSSARY } from '@/lib/glossary';
 import { getTickerThesisData } from '@/lib/content/public-thesis';
 import { createStaticServiceClient } from '@/lib/supabase/server';
 import { COMPARISON_PAIRS } from '@/lib/comparison-pairs';
+import { getApprovedCatches, catchUrl, catchDate } from '@/lib/content/masthead';
 
 /**
  * Latest approved-catch date per house-thesis ticker, for sitemap lastModified.
@@ -89,6 +90,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
+  // One URL per approved catch. This is the only cluster that grows on its own,
+  // roughly seven or eight a week from the cron, and every entry is a dated
+  // verbatim quote from a primary source, which is the most citable object the
+  // site has. lastModified is the catch's own date, not now(), so the freshness
+  // signal is true.
+  const catches = await getApprovedCatches(true);
+  const catchPages: MetadataRoute.Sitemap = catches.map((c) => ({
+    url: catchUrl(c),
+    lastModified: catchDate(c) ? new Date(catchDate(c)) : new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }));
+
   const comparePages: MetadataRoute.Sitemap = COMPARISON_PAIRS.map((pair) => ({
     url: `${base}/compare/${pair}`,
     lastModified: new Date(),
@@ -141,5 +155,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...blogPosts, ...tickerPages, ...comparePages, ...thesisRiskPages, ...whenToSellPages, ...themePages, ...thesisPages, ...glossaryPages];
+  return [...staticRoutes, ...blogPosts, ...tickerPages, ...catchPages, ...comparePages, ...thesisRiskPages, ...whenToSellPages, ...themePages, ...thesisPages, ...glossaryPages];
 }

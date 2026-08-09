@@ -1,4 +1,4 @@
-import { createStaticServiceClient } from '@/lib/supabase/server';
+import { getApprovedCatches, catchUrl } from '@/lib/content/masthead';
 
 // RSS feed of approved catches (The Masthead). Forwardable + crawlable; each item links to
 // the catch's anchor on its per-ticker thesis page. Same visibility gate as /masthead
@@ -8,21 +8,6 @@ export const revalidate = 1800;
 
 const BASE = 'https://helmterminal.dev';
 
-interface EventCols {
-  id: string;
-  ticker: string;
-  pillar_claim: string | null;
-  verdict: string;
-  verbatim_cite: string;
-  summary: string | null;
-  cite_date: string | null;
-  source_url: string | null;
-  source_type: string;
-  run_date: string | null;
-}
-interface QueueRow {
-  content_events: EventCols | null;
-}
 
 function esc(s: string): string {
   return s
@@ -43,20 +28,10 @@ function sourceLabel(t: string): string {
 }
 
 export async function GET() {
-  const db = createStaticServiceClient();
-  const { data } = await db
-    .from('content_queue')
-    .select(
-      'decided_at, content_events(id, ticker, pillar_claim, verdict, verbatim_cite, summary, cite_date, source_url, source_type, run_date)',
-    )
-    .eq('status', 'approved')
-    .order('decided_at', { ascending: false })
-    .limit(50);
-
-  const events = ((data ?? []) as unknown as QueueRow[])
-    .map((r) => r.content_events)
-    .filter((e): e is EventCols => !!e)
-    .sort((a, b) => (b.cite_date ?? b.run_date ?? '').localeCompare(a.cite_date ?? a.run_date ?? ''));
+  // Readers expect a feed to be a window, not the whole archive, so this still
+  // caps. It caps at 200 rather than 50 because the old limit was being hit,
+  // which meant the feed silently ended mid-corpus.
+  const events = (await getApprovedCatches(true)).slice(0, 200);
 
   const items = events
     .map((e) => {
@@ -64,11 +39,11 @@ export async function GET() {
       const descParts = [e.verbatim_cite, e.summary].filter(Boolean) as string[];
       const sourceTail = e.source_url ? `${sourceLabel(e.source_type)}: ${e.source_url}` : sourceLabel(e.source_type);
       const description = `${descParts.join(' ')} — ${sourceTail}`;
-      const link = `${BASE}/thesis/${e.ticker.toLowerCase()}#c-${e.id}`;
+      const link = catchUrl(e);
       return `    <item>
       <title>${esc(title)}</title>
       <link>${esc(link)}</link>
-      <guid isPermaLink="false">${esc(e.id)}</guid>
+      <guid isPermaLink="true">${esc(link)}</guid>
       <pubDate>${rfc822(e.cite_date ?? e.run_date)}</pubDate>
       <description>${esc(description)}</description>
     </item>`;
