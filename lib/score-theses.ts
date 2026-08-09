@@ -13,6 +13,7 @@ import {
   type Form4Summary,
 } from '@/lib/edgar';
 import { excerptFoundInSource, TEXT_SOURCES } from '@/lib/thesis-evidence';
+import { citationDefect } from '@/lib/content/citation-quality';
 import { extractFilingSection, stripFilingHtml } from '@/lib/filing-extract';
 import { derivePillarStatus, type EvidenceForStatus, type PillarStatus } from '@/lib/thesis-status';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
@@ -597,6 +598,18 @@ Respond with JSON exactly in this shape:
     // Guard: price_move/xbrl overwrite excerpt with system string
     if (candidate.excerpt_override) {
       excerpt = candidate.excerpt_override;
+    }
+
+    // Guard: the citation has to be evidence, not a sentence that happened to
+    // sit near the subject. The judge scores relevance, and a 10-Q's safe-harbor
+    // paragraph is extremely relevant-looking — one was filed as CONTRADICTING a
+    // MSTR pillar because it mentions "fluctuations in the price of Bitcoin".
+    // Runs after the override so system-generated strings are judged as what
+    // they actually are.
+    const defect = citationDefect(excerpt, verdict, candidate.source_type);
+    if (defect) {
+      log.push(`[${ticker}] Dropping row: ${defect.code} (${defect.detail}) "${excerpt.slice(0, 70)}"`);
+      continue;
     }
 
     // Guard: Form 4 with is10b5-1 => force context materiality
