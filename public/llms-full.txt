@@ -2,7 +2,7 @@
 
 > Institutional-grade financial intelligence platform for individual investors.
 > URL: https://helmterminal.dev
-> Founded: 2025
+> Founded: 2026
 > Status: Live, active development
 
 ## What Is Helm Terminal?
