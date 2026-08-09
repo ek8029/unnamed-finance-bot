@@ -13,10 +13,12 @@
  * finished state that tells the person to go back to the app.
  *
  * SESSION HANDOFF. A Safari view does not share the app's session, so the app
- * passes its Supabase tokens in the URL FRAGMENT. Fragments are never sent to
- * the server, so the token cannot land in an access log or a proxy. It is the
- * same mechanism Supabase's own implicit OAuth redirect uses. The fragment is
- * stripped from history the moment the session is set.
+ * passes its Supabase tokens in the URL FRAGMENT. A fragment is never sent to
+ * the origin, which is the only claim that was ever true about it — first-party
+ * JavaScript on the page can still read `location.href`, and PostHog and
+ * Plausible both did. `app/link/layout.tsx` now removes the fragment during
+ * HTML parse, before any of that runs, and leaves it on `window.__helmHandoff`
+ * for the effect below. Read that guide before touching this.
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -33,15 +35,21 @@ export default function LinkPage() {
     const supabase = createClient();
 
     (async () => {
-      const hash = typeof window !== 'undefined' ? window.location.hash : '';
-      const p = new URLSearchParams(hash.replace(/^#/, ''));
+      // Written by the inline script in layout.tsx during HTML parse. The
+      // location.hash fallback covers the case where that script did not run;
+      // if it is ever the branch that fires, the fragment was readable by every
+      // other script on the page for the life of the request.
+      const w = window as Window & { __helmHandoff?: string };
+      const raw = w.__helmHandoff ?? window.location.hash.replace(/^#/, '');
+      delete w.__helmHandoff;
+      const p = new URLSearchParams(raw);
       const access_token = p.get('at');
       const refresh_token = p.get('rt');
 
       if (access_token && refresh_token) {
         const { error } = await supabase.auth.setSession({ access_token, refresh_token });
-        // Drop the tokens out of the address bar and the history entry as soon
-        // as they have been used.
+        // Belt and braces: layout.tsx has already done this, but a fallback
+        // read above means the fragment may still be in the address bar.
         window.history.replaceState(null, '', window.location.pathname);
         if (error) {
           setPhase('signedout');

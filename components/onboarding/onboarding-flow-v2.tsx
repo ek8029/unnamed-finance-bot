@@ -328,8 +328,17 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
 
   function handleDemo() {
     track('onb_demo_chosen');
+    // Do the demo side effects now, then hand off to the normal ending.
+    //
+    // This used to set 'done' and unmount the whole overlay on a blind 1100ms
+    // timer. The attribution effect intercepts 'done' and switches to the
+    // attribution question, so the timer was firing while that question was on
+    // screen: "how did you find us" appeared for a second and then the overlay
+    // vanished underneath it. Every demo user was counted as shown and never
+    // had the chance to answer. The 'done' screen owns its own dismissal
+    // through "Open the terminal", so no timer is needed here at all.
+    if (!preview) { enableDemo(); sessionStorage.setItem(ONBOARDING_KEY, '1'); }
     setPhase('done');
-    setTimeout(() => { if (!preview) { enableDemo(); sessionStorage.setItem(ONBOARDING_KEY, '1'); } setShow(false); }, 1100);
   }
 
   function handleConnected() {

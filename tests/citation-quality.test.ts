@@ -1,5 +1,23 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { citationDefect } from '@/lib/content/citation-quality';
+
+// This has now silently broken the gate TWICE, in the same file, a few hours
+// apart: writing a regex through a shell heredoc turns every `\b` into a
+// literal backspace (0x08), so the pattern demands a control character no
+// document contains and matches nothing. The first time it made the news rules
+// inert against 2,213 rows. The second time it made HAS_FIGURE always false,
+// which flipped the fragment rule into deleting exactly the short headlines it
+// had just been rewritten to protect. Neither failure produced an error.
+describe('the source file itself', () => {
+  it('contains no literal control characters', () => {
+    const src = readFileSync(new URL('../lib/content/citation-quality.ts', import.meta.url), 'utf8');
+    const bad = src.split(/\r?\n/)
+      .map((line, i) => ({ line, n: i + 1 }))
+      .filter(({ line }) => [...line].some((ch) => { const c = ch.charCodeAt(0); return c < 32 && c !== 9; }));
+    expect(bad.map((b) => b.n)).toEqual([]);
+  });
+});
 
 const pass = (s: string, v: 'supports' | 'contradicts' | 'neutral' = 'supports', t?: string) =>
   citationDefect(s, v, t);
