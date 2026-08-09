@@ -90,6 +90,11 @@ export async function POST(req: NextRequest) {
     const isTrialRow = !!subscription?.trial_ends_at && !subscription?.stripe_subscription_id;
     const currentTier = isTrialRow ? 'free' : normalizeTier(subscription?.tier);
 
+    // Has this person ever had a trial, of either kind? trial_ends_at is set by
+    // the connect grant and cleared by a real purchase, so its presence is the
+    // has-trialed marker regardless of which path set it.
+    const hasHadTrial = !!subscription?.trial_ends_at;
+
     // Only Pro exists now, so any current holder of it is already at the top.
     if (tierAtLeast(currentTier, billingPeriod)) {
       return NextResponse.json({ error: 'You already have Pro.' }, { status: 400 });
@@ -182,7 +187,12 @@ export async function POST(req: NextRequest) {
         ? {
             payment_method_collection: 'always' as const,
             subscription_data: {
-              trial_period_days: TRIAL_DAYS,
+              // One trial per person, ever. trial_ends_at doubles as the
+              // has-trialed marker, so a user who already had the no-card
+              // connect trial does not get a second 14 days on top of it.
+              // Without this the two trial paths stacked to 28 free days and
+              // the conversion read as a trial start rather than a sale.
+              ...(hasHadTrial ? {} : { trial_period_days: TRIAL_DAYS }),
               trial_settings: {
                 end_behavior: { missing_payment_method: 'cancel' as const },
               },

@@ -97,9 +97,11 @@ const NAV_LINKS = [
 
 /* ─── Pricing ───────────────────────────────────────────────────────────── */
 
+// Pro leads and is the wider column. Two equal boxes made neither read as the
+// answer, which is what the three-tier layout was hiding.
 const TIERS = [
-  { name: 'Free', price: '$0', sub: 'Forever, no card', features: ['Full terminal access', 'AI analysis, any US ticker', 'Connected brokerages', 'Daily brief', 'Actions inbox', 'Portfolio Wrapped'], cta: 'Start free', featured: false },
-  { name: 'Pro', price: '$20', priceSuffix: '/mo', sub: 'Free for 14 days, then $20/mo', features: ['Everything in Free', 'Thesis monitoring with cited evidence', 'Earnings exposure', 'Tax center with TLH', 'Conviction-led tailored brief'], cta: 'Start free trial', featured: true, chip: 'Most popular' },
+  { name: 'Pro', price: '$20', priceSuffix: '/mo', sub: 'Free for 14 days, card required', features: ['Everything in Free', 'Thesis monitoring with cited evidence', 'Twelve months of history on day one', 'Tax center with TLH', 'Earnings exposure', 'Conviction-led tailored brief'], cta: 'Start free trial', featured: true },
+  { name: 'Free', price: '$0', priceSuffix: ' forever', sub: 'No card, no expiry', features: ['Full terminal access', 'AI analysis, any US ticker', 'Connected brokerages', 'Daily brief', 'Actions inbox', 'Portfolio Wrapped'], cta: 'Open the terminal', featured: false },
 ];
 
 /* ─── Reveal hook ───────────────────────────────────────────────────────── */
@@ -632,11 +634,11 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
                 Pricing
               </div>
               <h2 className="text-[clamp(2rem,4vw,3rem)] font-bold tracking-[-0.035em] leading-[1.05]">
-                Two tiers. <em className="font-[family-name:var(--font-display-serif)] italic font-normal text-[var(--color-gold)]">Zero percent of AUM.</em>
+                One product. <em className="font-[family-name:var(--font-display-serif)] italic font-normal text-[var(--color-gold)]">Zero percent of AUM.</em>
               </h2>
             </div>
             <div className="font-[family-name:var(--font-mono)] text-[12px] text-[var(--color-text-muted)] tracking-[0.08em] text-right max-w-[300px]">
-              Pro is $20/mo.
+              Pro is $20/mo, free for 14 days.
               <div className="h-0.5 bg-[var(--color-border-base)] mt-3 relative">
                 <span className="absolute inset-0 w-[40%] bg-[var(--color-gold)]" />
               </div>
@@ -644,10 +646,9 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
           </div>
         </Reveal>
         <Reveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-[820px]">
+          <div className="grid grid-cols-1 sm:grid-cols-[1.15fr_0.85fr] gap-3 max-w-[880px] items-start">
             {TIERS.map((tier) => (
-              <div key={tier.name} className={`relative p-8 max-sm:p-6 border rounded-lg transition-all hover:border-[var(--color-gold-border)] hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(0,0,0,0.5)] ${tier.featured ? 'border-[var(--color-gold-border)] bg-[linear-gradient(180deg,rgba(230,185,77,0.05),rgba(230,185,77,0.01))] lg:-translate-y-2 lg:scale-[1.03] lg:shadow-[0_20px_50px_rgba(230,185,77,0.12)]' : 'border-[var(--color-border-base)] bg-[var(--color-bg-surface)]'}`}>
-                {tier.chip && <span className="absolute -top-2.5 left-8 px-2.5 py-1 bg-[var(--color-gold)] text-black font-[family-name:var(--font-mono)] text-[9px] font-bold tracking-[0.18em] uppercase rounded-[3px]">{tier.chip}</span>}
+              <div key={tier.name} className={`relative p-8 max-sm:p-6 border rounded-lg transition-all hover:border-[var(--color-gold-border)] hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(0,0,0,0.5)] ${tier.featured ? 'border-[var(--color-gold-border)] bg-[linear-gradient(180deg,rgba(230,185,77,0.05),rgba(230,185,77,0.01))] shadow-[0_20px_50px_rgba(230,185,77,0.10)]' : 'border-[var(--color-border-base)] bg-[var(--color-bg-surface)]'}`}>
                 <div className={`font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase mb-4 ${tier.featured ? 'text-[var(--color-gold)]' : 'text-[var(--color-text-muted)]'}`}>{tier.name}</div>
                 <div className="text-[2.75rem] max-sm:text-[2.25rem] font-bold tracking-[-0.03em] leading-none">
                   {tier.price}{tier.priceSuffix && <small className="text-base text-[var(--color-text-muted)] font-medium">{tier.priceSuffix}</small>}
