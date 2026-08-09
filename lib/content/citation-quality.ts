@@ -44,6 +44,21 @@ const BOILERPLATE: { re: RegExp; name: string }[] = [
 ];
 
 
+/** News-only defects. The corpus is 96% news, and its junk has a different
+ *  shape from a filing's: not boilerplate, but somebody's opinion or a broker's
+ *  rating dressed as a finding about the business. */
+const NEWS_JUNK: { re: RegExp; name: string }[] = [
+  // A columnist writing in the first person is not evidence about a company.
+  { re: /(?:I|we|my|me)\s+(?:keep|kept|bought|sold|own|love|like|think|believe|would|am|have been)/i, name: 'first-person-opinion' },
+  { re: /(?:here(?:'|’)?s why|why I|my take|I(?:'|’)?(?:m|ve))/i, name: 'first-person-opinion' },
+  // A rating change is a fact about an analyst, not about the underlying.
+  { re: /(?:upgraded?|downgraded?|reiterated?|initiated coverage)[^.]{0,60}(?:to|from)\s+(?:buy|sell|hold|neutral|overweight|underweight|outperform)/i, name: 'analyst-rating' },
+  { re: /price target/i, name: 'analyst-rating' },
+  { re: /analysts?\s+(?:expect|estimate|forecast|predict|say|see)/i, name: 'analyst-opinion' },
+  // Ranked listicles and promotional roundups.
+  { re: /(?:\d+\s+(?:best|top|worst)|best\s+stocks?\s+to\s+buy|top\s+\d+\s+stocks?)/i, name: 'listicle' },
+];
+
 /** Something checkable: a figure, a percentage, or a date. */
 const HAS_FIGURE = /\d/;
 const HAS_MONTH = /\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\b/i;
@@ -74,10 +89,16 @@ export function citationDefect(
     if (b.re.test(raw)) return { code: 'boilerplate', detail: b.name };
   }
 
+  if (sourceType === 'news') {
+    for (const n of NEWS_JUNK) {
+      if (n.re.test(raw)) return { code: 'news-noise', detail: n.name };
+    }
+  }
+
   const words = raw.split(/\s+/).filter(Boolean);
 
   // A caption, a table footnote, or an event with its subject cut off.
-  if (words.length < 8) {
+  if (words.length < 10) {
     return { code: 'fragment', detail: `${words.length} words` };
   }
   // A short noun phrase that exists only to introduce a defined term. The same
