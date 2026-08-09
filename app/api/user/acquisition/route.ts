@@ -21,6 +21,11 @@ const SOURCES = new Set([
   'hacker_news',
   'reddit',
   'x',
+  'tiktok',
+  // Retired in favour of 'tiktok' once LinkedIn moved under "something else":
+  // there is no licensed LinkedIn mark to put on a tile, and a combined
+  // "TikTok or LinkedIn" answer could not tell the two channels apart anyway.
+  // Still accepted because a phone can be running an older bundle.
   'social',
   'other',
 ]);

@@ -177,7 +177,7 @@ const ACQUISITION_OPTIONS: { slug: string; label: string }[] = [
   { slug: 'blog_newsletter', label: 'Blog or newsletter' },
   { slug: 'x', label: 'X' },
   { slug: 'hacker_news', label: 'Hacker News' },
-  { slug: 'social', label: 'TikTok or LinkedIn' },
+  { slug: 'tiktok', label: 'TikTok' },
   { slug: 'other', label: 'Something else' },
 ];
 
