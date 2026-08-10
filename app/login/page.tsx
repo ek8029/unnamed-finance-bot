@@ -2,17 +2,15 @@
 
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { AUTH_MESSAGES, type AuthMessageKey } from '@/lib/auth-messages';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { AuthShell } from '@/components/auth-shell';
 import { supabase } from '@/lib/supabase/client';
 
-const MESSAGES: Record<string, string> = {
-  'check-email': 'Check your email to confirm your account.',
-  'password-reset': 'Password reset link sent.',
-  'password-updated': 'Password updated successfully. Please sign in.',
-  'session-expired': 'Your session expired. Please sign in again.',
-};
+// Copy lives in lib/auth-messages.ts so redirects and this lookup cannot drift
+// apart. An unknown key renders nothing on purpose: the param must never be
+// echoed to the page.
 
 /**
  * Only ever returns a path on this origin.
@@ -45,7 +43,8 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = sanitizeRedirect(searchParams.get('redirect'));
-  const message = MESSAGES[searchParams.get('message') ?? ''] ?? null;
+  const messageKey = searchParams.get('message') ?? '';
+  const message = messageKey in AUTH_MESSAGES ? AUTH_MESSAGES[messageKey as AuthMessageKey] : null;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

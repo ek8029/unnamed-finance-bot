@@ -96,7 +96,9 @@ function SignupForm() {
         router.refresh();
       } else {
         posthog.capture('signup_completed', { method: 'email', flow: isWrappedFlow ? 'wrapped' : 'default', needs_confirmation: true });
-        router.push('/login?message=Check your email to confirm your account. If you don\'t see it, check your spam or promotions folder — it may take a minute to arrive.');
+        // Must be a key from lib/auth-messages.ts, not the sentence itself:
+        // /login looks the param up and renders nothing when it misses.
+        router.push('/login?message=check-email');
       }
     } catch {
       setError('Something went wrong. Please try again.');
