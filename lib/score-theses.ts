@@ -18,6 +18,7 @@ import { extractFilingSection, stripFilingHtml } from '@/lib/filing-extract';
 import { derivePillarStatus, type EvidenceForStatus, type PillarStatus } from '@/lib/thesis-status';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import { entitledToMonitoring } from '@/lib/thesis-entitlement';
+import { filingSinceDate } from '@/lib/filing-window';
 import type { BreachEvent } from '@/lib/thesis-breach';
 import { isComparisonHeadline } from '@/lib/news-quality';
 import { isHedgedConnection } from '@/lib/evidence-quality';
@@ -223,6 +224,7 @@ export async function scoreOneThesis(
 ): Promise<{ evidenceAdded: number; statusChanges: number; breaches: BreachEvent[] }> {
   const { ticker, id: thesisId, user_id, last_scanned_at } = thesis;
   const since = options?.since ?? sinceDate(last_scanned_at);
+  const filingSince = filingSinceDate(since);
   const isBackfill = options?.isBackfill ?? false;
   // When set, evidence dated on/after liveCutoff is LIVE (reflects the current
   // state), older is backfill. Grounds the live/historical split in the quarterly
@@ -267,7 +269,7 @@ export async function scoreOneThesis(
 
   // 1. Recent SEC filings
   try {
-    const filings = await getRecentFilings(ticker, since, BUSINESS_FORMS);
+    const filings = await getRecentFilings(ticker, filingSince, BUSINESS_FORMS);
     for (const f of filings) {
       // source_key = filing URL: EdgarFiling exposes no accession number; URL is stable + unique per filing
       const sourceKey = f.url;
