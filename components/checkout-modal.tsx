@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
 import { X, Loader2, Check } from 'lucide-react';
@@ -74,6 +74,55 @@ export function CheckoutModal({ billingPeriod, onClose }: CheckoutModalProps) {
     [clientSecret],
   );
 
+  // Dialog behaviour. This had role="dialog" and aria-modal but none of what
+  // those promise: focus stayed on the trigger behind the backdrop, Tab walked
+  // the page underneath, Escape did nothing, and the background scrolled. On the
+  // one surface where someone hands over a card, that is worth getting right.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    // Move focus in, and put it back where it came from on close.
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+
+    const { overflow } = document.body.style;
+    document.body.style.overflow = 'hidden';
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+
+      // Trap. Stripe renders its card fields in a cross-origin iframe, which
+      // browsers keep inside this cycle, so the wrap only needs to cover our
+      // own focusables.
+      const focusables = dialogRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input, select, textarea, iframe, [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusables || focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = overflow;
+      previouslyFocused?.focus?.();
+    };
+  }, [onClose]);
+
   return (
     /* Backdrop */
     <div
@@ -81,8 +130,10 @@ export function CheckoutModal({ billingPeriod, onClose }: CheckoutModalProps) {
       onClick={onClose}
       aria-modal="true"
       role="dialog"
+      aria-labelledby="checkout-modal-title"
     >
       <div
+        ref={dialogRef}
         className="relative w-full max-w-lg mx-4 rounded-sm overflow-hidden"
         style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
         onClick={(e) => e.stopPropagation()}
@@ -92,10 +143,11 @@ export function CheckoutModal({ billingPeriod, onClose }: CheckoutModalProps) {
           className="flex items-center justify-between px-5 py-4"
           style={{ borderBottom: '1px solid var(--color-border-base)' }}
         >
-          <span className="text-[15px] font-semibold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
+          <span id="checkout-modal-title" className="text-[15px] font-semibold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
             Upgrade to Helm {tierName}
           </span>
           <button
+            ref={closeRef}
             onClick={onClose}
             aria-label="Close checkout"
             className="flex items-center justify-center w-7 h-7 rounded-sm transition-colors hover:bg-white/5"

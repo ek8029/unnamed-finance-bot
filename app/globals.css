@@ -136,10 +136,17 @@ html { scroll-behavior: smooth; }
 
     --color-text-primary:  #0A0A0A;
     --color-text-secondary:#4A5568;
-    --color-text-muted:    #8A94A6;
+    /* Was #8A94A6, which is 2.80:1 on #F5F5F5 and 3.06:1 on white — a WCAG AA
+       failure everywhere muted text appears, which is most small print in the
+       app. #5F6875 measures 5.17:1 on #F5F5F5 and keeps the same cool cast. */
+    --color-text-muted:    #5F6875;
     --color-text-inverse:  #FFFFFF;
 
-    --color-gold:          #B8914A;
+    /* Was #B8914A: 2.68:1 on #F5F5F5, and the same 2.68:1 for the #F5F5F5 label
+       on a gold CTA, so the primary button failed in both directions. #8A6A2E
+       measures 4.60:1 both ways. Dark theme gold is untouched and already
+       passes at 10.77:1. */
+    --color-gold:          #8A6A2E;
     --color-gold-hi:       #A07B3A;
     --color-gold-lo:       #C9A45E;
     --color-gold-surface:  rgba(184, 145, 74, 0.04);

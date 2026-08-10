@@ -6,6 +6,7 @@ import { generateThesisActions } from '@/lib/thesis-actions';
 import { generateInvestigations } from '@/lib/thesis-investigation';
 import { generateCrossThesisRisks } from '@/lib/cross-thesis-risk';
 import { rejudgeStaleMechanisms } from '@/lib/content/judge-runner';
+import { entitledToMonitoring } from '@/lib/thesis-entitlement';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -47,7 +48,17 @@ export async function GET(request: Request) {
       let owners = serviceClient.from('theses').select('user_id').eq('tracked', true);
       if (ticker) owners = owners.eq('ticker', ticker);
       const { data: ownerRows } = await owners;
-      const userIds = [...new Set((ownerRows ?? []).map((r) => r.user_id as string))];
+      const allOwners = [...new Set((ownerRows ?? []).map((r) => r.user_id as string))];
+
+      // Same entitlement gate the scorer uses. Without it this loop ran the
+      // agentic pipelines for free users too: wasted compute today because the
+      // read routes still gate, and a live feature leak the moment they don't.
+      const entitled = await entitledToMonitoring(serviceClient, allOwners);
+      const userIds = allOwners.filter((id) => entitled.has(id));
+      if (userIds.length < allOwners.length) {
+        result.log.push(`[agentic] skipped ${allOwners.length - userIds.length} unentitled owner(s).`);
+      }
+
       for (const userId of userIds) {
         const short = userId.slice(0, 8);
         try {

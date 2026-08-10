@@ -4,7 +4,8 @@ import { createClient } from '@/lib/supabase/server';
 // caller's own user_id, and reading, confirming or deleting your own thesis is
 // free. What Pro buys is the agent continuing to watch it, which is enforced in
 // the scoring cron via entitledToMonitoring, not here.
-import { getUserTier } from '@/lib/tier';
+import { hasThesisAccess } from '@/lib/thesis-access-server';
+import { FREE_THESIS_LIMIT } from '@/lib/thesis-entitlement';
 import { bumpThesisVersion } from '@/lib/thesis-version';
 import { triggerBackfill } from '@/lib/thesis-backfill-trigger';
 
@@ -158,18 +159,25 @@ export async function PATCH(
         return NextResponse.json({ error: 'tracked must be a boolean' }, { status: 400 });
       }
 
-      // Free-tier gate: only apply when transitioning false -> true
+      // Free-tier gate: only apply when transitioning false -> true.
+      // Uses hasThesisAccess rather than getUserTier so the comp allowlist is
+      // honoured here as it is on the other two cap checks, and the shared
+      // FREE_THESIS_LIMIT rather than a hardcoded 1, so the three places that
+      // enforce this cannot drift apart.
       if (body.tracked === true && thesis.tracked === false) {
-        const tier = await getUserTier(user.id);
-        if (tier === 'free') {
+        const pro = await hasThesisAccess(user.id, user.email);
+        if (!pro) {
           const { count } = await supabase
             .from('theses')
             .select('id', { count: 'exact', head: true })
             .eq('user_id', user.id)
             .eq('tracked', true);
-          if ((count ?? 0) >= 1) {
+          if ((count ?? 0) >= FREE_THESIS_LIMIT) {
             return NextResponse.json(
-              { error: 'Free tier tracks one thesis. Upgrade to track all your positions.' },
+              {
+                error: `Free accounts watch ${FREE_THESIS_LIMIT} thesis. Pro watches every position you own.`,
+                code: 'PRO_REQUIRED',
+              },
               { status: 403 },
             );
           }

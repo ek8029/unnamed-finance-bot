@@ -19,8 +19,12 @@ export function useScrollReveal<T extends HTMLElement = HTMLDivElement>(
     const element = ref.current;
     if (!element) return;
 
-    // Check if reduce-motion is active
-    const reduceMotion = document.documentElement.classList.contains('reduce-motion');
+    // Honour BOTH the in-app setting and the OS preference. This checked only
+    // the class, so a user who had set prefers-reduced-motion at the OS level
+    // but never opened Helm's settings still got the observer and the reveal.
+    const reduceMotion =
+      document.documentElement.classList.contains('reduce-motion') ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduceMotion) {
       setIsVisible(true);
       return;

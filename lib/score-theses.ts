@@ -168,6 +168,13 @@ export async function scoreAllTheses(
   }
   const { data: allTheses, error: thesesErr } = await query;
 
+  // Error first, so the fatal path reports the real cause rather than depending
+  // on supabase-js returning data: null alongside it.
+  if (thesesErr) {
+    log.push(`Fatal: failed to fetch theses: ${thesesErr.message}`);
+    return { scanned, evidenceAdded, statusChanges, breaches, log };
+  }
+
   // Ongoing monitoring is the paid half of the product. A free user may confirm
   // a thesis and read its backfilled history; the agent only keeps watching it
   // for someone entitled. Without this the cron would score every tracked
@@ -184,10 +191,6 @@ export async function scoreAllTheses(
     }
   }
 
-  if (thesesErr) {
-    log.push(`Fatal: failed to fetch theses: ${thesesErr.message}`);
-    return { scanned, evidenceAdded, statusChanges, breaches, log };
-  }
   if (!theses || theses.length === 0) {
     log.push('No tracked theses found.');
     return { scanned, evidenceAdded, statusChanges, breaches, log };

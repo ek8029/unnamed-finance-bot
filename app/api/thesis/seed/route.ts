@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { draftPillars } from '@/lib/thesis-seed';
-import { rateLimit } from '@/lib/rate-limit';
+import { canSeed } from '@/lib/thesis-rate-limit';
 import { triggerBackfill, ONBOARDING_AUTO_TRACK_CAP } from '@/lib/thesis-backfill-trigger';
 import { FREE_THESIS_LIMIT } from '@/lib/thesis-entitlement';
 
@@ -38,9 +38,7 @@ export async function POST(request: Request) {
 
     // Rate limit per user: draftPillars calls gpt-4o. Tighter cap on the
     // resuggest regeneration path since it re-bills the model every call.
-    const limit = resuggest
-      ? rateLimit(`thesis-seed-resuggest:${user.id}`, 5, 3600)
-      : rateLimit(`thesis-seed:${user.id}`, 10, 3600);
+    const limit = await canSeed(user.id, resuggest);
     if (!limit.allowed) {
       return NextResponse.json(
         { error: 'Too many requests. Please try again later.', retryAfterSeconds: limit.retryAfterSeconds },
