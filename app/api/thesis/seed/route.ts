@@ -4,6 +4,7 @@ import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { draftPillars } from '@/lib/thesis-seed';
 import { rateLimit } from '@/lib/rate-limit';
 import { triggerBackfill, ONBOARDING_AUTO_TRACK_CAP } from '@/lib/thesis-backfill-trigger';
+import { FREE_THESIS_LIMIT } from '@/lib/thesis-entitlement';
 
 export async function POST(request: Request) {
   try {
@@ -12,9 +13,14 @@ export async function POST(request: Request) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (!(await hasThesisAccess(user.id, user.email))) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    }
+    // Free users may draft and confirm a capped number of theses and read the
+    // history behind them; ongoing monitoring is what Pro buys, and that is
+    // enforced in the scoring cron via entitledToMonitoring.
+    //
+    // This route used to 404 for anyone below Pro, which meant a free user's
+    // onboarding silently produced no theses at all. That is the reason the
+    // no-card connect trial existed: it was propping up the flagship moment.
+    const pro = await hasThesisAccess(user.id, user.email);
 
     const body = await request.json() as { ticker?: unknown; resuggest?: unknown };
     const rawTicker = body.ticker;
@@ -53,6 +59,24 @@ export async function POST(request: Request) {
     if (thesisError) {
       console.error('[thesis/seed] fetch thesis error:', thesisError);
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
+    }
+
+    // The cap applies to NEW theses only. Re-seeding one they already hold must
+    // keep working, or a free user could not reopen their own thesis.
+    if (!thesis && !pro) {
+      const { count: owned } = await supabase
+        .from('theses')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+      if ((owned ?? 0) >= FREE_THESIS_LIMIT) {
+        return NextResponse.json(
+          {
+            error: `Free accounts can hold ${FREE_THESIS_LIMIT} thesis. Pro tracks every position you own.`,
+            code: 'PRO_REQUIRED',
+          },
+          { status: 403 },
+        );
+      }
     }
 
     if (!thesis) {

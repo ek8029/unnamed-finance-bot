@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { hasThesisAccess } from '@/lib/thesis-access-server';
+// No entitlement gate on this route. Every query here is scoped to the
+// caller's own user_id, and reading, confirming or deleting your own thesis is
+// free. What Pro buys is the agent continuing to watch it, which is enforced in
+// the scoring cron via entitledToMonitoring, not here.
 import { getUserTier } from '@/lib/tier';
 import { bumpThesisVersion } from '@/lib/thesis-version';
 import { triggerBackfill } from '@/lib/thesis-backfill-trigger';
@@ -23,9 +26,6 @@ export async function GET(
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (!(await hasThesisAccess(user.id, user.email))) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
     const { ticker: raw } = await params;
@@ -113,9 +113,6 @@ export async function PATCH(
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (!(await hasThesisAccess(user.id, user.email))) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
     const { ticker: raw } = await params;
@@ -220,9 +217,6 @@ export async function DELETE(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (!(await hasThesisAccess(user.id, user.email))) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    }
 
     const { ticker: raw } = await params;
     const parsed = parseTicker(raw);
@@ -275,9 +269,6 @@ export async function POST(
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (!(await hasThesisAccess(user.id, user.email))) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
     const { ticker: raw } = await params;

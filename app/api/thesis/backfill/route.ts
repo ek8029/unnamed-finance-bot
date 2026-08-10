@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { scoreOneThesis, type Thesis } from '@/lib/score-theses';
 import { rateLimit } from '@/lib/rate-limit';
 
@@ -16,9 +15,11 @@ export async function POST(request: Request) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (!(await hasThesisAccess(user.id, user.email))) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    }
+    // The past is free. Backfill is a one-off read of what already happened to
+    // a thesis the user confirmed, and it is what makes a new thesis show
+    // something instead of an empty page. Pro buys what happens next, enforced
+    // in the scoring cron. Still rate limited below, because it costs EDGAR
+    // fetches regardless of who asks.
 
     const body = await request.json() as { ticker?: unknown };
     const rawTicker = typeof body.ticker === 'string' ? body.ticker.trim().toUpperCase() : '';

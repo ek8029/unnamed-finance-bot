@@ -17,6 +17,7 @@ import { citationDefect } from '@/lib/content/citation-quality';
 import { extractFilingSection, stripFilingHtml } from '@/lib/filing-extract';
 import { derivePillarStatus, type EvidenceForStatus, type PillarStatus } from '@/lib/thesis-status';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
+import { entitledToMonitoring } from '@/lib/thesis-entitlement';
 import type { BreachEvent } from '@/lib/thesis-breach';
 import { isComparisonHeadline } from '@/lib/news-quality';
 import { isHedgedConnection } from '@/lib/evidence-quality';
@@ -165,7 +166,24 @@ export async function scoreAllTheses(
   if (tickerScope) {
     query = query.eq('ticker', tickerScope);
   }
-  const { data: theses, error: thesesErr } = await query;
+  const { data: allTheses, error: thesesErr } = await query;
+
+  // Ongoing monitoring is the paid half of the product. A free user may confirm
+  // a thesis and read its backfilled history; the agent only keeps watching it
+  // for someone entitled. Without this the cron would score every tracked
+  // thesis regardless of tier, which was harmless only while thesis creation
+  // was itself Pro-gated.
+  let theses = allTheses;
+  if (allTheses && allTheses.length > 0) {
+    const owners = [...new Set(allTheses.map((t: { user_id: string }) => t.user_id))];
+    const entitled = await entitledToMonitoring(serviceClient, owners);
+    theses = allTheses.filter((t: { user_id: string }) => entitled.has(t.user_id));
+    const skipped = allTheses.length - theses.length;
+    if (skipped > 0) {
+      log.push(`Skipped ${skipped} tracked thesis/theses owned by unentitled users.`);
+    }
+  }
+
   if (thesesErr) {
     log.push(`Fatal: failed to fetch theses: ${thesesErr.message}`);
     return { scanned, evidenceAdded, statusChanges, breaches, log };

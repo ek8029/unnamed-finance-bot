@@ -3,7 +3,6 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { plaidClient, mapPlaidAccountType } from '@/lib/plaid';
 import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
 import { extractPlaidError } from '@/lib/plaid-errors';
-import { grantFirstConnectTrial } from '@/lib/grant-connect-trial';
 
 export async function POST(request: Request) {
   try {
@@ -213,9 +212,12 @@ export async function POST(request: Request) {
       await supabase.from('plaid_items').delete().eq('id', duplicateItem.id);
     }
 
-    // 14-day Pro trial on first connect. Shared with the manual-entry path so both
-    // routes to "real holdings on file" unlock the Pro-gated thesis layer.
-    await grantFirstConnectTrial(user.id, 'plaid');
+    // The automatic no-card trial that used to fire here is gone. It existed to
+    // unlock the Pro-gated thesis layer so onboarding was not empty, and that
+    // gate is now removed: a free user can draft a thesis, confirm it, and read
+    // the twelve months behind it. Eight of these trials were granted, every one
+    // lapsed, and none converted, because nothing ever asked for a card.
+    // The only trial now is the card-required one at /pricing.
 
     return NextResponse.json({
       success: true,

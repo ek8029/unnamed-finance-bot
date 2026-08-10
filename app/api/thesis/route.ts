@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { hasThesisAccess } from '@/lib/thesis-access-server';
+import { FREE_THESIS_LIMIT } from '@/lib/thesis-entitlement';
 
 // GET /api/thesis — list all user theses with their pillars (no evidence)
+// Reading your own theses is free. Pro buys ongoing monitoring, enforced in the
+// scoring cron via entitledToMonitoring. Creating one is capped for free users.
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -10,10 +13,6 @@ export async function GET() {
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (!(await hasThesisAccess(user.id, user.email))) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    }
-
     const { data: theses, error: thesesError } = await supabase
       .from('theses')
       .select('*')
@@ -96,9 +95,7 @@ export async function POST(request: Request) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (!(await hasThesisAccess(user.id, user.email))) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    }
+    const pro = await hasThesisAccess(user.id, user.email);
 
     const body = await request.json() as { ticker?: unknown };
     const rawTicker = body.ticker;
@@ -127,6 +124,24 @@ export async function POST(request: Request) {
 
     if (existing) {
       return NextResponse.json({ thesis: existing });
+    }
+
+    // Same cap as the seed route, applied to new theses only so reopening one
+    // they already hold keeps working.
+    if (!pro) {
+      const { count: owned } = await supabase
+        .from('theses')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+      if ((owned ?? 0) >= FREE_THESIS_LIMIT) {
+        return NextResponse.json(
+          {
+            error: `Free accounts can hold ${FREE_THESIS_LIMIT} thesis. Pro tracks every position you own.`,
+            code: 'PRO_REQUIRED',
+          },
+          { status: 403 },
+        );
+      }
     }
 
     const { data: inserted, error: insertError } = await supabase
