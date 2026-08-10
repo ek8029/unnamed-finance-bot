@@ -17,15 +17,28 @@ export async function GET() {
   }
 
   const { allowed } = await requirePro(user.id);
-  if (!allowed) {
-    return NextResponse.json(
-      { error: 'Tax-loss harvesting intelligence is a Pro feature.', code: 'PRO_REQUIRED' },
-      { status: 403 },
-    );
-  }
 
   try {
     const report = await generateTaxReport(user.id);
+
+    // The figure is free. The workings are the product.
+    //
+    // This route used to 403 below Pro, which meant the one deterministic
+    // dollar amount Helm computes was invisible to exactly the people who had
+    // not yet decided whether it was worth paying for. It is calculated from
+    // lots the user already owns and waits on nothing, so showing the total
+    // costs nothing and is the most honest thing the product can say to a free
+    // account. What Pro buys is which lots, the 30-day wash-sale screening
+    // across every account at once, and the Form 8949 worksheet.
+    if (!allowed) {
+      return NextResponse.json({
+        teaser: true,
+        totalHarvestableLoss: report.totalHarvestableLoss,
+        totalEstimatedSavings: report.totalEstimatedSavings,
+        opportunityCount: report.opportunityCount,
+        disclaimer: report.disclaimer,
+      });
+    }
 
     // Thesis-aware TLH: stamp each opportunity with its conviction so the UI can
     // tailor the harvest guidance (broken -> consider exiting; intact -> tax move

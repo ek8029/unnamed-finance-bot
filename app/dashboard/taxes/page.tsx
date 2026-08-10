@@ -15,6 +15,8 @@ import { DemoConnectCta } from '@/components/demo/demo-connect-cta';
 import { Form8949Preview } from '@/components/dashboard/form-8949-preview';
 import { TierLock } from '@/components/tier-lock';
 import { usePreview } from '@/lib/preview-context';
+import { tierAtLeast } from '@/lib/tier-shared';
+import { TaxTeaser } from '@/components/tax-teaser';
 import { TAX_RATE, LTCG_RATE_DEFAULT, ANNUAL_LOSS_DEDUCTION_CAP } from '@/lib/financial-config';
 import { estimateTaxOnRealizedGains } from '@/lib/tax-math';
 
@@ -260,15 +262,32 @@ function NoHarvestEmpty() {
 // ── Main Page ──
 
 export default function TaxesPage() {
-  return (
-    <TierLock
-      required="pro"
-      label="The Tax Center is a Pro feature"
-      blurb="Harvestable losses with 30-day wash-sale screening, and a Form 8949 worksheet you can reconcile against your 1099-B."
-    >
-      <TaxesContent />
-    </TierLock>
-  );
+  const { tier } = usePreview();
+  const entitled = tierAtLeast(tier, 'pro');
+
+  // A free account sees its real harvestable figure first, then the locked
+  // detail underneath. Hiding the number entirely meant the one deterministic
+  // dollar amount in the product was invisible to everyone deciding whether to
+  // pay for it.
+  if (!entitled) {
+    return (
+      <main className="mx-auto max-w-[1240px] px-4 py-6 sm:px-7">
+        <TaxTeaser />
+        <div className="mt-6">
+          <TierLock
+            required="pro"
+            surface="/dashboard/taxes"
+            label="Which lots, and what the wash-sale rules do to them"
+            blurb="The figure above is yours either way. Pro shows the positions behind it, screens them against 30-day wash-sale windows across every account at once, and gives you a Form 8949 worksheet you can reconcile against your 1099-B."
+          >
+            <TaxesContent />
+          </TierLock>
+        </div>
+      </main>
+    );
+  }
+
+  return <TaxesContent />;
 }
 
 function TaxesContent() {
