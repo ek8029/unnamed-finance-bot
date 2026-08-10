@@ -27,6 +27,22 @@ interface Teaser {
   disclaimer?: string;
 }
 
+/**
+ * Read the teaser payload into a display decision.
+ *
+ * Exported so the sign convention is pinned by a test rather than by memory.
+ * `totalHarvestableLoss` is SIGNED and a loss is NEGATIVE: live accounts return
+ * -1,116.57, -20,702.97 and -137,028.20. Checking `> 0` reports "nothing to
+ * harvest" to every user who has something to harvest.
+ */
+export function readTeaser(d: Pick<Teaser, 'totalHarvestableLoss' | 'opportunityCount'>): {
+  harvestable: number;
+  hasLosses: boolean;
+} {
+  const harvestable = Math.abs(d.totalHarvestableLoss ?? 0);
+  return { harvestable, hasLosses: (d.opportunityCount ?? 0) > 0 && harvestable > 0 };
+}
+
 export function TaxTeaser() {
   const { formatCurrency } = useFormat();
   const [data, setData] = useState<Teaser | null>(null);
@@ -43,7 +59,7 @@ export function TaxTeaser() {
         setData(d);
         setState('ready');
         posthog.capture('tax_teaser_shown', {
-          has_harvestable: (d?.totalHarvestableLoss ?? 0) > 0,
+          has_harvestable: (d?.opportunityCount ?? 0) > 0,
           opportunity_count: d?.opportunityCount ?? 0,
         });
       } catch {
@@ -76,7 +92,7 @@ export function TaxTeaser() {
     );
   }
 
-  const hasLosses = data.totalHarvestableLoss > 0;
+  const { harvestable, hasLosses } = readTeaser(data);
 
   return (
     <div
@@ -102,7 +118,7 @@ export function TaxTeaser() {
               className="text-[40px] font-bold tabular-nums leading-none text-[var(--color-text-primary)]"
               style={{ fontFamily: 'var(--font-mono)' }}
             >
-              {formatCurrency(data.totalHarvestableLoss)}
+              {formatCurrency(harvestable)}
             </span>
             <span className="text-[15px] text-[var(--color-text-secondary)]">
               in harvestable losses across your accounts
