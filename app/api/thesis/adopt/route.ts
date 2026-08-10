@@ -20,6 +20,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getUserTier } from '@/lib/tier';
 import { getHouseThesis } from '@/lib/content/house-theses';
+import { FREE_THESIS_LIMIT } from '@/lib/thesis-entitlement';
 
 const MAX_REASON = 300;
 
@@ -75,12 +76,30 @@ export async function POST(request: Request) {
     if (!existing?.tracked) {
       const tier = await getUserTier(user.id);
       if (tier === 'free') {
+        // Ownership cap, matching /api/thesis and /api/thesis/seed. Without it
+        // this route was the way around it: 41 house theses exist, so a free
+        // account could adopt all of them against an advertised limit of one.
+        if (!existing) {
+          const { count: owned } = await supabase
+            .from('theses')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id);
+          if ((owned ?? 0) >= FREE_THESIS_LIMIT) {
+            return NextResponse.json(
+              {
+                error: `Free accounts can hold ${FREE_THESIS_LIMIT} thesis. Pro tracks every position you own.`,
+                code: 'PRO_REQUIRED',
+              },
+              { status: 403 },
+            );
+          }
+        }
         const { count } = await supabase
           .from('theses')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('tracked', true);
-        if ((count ?? 0) >= 1) tracked = false;
+        if ((count ?? 0) >= FREE_THESIS_LIMIT) tracked = false;
       }
     }
 

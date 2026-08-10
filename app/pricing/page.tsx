@@ -22,6 +22,7 @@ type PaidPeriod = 'pro';
 // and scales if a tier is ever added back.
 
 const proFeatures = [
+  'Every position watched, not just one',
   'Thesis monitoring with cited evidence',
   'The agent: reassessment, investigation, shared exposure',
   'Tax center with tax-loss harvesting',
@@ -31,7 +32,7 @@ const proFeatures = [
   'Factor lens',
 ];
 
-const freeSummary = 'Full terminal, brokerage sync, AI analysis on any US ticker, the daily brief, actions inbox, and Portfolio Wrapped.';
+const freeSummary = 'Full terminal, brokerage sync, AI analysis on any US ticker, the daily brief, actions inbox, and one thesis with the twelve months of evidence behind it.';
 
 // Where they genuinely differ, say how, rather than printing a tick in both
 // columns. A row that reads "General" against "Conviction-led" tells you more
@@ -43,8 +44,9 @@ const LEDGER: { feature: string; free: string; pro: string }[] = [
   { feature: 'Actions inbox', free: 'Included', pro: 'Included' },
   { feature: 'Portfolio Wrapped', free: 'Included', pro: 'Included' },
   { feature: 'Daily brief', free: 'General', pro: 'Conviction-led, your book' },
-  { feature: 'Thesis monitoring, cited evidence', free: '—', pro: 'Every tracked thesis' },
-  { feature: 'Twelve months of thesis history', free: '—', pro: 'Loaded on day one' },
+  { feature: 'Investment theses', free: 'One', pro: 'Every position you own' },
+  { feature: 'Twelve months of history behind a thesis', free: 'Included', pro: 'Included' },
+  { feature: 'Ongoing monitoring, cited evidence', free: '—', pro: 'Watched every trading day' },
   { feature: 'Tax-loss harvesting', free: '—', pro: 'Computed on your lots' },
   { feature: 'Earnings exposure', free: '—', pro: 'Across held positions' },
   { feature: 'The agent', free: '—', pro: 'Reassessment and shared exposure' },
@@ -61,12 +63,12 @@ const faqItems = [
   {
     question: "What's included in the Free plan?",
     answer:
-      'The full terminal: portfolio dashboard with brokerage sync via Plaid, AI stock analysis on any US ticker, the general daily brief, the actions inbox, and Portfolio Wrapped. Free forever, and no card is required.',
+      'The full terminal: portfolio dashboard with brokerage sync via Plaid, AI stock analysis on any US ticker, the general daily brief, the actions inbox, and Portfolio Wrapped. You also get one investment thesis and can read the twelve months of dated evidence behind it. Free forever, and no card is required.',
   },
   {
     question: 'What does Pro add?',
     answer:
-      'Pro is $20/mo. It adds thesis monitoring with cited evidence, twelve months of thesis history loaded the moment you confirm a thesis, the agent, the Thesis Builder, the factor lens, earnings exposure tracking, the tax center with tax-loss harvesting, and a conviction-led tailored brief.',
+      'Pro is $20/mo. Free gives you one thesis and the history behind it; Pro watches every position you own, every trading day, and adds the agent, the Thesis Builder, the factor lens, earnings exposure tracking, the tax center with tax-loss harvesting, and a conviction-led tailored brief.',
   },
   {
     question: 'Can I cancel anytime?',

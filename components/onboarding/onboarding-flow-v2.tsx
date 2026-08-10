@@ -124,8 +124,8 @@ const AGENT_JOBS = [
 // highlights the previewed tier (usePreview), so the free/pro dev toggle
 // demos the differences and prod shows the user's real entitlement.
 const TIERS: { key: Tier; name: string; price: string; unlocks: string[] }[] = [
-  { key: 'free', name: 'Free', price: '$0', unlocks: ['Every account in one place', '5 AI analyses a day', 'Daily market brief'] },
-  { key: 'pro', name: 'Pro', price: '$20/mo', unlocks: ['Thesis tracking', 'Tax-loss harvesting', 'Earnings watch', 'The agent, watching every position'] },
+  { key: 'free', name: 'Free', price: '$0', unlocks: ['Every account in one place', '5 AI analyses a day', 'Daily market brief', 'One thesis, and its history'] },
+  { key: 'pro', name: 'Pro', price: '$20/mo', unlocks: ['Every thesis, watched daily', 'Tax-loss harvesting', 'Earnings watch', 'The agent, watching every position'] },
 ];
 
 // Preview mode (?onbv2preview=1 or the /testing/onboarding harness): forces the
@@ -530,12 +530,22 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
     }
     setBusy(d.ticker);
     try {
+      // fetch does not reject on 4xx, so an unchecked loop here reported success
+      // for pillars that were never confirmed. That is how a thesis ended up
+      // tracked, empty, and labelled "Watching": the confirm silently 404'd and
+      // the backfill then refused with "No confirmed pillars".
+      let confirmedAny = false;
       for (const id of d.draftPillarIds) {
-        await fetch(`/api/thesis/pillars/${id}`, {
+        const pr = await fetch(`/api/thesis/pillars/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ confirmed: true }),
         });
+        if (pr.ok) confirmedAny = true;
+      }
+      if (!confirmedAny) {
+        setNote(`Could not confirm ${d.ticker}. You can try again from the Theses page.`);
+        return;
       }
       // Tracking is what the cron actually scans, and free tier caps it at one.
       // A silent 403 would leave the user believing all three are being watched.
@@ -1093,7 +1103,8 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                     </div>
                     {!tierAtLeast(tier, 'pro') && (
                       <p className="mt-3 text-[12.5px] text-[var(--color-text-muted)] leading-relaxed">
-                        You&apos;re on Free. Connect your book now at no cost, and the thesis layer, taxes, and earnings unlock with Pro.
+                        You&apos;re on Free. Connect your book now at no cost, write one thesis and read the
+                        twelve months behind it. Pro is what keeps watching it, plus taxes and earnings.
                       </p>
                     )}
                   </div>

@@ -110,6 +110,13 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   let currentPeriodEnd: string;
   let stripeSubscriptionId: string | null = null;
   let stripePriceId: string | null = null;
+  // Records that this person has HAD a trial, which is what makes "one trial
+  // per person" enforceable at checkout. Nulling it on purchase, as this used
+  // to, meant nothing ever wrote the column again once the connect trial was
+  // retired: cancel on day 13, check out again, get another 14 free days,
+  // repeat forever. Safe to keep set, because every reader that treats a trial
+  // row as unpaid also requires stripe_subscription_id to be null.
+  let trialEndsAt: string | null = null;
 
   if (billingPeriod === 'lifetime') {
     // One-time payment — never expires
@@ -130,6 +137,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     stripeSubscriptionId = sub.id;
     stripePriceId = sub.items.data[0]?.price?.id ?? null;
     currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
+    trialEndsAt = sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null;
   }
 
   // Tier from the purchased price (source of truth). Only Pro is sellable, and
@@ -150,7 +158,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         billing_period: billingPeriod,
         current_period_end: currentPeriodEnd,
         cancel_at_period_end: false,
-        trial_ends_at: null, // paid subscription supersedes any Plaid-connect trial
+        trial_ends_at: trialEndsAt,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'user_id' },

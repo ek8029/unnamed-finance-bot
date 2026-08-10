@@ -31,6 +31,13 @@ import { normalizeTier, tierAtLeast } from '@/lib/tier-shared';
  */
 export const FREE_THESIS_LIMIT = 1;
 
+interface SubRow {
+  user_id: string;
+  tier: string | null;
+  trial_ends_at: string | null;
+  stripe_subscription_id: string | null;
+}
+
 export async function entitledToMonitoring(
   serviceClient: SupabaseClient,
   userIds: string[],
@@ -38,13 +45,30 @@ export async function entitledToMonitoring(
   const entitled = new Set<string>();
   if (userIds.length === 0) return entitled;
 
-  const { data: subs } = await serviceClient
-    .from('user_subscriptions')
-    .select('user_id, tier, trial_ends_at, stripe_subscription_id')
-    .in('user_id', userIds);
+  // FAILS OPEN, deliberately. If entitlement cannot be read, everyone keeps
+  // monitoring for this run. Failing closed would silently unmonitor every
+  // paying customer on a transient database error and log it as the normal
+  // "skipped N unentitled" line, which reads like correct behaviour. A day of
+  // scoring given away is cheap; a paying user quietly losing the product is
+  // not.
+  const subs: SubRow[] = [];
+  // PostgREST caps a result set at 1000 rows, so a large .in() truncates and
+  // the missing owners read as unentitled. Chunk rather than trust the cap.
+  const CHUNK = 500;
+  for (let i = 0; i < userIds.length; i += CHUNK) {
+    const { data, error } = await serviceClient
+      .from('user_subscriptions')
+      .select('user_id, tier, trial_ends_at, stripe_subscription_id')
+      .in('user_id', userIds.slice(i, i + CHUNK));
+    if (error) {
+      console.error('[thesis-entitlement] lookup failed, failing open:', error.message);
+      return new Set(userIds);
+    }
+    subs.push(...((data ?? []) as SubRow[]));
+  }
 
   const now = Date.now();
-  for (const s of subs ?? []) {
+  for (const s of subs) {
     // Mirrors getRealSubscriptionInfo: a trial row with no Stripe subscription
     // is only worth its tier while the trial is still running.
     let tier = normalizeTier(s.tier);

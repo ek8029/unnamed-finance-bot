@@ -238,12 +238,13 @@ export function ClassicThesesPage() {
   }, []);
 
   useEffect(() => {
-    // Non-Pro is gated — don't fetch theses/holdings just to throw the data away
-    // behind the lock; the lock renders off previewTier alone.
-    if (!tierAtLeast(previewTier, 'pro')) return;
+    // Fetch for everyone. Free accounts hold one thesis and can read its
+    // history, so skipping the load here would render them an empty page for
+    // something they own. /api/thesis decides what they may see; if it refuses,
+    // loadTheses sets phase to 'locked'.
     loadTheses();
     loadHoldings();
-  }, [loadTheses, loadHoldings, previewTier]);
+  }, [loadTheses, loadHoldings]);
 
   /* ── Derived data ── */
   const summaries = theses.map((t) => ({ t, summary: summarizePillars(t.pillars) }));
@@ -426,9 +427,8 @@ export function ClassicThesesPage() {
     }
   }
 
-  /* ── Gate first: non-Pro sees the lock instantly (previewTier is correct on
-        first paint), never waiting on the /api/thesis fetch. ── */
-  if (phase === 'loading' && tierAtLeast(previewTier, 'pro')) {
+  /* ── Loading state applies to everyone now that free accounts load too. ── */
+  if (phase === 'loading') {
     return (
       <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8">
         <LoadingSkeleton />
@@ -449,7 +449,13 @@ export function ClassicThesesPage() {
     );
   }
 
-  if (phase === 'locked' || !tierAtLeast(previewTier, 'pro')) {
+  // Free accounts are NOT locked out of this page any more. They can hold one
+  // thesis and read the history behind it, so locking the only surface that
+  // shows a thesis would leave them with something they own and cannot open.
+  // The lock now follows the API: it renders only when /api/thesis actually
+  // refuses. Pro-only panels on this page (agent activity, and the rest) keep
+  // their own locked states, and the one-thesis cap is enforced server-side.
+  if (phase === 'locked') {
     return (
       <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8">
         <TierLock

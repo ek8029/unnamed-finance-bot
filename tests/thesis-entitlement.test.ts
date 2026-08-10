@@ -125,4 +125,70 @@ describe('entitledToMonitoring', () => {
     // The cap is what makes a second thesis the upgrade, so pin the value.
     expect(FREE_THESIS_LIMIT).toBe(1);
   });
+
+  // ── The failure that actually costs money ──
+
+  it('FAILS OPEN when the entitlement query errors, keeping paying users watched', async () => {
+    // A transient database error must not silently unmonitor every subscriber
+    // and log it as the ordinary "skipped N unentitled" line.
+    const client = {
+      from: () => ({
+        select: () => ({ in: () => Promise.resolve({ data: null, error: { message: 'connection reset' } }) }),
+      }),
+      auth: { admin: { getUserById: () => Promise.resolve({ data: null }) } },
+    } as never;
+    const s = await entitledToMonitoring(client, ['payer', 'freebie']);
+    expect(s.has('payer')).toBe(true);
+    expect(s.has('freebie')).toBe(true);
+  });
+
+  it('keeps an allowlisted comp whose subscription row says free', async () => {
+    // The allowlist is the documented override for the founder and comped
+    // testers. If it stops being consulted they lose monitoring silently.
+    const s = await entitledToMonitoring(
+      fakeClient(
+        [{ user_id: 'comp', tier: 'free', trial_ends_at: null, stripe_subscription_id: null }],
+        { comp: 'evank8029@gmail.com' },
+      ),
+      ['comp'],
+    );
+    expect(s.has('comp')).toBe(true);
+  });
+
+  it('does not promote a non-allowlisted free user via the email backstop', async () => {
+    const s = await entitledToMonitoring(
+      fakeClient(
+        [{ user_id: 'u1', tier: 'free', trial_ends_at: null, stripe_subscription_id: null }],
+        { u1: 'stranger@example.com' },
+      ),
+      ['u1'],
+    );
+    expect(s.has('u1')).toBe(false);
+  });
+
+  it('chunks large id lists instead of truncating at the 1000-row cap', async () => {
+    // PostgREST caps a result set at 1000. A single .in() past that silently
+    // drops owners, who then read as unentitled while paying.
+    const ids = Array.from({ length: 1200 }, (_, i) => `u${i}`);
+    const rows = ids.map((id) => ({
+      user_id: id, tier: 'pro', trial_ends_at: null, stripe_subscription_id: 'sub',
+    }));
+    let calls = 0;
+    const client = {
+      from: () => ({
+        select: () => ({
+          in: (_c: string, batch: string[]) => {
+            calls++;
+            expect(batch.length).toBeLessThanOrEqual(1000);
+            return Promise.resolve({ data: rows.filter(r => batch.includes(r.user_id)), error: null });
+          },
+        }),
+      }),
+      auth: { admin: { getUserById: () => Promise.resolve({ data: null }) } },
+    } as never;
+
+    const s = await entitledToMonitoring(client, ids);
+    expect(calls).toBeGreaterThan(1);
+    expect(s.size).toBe(1200);
+  });
 });
