@@ -24,6 +24,10 @@ interface Teaser {
   totalHarvestableLoss: number;
   totalEstimatedSavings: number;
   opportunityCount: number;
+  /** False when the account holds nothing, which is NOT the same as nothing to harvest. */
+  hasHoldings?: boolean;
+  /** Set by the server only for unentitled accounts. The client tier is unreliable on first paint. */
+  teaser?: boolean;
   disclaimer?: string;
 }
 
@@ -58,10 +62,18 @@ export function TaxTeaser() {
         if (!alive) return;
         setData(d);
         setState('ready');
-        posthog.capture('tax_teaser_shown', {
-          has_harvestable: (d?.opportunityCount ?? 0) > 0,
-          opportunity_count: d?.opportunityCount ?? 0,
-        });
+        // Only count it when the server agrees this is a free account. In prod
+        // the client asserts 'free' for the first few hundred ms while the real
+        // tier resolves, so every Pro pageview transits this component. Firing
+        // unconditionally would contaminate the one conversion metric this
+        // feature exists to produce with traffic from people who already pay.
+        if (d?.teaser === true) {
+          posthog.capture('tax_teaser_shown', {
+            has_harvestable: (d?.opportunityCount ?? 0) > 0,
+            opportunity_count: d?.opportunityCount ?? 0,
+            has_holdings: d?.hasHoldings !== false,
+          });
+        }
       } catch {
         if (alive) setState('failed');
       }
@@ -93,6 +105,36 @@ export function TaxTeaser() {
   }
 
   const { harvestable, hasLosses } = readTeaser(data);
+
+  // Four states, not three. An account with nothing connected must never be
+  // told Helm checked every lot it holds, because Helm checked nothing. Most
+  // accounts are in exactly this state.
+  if (data.hasHoldings === false) {
+    return (
+      <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] px-6 py-7">
+        <div
+          className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-[var(--color-text-muted)]"
+          style={{ fontFamily: 'var(--font-mono)' }}
+        >
+          Tax Center
+        </div>
+        <div className="mt-3 text-[22px] font-semibold leading-[1.25] text-[var(--color-text-primary)]">
+          Nothing connected yet, so there is nothing to check.
+        </div>
+        <p className="mt-3 mb-0 max-w-[62ch] text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
+          Add a portfolio and Helm computes the harvestable losses across every account
+          you hold, lot by lot, from your own cost basis. Read-only, and you can type the
+          positions in by hand instead of connecting a brokerage.
+        </p>
+        <Link
+          href="/dashboard/portfolio"
+          className="mt-5 inline-flex min-h-[44px] items-center rounded-[var(--radius-md)] border border-[var(--color-border-strong)] px-5 text-[14px] font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-bg-overlay)]"
+        >
+          Add your portfolio
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div

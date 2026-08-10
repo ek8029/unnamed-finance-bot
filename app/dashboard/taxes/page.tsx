@@ -261,6 +261,40 @@ function NoHarvestEmpty() {
 
 // ── Main Page ──
 
+/**
+ * Structure only, behind the blur. Column headers and the shape of the table,
+ * with no numbers and no tickers, so the preview cannot imply a holding the
+ * user does not have.
+ */
+function LockedTaxPreview() {
+  return (
+    <div className="space-y-4" aria-hidden>
+      <div className="text-[22px] font-bold tracking-[-0.02em] text-[var(--color-text-primary)]">
+        Harvestable positions
+      </div>
+      <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)]">
+        <div className="grid grid-cols-4 gap-4 border-b border-[var(--color-border-base)] px-5 py-3 font-mono text-[10.5px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+          <span>Position</span>
+          <span>Unrealised loss</span>
+          <span>Wash sale</span>
+          <span>Est. saving</span>
+        </div>
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="grid grid-cols-4 gap-4 border-b border-[var(--color-border-base)] px-5 py-4 last:border-b-0">
+            {[0, 1, 2, 3].map((j) => (
+              <span key={j} className="h-3 rounded bg-[var(--color-border-base)]" />
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="text-[22px] font-bold tracking-[-0.02em] text-[var(--color-text-primary)]">
+        Form 8949 worksheet
+      </div>
+      <div className="h-24 rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)]" />
+    </div>
+  );
+}
+
 export default function TaxesPage() {
   const { tier } = usePreview();
   const entitled = tierAtLeast(tier, 'pro');
@@ -280,7 +314,14 @@ export default function TaxesPage() {
             label="Which lots, and what the wash-sale rules do to them"
             blurb="The figure above is yours either way. Pro shows the positions behind it, screens them against 30-day wash-sale windows across every account at once, and gives you a Form 8949 worksheet you can reconcile against your 1099-B."
           >
-            <TaxesContent />
+            {/* A STATIC preview, not <TaxesContent />. TierLock renders its
+                children blurred rather than not rendering them, so mounting the
+                real component here would run its hooks, hand it the four-field
+                teaser payload where it expects a full report, and throw on
+                harvestReport.annualCap. It would also call the endpoint a
+                second time on every load. Nothing here is a claim about this
+                user's data. */}
+            <LockedTaxPreview />
           </TierLock>
         </div>
       </main>

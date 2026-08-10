@@ -31,11 +31,31 @@ export async function GET() {
     // account. What Pro buys is which lots, the 30-day wash-sale screening
     // across every account at once, and the Form 8949 worksheet.
     if (!allowed) {
+      // NET OF WASH SALES, deliberately, and not report.totalHarvestableLoss.
+      // That field sums every opportunity including §1091-blocked lots, while
+      // the savings pool a few lines below it in tax-analysis skips them. Using
+      // the raw total here would advertise a figure inflated by exactly the
+      // quantity the paid feature then deducts, so the number would SHRINK
+      // after payment. That is a refund conversation, and it is the one
+      // direction this error must never run.
+      const clean = report.opportunities.filter((o) => !o.washSaleRisk);
+      const netLoss = clean.reduce((s, o) => s + o.unrealizedLoss, 0);
+
+      // "Nothing to harvest" and "nothing connected" are different sentences.
+      // Most accounts have no holdings at all, so without this the dominant
+      // rendering of this screen would tell someone Helm checked every lot they
+      // hold when it checked nothing.
+      const { count: holdingsCount } = await supabase
+        .from('holdings')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
       return NextResponse.json({
         teaser: true,
-        totalHarvestableLoss: report.totalHarvestableLoss,
+        totalHarvestableLoss: netLoss,
         totalEstimatedSavings: report.totalEstimatedSavings,
-        opportunityCount: report.opportunityCount,
+        opportunityCount: clean.length,
+        hasHoldings: (holdingsCount ?? 0) > 0,
         disclaimer: report.disclaimer,
       });
     }

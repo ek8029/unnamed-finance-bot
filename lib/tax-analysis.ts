@@ -291,8 +291,12 @@ async function fetchHoldingsWithLosses(userId: string): Promise<RawHolding[]> {
     .order('unrealised_gain_loss', { ascending: true });
 
   if (error) {
+    // THROW, do not return []. An empty array here is indistinguishable from
+    // "this user holds nothing", and the caller turns that into "Helm checked
+    // every lot you hold and found no losses" on a screen that asks for money.
+    // A failed query is not a finding. Let it 500 so the UI can say so.
     console.error('tax-analysis: failed to fetch holdings', error);
-    return [];
+    throw new Error(`failed to fetch holdings: ${error.message}`);
   }
   return (data || []) as unknown as RawHolding[];
 }
