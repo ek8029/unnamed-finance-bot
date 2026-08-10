@@ -85,7 +85,9 @@ export function LegalFooter({ variant = 'full' }: LegalFooterProps) {
             ))}
           </div>
         </div>
-        <div className="flex items-center gap-5">
+        {/* Wraps: five links in one row forced a 344px scrollWidth at a 320px
+            viewport, so every page carrying this footer scrolled sideways. */}
+        <div className="flex flex-wrap justify-center items-center gap-x-5 gap-y-2">
           {links.map((link) => (
             <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>
           ))}

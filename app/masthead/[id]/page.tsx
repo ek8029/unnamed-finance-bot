@@ -78,7 +78,7 @@ export default async function CatchPage({ params }: Props) {
   const subject = e.company && e.company !== e.ticker ? e.company : e.ticker;
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)]">
+    <main id="main-content" className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(catchJsonLd(e)) }}
@@ -131,9 +131,9 @@ export default async function CatchPage({ params }: Props) {
 
         {/* ── The claim under test ── */}
         <section className="mt-9">
-          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
+          <h2 className="m-0 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
             The claim under test
-          </div>
+          </h2>
           <p className="mt-2.5 mb-0 text-[18px] leading-[1.55] text-[var(--color-text-primary)]" style={{ fontFamily: SERIF }}>
             {e.pillar_claim}
           </p>
@@ -141,9 +141,9 @@ export default async function CatchPage({ params }: Props) {
 
         {/* ── The verbatim quote ── */}
         <section className="mt-9">
-          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-gold)]">
+          <h2 className="m-0 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-[var(--color-gold)]">
             What the source actually says
-          </div>
+          </h2>
           <blockquote
             className="mt-3 mb-0 border-l-2 pl-5 text-[19px] leading-[1.6] text-[var(--color-text-primary)]"
             style={{ fontFamily: SERIF, borderColor: 'var(--color-gold)' }}
@@ -177,20 +177,20 @@ export default async function CatchPage({ params }: Props) {
 
         {e.summary && (
           <section className="mt-9 border-t border-[var(--color-border-base)] pt-6">
-            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
+            <h2 className="m-0 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
               Why it matters
-            </div>
+            </h2>
             <p className="mt-2.5 mb-0 text-[16px] leading-[1.65] text-[var(--color-text-secondary)]">{e.summary}</p>
           </section>
         )}
 
         {/* ── Onward ── */}
-        <nav className="mt-11 flex flex-wrap gap-3 border-t border-[var(--color-border-strong)] pt-7">
+        <nav aria-label="Continue reading" className="mt-11 flex flex-wrap gap-3 border-t border-[var(--color-border-strong)] pt-7">
           <Link
             href={`/thesis/${e.ticker.toLowerCase()}`}
             className="inline-flex min-h-[44px] items-center border border-[var(--color-gold)] px-5 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-gold)] transition-colors hover:bg-[var(--color-gold)] hover:text-[var(--color-bg-base)]"
           >
-            The full {e.ticker} thesis &rarr;
+            {`The full ${e.ticker} thesis`} &rarr;
           </Link>
           <Link
             href="/masthead"

@@ -106,7 +106,7 @@ export default function PricingPage() {
   const { realTier: tier } = useTier();
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg-base)] bg-depth relative overflow-hidden">
+    <main id="main-content" className="min-h-screen bg-[var(--color-bg-base)] bg-depth relative overflow-hidden">
       {/* JSON-LD */}
       <script
         type="application/ld+json"
@@ -142,11 +142,14 @@ export default function PricingPage() {
             <HelmMark size={32} />
             <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
           </Link>
-          <div className="flex items-center gap-5">
-            <Link href="/analyze" className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Analyze</Link>
-            <Link href="/pricing" className="text-[15px] text-[var(--color-text-primary)] transition-colors">Pricing</Link>
-            <Link href="/blog" className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Blog</Link>
-            <Link href="/login" className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Sign in</Link>
+          {/* Wraps rather than clipping: <main> carries overflow-hidden, so at
+              320px the un-wrapped row silently cut "Sign in" off the edge with
+              no way to reach it. */}
+          <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-[13px] sm:text-[15px]">
+            <Link href="/analyze" className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Analyze</Link>
+            <Link href="/pricing" className="text-[var(--color-text-primary)] transition-colors">Pricing</Link>
+            <Link href="/blog" className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Blog</Link>
+            <Link href="/login" className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Sign in</Link>
           </div>
         </div>
       </nav>
@@ -278,6 +281,7 @@ export default function PricingPage() {
         <AnimatedSection delay={100}>
           <div className="overflow-x-auto rounded-lg border border-[var(--color-border-base)]">
             <table className="w-full min-w-[560px] border-collapse text-left">
+              <caption className="sr-only">Feature comparison, Free versus Pro</caption>
               <thead>
                 <tr className="border-b border-[var(--color-border-strong)] bg-[var(--color-bg-surface)]">
                   <th
@@ -312,8 +316,19 @@ export default function PricingPage() {
                     >
                       {row.feature}
                     </th>
+                    {/* NVDA at its default punctuation level does not speak an
+                        em dash, so a cell containing only "—" reads as empty,
+                        which on a pricing table is indistinguishable from
+                        missing data. Keep the mark, add the word. */}
                     <td className={`px-5 py-3 text-[13.5px] ${row.free === '—' ? 'text-[var(--color-text-muted)]' : 'text-[var(--color-text-secondary)]'}`}>
-                      {row.free}
+                      {row.free === '—' ? (
+                        <>
+                          <span aria-hidden="true">&mdash;</span>
+                          <span className="sr-only">Not included</span>
+                        </>
+                      ) : (
+                        row.free
+                      )}
                     </td>
                     <td className="px-5 py-3 text-[13.5px] text-[var(--color-text-primary)]">{row.pro}</td>
                   </tr>
