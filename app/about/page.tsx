@@ -7,14 +7,14 @@ import { LegalFooter } from '@/components/legal-footer';
 export const metadata: Metadata = {
   title: 'About | Helm Terminal',
   description:
-    'Helm Terminal was built by Evan Kim — Penn State economics graduate and former derivatives hedging intern — to give individual investors institutional-grade portfolio intelligence, free and transparent.',
+    'Helm Terminal is portfolio intelligence for people who manage their own money. Built by Evan Kim, a Penn State economics student and former derivatives hedging intern.',
   alternates: {
     canonical: 'https://helmterminal.dev/about',
   },
   openGraph: {
     title: 'About Helm Terminal',
     description:
-      'The story behind Helm — institutional-grade financial intelligence, built for individuals.',
+      'Who built Helm, what it actually does, and how it decides what to tell you.',
     url: 'https://helmterminal.dev/about',
   },
 };
@@ -24,7 +24,7 @@ const PERSON_SCHEMA = {
   '@type': 'Person',
   name: 'Evan Kim',
   jobTitle: 'Founder',
-  description: 'Economics graduate from Penn State and former derivatives hedging intern. Built Helm Terminal to bring institutional-grade portfolio intelligence to individual investors.',
+  description: 'Economics student at Penn State and former derivatives hedging intern. Built Helm Terminal to bring institutional-grade portfolio intelligence to individual investors.',
   url: 'https://helmterminal.dev/about',
   worksFor: {
     '@type': 'Organization',
@@ -93,17 +93,69 @@ export default function AboutPage() {
 
           <div className="space-y-6 text-[15px] leading-relaxed text-[var(--color-text-secondary)]">
             <p>
-              Helm Terminal is a financial intelligence platform built for people who
-              manage their own money. It connects to your brokerage accounts, analyzes
-              your full portfolio, and tells you what actually matters: concentration risk,
-              tax-loss harvesting opportunities, earnings exposure, and a personalized
-              daily brief that connects overnight market moves to your specific holdings.
+              Helm Terminal is portfolio intelligence for people who manage their own
+              money. It connects every brokerage account you hold, reads them as one
+              book, and tells you what changed and why it matters to the positions you
+              actually own.
             </p>
 
             <p>
-              Most of it is free. No black boxes, no vague AI summaries. Every insight
-              shows its data sources, timestamps, and methodology. You can verify
-              everything Helm tells you.
+              It is not a tracker. A tracker tells you what your portfolio is worth,
+              which your brokerage already does. Helm is built for the harder question,
+              which is what you should know about what you already hold.
+            </p>
+
+            <h2 className="text-[var(--color-text-primary)] text-xl font-semibold pt-4">
+              What it does
+            </h2>
+
+            <ul className="space-y-3 list-none" role="list">
+              <li className="flex gap-3">
+                <span className="text-[var(--color-gold)] font-mono text-[15px] mt-0.5">01</span>
+                <span>
+                  <strong className="text-[var(--color-text-primary)]">Sees the whole book.</strong>{' '}
+                  Every account in one place, so concentration and overlap that hide
+                  between brokerages become visible. No single brokerage can do this,
+                  because each one only sees its own share of your money.
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-[var(--color-gold)] font-mono text-[15px] mt-0.5">02</span>
+                <span>
+                  <strong className="text-[var(--color-text-primary)]">Computes the tax number.</strong>{' '}
+                  Harvestable losses lot by lot from your own cost basis, screened
+                  against 30 day wash sale windows across every account at once. This is
+                  the one figure in the product that is arithmetic rather than judgment.
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-[var(--color-gold)] font-mono text-[15px] mt-0.5">03</span>
+                <span>
+                  <strong className="text-[var(--color-text-primary)]">Watches the reasons.</strong>{' '}
+                  You record why you own something. Helm reads SEC filings and market
+                  reporting against those reasons and flags it when the evidence turns,
+                  quoting the source document word for word with its date and a link.
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-[var(--color-gold)] font-mono text-[15px] mt-0.5">04</span>
+                <span>
+                  <strong className="text-[var(--color-text-primary)]">Flags what is coming.</strong>{' '}
+                  Earnings exposure before the print, and a daily brief that connects
+                  overnight moves to your specific holdings rather than to the market in
+                  general.
+                </span>
+              </li>
+            </ul>
+
+            <p>
+              There is also a free stock analysis page for any US listed ticker that
+              needs no account at all, and{' '}
+              <Link href="/masthead" className="text-[var(--color-gold)] hover:underline">
+                the Masthead
+              </Link>
+              , a public running record of what Helm has surfaced, with every source
+              shown.
             </p>
 
             <h2 className="text-[var(--color-text-primary)] text-xl font-semibold pt-4">
@@ -120,18 +172,26 @@ export default function AboutPage() {
               >
                 Plaid
               </a>{' '}
-              (read-only — Helm can never move money or execute trades). It pulls positions,
-              balances, and transactions, then runs a deterministic rule engine that checks
-              for concentration risk, tax-loss harvesting opportunities, earnings exposure,
-              cash drag, and more. No LLMs in the decision loop — every insight is
-              auditable and reproducible.
+              on a read only basis. It can never move money or place a trade. It pulls
+              positions, balances and transactions, then runs a rule engine over them
+              for concentration risk, harvestable losses, earnings exposure and cash
+              drag. Those rules are deterministic, which means the same inputs always
+              produce the same output and you can audit any of it.
             </p>
 
             <p>
-              Market data comes from Finazon (real-time quotes and historical prices)
-              and SEC EDGAR (company fundamentals and filings). Analysis pages use AI for
-              narrative interpretation of structured financial data, clearly labeled as
-              AI-generated.
+              Thesis monitoring works differently and it is worth being precise about
+              the difference. Reading a filing to decide whether it contradicts a stated
+              reason is a judgment, and a language model makes it. What keeps it honest
+              is the constraint around it: every claim has to quote its source document
+              word for word, and a claim that cannot be matched back to the source is
+              discarded rather than shown to you. Helm never paraphrases a document and
+              presents it as a finding.
+            </p>
+
+            <p>
+              Market data comes from Finazon for quotes and historical prices, and from
+              SEC EDGAR for fundamentals and filings. Coverage is US listed securities.
             </p>
 
             <p className="text-[var(--color-text-muted)] text-[14px]">
@@ -148,25 +208,55 @@ export default function AboutPage() {
             </p>
 
             <h2 className="text-[var(--color-text-primary)] text-xl font-semibold pt-4">
+              Who built it
+            </h2>
+
+            <p>
+              I am{' '}
+              <strong className="text-[var(--color-text-primary)]">Evan Kim</strong>. I
+              study economics at Penn State and I spent an internship on derivatives
+              hedging, which is where I got used to the idea that a position is
+              something you keep testing rather than something you buy and forget.
+            </p>
+
+            <p>
+              I built Helm because my own money was spread across several brokerages and
+              none of them could see the others. The reasons I had bought things lived in
+              my head or in a spreadsheet I stopped updating, and nothing anywhere was
+              checking those reasons against what the companies were actually reporting.
+              I could not find a tool that did it, so I wrote one.
+            </p>
+
+            <p>
+              Helm is run by one person, which I would rather say plainly than dress up.
+              It means the roadmap is short and honest, and it means that when something
+              is wrong you are talking to the person who can fix it.
+            </p>
+
+            <h2 className="text-[var(--color-text-primary)] text-xl font-semibold pt-4">
               The philosophy
             </h2>
 
             <ul className="space-y-3 list-none" role="list">
               <li className="flex gap-3">
                 <span className="text-[var(--color-gold)] font-mono text-[15px] mt-0.5">01</span>
-                <span><strong className="text-[var(--color-text-primary)]">Transparency over polish.</strong> Show the data, the source, the timestamp. Let users verify.</span>
+                <span><strong className="text-[var(--color-text-primary)]">Transparency over polish.</strong> Show the data, the source and the timestamp. Let people check the work.</span>
               </li>
               <li className="flex gap-3">
                 <span className="text-[var(--color-gold)] font-mono text-[15px] mt-0.5">02</span>
-                <span><strong className="text-[var(--color-text-primary)]">Rules before AI.</strong> Deterministic intelligence you can audit. LLMs for narrative, not decisions.</span>
+                <span><strong className="text-[var(--color-text-primary)]">Deterministic where it counts.</strong> Risk, tax and exposure are plain rules with no model in the loop. Where a model does read a document, its claim must quote the source or it is dropped.</span>
               </li>
               <li className="flex gap-3">
                 <span className="text-[var(--color-gold)] font-mono text-[15px] mt-0.5">03</span>
-                <span><strong className="text-[var(--color-text-primary)]">Free by default.</strong> Core features stay free. Pro exists for advanced tax and earnings tools.</span>
+                <span><strong className="text-[var(--color-text-primary)]">Say less than you know.</strong> Helm does not predict prices and does not claim to beat anything. It reports what the evidence says and stops there.</span>
               </li>
               <li className="flex gap-3">
                 <span className="text-[var(--color-gold)] font-mono text-[15px] mt-0.5">04</span>
-                <span><strong className="text-[var(--color-text-primary)]">No financial advice.</strong> Helm is informational. It shows you what your data says — you make the decisions.</span>
+                <span><strong className="text-[var(--color-text-primary)]">Free by default.</strong> The terminal is free, including one tracked thesis and the history behind it. Pro is $20 a month and watches every position you own.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-[var(--color-gold)] font-mono text-[15px] mt-0.5">05</span>
+                <span><strong className="text-[var(--color-text-primary)]">No financial advice.</strong> Helm is not a registered investment adviser and nothing it shows you is advice. It tells you what your data says. The decisions stay yours.</span>
               </li>
             </ul>
           </div>
@@ -182,7 +272,7 @@ export default function AboutPage() {
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <span className="text-[15px] text-[var(--color-text-muted)]">
-                Free forever. No credit card required.
+                The free tier needs no card.
               </span>
             </div>
           </div>
