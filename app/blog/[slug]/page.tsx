@@ -5,6 +5,7 @@ import { ArrowLeft, Share2 } from 'lucide-react';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
+import { StickyMobileCta } from '@/components/sticky-mobile-cta';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { getAllPosts, getPostBySlug, extractHeadings } from '@/lib/blog';
 import { mdxComponents, CTACard, ComparisonTable, ProTip } from '@/components/blog/mdx-components';
@@ -285,6 +286,7 @@ export default async function BlogPost({ params }: PageProps) {
       </div>
 
       <LegalFooter />
+      <StickyMobileCta source="blog" />
     </main>
   );
 }

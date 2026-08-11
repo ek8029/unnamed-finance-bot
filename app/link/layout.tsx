@@ -1,4 +1,12 @@
 import type { ReactNode } from 'react';
+import type { Metadata } from 'next';
+
+// noindex: reached only via a session handoff from the phone, never from search.
+export const metadata: Metadata = {
+  title: 'Connect a brokerage | Helm Terminal',
+  description: 'Connect a brokerage read-only through Plaid.',
+  robots: { index: false, follow: false },
+};
 
 /**
  * Takes the session handoff out of the URL before any other script can read it.
