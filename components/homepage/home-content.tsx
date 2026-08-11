@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
 import { Menu, X } from 'lucide-react';
@@ -9,6 +10,7 @@ import { HelmMark } from '@/components/helm-mark';
 import type { TickerTapeItem } from '@/lib/ticker-tape';
 import { useLivePrices } from '@/hooks/use-live-prices';
 import { PriceFlash } from '@/components/price-flash';
+import HeroBlock from './hero-block';
 
 /* ─── Props ─────────────────────────────────────────────────────────────── */
 
@@ -141,15 +143,9 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
   const [railVisible, setRailVisible] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const [tickerInput, setTickerInput] = useState('');
 
-  function submitAnalyze(e: React.FormEvent) {
-    e.preventDefault();
-    const symbol = tickerInput.trim().toUpperCase().replace(/[^A-Z]/g, '');
-    if (!symbol) return;
-    posthog.capture('home_cta_clicked', { cta: 'analyze_try' });
-    router.push(`/analyze/${symbol}`);
-  }
+  // tickerInput / submitAnalyze lived here for the old ANALYZE section. The
+  // hero owns that input now, so they went with it.
 
   // Live overlay for the ticker tape: poll the public quotes endpoint
   // every 60s. Non-whitelisted (trending) tickers keep their SSR values.
@@ -171,9 +167,18 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
     setReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }, []);
 
-  // Scroll-driven scene engine
+  // Scroll-driven scene engine.
+  //
+  // The measuring is rAF-throttled: getBoundingClientRect forces a synchronous
+  // layout, and running it on every scroll event meant one forced reflow per
+  // event during the one part of the page that asks people to scroll slowly.
+  // Coalescing to one read per frame gives the same result for a fraction of
+  // the work, and setState is a no-op when the scene has not changed.
   useEffect(() => {
-    function onScroll() {
+    let frame = 0;
+
+    function measure() {
+      frame = 0;
       const wrap = stageRef.current;
       if (!wrap) return;
       const rect = wrap.getBoundingClientRect();
@@ -185,26 +190,25 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
       setRailVisible(inView);
     }
 
+    function onScroll() {
+      if (frame) return;
+      frame = requestAnimationFrame(measure);
+    }
+
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
-    onScroll();
+    measure();
 
     return () => {
+      if (frame) cancelAnimationFrame(frame);
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
     };
   }, []);
 
-  // Preload first 2 scenes eagerly, rest after first interaction
-  useEffect(() => {
-    SCENES.slice(0, 2).forEach(s => { const img = new Image(); img.src = s.img; });
-    const preloadRest = () => {
-      SCENES.slice(2).forEach(s => { const img = new Image(); img.src = s.img; });
-      window.removeEventListener('scroll', preloadRest);
-    };
-    window.addEventListener('scroll', preloadRest, { once: true, passive: true });
-    return () => window.removeEventListener('scroll', preloadRest);
-  }, []);
+  // The manual preloader that used to live here fetched the raw PNGs, which
+  // bypassed image optimisation entirely and pulled ~2MB before first scroll.
+  // next/image handles this now: priority on the first scene, lazy on the rest.
 
   const scene = SCENES[activeScene];
 
@@ -246,7 +250,9 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
         {/* Desktop nav links */}
         <div className="hidden md:flex items-center gap-8 pointer-events-auto">
           {NAV_LINKS.map((link) => (
-            <Link key={link.label} href={link.href} className="font-[family-name:var(--font-mono)] text-[12px] tracking-[0.14em] uppercase text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">
+            /* py-3 -my-3 lifts the hit area from 18px to 44px without moving
+               the text or changing the nav's rhythm */
+            <Link key={link.label} href={link.href} className="py-3 -my-3 font-[family-name:var(--font-mono)] text-[12px] tracking-[0.14em] uppercase text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">
               {link.label}
             </Link>
           ))}
@@ -258,7 +264,7 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
           </Link>
           {/* Mobile hamburger */}
           <button
-            className="md:hidden p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+            className="md:hidden w-11 h-11 -mr-2 grid place-items-center text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileMenuOpen}
@@ -283,97 +289,14 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
       )}
 
       <main>
-      {/* ── INTRO (full viewport) ── */}
-      <section className="min-h-screen flex flex-col items-center justify-center text-center relative px-10 max-sm:px-5 pt-[100px] pb-28 overflow-hidden">
-        {/* Gold glow */}
-        <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[700px] max-w-[120vw] pointer-events-none bg-[radial-gradient(ellipse_50%_50%_at_50%_50%,rgba(230,185,77,0.12),transparent_64%)]" />
-
-        <div className={`relative w-12 h-px bg-[var(--color-gold)] mb-7 ${motionClass}`} style={motionStyle(0.1)} />
-
-        <p className={`relative text-[var(--color-text-secondary)] font-semibold text-[clamp(1rem,1.7vw,1.3rem)] tracking-[0.005em] mb-11 ${motionClass}`} style={motionStyle(0.15)}>
-          An agentic terminal for your whole portfolio that tells you:
-        </p>
-
-        {/* The three beats */}
-        <h1 className="relative flex flex-col items-center gap-[0.02em]">
-          {['What moved', 'What matters', "What\u2019s next"].map((text, i) => (
-            <span
-              key={text}
-              className={`font-extrabold tracking-[-0.05em] leading-[0.96] text-[clamp(2.75rem,10vw,9.125rem)] ${motionClass} ${i === 1 ? 'text-[var(--color-gold)]' : ''}`}
-              style={motionStyle(0.42 + i * 0.2)}
-            >
-              {text}
-            </span>
-          ))}
-        </h1>
-
-        <p className={`relative mt-11 text-[clamp(0.875rem,1.4vw,1.063rem)] text-[var(--color-text-muted)] max-w-[620px] leading-relaxed ${motionClass}`} style={motionStyle(1.05)}>
-          A tracker lists what you own. A dashboard charts what it&rsquo;s worth.
-        </p>
-        <p className={`relative mt-4 text-[clamp(0.938rem,1.55vw,1.188rem)] text-[var(--color-text-primary)] max-w-[620px] leading-snug ${motionClass}`} style={motionStyle(1.15)}>
-          Helm reads every account: the exposure, the taxes, and the conviction behind each one, then tells you what to do.
-          <b className="block mt-2 text-[var(--color-text-primary)] font-semibold">An agentic AI analyst on every position.</b>
-        </p>
-
-        {/* CTAs */}
-        <div className={`relative flex gap-3.5 mt-11 flex-wrap justify-center ${motionClass}`} style={motionStyle(1.15)}>
-          <Link href="/signup" onClick={() => posthog.capture('home_cta_clicked', { cta: 'hero_primary_signup' })} className="font-[family-name:var(--font-mono)] text-[12px] font-bold tracking-[0.16em] uppercase px-6 py-3 rounded-[5px] bg-[var(--color-gold)] text-black shadow-[0_6px_22px_rgba(230,185,77,0.22)] hover:bg-[var(--color-gold-hi)] transition-all min-h-[44px] flex items-center">
-            Open the terminal &rarr;
-          </Link>
-          <Link href="/brief" onClick={() => posthog.capture('home_cta_clicked', { cta: 'hero_secondary_brief' })} className="font-[family-name:var(--font-mono)] text-[12px] font-bold tracking-[0.16em] uppercase px-6 py-3 rounded-[5px] border border-[var(--color-border-strong)] text-[var(--color-text-primary)] hover:border-[rgba(255,255,255,0.28)] transition-all min-h-[44px] flex items-center">
-            Read today&rsquo;s brief
-          </Link>
-        </div>
-
-        {/* Agent on-watch status */}
-        <div className={`relative flex items-center gap-2 mt-5 font-[family-name:var(--font-mono)] text-[11px] tracking-[0.04em] text-[var(--color-text-muted)] ${motionClass}`} style={motionStyle(1.22)}>
-          <span className={`inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-positive)] shadow-[0_0_6px_var(--color-positive)] ${reducedMotion ? '' : 'animate-pulse'}`} />
-          <span>The agent is on watch{latestCatch ? ` · last catch ${latestCatch.dateLabel}` : ''}</span>
-        </div>
-
-        {/* Scroll cue */}
-        {!reducedMotion && (
-          <div className={`absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2.5 font-[family-name:var(--font-mono)] text-[9px] tracking-[0.22em] uppercase text-[var(--color-text-muted)] [@media(max-height:760px)]:hidden ${motionClass}`} style={motionStyle(1)}>
-            <span>Scroll</span>
-            <div className="w-px h-10 bg-gradient-to-b from-[var(--color-gold)] to-transparent relative overflow-hidden">
-              <div className="absolute top-[-50%] left-0 w-px h-[50%] bg-[var(--color-gold)] animate-[cue_1.8s_cubic-bezier(0.22,1,0.36,1)_infinite]" />
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* ── ANALYZE ANY TICKER (free, no-signup hook) ── */}
-      <section className="border-y border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] py-12 max-sm:py-10 px-10 max-sm:px-5">
-        <div className="max-w-[680px] mx-auto text-center">
-          <div className="font-[family-name:var(--font-mono)] text-[12px] tracking-[0.22em] uppercase text-[var(--color-gold)] mb-4">
-            Try it first
-          </div>
-          <h2 className="text-[clamp(1.5rem,3.4vw,2.25rem)] font-bold tracking-[-0.03em] leading-[1.08]">
-            Analyze any ticker, <em className="font-[family-name:var(--font-display-serif)] italic font-normal text-[var(--color-gold)]">free.</em>
-          </h2>
-          <form onSubmit={submitAnalyze} className="mt-7 flex gap-2.5 max-w-[420px] mx-auto flex-col sm:flex-row">
-            <input
-              value={tickerInput}
-              onChange={(e) => setTickerInput(e.target.value)}
-              aria-label="Stock ticker symbol"
-              placeholder="e.g. NVDA"
-              autoCapitalize="characters"
-              autoCorrect="off"
-              spellCheck={false}
-              className="flex-1 min-h-[44px] px-4 rounded-[5px] bg-[var(--color-bg-base)] border border-[var(--color-border-strong)] text-[var(--color-text-primary)] font-[family-name:var(--font-mono)] text-[15px] tracking-[0.08em] uppercase placeholder:text-[var(--color-text-muted)] placeholder:normal-case placeholder:tracking-normal focus:outline-none focus:border-[var(--color-gold-border)] transition-colors"
-            />
-            <button
-              type="submit"
-              className="min-h-[44px] px-6 rounded-[5px] bg-[var(--color-gold)] text-black font-[family-name:var(--font-mono)] text-[11px] font-bold tracking-[0.16em] uppercase hover:bg-[var(--color-gold-hi)] transition-colors whitespace-nowrap"
-            >
-              Analyze &rarr;
-            </button>
-          </form>
-          <p className="mt-4 font-[family-name:var(--font-mono)] text-[12px] tracking-[0.04em] text-[var(--color-text-muted)]">
-            Free AI analysis on any US ticker. No signup.
-          </p>
-        </div>
-      </section>
+      {/* ── HERO ── */}
+      {/* The standalone ANALYZE ANY TICKER section that used to sit here is
+          gone: the hero carries the ticker input now, so keeping it would ask
+          the same thing twice within one scroll. */}
+      <HeroBlock
+        latestCatch={latestCatch ?? null}
+        onAnalyze={(t) => posthog.capture('home_cta_clicked', { cta: 'hero_scan', ticker: t })}
+      />
 
       {/* ── PINNED MACBOOK STAGE (320vh scroll distance, desktop only) ── */}
       <section ref={stageRef} className="relative hidden md:block" style={{ height: '250vh' }}>
@@ -389,7 +312,7 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
             <div className="font-[family-name:var(--font-mono)] text-[12px] tracking-[0.26em] uppercase text-[var(--color-gold)] mb-4">
               {scene.eyebrow}
             </div>
-            <h2 className="text-[clamp(1.625rem,3.6vw,3.25rem)] font-bold tracking-[-0.035em] leading-[1.05] max-w-[18ch] mx-auto [&_em]:font-[family-name:var(--font-display-serif)] [&_em]:italic [&_em]:font-normal [&_em]:text-[var(--color-gold)]">
+            <h2 className="text-[clamp(1.625rem,3.6vw,3.25rem)] font-bold tracking-[-0.035em] leading-[1.05] max-w-[18ch] mx-auto [&_em]:not-italic [&_em]:font-bold [&_em]:text-[var(--color-gold)]">
               {scene.head}
             </h2>
           </div>
@@ -397,22 +320,28 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
           {/* The MacBook */}
           <div className="relative z-[2] flex justify-center items-center py-3" style={{ perspective: '2400px' }}>
             <div className="w-[min(1360px,95vw,104vh)]" style={{ transform: 'rotateX(9deg)', transformOrigin: 'center 65%' }}>
-              <div className="relative rounded-[clamp(12px,1.5vw,22px)] p-[1.6%] shadow-[0_1px_0_rgba(255,255,255,0.08)_inset,0_60px_120px_rgba(0,0,0,0.75),0_0_0_1px_rgba(255,255,255,0.05),0_0_90px_rgba(230,185,77,0.05)]" style={{ background: 'linear-gradient(160deg,#26262a,#0d0d0f)' }}>
-                <span className="absolute top-[0.7%] left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#0a0a0a] shadow-[0_0_0_2px_#1a1a1c]" />
+              <div className="relative rounded-[clamp(12px,1.5vw,22px)] p-[1.6%] shadow-[0_1px_0_rgba(255,255,255,0.08)_inset,0_60px_120px_rgba(0,0,0,0.75),0_0_0_1px_rgba(255,255,255,0.05),0_0_90px_rgba(230,185,77,0.05)]" style={{ background: 'linear-gradient(160deg,var(--device-body-hi),var(--device-body-lo))' }}>
+                <span className="absolute top-[0.7%] left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[var(--device-camera)] shadow-[0_0_0_2px_var(--device-camera-ring)]" />
                 <div className="relative rounded-[clamp(5px,0.7vw,9px)] overflow-hidden aspect-video bg-black shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  {/* next/image so the 3600px source is negotiated down to
+                      AVIF/WebP at the width actually on screen. The raw PNG is
+                      about 1MB; this lands under 100KB for the same pixels. */}
+                  <Image
                     key={`shot-${activeScene}`}
                     src={scene.img}
                     alt={SCENE_ALT[scene.eyebrow] || `Helm ${scene.eyebrow} view`}
-                    className={`absolute inset-0 w-full h-full object-cover object-top ${reducedMotion ? '' : 'animate-[scenePop_0.3s_cubic-bezier(0.22,1,0.36,1)_both]'}`}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, min(1360px, 95vw, 104vh)"
+                    quality={82}
+                    priority={activeScene === 0}
+                    className={`object-cover object-top ${reducedMotion ? '' : 'animate-[scenePop_0.3s_cubic-bezier(0.22,1,0.36,1)_both]'}`}
                   />
                   <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_60px_rgba(0,0,0,0.4)]" />
                 </div>
               </div>
-              <div className="relative w-[106%] mx-auto h-[clamp(9px,1.15vw,17px)] rounded-b-[clamp(8px,1vw,14px)] shadow-[0_34px_44px_rgba(0,0,0,0.55)]" style={{ background: 'linear-gradient(#43434a,#141416 62%)' }}>
+              <div className="relative w-[106%] mx-auto h-[clamp(9px,1.15vw,17px)] rounded-b-[clamp(8px,1vw,14px)] shadow-[0_34px_44px_rgba(0,0,0,0.55)]" style={{ background: 'linear-gradient(var(--device-base-hi),var(--device-base-lo) 62%)' }}>
                 <div className="absolute top-0 left-0 right-0 h-0.5 bg-[rgba(0,0,0,0.55)]" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[13%] h-[46%] rounded-b-[7px]" style={{ background: 'linear-gradient(#0c0c0d,#1c1c1f)' }} />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[13%] h-[46%] rounded-b-[7px]" style={{ background: 'linear-gradient(var(--device-notch-hi),var(--device-notch-lo))' }} />
               </div>
             </div>
           </div>
@@ -432,13 +361,23 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
           <Reveal key={s.eyebrow}>
             <div className="text-center mb-6">
               <div className="font-[family-name:var(--font-mono)] text-[12px] tracking-[0.26em] uppercase text-[var(--color-gold)] mb-3">{s.eyebrow}</div>
-              <h2 className="text-2xl font-bold tracking-[-0.025em] leading-[1.1] [&_em]:font-[family-name:var(--font-display-serif)] [&_em]:italic [&_em]:font-normal [&_em]:text-[var(--color-gold)]">
+              <h2 className="text-2xl font-bold tracking-[-0.025em] leading-[1.1] [&_em]:not-italic [&_em]:font-bold [&_em]:text-[var(--color-gold)]">
                 {s.head}
               </h2>
             </div>
             <div className="rounded-lg overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.5)]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={s.img} alt={SCENE_ALT[s.eyebrow] || `Helm ${s.eyebrow} view`} className="w-full block" loading="lazy" />
+              <Image
+                src={s.img}
+                alt={SCENE_ALT[s.eyebrow] || `Helm ${s.eyebrow} view`}
+                width={3600}
+                height={2025}
+                /* these cards only render below md, so cap the candidate width
+                   rather than letting 100vw reach for the 3600 entry */
+                sizes="(max-width: 1024px) 100vw, 1024px"
+                quality={78}
+                loading="lazy"
+                className="w-full h-auto block"
+              />
             </div>
             <div className="font-[family-name:var(--font-mono)] text-[13px] tracking-[0.04em] text-[var(--color-text-muted)] mt-4 text-center flex gap-2 items-center flex-wrap justify-center [&_b]:text-[var(--color-text-primary)]">
               {s.cap}
@@ -451,12 +390,18 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
       {railVisible && (
         <div className="fixed right-[26px] top-1/2 -translate-y-1/2 z-40 flex-col gap-3.5 hidden md:flex" role="navigation" aria-label="Product tour scenes">
           {SCENES.map((s, i) => (
+            /* the dot stays 9px; the button around it is 44px so it can
+               actually be hit. It was a 9x9 target before. */
             <button
               key={i}
               onClick={() => scrollToScene(i)}
               aria-label={`Go to ${s.eyebrow}`}
-              className={`w-[9px] h-[9px] rounded-full border-0 cursor-pointer transition-all ${i === activeScene ? 'bg-[var(--color-gold)] shadow-[0_0_12px_rgba(230,185,77,0.7)]' : 'bg-[rgba(255,255,255,0.18)] hover:bg-[rgba(255,255,255,0.4)]'}`}
-            />
+              className="w-11 h-11 -my-[17.5px] grid place-items-center bg-transparent border-0 cursor-pointer"
+            >
+              <span
+                className={`w-[9px] h-[9px] rounded-full transition-all ${i === activeScene ? 'bg-[var(--color-gold)] shadow-[0_0_12px_rgba(230,185,77,0.7)]' : 'bg-[rgba(255,255,255,0.18)] hover:bg-[rgba(255,255,255,0.4)]'}`}
+              />
+            </button>
           ))}
         </div>
       )}
@@ -470,7 +415,7 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
               Transparency
             </div>
             <h2 className="text-[clamp(2rem,4vw,3rem)] font-bold tracking-[-0.035em] leading-[1.05]">
-              Built to be <em className="font-[family-name:var(--font-display-serif)] italic font-normal text-[var(--color-gold)]">second-guessed.</em>
+              Built to be <em className="not-italic font-bold text-[var(--color-gold)]">second-guessed.</em>
             </h2>
             <p className="text-[1.0625rem] leading-relaxed text-[var(--color-text-muted)] mt-5 max-w-[560px]">
               AI you can audit. Each take cites the filing, the data provider, and the moment it was generated, so you can check Helm&rsquo;s work, not just trust it.
@@ -540,7 +485,9 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
                     <span className={`font-[family-name:var(--font-mono)] text-[10px] tracking-[0.14em] uppercase border px-2 py-1 rounded-[3px] whitespace-nowrap ${broke ? 'text-[var(--color-negative-text)] border-[rgba(248,113,113,0.3)]' : 'text-[var(--color-positive)] border-[rgba(74,222,128,0.3)]'}`}>{verdictLabel}</span>
                   </div>
                   <div>
-                    <blockquote className="text-[clamp(1.0625rem,1.7vw,1.375rem)] leading-snug text-[var(--color-text-primary)] font-[family-name:var(--font-display-serif)] italic">
+                    {/* the cited extract is evidence, so it is set like the one
+                        in the hero: page sans, medium weight, no flourish */}
+                    <blockquote className="text-[clamp(1.0625rem,1.7vw,1.375rem)] leading-snug text-[var(--color-text-primary)] font-medium tracking-[-0.015em]">
                       &ldquo;{latestCatch.verbatimCite}&rdquo;
                     </blockquote>
                     <div className="mt-4 font-[family-name:var(--font-mono)] text-[11px] tracking-[0.06em] text-[var(--color-text-muted)]">
@@ -573,7 +520,7 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
               Security
             </div>
             <h2 className="text-[clamp(2rem,4vw,3rem)] font-bold tracking-[-0.035em] leading-[1.05]">
-              Read-only by design. <em className="font-[family-name:var(--font-display-serif)] italic font-normal text-[var(--color-gold)]">We can&rsquo;t touch your money.</em>
+              Read-only by design. <em className="not-italic font-bold text-[var(--color-gold)]">We can&rsquo;t touch your money.</em>
             </h2>
             <p className="text-[1.0625rem] leading-relaxed text-[var(--color-text-muted)] mt-5 max-w-[560px]">
               Helm links to your brokerages through Plaid. Here is exactly what that connection can and cannot do, enforced at the protocol level, not promised in a policy.
@@ -634,14 +581,8 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
                 Pricing
               </div>
               <h2 className="text-[clamp(2rem,4vw,3rem)] font-bold tracking-[-0.035em] leading-[1.05]">
-                One product. <em className="font-[family-name:var(--font-display-serif)] italic font-normal text-[var(--color-gold)]">Zero percent of AUM.</em>
+                One product. <em className="not-italic font-bold text-[var(--color-gold)]">Zero percent of AUM.</em>
               </h2>
-            </div>
-            <div className="font-[family-name:var(--font-mono)] text-[12px] text-[var(--color-text-muted)] tracking-[0.08em] text-right max-w-[300px]">
-              Pro is $20/mo, free for 14 days.
-              <div className="h-0.5 bg-[var(--color-border-base)] mt-3 relative">
-                <span className="absolute inset-0 w-[40%] bg-[var(--color-gold)]" />
-              </div>
             </div>
           </div>
         </Reveal>
@@ -677,7 +618,7 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
           Steer. Don&rsquo;t drift.
         </div>
         <h2 className="relative text-[clamp(3rem,9vw,8rem)] font-bold leading-[0.94] tracking-[-0.05em]">
-          Take the <em className="font-[family-name:var(--font-display-serif)] italic font-normal text-[var(--color-gold)]">HELM.</em>
+          Take the <em className="not-italic font-bold text-[var(--color-gold)]">HELM.</em>
         </h2>
         <p className="relative mt-6 text-[clamp(1rem,1.7vw,1.25rem)] text-[var(--color-text-muted)] max-w-[480px] leading-relaxed">
           Link your first account in two minutes. Read-only, no card. See your real exposure, your first brief, your first action.
@@ -761,7 +702,10 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
                 <HelmMark size={24} /> Helm
               </Link>
               <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed mt-5 max-w-[300px]">Steer. Don&rsquo;t drift. Take the HELM.</p>
-              <p className="font-[family-name:var(--font-mono)] text-[10px] text-[#555] mt-3">Helm is not a registered investment advisor. Information is for educational purposes only.</p>
+              {/* was #555, a hard-coded grey that measured 2.72:1 on the page
+                  background. The token measures 6.3:1 and is the same grey used
+                  for every other piece of fine print. */}
+              <p className="font-[family-name:var(--font-mono)] text-[10px] text-[var(--color-text-secondary)] mt-3">Helm is not a registered investment advisor. Information is for educational purposes only.</p>
             </div>
             <div>
               <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4">Product</div>

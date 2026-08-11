@@ -43,6 +43,19 @@ html { scroll-behavior: smooth; }
     --color-text-muted:    #A0A0A0;
     --color-text-inverse:  #0A0A0A;
 
+    /* ── Device chrome ──
+       The homepage MacBook is an illustration of a physical object, not part of
+       the semantic palette, so it gets its own namespace rather than borrowing
+       surface tokens that mean something else. */
+    --device-body-hi:      #26262a;
+    --device-body-lo:      #0d0d0f;
+    --device-camera:       #0a0a0a;
+    --device-camera-ring:  #1a1a1c;
+    --device-base-hi:      #43434a;
+    --device-base-lo:      #141416;
+    --device-notch-hi:     #0c0c0d;
+    --device-notch-lo:     #1c1c1f;
+
     /* ── Brand Accent — Sovereign Gold ── */
     --color-gold:          #E6B94D;
     --color-gold-hi:       #FFD67A;

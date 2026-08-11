@@ -4,6 +4,14 @@ const ANALYZE_CACHE_CONTROL = 'public, s-maxage=1800, stale-while-revalidate=864
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  images: {
+    // The product screenshots are 3600x2025 PNGs (~1MB each) because anything
+    // smaller looks soft on a DPR-1 ultrawide. Keeping the source that size and
+    // letting Next negotiate AVIF/WebP at the width actually being displayed is
+    // what makes that affordable.
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [640, 828, 1080, 1200, 1600, 1920, 2560, 3600],
+  },
   async headers() {
     return [
       {
