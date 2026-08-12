@@ -75,10 +75,23 @@ async function getLatestCatch(): Promise<LatestCatch | null> {
     // The page claims the agent keeps what CHANGED, and a contradiction is the
     // only one of the two that demonstrates it. Both are real either way; this
     // only decides which real one leads.
-    const rank = (v: string) => (v === 'contradicts' ? 0 : 1);
+    // Then: a primary source beats a news take, and a company a stranger
+    // recognises beats one they have to look up. A visitor who has never heard
+    // of the ticker cannot tell whether the contradiction matters, so the
+    // finding lands as trivia. This only orders real catches; it never invents
+    // or edits one.
+    const KNOWN = new Set([
+      'AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'GOOG', 'META', 'TSLA', 'NFLX',
+      'AMD', 'AVGO', 'PLTR', 'COST', 'JPM', 'DIS', 'UBER', 'SBUX', 'NKE', 'PYPL',
+    ]);
+    const rank = (e: CatchEvent) => [
+      e.verdict === 'contradicts' ? 0 : 1,
+      e.source_type === 'filing' ? 0 : 1,
+      KNOWN.has(e.ticker) ? 0 : 1,
+    ];
     events.sort((a, b) => {
-      const r = rank(a.verdict) - rank(b.verdict);
-      if (r !== 0) return r;
+      const ra = rank(a), rb = rank(b);
+      for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return ra[i] - rb[i];
       return (b.cite_date ?? b.run_date ?? '').localeCompare(a.cite_date ?? a.run_date ?? '');
     });
     const e = events[0];
