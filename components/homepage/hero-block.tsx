@@ -236,10 +236,10 @@ export default function HeroBlock({
           {latestCatch?.pillarClaim ? (
             // A contradiction only reads as one if you can see what it
             // contradicts, so the pillar it was tested against leads.
-            <p className="h13m-claim">
-              <span className="h13m-claim-label">Tested</span>
-              {latestCatch.pillarClaim}
-            </p>
+            <div className="h13m-claim">
+              <span className="h13m-claim-label">The thesis it tested</span>
+              <p className="h13m-claim-text">{latestCatch.pillarClaim}</p>
+            </div>
           ) : null}
 
           <blockquote>
@@ -478,12 +478,21 @@ const CSS = `
 /* real-catch variant: the verdict rides in the tag, and the surfaces are named
    without values because those numbers belong to a book nobody has linked yet */
 .h13m-live { color:var(--color-gold); border-color:var(--color-gold-border) }
+/* The belief and the filing are two different objects, so the claim gets its
+   own panel rather than sitting inline like a caption. Visibility here comes
+   from contrast and separation, not point size. */
 .h13m-claim {
-  margin:14px 0 0; font-size:13px; line-height:1.45; color:var(--color-text-muted);
+  margin:14px 0 0; padding:12px 14px; border-radius:6px;
+  border:1px solid var(--color-border-base);
+  background:linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.012));
 }
 .h13m-claim-label {
-  display:inline-block; margin-right:9px; font-family:var(--font-mono); font-size:9px;
-  letter-spacing:.24em; text-transform:uppercase; color:var(--color-text-secondary);
+  display:block; margin-bottom:6px; font-family:var(--font-mono); font-size:9px;
+  letter-spacing:.24em; text-transform:uppercase; color:var(--color-gold);
+}
+.h13m-claim-text {
+  margin:0; font-size:14.5px; line-height:1.45; letter-spacing:-.005em;
+  color:var(--color-text-primary);
 }
 .h13m-surfaces {
   display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; margin:16px 0 0;
