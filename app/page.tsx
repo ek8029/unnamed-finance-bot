@@ -36,6 +36,8 @@ export interface LatestCatch {
   ticker: string;
   company: string;
   verdict: string;
+  /** the thesis pillar this filing was tested against */
+  pillarClaim: string | null;
   verbatimCite: string;
   sourceLabel: string;
   dateISO: string;
@@ -65,10 +67,20 @@ async function getLatestCatch(): Promise<LatestCatch | null> {
       .filter((e): e is CatchEvent => e != null);
     if (events.length === 0) return null;
 
-    // Newest first by the event's own date (cite_date, falling back to run_date).
-    events.sort((a, b) =>
-      (b.cite_date ?? b.run_date ?? '').localeCompare(a.cite_date ?? a.run_date ?? ''),
-    );
+    // A contradiction outranks a confirmation, then newest first.
+    //
+    // Newest-first alone kept surfacing whichever catch happened to land last,
+    // and 51 of the 60 approved catches are `supports` — so the homepage was
+    // usually showing a filing that agrees with a thesis nobody has read yet.
+    // The page claims the agent keeps what CHANGED, and a contradiction is the
+    // only one of the two that demonstrates it. Both are real either way; this
+    // only decides which real one leads.
+    const rank = (v: string) => (v === 'contradicts' ? 0 : 1);
+    events.sort((a, b) => {
+      const r = rank(a.verdict) - rank(b.verdict);
+      if (r !== 0) return r;
+      return (b.cite_date ?? b.run_date ?? '').localeCompare(a.cite_date ?? a.run_date ?? '');
+    });
     const e = events[0];
 
     const raw = e.cite_date ?? e.run_date;
@@ -83,6 +95,7 @@ async function getLatestCatch(): Promise<LatestCatch | null> {
       ticker: e.ticker,
       company: e.company ?? e.ticker,
       verdict: e.verdict,
+      pillarClaim: e.pillar_claim,
       verbatimCite: e.verbatim_cite,
       sourceLabel: e.source_type === 'filing' ? 'SEC filing' : 'News',
       dateISO: raw.slice(0, 10),

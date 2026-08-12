@@ -18,6 +18,7 @@ interface LatestCatch {
   ticker: string;
   company: string;
   verdict: string;
+  pillarClaim?: string | null;
   verbatimCite: string;
   sourceLabel: string;
   dateISO: string;

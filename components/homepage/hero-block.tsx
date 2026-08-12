@@ -77,6 +77,7 @@ const SURFACES = ['Exposure', 'Taxes', 'Earnings', 'Thesis'];
 export type HeroCatch = {
   ticker: string;
   verdict: string;
+  pillarClaim?: string | null;
   verbatimCite: string;
   sourceLabel: string;
   dateLabel: string;
@@ -231,6 +232,15 @@ export default function HeroBlock({
               ? <span className="h13m-sample h13m-live">{latestCatch.verdict}</span>
               : <span className="h13m-sample">Sample</span>}
           </div>
+
+          {latestCatch?.pillarClaim ? (
+            // A contradiction only reads as one if you can see what it
+            // contradicts, so the pillar it was tested against leads.
+            <p className="h13m-claim">
+              <span className="h13m-claim-label">Tested</span>
+              {latestCatch.pillarClaim}
+            </p>
+          ) : null}
 
           <blockquote>
             &ldquo;{latestCatch
@@ -468,6 +478,13 @@ const CSS = `
 /* real-catch variant: the verdict rides in the tag, and the surfaces are named
    without values because those numbers belong to a book nobody has linked yet */
 .h13m-live { color:var(--color-gold); border-color:var(--color-gold-border) }
+.h13m-claim {
+  margin:14px 0 0; font-size:13px; line-height:1.45; color:var(--color-text-muted);
+}
+.h13m-claim-label {
+  display:inline-block; margin-right:9px; font-family:var(--font-mono); font-size:9px;
+  letter-spacing:.24em; text-transform:uppercase; color:var(--color-text-secondary);
+}
 .h13m-surfaces {
   display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; margin:16px 0 0;
   padding-top:15px; border-top:1px solid var(--color-border-base);
