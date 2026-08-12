@@ -1,8 +1,36 @@
+import type { Metadata } from 'next';
 import { unstable_cache } from 'next/cache';
 import { getDemoAnalyses } from '@/lib/demo-tickers';
 import { getTickerTapeData } from '@/lib/ticker-tape';
 import { createStaticServiceClient } from '@/lib/supabase/server';
 import HomeContent from '@/components/homepage/home-content';
+
+/**
+ * The homepage owns its title rather than inheriting the site-wide default.
+ *
+ * The old one led with thesis monitoring, which undersells the product: the
+ * agent reads exposure, taxes and earnings across every linked account, and
+ * thesis is the backbone rather than the whole of it. It was also 65
+ * characters, so search results truncated it. Thesis keeps its keyword weight
+ * in the description, where there is room for it.
+ */
+export const metadata: Metadata = {
+  title: 'Helm Terminal | Agentic Coverage of Your Whole Portfolio',
+  description:
+    'An agent that reads every filing, earnings call and release touching a position you hold, then hands you what changed with the document it came from. Exposure, taxes, earnings and thesis monitoring across all your accounts. Free AI stock analysis, no account needed.',
+  alternates: { canonical: 'https://helmterminal.dev' },
+  openGraph: {
+    title: 'Helm Terminal | Agentic Coverage of Your Whole Portfolio',
+    description:
+      'The agent reads every filing touching a position you hold and keeps the sentence that changed the picture, with its source. Exposure, taxes, earnings and thesis, across every account you link.',
+    url: 'https://helmterminal.dev',
+  },
+  twitter: {
+    title: 'Helm Terminal | Agentic Coverage of Your Whole Portfolio',
+    description:
+      'The agent reads every filing touching a position you hold and keeps the sentence that changed the picture, with its source.',
+  },
+};
 
 /** ISR — regenerate every 5 minutes */
 export const revalidate = 300;
