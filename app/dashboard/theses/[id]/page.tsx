@@ -98,6 +98,22 @@ function LockedPanel() {
   );
 }
 
+/**
+ * Tab title carries the ticker: with four theses open the tabs have to be
+ * tellable apart. RLS-scoped like the page itself, and falls back to the
+ * generic label rather than failing the render.
+ */
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const supabase = await createClient();
+    const { data } = await supabase.from('theses').select('ticker').eq('id', id).maybeSingle();
+    return { title: data?.ticker ? `${data.ticker} Thesis` : 'Thesis' };
+  } catch {
+    return { title: 'Thesis' };
+  }
+}
+
 export default async function ThesisDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { analyzeStock } from '@/lib/analyze-stock';
@@ -103,6 +104,12 @@ export const dynamic = 'force-dynamic';
 
 interface Props {
   params: Promise<{ ticker: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { ticker } = await params;
+  const symbol = ticker.toUpperCase().replace(/[^A-Z]/g, '');
+  return { title: symbol ? `${symbol} Analysis` : 'Analysis' };
 }
 
 export default async function DashboardTickerAnalysisPage({ params }: Props) {

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { getQuote } from '@/lib/financial-data';
 import { notFound } from 'next/navigation';
@@ -6,6 +7,11 @@ import { HoldingDetailClient } from './holding-detail-client';
 
 interface Props {
   params: Promise<{ ticker: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { ticker } = await params;
+  return { title: ticker.toUpperCase().replace(/[^A-Z]/g, '') || 'Holding' };
 }
 
 export default async function HoldingDetailPage({ params }: Props) {

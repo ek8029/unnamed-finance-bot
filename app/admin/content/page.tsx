@@ -2,6 +2,8 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { isThesisUser } from '@/lib/thesis-access';
 import { approveDraft, rejectDraft } from './actions';
 
+export const metadata = { title: 'Content queue' };
+
 export const dynamic = 'force-dynamic';
 
 interface DraftRow {

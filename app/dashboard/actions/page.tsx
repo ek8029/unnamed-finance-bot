@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { getUserTier, tierAtLeast } from '@/lib/tier';
 import { ActionsClient, type ActionItem } from './actions-client';
 
+export const metadata = { title: 'Actions' };
+
 /** Strip volatile dollar amounts and percentages for stable dedup */
 function normalizeTitle(title: string): string {
   return title

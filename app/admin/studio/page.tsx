@@ -2,6 +2,9 @@ import { notFound } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { isThesisUser } from '@/lib/thesis-access';
 import { HOUSE_THESES } from '@/lib/content/house-theses';
+
+export const metadata = { title: 'Studio' };
+
 import { getTickerThesisData } from '@/lib/content/public-thesis';
 import {
   catchToXPost,

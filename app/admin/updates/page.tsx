@@ -1,6 +1,9 @@
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { isThesisUser } from '@/lib/thesis-access';
+
+export const metadata = { title: 'Weekly update' };
+
 import { getAllUpdates, draftMarketSection } from '@/lib/content/weekly-updates';
 import { WeeklyEditor } from '@/components/admin/weekly-editor';
 
