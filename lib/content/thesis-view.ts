@@ -59,8 +59,9 @@ export function headline(d: ScoringThesisData): string {
   if (!worst) return 'No scored evidence yet.';
   const worstStatus = worstLadder(worst.mechanisms);
   if (worstStatus === 'watch') {
-    const t = tally(d);
-    if (t.supports > 0) return `Holding up: ${t.supports} pieces of supporting evidence, ${t.against} against.`;
+    // Kept in step with the same branch in thesis-board.ts: the count
+    // restatement duplicated the chips rendered directly above it, so the
+    // latest evidence goes here instead. If you change one, change both.
     const latest = d.pillars.flatMap((p) => p.catches)[0];
     return latest ? `Quiet. Latest: ${latest.title}` : 'Quiet. Nothing challenges this thesis.';
   }

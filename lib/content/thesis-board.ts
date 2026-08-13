@@ -58,8 +58,13 @@ export function headline(d: ScoringThesisData): string {
   if (!worst) return 'No scored evidence yet.';
   const worstStatus = topCeiling(worst.mechanisms);
   if (worstStatus === 'watch') {
-    const t = tally(d);
-    if (t.supports > 0) return `Holding up: ${t.supports} pieces of supporting evidence, ${t.against} against.`;
+    // The healthy case used to read "Holding up: 9 pieces of supporting
+    // evidence, 2 against." Every caller already renders that same tally as
+    // chips immediately above this sentence, so the row said the same two
+    // numbers twice, once in figures and once in words — and on a thesis
+    // sitting at 2-for-2 the word "holding" was doing work the numbers did not
+    // support. The latest piece of evidence is the only thing here the chips do
+    // not already say, so say that instead.
     const latest = d.pillars.flatMap((p) => p.catches)[0];
     return latest ? `Quiet. Latest: ${latest.title}` : 'Quiet. Nothing challenges this thesis.';
   }
