@@ -49,6 +49,16 @@ const nextConfig: NextConfig = {
       // Permanent (308) redirects preserve the SEO equity earned on the old URLs.
       { source: '/caught', destination: '/masthead', permanent: true },
       { source: '/caught/rss.xml', destination: '/masthead/rss.xml', permanent: true },
+      // HeyCatch short links. A single-character path is a campaign code, which
+      // is why the pattern is deliberately this narrow: every real route on the
+      // site is two characters or longer, so nothing existing can collide, and
+      // a future one-letter route would have to be named around this.
+      // Temporary (307) on purpose — the campaign a code points at can change.
+      {
+        source: '/:l([a-z0-9])',
+        destination: '/?utm_source=heycatch&utm_campaign=:l',
+        permanent: false,
+      },
     ];
   },
 };
