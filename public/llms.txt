@@ -29,8 +29,8 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 
 ## Pricing
 - Free: full terminal, AI stock analysis, Plaid-linked brokerages, net worth, daily brief, actions inbox, Portfolio Wrapped
-- Pro: $20/mo. Thesis monitoring with cited evidence, earnings exposure, tax center with tax-loss harvesting, conviction-led tailored brief
-- Max: $50/mo. Everything in Pro plus the agent, the Thesis Builder (pre-buy thesis), and the factor lens
+- Pro: $20/mo. Thesis monitoring with cited evidence, the agent, the Thesis Builder (pre-buy thesis), the factor lens, earnings exposure, tax center with tax-loss harvesting, conviction-led tailored brief
+- Two tiers only. Flat per-account pricing, zero percent of AUM.
 
 ## Key Pages
 - [Thesis Monitoring](https://helmterminal.dev/thesis-monitoring): What thesis monitoring and thesis drift are, and how Helm tracks the reasons you own each stock against primary sources

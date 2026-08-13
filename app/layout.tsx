@@ -169,22 +169,16 @@ export default function RootLayout({
                   '@type': 'Offer',
                   price: '20',
                   priceCurrency: 'USD',
-                  description: 'Pro. Thesis monitoring with cited evidence, earnings exposure, tax center, conviction-led tailored brief',
+                  // Max was retired in August 2026 and its features folded into
+                  // Pro. The third Offer stayed here after the retirement, so
+                  // the machine-readable layer kept quoting a $50 tier nobody
+                  // can buy — and this block is exactly what an AI assistant
+                  // reads when someone asks what Helm costs.
+                  description:
+                    'Pro. Thesis monitoring with cited evidence, the agent, Thesis Builder, factor lens, earnings exposure, tax center, conviction-led tailored brief',
                   priceSpecification: {
                     '@type': 'UnitPriceSpecification',
                     price: '20',
-                    priceCurrency: 'USD',
-                    billingDuration: 'P1M',
-                  },
-                },
-                {
-                  '@type': 'Offer',
-                  price: '50',
-                  priceCurrency: 'USD',
-                  description: 'Max. Everything in Pro plus the agent, Thesis Builder, and factor lens',
-                  priceSpecification: {
-                    '@type': 'UnitPriceSpecification',
-                    price: '50',
                     priceCurrency: 'USD',
                     billingDuration: 'P1M',
                   },

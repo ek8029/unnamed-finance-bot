@@ -67,10 +67,11 @@ function matchesChip(action: ActionItem, chip: ChipFilter): boolean {
   return CHIP_TYPES[chip].includes(action.type);
 }
 
-// Max-only intelligence: agentic investigations + shared-exposure / thesis-risk items.
+// Pro-only intelligence: agentic investigations + shared-exposure / thesis-risk items.
+// Named for the retired Max tier until Aug 2026; the gate has always been Pro.
 // Shared-exposure rows are written with related_entity_type='thesis_risk'; agentic
 // investigation rows carry 'investigation'. A title prefix is the fallback signal.
-function isMaxItem(a: ActionItem): boolean {
+function isProItem(a: ActionItem): boolean {
   const ret = (a.related_entity_type || '').toLowerCase();
   if (ret === 'thesis_risk' || ret === 'investigation') return true;
   return /^(shared risk:|helm investigated)/i.test(a.title);
@@ -132,7 +133,9 @@ export function ActionsClient({ initialActions, isPro }: { initialActions: Actio
   void isPro; // server already stripped recommended_action for non-pro; per-item gating is tier-driven below
   const { formatCurrency } = useFormat();
   const { tier } = usePreview();
-  const isMax = tierAtLeast(tier, 'pro');
+  // Distinct from the `isPro` prop above: that one is the server's view at
+  // render time, this follows the preview tier so dev impersonation works.
+  const entitled = tierAtLeast(tier, 'pro');
 
   // Demo mode (sessionStorage flag, set when exploring without a connection).
   const isDemo = typeof window !== 'undefined' && sessionStorage.getItem('helm_demo_mode') === '1';
@@ -145,13 +148,13 @@ export function ActionsClient({ initialActions, isPro }: { initialActions: Actio
   const [generating, setGenerating] = useState(false);
   const [actionLoading, setActionLoading] = useState<Set<string>>(new Set());
 
-  // Filtered + ordered: Max-only intelligence cards float to the top, then basics by priority.
+  // Filtered + ordered: Pro-only intelligence cards float to the top, then basics by priority.
   const filtered = useMemo(() => {
     return actions
       .filter(a => matchesChip(a, chip))
       .sort((a, b) => {
-        const am = isMaxItem(a) ? 0 : 1;
-        const bm = isMaxItem(b) ? 0 : 1;
+        const am = isProItem(a) ? 0 : 1;
+        const bm = isProItem(b) ? 0 : 1;
         if (am !== bm) return am - bm;
         return (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3);
       });
@@ -226,11 +229,11 @@ export function ActionsClient({ initialActions, isPro }: { initialActions: Actio
 
       <div className="flex flex-col gap-3">
         {filtered.map(action =>
-          isMaxItem(action) ? (
-            isMax ? (
-              <MaxCard key={action.id} action={action} />
+          isProItem(action) ? (
+            entitled ? (
+              <ProCard key={action.id} action={action} />
             ) : (
-              <MaxTeaser key={action.id} action={action} />
+              <ProTeaser key={action.id} action={action} />
             )
           ) : (
             <BasicCard
@@ -382,10 +385,10 @@ function BasicCard({
 }
 
 /* ──────────────────────────────────────────────────
-   Max card (Investigation / Shared exposure) — Max tier
+   Pro card (Investigation / Shared exposure)
    ────────────────────────────────────────────────── */
 
-function MaxCard({ action }: { action: ActionItem }) {
+function ProCard({ action }: { action: ActionItem }) {
   const kind = maxKind(action);
   const badge = kind === 'investigation' ? '✦ Investigation' : '✦ Shared exposure';
   const ctaLabel = kind === 'investigation' ? 'View thesis' : 'Factor lens';
@@ -410,7 +413,7 @@ function MaxCard({ action }: { action: ActionItem }) {
       </div>
 
       <div className="flex flex-col items-end gap-2 shrink-0">
-        <span className="font-mono text-[10px]" style={{ ...MONO, color: '#FFD67A' }}>Max</span>
+        <span className="font-mono text-[10px]" style={{ ...MONO, color: '#FFD67A' }}>Pro</span>
         <a
           href={href}
           className="px-[11px] py-1.5 font-mono text-[9px] font-bold tracking-[0.08em] uppercase rounded border whitespace-nowrap motion-safe:transition-colors"
@@ -424,10 +427,10 @@ function MaxCard({ action }: { action: ActionItem }) {
 }
 
 /* ──────────────────────────────────────────────────
-   Max teaser (below Max) — present but blurred + locked
+   Pro teaser (free tier) — present but blurred + locked
    ────────────────────────────────────────────────── */
 
-function MaxTeaser({ action }: { action: ActionItem }) {
+function ProTeaser({ action }: { action: ActionItem }) {
   const kind = maxKind(action);
   const tease =
     kind === 'investigation'
@@ -459,7 +462,7 @@ function MaxTeaser({ action }: { action: ActionItem }) {
         className="flex items-center gap-1 font-mono text-[9px] tracking-[0.08em] uppercase whitespace-nowrap motion-safe:transition-colors hover:brightness-110"
         style={{ ...MONO, color: '#FFD67A' }}
       >
-        Unlock with Max
+        Unlock with Pro
         <ArrowRight className="w-3 h-3" />
       </a>
     </div>
