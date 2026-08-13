@@ -198,7 +198,14 @@ export default function PricingPage() {
                   </span>
                   <span className="text-[16px] text-[var(--color-text-muted)]">/mo</span>
                 </div>
-                <p className="mt-4 mb-0 text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
+                {/* The AUM comparison was doing its work in the section heading,
+                    which is a screen away from the figure a buyer is actually
+                    weighing. The arithmetic is on a stated advisory fee, not on
+                    a competitor's advertised price, so it cannot go stale. */}
+                <p className="mt-3 mb-0 text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
+                  A 1% advisory fee on a $1M book is $10,000 a year. This is $240.
+                </p>
+                <p className="mt-3 mb-0 text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
                   Free for 14 days. A card is required to start, nothing is charged until the
                   trial ends, and you can cancel any time before then.
                 </p>
@@ -223,6 +230,15 @@ export default function PricingPage() {
                 >
                   Cancel anytime &middot; Secure via Stripe
                 </div>
+                {/* The stability objection a one-person product gets, answered
+                    at the point of payment rather than only on /about. */}
+                <p className="mt-4 mb-0 text-[13px] leading-[1.6] text-[var(--color-text-secondary)]">
+                  Run by one person, on purpose. Your data is exportable and{' '}
+                  <Link href="/data-deletion" className="underline underline-offset-2 hover:text-[var(--color-text-primary)] transition-colors">
+                    deletable in one click
+                  </Link>
+                  , whatever happens to Helm.
+                </p>
               </div>
 
               {/* What it is */}

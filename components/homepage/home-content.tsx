@@ -46,7 +46,10 @@ const SCENES = [
     img: '/product/overview.png',
     eyebrow: 'Overview',
     head: <>Everything you own. <em>One number,</em> fully explained.</>,
-    cap: <><b className="text-[var(--color-gold)]">$1,270,020</b> net worth <Dot /> reconciled nightly across every account</>,
+    // Crypto is named because it is genuinely supported (its own asset class,
+    // its own filter in the terminal) and appeared nowhere in the marketing
+    // copy, so anyone holding it had to assume it was equities only.
+    cap: <><b className="text-[var(--color-gold)]">$1,270,020</b> net worth <Dot /> equities, ETFs and crypto <Dot /> reconciled nightly across every account</>,
     ambient: 'rgba(230,185,77,0.16)',
   },
   {
@@ -60,7 +63,7 @@ const SCENES = [
     img: '/product/exposure.png',
     eyebrow: 'True exposure',
     head: <>See what you actually own. <em>Through every ETF.</em></>,
-    cap: <><b>71</b> positions <Dot /> 8 sectors <Dot /> indirect ETF exposure surfaced</>,
+    cap: <><b>71</b> positions <Dot /> 8 sectors <Dot /> indirect ETF exposure surfaced <Dot /> filter by equities, ETFs, crypto or cash</>,
     ambient: 'rgba(230,185,77,0.15)',
   },
   {
@@ -92,9 +95,16 @@ function Dot() {
 
 /* ─── Nav links ─────────────────────────────────────────────────────────── */
 
+// Compare points at the head-to-head roundup. The comparison cluster
+// (/best-thesis-trackers, /mythesis-alternative, /vela-alternative,
+// /usethesis-alternative) was reachable only from search, so a visitor already
+// weighing Helm against something else found no path to the page written for
+// exactly that question, and the cluster earned no internal links from the
+// site's highest-authority page.
 const NAV_LINKS = [
   { label: 'Analyze', href: '/analyze' },
   { label: 'The Masthead', href: '/masthead' },
+  { label: 'Compare', href: '/best-thesis-trackers' },
   { label: 'Pricing', href: '#pricing' },
 ];
 
@@ -102,9 +112,16 @@ const NAV_LINKS = [
 
 // Pro leads and is the wider column. Two equal boxes made neither read as the
 // answer, which is what the three-tier layout was hiding.
+// The badge says "Recommended", not "Most popular". Free has vastly more users
+// than Pro, so "most popular" would be false, and an unverifiable claim about
+// other people is the one kind of proof this site does not use.
+//
+// `anchor` puts the comparison where the price is, rather than leaving it to
+// the section header. The figure is arithmetic on a stated fee, not a
+// competitor's advertised price, so it cannot go stale.
 const TIERS = [
-  { name: 'Pro', price: '$20', priceSuffix: '/mo', sub: 'Free for 14 days, card required', features: ['Everything in Free', 'Thesis monitoring with cited evidence', 'Twelve months of history on day one', 'Tax center with TLH', 'Earnings exposure', 'Conviction-led tailored brief'], cta: 'Start free trial', featured: true },
-  { name: 'Free', price: '$0', priceSuffix: ' forever', sub: 'No card, no expiry', features: ['Full terminal access', 'AI analysis, any US ticker', 'Connected brokerages', 'Daily brief', 'Actions inbox', 'Portfolio Wrapped'], cta: 'Open the terminal', featured: false },
+  { name: 'Pro', price: '$20', priceSuffix: '/mo', sub: 'Free for 14 days, card required', anchor: 'A 1% advisory fee on a $1M book is $10,000 a year. This is $240.', badge: 'Recommended', features: ['Everything in Free', 'Thesis monitoring with cited evidence', 'Twelve months of history on day one', 'Tax center with TLH', 'Earnings exposure', 'Conviction-led tailored brief'], cta: 'Start free trial', featured: true },
+  { name: 'Free', price: '$0', priceSuffix: ' forever', sub: 'No card, no expiry', anchor: null, badge: null, features: ['Full terminal access', 'AI analysis, any US ticker', 'Connected brokerages', 'Daily brief', 'Actions inbox', 'Portfolio Wrapped'], cta: 'Open the terminal', featured: false },
 ];
 
 /* ─── Reveal hook ───────────────────────────────────────────────────────── */
@@ -591,11 +608,19 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
           <div className="grid grid-cols-1 sm:grid-cols-[1.15fr_0.85fr] gap-3 max-w-[880px] items-start">
             {TIERS.map((tier) => (
               <div key={tier.name} className={`relative p-8 max-sm:p-6 border rounded-lg transition-all hover:border-[var(--color-gold-border)] hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(0,0,0,0.5)] ${tier.featured ? 'border-[var(--color-gold-border)] bg-[linear-gradient(180deg,rgba(230,185,77,0.05),rgba(230,185,77,0.01))] shadow-[0_20px_50px_rgba(230,185,77,0.10)]' : 'border-[var(--color-border-base)] bg-[var(--color-bg-surface)]'}`}>
+                {tier.badge && (
+                  <span className="absolute -top-2.5 right-6 font-[family-name:var(--font-mono)] text-[9px] font-bold tracking-[0.18em] uppercase px-2.5 py-1 rounded-full bg-[var(--color-gold)] text-black">
+                    {tier.badge}
+                  </span>
+                )}
                 <div className={`font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase mb-4 ${tier.featured ? 'text-[var(--color-gold)]' : 'text-[var(--color-text-muted)]'}`}>{tier.name}</div>
                 <div className="text-[2.75rem] max-sm:text-[2.25rem] font-bold tracking-[-0.03em] leading-none">
                   {tier.price}{tier.priceSuffix && <small className="text-base text-[var(--color-text-muted)] font-medium">{tier.priceSuffix}</small>}
                 </div>
                 <div className="font-[family-name:var(--font-mono)] text-[12px] text-[var(--color-text-muted)] mt-2 tracking-[0.06em]">{tier.sub}</div>
+                {tier.anchor && (
+                  <p className="text-[13px] leading-[1.5] text-[var(--color-text-secondary)] mt-2.5 mb-0 max-w-[34ch]">{tier.anchor}</p>
+                )}
                 <ul className="mt-5 pt-5 border-t border-[var(--color-border-base)] flex flex-col gap-3">
                   {tier.features.map((f) => (
                     <li key={f} className="flex gap-2 text-[15px] text-[var(--color-text-muted)] leading-snug">
@@ -632,6 +657,22 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
             Analyze a ticker
           </Link>
         </div>
+        {/* The data-safety objection is answered thoroughly further up the page,
+            by the permission table. The other objection a solo-founder product
+            gets is "will this still be here next year", and the honest answer
+            to it lived only on /about, three clicks from the button people
+            actually press. */}
+        <p className="relative mt-8 text-[13px] leading-[1.6] text-[var(--color-text-secondary)] max-w-[440px]">
+          Run by one person, on purpose. Your data is exportable and{' '}
+          <Link href="/data-deletion" className="underline decoration-[var(--color-border-strong)] underline-offset-2 hover:text-[var(--color-text-primary)] transition-colors">
+            deletable in one click
+          </Link>
+          , whatever happens to Helm.{' '}
+          <Link href="/about" className="underline decoration-[var(--color-border-strong)] underline-offset-2 hover:text-[var(--color-text-primary)] transition-colors">
+            Who builds it
+          </Link>
+          .
+        </p>
       </section>
 
       {/* ── SEO CONTENT ── */}
@@ -697,7 +738,7 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
       {/* ── FOOTER ── */}
       <footer className="border-t border-[var(--color-border-base)] bg-[var(--color-bg-inset)] pt-16 pb-10">
         <div className="max-w-[1240px] mx-auto px-10 max-sm:px-5">
-          <div className="grid grid-cols-2 max-sm:grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-12 max-sm:gap-8">
+          <div className="grid grid-cols-2 max-sm:grid-cols-1 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1.15fr_1fr] gap-x-8 gap-y-12 max-sm:gap-8">
             <div className="col-span-2 max-sm:col-span-1 lg:col-span-1">
               <Link href="/" className="flex items-center gap-3 font-bold tracking-[0.02em] uppercase text-base">
                 <HelmMark size={24} /> Helm
@@ -727,8 +768,16 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
               ))}
             </div>
             <div>
+              <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4">Compare</div>
+              {[['Thesis trackers', '/best-thesis-trackers'], ['vs MyThesis', '/mythesis-alternative'], ['vs Vela', '/vela-alternative'], ['vs UseThesis', '/usethesis-alternative'], ['What is thesis monitoring', '/thesis-monitoring']].map(([l, h]) => (
+                <Link key={l} href={h} className="block text-[15px] text-[var(--color-text-secondary)] py-1.5 hover:text-[var(--color-text-primary)] transition-colors">{l}</Link>
+              ))}
+            </div>
+            <div>
               <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4">Legal</div>
-              {[['Privacy', '/privacy'], ['Terms', '/terms'], ['Data Deletion', '/contact']].map(([l, h]) => (
+              {/* Data Deletion pointed at /contact, but /data-deletion exists and
+                  is the page this label promises. */}
+              {[['Privacy', '/privacy'], ['Terms', '/terms'], ['Data Deletion', '/data-deletion']].map(([l, h]) => (
                 <Link key={l} href={h} className="block text-[15px] text-[var(--color-text-secondary)] py-1.5 hover:text-[var(--color-text-primary)] transition-colors">{l}</Link>
               ))}
             </div>
