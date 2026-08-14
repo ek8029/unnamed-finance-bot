@@ -12,6 +12,7 @@ import { useFormat } from '@/hooks/use-format';
 import { useDemo } from '@/contexts/demo-context';
 import { usePreview } from '@/lib/preview-context';
 import { AgentFirstLook } from '@/components/agent-first-look';
+import { Ghost, GhostBar } from '@/components/ghost';
 import { tierAtLeast } from '@/lib/tier-shared';
 import { useLivePrices } from '@/hooks/use-live-prices';
 import posthog from 'posthog-js';
@@ -394,11 +395,11 @@ export default function DashboardOverview() {
     error,
   } = useFinancialSummary();
 
-  const { insights: feedInsights } = useIntelligence();
+  const { insights: feedInsights, loading: insightsLoading } = useIntelligence();
 
   // Live portfolio value: useHoldings polls /api/market/quotes every 30s and
   // recomputes totalValue client-side. Overrides the static DB aggregate.
-  const { holdings, totalValue: liveHoldingsValue } = useHoldings();
+  const { holdings, totalValue: liveHoldingsValue, loading: holdingsLoading } = useHoldings();
 
   const { formatCurrency, formatPercentage } = useFormat();
   const { isDemo, enableDemo, disableDemo } = useDemo();
@@ -923,7 +924,19 @@ export default function DashboardOverview() {
             </span>
           </div>
           <div className="flex flex-col">
-            {feedInsights.length === 0 && (
+            {/* "You're all clear" is a FINDING, not a loading state. Rendered
+                while the request was still in flight it told people the agent
+                had checked and found nothing, seconds before four items
+                appeared. Loading gets a shell; the all-clear waits its turn. */}
+            {insightsLoading && feedInsights.length === 0 && (
+              <div className="border-t border-[var(--color-border-subtle)] py-5">
+                <Ghost label="Loading what the agent found">
+                  <GhostBar w="64%" h={14} />
+                  <GhostBar w="42%" h={12} className="mt-2.5" />
+                </Ghost>
+              </div>
+            )}
+            {!insightsLoading && feedInsights.length === 0 && (
               <div className="border-t border-[var(--color-border-subtle)] py-5 text-[15px] text-[var(--color-text-muted)]">
                 You&apos;re all clear. Helm keeps watching your book.
               </div>
@@ -990,6 +1003,19 @@ export default function DashboardOverview() {
                 ))}
               </div>
             </div>
+          ) : holdingsLoading ? (
+            // Same rule as the movers list: "no sector data" is a conclusion,
+            // and it cannot be drawn until the holdings request has answered.
+            <div className="py-8">
+              <Ghost label="Loading sector allocation">
+                <GhostBar w="100%" h={10} />
+                <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
+                  <GhostBar w={104} h={11} />
+                  <GhostBar w={88} h={11} />
+                  <GhostBar w={96} h={11} />
+                </div>
+              </Ghost>
+            </div>
           ) : (
             <div className="py-8 text-center text-[14px] text-[var(--color-text-muted)]">
               No sector data yet.
@@ -1026,7 +1052,15 @@ export default function DashboardOverview() {
         <div className={`${CARD} px-5 py-[18px]`}>
           <Eyebrow className="mb-1.5 !text-[10px] !tracking-[0.14em]">Today&apos;s movers</Eyebrow>
           <div className="flex flex-col">
-            {movers.length === 0 && (
+            {holdingsLoading && movers.length === 0 && (
+              <div className="border-t border-[var(--color-border-subtle)] py-4">
+                <Ghost label="Loading today's movers">
+                  <GhostBar w="52%" h={13} />
+                  <GhostBar w="38%" h={13} className="mt-2.5" />
+                </Ghost>
+              </div>
+            )}
+            {!holdingsLoading && movers.length === 0 && (
               <div className="border-t border-[var(--color-border-subtle)] py-4 text-[14px] text-[var(--color-text-muted)]">
                 No moves yet today.
               </div>

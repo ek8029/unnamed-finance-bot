@@ -875,3 +875,26 @@ a:focus-visible, button:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* Sticky-stack offsets for the four-surfaces section on the homepage.
+   Four cards at the desktop step crowd the top of a short viewport, so both
+   the starting offset and the per-card step shrink on small screens. */
+:root { --stack-top: 96px; --stack-step: 16px; }
+@media (max-width: 640px) { :root { --stack-top: 72px; --stack-step: 10px; } }
+
+
+/* Staggered row entrance for holdings tables and boards.
+   Deliberately a CSS animation rather than a JS reveal: a keyframe runs when
+   the ELEMENT mounts, so rows that survive a data poll never replay it. React
+   keys rows by id, so a refresh that returns the same positions re-renders
+   without remounting and the table stays still. Only genuinely new rows
+   animate, which is the correct behaviour rather than a compromise. */
+@keyframes helm-row-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.helm-row-in { animation: helm-row-in 0.42s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .helm-row-in { animation: none; }
+}

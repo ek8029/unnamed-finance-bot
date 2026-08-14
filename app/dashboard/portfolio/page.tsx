@@ -761,7 +761,7 @@ export default function PortfolioPage() {
               />
             ) : (
             <div className="space-y-2">
-            {filteredPositions.map((h) => {
+            {filteredPositions.map((h, idx) => {
               const dayPct = h.day_change_percentage ?? 0;
               const sparkPath = generateSparklinePath(h.ticker);
               const sparkTrend = dayPct >= 0;
@@ -769,7 +769,8 @@ export default function PortfolioPage() {
                 <Link
                   key={h.id}
                   href={`/dashboard/holdings/${h.ticker}`}
-                  className="block p-3.5 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl active:bg-[var(--color-bg-elevated)] transition-colors"
+                  style={{ animationDelay: `${Math.min(idx, 6) * 55}ms` }}
+                  className="helm-row-in block p-3.5 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl active:bg-[var(--color-bg-elevated)] transition-colors"
                 >
                   <div className="grid grid-cols-[32px_1fr_auto] gap-1.5 sm:gap-3 items-center">
                     <TickerIcon ticker={h.ticker} />
@@ -1074,7 +1075,11 @@ export default function PortfolioPage() {
                     return (
                       <tr
                         key={h.id}
-                        className={`h-16 border-b border-[var(--color-border-subtle)] ${
+                        // Stagger capped at six. Past that a large book spends
+                        // seconds assembling while someone waits to read one
+                        // number, and the delay stops being texture.
+                        style={{ animationDelay: `${Math.min(idx, 6) * 55}ms` }}
+                        className={`helm-row-in h-16 border-b border-[var(--color-border-subtle)] ${
                           idx % 2 === 1 ? 'bg-[var(--color-bg-elevated)]/20' : ''
                         }`}
                       >

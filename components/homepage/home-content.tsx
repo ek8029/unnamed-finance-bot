@@ -124,6 +124,34 @@ const TIERS = [
   { name: 'Free', price: '$0', priceSuffix: ' forever', sub: 'No card, no expiry', anchor: null, badge: null, features: ['Full terminal access', 'AI analysis, any US ticker', 'Connected brokerages', 'Daily brief', 'Actions inbox', 'Portfolio Wrapped'], cta: 'Open the terminal', featured: false },
 ];
 
+/* ─── The four surfaces ─────────────────────────────────────────────────── */
+
+// Order is deliberate and thesis is last. Every other surface applies to the
+// whole book; thesis applies to the single names in it. Leading with it is
+// what makes the product read as narrower than it is.
+const SURFACES = [
+  {
+    name: 'Exposure',
+    lead: 'What you actually own, through every ETF and fund.',
+    detail: 'Concentration, sector weight, and the single names hiding inside your index positions.',
+  },
+  {
+    name: 'Taxes',
+    lead: 'Harvestable losses, and the wash-sale windows around them.',
+    detail: 'Lot level, across every linked account at once. Arithmetic, not a model.',
+  },
+  {
+    name: 'Earnings',
+    lead: 'What reports next, and how much of your book it touches.',
+    detail: 'Exposure to the print before it lands, not a calendar you have to read.',
+  },
+  {
+    name: 'Thesis',
+    lead: 'The reasons you bought, checked against the filing.',
+    detail: 'Every pillar tested against primary sources, with the dated line that moved it.',
+  },
+];
+
 /* ─── Reveal hook ───────────────────────────────────────────────────────── */
 
 function useReveal(threshold = 0.12) {
@@ -139,6 +167,31 @@ function useReveal(threshold = 0.12) {
     return () => io.disconnect();
   }, [threshold]);
   return { ref, inView };
+}
+
+/**
+ * The 26px gold bar that sits left of every section eyebrow, drawn rather than
+ * printed. Transform-only, so it stays on the compositor, and it inherits
+ * useReveal's reduced-motion check: with reduce set, inView is true from the
+ * first frame and the bar is simply there.
+ *
+ * Deliberately only on section eyebrows. Every hairline on the page animating
+ * at once stops being a quiet touch and becomes a light show.
+ */
+function EyebrowRule() {
+  const { ref, inView } = useReveal(1);
+  return (
+    <div
+      ref={ref}
+      aria-hidden
+      className="w-[26px] h-px bg-[var(--color-gold)] shrink-0"
+      style={{
+        transform: inView ? 'scaleX(1)' : 'scaleX(0)',
+        transformOrigin: 'left',
+        transition: 'transform 0.55s cubic-bezier(0.16,1,0.3,1)',
+      }}
+    />
+  );
 }
 
 function Reveal({ children, className = '' }: { children: React.ReactNode; className?: string }) {
@@ -429,7 +482,7 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
         <Reveal>
           <div className="max-w-[720px] mb-16">
             <div className="flex items-center gap-3.5 mb-5 font-[family-name:var(--font-mono)] text-[12px] font-medium tracking-[0.22em] uppercase text-[var(--color-gold)]">
-              <span className="w-[26px] h-px bg-[var(--color-gold)]" />
+              <EyebrowRule />
               Transparency
             </div>
             <h2 className="text-[clamp(2rem,4vw,3rem)] font-bold tracking-[-0.035em] leading-[1.05]">
@@ -534,7 +587,7 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
         <Reveal>
           <div className="max-w-[720px] mb-16">
             <div className="flex items-center gap-3.5 mb-5 font-[family-name:var(--font-mono)] text-[12px] font-medium tracking-[0.22em] uppercase text-[var(--color-gold)]">
-              <span className="w-[26px] h-px bg-[var(--color-gold)]" />
+              <EyebrowRule />
               Security
             </div>
             <h2 className="text-[clamp(2rem,4vw,3rem)] font-bold tracking-[-0.035em] leading-[1.05]">
@@ -589,13 +642,62 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
         </Reveal>
       </section>
 
+      {/* ── THE FOUR SURFACES (sticky stack) ──
+          Sits between the stage and the ask on purpose. The stage shows the
+          product; this states what the four surfaces are, at equal weight,
+          immediately before the price.
+
+          It is here to fix a positioning problem structurally rather than by
+          rewording: listed vertically, thesis reads as the product and the
+          other three read as supporting features. Stacked, each one holds the
+          viewport in turn and they land equal.
+
+          Pure CSS position:sticky. No scroll listener, no JavaScript, and it
+          degrades to four ordinary stacked cards wherever sticky is not
+          supported. Offsets shrink on small viewports, where four cards at the
+          desktop offset would crowd the top of the screen. */}
+      <section className="py-[120px] max-sm:py-16 max-w-[1240px] mx-auto px-10 max-sm:px-5">
+        <Reveal>
+          <div className="flex items-center gap-3.5 mb-5 font-[family-name:var(--font-mono)] text-[12px] font-medium tracking-[0.22em] uppercase text-[var(--color-gold)]">
+            <EyebrowRule />
+            What the agent covers
+          </div>
+          <h2 className="text-[clamp(2rem,4vw,3rem)] font-bold tracking-[-0.035em] leading-[1.05] max-w-[20ch]">
+            Four surfaces. <em className="not-italic font-bold text-[var(--color-gold)]">One book.</em>
+          </h2>
+        </Reveal>
+
+        <div className="relative mt-14 max-w-[840px]">
+          {SURFACES.map((s, i) => (
+            <div
+              key={s.name}
+              className="sticky rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-inset)] p-9 max-sm:p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.55)]"
+              style={{
+                top: `calc(var(--stack-top, 96px) + ${i} * var(--stack-step, 16px))`,
+                // The last card carries no trailing margin. With one, the
+                // section ended on a stretch of empty black between the stack
+                // releasing and the pricing header arriving.
+                marginBottom: i === SURFACES.length - 1 ? 0 : 22,
+              }}
+            >
+              <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.2em] text-[var(--color-gold)]">
+                0{i + 1}
+              </div>
+              <div className="mt-3 text-[clamp(1.5rem,2.6vw,1.95rem)] font-bold tracking-[-0.025em]">{s.name}</div>
+              <p className="mt-2.5 mb-0 max-w-[54ch] text-[clamp(0.95rem,1.4vw,1.08rem)] leading-[1.5]">{s.lead}</p>
+              <p className="mt-2 mb-0 max-w-[56ch] text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">{s.detail}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ── PRICING ── */}
       <section id="pricing" className="py-[120px] max-sm:py-16 max-w-[1240px] mx-auto px-10 max-sm:px-5">
         <Reveal>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-10">
             <div>
               <div className="flex items-center gap-3.5 mb-5 font-[family-name:var(--font-mono)] text-[12px] font-medium tracking-[0.22em] uppercase text-[var(--color-gold)]">
-                <span className="w-[26px] h-px bg-[var(--color-gold)]" />
+                <EyebrowRule />
                 Pricing
               </div>
               <h2 className="text-[clamp(2rem,4vw,3rem)] font-bold tracking-[-0.035em] leading-[1.05]">

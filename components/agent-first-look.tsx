@@ -6,6 +6,7 @@
 // numbers free; the linked surfaces carry the gates.
 
 import { useEffect, useState } from 'react';
+import { GhostFirstLook } from '@/components/ghost';
 import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
 
@@ -22,6 +23,7 @@ interface FirstLook {
 export function AgentFirstLook() {
   const router = useRouter();
   const [data, setData] = useState<FirstLook | null>(null);
+  const [pending, setPending] = useState(true);
   const [dismissed, setDismissed] = useState(true); // default hidden until localStorage read
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export function AgentFirstLook() {
   }, []);
 
   useEffect(() => {
-    if (dismissed) return;
+    if (dismissed) { setPending(false); return; }
     let active = true;
     fetch('/api/scan/first-look')
       .then((r) => (r.ok ? r.json() : null))
@@ -39,11 +41,14 @@ export function AgentFirstLook() {
           try { posthog.capture('scan_viewed'); } catch { /* analytics only */ }
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => { if (active) setPending(false); });
     return () => { active = false; };
   }, [dismissed]);
 
-  if (dismissed || !data?.ready) return null;
+  if (dismissed) return null;
+  if (pending) return <GhostFirstLook />;
+  if (!data?.ready) return null;
 
   const findings: { label: string; value: string; detail: string; href: string; cta: string }[] = [];
   if (data.tlh && data.tlh.savings > 0) {

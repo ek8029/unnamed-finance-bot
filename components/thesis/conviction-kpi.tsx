@@ -7,6 +7,7 @@
 // be dropped into the Overview unconditionally.
 
 import { useEffect, useState } from 'react';
+import { GhostConviction } from '@/components/ghost';
 import Link from 'next/link';
 import { summarizePillars } from '@/lib/thesis-summary';
 import { STATUS_META, type PillarStatus } from '@/lib/thesis-palette';
@@ -36,9 +37,13 @@ function convictionOf(counts: Record<PillarStatus, number>): 'intact' | 'weakeni
 export function ThesisConvictionKpi() {
   const enabled = useThesisEnabled();
   const [counts, setCounts] = useState<ConvictionCounts | null>(null);
+  // Distinct from `counts === null`: that state also covers a fetch that
+  // failed or returned nothing, and a shell must never outlive the request.
+  const [pending, setPending] = useState(true);
 
   useEffect(() => {
-    if (!enabled) return;
+    // Not entitled: nothing is coming, so do not hold a shell open for it.
+    if (!enabled) { setPending(false); return; }
     let active = true;
     fetch('/api/thesis')
       .then((r) => (r.ok ? r.json() : null))
@@ -52,13 +57,20 @@ export function ThesisConvictionKpi() {
         }
         setCounts(tally);
       })
-      .catch(() => {});
+      .catch(() => {})
+      // finally, not then: a failed request has also stopped loading, and a
+      // ghost left spinning after a 500 is worse than an empty panel.
+      .finally(() => { if (active) setPending(false); });
     return () => {
       active = false;
     };
   }, [enabled]);
 
-  if (!enabled || !counts) return null;
+  // A ghost while the request is in flight, null once it has answered and
+  // there is nothing to show. Loading and empty are different states.
+  if (!enabled) return null;
+  if (pending) return <GhostConviction />;
+  if (!counts) return null;
   const { intact, weakening, broken } = counts;
   const total = intact + weakening + broken;
   if (total === 0) return null;
