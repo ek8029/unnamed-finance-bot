@@ -21,6 +21,20 @@ export async function GET() {
   try {
     const report = await generateTaxReport(user.id);
 
+    // "Nothing to harvest" and "nothing connected" are different sentences.
+    // Most accounts have no holdings at all, so without this a client renders
+    // "Helm checks every position against its cost basis daily" over a book it
+    // never read.
+    //
+    // This used to be computed inside the free-tier branch only, so the full
+    // report carried no such flag and a PAYING account with an empty book got
+    // the false sentence while a free one did not. Both branches send it now.
+    const { count: holdingsCount } = await supabase
+      .from('holdings')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+    const hasHoldings = (holdingsCount ?? 0) > 0;
+
     // The figure is free. The workings are the product.
     //
     // This route used to 403 below Pro, which meant the one deterministic
@@ -41,21 +55,12 @@ export async function GET() {
       const clean = report.opportunities.filter((o) => !o.washSaleRisk);
       const netLoss = clean.reduce((s, o) => s + o.unrealizedLoss, 0);
 
-      // "Nothing to harvest" and "nothing connected" are different sentences.
-      // Most accounts have no holdings at all, so without this the dominant
-      // rendering of this screen would tell someone Helm checked every lot they
-      // hold when it checked nothing.
-      const { count: holdingsCount } = await supabase
-        .from('holdings')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id);
-
       return NextResponse.json({
         teaser: true,
         totalHarvestableLoss: netLoss,
         totalEstimatedSavings: report.totalEstimatedSavings,
         opportunityCount: clean.length,
-        hasHoldings: (holdingsCount ?? 0) > 0,
+        hasHoldings,
         disclaimer: report.disclaimer,
       });
     }
@@ -87,7 +92,7 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json(report);
+    return NextResponse.json({ ...report, hasHoldings });
   } catch (error) {
     console.error('Tax opportunities failed:', error);
     return NextResponse.json({ error: 'Failed to generate tax report' }, { status: 500 });
