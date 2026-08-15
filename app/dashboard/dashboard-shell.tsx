@@ -199,8 +199,14 @@ export default function DashboardShell({
   const [paletteQuery, setPaletteQuery] = useState('');
   const [tickerResults, setTickerResults] = useState<{ ticker: string; name: string }[]>([]);
   const [paletteSel, setPaletteSel] = useState(0);
+  // Open on the first paint when the route is already a portfolio child, so the
+  // sub-menu never flashes shut and then open. The route must come from
+  // usePathname(): the server has no `window`, so a `typeof window` branch here
+  // rendered the menu CLOSED on the server and OPEN on the client, and every
+  // /dashboard/portfolio load threw a hydration mismatch and rebuilt the entire
+  // dashboard tree client-side.
   const [portfolioDropdownOpen, setPortfolioDropdownOpen] = useState(() =>
-    PORTFOLIO_HREFS.includes(typeof window !== 'undefined' ? window.location.pathname : '')
+    PORTFOLIO_HREFS.includes(pathname)
   );
   const menuRef = useRef<HTMLDivElement>(null);
 
