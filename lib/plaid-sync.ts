@@ -80,6 +80,14 @@ export async function syncPlaidItem(
           credit_limit: account.balances.limit ?? null,
           sync_status: 'healthy',
           sync_error: null,
+          // This was missing, so last_synced_at was written once at link time
+          // and never again. Balances kept refreshing underneath it, and the
+          // account list told people their data was days old when it had
+          // updated that morning: 72 of 136 active accounts were showing a
+          // sync date older than their own updated_at. The web list also drives
+          // a "stale" badge off this field, so healthy connections were being
+          // labelled stale.
+          last_synced_at: new Date().toISOString(),
         })
         .eq('plaid_account_id', account.account_id)
         .eq('user_id', userId);
@@ -718,13 +726,13 @@ export async function syncAllItems(
     }
   }
 
-  // Update last_synced_at on all linked accounts
-  const now = new Date().toISOString();
-  await supabase
-    .from('linked_accounts')
-    .update({ last_synced_at: now, sync_status: 'healthy' })
-    .eq('user_id', userId)
-    .eq('is_active', true);
+  // No blanket stamp here any more. syncPlaidItem now sets last_synced_at on
+  // each account it actually refreshed, which is the only honest place for it:
+  // this ran unconditionally after the loop, so when one item threw, every
+  // account on it was still marked sync_status 'healthy' and stamped as synced
+  // right now. It also only ever ran from the dashboard, so the cron and the
+  // webhook left the timestamp frozen at link time while balances moved
+  // underneath it.
 
   // Compute snapshots after sync
   await computeSnapshots(supabase, userId);
