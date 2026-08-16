@@ -300,8 +300,20 @@ export async function POST(request: Request) {
       metadata: { ip: clientIp, emailDomain, userAgent, utm_source, utm_medium, utm_campaign },
     });
 
-    // Send Day 0 welcome email + log to drip table so cron skips it
+    // Send Day 0 welcome email + log to drip table so cron skips it.
+    //
+    // ONLY once the account can actually be used. With email confirmation ON,
+    // signUp returns no session, and sending the welcome here put two emails in
+    // the inbox within seconds of each other: Supabase's "confirm your address"
+    // and Helm's "welcome, here is what to do next". The welcome arrived first
+    // and told someone to go do things they could not do, because they had not
+    // confirmed yet.
+    //
+    // No session means unconfirmed. Skipping here is not a lost email: day 0 is
+    // not written to email_drip_log, so the drip cron finds it unsent and sends
+    // it on its next run. The guard below is what stops a double.
     try {
+      if (!data.session) throw new Error('unconfirmed: welcome deferred to drip cron');
       const { resend: resendClient, FROM_EMAIL } = await import('@/lib/emails/resend');
       const { getTemplate } = await import('@/lib/emails/templates');
       if (resendClient) {
@@ -325,7 +337,9 @@ export async function POST(request: Request) {
         }
       }
     } catch (emailErr) {
-      console.error('Welcome email failed:', emailErr);
+      // Deferral is expected, not a failure; anything else is worth seeing.
+      const msg = emailErr instanceof Error ? emailErr.message : String(emailErr);
+      if (!msg.startsWith('unconfirmed:')) console.error('Welcome email failed:', msg);
     }
 
     return NextResponse.json({
