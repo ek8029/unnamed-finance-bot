@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { normalizeTier } from '@/lib/tier-shared';
 
 /**
  * POST /api/webhooks/revenuecat
@@ -20,6 +21,12 @@ import { createClient } from '@supabase/supabase-js';
  * the Supabase user id. A payload whose app_user_id is not a uuid is one where
  * that call did not happen, and writing a tier for it would mean guessing whose
  * subscription it is. Those are rejected loudly rather than absorbed.
+ *
+ * A NOTE ON 'max', because it looks like a bug and is not. A grant writes 'pro'
+ * over a comped 'max' row, but normalizeTier() folds max into pro at every read
+ * boundary — Max was retired in Aug 2026 — so the label changes and the access
+ * does not. There is no entitlement to preserve, and inventing rank arithmetic
+ * for a tier that no longer means anything would be code protecting a string.
  */
 
 export const dynamic = 'force-dynamic';
@@ -103,6 +110,30 @@ export async function POST(request: NextRequest) {
   if (whoErr || !who?.user) {
     console.error('[revenuecat] no such user:', appUserId);
     return NextResponse.json({ ok: true, skipped: 'unknown user' });
+  }
+
+  // WHAT IS ALREADY THERE DECIDES WHETHER WE MAY REVOKE.
+  //
+  // user_subscriptions is one row written by two rails. An App Store
+  // EXPIRATION says "the thing Apple was billing has ended" — it says nothing
+  // about a Stripe subscription, and there is nothing stopping the same person
+  // from holding both. Writing tier 'free' on an EXPIRATION would cancel, for
+  // free, a subscription the person is still being charged for on the web.
+  //
+  // So a revocation may only revoke what RevenueCat granted. If the row was
+  // last written by Stripe and still carries a paid tier, this event is not
+  // about that entitlement and must not touch it. Grants are safe either way:
+  // the worst case is Pro arriving slightly early for someone who is paying
+  // twice, and the Stripe webhook writes the row back on its next event.
+  const { data: existing } = await db
+    .from('user_subscriptions')
+    .select('tier, source')
+    .eq('user_id', appUserId)
+    .maybeSingle();
+
+  if (revokes && existing && existing.source !== 'revenuecat' && normalizeTier(existing.tier) !== 'free') {
+    console.log('[revenuecat]', type, 'ignored: entitlement belongs to', existing.source, 'for', appUserId);
+    return NextResponse.json({ ok: true, skipped: 'not ours to revoke', source: existing.source });
   }
 
   const row = {
