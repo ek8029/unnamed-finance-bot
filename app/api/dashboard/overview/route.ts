@@ -81,7 +81,45 @@ export async function GET() {
 
     const holdings = allHoldings || [];
     const portfolioValue = holdings.reduce((sum, h) => sum + Number(h.total_value), 0);
-    const topHoldings = holdings.slice(0, 10);
+
+    // FOLD TO POSITIONS, THEN TAKE THE TOP TEN. This was `holdings.slice(0, 10)`,
+    // which took the ten biggest LOT ROWS. A name held at two brokerages is two
+    // rows, and only the rows large enough to make the cut survived, so the
+    // caller rendered a fraction of the position as though it were the whole
+    // thing: the ICP's AAPL showed 152 shares worth $46,494 here while the
+    // portfolio page showed the real 258 shares worth $78,876. Two of our own
+    // screens quoting different numbers for the same holding.
+    //
+    // The bug only ever hit multi-brokerage users, which is precisely who this
+    // product is for. `portfolioValue` above was always right because it sums
+    // every row before any truncation.
+    const byTicker = new Map<string, { ticker: string; shares: number; current_price: number; total_value: number; unrealised_gain_loss: number | null }>();
+    for (const h of holdings) {
+      const prev = byTicker.get(h.ticker);
+      const gain = h.unrealised_gain_loss == null ? null : Number(h.unrealised_gain_loss);
+      if (!prev) {
+        byTicker.set(h.ticker, {
+          ticker: h.ticker,
+          shares: Number(h.shares),
+          current_price: Number(h.current_price),
+          total_value: Number(h.total_value),
+          unrealised_gain_loss: gain,
+        });
+        continue;
+      }
+      prev.shares += Number(h.shares);
+      prev.total_value += Number(h.total_value);
+      // One lot with no basis makes the WHOLE position's gain unknown. Summing
+      // the lots we can price would report a smaller number as if it were
+      // complete, and a P/L that is quietly missing a leg is worse than one
+      // that says it cannot be computed.
+      prev.unrealised_gain_loss = prev.unrealised_gain_loss == null || gain == null
+        ? null
+        : prev.unrealised_gain_loss + gain;
+    }
+    const topHoldings = [...byTicker.values()]
+      .sort((a, b) => b.total_value - a.total_value)
+      .slice(0, 10);
 
     // 4. Recent transactions (last 30 days)
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
