@@ -6,6 +6,7 @@
 import { createClient as createServiceRoleClient } from '@supabase/supabase-js';
 import { plaidClient, mapPlaidAccountType } from '@/lib/plaid';
 import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
+import { assetBalance, isLiabilityType, liabilityBalance } from '@/lib/account-balance';
 import { extractPlaidError } from '@/lib/plaid-errors';
 import { summarizeCashFlow, countsAsCashFlow } from '@/lib/cash-flow';
 import { aggregateHoldingLots } from '@/lib/holdings-aggregate';
@@ -741,7 +742,7 @@ export async function computeSnapshots(
   try {
     const { data: accounts } = await supabase
       .from('linked_accounts')
-      .select('id, account_type, current_balance')
+      .select('id, account_type, account_subtype, current_balance, available_balance')
       .eq('user_id', userId)
       .eq('is_active', true);
 
@@ -768,8 +769,11 @@ export async function computeSnapshots(
     let totalLiabilities = 0;
 
     for (const a of accts) {
-      const bal = Number(a.current_balance);
       const type = a.account_type;
+      // Cash is `available` where the institution reports it, because that is
+      // what the bank shows and it nets out pending charges. Liabilities stay
+      // on `current`: `available` on a card is the unused credit line.
+      const bal = isLiabilityType(type) ? liabilityBalance(a) : assetBalance(a);
 
       if (type === 'credit_card') {
         // Signed, per Plaid convention: positive = owed, negative = credit

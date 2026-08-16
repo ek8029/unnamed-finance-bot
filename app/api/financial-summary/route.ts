@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { parseDateLocal, formatMonthLabel, formatMonthShort } from '@/lib/date-format';
 import { computeSnapshots } from '@/lib/plaid-sync';
+import { assetBalance, isLiabilityType, liabilityBalance } from '@/lib/account-balance';
 
 export async function GET() {
   try {
@@ -95,8 +96,10 @@ export async function GET() {
     let totalLiabilities = 0;
 
     for (const a of accounts) {
-      const bal = Number(a.current_balance);
       const type = a.account_type;
+      // Cash reads `available` where reported, per lib/account-balance: it nets
+      // out pending charges and matches what the bank itself shows.
+      const bal = isLiabilityType(type) ? liabilityBalance(a) : assetBalance(a);
 
       if (type === 'credit_card' || type === 'loan' || type === 'mortgage') {
         liabilityAccounts.push(a);
@@ -396,7 +399,13 @@ export async function GET() {
 
 // Helper function to build composition data
 function buildComposition(
-  accounts: Array<{ account_type: string; current_balance: number; account_name: string }>,
+  accounts: Array<{
+    account_type: string;
+    account_subtype?: string | null;
+    current_balance: number;
+    available_balance?: number | null;
+    account_name: string;
+  }>,
   groupBy: string,
   labelMap: Record<string, string>
 ) {
@@ -405,7 +414,18 @@ function buildComposition(
   for (const account of accounts) {
     const key = account[groupBy as keyof typeof account] as string;
     const label = labelMap[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    const value = Math.abs(Number(account.current_balance));
+    // The same figures the totals above are built from, or the chart and the
+    // number beside it disagree. This read current_balance through Math.abs(),
+    // so the asset slices ignored pending charges and a card sitting in credit
+    // was drawn as a slice of debt.
+    const value = isLiabilityType(account.account_type)
+      ? liabilityBalance(account)
+      : assetBalance(account);
+
+    // A slice can only be a magnitude. An account in credit, or overdrawn,
+    // belongs in the totals but cannot be drawn as negative area, so it is left
+    // out of the composition rather than flipped positive.
+    if (value <= 0) continue;
 
     if (!grouped[label]) {
       grouped[label] = { value: 0, items: [] };

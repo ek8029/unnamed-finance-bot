@@ -1,5 +1,6 @@
 import { splitLossByCharacter } from '@/lib/tax-math';
 import { computePortfolioLookthrough } from '@/lib/etf-holdings';
+import { assetBalance, liabilityBalance } from '@/lib/account-balance';
 import {
   TAX_RATE,
   LTCG_RATE_DEFAULT,
@@ -76,7 +77,7 @@ export async function generateInsights(
       await Promise.all([
         supabase
           .from('linked_accounts')
-          .select('id, account_type, current_balance, account_name')
+          .select('id, account_type, account_subtype, current_balance, available_balance, account_name')
           .eq('user_id', userId)
           .eq('is_active', true),
         supabase
@@ -289,13 +290,18 @@ export async function generateInsights(
     }
 
     // Rule 4: Idle cash detection
+    // Idle cash has to be cash they could actually move, so this reads
+    // `available` and not the posted balance. Telling someone to go invest
+    // money that is already committed to pending charges is advice on money
+    // they do not have.
     const cashAccounts = accounts.filter(
-      (a: { account_type: string; current_balance: number }) =>
+      (a: { account_type: string; current_balance: number; available_balance?: number | null }) =>
         (a.account_type === 'checking' || a.account_type === 'savings') &&
-        Number(a.current_balance) > 0,
+        assetBalance(a) > 0,
     );
     const totalCash = cashAccounts.reduce(
-      (s: number, a: { current_balance: number }) => s + Number(a.current_balance), 0,
+      (s: number, a: { account_type: string; current_balance: number; available_balance?: number | null }) =>
+        s + assetBalance(a), 0,
     );
     const monthlyExpenses = currentTx
       .filter((t: { amount: number }) => Number(t.amount) < 0)
@@ -320,7 +326,11 @@ export async function generateInsights(
       (a: { account_type: string }) => a.account_type === 'credit_card',
     );
     for (const card of creditCards) {
-      const balance = Math.abs(Number(card.current_balance));
+      // Signed, not abs(). A negative card balance is a credit in the user's
+      // favour, and abs() would flip it into a "your balance is high" warning
+      // about money the card company owes THEM. Four cards in this database are
+      // currently negative.
+      const balance = liabilityBalance(card);
       if (balance > CREDIT_CARD_ALERT_THRESHOLD) {
         candidates.push({
           insight_type: 'credit',

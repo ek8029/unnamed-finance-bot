@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { syncAllItems } from '@/lib/plaid-sync';
+import { assetBalance, isLiabilityType, liabilityBalance } from '@/lib/account-balance';
 
 /**
  * GET /api/dashboard/overview
@@ -51,22 +52,22 @@ export async function GET() {
     // 2. Account balances
     const { data: accounts } = await supabase
       .from('linked_accounts')
-      .select('id, account_name, account_type, current_balance, institution_id')
+      .select('id, account_name, account_type, account_subtype, current_balance, available_balance, institution_id')
       .eq('user_id', user.id)
       .eq('is_active', true);
 
-    // Separate assets from liabilities (same logic as financial-summary route)
-    const LIABILITY_TYPES = new Set(['credit_card', 'loan', 'mortgage']);
+    // Asset and liability semantics live in lib/account-balance. This used to
+    // inline them and got two things wrong: it read current_balance for cash,
+    // which overstates by whatever is pending, and it wrapped liabilities in
+    // Math.abs(), which turns a credit balance on a card into debt.
     let cashAssets = 0;
     let totalLiabilities = 0;
     for (const a of accounts || []) {
-      const bal = Number(a.current_balance);
-      const type = a.account_type;
-      if (LIABILITY_TYPES.has(type)) {
-        totalLiabilities += Math.abs(bal);
-      } else if (type !== 'brokerage') {
+      if (isLiabilityType(a.account_type)) {
+        totalLiabilities += liabilityBalance(a);
+      } else if (a.account_type !== 'brokerage') {
         // Brokerage value comes from holdings, not account balance
-        cashAssets += bal;
+        cashAssets += assetBalance(a);
       }
     }
     const totalBalance = cashAssets - totalLiabilities;

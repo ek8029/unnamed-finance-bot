@@ -6,6 +6,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { getPortfolioSummary } from '@/lib/portfolio-analysis';
+import { assetBalance, isLiabilityType, liabilityBalance } from '@/lib/account-balance';
 import { generateTaxReport } from '@/lib/tax-analysis';
 import { getQuote } from '@/lib/financial-data';
 import { getHistoricalPrices } from '@/lib/finazon';
@@ -303,7 +304,7 @@ export async function generateWrapped(
     // Live accounts for accurate net worth (avoids stale double-counted snapshots)
     supabase
       .from('linked_accounts')
-      .select('account_type, current_balance')
+      .select('account_type, account_subtype, current_balance, available_balance')
       .eq('user_id', userId)
       .eq('is_active', true),
     // Live holdings for accurate net worth
@@ -470,13 +471,16 @@ export async function generateWrapped(
   let liveAssets = 0;
   let liveLiabilities = 0;
   for (const a of liveAccounts) {
-    const bal = Number(a.current_balance);
     const type = a.account_type;
-    if (type === 'credit_card' || type === 'loan' || type === 'mortgage') {
-      liveLiabilities += Math.abs(bal);
+    if (isLiabilityType(type)) {
+      // Signed, not abs(): a card in credit is money owed TO the user, and
+      // abs() was subtracting it from their net worth instead of adding it.
+      liveLiabilities += liabilityBalance(a);
     } else if (type !== 'brokerage') {
-      // Skip brokerage — investment value comes from holdings
-      liveAssets += Math.max(0, bal);
+      // Skip brokerage — investment value comes from holdings.
+      // Not clamped at zero either: an overdrawn account genuinely reduces net
+      // worth, and Math.max(0, …) hid the overdraft.
+      liveAssets += assetBalance(a);
     }
   }
   liveAssets += liveHoldings.reduce((s: number, h: { total_value: number }) => s + Number(h.total_value), 0);
