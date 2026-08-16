@@ -27,7 +27,12 @@ export async function GET() {
   // no user ever saw a renewal date or a pending cancellation.
   const { data } = await supabase
     .from('user_subscriptions')
-    .select('tier, billing_period, current_period_end, cancel_at_period_end')
+    // `source` (migration 064) is 'revenuecat' or 'stripe'. The iOS app needs
+    // it to tell someone HOW to cancel: an App Store subscription can only be
+    // managed in App Store settings, and a Stripe one cannot be managed there
+    // at all. Sending the wrong instruction is worse than sending none, and
+    // Apple requires the right one next to account deletion.
+    .select('tier, billing_period, current_period_end, cancel_at_period_end, source')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -45,6 +50,7 @@ export async function GET() {
     billingPeriod: data?.billing_period || null,
     currentPeriodEnd: data?.current_period_end || null,
     cancelAtPeriodEnd: data?.cancel_at_period_end || false,
+    source: data?.source || null,
   }, {
     headers: NO_CACHE_HEADERS,
   });
