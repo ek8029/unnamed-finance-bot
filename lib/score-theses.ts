@@ -564,8 +564,31 @@ Respond with JSON exactly in this shape:
     llmRows = Array.isArray(parsed.evidence) ? parsed.evidence : [];
     log.push(`[${ticker}] LLM returned ${llmRows.length} rows for ${sortedCandidates.length} candidates x ${pillars.length} pillars`);
   } catch (err) {
-    log.push(`[${ticker}] LLM error: ${err instanceof Error ? err.message : String(err)}`);
-    await bumpLastScanned(db, thesisId);
+    // DO NOT ADVANCE THE WATERMARK ON AN INFRASTRUCTURE FAILURE.
+    //
+    // `since` comes from last_scanned_at, so bumping it after a failed judge
+    // call tells the next run that everything in this batch was considered.
+    // Nothing re-reads it. The documents are not retried, not logged as
+    // skipped, and not counted anywhere — they simply never happened, and the
+    // hole is invisible because the pillar still shows evidence from before it.
+    //
+    // The window truncates to a DATE, so a failure and a recovery inside the
+    // same day are harmless. The expensive case is a failure on a day AFTER the
+    // last success: the OpenAI key ran dry mid-Friday 2026-08-14, and had the
+    // Monday 09:00 run also failed it would have stamped Monday's date and
+    // dropped Friday, Saturday and Sunday's filings and news for every tracked
+    // thesis, permanently.
+    //
+    // Only a 4xx that is a fact about THIS REQUEST justifies giving up on the
+    // batch — a malformed payload or one too large to send will fail the same
+    // way every hour forever. Auth, quota, rate limits, timeouts and 5xx are
+    // facts about the account or the network, and those get retried, which is
+    // what the hourly schedule is for.
+    const status = (err as { status?: number } | null)?.status;
+    const requestIsTheProblem = status === 400 || status === 404 || status === 413 || status === 422;
+    log.push(`[${ticker}] LLM error${status ? ` (${status})` : ''}: ${err instanceof Error ? err.message : String(err)}`
+      + (requestIsTheProblem ? ' — giving up on this batch' : ' — leaving the scan window open for a retry'));
+    if (requestIsTheProblem) await bumpLastScanned(db, thesisId);
     return { evidenceAdded, statusChanges, breaches };
   }
 
