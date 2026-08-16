@@ -45,24 +45,40 @@ export interface BalanceRow {
 /** Balance means "owed" on these, not "held". */
 const LIABILITY_TYPES = new Set(['credit_card', 'loan', 'mortgage']);
 
-/** The only types where `available` means spendable money. See rule 2. */
-const DEPOSITORY_TYPES = new Set(['checking', 'savings']);
-
 /**
- * Rule 2, continued: subtypes where `available` does NOT mean what it means on
- * a chequing account.
+ * Rule 2, continued: an ALLOWLIST of `type/subtype` pairs where `available`
+ * has been verified to mean spendable cash. Anything not listed uses
+ * `current`.
  *
- * A cash management account is a brokerage sweep, and its `available` is the
- * SETTLED and withdrawable portion, not the amount owned. One account in this
- * database reports current 95,916.88 against available 22,773.88: a 76% gap
- * that is unsettled funds, not pending charges. Preferring `available` there
- * would delete three quarters of a real balance.
+ * This is deliberately an allowlist rather than a denylist, because the two
+ * ways of being wrong are not the same size:
  *
- * The tell is scale. Genuine pending charges on the other depository accounts
- * here are 431.93, 10.00 and 10.00. Nothing about a 73k gap is a pending
- * coffee.
+ *   - Wrong with `current` on a chequing account overstates by the pending
+ *     amount. Bounded, and small: the real gaps in this database are 431.93,
+ *     10.00 and 10.00.
+ *   - Wrong with `available` on a settlement-style account understates by the
+ *     WHOLE balance. One cash management account here reports current
+ *     95,916.88 against available 22,773.88, because on a brokerage sweep
+ *     `available` means settled and withdrawable, not owned. Preferring it
+ *     would have deleted 73,143.00 from a real person's net worth, silently.
+ *
+ * A denylist gets that second case wrong by default every time a new
+ * institution or subtype appears. An allowlist gets the first case wrong
+ * instead, which is a rounding error by comparison.
+ *
+ * A percentage guard was considered and rejected: on a small balance a
+ * perfectly ordinary pending charge is a large percentage (40 on 50 is 80%),
+ * so it would misfire on exactly the accounts it was meant to protect.
+ *
+ * Adding a pair here is a deliberate act: confirm against real rows that
+ * `available` tracks pending activity rather than settlement or lock-up.
+ * Deposit subtypes NOT listed, and why: `cd` and `hsa` can restrict
+ * withdrawal, `money market` can settle, `cash management` does the above.
+ * All four report available == current in this database today, so they read
+ * identically either way — they are excluded because that equality is not
+ * guaranteed at another institution.
  */
-const SETTLEMENT_SUBTYPES = new Set(['cash management']);
+const AVAILABLE_MEANS_SPENDABLE = new Set(['checking/checking', 'savings/savings']);
 
 const num = (v: number | string | null | undefined): number => {
   const n = Number(v);
@@ -83,10 +99,8 @@ export function isLiabilityType(type: string | null | undefined): boolean {
  */
 export function assetBalance(a: BalanceRow): number {
   if (isLiabilityType(a.account_type)) return 0;
-  const usesAvailable =
-    DEPOSITORY_TYPES.has(String(a.account_type ?? '')) &&
-    !SETTLEMENT_SUBTYPES.has(String(a.account_subtype ?? '').toLowerCase()) &&
-    a.available_balance != null;
+  const pair = `${String(a.account_type ?? '').toLowerCase()}/${String(a.account_subtype ?? '').toLowerCase()}`;
+  const usesAvailable = AVAILABLE_MEANS_SPENDABLE.has(pair) && a.available_balance != null;
   return num(usesAvailable ? a.available_balance : a.current_balance);
 }
 
