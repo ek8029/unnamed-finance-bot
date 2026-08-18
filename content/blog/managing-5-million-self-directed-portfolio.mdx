@@ -1,0 +1,97 @@
+---
+title: "Managing a $5 Million Self-Directed Portfolio: What Actually Changes"
+description: "The problems that appear between $1M and $10M are different from the ones below it. Concentration, tax drag, custodian sprawl, and the reporting most people never build."
+date: "2026-08-18"
+author: "Evan Kim"
+tags: ["self-directed", "high-net-worth", "portfolio", "tax", "concentration"]
+published: true
+---
+
+# Managing a $5 Million Self-Directed Portfolio: What Actually Changes
+
+Most writing about self-directed investing is aimed at someone with $50,000 and a Roth IRA. The advice is sound at that size and largely irrelevant at $5 million, because the binding constraints are different.
+
+Below roughly $500,000, the dominant variable is savings rate. You cannot optimize your way to wealth faster than you can add to the account. Above a few million, savings rate stops mattering much and four other things start to.
+
+## 1. Tax drag overtakes fund selection
+
+At $50,000, the difference between a 0.03% index fund and a 0.35% active fund is $160 a year. Worth fixing, not worth agonizing over.
+
+At $5 million, a single mistimed sale can cost more than a decade of expense ratios. A $400,000 long-term gain realized in a year you did not need the liquidity is roughly $95,000 in federal tax at the 20% capital gains rate plus the 3.8% net investment income tax, before state. The same position held and borrowed against, or donated, or offset against harvested losses, produces a materially different outcome.
+
+The practical consequence is that the highest-value activity shifts from picking holdings to sequencing transactions. When you realize, what you offset it against, which lot you sell, and which account the trade happens in.
+
+**Lot-level selling matters at this size.** If you bought the same position across eight purchases over four years, those lots have different cost bases and different holding periods. Selling "the position" at a broker default of first-in-first-out can realize a much larger gain than selling specific high-basis lots. The dollar difference at $5 million is not academic.
+
+## 2. Concentration arrives without a decision
+
+Almost nobody with $5 million built it by allocating evenly. It usually came from one of a few places: equity in a company that did well, a career in an industry you also invested in, or a position you were right about and never trimmed.
+
+The result is a portfolio where a single name or sector is a large share of the whole, arrived at by success rather than intent. That is a different psychological situation from choosing to concentrate, and it is harder to unwind for two reasons. The position usually carries a large embedded gain, so selling triggers tax. And it usually carries a story you believe, because it worked.
+
+Two measurement problems make this worse than it appears on a statement.
+
+**Fund overlap.** If you hold an S&P 500 index fund alongside a large direct position in a mega-cap name, you own more of that company than the account screen shows. At current index concentration levels, a broad US equity fund is not the diversifier it was twenty years ago.
+
+**Correlated but differently named exposure.** Holding a semiconductor company, a semiconductor equipment supplier, and a technology-heavy index fund is one bet described three ways. Sector labels obscure this, because they classify by industry rather than by what the positions actually respond to.
+
+## 3. Custodian sprawl becomes the default
+
+Below $1 million, most people have one or two accounts. Between $1 million and $10 million, the typical picture is four to eight: a primary brokerage, an old employer plan, a rollover IRA, a Roth, a joint account, sometimes a trust, sometimes a legacy advisory account nobody wants to deal with.
+
+Each custodian shows you a complete and confident picture of the slice it holds. None of them is wrong. All of them are partial.
+
+The specific consequence worth knowing is the wash-sale rule. It applies per taxpayer across every account you control, including IRAs. A loss harvested in your taxable brokerage can be disallowed by an automatic reinvestment in an IRA at another firm thirty days either side. Your broker will not flag it, because your broker cannot see the other account. This is the one number in personal finance that no single custodian is structurally able to compute correctly.
+
+## 4. Reporting is something you have to build
+
+At this size you start needing answers that no brokerage statement provides:
+
+- What is my actual exposure to a single company, counting what sits inside my funds
+- What is my unrealized gain by lot, and which lots are long-term
+- How much harvestable loss exists right now, across all accounts, net of wash-sale windows
+- Which of my positions report earnings in the next three weeks
+- What has changed about the reasons I bought these things
+
+None of these are exotic. All of them are tedious to assemble by hand, and all of them go stale within days.
+
+This is the point at which most people either build a spreadsheet they maintain badly, or hire someone at 1% of assets to maintain it for them. At $5 million, a 1% fee is $50,000 a year. That is a real amount of money for portfolio reporting plus behavioral coaching, and whether it is worth paying depends entirely on what the advisor actually does beyond rebalancing.
+
+## The honest case for and against staying self-directed at this size
+
+**Reasons it works.** The fee math is stark. Modern tooling replaces most of what portfolio construction used to require. You know your own tax situation, liquidity needs, and risk tolerance better than anyone you would hire. And nobody is more motivated.
+
+**Reasons it fails.** Three specific ways, in rough order of frequency.
+
+*Behavioral.* A 35% drawdown on $5 million is $1.75 million of paper loss. The dollar figure is what makes it hard, not the percentage. People who held calmly through a 35% drawdown on $200,000 sometimes do not hold through the same percentage on a number that large.
+
+*Complexity creep.* Concentrated stock, options, alternatives, trusts, multi-state tax, charitable vehicles. Each addition raises the odds that a decision made in one place breaks something in another.
+
+*Neglect.* The most common failure is not a dramatic mistake. It is a portfolio that was optimized once in 2021 and has been drifting since, with a forgotten 401(k), unharvested losses, and a concentration that grew quietly.
+
+## What a workable setup looks like
+
+**Everything visible in one place.** Not one custodian, one view. The point is not tidiness, it is that several of the questions above are unanswerable from any partial picture.
+
+**Look-through exposure, not fund labels.** Know what you own by underlying holding, not by fund name.
+
+**Lot-level tax visibility, maintained continuously.** Harvestable losses expire quietly at year end. Knowing the figure in November rather than late December is worth real money at this size.
+
+**A written reason for each position.** Not a price target. The condition that would make you wrong. Concentration built by success is difficult to evaluate precisely because the story feels settled, and a written thesis from two years ago is the only honest check against a story you have since rewritten in your head.
+
+**Something that tells you when a reason breaks.** The value here is lead time, not prediction. Finding out from a filing rather than from a price move is the difference.
+
+## Where Helm fits
+
+Helm was built for this shape of problem. Users connect their brokerages read-only through Plaid, and Helm works the whole book at once: concentration including look-through into what the ETFs actually hold, harvestable tax losses lot by lot with wash-sale windows screened across every connected account, earnings dates on positions actually held, and filings and news read against the stated reason for holding each one. Every finding quotes the source sentence with a date on it.
+
+Pricing is flat at $20 a month, with no percentage of assets. At $5 million, a 1% advisory fee is $50,000 a year and this is $240.
+
+Helm is not a registered investment adviser. It does not manage money, cannot place trades, and cannot move funds. Nothing here is a recommendation about your portfolio. It is a description of the problems that appear at this size and the mechanics of addressing them.
+
+## Related Reading
+
+- [Switching from a Managed Portfolio to Self-Directed](/blog/switching-managed-to-self-directed)
+- [The Portfolio Concentration Problem](/blog/portfolio-concentration-problem)
+- [Tax-Loss Harvesting Guide](/blog/tax-loss-harvesting-guide)
+- [How to Track Multiple Brokerage Accounts](/blog/how-to-track-multiple-brokerage-accounts)

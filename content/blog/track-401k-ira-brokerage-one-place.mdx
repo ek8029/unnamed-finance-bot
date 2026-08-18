@@ -1,0 +1,102 @@
+---
+title: "How to Track a 401(k), IRA, and Brokerage Accounts in One Place"
+description: "Retirement accounts are where consolidated tracking usually breaks. What actually connects, what doesn't, and how to see your real allocation across all of it."
+date: "2026-08-18"
+author: "Evan Kim"
+tags: ["portfolio", "401k", "retirement", "multiple-accounts", "asset-allocation"]
+published: true
+---
+
+# How to Track a 401(k), IRA, and Brokerage Accounts in One Place
+
+Most people solve half of this problem and stop.
+
+They link two brokerage accounts, see a combined number, and feel organized. Then they remember the 401(k) at the old employer, the rollover IRA nobody has looked at since 2021, and the SEP IRA from the consulting year. Those accounts are frequently the largest ones. Leaving them out doesn't just make the total wrong. It makes every allocation percentage wrong, and allocation is the number that actually drives decisions.
+
+Here is what breaks, why it breaks, and what to do about it.
+
+## Why retirement accounts are the hard part
+
+Brokerage accounts are relatively easy to aggregate. Retirement accounts are not, for three structural reasons.
+
+**Recordkeepers are not brokerages.** Your 401(k) does not live at a broker. It lives at a recordkeeper: Fidelity NetBenefits, Empower, Vanguard, Principal, Voya, Alight, TIAA. These are different systems from the retail brokerage side of the same brand. A connection to "Fidelity" may reach your taxable account and not your workplace plan, because they are separate platforms that happen to share a logo.
+
+**Plan-specific funds often have no public ticker.** A large share of 401(k) menus are built from collective investment trusts and separate accounts rather than public mutual funds. A holding called "State Street Target Retirement 2045 Class K" may carry a CUSIP but no ticker your tracking tool recognizes. The dollar value comes through. The composition frequently does not.
+
+**Employer plans change vendors.** When a company switches recordkeepers, your login, your plan ID, and sometimes your entire fund lineup change with it. Any connection you set up breaks and has to be rebuilt.
+
+## What usually connects, and what usually doesn't
+
+The honest picture, not a marketing chart.
+
+| Account type | Typically connects | Common failure |
+|---|---|---|
+| Taxable brokerage | Yes | Rare |
+| Rollover, Traditional, and Roth IRA | Yes | Rare, since these sit on the retail brokerage side |
+| SEP IRA, SIMPLE IRA | Usually | Depends on the custodian |
+| Current-employer 401(k) | Sometimes | Recordkeeper may be unsupported, or need separate credentials |
+| Old-employer 401(k) | Sometimes | Same, plus dormant accounts are easy to forget entirely |
+| 403(b), 457, TSP | Mixed | TSP in particular is often a manual entry |
+| HSA with an investment sleeve | Rarely | Cash portion may connect while the invested portion does not |
+| Pension, deferred comp, unvested RSUs | No | Not a custodied account in the usual sense |
+
+The practical rule: anything on the retail side of a brokerage connects readily, anything on the workplace side is a coin flip, and anything that is a promise rather than an account does not connect at all.
+
+## The number that goes wrong when you leave them out
+
+Say your taxable brokerage holds $300,000, heavily in individual technology names, and an old 401(k) holds $400,000 in a target-date fund.
+
+Looking at the brokerage alone, you might see roughly 40% technology and conclude you are dangerously concentrated. That figure is not merely incomplete. It is wrong in a specific direction, and the correction is not the one most people expect.
+
+Across the full $700,000, the same dollar position in technology is a smaller share of the whole. But the target-date fund is not neutral ballast either. A 2045 fund typically holds a broad global equity sleeve, and a meaningful slice of that sleeve is the same mega-cap technology names already sitting in your taxable account. Your true exposure is neither the brokerage figure nor a naive blend. It is your direct position plus the look-through share of the fund.
+
+This is the most common error in do-it-yourself portfolio tracking: treating a fund as one unit of "diversified" rather than as a bundle of positions that may duplicate what you already own outright.
+
+## Three approaches, with their real tradeoffs
+
+**Manual spreadsheet.** Works, costs nothing, and handles every account type including ones no software can reach. The problem is staleness. A spreadsheet is accurate the day you build it and drifts every day after. Most people update quarterly at best, which means for most of the year they are looking at old percentages.
+
+**Aggregation tools with account linking.** Read-only connections pull balances and holdings automatically, so the picture stays current without effort. The limits are the ones in the table above: workplace plans are inconsistently supported, and plan-specific funds may arrive without a usable identifier.
+
+**Hybrid.** Link what links, enter the rest manually, revisit the manual entries on a schedule. In practice this is what nearly everyone with a real multi-account picture ends up doing. Less elegant, more accurate.
+
+## A workable setup
+
+**1. Inventory first, connect second.** Write down every account before opening any software: employer, custodian, approximate value, account type. People routinely discover an account they had forgotten. That discovery is worth more than any feature.
+
+**2. Connect the retail side.** Taxable accounts and IRAs usually link without trouble, and will typically cover most of your account count.
+
+**3. Attempt the workplace plans.** Search for the recordkeeper name, not the employer name. If your plan is administered by Empower, search Empower, not the company you work for.
+
+**4. Enter what will not connect.** For a target-date fund with no ticker, the useful minimum is the fund name, the current value, and the approximate equity and fixed-income split from the fund's own fact sheet. That alone repairs most of the allocation distortion.
+
+**5. Look through the funds.** Once everything is in, the question worth asking is not "what funds do I own" but "what am I exposed to." If a fund's largest holdings overlap your direct positions, your concentration is higher than the account-level view suggests.
+
+**6. Re-check when life changes.** A new job, a plan vendor change, a rollover, or a new account all break the picture. Twice a year is enough for most people.
+
+## What to look at once it's assembled
+
+The point of consolidation is not a bigger number at the top of the screen. It is the handful of questions that only become answerable when everything is visible at once.
+
+**True single-name concentration**, including what sits inside your funds rather than only what you bought directly.
+
+**Asset location**, meaning whether your bonds sit in tax-deferred accounts and your highest-growth holdings sit in the Roth, rather than the reverse.
+
+**Duplicate exposure**, where three funds across three accounts turn out to hold the same twenty companies.
+
+**Wash-sale risk.** This one is specifically an all-accounts problem. The wash-sale rule is applied per taxpayer across every account you control, and that explicitly includes IRAs. Selling a position at a loss in a taxable account while a scheduled purchase of the same security runs in your IRA can disallow the loss entirely. No single custodian can warn you, because no single custodian can see the other accounts.
+
+That last one is the clearest argument for consolidation that has nothing to do with tidiness. It is a number that is simply wrong unless you can see everything at once.
+
+## Where Helm fits
+
+Helm connects brokerages read-only through Plaid and builds one view across them: concentration including look-through into what your ETFs actually hold, harvestable tax losses with wash-sale windows screened across every connected account simultaneously, earnings dates on the positions you hold, and filings and news read against the reasons you hold them. Retirement accounts follow the pattern described above. Retail-side IRAs generally connect. Workplace plans depend on the recordkeeper.
+
+Helm is not a registered investment adviser. It does not manage money, cannot place trades, and cannot move funds. Everything here describes how account aggregation works, not what to do with your portfolio.
+
+## Related Reading
+
+- [How to Track Multiple Brokerage Accounts](/blog/how-to-track-multiple-brokerage-accounts)
+- [Multi-Asset Portfolio Tracker](/blog/multi-asset-portfolio-tracker)
+- [Tax-Loss Harvesting Guide](/blog/tax-loss-harvesting-guide)
+- [The Portfolio Concentration Problem](/blog/portfolio-concentration-problem)
