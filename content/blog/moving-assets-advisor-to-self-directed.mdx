@@ -1,0 +1,115 @@
+---
+title: "Moving Assets from an Advisor to a Self-Directed Account: What Actually Breaks"
+description: "The transfer mechanics nobody explains: ACATS, in-kind versus liquidation, proprietary funds that cannot move, missing cost basis, and the wash-sale trap in the first thirty days."
+date: "2026-08-18"
+author: "Evan Kim"
+tags: ["self-directed", "financial-advisor", "ACATS", "transfer", "tax", "robo-advisor"]
+published: true
+faq:
+  - q: "What should I evaluate before moving assets from an advisor to a self-directed account?"
+    a: "Five things, in this order. Which of your holdings are proprietary or share-class restricted, since those may not transfer in kind and would have to be sold, creating a taxable event you did not choose. Whether your cost basis will transfer intact, because the receiving broker gets it from the sending broker and gaps are common on older lots. Any surrender charges, deferred sales charges or account termination fees. Whether fractional shares exist, since ACATS moves whole shares and fractions are typically liquidated. And what automatic reinvestments are running anywhere in your accounts, because those create wash-sale exposure during the transition."
+  - q: "What are the most common mistakes when moving from a robo-advisor to self-directed?"
+    a: "Liquidating rather than transferring in kind, which converts an administrative move into a tax bill. Forgetting that robo-advisors run automated tax-loss harvesting, so your account may hold dozens of small lots across similar ETFs, and selling any of them near a purchase of a substantially identical fund can trigger a wash sale. Losing the harvesting service itself without replacing it. And assuming fractional shares transfer, which they usually do not, so a portfolio built entirely from fractional purchases can end up partly liquidated on the way out."
+  - q: "Does an ACATS transfer create a taxable event?"
+    a: "An in-kind ACATS transfer does not. You are moving the same securities between custodians, so there is no sale and no realized gain. What creates a taxable event is liquidation, which happens when a holding cannot transfer: proprietary funds the receiving broker does not carry, share classes it cannot hold, fractional shares, and sometimes mutual funds outside the receiving broker's platform. Ask the receiving broker which of your specific holdings will not transfer before you initiate, not after."
+  - q: "How long does moving a brokerage account take?"
+    a: "A standard ACATS transfer is typically about five to seven business days once initiated, though partial transfers, mutual funds and anything requiring manual handling extend that. Your assets are generally not tradeable during the transfer window, which matters if you hold something volatile or have an earnings date inside the window. The practical advice is to avoid initiating a transfer immediately before a known event in a large position."
+  - q: "Will my cost basis transfer to the new broker?"
+    a: "Usually, and not always. Brokers are required to transfer covered-security basis, which broadly means shares acquired after 2011 for equities and after 2012 for most funds. Older lots are non-covered and the basis may arrive incomplete or not at all. Before transferring, export your full lot-level history from the sending broker: acquisition dates, quantities and cost per lot. If basis arrives wrong, that export is the only practical way to correct it, and reconstructing it years later from statements you no longer have is genuinely painful."
+---
+
+# Moving Assets from an Advisor to a Self-Directed Account: What Actually Breaks
+
+The decision to leave is a separate question from the mechanics of leaving, and almost everything written about this covers only the first. This is about the second.
+
+None of it is complicated. All of it is the kind of thing that is cheap to handle before you initiate and expensive to discover afterwards.
+
+## The transfer itself
+
+Moving a brokerage account between US firms runs on **ACATS**, the Automated Customer Account Transfer Service. You initiate it at the receiving broker, not the sending one, which surprises people who expect to have to call their advisor first. You do not.
+
+A standard full transfer takes roughly five to seven business days. Partial transfers, mutual funds and anything needing manual handling take longer.
+
+**Your assets are generally not tradeable during the transfer window.** That is the first practical consideration: if you hold a large position with an earnings date next week, do not initiate the week before.
+
+## In kind versus liquidation, which is the whole ballgame
+
+**An in-kind transfer moves the actual securities.** Same shares, same lots, different custodian. No sale, no realized gain, no tax.
+
+**A liquidation sells everything and moves cash.** That is a taxable event on every position with a gain, and if your advisor-managed account has been running for years, those gains can be substantial.
+
+Nobody chooses liquidation deliberately. It happens because something in the account cannot transfer, and the two most common causes are worth checking before you start.
+
+**Proprietary funds.** If your advisor put you in house-branded funds, the receiving broker may not carry them. They cannot be transferred, so they must be sold. This is one reason proprietary funds are sticky, and it is worth knowing that stickiness is a feature from the seller's perspective.
+
+**Share class restrictions.** Institutional or advisor-only share classes of otherwise ordinary funds often cannot be held in a retail self-directed account. Sometimes the receiving broker can convert the share class. Sometimes it sells.
+
+The single most useful thing you can do: send the receiving broker a list of your exact holdings and ask which ones will not transfer in kind. Do this before initiating. Any decent broker will answer.
+
+## Fractional shares
+
+ACATS moves whole shares. Fractions are typically liquidated and sent as cash.
+
+For most portfolios this is a rounding error. For a portfolio built entirely through fractional purchases, which is common with robo-advisors and app-based brokers, it is not. You can end up with a meaningful slice liquidated on the way out, with the tax consequences that implies.
+
+## Cost basis, and why to export before you leave
+
+Brokers are required to pass along basis for **covered securities**, broadly meaning equities acquired after 2011 and most funds after 2012. Non-covered lots, meaning anything older, may arrive with incomplete basis or none at all.
+
+**Export your full lot-level history before you initiate the transfer.** Acquisition dates, quantities, cost per lot, for every position. Most brokers will produce this as a CSV.
+
+If basis arrives wrong at the other end, that export is how you fix it. Without it you are reconstructing purchase history from statements you may no longer have access to, for an account that no longer exists, which is as unpleasant as it sounds. The IRS requires you to report basis correctly regardless of whether your broker got it right.
+
+## The wash-sale trap in the first thirty days
+
+This is the one that catches careful people, and it is specific to the transition period.
+
+The wash-sale rule applies **per taxpayer across every account you control**, and that explicitly includes IRAs. A loss realized during a transition, whether from a forced liquidation of a proprietary fund or a deliberate cleanup of the portfolio you inherited, is disallowed if you or any account you control buys a substantially identical security within thirty days either side.
+
+During a transfer, the things most likely to trip it are running quietly in the background:
+
+- Automatic dividend reinvestment in another account
+- A recurring monthly contribution into an index fund
+- A 401(k) contribution buying a fund that substantially overlaps what you just sold
+- The receiving broker's model portfolio buying something similar as it invests your cash
+
+Your brokers will not warn you about any of this, because no single custodian can see the others. If you are realizing losses during a transition, the safe move is to pause automatic reinvestments and recurring purchases across every account for the window, then restart them.
+
+## Leaving a robo-advisor specifically
+
+Different from leaving a human advisor in three ways.
+
+**Your account is probably full of small lots.** Automated tax-loss harvesting works by selling and rebuying across similar ETFs, so a Betterment or Wealthfront account of any age holds many partial positions across funds that are close cousins. That is exactly the condition that makes wash sales easy to trigger during a cleanup.
+
+**Fractional shares are everywhere.** See above. This is the population most affected by the fractional liquidation issue.
+
+**You are giving up a real service.** Automated harvesting has genuine value, and if you leave without replacing it you have traded a fee for a service you were actually receiving. Know the harvestable-loss number you are walking away from before deciding it does not matter.
+
+## A checklist
+
+1. Ask the receiving broker which of your specific holdings will not transfer in kind
+2. Export lot-level cost basis history from the sending broker, as a file you keep
+3. Check for surrender charges, deferred sales charges and account termination fees
+4. Note any fractional positions, since these will likely be liquidated
+5. Pause automatic reinvestments and recurring buys across every account you control
+6. Avoid initiating before an earnings date in a large position
+7. Initiate at the receiving broker, not the sending one
+8. After it lands, verify cost basis against your export, lot by lot
+9. Restart automatic contributions once the thirty-day windows have cleared
+
+Step eight is the one people skip and later regret. Check it in the first month, while the sending broker still has records and staff who will talk to you.
+
+## Where Helm fits
+
+Helm is useful on the far side of this, once everything has landed. It connects brokerages read-only through Plaid and works the holdings: concentration including look-through into what your ETFs actually hold, harvestable tax losses lot by lot with wash-sale windows screened across every connected account at once, earnings dates on positions actually held, and filings and news read against the reasons for holding each one.
+
+The wash-sale screening is the part that matters most in the first year after a transition, because that is when you are most likely to be cleaning up a portfolio someone else built while automatic purchases run in accounts you have stopped thinking about.
+
+Helm is not a registered investment adviser. It does not manage money, cannot place trades and cannot move funds. Nothing here is tax advice; transfer and basis questions with real money attached are worth an hour of a CPA's time.
+
+## Related Reading
+
+- [Switching from a Managed Portfolio to Self-Directed](/blog/switching-managed-to-self-directed)
+- [Tax-Loss Harvesting Guide](/blog/tax-loss-harvesting-guide)
+- [Getting a Second Opinion on Your Portfolio](/blog/portfolio-second-opinion)
+- [How to Track a 401(k), IRA, and Brokerage Accounts in One Place](/blog/track-401k-ira-brokerage-one-place)
