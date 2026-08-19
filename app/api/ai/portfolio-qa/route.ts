@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getPortfolioSummary, formatPortfolioContext } from '@/lib/portfolio-analysis';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
+import { checkAnalysisQuota, recordAnalysisUsage, tierAtLeast } from '@/lib/tier';
 import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import OpenAI from 'openai';
@@ -146,6 +147,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Daily analysis quota (free: 5/day, pro: fair-use ceiling). Shares the
+  // analysis_usage ledger with /api/ai/analyze so one authed user cannot spend
+  // an unbounded number of gpt-4o-mini calls by alternating endpoints. The
+  // per-IP limiter above is in-memory and per-instance, so it is not a spend cap.
+  const quota = await checkAnalysisQuota(user.id);
+  if (!quota.allowed) {
+    return NextResponse.json(
+      {
+        error: tierAtLeast(quota.tier, 'pro')
+          ? 'Daily analysis limit reached. Your quota resets at midnight UTC.'
+          : 'Daily analysis limit reached. Upgrade to Pro for a higher limit.',
+        code: 'QUOTA_EXCEEDED',
+        quota: { used: quota.used, limit: quota.limit, remaining: 0 },
+      },
+      { status: 429 },
+    );
+  }
+
   const body = await req.json();
   const { question, conversationHistory } = body as {
     question: string;
@@ -224,6 +243,9 @@ export async function POST(req: NextRequest) {
     if (!content) {
       return NextResponse.json({ error: 'No response from AI' }, { status: 500 });
     }
+
+    // Charge quota only once the paid call actually returned content.
+    await recordAnalysisUsage(user.id);
 
     let cleaned = content.trim();
     if (cleaned.startsWith('```')) {
