@@ -56,8 +56,22 @@ export async function POST(request: Request) {
     const response = await plaidClient.linkTokenCreate({
       user: { client_user_id: user.id },
       client_name: 'Helm Terminal',
-      products: [Products.Transactions],
-      optional_products: [Products.Investments],
+      // INVESTMENTS IS THE REQUIRED PRODUCT, NOT TRANSACTIONS.
+      //
+      // Plaid filters the institution picker to institutions compatible with
+      // everything in `products`. `optional_products` explicitly does not
+      // filter. Requiring Transactions therefore hid investment-only brokerages
+      // from the search, on a product whose entire job is reading holdings.
+      //
+      // Measured before this change: of ~30 people who opened Link, 9 exited on
+      // `institution_not_found` and 3 more on `institution_not_supported`, the
+      // latter including Fidelity twice and Webull once. Fidelity is a top-five
+      // brokerage and was being filtered out of the list.
+      //
+      // `required_if_supported_products` gets Transactions wherever the
+      // institution offers it, without narrowing the institution list.
+      products: [Products.Investments],
+      required_if_supported_products: [Products.Transactions],
       country_codes: [CountryCode.Us],
       language: 'en',
       ...(redirectUri && { redirect_uri: redirectUri }),
