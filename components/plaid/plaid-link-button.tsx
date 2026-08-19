@@ -48,6 +48,8 @@ export function PlaidLinkButton({
   const [exchanging, setExchanging] = useState(false);
   const [tokenError, setTokenError] = useState(false);
   const { disableDemo } = useDemo();
+  // Last institution the user searched for, so an exit can say what they wanted.
+  const lastSearchRef = useRef<string | null>(null);
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
 
@@ -123,12 +125,31 @@ export function PlaidLinkButton({
   const { open, ready } = usePlaidLink({
     token: linkToken ?? '',
     onSuccess: handleSuccess,
+    // WHAT THE USER TYPED, not just that they failed.
+    //
+    // `institution_name` on exit is null unless an institution was actually
+    // selected, so every `institution_not_found` exit told us someone could not
+    // find their brokerage and nothing about which one. Nine people hit that and
+    // the list of institutions they wanted is unrecoverable.
+    //
+    // Link fires SEARCH_INSTITUTION with the query as the user types. Keeping
+    // the last one lets the exit event carry it. Only the search term is
+    // recorded, never credentials, and only when the user is searching Helm's
+    // own Link instance.
+    onEvent: (eventName, metadata) => {
+      if (eventName === 'SEARCH_INSTITUTION') {
+        const q = metadata?.institution_search_query;
+        if (q) lastSearchRef.current = q;
+      }
+    },
     onExit: (err, metadata) => {
       posthog.capture('plaid_link_exit', {
         exit_status: metadata?.status ?? null,
         error_type: err?.error_type ?? null,
         error_code: err?.error_code ?? null,
         institution_name: metadata?.institution?.name ?? null,
+        // Populated on institution_not_found, where institution_name is null.
+        institution_search_query: lastSearchRef.current ?? null,
       });
       if (err) {
         console.error('Plaid Link exit error:', err);
