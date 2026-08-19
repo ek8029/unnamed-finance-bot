@@ -143,7 +143,7 @@ export function ThesisActions({ thesisId, className = '' }: { thesisId: string; 
                           )}
                           {a.estimated_impact != null && a.estimated_impact > 0 && (
                             <div className="font-mono text-[12px] text-[#4ADE80] mt-2" style={MONO}>
-                              ~${a.estimated_impact.toLocaleString()} potential tax impact
+                              ~${a.estimated_impact.toLocaleString('en-US')} potential tax impact
                             </div>
                           )}
                           {a.explanation && (

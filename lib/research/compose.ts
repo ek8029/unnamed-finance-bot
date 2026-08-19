@@ -97,9 +97,9 @@ function formatContext(ctx: ResearchContext): string {
     const rows = p.holdings
       .map(
         (h) =>
-          `  ${h.ticker}: $${Math.round(h.value).toLocaleString()} (${h.pct.toFixed(1)}%${
+          `  ${h.ticker}: $${Math.round(h.value).toLocaleString('en-US')} (${h.pct.toFixed(1)}%${
             h.unrealizedGainLoss != null
-              ? `, unrealized ${h.unrealizedGainLoss >= 0 ? '+' : ''}$${Math.round(h.unrealizedGainLoss).toLocaleString()}`
+              ? `, unrealized ${h.unrealizedGainLoss >= 0 ? '+' : ''}$${Math.round(h.unrealizedGainLoss).toLocaleString('en-US')}`
               : ''
           }${h.sector ? `, ${h.sector}` : ''}${
             h.accounts.length > 1 ? `, across ${h.accounts.join(' + ')}` : ''
@@ -111,7 +111,7 @@ function formatContext(ctx: ResearchContext): string {
       .map((s) => `${s.sector} ${s.pct.toFixed(0)}%`)
       .join(' · ');
     parts.push(
-      `=== PORTFOLIO (real book) ===\nTotal value $${Math.round(p.totalValue).toLocaleString()} · cost basis $${Math.round(p.totalCostBasis).toLocaleString()} · unrealized ${p.totalUnrealized >= 0 ? '+' : ''}$${Math.round(p.totalUnrealized).toLocaleString()} · ${p.positionCount} positions\nSector allocation: ${sectors || 'n/a'}\nHoldings (richest first):\n${rows}`,
+      `=== PORTFOLIO (real book) ===\nTotal value $${Math.round(p.totalValue).toLocaleString('en-US')} · cost basis $${Math.round(p.totalCostBasis).toLocaleString('en-US')} · unrealized ${p.totalUnrealized >= 0 ? '+' : ''}$${Math.round(p.totalUnrealized).toLocaleString('en-US')} · ${p.positionCount} positions\nSector allocation: ${sectors || 'n/a'}\nHoldings (richest first):\n${rows}`,
     );
   }
 
@@ -119,10 +119,10 @@ function formatContext(ctx: ResearchContext): string {
 
   if (ctx.ledger.lines.length > 0) {
     const l = ctx.ledger.lines
-      .map((x) => `  ${x.label}: $${x.amount.toLocaleString()}${x.detail ? ` (${x.detail})` : ''}`)
+      .map((x) => `  ${x.label}: $${x.amount.toLocaleString('en-US')}${x.detail ? ` (${x.detail})` : ''}`)
       .join('\n');
     parts.push(
-      `=== VALUE SURFACED BY HELM (dollars flagged, NOT a performance/return claim) ===\nTotal surfaced: $${ctx.ledger.surfacedTotal.toLocaleString()}\n${l}`,
+      `=== VALUE SURFACED BY HELM (dollars flagged, NOT a performance/return claim) ===\nTotal surfaced: $${ctx.ledger.surfacedTotal.toLocaleString('en-US')}\n${l}`,
     );
   }
 

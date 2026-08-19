@@ -38,7 +38,7 @@ function AnimatedValue({ value }: { value: string }) {
       onUpdate: (v) => {
         if (!ref.current) return;
         let formatted = decimals > 0 ? v.toFixed(decimals) : Math.round(v).toString();
-        if (hasCommas) formatted = Number(formatted).toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+        if (hasCommas) formatted = Number(formatted).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
         ref.current.textContent = `${prefix}${formatted}${suffix}`;
       },
     });

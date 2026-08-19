@@ -45,7 +45,7 @@ function fmtPL(n: number | null): { text: string; color: string } | null {
   if (n == null || !Number.isFinite(n)) return null;
   const abs = Math.abs(Math.round(n));
   return {
-    text: `${n >= 0 ? '+' : '−'}$${abs.toLocaleString()}`,
+    text: `${n >= 0 ? '+' : '−'}$${abs.toLocaleString('en-US')}`,
     color: n >= 0 ? 'var(--color-positive)' : 'var(--color-negative-text)',
   };
 }

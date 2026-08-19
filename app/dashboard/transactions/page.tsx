@@ -576,7 +576,7 @@ export default function TransactionsPage() {
                   </span>
                   <span>&middot;</span>
                   <span>
-                    {pagination.total.toLocaleString()} transaction
+                    {pagination.total.toLocaleString('en-US')} transaction
                     {pagination.total !== 1 ? 's' : ''}
                   </span>
                 </>
@@ -855,7 +855,7 @@ export default function TransactionsPage() {
                       metaParts.push(`${displayTime} ET`);
                     }
                     if (tx.quantity != null && tx.price != null) {
-                      metaParts.push(`${Math.abs(tx.quantity).toLocaleString()} @ ${formatCurrencyDetailed(tx.price)}`);
+                      metaParts.push(`${Math.abs(tx.quantity).toLocaleString('en-US')} @ ${formatCurrencyDetailed(tx.price)}`);
                     }
 
                     // "—" is only for rows that truly carry no amount (sync artifacts).
@@ -882,7 +882,7 @@ export default function TransactionsPage() {
                             )}
                             {ticker && tx.quantity != null && (
                               <span className="text-[var(--color-text-secondary)]">
-                                {' '}&middot; {Math.abs(tx.quantity).toLocaleString()} share{Math.abs(tx.quantity) !== 1 ? 's' : ''}
+                                {' '}&middot; {Math.abs(tx.quantity).toLocaleString('en-US')} share{Math.abs(tx.quantity) !== 1 ? 's' : ''}
                               </span>
                             )}
                           </div>

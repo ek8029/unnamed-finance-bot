@@ -434,7 +434,7 @@ export default function BriefPage() {
     if (data.market.treasury) cells.push({ label: 'Bonds (TLT)', value: `$${data.market.treasury.price.toFixed(2)}`, delta: fmtPct(data.market.treasury.changePct), pos: data.market.treasury.changePct >= 0 });
     // BTC only if the user actually tracks it (real data, not invented).
     const btc = liveWatchlist.find(w => /^(BTC|BTC-USD|BTCUSD|X:BTCUSD)$/i.test(w.ticker) && w.price != null);
-    if (btc) cells.push({ label: 'BTC', value: `$${Math.round(btc.price).toLocaleString()}`, delta: fmtPct(btc.changePct), pos: btc.changePct >= 0 });
+    if (btc) cells.push({ label: 'BTC', value: `$${Math.round(btc.price).toLocaleString('en-US')}`, delta: fmtPct(btc.changePct), pos: btc.changePct >= 0 });
     return cells;
   }, [data, liveWatchlist]);
 

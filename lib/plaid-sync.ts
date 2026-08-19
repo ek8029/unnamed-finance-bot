@@ -492,7 +492,7 @@ export async function syncPlaidItem(
                 const value = rows.reduce((sum, d) => sum + Number(d.total_value ?? 0), 0);
                 console.log(
                   `[plaid-sync] dropped ${rows.length} position(s) no longer reported for user ${userId}: ` +
-                    `${rows.map((d) => d.ticker).join(', ')} ($${Math.round(value).toLocaleString()})`,
+                    `${rows.map((d) => d.ticker).join(', ')} ($${Math.round(value).toLocaleString('en-US')})`,
                 );
               }
             }

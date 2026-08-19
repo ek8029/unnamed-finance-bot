@@ -366,7 +366,7 @@ export default function RSUCalculatorPage() {
                   <input
                     type="text"
                     inputMode="numeric"
-                    value={totalShares ? Number(totalShares).toLocaleString() : ''}
+                    value={totalShares ? Number(totalShares).toLocaleString('en-US') : ''}
                     onChange={(e) => setTotalShares(e.target.value.replace(/\D/g, ''))}
                     placeholder="1,000"
                     className="w-full px-4 py-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors font-mono text-2xl"

@@ -94,7 +94,7 @@ export function TrialBanner() {
               <>
                 Ended {endedDate}. While it ran, Helm
                 {receipt.surfacedTotal > 0 && (
-                  <> flagged <span className="font-semibold text-[var(--color-text-primary)]">${receipt.surfacedTotal.toLocaleString()}</span> in potential tax savings</>
+                  <> flagged <span className="font-semibold text-[var(--color-text-primary)]">${receipt.surfacedTotal.toLocaleString('en-US')}</span> in potential tax savings</>
                 )}
                 {receipt.surfacedTotal > 0 && receipt.findings > 0 && ' and'}
                 {receipt.findings > 0 && (

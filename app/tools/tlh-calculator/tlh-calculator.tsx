@@ -465,7 +465,7 @@ export function TLHCalculator() {
 function InputField({ label, hint, value, onChange, placeholder, belowHint }: {
   label: string; hint: string; value: string; onChange: (v: string) => void; placeholder: string; belowHint?: React.ReactNode;
 }) {
-  const display = value ? Number(value).toLocaleString() : '';
+  const display = value ? Number(value).toLocaleString('en-US') : '';
   return (
     <div>
       <label className="block text-[15px] font-medium text-[var(--color-text-primary)] mb-2">{label}</label>

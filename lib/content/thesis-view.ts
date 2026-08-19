@@ -22,7 +22,7 @@ export const isFresh = (dateISO: string) =>
   Date.now() - new Date(dateISO).getTime() < NEW_DAYS * 86400000;
 
 export const money = (n: number) =>
-  n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M` : `$${Math.round(n).toLocaleString()}`;
+  n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M` : `$${Math.round(n).toLocaleString('en-US')}`;
 
 /** Worst (most adverse) ladder status across a set of mechanisms. */
 export function worstLadder(mechanisms: Mechanism[]): LadderStatus {

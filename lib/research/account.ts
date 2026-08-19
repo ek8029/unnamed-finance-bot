@@ -188,16 +188,16 @@ export async function getTaxContext(
       const net = st + lt;
       lines.push(
         `=== REALIZED CAPITAL GAINS (${year} YTD) ===`,
-        `Short-term net: ${st >= 0 ? '+' : ''}$${Math.round(st).toLocaleString()}`,
-        `Long-term net: ${lt >= 0 ? '+' : ''}$${Math.round(lt).toLocaleString()}`,
-        `Net realized: ${net >= 0 ? '+' : ''}$${Math.round(net).toLocaleString()}`,
+        `Short-term net: ${st >= 0 ? '+' : ''}$${Math.round(st).toLocaleString('en-US')}`,
+        `Long-term net: ${lt >= 0 ? '+' : ''}$${Math.round(lt).toLocaleString('en-US')}`,
+        `Net realized: ${net >= 0 ? '+' : ''}$${Math.round(net).toLocaleString('en-US')}`,
         // Character matters, and so does netting: IRC §1222(11) requires ST and
         // LT to offset each other BEFORE a rate applies. Flooring each side at
         // zero independently told a user with a $10k ST loss and a $20k LT gain
         // they owed tax on the full gain.
         `Estimated tax on realized gains: $${Math.round(
           estimateTaxOnRealizedGains({ stNet: st, ltNet: lt }),
-        ).toLocaleString()} (short-term at ${Math.round(TAX_RATE * 100)}%, long-term at ${Math.round(LTCG_RATE_DEFAULT * 100)}%, after §1222(11) netting; federal only, excludes the §1411 NIIT and state tax)`,
+        ).toLocaleString('en-US')} (short-term at ${Math.round(TAX_RATE * 100)}%, long-term at ${Math.round(LTCG_RATE_DEFAULT * 100)}%, after §1222(11) netting; federal only, excludes the §1411 NIIT and state tax)`,
       );
     }
   } catch {
@@ -219,17 +219,17 @@ export async function getTaxContext(
       lines.push(
         '',
         '=== HARVESTABLE LOSSES (unrealized, TAXABLE accounts only) ===',
-        `Total harvestable loss: $${Math.round(totalLoss).toLocaleString()} across ${losers.length} positions`,
+        `Total harvestable loss: $${Math.round(totalLoss).toLocaleString('en-US')} across ${losers.length} positions`,
         // IRC §1211(b): losses offset capital gains without limit, but only
         // $3,000 of net loss deducts against ordinary income per year — a flat
         // rate × total loss overstates year-one savings, sometimes by a lot.
-        `Estimated tax savings if realized this year: $${Math.round(capped.cappedSavings).toLocaleString()}`,
+        `Estimated tax savings if realized this year: $${Math.round(capped.cappedSavings).toLocaleString('en-US')}`,
         capped.estimatedCarryforward > 0
-          ? `Carries forward to future years: $${Math.round(capped.estimatedCarryforward).toLocaleString()} (IRC §1212(b), never expires)`
+          ? `Carries forward to future years: $${Math.round(capped.estimatedCarryforward).toLocaleString('en-US')} (IRC §1212(b), never expires)`
           : 'Nothing carries forward at this loss level — the losses are absorbed this year.',
         ...losers
           .slice(0, 8)
-          .map((h) => `  ${h.ticker}: unrealized -$${Math.round(Math.abs(h.taxableUnrealizedGainLoss ?? 0)).toLocaleString()}`),
+          .map((h) => `  ${h.ticker}: unrealized -$${Math.round(Math.abs(h.taxableUnrealizedGainLoss ?? 0)).toLocaleString('en-US')}`),
         `Note: estimate. Losses first offset realized capital gains dollar-for-dollar (IRC §1211(b)); only the excess is deductible against ordinary income, capped at $3,000/year, with the rest carrying forward under IRC §1212(b). Assumes a ${(TAX_RATE * 100).toFixed(0)}% ordinary rate and a ${(LTCG_RATE_DEFAULT * 100).toFixed(0)}% long-term rate. Taxable accounts only — losses inside IRAs, 401(k)s, HSAs and 529s are excluded because those accounts are tax-exempt under IRC §408(e)(1) and produce no current deduction. Before wash-sale checks. Not tax advice.`,
       );
     }
@@ -315,8 +315,8 @@ export async function getValueLedger(
         date: null,
         detail:
           stYtd + ltYtd > 0
-            ? `offsets $${Math.round(stYtd + ltYtd).toLocaleString()} of realized gains, then the annual cap; from $${Math.round(totalLoss).toLocaleString()} of unrealized losses`
-            : `deductible this year from $${Math.round(totalLoss).toLocaleString()} of unrealized losses; the rest carries forward`,
+            ? `offsets $${Math.round(stYtd + ltYtd).toLocaleString('en-US')} of realized gains, then the annual cap; from $${Math.round(totalLoss).toLocaleString('en-US')} of unrealized losses`
+            : `deductible this year from $${Math.round(totalLoss).toLocaleString('en-US')} of unrealized losses; the rest carries forward`,
       });
     }
   }

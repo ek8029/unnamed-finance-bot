@@ -144,21 +144,21 @@ export async function composeWeeklyNote(
   const holdings = brief.holdings
     .map(
       (h) =>
-        `  ${h.ticker}: $${Math.round(h.value).toLocaleString()} (${h.pct.toFixed(1)}%${
+        `  ${h.ticker}: $${Math.round(h.value).toLocaleString('en-US')} (${h.pct.toFixed(1)}%${
           h.unrealizedGainLoss != null
-            ? `, unrealized ${h.unrealizedGainLoss >= 0 ? '+' : ''}$${Math.round(h.unrealizedGainLoss).toLocaleString()}`
+            ? `, unrealized ${h.unrealizedGainLoss >= 0 ? '+' : ''}$${Math.round(h.unrealizedGainLoss).toLocaleString('en-US')}`
             : ''
         }${h.accounts.length > 1 ? `, across ${h.accounts.join(' + ')}` : ''})`,
     )
     .join('\n');
   parts.push(
-    `=== PORTFOLIO (real book) ===\nTotal value $${Math.round(brief.totalValue).toLocaleString()} · unrealized ${brief.totalUnrealized >= 0 ? '+' : ''}$${Math.round(brief.totalUnrealized).toLocaleString()} · ${brief.positionCount} positions\n${holdings}`,
+    `=== PORTFOLIO (real book) ===\nTotal value $${Math.round(brief.totalValue).toLocaleString('en-US')} · unrealized ${brief.totalUnrealized >= 0 ? '+' : ''}$${Math.round(brief.totalUnrealized).toLocaleString('en-US')} · ${brief.positionCount} positions\n${holdings}`,
   );
   if (tax) parts.push(tax);
   if (ledger.surfacedTotal > 0) {
     parts.push(
       `=== VALUE SURFACED (flagged, not returns) ===\n${ledger.lines
-        .map((l) => `  ${l.label}: $${Math.round(l.amount).toLocaleString()}`)
+        .map((l) => `  ${l.label}: $${Math.round(l.amount).toLocaleString('en-US')}`)
         .join('\n')}`,
     );
   }

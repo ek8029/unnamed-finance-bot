@@ -568,7 +568,7 @@ function BriefScreen({ brief, open }: { brief: Any; open: Open }) {
 
       {/* One sentence. The rest of the digest is a tap away, in full. */}
       {lede && (
-        <Tappable delay={120} onClick={() => open({ kicker: 'The Current', title: 'Today’s brief', body: digest, foot: brief.digestGeneratedAt ? `Generated ${new Date(brief.digestGeneratedAt).toLocaleString()}` : undefined })}>
+        <Tappable delay={120} onClick={() => open({ kicker: 'The Current', title: 'Today’s brief', body: digest, foot: brief.digestGeneratedAt ? `Generated ${new Date(brief.digestGeneratedAt).toLocaleString('en-US')}` : undefined })}>
           <p className="m-0 text-[13.5px] leading-[1.6] text-[#B4B4B4]" style={SANS}>{lede}</p>
           <More>Read the full brief</More>
         </Tappable>

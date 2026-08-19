@@ -116,7 +116,7 @@ export async function GET(request: Request) {
         positionValue: holding?.totalValue ?? null,
         portfolioWeight: holding?.portfolioWeight ?? null,
         impactNote: holding
-          ? `You hold $${Math.round(holding.totalValue).toLocaleString()} of ${primary} (${holding.portfolioWeight.toFixed(1)}% of portfolio)`
+          ? `You hold $${Math.round(holding.totalValue).toLocaleString('en-US')} of ${primary} (${holding.portfolioWeight.toFixed(1)}% of portfolio)`
           : null,
       };
     });

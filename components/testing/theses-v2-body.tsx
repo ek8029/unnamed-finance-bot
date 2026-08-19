@@ -21,7 +21,7 @@ const MONO = { fontFamily: 'var(--font-mono)' } as const;
 const MAX_THESES = 30;
 
 const money = (n: number) =>
-  n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M` : `$${Math.round(n).toLocaleString()}`;
+  n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M` : `$${Math.round(n).toLocaleString('en-US')}`;
 
 /** One mechanism as one line: the story, how corroborated, receipts a click away. */
 function StoryLine({ m }: { m: ScoredPillar['mechanisms'][number] }) {

@@ -54,7 +54,7 @@ export function AgentFirstLook() {
   if (data.tlh && data.tlh.savings > 0) {
     findings.push({
       label: 'Tax-loss harvesting',
-      value: `$${data.tlh.savings.toLocaleString()}`,
+      value: `$${data.tlh.savings.toLocaleString('en-US')}`,
       detail: `estimated offsettable tax across ${data.tlh.count} position${data.tlh.count === 1 ? '' : 's'} at a loss`,
       href: '/dashboard/taxes',
       cta: 'See the work-through',

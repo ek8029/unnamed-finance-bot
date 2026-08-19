@@ -130,7 +130,7 @@ export function HoldingDetailClient({
   // Secondary KPI tiles (price + day change are surfaced large in the header).
   const tiles: { label: string; value: string; flash?: number; color?: string }[] = [
     { label: 'Market value', value: fmt(holding.totalValue), flash: holding.totalValue },
-    { label: 'Shares', value: holding.shares.toLocaleString() },
+    { label: 'Shares', value: holding.shares.toLocaleString('en-US') },
     { label: 'Avg cost', value: fmt(holding.avgCost) },
     { label: 'Cost basis', value: fmt(holding.costBasis) },
     {

@@ -121,7 +121,7 @@ function derivePriority(status: PillarStatus, severe: boolean): ThesisAction['pr
 }
 
 function fmtMoney(n: number): string {
-  return `$${Math.abs(Math.round(n)).toLocaleString()}`;
+  return `$${Math.abs(Math.round(n)).toLocaleString('en-US')}`;
 }
 
 function groundingLine(cited: ActionEvidence[]): string {

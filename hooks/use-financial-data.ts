@@ -385,7 +385,7 @@ export function useHoldings() {
         portfolio_allocation: total > 0 ? ((h.total_value || 0) / total) * 100 : h.portfolio_allocation,
       })));
       setTotalValue(total);
-      setLastRefreshed(new Date().toLocaleTimeString());
+      setLastRefreshed(new Date().toLocaleTimeString('en-US'));
     } catch {
       // Polling failure is non-fatal — next tick will retry
     } finally {
@@ -401,7 +401,7 @@ export function useHoldings() {
       const res = await fetch('/api/market/prices/refresh', { method: 'POST' });
       if (res.ok) {
         sessionStorage.setItem(PRICE_REFRESH_KEY, String(Date.now()));
-        const now = new Date().toLocaleTimeString();
+        const now = new Date().toLocaleTimeString('en-US');
         setLastRefreshed(now);
 
         // Re-fetch holdings with updated prices
@@ -442,7 +442,7 @@ export function useHoldings() {
         const threshold = Date.now() - PRICE_REFRESH_INTERVAL;
 
         if (lastRefresh && Number(lastRefresh) > threshold) {
-          setLastRefreshed(new Date(Number(lastRefresh)).toLocaleTimeString());
+          setLastRefreshed(new Date(Number(lastRefresh)).toLocaleTimeString('en-US'));
           return;
         }
 
@@ -450,7 +450,7 @@ export function useHoldings() {
         const res = await fetch('/api/market/prices/refresh', { method: 'POST' });
         if (res.ok) {
           sessionStorage.setItem(PRICE_REFRESH_KEY, String(Date.now()));
-          setLastRefreshed(new Date().toLocaleTimeString());
+          setLastRefreshed(new Date().toLocaleTimeString('en-US'));
         }
         // No holdings re-fetch here. This POST exists to PERSIST prices to the
         // DB; what the user sees is already covered by pollQuotes(), which

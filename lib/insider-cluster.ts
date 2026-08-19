@@ -49,7 +49,7 @@ export function detectInsiderCluster(form4s: Form4Summary[]): InsiderCluster | n
 /** System-generated candidate text (doubles as the verbatim excerpt, like price_move). */
 export function clusterText(ticker: string, c: InsiderCluster): string {
   const value = c.totalSaleValue > 0
-    ? ` totaling ~$${c.totalSaleValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+    ? ` totaling ~$${c.totalSaleValue.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
     : '';
   return `Insider selling cluster at ${ticker}: ${c.sellerCount} distinct insiders filed discretionary (non-10b5-1) sales${value} between ${c.firstDate} and ${c.lastDate}: ${c.sellers.join(', ')}.`;
 }

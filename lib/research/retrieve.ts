@@ -82,7 +82,7 @@ function formatMovers(brief: PortfolioBrief | null): string {
     const pct = h.dayChangePct as number;
     const dollars = (h.value * pct) / (100 + pct);
     return `  ${h.ticker}: ${pct >= 0 ? '+' : ''}${pct.toFixed(2)}% today`
-      + ` (${dollars >= 0 ? '+' : '-'}$${Math.round(Math.abs(dollars)).toLocaleString()} on a $${Math.round(h.value).toLocaleString()} position)`;
+      + ` (${dollars >= 0 ? '+' : '-'}$${Math.round(Math.abs(dollars)).toLocaleString('en-US')} on a $${Math.round(h.value).toLocaleString('en-US')} position)`;
   });
   return `=== MOVERS ON THEIR BOOK TODAY ===\n${lines.join('\n')}`;
 }

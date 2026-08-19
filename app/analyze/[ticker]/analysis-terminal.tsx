@@ -577,15 +577,15 @@ function fmtStatementValue(value: number, unit: string): string {
     if (abs >= 1e9) return `${sign}$${(abs / 1e9).toFixed(2)}B`;
     if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(1)}M`;
     if (abs >= 1e3) return `${sign}$${(abs / 1e3).toFixed(0)}K`;
-    return `${sign}$${abs.toLocaleString()}`;
+    return `${sign}$${abs.toLocaleString('en-US')}`;
   }
   // Share counts
   if (u.includes('share')) {
     if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(2)}B`;
     if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(1)}M`;
-    return value.toLocaleString();
+    return value.toLocaleString('en-US');
   }
-  return value.toLocaleString();
+  return value.toLocaleString('en-US');
 }
 
 function StatementView({ symbol, statement }: { symbol: string; statement: 'ic' | 'bs' | 'cf' }) {

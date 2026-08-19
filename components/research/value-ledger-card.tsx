@@ -73,7 +73,7 @@ export function ValueLedgerCard({
             Surfaced by Helm
           </div>
           <div className="mt-1.5 text-[30px] font-bold text-[#FAFAFA] leading-none" style={MONO}>
-            ${ledger.surfacedTotal.toLocaleString()}
+            ${ledger.surfacedTotal.toLocaleString('en-US')}
           </div>
           <div className="mt-1 text-[10.5px] text-[#8A8A8A]" style={MONO}>estimate, flagged not earned</div>
         </div>
@@ -82,7 +82,7 @@ export function ValueLedgerCard({
             Realized by you
           </div>
           <div className="mt-1.5 text-[30px] font-bold text-[#FAFAFA] leading-none" style={MONO}>
-            ${(ledger.realizedTotal ?? 0).toLocaleString()}
+            ${(ledger.realizedTotal ?? 0).toLocaleString('en-US')}
           </div>
           <div className="mt-1 text-[10.5px] text-[#8A8A8A]" style={MONO}>what you recorded executing</div>
         </div>
@@ -101,7 +101,7 @@ export function ValueLedgerCard({
                 {KIND_LABEL[l.kind] ?? l.kind}
               </span>
               <span className="text-[#C8C8C8] min-w-0 truncate">{l.label}</span>
-              <span className="ml-auto text-[#FAFAFA] font-semibold shrink-0" style={MONO}>${l.amount.toLocaleString()}</span>
+              <span className="ml-auto text-[#FAFAFA] font-semibold shrink-0" style={MONO}>${l.amount.toLocaleString('en-US')}</span>
             </div>
           ))}
         </div>
@@ -116,7 +116,7 @@ export function ValueLedgerCard({
               </span>
               <span className="text-[#C8C8C8] min-w-0 truncate">{l.label}{l.ticker ? ` · ${l.ticker}` : ''}</span>
               <span className="text-[10.5px] text-[#5F5F5F] shrink-0" style={MONO}>{l.date}</span>
-              <span className="ml-auto text-[#FAFAFA] font-semibold shrink-0" style={MONO}>${l.amount.toLocaleString()}</span>
+              <span className="ml-auto text-[#FAFAFA] font-semibold shrink-0" style={MONO}>${l.amount.toLocaleString('en-US')}</span>
             </div>
           ))}
         </div>

@@ -111,14 +111,14 @@ function buildForm4Text(f: Form4Summary): string {
   const txLines = f.transactions
     .map(
       (t) =>
-        `  ${t.isDisposition ? 'Sold' : 'Acquired'} ${t.shares.toLocaleString()} shares` +
+        `  ${t.isDisposition ? 'Sold' : 'Acquired'} ${t.shares.toLocaleString('en-US')} shares` +
         (t.pricePerShare != null ? ` at $${t.pricePerShare.toFixed(2)}` : '') +
         ` on ${t.date} (code: ${t.code})`
     )
     .join('\n');
   const saleNote =
     f.totalSaleValue > 0
-      ? `Total sale value: $${f.totalSaleValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+      ? `Total sale value: $${f.totalSaleValue.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
       : '';
   const planNote = f.is10b51 ? 'Filed under 10b5-1 trading plan.' : '';
   return [
@@ -426,7 +426,7 @@ export async function scoreOneThesis(
             if (unit === 'USD' || unit === 'usd') {
               if (Math.abs(v) >= 1e9) return `$${(v / 1e9).toFixed(1)}B`;
               if (Math.abs(v) >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
-              return `$${v.toLocaleString()}`;
+              return `$${v.toLocaleString('en-US')}`;
             }
             return String(v);
           };

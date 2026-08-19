@@ -813,7 +813,7 @@ function TaxesContent() {
               <div className="grid grid-cols-3 gap-x-4">
                 <div>
                   <span className="text-[12px] text-[var(--color-text-muted)] block" style={MONO}>Shares</span>
-                  <span className="text-[14px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>{pos.shares.toLocaleString()}</span>
+                  <span className="text-[14px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>{pos.shares.toLocaleString('en-US')}</span>
                 </div>
                 <div>
                   <span className="text-[12px] text-[var(--color-text-muted)] block" style={MONO}>Unrealized</span>
@@ -862,7 +862,7 @@ function TaxesContent() {
                           {tx.ticker}
                         </span>{' '}
                         <span className="text-[12px] text-[var(--color-text-muted)]">
-                          · sold {tx.shares.toLocaleString()} sh · {dateLabel}
+                          · sold {tx.shares.toLocaleString('en-US')} sh · {dateLabel}
                         </span>
                       </div>
                       <span
@@ -1820,7 +1820,7 @@ function HarvestRow({
 
         {/* Shares */}
         <span className="text-[15px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
-          {opp.shares.toLocaleString()}
+          {opp.shares.toLocaleString('en-US')}
         </span>
 
         {/* Basis */}
@@ -2048,7 +2048,7 @@ function HarvestRow({
           <div className="flex items-center justify-between">
             <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>Shares</span>
             <span className="text-[14px] text-[var(--color-text-primary)] tabular-nums" style={MONO}>
-              {opp.shares.toLocaleString()}
+              {opp.shares.toLocaleString('en-US')}
             </span>
           </div>
           <div className="flex items-center justify-between">

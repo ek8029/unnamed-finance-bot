@@ -323,7 +323,7 @@ export function CountUp({
 
   return (
     <span ref={ref} className={className}>
-      {formatter ? formatter(val) : Math.round(val).toLocaleString()}
+      {formatter ? formatter(val) : Math.round(val).toLocaleString('en-US')}
     </span>
   );
 }

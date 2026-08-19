@@ -81,7 +81,7 @@ export default async function ContentApprovalPage() {
                       <span className="ml-2 text-[13px] uppercase tracking-wide text-[#888]">{ev.verdict}</span>
                     )}
                   </div>
-                  <time className="text-[13px] text-[#888]">{new Date(d.created_at).toLocaleString()}</time>
+                  <time className="text-[13px] text-[#888]">{new Date(d.created_at).toLocaleString('en-US')}</time>
                 </header>
 
                 {ev?.pillar_claim && (

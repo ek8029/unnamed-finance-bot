@@ -194,7 +194,7 @@ export async function getAgentFindings(
         const hitTicker = [...wanted].find((t) => new RegExp(`\\b${t}\\b`).test(text)) ?? null;
         const impact =
           r.estimated_impact_amount != null
-            ? ` (~$${Math.round(Number(r.estimated_impact_amount)).toLocaleString()})`
+            ? ` (~$${Math.round(Number(r.estimated_impact_amount)).toLocaleString('en-US')})`
             : '';
         findings.push({
           id: `action:${r.id}`,

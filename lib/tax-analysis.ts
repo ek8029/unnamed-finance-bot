@@ -637,9 +637,9 @@ function buildDisclaimer(
       + `income and filing status (IRC §1(h)). Set them in Settings to use your own.`;
 
   const capBasis = profile?.filingStatus
-    ? `The $${annualCap.toLocaleString()} annual ordinary-income deduction cap (IRC §1211(b)) reflects the `
+    ? `The $${annualCap.toLocaleString('en-US')} annual ordinary-income deduction cap (IRC §1211(b)) reflects the `
       + `"${profile.filingStatus}" filing status you set in settings.`
-    : `The $${annualCap.toLocaleString()} annual ordinary-income deduction cap (IRC §1211(b)) assumes you are not `
+    : `The $${annualCap.toLocaleString('en-US')} annual ordinary-income deduction cap (IRC §1211(b)) assumes you are not `
       + `married filing separately, whose statutory limit is $1,500. Set your filing status in Settings.`;
 
   return `Estimates only, not tax advice. Helm Terminal is not a registered tax `

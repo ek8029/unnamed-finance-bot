@@ -123,7 +123,7 @@ export default async function ExposureBeforeAfter({ searchParams }: { searchPara
         <Link href="/testing" className="text-[12px] text-[#6A6A6A] hover:text-[#FAFAFA]" style={MONO}>← Testing</Link>
         <h1 className="mt-4 text-[26px] font-bold text-[#FAFAFA]">True Exposure, before vs after</h1>
         <p className="mt-2 text-[13px] text-[#8A8A8A]">
-          {profile.email} · {rows.length} holdings · ${Math.round(total).toLocaleString()}
+          {profile.email} · {rows.length} holdings · ${Math.round(total).toLocaleString('en-US')}
         </p>
 
         <div className="mt-4 rounded-md border border-[rgba(230,185,77,0.25)] bg-[rgba(230,185,77,0.05)] px-4 py-3 text-[12.5px] leading-relaxed text-[#C8C8C8]">

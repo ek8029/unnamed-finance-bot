@@ -41,8 +41,8 @@ function fmtPct(n: number): string {
 function fmtDollar(n: number): string {
   const abs = Math.abs(n);
   if (abs >= 1_000_000) return `$${(abs / 1_000_000).toFixed(1)}M`;
-  if (abs >= 1000) return `$${Math.round(abs / 1000).toLocaleString()}K`;
-  return `$${Math.round(abs).toLocaleString()}`;
+  if (abs >= 1000) return `$${Math.round(abs / 1000).toLocaleString('en-US')}K`;
+  return `$${Math.round(abs).toLocaleString('en-US')}`;
 }
 
 function s(px: number) { return px * SCALE; }

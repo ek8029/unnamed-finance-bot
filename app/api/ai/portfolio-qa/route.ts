@@ -38,7 +38,7 @@ function buildTickerContext(dataList: TickerData[]): string {
       if (td.profile) {
         lines.push(`Company: ${td.profile.name}`);
         lines.push(`Industry: ${td.profile.industry}`);
-        lines.push(`Market Cap: $${(td.profile.marketCapitalization * 1_000_000).toLocaleString()}`);
+        lines.push(`Market Cap: $${(td.profile.marketCapitalization * 1_000_000).toLocaleString('en-US')}`);
       }
       if (td.quote) {
         lines.push(`Current Price: $${td.quote.c}`);

@@ -219,7 +219,18 @@ export default function PortfolioPage() {
   type RangeKey = '3M' | '6M' | '1Y' | 'ALL';
 
   const singlePointFallback = totalValue > 0
-    ? [{ label: (() => { const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][new Date().getMonth()]; return `${m} '${new Date().getFullYear().toString().slice(-2)}`; })(), value: totalValue }]
+    // Timezone pinned to market time. `new Date().getMonth()` runs on the server
+    // in UTC and on the client in the user's zone, so on the last evening of a
+    // month the two disagree and the label mismatches on hydration. Resolving
+    // the instant in one fixed zone makes both renders agree.
+    ? [{ label: (() => {
+        const parts = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'America/New_York', month: 'short', year: '2-digit',
+        }).formatToParts(new Date());
+        const m = parts.find((p) => p.type === 'month')?.value ?? '';
+        const y = parts.find((p) => p.type === 'year')?.value ?? '';
+        return `${m} '${y}`;
+      })(), value: totalValue }]
     : [];
 
   const performanceSeries: Record<RangeKey, { label: string; value: number }[]> = {
@@ -1108,7 +1119,12 @@ export default function PortfolioPage() {
                         {/* SHARES */}
                         <td className="px-2 py-2 text-right">
                           <span className="font-mono text-[15px] tabular-nums text-[var(--color-text-primary)]">
-                            {h.shares % 1 === 0 ? h.shares.toLocaleString() : h.shares.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                            {/* Locale pinned. This is a client component, so Next
+                                server-renders it first: an unpinned toLocaleString
+                                uses Node's locale on the server and the browser's
+                                on the client, which is a hydration mismatch for
+                                every user whose browser is not en-US. */}
+                            {h.shares % 1 === 0 ? h.shares.toLocaleString('en-US') : h.shares.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
                           </span>
                         </td>
                         {/* AVG COST */}

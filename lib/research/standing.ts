@@ -60,7 +60,7 @@ export function computeStanding(
     checks.push({
       label: 'Taxes',
       status: 'watch',
-      detail: `About $${harvest.amount.toLocaleString()} in potential tax savings is sitting in positions that are down.`,
+      detail: `About $${harvest.amount.toLocaleString('en-US')} in potential tax savings is sitting in positions that are down.`,
     });
   } else if (brief) {
     checks.push({ label: 'Taxes', status: 'ok', detail: 'No harvestable losses to flag right now.' });

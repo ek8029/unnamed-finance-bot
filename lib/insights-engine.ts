@@ -182,8 +182,8 @@ export async function generateInsights(
             priority: totalWeight > 0.5 ? 'high' : 'medium',
             title: `${h.ticker} is ${pctDisplay}% of your portfolio${hasIndirect ? ' (including ETF exposure)' : ''}`,
             description: hasIndirect
-              ? `Your total ${h.ticker} exposure is ${pctDisplay}% when including indirect holdings through ETFs and leveraged products${sources}. Direct position: $${Number(h.total_value).toLocaleString()}.`
-              : `A single position making up more than ${CONCENTRATION_THRESHOLDS.critical}% of your portfolio increases risk. ${h.ticker} currently represents $${Number(h.total_value).toLocaleString()} of your $${totalPortfolio.toLocaleString()} portfolio.`,
+              ? `Your total ${h.ticker} exposure is ${pctDisplay}% when including indirect holdings through ETFs and leveraged products${sources}. Direct position: $${Number(h.total_value).toLocaleString('en-US')}.`
+              : `A single position making up more than ${CONCENTRATION_THRESHOLDS.critical}% of your portfolio increases risk. ${h.ticker} currently represents $${Number(h.total_value).toLocaleString('en-US')} of your $${totalPortfolio.toLocaleString('en-US')} portfolio.`,
             recommended_action: `Single-position concentration above ${CONCENTRATION_THRESHOLDS.critical}% increases idiosyncratic risk. This ${h.ticker} figure of ${pctDisplay}%${hasIndirect ? ' reflects combined direct and ETF holdings' : ''} is above that level.`,
             confidence_score: 0.95,
             source_type: 'rule_based',
@@ -262,21 +262,21 @@ export async function generateInsights(
       const carryforward = Math.round(capped.estimatedCarryforward);
       const tickers = losers.map((h: { ticker: string }) => h.ticker).join(', ');
 
-      let description = `You have $${totalLoss.toLocaleString()} in unrealized losses across ${tickers}.`;
-      description += ` Applied against this year's realized gains plus the $${ANNUAL_LOSS_DEDUCTION_CAP.toLocaleString()} income deduction (IRC §1211(b)), ` +
-        `that is an estimated $${estimatedSavings.toLocaleString()} in offsettable tax. ` +
+      let description = `You have $${totalLoss.toLocaleString('en-US')} in unrealized losses across ${tickers}.`;
+      description += ` Applied against this year's realized gains plus the $${ANNUAL_LOSS_DEDUCTION_CAP.toLocaleString('en-US')} income deduction (IRC §1211(b)), ` +
+        `that is an estimated $${estimatedSavings.toLocaleString('en-US')} in offsettable tax. ` +
         `The rate follows the character of the gain each loss absorbs (IRC §1(h)): ordinary for short-term, ` +
         `${(LTCG_RATE_DEFAULT * 100).toFixed(0)}% for long-term.`;
       if (carryforward > 0) {
-        description += ` About $${carryforward.toLocaleString()} would carry forward to future years.`;
+        description += ` About $${carryforward.toLocaleString('en-US')} would carry forward to future years.`;
       }
 
       candidates.push({
         insight_type: 'tax',
         priority: totalLoss > TAX_INSIGHT_HIGH_PRIORITY_LOSS ? 'high' : 'medium',
-        title: `$${estimatedSavings.toLocaleString()} in potential tax savings`,
+        title: `$${estimatedSavings.toLocaleString('en-US')} in potential tax savings`,
         description,
-        recommended_action: `These positions (${tickers}) are at unrealized losses totaling $${totalLoss.toLocaleString()}. ` +
+        recommended_action: `These positions (${tickers}) are at unrealized losses totaling $${totalLoss.toLocaleString('en-US')}. ` +
           `Tax-loss harvesting is a strategy investors use to offset gains. ` +
           `Wash-sale rule (IRC §1091): acquiring a substantially identical security in the 30 days BEFORE a loss sale, on the day of the sale, or in the 30 days after it disallows the loss. ` +
           `That is a 61-day window, and it covers buys in any of your accounts, automatic dividend reinvestment, and purchases by your IRA. ` +
@@ -312,9 +312,9 @@ export async function generateInsights(
       candidates.push({
         insight_type: 'spending',
         priority: excess > IDLE_CASH_HIGH_PRIORITY ? 'high' : 'medium',
-        title: `$${excess.toLocaleString()} idle cash could be working harder`,
-        description: `You have $${totalCash.toLocaleString()} in cash accounts - about ${Math.round(totalCash / monthlyExpenses)} months of expenses. After keeping a ${IDLE_CASH_MONTHS}-month emergency fund ($${Math.round(monthlyExpenses * IDLE_CASH_MONTHS).toLocaleString()}), $${excess.toLocaleString()} could earn more in a high-yield savings account or short-term investments.`,
-        recommended_action: `$${excess.toLocaleString()} exceeds a ${IDLE_CASH_MONTHS}-month buffer. High-yield savings and short-term Treasuries are options some investors use for idle cash.`,
+        title: `$${excess.toLocaleString('en-US')} idle cash could be working harder`,
+        description: `You have $${totalCash.toLocaleString('en-US')} in cash accounts - about ${Math.round(totalCash / monthlyExpenses)} months of expenses. After keeping a ${IDLE_CASH_MONTHS}-month emergency fund ($${Math.round(monthlyExpenses * IDLE_CASH_MONTHS).toLocaleString('en-US')}), $${excess.toLocaleString('en-US')} could earn more in a high-yield savings account or short-term investments.`,
+        recommended_action: `$${excess.toLocaleString('en-US')} exceeds a ${IDLE_CASH_MONTHS}-month buffer. High-yield savings and short-term Treasuries are options some investors use for idle cash.`,
         estimated_impact_amount: Math.round(excess * HYSA_APY),
         confidence_score: 0.8,
         source_type: 'rule_based',
@@ -335,9 +335,9 @@ export async function generateInsights(
         candidates.push({
           insight_type: 'credit',
           priority: balance > CREDIT_CARD_ALERT_THRESHOLD * 2 ? 'high' : 'medium',
-          title: `${card.account_name} balance is $${balance.toLocaleString()}`,
-          description: `Carrying a high credit card balance incurs significant interest charges. At a typical ${(CREDIT_CARD_APR * 100).toFixed(0)}% APR, this costs roughly $${Math.round(balance * CREDIT_CARD_APR / 12).toLocaleString()}/month in interest.`,
-          recommended_action: `At ${(CREDIT_CARD_APR * 100).toFixed(0)}% APR this balance accrues ~$${Math.round(balance * CREDIT_CARD_APR / 12).toLocaleString()}/mo in interest. Balance-transfer cards with introductory 0% APR periods exist.`,
+          title: `${card.account_name} balance is $${balance.toLocaleString('en-US')}`,
+          description: `Carrying a high credit card balance incurs significant interest charges. At a typical ${(CREDIT_CARD_APR * 100).toFixed(0)}% APR, this costs roughly $${Math.round(balance * CREDIT_CARD_APR / 12).toLocaleString('en-US')}/month in interest.`,
+          recommended_action: `At ${(CREDIT_CARD_APR * 100).toFixed(0)}% APR this balance accrues ~$${Math.round(balance * CREDIT_CARD_APR / 12).toLocaleString('en-US')}/mo in interest. Balance-transfer cards with introductory 0% APR periods exist.`,
           estimated_impact_amount: Math.round(balance * CREDIT_CARD_APR),
           confidence_score: 0.85,
           source_type: 'rule_based',

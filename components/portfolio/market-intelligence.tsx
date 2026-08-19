@@ -427,7 +427,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
                   </span>
                   <span className="type-mono text-[var(--color-text-primary)] block">
                     {typeof value === 'number'
-                      ? value.toLocaleString()
+                      ? value.toLocaleString('en-US')
                       : String(value)}
                   </span>
                 </div>
