@@ -26,22 +26,44 @@ export async function GET(request: Request) {
   const catches = scoredAll.filter((e) => e.newsworthiness >= CATCH_THRESHOLD).slice(0, 3);
   const belowBar = scoredAll.filter((e) => e.newsworthiness < CATCH_THRESHOLD);
 
-  // Dedup against events stored in the last ~35d so reruns never double-queue the same cite.
-  const norm = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase();
+  // Dedup against events stored in the last ~35d so reruns never double-queue.
+  //
+  // TWO KEYS, because the quote alone was not enough. Keying only on the cite
+  // let the same filing be published twice whenever a later run picked a
+  // DIFFERENT sentence out of it: 8 of the 63 published calls are pairs of this
+  // shape — same 10-Q, same pillar, same date, two sentences. On MSFT the two
+  // quotes differed by a single trailing full stop.
+  //
+  // The document key is the real unit. "This filing bears on this pillar" is one
+  // call however many sentences support it, so (pillar_id, source_url) is what
+  // must be unique. The cite key stays as a second guard, since the same
+  // sentence can also reach us through two different URLs.
+  //
+  // norm() now strips trailing punctuation as well as collapsing whitespace, so
+  // a quote that differs only by a full stop is recognised as the same quote.
+  const norm = (s: string) => s.replace(/\s+/g, ' ').trim().replace(/[.,;:\s]+$/, '').toLowerCase();
   const since = new Date(Date.now() - 35 * 86400000).toISOString().slice(0, 10);
   const { data: recent } = await supabase
     .from('content_events')
-    .select('ticker, verbatim_cite')
+    .select('ticker, verbatim_cite, pillar_id, source_url')
     .gte('run_date', since);
   const seen = new Set((recent ?? []).map((e) => `${e.ticker}|${norm(e.verbatim_cite)}`));
+  const seenDocs = new Set(
+    (recent ?? [])
+      .filter((e) => e.pillar_id && e.source_url)
+      .map((e) => `${e.pillar_id}|${e.source_url}`),
+  );
 
   const results: string[] = [];
   let queued = 0;
 
   async function queueEvent(event: ContentEvent, tier: string): Promise<boolean> {
     const dkey = `${event.ticker}|${norm(event.verbatimCite)}`;
-    if (seen.has(dkey)) { results.push(`${event.ticker}:dup`); return false; }
+    if (seen.has(dkey)) { results.push(`${event.ticker}:dup-cite`); return false; }
+    const docKey = event.pillarId && event.sourceUrl ? `${event.pillarId}|${event.sourceUrl}` : null;
+    if (docKey && seenDocs.has(docKey)) { results.push(`${event.ticker}:dup-doc`); return false; }
     seen.add(dkey);
+    if (docKey) seenDocs.add(docKey);
 
     const { data: ev } = await supabase.from('content_events').insert({
       run_date: runDate, ticker: event.ticker, company: event.company, pillar_id: event.pillarId,
