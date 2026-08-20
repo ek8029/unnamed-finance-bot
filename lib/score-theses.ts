@@ -878,12 +878,30 @@ function sourceClassOf(sourceType: string, claimType: unknown): string {
 
 let sourceClassColumnKnown: boolean | null = null;
 
+/**
+ * Whether pillar_evidence.source_class exists.
+ *
+ * FAILS TOWARDS KEEPING THE DATA. An unknown answer used to resolve to `false`,
+ * and the caller reads `false` as "strip the column and insert anyway" — so a
+ * pooler blip or a timeout on this probe silently wrote a whole batch with no
+ * source class at all. That is what happened in the week of 2026-08-10: 889 of
+ * 1,278 rows lost their classification permanently, and source_class cannot be
+ * recomputed afterwards because it is derived from a claim_type the row does
+ * not store.
+ *
+ * On a genuinely unapplied migration the column really is absent, Postgres
+ * answers 42703, and stripping is correct. On anything else the right move is
+ * to keep the field: if the column is missing after all, the upsert fails
+ * loudly and gets logged, which is a far better outcome than quietly degrading
+ * the evidence the status engine will later be asked to weigh.
+ */
 async function hasSourceClassColumn(db: SupabaseClient): Promise<boolean> {
   if (sourceClassColumnKnown !== null) return sourceClassColumnKnown;
   const { error } = await db.from('pillar_evidence').select('source_class').limit(1);
   if (!error) sourceClassColumnKnown = true;
   else if (error.code === '42703') sourceClassColumnKnown = false; // undefined_column
-  return sourceClassColumnKnown ?? false;
+  // Deliberately NOT `?? false`: unknown means keep the column, not drop it.
+  return sourceClassColumnKnown ?? true;
 }
 
 async function hasJudgedByColumn(db: SupabaseClient): Promise<boolean> {
@@ -893,7 +911,9 @@ async function hasJudgedByColumn(db: SupabaseClient): Promise<boolean> {
   // NOT poison the cache for the instance lifetime — re-probe next call instead.
   if (!error) judgedByColumnKnown = true;
   else if (error.code === '42703') judgedByColumnKnown = false; // undefined_column
-  return judgedByColumnKnown ?? false;
+  // Same reasoning as hasSourceClassColumn: unknown keeps the field. Losing
+  // provenance silently is worse than an upsert that fails where we can see it.
+  return judgedByColumnKnown ?? true;
 }
 
 async function bumpLastScanned(db: SupabaseClient, thesisId: string): Promise<void> {
