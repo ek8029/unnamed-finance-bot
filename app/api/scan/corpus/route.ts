@@ -21,6 +21,7 @@
 
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
+import { HOUSE_THESES } from '@/lib/content/house-theses';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,14 +35,31 @@ interface PublishedRow {
 
 export interface CorpusStats {
   windowDays: number;
-  /** Distinct source documents read. The headline: the work, not the output. */
-  documents: number;
-  /** Every piece of evidence filed against a pillar in the window. */
-  evidence: number;
-  /** Evidence that argued AGAINST a reason someone holds something. */
+  /** THE HEADLINE UNIT. Reasons under active watch — the thing nobody else
+   *  tracks. Everyone reads the news; only this counts specific claims and says
+   *  when one stops holding. It also cannot be inflated by junk sources. */
+  reasons: number;
+  /** Distinct tickers carrying a tracked thesis. */
+  companies: number;
+  /** Distinct sources read. "Sources", never "documents": 94% of these are news
+   *  articles, and next to a product that says it reads the filings, the word
+   *  "documents" implies 1,154 filings when 72 of them are. */
+  sources: number;
+  /** Of those sources, the ones that are actual company filings. Small, and
+   *  stated separately rather than hidden inside the total. */
+  filings: number;
+  /** Every finding filed against a reason in the window. */
+  findings: number;
+  /** Findings the judge rated `material` rather than `context`. The
+   *  conservative figure, for any surface that would rather understate. */
+  material: number;
+  /** Findings that argued AGAINST a reason someone holds something. */
   contradictions: number;
-  /** Reasons under active watch, across every tracked thesis. */
-  pillars: number;
+  /** DISTINCT reasons that took a contradiction. Always <= contradictions,
+   *  because one reason can be hit several times in a month — 72 findings
+   *  landed on 44 reasons. Any copy of the form "N of them stopped holding up"
+   *  has to use THIS, or it counts the same broken reason repeatedly. */
+  reasonsContradicted: number;
   /** Most recent day anything was filed, so a stale corpus cannot pose as live. */
   lastFiledISO: string | null;
   /** A handful of REAL published calls, for a surface that wants to show the
@@ -56,6 +74,11 @@ export interface CorpusStats {
     dateISO: string;
     sourceLabel: string;
   }[];
+  /** The PUBLIC house universe — the same names already published at
+   *  /thesis/<ticker>. Safe to render anywhere, and unlike the set of tickers
+   *  users actually track it says nothing about anyone's book. For a surface
+   *  that wants to show breadth rather than assert it. */
+  universe: string[];
 }
 
 /** 'filing' and 'minor_news' are the stored values; neither is a sentence. */
@@ -75,11 +98,14 @@ export async function GET() {
     // truncates, so an unpaged read would silently report a fraction of the
     // corpus as the whole of it — understating the one number this route
     // exists to state.
-    const rows: { verdict: string | null; source_url: string | null; pillar_id: string | null; created_at: string }[] = [];
+    const rows: {
+      verdict: string | null; source_url: string | null; source_type: string | null;
+      materiality: string | null; pillar_id: string | null; created_at: string;
+    }[] = [];
     for (let from = 0; ; from += 1000) {
       const { data, error } = await supabase
         .from('pillar_evidence')
-        .select('verdict, source_url, pillar_id, created_at')
+        .select('verdict, source_url, source_type, materiality, pillar_id, created_at')
         .gte('created_at', since)
         .range(from, from + 999);
       if (error) throw error;
@@ -87,9 +113,22 @@ export async function GET() {
       if (!data || data.length < 1000) break;
     }
 
-    const documents = new Set(rows.map((r) => r.source_url).filter(Boolean)).size;
-    const pillars = new Set(rows.map((r) => r.pillar_id).filter(Boolean)).size;
+    const sources = new Set(rows.map((r) => r.source_url).filter(Boolean)).size;
+    const filings = new Set(
+      rows.filter((r) => r.source_type === 'filing').map((r) => r.source_url).filter(Boolean),
+    ).size;
+    const reasons = new Set(rows.map((r) => r.pillar_id).filter(Boolean)).size;
     const contradictions = rows.filter((r) => /contradict/i.test(r.verdict ?? '')).length;
+    const material = rows.filter((r) => r.materiality === 'material').length;
+    const reasonsContradicted = new Set(
+      rows.filter((r) => /contradict/i.test(r.verdict ?? '')).map((r) => r.pillar_id).filter(Boolean),
+    ).size;
+
+    // Companies under watch, not sources read. Counted from tracked theses
+    // rather than from evidence, so a quiet week does not shrink the number of
+    // things Helm is watching — which would be false.
+    const { data: tracked } = await supabase.from('theses').select('ticker').eq('tracked', true);
+    const companies = new Set((tracked ?? []).map((t) => String(t.ticker).toUpperCase())).size;
     const lastFiledISO = rows.length
       ? rows.reduce((m, r) => (r.created_at > m ? r.created_at : m), rows[0].created_at).slice(0, 10)
       : null;
@@ -141,12 +180,17 @@ export async function GET() {
 
     const stats: CorpusStats = {
       windowDays: WINDOW_DAYS,
-      documents,
-      evidence: rows.length,
+      reasons,
+      companies,
+      sources,
+      filings,
+      findings: rows.length,
+      material,
       contradictions,
-      pillars,
+      reasonsContradicted,
       lastFiledISO,
       recent,
+      universe: HOUSE_THESES.map((t) => t.ticker),
     };
 
     return NextResponse.json(stats, {
