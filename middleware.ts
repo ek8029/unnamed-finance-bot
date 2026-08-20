@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { ATTR_COOKIE, ATTR_MAX_AGE, buildFirstTouch, encodeFirstTouch } from '@/lib/attribution';
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -146,6 +147,30 @@ export async function middleware(request: NextRequest) {
       'Cache-Control',
       'public, s-maxage=1800, stale-while-revalidate=86400',
     );
+  }
+
+  // ── First-touch attribution ──
+  // Written here rather than on /signup because people land on the homepage, a
+  // blog post or an /analyze page and reach signup several clicks later, by
+  // which point the utm params are long gone. That is why all 198 accounts to
+  // date have utm_source null.
+  //
+  // Set once and never overwritten: first touch is the acquisition. Overwriting
+  // on every request would relabel every organic arrival as an internal
+  // referral from whatever page they happened to read last.
+  if (!request.cookies.get(ATTR_COOKIE)) {
+    const ft = buildFirstTouch(request.nextUrl, request.headers.get('referer'), request.nextUrl.hostname);
+    if (ft) {
+      response.cookies.set({
+        name: ATTR_COOKIE,
+        value: encodeFirstTouch(ft),
+        maxAge: ATTR_MAX_AGE,
+        path: '/',
+        sameSite: 'lax',       // must survive a cross-site click from search or social
+        httpOnly: true,        // only ever read server-side, at signup
+        secure: process.env.NODE_ENV === 'production',
+      });
+    }
   }
 
   // ── Security headers ──

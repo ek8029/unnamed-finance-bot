@@ -38,7 +38,9 @@
  * for operator visibility.
  */
 
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
+import { ATTR_COOKIE, decodeFirstTouch } from '@/lib/attribution';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { checkPasswordStrength, logAuthEvent } from '@/lib/auth-security';
@@ -100,9 +102,16 @@ export async function POST(request: Request) {
     const honeypot = typeof body.website === 'string' ? body.website : '';
     const formRenderedAt = typeof body.form_rendered_at === 'number' ? body.form_rendered_at : 0;
 
-    const utm_source = typeof body.utm_source === 'string' ? body.utm_source : null;
-    const utm_medium = typeof body.utm_medium === 'string' ? body.utm_medium : null;
-    const utm_campaign = typeof body.utm_campaign === 'string' ? body.utm_campaign : null;
+    // The first-touch cookie is authoritative: middleware wrote it on whatever
+    // page they actually arrived on, which is where the utm params were. The
+    // body values only ever populated when someone landed directly on /signup
+    // with the params still attached, which is why every account to date has
+    // utm_source null. They stay as a fallback for the case where the cookie is
+    // unavailable (blocked, or a client that never passed through middleware).
+    const firstTouch = decodeFirstTouch((await cookies()).get(ATTR_COOKIE)?.value);
+    const utm_source = firstTouch?.source ?? (typeof body.utm_source === 'string' ? body.utm_source : null);
+    const utm_medium = firstTouch?.medium ?? (typeof body.utm_medium === 'string' ? body.utm_medium : null);
+    const utm_campaign = firstTouch?.campaign ?? (typeof body.utm_campaign === 'string' ? body.utm_campaign : null);
 
     const emailDomain = extractEmailDomain(email) || 'unknown';
     const logBase = { email, emailDomain, ip: clientIp, userAgent };

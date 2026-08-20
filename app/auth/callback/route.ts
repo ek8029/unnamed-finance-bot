@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { ATTR_COOKIE, decodeFirstTouch } from '@/lib/attribution';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -50,13 +51,21 @@ export async function GET(request: NextRequest) {
             .eq('drip_day', 0)
             .maybeSingle();
 
+          const oauthTouch = decodeFirstTouch(request.cookies.get(ATTR_COOKIE)?.value);
+
           if (!existingDrip) {
             // New OAuth user — create missing records
             await Promise.allSettled([
+              // Attribution on the OAuth path too. This branch wrote no utm
+              // fields at all, so every Google signup was unattributable even
+              // when the capture on /signup did fire.
               serviceClient.from('user_profiles').upsert({
                 id: user.id,
                 email: user.email,
                 full_name: user.user_metadata?.full_name || null,
+                ...(oauthTouch?.source && { utm_source: oauthTouch.source }),
+                ...(oauthTouch?.medium && { utm_medium: oauthTouch.medium }),
+                ...(oauthTouch?.campaign && { utm_campaign: oauthTouch.campaign }),
               }, { onConflict: 'id' }),
               serviceClient.from('user_preferences').upsert({
                 user_id: user.id,
