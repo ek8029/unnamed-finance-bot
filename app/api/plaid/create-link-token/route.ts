@@ -58,18 +58,28 @@ export async function POST(request: Request) {
       client_name: 'Helm Terminal',
       // INVESTMENTS IS THE REQUIRED PRODUCT, NOT TRANSACTIONS.
       //
-      // Plaid filters the institution picker to institutions compatible with
-      // everything in `products`. `optional_products` explicitly does not
-      // filter. Requiring Transactions therefore hid investment-only brokerages
-      // from the search, on a product whose entire job is reading holdings.
+      // Correct config for a product whose job is reading holdings: it
+      // guarantees the institution supports Investments, and
+      // `required_if_supported_products` still picks up Transactions wherever
+      // the institution offers it, without narrowing the picker.
       //
-      // Measured before this change: of ~30 people who opened Link, 9 exited on
-      // `institution_not_found` and 3 more on `institution_not_supported`, the
-      // latter including Fidelity twice and Webull once. Fidelity is a top-five
-      // brokerage and was being filtered out of the list.
+      // ⚠️ It does NOT fix what it was originally believed to fix. This comment
+      // used to claim that requiring Transactions hid Fidelity and Webull from
+      // the picker. Checked against Plaid PRODUCTION on 2026-08-21, both halves
+      // are false:
       //
-      // `required_if_supported_products` gets Transactions wherever the
-      // institution offers it, without narrowing the institution list.
+      //   Fidelity, Schwab, Vanguard, Edward Jones and Robinhood all support
+      //   `transactions` as well as `investments`, so the old config rejected
+      //   none of them.
+      //
+      //   Webull is not in Plaid's institution catalogue AT ALL, under any
+      //   product filter. Neither is Public.com. No link token config could
+      //   ever have surfaced them.
+      //
+      // So the ~9 `institution_not_found` exits were people looking for
+      // brokerages Plaid does not cover, and the answer to those is the import
+      // path, not a Link setting. Reproduce with
+      // scripts/probe-plaid-institutions.ts.
       products: [Products.Investments],
       required_if_supported_products: [Products.Transactions],
       country_codes: [CountryCode.Us],

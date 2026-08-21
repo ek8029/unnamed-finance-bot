@@ -25,12 +25,6 @@ const configuration = new Configuration({
 
 export const plaidClient = new PlaidApi(configuration);
 
-// Products we always request
-export const PLAID_PRODUCTS = ['transactions'] as const;
-
-// Optional products requested if the institution supports them
-export const PLAID_OPTIONAL_PRODUCTS = ['investments'] as const;
-
 // Country codes
 export const PLAID_COUNTRY_CODES = ['US'] as const;
 

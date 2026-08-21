@@ -13,8 +13,12 @@ const PLAID_ERROR_MESSAGES: Record<string, string> = {
     'Your bank requires online banking to be set up. Please enable online banking with your institution and try again.',
   INSTITUTION_NO_LONGER_SUPPORTED:
     'This institution is no longer supported by Plaid. Try connecting a different account.',
+  // "Try a different name" is the wrong advice and it is what nine people were
+  // given. Plaid's catalogue genuinely does not include every broker: Webull
+  // and Public.com are absent from PRODUCTION entirely, so searching harder
+  // cannot work. Say that, and point at the path that does.
   INSTITUTION_NOT_FOUND:
-    'Institution not found. Try searching with a different name.',
+    'Plaid does not cover every broker. Webull and Public are not available through it. You can add those holdings by importing them instead.',
   INSTITUTION_DOWN:
     'This institution is temporarily unavailable. Please try again later.',
   INVALID_CREDENTIALS:
