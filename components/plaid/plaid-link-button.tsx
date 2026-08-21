@@ -28,7 +28,9 @@ const PLAID_ERROR_MESSAGES: Record<string, string> = {
 };
 
 interface PlaidLinkButtonProps {
-  onSuccess: () => void;
+  /** Receives the new item id. Optional so existing `() => void`
+   *  handlers stay valid. */
+  onSuccess: (itemId?: string) => void;
   onError?: (error: string) => void;
   onLinkError?: (errorCode: string, message: string) => void;
   onExit?: () => void;
@@ -117,7 +119,7 @@ export function PlaidLinkButton({
       // Real accounts connected: end demo mode so sample data does not linger.
       try { sessionStorage.removeItem('helm_demo_mode'); } catch {}
       disableDemo();
-      onSuccess();
+      onSuccess(data.item_id);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to link account';
       onError?.(message);

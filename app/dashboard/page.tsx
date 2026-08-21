@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { FirstRead } from '@/components/dashboard/first-read';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Link2, Sparkles } from 'lucide-react';
@@ -407,6 +408,11 @@ export default function DashboardOverview() {
   const router = useRouter();
   const toast = useToast();
   const [plaidError, setPlaidError] = useState<string | null>(null);
+  // Set on a successful Link exchange. Holdings are not in yet at that moment,
+  // so the dashboard would render its empty state over a book that is arriving;
+  // FirstRead waits for the sync and pays the connection out in the one figure
+  // Helm computes deterministically.
+  const [justConnected, setJustConnected] = useState<string | null>(null);
   const [nwRange, setNwRange] = useState<'1W' | '1M' | '3M' | '6M' | '1Y' | 'ALL'>('ALL');
 
   useEffect(() => {
@@ -570,6 +576,19 @@ export default function DashboardOverview() {
   // Real condition (no account/summary) OR the preview empty toggle.
   const hasNoData = !financialSummary || !hasPlaidConnection || dataState === 'empty';
 
+  // Ahead of hasNoData deliberately: a user who just connected HAS no data yet,
+  // and would otherwise be shown "See Helm in action" one second after handing
+  // over their brokerage.
+  if (justConnected !== null) {
+    return (
+      <div className={`mx-auto ${SCREEN_PAD}`} style={SCREEN}>
+        {/* Full reload rather than router.refresh(): client state survives a
+            refresh and the holdings never appeared without one. */}
+        <FirstRead itemId={justConnected || null} onDone={() => window.location.reload()} />
+      </div>
+    );
+  }
+
   if (hasNoData) {
     return (
       <div className={`mx-auto ${SCREEN_PAD}`} style={SCREEN}>
@@ -603,7 +622,7 @@ export default function DashboardOverview() {
               </button>
               <PlaidLinkButton
                 className="w-full max-w-[280px] rounded-[5px] border border-[var(--color-border-strong)] bg-transparent px-9 py-3 text-[14px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                onSuccess={() => window.location.reload()} /* router.refresh() keeps client state — holdings never appeared without F5 */
+                onSuccess={(itemId) => setJustConnected(itemId ?? '')}
                 onError={(msg) => setPlaidError(msg)}
                 onLinkError={(_code, message) => {
                   toast.error('Connection failed', message);
