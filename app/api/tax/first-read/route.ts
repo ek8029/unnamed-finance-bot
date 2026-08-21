@@ -24,7 +24,7 @@
 // A genuine zero is still an answer and is reported as `ready` with the position
 // count attached, so the screen can say what was actually examined.
 //
-// Errors 500 rather than returning zeros, for the same reason: a failed query is
+// Errors 503 rather than returning zeros, for the same reason: a failed query is
 // not a finding. lib/tax-analysis carries the same rule one layer down.
 
 import { NextResponse } from 'next/server';
@@ -32,6 +32,13 @@ import { createClient } from '@/lib/supabase/server';
 import { generateTaxReport } from '@/lib/tax-analysis';
 
 export const dynamic = 'force-dynamic';
+
+/** Per-user tax figures. Next's default for a dynamic route is
+ *  `public, max-age=0, must-revalidate`, which in practice nothing reuses, but
+ *  `public` is the wrong word to have on somebody's harvestable-loss number:
+ *  it tells every shared cache between here and the reader that this response
+ *  is theirs to hold. Nothing about this response is shared. */
+const PRIVATE = { 'Cache-Control': 'private, no-store' } as const;
 
 export interface FirstRead {
   /** `syncing`: connected, holdings not in yet. `empty`: nothing connected at
@@ -58,7 +65,7 @@ export async function GET() {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: PRIVATE });
     }
 
     // Counted head-only: this endpoint is polled every couple of seconds during
@@ -82,7 +89,7 @@ export async function GET() {
         harvestable: 0, opportunityCount: 0, savings: 0, remainingDeductible: 0,
         disclaimer: null,
       };
-      return NextResponse.json(base);
+      return NextResponse.json(base, { headers: PRIVATE });
     }
 
     const report = await generateTaxReport(user.id);
@@ -97,9 +104,9 @@ export async function GET() {
       remainingDeductible: report.annualCap.remainingDeductibleLoss,
       disclaimer: report.disclaimer,
     };
-    return NextResponse.json(body);
+    return NextResponse.json(body, { headers: PRIVATE });
   } catch (error) {
     console.error('first-read failed:', error instanceof Error ? error.message : 'unknown');
-    return NextResponse.json({ error: 'unavailable' }, { status: 503 });
+    return NextResponse.json({ error: 'unavailable' }, { status: 503, headers: PRIVATE });
   }
 }
