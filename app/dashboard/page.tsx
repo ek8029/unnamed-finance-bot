@@ -413,6 +413,10 @@ export default function DashboardOverview() {
   // FirstRead waits for the sync and pays the connection out in the one figure
   // Helm computes deterministically.
   const [justConnected, setJustConnected] = useState<string | null>(null);
+  // Set when Link ends because the broker is not in Plaid's catalogue. Kept as
+  // state rather than a toast: a toast is the wrong shape for a dead end, since
+  // it takes the only route out of the dead end away with it after four seconds.
+  const [noInstitution, setNoInstitution] = useState(false);
   const [nwRange, setNwRange] = useState<'1W' | '1M' | '3M' | '6M' | '1Y' | 'ALL'>('ALL');
 
   useEffect(() => {
@@ -624,13 +628,48 @@ export default function DashboardOverview() {
                 className="w-full max-w-[280px] rounded-[5px] border border-[var(--color-border-strong)] bg-transparent px-9 py-3 text-[14px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                 onSuccess={(itemId) => setJustConnected(itemId ?? '')}
                 onError={(msg) => setPlaidError(msg)}
-                onLinkError={(_code, message) => {
+                onLinkError={(code, message) => {
+                  // Plaid does not cover every broker. Webull and Public.com
+                  // are absent from the production catalogue entirely, so
+                  // "try again" is not advice, it is a loop. Verified via
+                  // scripts/probe-plaid-institutions.mjs.
+                  if (code === 'INSTITUTION_NOT_FOUND' || code === 'INSTITUTION_NOT_SUPPORTED') {
+                    setNoInstitution(true);
+                    return;
+                  }
                   toast.error('Connection failed', message);
                 }}
               >
                 Connect your brokerage
               </PlaidLinkButton>
+              {/* The third path, quiet but present. Plaid reaches most brokers
+                  and not all of them, and until now the only people who found
+                  this route were the ones who happened to open the sidebar. */}
+              <Link
+                href="/dashboard/portfolio/add"
+                className="text-[13px] text-[var(--color-text-muted)] underline decoration-[var(--color-border-strong)] underline-offset-4 transition-colors hover:text-[var(--color-text-secondary)]"
+              >
+                Or add holdings by import
+              </Link>
             </div>
+
+            {noInstitution && (
+              <div
+                className="mx-auto mt-6 max-w-[420px] rounded-[6px] px-4 py-3.5 text-left"
+                style={{ background: 'rgba(230,185,77,0.06)', border: '1px solid rgba(230,185,77,0.18)' }}
+              >
+                <p className="text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
+                  Plaid does not reach every broker. Webull and Public are not available through it
+                  at all, so searching again will not find them.
+                </p>
+                <Link
+                  href="/dashboard/portfolio/add"
+                  className="mt-2.5 inline-block text-[14px] font-semibold text-[var(--color-gold)] hover:brightness-110"
+                >
+                  Add those holdings by import &rarr;
+                </Link>
+              </div>
+            )}
 
             {plaidError && <p className="mt-3 text-[15px] text-[var(--color-negative-text)]">{plaidError}</p>}
 

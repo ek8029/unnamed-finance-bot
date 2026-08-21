@@ -19,14 +19,19 @@ export default function AddHoldingsPage() {
           className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-2"
           style={{ fontFamily: 'var(--font-mono)' }}
         >
-          Manual entry
+          Import or manual entry
         </div>
         <h1 className="text-[28px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)]">
-          Add a holding by hand
+          Add holdings
         </h1>
+        {/* Said both ways on purpose. The page has always led with the importer
+            and was headed "Add a holding by hand", so anyone arriving from a
+            link that offered to import their book was told at the door that
+            this was not the place. It is the place. */}
         <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed mt-1.5">
-          For assets Helm cannot sync automatically. Prices update via live market data, and cost
-          basis unlocks tax-loss harvesting insights.
+          For brokers Plaid does not reach, and anything else Helm cannot sync. Start from a
+          screenshot or a CSV export, or type positions in by hand. Prices update via live market
+          data, and cost basis is what makes the tax figure possible.
         </p>
         <div className="flex items-start gap-2 mt-4 p-3 rounded-lg bg-[var(--color-bg-inset)] border border-[var(--color-border-subtle)]">
           <span className="text-[var(--color-gold)] text-[15px] mt-0.5 shrink-0">&#9432;</span>
