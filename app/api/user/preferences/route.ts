@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { WRITABLE_PREFERENCE_FIELDS } from '@/lib/preference-fields';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
@@ -72,18 +73,15 @@ export async function PATCH(request: Request) {
 
     const updates = await request.json();
 
-    const allowedFields = [
-      'theme', 'density', 'currency', 'number_format', 'date_format',
-      'notification_market_alerts', 'notification_transaction_alerts',
-      'notification_budget_alerts', 'notification_tax_reminders',
-      'notification_weekly_digest', 'notification_monthly_report',
-      'notification_daily_brief',
-      'reduce_motion', 'high_contrast', 'large_text', 'screen_reader_optimized',
-      'analytics_enabled', 'crash_reporting_enabled',
-      'filing_status', 'tax_bracket', 'tax_state',
-    ];
+    // Anything the settings UI sends that is not on this list is dropped
+    // without a word, and the request still returns 200 with the row, so the
+    // toggle looks saved. That is how "This Week at Helm" and the master email
+    // switch became controls that did nothing: both were sent by
+    // contexts/settings-context and neither was listed here. The list lives in
+    // lib/preference-fields now, next to the columns the unsubscribe links
+    // switch off, with a test that fails when the two drift apart.
     const sanitized: Record<string, unknown> = {};
-    for (const field of allowedFields) {
+    for (const field of WRITABLE_PREFERENCE_FIELDS) {
       if (field in updates) sanitized[field] = updates[field];
     }
 

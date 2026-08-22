@@ -31,7 +31,7 @@ export async function runDigestCron(options: { force?: boolean } = {}): Promise<
 
   const { data: prefs } = await serviceClient
     .from('user_preferences')
-    .select('user_id, brief_delivery_time, notification_daily_brief');
+    .select('user_id, brief_delivery_time, notification_daily_brief, notification_email');
 
   const prefMap = new Map<string, string>();
   // Users who turned the daily brief EMAIL off. The in-app brief still generates
@@ -39,7 +39,13 @@ export async function runDigestCron(options: { force?: boolean } = {}): Promise<
   const emailBriefDisabled = new Set<string>();
   for (const p of prefs ?? []) {
     if (p.brief_delivery_time) prefMap.set(p.user_id, p.brief_delivery_time);
-    if (p.notification_daily_brief === false) emailBriefDisabled.add(p.user_id);
+    // notification_email is the master switch, and it has to actually be one.
+    // The unsubscribe page tells people "you will no longer receive any emails"
+    // when they use the all link; a sender that only reads its own specific
+    // flag makes that sentence false.
+    if (p.notification_daily_brief === false || p.notification_email === false) {
+      emailBriefDisabled.add(p.user_id);
+    }
   }
 
   const todayStart = new Date();

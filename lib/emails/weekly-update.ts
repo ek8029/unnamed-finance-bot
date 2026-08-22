@@ -53,10 +53,13 @@ export async function sendWeeklyUpdate(
     }
     if (data.users.length < 200) break;
   }
+  // Both switches, not just this sender's own. notification_email is what the
+  // "unsubscribe from everything" link sets, and a sender that reads past it is
+  // a sender that ignores an opt-out.
   const { data: optedOut } = await db
     .from('user_preferences')
-    .select('user_id')
-    .eq('notification_weekly_update', false);
+    .select('user_id, notification_weekly_update, notification_email')
+    .or('notification_weekly_update.eq.false,notification_email.eq.false');
   const skip = new Set((optedOut ?? []).map((r) => r.user_id as string));
   const recipients = users.filter((r) => !skip.has(r.id));
   if (recipients.length === 0) return { ok: false, error: 'No recipients' };

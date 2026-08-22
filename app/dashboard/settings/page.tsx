@@ -1449,10 +1449,16 @@ export default function SettingsPage() {
   // ── Notifications ──
   const renderNotifications = () => {
     const items = [
-      { key: 'dailyBrief', label: 'Daily brief', description: 'The Current — your morning brief, emailed daily' },
+      { key: 'dailyBrief', label: 'Daily brief', description: 'The Current, your morning brief, emailed daily' },
       { key: 'weeklyUpdate', label: 'This Week at Helm', description: 'The weekly product update, emailed when published' },
-      { key: 'marketAlerts', label: 'Watchlist alerts', description: 'Email when a watchlist ticker moves more than 3%' },
+      // One switch, three senders. It gates the thesis breach alert from
+      // score-theses and the material portfolio events from the daily run as
+      // well as the watchlist mover email, and it used to say only the last of
+      // those. Somebody turning off what they read as price noise was also
+      // turning off the alert the product is sold on.
+      { key: 'marketAlerts', label: 'Alerts', description: 'A reason you hold something stops being supported, something in your book needs a look, or a watchlist ticker moves more than 3%' },
     ] as const
+    const allEmail = settings.notifications.email
     return (
       <div className="space-y-3.5">
         <SettingsCard label="Notifications">
@@ -1465,15 +1471,37 @@ export default function SettingsPage() {
               divider={i < items.length - 1}
               title={notification.label}
               description={notification.description}
+              className={allEmail ? '' : 'opacity-50'}
               control={
                 <Switch
                   checked={settings.notifications[notification.key as keyof typeof settings.notifications]}
                   onCheckedChange={() => handleNotificationChange(notification.key as keyof typeof settings.notifications)}
+                  disabled={!allEmail}
                   aria-label={notification.label}
                 />
               }
             />
           ))}
+        </SettingsCard>
+
+        {/* The one-click unsubscribe link in every Helm email ends on a page
+            that says "you can turn it back on anytime from your settings". It
+            sets notification_email, and until now there was nowhere in any
+            settings screen that could set it back. This is that place. */}
+        <SettingsCard label="All email">
+          <SettingsRow
+            title="Email from Helm"
+            description={allEmail
+              ? 'Turn this off and Helm sends you nothing at all. The choices above are remembered and come back when you turn it on.'
+              : 'Helm is sending you nothing. Turn this on to restore the choices above.'}
+            control={
+              <Switch
+                checked={allEmail}
+                onCheckedChange={() => handleNotificationChange('email')}
+                aria-label="All email from Helm"
+              />
+            }
+          />
         </SettingsCard>
       </div>
     )

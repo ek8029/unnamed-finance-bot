@@ -5,15 +5,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { verifyUnsub, type UnsubKind } from '@/lib/emails/unsubscribe';
+import { UNSUB_FIELDS } from '@/lib/preference-fields';
 
 export const dynamic = 'force-dynamic';
 
-const KIND_FIELDS: Record<UnsubKind, Record<string, boolean>> = {
-  brief: { notification_daily_brief: false },
-  market: { notification_market_alerts: false },
-  weekly: { notification_weekly_update: false },
-  all: { notification_daily_brief: false, notification_market_alerts: false, notification_weekly_update: false, notification_email: false },
-};
+const KIND_FIELDS = UNSUB_FIELDS;
 
 const LABEL: Record<UnsubKind, string> = {
   brief: 'the daily brief',
