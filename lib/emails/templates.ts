@@ -422,7 +422,7 @@ export function getWatchDigestTemplate(
       ${subtext(opts.isRoundup ? 'Helm read the filings and reporting on your tickers all week. Here is the honest verdict:' : 'New evidence landed on the tickers you watch:')}
       ${itemHtml}
       ${quietHtml}
-      ${cta('See the full picture — free account', opts.signupUrl)}
+      ${cta('See the full picture, free account', opts.signupUrl)}
       <p style="margin:24px 0 0;font-size:10px;color:#525252;">Evidence is quoted verbatim from public sources, never invented. Not financial advice. <a href="${escapeHtml(opts.unsubUrl)}" style="color:#525252;">Unsubscribe</a></p>
     `),
   };
