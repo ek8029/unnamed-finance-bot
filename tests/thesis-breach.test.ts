@@ -1,17 +1,24 @@
 // tests/thesis-breach.test.ts
 import { describe, it, expect } from 'vitest';
-import { isAllowedAlertRecipient } from '@/lib/thesis-breach';
+import { wantsBreachAlerts } from '@/lib/thesis-breach';
 import { getThesisBreachTemplate } from '@/lib/emails/templates';
 
-describe('isAllowedAlertRecipient', () => {
-  it('allows only the test account', () => {
-    expect(isAllowedAlertRecipient('evank8029@gmail.com')).toBe(true);
-    expect(isAllowedAlertRecipient('EvanK8029@gmail.com')).toBe(true);
+describe('wantsBreachAlerts', () => {
+  // Never-answered is not the same as declined. A user who has not touched
+  // notification settings still gets the alert the product is sold on, which is
+  // what the defaults route already assumes.
+  it('treats a missing row or null columns as opted in', () => {
+    expect(wantsBreachAlerts(null)).toBe(true);
+    expect(wantsBreachAlerts({})).toBe(true);
+    expect(wantsBreachAlerts({ notification_market_alerts: null, notification_email: null })).toBe(true);
   });
-  it('blocks every other address', () => {
-    expect(isAllowedAlertRecipient('ben@example.com')).toBe(false);
-    expect(isAllowedAlertRecipient('evank7029@gmail.com')).toBe(false);
-    expect(isAllowedAlertRecipient('')).toBe(false);
+  it('honours the specific preference', () => {
+    expect(wantsBreachAlerts({ notification_market_alerts: true })).toBe(true);
+    expect(wantsBreachAlerts({ notification_market_alerts: false })).toBe(false);
+  });
+  it('lets the master switch win, which is what one-click unsubscribe sets', () => {
+    expect(wantsBreachAlerts({ notification_email: false })).toBe(false);
+    expect(wantsBreachAlerts({ notification_email: false, notification_market_alerts: true })).toBe(false);
   });
 });
 
