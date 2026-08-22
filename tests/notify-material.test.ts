@@ -178,3 +178,32 @@ describe('getMaterialEventsTemplate', () => {
     expect(tpl.html).not.toContain('—');
   });
 });
+
+describe('subject lines never carry an action prompt', () => {
+  // Helm is not a registered adviser. "Trim AAPL?" sitting above the evidence
+  // in the terminal is one thing; the same three words alone on a lock screen
+  // are another.
+  it('picks a line that states a fact when one is available', () => {
+    const tpl = getMaterialEventsTemplate([
+      { priority: 'critical', title: 'Harvest the loss on PRIM?', description: 'x' },
+      { priority: 'high', title: 'GOOG is 58% of your portfolio', description: 'y' },
+    ], { unsubUrl: 'u' })!;
+    expect(tpl.subject).toContain('GOOG is 58% of your portfolio');
+    expect(tpl.subject).not.toContain('Harvest');
+  });
+  it('falls back to a count when every line is a prompt', () => {
+    const tpl = getMaterialEventsTemplate([
+      { priority: 'critical', title: 'Harvest the loss on PRIM?', description: 'x' },
+      { priority: 'high', title: 'Trim AAPL?', description: 'y' },
+    ], { unsubUrl: 'u' })!;
+    expect(tpl.subject).toBe('2 things Helm flagged on your book');
+  });
+  it('still carries the prompts in the body, word for word from the app', () => {
+    const tpl = getMaterialEventsTemplate([
+      { priority: 'high', title: 'Trim AAPL?', description: 'One position carries a third of the book.' },
+    ], { unsubUrl: 'u' })!;
+    expect(tpl.subject).toBe('One thing Helm flagged on your book');
+    expect(tpl.html).toContain('Trim AAPL?');
+    expect(tpl.text).toContain('Trim AAPL?');
+  });
+});

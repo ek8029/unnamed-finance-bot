@@ -456,17 +456,30 @@ export function tidyAmounts(text: string): string {
   });
 }
 
+/** Some insight titles are written as action prompts: "Trim AAPL?", "Harvest
+ *  the loss on PRIM?". Inside the terminal those sit directly above the
+ *  evidence that produced them and the figures behind it. In a subject line
+ *  they arrive alone, on a lock screen, reading as an instruction from a
+ *  company that is not a registered investment adviser. The body still carries
+ *  them word for word, unchanged from what the person sees in the app; the
+ *  subject is chosen from a line that states a fact instead. */
+const ACTION_SHAPED = /^(trim|harvest|sell|buy|add|rebalance|consider|reduce|close|exit|move)\b/i;
+
 export function getMaterialEventsTemplate(
   events: MaterialEventLine[],
   opts: { unsubUrl: string },
 ): EmailTemplate | null {
   if (events.length === 0) return null;
   const url = 'https://helmterminal.dev/dashboard/actions';
-  const lead = tidyAmounts(events[0].title);
+  const stated = events.find((e) => !ACTION_SHAPED.test(e.title.trim()));
   const more = events.length - 1;
-  const subject = more > 0
-    ? `${lead}, and ${more} more in your portfolio`
-    : lead;
+  // Every line is an action prompt: say how many there are and let the person
+  // open the inbox, rather than putting the prompt in the subject.
+  const subject = stated
+    ? (more > 0
+      ? `${tidyAmounts(stated.title)}, and ${more} more in your portfolio`
+      : tidyAmounts(stated.title))
+    : `${events.length === 1 ? 'One thing' : `${events.length} things`} Helm flagged on your book`;
 
   const rows = events.map((e) => {
     const isCritical = e.priority === 'critical';

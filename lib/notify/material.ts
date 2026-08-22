@@ -25,9 +25,12 @@
 //     spending up 275%". That is Plaid's category tree drifting month to month,
 //     not a fact about somebody's money. Notifying on it teaches people that a
 //     Helm alert is noise.
-//   - Price moves. A ticker being down 4% is not a finding; it is the market
-//     being the market. The watchlist mover email already exists for people who
-//     asked for exactly that, and it is opt-in separately.
+//   - Bare price moves. A ticker being down 4% is not a finding; it is the
+//     market being the market, and the watchlist mover email already exists for
+//     people who asked for exactly that. Note the word bare: a severe move that
+//     lib/thesis-investigation has already read and tied to specific pillars a
+//     person holds arrives here as a `market` insight ("Why PRIM moved") and
+//     does qualify. The move is the trigger; the finding is what it bore on.
 //   - `medium` and `low` priority of any type. The inbox is for those.
 //
 // The engine's own priority ladder does the ranking, so raising or lowering the
