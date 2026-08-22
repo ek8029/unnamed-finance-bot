@@ -456,22 +456,15 @@ export function tidyAmounts(text: string): string {
   });
 }
 
-/** Some insight titles are written as action prompts: "Trim AAPL?", "Harvest
- *  the loss on PRIM?". Inside the terminal those sit directly above the
- *  evidence that produced them and the figures behind it. In a subject line
- *  they arrive alone, on a lock screen, reading as an instruction from a
- *  company that is not a registered investment adviser. The body still carries
- *  them word for word, unchanged from what the person sees in the app; the
- *  subject is chosen from a line that states a fact instead. */
-const ACTION_SHAPED = /^(trim|harvest|sell|buy|add|rebalance|consider|reduce|close|exit|move)\b/i;
-
 /** The findings as a block, for embedding in another email.
  *
- *  The morning brief and the standalone alert say the same thing in the same
- *  words; which envelope carries it depends only on whether a brief is already
- *  going out to that person. Two Helm emails in the same minute is worse than
- *  either of them, so the brief absorbs the block and the standalone email is
- *  reserved for people not receiving one. */
+ *  Helm sends one email a day and this is how the findings reach it: as a
+ *  block inside The Current, above the button. There is deliberately no
+ *  standalone alert email. There was one briefly, and a dry run named ten
+ *  recipients of whom nine were already getting the brief from the same cron
+ *  run, seconds apart. Push will carry the same decision in its own voice; it
+ *  will not carry this block, because an email read out on a lock screen is
+ *  not a notification. */
 export function materialEventsBlock(events: MaterialEventLine[]): { html: string; text: string } | null {
   if (events.length === 0) return null;
   const rows = events.map((e) => {
@@ -496,42 +489,5 @@ ${rows}</table>`,
         .map((e) => `${e.priority === 'critical' ? '[critical] ' : ''}${tidyAmounts(e.title)}\n${tidyAmounts(e.description)}`)
         .join('\n\n'),
     ].join('\n'),
-  };
-}
-
-export function getMaterialEventsTemplate(
-  events: MaterialEventLine[],
-  opts: { unsubUrl: string },
-): EmailTemplate | null {
-  if (events.length === 0) return null;
-  const url = 'https://helmterminal.dev/dashboard/actions';
-  const stated = events.find((e) => !ACTION_SHAPED.test(e.title.trim()));
-  const more = events.length - 1;
-  // Every line is an action prompt: say how many there are and let the person
-  // open the inbox, rather than putting the prompt in the subject.
-  const subject = stated
-    ? (more > 0
-      ? `${tidyAmounts(stated.title)}, and ${more} more in your portfolio`
-      : tidyAmounts(stated.title))
-    : `${events.length === 1 ? 'One thing' : `${events.length} things`} Helm flagged on your book`;
-
-  const rows = events.map((e) => {
-    const isCritical = e.priority === 'critical';
-    const chipColor = isCritical ? '#F87171' : '#E6B94D';
-    return `<tr><td style="padding:0 0 20px;">
-<p style="margin:0 0 6px;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${chipColor};font-family:monospace;">${isCritical ? 'Critical' : 'Worth a look'}</p>
-<p style="margin:0 0 4px;font-size:16px;font-weight:700;color:#FAFAFA;line-height:1.4;">${escapeHtml(tidyAmounts(e.title))}</p>
-<p style="margin:0;font-size:14px;color:#B4B4B4;line-height:1.6;">${escapeHtml(tidyAmounts(e.description))}</p>
-</td></tr>`;
-  }).join('');
-
-  const textLines = events
-    .map((e) => `${e.priority === 'critical' ? '[critical] ' : ''}${tidyAmounts(e.title)}\n${tidyAmounts(e.description)}`)
-    .join('\n\n');
-
-  return {
-    subject,
-    text: `Helm read your book this morning. ${events.length === 1 ? 'One thing' : `${events.length} things`} worth your attention:\n\n${textLines}\n\nOpen the inbox: ${url}\n\nEvery figure is computed from the positions in your linked accounts. Not financial advice.\nStop these alerts: ${opts.unsubUrl}`,
-    html: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body bgcolor="#FFFFFF" style="margin:0;padding:0;background:#FFFFFF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 16px 48px;"><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width:500px;"><tr><td><table role="presentation" width="100%" bgcolor="#1E1E1E" style="background:#1E1E1E;border-radius:8px;"><tr><td height="2" bgcolor="#E6B94D" style="height:2px;line-height:2px;font-size:0;border-radius:8px 8px 0 0;">&nbsp;</td></tr><tr><td style="padding:36px 40px 12px;"><p style="margin:0;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:#8F8F8F;font-family:monospace;">Helm &#183; your portfolio</p></td></tr><tr><td style="padding:0 40px 20px;"><h1 style="margin:0;font-size:20px;font-weight:700;color:#FAFAFA;line-height:1.35;">I read your book this morning. ${events.length === 1 ? 'One thing is' : `${events.length} things are`} worth your attention.</h1></td></tr><tr><td style="padding:0 40px;"><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">${rows}</table></td></tr><tr><td style="padding:4px 40px 0;"><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td align="center" bgcolor="#E6B94D" style="border-radius:6px;"><a href="${url}" target="_blank" style="display:inline-block;padding:13px 28px;font-size:14px;font-weight:700;color:#0A0A0A;text-decoration:none;">Open the inbox &rarr;</a></td></tr></table></td></tr><tr><td style="padding:24px 40px 28px;"><p style="margin:0;font-size:10px;color:#525252;line-height:1.6;">Every figure is computed from the positions in your linked accounts. Not financial advice. <a href="${escapeHtml(opts.unsubUrl)}" style="color:#525252;">Stop these alerts</a></p></td></tr></table></td></tr></table></td></tr></table></body></html>`,
   };
 }

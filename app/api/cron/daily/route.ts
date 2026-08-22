@@ -3,7 +3,6 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { syncPlaidItem, computeSnapshots, type PlaidItemForSync, type SyncResult } from '@/lib/plaid-sync';
 import { refreshMarketPrices, enrichMarketData, refreshMarketNews, updatePortfolioPerformance } from '@/lib/market-sync';
 import { generateInsights } from '@/lib/insights-engine';
-import { notifyMaterialEvents } from '@/lib/notify/deliver';
 import { runDigestCron } from '@/lib/digest-cron';
 import { composeWeeklyNote, saveAnalystNote } from '@/lib/research/analyst-note';
 import { commitStandingSnapshots } from '@/lib/research/standing-questions';
@@ -207,8 +206,6 @@ export async function GET(request: Request) {
     }
 
     let insightsGenerated = 0;
-    let materialAlertsSent = 0;
-    const briefedToday = new Set(digestResult.emailed);
 
     for (const userId of userItemMap.keys()) {
       try {
@@ -266,29 +263,6 @@ export async function GET(request: Request) {
         insightsGenerated += count;
         log.push(`[insights] Generated ${count} for user ${userId.slice(0, 8)}...`);
 
-        // Everything material in the book, not only findings about theses.
-        // Runs after generateInsights so it reads today's rows, and inside the
-        // same per-user try so one bad book cannot take the cron down.
-        //
-        // SKIPPED for anybody the brief already emailed this run. The brief
-        // carries the same findings in the same words (lib/digest-cron), and
-        // two Helm emails landing in the same minute from the same cron is
-        // worse than either of them. Nine of the ten people the first dry run
-        // named were on the brief.
-        //
-        // It reports why it stayed quiet. A notifier that logs nothing looks
-        // identical whether it decided there was nothing to say or silently
-        // broke, and Helm has already shipped one alert that was off for
-        // everybody without a single line in a log to show for it.
-        const notified = briefedToday.has(userId)
-          ? { sent: false as const, reason: 'told them inside the brief' }
-          : await notifyMaterialEvents(serviceClient, userId);
-        if (notified.sent) {
-          materialAlertsSent++;
-          log.push(`[notify] Sent ${notified.count} material event(s) to user ${userId.slice(0, 8)}...`);
-        } else {
-          log.push(`[notify] User ${userId.slice(0, 8)}... quiet: ${notified.reason}`);
-        }
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         log.push(`[post-sync] User ${userId.slice(0, 8)}... failed: ${msg}`);
@@ -363,7 +337,7 @@ export async function GET(request: Request) {
       users_processed: userItemMap.size,
       prices_refreshed: pricesRefreshed,
       insights_generated: insightsGenerated,
-      material_alerts_sent: materialAlertsSent,
+      briefs_emailed: digestResult.emailed.length,
       analyst_notes_written: analystNotesWritten,
       drip_emails_sent: dripResult.sent,
       digests_generated: digestResult.generated,

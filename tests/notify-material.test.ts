@@ -12,7 +12,7 @@ import {
 } from '@/lib/notify/material';
 import { MAX_AGE_DAYS } from '@/lib/notify/material';
 import { wantsAlerts } from '@/lib/notify/preferences';
-import { getMaterialEventsTemplate, tidyAmounts } from '@/lib/emails/templates';
+import { materialEventsBlock, tidyAmounts } from '@/lib/emails/templates';
 
 /** Fixed clock. Every age assertion is relative to this. */
 const NOW = Date.parse('2026-08-22T12:00:00Z');
@@ -172,65 +172,34 @@ describe('tidyAmounts', () => {
   });
 });
 
-describe('getMaterialEventsTemplate', () => {
+describe('materialEventsBlock', () => {
+  // Helm sends ONE email a day. These findings are a block inside the morning
+  // brief, never an email of their own: a dry run named ten recipients and nine
+  // were already getting The Current from the same cron run.
   const events = [
     { priority: 'critical', title: 'NVDA is 34% of your portfolio', description: 'One position carries a third of the book.' },
     { priority: 'high', title: '$62,745.4 tax-loss harvesting opportunity', description: 'Losses across 4 positions.' },
   ];
-  const tpl = getMaterialEventsTemplate(events, { unsubUrl: 'https://helmterminal.dev/unsub?t=1' })!;
+  const block = materialEventsBlock(events)!;
 
-  it('returns nothing when there is nothing to say', () => {
-    expect(getMaterialEventsTemplate([], { unsubUrl: 'x' })).toBeNull();
+  it('returns nothing when there is nothing to say, so the brief is unchanged', () => {
+    expect(materialEventsBlock([])).toBeNull();
   });
-  it('leads with the most severe finding and counts the rest', () => {
-    expect(tpl.subject).toContain('NVDA is 34% of your portfolio');
-    expect(tpl.subject).toContain('1 more');
+  it('carries every finding in one block rather than one message each', () => {
+    expect(block.html).toContain('NVDA is 34% of your portfolio');
+    expect(block.html).toContain('$62,745 tax-loss harvesting opportunity');
+    expect(block.text).toContain('$62,745 tax-loss harvesting opportunity');
   });
-  it('sends one message carrying every finding, not one per finding', () => {
-    expect(tpl.html).toContain('NVDA is 34% of your portfolio');
-    expect(tpl.html).toContain('$62,745 tax-loss harvesting opportunity');
-    expect(tpl.text).toContain('$62,745 tax-loss harvesting opportunity');
+  it('counts what it is carrying', () => {
+    expect(block.html).toContain('2 things in your book');
+    expect(materialEventsBlock([events[0]])!.html).toContain('one thing in your book');
   });
-  it('can always be turned off', () => {
-    expect(tpl.html).toContain('https://helmterminal.dev/unsub?t=1');
-    expect(tpl.text).toContain('https://helmterminal.dev/unsub?t=1');
-  });
-  it('says the figures come from their own positions, and claims nothing more', () => {
-    expect(tpl.html).toContain('Not financial advice');
-    expect(tpl.text).toContain('Not financial advice');
+  it('is a fragment, not a document: no envelope of its own', () => {
+    expect(block.html).not.toContain('<!DOCTYPE');
+    expect(block.html).not.toContain('<body');
   });
   it('copy contains no em dashes', () => {
-    expect(tpl.subject).not.toContain('—');
-    expect(tpl.text).not.toContain('—');
-    expect(tpl.html).not.toContain('—');
-  });
-});
-
-describe('subject lines never carry an action prompt', () => {
-  // Helm is not a registered adviser. "Trim AAPL?" sitting above the evidence
-  // in the terminal is one thing; the same three words alone on a lock screen
-  // are another.
-  it('picks a line that states a fact when one is available', () => {
-    const tpl = getMaterialEventsTemplate([
-      { priority: 'critical', title: 'Harvest the loss on PRIM?', description: 'x' },
-      { priority: 'high', title: 'GOOG is 58% of your portfolio', description: 'y' },
-    ], { unsubUrl: 'u' })!;
-    expect(tpl.subject).toContain('GOOG is 58% of your portfolio');
-    expect(tpl.subject).not.toContain('Harvest');
-  });
-  it('falls back to a count when every line is a prompt', () => {
-    const tpl = getMaterialEventsTemplate([
-      { priority: 'critical', title: 'Harvest the loss on PRIM?', description: 'x' },
-      { priority: 'high', title: 'Trim AAPL?', description: 'y' },
-    ], { unsubUrl: 'u' })!;
-    expect(tpl.subject).toBe('2 things Helm flagged on your book');
-  });
-  it('still carries the prompts in the body, word for word from the app', () => {
-    const tpl = getMaterialEventsTemplate([
-      { priority: 'high', title: 'Trim AAPL?', description: 'One position carries a third of the book.' },
-    ], { unsubUrl: 'u' })!;
-    expect(tpl.subject).toBe('One thing Helm flagged on your book');
-    expect(tpl.html).toContain('Trim AAPL?');
-    expect(tpl.text).toContain('Trim AAPL?');
+    expect(block.text).not.toContain('—');
+    expect(block.html).not.toContain('—');
   });
 });

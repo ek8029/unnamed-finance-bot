@@ -1,27 +1,32 @@
 // lib/notify/deliver.ts
 //
-// The fan-out. One decision, then however many transports are switched on.
+// The decision. Not a sender.
 //
-// Email ships first because it needs no new native build. Push is the same
-// decision carried by a different pipe, and when it arrives it plugs in HERE,
-// under the same threshold and the same delivery record, rather than becoming a
-// fourth sender with a fourth opinion about what deserves an interruption.
+// EMAIL HAS EXACTLY ONE ENVELOPE, and it is the morning brief. Helm sends one
+// email a day and this module does not add a second one. It works out what a
+// person has not yet been told; lib/digest-cron puts that inside The Current,
+// which was going to arrive anyway. There was briefly a standalone alert email
+// here and it was wrong: a dry run named ten recipients and nine of them were
+// already getting the brief from the same cron run, seconds apart.
+//
+// Push, when helm-mobile has a build that can carry it, is a different medium
+// and gets its own voice rather than an email read out on a lock screen. What
+// it shares with the brief is this file: the same threshold, and the same
+// record of what has already been said, so the two channels can never announce
+// the same finding twice.
 //
 // THE ORDER OF THE CHECKS MATTERS.
-//   1. preference  (never mail somebody who said no, and a failed read is not a yes)
+//   1. preference  (never tell somebody who said no, and a failed read is not a yes)
 //   2. threshold   (lib/notify/material.ts, the only definition of material)
 //   3. delivery    (never say the same thing twice)
-//   4. send
-//   5. record, and only what was actually named in the message that went out
+//   4. the caller sends
+//   5. the caller records, and only what actually went out
 //
 // Step 5 is the one that is easy to get wrong. Recording a key that was
 // computed but never printed makes the fact invisible forever: suppressed as
 // "already told you" when nobody was ever told.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { resend, FROM_EMAIL } from '@/lib/emails/resend';
-import { getMaterialEventsTemplate } from '@/lib/emails/templates';
-import { unsubUrl } from '@/lib/emails/unsubscribe';
 import { alertPreference } from '@/lib/notify/preferences';
 import { selectMaterial, type NotifiableInsight, type MaterialEvent } from '@/lib/notify/material';
 
@@ -30,10 +35,6 @@ import { selectMaterial, type NotifiableInsight, type MaterialEvent } from '@/li
  *  is not a fact anybody was told. The live maximum per user is 6, so this
  *  rarely bites; it exists so a bad day cannot produce a wall of text. */
 const MAX_PER_MESSAGE = 5;
-
-export type NotifyOutcome =
-  | { sent: false; reason: string }
-  | { sent: true; count: number; keys: string[] };
 
 /** Keys this user has already been told about, of the ones offered. */
 export async function alreadyDelivered(
@@ -82,13 +83,6 @@ export async function recordDelivery(
   if (error) console.error('[notify] Could not record delivery:', error.message);
 }
 
-/**
- * Decide and send this user's material portfolio events.
- *
- * Returns why it stayed quiet when it did. Callers log it: a notifier that
- * reports nothing is indistinguishable from a notifier that is broken, which
- * is exactly how a one-address allowlist survived months inside score-theses.
- */
 export type PickResult =
   | { ok: false; reason: string }
   | { ok: true; events: MaterialEvent[] };
@@ -96,10 +90,12 @@ export type PickResult =
 /**
  * THE DECISION, with no transport attached.
  *
- * Preference, then threshold, then delivery record. Whatever carries the result
- * afterwards, an email of its own or a section inside the morning brief, asks
- * this one function, so there is a single answer to "does this person need to
- * be told something" rather than one per sender.
+ * Preference, then threshold, then delivery record. Every channel asks this one
+ * function, so there is a single answer to "does this person need to be told
+ * something" rather than one answer per sender. It returns why it said no, and
+ * callers log it: a notifier that reports nothing looks identical whether it
+ * decided there was nothing to say or silently broke, which is exactly how a
+ * one-address allowlist survived months inside score-theses.
  */
 export async function pickMaterialEvents(
   db: SupabaseClient,
@@ -126,58 +122,4 @@ export async function pickMaterialEvents(
   const fresh = material.filter((m) => !seen.has(m.notifyKey)).slice(0, MAX_PER_MESSAGE);
   if (fresh.length === 0) return { ok: false, reason: 'already told them' };
   return { ok: true, events: fresh };
-}
-
-/**
- * Send it as its own email.
- *
- * ONLY for people who are not getting the morning brief today. Nine of the ten
- * people the first dry run named were already receiving The Current from the
- * same cron run, seconds apart, and two Helm emails landing in the same minute
- * is worse than either of them. lib/digest-cron carries the same events inside
- * the brief for everybody else.
- */
-export async function notifyMaterialEvents(
-  db: SupabaseClient,
-  userId: string,
-): Promise<NotifyOutcome> {
-  if (!resend) return { sent: false, reason: 'no email transport configured' };
-
-  const picked = await pickMaterialEvents(db, userId);
-  if (!picked.ok) return { sent: false, reason: picked.reason };
-  const fresh = picked.events;
-
-  const { data: userRes, error: userErr } = await db.auth.admin.getUserById(userId);
-  const email = userRes?.user?.email;
-  if (userErr || !email) return { sent: false, reason: 'no email address' };
-
-  const unsub = unsubUrl(userId, 'market');
-  const tpl = getMaterialEventsTemplate(
-    fresh.map((m) => ({ priority: m.priority, title: m.title, description: m.description })),
-    { unsubUrl: unsub },
-  );
-  if (!tpl) return { sent: false, reason: 'nothing material' };
-
-  try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: email,
-      subject: tpl.subject,
-      html: tpl.html,
-      text: tpl.text,
-      // The header bulk senders are judged on. An alert people cannot turn off
-      // is a complaint, not a feature.
-      headers: {
-        'List-Unsubscribe': `<${unsub}>`,
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      },
-    });
-  } catch (err) {
-    return { sent: false, reason: `send failed: ${err instanceof Error ? err.message : 'unknown'}` };
-  }
-
-  // Only now, and only the ones that were in the message.
-  const keys = fresh.map((m) => m.notifyKey);
-  await recordDelivery(db, userId, keys, 'email');
-  return { sent: true, count: fresh.length, keys };
 }
