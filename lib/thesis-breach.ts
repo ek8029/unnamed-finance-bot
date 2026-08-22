@@ -15,21 +15,20 @@
 //
 // Absent preferences count as opted in, matching the defaults in
 // app/api/user/preferences. `notification_email` is the master switch that
-// one-click unsubscribe sets, and it wins over everything.
+// one-click unsubscribe sets, and it wins over everything. Those preferences
+// live on `user_preferences.user_id`, not on `user_profiles`.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { resend, FROM_EMAIL } from '@/lib/emails/resend';
 import { getThesisBreachTemplate } from '@/lib/emails/templates';
 import { unsubUrl } from '@/lib/emails/unsubscribe';
+import { alertPreference, wantsAlerts } from '@/lib/notify/preferences';
+import { normalizeFact } from '@/lib/notify/material';
+import { recordDelivery } from '@/lib/notify/deliver';
+import { createHash } from 'crypto';
 
-/** A missing row or a null column means never answered, which is not the same
- *  as declined — the defaults route treats these as on, and so does this. */
-export function wantsBreachAlerts(
-  prefs: { notification_email?: boolean | null; notification_market_alerts?: boolean | null } | null,
-): boolean {
-  if (!prefs) return true;
-  if (prefs.notification_email === false) return false;
-  return prefs.notification_market_alerts !== false;
-}
+/** The same rule every Helm sender uses. Kept under this name because it is
+ *  what this module has always been called from, and what the tests exercise. */
+export const wantsBreachAlerts = wantsAlerts;
 
 export interface BreachEvent {
   userId: string;
@@ -38,6 +37,15 @@ export interface BreachEvent {
   excerpt: string;
   sourceTitle: string;
   sourceUrl: string | null;
+}
+
+/** Identity of a breach: the ticker and the pillar it broke, with any figures
+ *  in the claim normalized out so the same break cannot log twice. */
+function breachNotifyKey(b: BreachEvent): string {
+  return createHash('sha256')
+    .update(['breach', b.ticker, normalizeFact(b.claim)].join('|'))
+    .digest('hex')
+    .slice(0, 32);
 }
 
 export async function sendBreachAlerts(
@@ -55,12 +63,18 @@ export async function sendBreachAlerts(
         log.push(`[breach] No email for user ${b.userId.slice(0, 8)}, skipped`);
         continue;
       }
-      const { data: prefs } = await serviceClient
-        .from('user_profiles')
-        .select('notification_email, notification_market_alerts')
-        .eq('id', b.userId)
-        .maybeSingle();
-      if (!wantsBreachAlerts(prefs)) {
+      // The columns are on user_PREFERENCES, keyed by user_id. This module used
+      // to read them off user_profiles, which has never had them: the select
+      // errored, the row came back null, and a null row reads as "never
+      // answered" and therefore opted in. Every opt-out in the table was
+      // silently overridden. One shared reader now, so there is one place to
+      // get this wrong instead of one per cron.
+      const pref = await alertPreference(serviceClient, b.userId);
+      if (!pref.ok) {
+        log.push(`[breach] Preference read failed for ${b.ticker}, skipped: ${pref.reason}`);
+        continue;
+      }
+      if (!pref.wants) {
         log.push(`[breach] ${email.slice(0, 4)}... opted out, skipped (${b.ticker})`);
         continue;
       }
@@ -74,6 +88,12 @@ export async function sendBreachAlerts(
         headers: { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
       });
       sent++;
+      // Recorded, but never gated on. A breach is edge triggered: it fires only
+      // on a pillar flipping to broken, so it cannot repeat on its own, and a
+      // pillar that is repaired and later breaks again has genuinely earned a
+      // second alert. The record exists so the delivery log answers "what has
+      // Helm told this person" for every channel, not just some of them.
+      await recordDelivery(serviceClient, b.userId, [breachNotifyKey(b)], 'email');
       log.push(`[breach] Alerted ${email.slice(0, 4)}... ${b.ticker}: "${b.claim.slice(0, 40)}"`);
     } catch (err) {
       log.push(`[breach] Send failed for ${b.ticker}: ${err instanceof Error ? err.message : 'unknown'}`);

@@ -3,6 +3,7 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { syncPlaidItem, computeSnapshots, type PlaidItemForSync, type SyncResult } from '@/lib/plaid-sync';
 import { refreshMarketPrices, enrichMarketData, refreshMarketNews, updatePortfolioPerformance } from '@/lib/market-sync';
 import { generateInsights } from '@/lib/insights-engine';
+import { notifyMaterialEvents } from '@/lib/notify/deliver';
 import { runDigestCron } from '@/lib/digest-cron';
 import { composeWeeklyNote, saveAnalystNote } from '@/lib/research/analyst-note';
 import { commitStandingSnapshots } from '@/lib/research/standing-questions';
@@ -206,6 +207,7 @@ export async function GET(request: Request) {
     }
 
     let insightsGenerated = 0;
+    let materialAlertsSent = 0;
 
     for (const userId of userItemMap.keys()) {
       try {
@@ -262,6 +264,22 @@ export async function GET(request: Request) {
         const count = await generateInsights(serviceClient, userId);
         insightsGenerated += count;
         log.push(`[insights] Generated ${count} for user ${userId.slice(0, 8)}...`);
+
+        // Everything material in the book, not only findings about theses.
+        // Runs after generateInsights so it reads today's rows, and inside the
+        // same per-user try so one bad book cannot take the cron down.
+        //
+        // It reports why it stayed quiet. A notifier that logs nothing looks
+        // identical whether it decided there was nothing to say or silently
+        // broke, and Helm has already shipped one alert that was off for
+        // everybody without a single line in a log to show for it.
+        const notified = await notifyMaterialEvents(serviceClient, userId);
+        if (notified.sent) {
+          materialAlertsSent++;
+          log.push(`[notify] Sent ${notified.count} material event(s) to user ${userId.slice(0, 8)}...`);
+        } else {
+          log.push(`[notify] User ${userId.slice(0, 8)}... quiet: ${notified.reason}`);
+        }
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         log.push(`[post-sync] User ${userId.slice(0, 8)}... failed: ${msg}`);
@@ -336,6 +354,7 @@ export async function GET(request: Request) {
       users_processed: userItemMap.size,
       prices_refreshed: pricesRefreshed,
       insights_generated: insightsGenerated,
+      material_alerts_sent: materialAlertsSent,
       analyst_notes_written: analystNotesWritten,
       drip_emails_sent: dripResult.sent,
       digests_generated: digestResult.generated,

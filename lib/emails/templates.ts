@@ -427,3 +427,64 @@ export function getWatchDigestTemplate(
     `),
   };
 }
+
+/* ── Material portfolio events ──────────────────────────────────────────────
+ *
+ * The other half of the alert story. A thesis breach says a reason stopped
+ * being true; this says something moved in the book itself: concentration,
+ * a harvestable loss, earnings exposure, idle cash.
+ *
+ * One email per person per run, never one per finding. Six separate emails is
+ * not six times the signal, it is an unsubscribe.
+ */
+
+export interface MaterialEventLine {
+  priority: string;
+  title: string;
+  description: string;
+}
+
+/** Insight titles are generated with raw arithmetic and reach here as things
+ *  like "$62,745.4 tax-loss harvesting opportunity". Cents on an estimate are
+ *  false precision, and in a subject line they read as a bug. Rounds to the
+ *  dollar and groups thousands; changes nothing else about the sentence. */
+export function tidyAmounts(text: string): string {
+  return text.replace(/\$\s?([\d,]+(?:\.\d+)?)/g, (whole, num: string) => {
+    const n = Number(num.replace(/,/g, ''));
+    if (!Number.isFinite(n)) return whole;
+    return `$${Math.round(n).toLocaleString('en-US')}`;
+  });
+}
+
+export function getMaterialEventsTemplate(
+  events: MaterialEventLine[],
+  opts: { unsubUrl: string },
+): EmailTemplate | null {
+  if (events.length === 0) return null;
+  const url = 'https://helmterminal.dev/dashboard/actions';
+  const lead = tidyAmounts(events[0].title);
+  const more = events.length - 1;
+  const subject = more > 0
+    ? `${lead}, and ${more} more in your portfolio`
+    : lead;
+
+  const rows = events.map((e) => {
+    const isCritical = e.priority === 'critical';
+    const chipColor = isCritical ? '#F87171' : '#E6B94D';
+    return `<tr><td style="padding:0 0 20px;">
+<p style="margin:0 0 6px;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${chipColor};font-family:monospace;">${isCritical ? 'Critical' : 'Worth a look'}</p>
+<p style="margin:0 0 4px;font-size:16px;font-weight:700;color:#FAFAFA;line-height:1.4;">${escapeHtml(tidyAmounts(e.title))}</p>
+<p style="margin:0;font-size:14px;color:#B4B4B4;line-height:1.6;">${escapeHtml(tidyAmounts(e.description))}</p>
+</td></tr>`;
+  }).join('');
+
+  const textLines = events
+    .map((e) => `${e.priority === 'critical' ? '[critical] ' : ''}${tidyAmounts(e.title)}\n${tidyAmounts(e.description)}`)
+    .join('\n\n');
+
+  return {
+    subject,
+    text: `Helm read your book this morning. ${events.length === 1 ? 'One thing' : `${events.length} things`} worth your attention:\n\n${textLines}\n\nOpen the inbox: ${url}\n\nEvery figure is computed from the positions in your linked accounts. Not financial advice.\nStop these alerts: ${opts.unsubUrl}`,
+    html: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body bgcolor="#FFFFFF" style="margin:0;padding:0;background:#FFFFFF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 16px 48px;"><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width:500px;"><tr><td><table role="presentation" width="100%" bgcolor="#1E1E1E" style="background:#1E1E1E;border-radius:8px;"><tr><td height="2" bgcolor="#E6B94D" style="height:2px;line-height:2px;font-size:0;border-radius:8px 8px 0 0;">&nbsp;</td></tr><tr><td style="padding:36px 40px 12px;"><p style="margin:0;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:#8F8F8F;font-family:monospace;">Helm &#183; your portfolio</p></td></tr><tr><td style="padding:0 40px 20px;"><h1 style="margin:0;font-size:20px;font-weight:700;color:#FAFAFA;line-height:1.35;">I read your book this morning. ${events.length === 1 ? 'One thing is' : `${events.length} things are`} worth your attention.</h1></td></tr><tr><td style="padding:0 40px;"><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">${rows}</table></td></tr><tr><td style="padding:4px 40px 0;"><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td align="center" bgcolor="#E6B94D" style="border-radius:6px;"><a href="${url}" target="_blank" style="display:inline-block;padding:13px 28px;font-size:14px;font-weight:700;color:#0A0A0A;text-decoration:none;">Open the inbox &rarr;</a></td></tr></table></td></tr><tr><td style="padding:24px 40px 28px;"><p style="margin:0;font-size:10px;color:#525252;line-height:1.6;">Every figure is computed from the positions in your linked accounts. Not financial advice. <a href="${escapeHtml(opts.unsubUrl)}" style="color:#525252;">Stop these alerts</a></p></td></tr></table></td></tr></table></td></tr></table></body></html>`,
+  };
+}
