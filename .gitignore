@@ -49,6 +49,9 @@ __pycache__/
 *.pyc
 .env.local
 
+# Personal and financial notes. NEVER pushed: this repo is public.
+docs/private/
+
 # Fundraise material and in-progress specs stay local
 docs/fundraise/
 docs/superpowers/specs/2026-07-16-ai-expansion-master.md
