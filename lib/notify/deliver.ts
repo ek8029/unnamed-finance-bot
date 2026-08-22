@@ -89,32 +89,63 @@ export async function recordDelivery(
  * reports nothing is indistinguishable from a notifier that is broken, which
  * is exactly how a one-address allowlist survived months inside score-theses.
  */
+export type PickResult =
+  | { ok: false; reason: string }
+  | { ok: true; events: MaterialEvent[] };
+
+/**
+ * THE DECISION, with no transport attached.
+ *
+ * Preference, then threshold, then delivery record. Whatever carries the result
+ * afterwards, an email of its own or a section inside the morning brief, asks
+ * this one function, so there is a single answer to "does this person need to
+ * be told something" rather than one per sender.
+ */
+export async function pickMaterialEvents(
+  db: SupabaseClient,
+  userId: string,
+): Promise<PickResult> {
+  const pref = await alertPreference(db, userId);
+  if (!pref.ok) return { ok: false, reason: `preference read failed: ${pref.reason}` };
+  if (!pref.wants) return { ok: false, reason: 'opted out' };
+
+  const { data: rows, error } = await db
+    .from('insights')
+    .select('id, user_id, created_at, insight_type, priority, title, description, estimated_impact_amount, related_entity_type, related_entity_ids, is_dismissed, is_archived, snoozed_until, expires_at')
+    .eq('user_id', userId)
+    .eq('is_dismissed', false)
+    .eq('is_archived', false)
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) return { ok: false, reason: `insight read failed: ${error.message}` };
+
+  const material: MaterialEvent[] = selectMaterial((rows ?? []) as NotifiableInsight[]);
+  if (material.length === 0) return { ok: false, reason: 'nothing material' };
+
+  const seen = await alreadyDelivered(db, userId, material.map((m) => m.notifyKey));
+  const fresh = material.filter((m) => !seen.has(m.notifyKey)).slice(0, MAX_PER_MESSAGE);
+  if (fresh.length === 0) return { ok: false, reason: 'already told them' };
+  return { ok: true, events: fresh };
+}
+
+/**
+ * Send it as its own email.
+ *
+ * ONLY for people who are not getting the morning brief today. Nine of the ten
+ * people the first dry run named were already receiving The Current from the
+ * same cron run, seconds apart, and two Helm emails landing in the same minute
+ * is worse than either of them. lib/digest-cron carries the same events inside
+ * the brief for everybody else.
+ */
 export async function notifyMaterialEvents(
   db: SupabaseClient,
   userId: string,
 ): Promise<NotifyOutcome> {
   if (!resend) return { sent: false, reason: 'no email transport configured' };
 
-  const pref = await alertPreference(db, userId);
-  if (!pref.ok) return { sent: false, reason: `preference read failed: ${pref.reason}` };
-  if (!pref.wants) return { sent: false, reason: 'opted out' };
-
-  const { data: rows, error } = await db
-    .from('insights')
-    .select('id, user_id, insight_type, priority, title, description, estimated_impact_amount, related_entity_type, related_entity_ids, is_dismissed, is_archived, snoozed_until, expires_at')
-    .eq('user_id', userId)
-    .eq('is_dismissed', false)
-    .eq('is_archived', false)
-    .order('created_at', { ascending: false })
-    .limit(200);
-  if (error) return { sent: false, reason: `insight read failed: ${error.message}` };
-
-  const material: MaterialEvent[] = selectMaterial((rows ?? []) as NotifiableInsight[]);
-  if (material.length === 0) return { sent: false, reason: 'nothing material' };
-
-  const seen = await alreadyDelivered(db, userId, material.map((m) => m.notifyKey));
-  const fresh = material.filter((m) => !seen.has(m.notifyKey)).slice(0, MAX_PER_MESSAGE);
-  if (fresh.length === 0) return { sent: false, reason: 'already told them' };
+  const picked = await pickMaterialEvents(db, userId);
+  if (!picked.ok) return { sent: false, reason: picked.reason };
+  const fresh = picked.events;
 
   const { data: userRes, error: userErr } = await db.auth.admin.getUserById(userId);
   const email = userRes?.user?.email;

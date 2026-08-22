@@ -465,6 +465,40 @@ export function tidyAmounts(text: string): string {
  *  subject is chosen from a line that states a fact instead. */
 const ACTION_SHAPED = /^(trim|harvest|sell|buy|add|rebalance|consider|reduce|close|exit|move)\b/i;
 
+/** The findings as a block, for embedding in another email.
+ *
+ *  The morning brief and the standalone alert say the same thing in the same
+ *  words; which envelope carries it depends only on whether a brief is already
+ *  going out to that person. Two Helm emails in the same minute is worse than
+ *  either of them, so the brief absorbs the block and the standalone email is
+ *  reserved for people not receiving one. */
+export function materialEventsBlock(events: MaterialEventLine[]): { html: string; text: string } | null {
+  if (events.length === 0) return null;
+  const rows = events.map((e) => {
+    const isCritical = e.priority === 'critical';
+    const chipColor = isCritical ? '#F87171' : '#E6B94D';
+    return `<tr><td style="padding:0 0 16px;">
+<p style="margin:0 0 5px;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${chipColor};font-family:monospace;">${isCritical ? 'Critical' : 'Worth a look'}</p>
+<p style="margin:0 0 3px;font-size:15px;font-weight:700;color:#FAFAFA;line-height:1.4;">${escapeHtml(tidyAmounts(e.title))}</p>
+<p style="margin:0;font-size:13px;color:#B4B4B4;line-height:1.6;">${escapeHtml(tidyAmounts(e.description))}</p>
+</td></tr>`;
+  }).join('');
+  return {
+    html: `<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin:4px 0 20px;">
+<tr><td style="padding:0 0 12px;border-top:1px solid rgba(255,255,255,0.10);"></td></tr>
+<tr><td style="padding:0 0 14px;"><p style="margin:0;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:#8F8F8F;font-family:monospace;">${events.length === 1 ? 'And one thing in your book' : `And ${events.length} things in your book`}</p></td></tr>
+${rows}</table>`,
+    text: [
+      '',
+      events.length === 1 ? 'And one thing in your book:' : `And ${events.length} things in your book:`,
+      '',
+      events
+        .map((e) => `${e.priority === 'critical' ? '[critical] ' : ''}${tidyAmounts(e.title)}\n${tidyAmounts(e.description)}`)
+        .join('\n\n'),
+    ].join('\n'),
+  };
+}
+
 export function getMaterialEventsTemplate(
   events: MaterialEventLine[],
   opts: { unsubUrl: string },

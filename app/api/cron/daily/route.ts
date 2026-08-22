@@ -49,7 +49,7 @@ export async function GET(request: Request) {
 
     // ── AI digest FIRST — highest user-facing priority ──
 
-    let digestResult = { generated: 0, skipped: 0, log: [] as string[] };
+    let digestResult = { generated: 0, skipped: 0, log: [] as string[], emailed: [] as string[] };
     try {
       digestResult = await runDigestCron({ force: true });
       log.push(...digestResult.log);
@@ -208,6 +208,7 @@ export async function GET(request: Request) {
 
     let insightsGenerated = 0;
     let materialAlertsSent = 0;
+    const briefedToday = new Set(digestResult.emailed);
 
     for (const userId of userItemMap.keys()) {
       try {
@@ -269,11 +270,19 @@ export async function GET(request: Request) {
         // Runs after generateInsights so it reads today's rows, and inside the
         // same per-user try so one bad book cannot take the cron down.
         //
+        // SKIPPED for anybody the brief already emailed this run. The brief
+        // carries the same findings in the same words (lib/digest-cron), and
+        // two Helm emails landing in the same minute from the same cron is
+        // worse than either of them. Nine of the ten people the first dry run
+        // named were on the brief.
+        //
         // It reports why it stayed quiet. A notifier that logs nothing looks
         // identical whether it decided there was nothing to say or silently
         // broke, and Helm has already shipped one alert that was off for
         // everybody without a single line in a log to show for it.
-        const notified = await notifyMaterialEvents(serviceClient, userId);
+        const notified = briefedToday.has(userId)
+          ? { sent: false as const, reason: 'told them inside the brief' }
+          : await notifyMaterialEvents(serviceClient, userId);
         if (notified.sent) {
           materialAlertsSent++;
           log.push(`[notify] Sent ${notified.count} material event(s) to user ${userId.slice(0, 8)}...`);

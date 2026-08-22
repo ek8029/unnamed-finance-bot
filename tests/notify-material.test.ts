@@ -10,13 +10,19 @@ import {
   selectMaterial,
   type NotifiableInsight,
 } from '@/lib/notify/material';
+import { MAX_AGE_DAYS } from '@/lib/notify/material';
 import { wantsAlerts } from '@/lib/notify/preferences';
 import { getMaterialEventsTemplate, tidyAmounts } from '@/lib/emails/templates';
+
+/** Fixed clock. Every age assertion is relative to this. */
+const NOW = Date.parse('2026-08-22T12:00:00Z');
+const daysAgo = (n: number) => new Date(NOW - n * 86_400_000).toISOString();
 
 function insight(over: Partial<NotifiableInsight> = {}): NotifiableInsight {
   return {
     id: 'i1',
     user_id: 'u1',
+    created_at: daysAgo(0),
     insight_type: 'tax',
     priority: 'high',
     title: '$62,745.4 tax-loss harvesting opportunity',
@@ -69,7 +75,7 @@ describe('selectMaterial', () => {
     const out = selectMaterial([
       insight({ id: 'a', priority: 'high', insight_type: 'tax' }),
       insight({ id: 'b', priority: 'critical', insight_type: 'portfolio', related_entity_ids: ['h9'] }),
-    ]);
+    ], NOW);
     expect(out.map((e) => e.insightId).sort()).toEqual(['a', 'b']);
   });
 
@@ -80,16 +86,16 @@ describe('selectMaterial', () => {
     const out = selectMaterial([
       insight({ id: 'c', insight_type: 'spending', priority: 'high', title: 'Other spending up 357%' }),
       insight({ id: 'd', insight_type: 'credit', priority: 'critical' }),
-    ]);
+    ], NOW);
     expect(out).toEqual([]);
   });
 
   it('leaves medium and low in the inbox', () => {
-    expect(selectMaterial([insight({ priority: 'medium' }), insight({ priority: 'low' })])).toEqual([]);
+    expect(selectMaterial([insight({ priority: 'medium' }), insight({ priority: 'low' })], NOW)).toEqual([]);
   });
 
   it('respects dismissed, archived, snoozed and expired', () => {
-    const now = Date.parse('2026-08-22T12:00:00Z');
+    const now = NOW;
     const future = new Date(now + 86_400_000).toISOString();
     const past = new Date(now - 86_400_000).toISOString();
     expect(selectMaterial([insight({ is_dismissed: true })], now)).toEqual([]);
@@ -104,7 +110,7 @@ describe('selectMaterial', () => {
     const out = selectMaterial([
       insight({ id: 'a', title: '$62,745.4 tax-loss harvesting opportunity' }),
       insight({ id: 'b', title: '$62,801 tax-loss harvesting opportunity' }),
-    ]);
+    ], NOW);
     expect(out).toHaveLength(1);
   });
 
@@ -113,8 +119,29 @@ describe('selectMaterial', () => {
       insight({ id: 'small', priority: 'high', estimated_impact_amount: 100, related_entity_ids: ['h1'] }),
       insight({ id: 'big', priority: 'high', estimated_impact_amount: 90_000, related_entity_ids: ['h2'] }),
       insight({ id: 'crit', priority: 'critical', estimated_impact_amount: 5, related_entity_ids: ['h3'] }),
-    ]);
+    ], NOW);
     expect(out.map((e) => e.insightId)).toEqual(['crit', 'big', 'small']);
+  });
+});
+
+describe('the age gate', () => {
+  // The live data is the argument. 18 of 24 qualifying rows were older than two
+  // days and the oldest was 150: "$62,745 tax-loss harvesting opportunity" has
+  // been true since March. A standing condition is not an event, and a notifier
+  // switched on today must not announce five months of backlog.
+  it('will not announce a finding that has been true for months', () => {
+    expect(selectMaterial([insight({ created_at: daysAgo(150) })], NOW)).toEqual([]);
+    expect(selectMaterial([insight({ created_at: daysAgo(66) })], NOW)).toEqual([]);
+    expect(selectMaterial([insight({ created_at: daysAgo(MAX_AGE_DAYS + 1) })], NOW)).toEqual([]);
+  });
+  it('announces one that appeared today, or within the window', () => {
+    expect(selectMaterial([insight({ created_at: daysAgo(0) })], NOW)).toHaveLength(1);
+    expect(selectMaterial([insight({ created_at: daysAgo(MAX_AGE_DAYS - 1) })], NOW)).toHaveLength(1);
+  });
+  it('stays quiet when there is no timestamp at all', () => {
+    // Silence is recoverable on the next run. Announcing a five month old
+    // number is not.
+    expect(selectMaterial([insight({ created_at: null })], NOW)).toEqual([]);
   });
 });
 

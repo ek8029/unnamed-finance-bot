@@ -44,9 +44,30 @@ export const MATERIAL_TYPES = new Set(['portfolio', 'tax', 'market']);
 /** Priorities worth an interruption. Everything else waits in the inbox. */
 export const MATERIAL_PRIORITIES = new Set(['critical', 'high']);
 
+/** How recent a finding has to be to be worth announcing.
+ *
+ *  THIS IS NOT AN OPTIMISATION, it is the difference between an alert and a
+ *  nag. A dry run against live data found 18 of 24 qualifying rows older than
+ *  two days and the oldest at 150: "$62,745 tax-loss harvesting opportunity"
+ *  has been true since March. Standing conditions are not events. Announcing
+ *  one as though something happened is exactly what teaches somebody that a
+ *  Helm alert is worth ignoring, and it is what a notifier switched on today
+ *  would do with five months of backlog on its first run.
+ *
+ *  Old findings are not lost. They sit in the Actions inbox, where a person
+ *  goes to look rather than being interrupted, which is where a fact that has
+ *  been true for two months belongs.
+ *
+ *  lib/insights-engine refreshes its rows in place specifically to preserve
+ *  created_at as "the true age of the opportunity", so this reads what it was
+ *  meant to read. The thesis writers reinsert, which resets the age, but the
+ *  delivery record catches the repeat: same fact, same key, already told. */
+export const MAX_AGE_DAYS = 3;
+
 export interface NotifiableInsight {
   id: string;
   user_id: string;
+  created_at?: string | null;
   insight_type: string;
   priority: string;
   title: string;
@@ -111,6 +132,14 @@ function isLive(i: NotifiableInsight, now: number): boolean {
   return true;
 }
 
+function isRecent(i: NotifiableInsight, now: number): boolean {
+  // A row with no timestamp is treated as too old to announce. Being quiet
+  // about something is recoverable; announcing a five month old number is not.
+  if (!i.created_at) return false;
+  const age = now - new Date(i.created_at).getTime();
+  return Number.isFinite(age) && age <= MAX_AGE_DAYS * 86_400_000;
+}
+
 function impactOf(i: NotifiableInsight): number | null {
   if (i.estimated_impact_amount == null) return null;
   const n = Number(i.estimated_impact_amount);
@@ -123,6 +152,7 @@ export function selectMaterial(rows: NotifiableInsight[], now = Date.now()): Mat
     .filter((i) => MATERIAL_TYPES.has(i.insight_type))
     .filter((i) => MATERIAL_PRIORITIES.has(i.priority))
     .filter((i) => isLive(i, now))
+    .filter((i) => isRecent(i, now))
     .map((i) => ({
       insightId: i.id,
       userId: i.user_id,
