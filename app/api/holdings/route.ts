@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
+import { isUsMarketHours } from '@/lib/live-quotes';
 import { parseDateLocal, formatMonthLabel } from '@/lib/date-format';
 import { resolveSector } from '@/lib/portfolio-analysis';
 import { canonicalTicker } from '@/lib/ticker-alias';
@@ -13,6 +15,39 @@ export async function GET() {
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Freshness: the iOS app has no client-side live-quote wire (the web
+    // dashboard polls /api/market/quotes itself), so an app open must be able
+    // to bring the database current on its own. When this user's newest price
+    // is older than 10 minutes during market hours, fire the global coalesced
+    // sweep in the background -- same unawaited pattern the overview route
+    // uses for Plaid sync -- and serve this request from what we have. The
+    // sweep's own coalescing and per-user rate limit absorb stampedes.
+    void (async () => {
+      if (!isUsMarketHours()) return;
+      const { data: newest } = await supabase
+        .from('holdings')
+        .select('last_updated_at')
+        .eq('user_id', user.id)
+        .order('last_updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const at = newest?.last_updated_at ? new Date(newest.last_updated_at).getTime() : 0;
+      if (Date.now() - at < 10 * 60 * 1000) return;
+      const h = await headers();
+      const host = h.get('host');
+      if (!host) return;
+      const proto = h.get('x-forwarded-proto') ?? 'https';
+      const auth = h.get('authorization');
+      const cookie = h.get('cookie');
+      await fetch(`${proto}://${host}/api/market/prices/refresh`, {
+        method: 'POST',
+        headers: {
+          ...(auth ? { authorization: auth } : {}),
+          ...(cookie ? { cookie } : {}),
+        },
+      });
+    })().catch((err) => console.error('[holdings] background price refresh failed:', err));
 
     // Fetch holdings, performance, and snapshots in parallel
     const [holdingsResult, performanceResult, snapshotsResult] = await Promise.all([

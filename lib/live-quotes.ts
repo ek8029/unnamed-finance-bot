@@ -36,7 +36,7 @@ const ET_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }
  * live quotes are suppressed and clients keep the official close from
  * the database / SSR snapshot.
  */
-function isUsMarketHours(): boolean {
+export function isUsMarketHours(): boolean {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',
     weekday: 'short',
