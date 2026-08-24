@@ -318,16 +318,33 @@ export async function getLastTradePrice(ticker: string): Promise<number | null> 
   // was excluded entirely, so BTC-USD holdings kept their Plaid sync-time
   // price forever -- two lots were showing $82k and $108k on the same screen.
   const upper = ticker.toUpperCase();
-  const data = isCrypto(upper)
-    ? await finazonFetch<{ p: number }>(
-        '/price',
-        { ticker: `${upper.replace(/-USD$/, '')}/USDT` },
-        'https://api.finazon.io/latest/finazon/crypto',
-      )
-    : await finazonFetch<{ p: number }>('/price', {
-        dataset: 'us_stocks_essential',
-        ticker: upper,
+  if (isCrypto(upper)) {
+    // Coinbase public spot, not Finazon: Finazon's crypto dataset trial-locks
+    // every symbol except BTC/USDT (ETH 403s in ALL pairs), and Coinbase is
+    // keyless, uniform across the majors, and quotes the real USD pair rather
+    // than a tether proxy. Tickers are already in Coinbase's BTC-USD shape.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    try {
+      const res = await fetch(`https://api.coinbase.com/v2/prices/${upper}/spot`, {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+        signal: controller.signal,
       });
+      if (!res.ok) return null;
+      const json = (await res.json()) as { data?: { amount?: string } };
+      const p = Number(json.data?.amount);
+      return p > 0 ? p : null;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+  const data = await finazonFetch<{ p: number }>('/price', {
+    dataset: 'us_stocks_essential',
+    ticker: upper,
+  });
   if (!data || typeof data.p !== 'number' || data.p <= 0) return null;
   return data.p;
 }
