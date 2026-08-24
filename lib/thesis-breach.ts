@@ -53,6 +53,14 @@ export async function sendBreachAlerts(
   breaches: BreachEvent[],
   log: string[],
 ): Promise<number> {
+  // PAUSED 2026-08-24 pre-App-Store-launch: a breach email reached the Apple
+  // demo account mid-review-prep. Findings still land in the app and the
+  // brief; only the EMAIL channel is off. Delete this block to resume.
+  if (true as boolean) {
+    log.push(`[breach] email channel paused (pre-launch), ${breaches.length} breach(es) not mailed`);
+    return 0;
+  }
+
   if (!resend || breaches.length === 0) return 0;
   let sent = 0;
   for (const b of breaches) {
