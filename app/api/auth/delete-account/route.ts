@@ -1,52 +1,17 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { logAuthEvent } from '@/lib/auth-security';
 import { plaidClient } from '@/lib/plaid';
 import { getStripe } from '@/lib/stripe';
 
 /**
- * DELETE /api/auth/delete-account
- * Permanently deletes the user's account and all associated data.
- * Requires password confirmation.
+ * The deletion body shared by both verbs: cancel Stripe billing first (hard
+ * abort if that fails), disconnect Plaid items, purge every user-owned table,
+ * then delete the auth user. Callers are responsible for having authenticated
+ * the user -- and, on the password-verified web path, re-verified them.
  */
-export async function DELETE(request: Request) {
-  try {
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { password, confirmation } = await request.json();
-
-    if (!password) {
-      return NextResponse.json({ error: 'Password is required to delete your account' }, { status: 400 });
-    }
-
-    if (confirmation !== 'DELETE') {
-      return NextResponse.json({ error: 'Please type DELETE to confirm' }, { status: 400 });
-    }
-
-    // Verify identity — password for email users, skip for OAuth-only users
-    const isOAuthOnly = user.app_metadata?.provider !== 'email'
-      && !user.app_metadata?.providers?.includes('email');
-
-    if (isOAuthOnly) {
-      // OAuth users don't have a password — confirmation text "DELETE" is sufficient
-      if (password !== 'CONFIRM') {
-        return NextResponse.json({ error: 'Please type CONFIRM as your password to verify' }, { status: 400 });
-      }
-    } else {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email!,
-        password,
-      });
-      if (signInError) {
-        return NextResponse.json({ error: 'Incorrect password' }, { status: 400 });
-      }
-    }
-
+async function destroyAccount(user: { id: string; email?: string }) {
     const userId = user.id;
     const serviceClient = await createServiceClient();
 
@@ -140,8 +105,80 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json({ success: true, message: 'Your account has been permanently deleted' });
+}
+
+/**
+ * DELETE /api/auth/delete-account
+ * Permanently deletes the user's account and all associated data.
+ * Requires password confirmation.
+ */
+export async function DELETE(request: Request) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { password, confirmation } = await request.json();
+
+    if (!password) {
+      return NextResponse.json({ error: 'Password is required to delete your account' }, { status: 400 });
+    }
+
+    if (confirmation !== 'DELETE') {
+      return NextResponse.json({ error: 'Please type DELETE to confirm' }, { status: 400 });
+    }
+
+    // Verify identity — password for email users, skip for OAuth-only users
+    const isOAuthOnly = user.app_metadata?.provider !== 'email'
+      && !user.app_metadata?.providers?.includes('email');
+
+    if (isOAuthOnly) {
+      // OAuth users don't have a password — confirmation text "DELETE" is sufficient
+      if (password !== 'CONFIRM') {
+        return NextResponse.json({ error: 'Please type CONFIRM as your password to verify' }, { status: 400 });
+      }
+    } else {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email!,
+        password,
+      });
+      if (signInError) {
+        return NextResponse.json({ error: 'Incorrect password' }, { status: 400 });
+      }
+    }
+
+    return destroyAccount(user);
   } catch (error) {
     console.error('Error in delete-account route:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+/**
+ * POST /api/auth/delete-account
+ * The iOS app's deletion path (guideline 5.1.1(v)). Accepts ONLY Bearer-token
+ * auth: a cookie session is rejected outright, so a cross-site POST can never
+ * delete a signed-in web user, and the web keeps its password-verified DELETE.
+ * The app runs its own two-step confirmation before calling, and the token is
+ * validated against Supabase by auth.getUser(), not trusted from its claims.
+ */
+export async function POST() {
+  try {
+    const authHeader = (await headers()).get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    return await destroyAccount(user);
+  } catch (error) {
+    console.error('Error in delete-account POST route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

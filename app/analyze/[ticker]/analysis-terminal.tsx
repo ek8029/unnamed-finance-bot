@@ -1308,7 +1308,7 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
                 Want AI analysis of your entire portfolio?
               </p>
               <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed max-w-md mx-auto">
-                Helm Terminal connects to your brokerage, analyzes every holding, and delivers actionable intelligence weekly. Free to start. Pro unlocks the full terminal at $20/mo.
+                Helm Terminal connects to your brokerage, analyzes every holding, and delivers actionable intelligence weekly. Free to start.
               </p>
               <a
                 href="/signup"
