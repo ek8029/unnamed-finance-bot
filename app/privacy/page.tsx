@@ -185,7 +185,7 @@ export default function PrivacyPage() {
         <h2>10. Contact</h2>
         <p>
           For privacy-related questions or requests, contact us at{' '}
-          <a href="mailto:privacy@helmterminal.dev">privacy@helmterminal.dev</a>.
+          <a href="mailto:support@helmterminal.dev">support@helmterminal.dev</a>.
         </p>
       </section>
     </LegalPageLayout>

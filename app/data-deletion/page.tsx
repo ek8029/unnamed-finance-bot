@@ -63,7 +63,7 @@ export default function DataDeletionPage() {
         <h2>Request Deletion via Email</h2>
         <p>
           If you are unable to access your account or prefer to request deletion via email, contact us at{' '}
-          <a href="mailto:privacy@helmterminal.dev">privacy@helmterminal.dev</a> with the subject line
+          <a href="mailto:support@helmterminal.dev">support@helmterminal.dev</a> with the subject line
           &ldquo;Account Deletion Request.&rdquo; Include the email address associated with your account.
         </p>
         <p>
@@ -108,7 +108,7 @@ export default function DataDeletionPage() {
         </ul>
         <p>
           To exercise any of these rights, contact{' '}
-          <a href="mailto:privacy@helmterminal.dev">privacy@helmterminal.dev</a>.
+          <a href="mailto:support@helmterminal.dev">support@helmterminal.dev</a>.
           We will respond within 30 days.
         </p>
       </section>
@@ -118,7 +118,7 @@ export default function DataDeletionPage() {
         <h2>Questions</h2>
         <p>
           For questions about data deletion or your privacy rights, contact{' '}
-          <a href="mailto:privacy@helmterminal.dev">privacy@helmterminal.dev</a>.
+          <a href="mailto:support@helmterminal.dev">support@helmterminal.dev</a>.
         </p>
       </section>
     </LegalPageLayout>
