@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getQuote } from '@/lib/financial-data';
+import { getVixQuote } from '@/lib/vix';
 import { getSourceTier } from '@/lib/news-quality';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 
@@ -53,7 +54,7 @@ export async function generateDigest(
         .order('published_at', { ascending: false })
         .limit(10),
       getQuote('SPY'),
-      getQuote('VIXY'),
+      getVixQuote(),
     ]);
 
   // Deduplicate
@@ -79,7 +80,7 @@ export async function generateDigest(
       ? `SPY: $${spyQuote.c.toFixed(2)} (${spyQuote.dp >= 0 ? '+' : ''}${spyQuote.dp.toFixed(2)}%)`
       : null,
     vixQuote
-      ? `VIX proxy (VIXY): $${vixQuote.c.toFixed(2)} (${vixQuote.dp >= 0 ? '+' : ''}${vixQuote.dp.toFixed(2)}%)`
+      ? `VIX: ${vixQuote.value.toFixed(2)} (${vixQuote.changePct >= 0 ? '+' : ''}${vixQuote.changePct.toFixed(2)}% today). Options are pricing a ±${vixQuote.pricedDayPct.toFixed(2)}% one-sigma day for the S&P; two days in three close inside that band. Cite the ±% band, not a fear label.`
       : null,
   ]
     .filter(Boolean)
@@ -184,7 +185,7 @@ export async function generateGenericDigest(): Promise<DigestResult> {
         .order('published_at', { ascending: false })
         .limit(10),
       getQuote('SPY'),
-      getQuote('VIXY'),
+      getVixQuote(),
     ]);
 
   // Deduplicate
@@ -209,7 +210,7 @@ export async function generateGenericDigest(): Promise<DigestResult> {
       ? `SPY: $${spyQuote.c.toFixed(2)} (${spyQuote.dp >= 0 ? '+' : ''}${spyQuote.dp.toFixed(2)}%)`
       : null,
     vixQuote
-      ? `VIX proxy (VIXY): $${vixQuote.c.toFixed(2)} (${vixQuote.dp >= 0 ? '+' : ''}${vixQuote.dp.toFixed(2)}%)`
+      ? `VIX: ${vixQuote.value.toFixed(2)} (${vixQuote.changePct >= 0 ? '+' : ''}${vixQuote.changePct.toFixed(2)}% today). Options are pricing a ±${vixQuote.pricedDayPct.toFixed(2)}% one-sigma day for the S&P; two days in three close inside that band. Cite the ±% band, not a fear label.`
       : null,
   ]
     .filter(Boolean)

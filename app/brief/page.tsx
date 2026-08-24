@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { PublicBrief } from './public-brief';
 import { getBatchQuotes } from '@/lib/financial-data';
+import { getVixQuote } from '@/lib/vix';
 
 export const metadata: Metadata = {
   title: 'The Current — Today\'s Market Brief | Helm Terminal',
@@ -18,6 +19,14 @@ const TICKERS = ['SPY', 'QQQ', 'NVDA', 'AAPL', 'MSFT', 'GOOGL', 'META', 'AMZN', 
 
 export default async function PublicBriefPage() {
   let quotes: { symbol: string; price: number; changePct: number; change: number }[] = [];
+  let vix: { value: number; pricedDayPct: number } | null = null;
+
+  try {
+    const q = await getVixQuote();
+    if (q) vix = { value: q.value, pricedDayPct: q.pricedDayPct };
+  } catch {
+    // the row simply does not render
+  }
 
   try {
     const raw = await getBatchQuotes(TICKERS);
@@ -31,5 +40,5 @@ export default async function PublicBriefPage() {
     // fallback in client
   }
 
-  return <PublicBrief quotes={quotes} />;
+  return <PublicBrief quotes={quotes} vix={vix} />;
 }

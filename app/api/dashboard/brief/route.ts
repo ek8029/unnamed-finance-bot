@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getTickerSectorOverride } from '@/lib/market-classify';
 import { getQuote } from '@/lib/financial-data';
+import { getVixQuote } from '@/lib/vix';
 import { rateLimit } from '@/lib/rate-limit';
 import { getUserTier, tierAtLeast } from '@/lib/tier';
 import { getUnderlyingExposure } from '@/lib/etf-holdings';
@@ -20,13 +21,14 @@ interface HoldingRow {
   security: { security_name: string; sector: string } | null;
 }
 
-// Thresholds calibrated for VIXY ETF price (not the VIX index).
-// VIXY trades lower than VIX due to contango decay in VIX futures.
-function classifyVix(vixyPrice: number): VixLevel {
-  if (vixyPrice > 25) return 'extreme_fear';
-  if (vixyPrice > 20) return 'fear';
-  if (vixyPrice > 15) return 'neutral';
-  if (vixyPrice > 10) return 'greed';
+// Thresholds for the real VIX index (lib/vix.ts, Cboe delayed feed). The old
+// set was calibrated for the VIXY ETF dollar price, which was all the vendor
+// could fetch -- and which the UI then printed under the label "VIX".
+function classifyVix(vix: number): VixLevel {
+  if (vix > 30) return 'extreme_fear';
+  if (vix > 20) return 'fear';
+  if (vix > 15) return 'neutral';
+  if (vix > 12) return 'greed';
   return 'extreme_greed';
 }
 
@@ -161,29 +163,29 @@ export async function GET() {
     let market: {
       spy: { price: number; changePct: number } | null;
       qqq: { price: number; changePct: number } | null;
-      vix: { price: number; level: VixLevel } | null;
+      vix: { price: number; level: VixLevel; pricedDayPct: number } | null;
       treasury: { price: number; changePct: number } | null;
     } = { spy: null, qqq: null, vix: null, treasury: null };
 
     try {
-      // All 4 use Finnhub getQuote() for real-time intraday data
-      // (getLatestPrice from Polygon only returns previous day close)
-      const [spyData, qqqData, vixyData, tltData] = await Promise.allSettled([
+      // SPY/QQQ/TLT via getQuote(); the VIX is the real index via Cboe's
+      // free delayed feed (lib/vix.ts) -- Finazon has no index dataset.
+      const [spyData, qqqData, vixData, tltData] = await Promise.allSettled([
         getQuote('SPY'),
         getQuote('QQQ'),
-        getQuote('VIXY'),
+        getVixQuote(),
         getQuote('TLT'),
       ]);
 
       const spyQ = spyData.status === 'fulfilled' ? spyData.value : null;
       const qqqQ = qqqData.status === 'fulfilled' ? qqqData.value : null;
-      const vixy = vixyData.status === 'fulfilled' ? vixyData.value : null;
+      const vix = vixData.status === 'fulfilled' ? vixData.value : null;
       const tlt = tltData.status === 'fulfilled' ? tltData.value : null;
 
       market = {
         spy: spyQ && spyQ.c > 0 ? { price: spyQ.c, changePct: spyQ.dp ?? 0 } : null,
         qqq: qqqQ && qqqQ.c > 0 ? { price: qqqQ.c, changePct: qqqQ.dp ?? 0 } : null,
-        vix: vixy && vixy.c > 0 ? { price: vixy.c, level: classifyVix(vixy.c) } : null,
+        vix: vix ? { price: vix.value, level: classifyVix(vix.value), pricedDayPct: vix.pricedDayPct } : null,
         treasury: tlt && tlt.c > 0 ? { price: tlt.c, changePct: tlt.dp ?? 0 } : null,
       };
     } catch (err) {

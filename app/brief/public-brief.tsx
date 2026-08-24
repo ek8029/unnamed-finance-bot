@@ -62,7 +62,7 @@ function moverReason(symbol: string, changePct: number, spyPct: number): string 
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 
-export function PublicBrief({ quotes: serverQuotes }: { quotes: Quote[] }) {
+export function PublicBrief({ quotes: serverQuotes, vix }: { quotes: Quote[]; vix?: { value: number; pricedDayPct: number } | null }) {
   // Live overlay: poll the public quotes endpoint every 60s and patch
   // prices onto the server-rendered snapshot (ISR revalidates every 5 min).
   // If the server snapshot is empty (vendor hiccup at render time), build
@@ -408,6 +408,24 @@ export function PublicBrief({ quotes: serverQuotes }: { quotes: Quote[] }) {
                     </div>
                     <div className="text-[14px] text-[#9A9A9A] mt-1">{NAMES[losers[0].symbol] || losers[0].symbol}</div>
                   </div>
+                  {vix && (
+                    <>
+                      <div className="h-px bg-white/[0.06]" />
+                      <div>
+                        <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6A6A6A]" style={MONO}>Priced move</div>
+                        <div className="flex justify-between items-baseline mt-1.5">
+                          <span className="font-mono text-[16px] font-bold text-[#FAFAFA] tabular-nums">±{vix.pricedDayPct.toFixed(2)}%</span>
+                          <span className="font-mono text-[12px] text-[#9A9A9A] tabular-nums">VIX {vix.value.toFixed(2)} ÷ 16</span>
+                        </div>
+                        <div className="text-[14px] text-[#9A9A9A] mt-1 leading-[1.5]">
+                          {spy
+                            ? `The one-sigma day options priced. SPY ${fmtPct(spy.changePct)} closed ${Math.abs(spy.changePct) <= vix.pricedDayPct ? 'inside it, a normal day as priced.' : 'outside it.'}`
+                            : 'The one-sigma day options priced. Two days in three close inside it.'}
+                        </div>
+                        <div className="font-mono text-[10px] text-[#6A6A6A] mt-1.5" style={MONO}>Cboe · 15-min delayed</div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}

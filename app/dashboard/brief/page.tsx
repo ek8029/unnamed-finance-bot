@@ -46,7 +46,7 @@ interface BriefData {
   market: {
     spy: { price: number; changePct: number } | null;
     qqq: { price: number; changePct: number } | null;
-    vix: { price: number; level: string } | null;
+    vix: { price: number; level: string; pricedDayPct?: number } | null;
     treasury: { price: number; changePct: number } | null;
   };
   movers: { ticker: string; name: string; sector: string; changePct: number; dollarImpact: number }[];
@@ -315,7 +315,7 @@ export default function BriefPage() {
         market: {
           spy: { price: 528.40, changePct: 0.35 },
           qqq: { price: 452.15, changePct: 0.52 },
-          vix: { price: 14.20, level: 'greed' },
+          vix: { price: 14.2, level: 'greed', pricedDayPct: 0.89 },
           treasury: { price: 92.80, changePct: -0.18 },
         },
         movers: [
@@ -341,7 +341,7 @@ export default function BriefPage() {
         pillarSummary: { intact: 0, weakening: 0, broken: 0, unverified: 0, positions: 0, lastScannedAt: null },
         thesisIntelligence: [],
         macroStrip: [],
-        digest: 'NVIDIA is the story this morning. The stock is up 3.2% pre-market after reporting data center revenue that beat estimates by 12%, pushing your largest holding to a $960 gain overnight. Demand for Blackwell GPUs continues to outstrip supply, and management raised full-year guidance for the third consecutive quarter.\n\nApple slipped 0.8% on reports of slower iPhone 16 sales in China, trimming $320 from your position. The weakness is contained to the China market — North American and European sales remain on track. Microsoft edged up 0.4% on steady Azure growth.\n\nThe broader market is calm. SPY is up 0.35% with the VIX sitting at 14.2, firmly in the greed zone. Treasury yields ticked up slightly, pulling TLT down 0.18%. No major macro catalysts today, but keep an eye on NVDA earnings exposure — your 18.5% portfolio weight means any post-earnings reversal hits hard.',
+        digest: 'NVIDIA is the story this morning. The stock is up 3.2% pre-market after reporting data center revenue that beat estimates by 12%, pushing your largest holding to a $960 gain overnight. Demand for Blackwell GPUs continues to outstrip supply, and management raised full-year guidance for the third consecutive quarter.\n\nApple slipped 0.8% on reports of slower iPhone 16 sales in China, trimming $320 from your position. The weakness is contained to the China market — North American and European sales remain on track. Microsoft edged up 0.4% on steady Azure growth.\n\nThe broader market is calm. SPY is up 0.35% with the VIX at 14.2, so options are pricing a ±0.9% day for the index. Treasury yields ticked up slightly, pulling TLT down 0.18%. No major macro catalysts today, but keep an eye on NVDA earnings exposure — your 18.5% portfolio weight means any post-earnings reversal hits hard.',
         digestGeneratedAt: new Date().toISOString(),
       });
       setLoading(false);
@@ -412,8 +412,8 @@ export default function BriefPage() {
     }
     if (data.market.vix) {
       const lvl = data.market.vix.price;
-      const regime = lvl < 15 ? 'a calm, low-volatility tape' : lvl < 20 ? 'moderate volatility' : lvl < 30 ? 'elevated volatility as risk gets repriced' : 'high volatility — markets are repricing risk fast';
-      parts.push(`The VIX sits at ${lvl.toFixed(1)}, ${regime}.`);
+      const band = (data.market.vix.pricedDayPct ?? lvl / Math.sqrt(252)).toFixed(2);
+      parts.push(`The VIX sits at ${lvl.toFixed(1)}, so options are pricing a ±${band}% day for the index, and two days in three should close inside it.`);
     }
     if (data.market.treasury) {
       parts.push(
@@ -426,11 +426,22 @@ export default function BriefPage() {
 
   /* ─── Market context strip cells (only real data; never fabricated) ─── */
   const marketCells = useMemo(() => {
-    if (!data) return [] as { label: string; value: string; delta: string; pos: boolean }[];
-    const cells: { label: string; value: string; delta: string; pos: boolean }[] = [];
+    if (!data) return [] as { label: string; value: string; delta: string; pos: boolean; dim?: boolean; sub?: string; tip?: string }[];
+    const cells: { label: string; value: string; delta: string; pos: boolean; dim?: boolean; sub?: string; tip?: string }[] = [];
     if (data.market.spy) cells.push({ label: 'S&P 500 (SPY)', value: `$${data.market.spy.price.toFixed(2)}`, delta: fmtPct(data.market.spy.changePct), pos: data.market.spy.changePct >= 0 });
     if (data.market.qqq) cells.push({ label: 'Nasdaq (QQQ)', value: `$${data.market.qqq.price.toFixed(2)}`, delta: fmtPct(data.market.qqq.changePct), pos: data.market.qqq.changePct >= 0 });
-    if (data.market.vix) cells.push({ label: 'VIX', value: data.market.vix.price.toFixed(2), delta: data.market.vix.level.replace(/_/g, ' '), pos: data.market.vix.price < 20 });
+    if (data.market.vix) {
+      const band = (data.market.vix.pricedDayPct ?? data.market.vix.price / Math.sqrt(252)).toFixed(2);
+      cells.push({
+        label: 'VIX',
+        value: data.market.vix.price.toFixed(2),
+        delta: `±${band}% priced day`,
+        pos: true,
+        dim: true,
+        sub: 'Cboe · 15-min delayed',
+        tip: `The VIX is the market's expected S&P 500 volatility over the next 30 days, quoted annualized. Divide by 16 (the square root of 252 trading days) for the one-sigma daily move options are pricing: ${data.market.vix.price.toFixed(2)} ÷ 16 ≈ ±${band}%. Two days in three should close inside that band, one in three outside. A band, not a limit. Quote from Cboe, delayed 15 minutes.`,
+      });
+    }
     if (data.market.treasury) cells.push({ label: 'Bonds (TLT)', value: `$${data.market.treasury.price.toFixed(2)}`, delta: fmtPct(data.market.treasury.changePct), pos: data.market.treasury.changePct >= 0 });
     // BTC only if the user actually tracks it (real data, not invented).
     const btc = liveWatchlist.find(w => /^(BTC|BTC-USD|BTCUSD|X:BTCUSD)$/i.test(w.ticker) && w.price != null);
@@ -682,12 +693,12 @@ export default function BriefPage() {
       {/* ══ Market context strip (5 cells, real data only) ══ */}
       {marketCells.length > 0 && (
         <div
-          className="mb-5 grid grid-cols-2 overflow-hidden rounded-md border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] sm:grid-cols-3 lg:grid-cols-5"
+          className="mb-5 grid grid-cols-2 rounded-md border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] sm:grid-cols-3 lg:grid-cols-5"
         >
           {marketCells.map((c, i) => (
             <div
               key={c.label}
-              className="px-[20px] py-[16px]"
+              className={`group relative px-[20px] py-[16px]${c.tip ? ' cursor-help' : ''}`}
               style={{
                 borderRight: i < marketCells.length - 1 ? '1px solid var(--color-border-subtle)' : undefined,
               }}
@@ -697,14 +708,37 @@ export default function BriefPage() {
               </div>
               <div className="text-[18px] font-bold tabular-nums" style={MONO}>{c.value}</div>
               <div
-                className={`mt-1 text-[11px] ${c.pos ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}
+                className={`mt-1 text-[11px] ${c.dim ? 'text-[var(--color-text-muted)]' : c.pos ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]'}`}
                 style={MONO}
               >
                 {c.delta}
               </div>
+              {c.sub && (
+                <div className="mt-0.5 text-[9px] text-[var(--color-text-muted)]" style={MONO}>
+                  {c.sub}
+                </div>
+              )}
+              {c.tip && (
+                <div
+                  className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-[280px] -translate-x-1/2 rounded-md border border-[var(--color-border-base)] bg-[#0C0C0C] p-3.5 text-[10.5px] leading-[1.75] text-[#B4B4B4] shadow-[0_8px_24px_rgba(0,0,0,0.6)] group-hover:block"
+                  style={MONO}
+                >
+                  {c.tip}
+                </div>
+              )}
             </div>
           ))}
         </div>
+      )}
+
+      {/* ══ The priced day: what options priced vs what happened, one scale ══ */}
+      {data.market.vix?.pricedDayPct != null && (
+        <PricedDayBand
+          band={data.market.vix.pricedDayPct}
+          vix={data.market.vix.price}
+          spyPct={data.market.spy?.changePct ?? null}
+          bookPct={data.portfolio.totalValue > 0 ? data.portfolio.overnightChangePct : null}
+        />
       )}
 
       {/* ══ Macro strip (existing thesis macro context, only what moves your book) ══ */}
@@ -984,6 +1018,68 @@ export default function BriefPage() {
           <span>AI-generated summary · Not financial advice</span>
         </div>
       </footer>
+    </div>
+  );
+}
+
+/* ═══ The priced day band ═══
+   The market's own normal-day scale: VIX ÷ 16 as a shaded band on ±2%, with a
+   quiet needle for SPY and a needle for the book. Gold when the book lands
+   outside what options priced -- that spread is concentration, not the tape.
+   "Your usual day" (realized vol) joins once market-sync persists dailyVol. */
+function PricedDayBand({ band, vix, spyPct, bookPct }: {
+  band: number; vix: number; spyPct: number | null; bookPct: number | null;
+}) {
+  const RANGE = 2;
+  const pos = (v: number) => ((Math.max(-RANGE, Math.min(RANGE, v)) + RANGE) / (RANGE * 2)) * 100;
+  const inside = (v: number) => Math.abs(v) <= band;
+  const legend: string[] = [];
+  if (spyPct != null) legend.push(`SPY ${fmtPct(spyPct)} ${inside(spyPct) ? 'inside' : 'outside'}`);
+  if (bookPct != null) legend.push(`your book ${fmtPct(bookPct)} ${inside(bookPct) ? 'inside' : 'outside'} the priced day`);
+  return (
+    <div className="mb-5 rounded-md border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] px-[20px] py-[14px]">
+      <div className="flex items-baseline justify-between">
+        <div className="text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-muted)]" style={MONO}>The priced day</div>
+        <div className="text-[10px] text-[var(--color-text-muted)] tabular-nums" style={MONO}>VIX {vix.toFixed(2)} ÷ 16 = ±{band.toFixed(2)}%</div>
+      </div>
+      <div className="relative mt-3 h-[26px]">
+        <div
+          className="absolute top-0 h-[26px]"
+          style={{
+            left: `${pos(-band)}%`,
+            width: `${pos(band) - pos(-band)}%`,
+            background: 'rgba(230,185,77,0.10)',
+            borderLeft: '1px solid rgba(230,185,77,0.35)',
+            borderRight: '1px solid rgba(230,185,77,0.35)',
+          }}
+        />
+        <div className="absolute top-[13px] h-px w-full bg-[var(--color-border-base)]" />
+        <div className="absolute left-1/2 top-[6px] h-[14px] w-px bg-white/20" />
+        {spyPct != null && (
+          <div className="absolute top-[6px] h-[14px] w-[2px] bg-[#8A8A8A]" style={{ left: `${pos(spyPct)}%` }} />
+        )}
+        {bookPct != null && (
+          <div
+            className="absolute top-0 h-[26px] w-[2px]"
+            style={{
+              left: `${pos(bookPct)}%`,
+              background: inside(bookPct)
+                ? bookPct >= 0 ? 'var(--color-positive)' : 'var(--color-negative-text)'
+                : 'var(--color-gold)',
+            }}
+          />
+        )}
+      </div>
+      <div className="mt-1 flex text-[10px] text-[var(--color-text-muted)]" style={MONO}>
+        <span className="flex-1">&minus;2%</span>
+        <span className="flex-1 text-center">0</span>
+        <span className="flex-1 text-right">+2%</span>
+      </div>
+      {legend.length > 0 && (
+        <div className="mt-2 text-[11px] text-[var(--color-text-muted)]" style={MONO}>
+          {legend.join(' · ')} · one day in three closes outside
+        </div>
+      )}
     </div>
   );
 }

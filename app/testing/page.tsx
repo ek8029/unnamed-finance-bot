@@ -9,6 +9,13 @@ export const metadata = { title: 'Testing', robots: { index: false, follow: fals
 
 const EXPERIMENTS = [
   {
+    href: '/testing/vix16',
+    title: 'VIX ÷ 16 · the priced day',
+    date: '2026-08-23',
+    blurb:
+      'The rule of 16 placed on the real brief surfaces: the VIX cell gets a ±% priced-day subline, the hero sentence compares your move with the day options priced, and a band module draws both on one scale. Research: docs/vix-rule-of-16.md. Blocked in prod by VIXY-printed-as-VIX; Cboe delayed JSON fixes it free.',
+  },
+  {
     href: '/testing/app',
     title: 'Lab shell · browse it like the product',
     date: '2026-07-24',
