@@ -8,13 +8,14 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalPageLayout title="Privacy Policy" lastUpdated="March 10, 2026">
+    <LegalPageLayout title="Privacy Policy" lastUpdated="August 24, 2026">
       {/* 1. Introduction */}
       <section>
         <h2>1. Introduction</h2>
         <p>
           Helm (&ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;) operates the Helm financial intelligence
-          platform at <strong>helmterminal.dev</strong>. This Privacy Policy explains what information we collect,
+          platform at <strong>helmterminal.dev</strong> and the <strong>Helm Terminal</strong> iOS app.
+          This Privacy Policy covers both. It explains what information we collect,
           how we use it, and your rights regarding your data. We are committed to protecting your financial
           information with the same diligence you&apos;d expect from an institutional-grade platform.
         </p>
@@ -30,7 +31,27 @@ export default function PrivacyPage() {
           <li>Email address</li>
           <li>Full name (optional)</li>
           <li>Encrypted password (we never store plaintext passwords)</li>
+          <li>
+            If you sign in with Apple or Google, we receive your email address and the name those
+            services provide. We use them only to create and identify your account.
+          </li>
         </ul>
+
+        <h3>Subscriptions &amp; Purchases</h3>
+        <p>
+          If you subscribe on the web, billing is handled by <strong>Stripe</strong>; we never see or
+          store your card number. If you subscribe in the iOS app, billing is handled by Apple through
+          your App Store account, and we receive purchase history and receipt information via{' '}
+          <strong>RevenueCat</strong> to activate your subscription. We store which plan you are on,
+          never your payment details.
+        </p>
+
+        <h3>Imported Screenshots (iOS app)</h3>
+        <p>
+          If you use the holdings-screenshot importer, the image you choose is sent to our server and
+          read once by OpenAI to extract the positions in it. Helm does not save the image to your
+          account. OpenAI may retain processed inputs for up to 30 days under its API data policy.
+        </p>
 
         <h3>Financial Data via Plaid</h3>
         <p>
@@ -133,22 +154,35 @@ export default function PrivacyPage() {
           <li><strong>OpenAI</strong> - AI-powered financial analysis (your query and portfolio context are sent for analysis but never used for model training)</li>
           <li><strong>Supabase</strong> - Database and authentication infrastructure</li>
           <li><strong>Vercel</strong> - Application hosting</li>
+          <li><strong>Stripe</strong> - Web subscription billing</li>
+          <li><strong>RevenueCat</strong> - iOS subscription management (purchase receipts from Apple)</li>
+          <li><strong>Apple &amp; Google</strong> - Optional sign-in providers</li>
         </ul>
         <p>Each service operates under its own privacy policy and data handling practices.</p>
       </section>
 
-      {/* 8. Changes */}
+      {/* 8. Children's Privacy */}
       <section>
-        <h2>8. Changes to This Policy</h2>
+        <h2>8. Children&apos;s Privacy</h2>
+        <p>
+          Helm is not directed at children, and we do not knowingly collect personal information from
+          anyone under 13. If you believe a child has provided us personal information, contact us and
+          we will delete it.
+        </p>
+      </section>
+
+      {/* 9. Changes */}
+      <section>
+        <h2>9. Changes to This Policy</h2>
         <p>
           We may update this Privacy Policy from time to time. Material changes will be communicated
           via email or an in-app notification. Continued use of Helm after changes constitutes acceptance.
         </p>
       </section>
 
-      {/* 9. Contact */}
+      {/* 10. Contact */}
       <section>
-        <h2>9. Contact</h2>
+        <h2>10. Contact</h2>
         <p>
           For privacy-related questions or requests, contact us at{' '}
           <a href="mailto:privacy@helmterminal.dev">privacy@helmterminal.dev</a>.
