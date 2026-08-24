@@ -23,6 +23,12 @@ import { updatePortfolioPerformance } from '@/lib/market-sync';
 import { rateLimit } from '@/lib/rate-limit';
 import { coalesce } from '@/lib/coalesce';
 
+// The sweep walks the whole held-ticker universe at vendor-throttled pace and
+// was already brushing Vercel's 300s default; the last-trade lift tipped it
+// into FUNCTION_INVOCATION_TIMEOUT, which kills the run BEFORE any row is
+// written. Ten minutes is honest headroom for a batch job, not a hot path.
+export const maxDuration = 600;
+
 interface RefreshResult {
   status: number;
   body: Record<string, unknown>;

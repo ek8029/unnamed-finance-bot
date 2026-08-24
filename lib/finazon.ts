@@ -53,11 +53,15 @@ interface RawBar {
 async function finazonFetch<T>(
   endpoint: string,
   params: Record<string, string>,
+  // The dataset lives in the URL PATH, not the query string -- a `dataset`
+  // query param is silently ignored by Finazon. Callers that need a dataset
+  // other than US stocks must override the base.
+  base: string = FINAZON_BASE,
 ): Promise<T | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10000);
   try {
-    const url = new URL(`${FINAZON_BASE}${endpoint}`);
+    const url = new URL(`${base}${endpoint}`);
     for (const [k, v] of Object.entries(params)) {
       url.searchParams.set(k, v);
     }
@@ -315,10 +319,11 @@ export async function getLastTradePrice(ticker: string): Promise<number | null> 
   // price forever -- two lots were showing $82k and $108k on the same screen.
   const upper = ticker.toUpperCase();
   const data = isCrypto(upper)
-    ? await finazonFetch<{ p: number }>('/price', {
-        dataset: 'crypto',
-        ticker: `${upper.replace(/-USD$/, '')}/USDT`,
-      })
+    ? await finazonFetch<{ p: number }>(
+        '/price',
+        { ticker: `${upper.replace(/-USD$/, '')}/USDT` },
+        'https://api.finazon.io/latest/finazon/crypto',
+      )
     : await finazonFetch<{ p: number }>('/price', {
         dataset: 'us_stocks_essential',
         ticker: upper,
