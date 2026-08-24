@@ -17,9 +17,12 @@ import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
-const MAX_TICKERS = 50;
+// 120, not 50: real books run 75+ rows (appreview is 75), and the silent
+// slice left everything past the cap permanently un-patched by the live
+// overlay -- fresh rows rendered beside hours-old ones on the same screen.
+const MAX_TICKERS = 120;
 const TICKER_RE = /^[A-Z][A-Z0-9.\-]{0,9}$/;
-const PRICE_TTL_MS = 12_000;
+const PRICE_TTL_MS = 6_000;
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -29,8 +32,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // 15s polling = 40 calls/10min per page; allow several open surfaces.
-  const { allowed } = rateLimit(`market-quotes:${user.id}`, 160, 600);
+  // 8s polling = 75 calls/10min per page; allow several open surfaces.
+  const { allowed } = rateLimit(`market-quotes:${user.id}`, 240, 600);
   if (!allowed) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }

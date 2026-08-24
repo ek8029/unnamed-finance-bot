@@ -309,11 +309,20 @@ export async function getBatchPrices(tickers: string[]): Promise<Map<string, Lat
  * separately from time_series (FINAZON_PRICE_RPM, plan: 200/min).
  */
 export async function getLastTradePrice(ticker: string): Promise<number | null> {
-  if (isCrypto(ticker)) return null;
-  const data = await finazonFetch<{ p: number }>('/price', {
-    dataset: 'us_stocks_essential',
-    ticker: ticker.toUpperCase(),
-  });
+  // Crypto rides the crypto dataset as BTC/USDT (the /USD pairs are locked on
+  // this plan; the tether pair tracks within ~0.1%). Before this branch crypto
+  // was excluded entirely, so BTC-USD holdings kept their Plaid sync-time
+  // price forever -- two lots were showing $82k and $108k on the same screen.
+  const upper = ticker.toUpperCase();
+  const data = isCrypto(upper)
+    ? await finazonFetch<{ p: number }>('/price', {
+        dataset: 'crypto',
+        ticker: `${upper.replace(/-USD$/, '')}/USDT`,
+      })
+    : await finazonFetch<{ p: number }>('/price', {
+        dataset: 'us_stocks_essential',
+        ticker: upper,
+      });
   if (!data || typeof data.p !== 'number' || data.p <= 0) return null;
   return data.p;
 }

@@ -256,12 +256,23 @@ export async function GET() {
 
     const portfolioHistory = Array.from(snapshotsByMonth.values());
 
+    // Whether this payload was priced before the background sweep above could
+    // land. A client that caches responses can use it to schedule one silent
+    // re-read instead of showing the pre-sweep numbers all session. Newest row
+    // only: crypto lots price on their own cadence and must not pin the flag.
+    const newestPriceAt = (holdings ?? []).reduce((max, h) => {
+      const at = h.last_updated_at ? new Date(h.last_updated_at).getTime() : 0;
+      return at > max ? at : max;
+    }, 0);
+    const pricesStale = isUsMarketHours() && newestPriceAt > 0 && Date.now() - newestPriceAt > 10 * 60 * 1000;
+
     return NextResponse.json({
       holdings: transformedHoldings,
       allocation: allocation ? Object.values(allocation) : [],
       totalValue,
       performanceMetrics,
       portfolioHistory,
+      pricesStale,
     }, {
       headers: { 'Cache-Control': 'no-store, max-age=0' },
     });

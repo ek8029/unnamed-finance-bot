@@ -17,6 +17,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { getBatchQuotes, type StockQuote } from '@/lib/financial-data';
+import { getBatchLastTradePrices } from '@/lib/finazon';
 import { updatePortfolioPerformance } from '@/lib/market-sync';
 import { rateLimit } from '@/lib/rate-limit';
 import { coalesce } from '@/lib/coalesce';
@@ -55,6 +56,21 @@ async function runGlobalRefresh(): Promise<RefreshResult> {
 
   // 2. Fetch real-time quotes from Finazon (not Polygon end-of-day)
   const quoteMap = await getBatchQuotes(uniqueTickers);
+
+  // 2b. Crypto never resolves through the equities time_series path, so those
+  // holdings kept their Plaid sync-time price forever (two BTC lots read $82k
+  // and $108k on the same screen, 79 days stale). The /price endpoint now
+  // speaks crypto; day change stays null (pc: 0) because there is no
+  // consolidated previous close to compare against -- an honest dash beats a
+  // ten-week-old percentage.
+  const cryptoMissing = uniqueTickers.filter(t => t.toUpperCase().includes('-USD') && !quoteMap.has(t.toUpperCase()));
+  if (cryptoMissing.length > 0) {
+    const prices = await getBatchLastTradePrices(cryptoMissing);
+    const today = new Date().toISOString().split('T')[0];
+    for (const [t, p] of prices) {
+      quoteMap.set(t, { c: p, d: 0, dp: 0, h: p, l: p, o: p, pc: 0, t: Math.floor(Date.now() / 1000), date: today });
+    }
+  }
 
   if (quoteMap.size === 0) {
     return {
