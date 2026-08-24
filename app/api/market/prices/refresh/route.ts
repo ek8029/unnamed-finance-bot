@@ -18,6 +18,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { getBatchQuotes, type StockQuote } from '@/lib/financial-data';
 import { getBatchLastTradePrices } from '@/lib/finazon';
+import { isUsMarketHours } from '@/lib/live-quotes';
 import { updatePortfolioPerformance } from '@/lib/market-sync';
 import { rateLimit } from '@/lib/rate-limit';
 import { coalesce } from '@/lib/coalesce';
@@ -69,6 +70,33 @@ async function runGlobalRefresh(): Promise<RefreshResult> {
     const today = new Date().toISOString().split('T')[0];
     for (const [t, p] of prices) {
       quoteMap.set(t, { c: p, d: 0, dp: 0, h: p, l: p, o: p, pc: 0, t: Math.floor(Date.now() / 1000), date: today });
+    }
+  }
+
+  // 2c. Intraday, lift every equity's price to the actual last trade. The
+  // time_series path above prices from the last completed HOURLY bar, up to an
+  // hour behind the tape -- and these rows feed the Tax Center: an hour-old
+  // price mis-sizes every TLH figure and can flip a lot in or out of loss
+  // territory entirely. pc (previous session close) stays from the bar path,
+  // so the day % is the honest last-trade-vs-close. Off-hours the bar close IS
+  // the official close and /price serves thin odd-lot prints, so skip it.
+  // New objects, not mutation: getBatchQuotes hands back its module-cache
+  // entries, and other callers must keep seeing the un-overridden quote.
+  if (isUsMarketHours()) {
+    const equities = uniqueTickers.filter(t => !t.toUpperCase().includes('-USD') && quoteMap.has(t.toUpperCase()));
+    if (equities.length > 0) {
+      const live = await getBatchLastTradePrices(equities);
+      for (const [t, p] of live) {
+        const q = quoteMap.get(t);
+        if (q && p > 0) {
+          quoteMap.set(t, {
+            ...q,
+            c: p,
+            d: q.pc > 0 ? p - q.pc : q.d,
+            dp: q.pc > 0 ? ((p - q.pc) / q.pc) * 100 : q.dp,
+          });
+        }
+      }
     }
   }
 
