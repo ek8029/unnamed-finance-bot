@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import posthog from 'posthog-js';
 import { useDemo } from '@/contexts/demo-context';
 import { resolveLinkExitError } from '@/lib/plaid/link-exit';
+import { runBackgroundSync, type BackgroundSyncResult } from '@/lib/plaid/background-sync';
 
 interface PlaidLinkButtonProps {
   /** Receives the new item id. Optional so existing `() => void`
@@ -18,8 +19,11 @@ interface PlaidLinkButtonProps {
   onWarning?: (message: string) => void;
   /** Fires when the user actually opens Link. A wrapper's onClickCapture
    *  cannot tell: the disabled button uses pointer-events-none, so clicks
-   *  during the sync wait fall through to the wrapper and count as starts. */
+   *  while it is disabled fall through to the wrapper and count as starts. */
   onOpen?: () => void;
+  /** The background sync behind onSuccess settled. Minutes later on a real
+   *  book; the button may be unmounted by then, the callback still runs. */
+  onSynced?: (result: BackgroundSyncResult, itemId?: string) => void;
   className?: string;
   variant?: 'default' | 'outline' | 'ghost';
   children?: React.ReactNode;
@@ -32,6 +36,7 @@ export function PlaidLinkButton({
   onExit,
   onWarning,
   onOpen,
+  onSynced,
   className,
   variant = 'default',
   children,
@@ -44,6 +49,8 @@ export function PlaidLinkButton({
   const lastSearchRef = useRef<string | null>(null);
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
+  const onSyncedRef = useRef(onSynced);
+  onSyncedRef.current = onSynced;
 
   // Fetch link token once on mount
   useEffect(() => {
@@ -95,21 +102,19 @@ export function PlaidLinkButton({
         onWarning?.('This institution was already connected. Duplicate connection created.');
       }
 
-      // The item exists from here. Record it before the sync, which takes
-      // one to six minutes on a real book: the 8/16 Wells Fargo link is active
-      // in the database and never produced a completion because the person
-      // left during the wait below.
+      // The item and its accounts exist from here. Hand it back now and pull
+      // the holdings in the background: that pull takes one to six minutes on
+      // a real book, and the 8/16 Wells Fargo link is active in the database
+      // with no completion because the person left while this said "Linking".
       posthog.capture('plaid_link_completed');
-
-      sessionStorage.removeItem('helm_last_auto_sync');
-      sessionStorage.removeItem('helm_last_price_refresh');
-      await fetch('/api/plaid/sync', { method: 'POST' }).catch(() => {});
-      // Refresh market prices so holdings have real prices (Plaid sandbox doesn't provide them)
-      await fetch('/api/market/prices/refresh', { method: 'POST' }).catch(() => {});
       // Real accounts connected: end demo mode so sample data does not linger.
       try { sessionStorage.removeItem('helm_demo_mode'); } catch {}
       disableDemo();
-      onSuccess(data.item_id);
+      sessionStorage.removeItem('helm_last_auto_sync');
+      sessionStorage.removeItem('helm_last_price_refresh');
+      const itemId = typeof data.item_id === 'string' ? data.item_id : undefined;
+      onSuccess(itemId);
+      void runBackgroundSync().then((result) => onSyncedRef.current?.(result, itemId));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to link account';
       onError?.(message);
@@ -160,7 +165,7 @@ export function PlaidLinkButton({
   const isDisabled = !ready || exchanging || tokenError;
 
   const label = exchanging
-    ? 'Syncing holdings...'
+    ? 'Linking...'
     : isLoading
       ? 'Initializing...'
       : tokenError

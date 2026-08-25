@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { resolveLinkExitError, PLAID_ERROR_MESSAGES } from '../lib/plaid/link-exit';
 
 /**
@@ -28,5 +30,13 @@ describe('resolveLinkExitError', () => {
     expect(resolveLinkExitError(null, null)).toBeNull();
     expect(resolveLinkExitError(null, 'requires_credentials')).toBeNull();
     expect(resolveLinkExitError(null, 'requires_oauth')).toBeNull();
+  });
+});
+
+describe('PlaidLinkButton never waits on the sync', () => {
+  it('has no awaited fetch of /api/plaid/sync', () => {
+    const src = readFileSync(join(process.cwd(), 'components/plaid/plaid-link-button.tsx'), 'utf8');
+    expect(src).not.toMatch(/await fetch\('\/api\/plaid\/sync'/);
+    expect(src).toMatch(/runBackgroundSync\(/);
   });
 });

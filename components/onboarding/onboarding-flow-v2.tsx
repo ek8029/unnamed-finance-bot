@@ -198,6 +198,9 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
   const [scan, setScan] = useState<ScanResult | null>(null);
 
   const [syncCounts, setSyncCounts] = useState<{ accounts: number; holdings: number } | null>(null);
+  // 'syncing' only on the Plaid path: the item is linked, the holdings are
+  // still arriving. Manual entry and preview enter 'synced' with data in hand.
+  const [syncStage, setSyncStage] = useState<'syncing' | 'drafting'>('drafting');
   const [drafts, setDrafts] = useState<RatifyDraft[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -343,7 +346,13 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
 
   function handleConnected() {
     track('onb_link_completed');
+    setSyncStage('syncing');
     setPhase('synced');
+  }
+
+  /** The background sync settled, or gave up. Either way, draft from what exists. */
+  function handleSynced() {
+    setSyncStage('drafting');
   }
 
   // synced: pull real counts + top holdings, draft starter theses on the top 3.
@@ -351,6 +360,9 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
     // Also runs when the harness jumps straight to 'ratify' with no drafts loaded.
     const needsData = phase === 'synced' || (harness && phase === 'ratify' && !drafts);
     if (!needsData) return;
+    // Holdings are still arriving; reading the summary now would draft from an
+    // empty book. handleSynced flips the stage and this effect runs again.
+    if (phase === 'synced' && syncStage === 'syncing') return;
     let cancelled = false;
 
     // Preview: real reads, zero writes. Show the reviewer's own accounts/holdings
@@ -458,7 +470,7 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
     })();
 
     return () => { cancelled = true; };
-  }, [phase, preview, harness, drafts]);
+  }, [phase, preview, harness, drafts, syncStage]);
 
   /** Adopt the house claims the person recognised as their own. */
   async function adoptReasons() {
@@ -1161,6 +1173,7 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                       <div>
                         <PlaidLinkButton
                           onSuccess={handleConnected}
+                          onSynced={handleSynced}
                           onOpen={() => track('onb_link_started')}
                           onError={(msg) => setLinkError(msg || 'Connection failed — please try again.')}
                           onLinkError={(_code, msg) => setLinkError(msg)}
@@ -1231,14 +1244,27 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"
                     style={{ strokeDasharray: 30, strokeDashoffset: 30, animation: 'onb-check 0.4s ease-out 0.1s forwards' }} />
                 </svg>
-                {syncCounts && (
-                  <p className="text-[16px] text-[var(--color-text-primary)]" style={MONO}>
-                    {syncCounts.accounts} {syncCounts.accounts === 1 ? 'account' : 'accounts'} · {syncCounts.holdings} holdings synced
-                  </p>
+                {syncStage === 'syncing' ? (
+                  <>
+                    <p className="text-[16px] text-[var(--color-text-primary)]" style={MONO}>
+                      Linked. Syncing your holdings…
+                    </p>
+                    <p className="mt-3 text-[14px] text-[var(--color-text-muted)]" style={MONO}>
+                      Usually under a minute. A large book can take a few. The sync keeps going if you step away.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    {syncCounts && (
+                      <p className="text-[16px] text-[var(--color-text-primary)]" style={MONO}>
+                        {syncCounts.accounts} {syncCounts.accounts === 1 ? 'account' : 'accounts'} · {syncCounts.holdings} holdings synced
+                      </p>
+                    )}
+                    <p className="mt-3 text-[14px] text-[var(--color-text-muted)]" style={MONO}>
+                      Drafting a starting thesis for your largest positions…
+                    </p>
+                  </>
                 )}
-                <p className="mt-3 text-[14px] text-[var(--color-text-muted)]" style={MONO}>
-                  Drafting a starting thesis for your largest positions…
-                </p>
               </div>
             </div>
           )}

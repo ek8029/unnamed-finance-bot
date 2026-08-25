@@ -60,11 +60,11 @@ export default function OAuthCallbackPage() {
         throw new Error(data.error || 'Failed to link account');
       }
 
-      // Sync transactions + holdings + market prices (matches PlaidLinkButton behavior)
+      // Hand off to the dashboard. With these keys cleared its auto-sync runs
+      // on mount and refetches when done, so one sync happens, not two, and
+      // this page no longer holds people for one to six minutes on a real book.
       sessionStorage.removeItem('helm_last_auto_sync');
       sessionStorage.removeItem('helm_last_price_refresh');
-      await fetch('/api/plaid/sync', { method: 'POST' }).catch(() => {});
-      await fetch('/api/market/prices/refresh', { method: 'POST' }).catch(() => {});
 
       setStatus('success');
       router.push('/dashboard');

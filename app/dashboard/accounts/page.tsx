@@ -9,6 +9,7 @@ import { useFormat } from '@/hooks/use-format';
 import { useAccounts } from '@/hooks/use-financial-data';
 import { usePreview } from '@/lib/preview-context';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
+import type { BackgroundSyncResult } from '@/lib/plaid/background-sync';
 import { PlaidUpdateLink } from '@/components/plaid/plaid-update-link';
 
 interface Account {
@@ -167,9 +168,14 @@ export default function AccountsPage() {
   };
 
   const handlePlaidSuccess = () => {
-    success('Account linked', 'Your financial account has been connected successfully');
+    success('Account linked', 'Syncing holdings in the background. They show up in a minute or two.');
     setShowAddAccount(false);
     refetch?.();
+  };
+
+  const handlePlaidSynced = (result: BackgroundSyncResult) => {
+    refetch?.();
+    if (result === 'synced') success('Holdings synced', 'Your new account is up to date.');
   };
 
   const handlePlaidError = (error: string) => {
@@ -297,7 +303,7 @@ export default function AccountsPage() {
             — Helm can never move money or place trades.
           </p>
           <div className="flex justify-center">
-            <PlaidLinkButton onSuccess={handlePlaidSuccess} onError={handlePlaidError} onLinkError={(_code, msg) => handlePlaidError(msg)} />
+            <PlaidLinkButton onSuccess={handlePlaidSuccess} onSynced={handlePlaidSynced} onError={handlePlaidError} onLinkError={(_code, msg) => handlePlaidError(msg)} />
           </div>
           <p className="mt-4 text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
             Nothing to connect yet?{' '}
@@ -747,6 +753,7 @@ export default function AccountsPage() {
                   key={showAddAccount ? 'open' : 'closed'}
                   className="flex-1"
                   onSuccess={handlePlaidSuccess}
+                  onSynced={handlePlaidSynced}
                   onError={handlePlaidError}
                   onLinkError={(_code, msg) => handlePlaidError(msg)}
                 />
