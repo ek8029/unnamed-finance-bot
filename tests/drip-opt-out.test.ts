@@ -25,3 +25,12 @@ describe('drip route honours the master email opt-out', () => {
     expect(src).toMatch(/MAX_SENDS_PER_RUN\s*=\s*\d+/);
   });
 });
+
+describe('watchlist route honours the master email opt-out', () => {
+  const src = readFileSync(join(process.cwd(), 'app/api/cron/watchlist-alerts/route.ts'), 'utf8');
+
+  it('reads notification_email alongside the market flag', () => {
+    expect(src).toContain('notification_email');
+    expect(src).toMatch(/wantsAlerts\(/);
+  });
+});

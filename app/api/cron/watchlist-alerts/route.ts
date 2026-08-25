@@ -4,6 +4,7 @@ import { getQuote } from '@/lib/financial-data';
 import { resend, FROM_EMAIL } from '@/lib/emails/resend';
 import { getWatchlistAlertTemplate, type WatchlistMover } from '@/lib/emails/templates';
 import { alertThresholdFor } from '@/lib/watchlist-defaults';
+import { wantsAlerts } from '@/lib/notify/preferences';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
       const from = page * 1000;
       const { data: prefRows, error: prefError } = await serviceClient
         .from('user_preferences')
-        .select('user_id, notification_market_alerts')
+        .select('user_id, notification_email, notification_market_alerts')
         .order('user_id', { ascending: true })
         .range(from, from + 999);
       if (prefError) {
@@ -67,7 +68,10 @@ export async function GET(request: Request) {
       }
       const batch = prefRows ?? [];
       for (const p of batch) {
-        if (p.notification_market_alerts === false) marketAlertsOff.add(p.user_id);
+        // Both switches: the specific one and the master one that one-click
+        // unsubscribe sets. Reading only the specific flag mailed people who
+        // had said no to everything.
+        if (!wantsAlerts(p)) marketAlertsOff.add(p.user_id);
       }
       if (batch.length < 1000) break;
     }
