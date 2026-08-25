@@ -6,26 +6,7 @@ import { Loader2, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import posthog from 'posthog-js';
 import { useDemo } from '@/contexts/demo-context';
-
-// User-friendly messages for common Plaid Link error codes
-const PLAID_ERROR_MESSAGES: Record<string, string> = {
-  INSTITUTION_REGISTRATION_REQUIRED:
-    'Your bank requires online banking to be set up. Please enable online banking with your institution and try again.',
-  INSTITUTION_NO_LONGER_SUPPORTED:
-    'This institution is no longer supported by Plaid. Try connecting a different account.',
-  // "Try a different name" is the wrong advice and it is what nine people were
-  // given. Plaid's catalogue genuinely does not include every broker: Webull
-  // and Public.com are absent from PRODUCTION entirely, so searching harder
-  // cannot work. Say that, and point at the path that does.
-  INSTITUTION_NOT_FOUND:
-    'Plaid does not cover every broker. Webull and Public are not available through it. You can add those holdings by importing them instead.',
-  INSTITUTION_DOWN:
-    'This institution is temporarily unavailable. Please try again later.',
-  INVALID_CREDENTIALS:
-    'The credentials you entered were incorrect. Please try again.',
-  ITEM_LOCKED:
-    'Your account is locked. Please unlock it with your institution and try again.',
-};
+import { resolveLinkExitError } from '@/lib/plaid/link-exit';
 
 interface PlaidLinkButtonProps {
   /** Receives the new item id. Optional so existing `() => void`
@@ -35,6 +16,10 @@ interface PlaidLinkButtonProps {
   onLinkError?: (errorCode: string, message: string) => void;
   onExit?: () => void;
   onWarning?: (message: string) => void;
+  /** Fires when the user actually opens Link. A wrapper's onClickCapture
+   *  cannot tell: the disabled button uses pointer-events-none, so clicks
+   *  during the sync wait fall through to the wrapper and count as starts. */
+  onOpen?: () => void;
   className?: string;
   variant?: 'default' | 'outline' | 'ghost';
   children?: React.ReactNode;
@@ -46,6 +31,7 @@ export function PlaidLinkButton({
   onLinkError,
   onExit,
   onWarning,
+  onOpen,
   className,
   variant = 'default',
   children,
@@ -109,13 +95,17 @@ export function PlaidLinkButton({
         onWarning?.('This institution was already connected. Duplicate connection created.');
       }
 
+      // The item exists from here. Record it before the sync, which takes
+      // one to six minutes on a real book: the 8/16 Wells Fargo link is active
+      // in the database and never produced a completion because the person
+      // left during the wait below.
+      posthog.capture('plaid_link_completed');
+
       sessionStorage.removeItem('helm_last_auto_sync');
       sessionStorage.removeItem('helm_last_price_refresh');
       await fetch('/api/plaid/sync', { method: 'POST' }).catch(() => {});
       // Refresh market prices so holdings have real prices (Plaid sandbox doesn't provide them)
       await fetch('/api/market/prices/refresh', { method: 'POST' }).catch(() => {});
-
-      posthog.capture('plaid_link_completed');
       // Real accounts connected: end demo mode so sample data does not linger.
       try { sessionStorage.removeItem('helm_demo_mode'); } catch {}
       disableDemo();
@@ -157,14 +147,10 @@ export function PlaidLinkButton({
         // Populated on institution_not_found, where institution_name is null.
         institution_search_query: lastSearchRef.current ?? null,
       });
-      if (err) {
-        console.error('Plaid Link exit error:', err);
-        const code = err.error_code || '';
-        const friendlyMessage =
-          PLAID_ERROR_MESSAGES[code] ||
-          err.display_message ||
-          'Something went wrong connecting your account. Please try again.';
-        onLinkError?.(code, friendlyMessage);
+      const linkError = resolveLinkExitError(err, metadata?.status);
+      if (linkError) {
+        if (err) console.error('Plaid Link exit error:', err);
+        onLinkError?.(linkError.code, linkError.message);
       }
       onExit?.();
     },
@@ -174,7 +160,7 @@ export function PlaidLinkButton({
   const isDisabled = !ready || exchanging || tokenError;
 
   const label = exchanging
-    ? 'Linking...'
+    ? 'Syncing holdings...'
     : isLoading
       ? 'Initializing...'
       : tokenError
@@ -185,7 +171,7 @@ export function PlaidLinkButton({
     <Button
       variant={variant}
       className={className}
-      onClick={() => { if (!exchanging) { posthog.capture('plaid_link_started'); open(); } }}
+      onClick={() => { if (!exchanging) { onOpen?.(); posthog.capture('plaid_link_started'); open(); } }}
       disabled={isDisabled}
     >
       {(isLoading || exchanging) ? (

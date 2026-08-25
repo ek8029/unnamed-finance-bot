@@ -1158,11 +1158,12 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                         Connect a brokerage
                       </button>
                     ) : (
-                      /* onClickCapture fires our step event before Plaid opens (button has no onClick prop) */
-                      <div onClickCapture={() => track('onb_link_started')}>
+                      <div>
                         <PlaidLinkButton
                           onSuccess={handleConnected}
+                          onOpen={() => track('onb_link_started')}
                           onError={(msg) => setLinkError(msg || 'Connection failed — please try again.')}
+                          onLinkError={(_code, msg) => setLinkError(msg)}
                           className="w-full flex items-center justify-center gap-2 h-[52px] rounded-md bg-[var(--color-gold)] text-black text-[15px] font-semibold hover:brightness-110 transition-all cursor-pointer"
                         >
                           Connect a brokerage
