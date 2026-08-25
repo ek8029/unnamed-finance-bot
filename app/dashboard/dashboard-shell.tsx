@@ -904,9 +904,16 @@ export default function DashboardShell({
               />
             </Link>
 
-            {/* + ADD ACCOUNT gold CTA */}
+            {/* + ADD ACCOUNT gold CTA. ?add=1 opens the connect modal on the
+                accounts page; as a bare link it did nothing once you were there. */}
             <Link
-              href="/dashboard/accounts"
+              href="/dashboard/accounts?add=1"
+              onClick={(e) => {
+                if (pathname === '/dashboard/accounts') {
+                  e.preventDefault();
+                  window.dispatchEvent(new Event('helm:add-account'));
+                }
+              }}
               className="flex items-center gap-[7px] h-[34px] px-3.5 rounded-md text-[#0A0A0A] uppercase no-underline transition-[filter] hover:brightness-110"
               style={{
                 background: 'var(--color-gold)',

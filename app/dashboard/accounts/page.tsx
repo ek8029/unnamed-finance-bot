@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, X, Loader2, Trash2, Link2, ShieldCheck } from 'lucide-react';
+import NextLink from 'next/link';
+import { Plus, X, Loader2, Trash2, Link2, ShieldCheck, PenLine } from 'lucide-react';
 import { useToast } from '@/contexts/toast-context';
 import { Button } from '@/components/ui/button';
 import { useFormat } from '@/hooks/use-format';
@@ -93,6 +94,21 @@ export default function AccountsPage() {
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
+  // The shell's "+ Add account" CTA links here with ?add=1. As a plain link it
+  // did nothing when you were already on this page. window.location, not
+  // useSearchParams: no Suspense boundary needed, and the param is dropped so
+  // a refresh does not reopen the modal.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('add') === '1') {
+      setShowAddAccount(true);
+      window.history.replaceState(null, '', '/dashboard/accounts');
+    }
+    // Already here when the CTA is clicked: same-path soft nav never remounts,
+    // so the shell dispatches an event instead.
+    const open = () => setShowAddAccount(true);
+    window.addEventListener('helm:add-account', open);
+    return () => window.removeEventListener('helm:add-account', open);
+  }, []);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null);
   const [healthError, setHealthError] = useState(false);
@@ -283,6 +299,12 @@ export default function AccountsPage() {
           <div className="flex justify-center">
             <PlaidLinkButton onSuccess={handlePlaidSuccess} onError={handlePlaidError} />
           </div>
+          <p className="mt-4 text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
+            Nothing to connect yet?{' '}
+            <NextLink href="/dashboard/portfolio/add" style={{ color: 'var(--color-gold)' }}>
+              Enter positions by hand
+            </NextLink>
+          </p>
           <div
             className="mt-[18px] text-[10px]"
             style={{ ...MONO, color: 'var(--color-text-muted)', letterSpacing: '0.04em' }}
@@ -506,6 +528,7 @@ export default function AccountsPage() {
 
             {/* Connect another */}
             <ConnectAnotherTile onClick={() => setShowAddAccount(true)} />
+            <EnterByHandTile />
           </>
         )}
       </div>
@@ -700,6 +723,18 @@ export default function AccountsPage() {
                 </p>
               </div>
 
+              <p className="text-[14px] text-[var(--color-text-secondary)]">
+                Prefer not to connect?{' '}
+                <NextLink
+                  href="/dashboard/portfolio/add"
+                  className="text-[var(--color-gold)] hover:underline"
+                  onClick={() => setShowAddAccount(false)}
+                >
+                  Enter positions by hand
+                </NextLink>
+                . Ticker, shares, cost basis. No sync.
+              </p>
+
               <div className="flex gap-3">
                 <Button
                   variant="outline"
@@ -747,6 +782,32 @@ function ConnectAnotherTile({ onClick }: { onClick: () => void }) {
         12,000+ institutions supported
       </span>
     </button>
+  );
+}
+
+function EnterByHandTile() {
+  const [hover, setHover] = useState(false);
+  return (
+    <NextLink
+      href="/dashboard/portfolio/add"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      className="rounded-lg cursor-pointer flex flex-col items-center justify-center gap-[10px] no-underline"
+      style={{
+        border: `1px dashed ${hover ? 'rgba(230,185,77,0.35)' : 'rgba(255,255,255,0.12)'}`,
+        background: 'transparent', padding: '18px 20px', minHeight: 160,
+        color: hover ? 'var(--color-gold)' : 'var(--color-text-muted)',
+        transition: 'border-color 200ms var(--ease-out-expo), color 200ms var(--ease-out-expo)',
+      }}
+    >
+      <PenLine className="w-[22px] h-[22px]" strokeWidth={1.6} />
+      <span className="text-[10px] uppercase" style={{ ...MONO, letterSpacing: '0.12em' }}>
+        Enter by hand
+      </span>
+      <span className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
+        No connection needed
+      </span>
+    </NextLink>
   );
 }
 
