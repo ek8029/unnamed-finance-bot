@@ -1103,8 +1103,8 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                     </div>
                     {!tierAtLeast(tier, 'pro') && (
                       <p className="mt-3 text-[12.5px] text-[var(--color-text-muted)] leading-relaxed">
-                        You&apos;re on Free. Connect your book now at no cost, write one thesis and read the
-                        twelve months behind it. Pro is what keeps watching it, plus taxes and earnings.
+                        You&apos;re on Free. Connect your book now at no cost, write one thesis, read the
+                        twelve months behind it, and Helm keeps watching it. Pro watches every position, plus taxes and earnings.
                       </p>
                     )}
                   </div>

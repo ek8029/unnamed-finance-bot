@@ -4,8 +4,9 @@ import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { FREE_THESIS_LIMIT } from '@/lib/thesis-entitlement';
 
 // GET /api/thesis — list all user theses with their pillars (no evidence)
-// Reading your own theses is free. Pro buys ongoing monitoring, enforced in the
-// scoring cron via entitledToMonitoring. Creating one is capped for free users.
+// Reading your own theses is free, and the scoring cron keeps one free thesis
+// under watch (selectMonitored). Pro buys monitoring for every position and
+// the agentic pipelines. Creating one is capped for free users.
 export async function GET() {
   try {
     const supabase = await createClient();

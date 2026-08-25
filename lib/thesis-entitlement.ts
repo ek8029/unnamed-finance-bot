@@ -3,16 +3,18 @@ import { isThesisUser } from '@/lib/thesis-access';
 import { normalizeTier, tierAtLeast } from '@/lib/tier-shared';
 
 /**
- * Who is entitled to ONGOING thesis monitoring.
+ * Who is entitled to FULL thesis monitoring.
  *
- * The split this exists to enforce: a free user can draft a thesis, confirm it,
- * and see the twelve months of history behind it. What they do not get is the
- * agent continuing to watch it. Free gets the past, Pro gets the future.
+ * The split this exists to enforce: a free user keeps one thesis under watch,
+ * its oldest tracked one, and reads the twelve months of history behind it.
+ * Every thesis past that, and every agentic pipeline (reassessment,
+ * investigation, shared exposure), is Pro. Decided 2026-08-25: after the 8/09
+ * paywall the free theses had accumulated no evidence at all, and every
+ * August signup who wrote one got nothing after the onboarding scan.
  *
  * Before this, `tracked = true` was the whole gate and the scoring cron applied
  * no entitlement check at all. That was safe only because thesis creation was
- * Pro-gated, so a free user could never own a tracked thesis. Once free users
- * can seed one, the cron would hand them the paid feature for nothing.
+ * Pro-gated, so a free user could never own a tracked thesis.
  *
  * Bulk by design: the cron holds user ids, not sessions, and calling the
  * per-user tier lookup once per thesis would be a query per row.
@@ -26,10 +28,43 @@ import { normalizeTier, tierAtLeast } from '@/lib/tier-shared';
  * How many theses a free user may hold.
  *
  * One is enough to see what the product is: draft it, confirm the reasons,
- * and read the twelve months of evidence behind them. The second one is the
- * paid product, and so is every day of watching after today.
+ * read the twelve months of evidence behind them, and watch it hold or break.
+ * The second one is the paid product.
  */
 export const FREE_THESIS_LIMIT = 1;
+
+/** How many of a free user's tracked theses the scorer keeps watching. */
+export const FREE_MONITORED_LIMIT = 1;
+
+/**
+ * Which tracked theses the scorer should scan this run.
+ *
+ * Entitled owners keep everything. A free owner keeps their oldest tracked
+ * thesis (created_at ascending, id as the tie-break so the pick never flips
+ * between runs) up to FREE_MONITORED_LIMIT; the rest are skipped. Input order
+ * is preserved for the kept rows.
+ */
+export function selectMonitored<T extends { id: string; user_id: string; created_at?: string | null }>(
+  theses: T[],
+  entitled: Set<string>,
+): { kept: T[]; skipped: number } {
+  const byFreeOwner = new Map<string, T[]>();
+  for (const t of theses) {
+    if (entitled.has(t.user_id)) continue;
+    const list = byFreeOwner.get(t.user_id) ?? [];
+    list.push(t);
+    byFreeOwner.set(t.user_id, list);
+  }
+  const allowed = new Set<string>();
+  for (const list of byFreeOwner.values()) {
+    const sorted = [...list].sort((a, b) =>
+      (a.created_at ?? '').localeCompare(b.created_at ?? '') || a.id.localeCompare(b.id),
+    );
+    for (const t of sorted.slice(0, FREE_MONITORED_LIMIT)) allowed.add(t.id);
+  }
+  const kept = theses.filter((t) => entitled.has(t.user_id) || allowed.has(t.id));
+  return { kept, skipped: theses.length - kept.length };
+}
 
 interface SubRow {
   user_id: string;

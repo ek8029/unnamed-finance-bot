@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entitledToMonitoring, FREE_THESIS_LIMIT } from '@/lib/thesis-entitlement';
+import { entitledToMonitoring, selectMonitored, FREE_THESIS_LIMIT, FREE_MONITORED_LIMIT } from '@/lib/thesis-entitlement';
 
 /**
  * The scoring cron now filters by entitlement. The failure that matters is not
@@ -190,5 +190,62 @@ describe('entitledToMonitoring', () => {
     const s = await entitledToMonitoring(client, ids);
     expect(calls).toBeGreaterThan(1);
     expect(s.size).toBe(1200);
+  });
+});
+
+/**
+ * Free is not "the past only" any more. A free account keeps ONE thesis under
+ * watch, its oldest tracked one; everything past that, and every agentic
+ * pipeline, stays Pro. Decided 2026-08-25: after the 8/09 paywall, 15 free
+ * theses had accumulated zero evidence and every August signup who wrote one
+ * got nothing after the onboarding scan.
+ */
+describe('selectMonitored', () => {
+  const t = (id: string, user_id: string, created_at: string) => ({ id, user_id, created_at });
+
+  it('keeps every thesis of an entitled owner', () => {
+    const rows = [t('a', 'pro', '2026-01-01'), t('b', 'pro', '2026-02-01'), t('c', 'pro', '2026-03-01')];
+    const r = selectMonitored(rows, new Set(['pro']));
+    expect(r.kept.map((x) => x.id)).toEqual(['a', 'b', 'c']);
+    expect(r.skipped).toBe(0);
+  });
+
+  it('keeps exactly one thesis for a free owner: the oldest tracked one', () => {
+    const rows = [t('newer', 'free', '2026-08-20'), t('oldest', 'free', '2026-07-01'), t('mid', 'free', '2026-08-01')];
+    const r = selectMonitored(rows, new Set());
+    expect(r.kept.map((x) => x.id)).toEqual(['oldest']);
+    expect(r.skipped).toBe(2);
+  });
+
+  it('a free owner with one thesis keeps it', () => {
+    const r = selectMonitored([t('only', 'free', '2026-08-20')], new Set());
+    expect(r.kept.map((x) => x.id)).toEqual(['only']);
+    expect(r.skipped).toBe(0);
+  });
+
+  it('mixes owners in one pass and preserves input order for the kept rows', () => {
+    const rows = [
+      t('p1', 'pro', '2026-05-01'),
+      t('f2', 'free', '2026-08-02'),
+      t('f1', 'free', '2026-08-01'),
+      t('p2', 'pro', '2026-06-01'),
+      t('g1', 'free2', '2026-07-01'),
+    ];
+    const r = selectMonitored(rows, new Set(['pro']));
+    expect(r.kept.map((x) => x.id)).toEqual(['p1', 'f1', 'p2', 'g1']);
+    expect(r.skipped).toBe(1);
+  });
+
+  it('breaks a created_at tie by id so the pick is stable across runs', () => {
+    const rows = [t('b', 'free', '2026-08-01'), t('a', 'free', '2026-08-01')];
+    expect(selectMonitored(rows, new Set()).kept.map((x) => x.id)).toEqual(['a']);
+  });
+
+  it('handles empty input', () => {
+    expect(selectMonitored([], new Set())).toEqual({ kept: [], skipped: 0 });
+  });
+
+  it('pins the free monitoring allowance at one', () => {
+    expect(FREE_MONITORED_LIMIT).toBe(1);
   });
 });

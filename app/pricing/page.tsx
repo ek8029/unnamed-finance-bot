@@ -46,7 +46,7 @@ const LEDGER: { feature: string; free: string; pro: string }[] = [
   { feature: 'Daily brief', free: 'General', pro: 'Conviction-led, your book' },
   { feature: 'Investment theses', free: 'One', pro: 'Every position you own' },
   { feature: 'Twelve months of history behind a thesis', free: 'Included', pro: 'Included' },
-  { feature: 'Ongoing monitoring, cited evidence', free: '—', pro: 'Watched every trading day' },
+  { feature: 'Ongoing monitoring, cited evidence', free: 'One thesis', pro: 'Every position, every trading day' },
   { feature: 'Harvestable loss figure', free: 'Included', pro: 'Included' },
   { feature: 'Which lots, and wash-sale screening', free: '—', pro: 'Across every account' },
   { feature: 'Earnings exposure', free: '—', pro: 'Across held positions' },
@@ -69,7 +69,7 @@ const faqItems = [
   {
     question: 'What does Pro add?',
     answer:
-      'Pro is $20/mo. Free gives you one thesis and the history behind it; Pro watches every position you own, every trading day, and adds the agent, the Thesis Builder, the factor lens, earnings exposure tracking, the tax center with tax-loss harvesting, and a conviction-led tailored brief.',
+      'Pro is $20/mo. Free gives you one thesis, the history behind it, and keeps watching it; Pro watches every position you own, every trading day, and adds the agent, the Thesis Builder, the factor lens, earnings exposure tracking, the tax center with tax-loss harvesting, and a conviction-led tailored brief.',
   },
   {
     question: 'Can I cancel anytime?',

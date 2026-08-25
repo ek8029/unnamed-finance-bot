@@ -17,7 +17,7 @@ import { citationDefect } from '@/lib/content/citation-quality';
 import { extractFilingSection, stripFilingHtml } from '@/lib/filing-extract';
 import { derivePillarStatus, type EvidenceForStatus, type PillarStatus } from '@/lib/thesis-status';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
-import { entitledToMonitoring } from '@/lib/thesis-entitlement';
+import { entitledToMonitoring, selectMonitored } from '@/lib/thesis-entitlement';
 import { filingSinceDate } from '@/lib/filing-window';
 import type { BreachEvent } from '@/lib/thesis-breach';
 import { isComparisonHeadline } from '@/lib/news-quality';
@@ -162,7 +162,7 @@ export async function scoreAllTheses(
   // Fetch theses
   let query = serviceClient
     .from('theses')
-    .select('id, user_id, ticker, tracked, last_scanned_at')
+    .select('id, user_id, ticker, tracked, last_scanned_at, created_at')
     .eq('tracked', true);
   if (tickerScope) {
     query = query.eq('ticker', tickerScope);
@@ -176,19 +176,18 @@ export async function scoreAllTheses(
     return { scanned, evidenceAdded, statusChanges, breaches, log };
   }
 
-  // Ongoing monitoring is the paid half of the product. A free user may confirm
-  // a thesis and read its backfilled history; the agent only keeps watching it
-  // for someone entitled. Without this the cron would score every tracked
+  // A free user keeps one thesis under watch, their oldest tracked one; Pro
+  // keeps every position. Without this the cron would score every tracked
   // thesis regardless of tier, which was harmless only while thesis creation
   // was itself Pro-gated.
   let theses = allTheses;
   if (allTheses && allTheses.length > 0) {
     const owners = [...new Set(allTheses.map((t: { user_id: string }) => t.user_id))];
     const entitled = await entitledToMonitoring(serviceClient, owners);
-    theses = allTheses.filter((t: { user_id: string }) => entitled.has(t.user_id));
-    const skipped = allTheses.length - theses.length;
-    if (skipped > 0) {
-      log.push(`Skipped ${skipped} tracked thesis/theses owned by unentitled users.`);
+    const picked = selectMonitored(allTheses as Array<{ id: string; user_id: string; created_at?: string | null }>, entitled);
+    theses = picked.kept as typeof allTheses;
+    if (picked.skipped > 0) {
+      log.push(`Skipped ${picked.skipped} tracked thesis/theses beyond the free allowance of one per user.`);
     }
   }
 
