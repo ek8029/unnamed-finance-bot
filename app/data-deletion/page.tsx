@@ -23,9 +23,9 @@ export default function DataDeletionPage() {
         <h2>Self-Service Account Deletion</h2>
         <p>You can delete your account directly from the app:</p>
         <ul>
-          <li>Navigate to <strong>Settings &gt; Data &amp; Privacy</strong></li>
-          <li>Click <strong>Delete Account</strong></li>
-          <li>Enter your password and type &ldquo;DELETE&rdquo; to confirm</li>
+          <li>Navigate to <strong>Settings &gt; Danger zone</strong> (direct link: <a href="/dashboard/settings#danger">helmterminal.dev/dashboard/settings#danger</a>)</li>
+          <li>Click <strong>Delete account</strong></li>
+          <li>Enter your password (if you sign in with Google or Apple, type &ldquo;CONFIRM&rdquo; instead) and type &ldquo;DELETE&rdquo; to confirm</li>
           <li>Your account and all data will be permanently removed</li>
         </ul>
       </section>
