@@ -35,14 +35,11 @@ function PostHogIdentify() {
           name: user.user_metadata?.full_name,
           auth_provider: user.app_metadata?.provider,
         })
-        // New OAuth user: created_at within last 60s → fire signup_completed
-        const createdAt = new Date(user.created_at).getTime()
-        if (Date.now() - createdAt < 60_000) {
-          ph.capture('signup_completed', {
-            method: user.app_metadata?.provider || 'google',
-            flow: window.location.pathname.includes('wrapped') ? 'wrapped' : 'default',
-          })
-        }
+        // signup_completed for OAuth users is captured server-side in
+        // app/auth/callback/route.ts. It lived here behind a "created_at
+        // within 60 s" check, which depended on this listener observing the
+        // SDK's own SIGNED_IN emission: a race at init, a repeat on every tab
+        // refocus.
       } else if (event === 'SIGNED_OUT') {
         ph.reset()
       }

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { ATTR_COOKIE, decodeFirstTouch } from '@/lib/attribution';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { captureServer } from '@/lib/posthog-server';
 
 /**
  * Supabase auth callback handler.
@@ -104,6 +105,19 @@ export async function GET(request: NextRequest) {
               email_subject: 'Welcome to Helm',
               sent_at: new Date().toISOString(),
             });
+
+            // One capture, here, where newness is certain. The client used to
+            // fire this from a SIGNED_IN listener gated on created_at within
+            // 60 s; that raced the SDK's init emission (43% of August Google
+            // signups captured) and re-fired on every tab refocus (up to 9x).
+            // Email signups capture on the signup page, so they are skipped.
+            const provider = user.app_metadata?.provider;
+            if (provider && provider !== 'email') {
+              captureServer('signup_completed', user.id, {
+                method: provider,
+                flow: next.startsWith('/wrapped') ? 'wrapped' : 'default',
+              });
+            }
           }
         }
       } catch (err) {
