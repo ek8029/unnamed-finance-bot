@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { syncPlaidItem, computeSnapshots, type PlaidItemForSync, type SyncResult } from '@/lib/plaid-sync';
 import { refreshMarketPrices, enrichMarketData, refreshMarketNews, updatePortfolioPerformance } from '@/lib/market-sync';
@@ -7,6 +7,8 @@ import { runDigestCron } from '@/lib/digest-cron';
 import { composeWeeklyNote, saveAnalystNote } from '@/lib/research/analyst-note';
 import { commitStandingSnapshots } from '@/lib/research/standing-questions';
 import { isOpenAccessWindow } from '@/lib/tier';
+import { POST as runDripEmails } from '@/app/api/emails/drip/route';
+import { GET as runWatchlistAlerts } from '@/app/api/cron/watchlist-alerts/route';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -57,18 +59,24 @@ export async function GET(request: Request) {
     }
 
     // ── Email jobs — must run before dedup can early-return ──
-
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://helmterminal.dev';
-    const cacheBust = `_t=${Date.now()}`;
+    //
+    // Called in-process, never fetched. The self-fetch through
+    // NEXT_PUBLIC_APP_URL went dead on 2026-05-21: the variable is http:// in
+    // production, Vercel answers 308 -> https, Node treats the scheme change as
+    // cross-origin and drops the Authorization header, the route says 401, and
+    // this log read "Sent 0 emails" every morning for three months. Route
+    // handlers are functions; there is nothing to fetch.
+    const internal = (path: string, method: 'GET' | 'POST') =>
+      new NextRequest(`http://cron.internal${path}`, {
+        method,
+        headers: { Authorization: `Bearer ${cronSecret}` },
+      });
 
     let dripResult = { sent: 0 };
     try {
-      const dripRes = await fetch(`${baseUrl}/api/emails/drip?${cacheBust}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
-        cache: 'no-store',
-      });
+      const dripRes = await runDripEmails(internal('/api/emails/drip', 'POST'));
       if (dripRes.ok) dripResult = await dripRes.json();
+      else log.push(`[drip] Route answered ${dripRes.status}`);
       log.push(`[drip] Sent ${dripResult.sent} emails`);
     } catch (err) {
       log.push(`[drip] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
@@ -77,11 +85,9 @@ export async function GET(request: Request) {
     // Watchlist price alerts
     let watchlistResult = { sent: 0 };
     try {
-      const watchlistRes = await fetch(`${baseUrl}/api/cron/watchlist-alerts?${cacheBust}`, {
-        headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
-        cache: 'no-store',
-      });
+      const watchlistRes = await runWatchlistAlerts(internal('/api/cron/watchlist-alerts', 'GET'));
       if (watchlistRes.ok) watchlistResult = await watchlistRes.json();
+      else log.push(`[watchlist] Route answered ${watchlistRes.status}`);
       log.push(`[watchlist] Sent ${watchlistResult.sent} alerts`);
     } catch (err) {
       log.push(`[watchlist] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
