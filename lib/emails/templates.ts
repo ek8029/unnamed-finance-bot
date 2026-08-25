@@ -189,7 +189,7 @@ export function getTemplate(dayIndex: number, userName?: string): EmailTemplate 
 
     case 7: return {
       subject: 'One last thing',
-      text: `Hey ${name},\n\nYou signed up a week ago, and your dashboard is still empty.\n\nIf you're not ready, try demo mode to see sample data: ${DASHBOARD_URL}\n\nWhen ready, connecting takes 30 seconds: ${ACCOUNTS_URL}\n\nNo more emails about this.\n\n- Helm Terminal`,
+      text: `Hey ${name},\n\nYou signed up a week ago, and your dashboard is still empty.\n\nIf you're not ready, try demo mode to see sample data: ${DASHBOARD_URL}\n\nWhen ready, connecting takes 30 seconds: ${ACCOUNTS_URL}\n\n- Helm Terminal`,
       html: wrap(`
         <div style="text-align:center;">
         ${heading('One last <span style="font-weight:700;color:#E6B94D;">thing.</span>')}
@@ -200,47 +200,48 @@ export function getTemplate(dayIndex: number, userName?: string): EmailTemplate 
         </div>
         ${cta('Connect Account', ACCOUNTS_URL)}
         ${dividerLine()}
-        <p style="margin:16px 0 0;font-size:10px;color:#8A8A8A;text-align:center;letter-spacing:0.3px;">No more emails about this. We'll be here when you're ready.</p>
+        <p style="margin:16px 0 0;font-size:10px;color:#8A8A8A;text-align:center;letter-spacing:0.3px;">We'll be here when you're ready.</p>
       `),
     };
 
     case 14: return {
-      subject: 'What Helm users are finding',
-      text: `Hey ${name},\n\nHere's what Helm users discovered in their first week:\n\n- One user found $23,380 in harvestable losses across 3 accounts\n- Another realized 68% of their portfolio was concentrated in tech through ETF overlap\n- Most users see their first actionable insight within 2 minutes of connecting\n\nYour dashboard is still waiting: ${ACCOUNTS_URL}\n\n- Helm Terminal`,
+      subject: 'What Helm shows you first',
+      text: `Hey ${name},\n\nTwo things Helm computes the moment a brokerage is connected, from your actual positions:\n\n- Your harvestable loss figure across every linked account\n- Where you are concentrated, once every account is counted together\n\nNo estimates, no sample data. Connecting takes about 30 seconds; the first sync a minute or two.\n\n${ACCOUNTS_URL}\n\n- Helm Terminal`,
       html: wrap(`
         <div style="text-align:center;">
-        ${heading('What users are <span style="font-weight:700;color:#E6B94D;">finding.</span>')}
-        ${subtext('Real results from Helm users in their first week.')}
+        ${heading('What Helm shows you <span style="font-weight:700;color:#E6B94D;">first.</span>')}
+        ${subtext('Computed from your positions the moment a brokerage is connected.')}
         </div>
         ${dividerLine()}
-        ${sectionLabel('Real discoveries')}
-        ${bulletItem('$23,380 in harvestable losses', 'Found across 3 linked accounts. Brokerage never flagged it.')}
-        ${bulletItem('68% tech concentration', 'Hidden inside ETFs. Looked diversified on the surface.')}
-        ${bulletItem('2 minutes to first insight', 'Connect once. Intelligence runs every night.')}
+        ${sectionLabel('From your real book')}
+        ${bulletItem('Harvestable losses', 'The figure across every linked account, from your lots.')}
+        ${bulletItem('Concentration', 'Where you are exposed once every account is counted together.')}
+        ${bulletItem('Then, every night', 'Prices, holdings and the brief refresh while you sleep.')}
         <div style="height:12px;"></div>
-        ${cta('See Your Portfolio', ACCOUNTS_URL)}
+        ${cta('Connect Account', ACCOUNTS_URL)}
         ${trustBar()}
       `),
     };
 
     case 21: return {
       subject: 'Helm Pro: thesis monitoring and tax intelligence for $20/mo',
-      text: `Hey ${name},\n\nHelm Pro is $20/mo.\n\nWhat you get:\n- Thesis monitoring with cited evidence\n- Tax center with wash-sale-aware TLH\n- Earnings exposure alerts\n- Conviction-led tailored brief\n\nMax is $50/mo and adds the agent, the Thesis Builder, and the factor lens.\n\nThe free tier already includes the full terminal, AI analysis, daily brief, and actions inbox.\n\nhelmterminal.dev/pricing\n\n- Helm Terminal`,
+      text: `Hey ${name},\n\nHelm Pro is $20/mo.\n\nWhat it adds:\n- Every position watched, every trading day, with cited evidence\n- The agent: reassessment, investigation, shared exposure\n- The Thesis Builder and the factor lens\n- Tax center with tax-loss harvesting, wash-sale aware\n- Earnings exposure across held positions\n- A conviction-led brief built around your book\n\nFree stays free: the full terminal, one thesis kept under watch, AI stock analysis, the daily brief and the actions inbox.\n\nhttps://helmterminal.dev/pricing\n\n- Helm Terminal`,
       html: wrap(`
         <div style="text-align:center;">
         ${heading('<span style="font-weight:700;color:#E6B94D;">$20/mo.</span> Helm Pro.')}
-        ${subtext('Thesis monitoring, earnings, and the tax center. Max is $50/mo.')}
+        ${subtext('Every position watched, the agent, earnings, and the tax center.')}
         </div>
         ${dividerLine()}
         ${sectionLabel('What Pro adds')}
-        ${bulletItem('Thesis monitoring', 'Cited evidence the moment a thesis starts to break.')}
+        ${bulletItem('Every position watched', 'Cited evidence the moment a thesis starts to break.')}
+        ${bulletItem('The agent', 'Reassessment, investigation, shared exposure. Plus the Thesis Builder and the factor lens.')}
         ${bulletItem('Tax center', 'Harvestable losses with 30-day wash-sale screening.')}
         ${bulletItem('Earnings exposure', 'Know when your holdings report, before they move.')}
         ${bulletItem('Tailored brief', 'Conviction-led, built around your positions.')}
         <div style="height:12px;"></div>
         ${cta('Upgrade to Pro', 'https://helmterminal.dev/pricing')}
         ${dividerLine()}
-        <p style="margin:16px 0 0;font-size:11px;color:#8A8A8A;text-align:center;">The free tier already includes the full terminal, AI analysis, daily brief, and actions inbox. Pro adds tax intelligence.</p>
+        <p style="margin:16px 0 0;font-size:11px;color:#8A8A8A;text-align:center;">Free stays free: the full terminal, one thesis kept under watch, AI stock analysis, the daily brief and the actions inbox.</p>
       `),
     };
 
