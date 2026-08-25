@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
   const now = new Date();
   let sent = 0;
   let skipped = 0;
+  let deferred = 0;
   const errors: string[] = [];
 
   try {
@@ -42,8 +43,30 @@ export async function POST(request: NextRequest) {
     const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers({ perPage: 1000 });
     if (usersError) throw usersError;
 
+    // Who said no. `notification_email` on user_preferences is the master
+    // switch that one-click unsubscribe sets (lib/notify/preferences.ts); it
+    // has never lived on user_profiles. This route sent with no check at all,
+    // which was invisible only because the route was not being reached. A
+    // failed read is not consent: skip the run and let tomorrow retry.
+    const { data: prefRows, error: prefsError } = await supabase
+      .from('user_preferences')
+      .select('user_id, notification_email')
+      .eq('notification_email', false);
+    if (prefsError) {
+      return NextResponse.json({ error: `Preference read failed: ${prefsError.message}` }, { status: 500 });
+    }
+    const optedOut = new Set((prefRows ?? []).map((r: { user_id: string }) => r.user_id));
+
+    // The route was silent from 2026-05-21 to 2026-08-25, so the first run
+    // after revival owes about 200 people a drip, most of them the day-30
+    // note. A cap turns that into a few days of normal volume instead of one
+    // burst; listUsers returns newest first, so fresh signups go first.
+    const MAX_SENDS_PER_RUN = 40;
+
     for (const user of users) {
       if (!user.email) continue;
+      if (optedOut.has(user.id)) { skipped++; continue; }
+      if (sent >= MAX_SENDS_PER_RUN) { deferred++; continue; }
 
       // Check Plaid connection status and subscription tier
       const { data: plaidItems } = await supabase
@@ -162,7 +185,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ sent, skipped, errors: errors.length > 0 ? errors : undefined });
+    return NextResponse.json({ sent, skipped, deferred, errors: errors.length > 0 ? errors : undefined });
   } catch (err) {
     console.error('Drip email error:', err);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
