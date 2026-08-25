@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AUTH_MESSAGES, type AuthMessageKey } from '@/lib/auth-messages';
+import { AUTH_MESSAGES, UNCONFIRMED_LOGIN_ERROR, type AuthMessageKey } from '@/lib/auth-messages';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { AuthShell } from '@/components/auth-shell';
@@ -90,7 +90,11 @@ function LoginForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Login failed');
+        // Right after signup the account exists but is unconfirmed. The API
+        // says "Invalid email or password" for that too (no enumeration), and
+        // people read it literally and reset a password that was never wrong.
+        const unconfirmed = res.status === 401 && messageKey === 'check-email';
+        setError(unconfirmed ? UNCONFIRMED_LOGIN_ERROR : (data.error || 'Login failed'));
         return;
       }
 

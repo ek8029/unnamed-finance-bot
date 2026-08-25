@@ -44,3 +44,17 @@ describe('auth message redirects', () => {
     }
   });
 });
+
+describe('unconfirmed-email login error', () => {
+  it('exists, is not the generic credentials error, and /login uses it', async () => {
+    const mod = await import('../lib/auth-messages');
+    const copy: string = (mod as Record<string, unknown>).UNCONFIRMED_LOGIN_ERROR as string;
+    expect(typeof copy).toBe('string');
+    expect(copy.length).toBeGreaterThan(0);
+    expect(copy.includes('—')).toBe(false);
+    expect(/invalid/i.test(copy)).toBe(false);
+    expect(/confirm/i.test(copy)).toBe(true);
+    const login = readFileSync(join(process.cwd(), 'app/login/page.tsx'), 'utf8');
+    expect(login).toContain('UNCONFIRMED_LOGIN_ERROR');
+  });
+});

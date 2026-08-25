@@ -238,12 +238,19 @@ export async function POST(request: Request) {
     // also verifies it (requires Dashboard CAPTCHA to be enabled)
     // ──────────────────────────────────────────────────────────────────────
     const supabase = await createClient();
+    // The confirmation link lands on the auth callback, so the device that
+    // clicks it gets a session and the deferred welcome goes out. Without
+    // this, Supabase sent people to the Site URL homepage signed out and they
+    // signed up again. Origin comes from the request, not NEXT_PUBLIC_APP_URL:
+    // that variable is http:// in production and the allowlist holds https.
+    const origin = new URL(request.url).origin;
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { full_name: full_name || null },
         captchaToken: captchaToken || undefined,
+        emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent('/dashboard')}`,
       },
     });
 
@@ -319,8 +326,9 @@ export async function POST(request: Request) {
     // confirmed yet.
     //
     // No session means unconfirmed. Skipping here is not a lost email: day 0 is
-    // not written to email_drip_log, so the drip cron finds it unsent and sends
-    // it on its next run. The guard below is what stops a double.
+    // not written to email_drip_log, so the auth callback (where the
+    // confirmation link now lands) sees no day-0 row and sends the welcome on
+    // confirmation. The drip cron cannot: DRIP_DAYS starts at 1.
     try {
       if (!data.session) throw new Error('unconfirmed: welcome deferred to drip cron');
       const { resend: resendClient, FROM_EMAIL } = await import('@/lib/emails/resend');

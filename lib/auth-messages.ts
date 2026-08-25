@@ -23,3 +23,15 @@ export const AUTH_MESSAGES = {
 } as const;
 
 export type AuthMessageKey = keyof typeof AUTH_MESSAGES;
+
+/**
+ * Shown by /login when a password attempt fails while `?message=check-email`
+ * is on the URL, i.e. right after an email signup. GoTrue rejects an
+ * unconfirmed account before it looks at the password, and the login API
+ * deliberately flattens every failure to "Invalid email or password" so the
+ * response cannot be used to enumerate accounts. In August 19 of 23 login
+ * failures were "Email not confirmed", most within minutes of signing up, and
+ * people went to Forgot password. The true reading lives client-side only.
+ */
+export const UNCONFIRMED_LOGIN_ERROR =
+  'Your email is not confirmed yet. Open the link we sent you first, then sign in. If it is not there, check spam or promotions.';
