@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch'
 import { useSettings } from '@/contexts/settings-context'
 import { useToast } from '@/contexts/toast-context'
 import { supabase as supabaseBrowser } from '@/lib/supabase/client'
+import NextLink from 'next/link'
 import { useTier } from '@/hooks/use-tier'
 import { useAccounts } from '@/hooks/use-financial-data'
 import { useFormat } from '@/hooks/use-format'
@@ -45,6 +46,7 @@ import {
   Trash2,
   Download,
   RotateCcw,
+  PenLine,
 } from 'lucide-react'
 
 // ── Types ──
@@ -340,6 +342,27 @@ export default function SettingsPage() {
     errorCount: number
     items: ConnectionHealthItem[]
   }>({ lastSync: null, itemCount: 0, errorCount: 0, items: [] })
+
+  // A hand-entered book is a linked_account with source 'manual'. It never
+  // appears in Plaid health, so the list below gives it its own card, with the
+  // count and value read from the manual-portfolio endpoint.
+  const hasManual = accounts.some((a) => a.source === 'manual')
+  const [manual, setManual] = useState<{ count: number; total: number } | null>(null)
+  useEffect(() => {
+    if (!hasManual) { setManual(null); return }
+    let gone = false
+    fetch('/api/portfolio/manual')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { holdings?: { total_value?: number }[] } | null) => {
+        if (gone || !j?.holdings) return
+        setManual({
+          count: j.holdings.length,
+          total: j.holdings.reduce((s, h) => s + (Number(h.total_value) || 0), 0),
+        })
+      })
+      .catch(() => {})
+    return () => { gone = true }
+  }, [hasManual])
 
   // ── Tax settings state ──
   const [filingStatus, setFilingStatus] = useState<string>('')
@@ -1211,7 +1234,10 @@ export default function SettingsPage() {
           <div className="text-center py-12 text-[var(--color-text-secondary)]">
             <Link className="w-10 h-10 mx-auto mb-3 text-[var(--color-text-muted)]" />
             <p className="text-[15px] mb-1">No accounts connected</p>
-            <p className="text-[15px] text-[var(--color-text-muted)]">Link your first account to get started</p>
+            <p className="text-[15px] text-[var(--color-text-muted)]">
+              Link a brokerage, or{' '}
+              <NextLink href="/dashboard/portfolio/add" className="text-[var(--color-gold)] hover:underline">enter positions by hand</NextLink>.
+            </p>
           </div>
         ) : (
           <>
@@ -1381,6 +1407,33 @@ export default function SettingsPage() {
           </>
         )}
 
+        {/* Hand-entered book: its own card, never a Plaid item */}
+        {hasManual && (
+          <div className="relative p-4 bg-[var(--color-bg-elevated)] rounded-lg border border-[var(--color-border-base)]">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-lg border border-[var(--color-border-base)] flex items-center justify-center shrink-0">
+                  <PenLine className="w-5 h-5 text-[var(--color-text-muted)]" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[15px] font-medium text-[var(--color-text-primary)]">Entered by hand</p>
+                  <p className="text-[14px] text-[var(--color-text-muted)]">
+                    {manual
+                      ? `${manual.count} position${manual.count === 1 ? '' : 's'} · $${Math.round(manual.total).toLocaleString('en-US')}`
+                      : 'Positions you typed in'}
+                  </p>
+                </div>
+              </div>
+              <NextLink href="/dashboard/portfolio/add" className="text-[14px] text-[var(--color-gold)] hover:underline shrink-0">
+                Add or edit
+              </NextLink>
+            </div>
+            <p className="text-[13px] text-[var(--color-text-muted)] mt-3">
+              Not synced. If you connect a brokerage that holds the same tickers, these entries are replaced by the real positions on the next sync.
+            </p>
+          </div>
+        )}
+
         {/* Add account card */}
         <button
           onClick={() => setShowAddAccount(true)}
@@ -1396,6 +1449,22 @@ export default function SettingsPage() {
             </div>
           </div>
         </button>
+
+        {/* The other door: no connection at all */}
+        <NextLink
+          href="/dashboard/portfolio/add"
+          className="block w-full p-4 rounded-lg border-2 border-dashed border-[var(--color-border-base)] hover:border-[var(--color-gold)]/50 bg-transparent hover:bg-[var(--color-gold)]/5 motion-safe:transition-all group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg border-2 border-dashed border-[var(--color-border-base)] group-hover:border-[var(--color-gold)]/50 flex items-center justify-center motion-safe:transition-colors">
+              <PenLine className="w-5 h-5 text-[var(--color-text-muted)] group-hover:text-[var(--color-gold)] motion-safe:transition-colors" />
+            </div>
+            <div className="text-left">
+              <p className="text-[15px] font-medium text-[var(--color-text-primary)]">Enter positions by hand</p>
+              <p className="text-[14px] text-[var(--color-text-muted)]">No connection needed. Ticker, shares, cost basis.</p>
+            </div>
+          </div>
+        </NextLink>
       </div>
 
       {/* Sync Preferences */}

@@ -50,6 +50,7 @@ interface Account {
   account_name: string;
   sync_status: string;
   last_synced_at?: string;
+  source?: string;
 }
 
 interface Holding {

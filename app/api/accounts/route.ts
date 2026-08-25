@@ -62,6 +62,10 @@ export async function GET() {
       account_name: account.account_name,
       sync_status: account.sync_status,
       last_synced_at: account.last_synced_at,
+      // 'plaid' or 'manual'. The connected-accounts page lists Plaid items from
+      // the health endpoint; without this it had no way to show a hand-entered
+      // book at all.
+      source: account.source,
     }));
 
     // Build balance history from net worth snapshots with cash flow
