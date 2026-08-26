@@ -55,7 +55,7 @@ export default function AdvisorClient() {
           <section className="adv-section">
             <div className="adv-section-head">
               <span className="adv-eyebrow">Accounts</span>
-              <small>custody and tax status decide what you can do about anything below</small>
+              <small>where you can trade, and where a harvest counts</small>
             </div>
             <table className="adv-table">
               <thead>
@@ -80,7 +80,7 @@ export default function AdvisorClient() {
           <section className="adv-section">
             <div className="adv-section-head">
               <span className="adv-eyebrow">Positions and why they are held</span>
-              <small>7 of 23 shown · thesis status is the last document that tested it</small>
+              <small>7 of 23 · status reflects the most recent document that tested the reason</small>
             </div>
             <table className="adv-table">
               <thead>
@@ -111,7 +111,7 @@ export default function AdvisorClient() {
           <section className="adv-section">
             <div className="adv-section-head">
               <span className="adv-eyebrow">Harvestable losses · taxable accounts only</span>
-              <small>{usd(OKAFOR.excludedRetirement, { compact: true })} in retirement accounts excluded by construction</small>
+              <small>{usd(OKAFOR.excludedRetirement, { compact: true })} in retirement accounts not counted</small>
             </div>
             <table className="adv-table">
               <thead>
@@ -142,7 +142,7 @@ export default function AdvisorClient() {
           <div className="adv-eyebrow">Concentration</div>
           <div className="adv-stat">
             <div className="adv-stat-n">NVDA <small>18.2%</small></div>
-            <div className="adv-stat-l">Across three accounts. <b>6.1%</b> in your custody, <b>12.1%</b> in Robinhood and the 401(k). Orion shows the first number.</div>
+            <div className="adv-stat-l">Across three accounts. <b>6.1%</b> in the accounts you custody, <b>12.1%</b> in Robinhood and the 401(k). Your custodian statements show only the first.</div>
             <div className="adv-scale" style={{ marginTop: 8 }}>
               <i style={{ width: '6.1%' }} /><i className="held" style={{ left: '6.1%', width: '12.1%' }} /><b style={{ left: '20%' }} />
             </div>

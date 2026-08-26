@@ -16,8 +16,8 @@ export default function AdvisorCompliance() {
             Who saw what, <em>and the file that says so</em>
           </h1>
           <p className="adv-lede">
-            This role sees consent, access and documents. It does not see a single position, balance or thesis, so the
-            person who has to answer an examiner can do the job without touching client data.
+            Consent, access and documents. No positions, balances or theses appear on this screen, so the review can be done
+            without opening a client account.
           </p>
         </div>
         <div className="adv-head-meta">
@@ -32,7 +32,7 @@ export default function AdvisorCompliance() {
           <section className="adv-section">
             <div className="adv-section-head">
               <span className="adv-eyebrow">Consent register</span>
-              <small>the accepted tuple is the artifact · 6 of 39 shown</small>
+              <small>time, address and device recorded at acceptance · 6 of 39</small>
             </div>
             <table className="adv-table">
               <thead>
@@ -57,7 +57,7 @@ export default function AdvisorCompliance() {
           <section className="adv-section">
             <div className="adv-section-head">
               <span className="adv-eyebrow">Access log</span>
-              <small>every read of client data by a person writes a row · semantic, not row-level</small>
+              <small>every view of client data by a person · last 24 hours</small>
             </div>
             <table className="adv-table">
               <thead>
@@ -81,7 +81,7 @@ export default function AdvisorCompliance() {
           <section className="adv-section">
             <div className="adv-section-head">
               <span className="adv-eyebrow">Vendor file · Helm</span>
-              <small>what your diligence record holds on us</small>
+              <small>documents on file for your vendor review</small>
             </div>
             <table className="adv-table">
               <thead>

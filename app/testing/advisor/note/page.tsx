@@ -92,15 +92,15 @@ export default function AdvisorNote() {
             </div>
           </div>
 
-          <div className="adv-eyebrow" style={{ marginTop: 22 }}>What the guardrail removed</div>
+          <div className="adv-eyebrow" style={{ marginTop: 22 }}>Left out of this note</div>
           <div className="adv-stat">
             <div className="adv-guard">
               <span className="adv-struck">&ldquo;Had we trimmed in March you would be $41,000 better off.&rdquo;</span>
-              <br /><b>Not written.</b> Hypothetical performance turns a note to one client into an advertisement under
+              <br /><b>Left out.</b> A hypothetical figure would make this note an advertisement under the Marketing Rule,
               206(4)-1(e)(1).
               <br /><br />
               <span className="adv-struck">&ldquo;Our model expects the stock to recover by Q1.&rdquo;</span>
-              <br /><b>Not written.</b> A forecast. The filing is quoted; the future is not.
+              <br /><b>Left out.</b> A forecast. The note quotes the filing and stops there.
             </div>
           </div>
 
@@ -110,7 +110,7 @@ export default function AdvisorNote() {
               10-Q 2026-08-25 p.23 · retrieved 06:31<br />
               April note · sent 2026-04-09 · on file<br />
               Household weights · synced 06:12<br />
-              Breaks shown with holds: 1 of 6 pillars
+              Pillars tested: 6 · contradicted: 1
             </div>
           </div>
 

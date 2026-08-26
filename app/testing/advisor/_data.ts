@@ -153,8 +153,8 @@ export const ACCESS_LOG = [
 export const VENDOR_FILE = [
   { doc: 'Vendor agreement + data protection exhibit', status: 'Signed 2026-07-01', note: '72-hour breach notice from awareness. Export rights. Not an investment adviser.' },
   { doc: 'Subprocessor register', status: 'Current · 6 entries', note: 'Supabase, Vercel, Resend, PostHog, OpenAI, Plaid. 30-day change notice.' },
-  { doc: 'Security self-assessment', status: '17 of 17 answered', note: 'Encryption, access control, pen test, IR, BCP/DR, retention, AI data use.' },
+  { doc: 'Security questionnaire', status: '17 of 17 answered', note: 'Encryption, access control, penetration testing, incident response, backup and recovery, retention, AI data handling.' },
   { doc: 'Cyber liability certificate', status: '$2M · renews 2027-06', note: 'Carrier certificate on file.' },
   { doc: 'AI data handling statement', status: 'Current', note: 'Portfolio content sent to OpenAI API; not used for training; retained up to 30 days in abuse logs.' },
-  { doc: 'SOC 2', status: 'Not held', note: 'Type I available on request within 8 weeks. Stated plainly rather than implied.' },
+  { doc: 'SOC 2', status: 'Not held', note: 'Type I report available on request; allow 8 weeks.' },
 ];

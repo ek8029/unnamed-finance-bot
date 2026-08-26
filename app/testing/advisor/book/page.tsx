@@ -38,7 +38,7 @@ export default function AdvisorBook() {
           <section className="adv-section">
             <div className="adv-section-head">
               <span className="adv-eyebrow">Overnight · what needs you</span>
-              <small>3 items · everything else is on the ledger</small>
+              <small>3 items · the rest of the book is below</small>
             </div>
             <div className="adv-events">
               {OVERNIGHT.map((e) => (
@@ -65,7 +65,7 @@ export default function AdvisorBook() {
           <section className="adv-section">
             <div className="adv-section-head">
               <span className="adv-eyebrow">The book</span>
-              <small>held-away counted in · sorted by what changed · 10 of 38 shown</small>
+              <small>held-away accounts included · what changed first · 10 of 38</small>
             </div>
             <table className="adv-table">
               <thead>
@@ -166,7 +166,7 @@ export default function AdvisorBook() {
 
           <div className="adv-stat">
             <div className="adv-stat-n">{BOOK_ROLLUPS.quiet} <small>quiet</small></div>
-            <div className="adv-stat-l">Households where nothing tested a reason to own anything. This number is the product.</div>
+            <div className="adv-stat-l">Households where nothing in yesterday’s documents tested a reason to own anything. Each was read in full.</div>
           </div>
 
           <div className="adv-stat">
