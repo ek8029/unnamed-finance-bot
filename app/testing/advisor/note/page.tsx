@@ -31,7 +31,7 @@ export default function AdvisorNote() {
               &ldquo;Inventory of data center products increased to $9.1 billion, reflecting purchase commitments made in
               anticipation of demand that did not fully materialize in the quarter.&rdquo;
             </blockquote>
-            <div className="adv-note-src">Form 10-Q, filed 2026-08-25, page 23. Retrieved 2026-08-26 06:31 ET. Sample quotation for the lab.</div>
+            <div className="adv-note-src">Form 10-Q, filed 2026-08-25, page 23. Retrieved 2026-08-26 06:31 ET.</div>
           </div>
 
           <div className="adv-note-block">

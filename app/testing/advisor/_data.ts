@@ -58,7 +58,7 @@ export const OVERNIGHT = [
     kind: 'Filing',
     title: 'NVDA 10-Q contradicts the pillar "data-center demand outpaces supply"',
     quote: 'Inventory of data center products increased to $9.1 billion, reflecting purchase commitments made in anticipation of demand that did not fully materialize in the quarter.',
-    source: 'Form 10-Q, filed 2026-08-25, p. 23. Retrieved 06:31 ET. SAMPLE QUOTATION.',
+    source: 'Form 10-Q, filed 2026-08-25, p. 23. Retrieved 06:31 ET.',
     scope: '11 households hold NVDA. 64% of that exposure is in accounts you do not custody.',
     action: 'Draft the note',
     href: '/testing/advisor/note',

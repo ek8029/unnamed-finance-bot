@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { THEMES } from './theme-shell';
 
 const SCREENS = [
   {
@@ -24,13 +25,20 @@ const SCREENS = [
   },
   {
     no: '04',
+    href: '/testing/advisor/digest',
+    name: 'The digest',
+    body: 'Monday 6:45 AM. Numbers first, then the three things that need a person, then what went out last week. The email is the habit; the book gets opened when the email says something happened.',
+    why: 'Spec §2.3 (digest creates the habit), research 03 §3.3 (16 to 20 touchpoints, 1 to 2 meetings)',
+  },
+  {
+    no: '05',
     href: '/testing/advisor/consent',
     name: 'Consent',
     body: 'The client’s screen. What the advisor will see, what they never will, and that revoking is one click with no approval. The consent tuple is the artifact.',
     why: 'Spec §2.2 and §3.4 (advisor invites, client accepts, revocation instant)',
   },
   {
-    no: '05',
+    no: '06',
     href: '/testing/advisor/compliance',
     name: 'Compliance',
     body: 'The CCO’s view: consent register, access log, vendor file, export. Not one position on the page. The diligence pack a small firm actually asks for, answered honestly, SOC 2 included.',
@@ -43,14 +51,14 @@ export default function AdvisorLabIndex() {
     <main className="adv-page">
       <div className="adv-head">
         <div>
-          <div className="adv-eyebrow">Design lab · 2026-08-26</div>
+          <div className="adv-eyebrow">Larkspur Wealth Partners · Sarah Whitcomb</div>
           <h1 className="adv-h1">
-            Helm for advisors, <em>five screens</em>
+            Helm for advisors, <em>six screens, six palettes</em>
           </h1>
           <p className="adv-lede">
             Vendor to a 5 to 15 person RIA. Read-only, evidence-first, never trades. Built from the research in
-            ria-research/SYNTHESIS.md rather than from the consumer terminal, so it is paper, ink and hairlines instead of
-            black and gold. Every figure is sample data.
+            ria-research/SYNTHESIS.md rather than from the consumer terminal. Pick a palette in the strip; it follows you
+            across every screen.
           </p>
         </div>
         <div className="adv-head-meta">
@@ -59,6 +67,22 @@ export default function AdvisorLabIndex() {
           Gate: the CCO, who sees no positions
         </div>
       </div>
+
+      <section className="adv-section" style={{ borderBottom: 0 }}>
+        <div className="adv-section-head">
+          <span className="adv-eyebrow">Palettes</span>
+          <small>three light, three dark · same layout, same copy</small>
+        </div>
+        <div className="adv-palettes">
+          {THEMES.map((t) => (
+            <div key={t.id} className="adv-palette">
+              <div className="sw"><span className="adv-theme-btn" style={{ padding: 0, border: 0 }}><i data-swatch={t.id} style={{ width: 22, height: 22 }} /></span></div>
+              <b>{t.name} <span style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '.12em', color: 'var(--ink-3)' }}>{t.mode.toUpperCase()}</span></b>
+              <p>{t.line}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <div className="adv-index">
         {SCREENS.map((s) => (
