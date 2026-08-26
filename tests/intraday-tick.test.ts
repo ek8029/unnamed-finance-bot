@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { repriceHolding, toHoldingUpdate } from '../lib/market/last-trade';
+import { intradayNetWorthSeries, onlyToday, portfolioTotalsByUser } from '../lib/market/intraday-series';
 
 describe('repriceHolding', () => {
   it('values the position at the last trade and stores the day change as a fraction', () => {
@@ -58,5 +59,44 @@ describe('intraday tick cron', () => {
     const [from, to] = hour.split('-').map(Number);
     expect(from).toBeLessThanOrEqual(13); // 9:30 EDT = 13:30 UTC
     expect(to).toBeGreaterThanOrEqual(21); // 16:00 EST = 21:00 UTC
+  });
+});
+
+describe('intraday (1D) series', () => {
+  it('sums the book per user, using the tick price where one landed', () => {
+    const totals = portfolioTotalsByUser(
+      [
+        { id: 'a', user_id: 'u1', total_value: 1000 },
+        { id: 'b', user_id: 'u1', total_value: 500 },
+        { id: 'c', user_id: 'u2', total_value: 42 },
+      ],
+      new Map([['a', 1100]]), // only holding a was repriced this tick
+    );
+    expect(totals.get('u1')).toBe(1600);
+    expect(totals.get('u2')).toBe(42);
+  });
+
+  it('adds flat cash and liabilities back so the last point is the displayed net worth', () => {
+    const pts = [
+      { captured_at: '2026-08-26T14:35:00.000Z', total_value: '48000' },
+      { captured_at: '2026-08-26T13:35:00.000Z', total_value: 47000 },
+    ];
+    // net worth 60,000 with a 48,000 book: 12,000 of cash minus debt.
+    const s = intradayNetWorthSeries(pts, 60000, 48000);
+    expect(s.map((p) => p.value)).toEqual([59000, 60000]);
+    expect(s[0].at < s[1].at).toBe(true);
+  });
+
+  it('keeps only points from today in New York', () => {
+    const now = new Date('2026-08-26T18:00:00Z'); // 14:00 ET
+    const kept = onlyToday(
+      [
+        { captured_at: '2026-08-26T14:00:00Z', total_value: 1 }, // 10:00 ET today
+        { captured_at: '2026-08-26T02:00:00Z', total_value: 2 }, // 22:00 ET yesterday
+        { captured_at: '2026-08-25T18:00:00Z', total_value: 3 },
+      ],
+      now,
+    );
+    expect(kept.map((p) => p.total_value)).toEqual([1]);
   });
 });

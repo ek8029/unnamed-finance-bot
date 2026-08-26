@@ -13,6 +13,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { getBatchLastTradePrices } from '@/lib/finazon';
 import { isUsMarketHours } from '@/lib/live-quotes';
 import { repriceHolding, toHoldingUpdate } from '@/lib/market/last-trade';
+import { portfolioTotalsByUser } from '@/lib/market/intraday-series';
 
 /** /price pace for the tick. The plan allows 200/min; 120 leaves 80 for the
  *  dashboard and mobile polls that share the budget. 291 held tickers at
@@ -36,7 +37,7 @@ export async function runIntradayTick(): Promise<IntradayTickResult> {
 
   const { data: holdings, error } = await db
     .from('holdings')
-    .select('id, ticker, shares, total_cost_basis, security_id')
+    .select('id, user_id, ticker, shares, total_cost_basis, total_value, security_id')
     .neq('ticker', 'UNKNOWN');
   if (error || !holdings || holdings.length === 0) {
     return { status: 200, body: { success: true, message: 'No holdings', updated: 0 } };
@@ -105,11 +106,31 @@ export async function runIntradayTick(): Promise<IntradayTickResult> {
       .map(([t, p]) => db.from('securities').update({ current_price: p, last_updated_at: now }).eq('id', securityByTicker.get(t)!)),
   );
 
+  // One point per user for the 1D chart (migration 066), then prune the
+  // week-old tail so the table stays a session log, not a history.
+  const repricedValue = new Map(updates.map((u) => [u.id, u.total_value]));
+  const totals = portfolioTotalsByUser(
+    holdings.map((h) => ({ id: h.id as string, user_id: h.user_id as string, total_value: h.total_value })),
+    repricedValue,
+  );
+  const pointRows = [...totals.entries()].map(([user_id, total_value]) => ({ user_id, captured_at: now, total_value }));
+  let points = 0;
+  if (pointRows.length > 0) {
+    const { error: pointErr } = await db.from('portfolio_intraday_snapshots').insert(pointRows);
+    if (pointErr) console.error('[intraday-tick] snapshot insert failed:', pointErr.message);
+    else points = pointRows.length;
+  }
+  await db
+    .from('portfolio_intraday_snapshots')
+    .delete()
+    .lt('captured_at', new Date(Date.now() - 7 * 86_400_000).toISOString());
+
   return {
     status: 200,
     body: {
       success: true,
       source: 'finazon-price',
+      snapshots: points,
       tickers: tickers.length,
       priced: prices.size,
       holdings_updated: updated,

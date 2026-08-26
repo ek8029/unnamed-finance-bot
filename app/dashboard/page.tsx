@@ -392,6 +392,7 @@ export default function DashboardOverview() {
     financialSummary,
     netWorthHistory,
     netWorthDaily,
+    netWorthIntraday,
     hasPlaidConnection,
     loading,
     error,
@@ -427,7 +428,7 @@ export default function DashboardOverview() {
   // state rather than a toast: a toast is the wrong shape for a dead end, since
   // it takes the only route out of the dead end away with it after four seconds.
   const [noInstitution, setNoInstitution] = useState(false);
-  const [nwRange, setNwRange] = useState<'1W' | '1M' | '3M' | '6M' | '1Y' | 'ALL'>('ALL');
+  const [nwRange, setNwRange] = useState<'1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | 'ALL'>('ALL');
 
   useEffect(() => {
     posthog.capture('dashboard_viewed', { has_plaid: hasPlaidConnection, is_demo: isDemo });
@@ -450,14 +451,19 @@ export default function DashboardOverview() {
   }, [financialSummary]);
 
   // ── Derived presentation data ──────────────────────────────────────────
-  // Net-worth history is monthly snapshots; the range pills slice trailing
-  // months. ALL keeps everything. (No intraday data → no 1D/1W ranges.)
-  // Chart points as {label, value}. Prefer the daily series (real per-day
-  // resolution → supports 1W/1M); fall back to the monthly history when no
-  // daily data exists yet (e.g. demo mode or a brand-new account).
+  // Chart points as {label, value}. 1D draws today's five-minute book values
+  // (the intraday tick); before the session's first tick it falls back to
+  // yesterday → today. Longer ranges prefer the daily series (real per-day
+  // resolution → supports 1W/1M) and fall back to the monthly history when
+  // no daily data exists yet (e.g. demo mode or a brand-new account).
   const chartPoints = useMemo(() => {
+    if (nwRange === '1D' && netWorthIntraday.length >= 2) {
+      const fmt = (iso: string) =>
+        new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
+      return netWorthIntraday.map((p) => ({ label: fmt(p.at), value: p.value }));
+    }
     if (netWorthDaily.length >= 2) {
-      const days = { '1W': 7, '1M': 31, '3M': 92, '6M': 183, '1Y': 366, ALL: Infinity }[nwRange];
+      const days = { '1D': 1, '1W': 7, '1M': 31, '3M': 92, '6M': 183, '1Y': 366, ALL: Infinity }[nwRange];
       const fmt = (d: string) =>
         new Date(`${d}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       let pts = netWorthDaily;
@@ -469,10 +475,10 @@ export default function DashboardOverview() {
       return pts.map((p) => ({ label: fmt(p.date), value: p.value }));
     }
     // Monthly fallback (no daily data): short ranges just show what we have.
-    const n = { '1W': 2, '1M': 2, '3M': 3, '6M': 6, '1Y': 12, ALL: Infinity }[nwRange];
+    const n = { '1D': 2, '1W': 2, '1M': 2, '3M': 3, '6M': 6, '1Y': 12, ALL: Infinity }[nwRange];
     const src = n === Infinity ? netWorthHistory : netWorthHistory.slice(-n);
     return src.map((p) => ({ label: p.month, value: p.value }));
-  }, [netWorthDaily, netWorthHistory, nwRange]);
+  }, [netWorthIntraday, netWorthDaily, netWorthHistory, nwRange]);
 
   const chartSeries = useMemo(
     () => (chartPoints.length >= 2 ? chartPoints.map((p) => p.value) : []),
@@ -483,6 +489,7 @@ export default function DashboardOverview() {
   // series the pills produced. Falls back to the month-over-month change from
   // the API when there's no daily series to slice (demo / brand-new account).
   const RANGE_LABEL: Record<typeof nwRange, string> = {
+    '1D': 'today',
     '1W': 'past week',
     '1M': 'past month',
     '3M': 'past 3 months',
@@ -797,7 +804,7 @@ export default function DashboardOverview() {
         </div>
         <div className="flex flex-col items-end gap-2.5">
           <div className="flex flex-wrap justify-end gap-1 text-[12px] uppercase tracking-[0.1em]" style={MONO}>
-            {(['1W', '1M', '3M', '6M', '1Y', 'ALL'] as const).map((r) => (
+            {(['1D', '1W', '1M', '3M', '6M', '1Y', 'ALL'] as const).map((r) => (
               <button
                 key={r}
                 onClick={() => setNwRange(r)}

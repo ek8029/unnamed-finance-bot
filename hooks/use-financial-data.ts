@@ -106,6 +106,7 @@ interface FinancialDataState {
   holdings: Holding[];
   netWorthHistory: NetWorthDataPoint[];
   netWorthDaily: { date: string; value: number }[];
+  netWorthIntraday: { at: string; value: number }[];
   cashFlowHistory: CashFlowDataPoint[];
   assetsComposition: CompositionItem[];
   liabilitiesComposition: CompositionItem[];
@@ -127,6 +128,7 @@ export function useFinancialSummary() {
     holdings: [],
     netWorthHistory: [],
     netWorthDaily: [],
+    netWorthIntraday: [],
     cashFlowHistory: [],
     assetsComposition: [],
     liabilitiesComposition: [],
@@ -151,6 +153,7 @@ export function useFinancialSummary() {
           holdings: data.holdings || [],
           netWorthHistory: data.netWorthHistory || [],
           netWorthDaily: data.netWorthDaily || [],
+          netWorthIntraday: data.netWorthIntraday || [],
           cashFlowHistory: data.cashFlowHistory || [],
           assetsComposition: data.assetsComposition || [],
           liabilitiesComposition: data.liabilitiesComposition || [],
@@ -203,6 +206,7 @@ export function useFinancialSummary() {
               holdings: data.holdings || prev.holdings,
               netWorthHistory: data.netWorthHistory || prev.netWorthHistory,
               netWorthDaily: data.netWorthDaily || prev.netWorthDaily,
+              netWorthIntraday: data.netWorthIntraday || prev.netWorthIntraday,
               cashFlowHistory: data.cashFlowHistory || prev.cashFlowHistory,
               assetsComposition: data.assetsComposition || prev.assetsComposition,
               liabilitiesComposition: data.liabilitiesComposition || prev.liabilitiesComposition,

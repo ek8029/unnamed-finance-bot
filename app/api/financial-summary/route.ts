@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { parseDateLocal, formatMonthLabel, formatMonthShort } from '@/lib/date-format';
 import { computeSnapshots } from '@/lib/plaid-sync';
 import { assetBalance, isLiabilityType, liabilityBalance } from '@/lib/account-balance';
+import { intradayNetWorthSeries, onlyToday } from '@/lib/market/intraday-series';
 
 export async function GET() {
   try {
@@ -32,6 +33,7 @@ export async function GET() {
       healthScoreResult,
       insightsResult,
       plaidItemsResult,
+      intradayResult,
     ] = await Promise.all([
       supabase
         .from('linked_accounts')
@@ -74,6 +76,15 @@ export async function GET() {
         .from('plaid_items')
         .select('id')
         .eq('user_id', user.id),
+      // Today's five-minute book values (migration 066) for the 1D range.
+      // A day's worth is at most 78 rows; the ET-day filter happens below.
+      supabase
+        .from('portfolio_intraday_snapshots')
+        .select('captured_at, total_value')
+        .eq('user_id', user.id)
+        .gte('captured_at', new Date(Date.now() - 86_400_000).toISOString())
+        .order('captured_at', { ascending: true })
+        .limit(200),
     ]);
 
     // Calculate totals from accounts
@@ -292,6 +303,14 @@ export async function GET() {
       a.date < b.date ? -1 : a.date > b.date ? 1 : 0,
     );
 
+    // Intraday (1D) series: the book at each tick today, with cash and
+    // liabilities added back so the last point is the displayed net worth.
+    const netWorthIntraday = intradayNetWorthSeries(
+      onlyToday(intradayResult.data ?? [], now),
+      netWorth,
+      portfolioValue,
+    );
+
     // Transform cash flow history for chart
     const transformedCashFlowHistory = cashFlowHistory.map(snapshot => {
       const date = parseDateLocal(snapshot.snapshot_month);
@@ -383,6 +402,7 @@ export async function GET() {
       insights: transformedInsights,
       netWorthHistory: transformedNetWorthHistory,
       netWorthDaily,
+      netWorthIntraday,
       cashFlowHistory: transformedCashFlowHistory,
       assetsComposition,
       liabilitiesComposition,
