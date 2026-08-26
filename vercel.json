@@ -27,6 +27,10 @@
       "schedule": "30 21 * * 1-5"
     },
     {
+      "path": "/api/cron/intraday-prices",
+      "schedule": "*/5 13-21 * * 1-5"
+    },
+    {
       "path": "/api/cron/prices?run=close",
       "schedule": "5 20 * * 1-5"
     },

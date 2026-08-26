@@ -353,12 +353,18 @@ export async function getLastTradePrice(ticker: string): Promise<number | null> 
  * Fetch last trade prices for multiple tickers, throttled to the
  * /price requests-per-minute budget.
  */
-export async function getBatchLastTradePrices(tickers: string[]): Promise<Map<string, number>> {
+export async function getBatchLastTradePrices(
+  tickers: string[],
+  // Requests per minute to pace at. The default leaves the plan's 200/min
+  // /price budget mostly free for live polling; a scheduled sweep that owns
+  // the minute can pass a higher figure.
+  rpm: number = FINAZON_PRICE_RPM,
+): Promise<Map<string, number>> {
   const results = new Map<string, number>();
   const unique = [...new Set(tickers.filter(Boolean).map((t) => t.toUpperCase()))];
 
   const BATCH_SIZE = 10;
-  const batchDelayMs = Math.ceil((BATCH_SIZE * 60_000) / FINAZON_PRICE_RPM);
+  const batchDelayMs = Math.ceil((BATCH_SIZE * 60_000) / Math.max(1, rpm));
 
   for (let i = 0; i < unique.length; i += BATCH_SIZE) {
     const batch = unique.slice(i, i + BATCH_SIZE);
