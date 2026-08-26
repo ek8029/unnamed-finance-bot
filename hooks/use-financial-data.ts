@@ -331,6 +331,9 @@ export function useHoldings() {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
+  // Epoch ms of the last quote poll that returned prices. The status dot
+  // needs a comparable number; lastRefreshed is display text.
+  const [lastQuoteAt, setLastQuoteAt] = useState<number | null>(null);
   const holdingsRef = useRef<Holding[]>([]);
   const quotesInFlight = useRef(false);
 
@@ -387,6 +390,7 @@ export function useHoldings() {
       })));
       setTotalValue(total);
       setLastRefreshed(new Date().toLocaleTimeString('en-US'));
+      setLastQuoteAt(Date.now());
     } catch {
       // Polling failure is non-fatal — next tick will retry
     } finally {
@@ -520,10 +524,11 @@ export function useHoldings() {
       refreshing: false,
       refreshPrices: async () => {},
       lastRefreshed: null,
+      lastQuoteAt: null,
     };
   }
 
-  return { holdings, allocation, totalValue, performanceMetrics, portfolioHistory, loading, error, refreshing, refreshPrices, lastRefreshed };
+  return { holdings, allocation, totalValue, performanceMetrics, portfolioHistory, loading, error, refreshing, refreshPrices, lastRefreshed, lastQuoteAt };
 }
 
 export function useInsights() {

@@ -15,7 +15,8 @@ import { usePreview } from '@/lib/preview-context';
 import { AgentFirstLook } from '@/components/agent-first-look';
 import { Ghost, GhostBar } from '@/components/ghost';
 import { tierAtLeast } from '@/lib/tier-shared';
-import { useLivePrices } from '@/hooks/use-live-prices';
+import { useLivePrices, isUsMarketOpen } from '@/hooks/use-live-prices';
+import { liveStatus } from '@/lib/live-status';
 import posthog from 'posthog-js';
 import { DemoConnectCta } from '@/components/demo/demo-connect-cta';
 import { AgentHeartbeat } from '@/components/thesis/agent-activity';
@@ -400,7 +401,16 @@ export default function DashboardOverview() {
 
   // Live portfolio value: useHoldings polls /api/market/quotes every 30s and
   // recomputes totalValue client-side. Overrides the static DB aggregate.
-  const { holdings, totalValue: liveHoldingsValue, loading: holdingsLoading } = useHoldings();
+  const { holdings, totalValue: liveHoldingsValue, loading: holdingsLoading, lastQuoteAt } = useHoldings();
+
+  // The status dot re-evaluates every 15 s so "Live" decays to "Delayed"
+  // when polling stops, and flips to "Market closed" at the bell.
+  const [statusNow, setStatusNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setStatusNow(Date.now()), 15_000);
+    return () => clearInterval(id);
+  }, []);
+  const marketStatus = liveStatus(isUsMarketOpen(), lastQuoteAt, statusNow);
 
   const { formatCurrency, formatPercentage } = useFormat();
   const { isDemo, enableDemo, disableDemo } = useDemo();
@@ -801,8 +811,18 @@ export default function DashboardOverview() {
               </button>
             ))}
           </div>
-          <div className="text-[12px] tracking-[0.06em] text-[var(--color-text-muted)]" style={MONO}>
-            ● Live
+          <div
+            className={`text-[12px] tracking-[0.06em] ${
+              marketStatus.state === 'live'
+                ? 'text-[var(--color-positive)]'
+                : marketStatus.state === 'delayed'
+                  ? 'text-[var(--color-gold)]'
+                  : 'text-[var(--color-text-muted)]'
+            }`}
+            style={MONO}
+            title={lastQuoteAt ? `Last quote ${new Date(lastQuoteAt).toLocaleTimeString('en-US')}` : undefined}
+          >
+            ● {marketStatus.label}
           </div>
         </div>
       </div>
