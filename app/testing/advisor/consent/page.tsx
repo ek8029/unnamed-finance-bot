@@ -12,6 +12,13 @@ export default function AdvisorConsent() {
         <div className="adv-eyebrow">Shown to the client · in their own account</div>
       </div>
 
+      <div style={{ maxWidth: 460, margin: '28px auto 0' }}>
+        <div className="adv-eyebrow" style={{ marginBottom: 6 }}>What Sarah said when she asked</div>
+        <p style={{ margin: 0, fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 16, lineHeight: 1.45, color: 'var(--ink-2)' }}>
+          &ldquo;As part of getting organized, I would like to see the accounts we do not manage next to the ones we do, so the plan covers everything you own. You link them yourself, I can only look, and you can switch it off at any time.&rdquo;
+        </p>
+      </div>
+
       <div className="adv-consent">
         <div className="adv-eyebrow">Access request</div>
         <h1 className="adv-h2" style={{ marginTop: 6 }}>
@@ -26,7 +33,7 @@ export default function AdvisorConsent() {
           <li><span className="k">will</span><span>See when a filing or a news item tests one of those reasons, with the source quoted.</span></li>
           <li><span className="k no">never</span><span>See your login details. Helm never has them either; the link is read-only through Plaid.</span></li>
           <li><span className="k no">never</span><span>Trade, move money, or change anything in any account.</span></li>
-          <li><span className="k no">never</span><span>Keep access after you revoke it. Revoking is one click in your settings and needs no approval.</span></li>
+          <li><span className="k no">never</span><span>Keep access after you revoke it. Revoking is one click in your settings and needs no approval. Sarah is told when you do.</span></li>
         </ul>
 
         <div className="adv-consent-actions">

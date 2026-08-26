@@ -124,6 +124,19 @@ export default function AdvisorCompliance() {
             </div>
           </div>
 
+          <div className="adv-eyebrow" style={{ marginTop: 22 }}>AI, stated for your file</div>
+          <div className="adv-stat">
+            <div className="adv-stat-l">
+              Helm reads filings and drafts notes with a language model through the OpenAI API. Portfolio content is sent to
+              it; it is not used for training; it may be retained by the provider for up to 30 days. Every quoted line is
+              checked against the source document before it is shown. The model never sends, trades, or decides, and no
+              draft reaches a client without an advisor&rsquo;s signature.
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <button type="button" className="adv-btn quiet">Download the vendor file</button>
+            </div>
+          </div>
+
           <div className="adv-eyebrow" style={{ marginTop: 22 }}>Roles</div>
           <div className="adv-stat">
             <table className="adv-table" style={{ fontSize: 12.5 }}>

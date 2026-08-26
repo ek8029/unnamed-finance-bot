@@ -12,7 +12,7 @@ export default function AdvisorDigest() {
   return (
     <main className="adv-page">
       <div className="adv-mail-meta">
-        <span>To: sarah@larkspurwealth.com</span>
+        <span>To: dana@larkspurwealth.com · cc sarah@larkspurwealth.com</span>
         <span>Monday, August 24, 2026 · 6:45 AM</span>
       </div>
 
@@ -66,7 +66,7 @@ export default function AdvisorDigest() {
         </div>
 
         <div className="adv-mail-foot">
-          Helm reads and cites. It never trades, moves money, or contacts a client. Every figure above links to the document or account it came from.<br />
+          Helm reads and cites. It never trades, moves money, or contacts a client. Every figure above links to the document or account it came from. On a week with nothing to report, this email is one line.<br />
           {FIRM.name} · Digest settings · Sent Mondays at 6:45 AM ET
         </div>
       </div>

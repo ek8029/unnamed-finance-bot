@@ -6,7 +6,7 @@
 // product (Carl Richards' "we looked at your stuff, everything's fine").
 
 import Link from 'next/link';
-import { BOOK_ROLLUPS, FIRM, HOUSEHOLDS, OVERNIGHT, pct, usd } from '../_data';
+import { BOOK_ROLLUPS, FIRM, HOUSEHOLDS, MEETINGS, OVERNIGHT, STALE, pct, usd } from '../_data';
 
 export default function AdvisorBook() {
   const changed = HOUSEHOLDS.filter((h) => h.changed);
@@ -71,6 +71,7 @@ export default function AdvisorBook() {
               <thead>
                 <tr>
                   <th>Household</th>
+                  <th>Next review</th>
                   <th className="num">Total</th>
                   <th>Held away</th>
                   <th>Largest position</th>
@@ -88,6 +89,10 @@ export default function AdvisorBook() {
                         <span className={`adv-mark ${h.breaches ? 'neg' : h.changed ? '' : 'none'}`} />
                         <Link href={h.id === 'okafor' ? '/testing/advisor/client' : '#'}>{h.name}</Link>
                         {h.note && <span className="sub">{h.note}</span>}
+                      </td>
+                      <td style={{ minWidth: 118 }}>
+                        <span style={{ fontFamily: 'var(--mono)', fontSize: 12.5 }}>{MEETINGS[h.id].next}</span>
+                        <span className="sub">{MEETINGS[h.id].topic}</span>
                       </td>
                       <td className="num">{usd(h.total, { compact: true })}</td>
                       <td style={{ minWidth: 150 }}>
@@ -116,14 +121,20 @@ export default function AdvisorBook() {
                       <td className="num">
                         {h.harvestable === null ? <span className="dim" title="No taxable account with a loss">n/a</span> : h.harvestable === 0 ? <span className="dim">0</span> : usd(h.harvestable)}
                       </td>
-                      <td className="num dim">{h.lastSync}</td>
+                      <td className="num">
+                        {STALE[h.id] ? (
+                          <span className="adv-neg" title={STALE[h.id]} style={{ fontSize: 11.5 }}>34 d · reconnect</span>
+                        ) : (
+                          <span className="dim">{h.lastSync}</span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
             <div style={{ marginTop: 12, fontSize: 13, color: 'var(--ink-3)' }}>
-              {BOOK_ROLLUPS.quiet} households: nothing changed since Friday. Every one of them was read.
+              {BOOK_ROLLUPS.quiet} households: nothing changed since Friday. Every one of them was read. One connection needs the client: Whitfield&rsquo;s Fidelity 401(k), 34 days since its last sync.
             </div>
           </section>
         </div>
@@ -135,7 +146,7 @@ export default function AdvisorBook() {
           <div className="adv-stat">
             <div className="adv-stat-n">NVDA <small>{pct(BOOK_ROLLUPS.nvda.bookShare)}</small></div>
             <div className="adv-stat-l">
-              <b>{BOOK_ROLLUPS.nvda.households} households</b> hold it. {pct(BOOK_ROLLUPS.nvda.heldAwayShare, 0)} of the exposure is in accounts you do not custody.
+              <b>{BOOK_ROLLUPS.nvda.households} households</b> hold it, 4 above their own limit. {pct(BOOK_ROLLUPS.nvda.heldAwayShare, 0)} of the exposure is in accounts you do not custody.
             </div>
             <div className="adv-scale" style={{ marginTop: 8 }}>
               <i style={{ width: '36%' }} /><i className="held" style={{ left: '36%', width: '64%' }} />

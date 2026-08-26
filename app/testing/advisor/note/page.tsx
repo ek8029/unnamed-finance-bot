@@ -13,6 +13,10 @@ export default function AdvisorNote() {
     <main className="adv-page">
       <div className="adv-cols" style={{ gridTemplateColumns: 'minmax(0, 1fr) 300px' }}>
         <div className="adv-note">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: 10, marginBottom: 14, borderBottom: '2px solid var(--ink)' }}>
+            <span style={{ fontFamily: 'var(--serif)', fontSize: 18 }}>Larkspur Wealth Partners</span>
+            <span className="adv-eyebrow">Sarah Whitcomb, CFP · sarah@larkspurwealth.com</span>
+          </div>
           <div className="adv-eyebrow">Draft · NVDA · for the Okafor household</div>
           <h1 className="adv-note-subj">What the NVIDIA 10-Q said, and what we are doing about it</h1>
           <div className="adv-note-from">From Sarah Whitcomb · to Harold and June Okafor · drafted 06:34, not sent</div>
@@ -74,9 +78,12 @@ export default function AdvisorNote() {
           </div>
 
           <div style={{ marginTop: 18 }}>
-            <button type="button" className="adv-btn fill">Copy for email</button>
-            <button type="button" className="adv-btn">Save to CRM note</button>
-            <button type="button" className="adv-btn quiet">Mark reviewed, do not send</button>
+            <button type="button" className="adv-btn fill">Review and sign</button>
+            <button type="button" className="adv-btn">Save to CRM as a draft</button>
+            <button type="button" className="adv-btn quiet">Do not send</button>
+          </div>
+          <div style={{ marginTop: 10, fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '.06em', color: 'var(--ink-3)' }}>
+            Nothing leaves under your name until you sign it. Drafts are never sent on their own.
           </div>
         </div>
 
@@ -101,6 +108,15 @@ export default function AdvisorNote() {
               <br /><br />
               <span className="adv-struck">&ldquo;Our model expects the stock to recover by Q1.&rdquo;</span>
               <br /><b>Left out.</b> A forecast. The note quotes the filing and stops there.
+            </div>
+          </div>
+
+          <div className="adv-eyebrow" style={{ marginTop: 22 }}>Other notes this week</div>
+          <div className="adv-stat">
+            <div className="adv-stat-l" style={{ lineHeight: 1.7 }}>
+              Nothing changed, here is why · 27 households<br />
+              Before a vest · Lindqvist, Sep 1<br />
+              After a client asks · Okafor, RIVN
             </div>
           </div>
 

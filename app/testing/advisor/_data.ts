@@ -52,6 +52,35 @@ export const HOUSEHOLDS: Household[] = [
   { id: 'feldman', name: 'Feldman, Ruth', total: 3_220_000, custodied: 3_220_000, heldAwayAccounts: 0, largest: { ticker: 'TLT', weight: 0.15, custodiedWeight: 0.15 }, breaches: 0, harvestable: 0, lastSync: '06:12', changed: false },
 ];
 
+// Next review per household and the planning topic the firm's service calendar
+// has already assigned to it. A finding competes for the "special topic" slot.
+export const MEETINGS: Record<string, { next: string; topic: string }> = {
+  okafor: { next: 'Thu Aug 27', topic: 'Tax planning' },
+  lindqvist: { next: 'Tue Sep 8', topic: 'Equity comp' },
+  berglund: { next: 'Oct 6', topic: 'Estate' },
+  castellano: { next: 'Sep 15', topic: 'Insurance' },
+  marchetti: { next: 'Sep 22', topic: 'Tax planning' },
+  nakamura: { next: 'Oct 13', topic: 'Retirement projection' },
+  raman: { next: 'Sep 29', topic: 'Cash flow' },
+  osei: { next: 'Oct 20', topic: 'Tax planning' },
+  whitfield: { next: 'Sep 10', topic: 'Get organized' },
+  feldman: { next: 'Nov 3', topic: 'Charitable giving' },
+};
+
+// Connections that need the client to act. A stale link is shown, never hidden.
+export const STALE: Record<string, string> = {
+  whitfield: 'Fidelity 401(k) · last synced 34 days ago · client must reconnect',
+};
+
+// The rule the household agreed to, kept beside the reason. A breach is a rule
+// being crossed, not an opinion about the stock.
+export const RULES: Record<string, string> = {
+  NVDA: 'Max 15% of the household. Reviewed quarterly, not on headlines.',
+  MSFT: 'Max 12% of the household.',
+  PFE: 'Hold while 2 of 3 pillars stand. Reassess at 6 months stale.',
+  RIVN: 'No rule set. Bought outside the plan.',
+};
+
 export const OVERNIGHT = [
   {
     when: 'Aug 25\n17:04 ET',

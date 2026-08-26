@@ -5,14 +5,14 @@
 // banner is not decoration: read-only and revocable is the legal lane.
 
 import Link from 'next/link';
-import { OKAFOR, pct, usd } from '../_data';
+import { OKAFOR, RULES, pct, usd } from '../_data';
 
 const THESIS_LABEL: Record<string, { text: string; cls: string }> = {
-  contradicted: { text: 'Contradicted', cls: 'neg' },
-  weakening: { text: 'Weakening', cls: '' },
-  holds: { text: 'Holds', cls: 'pos' },
+  contradicted: { text: 'Reason contradicted', cls: 'neg' },
+  weakening: { text: 'Reason weakening', cls: '' },
+  holds: { text: 'Still fits', cls: 'pos' },
   index: { text: 'Index', cls: 'none' },
-  none: { text: 'No thesis', cls: 'none' },
+  none: { text: 'Outside the plan', cls: 'none' },
 };
 
 export default function AdvisorClient() {
@@ -79,12 +79,12 @@ export default function AdvisorClient() {
           {/* ── positions ── */}
           <section className="adv-section">
             <div className="adv-section-head">
-              <span className="adv-eyebrow">Positions and why they are held</span>
+              <span className="adv-eyebrow">Positions, the reason, and the rule</span>
               <small>7 of 23 · status reflects the most recent document that tested the reason</small>
             </div>
             <table className="adv-table">
               <thead>
-                <tr><th>Ticker</th><th>Where</th><th className="num">Value</th><th className="num">Household</th><th>Thesis</th><th>The reason, in the client&rsquo;s words</th></tr>
+                <tr><th>Ticker</th><th>Where</th><th className="num">Value</th><th className="num">Household</th><th>Against the plan</th><th>The reason, in the client&rsquo;s words</th><th>The rule</th></tr>
               </thead>
               <tbody>
                 {OKAFOR.positions.map((p) => {
@@ -99,7 +99,11 @@ export default function AdvisorClient() {
                         <span className={`adv-mark ${t.cls}`} />{t.text}
                         {p.evidence && <span className="sub" style={{ fontFamily: 'var(--mono)', fontSize: 10.5 }}>{p.evidence}</span>}
                       </td>
-                      <td style={{ fontSize: 13, color: 'var(--ink-2)', maxWidth: 360 }}>{p.why}</td>
+                      <td style={{ fontSize: 13, color: 'var(--ink-2)', maxWidth: 300 }}>{p.why}</td>
+                      <td style={{ fontSize: 12.5, color: RULES[p.ticker] ? 'var(--ink)' : 'var(--ink-3)', maxWidth: 220 }}>
+                        {RULES[p.ticker] ?? (p.thesis === 'index' ? 'Core allocation.' : '')}
+                        {p.ticker === 'NVDA' && <span className="sub adv-neg">At 18.2% the household is past its own limit.</span>}
+                      </td>
                     </tr>
                   );
                 })}
