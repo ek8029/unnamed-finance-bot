@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { THEMES } from './theme-shell';
+import { THEMES } from './themes';
 
 const SCREENS = [
   {
