@@ -27,6 +27,14 @@
       "schedule": "30 21 * * 1-5"
     },
     {
+      "path": "/api/cron/prices?run=close",
+      "schedule": "5 20 * * 1-5"
+    },
+    {
+      "path": "/api/cron/prices?run=late",
+      "schedule": "0 23 * * 1-5"
+    },
+    {
       "path": "/api/cron/snapshots",
       "schedule": "0 */6 * * *"
     },
