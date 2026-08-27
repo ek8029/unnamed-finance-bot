@@ -245,7 +245,7 @@ export const OKAFOR = {
   ],
   harvest: [
     { ticker: 'PFE', account: 'Schwab Brokerage', loss: -7_200, wash: 'No purchase in 30 days' },
-    { ticker: 'RIVN', account: 'Robinhood', loss: -5_200, wash: 'Bought 2026-03-04; clear' },
+    { ticker: 'RIVN', account: 'Robinhood', loss: -5_200, wash: 'Last bought 2026-03-04, outside the 30-day window' },
   ],
   excludedRetirement: 1_170_000,
   nextSteps: [
