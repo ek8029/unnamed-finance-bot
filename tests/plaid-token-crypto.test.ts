@@ -126,7 +126,11 @@ describe('no route joins on the raw access token any more', () => {
     const files = [...walk(join(ROOT, 'app')), ...walk(join(ROOT, 'lib'))];
     const offenders = files.filter((f) => {
       const src = readFileSync(f, 'utf8');
-      return /\.eq\(\s*'plaid_access_token'/.test(src) || /a\.plaid_access_token === item\.plaid_access_token/.test(src);
+      // A linked_accounts query followed (within the same chain) by a filter on the raw token.
+      const joinsOnToken = /from\('linked_accounts'\)[\s\S]{0,400}?\.eq\(\s*'plaid_access_token'/.test(src);
+      const countsByToken = /a\.plaid_access_token === item\.plaid_access_token/.test(src);
+      const writesTokenIntoLinked = /from\('linked_accounts'\)[\s\S]{0,1200}?plaid_access_token:\s*accessToken/.test(src);
+      return joinsOnToken || countsByToken || writesTokenIntoLinked;
     });
     expect(offenders).toEqual([]);
   });
