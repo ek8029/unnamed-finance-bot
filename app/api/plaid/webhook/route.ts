@@ -281,7 +281,7 @@ async function handleItemWebhook(
           sync_status: 'error',
           sync_error: body.error?.error_message || 'Connection error',
         })
-        .eq('plaid_access_token', plaidItem.plaid_access_token);
+        .eq('plaid_item_ref', plaidItem.id);
       break;
     }
     case 'LOGIN_REPAIRED': {
@@ -301,7 +301,7 @@ async function handleItemWebhook(
           sync_status: 'healthy',
           sync_error: null,
         })
-        .eq('plaid_access_token', plaidItem.plaid_access_token);
+        .eq('plaid_item_ref', plaidItem.id);
       break;
     }
     case 'PENDING_EXPIRATION': {

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { sealToken } from '@/lib/plaid/token-crypto';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { plaidClient, mapPlaidAccountType } from '@/lib/plaid';
 import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
@@ -138,12 +139,12 @@ export async function POST(request: Request) {
     }
 
     // Store the Plaid item
-    const { error: itemError } = await supabase
+    const { data: newItem, error: itemError } = await supabase
       .from('plaid_items')
       .insert({
         user_id: user.id,
         plaid_item_id: itemId,
-        plaid_access_token: accessToken,
+        plaid_access_token: sealToken(accessToken),
         institution_id: institutionId,
         plaid_institution_id: plaidInstitutionId,
         institution_name: metadata?.institution?.name || null,
@@ -151,9 +152,11 @@ export async function POST(request: Request) {
         available_products: item.available_products || [],
         billed_products: item.billed_products || [],
         consented_products: item.consented_products || [],
-      });
+      })
+      .select('id')
+      .single();
 
-    if (itemError) {
+    if (itemError || !newItem) {
       console.error(`[plaid][CRITICAL] item store failed for user ${user.id} (${institutionName}):`, itemError.message);
       return NextResponse.json({ error: 'Failed to store connection' }, { status: 500 });
     }
@@ -171,7 +174,7 @@ export async function POST(request: Request) {
       available_balance: account.balances.available ?? null,
       credit_limit: account.balances.limit ?? null,
       currency: account.balances.iso_currency_code || 'USD',
-      plaid_access_token: accessToken,
+      plaid_item_ref: newItem.id,
       plaid_account_id: account.account_id,
       is_active: true,
       sync_status: 'healthy',

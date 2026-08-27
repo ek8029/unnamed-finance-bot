@@ -143,7 +143,7 @@ export default function ISPPage() {
           <li><strong>Token lifecycle:</strong> JWT access tokens are short-lived and automatically refreshed. Refresh tokens are stored in secure, HTTP-only, SameSite cookies</li>
           <li><strong>Privilege separation:</strong> Application code uses user-scoped database clients by default. Service-role access is limited to specific server-side operations (audit logging, account deletion, admin workflows) and is never exposed to client-side code</li>
           <li><strong>MFA enforcement:</strong> When a user enables two-factor authentication, the middleware enforces AAL2 (Authenticator Assurance Level 2) on all protected routes. Users at AAL1 are redirected to complete TOTP verification before accessing any dashboard functionality</li>
-          <li><strong>Rate limiting:</strong> Authentication endpoints enforce per-identity rate limits. Login and password-reset limits are stored in Postgres and signup limits in Upstash Redis, so they apply consistently across serverless function instances. The password-change limit is held in memory per instance</li>
+          <li><strong>Rate limiting:</strong> Authentication endpoints enforce per-identity rate limits. Login, password-change and password-reset limits are stored in Postgres and signup limits in Upstash Redis, so they apply consistently across serverless function instances</li>
         </ul>
       </section>
 
@@ -176,7 +176,7 @@ export default function ISPPage() {
         <h3>6.4 Sensitive Credential Handling</h3>
         <ul>
           <li>Passwords are hashed using bcrypt - plaintext passwords are never stored or logged</li>
-          <li>Plaid access tokens are stored in the database in a column protected by row-level security and by the infrastructure&apos;s disk encryption (AES-256, section 6.2). Column-level encryption is not applied. Tokens are never sent to client-side code</li>
+          <li>Plaid access tokens are encrypted by the application with AES-256-GCM before they are written to the database, under a key held in the deployment environment and never stored in the database; the column is additionally protected by row-level security and disk encryption (section 6.2). Tokens are never sent to client-side code</li>
           <li>API keys and service secrets are stored in Vercel&apos;s encrypted environment variable vault</li>
           <li>No consumer credentials (bank logins) are received or stored by Helm - Plaid handles all bank authentication directly</li>
         </ul>
@@ -189,7 +189,7 @@ export default function ISPPage() {
         <h3>7.1 Automated Scanning</h3>
         <ul>
           <li><strong>Dependency scanning:</strong> GitHub Dependabot monitors all npm dependencies for known CVEs on a weekly basis and creates automated pull requests for remediation</li>
-          <li><strong>Static code analysis:</strong> GitHub CodeQL is configured to run on every pull request and weekly on the main branch. As of August 2026 its runs are failing and it is not yet a control Helm relies on; Dependabot is the active automated scanner</li>
+          <li><strong>Static code analysis:</strong> GitHub CodeQL (default setup) scans every push and pull request to the main branch; findings are reviewed in the repository&apos;s Security tab</li>
           <li><strong>Infrastructure scanning:</strong> Vercel and Supabase perform continuous vulnerability assessments on their managed infrastructure</li>
         </ul>
 
@@ -213,7 +213,7 @@ export default function ISPPage() {
       <section>
         <h2>8. Audit Logging &amp; Monitoring</h2>
         <p>
-          Authentication events are logged to a dedicated table (auth_events) with the following attributes. Plaid webhook events are logged to a separate audit_logs table. Administrative actions and data exports are not currently logged.
+          Authentication events are logged to a dedicated table (auth_events) with the following attributes. Plaid webhook events are logged to a separate audit_logs table. Both tables are append-only at the database level: a trigger rejects every update and delete, including from service-role access; the one exception is the cascade that follows a user&apos;s own account deletion. Administrative actions and data exports are not currently logged.
         </p>
         <ul>
           <li>Event type (login success, login failure, logout, signup outcome, password change, password reset request, session revocation, account deletion)</li>
@@ -226,8 +226,8 @@ export default function ISPPage() {
         <p>
           Audit logs are retained indefinitely; no automated purge is in place. Users can view their own login activity
           from the Settings page. Logs are protected by RLS - users can read only their own events and cannot
-          insert, edit or delete them. The tables are not append-only at the database level: service-role
-          access can modify them, and that access is restricted to the Security Owner.
+          insert, edit or delete them. Service-role read access is restricted to the Security Owner and
+          cannot alter or remove rows.
         </p>
       </section>
 
@@ -294,7 +294,7 @@ export default function ISPPage() {
         <ul>
           <li>Helm never receives or stores bank login credentials - Plaid handles all bank authentication</li>
           <li>Read-only access only - no transaction initiation or fund transfer capabilities</li>
-          <li>Plaid access tokens are protected by row-level security and disk-level encryption at rest, and never exposed to client code; column-level encryption is not applied (section 6.4)</li>
+          <li>Plaid access tokens are encrypted at the application layer (AES-256-GCM) before storage and never exposed to client code (section 6.4)</li>
           <li>Separate API keys for sandbox and production environments</li>
           <li>Webhook signatures verified on all incoming Plaid events</li>
         </ul>

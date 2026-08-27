@@ -1,4 +1,5 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { openToken } from '@/lib/plaid/token-crypto';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { logAuthEvent } from '@/lib/auth-security';
@@ -40,14 +41,14 @@ async function destroyAccount(user: { id: string; email?: string }) {
 
     const { data: plaidItems } = await serviceClient
       .from('plaid_items')
-      .select('plaid_access_token')
+      .select('id, plaid_access_token')
       .eq('user_id', userId);
 
     if (plaidItems && plaidItems.length > 0) {
       for (const item of plaidItems) {
         try {
           await plaidClient.itemRemove({
-            access_token: item.plaid_access_token,
+            access_token: openToken(item.plaid_access_token),
           });
         } catch (err) {
           console.error('Plaid itemRemove failed during account deletion:', err);
@@ -57,7 +58,7 @@ async function destroyAccount(user: { id: string; email?: string }) {
 
     // Delete user data from all tables (order matters for FK constraints)
     const tables = [
-      'auth_events',
+      // auth_events is append-only (migration 067); the auth.users cascade removes it
       'insight_sources',
       'insights',
       'recurring_transactions',

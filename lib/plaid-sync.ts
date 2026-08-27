@@ -3,6 +3,7 @@
  * Extracted from app/api/plaid/sync/route.ts so it can be called
  * from API routes, webhooks, and the dashboard overview endpoint.
  */
+import { readItemToken } from '@/lib/plaid/token-crypto';
 import { createClient as createServiceRoleClient } from '@supabase/supabase-js';
 import { plaidClient, mapPlaidAccountType } from '@/lib/plaid';
 import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
@@ -60,7 +61,7 @@ export async function syncPlaidItem(
   userId: string,
   item: PlaidItemForSync
 ): Promise<SyncResult> {
-  const accessToken = item.plaid_access_token;
+  const accessToken = await readItemToken(supabase, item);
   let transactionsAdded = 0;
   let transactionsModified = 0;
   let transactionsRemoved = 0;

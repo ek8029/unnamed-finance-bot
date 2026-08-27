@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { openToken } from '@/lib/plaid/token-crypto';
 import { createClient } from '@/lib/supabase/server';
 import { plaidClient, getWebhookUrl } from '@/lib/plaid';
 import { CountryCode } from 'plaid';
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
     const response = await plaidClient.linkTokenCreate({
       user: { client_user_id: user.id },
       client_name: 'Helm Terminal',
-      access_token: plaidItem.plaid_access_token,
+      access_token: openToken(plaidItem.plaid_access_token),
       country_codes: [CountryCode.Us],
       language: 'en',
       ...(redirectUri && { redirect_uri: redirectUri }),

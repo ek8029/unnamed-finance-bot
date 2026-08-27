@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { openToken } from '@/lib/plaid/token-crypto';
 import { createClient } from '@/lib/supabase/server';
 import { plaidClient } from '@/lib/plaid';
 import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
@@ -29,7 +30,7 @@ export async function DELETE() {
     for (const item of plaidItems || []) {
       try {
         await plaidClient.itemRemove({
-          access_token: item.plaid_access_token,
+          access_token: openToken(item.plaid_access_token),
         });
         removedItems.push(item.institution_name || item.id);
         await logPlaidSuccess(user.id, 'itemRemove:fullDeletion', { item_id: item.id });

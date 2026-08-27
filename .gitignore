@@ -55,3 +55,6 @@ docs/private/
 # Fundraise material and in-progress specs stay local
 docs/fundraise/
 docs/superpowers/specs/2026-07-16-ai-expansion-master.md
+
+# plugin checkout, not part of the app (a stale gitlink here broke every Actions checkout with a submodule warning)
+claude-seo/

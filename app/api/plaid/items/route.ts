@@ -42,18 +42,18 @@ export async function GET() {
   // about to be removed rather than asking someone to confirm an abstraction.
   const { data: accounts } = await supabase
     .from('linked_accounts')
-    .select('id, plaid_access_token')
+    .select('id, plaid_item_ref')
     .eq('user_id', user.id)
     .eq('is_active', true);
 
   const { data: withTokens } = await supabase
     .from('plaid_items')
-    .select('id, plaid_access_token')
+    .select('id')
     .eq('user_id', user.id);
 
   const countByItem = new Map<string, number>();
   for (const item of withTokens ?? []) {
-    const n = (accounts ?? []).filter((a) => a.plaid_access_token === item.plaid_access_token).length;
+    const n = (accounts ?? []).filter((a) => a.plaid_item_ref === item.id).length;
     countByItem.set(item.id, n);
   }
 

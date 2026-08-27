@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { checkPasswordStrength, logAuthEvent } from '@/lib/auth-security';
-import { rateLimit } from '@/lib/rate-limit';
+import { checkPasswordStrength, checkRateLimit, logAuthEvent } from '@/lib/auth-security';
 
 export async function PATCH(request: Request) {
   try {
@@ -12,7 +11,8 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { allowed } = rateLimit(`password-change:${user.id}`, 5, 900);
+    // Backed by auth_events in Postgres (every attempt logs a password_change row), so the limit holds across instances.
+    const { allowed } = await checkRateLimit(user.email!, 'password_change', 5, 15);
     if (!allowed) {
       return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
     }

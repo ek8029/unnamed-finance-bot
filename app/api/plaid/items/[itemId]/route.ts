@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { openToken } from '@/lib/plaid/token-crypto';
 import { createClient } from '@/lib/supabase/server';
 import { plaidClient } from '@/lib/plaid';
 import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
@@ -36,7 +37,7 @@ export async function DELETE(
     // 1. Revoke access at Plaid
     try {
       await plaidClient.itemRemove({
-        access_token: plaidItem.plaid_access_token,
+        access_token: openToken(plaidItem.plaid_access_token),
       });
       await logPlaidSuccess(user.id, 'itemRemove', { item_id: itemId });
     } catch (error) {
@@ -53,7 +54,7 @@ export async function DELETE(
     const { data: linkedAccounts } = await supabase
       .from('linked_accounts')
       .select('id')
-      .eq('plaid_access_token', plaidItem.plaid_access_token)
+      .eq('plaid_item_ref', plaidItem.id)
       .eq('user_id', user.id);
 
     if (linkedAccounts && linkedAccounts.length > 0) {
@@ -77,7 +78,7 @@ export async function DELETE(
     await supabase
       .from('linked_accounts')
       .delete()
-      .eq('plaid_access_token', plaidItem.plaid_access_token)
+      .eq('plaid_item_ref', plaidItem.id)
       .eq('user_id', user.id);
 
     // 4. Delete the plaid item (leave a surviving trail in case a loss is later disputed)
