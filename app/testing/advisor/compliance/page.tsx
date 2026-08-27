@@ -4,7 +4,7 @@
 // the diligence pack a 1-10 person RIA files under 204-2(a)(25), answered
 // honestly: SOC 2 is listed as not held rather than implied.
 
-import { ACCESS_LOG, CONSENT_LOG, FIRM, VENDOR_FILE } from '../_data';
+import { ACCESS_LOG, CONSENT_LOG, FIRM, PROVENANCE, VENDOR_FILE } from '../_data';
 
 export default function AdvisorCompliance() {
   return (
@@ -16,7 +16,7 @@ export default function AdvisorCompliance() {
             Who saw what, <em>and the file that says so</em>
           </h1>
           <p className="adv-lede">
-            Consent, access and documents. No positions, balances or theses appear on this screen, so the review can be done
+            Consent, access and documents. No positions, balances or reasons on file appear on this screen, so the review can be done
             without opening a client account.
           </p>
         </div>
@@ -80,6 +80,38 @@ export default function AdvisorCompliance() {
 
           <section className="adv-section">
             <div className="adv-section-head">
+              <span className="adv-eyebrow">Data provenance</span>
+              <small>every figure and every quotation on every screen comes from one of these two</small>
+            </div>
+            <table className="adv-table">
+              <thead>
+                <tr><th style={{ width: 210 }}>Source</th><th>What it provides</th><th>What it never provides</th></tr>
+              </thead>
+              <tbody>
+                {PROVENANCE.map((p) => (
+                  <tr key={p.source}>
+                    <td className="name" style={{ minWidth: 190 }}>
+                      {p.source}
+                      <span className="sub">{p.detail}</span>
+                    </td>
+                    <td style={{ fontSize: 13, color: 'var(--ink-2)', maxWidth: 340 }}>{p.provides}</td>
+                    <td style={{ fontSize: 13, color: 'var(--ink-2)', maxWidth: 340 }}>{p.never}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{ marginTop: 12, fontSize: 13, color: 'var(--ink-3)' }}>
+              There is no third row. Helm has no file upload, no import and no way for anyone at this firm or at Helm to
+              type a holding in by hand.
+            </div>
+            <div style={{ marginTop: 8, fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '.06em', color: 'var(--ink-3)', lineHeight: 1.7 }}>
+              For the ADV: an account a client links that Larkspur does not custody is what Part 2A calls held away. Helm
+              counts it in the household. Whether the firm bills on it or reports on it is the firm&rsquo;s decision, not Helm&rsquo;s.
+            </div>
+          </section>
+
+          <section className="adv-section">
+            <div className="adv-section-head">
               <span className="adv-eyebrow">Vendor file · Helm</span>
               <small>documents on file for your vendor review</small>
             </div>
@@ -105,7 +137,7 @@ export default function AdvisorCompliance() {
           <div className="adv-stat">
             <div className="adv-stat-l">
               One dated bundle: clients, households, grants with consent timestamps, per-client holdings and
-              transactions, every thesis with each cited document and its retrieval time, the access log for the period,
+              transactions, every reason on file with each cited document and its retrieval time, the access log for the period,
               and a manifest with a SHA-256 per file.
             </div>
             <div style={{ marginTop: 12 }}>

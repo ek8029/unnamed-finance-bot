@@ -1,11 +1,13 @@
-// /testing/advisor — design lab for Helm's advisor platform (vendor to RIAs).
+// /testing/advisor: design lab for Helm's advisor platform (vendor to RIAs).
 //
-// Six screens, each on its own route so it can be screenshotted honestly, and
-// six palettes switchable from the strip (three light, three dark). Built from
-// ria-research/SYNTHESIS.md: the morning book, one household with the half the
-// advisor cannot see, the one-page note in the advisor's voice, the weekly
-// digest, the client's consent screen, and the CCO's view that never shows a
-// position.
+// Seven screens, each on its own route so it can be screenshotted honestly,
+// and six palettes switchable from the strip (three light, three dark). The
+// premise is every single name across the firm's book, under management and
+// client-linked alike, with a written reason, checked every market day against
+// filings: the morning book cut by household and by name, one household, the
+// one-page note in the advisor's voice, the weekly digest, the client's
+// consent screen, the CCO's view that never shows a position, and the artifact
+// a prospect firm gets from its own public filings before anything is shared.
 //
 // Copy on the screens is written as the product would ship it. The households,
 // figures and quotations are invented for the lab, and the lab is dev only:
@@ -99,18 +101,18 @@ const CSS = `
 .adv-root button { font: inherit; cursor: pointer; }
 
 .adv-strip {
-  display: flex; align-items: center; gap: 28px;
+  display: flex; align-items: center; gap: 22px;
   height: 44px; padding: 0 32px;
   border-bottom: 1px solid var(--ink);
   background: var(--paper);
   position: sticky; top: 0; z-index: 20;
 }
-.adv-strip-name { font-family: var(--serif); font-size: 19px; letter-spacing: .01em; }
+.adv-strip-name { flex: 0 0 auto; white-space: nowrap; font-family: var(--serif); font-size: 19px; letter-spacing: .01em; }
 .adv-strip-name span { font-style: italic; color: var(--ink-2); }
-.adv-strip-nav { display: flex; gap: 22px; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
+.adv-strip-nav { display: flex; gap: 16px; min-width: 0; overflow: hidden; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
 .adv-strip-nav a:hover { color: var(--ink); }
 .adv-themes { margin-left: auto; display: flex; gap: 4px; }
-.adv-theme-btn { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; padding: 4px 8px; border: 1px solid transparent; border-radius: 3px; background: transparent; color: var(--ink-3); transition: color .15s, border-color .15s; }
+.adv-theme-btn { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; padding: 4px 6px; border: 1px solid transparent; border-radius: 3px; background: transparent; color: var(--ink-3); transition: color .15s, border-color .15s; }
 .adv-theme-btn:hover { color: var(--ink); }
 .adv-theme-btn.on { color: var(--ink); border-color: var(--rule-2); }
 .adv-theme-btn i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(0,0,0,.25); }
@@ -139,6 +141,12 @@ const CSS = `
 .adv-section-head small { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; color: var(--ink-3); }
 
 .adv-cols { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; }
+
+/* two ways to cut the same book */
+.adv-tabs { display: flex; gap: 0; margin-bottom: 14px; border-bottom: 1px solid var(--rule); }
+.adv-tabs a { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; padding: 7px 14px; color: var(--ink-3); border: 1px solid transparent; border-bottom: 0; margin-bottom: -1px; }
+.adv-tabs a:hover { color: var(--ink); }
+.adv-tabs a.on { color: var(--ink); border-color: var(--rule-2); background: var(--raised); }
 
 /* ledger tables */
 .adv-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -276,6 +284,16 @@ const CSS = `
   .adv-theme-btn { padding: 4px 5px; }
   .adv-theme-btn i { display: none; }
   .adv-mail-nums { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 1220px) {
+  .adv-strip-nav { display: none; }
+}
+@media (max-width: 700px) {
+  /* a phone gets the load-bearing columns; the rest of the ledger is desk work */
+  .adv-table .opt { display: none; }
+  /* the strip keeps the palette switcher reachable by dropping to swatches */
+  .adv-strip .adv-theme-btn { font-size: 0; gap: 0; padding: 5px 6px; }
+  .adv-strip .adv-theme-btn i { display: block; width: 14px; height: 14px; }
 }
 @media (max-width: 600px) {
   .adv-page { padding: 20px 16px 60px; }

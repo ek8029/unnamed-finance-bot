@@ -6,43 +6,50 @@ const SCREENS = [
     no: '01',
     href: '/testing/advisor/book',
     name: 'The book, 7:40 AM',
-    body: 'One screen per morning. What needs you overnight, then every household on a ledger with the half you cannot see counted in. Twenty-seven rows say nothing changed, on purpose.',
-    why: 'Research 02 §2.5 (prep is the block), 03 §1.8 (somebody looked at our stuff), spec §2.3',
+    body: 'One screen per morning. What needs you overnight, then the same book cut two ways: by household, the way the calendar is organised, and by name, the way the risk sits. Twenty-seven rows say nothing changed, on purpose.',
+    why: 'Every single name across the firm, under management and client-linked alike, with a reason on file or without one',
   },
   {
     no: '02',
     href: '/testing/advisor/client',
     name: 'One household',
-    body: 'Custodied beside held-away, taxable beside retirement, and the reason the client owns each position next to the last document that tested it. Read-only, revocable, and it says so.',
-    why: 'Research 03 §3.2 (87% self-manage), spec P0-B (taxable vs retirement), 01 §7.1 (view-only lane)',
+    body: 'Accounts under management above accounts the client runs, taxable beside retirement, and beside each single name the written reason for owning it, or nothing, which is the finding. Read-only, revocable, and it says so.',
+    why: 'Fourteen single names, nine reasons on file, three tested this week',
   },
   {
     no: '03',
     href: '/testing/advisor/note',
-    name: 'The note',
-    body: 'One page in the advisor’s voice: what changed, what the filing said, what it means for the rule, what we are doing. April’s call revisited and graded. Nothing a Marketing Rule reviewer would strike.',
-    why: 'Research 03 §5.4 (output spec), §2.10 (Edgemoor), §4.5 (hypothetical performance)',
+    name: 'The notes',
+    body: 'Two kinds, both one page in the advisor’s voice. The event note: what changed, what the filing said, what it means for the rule, what we are doing. The legacy review: the names with nothing written down, and a question for the client.',
+    why: 'Nothing a Marketing Rule reviewer would strike, and the rail shows what was struck',
   },
   {
     no: '04',
     href: '/testing/advisor/digest',
     name: 'The digest',
-    body: 'Monday 6:45 AM. Numbers first, then the three things that need a person, then what went out last week. The email is the habit; the book gets opened when the email says something happened.',
-    why: 'Spec §2.3 (digest creates the habit), research 03 §3.3 (16 to 20 touchpoints, 1 to 2 meetings)',
+    body: 'Monday 6:45 AM. Numbers, then the names a document tested last week with the sentence quoted, then what reports in the next seven days, then the three things that need a person. Quiet week, one line.',
+    why: 'The email is the habit; the book gets opened when the email says something happened',
   },
   {
     no: '05',
     href: '/testing/advisor/consent',
     name: 'Consent',
-    body: 'The client’s screen. What the advisor will see, what they never will, and that revoking is one click with no approval. The consent tuple is the artifact.',
-    why: 'Spec §2.2 and §3.4 (advisor invites, client accepts, revocation instant)',
+    body: 'The client’s screen. That the advisor sees the accounts they link, the ones the firm already manages and the ones they run themselves, what the advisor never sees, and that revoking is one click with no approval.',
+    why: 'Advisor invites, client accepts, revocation is instant and needs nobody',
   },
   {
     no: '06',
     href: '/testing/advisor/compliance',
     name: 'Compliance',
-    body: 'The CCO’s view: consent register, access log, vendor file, export. Not one position on the page. The diligence pack a small firm actually asks for, answered honestly, SOC 2 included.',
-    why: 'Compliance readiness §1.2 (the 17 rows), spec §3.2 (compliance role sees no portfolio data)',
+    body: 'The CCO’s view: consent register, access log, data provenance, vendor file, export. Not one position on the page. Two sources feed everything, each with what it never provides written next to what it does.',
+    why: 'The diligence pack a small firm actually asks for, answered honestly, SOC 2 included',
+  },
+  {
+    no: '07',
+    href: '/testing/advisor/precall',
+    name: 'Before the first call',
+    body: 'What a prospect firm gets before anything is shared: its own 13F-HR sorted into funds and companies, the eight largest companies with the sentence from each latest filing that tests them, and what a 13F cannot see.',
+    why: 'Nothing signed, nothing shared, nothing the firm had not already published',
   },
 ];
 
@@ -53,11 +60,12 @@ export default function AdvisorLabIndex() {
         <div>
           <div className="adv-eyebrow">Larkspur Wealth Partners · Sarah Whitcomb</div>
           <h1 className="adv-h1">
-            Helm for advisors, <em>six screens, six palettes</em>
+            Helm for advisors, <em>seven screens, six palettes</em>
           </h1>
           <p className="adv-lede">
-            Vendor to a 5 to 15 person RIA. Read-only, evidence-first, never trades. Built from the research in
-            ria-research/SYNTHESIS.md rather than from the consumer terminal. Pick a palette in the strip; it follows you
+            Vendor to a 5 to 15 person RIA. Read-only, evidence-first, never trades. One premise: every single name across
+            the firm&rsquo;s book, in the accounts the firm manages and the accounts the clients run, each with a written
+            reason, checked every market day against what the companies file. Pick a palette in the strip; it follows you
             across every screen.
           </p>
         </div>

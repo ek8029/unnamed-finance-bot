@@ -9,12 +9,13 @@ import { useEffect, useState } from 'react';
 import { THEMES, type ThemeId } from './themes';
 
 const SCREENS = [
-  { href: '/testing/advisor/book', label: 'The book' },
+  { href: '/testing/advisor/book', label: 'Book' },
   { href: '/testing/advisor/client', label: 'Household' },
-  { href: '/testing/advisor/note', label: 'The note' },
+  { href: '/testing/advisor/note', label: 'Notes' },
   { href: '/testing/advisor/digest', label: 'Digest' },
   { href: '/testing/advisor/consent', label: 'Consent' },
   { href: '/testing/advisor/compliance', label: 'Compliance' },
+  { href: '/testing/advisor/precall', label: 'Before the call' },
 ];
 
 export function ThemeShell({ children }: { children: React.ReactNode }) {
@@ -52,6 +53,7 @@ export function ThemeShell({ children }: { children: React.ReactNode }) {
               onClick={() => setTheme(t.id)}
               className={`adv-theme-btn ${t.id === theme ? 'on' : ''}`}
               title={t.line}
+              aria-label={t.name}
               aria-pressed={t.id === theme}
             >
               <i data-swatch={t.id} />

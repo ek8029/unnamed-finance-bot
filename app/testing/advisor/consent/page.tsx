@@ -29,8 +29,9 @@ export default function AdvisorConsent() {
         </p>
 
         <ul className="adv-consent-list">
+          <li><span className="k">will</span><span>See the accounts you link, including the ones Larkspur already manages and the ones you run yourself.</span></li>
           <li><span className="k">will</span><span>See your holdings, transactions, cost basis and the reasons you have written down for owning things.</span></li>
-          <li><span className="k">will</span><span>See when a filing or a news item tests one of those reasons, with the source quoted.</span></li>
+          <li><span className="k">will</span><span>See when a filing tests one of those reasons, with the source quoted and dated.</span></li>
           <li><span className="k no">never</span><span>See your login details. Helm never has them either; the link is read-only through Plaid.</span></li>
           <li><span className="k no">never</span><span>Trade, move money, or change anything in any account.</span></li>
           <li><span className="k no">never</span><span>Keep access after you revoke it. Revoking is one click in your settings and needs no approval. Sarah is told when you do.</span></li>
