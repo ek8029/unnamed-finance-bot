@@ -7,11 +7,12 @@ export const PLAID_ERROR_MESSAGES: Record<string, string> = {
   INSTITUTION_NO_LONGER_SUPPORTED:
     'This institution is no longer supported by Plaid. Try connecting a different account.',
   // "Try a different name" is the wrong advice and it is what nine people were
-  // given. Plaid's catalogue genuinely does not include every broker: Webull
-  // and Public.com are absent from PRODUCTION entirely, so searching harder
-  // cannot work. Say that, and point at the path that does.
+  // given. Plaid's catalogue genuinely does not include every broker: Public.com,
+  // Tradier and moomoo are absent from PRODUCTION (checked 2026-08-28; Webull
+  // joined since the 8/21 check), so searching harder cannot work. Say that, and
+  // point at the path that does.
   INSTITUTION_NOT_FOUND:
-    'Plaid does not cover every broker. Webull and Public are not available through it. You can add those holdings by importing them instead.',
+    'Plaid does not reach every broker. Public, Tradier and moomoo are not available through it. You can add those holdings by importing them instead.',
   INSTITUTION_DOWN:
     'This institution is temporarily unavailable. Please try again later.',
   INVALID_CREDENTIALS:

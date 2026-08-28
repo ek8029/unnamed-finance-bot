@@ -72,9 +72,10 @@ export async function POST(request: Request) {
       //   `transactions` as well as `investments`, so the old config rejected
       //   none of them.
       //
-      //   Webull is not in Plaid's institution catalogue AT ALL, under any
-      //   product filter. Neither is Public.com. No link token config could
-      //   ever have surfaced them.
+      //   Webull was not in Plaid's institution catalogue AT ALL on 2026-08-21,
+      //   under any product filter; neither was Public.com. No link token config
+      //   could have surfaced them. (2026-08-28: Webull Financial has since
+      //   appeared, ins_138410, investments + OAuth. Public.com still absent.)
       //
       // So the ~9 `institution_not_found` exits were people looking for
       // brokerages Plaid does not cover, and the answer to those is the import

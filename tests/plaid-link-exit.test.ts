@@ -13,7 +13,7 @@ describe('resolveLinkExitError', () => {
     const r = resolveLinkExitError(null, 'institution_not_found');
     expect(r?.code).toBe('INSTITUTION_NOT_FOUND');
     expect(r?.message).toBe(PLAID_ERROR_MESSAGES.INSTITUTION_NOT_FOUND);
-    expect(r?.message).toContain('Webull');
+    expect(r?.message).toContain('Public');
   });
 
   it('maps a known error code', () => {
