@@ -77,3 +77,63 @@ export function GhostFirstLook() {
     </Ghost>
   );
 }
+
+/** Matches the factor lens report: tilt card beside the read card, a driver line, then the classification table. */
+export function GhostFactorLens() {
+  const card = 'rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)]';
+  return (
+    <Ghost label="Loading factor exposure">
+      <div className="space-y-3.5">
+        <GhostBar w={220} h={12} />
+        <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-3.5">
+          <div className={`${card} p-5 sm:p-6`}>
+            <GhostBar w={180} h={10} className="mb-5" />
+            <div className="flex flex-col gap-[18px]">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <GhostBar w={88} h={11} />
+                  <GhostBar w="100%" h={8} />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-3.5">
+            <div className="rounded-lg border border-[rgba(230,185,77,0.18)] bg-[rgba(230,185,77,0.025)] p-5">
+              <GhostBar w={44} h={10} className="mb-3" />
+              <div className="space-y-2.5">
+                <GhostBar w="92%" h={13} />
+                <GhostBar w="70%" h={13} />
+              </div>
+            </div>
+            <div className={`${card} p-5`}>
+              <GhostBar w={72} h={10} className="mb-4" />
+              <div className="grid grid-cols-3 gap-1.5">
+                {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <GhostBar key={i} w="100%" h={30} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className={`${card} p-5`}>
+          <GhostBar w={150} h={10} className="mb-2.5" />
+          <GhostBar w="60%" h={14} />
+        </div>
+        <div className={`${card} overflow-hidden`}>
+          <div className="px-5 py-3.5 border-b border-[var(--color-border-base)]">
+            <GhostBar w={170} h={10} />
+          </div>
+          <div className="px-5">
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+              <div key={i} className="grid grid-cols-6 gap-5 py-3.5 border-t border-[var(--color-border-subtle)]">
+                {[0, 1, 2, 3, 4, 5].map((j) => (
+                  <GhostBar key={j} w={j === 0 ? 48 : '70%'} h={12} />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Ghost>
+  );
+}

@@ -22,6 +22,9 @@ export type DataState = 'connected' | 'demo' | 'empty';
 
 interface PreviewCtx {
   tier: Tier;
+  /** Prod: true once the real entitlement answered (or the lookup gave up). Dev: always true.
+   *  Until then `tier` is the gate-first placeholder, not a fact about the user. */
+  resolved: boolean;
   dataState: DataState;
   setTier: (t: Tier) => void;
   setDataState: (d: DataState) => void;
@@ -42,6 +45,7 @@ export function PreviewProvider({ children }: { children: React.ReactNode }) {
   // server render (always 'pro') disagree with the client and threw hydration
   // errors on every dashboard page in dev.
   const [tier, setTierState] = useState<Tier>(IS_PROD ? 'free' : 'pro');
+  const [resolved, setResolved] = useState(!IS_PROD);
   const [dataState, setDataStateState] = useState<DataState>('connected');
   useEffect(() => {
     if (IS_PROD) return;
@@ -71,6 +75,11 @@ export function PreviewProvider({ children }: { children: React.ReactNode }) {
     const attempts = pathname?.startsWith('/dashboard') ? 3 : 1;
 
     (async () => {
+      // Whatever happens below, the gate-first placeholder stops being "unknown"
+      // when this lookup ends: a real tier, a non-401 failure, or retries spent.
+      // Without this a logged-out or erroring visitor would sit on the ghost forever.
+      let settled = false;
+      const settle = () => { if (!cancelled && !settled) { settled = true; setResolved(true); } };
       for (let attempt = 1; attempt <= attempts && !cancelled; attempt++) {
         try {
           const r = await fetch('/api/user/tier');
@@ -79,6 +88,7 @@ export function PreviewProvider({ children }: { children: React.ReactNode }) {
             if (!cancelled && (d?.tier === 'free' || d?.tier === 'pro' || d?.tier === 'max')) {
               resolvedRef.current = true;
               setTierState(d.tier);
+              settle();
               // Stamp the real entitlement onto the person. Person-on-events is
               // enabled on this project, so every event ingested after this
               // point carries the tier it was sent under, which is the only way
@@ -91,12 +101,14 @@ export function PreviewProvider({ children }: { children: React.ReactNode }) {
                 trial_ends_at: d.trialEndsAt ?? null,
               });
             }
+            settle();
             return;
           }
-          if (r.status !== 401) return;
+          if (r.status !== 401) { settle(); return; }
         } catch { /* retry */ }
         await new Promise((res) => setTimeout(res, 400 * attempt));
       }
+      settle();
     })();
     return () => { cancelled = true; };
   }, [pathname]);
@@ -104,7 +116,7 @@ export function PreviewProvider({ children }: { children: React.ReactNode }) {
   const setTier = (t: Tier) => { setTierState(t); if (!IS_PROD) localStorage.setItem(LS_TIER, t); };
   const setDataState = (d: DataState) => { setDataStateState(d); if (!IS_PROD) localStorage.setItem(LS_DS, d); };
 
-  return <Ctx.Provider value={{ tier, dataState, setTier, setDataState }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ tier, resolved, dataState, setTier, setDataState }}>{children}</Ctx.Provider>;
 }
 
 export function usePreview(): PreviewCtx {

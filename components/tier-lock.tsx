@@ -25,7 +25,7 @@ export function TierLock({
   surface?: string;
   children: React.ReactNode;
 }) {
-  const { tier } = usePreview();
+  const { tier, resolved } = usePreview();
   const pathname = usePathname();
   const entitled = tierAtLeast(tier, required);
   const where = surface ?? pathname ?? 'unknown';
@@ -33,12 +33,25 @@ export function TierLock({
   // The paywall shipped with no instrumentation at all, so "did anyone even see
   // it" was unanswerable. Fire on mount rather than on render: React runs the
   // render body twice in strict mode and that would double every count.
+  // Never before the tier is known: in prod the context starts at 'free' for
+  // everyone, so an unresolved lock is a Pro user's first paint, not a paywall.
   useEffect(() => {
-    if (entitled) return;
+    if (entitled || !resolved) return;
     posthog.capture('paywall_hit', { surface: where, required, tier });
-  }, [entitled, where, required, tier]);
+  }, [entitled, resolved, where, required, tier]);
 
   if (entitled) return <>{children}</>;
+
+  // Tier still loading: hold the blurred shape, no lock card yet. A Pro user
+  // goes blur -> content without ever seeing "Unlock"; a free user goes
+  // blur -> lock. Nothing paid is legible through the blur either way.
+  if (!resolved) {
+    return (
+      <div className="pointer-events-none select-none blur-[6px] opacity-40 max-h-[78vh] overflow-hidden" aria-hidden>
+        {children}
+      </div>
+    );
+  }
 
   const meta = TIER_META[required];
   return (

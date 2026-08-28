@@ -2,8 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { resolveSector } from '@/lib/portfolio-analysis';
-import { getFullTickerData } from '@/lib/financial-data';
 import { buildFactorReport, type EnrichedHolding } from '@/lib/factor-lens';
+import { getFactorMetrics, isEnrichable } from '@/lib/factor-lens-fundamentals';
 
 // Cap how many holdings we enrich with a data-API call, to bound provider
 // usage. The rest are passed through without metrics and reported as partial.
@@ -49,6 +49,7 @@ export async function GET() {
       dayChangePct: number | null;
       unrealisedPct: number | null;
       sector?: string;
+      assetClass: string | null;
     }>();
 
     for (const h of holdings) {
@@ -71,6 +72,7 @@ export async function GET() {
           dayChangePct: h.day_change_pct != null ? Number(h.day_change_pct) * 100 : null,
           unrealisedPct: h.unrealised_gain_loss_pct != null ? Number(h.unrealised_gain_loss_pct) : null,
           sector: resolved === 'Unknown' ? undefined : resolved,
+          assetClass: h.security?.asset_class ?? null,
         });
       }
     }
@@ -78,46 +80,38 @@ export async function GET() {
     const aggregated = [...tickerMap.values()].sort((a, b) => b.totalValue - a.totalValue);
     const toEnrich = aggregated.slice(0, MAX_ENRICHED);
 
-    // Enrich the top holdings with fundamentals (Finazon + EDGAR, no OpenAI).
-    // Chunked, not one big Promise.all: a full-parallel burst 429s both SEC
-    // (~10 req/s) and Finazon, which blanked size/style/quality for most
-    // holdings. Chunks of 5 with a short breather stay under both limits.
+    // Enrich the top holdings with fundamentals (EDGAR + one quote, cached a
+    // day per ticker in lib/factor-lens-fundamentals). Funds and crypto skip
+    // the lookup: nothing to read. Chunked, not one big Promise.all: a
+    // full-parallel burst of misses 429s both SEC (~10 req/s) and Finazon,
+    // which blanked size/style/quality for most holdings. The breather is
+    // only paid after a chunk that actually went to the providers; a chunk
+    // served from cache returns in a few ms and must not cost 300 ms.
     const ENRICH_BATCH = 5;
+    const bare = (agg: (typeof toEnrich)[number]): EnrichedHolding => ({
+      ticker: agg.ticker,
+      totalValue: agg.totalValue,
+      dayChangePct: agg.dayChangePct,
+      unrealisedPct: agg.unrealisedPct,
+      sector: agg.sector ?? null,
+    });
     const enrichOne = async (agg: (typeof toEnrich)[number]): Promise<EnrichedHolding> => {
-        try {
-          const data = await getFullTickerData(agg.ticker);
-          const m = data.financials?.metric ?? {};
-          const marketCapM = data.profile?.marketCapitalization; // millions
-          return {
-            ticker: agg.ticker,
-            totalValue: agg.totalValue,
-            dayChangePct: agg.dayChangePct,
-            unrealisedPct: agg.unrealisedPct,
-            sector: agg.sector ?? null,
-            marketCapB: marketCapM != null && marketCapM > 0 ? marketCapM / 1000 : null,
-            pe: m['peBasicExclExtraTTM'] ?? null,
-            pb: m['pbQuarterly'] ?? null,
-            ps: m['psTTM'] ?? null,
-            roe: m['roeTTM'] ?? null,
-            debtToEquity: m['totalDebtToEquityQuarterly'] ?? m['debtEquityQuarterly'] ?? null,
-          };
-        } catch (e) {
-          console.error(`factor-lens: enrich failed for ${agg.ticker}`, e);
-          return {
-            ticker: agg.ticker,
-            totalValue: agg.totalValue,
-            dayChangePct: agg.dayChangePct,
-            unrealisedPct: agg.unrealisedPct,
-            sector: agg.sector ?? null,
-          };
-        }
+      if (!isEnrichable(agg.assetClass)) return bare(agg);
+      try {
+        return { ...bare(agg), ...(await getFactorMetrics(agg.ticker)) };
+      } catch (e) {
+        console.error(`factor-lens: enrich failed for ${agg.ticker}`, e);
+        return bare(agg);
+      }
     };
 
     const enrichedTop: EnrichedHolding[] = [];
     for (let i = 0; i < toEnrich.length; i += ENRICH_BATCH) {
       const chunk = toEnrich.slice(i, i + ENRICH_BATCH);
+      const started = Date.now();
       enrichedTop.push(...(await Promise.all(chunk.map(enrichOne))));
-      if (i + ENRICH_BATCH < toEnrich.length) {
+      const wentToProviders = Date.now() - started > 100;
+      if (wentToProviders && i + ENRICH_BATCH < toEnrich.length) {
         await new Promise((r) => setTimeout(r, 300));
       }
     }

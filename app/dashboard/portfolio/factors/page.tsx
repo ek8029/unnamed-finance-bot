@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { usePreview } from '@/lib/preview-context';
 import { tierAtLeast } from '@/lib/tier-shared';
 import { TierLock } from '@/components/tier-lock';
+import { GhostFactorLens } from '@/components/ghost';
 import { useTier } from '@/hooks/use-tier';
 import { isThesisUser } from '@/lib/thesis-access';
 import type {
@@ -426,7 +427,7 @@ function ReportBody({ report }: { report: FactorReport }) {
 
 export default function FactorLensPage() {
   const { isPro, loading: tierLoading } = useTier();
-  const { tier: previewTier } = usePreview();
+  const { tier: previewTier, resolved: tierResolved } = usePreview();
   const [report, setReport] = useState<FactorReport | null>(null);
   const [empty, setEmpty] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -500,9 +501,14 @@ export default function FactorLensPage() {
         </h1>
       </div>
 
-      {/* Gate FIRST: non-entitled users see the lock instantly — no data fetch,
-          no loading spinner to wait through. Everything below is for Pro. */}
-      {!entitled ? (
+      {/* Tier unknown (prod first paint): the report's ghost, never the lock.
+          The context starts at 'free' for everyone, so painting the lock here
+          showed every Pro user "Unlock Factor Lens" for a beat before their
+          report. Once resolved: non-entitled users get the lock with no data
+          fetch; everything below the lock branch is for Pro. */}
+      {!tierResolved ? (
+        <GhostFactorLens />
+      ) : !entitled ? (
         <TierLock
           required="pro"
           label="Unlock Factor Lens with Pro"
@@ -519,14 +525,7 @@ export default function FactorLensPage() {
             </p>
           )}
 
-          {(loading || tierLoading) && (
-            <div
-              className="rounded-lg border py-16 text-center text-[15px] text-[var(--color-text-muted)]"
-              style={{ borderColor: 'var(--color-border-base)', background: 'var(--color-bg-surface)' }}
-            >
-              Loading factor exposure...
-            </div>
-          )}
+          {(loading || tierLoading) && <GhostFactorLens />}
 
           {!loading && !tierLoading && error && (
             <div
