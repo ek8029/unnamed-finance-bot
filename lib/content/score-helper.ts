@@ -78,6 +78,7 @@ Rules:
 - excerpt must be copied verbatim from the source text. Do not paraphrase or invent.
 - No invented numbers. No em dashes.
 - verdict: "supports", "contradicts", or "neutral" (neutral only if clearly relevant context).
+- A forward-looking risk statement that would appear whether or not the pillar is true ("may materially adversely affect revenue, gross margin, results of operations") is not evidence for either side. Omit it. If it must be filed, the verdict is "neutral", never "supports".
 - Mark "contradicts" when the source materially advances the pillar's "Breaks if" condition: the metric moves the wrong way, guidance is cut, the named risk occurs, or the catalyst fails. Do not soften genuine bad news into "neutral" or "supports."
 - summary: one concise sentence explaining what the source means for the pillar.
 Respond with JSON exactly in this shape:

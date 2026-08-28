@@ -519,6 +519,7 @@ Rules:
 - excerpt must be copied verbatim from the source text. Do not paraphrase or invent.
 - No invented numbers. No em dashes.
 - verdict: "supports", "contradicts", or "neutral". Neutral is RARE: only when the source speaks directly to the pillar's mechanism and confirms the status quo. Never use neutral to file a loose thematic association; omit instead.
+- A forward-looking risk statement that would appear whether or not the pillar is true ("may materially adversely affect revenue, gross margin, results of operations") is not evidence for either side. Omit it. If it must be filed, the verdict is "neutral", never "supports".
 - materiality: "material" (changes the thesis outlook) or "context" (informative background).
 - claim_type: for [news] sources ONLY, "reported_event" if the excerpt reports something that has actually happened or been formally announced (a contract ended, a plant shut, results published, a price changed), or "opinion" if it is a view, forecast, rating, price target or argument about what may happen. A rating change IS an opinion however factually it is written up. Where it was published is irrelevant; judge the claim itself. Omit for non-news sources.
 - confidence: "high" or "low". Use "low" when the connection or the materiality call required judgment you are not certain of.

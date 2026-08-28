@@ -175,3 +175,14 @@ describe('citationDefect — degenerate input', () => {
   it('rejects empty', () => expect(pass('')?.code).toBe('empty'));
   it('rejects null', () => expect(citationDefect(null, 'supports')?.code).toBe('empty'));
 });
+
+describe('citationDefect — the AAPL row of 2026-08-03: a risk-factor hedge judged as support', () => {
+  const hedge = 'the Company expects these trends to intensify, which may materially negatively impact the Company’s revenue, costs, gross margin, results of operations and financial condition.';
+  it('is boilerplate whatever verdict the judge attached', () => {
+    expect(pass(hedge, 'supports', 'filing')?.detail).toBe('risk-factor-hedge');
+    expect(pass(hedge, 'contradicts', 'filing')?.code).toBe('boilerplate');
+  });
+  it('a dated, quantified adverse statement is a finding, not a hedge', () => {
+    expect(pass('Tariff costs of $900 million adversely affected gross margin in the June quarter, the Company said.', 'contradicts', 'filing')).toBeNull();
+  });
+});

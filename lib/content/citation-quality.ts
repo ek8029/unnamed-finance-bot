@@ -41,6 +41,12 @@ const BOILERPLATE: { re: RegExp; name: string }[] = [
   { re: /see\s+(?:note|item)\s+\d+/i, name: 'cross-reference' },
   { re: /the accompanying (?:unaudited )?(?:condensed )?consolidated financial statements/i, name: 'financial-statement-preamble' },
   { re: /prepared in accordance with (?:u\.?s\.?\s+)?gaap/i, name: 'gaap-preamble' },
+  // A forward-looking risk-factor hedge. "may materially negatively impact
+  // revenue, gross margin, results of operations and financial condition" is in
+  // every 10-Q Apple has ever filed; on 2026-08-03 the judge filed it as SUPPORT
+  // for the iPhone upgrade cycle and the gate approved it. Past-tense adverse
+  // statements ("adversely affected gross margin by $900 million") stay.
+  { re: /(?:may|could|might|would)\s+(?:materially\s+(?:and\s+)?)?(?:adversely|negatively)\s+(?:impact|affect)/i, name: 'risk-factor-hedge' },
 ];
 
 
