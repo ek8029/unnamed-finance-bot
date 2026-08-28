@@ -7,6 +7,8 @@
 
 import { NextResponse } from 'next/server';
 import { getTickerThesisData, type PublicPillar, type PublicCatch } from '@/lib/content/public-thesis';
+import { getCompanyEntries } from '@/lib/edgar';
+import { classifyScanSymbol, rankCompanyMatches } from '@/lib/scan-classify';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
@@ -34,10 +36,18 @@ export async function GET(request: Request) {
   try {
     const data = await getTickerThesisData(raw);
 
-    // Off-universe: honest degrade. No fabricated thesis.
+    // Off-universe: still no fabricated thesis, but say WHAT it is. An SEC
+    // filer can have its pillars drafted by the signed-in client (POST
+    // /api/thesis/seed, user-reviewed before anything is tracked); a name or
+    // typo gets "did you mean"; gold and forex get told there is nothing to
+    // read; and if EDGAR's list is down we say unknown rather than guess.
     if (!data) {
+      const entries = await getCompanyEntries();
+      const match = entries?.find((e) => e.ticker === raw) ?? null;
+      const suggestions = entries && !match ? rankCompanyMatches(raw, entries, 3) : [];
+      const { kind } = classifyScanSymbol({ house: false, filer: !!match, suggestions, known: entries !== null });
       return NextResponse.json(
-        { house: false, ticker: raw, analyzePath: `/analyze/${raw}` },
+        { house: false, kind, ticker: raw, company: match?.title ?? null, suggestions, analyzePath: `/analyze/${raw}` },
         { headers: { 'Cache-Control': 'private, no-store' } },
       );
     }

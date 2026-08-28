@@ -65,6 +65,9 @@ const TICKER_MAP_TTL = 24 * 60 * 60 * 1000;
 // simultaneously, which nulled out fundamentals for every holding at once.
 let tickerMapInFlight: Promise<Map<string, number> | null> | null = null;
 let tickerMapLastGood: Map<string, number> | null = null;
+// The same file carries company titles. Kept for the onboarding scan, which
+// has to tell "APPL" (a typo for Apple) from "XAUUSD" (not a company at all).
+let companyEntriesLastGood: { ticker: string; title: string }[] | null = null;
 
 async function fetchTickerMap(): Promise<Map<string, number> | null> {
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -84,11 +87,14 @@ async function fetchTickerMap(): Promise<Map<string, number> | null> {
       }
       const data: Record<string, TickerEntry> = await res.json();
       const map = new Map<string, number>();
+      const entries: { ticker: string; title: string }[] = [];
       for (const entry of Object.values(data)) {
         map.set(entry.ticker.toUpperCase(), entry.cik_str);
+        entries.push({ ticker: entry.ticker.toUpperCase(), title: entry.title });
       }
       setCache('edgar:tickers', map, TICKER_MAP_TTL);
       tickerMapLastGood = map;
+      companyEntriesLastGood = entries;
       return map;
     } catch (error) {
       console.error('EDGAR company_tickers failed:', error);
@@ -98,8 +104,7 @@ async function fetchTickerMap(): Promise<Map<string, number> | null> {
   return null;
 }
 
-async function getCik(symbol: string): Promise<string | null> {
-  const upper = symbol.toUpperCase();
+async function getTickerMap(): Promise<Map<string, number> | null> {
   let map = getCached<Map<string, number>>('edgar:tickers');
   if (!map) {
     if (!tickerMapInFlight) {
@@ -109,10 +114,26 @@ async function getCik(symbol: string): Promise<string | null> {
     }
     // A stale registry beats none: ticker→CIK mappings are near-immutable.
     map = (await tickerMapInFlight) ?? tickerMapLastGood;
-    if (!map) return null;
   }
+  return map ?? null;
+}
+
+async function getCik(symbol: string): Promise<string | null> {
+  const upper = symbol.toUpperCase();
+  const map = await getTickerMap();
+  if (!map) return null;
   const cik = map.get(upper);
   return cik != null ? String(cik).padStart(10, '0') : null;
+}
+
+/**
+ * Every ticker and title in EDGAR's company list (operating companies and
+ * listed funds), or null when the list cannot be loaded and has never been.
+ * Callers that get null must say "unknown", never "not a company".
+ */
+export async function getCompanyEntries(): Promise<{ ticker: string; title: string }[] | null> {
+  await getTickerMap();
+  return companyEntriesLastGood;
 }
 
 /**

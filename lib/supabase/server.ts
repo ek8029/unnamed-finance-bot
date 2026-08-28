@@ -51,15 +51,32 @@ async function createImpersonatedClient(email: string): Promise<SupabaseClient |
   // the surfaces being previewed, so they no-op silently instead — nothing a
   // user would recognise as their data.
   const TELEMETRY_TABLES = new Set(['analysis_usage']);
+  // A builder that accepts any chain (.eq().or().then()) and resolves empty, so a
+  // no-op'd write can sit in the same fluent statement production uses.
+  const chainableNoop = (): any => {
+    const p: any = new Proxy({}, {
+      get(_t, prop) {
+        if (prop === 'then') {
+          return (onF: any, onR: any) => Promise.resolve({ data: null, error: null, count: null }).then(onF, onR);
+        }
+        return () => p;
+      },
+    });
+    return p;
+  };
 
   const client = svc as any;
   const origFrom = client.from.bind(client);
   client.from = (table: string) => {
     const qb = origFrom(table);
     for (const m of ['insert', 'update', 'upsert', 'delete'] as const) {
-      qb[m] = () => {
-        if (m === 'insert' && TELEMETRY_TABLES.has(table)) {
-          return Promise.resolve({ data: null, error: null });
+      qb[m] = (payload?: Record<string, unknown>) => {
+        if (m === 'insert' && TELEMETRY_TABLES.has(table)) return chainableNoop();
+        // /api/financial-summary opens by touching user_profiles.last_seen_at; a
+        // throw here 500'd the whole overview for every impersonated account, so
+        // the lab could never show the one page it exists to show.
+        if (m === 'update' && table === 'user_profiles' && payload && Object.keys(payload).every((k) => k === 'last_seen_at')) {
+          return chainableNoop();
         }
         throw new Error(`[lab] impersonation is read-only: ${m} on ${table} blocked`);
       };

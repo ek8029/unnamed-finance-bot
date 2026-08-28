@@ -18,14 +18,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import posthog from 'posthog-js';
 import { HelmMark } from '@/components/helm-mark';
-import { useDemo } from '@/contexts/demo-context';
 import { ArrowRight, PenLine, Check, ExternalLink, ShieldCheck, Lock, Building2, ChevronDown } from 'lucide-react';
 import { ManualPortfolioForm } from '@/components/manual-portfolio-form';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
 import { AnalysisLoadingTerminal } from '@/components/analysis-loading-terminal';
 import { SourceIcon } from '@/components/onboarding/source-icon';
-import { usePreview } from '@/lib/preview-context';
-import { tierAtLeast, type Tier } from '@/lib/tier-shared';
 
 const ONBOARDING_KEY = 'helm_onboarding_dismissed';
 // Recognizable house names that currently carry live cited evidence (receipt cards).
@@ -44,6 +41,12 @@ interface ScanResult {
   house: boolean;
   ticker: string;
   analyzePath?: string;
+  /** What the scan decided the symbol is. `filer` = an SEC filer outside the house list. */
+  kind?: 'house' | 'filer' | 'suggest' | 'unreadable' | 'unknown';
+  /** For `suggest`: company names the text matched (typos, names typed as tickers). */
+  suggestions?: Array<{ ticker: string; title: string }>;
+  /** Pillars came from /api/thesis/seed just now (origin ai_draft), not the house list. */
+  drafted?: boolean;
   company?: string;
   health?: Health;
   healthLabel?: string;
@@ -120,14 +123,6 @@ const AGENT_JOBS = [
   { label: 'Thesis', text: 'Tracks the reasons you own each position and flags the moment one breaks' },
 ];
 
-// Per-tier unlocks — copy mirrors the real gates in lib/tier.ts. The strip
-// highlights the previewed tier (usePreview), so the free/pro dev toggle
-// demos the differences and prod shows the user's real entitlement.
-const TIERS: { key: Tier; name: string; price: string; unlocks: string[] }[] = [
-  { key: 'free', name: 'Free', price: '$0', unlocks: ['Every account in one place', '5 AI analyses a day', 'Daily market brief', 'One thesis, and its history'] },
-  { key: 'pro', name: 'Pro', price: '$20/mo', unlocks: ['Every thesis, watched daily', 'Tax-loss harvesting', 'Earnings watch', 'The agent, watching every position'] },
-];
-
 // Preview mode (?onbv2preview=1 or the /testing/onboarding harness): forces the
 // overlay to show on ANY account, including one that already has a brokerage
 // connected, and walks the whole flow WITHOUT A SINGLE WRITE.
@@ -185,8 +180,6 @@ const ACQUISITION_OPTIONS: { slug: string; label: string }[] = [
 /** `harness` is the /testing/onboarding review surface: forces preview (no writes),
  *  skips the no-connection gate, and lets a reviewer jump straight to any screen. */
 export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpTo?: Phase } = {}) {
-  const { enableDemo } = useDemo();
-  const { tier } = usePreview(); // dev: driven by the free/pro/max toggle; prod: real entitlement
   const [show, setShow] = useState(false);
   const [phase, setPhase] = useState<Phase>(jumpTo ?? 'welcome');
   // Plaid exchange failures were silent — the modal closed and nothing happened.
@@ -295,10 +288,43 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
 
     fetch(`/api/scan/ticker?symbol=${encodeURIComponent(ticker)}`)
       .then((r) => r.json())
-      .then((res: ScanResult) => {
+      .then(async (res: ScanResult) => {
         if (cancelled) return;
+        // An SEC filer Helm has not written up: draft its pillars now, while the
+        // terminal is still playing, so the card shows something real about the
+        // name they typed instead of a link out. Drafts are unconfirmed and
+        // untracked until the person picks the ones that are theirs.
+        if (res.kind === 'filer' && !preview) {
+          try {
+            const sr = await fetch('/api/thesis/seed', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ticker }),
+            });
+            if (sr.ok) {
+              const d = await sr.json();
+              const rows: Array<{ id: string | number; claim: string; breaks_if?: string | null; lifecycle?: string }> =
+                Array.isArray(d?.pillars) ? d.pillars : [];
+              const pillars = rows
+                .filter((p) => p.lifecycle !== 'dismissed')
+                .map((p) => ({
+                  id: String(p.id),
+                  claim: p.claim,
+                  breaksIf: p.breaks_if ?? '',
+                  status: 'unverified' as Health,
+                  statusLabel: 'Not tested yet',
+                  catches: [],
+                }));
+              if (pillars.length > 0) {
+                res = { ...res, drafted: true, pillars, pillarCount: pillars.length, catchCount: 0 };
+                track('onb_draft_shown', { ticker, pillars: pillars.length });
+              }
+            }
+          } catch { /* the card falls back to the honest degrade */ }
+          if (cancelled) return;
+        }
         setScan(res);
-        track('onb_scan_completed', { ticker, house: !!res.house, health: res.health ?? null });
+        track('onb_scan_completed', { ticker, house: !!res.house, kind: res.kind ?? (res.house ? 'house' : 'unknown'), drafted: !!res.drafted, health: res.health ?? null });
         const wait = Math.max(0, 2400 - (Date.now() - t0));
         setTimeout(() => { if (!cancelled) { setPhase('card'); track('onb_card_viewed', { ticker, house: !!res.house }); } }, wait);
       })
@@ -309,7 +335,7 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
       });
 
     return () => { cancelled = true; };
-  }, [phase, ticker]);
+  }, [phase, ticker, preview]);
 
   const startScan = useCallback((raw: string) => {
     const t = raw.trim().toUpperCase();
@@ -329,20 +355,6 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
     setShow(false);
   }
 
-  function handleDemo() {
-    track('onb_demo_chosen');
-    // Do the demo side effects now, then hand off to the normal ending.
-    //
-    // This used to set 'done' and unmount the whole overlay on a blind 1100ms
-    // timer. The attribution effect intercepts 'done' and switches to the
-    // attribution question, so the timer was firing while that question was on
-    // screen: "how did you find us" appeared for a second and then the overlay
-    // vanished underneath it. Every demo user was counted as shown and never
-    // had the chance to answer. The 'done' screen owns its own dismissal
-    // through "Open the terminal", so no timer is needed here at all.
-    if (!preview) { enableDemo(); sessionStorage.setItem(ONBOARDING_KEY, '1'); }
-    setPhase('done');
-  }
 
   function handleConnected() {
     track('onb_link_completed');
@@ -489,6 +501,56 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
     if (preview) { setAdopted(true); setPhase('howItWorks'); return; }
 
     setBusy('reasons');
+    // Drafted pillars already exist on an untracked thesis (from /api/thesis/seed):
+    // confirm the ones picked, dismiss the rest (a rejected draft is a learning
+    // signal and must never be re-proposed), then track. A note alone never
+    // tracks: an unconfirmed draft must not produce a tracked-but-empty thesis.
+    if (scan.drafted) {
+      try {
+        let confirmedAny = false;
+        for (const p of scan.pillars ?? []) {
+          if (!p.id) continue;
+          if (picked.has(p.id)) {
+            const r = await fetch(`/api/thesis/pillars/${p.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ confirmed: true }),
+            });
+            if (r.ok) confirmedAny = true;
+          } else {
+            await fetch(`/api/thesis/pillars/${p.id}`, { method: 'DELETE' }).catch(() => {});
+          }
+        }
+        if (custom) {
+          await fetch(`/api/thesis/${scan.ticker}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notes: custom }),
+          }).catch(() => {});
+        }
+        if (confirmedAny) {
+          const tr = await fetch(`/api/thesis/${scan.ticker}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tracked: true }),
+          });
+          setAdopted(true);
+          if (tr.status === 403) {
+            setNote(`${scan.ticker} is saved. Watching every position is part of Pro, so only your first thesis is being monitored for now.`);
+          }
+        } else if (custom) {
+          setNote(`Saved your note on ${scan.ticker}. Pick at least one reason for Helm to check filings against.`);
+        } else {
+          setNote('Could not save that. You can add it from the Theses page.');
+        }
+      } catch {
+        setNote('Could not reach Helm. You can add this from the Theses page later.');
+      } finally {
+        setBusy(null);
+        setPhase('howItWorks');
+      }
+      return;
+    }
     try {
       const res = await fetch('/api/thesis/adopt', {
         method: 'POST',
@@ -830,7 +892,96 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                       </p>
                     </>
                   ) : (
-                    /* off-house / error — honest, never a fake thesis */
+                    scan.drafted && (scan.pillars?.length ?? 0) > 0 ? (
+                    /* off-house SEC filer: Helm's read, drafted just now. Provenance
+                       is explicit and no verdict is claimed; the first test is tomorrow. */
+                    <>
+                      <div className="flex items-center gap-2.5 mb-4">
+                        <span className="w-2 h-2 rounded-full bg-[var(--color-gold)]" />
+                        <span className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>
+                          Helm&apos;s read · {scan.ticker}
+                        </span>
+                      </div>
+                      <h2 className="text-[clamp(24px,4.5vw,34px)] leading-[1.15] text-[var(--color-text-primary)]" style={{ fontFamily: 'var(--font-display-serif)' }}>
+                        {scan.company ?? scan.ticker}
+                      </h2>
+                      <p className="mt-4 text-[15px] leading-[1.6] text-[var(--color-text-secondary)]">
+                        Drafted just now from {scan.ticker}&apos;s filings and Helm&apos;s read of the business. No filing has tested
+                        these yet. Helm checks every trading day from tomorrow and shows you the receipt the moment one does.
+                      </p>
+                      <div className="mt-6 rounded-md border border-[var(--color-border-base)] bg-[#0B0B0B] p-4">
+                        <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] mb-3.5" style={MONO}>
+                          What Helm would watch on {scan.ticker}
+                        </div>
+                        <div className="space-y-4">
+                          {scan.pillars!.map((p, i) => (
+                            <div key={p.id ?? i}>
+                              <p className="text-[15.5px] leading-[1.5] text-[var(--color-text-primary)] m-0">{p.claim}</p>
+                              {!!p.breaksIf && (
+                                <p className="mt-1.5 text-[13px] leading-[1.5] text-[var(--color-text-muted)] m-0">
+                                  <span className="text-[var(--color-gold)] uppercase tracking-[0.08em] text-[10.5px] font-semibold" style={MONO}>Breaks if </span>
+                                  {p.breaksIf}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <p className="mt-6 text-[13.5px] text-[var(--color-text-muted)] leading-relaxed" style={MONO}>
+                        Pick the reasons that are actually yours on the next screen. Helm only watches what you keep.
+                      </p>
+                    </>
+                  ) : scan.kind === 'suggest' && (scan.suggestions?.length ?? 0) > 0 ? (
+                    /* a name or a typo: offer the tickers it matched, rescan on tap */
+                    <>
+                      <div className="flex items-center gap-2.5 mb-4">
+                        <span className="w-2 h-2 rounded-full bg-[var(--color-text-muted)]" />
+                        <span className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]" style={MONO}>
+                          {scan.ticker}
+                        </span>
+                      </div>
+                      <h2 className="text-[clamp(22px,4.5vw,32px)] leading-[1.15] text-[var(--color-text-primary)]" style={{ fontFamily: 'var(--font-display-serif)' }}>
+                        {scan.ticker} isn&apos;t a ticker Helm knows. Did you mean:
+                      </h2>
+                      <div className="mt-6 space-y-2.5">
+                        {scan.suggestions!.map((s) => (
+                          <button key={s.ticker} onClick={() => startScan(s.ticker)}
+                            className="w-full text-left rounded-lg border border-[var(--color-border-base)] hover:border-[var(--color-gold-border)] p-4 flex items-baseline gap-4 transition-colors min-h-[56px]">
+                            <span className="text-[15px] font-semibold tracking-[0.08em] text-[var(--color-gold)] w-[72px] shrink-0" style={MONO}>{s.ticker}</span>
+                            <span className="text-[15px] text-[var(--color-text-secondary)] truncate">{s.title}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : scan.kind === 'unreadable' ? (
+                    /* gold, forex, futures, crypto, foreign listings: nothing files with the SEC.
+                       Say so and keep them in the flow with names Helm can read. */
+                    <>
+                      <div className="flex items-center gap-2.5 mb-4">
+                        <span className="w-2 h-2 rounded-full bg-[var(--color-text-muted)]" />
+                        <span className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]" style={MONO}>
+                          {scan.ticker}
+                        </span>
+                      </div>
+                      <h2 className="text-[clamp(22px,4.5vw,32px)] leading-[1.15] text-[var(--color-text-primary)]" style={{ fontFamily: 'var(--font-display-serif)' }}>
+                        Helm can&apos;t read {scan.ticker}.
+                      </h2>
+                      <p className="mt-4 text-[15px] leading-[1.6] text-[var(--color-text-secondary)]">
+                        Helm reads what companies file with the SEC and checks it against the reasons you own them.
+                        {' '}{scan.ticker} doesn&apos;t file anything to read. Try a company you own:
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-5">
+                        {HOUSE_PICKS.map((t) => (
+                          <button key={t} type="button" onClick={() => startScan(t)}
+                            className="px-3.5 h-[38px] rounded-full border border-[var(--color-border-base)] text-[12.5px] tracking-[0.1em] text-[var(--color-text-secondary)] hover:border-[var(--color-gold-border)] hover:text-[var(--color-gold)] transition-colors"
+                            style={MONO}>
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    /* error / unknown / filer with no draft — honest, never a fake thesis */
                     <>
                       <div className="flex items-center gap-2.5 mb-4">
                         <span className="w-2 h-2 rounded-full bg-[var(--color-text-muted)]" />
@@ -853,6 +1004,7 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                         </a>
                       )}
                     </>
+                  )
                   )}
                 </div>
               </div>
@@ -867,8 +1019,8 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                       "which of these are yours" — is the one they can answer
                       without handing over a credential. Falls through to the
                       old copy when the ticker has no house pillars to offer. */}
-                  {scan.house && (scan.pillars?.length ?? 0) > 0 ? (
-                    <button onClick={() => { track('onb_reasons_shown', { ticker: scan.ticker }); setPhase('reasons'); }}
+                  {(scan.house || scan.drafted) && (scan.pillars?.length ?? 0) > 0 ? (
+                    <button onClick={() => { track('onb_reasons_shown', { ticker: scan.ticker, drafted: !!scan.drafted }); setPhase('reasons'); }}
                       className="flex items-center gap-2 px-6 min-h-[48px] bg-[var(--color-gold)] text-black text-[15px] font-semibold rounded-md hover:brightness-110 transition-all">
                       Watch {scan.ticker} for me <ArrowRight className="w-4 h-4" />
                     </button>
@@ -896,9 +1048,13 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                     Why do you own {scan.ticker}?
                   </h2>
                   <p className="mt-3 text-[15px] leading-[1.6] text-[var(--color-text-secondary)]">
-                    These are the reasons Helm already watches on {scan.ticker}. Pick the ones that are
-                    yours. Helm rechecks them against the company&apos;s own reports and tells you when one
-                    stops holding.
+                    {scan.drafted
+                      ? <>Helm drafted these from {scan.ticker}&apos;s filings just now. Pick the ones that are actually
+                          yours; the rest are dropped. Helm rechecks what you keep against the company&apos;s own reports
+                          and tells you when one stops holding.</>
+                      : <>These are the reasons Helm already watches on {scan.ticker}. Pick the ones that are
+                          yours. Helm rechecks them against the company&apos;s own reports and tells you when one
+                          stops holding.</>}
                   </p>
 
                   <div className="mt-6 space-y-2.5">
@@ -1055,18 +1211,19 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
             </>
           )}
 
-          {/* ═══ HOW IT WORKS — platform / agent / thesis primer + tier strip ═══ */}
+          {/* ═══ HOW IT WORKS — what happens tomorrow. Pricing left this screen: 74 people reached it a month and 15 went on; a price list before value is the wrong order. ═══ */}
           {phase === 'howItWorks' && (
             <>
               <div className="flex-1 overflow-y-auto flex flex-col px-5 sm:px-8 pt-[max(48px,env(safe-area-inset-top))] pb-6" style={{ animation: 'onb-fade-up 0.5s ease-out' }}>
                 <div className="max-w-xl mx-auto w-full my-auto py-4">
                   <h2 className="text-[clamp(24px,5vw,34px)] font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.1]">
-                    How Helm works
+                    {adopted && scan ? `Helm re-checks ${scan.ticker} every trading day.` : 'Helm reads what companies file, every trading day.'}
                   </h2>
                   <p className="text-[15px] text-[var(--color-text-muted)] mt-3 leading-relaxed">
-                    Connect your accounts and Helm runs an agent on every position you hold. It does the watching so you don&apos;t have to.
+                    {adopted && scan
+                      ? 'The first receipt lands tomorrow morning. When a filing tests one of the reasons you kept, the quote and its source are in your inbox and in Actions. Nothing arrives on a quiet day.'
+                      : 'Keep a reason next to each name you own and Helm checks every filing and headline against it, then tells you what changed and why, with the source. Nothing arrives on a quiet day.'}
                   </p>
-
                   <div className="mt-6 border-b border-[var(--color-border-subtle)]">
                     {AGENT_JOBS.map(({ label, text }) => (
                       <div key={label} className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4 py-2.5 border-t border-[var(--color-border-subtle)]">
@@ -1078,48 +1235,8 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                     ))}
                   </div>
                   <p className="mt-4 text-[13.5px] text-[var(--color-text-muted)] leading-relaxed" style={MONO}>
-                    ...and writes it into a short daily brief.
+                    Connect once and it does this for every position you hold, not only the one you typed.
                   </p>
-
-                  {/* Tier strip — highlights the previewed tier (free/pro/max toggle demos it) */}
-                  <div className="mt-8">
-                    <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] mb-3" style={MONO}>
-                      What each plan unlocks
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                      {TIERS.map((t) => {
-                        const current = t.key === tier;
-                        return (
-                          <div key={t.key}
-                            className={`rounded-md border p-3.5 ${current ? 'border-[var(--color-gold-border)] bg-[var(--color-gold-surface)]' : 'border-[var(--color-border-base)] bg-[#0B0B0B]'}`}>
-                            <div className="flex items-baseline justify-between gap-2">
-                              <span className="text-[13.5px] font-semibold text-[var(--color-text-primary)]">{t.name}</span>
-                              <span className="text-[11px] text-[var(--color-text-muted)]" style={MONO}>{t.price}</span>
-                            </div>
-                            {current && (
-                              <span className="inline-block mt-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--color-gold)]" style={MONO}>
-                                Your plan
-                              </span>
-                            )}
-                            <ul className="mt-2.5 space-y-1.5">
-                              {t.unlocks.map((u) => (
-                                <li key={u} className="flex items-start gap-1.5 text-[12px] text-[var(--color-text-secondary)] leading-snug">
-                                  <Check className="w-3 h-3 text-[var(--color-gold)] mt-[3px] shrink-0" />
-                                  <span>{u}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {!tierAtLeast(tier, 'pro') && (
-                      <p className="mt-3 text-[12.5px] text-[var(--color-text-muted)] leading-relaxed">
-                        You&apos;re on Free. Connect your book now at no cost, write one thesis, read the
-                        twelve months behind it, and Helm keeps watching it. Pro watches every position, plus taxes and earnings.
-                      </p>
-                    )}
-                  </div>
                 </div>
               </div>
 
@@ -1167,7 +1284,7 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                     {preview ? (
                       <button onClick={() => setPhase('synced')}
                         className="w-full flex items-center justify-center gap-2 h-[52px] rounded-md bg-[var(--color-gold)] text-black text-[15px] font-semibold hover:brightness-110 transition-all">
-                        Connect a brokerage
+                        Connect a brokerage, 401(k) or stock plan
                       </button>
                     ) : (
                       <div>
@@ -1179,7 +1296,7 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                           onLinkError={(_code, msg) => setLinkError(msg)}
                           className="w-full flex items-center justify-center gap-2 h-[52px] rounded-md bg-[var(--color-gold)] text-black text-[15px] font-semibold hover:brightness-110 transition-all cursor-pointer"
                         >
-                          Connect a brokerage
+                          Connect a brokerage, 401(k) or stock plan
                         </PlaidLinkButton>
                         {linkError && (
                           <p className="mt-2.5 text-[13px] text-[var(--color-negative-text)] text-center m-0">
@@ -1195,17 +1312,12 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                       <span className="h-px flex-1 bg-[var(--color-border-base)]" />
                     </div>
 
-                    {/* Two equal-weight alternatives under the one primary path. Stacks on narrow screens. */}
-                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <button onClick={() => setPhase('manual')}
-                        className="flex items-center justify-center gap-2 h-[48px] rounded-md border border-[var(--color-border-base)] hover:border-[var(--color-border-strong)] text-[14px] text-[var(--color-text-secondary)] transition-colors">
-                        <PenLine className="w-4 h-4" /> Add holdings manually
-                      </button>
-                      <button onClick={handleDemo}
-                        className="flex items-center justify-center h-[48px] rounded-md border border-[var(--color-border-base)] hover:border-[var(--color-border-strong)] text-[14px] text-[var(--color-text-secondary)] transition-colors">
-                        Explore a demo first
-                      </button>
-                    </div>
+                    {/* The one alternative. Plaid reaches most brokers, not all. The demo
+                        choice left this screen: 19 of 74 took it in a month and 1 explored it. */}
+                    <button onClick={() => setPhase('manual')}
+                      className="mt-4 w-full flex items-center justify-center gap-2 h-[48px] rounded-md border border-[var(--color-border-base)] hover:border-[var(--color-border-strong)] text-[14px] text-[var(--color-text-secondary)] transition-colors">
+                      <PenLine className="w-4 h-4" /> Not on Plaid? Add holdings manually
+                    </button>
                   </div>
                 </div>
               </div>

@@ -434,6 +434,33 @@ export default function DashboardOverview() {
     posthog.capture('dashboard_viewed', { has_plaid: hasPlaidConnection, is_demo: isDemo });
   }, [hasPlaidConnection, isDemo]);
 
+  // An unlinked user who kept a thesis in onboarding sees it here, not "See
+  // Helm in action". The value made at the scan card was being thrown away on
+  // the very next screen.
+  const [unlinkedThesis, setUnlinkedThesis] = useState<{ ticker: string; claims: string[] } | null>(null);
+  useEffect(() => {
+    if (hasPlaidConnection !== false) return;
+    let cancelled = false;
+    fetch('/api/thesis')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !d) return;
+        const list: Array<{ ticker: string; tracked?: boolean; pillars?: Array<{ claim: string; confirmed?: boolean; lifecycle?: string }> }> =
+          Array.isArray(d.theses) ? d.theses : [];
+        const kept = list
+          .map((t) => ({
+            ticker: t.ticker,
+            tracked: !!t.tracked,
+            claims: (t.pillars ?? []).filter((pl) => pl.lifecycle !== 'dismissed' && pl.confirmed).map((pl) => pl.claim),
+          }))
+          .filter((t) => t.claims.length > 0);
+        const first = kept.find((t) => t.tracked) ?? kept[0] ?? null;
+        setUnlinkedThesis(first ? { ticker: first.ticker, claims: first.claims.slice(0, 4) } : null);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [hasPlaidConnection]);
+
   // Snapshot-based dollar change from the API (same baseline as the % change).
   const netWorthChange = financialSummary?.changes?.net_worth_dollar ?? null;
   const netWorthPctChange = financialSummary?.changes?.net_worth ?? null;
@@ -622,43 +649,95 @@ export default function DashboardOverview() {
               <Link2 size={20} className="text-[var(--color-gold)]" />
             </div>
             <h1 className="text-[26px] font-bold tracking-[-0.025em] leading-[1.15] text-[var(--color-text-primary)] mb-3">
-              See Helm in action
+              {unlinkedThesis ? `Helm re-checks ${unlinkedThesis.ticker} every trading day.` : 'See Helm in action'}
             </h1>
+            {unlinkedThesis ? (
+              <div className="mx-auto mb-6 max-w-[440px] text-left">
+                <ul className="m-0 mb-4 list-none space-y-2 p-0">
+                  {unlinkedThesis.claims.map((c) => (
+                    <li key={c} className="flex gap-2.5 text-[15px] leading-[1.55] text-[var(--color-text-secondary)]">
+                      <span className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-gold)]" />
+                      <span>{c}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="m-0 text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
+                  First check tomorrow morning. Connect a brokerage and Helm does this for every position
+                  you hold, read-only.
+                </p>
+              </div>
+            ) : (
             <p className="mx-auto mb-6 max-w-[420px] text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
               Explore a fully loaded demo portfolio right now, no account needed: net worth, allocation,
               thesis intelligence, and the daily brief. Connect your real brokerage whenever you are ready
               (read-only via Plaid, it can never move money or place trades).
             </p>
+            )}
 
             <div className="flex flex-col items-center gap-3">
-              <button
-                onClick={() => {
-                  posthog.capture('demo_explored', { source: 'dashboard_empty' });
-                  enableDemo();
-                  router.refresh();
-                }}
-                className="w-full max-w-[280px] cursor-pointer rounded-[5px] bg-[var(--color-gold)] px-9 py-3.5 text-[15px] font-bold text-[var(--color-bg-base)] transition-all hover:brightness-110"
-              >
-                Explore the demo &rarr;
-              </button>
-              <PlaidLinkButton
-                className="w-full max-w-[280px] rounded-[5px] border border-[var(--color-border-strong)] bg-transparent px-9 py-3 text-[14px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                onSuccess={(itemId) => setJustConnected(itemId ?? '')}
-                onError={(msg) => setPlaidError(msg)}
-                onLinkError={(code, message) => {
-                  // Plaid does not cover every broker. Webull and Public.com
-                  // are absent from the production catalogue entirely, so
-                  // "try again" is not advice, it is a loop. Verified via
-                  // scripts/probe-plaid-institutions.mjs.
-                  if (code === 'INSTITUTION_NOT_FOUND' || code === 'INSTITUTION_NOT_SUPPORTED') {
-                    setNoInstitution(true);
-                    return;
-                  }
-                  toast.error('Connection failed', message);
-                }}
-              >
-                Connect your brokerage
-              </PlaidLinkButton>
+              {unlinkedThesis ? (
+                <>
+                  <PlaidLinkButton
+                    className="w-full max-w-[340px] cursor-pointer rounded-[5px] bg-[var(--color-gold)] px-9 py-3.5 text-[15px] font-bold text-[var(--color-bg-base)] transition-all hover:brightness-110"
+                    onSuccess={(itemId) => setJustConnected(itemId ?? '')}
+                    onError={(msg) => setPlaidError(msg)}
+                    onLinkError={(code, message) => {
+                      // Plaid does not cover every broker. Webull and Public.com
+                      // are absent from the production catalogue entirely, so
+                      // "try again" is not advice, it is a loop. Verified via
+                      // scripts/probe-plaid-institutions.mjs.
+                      if (code === 'INSTITUTION_NOT_FOUND' || code === 'INSTITUTION_NOT_SUPPORTED') {
+                        setNoInstitution(true);
+                        return;
+                      }
+                      toast.error('Connection failed', message);
+                    }}
+                  >
+                    Connect a brokerage, 401(k) or stock plan
+                  </PlaidLinkButton>
+                  <button
+                    onClick={() => {
+                      posthog.capture('demo_explored', { source: 'dashboard_empty' });
+                      enableDemo();
+                      router.refresh();
+                    }}
+                    className="w-full max-w-[340px] rounded-[5px] border border-[var(--color-border-strong)] bg-transparent px-9 py-3 text-[14px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                  >
+                    Explore the demo &rarr;
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      posthog.capture('demo_explored', { source: 'dashboard_empty' });
+                      enableDemo();
+                      router.refresh();
+                    }}
+                    className="w-full max-w-[340px] cursor-pointer rounded-[5px] bg-[var(--color-gold)] px-9 py-3.5 text-[15px] font-bold text-[var(--color-bg-base)] transition-all hover:brightness-110"
+                  >
+                    Explore the demo &rarr;
+                  </button>
+                  <PlaidLinkButton
+                    className="w-full max-w-[340px] rounded-[5px] border border-[var(--color-border-strong)] bg-transparent px-9 py-3 text-[14px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                    onSuccess={(itemId) => setJustConnected(itemId ?? '')}
+                    onError={(msg) => setPlaidError(msg)}
+                    onLinkError={(code, message) => {
+                      // Plaid does not cover every broker. Webull and Public.com
+                      // are absent from the production catalogue entirely, so
+                      // "try again" is not advice, it is a loop. Verified via
+                      // scripts/probe-plaid-institutions.mjs.
+                      if (code === 'INSTITUTION_NOT_FOUND' || code === 'INSTITUTION_NOT_SUPPORTED') {
+                        setNoInstitution(true);
+                        return;
+                      }
+                      toast.error('Connection failed', message);
+                    }}
+                  >
+                    Connect your brokerage
+                  </PlaidLinkButton>
+                </>
+              )}
               {/* The third path, quiet but present. Plaid reaches most brokers
                   and not all of them, and until now the only people who found
                   this route were the ones who happened to open the sidebar. */}
@@ -676,8 +755,8 @@ export default function DashboardOverview() {
                 style={{ background: 'rgba(230,185,77,0.06)', border: '1px solid rgba(230,185,77,0.18)' }}
               >
                 <p className="text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
-                  Plaid does not reach every broker. Webull and Public are not available through it
-                  at all, so searching again will not find them.
+                  Plaid does not reach every broker. Public, Tradier and moomoo are not available
+                  through it at all, so searching again will not find them.
                 </p>
                 <Link
                   href="/dashboard/portfolio/add"
