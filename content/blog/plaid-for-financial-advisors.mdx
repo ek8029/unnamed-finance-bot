@@ -1,0 +1,61 @@
+---
+title: "Plaid for Financial Advisors: What It Can See, What It Can't, and Whether It's Safe"
+description: "Plaid connects 12,000+ institutions through consented, token-based, read-only links. What that covers for advisors, including which custodians and retirement plans connect, where the gaps are, and how it compares to enterprise aggregators."
+date: "2026-09-01"
+author: "Evan Kim"
+tags: ["plaid for financial advisors", "plaid", "account aggregation", "held-away assets", "financial advisors"]
+published: true
+faq:
+  - q: "Can financial advisors use Plaid to see client accounts?"
+    a: "Yes, through software built on Plaid rather than Plaid directly. Plaid is infrastructure: the client authorizes each account through their institution's own login, the institution issues a revocable token, and the connected app receives read-only data, including balances, holdings, and transactions for investment accounts. The advisor sees whatever the app shows and can trade or move exactly nothing. Plaid sells to developers, so an advisor gets this through an advisor-facing product built on it, not from Plaid itself."
+  - q: "Is Plaid safe for clients to connect accounts through?"
+    a: "Plaid's model is the one the industry is converging on: where institutions support OAuth, the client signs in on the institution's own page and Plaid never handles the password, receiving a revocable token instead. That is materially different from credential-sharing platforms that store logins and enable trading, which is the practice custodians began banning in 2024. No connection method is risk-free, and a minority of long-tail institutions still connect through legacy methods, but token-based read-only access is the mechanism regulators and custodians have left standing."
+  - q: "Does Plaid work with Fidelity, Schwab, and other custodians?"
+    a: "Checked against Plaid's production institution catalog in late August 2026: Schwab connects via OAuth, Fidelity connects including its Wealthscape-side access, Pershing's NetXInvestor, Altruist via OAuth, Raymond James, LPL, Edward Jones, and Interactive Brokers were all present, alongside workplace and equity accounts including Empower, Vanguard retirement plans, and Morgan Stanley's Shareworks and StockPlan Connect. Coverage changes continuously and any specific institution should be re-verified at evaluation time, but the major custodial and retirement logins advisors care about are reachable."
+  - q: "What can't Plaid see?"
+    a: "The long tail that enterprise advisor aggregators grew up covering: annuity carriers, some smaller TAMPs and trust platforms, certain 401(k) recordkeepers, and institutions that simply have no supported connection. Data granularity also varies by institution; some investment connections return full holdings and transactions while others return balances with less detail. This is the honest trade-off against ByAllAccounts-style aggregators, which cover more of the odd corners at enterprise pricing."
+---
+
+# Plaid for Financial Advisors
+
+Plaid is the plumbing behind most consumer finance apps, it is preparing an IPO, and it keeps coming up in advisor conversations about [held-away visibility](/blog/what-are-held-away-assets). Here is what it actually is for an advisory practice, without the vendor gloss.
+
+## What Plaid is, in one paragraph
+
+Plaid is connection infrastructure, not an advisor product. An app built on Plaid lets a person link their financial accounts: the client clicks through to their institution's own login (OAuth where supported), approves access, and the institution issues a revocable token. The app then receives read-only data on an ongoing basis: balances, transactions, and for investment accounts, holdings and positions. More than 12,000 institutions connect. Nobody in the chain gains the ability to trade or move money, and where OAuth is supported nobody stores a password.
+
+Advisors encounter Plaid through products built on it. You do not buy Plaid at an RIA; you buy software whose data layer is Plaid.
+
+## The safety question, answered by mechanism
+
+The 2024-2025 custodian crackdown, most visible in the [Pontera fight](/blog/best-pontera-alternatives), targeted a specific practice: third parties storing client login credentials with trading capability attached. Fidelity's stated objection named credential storage and third-party trading power explicitly.
+
+Token-based read-only connections are the practice custodians left standing, and the direction open banking regulation pushes. The distinction is worth internalizing because clients will ask, and "the institution issues a revocable token through its own login page, nothing can trade, and you can kill the link anytime" is both true and reassuring in a way "we handle it securely" never is.
+
+For the custody rule, the posture matters the same way: visibility without any power to move assets is a categorically different thing from held credentials. Not legal advice; run your specific tooling past compliance counsel.
+
+## What it covers, verified
+
+We checked Plaid's production institution catalog directly in late August 2026 (we build on it, so this is first-hand rather than quoted from marketing). Present and connectable: **Schwab (OAuth), Fidelity including Wealthscape-side access, Pershing NetXInvestor, Altruist (OAuth), Raymond James, LPL, Edward Jones, and Interactive Brokers**, plus the workplace layer that matters for held-away work: **Empower, Vanguard retirement plans, and Morgan Stanley Shareworks / StockPlan Connect**.
+
+That list is the interesting part for advisors: the custodial logins and the retirement-plan logins, the two account families that decide whether whole-book visibility is real, are reachable. Coverage changes continuously, so re-verify any institution that matters to your book at evaluation time.
+
+## What it does not cover
+
+The honest gaps, which are exactly where the enterprise aggregators earn their pricing:
+
+- **Annuity carriers and insurance products**: thin coverage, and the data that exists is often balance-only.
+- **Small TAMPs, trust platforms, and odd recordkeepers**: the long tail ByAllAccounts and Yodlee spent two decades wiring.
+- **Granularity variance**: some investment connections return full holdings and transaction history; others return less. Test with real accounts, not the institution count.
+
+The full landscape comparison, including the [ByAllAccounts situation](/blog/best-byallaccounts-alternatives) and Akoya's institution-owned model, is in our [aggregation field guide](/blog/account-aggregation-for-financial-advisors).
+
+## The practical read for an RIA
+
+If your clients' held-away assets are 401(k)s, equity comp, and mainstream brokerage accounts, which is the balance sheet of most working professionals, Plaid-based tooling covers the accounts that matter, on the connection mechanism that survives custodian policy. If your book is heavy in annuities and trust accounts at small institutions, enterprise aggregation still earns its quote. Many firms will land on both: Plaid rails for the mainstream accounts, patched with statements for the corners.
+
+And either way, the data layer is only half the problem. A connected view shows the client's accounts; it does not tell you whose concentration crossed a line or what changed before the 2pm meeting. That analysis layer is the part [the stack still lacks](/blog/ria-tech-stack).
+
+## Where Helm fits
+
+Helm Terminal runs on Plaid's read-only rails today for individual investors, which is why we could check the catalog first-hand. The advisor research we are running asks what those same rails look like as a practice tool: the whole book, custodied and held-away clearly separated, with intelligence on top and a [read-only MCP layer](/blog/mcp-for-financial-advisors) for the AI tools a firm already uses. Research phase, built with practicing advisors, nothing for sale. If held-away coverage questions are live at your firm, [we want twenty minutes of your experience](/advisors).

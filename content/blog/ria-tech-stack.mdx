@@ -1,0 +1,63 @@
+---
+title: "The RIA Tech Stack in 2026: What Firms Actually Run, Layer by Layer"
+description: "CRM, planning, portfolio accounting, aggregation, tax, AI notetakers, and compliance: the working RIA stack with verified pricing where vendors publish it, and the data blind spot every stack shares."
+date: "2026-09-01"
+author: "Evan Kim"
+tags: ["ria tech stack", "ria software", "financial advisors", "wealthbox", "rightcapital", "ria technology"]
+published: true
+faq:
+  - q: "What software does a typical RIA use?"
+    a: "The working stack has seven layers: a custodian (Schwab, Fidelity, or a newer entrant like Altruist), a CRM (Wealthbox and Redtail dominate the independent space), financial planning software (eMoney, MoneyGuidePro, or RightCapital), portfolio management and reporting (Orion, Black Diamond, Tamarac, or Advyzon), account aggregation for held-away visibility, a tax tool like Holistiplan, and increasingly an AI notetaker. Solo firms run lighter versions of the same shape, often letting the planning tool double as the client portal."
+  - q: "How much does an RIA tech stack cost per advisor?"
+    a: "Using published prices where they exist: Wealthbox runs $59 to $99 per user per month depending on tier, RightCapital $149.95 to $254.95 per advisor per month on annual billing, advisor AI notetakers roughly $67 to $150 per month, and Holistiplan is banded by household count starting at $749 per year. Portfolio accounting and aggregation are quote-based and vary widely. A realistic solo-advisor floor lands around $400 to $700 per month before portfolio accounting; ensemble firms budget per-seat and per-account costs on top."
+  - q: "What is the best CRM for RIAs?"
+    a: "Wealthbox and Redtail split the independent market, with Salesforce variants serving larger firms. Wealthbox publishes per-seat pricing at $59, $75, and $99 per user per month (checked August 2026). Redtail moved to per-user pricing after its acquisition by Orion, with reported rates in the $39 to $65 per user range depending on plan and source; verify current rates directly. The practical decision usually follows integrations: check which CRM your planning tool, custodian, and notetaker push data into cleanly."
+  - q: "What is missing from the standard RIA tech stack?"
+    a: "A current view of what clients hold outside custody, and any intelligence layer on top of it. Custodial feeds cover the advisor's own book, but the client's 401(k), HSA, and outside brokerages sit beyond every layer of the standard stack unless the firm adds held-away aggregation, and even aggregated data arrives as balances to look at rather than analysis. The stack knows what was said (CRM, notetaker) and what is planned (planning software) far better than it knows what is actually held."
+---
+
+# The RIA Tech Stack in 2026
+
+Every RIA stack is a version of the same seven layers. Here they are with real prices where vendors publish them, reported ranges where they do not, and an honest note on what the whole assembly still cannot see. (The Kitces AdvisorTech directory is the exhaustive map; this is the working shape.)
+
+## Layer 1: the custodian
+
+Schwab and Fidelity hold most independent-RIA assets, with Altruist as the venture-backed challenger built software-first and Pershing serving larger firms. The custodian decision shapes everything downstream, because its data feeds and advisor portal are the plumbing the rest of the stack drinks from. Cost: custody is typically free to the firm; the custodian monetizes the assets.
+
+## Layer 2: CRM
+
+Wealthbox and Redtail split the independent market. **Wealthbox publishes $59 / $75 / $99 per user per month by tier (checked August 2026).** Redtail moved to per-user pricing after the Orion acquisition, with reported rates in the $39 to $65 range depending on plan and source; verify directly. Larger firms run Salesforce overlays. Choose on integrations, not features: the CRM is where your notetaker, planning tool, and custodian either push data cleanly or do not.
+
+## Layer 3: financial planning
+
+The big three: eMoney and MoneyGuidePro (both enterprise-priced, quotes only) and RightCapital, which publishes **$149.95 / $209.95 / $254.95 per advisor per month on annual billing (checked August 2026)**. RightCapital's publishing its prices is itself a signal of where the competitive pressure is. Planning tools increasingly double as the client portal and are absorbing AI features directly, which affects what you need to buy separately.
+
+## Layer 4: portfolio management and reporting
+
+Orion, Black Diamond, Tamarac, and Advyzon: performance reporting, billing, rebalancing, custodial reconciliation. All quote-based, priced on assets or accounts, and the layer where switching costs are highest. Advyzon bundles CRM and reporting together, which is why it keeps winning smaller firms consolidating tools.
+
+## Layer 5: account aggregation (the held-away layer)
+
+The layer most firms treat as optional and then regret. Custodial feeds cover your own book; everything the client holds elsewhere, often including their largest account, needs [aggregation](/blog/account-aggregation-for-financial-advisors): ByAllAccounts, Yodlee, Plaid-based tooling, or whatever your planning tool bundles. The category is in motion, between the [ByAllAccounts sale collapse](/blog/best-byallaccounts-alternatives) and the custodian crackdown on credential sharing, so this layer deserves a real evaluation rather than a default checkbox.
+
+## Layer 6: tax
+
+Holistiplan owns the category: OCR a client's return, generate observations and scenarios. Pricing is banded by household count, **from $749 per year at the small end (checked August 2026)**. Tax-loss and lot-level work mostly still lives in the portfolio layer or in spreadsheets.
+
+## Layer 7: the AI notetaker (the new default seat)
+
+The fastest-normalizing line item in the stack: Jump, Zocks, and FinMate at reported rates of roughly $67 to $150 per advisor per month, with a price war compressing entry tiers. Full breakdown: [best AI tools for financial advisors](/blog/best-ai-tools-for-financial-advisors).
+
+## What the assembled stack still cannot do
+
+Add up all seven layers and ask the assembled machine three questions:
+
+1. Which clients hold a given stock across every account, including [held-away](/blog/what-are-held-away-assets)?
+2. Whose real concentration, counting the 401(k) company stock and the RSUs, crossed a line this month?
+3. What changed in this household's full balance sheet since the last meeting?
+
+The stack answers none of them. It knows what was said (CRM, notetaker), what is planned (planning software), and what sits in custody (reporting), but the whole client picture, and any analysis on top of it, falls between the layers. That gap is where our research lives.
+
+## Where Helm fits
+
+We build the missing view for individual investors today: read-only, Plaid-connected, everything in one place with monitoring on top. The advisor research asks what the same thing looks like as a practice layer: whole book, in-custody and held-away clearly separated, queryable by the AI tools in layer 7 through a [governed read-only connection](/blog/mcp-for-financial-advisors). It is research, built with practicing advisors, and not for sale. If you run a stack like the one above, [twenty minutes on where it fails you](/advisors) would directly shape it.

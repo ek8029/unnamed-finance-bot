@@ -1,0 +1,68 @@
+---
+title: "ChatGPT Prompts for Financial Advisors: 12 That Work, and the Rules Before Any of Them"
+description: "Practical prompts for meeting prep, client communication, and practice management, preceded by the compliance guardrails that decide whether you should be typing anything into a chatbot at all."
+date: "2026-09-01"
+author: "Evan Kim"
+tags: ["chatgpt prompts for financial advisors", "chatgpt for financial advisors", "ai for financial advisors", "financial advisors"]
+published: true
+faq:
+  - q: "Can financial advisors use ChatGPT with client information?"
+    a: "Not in the consumer app, and the distinction is the whole game. Consumer chatbot apps may use conversations for training and offer no data processing agreement, so client names, account details, and identifying facts do not belong there. Business and enterprise tiers, and the underlying APIs, do not train on your data by default and support DPAs and retention controls, which is the posture a compliance officer can actually sign off on. The working rule: anonymize everything in consumer tools, and move to business-tier tooling before AI touches anything client-specific."
+  - q: "What are the best ChatGPT prompts for financial advisors?"
+    a: "The prompts that work share one shape: they supply context the model cannot know, ask for a specific artifact, and keep the advisor as editor. High-value examples: turning raw meeting notes into a structured summary and follow-up email, translating a planning concept to a specific client's sophistication level, drafting the difficult-message email for the advisor to rewrite, stress-testing an investment committee memo by arguing the other side, and generating discovery questions for a niche prospect type. Low-value: asking it for market predictions or client-specific investment recommendations, which it cannot responsibly produce."
+  - q: "Do AI chat conversations count as books and records for an RIA?"
+    a: "Treat outputs that reach clients as what they are: communications and, often, advertising under the SEC marketing rule, subject to the same review and retention as anything human-written. Several firms also archive significant AI drafts used in client work. The conservative posture that costs little: AI drafts get the same review path as junior-associate drafts, and anything sent externally is retained the way your email already is. Specifics belong with your compliance counsel."
+  - q: "Why can't ChatGPT answer questions about my clients' portfolios?"
+    a: "Because it has no access to them, and pasting statements into a chat window is both tedious and, in consumer tools, a data-handling problem. A chatbot knows what you type. Client account data lives in custodial systems, portfolio software, and held-away accounts. Connecting AI to that data safely requires a governed, read-only, logged integration layer rather than copy-paste, which is what the Model Context Protocol work in wealth management is trying to standardize."
+---
+
+# ChatGPT Prompts for Financial Advisors
+
+Prompt lists for advisors usually skip the part that determines whether you should be typing at all. Rules first, then the twelve.
+
+## The rules (read once, they are short)
+
+1. **Consumer app versus business tier is the line that matters.** Consumer chatbot apps may train on conversations and offer no data processing agreement. Business and enterprise tiers, and the APIs underneath, do not train on your data by default and support DPAs. Client-identifying information belongs only on the business side of that line, if anywhere.
+2. **Anonymize by habit.** "A 58-year-old with $1.4M across a 401(k) and taxable account, retiring at 62" gets you the same quality answer as the client's actual name and account numbers, with none of the exposure.
+3. **Output that reaches clients is a communication, and often advertising.** Same review, same retention as human-written copy. AI drafts get the junior-associate treatment: reviewed, edited, owned by you.
+4. **It does not know your book, and it will not say so convincingly.** A chatbot answers from what you paste. Nothing below asks it about actual client holdings, because it cannot know them; more on that gap at the end.
+
+## Meeting prep and follow-up
+
+**1. Notes to structured summary.** *"Here are my raw notes from a client review meeting [paste anonymized notes]. Produce: a summary organized by planning topic, a task list with owners, and a two-paragraph follow-up email in a warm, plain-English tone. Flag anything that sounds like a commitment I made."* The flag at the end is the underrated part.
+
+**2. Agenda from a life event.** *"A client couple, mid-40s, just sold a small business for $2.1M net. Draft a review-meeting agenda covering the decisions with deadlines first. Note which items typically involve a CPA or attorney."*
+
+**3. Discovery questions for a niche.** *"I am meeting a prospect who is an equity-compensated tech employee with concentrated RSUs. Write 10 discovery questions that surface facts other advisors would miss. No yes/no questions."*
+
+**4. The pre-meeting brief, honestly limited.** *"From these anonymized notes of our last two meetings [paste], list open threads, promised follow-ups, and topics the client raised unprompted."* Note what this cannot include: what actually changed in their accounts since last time. That data is not in your notes.
+
+## Client communication
+
+**5. Translate the concept.** *"Explain tax-loss harvesting to a client who is smart but has zero finance background, in under 150 words, with one concrete example using round numbers. No jargon."*
+
+**6. The hard email.** *"Draft an email telling a client we are declining to implement the concentrated crypto allocation they requested, preserving the relationship while being unambiguous. I will rewrite it in my own voice; give me structure and the two or three sentences that carry the weight."*
+
+**7. Volatility letter, no predictions.** *"Draft a 200-word note to clients after a sharp market decline. No predictions, no minimizing, one reference to the plan being built for this. Tone: steady, not cheerful."*
+
+**8. Objection prep.** *"List the eight most common objections a fee-only planner hears from a prospect currently paying an AUM fee elsewhere, and give a two-sentence honest response to each. Where the objection has merit, say so."*
+
+## Practice management
+
+**9. Process documentation.** *"Interview me one question at a time about how we onboard a new client, then produce a numbered SOP a new hire could follow."* The one-question-at-a-time framing produces materially better SOPs than a single dump.
+
+**10. The other side of the memo.** *"Here is an anonymized investment committee memo [paste]. Argue the opposite conclusion as strongly as the evidence allows, then list which of my assumptions do the most work."*
+
+**11. Niche content, verified by you.** *"Draft a 600-word article for small-business-owner clients on the retirement plan options for a 12-employee company, flagging every factual claim I should verify before publishing."* The flag list is the difference between a draft and a liability.
+
+**12. Vendor due diligence.** *"Generate the 15 questions an RIA should ask any AI vendor before connecting it to client data: training use, retention, DPA, breach terms, audit logging, scoping."* Then actually send them; the vendors who answer crisply are telling you something.
+
+## The ceiling, and what sits above it
+
+Every prompt above works from what you paste. The questions an advisor most wants answered live in data no chat window holds: which clients hold a given ticker across [held-away accounts](/blog/what-are-held-away-assets), whose real concentration crossed a line, what changed in the household since the last meeting. Copy-paste does not scale to that, and in consumer tools it should not be attempted at all.
+
+The emerging answer is connecting AI to account data through governed, read-only, audit-logged integrations rather than clipboards. Plain-language version: [MCP for financial advisors](/blog/mcp-for-financial-advisors).
+
+## Where Helm fits
+
+That connection layer is our research. Helm Terminal is read-only portfolio intelligence for individual investors today; the advisor work asks what the whole book looks like made safely queryable by the AI tools a firm already uses. Research phase, shaped by interviews with practicing advisors, nothing for sale. If you have pushed AI tools to this ceiling in your own practice, [we want twenty minutes on where they failed you](/advisors).

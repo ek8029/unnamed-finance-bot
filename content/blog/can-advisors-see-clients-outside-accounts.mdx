@@ -1,0 +1,55 @@
+---
+title: "Can a Financial Advisor See Your Outside Accounts? What Access Actually Exists"
+description: "What a financial advisor can and cannot see of a client's 401(k), outside brokerages, and other held-away accounts in 2026: statements, read-only aggregation, credential sharing, and where the compliance lines sit."
+date: "2026-09-01"
+author: "Evan Kim"
+tags: ["financial advisor client accounts", "held-away assets", "401k visibility", "read-only access", "financial advisors"]
+published: true
+faq:
+  - q: "Can my financial advisor see my 401(k)?"
+    a: "Not automatically. Your 401(k) is custodied with your employer's plan provider, and your advisor's systems have no native view into it. An advisor sees it only if you give them something: emailed statements, a screen share during a review, a client-permissioned read-only aggregation link, or, on contested platforms, your login credentials. By default, the largest account many people own is invisible to the person advising them."
+  - q: "Can an advisor get read-only access to a client's outside accounts?"
+    a: "Yes, with the client's consent. Read-only account aggregation lets a client link outside accounts through a consented, token-based connection, after which the advisor sees balances, holdings, and transactions but cannot trade or move money. The client can revoke the link at any time. This is the same mechanism consumer finance apps use and is the uncontested middle ground: custodians that banned credential sharing have left consented read-only connections alone."
+  - q: "Is it safe to give a financial advisor my account password?"
+    a: "Custodians say no. Fidelity's stated position is that sharing login credentials with a third party that stores them is widely regarded as unsafe, in part because credentials permit actions like trading across all your accounts, and it began restricting the practice in September 2024, with other custodians following. Credential sharing can also void the custodian's security guarantees. Consented read-only connections, authorized through the institution's own login with a revocable token, do not carry those problems, which is exactly why the industry is moving there."
+  - q: "Why would I want my advisor to see accounts they don't manage?"
+    a: "Because most useful advice needs the whole picture. Asset location, concentration risk, tax-loss coordination, rebalancing, and retirement projections all break when the advisor sees a third of your balance sheet. Concretely: if you hold your employer's stock in an RSU account, an ESPP account, and your 401(k), no one advising you on any single account can see that it is one large bet. Visibility is not the same as control; you can let an advisor see everything while they can touch nothing."
+---
+
+# Can a Financial Advisor See Your Outside Accounts?
+
+By default, no. And the account they most need to see is usually the one they cannot.
+
+An advisor has full visibility into the accounts custodied with their firm: that is their book, reconciled daily in their portfolio software. Everything else you own, your current 401(k), your HSA, the brokerage account at another firm, the crypto exchange, is held away from them. Their systems have no native view into any of it.
+
+We have interviewed practicing advisors about this, including at major national firms, and the candid answer to "what do you see of a client's outside accounts each morning" is: nothing. Not a stale view. Nothing, unless the client hands something over.
+
+Here is what handing something over can look like, from weakest to most contested.
+
+## Level 1: statements and screenshots
+
+The client emails a quarterly PDF or shares a screen during the annual review. Universally compliant, universally stale. The advisor gets a snapshot that is outdated on arrival and unreadable by their software. This remains the default at most firms, which is worth sitting with: the industry's standard mechanism for seeing a client's largest account is email.
+
+## Level 2: read-only aggregation
+
+The client links outside accounts through a consented connection, the same OAuth-style mechanism consumer finance apps use. The institution issues a revocable token; nobody stores a password. The advisor then sees balances, holdings, and transactions on an ongoing basis and can trade or move exactly nothing.
+
+This is the uncontested middle ground. The custodian crackdown of 2024 and 2025 targeted credential sharing that enabled third-party trading; consented read-only data flows were left alone, and open banking regulation actively pushes toward them. For the advisor it means real advice inputs: actual concentration numbers, actual asset location, actual rebalancing drift across the whole balance sheet. For the client it means the advisor works from your real picture while holding no keys. The plumbing options are covered in our [account aggregation field guide](/blog/account-aggregation-for-financial-advisors).
+
+## Level 3: credential sharing and third-party management
+
+The contested tier. Platforms like Pontera go beyond seeing: the client shares login credentials and the advisor manages the held-away 401(k), placing trades through the platform. Fidelity began restricting third-party credential sharing in September 2024, locked-out participants made the news through 2025, and by December 2025 the bans were spreading across custodians. The full fight and the alternatives are covered in [Best Pontera alternatives](/blog/best-pontera-alternatives).
+
+The compliance line underneath: under the SEC custody rule, the power to move client money or securities generally creates custody, with obligations most RIAs actively avoid. Credentials that permit trading sit in that danger zone. Read-only tokens do not confer the power to move anything. Not legal advice; the pattern in custodian and regulator behavior is nonetheless one-directional.
+
+## What advisors do with visibility, per advisors
+
+Interviews for our research keep surfacing the same three uses:
+
+1. **Advice that holds together.** Rebalancing and asset-location recommendations that account for the 401(k) instead of pretending it does not exist.
+2. **Risk they can finally see.** Concentration across RSUs, ESPP, and 401(k) company stock is invisible account-by-account and obvious in one view.
+3. **Asset gathering.** The blunt one: advisors describe outside-account visibility as one of the strongest tools for eventually bringing those assets in. The advisor who has watched the outside account intelligently for two years is the natural destination for the rollover. One advisor's verbatim reaction to ongoing read-only visibility: it would make bringing outside assets in considerably easier.
+
+## Where Helm fits
+
+Helm Terminal does read-only, whole-picture monitoring for individual investors today: Plaid-connected accounts, positions tied to the reasons they are held, evidence flagged with citations. We are researching an advisor-facing platform built on the same read-only rails, with in-custody and held-away accounts in one clearly separated view. It does not exist yet; we are building the research on interviews with practicing advisors. If you advise clients and the outside-account blind spot is part of your week, [we would like twenty minutes of your perspective](/advisors). No pitch exists to give you.

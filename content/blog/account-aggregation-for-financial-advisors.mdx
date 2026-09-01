@@ -1,0 +1,60 @@
+---
+title: "Account Aggregation for Financial Advisors: The 2026 Field Guide"
+description: "In-custody feeds versus held-away aggregation, credential scraping versus OAuth, and the vendors behind each: ByAllAccounts, Yodlee, Plaid, Akoya. What advisors need to know as open banking and custodian policy reshape the category."
+date: "2026-09-01"
+author: "Evan Kim"
+tags: ["account aggregation", "account aggregation software", "financial advisors", "held-away assets", "ria technology", "plaid"]
+published: true
+faq:
+  - q: "What is account aggregation for financial advisors?"
+    a: "Software that pulls a client's account data, including balances, holdings, and transactions, from institutions where the advisor does not custody assets into one view. It splits into two very different things: custodial data feeds, which deliver the advisor's own custodied accounts into portfolio accounting systems, and held-away aggregation, which surfaces the client's outside accounts like their 401(k), HSA, and other brokerages through client-permissioned connections."
+  - q: "What is the difference between in-custody and held-away account data?"
+    a: "In-custody data comes through direct custodian feeds (Schwab, Fidelity and peers into systems like Orion, Black Diamond, or Tamarac): reconciled, reliable, and the advisor already has it. Held-away data covers everything else the client owns, reachable only through aggregation the client consents to. The in-custody pipe is a solved problem. The held-away side is where visibility breaks, and where most of a working client's retirement assets often sit."
+  - q: "Is screen scraping still used in account aggregation?"
+    a: "Yes, but it is dying. Credential-based scraping stores the client's login and breaks whenever the institution changes anything, and large custodians began actively blocking third-party credential use in 2024 and 2025. The replacement is OAuth and API-based access: the client authorizes through the institution's own login, a revocable token is issued, and no credentials are stored. When evaluating any aggregator, ask what percentage of your clients' actual institutions connect via API versus legacy scraping."
+  - q: "Does read-only aggregation give an advisor custody of client assets?"
+    a: "Read-only, client-permissioned aggregation is a categorically different posture from holding credentials that permit trading or money movement, which is what creates custody-rule exposure under SEC rule 206(4)-2. Visibility-only tokens the client can revoke do not confer the power to move assets. This is not legal advice; RIAs should confirm treatment of any specific tool with compliance counsel."
+---
+
+# Account Aggregation for Financial Advisors
+
+"Account aggregation" is one label stretched across two different problems, and most confusion in the category comes from mixing them up.
+
+**Problem one: your own book.** Getting custodied accounts into your portfolio accounting system. Solved by direct custodian feeds into Orion, Black Diamond, Tamarac and peers. Reconciled, reliable, boring. If this is your problem, your portfolio accounting vendor is the answer, not an aggregator.
+
+**Problem two: everything else the client owns.** The current 401(k), the HSA, the outside brokerage, the crypto account, the spouse's old 403(b). This is [held-away visibility](/blog/what-are-held-away-assets), it is where advice quality actually breaks, and it is the part of the category being reshaped in real time by custodian policy and open banking regulation.
+
+This guide is about problem two.
+
+## The three connection mechanisms, ranked by durability
+
+**API / OAuth (tokenized).** The client clicks through to their institution's own login page, authorizes read access, and the aggregator receives a revocable token. No credentials stored, connections survive password changes, and institutions sanction it. This is where everything is converging.
+
+**Direct data feeds.** Institution-to-vendor pipes negotiated bilaterally. Highest fidelity, but coverage is concentrated in custodial and institutional accounts rather than the long tail of held-away ones.
+
+**Credential-based scraping.** The legacy mechanism: store the client's login, sign in as them, parse what renders. It breaks constantly, and since 2024 it is being actively killed. Fidelity began restricting third-party credential use in September 2024, and by late 2025 other custodians had followed, a fight most visible in the [Pontera dispute](/blog/best-pontera-alternatives) but hitting every credential-dependent connection.
+
+The regulatory backdrop pushes the same direction. The CFPB's open banking rule under Section 1033 has been through litigation and reopening, and through 2026 the live question was whether institutions may permanently charge for consumer-permissioned data access, a debate unfolding while Plaid prepared an IPO. The plumbing of who pays for data access is genuinely unsettled; the direction away from scraping toward consented APIs is not.
+
+## The vendors
+
+| Vendor | Model | Notes for advisors |
+|---|---|---|
+| ByAllAccounts (Morningstar) | Feeds + API + legacy | The advisor-channel incumbent. Its 2026 sale to Pello was announced in April and collapsed in June; service continues at Morningstar. [Full breakdown](/blog/best-byallaccounts-alternatives) |
+| Yodlee (Envestnet) | Feeds + API + legacy | Closest like-for-like to ByAllAccounts, deep advisor-channel history |
+| Plaid | Token/OAuth-first | 12,000+ institutions, investment holdings and transactions, developer-grade API, consumer-proven, moving upmarket |
+| Akoya | API-only | Owned by major financial institutions, tokenized by design, narrower but sanctioned coverage |
+| MX / Finicity (Mastercard) | Mixed, banking-first | Verify investment-holdings depth before committing |
+
+Two evaluation rules that save months:
+
+1. **Test against your actual clients, not the institution count.** Pull twenty real client households, list every held-away institution, and demand a coverage-and-mechanism answer per institution: API, feed, or scraping.
+2. **Check what your stack already includes.** Planning and portfolio accounting platforms commonly bundle aggregation. The question is often not "which aggregator" but "is the bundled one good enough for the held-away accounts that matter."
+
+## What aggregation does not do
+
+Aggregation delivers data, not judgment. A connected view shows the client's 401(k) holds a 2055 target-date fund and a company-stock position; it does not flag that the company stock plus the RSUs plus the ESPP shares in two other accounts add up to one oversized bet, or that a filing last month undercut the reason the client holds it. Every advisor we interview describes the same experience: the aggregated dashboard gets glanced at, the actual analysis still happens in their head or not at all. The category's unsolved problem is the layer on top of the data, not the data.
+
+## Where Helm fits
+
+That unsolved layer is what we build. Helm Terminal gives individual investors a read-only, Plaid-connected view of everything they own, with monitoring that ties each position to the reason it is held and flags evidence against it, citations included. We are now researching the advisor version: whole book in one screen, in-custody and held-away clearly separated, intelligence rather than display. It is research, built with practicing advisors, and nothing is for sale yet. If you run held-away visibility at your practice today, or fail to, [we want twenty minutes of your experience](/advisors).

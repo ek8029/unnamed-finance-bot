@@ -1,0 +1,63 @@
+---
+title: "MCP for Financial Advisors: What Model Context Protocol Means for Wealth Management"
+description: "AI assistants can draft your meeting notes but cannot see your book. Model Context Protocol (MCP) is the open standard that changes that, and what a read-only, audit-logged MCP layer for client account data would look like."
+date: "2026-09-01"
+author: "Evan Kim"
+tags: ["mcp financial data", "mcp for financial advisors", "ai for financial advisors", "model context protocol", "ria technology"]
+published: true
+faq:
+  - q: "What is MCP (Model Context Protocol)?"
+    a: "An open standard, introduced by Anthropic in late 2024 and since adopted across the major AI labs and tools, that lets AI assistants connect to outside systems through defined servers and tools. Instead of pasting data into a chat window, the AI queries a server that exposes specific, permissioned capabilities. Think of it as a universal port: any compliant AI client can plug into any MCP server and use exactly the tools that server chooses to expose, nothing more."
+  - q: "Why does MCP matter for financial advisors?"
+    a: "Because the current generation of advisor AI is blind to the thing advisors actually manage. AI notetakers know what was said in meetings, CRM assistants know contact records, but none of them can answer 'which of my clients hold Nvidia across any account' or 'whose held-away 401(k) is overweight their employer's stock,' because they cannot see account data. An MCP server exposing read-only book data would let the AI tools advisors already pay for answer questions about the actual portfolios, with the data staying behind defined, logged, permissioned tools."
+  - q: "Is it safe to connect client account data to AI tools?"
+    a: "Only with the right architecture, and the architecture is the whole question. The defensible shape: read-only tools exclusively, so nothing can trade or move money; per-firm scoped credentials so a firm can only ever query its own clients; full audit logging of every query; and API agreements with model providers under which data is not used for training, which is the default for the major providers' business APIs and is reinforced by zero-retention and data processing agreements. Pasting client PDFs into a consumer chatbot has none of those properties and is how firms get into trouble."
+  - q: "What could an advisor actually ask an AI connected to their book?"
+    a: "Book-level questions that currently require manual spreadsheet work: every client holding a given ticker across custodied and held-away accounts ahead of an earnings date, clients whose concentration in one name exceeds a threshold once you look through funds, households whose held-away allocation has drifted from plan, and pre-meeting briefs that combine the CRM record with what actually changed in the accounts. The pattern is the same in every case: the AI supplies the reasoning and the language, the MCP server supplies governed access to the numbers."
+---
+
+# MCP for Financial Advisors
+
+The AI tools advisors buy in 2026 share one silent limitation: none of them can see the book.
+
+The notetaker transcribes the meeting. The CRM assistant drafts the follow-up. The marketing tool writes the newsletter. Ask any of them *which clients hold Nvidia going into earnings*, and the honest answer is that the tool has no idea, because client account data lives in custodial systems and portfolio software that no AI assistant can reach.
+
+Model Context Protocol is the piece of plumbing that changes this, and advisors are going to hear a lot about it, so here is the plain-language version.
+
+## What MCP is
+
+MCP, Model Context Protocol, is an open standard introduced by Anthropic in November 2024 and adopted through 2025 by the other major AI labs and by the tools ecosystem. It defines how an AI assistant connects to outside systems: the system runs an **MCP server** exposing specific, named **tools** (functions like `get_household_holdings` or `list_clients_holding_ticker`), and any compliant AI client can call exactly those tools, with the server enforcing permissions on every call.
+
+The mental model: a universal port. Before USB, every peripheral needed its own cable. Before MCP, every AI-to-software integration was a bespoke build. After it, one server makes a system legible to every AI client at once, on the server's terms.
+
+The terms are the part that matters for this industry.
+
+## Why this beats copy-paste, specifically for client data
+
+Advisors already use AI on client information, mostly by pasting it into a chat window. That workflow has no permission boundary, no log, no revocation, and frequently no clarity about where the pasted data goes. Compliance departments hate it for good reasons.
+
+An MCP architecture inverts every one of those properties:
+
+- **The server decides what is reachable.** If it exposes only read-only queries, no prompt, however clever, can make the AI trade, move money, or edit records. Capability is bounded at the tool layer, not by trusting the model.
+- **Every call is logged.** Who asked, what tool, which client's data, when. An examiner-ready trail instead of an unknowable chat history.
+- **Access is scoped and revocable.** Per-firm credentials mean a firm queries its own clients only, and unplugging is one revoked key.
+- **Training leakage is a contract, not a hope.** The major model providers' business APIs do not train on API data by default, and data processing agreements plus zero-retention options exist on top. Consumer chat apps make no such promises. The distinction between the two is most of the answer to "is this compliant."
+
+## What it looks like in practice
+
+Concrete queries an advisor could run against a read-only book server, none of which any current advisor AI can answer:
+
+- "Which clients hold NVDA in any account, custodied or held-away, and at what weight?"
+- "Whose single-name concentration exceeds 10% once you look through their funds?"
+- "Which households drifted more than 5 points from target allocation, counting the 401(k)?"
+- "Brief me for the 2pm: what changed in this household's accounts since we last met?"
+
+Notice the dependency: every question is only answerable if the data layer includes [held-away accounts](/blog/what-are-held-away-assets). An AI wired to one-third of the balance sheet gives confidently wrong answers about concentration and allocation, which is worse than no answer. The data problem precedes the AI problem, which is why [account aggregation](/blog/account-aggregation-for-financial-advisors) quietly became the most strategic layer in the advisor stack.
+
+## What does not exist yet
+
+Honesty section. As of September 2026 there are MCP servers for generic market data, and there are advisor AI tools with proprietary integrations into CRMs and some planning software. What does not meaningfully exist is the layer this post describes: a whole-book, held-away-inclusive, read-only MCP server an RIA can point their AI tools at, with per-firm scoping and audit logs built for an examiner. The category is early enough that the standards conversation is still happening in public, which is precisely when it is worth advisors understanding the architecture, because you will be sold a dozen versions of it over the next two years and the questions above (read-only? scoped? logged? training terms in writing?) are how you tell them apart.
+
+## Where Helm fits
+
+This is the layer we are researching. Helm Terminal today is a read-only portfolio intelligence product for individual investors: Plaid-connected accounts, positions monitored against the reasons they are held, evidence cited verbatim. The advisor research we are running asks what the same rails look like as a practice tool, including exactly this: the book, in-custody and held-away, exposed to the AI tools a firm already uses through governed, read-only, logged MCP tools. It does not exist yet, and the interviews are shaping whether and how it gets built. If you run an advisory practice and have opinions about AI touching client data, [we want twenty minutes of them](/advisors). Nothing is for sale; the perspective is the point.

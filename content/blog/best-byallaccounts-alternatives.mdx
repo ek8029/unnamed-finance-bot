@@ -1,0 +1,61 @@
+---
+title: "Best ByAllAccounts Alternatives in 2026 (After the Pello Deal Collapsed)"
+description: "Morningstar announced the sale of ByAllAccounts to Pello Companies in April 2026, then the deal fell through in June. What RIAs relying on it should know, and the real alternatives for advisor-grade account aggregation."
+date: "2026-09-01"
+author: "Evan Kim"
+tags: ["byallaccounts alternatives", "byallaccounts competitors", "account aggregation", "financial advisors", "ria technology", "comparison"]
+published: true
+faq:
+  - q: "What happened to ByAllAccounts in 2026?"
+    a: "In April 2026 Morningstar announced it would sell ByAllAccounts, its account aggregation unit, to Pello Companies, a firm that came out of stealth to make the acquisition, with closing expected in the first half of 2026. The deal never closed. Morningstar emailed RIAs on June 25, 2026 that the transaction was terminated, and confirmed the termination publicly while citing a non-disclosure agreement about the circumstances. ByAllAccounts continues operating inside Morningstar."
+  - q: "Should RIAs leave ByAllAccounts after the failed sale?"
+    a: "Not reflexively. The service keeps running and Morningstar itself depends on it operating smoothly. But a business that its owner publicly tried to exit is a business whose long-term roadmap deserves skepticism, and prudent firms are at minimum pricing a migration path. The evaluation criteria: institution coverage for the accounts your clients actually hold, connection quality (direct feeds and OAuth versus credential-based scraping), what your portfolio accounting system supports natively, and per-account economics at your book's size."
+  - q: "What are the main ByAllAccounts alternatives for advisors?"
+    a: "Yodlee (Envestnet) is the closest like-for-like enterprise aggregator. Plaid covers more than 12,000 institutions with token-based connections and is increasingly used beyond consumer fintech; it was preparing an IPO in 2026. Akoya, owned by major financial institutions, offers API-based tokenized access without credential storage. MX and Mastercard's Finicity also compete. Many advisors do not buy aggregation directly at all but through the tool that consumes it, such as their portfolio accounting or planning software, so checking what your existing stack already includes is step one."
+  - q: "How much does ByAllAccounts cost?"
+    a: "Pricing is not published. It is enterprise, quote-based, and typically scales with the number of aggregated accounts. Firms comparing options should get current quotes from ByAllAccounts and at least one competitor at their actual account volume, since per-account economics diverge sharply between small and large books."
+---
+
+# Best ByAllAccounts Alternatives in 2026
+
+ByAllAccounts has been the default answer to "advisor-grade account aggregation" for two decades. In 2026 it had a strange year, and the strangeness is why this post exists.
+
+**The timeline, verified against public reporting:** in April 2026 Morningstar announced it was selling ByAllAccounts to Pello Companies, a buyer that came out of stealth for the deal, with closing expected in the first half of the year. Morningstar framed the sale as refocusing on core data. Then the deal died. On June 25, 2026 Morningstar emailed RIAs that the transaction would not close, confirming the termination publicly but declining to explain, citing an NDA with Pello.
+
+So ByAllAccounts remains a Morningstar product, running normally, that its owner publicly tried to sell and could not. Nothing about that requires panic: Morningstar's own products consume ByAllAccounts data, so it has every incentive to keep the service healthy. But "our vendor's owner wants out" is exactly the kind of fact a diligent firm prices in, and the aggregation category around it is moving fast: Plaid preparing an IPO, the CFPB weighing whether banks may permanently charge for data access under the open banking rule, and custodians killing credential-based connections. Worth knowing the field.
+
+## What you are actually buying
+
+Account aggregation for advisors is one product name covering three different connection qualities:
+
+1. **Direct feeds**: custodian-to-vendor pipes, the gold standard for accuracy, mostly covering custodial and institutional accounts.
+2. **API / OAuth connections**: the client authorizes access through the institution's own login, a token is issued, no credentials stored. Where the industry is heading, accelerated by the same custodian crackdown that hit [credential-sharing management platforms](/blog/best-pontera-alternatives).
+3. **Credential-based scraping**: the legacy mechanism, stores the client's login, breaks often, and is being actively squeezed out by large institutions.
+
+Vendors differ mostly in their mix of these three and in which institutions sit behind each. Interrogate that mix for the accounts your clients hold, not the headline institution count.
+
+## The alternatives
+
+**Yodlee (Envestnet)** is the closest like-for-like: enterprise aggregation with long history in the advisor channel, direct feeds plus API and legacy connections, quote-based pricing. If you want a straight swap with the fewest workflow changes, start here.
+
+**Plaid** is the consumer-fintech giant moving upmarket: more than 12,000 institutions, token-based consented connections, investment-account data including holdings and transactions, and developer-grade APIs. Historically weaker on the long tail of small custodians and annuity carriers that enterprise aggregators grew up covering, stronger on banks, brokerages, and anything a modern app connects to. Its IPO preparation signals where the category's center of gravity now sits.
+
+**Akoya** is the institution-owned answer: created and owned by major banks and brokerages, API-only, tokenized, no credential storage by design. Narrower coverage, but the connections it has are the sanctioned kind that do not break when a custodian changes policy.
+
+**MX and Finicity (Mastercard)** round out the field, both stronger historically in banking data than in the investment-account depth advisors need; evaluate their holdings coverage specifically.
+
+**Your existing stack** may already be the answer. Portfolio accounting and planning platforms commonly bundle or resell aggregation. Before buying anything standalone, check what your current tools include and what swapping the underlying aggregator would break.
+
+## The honest comparison
+
+| Vendor | Connection model | Advisor-channel maturity | Pricing |
+|---|---|---|---|
+| ByAllAccounts | Direct feeds + API + legacy | Deepest | Quote-based |
+| Yodlee | Direct feeds + API + legacy | Deep | Quote-based |
+| Plaid | Token/OAuth-first | Growing | Published developer tiers, enterprise quotes |
+| Akoya | API-only, tokenized | Narrow but sanctioned | Quote-based |
+| MX / Finicity | Mixed, banking-first | Light on holdings depth | Quote-based |
+
+## Where Helm fits
+
+Helm Terminal uses Plaid's read-only rails to give individual investors one intelligent view of everything they own, and we are researching an advisor-facing platform built the same way: whole-book visibility, in-custody and held-away clearly separated, no credentials stored anywhere. We are in the research phase, talking to practicing advisors about what full-book visibility should actually do beyond displaying balances. If you run aggregation at an RIA today, or just lived through the ByAllAccounts uncertainty, [twenty minutes of your experience](/advisors) would directly shape it. Nothing is for sale; the conversation is the point.

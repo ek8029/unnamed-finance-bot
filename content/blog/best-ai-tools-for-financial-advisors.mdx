@@ -1,0 +1,59 @@
+---
+title: "Best AI Tools for Financial Advisors in 2026, by the Job They Actually Do"
+description: "AI notetakers, prospecting tools, and planning copilots for advisors, with reported pricing for Jump, Zocks, and FinMate, the price war reshaping the category, and the one thing none of these tools can see: the book."
+date: "2026-09-01"
+author: "Evan Kim"
+tags: ["ai tools for financial advisors", "best ai for financial advisors", "jump ai", "zocks", "financial advisors", "comparison"]
+published: true
+faq:
+  - q: "What are the best AI tools for financial advisors in 2026?"
+    a: "It depends on the job. For meeting documentation, the advisor-specific notetakers are Jump, Zocks, and FinMate AI, all of which transcribe meetings, draft follow-ups, and push structured notes into advisor CRMs. For prospecting and marketing there is a crowded field of AI writing and lead tools. For planning, the major planning platforms are adding AI features directly. The honest caveat: every tool in the category works from meetings, emails, and CRM records, not from client account data, so none of them can answer questions about actual portfolios."
+  - q: "How much do AI notetakers for financial advisors cost?"
+    a: "Reported pricing as of mid-2026: Jump's core Meet product at $100 per advisor per month with add-on modules around $50 each, with some reporting citing $149 per user for fuller bundles; Zocks tiers starting around $67 per month; FinMate AI at roughly $80 to $130 per user per month. A price war is underway: industry reporting describes compression from the $120 norm toward $50 entry tiers as generic notetakers push into the category. Verify against vendor pages before buying, since these numbers are moving quarterly."
+  - q: "Should advisors use a generic AI notetaker or an advisor-specific one?"
+    a: "Advisor-specific tools earn their premium in three places: CRM integrations built for Redtail and Wealthbox, output templates shaped like advisor workflows (meeting summaries by planning topic, compliance-friendly notes), and vendor postures written for RIA due diligence, including data processing agreements. Generic tools cost less and transcribe just as well. Firms with real compliance review tend to land on advisor-specific; solo advisors who just want notes increasingly do not."
+  - q: "Why can't AI tools answer questions about client portfolios?"
+    a: "Because they cannot see them. Notetakers know what was said, CRM assistants know contact records, but client account data lives in custodial systems, portfolio accounting software, and held-away accounts that no current advisor AI connects to. Ask which clients hold a given stock across all accounts and every tool in the category comes up empty. Solving that requires a governed data connection, which is what the emerging Model Context Protocol work in wealth management is about."
+---
+
+# Best AI Tools for Financial Advisors in 2026
+
+The advisor AI category grew up fast and then immediately started a price war. Here is the field sorted by the job each tool does, with reported pricing and the structural gap the whole category shares.
+
+## Job 1: meeting documentation (the crowded one)
+
+This is where advisor AI actually landed. The tools record the meeting, transcribe it, draft the summary and the follow-up email, and push structured notes into the CRM.
+
+**Reported pricing, mid-2026** (these numbers are moving quarterly; verify with the vendor):
+
+| Tool | Reported price | Notes |
+|---|---|---|
+| Jump | $100/advisor/mo core (Meet), add-ons ~$50 each; some reporting cites $149 bundles | The category leader by mindshare, deep CRM integrations |
+| Zocks | Tiers from ~$67/mo | Positions on structured data capture, not just transcripts |
+| FinMate AI | ~$80-130/user/mo | Built by advisors, form pre-fill emphasis |
+
+The price story is the real 2026 news: industry reporting describes compression from the $120-a-month norm toward $50 entry tiers, driven by generic notetakers (Fireflies and peers) that transcribe perfectly well for a fraction of the price. The advisor-specific premium now has to be earned by CRM integration depth, advisor-shaped output templates, and a compliance posture an RIA can put through due diligence, meaning a data processing agreement and clear no-training terms, not just a good transcript.
+
+## Job 2: prospecting and marketing
+
+A wide field of AI writing assistants, lead-scoring tools, and content generators, none of which are meaningfully advisor-specific under the hood. The practical guidance fits in two lines: marketing output is advertising under SEC rules, so everything AI drafts needs the same review as human copy; and tools that personalize outreach from scraped prospect data deserve a compliance conversation before the first send.
+
+## Job 3: planning and analysis copilots
+
+The planning platforms are absorbing AI rather than being replaced by it: natural-language explanations of plan results, scenario narration, and client-letter drafting are appearing inside the software firms already run. If you own a planning tool, check what shipped in its last three releases before buying anything standalone. Our stack-wide view, including verified planning-software pricing: [the RIA tech stack in 2026](/blog/ria-tech-stack).
+
+## Job 4: the compliance layer
+
+Two separate questions get conflated. First, is the AI tool itself compliant to use: does the vendor sign a DPA, is client data excluded from training, where are recordings stored, do notes land in your books and records? Second, can AI help with compliance work: marketing review, ADV drafting assistance, and email surveillance tools are all adding AI features. Answer the first question before exploring the second. Our plain-language guardrails: [ChatGPT prompts for financial advisors](/blog/chatgpt-prompts-for-financial-advisors), which opens with the rules before the prompts.
+
+## The gap every tool shares: none of them can see the book
+
+Run the test yourself. Ask any tool above: *which of my clients hold NVDA going into earnings, counting their held-away accounts?*
+
+Nothing in the category can answer. Notetakers know meetings. CRM assistants know contact records. Planning copilots know the plan file. Client account data, the thing the practice actually manages, lives in custodial systems, portfolio accounting, and [held-away accounts](/blog/what-are-held-away-assets) that no advisor AI currently reaches. The AI supplies reasoning and language; nobody has wired it to the numbers.
+
+That wiring is a data problem before it is an AI problem, and the emerging answer is a governed, read-only connection layer, which we cover in plain language in [MCP for financial advisors](/blog/mcp-for-financial-advisors).
+
+## Where Helm fits
+
+The data layer is what we work on. Helm Terminal today is read-only portfolio intelligence for individual investors; the advisor research we are running asks what the whole book, custodied and held-away, looks like exposed to the AI tools a firm already pays for, through read-only, logged, per-firm-scoped connections. It is research, not a product. If you use any of the tools above and have hit the wall this post describes, [twenty minutes of your experience](/advisors) would shape what gets built.

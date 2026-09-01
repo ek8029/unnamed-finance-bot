@@ -1,0 +1,68 @@
+---
+title: "What Are Held-Away Assets? Definition, Examples, and Why Advisors Care"
+description: "Held-away assets are accounts a client owns outside their advisor's custodian: the 401(k), the HSA, the old brokerage account. Definition, examples, and why they are the biggest blind spot in wealth management."
+date: "2026-09-01"
+author: "Evan Kim"
+tags: ["held-away assets", "held away accounts", "financial advisors", "account aggregation", "401k"]
+published: true
+faq:
+  - q: "What does held-away mean in finance?"
+    a: "A held-away asset is any account or investment a client owns that is not custodied with their financial advisor's custodian. The advisor cannot see it in their portfolio management system, cannot bill on it in the usual way, and in most cases cannot trade it. The most common example is the client's current 401(k), which by law sits with the employer's plan provider, not with the advisor."
+  - q: "What are examples of held-away accounts?"
+    a: "The current employer's 401(k) or 403(b), a health savings account, 529 college savings plans, an old brokerage account at another firm, employer stock plan accounts holding RSUs or ESPP shares, crypto exchange accounts, bank accounts, annuities, and private investments. For many working clients the held-away 401(k) is the single largest account they own."
+  - q: "Can a financial advisor manage held-away assets?"
+    a: "Sometimes, but it is contested ground. Platforms like Pontera let advisors trade a client's 401(k) using the client's shared login credentials, and large custodians have pushed back hard: Fidelity began restricting third-party credential sharing in September 2024 and other providers followed. The uncontested options are read-only visibility through client-permissioned account aggregation, point-in-time recommendations the client executes personally, or an in-plan self-directed brokerage account where the plan offers one."
+  - q: "Do advisors charge fees on held-away assets?"
+    a: "Some do. Advisors using management platforms commonly bill their normal advisory fee on the held-away balance, and industry reporting puts the platform's own cost at roughly 30 basis points on top. Many advisors instead advise on held-away accounts informally and bill nothing, which is exactly why those accounts get less attention than the billed ones."
+  - q: "Why do held-away assets matter to advisors?"
+    a: "Three reasons. Risk: an advisor rebalancing the accounts they can see, blind to a concentrated 401(k) or a large single-stock position outside custody, is managing a fraction of the client's real exposure. Advice quality: asset location, tax-loss coordination, and rebalancing all break when half the balance sheet is invisible. Growth: held-away accounts eventually roll over, and the advisor who has been watching them is best positioned when they do."
+---
+
+# What Are Held-Away Assets?
+
+A held-away asset is any account a client owns that is not custodied with their financial advisor's custodian. The advisor cannot see it in their systems, cannot bill it the usual way, and in most cases cannot touch it.
+
+If a client keeps their taxable brokerage account with an advisor who custodies at Schwab, that account is "in custody." Their 401(k) at Fidelity through work, their HSA, the old Robinhood account they never closed, the RSUs vesting at their employer's stock plan provider: all held away.
+
+The phrase reads like jargon but the concept is the biggest structural blind spot in wealth management, and in 2026 it is also an active battleground, with custodians, fintechs, and regulators fighting over who gets to see and touch these accounts.
+
+## Examples of held-away assets
+
+| Account | Why it is held away | Typical size problem |
+|---|---|---|
+| Current employer 401(k) / 403(b) | Custodied with the employer's plan provider by law | Often the client's largest account |
+| HSA | Tied to the employer's benefits provider | Small individually, growing fast |
+| 529 plans | State program custodians | Moderate |
+| Old brokerage accounts | Client never consolidated | Unknown, which is the point |
+| Employer stock plans (RSU, ESPP) | Custodied at the plan administrator | Concentration risk lives here |
+| Crypto exchange accounts | No traditional custodian at all | Volatile and invisible |
+| Annuities and insurance products | Held at the carrier | Illiquid, often forgotten |
+
+The current 401(k) dominates the category. A client cannot move it while employed, so for their entire working tenure their biggest account sits somewhere their advisor's software does not reach.
+
+## Why advisors care
+
+**Risk management breaks first.** An advisor rebalancing a taxable account to a 60/40 target while the client's 401(k) sits in a 2055 target-date fund plus a slug of employer stock is not managing a 60/40 portfolio. They are managing the visible third of something they cannot see the shape of. Concentration is the sharpest version: the client who holds their employer's stock in an RSU account, an ESPP account, and their 401(k) company-stock fund has one bet spread across three invisible accounts.
+
+**Advice quality goes next.** Asset location, Roth conversion timing, tax-loss coordination across accounts, required minimum distribution planning: every one of these needs the whole balance sheet. Advisors do this work today by asking clients to email statements, which produces a snapshot that is stale the day it arrives.
+
+**And there is a business reason.** Held-away accounts roll over eventually. The advisor who has been watching a prospect's or client's outside accounts, and commenting on them intelligently, is the natural destination when the client changes jobs or retires. Advisors describe outside-account visibility as an asset-gathering tool as much as an advice tool.
+
+## How advisors handle held-away assets today
+
+There are four approaches, and they are not equally safe.
+
+1. **Ask for statements.** The default. Free, universally compliant, and stale on arrival. Most advisors get nothing at all between annual reviews.
+2. **Read-only account aggregation.** The client links accounts through a consented, token-based connection (the same mechanism consumer finance apps use), and the advisor sees balances and holdings without any ability to transact. This is the uncontested middle ground: visibility without custody implications.
+3. **Credential-based management platforms.** Pontera is the best-known: the client shares login credentials and the advisor trades the 401(k) through the platform. This model is under direct attack. Fidelity began restricting third-party credential sharing in September 2024, participants reported being locked out of linked accounts in 2025, and by late 2025 other major providers were following. See our breakdown of [Pontera alternatives](/blog/best-pontera-alternatives) for where that fight stands.
+4. **In-plan self-directed brokerage accounts.** Some plans offer a brokerage window (Schwab PCRA is the common example) that permits advisor access through the custodian's own rails. Sanctioned, but only available where the plan offers it.
+
+For a deeper look at the plumbing behind option 2, see [account aggregation for financial advisors](/blog/account-aggregation-for-financial-advisors).
+
+## The regulatory line that matters
+
+The reason "read-only" is not a throwaway phrase: under the SEC custody rule, an adviser with the power to move client money or securities generally has custody, which triggers surprise-exam and reporting obligations most small RIAs want no part of. Login credentials that permit trading or withdrawals put an advisor in that territory. Visibility-only access, granted by the client through a consented aggregation connection the client can revoke, is a categorically different posture. This is not legal advice, and any RIA should route the specifics through their compliance counsel, but the direction of travel in 2026 is unambiguous: custodians are killing credential sharing while leaving consented, tokenized, read-only data flows alone.
+
+## Where Helm fits
+
+Helm Terminal is a portfolio intelligence product for individual investors: it connects accounts read-only through Plaid and monitors what you own against the reasons you own it. We are now researching an advisor-facing version of the same idea, built with practicing advisors, starting from the held-away visibility problem this post describes. If you advise clients and this blind spot costs you time or assets, [we want twenty minutes of your perspective](/advisors). We are in the research phase and are not selling anything.

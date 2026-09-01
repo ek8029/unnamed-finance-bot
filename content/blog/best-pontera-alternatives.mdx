@@ -1,0 +1,65 @@
+---
+title: "Best Pontera Alternatives in 2026 (After the Fidelity and Schwab Crackdown)"
+description: "Fidelity restricted the credential sharing Pontera runs on, and other custodians followed. What advisors can actually use instead depends on whether you need to trade held-away accounts or see them."
+date: "2026-09-01"
+author: "Evan Kim"
+tags: ["pontera alternatives", "pontera competitors", "held-away assets", "401k management", "financial advisors", "comparison"]
+published: true
+faq:
+  - q: "Why are advisors looking for Pontera alternatives in 2026?"
+    a: "Because the major custodians moved against Pontera's core mechanism. Pontera works by having the client share their 401(k) login credentials so the advisor can manage the account through Pontera's platform. Fidelity, the largest workplace plan provider, began restricting third-party credential sharing in September 2024, participants reported losing online access to linked accounts in 2025, Pontera's CEO published an open letter in October 2025 calling it an anticompetitive power grab, and by December 2025 industry reporting described the bans as spreading, with Schwab and others declining to engage. Advisors with Fidelity-plan clients on Pontera have a direct operational problem."
+  - q: "What are the main alternatives to Pontera?"
+    a: "It depends on what job you need done. To keep discretionary management of held-away retirement accounts, Future Capital and Absolute Capital offer models built on different rails than participant credential sharing. To keep visibility without trading, read-only account aggregation (ByAllAccounts, Plaid-based tools, Yodlee) shows balances and holdings with no credentials stored and no custody implications. For the subset of plans that offer a self-directed brokerage window such as Schwab PCRA, advisor access runs through the custodian's own sanctioned rails. And point-in-time recommendation workflows, where the advisor advises and the client executes, remain compliant everywhere."
+  - q: "How much does Pontera cost?"
+    a: "Pontera does not publish pricing. Industry reporting, including Kitces.com coverage of the held-away management category, puts the cost at roughly 30 basis points annually on managed plan assets, billed to the advisor, who either passes it through to the client or absorbs it. Treat that as reported rather than official."
+  - q: "Is sharing 401(k) login credentials with an advisor safe?"
+    a: "The custodians say no, and that is the crux of the fight. Fidelity's stated position is that requiring a customer to share login credentials with a third party, which then stores them, is widely regarded as unsafe, particularly because it enables the third party to take actions like executing trades across all the customer's accounts. Pontera disputes the characterization and points to its security controls. What is not disputed: credential sharing can void custodian security guarantees for the participant, and consented token-based read-only connections do not carry the same problem."
+---
+
+# Best Pontera Alternatives in 2026
+
+A year ago "Pontera alternatives" was a shopping question. Now it is a contingency question.
+
+Pontera lets a financial advisor manage a client's held-away 401(k) by having the client share their plan login credentials; the advisor then trades the account through Pontera's order-entry platform. Roughly 30 basis points on managed assets, per industry reporting (Pontera does not publish pricing).
+
+The mechanism is the problem. In September 2024 Fidelity, the largest workplace plan provider in the country, began restricting third-party credential sharing. Through 2025, participants and advisors reported losing online access to Fidelity accounts that had been linked to third-party platforms. In October 2025 Pontera's CEO published an open letter accusing Fidelity of an "anticompetitive power grab." By December 2025, industry reporting described the credential-sharing bans as spreading, with Schwab and other custodians declining to engage with Pontera's investor-rights framing.
+
+Fidelity's stated position: requiring a customer to share login credentials with a third party, which then stores them, "is widely regarded as unsafe," particularly because it enables third parties to execute trades across all the customer's accounts.
+
+You can hold either view of the fight. Operationally it does not matter who is right. If your clients' plans custody at providers enforcing the ban, the platform's core mechanism does not work for those clients, and you need an alternative. Which one depends on which job you actually need done.
+
+## Job 1: keep managing held-away retirement accounts
+
+If discretionary management of the 401(k) is the service you sell, you need a platform built on rails the custodians tolerate.
+
+**Future Capital** positions itself directly as a Pontera alternative for advisors, with a model centered on retirement account management through its own advisory infrastructure rather than participant credential sharing. **Absolute Capital** runs managed programs for held-away retirement assets and has been publicly critical of the credential-sharing model; its CEO argued in InvestmentNews that Pontera's framing misses key 401(k) risks. Both firms have an obvious commercial interest in that critique, so evaluate the mechanics, not the marketing: ask precisely how access is established, whether the participant's credentials are ever stored, and what happens when a custodian changes policy.
+
+**Self-directed brokerage windows** are the custodian-sanctioned path where they exist. If the plan offers a brokerage window (Schwab's PCRA is the common example), an advisor can often gain trading access through the custodian's own advisor rails, no credential sharing involved. The limitation is coverage: most plans do not offer one, and the plans that do skew large.
+
+## Job 2: keep seeing held-away accounts
+
+If what you actually need is visibility, the picture is much cleaner, because read-only aggregation was never the target of the crackdown.
+
+Client-permissioned aggregation connects accounts through consented, token-based links (OAuth where the institution supports it), shows the advisor balances, holdings, and transactions, and stores no credentials and permits no trades. No trading authority also means no custody-rule exposure in the way credential-based management creates it.
+
+The established options: **ByAllAccounts** (Morningstar's aggregation unit, enterprise-grade, quote-based pricing, and worth reading up on before committing given its [aborted 2026 sale](/blog/best-byallaccounts-alternatives)), **Yodlee** (Envestnet), and **Plaid**-based tooling, which powers most consumer fintech and increasingly reaches advisor use cases. Our full breakdown: [account aggregation for financial advisors](/blog/account-aggregation-for-financial-advisors).
+
+The honest trade-off: visibility-only means you cannot bill for discretionary management of those assets on most fee schedules. What you get instead is the whole client balance sheet in front of you, concentration and overlap you can actually see, and a defensible compliance posture while the credential-sharing fight burns on. Several advisors we have interviewed describe outside-account visibility as their best asset-gathering tool: the advisor who watches the held-away account intelligently is where it rolls over.
+
+## Job 3: advise without touching
+
+The oldest model still works everywhere: point-in-time recommendations. The advisor reviews the held-away account (from statements or from read-only aggregation), recommends the allocation, and the client executes it themselves. No credentials, no custody questions, no platform fee. The cost is friction and follow-through, and anyone who has waited three weeks for a client to log in and rebalance knows exactly what that costs.
+
+## The comparison, honestly
+
+| Approach | Trade held-away accounts | Custodian-proof | Cost shape |
+|---|---|---|---|
+| Pontera | Yes, where not blocked | No, that is the problem | ~30 bps reported, not published |
+| Future Capital / Absolute Capital | Yes, via their programs | Different rails, verify per custodian | Quote-based |
+| Brokerage window (e.g., PCRA) | Yes, where the plan offers one | Yes, custodian-sanctioned | Plan-dependent |
+| Read-only aggregation | No | Yes | Per-account or per-client, generally modest |
+| Recommend, client executes | No | Yes | Free, paid in friction |
+
+## Where Helm fits
+
+Helm Terminal is a read-only portfolio intelligence product for individual investors, built on Plaid connections and grounded, cited monitoring of why each position is held. We are researching an advisor-facing platform on the same read-only rails: full-book visibility across in-custody and held-away accounts, without credential sharing, built with practicing advisors rather than for them. If the Pontera situation touched your practice, or held-away visibility is a gap you feel weekly, [we want twenty minutes of your perspective](/advisors). Research conversation, not a pitch; the advisor product does not exist yet, which is exactly why your input shapes it.
