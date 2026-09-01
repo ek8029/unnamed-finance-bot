@@ -30,7 +30,10 @@ function blogSection(): string {
 }
 
 export async function GET() {
-  const raw = readFileSync(join(process.cwd(), 'public', 'llms.txt'), 'utf-8');
+  // The template lives in content/llms, not public: a public file at the same
+  // path as a route makes Next dev refuse to serve the route at all
+  // (conflicting-public-file-page), so localhost showed a 500 while prod worked.
+  const raw = readFileSync(join(process.cwd(), 'content', 'llms', 'llms.txt'), 'utf-8');
 
   // Replace from the Educational Content heading up to the next top-level
   // heading, leaving the surrounding sections untouched.
