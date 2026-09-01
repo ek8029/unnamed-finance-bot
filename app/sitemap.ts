@@ -72,6 +72,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/for/founders`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/for/investors`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/for/high-net-worth`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/advisors`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/llms.txt`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.2 },
     { url: `${base}/llms-full.txt`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.2 },
   ];
