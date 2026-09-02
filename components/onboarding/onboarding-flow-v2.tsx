@@ -23,8 +23,13 @@ import { ManualPortfolioForm } from '@/components/manual-portfolio-form';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
 import { AnalysisLoadingTerminal } from '@/components/analysis-loading-terminal';
 import { SourceIcon } from '@/components/onboarding/source-icon';
+import { supabase } from '@/lib/supabase/client';
 
 const ONBOARDING_KEY = 'helm_onboarding_dismissed';
+// The investor demo login runs onboarding on EVERY visit, in preview mode (no
+// writes, no dismissed flag), so a visitor always sees the flow from zero and
+// lands on the populated demo dashboard. Nothing about this touches real users.
+const DEMO_EMAIL = 'test@helmterminal.dev';
 // Recognizable house names that currently carry live cited evidence (receipt cards).
 // Names without a fresh catch still scan fine — they land on the "Watching" card.
 const HOUSE_PICKS = ['NVDA', 'TSM', 'AVGO', 'MU', 'META', 'AAPL'];
@@ -186,6 +191,7 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
   const [linkError, setLinkError] = useState<string | null>(null);
   const [hasPlaid, setHasPlaid] = useState<boolean | null>(harness ? false : null);
   const [preview, setPreview] = useState(!!harness);
+  const [demo, setDemo] = useState(false);
 
   const [ticker, setTicker] = useState('');
   const [scan, setScan] = useState<ScanResult | null>(null);
@@ -241,20 +247,35 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
       setShow(true);
       return;
     }
-    const dismissed = localStorage.getItem(ONBOARDING_KEY) === '1' || sessionStorage.getItem(ONBOARDING_KEY) === '1';
-    if (dismissed) return;
-    fetch('/api/financial-summary')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.hasPlaidConnection) {
-          localStorage.setItem(ONBOARDING_KEY, '1');
-        } else {
+    const runNormal = () => {
+      const dismissed = localStorage.getItem(ONBOARDING_KEY) === '1' || sessionStorage.getItem(ONBOARDING_KEY) === '1';
+      if (dismissed) return;
+      fetch('/api/financial-summary')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data?.hasPlaidConnection) {
+            localStorage.setItem(ONBOARDING_KEY, '1');
+          } else {
+            setHasPlaid(false);
+            setShow(true);
+            track('onb_v2_shown');
+          }
+        })
+        .catch(() => {});
+    };
+    supabase.auth
+      .getUser()
+      .then(({ data }) => {
+        if (data.user?.email?.toLowerCase() === DEMO_EMAIL) {
+          setDemo(true);
+          setPreview(true);
           setHasPlaid(false);
           setShow(true);
-          track('onb_v2_shown');
+          return;
         }
+        runNormal();
       })
-      .catch(() => {});
+      .catch(runNormal);
   }, []);
 
   // welcome auto-advance
@@ -701,7 +722,7 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
             backgroundSize: '32px 32px',
           }} />
           <div className="pointer-events-none fixed top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--color-gold)]/20 to-transparent" />
-          {preview && (
+          {preview && !demo && (
             <div className="fixed top-0 inset-x-0 z-[110] bg-[var(--color-gold)] text-black text-center text-[10.5px] font-semibold uppercase tracking-[0.16em] py-1.5" style={MONO}>
               Preview · nothing is saved to your account
             </div>
