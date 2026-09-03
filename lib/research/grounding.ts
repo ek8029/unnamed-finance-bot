@@ -13,9 +13,11 @@ import type { Finding } from './types';
  */
 export function expandGroupedCitations(text: string): string {
   return text.replace(/\[([a-z_]+:[^\]]+)\]/gi, (m, inner: string) => {
-    if (!inner.includes(',')) return m;
+    // Semicolons too: a model that writes "[inv:a; inv:b]" had both receipts silently
+    // dropped, because the group never split and the joined string matched no finding id.
+    if (!/[,;]/.test(inner)) return m;
     return inner
-      .split(/\s*,\s*/)
+      .split(/\s*[,;]\s*/)
       .filter(Boolean)
       .map((id) => `[${id.trim()}]`)
       .join('');

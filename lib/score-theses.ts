@@ -553,6 +553,11 @@ Respond with JSON exactly in this shape:
   try {
     const response = await openai.chat.completions.create({
       model,
+      // A classifier must not sample. This call's verdict enum feeds derivePillarStatus,
+      // which is a pure function, so a pillar's status (and the breach that follows) was
+      // riding on the default temperature of 1.0. thesis-synthesis.ts pins 0 for the same
+      // reason. Deterministic also makes model comparisons measurable instead of noisy.
+      temperature: 0,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: systemPrompt },

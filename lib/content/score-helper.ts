@@ -61,7 +61,11 @@ export async function scoreItemsForPillars(
   if (pillars.length === 0 || sources.length === 0) return [];
 
   const pillarLines = pillars
-    .map((p, i) => `Pillar ${i + 1}: ${p.claim}\n  Breaks if: ${p.breaks_if}`)
+    // 164 of 297 confirmed pillars have no breaks_if (every user-authored one), and this
+    // interpolated the empty value, so the model was shown the literal "Breaks if: null"
+    // and then told to mark contradicts when a source advances that condition. Omit it
+    // instead, which is what lib/score-theses.ts:503 already does on the logged-in path.
+    .map((p, i) => `Pillar ${i + 1}: ${p.claim}${p.breaks_if ? `\n  Breaks if: ${p.breaks_if}` : ''}`)
     .join('\n');
 
   const sourceLines = sources
@@ -90,6 +94,9 @@ Respond with JSON exactly in this shape:
   try {
     const response = await getOpenAI().chat.completions.create({
       model: SCORE_MODEL,
+      // Same reason as lib/score-theses.ts: a verdict classifier must not sample.
+      // This fork feeds the public /masthead and /thesis pages.
+      temperature: 0,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: systemPrompt },

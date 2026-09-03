@@ -67,16 +67,21 @@ export interface CachedAnalysisResult {
 
 // ── Check cache ──
 
-async function getCachedAnalysis(ticker: string): Promise<CachedAnalysisResult | null> {
+/** `ignoreTtl` returns the newest row at any age. Used only as a fallback when we are
+ *  REFUSED permission to regenerate (cost guard, rate limiter, generation failure).
+ *  A stale analysis with an honest computedAt beats a 404 on an indexed URL. */
+async function getCachedAnalysis(ticker: string, opts?: { ignoreTtl?: boolean }): Promise<CachedAnalysisResult | null> {
   try {
     const supabase = await createServiceClient();
     const cutoff = new Date(Date.now() - getCacheTtlMs()).toISOString();
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('analysis_cache')
       .select('analysis_json, created_at, data_sources, methodology_version')
-      .eq('ticker', ticker.toUpperCase())
-      .gte('created_at', cutoff)
+      .eq('ticker', ticker.toUpperCase());
+    if (!opts?.ignoreTtl) query = query.gte('created_at', cutoff);
+
+    const { data, error } = await query
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -252,11 +257,29 @@ export const analyzeStock = cache(async (ticker: string, allowGenerate = true, a
     };
   }
 
+  // Being refused permission to regenerate is NOT the same as "this ticker does not
+  // exist", but both used to return emptyResult, and app/analyze/[ticker] turns a null
+  // analysis into notFound(). Anonymous generation is capped at 60 per 10 minutes
+  // GLOBALLY, so a crawler sweeping the 130 sitemap'd tickers past an expired cache
+  // 404'd our own indexed pages. Serve the last analysis we computed instead; its real
+  // computedAt goes with it, so the page is honest about the age.
+  const staleFallback = async (): Promise<AnalyzeStockResult> => {
+    const stale = await getCachedAnalysis(symbol, { ignoreTtl: true });
+    if (!stale) return emptyResult;
+    return {
+      analysis: stale.analysis,
+      fromCache: true,
+      computedAt: stale.computedAt,
+      dataSources: stale.dataSources,
+      methodologyVersion: stale.methodologyVersion,
+    };
+  };
+
   // Cost guard: callers (the public SEO page) pass allowGenerate=false for tickers
   // outside their allowlist. Cached entries above still serve; this blocks a cache-miss
   // from spending Finnhub + OpenAI on scripted iteration over arbitrary valid tickers.
   if (!allowGenerate) {
-    return emptyResult;
+    return staleFallback();
   }
 
   // Anonymous public path (anonIp set): gate before spending any paid call.
@@ -268,7 +291,7 @@ export const analyzeStock = cache(async (ticker: string, allowGenerate = true, a
       return emptyResult;
     }
     if (!(await canGenerateAnon(anonIp))) {
-      return emptyResult;
+      return staleFallback();
     }
   }
 
@@ -324,7 +347,7 @@ export const analyzeStock = cache(async (ticker: string, allowGenerate = true, a
       }
     } catch (parseError) {
       console.error(`Failed to parse analysis for ${symbol}:`, parseError);
-      return emptyResult;
+      return staleFallback();
     }
 
     // Cache the result — returns the computed_at ISO string
@@ -339,6 +362,6 @@ export const analyzeStock = cache(async (ticker: string, allowGenerate = true, a
     };
   } catch (error) {
     console.error('Stock analysis failed:', error);
-    return emptyResult;
+    return staleFallback();
   }
 });

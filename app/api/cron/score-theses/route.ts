@@ -97,6 +97,19 @@ export async function GET(request: Request) {
       result.log.push(`[mechanisms] rejudge skipped: ${err instanceof Error ? err.message : 'unknown'}`);
     }
 
+    // The whole scoring chain writes its diagnostics into result.log and nothing else:
+    // every LLM error, every dropped row and every rejected escalation. Returning it in
+    // the response body means Vercel discards it, so the pipeline has been unobservable
+    // in production while the user-triggered backfill path logged the same array. The
+    // dropped-row lines matter most: a row killed by "excerpt not found in source" is a
+    // finding the judge made and we deleted, and that failure is concentrated in filings.
+    for (const line of result.log) console.log(`[cron/score-theses] ${line}`);
+    const dropped = result.log.filter((l) => l.includes('Dropping row:')).length;
+    console.log(
+      `[cron/score-theses] scanned=${result.scanned} evidenceAdded=${result.evidenceAdded} ` +
+        `statusChanges=${result.statusChanges} droppedRows=${dropped} breachesSent=${breachesSent}`,
+    );
+
     return NextResponse.json({
       ok: true,
       ticker: ticker ?? 'all',
