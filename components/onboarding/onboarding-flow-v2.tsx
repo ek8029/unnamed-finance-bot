@@ -745,6 +745,22 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
             </div>
           )}
 
+          {/* A way out from every screen. The demo login re-runs this flow on
+              every visit, so without it the only exits are six screens deep.
+              dismiss() writes the dismissed flag for real users and nothing at
+              all in preview, so the demo still starts from zero next time.
+              'ratify' and 'done' already carry their own exit. */}
+          {phase !== 'ratify' && phase !== 'done' && (
+            <button
+              type="button"
+              onClick={() => { track('onb_skipped', { phase }); dismiss(true); }}
+              className="fixed right-3 z-[111] px-2 min-h-[44px] text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+              style={{ ...MONO, top: preview && !demo ? 30 : 4 }}
+            >
+              Skip to the terminal
+            </button>
+          )}
+
           {/* ═══ WELCOME ═══ */}
           {phase === 'welcome' && (
             <div className="flex-1 grid place-items-center px-6" style={{ animation: 'onb-fade-up 0.7s ease-out' }}>
