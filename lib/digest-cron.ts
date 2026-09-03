@@ -142,7 +142,8 @@ export async function runDigestCron(options: { force?: boolean } = {}): Promise<
     const batch = usersWithHoldings.slice(i, i + BATCH_SIZE);
     const results = await Promise.allSettled(
       batch.map(async (user) => {
-        const result = await generateDigest(user.tickers);
+        // The user id is what unlocks the ranked pack: it is built per account.
+        const result = await generateDigest(user.tickers, user.id);
         await serviceClient
           .from('brief_digests')
           .upsert({
@@ -161,7 +162,7 @@ export async function runDigestCron(options: { force?: boolean } = {}): Promise<
           }
         }
 
-        log.push(`[digest] Generated for ${user.email.slice(0, 4)}... (${result.tokens} tokens, ${user.tickers.length} holdings)`);
+        log.push(`[digest] Generated for ${user.email.slice(0, 4)}... via ${result.path} (${result.tokens} tokens, $${result.costUsd.toFixed(5)}, ${user.tickers.length} holdings)`);
         return result;
       })
     );

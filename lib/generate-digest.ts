@@ -4,6 +4,9 @@ import { getQuote } from '@/lib/financial-data';
 import { getVixQuote } from '@/lib/vix';
 import { getSourceTier } from '@/lib/news-quality';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
+import { getAnthropic, hasAnthropicKey, DIGEST_MODEL, anthropicCostUsd } from '@/lib/anthropic';
+import { buildDigestContext } from '@/lib/digest/pack';
+import { L7, validate, retryLine } from '@/lib/digest/validate';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -15,20 +18,148 @@ function createCronServiceClient() {
   );
 }
 
-interface DigestResult {
+export interface DigestResult {
   digest: string;
   holdings: string[];
   tokens: number;
+  /** Which generator actually produced this brief. Logged by the cron on every user. */
+  path: 'claude' | 'template' | 'openai-fallback';
+  costUsd: number;
 }
+
+// ---------- the ranked brief (round-6 design, claude-sonnet-5) ----------
+
+const MAX_TOKENS = 1500;
+/** only used when a thinking model spends the whole budget and returns no text */
+const MAX_TOKENS_RETRY = 4000;
+
+interface ClaudeCall { text: string; tokens: number; costUsd: number }
+
+async function callClaude(system: string, messages: { role: 'user' | 'assistant'; content: string }[]): Promise<ClaudeCall> {
+  const anthropic = getAnthropic();
+  let maxTokens = MAX_TOKENS;
+  for (;;) {
+    const res = await anthropic.messages.create({
+      model: DIGEST_MODEL,
+      max_tokens: maxTokens,
+      // The layer is identical for every user in a run, so it is the cache prefix. The facts
+      // vary per user and sit after it, in the messages.
+      system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
+      messages,
+      // Sonnet 5 takes output_config.effort and rejects temperature.
+      output_config: { effort: 'low' },
+    });
+    const text = res.content
+      .filter((b): b is Extract<typeof b, { type: 'text' }> => b.type === 'text')
+      .map((b) => b.text)
+      .join('');
+    const usage = {
+      input: res.usage.input_tokens ?? 0,
+      output: res.usage.output_tokens ?? 0,
+      cacheRead: res.usage.cache_read_input_tokens ?? 0,
+      cacheWrite: res.usage.cache_creation_input_tokens ?? 0,
+    };
+    const call: ClaudeCall = {
+      text,
+      tokens: usage.input + usage.output + usage.cacheRead + usage.cacheWrite,
+      costUsd: anthropicCostUsd(usage),
+    };
+    if (res.stop_reason === 'refusal') throw new Error('claude refused the brief');
+    if (!text.trim()) {
+      if (res.stop_reason === 'max_tokens' && maxTokens === MAX_TOKENS) {
+        maxTokens = MAX_TOKENS_RETRY; // thinking consumed the budget; one retry with room
+        continue;
+      }
+      throw new Error(`empty completion (stop_reason ${res.stop_reason})`);
+    }
+    return call;
+  }
+}
+
+/**
+ * The round-6 brief: a deterministic ranked pack, a model that only narrates it, a
+ * deterministic validator with one retry, and a closing sentence written by code.
+ * Throws on any model failure so the caller can fall back.
+ */
+async function generateRankedDigest(userId: string, userHoldings: string[]): Promise<DigestResult> {
+  const ctx = await buildDigestContext(userId);
+
+  // Quiet day: nothing qualified, so there is nothing to narrate and no model call to pay for.
+  if (ctx.quiet) {
+    return { digest: ctx.templateText, holdings: userHoldings, tokens: 0, path: 'template', costUsd: 0 };
+  }
+
+  if (!hasAnthropicKey()) throw new Error('ANTHROPIC_API_KEY missing');
+
+  const system = `${INJECTION_GUARD}\n${L7}`;
+  const user = fence(ctx.pack, 'FACTS');
+
+  const first = await callClaude(system, [{ role: 'user', content: user }]);
+  let body = first.text;
+  let tokens = first.tokens;
+  let costUsd = first.costUsd;
+
+  let val = validate(body, ctx.pack);
+  if (!val.passed) {
+    // One rewrite: the failed draft goes back as an assistant turn, the check list as the
+    // next user line, same system and facts otherwise.
+    const second = await callClaude(system, [
+      { role: 'user', content: user },
+      { role: 'assistant', content: body },
+      { role: 'user', content: retryLine(val.violations) },
+    ]);
+    body = second.text;
+    tokens += second.tokens;
+    costUsd += second.costUsd;
+    val = validate(body, ctx.pack);
+    if (!val.passed) {
+      console.warn(`[digest] validator failed twice for ${userId.slice(0, 8)}: ${val.violations.join(' | ')}`);
+    }
+  }
+
+  return {
+    digest: `${body.trim()}\n\n${ctx.closer}`,
+    holdings: userHoldings,
+    tokens,
+    path: 'claude',
+    costUsd,
+  };
+}
+
+/**
+ * Generate the morning brief for one user.
+ *
+ * With a `userId` this runs the round-6 ranked-pack generator on claude-sonnet-5. Without
+ * one it can only run the legacy path, because the ranked pack is built per account.
+ * Any failure of the ranked path (missing key, refusal, API error, a database read that
+ * throws) falls back to gpt-4o-mini rather than leaving somebody with no brief: a silent
+ * zero balance on one provider already took this feature down once.
+ */
+export async function generateDigest(userHoldings: string[], userId?: string): Promise<DigestResult> {
+  if (userId) {
+    try {
+      const r = await generateRankedDigest(userId, userHoldings);
+      console.log(`[digest] ${userId.slice(0, 8)} path=${r.path} tokens=${r.tokens} cost=$${r.costUsd.toFixed(5)}`);
+      return r;
+    } catch (err) {
+      console.error(
+        `[digest] ${userId.slice(0, 8)} ranked path failed, falling back to gpt-4o-mini: ${err instanceof Error ? err.message : 'unknown'}`,
+      );
+    }
+  }
+  const r = await generateLegacyDigest(userHoldings);
+  console.log(`[digest] ${userId ? `${userId.slice(0, 8)} ` : ''}path=${r.path} tokens=${r.tokens}`);
+  return r;
+}
+
+// ---------- the fallback: the previous gpt-4o-mini generator, unchanged ----------
 
 /**
  * Generate an AI-narrated portfolio digest for a user.
  * Pulls position-relevant + general news from market_news,
  * market snapshot from Finnhub, and writes a 150-250 word brief.
  */
-export async function generateDigest(
-  userHoldings: string[],
-): Promise<DigestResult> {
+async function generateLegacyDigest(userHoldings: string[]): Promise<DigestResult> {
   const supabase = createCronServiceClient();
   const oneDayAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
@@ -152,6 +283,8 @@ Rules:
     digest,
     holdings: userHoldings,
     tokens: completion.usage?.total_tokens ?? 0,
+    path: 'openai-fallback',
+    costUsd: 0,
   };
 }
 
@@ -276,5 +409,7 @@ Rules:
     digest,
     holdings: [],
     tokens: completion.usage?.total_tokens ?? 0,
+    path: 'openai-fallback',
+    costUsd: 0,
   };
 }

@@ -24,6 +24,7 @@ import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
 import { AnalysisLoadingTerminal } from '@/components/analysis-loading-terminal';
 import { SourceIcon } from '@/components/onboarding/source-icon';
 import { supabase } from '@/lib/supabase/client';
+import { validateBreaksIf, BREAKS_IF_MAX } from '@/lib/pillar-breaks-if';
 
 const ONBOARDING_KEY = 'helm_onboarding_dismissed';
 // The investor demo login runs onboarding on EVERY visit, in preview mode (no
@@ -208,6 +209,7 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
   // reasons step
   const [picked, setPicked] = useState<Set<string>>(() => new Set());
   const [customReason, setCustomReason] = useState('');
+  const [customBreaksIf, setCustomBreaksIf] = useState('');
   const [showCustom, setShowCustom] = useState(false);
   const [adopted, setAdopted] = useState(false);
 
@@ -512,6 +514,16 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
     const custom = showCustom ? customReason.trim() : '';
     if (ids.length === 0 && !custom) return;
 
+    // A reason in their own words still needs its own kill criterion. Every
+    // house pillar carries one; a custom one without it is a claim the agent
+    // can never come back and contradict.
+    let customKill: string | null = null;
+    if (custom) {
+      const checked = validateBreaksIf(customBreaksIf);
+      if (!checked.ok) { setNote(checked.error); return; }
+      customKill = checked.value;
+    }
+
     track('onb_reasons_adopted', {
       ticker: scan.ticker,
       picked: ids.length,
@@ -576,7 +588,12 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
       const res = await fetch('/api/thesis/adopt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticker: scan.ticker, pillarIds: ids, customReason: custom || undefined }),
+        body: JSON.stringify({
+          ticker: scan.ticker,
+          pillarIds: ids,
+          customReason: custom || undefined,
+          customBreaksIf: customKill || undefined,
+        }),
       });
       const data = await res.json().catch(() => null);
       if (res.ok) {
@@ -1138,6 +1155,21 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
                           placeholder={`I own ${scan.ticker} because…`}
                           className="w-full bg-transparent text-[15px] leading-[1.5] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] outline-none resize-none"
                         />
+                        {/* Required. Every house claim above ships with one, and
+                            without it Helm has nothing to check this reason
+                            against. */}
+                        <label className="block mt-3 pt-3 border-t border-[var(--color-border-base)]">
+                          <span className="block text-[10.5px] uppercase tracking-[0.08em] font-semibold text-[var(--color-gold)] mb-1.5" style={MONO}>
+                            Breaks if
+                          </span>
+                          <textarea
+                            value={customBreaksIf}
+                            onChange={(e) => setCustomBreaksIf(e.target.value.slice(0, BREAKS_IF_MAX))}
+                            rows={2}
+                            placeholder="Tell me it stops being true when… (name the metric, filing or event)"
+                            className="w-full bg-transparent text-[14px] leading-[1.5] text-[var(--color-text-secondary)] placeholder:text-[var(--color-text-muted)] outline-none resize-none"
+                          />
+                        </label>
                       </div>
                     )}
                   </div>

@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server';
 // Ongoing monitoring is the paid half, enforced in the scoring cron.
 import { nextLifecycle, type Lifecycle } from '@/lib/thesis-lifecycle';
 import { bumpThesisVersion, isMaterialPillarPatch } from '@/lib/thesis-version';
+import { validateBreaksIf } from '@/lib/pillar-breaks-if';
 
 const VALID_STATUS_OVERRIDES = new Set(['unverified', 'intact', 'weakening', 'broken']);
 
@@ -64,6 +65,23 @@ export async function PATCH(
         return NextResponse.json({ error: 'claim must be 500 characters or fewer' }, { status: 400 });
       }
       updates.claim = body.claim.trim();
+    }
+
+    // breaks_if — the kill criterion. Editable here (the field had no write path
+    // at all before), and it can never be cleared: an empty breaks_if is a pillar
+    // the scorer's judge can never contradict, which is the whole reason this
+    // route now validates it.
+    //
+    // Deliberately NOT required on a claim-only edit. The 164 user-authored
+    // pillars already in production have no kill criterion, and blocking a typo
+    // fix on them would retro-invalidate work people already did. New authoring
+    // is gated at POST /api/thesis/[ticker] and /api/thesis/adopt instead.
+    if ('breaks_if' in body) {
+      const checked = validateBreaksIf(body.breaks_if);
+      if (!checked.ok) {
+        return NextResponse.json({ error: checked.error, field: 'breaks_if' }, { status: 400 });
+      }
+      updates.breaks_if = checked.value;
     }
 
     // confirmed — boolean

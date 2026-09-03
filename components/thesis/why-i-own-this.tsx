@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { EvidenceTimeline as EvidenceChronology } from '@/components/thesis/evidence-timeline';
 import { VerdictCard, type ThesisIntelligenceItem } from '@/components/thesis/verdict-card';
+import { validateBreaksIf, BREAKS_IF_MAX } from '@/lib/pillar-breaks-if';
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 const SERIF: React.CSSProperties = { fontFamily: "var(--font-serif, 'Instrument Serif', Georgia, serif)" };
@@ -487,6 +488,8 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
   const [notesDraft, setNotesDraft] = useState('');
   const [adding, setAdding] = useState(false);
   const [addText, setAddText] = useState('');
+  const [addBreaks, setAddBreaks] = useState('');
+  const [addError, setAddError] = useState<string | null>(null);
   const [addBusy, setAddBusy] = useState(false);
   const [seedBusy, setSeedBusy] = useState(false);
   const [trackBusy, setTrackBusy] = useState(false);
@@ -562,7 +565,13 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
 
   const addPillar = useCallback(async () => {
     const claim = addText.trim();
+    const breaksIf = addBreaks.trim();
     if (claim.length === 0 || addBusy) return;
+    // Client-side so the requirement is visible before the round trip; the
+    // server runs the same check and is the one that must be right.
+    const checked = validateBreaksIf(breaksIf);
+    if (!checked.ok) { setAddError(checked.error); return; }
+    setAddError(null);
     setAddBusy(true);
     try {
       if (!thesis) {
@@ -578,18 +587,22 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
       const res = await fetch(`/api/thesis/${encodeURIComponent(ticker)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ claim }),
+        body: JSON.stringify({ claim, breaks_if: checked.value }),
       });
       if (res.ok) {
         const data = await res.json() as { pillar: Pillar };
         setPillars((prev) => [...prev, { ...data.pillar, evidence: [] }]);
         setAddText('');
+        setAddBreaks('');
         setAdding(false);
+      } else {
+        const data = await res.json().catch(() => null) as { error?: string } | null;
+        setAddError(data?.error ?? 'Could not save that pillar.');
       }
     } finally {
       setAddBusy(false);
     }
-  }, [ticker, thesis, addText, addBusy, applyPayload]);
+  }, [ticker, thesis, addText, addBreaks, addBusy, applyPayload]);
 
   const trackThesis = useCallback(async () => {
     if (trackBusy) return;
@@ -657,16 +670,31 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
 
   const addControl = adding ? (
     <div className="flex items-start gap-3">
-      <div className="flex-1">
+      <div className="flex-1 space-y-2">
         <ClaimTextarea
           value={addText}
           onChange={setAddText}
           placeholder={`Write a reason you own ${ticker}, in one sentence`}
         />
+        {/* Required. Without it the agent has nothing to test the claim against
+            and the pillar can never come back contradicted. */}
+        <label className="block">
+          <span className="block text-[10.5px] uppercase tracking-[0.08em] font-semibold text-[#E6B94D] mb-1">
+            Breaks if
+          </span>
+          <textarea
+            value={addBreaks}
+            onChange={(e) => setAddBreaks(e.target.value.slice(0, BREAKS_IF_MAX))}
+            placeholder="What would prove this wrong? Name the metric, filing or event and which way it has to move."
+            rows={2}
+            className="w-full rounded bg-[#060606] border border-white/[0.14] text-[#C8C8C8] text-[13.5px] leading-[1.5] px-3 py-2 outline-none resize-y"
+          />
+        </label>
+        {addError && <p className="text-[12.5px] leading-[1.5] text-[#F87171]">{addError}</p>}
       </div>
       <div className="flex gap-2 pt-1">
         <MiniButton primary onClick={addPillar} disabled={addBusy}>Add pillar</MiniButton>
-        <MiniButton onClick={() => { setAdding(false); setAddText(''); }}>Cancel</MiniButton>
+        <MiniButton onClick={() => { setAdding(false); setAddText(''); setAddBreaks(''); setAddError(null); }}>Cancel</MiniButton>
       </div>
     </div>
   ) : (

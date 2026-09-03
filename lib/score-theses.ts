@@ -26,6 +26,12 @@ import { reviewEscalations, needsEscalation, ESCALATION_MODEL, ESCALATION_CAP } 
 import { runInvestigation, classifyTrigger, type InvestigationTrigger } from '@/lib/investigation-memo';
 import { buildJudgeSteering } from '@/lib/judge-steering';
 import { detectInsiderCluster, clusterText } from '@/lib/insider-cluster';
+import {
+  anthropicJudgeAvailable,
+  judgeWithAnthropic,
+  parseJudgeJson,
+  FILING_JUDGE_MODEL,
+} from '@/lib/anthropic-judge';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SCORE_MODEL = 'gpt-4o-mini';
@@ -503,10 +509,6 @@ export async function scoreOneThesis(
     .map((p, i) => `Pillar ${i + 1}: ${p.claim}${p.breaks_if ? ` (breaks if: ${p.breaks_if})` : ''}`)
     .join('\n');
 
-  const sourceLines = sortedCandidates
-    .map((c, i) => `Source ${i + 1} [${c.source_type}]: ${c.sourceText}`)
-    .join('\n\n');
-
   const systemPrompt = `${INJECTION_GUARD}
 You are a senior equity analyst judging whether each source bears on each thesis pillar.
 A single source can bear on more than one pillar. For each pillar a source genuinely relates to, produce a separate evidence row.
@@ -547,10 +549,77 @@ Respond with JSON exactly in this shape:
     (dismissedRaw ?? []) as { claim: string }[],
   );
 
-  const userPrompt = `Thesis pillars:\n${fence(pillarLines, 'PILLARS')}\n\nSources:\n${fence(sourceLines, 'SOURCES')}${steering ? `\n\nHolder context:\n${fence(steering, 'HOLDER_CONTEXT')}` : ''}`;
+  const buildUserPrompt = (cands: Candidate[]): string => {
+    const sourceLines = cands
+      .map((c, i) => `Source ${i + 1} [${c.source_type}]: ${c.sourceText}`)
+      .join('\n\n');
+    return `Thesis pillars:\n${fence(pillarLines, 'PILLARS')}\n\nSources:\n${fence(sourceLines, 'SOURCES')}${steering ? `\n\nHolder context:\n${fence(steering, 'HOLDER_CONTEXT')}` : ''}`;
+  };
 
-  let llmRows: LLMEvidenceRow[] = [];
-  try {
+  // ---- Two-lane judge -----------------------------------------------------
+  //
+  // [filing] sources go to claude-sonnet-5, everything else stays on
+  // gpt-4o-mini. Measured offline on 24 theses over two blind arbiter panels:
+  // the control files the right row 54.8% of the time, this routing 76.0%
+  // (104 graded cases, 95% CI 67-83). The mechanism is excerptFoundInSource
+  // below: it demands a verbatim substring, and a weak model paraphrases a
+  // 8,000-character filing instead of copying from it. Every one of the
+  // control's 25 non-verbatim losses was on a filing; news passed cleanly,
+  // which is why news is not worth moving.
+  //
+  // A lane is a slice of sortedCandidates that is numbered from 1 in its own
+  // prompt, so each lane's source_index has to be mapped back to the shared
+  // candidate array before the rows merge. Everything downstream (validation,
+  // guards, escalation, dedupe, upsert) runs once over the merged set.
+  interface Lane {
+    name: string;
+    model: string;
+    candidates: Candidate[];
+    /** Position in sortedCandidates for each lane-local candidate. */
+    globalIndex: number[];
+  }
+  type JudgedRow = LLMEvidenceRow & { judgedBy: string };
+
+  const makeLane = (name: string, laneModel: string, pick: (c: Candidate) => boolean): Lane => {
+    const lane: Lane = { name, model: laneModel, candidates: [], globalIndex: [] };
+    sortedCandidates.forEach((c, i) => {
+      if (!pick(c)) return;
+      lane.candidates.push(c);
+      lane.globalIndex.push(i);
+    });
+    return lane;
+  };
+
+  // An explicit model option (the demo seed pins gpt-4o) is a deliberate choice
+  // by the caller and is not overridden. No key means local dev and any
+  // environment without one keeps the single-call path.
+  const routeFilings =
+    options?.model === undefined &&
+    anthropicJudgeAvailable() &&
+    sortedCandidates.some((c) => c.source_type === 'filing');
+
+  const filingLane = routeFilings
+    ? makeLane('filing', FILING_JUDGE_MODEL, (c) => c.source_type === 'filing')
+    : null;
+  const cheapLane = routeFilings
+    ? makeLane('news', model, (c) => c.source_type !== 'filing')
+    : makeLane('all', model, () => true);
+
+  /** Lane-local source_index -> index into sortedCandidates. */
+  const remap = (rows: LLMEvidenceRow[], lane: Lane, judgedBy: string): JudgedRow[] => {
+    const out: JudgedRow[] = [];
+    for (const row of rows) {
+      const si = row.source_index;
+      if (typeof si !== 'number' || si < 1 || si > lane.globalIndex.length) {
+        log.push(`[${ticker}] Dropping row: source_index ${JSON.stringify(si)} outside the ${lane.name} lane (${lane.globalIndex.length} sources)`);
+        continue;
+      }
+      out.push({ ...row, source_index: lane.globalIndex[si - 1] + 1, judgedBy });
+    }
+    return out;
+  };
+
+  const runOpenAiLane = async (lane: Lane): Promise<JudgedRow[]> => {
     const response = await openai.chat.completions.create({
       model,
       // A classifier must not sample. This call's verdict enum feeds derivePillarStatus,
@@ -561,46 +630,105 @@ Respond with JSON exactly in this shape:
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
+        { role: 'user', content: buildUserPrompt(lane.candidates) },
       ],
     });
     const raw = response.choices[0]?.message?.content ?? '{}';
     const parsed = JSON.parse(raw) as LLMResponse;
-    llmRows = Array.isArray(parsed.evidence) ? parsed.evidence : [];
-    log.push(`[${ticker}] LLM returned ${llmRows.length} rows for ${sortedCandidates.length} candidates x ${pillars.length} pillars`);
-  } catch (err) {
-    // DO NOT ADVANCE THE WATERMARK ON AN INFRASTRUCTURE FAILURE.
-    //
-    // `since` comes from last_scanned_at, so bumping it after a failed judge
-    // call tells the next run that everything in this batch was considered.
-    // Nothing re-reads it. The documents are not retried, not logged as
-    // skipped, and not counted anywhere — they simply never happened, and the
-    // hole is invisible because the pillar still shows evidence from before it.
-    //
-    // The window truncates to a DATE, so a failure and a recovery inside the
-    // same day are harmless. The expensive case is a failure on a day AFTER the
-    // last success: the OpenAI key ran dry mid-Friday 2026-08-14, and had the
-    // Monday 09:00 run also failed it would have stamped Monday's date and
-    // dropped Friday, Saturday and Sunday's filings and news for every tracked
-    // thesis, permanently.
-    //
-    // Only a 4xx that is a fact about THIS REQUEST justifies giving up on the
-    // batch — a malformed payload or one too large to send will fail the same
-    // way every hour forever. Auth, quota, rate limits, timeouts and 5xx are
-    // facts about the account or the network, and those get retried, which is
-    // what the hourly schedule is for.
+    return remap(Array.isArray(parsed.evidence) ? parsed.evidence : [], lane, model);
+  };
+
+  const runAnthropicLane = async (lane: Lane): Promise<JudgedRow[]> => {
+    const call = await judgeWithAnthropic(systemPrompt, buildUserPrompt(lane.candidates));
+    // Truncated output is unparseable JSON anyway; naming it makes the log say
+    // what actually happened instead of reporting a syntax error.
+    if (call.truncated) throw new Error('response hit max_tokens, the row set is incomplete');
+    const { rows, parseError } = parseJudgeJson<LLMEvidenceRow>(call.text);
+    if (parseError) throw new Error(`unparseable JSON: ${parseError}`);
+    return remap(rows, lane, FILING_JUDGE_MODEL);
+  };
+
+  const llmRows: JudgedRow[] = [];
+  let lanesAttempted = 0;
+  let lanesLost = 0;
+  // DO NOT ADVANCE THE WATERMARK ON AN INFRASTRUCTURE FAILURE.
+  //
+  // `since` comes from last_scanned_at, so bumping it after a failed judge
+  // call tells the next run that everything in this batch was considered.
+  // Nothing re-reads it. The documents are not retried, not logged as
+  // skipped, and not counted anywhere — they simply never happened, and the
+  // hole is invisible because the pillar still shows evidence from before it.
+  //
+  // The window truncates to a DATE, so a failure and a recovery inside the
+  // same day are harmless. The expensive case is a failure on a day AFTER the
+  // last success: the OpenAI key ran dry mid-Friday 2026-08-14, and had the
+  // Monday 09:00 run also failed it would have stamped Monday's date and
+  // dropped Friday, Saturday and Sunday's filings and news for every tracked
+  // thesis, permanently.
+  //
+  // Only a 4xx that is a fact about THIS REQUEST justifies giving up on the
+  // batch — a malformed payload or one too large to send will fail the same
+  // way every hour forever. Auth, quota, rate limits, timeouts and 5xx are
+  // facts about the account or the network, and those get retried, which is
+  // what the hourly schedule is for.
+  //
+  // With two lanes the rule is unchanged and applies per lane: one retryable
+  // loss anywhere holds the window open for BOTH, because a bumped watermark
+  // would strand that lane's documents just as permanently.
+  let holdWindowOpen = false;
+  const noteLaneLoss = (lane: Lane, err: unknown): void => {
     const status = (err as { status?: number } | null)?.status;
     const requestIsTheProblem = status === 400 || status === 404 || status === 413 || status === 422;
-    log.push(`[${ticker}] LLM error${status ? ` (${status})` : ''}: ${err instanceof Error ? err.message : String(err)}`
-      + (requestIsTheProblem ? ' — giving up on this batch' : ' — leaving the scan window open for a retry'));
-    if (requestIsTheProblem) await bumpLastScanned(db, thesisId);
+    log.push(`[${ticker}] ${lane.name} lane (${lane.model}) error${status ? ` (${status})` : ''}: ${err instanceof Error ? err.message : String(err)}`
+      + (requestIsTheProblem ? ' — giving up on these sources' : ' — leaving the scan window open for a retry'));
+    lanesLost++;
+    if (!requestIsTheProblem) holdWindowOpen = true;
+  };
+
+  if (filingLane && filingLane.candidates.length > 0) {
+    lanesAttempted++;
+    try {
+      const rows = await runAnthropicLane(filingLane);
+      llmRows.push(...rows);
+      log.push(`[${ticker}] filing lane (${FILING_JUDGE_MODEL}) returned ${rows.length} rows for ${filingLane.candidates.length} filings`);
+    } catch (err) {
+      // A bad parse or a failed call degrades to today's behaviour for these
+      // sources rather than dropping them. Silent evidence loss here already
+      // cost this product months of missed thesis breaks.
+      log.push(`[${ticker}] filing lane (${FILING_JUDGE_MODEL}) failed: ${err instanceof Error ? err.message : String(err)} — rerouting those filings to ${model}`);
+      try {
+        const rows = await runOpenAiLane(filingLane);
+        llmRows.push(...rows);
+        log.push(`[${ticker}] filing lane fallback (${model}) returned ${rows.length} rows`);
+      } catch (fallbackErr) {
+        noteLaneLoss(filingLane, fallbackErr);
+      }
+    }
+  }
+
+  if (cheapLane.candidates.length > 0) {
+    lanesAttempted++;
+    try {
+      const rows = await runOpenAiLane(cheapLane);
+      llmRows.push(...rows);
+      log.push(`[${ticker}] ${cheapLane.name} lane (${model}) returned ${rows.length} rows for ${cheapLane.candidates.length} sources`);
+    } catch (err) {
+      noteLaneLoss(cheapLane, err);
+    }
+  }
+
+  log.push(`[${ticker}] LLM returned ${llmRows.length} rows for ${sortedCandidates.length} candidates x ${pillars.length} pillars`);
+
+  // Every lane lost: nothing was judged, so this is today's total-failure path.
+  if (lanesAttempted > 0 && lanesLost === lanesAttempted) {
+    if (!holdWindowOpen) await bumpLastScanned(db, thesisId);
     return { evidenceAdded, statusChanges, breaches };
   }
 
   // Validate and build insert rows
   const toInsert: Record<string, unknown>[] = [];
   // E2: per-row metadata that never reaches the DB, aligned with toInsert by index.
-  const rowMeta: { confidence?: string; pillarClaim: string }[] = [];
+  const rowMeta: { confidence?: string; pillarClaim: string; judgedBy: string }[] = [];
   const validVerdicts = new Set(['supports', 'contradicts', 'neutral']);
   const validMaterialities = new Set(['material', 'context']);
 
@@ -668,7 +796,7 @@ Respond with JSON exactly in this shape:
       materiality = 'context';
     }
 
-    rowMeta.push({ confidence: typeof row.confidence === 'string' ? row.confidence : undefined, pillarClaim: pillar.claim });
+    rowMeta.push({ confidence: typeof row.confidence === 'string' ? row.confidence : undefined, pillarClaim: pillar.claim, judgedBy: row.judgedBy });
     toInsert.push({
       pillar_id: pillar.id,
       user_id: user_id,
@@ -697,7 +825,8 @@ Respond with JSON exactly in this shape:
     .map((r, i) => (needsEscalation({ materiality: r.materiality as string, confidence: rowMeta[i]?.confidence }) ? i : -1))
     .filter((i) => i >= 0)
     .slice(0, ESCALATION_CAP);
-  for (const r of toInsert) r.judged_by = model;
+  // Per-row, because two lanes can have judged this batch.
+  for (let i = 0; i < toInsert.length; i++) toInsert[i].judged_by = rowMeta[i].judgedBy;
   if (escalationIdx.length > 0) {
     const { actions, reviewed } = await reviewEscalations(
       openai,
@@ -854,8 +983,14 @@ Respond with JSON exactly in this shape:
     await runInvestigation(db, openai, trigger, log);
   }
 
-  // Always bump last_scanned_at
-  await bumpLastScanned(db, thesisId);
+  // Bump last_scanned_at, unless a lane was lost to something retryable: its
+  // sources were never judged, and advancing the watermark would strand them
+  // permanently. See the block above the lane calls.
+  if (holdWindowOpen) {
+    log.push(`[${ticker}] Leaving last_scanned_at where it was so the lost lane is retried.`);
+  } else {
+    await bumpLastScanned(db, thesisId);
+  }
 
   return { evidenceAdded, statusChanges, breaches };
 }

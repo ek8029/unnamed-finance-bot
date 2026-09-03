@@ -8,6 +8,7 @@ import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { FREE_THESIS_LIMIT } from '@/lib/thesis-entitlement';
 import { bumpThesisVersion } from '@/lib/thesis-version';
 import { triggerBackfill } from '@/lib/thesis-backfill-trigger';
+import { validateBreaksIf } from '@/lib/pillar-breaks-if';
 
 function parseTicker(raw: string): { ticker: string } | { error: string } {
   const ticker = raw.trim().toUpperCase();
@@ -286,7 +287,7 @@ export async function POST(
     }
     const { ticker } = parsed;
 
-    const body = await request.json() as { claim?: unknown };
+    const body = await request.json() as { claim?: unknown; breaks_if?: unknown };
     if (typeof body.claim !== 'string' || body.claim.trim().length === 0) {
       return NextResponse.json({ error: 'claim is required and must be a non-empty string' }, { status: 400 });
     }
@@ -294,6 +295,15 @@ export async function POST(
       return NextResponse.json({ error: 'claim must be 500 characters or fewer' }, { status: 400 });
     }
     const claim = body.claim.trim();
+
+    // A user-authored pillar with no kill criterion can never be contradicted:
+    // the scorer's judge only returns `contradicts` when a source advances the
+    // breaks_if condition. Every one of the 164 user-authored pillars in
+    // production shipped without one, so this is where that stops.
+    const breaksIf = validateBreaksIf(body.breaks_if);
+    if (!breaksIf.ok) {
+      return NextResponse.json({ error: breaksIf.error, field: 'breaks_if' }, { status: 400 });
+    }
 
     const { data: thesis, error: thesisError } = await supabase
       .from('theses')
@@ -333,6 +343,7 @@ export async function POST(
         thesis_id: thesis.id,
         user_id: user.id,
         claim,
+        breaks_if: breaksIf.value,
         origin: 'user',
         confirmed: true,
         status: 'unverified',

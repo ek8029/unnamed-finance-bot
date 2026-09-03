@@ -21,6 +21,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getUserTier } from '@/lib/tier';
 import { getHouseThesis } from '@/lib/content/house-theses';
 import { FREE_THESIS_LIMIT } from '@/lib/thesis-entitlement';
+import { validateBreaksIf } from '@/lib/pillar-breaks-if';
 
 const MAX_REASON = 300;
 
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    let body: { ticker?: unknown; pillarIds?: unknown; customReason?: unknown };
+    let body: { ticker?: unknown; pillarIds?: unknown; customReason?: unknown; customBreaksIf?: unknown };
     try { body = await request.json(); } catch { return NextResponse.json({ error: 'Bad request' }, { status: 400 }); }
     const ticker = typeof body.ticker === 'string' ? body.ticker.trim().toUpperCase() : '';
     const house = ticker ? getHouseThesis(ticker) : undefined;
@@ -48,6 +49,19 @@ export async function POST(request: Request) {
 
     if (chosen.length === 0 && !customReason) {
       return NextResponse.json({ error: 'Pick at least one reason' }, { status: 400 });
+    }
+
+    // Their own words still need their own kill criterion. Helm must not invent
+    // a test for a claim it did not write, but a pillar with no test at all is
+    // invisible to the scorer: the judge only returns `contradicts` when a
+    // source advances the breaks_if condition.
+    let customBreaksIf: string | null = null;
+    if (customReason) {
+      const checked = validateBreaksIf(body.customBreaksIf);
+      if (!checked.ok) {
+        return NextResponse.json({ error: checked.error, field: 'customBreaksIf' }, { status: 400 });
+      }
+      customBreaksIf = checked.value;
     }
 
     // Existing thesis with pillars => nothing to adopt over (never clobber user work).
@@ -149,14 +163,14 @@ export async function POST(request: Request) {
       sort_order: i,
     }));
 
-    // Their own words, when the house claims did not cover it. No kill
-    // criterion: Helm did not write this one and must not invent a test for it.
+    // Their own words, when the house claims did not cover it, with the kill
+    // criterion they wrote for it. Helm still does not invent the test.
     if (customReason) {
       rows.push({
         thesis_id: thesisId,
         user_id: user.id,
         claim: customReason,
-        breaks_if: null as unknown as string,
+        breaks_if: customBreaksIf as unknown as string,
         origin: 'user',
         confirmed: true,
         lifecycle: 'confirmed',

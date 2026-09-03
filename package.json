@@ -28,6 +28,7 @@
   },
   "homepage": "https://github.com/ek8029/unnamed-finance-bot#readme",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.123.0",
     "@hcaptcha/react-hcaptcha": "^2.0.2",
     "@heycatch/sdk": "^0.7.0",
     "@stripe/react-stripe-js": "^6.1.0",
