@@ -15,6 +15,15 @@
  * The ambiguous remainder goes to `lib/news-subject-model.ts`. Anything this
  * file is unsure about returns null, never 'about': a false 'about' here would
  * skip the model that could have caught it.
+ *
+ * Two different questions live here and must not be collapsed:
+ *   subjectPrefilter — is the company the article's SUBJECT? An accuracy
+ *     question, and its answer is stored on the row.
+ *   lowValueShape    — is this shape worth showing in a NEWS feed? An editorial
+ *     question, answered on the read path and never stored. A "Nvidia vs AMD:
+ *     which is the better buy" piece really is about both companies, so calling
+ *     it a mention would write a false statement into a column other surfaces
+ *     read.
  */
 
 import { isComparisonHeadline } from '@/lib/news-quality';
@@ -76,7 +85,6 @@ export function subjectPrefilter(input: {
   if (WRAPPER.test(title)) return { verdict: 'mention', reason: 'market wrapper' };
   if (LIST_PREFIX.test(title)) return { verdict: 'mention', reason: 'aggregator list' };
   if (isNameSeries(title)) return { verdict: 'mention', reason: 'name series' };
-  if (isComparisonHeadline(title)) return { verdict: 'mention', reason: 'comparison headline' };
   if (input.tickers && isTickerRoundup(title, input.tickers)) {
     return { verdict: 'mention', reason: 'ticker roundup' };
   }
@@ -85,5 +93,19 @@ export function subjectPrefilter(input: {
     .filter((n): n is string => !!n);
   if (isExEmployerMention(title, names)) return { verdict: 'mention', reason: 'ex-employer' };
 
+  return null;
+}
+
+/**
+ * Shapes that are genuinely about the company but do not belong in a feed of
+ * what happened. Opinion listicles are the whole category today: nothing
+ * occurred, and the headline puts a buy/sell recommendation in Helm's voice on
+ * a product that is not an RIA.
+ *
+ * Read-path only. Never stored, so reversing this judgment is one condition in
+ * one file rather than a reclassification of every row.
+ */
+export function lowValueShape(title: string): string | null {
+  if (isComparisonHeadline(title ?? '')) return 'comparison headline';
   return null;
 }

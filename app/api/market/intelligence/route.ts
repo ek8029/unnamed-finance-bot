@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { getSourceTier } from '@/lib/news-quality';
-import { subjectPrefilter } from '@/lib/news-subject';
+import { subjectPrefilter, lowValueShape } from '@/lib/news-subject';
 
 export async function GET(request: Request) {
   try {
@@ -95,6 +95,9 @@ export async function GET(request: Request) {
       // verdict on an unrecognised shape is shown, so this can only remove
       // headlines we can name a reason for.
       .filter(article => {
+        // Editorial, not accuracy: an opinion listicle can be genuinely about
+        // the company and still not belong in a feed of what happened.
+        if (lowValueShape(article.title ?? '')) return false;
         if (article.subject_verdict === 'mention') return false;
         if (article.subject_verdict === 'about') return true;
         if (!article.primary_ticker) return true;

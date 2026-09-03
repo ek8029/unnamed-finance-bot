@@ -1,6 +1,6 @@
 // tests/news-subject.test.ts
 import { describe, it, expect } from 'vitest';
-import { subjectPrefilter } from '@/lib/news-subject';
+import { subjectPrefilter, lowValueShape } from '@/lib/news-subject';
 import { detectPrimaryTicker, titleTargetsTicker } from '@/lib/news-primary-ticker';
 
 const call = (title: string, ticker = 'AMZN', companyName: string | null = 'Amazon.com Inc', tickers: string[] = [ticker]) =>
@@ -25,6 +25,11 @@ describe('subjectPrefilter', () => {
   it('drops the ex-employer shape', () => {
     expect(call('Ex-Nvidia engineer raises $30M for chip startup', 'NVDA', 'NVIDIA Corp')?.reason).toBe('ex-employer');
     expect(call('Former Amazon exec joins rival grocery chain')?.reason).toBe('ex-employer');
+  });
+
+  it('leaves comparison pieces alone: they ARE about the company', () => {
+    // Editorial calls live in lowValueShape, not in a stored accuracy verdict.
+    expect(call('BigBear.ai vs. Palantir: Which Defense AI Stock Is the Better Choice?', 'PLTR', 'Palantir Technologies')).toBeNull();
   });
 
   it('keeps real company news for the model to confirm', () => {
@@ -58,5 +63,18 @@ describe('company-name normalization', () => {
   it('returns null rather than guessing when nothing matches', () => {
     const names = new Map([['AMZN', 'Amazon.com Inc'], ['WMT', 'Walmart Inc']]);
     expect(detectPrimaryTicker('Grocery prices climb for a third month', null, ['WMT', 'AMZN'], names)).toBeNull();
+  });
+});
+
+describe('lowValueShape', () => {
+  it('flags opinion comparisons for the feed', () => {
+    expect(lowValueShape('BigBear.ai vs. Palantir: Which Defense AI Stock Is the Better Choice?')).toBe('comparison headline');
+    expect(lowValueShape('Better AI Infrastructure Stock: Nvidia vs. AMD')).toBe('comparison headline');
+  });
+
+  it('leaves reported events alone', () => {
+    expect(lowValueShape('AbbVie Reports Positive Phase 3 Results For Etentamig')).toBeNull();
+    expect(lowValueShape('Adobe names longtime exec Anil Chakravarthy CEO')).toBeNull();
+    expect(lowValueShape('Apple Q3 revenue beat vs estimates')).toBeNull();
   });
 });
