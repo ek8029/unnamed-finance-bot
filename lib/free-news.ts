@@ -421,7 +421,10 @@ async function classifyNewsSubjects(
   const mentions = [...groups.entries()]
     .filter(([k]) => k.startsWith('mention|'))
     .reduce((n, [, urls]) => n + urls.length, 0);
-  log.push(`[news] subject: ${written} classified, ${mentions} mentions (${forModel.length} needed the model)`);
+  // Counts are URLs, not rows: the table holds several copies of the same
+  // article (one per ticker feed it arrived on), and updating by URL cleans
+  // every copy from one model call. Measured 2026-09-03: ~3.6 rows per URL.
+  log.push(`[news] subject: ${written} urls classified, ${mentions} mentions (${forModel.length} needed the model)`);
 }
 
 /**
