@@ -21,6 +21,16 @@ export interface EscalationInput {
   materiality: 'material' | 'context';
   excerpt: string;
   why: string;
+  /**
+   * The pillar's own kill criterion. Optional because it was null for every
+   * user-authored pillar until 2026-09-03; without it the reviewer is asked to
+   * grade a contradicts verdict with no falsification criterion in front of it.
+   */
+  breaksIf?: string | null;
+  /** filing | form4 | xbrl | news | price_move. A 10-K is not a headline. */
+  sourceType?: string | null;
+  /** Publication date (YYYY-MM-DD). Stale news reads differently from a filing today. */
+  publishedAt?: string | null;
 }
 
 /** Pure: does this row's verdict warrant a second, stronger read? */
@@ -34,6 +44,8 @@ For each finding decide ONE action:
 - "keep": the connection is direct and the materiality grade is right.
 - "downgrade": genuinely relevant, but graded material when it is only informative background; demote to context.
 - "reject": the connection is indirect, hedged, thematic, or the excerpt does not actually bear on the pillar's causal claim.
+When a finding lists "Pillar breaks if", that is the holder's own falsification criterion: a contradicts verdict whose excerpt meets it is material, and one that does not meet it is at most context.
+A "Source" line gives the document type and date. A company filing states facts about itself; news reports or argues. Weigh the excerpt accordingly.
 Judge only what is in front of you. Do not invent facts. No em dashes.
 Respond with JSON exactly: { "reviews": [ { "index": <1-based finding number>, "action": "keep" | "downgrade" | "reject", "reason": "<one sentence>" } ] }`;
 
@@ -55,8 +67,15 @@ export async function reviewEscalations(
   let reviewed = true;
 
   const findings = rows
-    .map((r, i) =>
-      `Finding ${i + 1}\nPillar: ${r.pillarClaim}\nVerdict: ${r.verdict} (${r.materiality})\nExcerpt: "${r.excerpt}"\nJunior analyst's reasoning: ${r.why}`)
+    .map((r, i) => {
+      const lines = [`Finding ${i + 1}`, `Pillar: ${r.pillarClaim}`];
+      if (r.breaksIf) lines.push(`Pillar breaks if: ${r.breaksIf}`);
+      lines.push(`Verdict: ${r.verdict} (${r.materiality})`);
+      const provenance = [r.sourceType, r.publishedAt].filter(Boolean).join(', ');
+      if (provenance) lines.push(`Source: ${provenance}`);
+      lines.push(`Excerpt: "${r.excerpt}"`, `Junior analyst's reasoning: ${r.why}`);
+      return lines.join('\n');
+    })
     .join('\n\n');
 
   try {

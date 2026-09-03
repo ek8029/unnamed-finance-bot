@@ -728,7 +728,7 @@ Respond with JSON exactly in this shape:
   // Validate and build insert rows
   const toInsert: Record<string, unknown>[] = [];
   // E2: per-row metadata that never reaches the DB, aligned with toInsert by index.
-  const rowMeta: { confidence?: string; pillarClaim: string; judgedBy: string }[] = [];
+  const rowMeta: { confidence?: string; pillarClaim: string; breaksIf: string | null; judgedBy: string }[] = [];
   const validVerdicts = new Set(['supports', 'contradicts', 'neutral']);
   const validMaterialities = new Set(['material', 'context']);
 
@@ -796,7 +796,12 @@ Respond with JSON exactly in this shape:
       materiality = 'context';
     }
 
-    rowMeta.push({ confidence: typeof row.confidence === 'string' ? row.confidence : undefined, pillarClaim: pillar.claim, judgedBy: row.judgedBy });
+    rowMeta.push({
+      confidence: typeof row.confidence === 'string' ? row.confidence : undefined,
+      pillarClaim: pillar.claim,
+      breaksIf: pillar.breaks_if ?? null,
+      judgedBy: row.judgedBy,
+    });
     toInsert.push({
       pillar_id: pillar.id,
       user_id: user_id,
@@ -821,10 +826,30 @@ Respond with JSON exactly in this shape:
   // E2: two-speed judge. Material or low-confidence rows get a senior review
   // from the stronger model before they can touch status math. Reviewer can
   // keep, downgrade to context, or reject; failures keep the original verdict.
+  //
+  // Rows the filing lane judged are exempt. The reviewer was built when every
+  // row came from gpt-4o-mini, so it was the senior read; a Sonnet row already
+  // came from a stronger model that saw the whole document, while the reviewer
+  // holds one quote from it. Reviewing on strictly less information can only
+  // subtract, and in the LULU dry run it rejected a correct filing contradiction.
+  const filingLaneModel = filingLane?.model;
   const escalationIdx = toInsert
-    .map((r, i) => (needsEscalation({ materiality: r.materiality as string, confidence: rowMeta[i]?.confidence }) ? i : -1))
+    .map((r, i) =>
+      needsEscalation({ materiality: r.materiality as string, confidence: rowMeta[i]?.confidence }) &&
+      !(filingLaneModel && rowMeta[i]?.judgedBy === filingLaneModel)
+        ? i
+        : -1,
+    )
     .filter((i) => i >= 0)
     .slice(0, ESCALATION_CAP);
+  if (filingLaneModel) {
+    const exempt = toInsert.filter(
+      (r, i) =>
+        needsEscalation({ materiality: r.materiality as string, confidence: rowMeta[i]?.confidence }) &&
+        rowMeta[i]?.judgedBy === filingLaneModel,
+    ).length;
+    if (exempt > 0) log.push(`[${ticker}] ${exempt} ${filingLaneModel} row(s) skipped escalation`);
+  }
   // Per-row, because two lanes can have judged this batch.
   for (let i = 0; i < toInsert.length; i++) toInsert[i].judged_by = rowMeta[i].judgedBy;
   if (escalationIdx.length > 0) {
@@ -832,8 +857,11 @@ Respond with JSON exactly in this shape:
       openai,
       escalationIdx.map((i) => ({
         pillarClaim: rowMeta[i].pillarClaim,
+        breaksIf: rowMeta[i].breaksIf,
         verdict: toInsert[i].verdict as 'supports' | 'contradicts' | 'neutral',
         materiality: toInsert[i].materiality as 'material' | 'context',
+        sourceType: toInsert[i].source_type as string,
+        publishedAt: (toInsert[i].source_published_at as string | null)?.slice(0, 10) ?? null,
         excerpt: toInsert[i].excerpt as string,
         why: toInsert[i].why as string,
       })),

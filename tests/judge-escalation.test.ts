@@ -70,6 +70,20 @@ describe('reviewEscalations', () => {
     const { actions } = await reviewEscalations(ai, ROWS, []);
     expect(actions).toEqual(['keep', 'keep']);
   });
+  it('sends the kill criterion and source provenance when present, omits the lines when not', async () => {
+    const ai = mockOpenAI(JSON.stringify({ reviews: [] }));
+    await reviewEscalations(ai, [
+      { ...ROWS[0], breaksIf: 'Gross margin falls below 40% for two quarters', sourceType: 'filing', publishedAt: '2026-08-14' },
+      ROWS[1],
+    ], []);
+    const create = (ai.chat.completions.create as unknown as ReturnType<typeof vi.fn>);
+    const sent = create.mock.calls[0][0].messages[1].content as string;
+    expect(sent).toContain('Pillar breaks if: Gross margin falls below 40% for two quarters');
+    expect(sent).toContain('Source: filing, 2026-08-14');
+    // Finding 2 carries neither, so neither label may appear twice.
+    expect(sent.match(/Pillar breaks if:/g)).toHaveLength(1);
+    expect(sent.match(/^Source:/gm)).toHaveLength(1);
+  });
   it('empty input short-circuits without a call', async () => {
     const ai = mockOpenAI(null, true);
     const { actions, reviewed } = await reviewEscalations(ai, [], []);
