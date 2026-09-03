@@ -192,7 +192,7 @@ export async function GET(request: Request) {
       const marketResults = await Promise.allSettled([
         refreshMarketPrices(serviceClient, log),
         enrichMarketData(serviceClient, log),
-        refreshMarketNews(serviceClient, log, { classifyMacro: true }),
+        refreshMarketNews(serviceClient, log, { classifyMacro: true, classifySubjects: true }),
       ]);
 
       const marketNames = ['prices', 'enrich', 'news'] as const;

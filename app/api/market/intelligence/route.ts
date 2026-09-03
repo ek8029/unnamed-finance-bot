@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { getSourceTier } from '@/lib/news-quality';
+import { subjectPrefilter } from '@/lib/news-subject';
 
 export async function GET(request: Request) {
   try {
@@ -55,8 +56,10 @@ export async function GET(request: Request) {
       newsQuery.or(`primary_ticker.in.(${userTickers.join(',')}),primary_ticker.is.null`);
     }
 
+    // Pull more than we show: mentions are dropped below, and a feed that
+    // fetched exactly 20 would go short by however many were filtered.
     const [newsResult, eventsResult] = await Promise.all([
-      newsQuery.limit(20),
+      newsQuery.limit(60),
       (userTickers && userTickers.length > 0
         ? supabase
             .from('market_events')
@@ -84,7 +87,23 @@ export async function GET(request: Request) {
       if (seenUrls.has(key)) return false;
       seenUrls.add(key);
       return true;
-    });
+    })
+      // Drop articles that only MENTION their ticker (an ex-employer, a rival,
+      // a market wrap that lists the company). `subject_verdict` is written at
+      // ingest by migration 068; the prefilter re-runs here so the rows written
+      // before that existed get the same treatment without a backfill. A null
+      // verdict on an unrecognised shape is shown, so this can only remove
+      // headlines we can name a reason for.
+      .filter(article => {
+        if (article.subject_verdict === 'mention') return false;
+        if (article.subject_verdict === 'about') return true;
+        if (!article.primary_ticker) return true;
+        return !subjectPrefilter({
+          title: article.title ?? '',
+          ticker: article.primary_ticker,
+          tickers: article.tickers ?? [],
+        });
+      });
 
     const news = dedupedNews.map(article => {
       // Use primary_ticker for relevance — the article's actual subject,

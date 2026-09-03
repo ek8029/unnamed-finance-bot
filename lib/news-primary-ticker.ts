@@ -21,7 +21,11 @@ function normalizeCompanyName(name: string): string {
   if (!name) return '';
   return name
     .toUpperCase()
-    .replace(/[,.]/g, '')
+    // Punctuation becomes a SEPARATOR, not nothing. Deleting it turned
+    // "Amazon.com Inc" into AMAZONCOM, which matches no headline, so every
+    // Amazon article was invisible to name matching and only got tagged by
+    // the single-ticker shortcut below. Measured 2026-09-03.
+    .replace(/[,.]/g, ' ')
     .replace(/\b(INC|INCORPORATED|CORP|CORPORATION|CO|COMPANY|LTD|LIMITED|PLC|HOLDINGS|HLDGS|CLASS [A-Z]|NV|SA|AG|SE)\b/g, '')
     .trim()
     .split(/\s+/)[0] || '';

@@ -13,6 +13,8 @@
 
 import { scoreSentiment } from '@/lib/market-classify';
 import { detectPrimaryTicker } from '@/lib/news-primary-ticker';
+import { subjectPrefilter } from '@/lib/news-subject';
+import { classifySubjects, SUBJECT_MODEL } from '@/lib/news-subject-model';
 import { getRecentFilings } from '@/lib/edgar';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import OpenAI from 'openai';
@@ -218,7 +220,7 @@ export async function refreshRssNews(
   supabase: AnyClient,
   log: string[],
   tickers: string[],
-  options?: { classifyMacro?: boolean },
+  options?: { classifyMacro?: boolean; classifySubjects?: boolean },
 ): Promise<number> {
   const unique = [...new Set(tickers.map(t => t.toUpperCase()))]
     .filter(t => !t.includes('-USD'))
@@ -341,6 +343,16 @@ export async function refreshRssNews(
   }
 
 
+  // Is each article ABOUT its primary ticker, or does it only mention the
+  // company? Cron-only, same posture as the macro classifier below.
+  if (options?.classifySubjects) {
+    await classifyNewsSubjects(supabase, log, inserts, tickerNameMap);
+    // Rows the request-path refresh inserted, or that a classifier outage
+    // skipped, would otherwise never get a verdict. Bounded sweep, so the cost
+    // of catching up can never run away.
+    await sweepUnclassifiedSubjects(supabase, log, 150);
+  }
+
   // LLM classification is cron-only. Request-path callers (POST /api/market/news/refresh) must never trigger it.
   if (options?.classifyMacro) {
     const macroCandidates = inserts
@@ -350,6 +362,105 @@ export async function refreshRssNews(
   }
   log.push(`[news] Inserted ${inserts.length} new articles (${batch.length - newArticles.length} duplicates, ${newArticles.length - inserts.length} low-signal skipped)`);
   return inserts.length;
+}
+
+// ── Subject classifier ──
+
+/**
+ * Write an aboutness verdict for the rows just inserted. Free shape rules
+ * first (they also save a model call), claude-haiku on the remainder.
+ *
+ * Everything here is best-effort: an unwritten verdict stays NULL, and NULL is
+ * always shown. The worst case is today's behaviour, not an empty feed.
+ */
+async function classifyNewsSubjects(
+  supabase: AnyClient,
+  log: string[],
+  inserts: { url: string; title: string; summary: string | null; primary_ticker: string | null; tickers: string[] }[],
+  nameMap: Map<string, string>,
+): Promise<void> {
+  const candidates = inserts.filter((r) => r.primary_ticker && r.url);
+  if (candidates.length === 0) return;
+
+  // (verdict, decided-by) -> urls. Two to eight groups, so a handful of writes.
+  const groups = new Map<string, string[]>();
+  const addTo = (verdict: string, by: string, url: string) => {
+    const key = `${verdict}|${by}`;
+    const list = groups.get(key);
+    if (list) list.push(url);
+    else groups.set(key, [url]);
+  };
+
+  const forModel: { key: string; title: string; summary: string | null; ticker: string; companyName: string | null }[] = [];
+  for (const r of candidates) {
+    const ticker = (r.primary_ticker as string).toUpperCase();
+    const companyName = nameMap.get(ticker) ?? null;
+    const pre = subjectPrefilter({ title: r.title, ticker, companyName, tickers: r.tickers });
+    if (pre) addTo('mention', pre.reason, r.url);
+    else forModel.push({ key: r.url, title: r.title, summary: r.summary, ticker, companyName });
+  }
+
+  const modelVerdicts = await classifySubjects(forModel, log);
+  for (const [url, verdict] of modelVerdicts) addTo(verdict, SUBJECT_MODEL, url);
+
+  let written = 0;
+  for (const [key, urls] of groups) {
+    const [verdict, by] = key.split('|');
+    const { error } = await supabase
+      .from('market_news')
+      .update({ subject_verdict: verdict, subject_verdict_by: by })
+      .in('url', urls);
+    if (error) {
+      // Migration 068 not applied yet, or a transient failure. Either way the
+      // rows keep a null verdict and stay visible.
+      log.push(`[news] subject verdict not stored (${error.message})`);
+      return;
+    }
+    written += urls.length;
+  }
+  const mentions = [...groups.entries()]
+    .filter(([k]) => k.startsWith('mention|'))
+    .reduce((n, [, urls]) => n + urls.length, 0);
+  log.push(`[news] subject: ${written} classified, ${mentions} mentions (${forModel.length} needed the model)`);
+}
+
+/**
+ * Catch up on recent rows that carry no verdict yet: anything the request-path
+ * refresh inserted, or that a classifier outage skipped. Capped per run, and
+ * only reaches back three days, because the feed never shows older news.
+ */
+async function sweepUnclassifiedSubjects(
+  supabase: AnyClient,
+  log: string[],
+  limit: number,
+): Promise<void> {
+  const { data, error } = await supabase
+    .from('market_news')
+    .select('url, title, summary, primary_ticker, tickers')
+    .is('subject_verdict', null)
+    .not('primary_ticker', 'is', null)
+    .not('url', 'is', null)
+    .gte('published_at', new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString())
+    .order('published_at', { ascending: false })
+    .limit(limit);
+  // Migration 068 not applied yet: `subject_verdict` does not exist, so the
+  // filter errors. Nothing to do, and nothing breaks.
+  if (error || !data || data.length === 0) return;
+
+  const tickers = [...new Set((data as { primary_ticker: string }[]).map((r) => r.primary_ticker.toUpperCase()))];
+  const nameMap = new Map<string, string>();
+  if (tickers.length > 0) {
+    const { data: secs } = await supabase.from('securities').select('ticker, security_name').in('ticker', tickers);
+    for (const s of (secs || []) as { ticker: string; security_name: string | null }[]) {
+      if (s.security_name) nameMap.set(s.ticker.toUpperCase(), s.security_name);
+    }
+  }
+  await classifyNewsSubjects(
+    supabase,
+    log,
+    data as { url: string; title: string; summary: string | null; primary_ticker: string | null; tickers: string[] }[],
+    nameMap,
+  );
 }
 
 // ── Macro-mover classifier ──
