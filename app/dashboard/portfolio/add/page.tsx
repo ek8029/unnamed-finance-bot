@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ManualPortfolioForm } from '@/components/manual-portfolio-form';
 import { PortfolioImport } from '@/components/portfolio-import';
 import { ManualHoldingsEditor } from '@/components/manual-holdings-editor';
+import { ManualAccountType } from '@/components/manual-account-type';
 import type { ImportedRow } from '@/lib/portfolio-import';
 
 export default function AddHoldingsPage() {
@@ -41,6 +42,10 @@ export default function AddHoldingsPage() {
           </p>
         </div>
       </div>
+
+      {/* Asked before the list, because the answer changes what every number
+          below it means for tax. */}
+      <ManualAccountType />
 
       {/* Settings has linked here as "Add or edit" all along; this is the edit
           half. It renders nothing when there is nothing hand-entered. */}

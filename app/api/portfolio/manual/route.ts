@@ -225,15 +225,24 @@ export async function GET() {
 
     const { data: account } = await serviceClient
       .from('linked_accounts')
-      .select('id')
+      .select('id, account_subtype')
       .eq('user_id', user.id)
       .eq('institution_id', institution.id)
       .eq('source', 'manual')
       .maybeSingle();
 
     if (!account) {
-      return NextResponse.json({ holdings: [] });
+      return NextResponse.json({ holdings: [], accountType: null });
     }
+
+    // Back to the key the UI offers, not the stored subtype. An account made
+    // before this existed has subtype null, which is reported as null rather
+    // than "taxable": nobody has actually answered the question yet.
+    const accountType = account.account_subtype
+      ? Object.keys(MANUAL_ACCOUNT_TYPES).find(
+          (k) => MANUAL_ACCOUNT_TYPES[k].subtype === account.account_subtype,
+        ) ?? null
+      : null;
 
     const { data: holdings } = await serviceClient
       .from('holdings')
@@ -251,6 +260,7 @@ export async function GET() {
         currentPrice: Number(h.current_price),
         totalValue: Number(h.total_value),
       })),
+      accountType,
     });
   } catch (error) {
     console.error('[manual-portfolio] GET error:', error);
@@ -274,6 +284,7 @@ export async function GET() {
 async function manualAccountId(
   serviceClient: Awaited<ReturnType<typeof createServiceClient>>,
   userId: string,
+  opts: { create?: boolean } = {},
 ): Promise<string | null> {
   const { data: institution } = await serviceClient
     .from('institutions')
@@ -289,7 +300,26 @@ async function manualAccountId(
     .eq('institution_id', institution.id)
     .eq('source', 'manual')
     .maybeSingle();
-  return account?.id ?? null;
+  if (account) return account.id;
+  if (!opts.create) return null;
+
+  // Same row POST would have made on the first save. Created early only when
+  // the user has said something about the book, so it is never a stray.
+  const { data: made, error } = await serviceClient
+    .from('linked_accounts')
+    .insert({
+      user_id: userId,
+      institution_id: institution.id,
+      account_name: 'Manual Portfolio',
+      account_type: 'brokerage',
+      source: 'manual',
+      is_active: true,
+      sync_status: 'healthy',
+    })
+    .select('id')
+    .maybeSingle();
+  if (error) console.error('[manual-portfolio] create account error:', error);
+  return made?.id ?? null;
 }
 
 /**
@@ -353,14 +383,62 @@ export async function DELETE(req: NextRequest) {
   }
 }
 
-/** PATCH /api/portfolio/manual — change the share count or cost basis of one lot. */
+/**
+ * What kind of account the hand-entered book is. Nothing downstream reads this
+ * as a label: `isRetirementAccount` turns it into one boolean that decides
+ * whether a loss is harvestable, whether the position reaches Form 8949, and
+ * whether the Tax Center counts it at all. A manual account had no subtype and
+ * a name matching nothing, so every hand-entered book was assumed taxable and
+ * people holding an IRA were shown a harvest they cannot take.
+ *
+ * The name is set alongside the subtype on purpose. `isRetirementAccount` falls
+ * back to a name regex precisely because Plaid so often leaves subtype null, and
+ * a book that reads "Manual Portfolio (Roth IRA)" is right by either path.
+ */
+const MANUAL_ACCOUNT_TYPES: Record<string, { subtype: string; label: string }> = {
+  taxable: { subtype: 'brokerage', label: 'Manual Portfolio' },
+  traditional_ira: { subtype: 'traditional_ira', label: 'Manual Portfolio (Traditional IRA)' },
+  roth_ira: { subtype: 'roth_ira', label: 'Manual Portfolio (Roth IRA)' },
+  '401k': { subtype: '401k', label: 'Manual Portfolio (401k)' },
+  hsa: { subtype: 'hsa', label: 'Manual Portfolio (HSA)' },
+  '529': { subtype: '529', label: 'Manual Portfolio (529)' },
+};
+
+/** PATCH /api/portfolio/manual — change one lot, or the account type of the book. */
 export async function PATCH(req: NextRequest) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const body = await req.json().catch(() => null) as { id?: string; shares?: unknown; costBasis?: unknown } | null;
+    const body = await req.json().catch(() => null) as {
+      id?: string; shares?: unknown; costBasis?: unknown; accountType?: unknown;
+    } | null;
+
+    // Setting the account type addresses the book, not a lot, so it carries no
+    // id. Done before the id check so it does not need a holding to exist:
+    // someone should be able to say "this is my Roth" before typing anything in.
+    if (body?.accountType !== undefined && !body.id) {
+      const choice = MANUAL_ACCOUNT_TYPES[String(body.accountType)];
+      if (!choice) return NextResponse.json({ error: 'Unknown account type' }, { status: 400 });
+
+      const serviceClient = await createServiceClient();
+      const accountId = await manualAccountId(serviceClient, user.id, { create: true });
+      if (!accountId) return NextResponse.json({ error: 'No manual portfolio' }, { status: 404 });
+
+      const { error } = await serviceClient
+        .from('linked_accounts')
+        .update({ account_subtype: choice.subtype, account_name: choice.label })
+        .eq('id', accountId)
+        .eq('user_id', user.id)
+        .eq('source', 'manual');
+      if (error) {
+        console.error('[manual-portfolio] account type error:', error);
+        return NextResponse.json({ error: 'Failed to set account type' }, { status: 500 });
+      }
+      return NextResponse.json({ updated: true, accountType: String(body.accountType) });
+    }
+
     if (!body?.id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
     const patch: Record<string, number | null> = {};
