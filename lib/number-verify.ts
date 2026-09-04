@@ -22,9 +22,25 @@
 /** ISO dates first: 2026-09-04 is three integers to a naive tokenizer. */
 const ISO_DATE = /\b\d{4}-\d{2}-\d{2}\b/g;
 
-/** $1,234.56 | 19% | 2.15B | -0.48 | 3 */
+/** SEC form names are not quantities. "10K filings" is not ten thousand of
+ *  anything, and this corpus is full of them. */
+const SEC_FORM = /\b(10[-\s]?[KQ]|8[-\s]?K|S[-\s]?1|13[FDG]|424B\d|20[-\s]?F|6[-\s]?K|11[-\s]?K)\b/gi;
+
+/** Durations are not quantities under test. "52-week high" and "three-year
+ *  average" describe a window, and the facts write them glued ("52W High"), so
+ *  leaving them in produces a mismatch on a number nobody asserted. */
+const DURATION = /\b\d{1,3}[-\s]?(?:w|wk|week|month|mo|year|yr|day|quarter|q)s?\b/gi;
+
+/** Index names carry a number that is part of the name. Nobody asserts 500
+ *  about anything by writing "the S&P 500". */
+const INDEX_NAME =
+  /\b(s&p\s?500|s&p\s?400|nasdaq\s?(?:100|composite)|russell\s?(?:1000|2000|3000)|dow\s?(?:30|jones)|ftse\s?100|nikkei\s?225)\b/gi;
+
+/** $1,234.56 | 19% | 2.15B | -0.48 | 3
+ *  A comma only continues a number when a digit follows it, so "$479, and"
+ *  yields 479 rather than a token that ends on a comma. */
 const TOKEN =
-  /([-+]?)\$?\s?(\d[\d,]*(?:\.\d+)?)\s*(%|bps|[BMKT]\b|billion|million|thousand|trillion)?/gi;
+  /([-+]?)\$?\s?(\d(?:\d|,(?=\d))*(?:\.\d+)?)\s*(%|bps|[BMKT]\b|billion|million|thousand|trillion)?/gi;
 
 const MULTIPLIER: Record<string, number> = {
   k: 1e3, thousand: 1e3,
@@ -58,10 +74,23 @@ function toleranceFor(digits: string, multiplier: number): number {
 
 /** Every figure in a block of text. */
 export function extractFigures(text: string): Figure[] {
-  const clean = (text ?? '').replace(ISO_DATE, ' ');
+  const clean = (text ?? '').replace(ISO_DATE, ' ').replace(SEC_FORM, ' ').replace(DURATION, ' ').replace(INDEX_NAME, ' ');
   const out: Figure[] = [];
   for (const m of clean.matchAll(TOKEN)) {
     const [raw, sign, digits, unitRaw] = m;
+    // A number has to stand on its own. Citation ids are UUIDs, and a fragment
+    // like "...a1da-c9cb2b76e792" hands this tokenizer a "0b", which it would
+    // read as zero BILLION and whose tolerance (half a unit = 500,000,000) then
+    // swallows every dollar figure in the answer. Measured 2026-09-04: that is
+    // exactly how a derived $620,000 passed a check it should have failed.
+    // The pattern's optional whitespace can pull a space onto either end of the
+    // match, so measure the neighbours around the TRIMMED token.
+    const lead = raw.length - raw.replace(/^\s+/, '').length;
+    const from = (m.index ?? 0) + lead;
+    const to = from + raw.trim().length;
+    const before = from > 0 ? clean[from - 1] : '';
+    const after = clean[to] ?? '';
+    if (/[A-Za-z0-9]/.test(before) || /[A-Za-z0-9]/.test(after)) continue;
     const unit = (unitRaw ?? '').toLowerCase();
     const isPercent = unit === '%' || unit === 'bps';
     const multiplier = MULTIPLIER[unit] ?? 1;

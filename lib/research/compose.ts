@@ -94,7 +94,8 @@ export function formatFinding(f: Finding): string {
   return line;
 }
 
-function formatContext(ctx: ResearchContext): string {
+/** Exported so a probe can check the exact block the model is given. */
+export function formatContext(ctx: ResearchContext): string {
   const parts: string[] = [];
 
   if (ctx.portfolio) {

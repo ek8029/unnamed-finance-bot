@@ -97,3 +97,55 @@ describe('sign handling', () => {
     expect(verifyNumbers('The stock is -0.50% on the day.', FACTS2).ok).toBe(true);
   });
 });
+
+describe('tokens embedded in words and ids', () => {
+  it('ignores hex fragments inside citation ids', () => {
+    // "catch:8c4e41b6-cbce-4024-a1da-c9cb2b76e792" used to yield a "0b" token,
+    // read as zero billion, whose tolerance swallowed every dollar figure.
+    const facts = 'FINDINGS\n[catch:8c4e41b6-cbce-4024-a1da-c9cb2b76e792] NVDA pillar\nTotal value $1,294,883';
+    const c = verifyNumbers('Technology is about $620,000 of the book.', facts);
+    expect(c.ok).toBe(false);
+    expect(c.unverified[0].raw).toContain('620,000');
+  });
+
+  it('still reads a real suffixed figure', () => {
+    expect(verifyNumbers('Market cap $2.15B.', 'Market Cap: $2,150,000,000').ok).toBe(true);
+  });
+
+  it('ignores a number glued to letters', () => {
+    expect(extractFigures('Q3 revenue and 10K filings').map((f) => f.raw)).toEqual([]);
+  });
+});
+
+describe('durations are not figures', () => {
+  it('ignores a 52-week window on both sides', () => {
+    // The facts write "52W High: $195.10"; the model writes "52-week high".
+    // Neither is asserting the number 52 about the company.
+    expect(verifyNumbers('Trading near its 52-week high of $195.10.', '52W High: $195.10').ok).toBe(true);
+  });
+
+  it('ignores three-year and quarterly phrasing', () => {
+    expect(extractFigures('over the last 3 years and 2 quarters').map((f) => f.raw)).toEqual([]);
+  });
+
+  it('still checks a real figure in the same sentence', () => {
+    expect(verifyNumbers('Over 3 years revenue grew 40%.', 'Revenue Growth YoY: 19.32%').ok).toBe(false);
+  });
+});
+
+describe('index names and trailing commas', () => {
+  it('does not read the 500 in S&P 500 as a figure', () => {
+    expect(verifyNumbers('Your book is not compared to the S&P 500 here.', 'Total value $1,294,883').ok).toBe(true);
+    expect(verifyNumbers('The Nasdaq 100 and Russell 2000 are not in the data.', 'Total value $1,294,883').ok).toBe(true);
+  });
+
+  it('does not let a number end on a comma', () => {
+    const [f] = extractFigures('unrealized +$479, and cost basis $873,226');
+    expect(f.raw).toBe('+$479');
+    expect(f.value).toBe(479);
+  });
+
+  it('still reads a full comma-grouped number', () => {
+    expect(extractFigures('$873,226')[0].value).toBe(873226);
+  });
+});
