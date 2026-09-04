@@ -37,7 +37,7 @@ export default function AddHoldingsPage() {
         <div className="flex items-start gap-2 mt-4 p-3 rounded-lg bg-[var(--color-bg-inset)] border border-[var(--color-border-subtle)]">
           <span className="text-[var(--color-gold)] text-[15px] mt-0.5 shrink-0">&#9432;</span>
           <p className="text-[14px] text-[var(--color-text-muted)] leading-relaxed" style={{ fontFamily: 'var(--font-mono)' }}>
-            Manual holdings let you see positions immediately without waiting for brokerage sync. If you connect a brokerage via Plaid that holds the same tickers, the manual entries will be automatically replaced with your real brokerage data on the next sync.
+            Manual holdings let you see positions immediately without waiting for brokerage sync. They stay yours to manage: connecting a brokerage later does not remove them, so if that broker already holds the same ticker, remove the hand-entered copy above to avoid counting one position twice.
           </p>
         </div>
       </div>

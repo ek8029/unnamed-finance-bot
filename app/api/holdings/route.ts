@@ -55,7 +55,8 @@ export async function GET() {
         .from('holdings')
         .select(`
           *,
-          security:securities(security_name, asset_class, sector, exchange)
+          security:securities(security_name, asset_class, sector, exchange),
+          account:linked_accounts(source)
         `)
         .eq('user_id', user.id)
         .order('total_value', { ascending: false }),
@@ -103,6 +104,12 @@ export async function GET() {
       day_change_pct: number | null;
       sector?: string;
       asset_class?: string;
+      /** Lots in this position that the user typed in, and lots a broker sent.
+       *  Both can be true at once: the same ticker held at a synced brokerage
+       *  and entered by hand is one aggregated position built from two sources,
+       *  and the UI has to be able to say so. */
+      hasManualLot: boolean;
+      hasSyncedLot: boolean;
     }>();
 
     for (const holding of holdings || []) {
@@ -126,6 +133,7 @@ export async function GET() {
             : null;
       const costBasis = rowBasis ?? 0;
       const rowBasisMissing = rowBasis == null || !Number.isFinite(rowBasis);
+      const rowIsManual = holding.account?.source === 'manual';
 
       if (existing) {
         existing.ids.push(holding.id);
@@ -133,6 +141,8 @@ export async function GET() {
         existing.totalValue += value;
         existing.totalCostBasis += rowBasisMissing ? 0 : costBasis;
         if (rowBasisMissing) existing.basisMissing = true;
+        if (rowIsManual) existing.hasManualLot = true;
+        else existing.hasSyncedLot = true;
         // Use latest price
         if (Number(holding.current_price || 0) > 0) {
           existing.current_price = Number(holding.current_price);
@@ -151,6 +161,8 @@ export async function GET() {
           totalValue: value,
           totalCostBasis: rowBasisMissing ? 0 : costBasis,
           basisMissing: rowBasisMissing,
+          hasManualLot: rowIsManual,
+          hasSyncedLot: !rowIsManual,
           current_price: Number(holding.current_price || 0),
           day_change_pct: holding.day_change_pct != null ? Number(holding.day_change_pct) : null,
           // Look through leveraged/single-stock products to their underlying
@@ -194,6 +206,12 @@ export async function GET() {
         /** At least one lot in this position has no cost basis from the broker,
          *  so P/L cannot be computed for it. The UI shows a dash, not a zero. */
         basis_incomplete: agg.basisMissing,
+        /** Every lot behind this position was typed in by hand. Prices are
+         *  live, but the share count is only as right as what was entered. */
+        is_manual: agg.hasManualLot && !agg.hasSyncedLot,
+        /** Held at a synced brokerage AND entered by hand. The figures below
+         *  are the sum of both, which is usually one position counted twice. */
+        mixed_source: agg.hasManualLot && agg.hasSyncedLot,
       };
     }).sort((a, b) => b.total_value - a.total_value);
 

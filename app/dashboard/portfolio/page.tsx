@@ -61,6 +61,36 @@ function TickerIcon({ ticker }: { ticker: string }) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Where a position came from                                         */
+/* ------------------------------------------------------------------ */
+/** A hand-entered position looks identical to a synced one, which hides both
+ *  that nobody verified the share count and that this is a row the user is
+ *  allowed to edit. When the same ticker is held both ways the figures are the
+ *  sum of the two, so that case gets a louder chip than the plain one. */
+function SourceChip({ manual, mixed, show }: { manual?: boolean; mixed?: boolean; show?: boolean }) {
+  // A label on every row says nothing. When a book is entirely hand-entered
+  // there is no distinction to draw, so the plain chip is suppressed and only
+  // the double-counting warning survives.
+  if (mixed !== true && (!manual || !show)) return null;
+  const label = mixed ? 'Typed in + synced' : 'Typed in';
+  const title = mixed
+    ? 'Held at a connected brokerage and also entered by hand. The shares and value shown are the sum of both.'
+    : 'You entered this position by hand. Prices are live; the share count is what you typed.';
+  return (
+    <span
+      title={title}
+      className={`shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] px-1.5 py-[1px] rounded border ${
+        mixed
+          ? 'text-[var(--color-negative)] border-[var(--color-negative)]/40'
+          : 'text-[var(--color-text-muted)] border-[var(--color-border-base)]'
+      }`}
+    >
+      {label}
+    </span>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Loading skeleton                                                   */
 /* ------------------------------------------------------------------ */
 function LoadingSkeleton() {
@@ -172,6 +202,7 @@ export default function PortfolioPage() {
     current_price: number; total_value: number; day_change_percentage: number | null;
     portfolio_allocation: number; sector?: string; asset_class?: string;
     cost_basis?: number; unrealised_gain?: number; basis_incomplete?: boolean;
+    is_manual?: boolean; mixed_source?: boolean;
   }[] = holdingsData.holdings ?? [];
 
   const allocation: { name: string; value: number; percentage: number }[] = holdingsData.allocation ?? [];
@@ -310,6 +341,12 @@ export default function PortfolioPage() {
   }, [holdings, sortKey, sortDir]);
 
   // Hooks that the old code used (must stay above early returns)
+  // Provenance is only worth showing when this book has both kinds of position.
+  const showSourceChips = useMemo(
+    () => holdings.some(h => h.is_manual || h.mixed_source) && holdings.some(h => !h.is_manual),
+    [holdings],
+  );
+
   const sortedByAllocation = useMemo(() => [...holdings].sort((a, b) => b.portfolio_allocation - a.portfolio_allocation), [holdings]);
   const sortedByDayChange = useMemo(() => [...holdings].sort((a, b) => (b.day_change_percentage ?? 0) - (a.day_change_percentage ?? 0)), [holdings]);
   // Top 2 gainers + top 2 losers for the "Today's movers" strip.
@@ -794,8 +831,11 @@ export default function PortfolioPage() {
                           {Number(h.shares.toFixed(2))} sh &middot; <PriceFlash value={h.current_price}>${h.current_price.toFixed(2)}</PriceFlash>
                         </span>
                       </div>
-                      <div className="text-[12px] sm:text-[14px] text-[var(--color-text-muted)] mt-0.5 truncate">
-                        {h.asset_name}
+                      <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+                        <span className="text-[12px] sm:text-[14px] text-[var(--color-text-muted)] truncate">
+                          {h.asset_name}
+                        </span>
+                        <SourceChip manual={h.is_manual} mixed={h.mixed_source} show={showSourceChips} />
                       </div>
                     </div>
                     <div className="text-right flex flex-col items-end gap-0.5 sm:gap-1">
@@ -1106,8 +1146,11 @@ export default function PortfolioPage() {
                         {/* NAME + sector */}
                         <td className="px-2 py-2">
                           <Link href={`/dashboard/holdings/${h.ticker}`} className="flex flex-col group rounded hover:bg-[var(--color-bg-elevated)]/50 -mx-1.5 px-1.5 py-1 transition-colors">
-                            <span className="text-[15px] text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] truncate max-w-[180px] transition-colors">
-                              {h.asset_name}
+                            <span className="flex items-center gap-1.5 min-w-0">
+                              <span className="text-[15px] text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] truncate max-w-[180px] transition-colors">
+                                {h.asset_name}
+                              </span>
+                              <SourceChip manual={h.is_manual} mixed={h.mixed_source} show={showSourceChips} />
                             </span>
                             {h.sector && (
                               <span className="font-mono text-[10px] text-[var(--color-text-muted)] truncate">

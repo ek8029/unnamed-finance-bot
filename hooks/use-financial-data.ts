@@ -69,6 +69,11 @@ interface Holding {
   /** At least one lot in this position has no cost basis from the broker, so
    *  P/L is unknowable. Render a dash, never a zero — a zero reads as flat. */
   basis_incomplete?: boolean;
+  /** Typed in rather than synced. Worth saying out loud: it tells the user
+   *  which rows they can edit, and which numbers nobody verified. */
+  is_manual?: boolean;
+  /** Same ticker held at a synced brokerage and entered by hand. */
+  mixed_source?: boolean;
 }
 
 interface NetWorthDataPoint {
