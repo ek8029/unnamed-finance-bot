@@ -42,6 +42,12 @@ export interface Figure {
   isPercent: boolean;
   /** Half a unit of the least significant digit the writer chose. */
   tolerance: number;
+  /** Whether a +/- was actually written. Prose carries direction in words
+   *  ("down 0.50%") far more often than in a sign, so an unsigned figure is
+   *  matched on magnitude alone. Measured 2026-09-04: enforcing sign on every
+   *  figure produced 3 false positives in 166 on /analyze, and every one was a
+   *  correct number whose direction sat in the verb. */
+  hasExplicitSign: boolean;
 }
 
 function toleranceFor(digits: string, multiplier: number): number {
@@ -64,6 +70,7 @@ export function extractFigures(text: string): Figure[] {
     const value = (sign === '-' ? -n : n) * multiplier;
     out.push({
       raw: raw.trim(),
+      hasExplicitSign: sign === '-' || sign === '+',
       // bps and percent are the same axis: 50 bps is 0.5%.
       value: unit === 'bps' ? value / 100 : value,
       isPercent,
@@ -80,7 +87,9 @@ function traces(f: Figure, catalogue: Figure[]): boolean {
     // The writer's precision sets the band; the catalogue's own precision widens
     // it, since 19.32 written as 19 is correct and so is 19 written as 19.00.
     if (Math.abs(Math.abs(c.value) - Math.abs(f.value)) <= f.tolerance + c.tolerance) {
-      // Sign has to agree when both carry one.
+      // Sign is only binding when the writer actually wrote one. "down 0.50%"
+      // against a fact of -0.5045% is correct; "+0.50%" against it is not.
+      if (!f.hasExplicitSign) return true;
       if (Math.sign(c.value) === Math.sign(f.value) || f.value === 0) return true;
     }
   }
@@ -93,6 +102,10 @@ export interface NumberCheck {
   unverified: Figure[];
   /** How many figures were checked, for a rate in the log. */
   checked: number;
+  /** For each unverified figure, the closest thing in the facts. A flag that
+   *  says "0.50% traces to nothing, nearest fact is 0.55%" is a diagnosis; one
+   *  that only says "traces to nothing" is a chore. */
+  nearest: { figure: string; nearest: string | null; delta: number | null }[];
 }
 
 /**
@@ -109,12 +122,23 @@ export function verifyNumbers(output: string, facts: string): NumberCheck {
   // Dedupe by how it was written, so one repeated figure is one finding.
   const seen = new Set<string>();
   const unique = unverified.filter((f) => (seen.has(f.raw) ? false : (seen.add(f.raw), true)));
-  return { ok: unique.length === 0, unverified: unique, checked: figures.length };
+  const nearest = unique.map((f) => {
+    let best: Figure | null = null;
+    let bestDelta = Infinity;
+    for (const c of catalogue) {
+      if (c.isPercent !== f.isPercent) continue;
+      const d = Math.abs(Math.abs(c.value) - Math.abs(f.value));
+      if (d < bestDelta) { bestDelta = d; best = c; }
+    }
+    return { figure: f.raw, nearest: best?.raw ?? null, delta: best ? bestDelta : null };
+  });
+  return { ok: unique.length === 0, unverified: unique, checked: figures.length, nearest };
 }
 
-/** One-line summary for a log. */
+/** One-line summary for a log, with the nearest fact so the flag is a diagnosis. */
 export function describeCheck(c: NumberCheck): string {
-  return c.ok
-    ? `${c.checked} figures, all traced`
-    : `${c.unverified.length} of ${c.checked} figures trace to nothing: ${c.unverified.map((f) => f.raw).join(', ')}`;
+  if (c.ok) return `${c.checked} figures, all traced`;
+  const parts = c.nearest.map((n) =>
+    n.nearest ? `${n.figure} (nearest fact ${n.nearest})` : `${n.figure} (no comparable fact)`);
+  return `${c.unverified.length} of ${c.checked} figures trace to nothing: ${parts.join(', ')}`;
 }

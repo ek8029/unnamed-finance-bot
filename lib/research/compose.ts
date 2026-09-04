@@ -8,6 +8,8 @@ import OpenAI from 'openai';
 import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import { verifyNumbers, describeCheck } from '@/lib/number-verify';
+import { logFigureCheck } from '@/lib/figure-log';
+import { scrubOutbound, wasScrubbed, describeScrub } from '@/lib/pii-guard';
 import { hasAdviceLanguage } from '@/lib/investigation-memo';
 import { FINDING_KIND_LABEL, type Finding, type GroundedAnswer, type ResearchContext } from './types';
 import { expandGroupedCitations, extractCitedIds, validateCitations } from './grounding';
@@ -162,7 +164,12 @@ export async function composeAnswer(
 
   // Hoisted: this block is both the model's facts and the catalogue every figure
   // in its answer is checked against below.
-  const factBlock = formatContext(ctx);
+  // Egress guard: structured identifiers never leave for a model endpoint. It
+  // is deliberately narrow, so position sizes and dollar values pass through
+  // untouched; they are the substance of the answer.
+  const scrubbed = scrubOutbound(formatContext(ctx));
+  if (wasScrubbed(scrubbed)) console.warn(`[research] redacted before send: ${describeScrub(scrubbed)}`);
+  const factBlock = scrubbed.text;
   messages.push({
     role: 'user',
     content: `${factBlock}\n\nUSER QUESTION: ${fence(ctx.query, 'USER_QUESTION')}`,
@@ -232,6 +239,7 @@ export async function composeAnswer(
         check = retryCheck;
       } else {
         console.warn(`[research] retry still unverified: ${describeCheck(retryCheck)}`);
+        logFigureCheck({ surface: 'research_chat', model: 'gpt-4o-mini', check: retryCheck });
       }
     } catch (err) {
       console.warn(`[research] figure retry failed: ${err instanceof Error ? err.message : String(err)}`);

@@ -79,3 +79,21 @@ describe('extractFigures', () => {
     expect(extractFigures('12K')[0].value).toBe(12000);
   });
 });
+
+describe('sign handling', () => {
+  const FACTS2 = 'Change: -0.7450000000000045 (-0.5045545359114182%)\nEPS Growth YoY: -1.26%';
+
+  it('accepts an unsigned figure whose direction is in the prose', () => {
+    // Measured on /analyze: the model writes "down 0.50%", the fact is -0.5045%.
+    expect(verifyNumbers('The stock is down 0.50% on the day.', FACTS2).ok).toBe(true);
+    expect(verifyNumbers('EPS declined 1.26% year over year.', FACTS2).ok).toBe(true);
+  });
+
+  it('still rejects a figure whose written sign contradicts the fact', () => {
+    expect(verifyNumbers('The stock is +0.50% on the day.', FACTS2).ok).toBe(false);
+  });
+
+  it('accepts a written sign that agrees', () => {
+    expect(verifyNumbers('The stock is -0.50% on the day.', FACTS2).ok).toBe(true);
+  });
+});

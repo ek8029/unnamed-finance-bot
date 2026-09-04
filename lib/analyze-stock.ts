@@ -8,6 +8,7 @@
 import { cache } from 'react';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import { verifyNumbers, describeCheck } from '@/lib/number-verify';
+import { logFigureCheck } from '@/lib/figure-log';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import OpenAI from 'openai';
@@ -123,7 +124,8 @@ async function setCachedAnalysis(ticker: string, analysis: StockAnalysis): Promi
 
 // ── Build data context ──
 
-function buildDataContext(td: TickerData): string {
+/** Exported so the temperature lab can score the same facts the page uses. */
+export function buildDataContext(td: TickerData): string {
   const lines: string[] = [`=== ${td.symbol} ===`];
 
   if (td.profile) {
@@ -189,7 +191,7 @@ function buildDataContext(td: TickerData): string {
 
 // ── System prompt ──
 
-const SYSTEM_PROMPT = `${NO_ADVICE_GUARDRAIL}
+export const ANALYZE_SYSTEM_PROMPT = `${NO_ADVICE_GUARDRAIL}
 
 You are a senior equity research analyst at Helm Intelligence, an institutional-grade financial terminal. You deliver neutral, data-rich, factual analysis.
 
@@ -310,7 +312,7 @@ export const analyzeStock = cache(async (ticker: string, allowGenerate = true, a
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: `${INJECTION_GUARD}\n${SYSTEM_PROMPT}` },
+        { role: 'system', content: `${INJECTION_GUARD}\n${ANALYZE_SYSTEM_PROMPT}` },
         { role: 'user', content: `FINANCIAL DATA:\n${fence(dataContext, 'MARKET_DATA')}\n\nAnalyze ${symbol} stock.` },
       ],
       temperature: 0.7,
@@ -354,6 +356,7 @@ export const analyzeStock = cache(async (ticker: string, allowGenerate = true, a
         console.warn(
           `[analyze] ${symbol}: dropped ${before - analysis.metrics.length} metric(s), ${describeCheck(metricCheck)}`,
         );
+        logFigureCheck({ surface: 'analyze', ref: symbol, model: 'gpt-4o-mini', check: metricCheck });
       }
       const proseCheck = verifyNumbers(
         [analysis.summary, analysis.bullCase, analysis.bearCase, analysis.recommendation]
@@ -361,7 +364,10 @@ export const analyzeStock = cache(async (ticker: string, allowGenerate = true, a
           .join('\n'),
         dataContext,
       );
-      if (!proseCheck.ok) console.warn(`[analyze] ${symbol} prose: ${describeCheck(proseCheck)}`);
+      if (!proseCheck.ok) {
+        console.warn(`[analyze] ${symbol} prose: ${describeCheck(proseCheck)}`);
+        logFigureCheck({ surface: 'analyze', ref: symbol, model: 'gpt-4o-mini', check: proseCheck });
+      }
 
       // Enrich AI-generated headlines with URLs from the original Finnhub data
       if (tickerData.news?.length && analysis.newsHighlights.length) {
