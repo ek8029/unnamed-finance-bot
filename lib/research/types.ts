@@ -96,4 +96,7 @@ export interface GroundedAnswer {
   followUps: string[];
   /** Set when the answer contained advice language the guardrail caught. */
   adviceFlag?: boolean;
+  /** Figures the deterministic check could not trace to the facts the model was
+   *  given. Empty or absent means every number traced. */
+  unverifiedFigures?: string[];
 }

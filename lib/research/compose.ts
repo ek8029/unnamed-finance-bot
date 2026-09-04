@@ -7,6 +7,7 @@
 import OpenAI from 'openai';
 import { NO_ADVICE_GUARDRAIL } from '@/lib/ai-guardrail';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
+import { verifyNumbers, describeCheck } from '@/lib/number-verify';
 import { hasAdviceLanguage } from '@/lib/investigation-memo';
 import { FINDING_KIND_LABEL, type Finding, type GroundedAnswer, type ResearchContext } from './types';
 import { expandGroupedCitations, extractCitedIds, validateCitations } from './grounding';
@@ -159,9 +160,12 @@ export async function composeAnswer(
     }
   }
 
+  // Hoisted: this block is both the model's facts and the catalogue every figure
+  // in its answer is checked against below.
+  const factBlock = formatContext(ctx);
   messages.push({
     role: 'user',
-    content: `${formatContext(ctx)}\n\nUSER QUESTION: ${fence(ctx.query, 'USER_QUESTION')}`,
+    content: `${factBlock}\n\nUSER QUESTION: ${fence(ctx.query, 'USER_QUESTION')}`,
   });
 
   const completion = await getClient().chat.completions.create({
@@ -183,11 +187,57 @@ export async function composeAnswer(
   // The model sometimes "cites" a context section name ("[HARVESTABLE LOSSES]")
   // instead of a finding id. Those aren't citations — strip them from the prose
   // rather than render bracket noise. Real ids ([catch:...], [inv:...]) survive.
-  const answer = stripClosingRecap(
-    stripMarkup(expandGroupedCitations(String(parsed.answer ?? '')))
-      .replace(/\s?\[(?![a-z_]+:)[^\]]*\]/g, '')
-      .trim(),
-  );
+  const cleanProse = (s: unknown): string =>
+    stripClosingRecap(
+      stripMarkup(expandGroupedCitations(String(s ?? '')))
+        .replace(/\s?\[(?![a-z_]+:)[^\]]*\]/g, '')
+        .trim(),
+    );
+  let answer = cleanProse(parsed.answer);
+
+  // Deterministic figure check. Nothing here asks a model to grade a model:
+  // every number in the answer must trace to a number in factBlock, allowing
+  // for the rounding and unit rewrites a writer legitimately performs. On a
+  // miss the model gets ONE corrective pass at temperature 0, and its rewrite
+  // is only accepted if it verifies. Otherwise the original stands and the
+  // finding travels with the answer, because a silent pass is the failure mode
+  // worth avoiding.
+  let check = verifyNumbers(answer, factBlock);
+  if (!check.ok) {
+    console.warn(`[research] ${describeCheck(check)}`);
+    try {
+      const retry = await getClient().chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          ...messages,
+          { role: 'assistant', content: raw },
+          {
+            role: 'user',
+            content:
+              `These figures are in your answer but not in the data you were given: ${check.unverified
+                .map((f) => f.raw)
+                .join(', ')}. Rewrite it using only figures that appear in the data, or make the same point without a number. Same JSON shape.`,
+          },
+        ],
+        temperature: 0,
+        max_tokens: 1200,
+        response_format: { type: 'json_object' },
+      });
+      const retryRaw = retry.choices[0]?.message?.content ?? '';
+      const retryParsed = JSON.parse(retryRaw) as { answer?: string };
+      const retryAnswer = cleanProse(retryParsed.answer);
+      const retryCheck = verifyNumbers(retryAnswer, factBlock);
+      if (retryAnswer && retryCheck.ok) {
+        answer = retryAnswer;
+        check = retryCheck;
+      } else {
+        console.warn(`[research] retry still unverified: ${describeCheck(retryCheck)}`);
+      }
+    } catch (err) {
+      console.warn(`[research] figure retry failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
   // Trust ids the model listed, plus any [id] tokens it left inline in the prose.
   const citedIds = [...new Set([...extractCitedIds(parsed.citedIds), ...extractCitedIds(answer)])];
   const citations = validateCitations(citedIds, ctx.findings);
@@ -220,5 +270,6 @@ export async function composeAnswer(
     adviceFlag: hasAdviceLanguage(
       answer.replace(/\b(?:buy|sell|trim|exit)\b[^.!?]*?recommendations?/gi, 'recommendations'),
     ),
+    unverifiedFigures: check.ok ? undefined : check.unverified.map((f) => f.raw),
   };
 }

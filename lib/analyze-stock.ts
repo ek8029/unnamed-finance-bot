@@ -7,6 +7,7 @@
 
 import { cache } from 'react';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
+import { verifyNumbers, describeCheck } from '@/lib/number-verify';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
 import OpenAI from 'openai';
@@ -333,6 +334,34 @@ export const analyzeStock = cache(async (ticker: string, allowGenerate = true, a
       if (!Array.isArray(analysis.newsHighlights)) analysis.newsHighlights = [];
       if (!analysis.ticker) analysis.ticker = symbol;
       if (!analysis.verdict) analysis.verdict = 'neutral';
+
+      // Every figure has to trace to the fetched data. This page runs at
+      // temperature 0.7 and its prompt orders a number in every sentence, so it
+      // is the surface most able to invent one, and the only one a stranger
+      // sees without an account. A metric row that cannot be traced is dropped
+      // rather than shown: a wrong number beside a real ticker is worse than a
+      // shorter table. Prose is logged, not edited, since cutting a figure out
+      // of a sentence leaves worse prose than leaving it.
+      const metricFigures = analysis.metrics
+        .map((m) => `${m.value ?? ''} ${m.change ?? ''}`)
+        .join(' \n ');
+      const metricCheck = verifyNumbers(metricFigures, dataContext);
+      if (!metricCheck.ok) {
+        const before = analysis.metrics.length;
+        analysis.metrics = analysis.metrics.filter((m) =>
+          verifyNumbers(`${m.value ?? ''} ${m.change ?? ''}`, dataContext).ok,
+        );
+        console.warn(
+          `[analyze] ${symbol}: dropped ${before - analysis.metrics.length} metric(s), ${describeCheck(metricCheck)}`,
+        );
+      }
+      const proseCheck = verifyNumbers(
+        [analysis.summary, analysis.bullCase, analysis.bearCase, analysis.recommendation]
+          .filter(Boolean)
+          .join('\n'),
+        dataContext,
+      );
+      if (!proseCheck.ok) console.warn(`[analyze] ${symbol} prose: ${describeCheck(proseCheck)}`);
 
       // Enrich AI-generated headlines with URLs from the original Finnhub data
       if (tickerData.news?.length && analysis.newsHighlights.length) {
