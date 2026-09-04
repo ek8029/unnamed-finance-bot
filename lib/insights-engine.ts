@@ -1,5 +1,6 @@
 import { splitLossByCharacter } from '@/lib/tax-math';
 import { computePortfolioLookthrough } from '@/lib/etf-holdings';
+import { canonicalTicker } from '@/lib/ticker-alias';
 import { assetBalance, liabilityBalance } from '@/lib/account-balance';
 import {
   TAX_RATE,
@@ -167,35 +168,55 @@ export async function generateInsights(
         totalPortfolio,
       );
 
-      // Check direct holdings (original behavior)
+      // Check direct holdings. One entry per POSITION, not per lot: the same
+      // ticker held in two accounts, or entered by hand twice, is one position
+      // in two rows. Looping the rows produced a duplicate insight per lot and
+      // read a single lot's dollars into a sentence about the whole position.
+      const positions = new Map<string, { ticker: string; value: number; ids: string[] }>();
       for (const h of holdings) {
-        const directWeight = Number(h.total_value) / totalPortfolio;
-        const ltEntry = lookthrough.get(h.ticker.toUpperCase());
+        const key = canonicalTicker(h.ticker);
+        const p = positions.get(key) ?? { ticker: key, value: 0, ids: [] };
+        p.value += Number(h.total_value || 0);
+        p.ids.push(h.id);
+        positions.set(key, p);
+      }
+
+      for (const p of positions.values()) {
+        const directWeight = p.value / totalPortfolio;
+        // Keyed on the canonical ticker, the same key the look-through map
+        // builds. Reading it back by raw uppercase missed every broker symbol
+        // variant and quietly fell through to one lot's weight.
+        const ltEntry = lookthrough.get(p.ticker);
         const totalWeight = ltEntry ? ltEntry.totalWeight / 100 : directWeight;
         const hasIndirect = ltEntry && ltEntry.indirectWeight > 0;
 
-        if (totalWeight > CONCENTRATION_THRESHOLDS.critical / 100 && holdings.length > 1) {
+        // Owning one thing is not a concentration finding, and the count has to
+        // be of positions: two lots of the same ticker is still one thing.
+        if (totalWeight > CONCENTRATION_THRESHOLDS.critical / 100 && positions.size > 1) {
           const pctDisplay = Math.round(totalWeight * 100);
           const sources = hasIndirect ? ` (${ltEntry.sources.join(', ')})` : '';
           candidates.push({
             insight_type: 'portfolio',
             priority: totalWeight > 0.5 ? 'high' : 'medium',
-            title: `${h.ticker} is ${pctDisplay}% of your portfolio${hasIndirect ? ' (including ETF exposure)' : ''}`,
+            title: `${p.ticker} is ${pctDisplay}% of your portfolio${hasIndirect ? ' (including ETF exposure)' : ''}`,
             description: hasIndirect
-              ? `Your total ${h.ticker} exposure is ${pctDisplay}% when including indirect holdings through ETFs and leveraged products${sources}. Direct position: $${Number(h.total_value).toLocaleString('en-US')}.`
-              : `A single position making up more than ${CONCENTRATION_THRESHOLDS.critical}% of your portfolio increases risk. ${h.ticker} currently represents $${Number(h.total_value).toLocaleString('en-US')} of your $${totalPortfolio.toLocaleString('en-US')} portfolio.`,
-            recommended_action: `Single-position concentration above ${CONCENTRATION_THRESHOLDS.critical}% increases idiosyncratic risk. This ${h.ticker} figure of ${pctDisplay}%${hasIndirect ? ' reflects combined direct and ETF holdings' : ''} is above that level.`,
+              ? `Your total ${p.ticker} exposure is ${pctDisplay}% when including indirect holdings through ETFs and leveraged products${sources}. Direct position: $${Math.round(p.value).toLocaleString('en-US')}.`
+              : `A single position making up more than ${CONCENTRATION_THRESHOLDS.critical}% of your portfolio increases risk. ${p.ticker} currently represents $${Math.round(p.value).toLocaleString('en-US')} of your $${Math.round(totalPortfolio).toLocaleString('en-US')} portfolio.`,
+            recommended_action: `Single-position concentration above ${CONCENTRATION_THRESHOLDS.critical}% increases idiosyncratic risk. This ${p.ticker} figure of ${pctDisplay}%${hasIndirect ? ' reflects combined direct and ETF holdings' : ''} is above that level.`,
             confidence_score: 0.95,
             source_type: 'rule_based',
             related_entity_type: 'holding',
-            related_entity_ids: [h.id],
+            related_entity_ids: p.ids,
           });
         }
       }
 
       // Check for hidden concentration: stocks only exposed via ETFs (not held directly)
       for (const [ticker, entry] of lookthrough) {
-        const isDirectlyHeld = holdings.some((h: { ticker: string }) => h.ticker.toUpperCase() === ticker);
+        // Same canonical key as above. Comparing raw symbols called a position
+        // held under a broker variant "hidden ETF exposure" when it was held
+        // outright.
+        const isDirectlyHeld = positions.has(ticker);
         if (!isDirectlyHeld && entry.totalWeight > CONCENTRATION_THRESHOLDS.critical) {
           candidates.push({
             insight_type: 'portfolio',
@@ -464,8 +485,15 @@ export async function generateInsights(
     const staleIds: string[] = [];
     const updates: { id: string; fields: InsightCandidate }[] = [];
 
+    // Titles already handled this run. The map below is emptied as each title
+    // is claimed, so without this a second candidate with the same title read
+    // the emptied entry as "nothing exists yet" and inserted a duplicate.
+    const claimed = new Set<string>();
+
     for (const c of candidates) {
       const norm = normalizeInsightTitle(c.title);
+      if (claimed.has(norm)) continue;
+      claimed.add(norm);
       const existingIds = existingByNorm.get(norm);
       if (!existingIds || existingIds.length === 0) {
         newInsights.push(c);
