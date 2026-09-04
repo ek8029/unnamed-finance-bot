@@ -34,7 +34,9 @@ MENTION means the company appears as context, provenance or comparison and the a
 
 Answer only from the headline and summary. If the headline does not make the company its subject, answer mention.
 
-Return ONLY JSON: {"v":[{"i":<item number>,"a":"about"|"mention"}]}`;
+When the answer is mention AND the headline is clearly about a DIFFERENT public company, add "s" with that company's US ticker symbol in capitals. A story about Costco filed under Amazon gets "s":"COST". Omit "s" when the real subject is a private company, a person, a market-wide event, or anything you are not sure of. A guessed ticker is worse than no ticker.
+
+Return ONLY JSON: {"v":[{"i":<item number>,"a":"about"|"mention","s":"TICKER"}]}`;
 
 export interface SubjectInput {
   /** Stable key the caller uses to write the verdict back (url or id). */
@@ -45,6 +47,13 @@ export interface SubjectInput {
   companyName?: string | null;
 }
 
+export interface SubjectAnswer {
+  verdict: SubjectVerdict;
+  /** For a mention: the ticker the article is really about, if the model named
+   *  one. Unvalidated here; the caller checks it against the securities table. */
+  subjectTicker?: string;
+}
+
 /**
  * Classify a batch of articles. Returns only the rows the model answered for;
  * anything missing from the map keeps a null verdict upstream.
@@ -52,8 +61,8 @@ export interface SubjectInput {
 export async function classifySubjects(
   rows: SubjectInput[],
   log: string[],
-): Promise<Map<string, SubjectVerdict>> {
-  const out = new Map<string, SubjectVerdict>();
+): Promise<Map<string, SubjectAnswer>> {
+  const out = new Map<string, SubjectAnswer>();
   if (rows.length === 0) return out;
   if (!hasAnthropicKey()) {
     log.push('[news] subject classifier skipped: no ANTHROPIC_API_KEY');
@@ -80,11 +89,18 @@ export async function classifySubjects(
         .map((c) => c.text)
         .join('');
       const json = text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1);
-      const parsed = JSON.parse(json) as { v?: { i?: number; a?: string }[] };
+      const parsed = JSON.parse(json) as { v?: { i?: number; a?: string; s?: string }[] };
       for (const v of parsed.v ?? []) {
         const idx = (v.i ?? 0) - 1;
         if (idx < 0 || idx >= slice.length) continue;
-        if (v.a === 'about' || v.a === 'mention') out.set(slice[idx].key, v.a);
+        if (v.a !== 'about' && v.a !== 'mention') continue;
+        const proposed = typeof v.s === 'string' ? v.s.trim().toUpperCase() : '';
+        out.set(slice[idx].key, {
+          verdict: v.a,
+          // Shape check only. Whether it is a real listed company is the
+          // caller's job, against the securities table.
+          subjectTicker: v.a === 'mention' && /^[A-Z][A-Z.-]{0,5}$/.test(proposed) ? proposed : undefined,
+        });
       }
     } catch (err) {
       // One bad batch must not lose the others.

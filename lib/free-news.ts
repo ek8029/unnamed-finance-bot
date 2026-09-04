@@ -401,7 +401,38 @@ async function classifyNewsSubjects(
   }
 
   const modelVerdicts = await classifySubjects(forModel, log);
-  for (const [url, verdict] of modelVerdicts) addTo(verdict, SUBJECT_MODEL, url);
+  for (const [url, answer] of modelVerdicts) addTo(answer.verdict, SUBJECT_MODEL, url);
+
+  // A mention is the WRONG reader's news, not nobody's. When the model named
+  // the company the article is actually about, validate that ticker against the
+  // securities table and store it, so the feed can hand the article to whoever
+  // holds that name instead of discarding it. primary_ticker is deliberately
+  // left alone: the scorer and the digest keep seeing exactly what they saw.
+  const proposed = new Map<string, string>();
+  for (const [url, answer] of modelVerdicts) {
+    if (answer.verdict === 'mention' && answer.subjectTicker) proposed.set(url, answer.subjectTicker);
+  }
+  if (proposed.size > 0) {
+    const candidates = [...new Set(proposed.values())];
+    const { data: real } = await supabase.from('securities').select('ticker').in('ticker', candidates);
+    const valid = new Set(((real || []) as { ticker: string }[]).map((r) => r.ticker.toUpperCase()));
+    const byTicker = new Map<string, string[]>();
+    let dropped = 0;
+    for (const [url, ticker] of proposed) {
+      if (!valid.has(ticker)) { dropped++; continue; }
+      const list = byTicker.get(ticker);
+      if (list) list.push(url);
+      else byTicker.set(ticker, [url]);
+    }
+    let reaimed = 0;
+    for (const [ticker, urls] of byTicker) {
+      const { error } = await supabase.from('market_news').update({ subject_ticker: ticker }).in('url', urls);
+      if (!error) reaimed += urls.length;
+    }
+    if (reaimed > 0 || dropped > 0) {
+      log.push(`[news] re-aimed ${reaimed} url(s) to their real subject, dropped ${dropped} unrecognised ticker(s)`);
+    }
+  }
 
   let written = 0;
   for (const [key, urls] of groups) {

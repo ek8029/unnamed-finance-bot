@@ -53,8 +53,13 @@ export async function GET(request: Request) {
       .order('published_at', { ascending: false });
 
     if (userTickers && userTickers.length > 0) {
-      // Only news about user's holdings OR general market news (null primary_ticker)
-      newsQuery.or(`primary_ticker.in.(${userTickers.join(',')}),primary_ticker.is.null`);
+      // Holdings news, general market news, and articles filed under someone
+      // else's ticker that the classifier re-aimed at a name this reader holds
+      // (migration 070). A Costco story tagged AMZN is this reader's news if
+      // they hold COST, and it would otherwise never reach them.
+      newsQuery.or(
+        `primary_ticker.in.(${userTickers.join(',')}),primary_ticker.is.null,subject_ticker.in.(${userTickers.join(',')})`,
+      );
     }
 
     // Pull more than we show: mentions are dropped below, and a feed that
@@ -99,7 +104,11 @@ export async function GET(request: Request) {
         // Editorial, not accuracy: an opinion listicle can be genuinely about
         // the company and still not belong in a feed of what happened.
         if (lowValueShape(article.title ?? '')) return false;
-        if (article.subject_verdict === 'mention') return false;
+        // A mention is the wrong reader's news. If the classifier named the
+        // company it IS about and this reader holds it, it becomes theirs.
+        if (article.subject_verdict === 'mention') {
+          return !!(article.subject_ticker && userTickers?.includes(article.subject_ticker));
+        }
         if (article.subject_verdict === 'about') return true;
         if (!article.primary_ticker) return true;
         return !subjectPrefilter({
@@ -112,8 +121,16 @@ export async function GET(request: Request) {
     const news = dedupedNews.map(article => {
       // Use primary_ticker for relevance — the article's actual subject,
       // not a tangentially mentioned ticker from the article's full tag array
-      // Only use primary_ticker — never fall back to tickers[0] which causes misattribution
-      const primary = article.primary_ticker || null;
+      // Only use primary_ticker — never fall back to tickers[0] which causes misattribution.
+      // A re-aimed row (070) is attributed to the company it is actually about,
+      // so the impact note and the ranking weight describe the right holding.
+      const reaimed =
+        article.subject_verdict === 'mention' &&
+        article.subject_ticker &&
+        userTickers?.includes(article.subject_ticker)
+          ? (article.subject_ticker as string)
+          : null;
+      const primary = reaimed || article.primary_ticker || null;
       const isUserHolding = userTickers && primary && userTickers.includes(primary);
 
       // "Impact on You" context
