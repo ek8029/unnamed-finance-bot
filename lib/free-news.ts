@@ -382,10 +382,12 @@ async function classifyNewsSubjects(
   const candidates = inserts.filter((r) => r.primary_ticker && r.url);
   if (candidates.length === 0) return;
 
-  // (verdict, decided-by) -> urls. Two to eight groups, so a handful of writes.
+  // (verdict, decided-by, tone) -> urls. A handful of groups, so a handful of
+  // writes. Tone is empty for anything a rule decided, and an empty tone leaves
+  // the keyword-scored sentiment alone rather than overwriting it with nothing.
   const groups = new Map<string, string[]>();
-  const addTo = (verdict: string, by: string, url: string) => {
-    const key = `${verdict}|${by}`;
+  const addTo = (verdict: string, by: string, url: string, tone?: string) => {
+    const key = `${verdict}|${by}|${tone ?? ''}`;
     const list = groups.get(key);
     if (list) list.push(url);
     else groups.set(key, [url]);
@@ -401,7 +403,7 @@ async function classifyNewsSubjects(
   }
 
   const modelVerdicts = await classifySubjects(forModel, log);
-  for (const [url, answer] of modelVerdicts) addTo(answer.verdict, SUBJECT_MODEL, url);
+  for (const [url, answer] of modelVerdicts) addTo(answer.verdict, SUBJECT_MODEL, url, answer.tone);
 
   // A mention is the WRONG reader's news, not nobody's. When the model named
   // the company the article is actually about, validate that ticker against the
@@ -436,10 +438,15 @@ async function classifyNewsSubjects(
 
   let written = 0;
   for (const [key, urls] of groups) {
-    const [verdict, by] = key.split('|');
+    const [verdict, by, tone] = key.split('|');
+    // The model read the same headline to decide the verdict, so its tone costs
+    // nothing extra and replaces a word count that agreed with it 54% of the
+    // time. Rows a rule decided keep whatever scoreSentiment produced.
+    const payload: Record<string, string> = { subject_verdict: verdict, subject_verdict_by: by };
+    if (tone) payload.sentiment = tone;
     const { error } = await supabase
       .from('market_news')
-      .update({ subject_verdict: verdict, subject_verdict_by: by })
+      .update(payload)
       .in('url', urls);
     if (error) {
       // Migration 068 not applied yet, or a transient failure. Either way the

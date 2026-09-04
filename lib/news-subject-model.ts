@@ -36,7 +36,13 @@ Answer only from the headline and summary. If the headline does not make the com
 
 When the answer is mention AND the headline is clearly about a DIFFERENT public company, add "s" with that company's US ticker symbol in capitals. A story about Costco filed under Amazon gets "s":"COST". Omit "s" when the real subject is a private company, a person, a market-wide event, or anything you are not sure of. A guessed ticker is worse than no ticker.
 
-Return ONLY JSON: {"v":[{"i":<item number>,"a":"about"|"mention","s":"TICKER"}]}`;
+Also add "t", what the article reports about that company's business:
+- "positive": a beat, a raise, a win, an approval, a signed deal, an upgrade, a rise in its stock
+- "negative": a miss, a cut, a loss, a lawsuit, a downgrade, a recall, a fall in its stock
+- "neutral": neither, a mix, a question rather than an event, or an executive change
+Judge the report, never whether the stock is worth owning.
+
+Return ONLY JSON: {"v":[{"i":<item number>,"a":"about"|"mention","s":"TICKER","t":"positive"|"negative"|"neutral"}]}`;
 
 export interface SubjectInput {
   /** Stable key the caller uses to write the verdict back (url or id). */
@@ -52,6 +58,10 @@ export interface SubjectAnswer {
   /** For a mention: the ticker the article is really about, if the model named
    *  one. Unvalidated here; the caller checks it against the securities table. */
   subjectTicker?: string;
+  /** What the article reports about the company. Replaces a hardcoded word
+   *  count that agreed with a model on 54% of 80 rows (measured 2026-09-04),
+   *  where "dividend" and "buy" scored positive and "debt" and "risk" negative. */
+  tone?: 'positive' | 'negative' | 'neutral';
 }
 
 /**
@@ -89,14 +99,16 @@ export async function classifySubjects(
         .map((c) => c.text)
         .join('');
       const json = text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1);
-      const parsed = JSON.parse(json) as { v?: { i?: number; a?: string; s?: string }[] };
+      const parsed = JSON.parse(json) as { v?: { i?: number; a?: string; s?: string; t?: string }[] };
       for (const v of parsed.v ?? []) {
         const idx = (v.i ?? 0) - 1;
         if (idx < 0 || idx >= slice.length) continue;
         if (v.a !== 'about' && v.a !== 'mention') continue;
         const proposed = typeof v.s === 'string' ? v.s.trim().toUpperCase() : '';
+        const tone = v.t === 'positive' || v.t === 'negative' || v.t === 'neutral' ? v.t : undefined;
         out.set(slice[idx].key, {
           verdict: v.a,
+          tone,
           // Shape check only. Whether it is a real listed company is the
           // caller's job, against the securities table.
           subjectTicker: v.a === 'mention' && /^[A-Z][A-Z.-]{0,5}$/.test(proposed) ? proposed : undefined,
