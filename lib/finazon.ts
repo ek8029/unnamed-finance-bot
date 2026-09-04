@@ -50,6 +50,29 @@ interface RawBar {
 
 // ── Core fetch ──
 
+/**
+ * When the vendor last refused a request with a 429.
+ *
+ * A null from this module means "no data", and the caller cannot otherwise
+ * tell a symbol that does not exist from a symbol we were not allowed to ask
+ * about this minute. That difference is invisible for a ticker Helm already
+ * tracks, because `market_prices` answers instead, but a ticker nobody holds
+ * has no such fallback: the quote comes back empty and the user is told their
+ * real, listed ticker "could not be found". A user wrote in about exactly
+ * that, for CAVA and PSX, both of which price fine.
+ *
+ * Not cleared on success: within one save, an earlier ticker can be refused and
+ * a later one served from the daily-bar fallback, and a success in between must
+ * not make the refusal look like a bad symbol. The time window is the only
+ * thing that clears it.
+ */
+let lastRateLimitedAt = 0;
+
+/** True if the vendor refused a request in the last few seconds. */
+export function recentlyRateLimited(withinMs = 30_000): boolean {
+  return lastRateLimitedAt > 0 && Date.now() - lastRateLimitedAt < withinMs;
+}
+
 async function finazonFetch<T>(
   endpoint: string,
   params: Record<string, string>,
@@ -77,6 +100,12 @@ async function finazonFetch<T>(
     clearTimeout(timeout);
 
     if (res.status === 429) {
+      // Deliberately does NOT retry. The daily-bar fallback in getQuote uses
+      // this same /time_series budget, so sleeping and asking again spends the
+      // allowance the fallback needs. Measured: a retry turned a CAVA quote
+      // that resolved in 316ms into a 7.9s call that failed outright. Fail
+      // fast, let the caller fall back, and record that it happened.
+      lastRateLimitedAt = Date.now();
       console.warn(`[finazon] Rate limited on ${endpoint}`);
       return null;
     }

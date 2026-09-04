@@ -122,10 +122,18 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
         // Stay on the form so the failures are actually seen — flipping to the
         // success screen hid them and the user believed everything saved.
         if (data.added > 0) disableDemo();
+        const failed = data.failed as { ticker: string; retryable?: boolean }[];
+        const names = failed.map((f) => f.ticker).join(', ');
+        const saved = `Saved ${data.added ?? 0} position${data.added === 1 ? '' : 's'}`;
+        // "Could not find" was a guess presented as a fact. A listed ticker
+        // Helm has never priced has nothing to fall back on, so a rate-limited
+        // minute looked identical to a symbol that does not exist, and a user
+        // was told CAVA and PSX could not be found. Only say that when the
+        // price lookup actually answered.
         setError(
-          `Saved ${data.added ?? 0} position${data.added === 1 ? '' : 's'}, but could not find: ${data.failed
-            .map((f: { ticker: string }) => f.ticker)
-            .join(', ')}. Fix or remove those rows and save again.`,
+          failed.some((f) => f.retryable)
+            ? `${saved}. Could not get a price for ${names} just now, which is our data provider, not your ticker. Save again in a minute and they should go through.`
+            : `${saved}, but could not price: ${names}. Check the symbols, or try again shortly.`,
         );
         return;
       }

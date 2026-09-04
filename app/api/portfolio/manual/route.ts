@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { getQuote } from '@/lib/financial-data';
+import { recentlyRateLimited } from '@/lib/finazon';
 
 /**
  * POST /api/portfolio/manual
@@ -111,27 +112,38 @@ export async function POST(req: NextRequest) {
       }
 
       if (currentPrice === 0) {
-        results.push({ ticker, error: 'Could not fetch price' });
+        // A ticker Helm already tracks survives a vendor outage, because the
+        // quote falls back to market_prices. A ticker nobody holds has no such
+        // row, so a rate-limited minute is indistinguishable from a symbol that
+        // does not exist, and the user was told their real listed ticker could
+        // not be found. Say which one it actually was.
+        results.push({
+          ticker,
+          error: recentlyRateLimited() ? 'Price lookup is rate limited' : 'Could not fetch price',
+          retryable: recentlyRateLimited(),
+        });
         continue;
       }
 
-      // Upsert security
-      await serviceClient
+      // The column is asset_class. There is no security_type on this table, so
+      // this upsert had been failing with PGRST204 on every call, and because
+      // supabase-js reports that in `error` rather than throwing, nothing
+      // noticed. A ticker already in `securities` survived anyway, since the
+      // select below still found the existing row, which is why manual entry
+      // worked for popular names and failed for anything new. A user wrote in
+      // that CAVA and PSX "aren't showing".
+      const { data: security, error: securityError } = await serviceClient
         .from('securities')
         .upsert(
-          { ticker, security_name: ticker, security_type: 'equity', current_price: currentPrice },
+          { ticker, security_name: ticker, asset_class: 'equity', current_price: currentPrice },
           { onConflict: 'ticker' },
-        );
-
-      // Get security ID
-      const { data: security } = await serviceClient
-        .from('securities')
+        )
         .select('id')
-        .eq('ticker', ticker)
         .maybeSingle();
 
-      if (!security) {
-        results.push({ ticker, error: 'Failed to create security' });
+      if (securityError || !security) {
+        console.error(`[manual-portfolio] securities upsert failed for ${ticker}:`, securityError);
+        results.push({ ticker, error: 'Could not save that security' });
         continue;
       }
 
