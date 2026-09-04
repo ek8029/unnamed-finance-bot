@@ -53,6 +53,21 @@ export default function PrivacyPage() {
           account. OpenAI may retain processed inputs for up to 30 days under its API data policy.
         </p>
 
+        <h3>What We Send to AI Providers</h3>
+        <p>
+          Several Helm features are written by AI models run by <strong>OpenAI</strong> and{' '}
+          <strong>Anthropic</strong>: your daily brief, the research chat, the evidence Helm files
+          against a thesis, and the free stock analysis pages. To produce those, the positions in
+          your portfolio are sent to the provider: tickers, values, weights, unrealized gain or loss,
+          and the name of the institution an account is held at.
+        </p>
+        <p>
+          Your name, email address and account numbers are <strong>not</strong> included in those
+          requests. Neither provider uses this data to train its models, and both may retain
+          processed inputs for a limited period under their API data policies. The public stock
+          analysis pages send no personal data at all; they analyze market data only.
+        </p>
+
         <h3>Financial Data via Plaid</h3>
         <p>
           When you connect financial accounts through Plaid, we receive read-only access to:
@@ -152,6 +167,7 @@ export default function PrivacyPage() {
           <li><strong>Plaid</strong> - Account aggregation and transaction data</li>
           <li><strong>Finazon</strong> - Market data, real-time quotes, and historical prices</li>
           <li><strong>OpenAI</strong> - AI-powered financial analysis (your query and portfolio context are sent for analysis but never used for model training)</li>
+          <li><strong>Anthropic</strong> - AI-powered financial analysis (the same portfolio context is sent to write your daily brief and to read filings against your thesis, and is never used for model training)</li>
           <li><strong>Supabase</strong> - Database and authentication infrastructure</li>
           <li><strong>Vercel</strong> - Application hosting</li>
           <li><strong>Stripe</strong> - Web subscription billing</li>
