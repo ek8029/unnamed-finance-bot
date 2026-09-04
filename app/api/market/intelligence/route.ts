@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { getSourceTier } from '@/lib/news-quality';
 import { subjectPrefilter, lowValueShape } from '@/lib/news-subject';
+import { rankFeed } from '@/lib/market-feed-rank';
 
 export async function GET(request: Request) {
   try {
@@ -170,35 +171,37 @@ export async function GET(request: Request) {
       };
     });
 
-    // Combine and sort by relevance/recency
-    const intelligence = [
-      ...news.map(n => ({
-        ...n,
-        sortDate: new Date(n.publishedAt),
-        category: 'news' as const,
-      })),
-      ...events.map(e => ({
-        ...e,
-        sortDate: new Date(e.eventDate),
-        category: 'event' as const,
-      })),
-    ].sort((a, b) => {
-      // Prioritize items related to user holdings
-      const aRelevant = a.relevance === 'Your Holdings';
-      const bRelevant = b.relevance === 'Your Holdings';
-      if (aRelevant && !bRelevant) return -1;
-      if (!aRelevant && bRelevant) return 1;
-      // Then sort by date (news by published, events by upcoming)
-      if (a.category === 'event' && b.category === 'event') {
-        return a.sortDate.getTime() - b.sortDate.getTime();
-      }
-      return b.sortDate.getTime() - a.sortDate.getTime();
-    });
+    // Rank by what a position is worth to this reader, capped so no single
+    // ticker takes the page. Recency still decides inside a ticker. Measured
+    // 2026-09-03: pure recency gave AMZN, a 1.0% position, 9 of the 20 slots
+    // while 12 of the 36 held tickers got nothing at all.
+    const intelligence = rankFeed(
+      [
+        ...news.map(n => ({
+          ...n,
+          // The subject is what the cap groups on; a null one is market-wide.
+          ticker: n.primaryTicker ?? null,
+          weight: n.portfolioWeight,
+          sortMs: new Date(n.publishedAt).getTime(),
+          isEvent: false,
+          category: 'news' as const,
+        })),
+        ...events.map(e => ({
+          ...e,
+          ticker: e.ticker ?? null,
+          weight: e.ticker ? holdingsLookup.get(e.ticker.toUpperCase())?.portfolioWeight ?? null : null,
+          sortMs: new Date(e.eventDate).getTime(),
+          isEvent: true,
+          category: 'event' as const,
+        })),
+      ],
+      { capPerTicker: 2, limit: 15 },
+    );
 
     return NextResponse.json({
       news,
       events,
-      intelligence: intelligence.slice(0, 15),
+      intelligence,
       counts: {
         news: news.length,
         events: events.length,
