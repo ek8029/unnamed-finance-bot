@@ -353,11 +353,11 @@ export default function SettingsPage() {
     let gone = false
     fetch('/api/portfolio/manual')
       .then((r) => (r.ok ? r.json() : null))
-      .then((j: { holdings?: { total_value?: number }[] } | null) => {
+      .then((j: { holdings?: { totalValue?: number }[] } | null) => {
         if (gone || !j?.holdings) return
         setManual({
           count: j.holdings.length,
-          total: j.holdings.reduce((s, h) => s + (Number(h.total_value) || 0), 0),
+          total: j.holdings.reduce((s, h) => s + (Number(h.totalValue) || 0), 0),
         })
       })
       .catch(() => {})

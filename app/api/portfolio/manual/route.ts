@@ -237,13 +237,14 @@ export async function GET() {
 
     const { data: holdings } = await serviceClient
       .from('holdings')
-      .select('ticker, shares, average_cost_basis, current_price, total_value')
+      .select('id, ticker, shares, average_cost_basis, current_price, total_value')
       .eq('user_id', user.id)
       .eq('account_id', account.id)
       .order('total_value', { ascending: false });
 
     return NextResponse.json({
       holdings: (holdings || []).map(h => ({
+        id: h.id,
         ticker: h.ticker,
         shares: Number(h.shares),
         costBasis: h.average_cost_basis ? Number(h.average_cost_basis) : null,
@@ -253,6 +254,168 @@ export async function GET() {
     });
   } catch (error) {
     console.error('[manual-portfolio] GET error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// ── Editing what you typed ──
+//
+// POST only ever appended ("Each submission adds new lots — no delete, no
+// upsert"), so a typo was permanent and a correction produced a duplicate lot.
+// A support email from a real user on 2026-09-02 asked how to fix one. There was
+// no answer, so these exist.
+//
+// Both handlers resolve the caller's OWN manual account first and scope every
+// write to it. A Plaid-sourced holding can never be reached from here: those
+// rows belong to the brokerage feed and editing them would put Helm's numbers
+// out of step with the custodian's.
+
+/** The caller's manual account, or null when they have never used manual entry. */
+async function manualAccountId(
+  serviceClient: Awaited<ReturnType<typeof createServiceClient>>,
+  userId: string,
+): Promise<string | null> {
+  const { data: institution } = await serviceClient
+    .from('institutions')
+    .select('id')
+    .eq('slug', 'manual-portfolio')
+    .maybeSingle();
+  if (!institution) return null;
+
+  const { data: account } = await serviceClient
+    .from('linked_accounts')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('institution_id', institution.id)
+    .eq('source', 'manual')
+    .maybeSingle();
+  return account?.id ?? null;
+}
+
+/**
+ * Allocation percentages are a share of the whole book, so removing or resizing
+ * one lot makes every other row's percentage wrong. The daily sweep would fix it
+ * tomorrow; a user watching their own screen should not have to wait.
+ */
+async function recalcUserAllocations(
+  serviceClient: Awaited<ReturnType<typeof createServiceClient>>,
+  userId: string,
+): Promise<void> {
+  const { data: rows } = await serviceClient
+    .from('holdings')
+    .select('id, total_value')
+    .eq('user_id', userId);
+  const total = (rows || []).reduce((sum, r) => sum + Number(r.total_value || 0), 0);
+  if (total <= 0) return;
+  for (const r of rows || []) {
+    await serviceClient
+      .from('holdings')
+      .update({ portfolio_allocation_pct: Math.round((Number(r.total_value || 0) / total) * 10000) / 100 })
+      .eq('id', r.id);
+  }
+}
+
+/** DELETE /api/portfolio/manual?id=<holdingId> — remove one manually entered lot. */
+export async function DELETE(req: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const id = new URL(req.url).searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+
+    const serviceClient = await createServiceClient();
+    const accountId = await manualAccountId(serviceClient, user.id);
+    if (!accountId) return NextResponse.json({ error: 'No manual portfolio' }, { status: 404 });
+
+    const { data: deleted, error } = await serviceClient
+      .from('holdings')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .eq('account_id', accountId)
+      .select('ticker')
+      .maybeSingle();
+
+    if (error) {
+      console.error('[manual-portfolio] DELETE error:', error);
+      return NextResponse.json({ error: 'Failed to remove holding' }, { status: 500 });
+    }
+    // Not found means it was not theirs, or not manual. Same answer either way.
+    if (!deleted) return NextResponse.json({ error: 'Holding not found' }, { status: 404 });
+
+    await recalcUserAllocations(serviceClient, user.id);
+    return NextResponse.json({ removed: deleted.ticker });
+  } catch (error) {
+    console.error('[manual-portfolio] DELETE error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+/** PATCH /api/portfolio/manual — change the share count or cost basis of one lot. */
+export async function PATCH(req: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const body = await req.json().catch(() => null) as { id?: string; shares?: unknown; costBasis?: unknown } | null;
+    if (!body?.id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+
+    const patch: Record<string, number | null> = {};
+    if (body.shares !== undefined) {
+      const shares = Number(body.shares);
+      if (!Number.isFinite(shares) || shares <= 0) {
+        return NextResponse.json({ error: 'Shares must be a positive number' }, { status: 400 });
+      }
+      patch.shares = shares;
+    }
+    if (body.costBasis !== undefined) {
+      if (body.costBasis === null || body.costBasis === '') {
+        patch.average_cost_basis = null;
+      } else {
+        const cost = Number(body.costBasis);
+        if (!Number.isFinite(cost) || cost < 0) {
+          return NextResponse.json({ error: 'Cost basis must be zero or more' }, { status: 400 });
+        }
+        patch.average_cost_basis = cost;
+      }
+    }
+    if (Object.keys(patch).length === 0) {
+      return NextResponse.json({ error: 'Nothing to change' }, { status: 400 });
+    }
+
+    const serviceClient = await createServiceClient();
+    const accountId = await manualAccountId(serviceClient, user.id);
+    if (!accountId) return NextResponse.json({ error: 'No manual portfolio' }, { status: 404 });
+
+    const { data: existing } = await serviceClient
+      .from('holdings')
+      .select('id, current_price, shares')
+      .eq('id', body.id)
+      .eq('user_id', user.id)
+      .eq('account_id', accountId)
+      .maybeSingle();
+    if (!existing) return NextResponse.json({ error: 'Holding not found' }, { status: 404 });
+
+    // A share change moves the position's value, and the value feeds allocation,
+    // exposure and the tax numbers. Recompute it here rather than leaving the
+    // row internally inconsistent until the next price sweep.
+    if (patch.shares !== undefined) {
+      patch.total_value = Number(patch.shares) * Number(existing.current_price || 0);
+    }
+
+    const { error } = await serviceClient.from('holdings').update(patch).eq('id', existing.id);
+    if (error) {
+      console.error('[manual-portfolio] PATCH error:', error);
+      return NextResponse.json({ error: 'Failed to update holding' }, { status: 500 });
+    }
+
+    await recalcUserAllocations(serviceClient, user.id);
+    return NextResponse.json({ updated: true });
+  } catch (error) {
+    console.error('[manual-portfolio] PATCH error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

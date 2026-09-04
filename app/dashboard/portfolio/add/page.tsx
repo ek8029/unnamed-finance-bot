@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ManualPortfolioForm } from '@/components/manual-portfolio-form';
 import { PortfolioImport } from '@/components/portfolio-import';
+import { ManualHoldingsEditor } from '@/components/manual-holdings-editor';
 import type { ImportedRow } from '@/lib/portfolio-import';
 
 export default function AddHoldingsPage() {
@@ -40,6 +41,10 @@ export default function AddHoldingsPage() {
           </p>
         </div>
       </div>
+
+      {/* Settings has linked here as "Add or edit" all along; this is the edit
+          half. It renders nothing when there is nothing hand-entered. */}
+      <ManualHoldingsEditor />
 
       <PortfolioImport onExtracted={(rows) => setSeed(prev => ({ rows, n: (prev?.n ?? 0) + 1 }))} />
 
