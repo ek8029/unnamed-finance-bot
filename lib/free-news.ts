@@ -403,7 +403,14 @@ async function classifyNewsSubjects(
   }
 
   const modelVerdicts = await classifySubjects(forModel, log);
-  for (const [url, answer] of modelVerdicts) addTo(answer.verdict, SUBJECT_MODEL, url, answer.tone);
+  // The model sometimes calls a row a mention and then names the ticker it was
+  // already filed under. Those two answers contradict each other, and the
+  // second one is the considered one, so the row is about its own ticker.
+  const primaryOf = new Map(candidates.map((r) => [r.url, (r.primary_ticker as string).toUpperCase()]));
+  for (const [url, answer] of modelVerdicts) {
+    const namedItsOwn = answer.subjectTicker && answer.subjectTicker === primaryOf.get(url);
+    addTo(namedItsOwn ? 'about' : answer.verdict, SUBJECT_MODEL, url, answer.tone);
+  }
 
   // A mention is the WRONG reader's news, not nobody's. When the model named
   // the company the article is actually about, validate that ticker against the
@@ -412,7 +419,10 @@ async function classifyNewsSubjects(
   // left alone: the scorer and the digest keep seeing exactly what they saw.
   const proposed = new Map<string, string>();
   for (const [url, answer] of modelVerdicts) {
-    if (answer.verdict === 'mention' && answer.subjectTicker) proposed.set(url, answer.subjectTicker);
+    if (answer.verdict !== 'mention' || !answer.subjectTicker) continue;
+    // Naming its own ticker is not a re-aim; that row was just relabelled above.
+    if (answer.subjectTicker === primaryOf.get(url)) continue;
+    proposed.set(url, answer.subjectTicker);
   }
   if (proposed.size > 0) {
     const candidates = [...new Set(proposed.values())];
