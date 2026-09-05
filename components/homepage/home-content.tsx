@@ -96,16 +96,17 @@ function Dot() {
 
 /* ─── Nav links ─────────────────────────────────────────────────────────── */
 
-// Compare points at the head-to-head roundup. The comparison cluster
-// (/best-thesis-trackers, /mythesis-alternative, /vela-alternative,
-// /usethesis-alternative) was reachable only from search, so a visitor already
-// weighing Helm against something else found no path to the page written for
-// exactly that question, and the cluster earned no internal links from the
-// site's highest-authority page.
+// Compare points at the comparison hub. It used to point straight at
+// /best-thesis-trackers, which meant the single word on the homepage inviting
+// anyone to weigh Helm against something else answered with a roundup of
+// thesis monitors, and described a fifth of the product to every visitor who
+// clicked it. /compare now carries both halves: the stock tool it always had,
+// and all ~25 tool comparisons, thesis trackers among them.
 const NAV_LINKS = [
   { label: 'Analyze', href: '/analyze' },
   { label: 'The Masthead', href: '/masthead' },
-  { label: 'Compare', href: '/best-thesis-trackers' },
+  { label: 'Compare', href: '/compare' },
+  { label: 'iPhone', href: '/app' },
   { label: 'Pricing', href: '#pricing' },
 ];
 
@@ -857,7 +858,7 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
             </div>
             <div>
               <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4">Product</div>
-              {[['Terminal', '/dashboard'], ['Analyze', '/analyze'], ['Pricing', '/pricing'], ['Brief', '/brief']].map(([l, h]) => (
+              {[['Terminal', '/dashboard'], ['Analyze', '/analyze'], ['Pricing', '/pricing'], ['Brief', '/brief'], ['iPhone app', '/app']].map(([l, h]) => (
                 <Link key={l} href={h} className="block text-[15px] text-[var(--color-text-secondary)] py-1.5 hover:text-[var(--color-text-primary)] transition-colors">{l}</Link>
               ))}
             </div>
@@ -875,7 +876,12 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
             </div>
             <div>
               <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4">Compare</div>
-              {[['Thesis trackers', '/best-thesis-trackers'], ['vs MyThesis', '/mythesis-alternative'], ['vs Vela', '/vela-alternative'], ['vs UseThesis', '/usethesis-alternative'], ['What is thesis monitoring', '/thesis-monitoring']].map(([l, h]) => (
+              {/* This column used to be five thesis-tracker links under the
+                  heading "Compare", which is the same mistake the nav made:
+                  the whole comparison surface of the homepage described one
+                  feature. It now leads with the hub and spans the categories
+                  people actually arrive from. */}
+              {[['All comparisons', '/compare'], ['vs Bloomberg', '/blog/best-bloomberg-terminal-alternatives'], ['vs Empower', '/blog/best-personal-capital-alternatives'], ['vs Monarch', '/blog/best-monarch-alternatives'], ['vs Seeking Alpha', '/blog/best-seeking-alpha-alternatives'], ['Thesis trackers', '/best-thesis-trackers']].map(([l, h]) => (
                 <Link key={l} href={h} className="block text-[15px] text-[var(--color-text-secondary)] py-1.5 hover:text-[var(--color-text-primary)] transition-colors">{l}</Link>
               ))}
             </div>
