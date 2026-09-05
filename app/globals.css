@@ -902,11 +902,19 @@ html.screen-reader-optimized .sr-only {
  *
  * Below either threshold the page falls back to the stacked layout, where every
  * block carries its own phone at a width that does not depend on the fold.
+ *
+ * The height gate was 820px first, which was far too high: a browser windowed
+ * on a big display, or one with devtools docked at the bottom, drops under that
+ * easily, and the fallback is a phone that scrolls away above its own text.
+ * That is the layout reading as broken, not as a fallback. 640px keeps the pin
+ * for every real window and still excludes 200% zoom, which lands near 490.
+ * The device height is floored so the short end stays sensible rather than
+ * collapsing toward nothing.
  */
 .device-stage__pin { display: none; }
 .device-stage__inline { display: block; }
 
-@media (min-width: 1024px) and (min-height: 820px) {
+@media (min-width: 1024px) and (min-height: 760px) {
   .device-stage {
     display: grid;
     grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
@@ -917,8 +925,13 @@ html.screen-reader-optimized .sr-only {
   .device-stage__block {
     /* Enough that only one block ever crosses the observer band, and no more.
        At 86vh a block held ~860px for ~250px of copy, which is most of a screen
-       of nothing between every heading. */
-    min-height: min(72vh, 760px);
+       of nothing between every heading.
+
+       It also has to stay comfortably TALLER than the pinned device. The device
+       shares this column's scroll range, and a sticky element unsticks its own
+       height before the range ends, so a device taller than a block takes the
+       phone off screen while the last screen's copy is still being read. */
+    min-height: min(80vh, 900px);
     padding-top: 0;
     padding-bottom: 0;
     border-top: 0;

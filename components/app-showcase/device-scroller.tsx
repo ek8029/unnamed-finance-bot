@@ -14,10 +14,11 @@ import Image from 'next/image';
  * Here the device is pinned and the copy moves past it, so the screen swap is
  * the thing that marks progress.
  *
- * The pin starts at lg, not md. In the md band the copy column is only ~360px
- * wide while each block is still holding a viewport of height, which is a
- * screenful of nothing between every heading. Tablets get the stacked layout,
- * where each block carries its own phone inline.
+ * The pin is gated on viewport HEIGHT as well as width (.device-stage in
+ * globals.css), because a pinned device needs vertical room to be worth
+ * anything and because a width-only gate keeps this layout at 200% browser
+ * zoom, where the screenshot collapses. Below either threshold the page stacks
+ * and each block carries its own phone inline.
  */
 
 export interface AppScreen {
@@ -42,21 +43,19 @@ export function PhoneFrame({
   sizes?: string;
 }) {
   return (
-    <div
-      className="relative rounded-[2.4rem] p-[4px] bg-gradient-to-b from-[#2a2a2c] to-[#141416]"
-      style={{
-        // No gold glow here. Gold is the one accent and it is spoken for by the
-        // CTA and the live rail mark; a device that also glows spends it on
-        // decoration.
-        boxShadow:
-          '0 0 0 1px rgba(255,255,255,0.07), 0 2px 4px rgba(0,0,0,0.6), 0 40px 90px -30px rgba(0,0,0,0.95)',
-      }}
-    >
+    // Flat, dark, and unlit on purpose.
+    //
+    // This used to be a #2a2a2c-to-#141416 gradient at 4px with a 1px white
+    // outer ring. Against a #0A0A0A page that is a bright band tracing the
+    // whole outline, and it reads as a glow around the screen rather than as
+    // the edge of a device. A bezel only has to make the silhouette findable:
+    // one flat value a little above the page does it, with nothing outside the
+    // shape at all.
+    <div className="relative rounded-[2.1rem] p-[3px] bg-[#17171a]">
       {/* No fake screen glare either. These are real screenshots of a grid of
           numbers, and a diagonal white sheen lifts the blacks unevenly across
-          it, so the left column of figures reads lighter than the right. The
-          bezel and the shadow already sell the device. */}
-      <div className="relative rounded-[2.05rem] overflow-hidden bg-black">
+          it, so the left column of figures reads lighter than the right. */}
+      <div className="relative rounded-[1.95rem] overflow-hidden bg-black">
         <Image
           src={src}
           alt={alt}
@@ -100,16 +99,22 @@ export function DeviceScroller({ screens }: { screens: AppScreen[] }) {
     <div className="relative device-stage">
       {/* Pinned device. Gated on viewport height as well as width, see .device-stage in globals.css */}
       <div className="device-stage__pin">
-        <div className="sticky top-24 h-[calc(100vh-8rem)] flex items-center">
+        {/* No fixed height on the sticky box.
+            It used to be h-[calc(100vh-8rem)], and a sticky element that is
+            nearly as tall as the viewport detaches that far BEFORE its parent
+            ends: the phone slid away while the last screen's copy was still
+            being read, which looks exactly like the pin failing. The box now
+            shrink-wraps the device, and the device is kept meaningfully shorter
+            than a copy block so it stays put until the section genuinely
+            finishes. */}
+        <div className="sticky top-24">
           {/* Sized by HEIGHT, not width. A phone is a tall object in a column
               bounded by the viewport, so a max-width picks the wrong dimension:
-              it overflowed the sticky box on a 900px laptop and stayed small on
-              the 1600px-tall display this gets reviewed on. Height drives it,
-              the aspect ratio gives the width, and the cap stops it going
-              comical. */}
+              it overflowed the box on a short laptop and stayed small on a tall
+              display. Height drives it, the aspect ratio gives the width. */}
           <div
             className="relative mx-auto flex flex-col items-center"
-            style={{ height: 'min(calc(100vh - 13rem), 900px)', maxWidth: '100%' }}
+            style={{ height: 'clamp(320px, calc(100vh - 16rem), 720px)', maxWidth: '100%' }}
           >
             <div className="relative flex-1 min-h-0 aspect-[1290/2796]">
               {screens.map((s, i) => (
