@@ -21,6 +21,10 @@ export type CheckoutIntent = 'pro' | 'pro_annual';
 
 export const CHECKOUT_PARAM = 'checkout';
 
+/** Where the intent waits while onboarding runs. sessionStorage because
+ *  onboarding's dismiss can hard-navigate, which loses React state. */
+export const PENDING_CHECKOUT_KEY = 'helm_pending_checkout';
+
 export function isCheckoutIntent(value: string | null | undefined): value is CheckoutIntent {
   return value === 'pro' || value === 'pro_annual';
 }

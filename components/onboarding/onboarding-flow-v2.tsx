@@ -15,7 +15,7 @@
 // Gated behind NEXT_PUBLIC_ONBOARDING_V2 in the dashboard layout; the legacy
 // OnboardingFlow stays the default until the scan->link cohort reads positive.
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import posthog from 'posthog-js';
 import { HelmMark } from '@/components/helm-mark';
 import { ArrowRight, PenLine, Check, ExternalLink, ShieldCheck, Lock, Building2, ChevronDown } from 'lucide-react';
@@ -185,8 +185,27 @@ const ACQUISITION_OPTIONS: { slug: string; label: string }[] = [
 
 /** `harness` is the /testing/onboarding review surface: forces preview (no writes),
  *  skips the no-connection gate, and lets a reviewer jump straight to any screen. */
-export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpTo?: Phase } = {}) {
+export function OnboardingFlowV2({
+  harness,
+  jumpTo,
+  onSettled,
+}: {
+  harness?: boolean;
+  jumpTo?: Phase;
+  /** Fired exactly once when onboarding is out of the way: either it decided
+   *  not to show at all, or it was dismissed. The dashboard shell uses it to
+   *  hold a pending checkout until AFTER the scan, so the card is asked for at
+   *  the point value has just been demonstrated rather than before it. */
+  onSettled?: () => void;
+} = {}) {
   const [show, setShow] = useState(false);
+  // onSettled must fire once and only once, from whichever exit is reached.
+  const settled = useRef(false);
+  const settle = useCallback(() => {
+    if (settled.current) return;
+    settled.current = true;
+    onSettled?.();
+  }, [onSettled]);
   const [phase, setPhase] = useState<Phase>(jumpTo ?? 'welcome');
   // Plaid exchange failures were silent — the modal closed and nothing happened.
   const [linkError, setLinkError] = useState<string | null>(null);
@@ -251,19 +270,20 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
     }
     const runNormal = () => {
       const dismissed = localStorage.getItem(ONBOARDING_KEY) === '1' || sessionStorage.getItem(ONBOARDING_KEY) === '1';
-      if (dismissed) return;
+      if (dismissed) { settle(); return; }
       fetch('/api/financial-summary')
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
           if (data?.hasPlaidConnection) {
             localStorage.setItem(ONBOARDING_KEY, '1');
+            settle();
           } else {
             setHasPlaid(false);
             setShow(true);
             track('onb_v2_shown');
           }
         })
-        .catch(() => {});
+        .catch(() => settle());
     };
     supabase.auth
       .getUser()
@@ -374,6 +394,7 @@ export function OnboardingFlowV2({ harness, jumpTo }: { harness?: boolean; jumpT
       localStorage.setItem(ONBOARDING_KEY, '1');
       sessionStorage.setItem(ONBOARDING_KEY, '1');
     }
+    settle();
     if (reload && !preview) { window.location.href = '/dashboard'; return; }
     setShow(false);
   }

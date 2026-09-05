@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { isThesisUser } from '@/lib/thesis-access';
@@ -8,7 +8,7 @@ import { useTier } from '@/hooks/use-tier';
 import { useAccounts } from '@/hooks/use-financial-data';
 import { usePreview } from '@/lib/preview-context';
 import { CheckoutModal } from '@/components/checkout-modal';
-import { CHECKOUT_PARAM, isCheckoutIntent, type CheckoutIntent } from '@/lib/checkout-intent';
+import { CHECKOUT_PARAM, PENDING_CHECKOUT_KEY, isCheckoutIntent, type CheckoutIntent } from '@/lib/checkout-intent';
 import { TIER_RANK, type Tier } from '@/lib/tier-shared';
 import {
   LayoutDashboard,
@@ -56,6 +56,16 @@ import { DisclaimerModal } from '@/components/legal/disclaimer-modal';
 import { MobileBottomNav } from '@/components/mobile-bottom-nav';
 import { ConvictionRail } from '@/components/thesis/conviction-rail';
 import { ConvictionNavButton } from '@/components/thesis/conviction-nav-button';
+
+/* ── Legacy-onboarding fallback for a parked checkout ──
+   V2 tells the shell when it is out of the way. The legacy flow does not, so
+   without this a checkout intent parked on the way in would never be opened. */
+function LegacyCheckoutFallback({ enabled, onReady }: { enabled: boolean; onReady: () => void }) {
+  useEffect(() => {
+    if (enabled) onReady();
+  }, [enabled, onReady]);
+  return null;
+}
 
 /* ── Connect Banner — shown in demo mode ── */
 function ConnectBanner() {
@@ -183,15 +193,32 @@ export default function DashboardShell({
   // onboarding instead of onto a dead page. It has to outrank onboarding's
   // z-[100] to be visible at all.
   const [resumeCheckout, setResumeCheckout] = useState<CheckoutIntent | null>(null);
+
+  // Park the intent in sessionStorage rather than opening immediately. The
+  // scan inside onboarding is the moment Helm demonstrates something nobody
+  // else does, and it converts far better than a card form shown to someone
+  // who has not seen the product work yet. So the ask waits until onboarding
+  // settles. sessionStorage rather than state because onboarding's dismiss can
+  // hard-navigate to /dashboard, which would drop anything held in memory.
   useEffect(() => {
     const intent = searchParams.get(CHECKOUT_PARAM);
     if (!isCheckoutIntent(intent)) return;
-    setResumeCheckout(intent);
-    // Strip it so a refresh, or a back button, does not reopen the card form.
+    try { sessionStorage.setItem(PENDING_CHECKOUT_KEY, intent); } catch { /* private mode */ }
+    // Strip it so a refresh, or a back button, does not requeue the card form.
     const url = new URL(window.location.href);
     url.searchParams.delete(CHECKOUT_PARAM);
     window.history.replaceState({}, '', url.pathname + url.search + url.hash);
   }, [searchParams]);
+
+  // Onboarding calls this when it is out of the way, whether it showed or not.
+  const openPendingCheckout = useCallback(() => {
+    let intent: string | null = null;
+    try {
+      intent = sessionStorage.getItem(PENDING_CHECKOUT_KEY);
+      sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
+    } catch { /* private mode */ }
+    if (isCheckoutIntent(intent)) setResumeCheckout(intent);
+  }, []);
   const reduceMotion = settings.accessibility.reduceMotion;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [railCollapsed, setRailCollapsed] = useState(false);
@@ -614,7 +641,12 @@ export default function DashboardShell({
   return (
     <DemoProvider>
     <>
-    {ONBOARDING_V2 ? <OnboardingFlowV2 /> : <OnboardingFlow />}
+    {ONBOARDING_V2 ? <OnboardingFlowV2 onSettled={openPendingCheckout} /> : <OnboardingFlow />}
+    {/* Only V2 reports when it is out of the way. On the legacy flow nothing
+        would ever fire onSettled, so a parked checkout would sit in
+        sessionStorage forever and the trial the button promised would never
+        open. Fall back to asking straight away there. */}
+    <LegacyCheckoutFallback enabled={!ONBOARDING_V2} onReady={openPendingCheckout} />
     {resumeCheckout && (
       <CheckoutModal
         billingPeriod={resumeCheckout}
