@@ -1759,7 +1759,12 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-[18px] font-semibold text-[var(--color-text-primary)]">
-                  {(billing.realTier ?? billing.tier) === 'max' ? 'Max' : 'Pro'}{billing.billingPeriod === 'annual' ? ' Annual' : ' Monthly'}
+                  {/* 'annual' is the pre-044 legacy value and 'pro_annual' is
+                      what the $149/yr plan stores. Matching only the old one
+                      labelled a yearly subscriber "Pro Monthly" directly above
+                      a renewal date twelve months out. */}
+                  {(billing.realTier ?? billing.tier) === 'max' ? 'Max' : 'Pro'}
+                  {billing.billingPeriod === 'pro_annual' || billing.billingPeriod === 'annual' ? ' Annual' : ' Monthly'}
                 </p>
                 {billing.currentPeriodEnd && (
                   <p className="text-[15px] text-[var(--color-text-secondary)] mt-0.5">

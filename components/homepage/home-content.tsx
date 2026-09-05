@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
+import { signupUrlForIntent } from '@/lib/checkout-intent';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
@@ -120,8 +121,8 @@ const NAV_LINKS = [
 // the section header. The figure is arithmetic on a stated fee, not a
 // competitor's advertised price, so it cannot go stale.
 const TIERS = [
-  { name: 'Pro', price: '$20', priceSuffix: '/mo', sub: 'Free for 14 days, card required', anchor: 'A 1% advisory fee on a $1M book is $10,000 a year. This is $240.', badge: 'Recommended', features: ['Everything in Free', 'Thesis monitoring with cited evidence', 'Twelve months of history on day one', 'Tax center with TLH', 'Earnings exposure', 'Conviction-led tailored brief'], cta: 'Start free trial', featured: true },
-  { name: 'Free', price: '$0', priceSuffix: ' forever', sub: 'No card, no expiry', anchor: null, badge: null, features: ['Full terminal access', 'AI analysis, any US ticker', 'Connected brokerages', 'Daily brief', 'Actions inbox', 'Portfolio Wrapped'], cta: 'Open the terminal', featured: false },
+  { name: 'Pro', price: '$20', priceSuffix: '/mo', alt: 'Or $149 a year, saving $91.', sub: 'Free for 14 days, card required', anchor: 'A 1% advisory fee on a $1M book is $10,000 a year. This is $240.', badge: 'Recommended', features: ['Everything in Free', 'Thesis monitoring with cited evidence', 'Twelve months of history on day one', 'Tax center with TLH', 'Earnings exposure', 'Conviction-led tailored brief'], cta: 'Start free trial', featured: true },
+  { name: 'Free', price: '$0', priceSuffix: ' forever', alt: null, sub: 'No card, no expiry', anchor: null, badge: null, features: ['Full terminal access', 'AI analysis, any US ticker', 'Connected brokerages', 'Daily brief', 'Actions inbox', 'Portfolio Wrapped'], cta: 'Open the terminal', featured: false },
 ];
 
 /* ─── The four surfaces ─────────────────────────────────────────────────── */
@@ -719,6 +720,9 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
                 <div className="text-[2.75rem] max-sm:text-[2.25rem] font-bold tracking-[-0.03em] leading-none">
                   {tier.price}{tier.priceSuffix && <small className="text-base text-[var(--color-text-muted)] font-medium">{tier.priceSuffix}</small>}
                 </div>
+                {tier.alt && (
+                  <div className="font-[family-name:var(--font-mono)] text-[12px] text-[var(--color-gold)] mt-1.5 tracking-[0.06em]">{tier.alt}</div>
+                )}
                 <div className="font-[family-name:var(--font-mono)] text-[12px] text-[var(--color-text-muted)] mt-2 tracking-[0.06em]">{tier.sub}</div>
                 {tier.anchor && (
                   <p className="text-[13px] leading-[1.5] text-[var(--color-text-secondary)] mt-2.5 mb-0 max-w-[34ch]">{tier.anchor}</p>
@@ -730,7 +734,7 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
                     </li>
                   ))}
                 </ul>
-                <Link href="/signup" className={`block w-full mt-6 py-3 rounded-[5px] font-[family-name:var(--font-mono)] text-[10px] font-bold tracking-[0.16em] uppercase text-center transition-all min-h-[44px] flex items-center justify-center ${tier.featured ? 'bg-[var(--color-gold)] text-black border border-[var(--color-gold)] shadow-[0_8px_24px_rgba(230,185,77,0.25)] hover:bg-[var(--color-gold-hi)]' : 'bg-transparent text-[var(--color-text-primary)] border border-[var(--color-border-strong)] hover:border-[rgba(255,255,255,0.3)]'}`}>
+                <Link href={tier.featured ? signupUrlForIntent('pro') : '/signup'} className={`block w-full mt-6 py-3 rounded-[5px] font-[family-name:var(--font-mono)] text-[10px] font-bold tracking-[0.16em] uppercase text-center transition-all min-h-[44px] flex items-center justify-center ${tier.featured ? 'bg-[var(--color-gold)] text-black border border-[var(--color-gold)] shadow-[0_8px_24px_rgba(230,185,77,0.25)] hover:bg-[var(--color-gold-hi)]' : 'bg-transparent text-[var(--color-text-primary)] border border-[var(--color-border-strong)] hover:border-[rgba(255,255,255,0.3)]'}`}>
                   {tier.cta}
                 </Link>
               </div>
@@ -788,7 +792,7 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
             actionable insights: tax-loss harvesting opportunities with wash-sale
             detection, concentration risk alerts, earnings exposure, and cash flow
             changes. Its flagship capability is <strong className="text-[var(--color-text-primary)]">thesis monitoring</strong>: you write the reasons (the &ldquo;pillars&rdquo;) you own each stock, and Helm&rsquo;s agent watches those reasons against SEC filings, earnings, and news, then flags you when one weakens, the failure mode known as thesis drift, citing the exact dated filing. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.
-            Most features are free. Pro is $20/mo.
+            Most features are free. Pro is $20 a month, or $149 a year.
           </p>
         </div>
       </section>
@@ -828,7 +832,7 @@ export default function HomeContent({ tickerTape, latestCatch }: HomeContentProp
               { '@type': 'Question', name: 'What is Helm Terminal?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal is a free, institutional-grade financial intelligence platform for individual investors. It aggregates brokerage and bank accounts via Plaid, runs deterministic rule-based analysis over your portfolio, and surfaces actionable insights like tax-loss harvesting opportunities, concentration risk, earnings exposure, and cash flow changes. Its flagship capability is thesis monitoring: it tracks the specific reasons you own each stock against live SEC filings and news, and alerts you when your reasoning weakens or breaks (thesis drift), citing the exact dated source.' } },
               { '@type': 'Question', name: 'What tool tells me when my investment thesis breaks?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal does this through thesis monitoring. You write the pillars behind each position, and Helm\'s agent watches them against SEC filings, earnings, and news, then alerts you with a verbatim, dated citation the moment a pillar weakens or breaks (thesis drift). It is live and shipped, not a waitlist.' } },
               { '@type': 'Question', name: 'What is an agentic portfolio terminal?', acceptedAnswer: { '@type': 'Answer', text: 'An agentic portfolio terminal continuously watches your whole portfolio on your behalf, the exposure, the taxes, and the reasons behind each position, and surfaces what changed and what to do, instead of just charting what you own. Helm Terminal is an agentic terminal: an AI analyst on every position, monitoring each thesis against primary sources.' } },
-              { '@type': 'Question', name: 'Is Helm Terminal free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Helm Terminal offers a free tier that includes AI stock analysis, a full portfolio dashboard with Plaid sync, net worth tracking, daily brief, and an actions inbox. Pro at $20/month adds thesis monitoring with cited evidence, the agent, the Thesis Builder, the factor lens, earnings exposure tracking, and the tax center.' } },
+              { '@type': 'Question', name: 'Is Helm Terminal free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Helm Terminal offers a free tier that includes AI stock analysis, a full portfolio dashboard with Plaid sync, net worth tracking, daily brief, and an actions inbox. Pro at $20 a month, or $149 a year, adds thesis monitoring with cited evidence, the agent, the Thesis Builder, the factor lens, earnings exposure tracking, and the tax center.' } },
               { '@type': 'Question', name: 'Is Helm Terminal safe to use with my financial accounts?', acceptedAnswer: { '@type': 'Answer', text: 'Helm Terminal connects to your accounts through Plaid, a bank-grade financial data provider. The connection is read-only. Helm can never move money, execute trades, or modify your accounts. All data is encrypted in transit (TLS 1.3) and at rest (AES-256).' } },
             ],
           }),

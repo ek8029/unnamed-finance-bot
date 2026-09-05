@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { getStripe, tierForPriceId } from '@/lib/stripe';
+import { getStripe, tierForPriceId, billingPeriodForPriceId } from '@/lib/stripe';
 import { createServiceClient } from '@/lib/supabase/server';
 import { captureServer } from '@/lib/posthog-server';
 
@@ -255,7 +255,7 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
   const { data, error } = await supabase
     .from('user_subscriptions')
     .update({
-      ...(tier ? { tier, stripe_price_id: priceId, billing_period: tier } : {}),
+      ...(tier ? { tier, stripe_price_id: priceId, billing_period: billingPeriodForPriceId(priceId) ?? tier } : {}),
       cancel_at_period_end: sub.cancel_at_period_end,
       current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
       updated_at: new Date().toISOString(),

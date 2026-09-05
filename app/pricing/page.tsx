@@ -13,7 +13,14 @@ import { useTier } from '@/hooks/use-tier';
 // Display tiers for the new model. The `period` maps onto the existing
 // Stripe billing-period keys so checkout keeps working unchanged.
 // Pro is the only paid tier. Max was retired Aug 2026.
-type PaidPeriod = 'pro';
+type PaidPeriod = 'pro' | 'pro_annual';
+
+// $20 x 12 = $240 if you pay monthly. The annual price is the discount off
+// that, and it is stated as a saving rather than a percentage because the
+// dollar figure is what a buyer actually weighs.
+const MONTHLY_PRICE = 20;
+const ANNUAL_PRICE = 149;
+const ANNUAL_SAVING = MONTHLY_PRICE * 12 - ANNUAL_PRICE;
 
 // The page was built for three tiers and read as thin once it was two: two
 // equal boxes side by side make neither look like the answer. So there are no
@@ -59,7 +66,7 @@ const faqItems = [
   {
     question: 'How does the free trial work?',
     answer:
-      'Pro starts with a 14 day free trial. A card is required to begin it, nothing is charged until the trial ends, and you can cancel at any point before then and pay nothing. Fourteen days rather than seven because the evidence Helm surfaces arrives when companies file and report, not on a schedule that suits a trial.',
+      'Pro starts with a 14 day free trial on either plan. A card is required to begin it, nothing is charged until the trial ends, and you can cancel at any point before then and pay nothing. If you picked the yearly plan, the charge at the end of the trial is the full $149. Fourteen days rather than seven because the evidence Helm surfaces arrives when companies file and report, not on a schedule that suits a trial.',
   },
   {
     question: "What's included in the Free plan?",
@@ -69,7 +76,7 @@ const faqItems = [
   {
     question: 'What does Pro add?',
     answer:
-      'Pro is $20/mo. Free gives you one thesis, the history behind it, and keeps watching it; Pro watches every position you own, every trading day, and adds the agent, the Thesis Builder, the factor lens, earnings exposure tracking, the tax center with tax-loss harvesting, and a conviction-led tailored brief.',
+      'Pro is $20 a month, or $149 a year, which is $91 less than paying monthly. Free gives you one thesis, the history behind it, and keeps watching it; Pro watches every position you own, every trading day, and adds the agent, the Thesis Builder, the factor lens, earnings exposure tracking, the tax center with tax-loss harvesting, and a conviction-led tailored brief.',
   },
   {
     question: 'Can I cancel anytime?',
@@ -100,6 +107,14 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 export default function PricingPage() {
   // Which paid tier the checkout modal will open with.
   const [checkoutPeriod, setCheckoutPeriod] = useState<PaidPeriod | null>(null);
+  // Which interval the card is showing. Annual is not preselected: defaulting
+  // someone into a $149 charge they did not choose is how a trial turns into a
+  // refund request.
+  // NOT named `interval`/`setInterval`: that shadows the global timer function
+  // inside this component, which is a quiet way to break anything that later
+  // schedules work here.
+  const [billingInterval, setBillingInterval] = useState<PaidPeriod>('pro');
+  const annual = billingInterval === 'pro_annual';
   // Purchase logic runs on the REAL subscription tier — during the open-access
   // window everyone's features read as Pro, but nobody has bought anything,
   // and "Current plan" on an unpurchased tier reads as billing that
@@ -189,21 +204,53 @@ export default function PricingPage() {
                 >
                   Helm Pro
                 </div>
+                {/* Interval switch. Two words, no percentages, no "best value"
+                    badge: the saving is stated in dollars underneath. */}
+                <div
+                  className="mt-4 inline-flex rounded-[var(--radius-md)] border border-[var(--color-border-base)] p-0.5"
+                  role="group"
+                  aria-label="Billing interval"
+                >
+                  {([['pro', 'Monthly'], ['pro_annual', 'Yearly']] as const).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setBillingInterval(value)}
+                      aria-pressed={billingInterval === value}
+                      className={`px-3.5 py-1.5 text-[13px] rounded-[calc(var(--radius-md)-2px)] transition-colors cursor-pointer ${
+                        billingInterval === value
+                          ? 'bg-[var(--color-gold)] text-[var(--color-bg-base)] font-semibold'
+                          : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="flex items-baseline gap-2 mt-4">
                   <span
                     className="text-[52px] font-bold tabular-nums leading-none text-[var(--color-text-primary)]"
                     style={{ fontFamily: 'var(--font-mono)' }}
                   >
-                    $20
+                    ${annual ? ANNUAL_PRICE : MONTHLY_PRICE}
                   </span>
-                  <span className="text-[16px] text-[var(--color-text-muted)]">/mo</span>
+                  <span className="text-[16px] text-[var(--color-text-muted)]">
+                    {annual ? '/yr' : '/mo'}
+                  </span>
                 </div>
+                {annual && (
+                  <p className="mt-2 mb-0 text-[13px] text-[var(--color-gold)]" style={{ fontFamily: 'var(--font-mono)' }}>
+                    ${ANNUAL_SAVING} off paying monthly
+                  </p>
+                )}
                 {/* The AUM comparison was doing its work in the section heading,
                     which is a screen away from the figure a buyer is actually
                     weighing. The arithmetic is on a stated advisory fee, not on
                     a competitor's advertised price, so it cannot go stale. */}
                 <p className="mt-3 mb-0 text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
-                  A 1% advisory fee on a $1M book is $10,000 a year. This is $240.
+                  A 1% advisory fee on a $1M book is $10,000 a year. This is $
+                  {annual ? ANNUAL_PRICE : MONTHLY_PRICE * 12}.
                 </p>
                 <p className="mt-3 mb-0 text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
                   Free for 14 days. A card is required to start, nothing is charged until the
@@ -212,7 +259,7 @@ export default function PricingPage() {
 
                 {tier === 'free' ? (
                   <button
-                    onClick={() => setCheckoutPeriod('pro')}
+                    onClick={() => setCheckoutPeriod(billingInterval)}
                     className="group mt-6 w-full flex items-center justify-center gap-2.5 px-6 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-colors duration-200 min-h-[44px]"
                   >
                     Start 14 day free trial

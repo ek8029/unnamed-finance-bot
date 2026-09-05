@@ -95,8 +95,11 @@ export async function POST(req: NextRequest) {
     // has-trialed marker regardless of which path set it.
     const hasHadTrial = !!subscription?.trial_ends_at;
 
-    // Only Pro exists now, so any current holder of it is already at the top.
-    if (tierAtLeast(currentTier, billingPeriod)) {
+    // Only Pro exists, at two intervals. Compare against the TIER, not the
+    // billing period: passing 'pro_annual' here would look up a rank that does
+    // not exist, the guard would read false, and an existing Pro subscriber
+    // could buy a second subscription and be billed twice.
+    if (tierAtLeast(currentTier, 'pro')) {
       return NextResponse.json({ error: 'You already have Pro.' }, { status: 400 });
     }
 
@@ -148,6 +151,26 @@ export async function POST(req: NextRequest) {
           { error: 'Internal server error' },
           { status: 500 },
         );
+      }
+    }
+
+    // Ask STRIPE, not just our row. The guard above reads user_subscriptions,
+    // which is only correct while webhooks are landing. Any window where they
+    // are not — a delivery lag, an outage, a failed write — leaves the row on
+    // 'free' while a live subscription exists, and this endpoint would happily
+    // sell a second one. Two subscriptions on one customer both bill.
+    if (stripeCustomerId) {
+      const existing = await getStripe().subscriptions.list({
+        customer: stripeCustomerId,
+        status: 'all',
+        limit: 10,
+      });
+      const live = existing.data.find((s) =>
+        ['active', 'trialing', 'past_due', 'unpaid'].includes(s.status),
+      );
+      if (live) {
+        console.warn(`[checkout] ${user.id} already has Stripe subscription ${live.id} (${live.status}); local row said ${currentTier}`);
+        return NextResponse.json({ error: 'You already have Pro.' }, { status: 400 });
       }
     }
 
