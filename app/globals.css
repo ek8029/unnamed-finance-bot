@@ -37,6 +37,23 @@ html { scroll-behavior: smooth; }
     --color-border-base:   rgba(255, 255, 255, 0.06);
     --color-border-strong: rgba(255, 255, 255, 0.12);
 
+    /* A rule you can actually see.
+     *
+     * The three tokens above are for borders AROUND a surface, where the fill
+     * does the separating and the border only has to hint at an edge. On
+     * #0A0A0A, subtle composites to #141414 and lands at 1.07:1, base at
+     * 1.13:1. That is below the perceptual floor on anything but a bright
+     * screen in a dark room, which is fine for a card edge and useless for a
+     * rule that IS the structure.
+     *
+     * /compare and /app are built out of hairlines instead of cards, so the
+     * rule carries the layout on its own. At 0.11 it reads as a drawn line at
+     * arm's length and still stays quiet. Use it wherever a line separates two
+     * groups with no surface behind them; keep border-subtle for separators
+     * inside an already-bounded group.
+     */
+    --color-rule:          rgba(255, 255, 255, 0.11);
+
     /* ── Text ── */
     --color-text-primary:  #FAFAFA;
     --color-text-secondary:#8F8F8F;
@@ -146,6 +163,7 @@ html { scroll-behavior: smooth; }
     --color-border-subtle: rgba(0, 0, 0, 0.04);
     --color-border-base:   rgba(0, 0, 0, 0.08);
     --color-border-strong: rgba(0, 0, 0, 0.14);
+    --color-rule:          rgba(0, 0, 0, 0.14);
 
     --color-text-primary:  #0A0A0A;
     --color-text-secondary:#4A5568;
@@ -860,11 +878,51 @@ html.screen-reader-optimized .sr-only {
   border-radius: 4px;
 }
 
-/* ── Focus visible (a11y) ── */
-a:focus-visible, button:focus-visible {
-  outline: 1px solid var(--color-gold);
-  outline-offset: 2px;
-  border-radius: 2px;
+/* ── Focus visible (a11y) ──
+ *
+ * The 2px ring lives in @layer utilities as *:focus-visible. There used to be
+ * a second, UNLAYERED rule here setting 1px for a and button. Unlayered normal
+ * declarations beat every layered one regardless of specificity, so this quietly
+ * won for every link and button on the site and the layered rule was dead code
+ * for exactly the elements people tab through. Deleted rather than edited: the
+ * rule above already covers a and button, at the width the design system says.
+ */
+
+/* ── The pinned-device stage on /app ──
+ *
+ * Gated on viewport HEIGHT as well as width, which a Tailwind breakpoint cannot
+ * express on its own.
+ *
+ * The device is sized from the height of the viewport, because a phone is a
+ * tall object in a column bounded by the fold. That is right at 100% zoom and
+ * wrong at 200%: a width-only gate keeps the pinned layout, the height budget
+ * halves, and the screenshot renders about 110px wide. WCAG 1.4.4 mandates 200%
+ * specifically, so the primary content of the page was shrinking by 3x for the
+ * people who most need it larger.
+ *
+ * Below either threshold the page falls back to the stacked layout, where every
+ * block carries its own phone at a width that does not depend on the fold.
+ */
+.device-stage__pin { display: none; }
+.device-stage__inline { display: block; }
+
+@media (min-width: 1024px) and (min-height: 820px) {
+  .device-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    column-gap: 6rem;
+  }
+  .device-stage__pin { display: block; }
+  .device-stage__inline { display: none; }
+  .device-stage__block {
+    /* Enough that only one block ever crosses the observer band, and no more.
+       At 86vh a block held ~860px for ~250px of copy, which is most of a screen
+       of nothing between every heading. */
+    min-height: min(72vh, 760px);
+    padding-top: 0;
+    padding-bottom: 0;
+    border-top: 0;
+  }
 }
 
 /* ── Reduced motion ── */

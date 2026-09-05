@@ -29,7 +29,7 @@ export function CompareSearch() {
     ticker1.trim().toUpperCase() !== ticker2.trim().toUpperCase();
 
   return (
-    <div className="max-w-lg mx-auto">
+    <div className="max-w-lg">
       <div className="flex items-center gap-3">
         <input
           type="text"
@@ -39,7 +39,7 @@ export function CompareSearch() {
           onKeyDown={handleKeyDown}
           maxLength={5}
           aria-label="First ticker symbol"
-          className="flex-1 px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[15px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-center uppercase"
+          className="flex-1 min-w-0 px-1 py-3 bg-transparent border-0 border-b border-[var(--color-rule)] rounded-none text-[18px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors uppercase"
           style={{ fontFamily: 'var(--font-mono)' }}
         />
         <span
@@ -56,7 +56,7 @@ export function CompareSearch() {
           onKeyDown={handleKeyDown}
           maxLength={5}
           aria-label="Second ticker symbol"
-          className="flex-1 px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[15px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-center uppercase"
+          className="flex-1 min-w-0 px-1 py-3 bg-transparent border-0 border-b border-[var(--color-rule)] rounded-none text-[18px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors uppercase"
           style={{ fontFamily: 'var(--font-mono)' }}
         />
         <button
@@ -68,7 +68,7 @@ export function CompareSearch() {
           Compare
         </button>
       </div>
-      <p className="text-[12px] text-[var(--color-text-muted)] text-center mt-2">
+      <p className="text-[12px] text-[var(--color-text-muted)] mt-3">
         Enter any two US-listed ticker symbols (NYSE, NASDAQ, AMEX)
       </p>
     </div>

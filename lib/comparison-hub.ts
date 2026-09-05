@@ -42,6 +42,11 @@ export const COMPARISON_CATEGORIES: ComparisonCategory[] = [
       'Deep data on any company you care to look up. The work still starts with you deciding what to look up, and ends when you close the tab.',
     entries: [
       {
+        name: 'Koyfin',
+        href: '/blog/best-koyfin-alternatives',
+        note: 'Sharp dashboards, and a free tier that keeps shrinking.',
+      },
+      {
         name: 'Bloomberg Terminal',
         href: '/blog/best-bloomberg-terminal-alternatives',
         note: 'Institutional depth at $24,000 a year.',
@@ -50,11 +55,6 @@ export const COMPARISON_CATEGORIES: ComparisonCategory[] = [
         name: 'Bloomberg, the free options',
         href: '/blog/free-bloomberg-terminal-alternative',
         note: 'What $0 actually covers of a terminal.',
-      },
-      {
-        name: 'Koyfin',
-        href: '/blog/best-koyfin-alternatives',
-        note: 'Sharp dashboards, and a free tier that keeps shrinking.',
       },
       {
         name: 'Morningstar',
