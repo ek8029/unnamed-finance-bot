@@ -158,7 +158,13 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         billing_period: billingPeriod,
         current_period_end: currentPeriodEnd,
         cancel_at_period_end: false,
-        trial_ends_at: trialEndsAt,
+        // Only ever SET this, never clear it. It is the has-trialed marker the
+        // checkout route reads to decide whether someone gets a free trial, so
+        // writing null on a no-trial purchase erased the record that they had
+        // already had one. That made a repeatable loop: trial, cancel, buy
+        // (charged, marker wiped), cancel, and the next purchase gets a fresh
+        // 14 days. Forever, one paid cycle per free one.
+        ...(trialEndsAt ? { trial_ends_at: trialEndsAt } : {}),
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'user_id' },
@@ -192,9 +198,13 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // With the card-required trial this is the card-on-file moment, not the
   // money moment. The eight no-card trials granted in July converted at zero
   // precisely because this event could not exist for them.
+  // `trial` was `billingPeriod !== 'lifetime'`, and lifetime stopped being
+  // sellable, so it had become a constant true and was labelling immediate
+  // charges as trial starts. Read the actual trial instead, or the conversion
+  // funnel measures a mix of two different events.
   captureServer('trial_started', userId, {
     plan: billingPeriod,
-    trial: billingPeriod !== 'lifetime',
+    trial: !!trialEndsAt,
     current_period_end: currentPeriodEnd,
   });
 

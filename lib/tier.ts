@@ -71,7 +71,11 @@ export interface SubscriptionInfo {
  * Effective subscription: applies the 14-day Pro trial lazily at read time.
  * A trial row is tier='pro' + trial_ends_at set + no Stripe subscription;
  * once trial_ends_at passes it reads as 'free' — no cron, no write needed.
- * Paid checkouts clear trial_ends_at via the Stripe webhook upsert.
+ *
+ * A paid row KEEPS trial_ends_at. It used to be cleared, which also erased the
+ * has-trialed marker the checkout route reads, so cancelling and rebuying
+ * granted a fresh 14 days every time. What separates a live trial from a paid
+ * subscription is stripe_subscription_id, and every read below tests for it.
  */
 export async function getSubscriptionInfo(userId: string): Promise<SubscriptionInfo> {
   if (isOpenAccessWindow()) {
