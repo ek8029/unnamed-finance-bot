@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { isThesisUser } from '@/lib/thesis-access';
 import { useTier } from '@/hooks/use-tier';
 import { useAccounts } from '@/hooks/use-financial-data';
@@ -181,7 +181,6 @@ export default function DashboardShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { settings } = useSettings();
 
   // Resume a purchase that started before the account existed. A pricing CTA
@@ -201,14 +200,18 @@ export default function DashboardShell({
   // settles. sessionStorage rather than state because onboarding's dismiss can
   // hard-navigate to /dashboard, which would drop anything held in memory.
   useEffect(() => {
-    const intent = searchParams.get(CHECKOUT_PARAM);
+    // window.location rather than useSearchParams(): that hook opts the whole
+    // subtree out of prerendering unless it sits inside a Suspense boundary,
+    // and this shell wraps every dashboard route. It broke the production
+    // build on /dashboard/actions. This runs client-side only anyway.
+    const intent = new URLSearchParams(window.location.search).get(CHECKOUT_PARAM);
     if (!isCheckoutIntent(intent)) return;
     try { sessionStorage.setItem(PENDING_CHECKOUT_KEY, intent); } catch { /* private mode */ }
     // Strip it so a refresh, or a back button, does not requeue the card form.
     const url = new URL(window.location.href);
     url.searchParams.delete(CHECKOUT_PARAM);
     window.history.replaceState({}, '', url.pathname + url.search + url.hash);
-  }, [searchParams]);
+  }, []);
 
   // Onboarding calls this when it is out of the way, whether it showed or not.
   const openPendingCheckout = useCallback(() => {
