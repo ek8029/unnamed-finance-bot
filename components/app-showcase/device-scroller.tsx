@@ -43,28 +43,53 @@ export function PhoneFrame({
   sizes?: string;
 }) {
   return (
-    // Flat, dark, and unlit on purpose.
+    // A device, lit from above. Not a glowing one, and not a bare screenshot.
     //
-    // This used to be a #2a2a2c-to-#141416 gradient at 4px with a 1px white
-    // outer ring. Against a #0A0A0A page that is a bright band tracing the
-    // whole outline, and it reads as a glow around the screen rather than as
-    // the edge of a device. A bezel only has to make the silhouette findable:
-    // one flat value a little above the page does it, with nothing outside the
-    // shape at all.
-    <div className="relative rounded-[2.1rem] p-[3px] bg-[#17171a]">
-      {/* No fake screen glare either. These are real screenshots of a grid of
-          numbers, and a diagonal white sheen lifts the blacks unevenly across
-          it, so the left column of figures reads lighter than the right. */}
-      <div className="relative rounded-[1.95rem] overflow-hidden bg-black">
-        <Image
-          src={src}
-          alt={alt}
-          width={1290}
-          height={2796}
-          priority={priority}
-          sizes={sizes}
-          className="block w-full h-auto"
-        />
+    // Two wrong answers came before this. First a #2a2a2c bezel with a 1px
+    // WHITE RING around the outside: a uniform bright outline tracing the whole
+    // shape, which reads as a glow rather than as an edge. Then, overcorrecting,
+    // a flat #17171a with no shadow at all, which reads as a screenshot pasted
+    // on the page with no dimension to it.
+    //
+    // What separates the two is where the light is. A ring that is equally
+    // bright all the way round is a halo. A gradient that is brightest at the
+    // top edge and falls away, plus a shadow that falls downward, is an object
+    // sitting under a light. Same ingredients, opposite read.
+    <div className="relative">
+      {/* Side hardware. Small, and the single clearest signal that this is a
+          phone rather than a rectangle with a screenshot in it. */}
+      <span aria-hidden="true" className="absolute -left-[2px] top-[19%] w-[3px] h-[4%] rounded-l-sm bg-[#1c1c20]" />
+      <span aria-hidden="true" className="absolute -left-[2px] top-[26%] w-[3px] h-[7%] rounded-l-sm bg-[#1c1c20]" />
+      <span aria-hidden="true" className="absolute -left-[2px] top-[35%] w-[3px] h-[7%] rounded-l-sm bg-[#1c1c20]" />
+      <span aria-hidden="true" className="absolute -right-[2px] top-[28%] w-[3px] h-[11%] rounded-r-sm bg-[#1c1c20]" />
+
+      <div
+        className="relative rounded-[2.3rem] p-[5px] bg-gradient-to-b from-[#26262b] via-[#131316] to-[#0d0d10]"
+        style={{
+          boxShadow: [
+            // 1px specular on the top edge only, inside the shape
+            'inset 0 1px 0 rgba(255,255,255,0.13)',
+            // and it grounds, rather than radiates
+            '0 34px 64px -24px rgba(0,0,0,0.95)',
+            '0 12px 26px -12px rgba(0,0,0,0.85)',
+          ].join(', '),
+        }}
+      >
+        {/* No fake screen glare. These are real screenshots of a grid of
+            numbers, and a diagonal white sheen lifts the blacks unevenly across
+            it, so the left column of figures reads lighter than the right. The
+            inset hairline is the glass edge and stops there. */}
+        <div className="relative rounded-[1.95rem] overflow-hidden bg-black ring-1 ring-inset ring-white/[0.07]">
+          <Image
+            src={src}
+            alt={alt}
+            width={1290}
+            height={2796}
+            priority={priority}
+            sizes={sizes}
+            className="block w-full h-auto"
+          />
+        </div>
       </div>
     </div>
   );
@@ -99,37 +124,52 @@ export function DeviceScroller({ screens }: { screens: AppScreen[] }) {
     <div className="relative device-stage">
       {/* Pinned device. Gated on viewport height as well as width, see .device-stage in globals.css */}
       <div className="device-stage__pin">
-        {/* No fixed height on the sticky box.
-            It used to be h-[calc(100vh-8rem)], and a sticky element that is
-            nearly as tall as the viewport detaches that far BEFORE its parent
-            ends: the phone slid away while the last screen's copy was still
-            being read, which looks exactly like the pin failing. The box now
-            shrink-wraps the device, and the device is kept meaningfully shorter
-            than a copy block so it stays put until the section genuinely
-            finishes. */}
-        <div className="sticky top-24">
+        {/* The geometry here is solved, not tuned.
+         *
+         * A sticky box detaches its OWN height before its parent's range ends.
+         * Writing B for the block height, V for the viewport, t for this top
+         * offset and h for the box height: the last block's copy sits centred
+         * at scrollY = top + 4.5B - V/2, and the box is still stuck while
+         * scrollY <= top + 5B - t - h. So it holds iff
+         *
+         *     h <= 0.5B + V/2 - t
+         *
+         * Centring the device in the viewport means h = V - 2t, and
+         * substituting gives B >= V - 2t. That is the whole answer: a centred,
+         * viewport-tall device REQUIRES roughly one block per screenful.
+         * Shrinking the device to make it hold, which is what the last attempt
+         * did, was solving the wrong side of the inequality and cost 40% of its
+         * size for nothing.
+         *
+         * B = 100vh (globals.css), t = 64px and h = V - 128 puts the box exactly
+         * centred (64px top, 64px bottom) with 64px of margin on the
+         * inequality at every viewport height.
+         */}
+        <div className="sticky top-16 flex items-center" style={{ height: 'calc(100vh - 8rem)' }}>
           {/* Sized by HEIGHT, not width. A phone is a tall object in a column
-              bounded by the viewport, so a max-width picks the wrong dimension:
-              it overflowed the box on a short laptop and stayed small on a tall
-              display. Height drives it, the aspect ratio gives the width. */}
+              bounded by the fold, so a max-width picks the wrong dimension.
+              Height drives it, the aspect ratio gives the width. */}
+          {/* This box is the DEVICE, nothing else. The rail used to live inside
+              it, so centring the box put the phone 37px high by half the rail's
+              height. The rail hangs off the bottom instead. */}
           <div
-            className="relative mx-auto flex flex-col items-center"
-            style={{ height: 'clamp(320px, calc(100vh - 16rem), 720px)', maxWidth: '100%' }}
+            className="relative mx-auto"
+            style={{ height: 'min(calc(100vh - 13rem), 980px)', maxWidth: '100%' }}
           >
-            <div className="relative flex-1 min-h-0 aspect-[1290/2796]">
+            <div className="relative h-full aspect-[1290/2796]">
               {screens.map((s, i) => (
                 <div
                   key={s.id}
                   className="absolute inset-0 transition-opacity duration-500 ease-out motion-reduce:transition-none"
                   style={{ opacity: i === active ? 1 : 0 }}
                 >
-                  <PhoneFrame src={s.src} alt="" sizes="(max-width: 1280px) 320px, 440px" />
+                  <PhoneFrame src={s.src} alt="" sizes="(max-width: 1280px) 360px, 460px" />
                 </div>
               ))}
             </div>
 
             {/* Position rail. Five marks, the live one gold and wide. */}
-            <div className="mt-7 shrink-0 flex items-center justify-center gap-2">
+            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-6 flex items-center justify-center gap-2">
               {screens.map((s, i) => (
                 <span
                   key={s.id}
@@ -144,7 +184,7 @@ export function DeviceScroller({ screens }: { screens: AppScreen[] }) {
             </div>
             <p
               aria-hidden="true"
-              className="mt-3 shrink-0 text-center text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)]"
+              className="absolute top-full left-1/2 -translate-x-1/2 mt-[34px] whitespace-nowrap text-center text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)]"
               style={{ fontFamily: 'var(--font-mono)' }}
             >
               {screens[active]?.tab}

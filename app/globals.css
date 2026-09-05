@@ -923,15 +923,18 @@ html.screen-reader-optimized .sr-only {
   .device-stage__pin { display: block; }
   .device-stage__inline { display: none; }
   .device-stage__block {
-    /* Enough that only one block ever crosses the observer band, and no more.
-       At 86vh a block held ~860px for ~250px of copy, which is most of a screen
-       of nothing between every heading.
-
-       It also has to stay comfortably TALLER than the pinned device. The device
-       shares this column's scroll range, and a sticky element unsticks its own
-       height before the range ends, so a device taller than a block takes the
-       phone off screen while the last screen's copy is still being read. */
-    min-height: min(80vh, 900px);
+    /* One block per screenful. Not a taste call, a constraint.
+     *
+     * The pinned device needs B >= V - 2t to stay stuck through the last block
+     * (derivation in device-scroller.tsx). Anything shorter forces the device
+     * to shrink instead, which is what the previous 80vh/900px cap did.
+     *
+     * It also fixes what a capped block broke visually: at 900px on a tall
+     * display the NEXT block's copy sat only 900px below the current one, so
+     * the upcoming heading was on screen before the current one was done, with
+     * a band of nothing between them. At one viewport apart, exactly one block
+     * is readable at a time and the gap is off screen where it belongs. */
+    min-height: 100vh;
     padding-top: 0;
     padding-bottom: 0;
     border-top: 0;
