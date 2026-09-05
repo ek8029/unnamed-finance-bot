@@ -9,6 +9,13 @@ export const metadata = { title: 'Testing', robots: { index: false, follow: fals
 
 const EXPERIMENTS = [
   {
+    href: '/testing/app/ledger',
+    title: 'Agent presence · Ledger, Live Read, overview caption',
+    date: '2026-09-05',
+    blurb:
+      'Three tenses on one spine. The brief as a dated record with receipts and an AHEAD block, the connect moment as a streamed read with real timestamps, and the overview caption carrying the present tense instead of a fourth strip. Zero LLM. Spec: docs/superpowers/specs/2026-09-05-agent-presence-options.md',
+  },
+  {
     href: '/testing/vix16',
     title: 'VIX ÷ 16 · the priced day',
     date: '2026-08-23',

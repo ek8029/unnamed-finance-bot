@@ -35,6 +35,9 @@ export function LabNav({ email }: { email: string }) {
       <div className="px-5 pb-1.5 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[#5F5F5F]" style={MONO}>
         New surfaces
       </div>
+      {item('/testing/app/presence', 'Overview', 'presence')}
+      {item('/testing/app/ledger', 'Brief', 'ledger')}
+      {item('/testing/app/live-read', 'Live Read', 'connect')}
       {item('/testing/app/research', 'Research', 'v2')}
       {item('/testing/app/theses', 'Theses', 'v2')}
       {item('/testing/app/phone', 'Phone', 'mock')}
