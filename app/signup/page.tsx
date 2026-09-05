@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { safeNext } from '@/lib/checkout-intent';
 import Link from 'next/link';
 import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
@@ -28,6 +29,10 @@ function SignupForm() {
   const searchParams = useSearchParams();
 
   const isWrappedFlow = searchParams.get('flow') === 'wrapped';
+  // Where to land after signup. A pricing CTA sends ?next=/dashboard?checkout=…
+  // so the trial the button promised actually opens. Sanitised: this param is
+  // reachable by anyone with a link, so it must never leave the origin.
+  const nextPath = isWrappedFlow ? '/wrapped' : safeNext(searchParams.get('next'));
 
   const [email, setEmail] = useState(searchParams.get('email') || '');
   const [password, setPassword] = useState('');
@@ -92,7 +97,7 @@ function SignupForm() {
       }
       if (data.session) {
         posthog.capture('signup_completed', { method: 'email', flow: isWrappedFlow ? 'wrapped' : 'default' });
-        router.push(isWrappedFlow ? '/wrapped' : '/dashboard');
+        router.push(nextPath);
         router.refresh();
       } else {
         posthog.capture('signup_completed', { method: 'email', flow: isWrappedFlow ? 'wrapped' : 'default', needs_confirmation: true });
@@ -111,7 +116,6 @@ function SignupForm() {
 
   const handleGoogleSignIn = async () => {
     posthog.capture('signup_started', { method: 'google', flow: isWrappedFlow ? 'wrapped' : 'default' });
-    const nextPath = isWrappedFlow ? '/wrapped' : '/dashboard';
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}` },

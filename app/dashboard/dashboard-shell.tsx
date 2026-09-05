@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { isThesisUser } from '@/lib/thesis-access';
 import { useTier } from '@/hooks/use-tier';
 import { useAccounts } from '@/hooks/use-financial-data';
 import { usePreview } from '@/lib/preview-context';
+import { CheckoutModal } from '@/components/checkout-modal';
+import { CHECKOUT_PARAM, isCheckoutIntent, type CheckoutIntent } from '@/lib/checkout-intent';
 import { TIER_RANK, type Tier } from '@/lib/tier-shared';
 import {
   LayoutDashboard,
@@ -169,7 +171,27 @@ export default function DashboardShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { settings } = useSettings();
+
+  // Resume a purchase that started before the account existed. A pricing CTA
+  // sends ?next=/dashboard?checkout=… through signup, so the trial the button
+  // promised opens here rather than quietly not happening.
+  //
+  // The dashboard is the landing spot on purpose: the onboarding overlay is
+  // already mounted underneath, so closing the card form drops the person into
+  // onboarding instead of onto a dead page. It has to outrank onboarding's
+  // z-[100] to be visible at all.
+  const [resumeCheckout, setResumeCheckout] = useState<CheckoutIntent | null>(null);
+  useEffect(() => {
+    const intent = searchParams.get(CHECKOUT_PARAM);
+    if (!isCheckoutIntent(intent)) return;
+    setResumeCheckout(intent);
+    // Strip it so a refresh, or a back button, does not reopen the card form.
+    const url = new URL(window.location.href);
+    url.searchParams.delete(CHECKOUT_PARAM);
+    window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+  }, [searchParams]);
   const reduceMotion = settings.accessibility.reduceMotion;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [railCollapsed, setRailCollapsed] = useState(false);
@@ -593,6 +615,13 @@ export default function DashboardShell({
     <DemoProvider>
     <>
     {ONBOARDING_V2 ? <OnboardingFlowV2 /> : <OnboardingFlow />}
+    {resumeCheckout && (
+      <CheckoutModal
+        billingPeriod={resumeCheckout}
+        zClassName="z-[120]"
+        onClose={() => setResumeCheckout(null)}
+      />
+    )}
     <GuidedTour />
     <DisclaimerModal />
     <div

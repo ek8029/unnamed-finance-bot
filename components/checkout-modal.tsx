@@ -5,22 +5,29 @@ import { loadStripe } from '@stripe/stripe-js';
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
 import { X, Loader2, Check } from 'lucide-react';
 import posthog from 'posthog-js';
+import { signupUrlForIntent } from '@/lib/checkout-intent';
 
 // Initialize once at module level
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
   : null;
 
-type BillingPeriod = 'pro' | 'max';
+// A local copy on purpose: lib/stripe.ts pulls in the server SDK and cannot be
+// imported from a client component. Keep it in step with BillingPeriod there.
+// 'max' was retired Aug 2026 and is gone from both.
+type BillingPeriod = 'pro' | 'pro_annual';
 type Mode = 'loading' | 'checkout' | 'upgraded' | 'error';
 
 interface CheckoutModalProps {
   billingPeriod: BillingPeriod;
   onClose: () => void;
+  /** Stacking override. The onboarding overlay is z-[100], so a card form
+   *  opened on the dashboard has to be told to sit above it. */
+  zClassName?: string;
 }
 
-export function CheckoutModal({ billingPeriod, onClose }: CheckoutModalProps) {
-  const tierName = billingPeriod === 'max' ? 'Max' : 'Pro';
+export function CheckoutModal({ billingPeriod, onClose, zClassName = 'z-50' }: CheckoutModalProps) {
+  const tierName = 'Pro';
   const [mode, setMode] = useState<Mode>('loading');
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +50,13 @@ export function CheckoutModal({ billingPeriod, onClose }: CheckoutModalProps) {
         const data = await res.json();
         if (cancelled) return;
         if (!res.ok) {
+          // A logged-out visitor clicking the buy button used to be shown the
+          // literal string "Unauthorized" with nowhere to go. Send them to
+          // sign up and resume the same purchase on the other side.
+          if (res.status === 401) {
+            window.location.href = signupUrlForIntent(billingPeriod);
+            return;
+          }
           setError((data?.error as string) || 'Something went wrong. Please try again.');
           setMode('error');
           return;
@@ -126,7 +140,7 @@ export function CheckoutModal({ billingPeriod, onClose }: CheckoutModalProps) {
   return (
     /* Backdrop */
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className={`fixed inset-0 ${zClassName} flex items-center justify-center bg-black/60 backdrop-blur-sm`}
       onClick={onClose}
       aria-modal="true"
       role="dialog"
