@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { WatchTickersCard } from '@/components/watch-tickers-card';
+import { ThesisPanel } from '@/components/analyze/thesis-panel';
 import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import { analyzeStock } from '@/lib/analyze-stock';
@@ -261,6 +262,12 @@ export default async function TickerAnalysisPage({ params }: Props) {
           dataSources={dataSources}
           methodologyVersion={methodologyVersion}
         />
+
+        {/* The reasons, and what would break them. This is the differentiated
+            half of the page: the analysis above it is a summary anyone can
+            get, and the hero that sends people here promises this. Renders
+            nothing for a ticker with no house thesis. */}
+        <ThesisPanel ticker={symbol} />
 
         {/* Watch my tickers — no-account email capture, right after the analysis */}
         <section className="mt-8 max-w-3xl mx-auto">
