@@ -2,7 +2,7 @@
 // /ledger, /live-read). Takes an account email, resolves it with the service
 // client (same pattern as /api/testing/research), and returns the numbers the
 // three screens draw: the book, when it was priced, what the crons did, what
-// is ahead, the harvestable figure, house coverage, the sources read.
+// is ahead, the harvestable figure, house coverage, the sources read, the flags.
 //
 // `?part=` returns one slice with its real server time in ms, so the Live Read
 // screen can print each line when its work actually finishes. No part = all.
@@ -19,14 +19,21 @@ import { getTickerThesisData } from '@/lib/content/public-thesis';
 export const dynamic = 'force-dynamic';
 
 export type PresencePart =
-  | 'book' | 'run' | 'concentration' | 'earnings' | 'tax' | 'coverage' | 'sources' | 'theses' | 'worklog' | 'digest';
+  | 'book' | 'run' | 'concentration' | 'earnings' | 'tax' | 'coverage' | 'sources' | 'theses' | 'worklog' | 'digest' | 'flags';
 
+export interface PresenceHolding { ticker: string; pct: number; value: number; dayChangePct: number | null; sector: string | null }
 export interface PresenceBook {
   positions: number;
   names: number;
   accounts: { name: string; lastSyncedAt: string | null }[];
   totalValue: number;
-  top: { ticker: string; pct: number; value: number }[];
+  /** Weighted day move across the positions that have a price feed. Null when none do. */
+  dayChangePct: number | null;
+  dayChangeValue: number | null;
+  pricedPositions: number;
+  top: PresenceHolding[];
+  movers: PresenceHolding[];
+  sectors: { sector: string; pct: number }[];
 }
 export interface PresenceRun { pricedAt: string | null; lastRunAt: string | null; nextRunAt: string }
 export interface PresenceEarning { ticker: string; date: string; pct: number }
@@ -41,6 +48,7 @@ export interface PresenceSource {
   title: string; type: string; ticker: string | null; verdict: string; materiality: string; at: string; url: string | null;
 }
 export interface PresencePillar { ticker: string; claim: string; status: string; breaksIf: string | null; changedAt: string | null }
+export interface PresenceFlag { id: string; title: string; kind: string; priority: string; at: string; detail: string | null; impact: number | null }
 
 export interface PresenceData {
   email: string;
@@ -52,6 +60,7 @@ export interface PresenceData {
   coverage: { covered: string[]; uncovered: string[] };
   sources: { filings: number; news: number; priceMoves: number; contradicts: number; items: PresenceSource[] };
   theses: { tracked: number; pillars: PresencePillar[] };
+  flags: { scansRanAt: string | null; items: PresenceFlag[] };
   worklog: WorklogResponse;
   digest: string | null;
   ms: Partial<Record<PresencePart, number>>;
@@ -80,12 +89,34 @@ async function partBook(db: Db, uid: string): Promise<PresenceBook> {
     db.from('linked_accounts').select('account_name, last_synced_at').eq('user_id', uid).eq('is_active', true),
   ]);
   const holdings = brief?.holdings ?? [];
+  const toH = (h: (typeof holdings)[number]): PresenceHolding => ({ ticker: h.ticker, pct: h.pct, value: h.value, dayChangePct: h.dayChangePct, sector: h.sector });
+  // Day change from the positions that carry a price feed. prev = value / (1 + pct).
+  let prevSum = 0, changeSum = 0, priced = 0;
+  for (const h of holdings) {
+    if (h.dayChangePct === null || !isFinite(h.dayChangePct)) continue;
+    const prev = h.value / (1 + h.dayChangePct / 100);
+    if (!isFinite(prev) || prev <= 0) continue;
+    prevSum += prev; changeSum += h.value - prev; priced++;
+  }
+  // Movers by contribution to the day (weight x move), not by raw move: a 0.1% position up 10% is noise.
+  const contrib = (h: (typeof holdings)[number]) => Math.abs(h.dayChangePct ?? 0) * h.pct;
+  const movers = holdings.filter((h) => h.dayChangePct !== null).sort((a, b) => contrib(b) - contrib(a)).slice(0, 4).map(toH);
+  // The brief's sector shares are of NET value, so a negative sector (shorts, a negative cash row)
+  // pushes the long sectors past 100 between them. Show shares of long value instead.
+  const rawSectors = (brief?.sectorAllocation ?? []).filter((s) => s.pct > 0);
+  const sectorTotal = rawSectors.reduce((a, s) => a + s.pct, 0) || 1;
+  const sectors = rawSectors.map((s) => ({ sector: s.sector, pct: (s.pct / sectorTotal) * 100 })).slice(0, 6);
   return {
     positions: brief?.positionCount ?? 0,
     names: new Set(holdings.map((h) => h.ticker)).size,
     accounts: (accts.data ?? []).map((a) => ({ name: String(a.account_name ?? 'Account'), lastSyncedAt: (a.last_synced_at as string | null) ?? null })),
     totalValue: brief?.totalValue ?? 0,
-    top: holdings.slice(0, 5).map((h) => ({ ticker: h.ticker, pct: h.pct, value: h.value })),
+    dayChangePct: priced > 0 && prevSum > 0 ? (changeSum / prevSum) * 100 : null,
+    dayChangeValue: priced > 0 ? changeSum : null,
+    pricedPositions: priced,
+    top: holdings.slice(0, 8).map(toH),
+    movers,
+    sectors,
   };
 }
 
@@ -162,6 +193,7 @@ async function partCoverage(db: Db, uid: string) {
 
 async function partSources(db: Db, uid: string) {
   const since = new Date(Date.now() - 72 * 3600 * 1000).toISOString();
+  // pillar_evidence keys on pillar_id (no thesis_id column); map to a ticker through thesis_pillars.
   const [{ data, error }, { data: th }, { data: pl }] = await Promise.all([
     db.from('pillar_evidence')
       .select('source_type, source_title, source_url, verdict, materiality, created_at, pillar_id')
@@ -208,6 +240,22 @@ async function partTheses(db: Db, uid: string) {
   };
 }
 
+async function partFlags(db: Db, uid: string): Promise<PresenceData['flags']> {
+  const since = new Date(Date.now() - 72 * 3600 * 1000).toISOString();
+  const [{ data }, perf] = await Promise.all([
+    db.from('insights').select('*').eq('user_id', uid).gte('created_at', since).order('created_at', { ascending: false }).limit(30),
+    db.from('portfolio_performance').select('calculated_at').eq('user_id', uid).order('calculated_at', { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rows = ((data ?? []) as any[]).filter((r) => !r.is_dismissed);
+  const items: PresenceFlag[] = rows.slice(0, 8).map((r) => ({
+    id: String(r.id), title: String(r.title ?? 'Flagged'), kind: String(r.insight_type ?? ''), priority: String(r.priority ?? ''),
+    at: String(r.created_at), detail: (r.description as string | null) ?? null,
+    impact: r.estimated_impact_amount != null ? Number(r.estimated_impact_amount) : null,
+  }));
+  return { scansRanAt: (rows[0]?.created_at as string | undefined) ?? (perf.data?.calculated_at as string | null) ?? null, items };
+}
+
 async function partDigest(db: Db, uid: string): Promise<string | null> {
   const { data } = await db.from('brief_digests').select('digest').eq('user_id', uid).maybeSingle();
   const d = data?.digest;
@@ -248,6 +296,7 @@ export async function GET(req: NextRequest) {
         case 'coverage': [value, ms] = await timed(() => partCoverage(db, uid)); break;
         case 'sources': [value, ms] = await timed(() => partSources(db, uid)); break;
         case 'theses': [value, ms] = await timed(() => partTheses(db, uid)); break;
+        case 'flags': [value, ms] = await timed(() => partFlags(db, uid)); break;
         case 'worklog': [value, ms] = await timed(() => buildWorklog(db, uid)); break;
         case 'digest': [value, ms] = await timed(() => partDigest(db, uid)); break;
         default: return NextResponse.json({ error: `unknown part ${part}` }, { status: 400 });
@@ -255,15 +304,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ part, value, ms });
     }
 
-    const [[book, msBook], [run, msRun], [concentration, msConc], [earnings, msEarn], [coverage, msCov], [sources, msSrc], [theses, msTh], [worklog, msWl], [digest, msDg]] = await Promise.all([
+    const [[book, msBook], [run, msRun], [concentration, msConc], [earnings, msEarn], [coverage, msCov], [sources, msSrc], [theses, msTh], [flags, msFl], [worklog, msWl], [digest, msDg]] = await Promise.all([
       timed(() => partBook(db, uid)), timed(() => partRun(db, uid)), timed(() => partConcentration(db, uid)),
       timed(() => partEarnings(db, uid)), timed(() => partCoverage(db, uid)), timed(() => partSources(db, uid)),
-      timed(() => partTheses(db, uid)), timed(() => buildWorklog(db, uid)), timed(() => partDigest(db, uid)),
+      timed(() => partTheses(db, uid)), timed(() => partFlags(db, uid)), timed(() => buildWorklog(db, uid)), timed(() => partDigest(db, uid)),
     ]);
     const [tax, msTax] = await timed(() => partTax(uid, book.positions));
     const body: PresenceData = {
-      email, book, run, concentration, earnings, tax, coverage, sources, theses, worklog, digest,
-      ms: { book: msBook, run: msRun, concentration: msConc, earnings: msEarn, tax: msTax, coverage: msCov, sources: msSrc, theses: msTh, worklog: msWl, digest: msDg },
+      email, book, run, concentration, earnings, tax, coverage, sources, theses, flags, worklog, digest,
+      ms: { book: msBook, run: msRun, concentration: msConc, earnings: msEarn, tax: msTax, coverage: msCov, sources: msSrc, theses: msTh, flags: msFl, worklog: msWl, digest: msDg },
     };
     return NextResponse.json(body);
   } catch (err) {
