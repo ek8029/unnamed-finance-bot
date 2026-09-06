@@ -10,15 +10,21 @@
 // the sweep and its 16:05 / 19:00 runs.
 
 import { createServiceClient } from '@/lib/supabase/server';
+import { FINAZON_PRICE_RPM } from '@/lib/financial-config';
 import { getBatchLastTradePrices } from '@/lib/finazon';
 import { isUsMarketHours } from '@/lib/live-quotes';
 import { repriceHolding, toHoldingUpdate } from '@/lib/market/last-trade';
 import { portfolioTotalsByUser } from '@/lib/market/intraday-series';
 
-/** /price pace for the tick. The plan allows 200/min; 120 leaves 80 for the
- *  dashboard and mobile polls that share the budget. 291 held tickers at
- *  120/min is about two and a half minutes, inside a five-minute cadence. */
-export const INTRADAY_TICK_RPM = 120;
+/** /price pace for the tick, derived from the plan's configured budget
+ *  (FINAZON_PRICE_RPM, 200 on the current plan) minus a 40/min reserve for the
+ *  dashboard and mobile polls that share it. Measured 2026-09-04: at a fixed
+ *  120/min a 319-name sweep plus the row updates ran about four minutes, so
+ *  every other five-minute slot was coalesced away and prices landed every
+ *  ten (43 ticks, gaps of 9 to 11 min). At 160/min the sweep is about two
+ *  minutes and the run fits the slot. Floor 60 so a misconfigured env can
+ *  never stall the tick. */
+export const INTRADAY_TICK_RPM = Math.max(60, Math.min(FINAZON_PRICE_RPM - 40, 200));
 
 export interface IntradayTickResult {
   status: number;
