@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic';
 export type PresencePart =
   | 'book' | 'run' | 'concentration' | 'earnings' | 'tax' | 'coverage' | 'sources' | 'theses' | 'worklog' | 'digest' | 'flags' | 'reads';
 
-export interface PresenceHolding { ticker: string; pct: number; value: number; dayChangePct: number | null; sector: string | null }
+export interface PresenceHolding { ticker: string; pct: number; value: number; dayChangePct: number | null; sector: string | null; assetClass: string | null }
 export interface PresenceBook {
   positions: number;
   names: number;
@@ -93,7 +93,10 @@ async function partBook(db: Db, uid: string): Promise<PresenceBook> {
     db.from('linked_accounts').select('account_name, last_synced_at').eq('user_id', uid).eq('is_active', true),
   ]);
   const holdings = brief?.holdings ?? [];
-  const toH = (h: (typeof holdings)[number]): PresenceHolding => ({ ticker: h.ticker, pct: h.pct, value: h.value, dayChangePct: h.dayChangePct, sector: h.sector });
+  // The security master knows what each name is; a fund or a coin has no filings to read.
+  const { data: secs } = await db.from('securities').select('ticker, asset_class').in('ticker', holdings.length > 0 ? holdings.map((h) => h.ticker) : ['__none__']).limit(1000);
+  const classOf = new Map<string, string>((secs ?? []).map((s) => [String(s.ticker), String(s.asset_class ?? '')]));
+  const toH = (h: (typeof holdings)[number]): PresenceHolding => ({ ticker: h.ticker, pct: h.pct, value: h.value, dayChangePct: h.dayChangePct, sector: h.sector, assetClass: classOf.get(h.ticker) || null });
   // Day change from the positions that carry a price feed. prev = value / (1 + pct).
   let prevSum = 0, changeSum = 0, priced = 0;
   for (const h of holdings) {

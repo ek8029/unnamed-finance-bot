@@ -59,8 +59,12 @@ function Kpi({ label, value, tone = 'muted', receipt, href }: { label: string; v
   return href ? <Link href={href} className="block no-underline hover:bg-white/[0.015]">{body}</Link> : body;
 }
 
-function ReadLine({ r }: { r: PresenceRead | undefined }) {
-  if (!r) return <span className="text-[11px] text-[#4A4A4A]" style={MONO}>not read yet</span>;
+function ReadLine({ r, assetClass }: { r: PresenceRead | undefined; assetClass?: string | null }) {
+  if (!r) {
+    // A fund or a coin files nothing and holds no earnings call; say so instead of "not read yet".
+    const why = assetClass === 'etf' || assetClass === 'mutual_fund' ? 'fund · no filings to read' : assetClass === 'crypto' ? 'crypto · no filings to read' : 'not read yet';
+    return <span className="text-[11px] text-[#4A4A4A]" style={MONO}>{why}</span>;
+  }
   const v = r.verdict;
   const vColor = v === 'contradicts' ? NEG : v === 'supports' ? POS : 'text-[#6A6A6A]';
   const label = r.kind === 'evidence' ? (r.source ?? 'evidence') : r.kind === 'house' ? (r.source ?? 'house read') : (r.source ?? 'news');
@@ -81,7 +85,7 @@ function HoldingRow({ h, max, read }: { h: PresenceHolding; max: number; read: P
         <Bar pct={h.pct} max={max} />
         <div className="mt-1 text-[10px] text-[#6A6A6A]" style={MONO}>{h.pct.toFixed(1)}%</div>
       </div>
-      <ReadLine r={read} />
+      <ReadLine r={read} assetClass={h.assetClass} />
       <span className="text-right text-[12px] tabular-nums text-[#B8B8B8]" style={MONO}>{money(h.value)}</span>
       <span className={`text-right text-[12px] tabular-nums ${tone}`} style={MONO}>{pctText(h.dayChangePct)}</span>
     </li>
@@ -264,7 +268,7 @@ export function PresenceOverview({ email }: { email: string }) {
                   <li key={h.ticker} className={`grid grid-cols-[60px_minmax(0,1fr)_64px] items-center gap-x-4 border-b ${RULE} py-2 last:border-0`}>
                     <span className="text-[12.5px] font-semibold text-[#FAFAFA]" style={MONO}>{h.ticker}</span>
                     <div className="min-w-0">
-                      <ReadLine r={reads.byTicker[h.ticker]} />
+                      <ReadLine r={reads.byTicker[h.ticker]} assetClass={h.assetClass} />
                       <div className="text-[10px] text-[#5F5F5F]" style={MONO}>{h.pct.toFixed(1)}% of book</div>
                     </div>
                     <span className={`text-right text-[12px] tabular-nums ${h.dayChangePct !== null && h.dayChangePct >= 0 ? POS : NEG}`} style={MONO}>{pctText(h.dayChangePct)}</span>
@@ -329,7 +333,7 @@ export function PresenceOverview({ email }: { email: string }) {
         <ul className="mt-2 m-0 list-none p-0 space-y-1 text-[12px] leading-[1.55] text-[#8A8A8A]">
           <li>The lead paragraph is the digest the cron already writes for this book; it was only ever shown on /brief.</li>
           <li>The work lines are real rows with real times; the arrival stagger is the only motion and respects reduced-motion.</li>
-          <li>&quot;Last read&quot; per position: thesis evidence first, then a house-thesis catch, then the latest news item the classifier judged to be about the name. &quot;Not read yet&quot; is printed rather than hidden.</li>
+          <li>&quot;Last read&quot; per position: thesis evidence first, then a house-thesis catch, then the latest news item the classifier judged to be about the name. &quot;Not read yet&quot; is printed rather than hidden; funds and crypto say why instead.</li>
           <li>First person is used only where Helm did the thing. Numbers still carry their receipts. Nothing is padded on a quiet day.</li>
         </ul>
         <p className="mt-3 text-[10.5px] text-[#5F5F5F] m-0" style={MONO}>fetched in {Object.values(data.ms).reduce((a, b) => a + (b ?? 0), 0)} ms</p>

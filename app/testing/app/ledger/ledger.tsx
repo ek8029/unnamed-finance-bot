@@ -194,6 +194,9 @@ export function Ledger({ email }: { email: string }) {
   }
 
   const readTotal = data.sources.filings + data.sources.news + data.sources.priceMoves;
+  // What the morning email would carry above the prose: the first three OVERNIGHT lines and the AHEAD "next" line.
+  const emailRows = [...overnight.filter((r) => r.id !== 'brief').slice(0, 3), ...ahead.filter((r) => r.id === 'next')];
+  const lead = data.digest ? (data.digest.split('\n\n').find((p) => p.trim()) ?? '') : '';
 
   return (
     <div className="max-w-[860px]">
@@ -227,6 +230,24 @@ export function Ledger({ email }: { email: string }) {
         </ol>
       </Block>
 
+      <Block title="As the email" meta="the first block of The Current, above the prose · same rows">
+        <div className="mt-4 max-w-[520px] rounded-[8px] bg-[#1E1E1E] px-9 py-8" style={{ boxShadow: 'inset 0 2px 0 var(--color-gold)' }}>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>The Current</div>
+          <div className="mt-3 text-[20px] font-bold leading-[1.3] text-[#FAFAFA]">Good morning.</div>
+          <div className="mt-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>Overnight</div>
+          <ol className="mt-2 m-0 list-none p-0">
+            {emailRows.map((r) => (
+              <li key={r.id} className="grid grid-cols-[76px_minmax(0,1fr)] items-baseline gap-x-3 py-1">
+                <span className="text-[11px] text-[#6A6A6A]" style={MONO}>{r.id === 'next' ? 'next' : r.ts ? clock(r.ts) : ''}</span>
+                <span className="text-[13px] leading-[1.5] text-[#D4D4D4]">{r.label}<span className="text-[#8F8F8F]"> · {r.right}</span></span>
+              </li>
+            ))}
+          </ol>
+          {lead && <p className="mt-5 m-0 text-[15px] leading-[1.7] text-[#8F8F8F]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>{lead.slice(0, 200)}...</p>}
+          <div className="mt-6 inline-block rounded-[6px] bg-[var(--color-gold)] px-7 py-3 text-[14px] font-bold text-[#0A0A0A]">Read full brief →</div>
+        </div>
+      </Block>
+
       <Block title="The brief" meta={data.run.lastRunAt ? `written ${clock(data.run.lastRunAt)}` : undefined}>
         {data.digest ? (
           <div className="pt-3">
@@ -245,7 +266,7 @@ export function Ledger({ email }: { email: string }) {
           <li>Every OVERNIGHT line is a real row; no line is padded. A quiet day reads as numbers, not as an empty state.</li>
           <li>Receipts open in place. Nothing animates. The interactivity is the record.</li>
           <li>AHEAD only lists what the crons literally do: the 9:15 read, earnings re-reads, pillar kill criteria that exist on this account.</li>
-          <li>The morning email would carry the first three OVERNIGHT lines and the first AHEAD line above the prose. Same data.</li>
+          <li>The morning email would carry the first three OVERNIGHT lines and the AHEAD next line above the prose; the card above is that block, from the same rows. Nothing is sent from here.</li>
         </ul>
         <p className="mt-3 text-[10.5px] text-[#5F5F5F] m-0" style={MONO}>fetched in {Object.values(data.ms).reduce((a, b) => a + (b ?? 0), 0)} ms · coverage {data.coverage.covered.length}/{data.coverage.covered.length + data.coverage.uncovered.length} names</p>
       </div>
