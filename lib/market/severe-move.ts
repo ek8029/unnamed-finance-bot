@@ -9,7 +9,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SEVERE_MOVE_PCT } from '@/lib/thesis-investigation';
-import { entitledToMonitoring } from '@/lib/thesis-entitlement';
+import { monitoredThesisIds } from '@/lib/agent/monitored';
 import { enqueueJudgeJobs, type NewJudgeJob } from '@/lib/agent/judge-queue';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,11 +60,11 @@ export async function enqueueSevereMoves(
   const rows = (data ?? []) as { id: string; user_id: string; ticker: string }[];
   if (rows.length === 0) return { theses: 0, queued: 0, error: null };
 
-  const entitled = await entitledToMonitoring(db, [...new Set(rows.map((r) => r.user_id))]);
+  const kept = await monitoredThesisIds(db, rows.map((r) => r.user_id));
   const jobs: NewJudgeJob[] = [];
   for (const r of rows) {
     const m = byTicker.get(r.ticker.toUpperCase());
-    if (!m || !entitled.has(r.user_id)) continue;
+    if (!m || !kept.has(r.id)) continue;
     jobs.push({
       kind: 'investigate',
       user_id: r.user_id,

@@ -16,7 +16,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { refreshRssNews } from '@/lib/free-news';
-import { entitledToMonitoring } from '@/lib/thesis-entitlement';
+import { monitoredThesisIds } from '@/lib/agent/monitored';
 import { enqueueJudgeJobs, recordLedgerRow, type NewJudgeJob } from '@/lib/agent/judge-queue';
 import { beat } from '@/lib/agent/heartbeat';
 import { emptyLedger } from '@/lib/ai/pricing';
@@ -127,11 +127,11 @@ export async function runNewsWatch(db: Db, opts: { log: string[]; now?: Date; si
           errors.push(`theses: ${tErr.message}`);
         } else {
           const owners = (theses ?? []) as { id: string; user_id: string; ticker: string }[];
-          const entitled = await entitledToMonitoring(db, [...new Set(owners.map((o) => o.user_id))]);
+          const kept = await monitoredThesisIds(db, owners.map((o) => o.user_id));
           const jobs: NewJudgeJob[] = [];
           for (const r of fresh) {
             for (const t of owners) {
-              if (t.ticker.toUpperCase() !== r.primary_ticker.toUpperCase() || !entitled.has(t.user_id)) continue;
+              if (t.ticker.toUpperCase() !== r.primary_ticker.toUpperCase() || !kept.has(t.id)) continue;
               jobs.push({
                 kind: 'news',
                 user_id: t.user_id,

@@ -12,7 +12,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { scoreOneThesis, type Candidate, type Thesis } from '@/lib/score-theses';
-import { entitledToMonitoring } from '@/lib/thesis-entitlement';
+import { monitoredThesisIds } from '@/lib/agent/monitored';
 import { getRecentFilings, BUSINESS_FORMS } from '@/lib/edgar';
 import { emptyLedger } from '@/lib/ai/pricing';
 import type { JudgeJobRow, JudgeJobOutcome } from '@/lib/agent/judge-queue';
@@ -38,10 +38,10 @@ export async function runJudgeJob(db: Db, job: JudgeJobRow, log: string[]): Prom
   const thesis = thesisRow as Thesis;
   if (!thesis.tracked) return { status: 'skipped', error: 'thesis untracked' };
 
-  // Same gate as the hourly scorer: free users keep one monitored thesis,
-  // and an event on the others is recorded, not judged.
-  const entitled = await entitledToMonitoring(db, [thesis.user_id]);
-  if (!entitled.has(thesis.user_id)) return { status: 'skipped', error: 'not entitled to monitoring' };
+  // Same gate as the hourly scorer: Pro keeps every thesis, a free user keeps
+  // their oldest tracked one, and an event on the others is recorded, not judged.
+  const kept = await monitoredThesisIds(db, [thesis.user_id]);
+  if (!kept.has(thesis.id)) return { status: 'skipped', error: 'not monitored on this tier' };
 
   const ledger = emptyLedger();
   let candidates: Candidate[] | undefined;

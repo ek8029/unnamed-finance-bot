@@ -14,7 +14,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getTickerCikMap, BUSINESS_FORMS } from '@/lib/edgar';
-import { entitledToMonitoring } from '@/lib/thesis-entitlement';
+import { monitoredThesisIds } from '@/lib/agent/monitored';
 import { enqueueJudgeJobs, type NewJudgeJob } from '@/lib/agent/judge-queue';
 import { beat } from '@/lib/agent/heartbeat';
 
@@ -368,9 +368,9 @@ export async function enqueueForEvent(db: Db, event: RecordedEvent, log: string[
   const rows = (theses ?? []) as { id: string; user_id: string; ticker: string }[];
   if (rows.length === 0) return { queued: 0, status: 'skipped', note: 'no tracked thesis' };
 
-  const entitled = await entitledToMonitoring(db, [...new Set(rows.map((r) => r.user_id))]);
+  const kept = await monitoredThesisIds(db, rows.map((r) => r.user_id));
   const jobs: NewJudgeJob[] = rows
-    .filter((r) => entitled.has(r.user_id))
+    .filter((r) => kept.has(r.id))
     .map((r) => ({
       kind: 'filing',
       user_id: r.user_id,
@@ -379,12 +379,12 @@ export async function enqueueForEvent(db: Db, event: RecordedEvent, log: string[
       source_key: event.accessionNo,
       payload: { accession_no: event.accessionNo, form: event.form, filed_at: event.acceptedAt, url: event.url, items: event.items, ticker: event.ticker },
     }));
-  if (jobs.length === 0) return { queued: 0, status: 'skipped', note: `${rows.length} tracked thesis/theses, none entitled` };
+  if (jobs.length === 0) return { queued: 0, status: 'skipped', note: `${rows.length} tracked thesis/theses, none monitored on their tier` };
 
   const { inserted, error: qErr } = await enqueueJudgeJobs(db, jobs);
   if (qErr) throw new Error(`enqueue: ${qErr}`);
   if (inserted < jobs.length) log.push(`[edgar-watch] ${event.accessionNo}: ${jobs.length - inserted} job(s) already queued`);
-  return { queued: inserted, status: 'queued', note: rows.length > jobs.length ? `${rows.length - jobs.length} unentitled skipped` : null };
+  return { queued: inserted, status: 'queued', note: rows.length > jobs.length ? `${rows.length - jobs.length} not monitored on their tier` : null };
 }
 
 export async function stampFilingEvent(db: Db, accessionNo: string, status: 'queued' | 'skipped' | 'new', note: string | null): Promise<void> {
