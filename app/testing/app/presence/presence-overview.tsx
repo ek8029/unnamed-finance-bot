@@ -157,9 +157,11 @@ export function PresenceOverview({ email }: { email: string }) {
   if (reads.newsAbout.count > 0) {
     work.push({ key: 'news', at: newsAt ?? watch.newsCheckedAt, cadence: '5 min', text: <>I took in {plural(reads.newsAbout.count, 'news item')} tagged with {reads.newsAbout.names} of your names in the last 72 hours. The latest sits on each position below.</> });
   }
-  work.push({ key: 'scans', at: flags.scansRanAt, cadence: 'daily', text: flags.items.length > 0
+  // Only when a scan actually ran: a fresh insight row, or the daily run's own stamp.
+  if (flags.scansRanAt) work.push({ key: 'scans', at: flags.scansRanAt, cadence: 'daily', text: flags.items.length > 0
     ? <>I ran 7 scans and flagged {plural(flags.items.length, 'item')}.</>
     : <>I ran 7 scans: concentration, tax, earnings, cash flow, drift. Nothing to flag.</> });
+  else work.push({ key: 'scans', at: null, cadence: 'daily', tone: 'muted', text: <>No scan has run on this book in 72 hours.</> });
   if (tax && tax.harvestable > 0) work.push({ key: 'tax', at: flags.scansRanAt ?? priced, cadence: 'daily', tone: 'gold', text: <>Found <span className={GOLD}>{money(tax.harvestable)}</span> of harvestable losses across {plural(tax.opportunityCount, 'lot')}.</> });
   if (watch.checkedAt) work.push({ key: 'watch', at: watch.checkedAt, cadence: '1 min', tone: 'muted', text: <>Checked the filing feed {ago(watch.checkedAt)}{watch.queued > 0 ? `, ${plural(watch.queued, 'read')} in the queue` : ''}.</> });
   work.push({ key: 'next', at: null, tone: 'muted', text: <>Next full read {nextRead}.</> });

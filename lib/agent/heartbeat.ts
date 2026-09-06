@@ -11,7 +11,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, any, any>;
 
-export type WatchName = 'edgar-watch' | 'news-watch' | 'judge-worker';
+export type WatchName = 'edgar-watch' | 'news-watch' | 'judge-worker' | 'daily-scans' | 'market-morning';
 
 /** Best effort: a missing table or a blip never fails the tick that called it. */
 export async function beat(db: Db, name: WatchName, detail: Record<string, unknown> = {}): Promise<void> {

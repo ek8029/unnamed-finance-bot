@@ -19,6 +19,10 @@
       "schedule": "15 13 * * *"
     },
     {
+      "path": "/api/cron/market-morning",
+      "schedule": "45 12 * * 1-5"
+    },
+    {
       "path": "/api/cron/score-theses",
       "schedule": "0 13-21 * * 1-5"
     },

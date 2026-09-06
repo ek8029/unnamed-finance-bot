@@ -249,9 +249,9 @@ async function partTheses(db: Db, uid: string) {
 
 async function partFlags(db: Db, uid: string): Promise<PresenceData['flags']> {
   const since = new Date(Date.now() - 72 * 3600 * 1000).toISOString();
-  const [{ data }, perf] = await Promise.all([
+  const [{ data }, scans] = await Promise.all([
     db.from('insights').select('*').eq('user_id', uid).gte('created_at', since).order('created_at', { ascending: false }).limit(30),
-    db.from('portfolio_performance').select('calculated_at').eq('user_id', uid).order('calculated_at', { ascending: false }).limit(1).maybeSingle(),
+    db.from('watch_heartbeats').select('at').eq('name', 'daily-scans').maybeSingle(),
   ]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rows = ((data ?? []) as any[]).filter((r) => !r.is_dismissed);
@@ -260,7 +260,7 @@ async function partFlags(db: Db, uid: string): Promise<PresenceData['flags']> {
     at: String(r.created_at), detail: (r.description as string | null) ?? null,
     impact: r.estimated_impact_amount != null ? Number(r.estimated_impact_amount) : null,
   }));
-  return { scansRanAt: (rows[0]?.created_at as string | undefined) ?? (perf.data?.calculated_at as string | null) ?? null, items };
+  return { scansRanAt: (rows[0]?.created_at as string | undefined) ?? (scans.data?.at as string | null) ?? null, items };
 }
 
 async function partReads(db: Db, uid: string): Promise<PresenceReads> {

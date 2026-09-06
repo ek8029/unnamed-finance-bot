@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { syncPlaidItem, computeSnapshots, type PlaidItemForSync, type SyncResult } from '@/lib/plaid-sync';
-import { refreshMarketPrices, enrichMarketData, refreshMarketNews, updatePortfolioPerformance } from '@/lib/market-sync';
+import { updatePortfolioPerformance } from '@/lib/market-sync';
 import { generateInsights } from '@/lib/insights-engine';
 import { runDigestCron } from '@/lib/digest-cron';
 import { composeWeeklyNote, saveAnalystNote } from '@/lib/research/analyst-note';
 import { commitStandingSnapshots } from '@/lib/research/standing-questions';
 import { isOpenAccessWindow } from '@/lib/tier';
-import { emptyLedger, describeLedger } from '@/lib/ai/pricing';
+import { beat } from '@/lib/agent/heartbeat';
 import { POST as runDripEmails } from '@/app/api/emails/drip/route';
 import { GET as runWatchlistAlerts } from '@/app/api/cron/watchlist-alerts/route';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-// Headroom for the Friday analyst-note pass (an LLM call + standing-question
-// re-runs per user) on top of sync/prices/digest. Vercel Pro allows 300.
+// This is the people run: briefs, drips, alerts, Plaid sync, the scans, and on
+// Fridays the analyst note. The vendor-paced market refresh has its own cron
+// (/api/cron/market-morning) so it can never again spend this run's clock.
 export const maxDuration = 300;
 
 interface CronSyncResult extends SyncResult {
@@ -187,33 +188,10 @@ export async function GET(request: Request) {
       }
     }
 
-    let pricesRefreshed = 0;
-
-    if (process.env.FINAZON_API_KEY) {
-      // The subject classifier's tokens and cost for this run (lib/ai/pricing.ts).
-      const newsLedger = emptyLedger();
-      const marketResults = await Promise.allSettled([
-        refreshMarketPrices(serviceClient, log),
-        enrichMarketData(serviceClient, log),
-        refreshMarketNews(serviceClient, log, { classifyMacro: true, classifySubjects: true, ledger: newsLedger }),
-      ]);
-      if (newsLedger.calls > 0) log.push(`[news] classifier cost ${describeLedger(newsLedger)}`);
-
-      const marketNames = ['prices', 'enrich', 'news'] as const;
-      marketResults.forEach((result, i) => {
-        if (result.status === 'fulfilled') {
-          if (i === 0 && typeof result.value === 'number') {
-            pricesRefreshed = result.value;
-          }
-        } else {
-          const msg = result.reason instanceof Error ? result.reason.message : String(result.reason);
-          log.push(`[${marketNames[i]}] Market ${marketNames[i]} failed: ${msg}`);
-          console.error(`[cron/daily] Market ${marketNames[i]} failed:`, result.reason);
-        }
-      });
-    } else {
-      log.push('[prices] FINAZON_API_KEY not set - skipping all market data');
-    }
+    // The market refresh (daily bars, sector enrichment) runs on its own cron,
+    // /api/cron/market-morning at 12:45 UTC, so a rate-limited vendor never
+    // again decides whether the scans below get to run. News comes from the
+    // five-minute news-watch poller.
 
     let insightsGenerated = 0;
 
@@ -278,6 +256,9 @@ export async function GET(request: Request) {
         log.push(`[post-sync] User ${userId.slice(0, 8)}... failed: ${msg}`);
       }
     }
+
+    // The scans ran: stamp it, so a surface can say so only when it is true.
+    await beat(serviceClient, 'daily-scans', { users: userItemMap.size, insights: insightsGenerated, ms: Date.now() - startTime });
 
     // ── Weekly analyst note (Fridays ET) — the agent writes each pro user a
     //    short memo from the week's findings. Capped and per-user tolerant so
@@ -345,7 +326,6 @@ export async function GET(request: Request) {
       items_synced: syncResults.filter(r => r.success).length,
       items_failed: syncResults.filter(r => !r.success).length,
       users_processed: userItemMap.size,
-      prices_refreshed: pricesRefreshed,
       insights_generated: insightsGenerated,
       briefs_emailed: digestResult.emailed.length,
       analyst_notes_written: analystNotesWritten,

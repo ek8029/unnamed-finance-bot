@@ -105,13 +105,6 @@ export async function buildWorklog(supabase: SupabaseClient<any, any, any>, uid:
     });
   }
 
-  // ── Run timestamp — anchors the scan line only. The overnight price refresh
-  //    is automatic plumbing, not agent work, so it is never shown as a step.
-  const { data: perf } = await supabase
-    .from('portfolio_performance').select('calculated_at')
-    .eq('user_id', uid).order('calculated_at', { ascending: false }).limit(1).maybeSingle();
-  const priceTs = (perf?.calculated_at as string | undefined) ?? null;
-
   // ── Re-read filings / news against theses ──
   const { data: ev } = await supabase
     .from('pillar_evidence')
@@ -172,9 +165,11 @@ export async function buildWorklog(supabase: SupabaseClient<any, any, any>, uid:
       .eq('user_id', uid).gte('created_at', since).order('created_at', { ascending: false }).limit(40),
     supabase.from('watch_heartbeats').select('name, at').limit(10),
   ]);
+  let dailyScansAt: string | null = null;
   for (const b of beats ?? []) {
     if (b.name === 'edgar-watch') watch.checkedAt = String(b.at);
     if (b.name === 'news-watch') watch.newsCheckedAt = String(b.at);
+    if (b.name === 'daily-scans') dailyScansAt = String(b.at);
   }
   const jobs = (jobsRaw ?? []) as JobRow[];
   const jobBySource = new Map(jobs.map((j) => [j.source_key, j]));
@@ -236,9 +231,10 @@ export async function buildWorklog(supabase: SupabaseClient<any, any, any>, uid:
     .limit(40);
   const liveIns = (ins ?? []).filter((i) => !i.is_dismissed);
   const scanTs = liveIns[0]?.created_at as string | undefined;
-  // The daily cron always runs the 7-rule intelligence sweep; anchor it to the
-  // freshest insight (or the pricing run) so the line has a real timestamp.
-  const runTs = scanTs ?? priceTs;
+  // The scan line needs a real time: the freshest insight, else the stamp the
+  // daily run writes when the sweep finishes. Without either the sweep did not
+  // run, and the line is left out rather than anchored to something else.
+  const runTs = scanTs ?? dailyScansAt;
   if (runTs) {
     steps.push({
       id: 'scan', ts: runTs, kind: 'scan',
