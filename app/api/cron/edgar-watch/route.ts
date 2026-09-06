@@ -45,7 +45,7 @@ export async function GET(request: Request) {
       for (const line of log) console.log(`[cron/edgar-watch] ${line}`);
       console.log(
         `[cron/edgar-watch] ${dry ? 'DRY ' : ''}fetched=${r.fetched} pages=${r.pages} watched=${r.watched} new=${r.new} queued=${r.queued} ` +
-          `skipped=${r.skipped} errors=${r.errors.length} universe=${r.universe.tickers}t/${r.universe.ciks}c ms=${r.ms}`,
+          `hourly=${r.hourly} skipped=${r.skipped} errors=${r.errors.length} universe=${r.universe.tickers}t/${r.universe.ciks}c ms=${r.ms}`,
       );
       for (const e of r.errors) console.error(`[cron/edgar-watch] ${e}`);
       return r;

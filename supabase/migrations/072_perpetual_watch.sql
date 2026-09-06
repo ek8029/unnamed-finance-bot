@@ -30,7 +30,7 @@ create table if not exists filing_events (
   filed_at timestamptz not null,
   url text not null,
   seen_at timestamptz not null default now(),
-  status text not null default 'new' check (status in ('new', 'queued', 'judged', 'skipped')),
+  status text not null default 'new' check (status in ('new', 'queued', 'hourly', 'judged', 'skipped')),
   judged_at timestamptz,
   note text
 );
@@ -41,7 +41,25 @@ create index if not exists idx_filing_events_seen on filing_events(seen_at desc)
 alter table filing_events enable row level security;
 
 comment on table filing_events is
-  'Filings the EDGAR feed poller saw on watched names. status: new = recorded, queued = judge job(s) enqueued, judged = at least one job done, skipped = no tracked thesis (note says why).';
+  'Filings the EDGAR feed poller saw on watched names. status: new = recorded, queued = judge job(s) enqueued, hourly = tier B, read at the hourly scan, judged = at least one job done, skipped = tier C or no tracked thesis (note says why). Tiers: lib/filing-tiers.ts.';
+
+-- judged_sources: every source the judge has read for a thesis, whether or
+-- not it filed a row. The scorer deduped candidates only against evidence,
+-- so a filing the judge read and filed nothing for was fetched and judged
+-- again every hourly run for the whole 120-day filing window. Trade-off,
+-- deliberate: a pillar added later does not see older sources unless the
+-- thesis is backfilled.
+create table if not exists judged_sources (
+  thesis_id uuid not null references theses(id) on delete cascade,
+  source_key text not null,
+  judged_at timestamptz not null default now(),
+  judged_by text,
+  primary key (thesis_id, source_key)
+);
+
+create index if not exists idx_judged_sources_thesis_at on judged_sources(thesis_id, judged_at desc);
+
+alter table judged_sources enable row level security;
 
 create table if not exists judge_jobs (
   id uuid primary key default gen_random_uuid(),
@@ -98,4 +116,5 @@ alter table watch_heartbeats enable row level security;
 --   select count(*) from judge_jobs;   -- 0
 --   select count(*) from filing_events; -- 0
 --   select count(*) from watch_heartbeats; -- 0
---   select indexname from pg_indexes where tablename in ('judge_jobs', 'filing_events');
+--   select count(*) from judged_sources;   -- 0
+--   select indexname from pg_indexes where tablename in ('judge_jobs', 'filing_events', 'judged_sources');

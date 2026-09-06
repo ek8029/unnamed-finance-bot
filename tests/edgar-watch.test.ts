@@ -81,7 +81,11 @@ describe('needsNextPage', () => {
 });
 
 describe('watchOnce', () => {
-  const universe = universeFromMap(['VSAT'], new Map([['VSAT', 797721]]));
+  // Three watched filers from the fixture, one per tier:
+  //   GRLD  Greenland Mines   items 1.01 2.01 3.02 5.03 5.07 9.01  -> 2.01 completed deal, read now
+  //   PDSB  PDS Biotechnology items 1.01 2.03 9.01                 -> financing, read at the hour
+  //   VSAT  Viasat            items 5.07 9.01                      -> vote results, never
+  const universe = universeFromMap(['GRLD', 'PDSB', 'VSAT'], new Map([['GRLD', 1907223], ['PDSB', 1472091], ['VSAT', 797721]]));
 
   function fakes() {
     const recorded = new Map<string, { status: string; note: string | null }>();
@@ -104,33 +108,41 @@ describe('watchOnce', () => {
     return { deps, recorded, enqueued };
   }
 
-  it('records a watched filing once and enqueues once, however often the feed repeats it', async () => {
+  it('tiers each new filing: enqueues tier now, stamps tier hourly and tier never, and never repeats', async () => {
     const { deps, recorded, enqueued } = fakes();
     const memory = new Map<string, Set<string>>();
     const first = await watchOnce(deps, { log: [], forms: ['8-K', '10-Q'], memory });
     expect(first.fetched).toBe(6);
-    expect(first.watched).toBe(1);
-    expect(first.new).toBe(1);
+    expect(first.watched).toBe(3);
+    expect(first.new).toBe(3);
     expect(first.queued).toBe(2);
-    expect(first.events[0]).toMatchObject({ ticker: 'VSAT', form: '8-K', status: 'queued', queued: 2 });
-    expect(recorded.get(first.events[0].accessionNo)?.status).toBe('queued');
+    expect(first.hourly).toBe(1);
+    expect(first.skipped).toBe(1);
+    const byTicker = Object.fromEntries(first.events.map((e) => [e.ticker, e]));
+    expect(byTicker.GRLD).toMatchObject({ form: '8-K', status: 'queued', queued: 2 });
+    expect(byTicker.PDSB).toMatchObject({ status: 'hourly', queued: 0 });
+    expect(byTicker.VSAT).toMatchObject({ status: 'skipped', queued: 0 });
+    expect(recorded.get(byTicker.PDSB.accessionNo)?.note).toContain('read at the hour');
+    expect(recorded.get(byTicker.VSAT.accessionNo)?.note).toContain('never bears on a pillar');
+    expect(enqueued).toEqual([byTicker.GRLD.accessionNo]);
 
     const second = await watchOnce(deps, { log: [], forms: ['8-K', '10-Q'], memory });
-    expect(second.watched).toBe(1);
+    expect(second.watched).toBe(3);
     expect(second.new).toBe(0);
     expect(second.queued).toBe(0);
     expect(enqueued).toHaveLength(1);
   });
 
-  it('dry mode records as skipped and never enqueues', async () => {
+  it('dry mode records everything as skipped and never enqueues, whatever the tier', async () => {
     const { deps, recorded, enqueued } = fakes();
     const log: string[] = [];
     const r = await watchOnce(deps, { log, dry: true, forms: ['8-K'], memory: new Map() });
-    expect(r.new).toBe(1);
+    expect(r.new).toBe(3);
     expect(r.queued).toBe(0);
-    expect(r.skipped).toBe(1);
+    expect(r.hourly).toBe(0);
+    expect(r.skipped).toBe(3);
     expect(enqueued).toEqual([]);
-    expect([...recorded.values()][0]).toEqual({ status: 'skipped', note: 'dry run' });
+    expect([...recorded.values()].every((v) => v.status === 'skipped' && v.note === 'dry run')).toBe(true);
     expect(log[0]).toContain('dry run');
   });
 

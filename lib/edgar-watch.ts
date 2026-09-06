@@ -13,7 +13,8 @@
 // real feed, database and queue.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getTickerCikMap, BUSINESS_FORMS } from '@/lib/edgar';
+import { getTickerCikMap } from '@/lib/edgar';
+import { filingTier } from '@/lib/filing-tiers';
 import { monitoredThesisIds } from '@/lib/agent/monitored';
 import { enqueueJudgeJobs, type NewJudgeJob } from '@/lib/agent/judge-queue';
 import { beat } from '@/lib/agent/heartbeat';
@@ -200,9 +201,9 @@ export interface WatchDeps {
   universe: () => Promise<WatchUniverse>;
   /** Insert the events that are not already on record; return the ones that were new. */
   record: (hits: WatchedEntry[], dry: boolean, now: Date) => Promise<RecordedEvent[]>;
-  /** Enqueue judge jobs for a new event; return how many were queued and the status to stamp. */
+  /** Enqueue judge jobs for a new tier-now event; return how many were queued and the status to stamp. */
   enqueue: (event: RecordedEvent, log: string[]) => Promise<{ queued: number; status: 'queued' | 'skipped'; note: string | null }>;
-  stamp: (accessionNo: string, status: 'queued' | 'skipped' | 'new', note: string | null) => Promise<void>;
+  stamp: (accessionNo: string, status: 'queued' | 'skipped' | 'hourly' | 'new', note: string | null) => Promise<void>;
 }
 
 export interface WatchResult {
@@ -213,6 +214,8 @@ export interface WatchResult {
   watched: number;
   new: number;
   queued: number;
+  /** Tier B: recorded, read at the hourly scan. */
+  hourly: number;
   skipped: number;
   errors: string[];
   universe: { tickers: number; ciks: number };
@@ -234,7 +237,7 @@ export async function watchOnce(
   const memory = opts.memory ?? lastRead;
   const log = opts.log;
   const result: WatchResult = {
-    dry, forms, fetched: 0, pages: 0, watched: 0, new: 0, queued: 0, skipped: 0, errors: [],
+    dry, forms, fetched: 0, pages: 0, watched: 0, new: 0, queued: 0, hourly: 0, skipped: 0, errors: [],
     universe: { tickers: 0, ciks: 0 }, events: [], ms: 0,
   };
 
@@ -290,11 +293,21 @@ export async function watchOnce(
     result.new += fresh.length;
     for (const ev of fresh) {
       let queued = 0;
-      let status: 'queued' | 'skipped' | 'new' = 'new';
+      let status: 'queued' | 'skipped' | 'hourly' | 'new' = 'new';
       let note: string | null = null;
+      const tier = filingTier(ev.form, ev.items);
+      const isForm4 = ev.form === '4' || ev.form.startsWith('4/');
       if (dry) {
         status = 'skipped';
         note = 'dry run';
+      } else if (tier === 'never') {
+        status = 'skipped';
+        note = `tier C (${ev.items.join(' ')}): never bears on a pillar`;
+        await deps.stamp(ev.accessionNo, status, note).catch((err) => result.errors.push(`${form} ${ev.accessionNo} stamp: ${err instanceof Error ? err.message : String(err)}`));
+      } else if (tier === 'hourly') {
+        status = 'hourly';
+        note = isForm4 ? 'form 4 is read at the hourly scan' : `tier B (${ev.items.join(' ')}): read at the hour`;
+        await deps.stamp(ev.accessionNo, status, note).catch((err) => result.errors.push(`${form} ${ev.accessionNo} stamp: ${err instanceof Error ? err.message : String(err)}`));
       } else {
         try {
           const q = await deps.enqueue(ev, log);
@@ -308,6 +321,7 @@ export async function watchOnce(
       }
       result.queued += queued;
       if (status === 'skipped') result.skipped += 1;
+      if (status === 'hourly') result.hourly += 1;
       result.events.push({ ticker: ev.ticker, form: ev.form, accessionNo: ev.accessionNo, acceptedAt: ev.acceptedAt, url: ev.url, status, queued });
       log.push(`[edgar-watch] ${ev.form} ${ev.ticker} ${ev.accessionNo} accepted ${ev.acceptedAt} -> ${status}${note ? ` (${note})` : ''}${queued ? `, ${queued} job(s)` : ''}`);
     }
@@ -345,19 +359,12 @@ export async function recordFilingEvents(db: Db, hits: WatchedEntry[], dry: bool
 }
 
 /**
- * Judge jobs for a new filing: one per tracked, entitled thesis on the name.
- * Form 4 is recorded only. A single insider transaction is rarely thesis
- * evidence on its own, the hourly scan reads Form 4s together (that is where
- * the insider-cluster signal comes from), and a busy day of Form 4s on 300
- * names would spend the daily cap on the least urgent reads.
+ * Judge jobs for a new tier-now filing: one per monitored thesis on the name.
+ * Tier-hourly filings (Form 4 among them: the insider-cluster signal needs the
+ * batch, and a busy insider day would spend the cap on the least urgent reads)
+ * and tier-never filings are stamped by watchOnce and never reach here.
  */
 export async function enqueueForEvent(db: Db, event: RecordedEvent, log: string[]): Promise<{ queued: number; status: 'queued' | 'skipped'; note: string | null }> {
-  const isForm4 = event.form === '4' || event.form.startsWith('4/');
-  if (isForm4) return { queued: 0, status: 'skipped', note: 'form 4 is read at the hourly scan' };
-  if (!BUSINESS_FORMS.some((f) => event.form === f || event.form.startsWith(f + '/'))) {
-    return { queued: 0, status: 'skipped', note: `${event.form} is not a business form` };
-  }
-
   const { data: theses, error } = await db
     .from('theses')
     .select('id, user_id, ticker')
@@ -387,7 +394,7 @@ export async function enqueueForEvent(db: Db, event: RecordedEvent, log: string[
   return { queued: inserted, status: 'queued', note: rows.length > jobs.length ? `${rows.length - jobs.length} not monitored on their tier` : null };
 }
 
-export async function stampFilingEvent(db: Db, accessionNo: string, status: 'queued' | 'skipped' | 'new', note: string | null): Promise<void> {
+export async function stampFilingEvent(db: Db, accessionNo: string, status: 'queued' | 'skipped' | 'hourly' | 'new', note: string | null): Promise<void> {
   await db.from('filing_events').update({ status, note }).eq('accession_no', accessionNo);
 }
 
@@ -403,6 +410,6 @@ export async function runEdgarWatch(db: Db, opts: { dry?: boolean; forms?: reado
     opts,
   );
   // Stamped even on a quiet tick: the overview's "checked N min ago" is this.
-  await beat(db, 'edgar-watch', { dry: result.dry, fetched: result.fetched, watched: result.watched, new: result.new, queued: result.queued, errors: result.errors.length, ms: result.ms });
+  await beat(db, 'edgar-watch', { dry: result.dry, fetched: result.fetched, watched: result.watched, new: result.new, queued: result.queued, hourly: result.hourly, skipped: result.skipped, errors: result.errors.length, ms: result.ms });
   return result;
 }

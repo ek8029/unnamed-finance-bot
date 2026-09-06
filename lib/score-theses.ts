@@ -13,6 +13,7 @@ import {
   type Form4Summary,
 } from '@/lib/edgar';
 import { excerptFoundInSource, TEXT_SOURCES } from '@/lib/thesis-evidence';
+import { filingTier, EXHIBIT_ITEMS } from '@/lib/filing-tiers';
 import { citationDefect } from '@/lib/content/citation-quality';
 import { extractFilingSection, stripFilingHtml } from '@/lib/filing-extract';
 import { derivePillarStatus, type EvidenceForStatus, type PillarStatus } from '@/lib/thesis-status';
@@ -296,6 +297,23 @@ export async function scoreOneThesis(
     }
   }
 
+  // Sources the judge already read for this thesis and filed nothing for
+  // (judged_sources, migration 072). Without this a filing that yielded no
+  // row was fetched and judged again every hourly run for the whole 120-day
+  // window. Bounded to the widest window in play; older keys cannot be
+  // candidates anyway. A missing table means today's behaviour, nothing more.
+  let judgedSourcesTable = true;
+  {
+    const { data: judged, error: judgedErr } = await db
+      .from('judged_sources')
+      .select('source_key')
+      .eq('thesis_id', thesisId)
+      .gte('judged_at', filingSince)
+      .limit(1000);
+    if (judgedErr) judgedSourcesTable = false;
+    else for (const row of judged ?? []) existingSourceKeys.add(row.source_key as string);
+  }
+
   // Gather candidates
   const candidates: Candidate[] = [];
 
@@ -308,10 +326,13 @@ export async function scoreOneThesis(
   // 1. Recent SEC filings
   if (!injected) try {
     const filings = await getRecentFilings(ticker, filingSince, BUSINESS_FORMS);
+    let tierNever = 0;
     for (const f of filings) {
       // source_key = filing URL: EdgarFiling exposes no accession number; URL is stable + unique per filing
       const sourceKey = f.url;
       if (existingSourceKeys.has(sourceKey)) continue;
+      // Votes, bylaws, exhibit-only 8-Ks: never fetched, never judged (lib/filing-tiers.ts).
+      if (filingTier(f.form, f.items) === 'never') { tierNever++; continue; }
       candidates.push({
         source_type: 'filing',
         source_key: sourceKey,
@@ -323,6 +344,7 @@ export async function scoreOneThesis(
         filingItems: f.items,
       });
     }
+    if (tierNever > 0) log.push(`[${ticker}] ${tierNever} filing(s) left unread by tier (votes, bylaws, exhibits only)`);
   } catch (err) {
     log.push(`[${ticker}] getRecentFilings error: ${err instanceof Error ? err.message : String(err)}`);
   }
@@ -515,12 +537,15 @@ export async function scoreOneThesis(
   for (const c of sortedCandidates) {
     if (c.source_type === 'filing' && c.sourceText === '') {
       c.sourceText = await fetchFilingText(c.source_url!, c.filingForm);
-      // E6.1: earnings 8-Ks (item 2.02) carry the press release as EX-99 —
-      // the guidance language lives there, not in the skeletal primary doc.
-      if (c.filingForm === '8-K' && c.filingItems?.includes('2.02')) {
+      // E6.1: earnings 8-Ks (item 2.02) carry the press release as EX-99, and
+      // so do Reg FD (7.01) and "other events" (8.01): the primary document
+      // is usually a stub that says a press release is attached. The guidance
+      // and product language lives in the exhibit, not the stub.
+      if (c.filingForm === '8-K' && c.filingItems?.some((i) => EXHIBIT_ITEMS.has(i))) {
         const ex99 = await fetchEx99Html(c.source_url!);
         if (ex99) {
-          c.sourceText += `\nEARNINGS PRESS RELEASE (EX-99):\n${stripFilingHtml(ex99).slice(0, 4000)}`;
+          const label = c.filingItems.includes('2.02') ? 'EARNINGS PRESS RELEASE (EX-99)' : 'PRESS RELEASE OR EXHIBIT (EX-99)';
+          c.sourceText += `\n${label}:\n${stripFilingHtml(ex99).slice(0, 4000)}`;
           log.push(`[${ticker}] EX-99 exhibit attached to ${c.source_title}`);
         }
       }
@@ -684,6 +709,9 @@ Respond with JSON exactly in this shape:
   };
 
   const llmRows: JudgedRow[] = [];
+  // Every source a lane actually read, for judged_sources below. Filled only
+  // on a lane that returned, so a lost lane's sources stay candidates.
+  const judgedNow: { source_key: string; judged_by: string }[] = [];
   let lanesAttempted = 0;
   let lanesLost = 0;
   // DO NOT ADVANCE THE WATERMARK ON AN INFRASTRUCTURE FAILURE.
@@ -725,6 +753,7 @@ Respond with JSON exactly in this shape:
     try {
       const rows = await runAnthropicLane(filingLane);
       llmRows.push(...rows);
+      judgedNow.push(...filingLane.candidates.map((c) => ({ source_key: c.source_key, judged_by: FILING_JUDGE_MODEL })));
       log.push(`[${ticker}] filing lane (${FILING_JUDGE_MODEL}) returned ${rows.length} rows for ${filingLane.candidates.length} filings`);
     } catch (err) {
       // A bad parse or a failed call degrades to today's behaviour for these
@@ -734,6 +763,7 @@ Respond with JSON exactly in this shape:
       try {
         const rows = await runOpenAiLane(filingLane);
         llmRows.push(...rows);
+        judgedNow.push(...filingLane.candidates.map((c) => ({ source_key: c.source_key, judged_by: model })));
         log.push(`[${ticker}] filing lane fallback (${model}) returned ${rows.length} rows`);
       } catch (fallbackErr) {
         noteLaneLoss(filingLane, fallbackErr);
@@ -746,6 +776,7 @@ Respond with JSON exactly in this shape:
     try {
       const rows = await runOpenAiLane(cheapLane);
       llmRows.push(...rows);
+      judgedNow.push(...cheapLane.candidates.map((c) => ({ source_key: c.source_key, judged_by: model })));
       log.push(`[${ticker}] ${cheapLane.name} lane (${model}) returned ${rows.length} rows for ${cheapLane.candidates.length} sources`);
     } catch (err) {
       noteLaneLoss(cheapLane, err);
@@ -753,6 +784,14 @@ Respond with JSON exactly in this shape:
   }
 
   log.push(`[${ticker}] LLM returned ${llmRows.length} rows for ${sortedCandidates.length} candidates x ${pillars.length} pillars`);
+
+  // Remember what was read, filed or not, so the next run does not pay for it again.
+  if (judgedSourcesTable && judgedNow.length > 0) {
+    const { error: markErr } = await db
+      .from('judged_sources')
+      .upsert(judgedNow.map((j) => ({ thesis_id: thesisId, source_key: j.source_key, judged_by: j.judged_by })), { onConflict: 'thesis_id,source_key', ignoreDuplicates: true });
+    if (markErr) log.push(`[${ticker}] judged_sources not written: ${markErr.message}`);
+  }
 
   // Every lane lost: nothing was judged, so this is today's total-failure path.
   if (lanesAttempted > 0 && lanesLost === lanesAttempted) {
