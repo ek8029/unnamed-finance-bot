@@ -195,7 +195,7 @@ export default function SecurityPage() {
         <h2>Responsible Disclosure</h2>
         <p>
           If you discover a security vulnerability in Helm, please report it responsibly. Contact us at{' '}
-          <a href="mailto:security@helmterminal.dev">security@helmterminal.dev</a>. We ask that you:
+          <a href="mailto:support@helmterminal.dev">support@helmterminal.dev</a>. We ask that you:
         </p>
         <ul>
           <li>Do not access other users&apos; data</li>
@@ -219,7 +219,7 @@ export default function SecurityPage() {
         <h2>Questions</h2>
         <p>
           For security-related questions, contact{' '}
-          <a href="mailto:security@helmterminal.dev">security@helmterminal.dev</a>.
+          <a href="mailto:support@helmterminal.dev">support@helmterminal.dev</a>.
         </p>
       </section>
     </LegalPageLayout>

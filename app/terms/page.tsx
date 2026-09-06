@@ -157,7 +157,7 @@ export default function TermsPage() {
         <h2>12. Contact</h2>
         <p>
           For questions about these Terms, contact us at{' '}
-          <a href="mailto:legal@helmterminal.dev">legal@helmterminal.dev</a>.
+          <a href="mailto:support@helmterminal.dev">support@helmterminal.dev</a>.
         </p>
       </section>
     </LegalPageLayout>

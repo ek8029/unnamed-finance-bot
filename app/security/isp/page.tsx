@@ -204,7 +204,7 @@ export default function ISPPage() {
         <h3>7.3 Responsible Disclosure</h3>
         <p>
           External security researchers can report vulnerabilities to{' '}
-          <a href="mailto:security@helmterminal.dev">security@helmterminal.dev</a>.
+          <a href="mailto:support@helmterminal.dev">support@helmterminal.dev</a>.
           Reports are acknowledged within 48 hours and triaged according to the remediation SLAs above.
         </p>
       </section>
@@ -330,7 +330,7 @@ export default function ISPPage() {
         <h2>14. Contact</h2>
         <p>
           For questions about this policy or to report a security concern, contact:{' '}
-          <a href="mailto:security@helmterminal.dev">security@helmterminal.dev</a>
+          <a href="mailto:support@helmterminal.dev">support@helmterminal.dev</a>
         </p>
       </section>
     </LegalPageLayout>
