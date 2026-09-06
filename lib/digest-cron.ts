@@ -1,8 +1,8 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { generateDigest, generateGenericDigest } from '@/lib/generate-digest';
-import { resend, FROM_EMAIL } from '@/lib/emails/resend';
-import { unsubUrl } from '@/lib/emails/unsubscribe';
-import { getDigestTemplate, materialEventsBlock } from '@/lib/emails/templates';
+import { resend } from '@/lib/emails/resend';
+import { materialEventsBlock } from '@/lib/emails/templates';
+import { isWeekendET, digestEmailPayload, chunk, type DigestRecipient } from '@/lib/emails/digest-send';
 import { pickMaterialEvents, recordDelivery } from '@/lib/notify/deliver';
 
 interface DigestCronResult {
@@ -17,7 +17,7 @@ interface DigestCronResult {
  * Core digest generation logic — called directly from daily cron.
  * No HTTP, no fetch, no caching issues.
  */
-export async function runDigestCron(options: { force?: boolean } = {}): Promise<DigestCronResult> {
+export async function runDigestCron(options: { force?: boolean; weekends?: boolean } = {}): Promise<DigestCronResult> {
   const log: string[] = [];
 
   const serviceClient = createSupabaseClient(
@@ -29,6 +29,15 @@ export async function runDigestCron(options: { force?: boolean } = {}): Promise<
   const nowET = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', hour12: false });
   const currentHourET = parseInt(nowET.split(', ')[1].split(':')[0], 10);
   log.push(`[digest] Current hour ET: ${currentHourET}`);
+
+  // No brief on Saturday or Sunday: markets are closed, the prices and the
+  // sessions in the prose are Friday's, and nobody asked for a weekend email.
+  // Monday's brief covers the gap. `force` skips the preferred-hour check,
+  // not this one.
+  if (isWeekendET() && !options.weekends) {
+    log.push('[digest] Weekend in New York: no brief generated, no email sent');
+    return { generated: 0, skipped: 0, log, emailed: [] };
+  }
 
   const { data: { users }, error: usersError } = await serviceClient.auth.admin.listUsers({ perPage: 1000 });
   if (usersError) throw usersError;
@@ -108,6 +117,10 @@ export async function runDigestCron(options: { force?: boolean } = {}): Promise<
   // them in the standalone notifier: they have already been told, inside the
   // email they were expecting.
   const emailed: string[] = [];
+  // Every email this run will send, collected first and sent in batches at the
+  // end: Resend allows two requests a second and the batch endpoint takes a
+  // hundred emails in one, so a morning of 250 briefs is three requests.
+  const outgoing: Outgoing[] = [];
 
   if (usersWithoutHoldings.length > 0) {
     try {
@@ -130,7 +143,7 @@ export async function runDigestCron(options: { force?: boolean } = {}): Promise<
 
       if (resend) {
         const genericTargets = usersWithoutHoldings.filter(u => !emailBriefDisabled.has(u.id));
-        await sendDigestEmails(serviceClient, genericTargets, genericResult.digest, log, emailed);
+        await collectOutgoing(serviceClient, genericTargets, genericResult.digest, outgoing);
       }
     } catch (err) {
       log.push(`[digest] Generic digest failed: ${err instanceof Error ? err.message : 'unknown'}`);
@@ -155,11 +168,7 @@ export async function runDigestCron(options: { force?: boolean } = {}): Promise<
 
         if (resend && !emailBriefDisabled.has(user.id)) {
           const findings = await findingsFor(serviceClient, user.id);
-          const ok = await sendDigestEmail(user, result.digest, log, findings.block);
-          if (ok) {
-            emailed.push(user.id);
-            await findings.commit();
-          }
+          outgoing.push({ user, digest: result.digest, material: findings.block, commit: findings.commit });
         }
 
         log.push(`[digest] Generated for ${user.email.slice(0, 4)}... via ${result.path} (${result.tokens} tokens, $${result.costUsd.toFixed(5)}, ${user.tickers.length} holdings)`);
@@ -173,7 +182,64 @@ export async function runDigestCron(options: { force?: boolean } = {}): Promise<
     }
   }
 
+  if (outgoing.length > 0) await sendOutgoing(outgoing, log, emailed);
+
   return { generated, skipped, log, emailed };
+}
+
+/** One email waiting to go: who, what, the findings block, and what to record once it has gone. */
+interface Outgoing {
+  user: DigestRecipient;
+  digest: string;
+  material: { html: string; text: string } | null;
+  commit: () => Promise<void>;
+}
+
+/** Queue the same digest for many people, each with their own findings block. */
+async function collectOutgoing(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
+  users: DigestRecipient[],
+  digest: string,
+  outgoing: Outgoing[],
+) {
+  for (const group of chunk(users, 5)) {
+    const found = await Promise.all(group.map((user) => findingsFor(db, user.id)));
+    group.forEach((user, i) => outgoing.push({ user, digest, material: found[i].block, commit: found[i].commit }));
+  }
+}
+
+/** THE MORNING GOES OUT IN BATCHES.
+ *
+ *  Up to a hundred emails per request through Resend's batch endpoint. A batch
+ *  the endpoint refuses falls back to one-at-a-time sends, paced under the two
+ *  requests a second the API allows, so a bad address in one email never costs
+ *  the other ninety-nine their brief. Delivery is recorded only for emails
+ *  that actually went. */
+async function sendOutgoing(outgoing: Outgoing[], log: string[], emailed: string[]) {
+  if (!resend) return;
+  for (const batch of chunk(outgoing)) {
+    const payload = batch.map((o) => digestEmailPayload(o.user, o.digest, o.material));
+    try {
+      const res = await resend.batch.send(payload);
+      if (res.error) throw new Error(res.error.message);
+      for (const o of batch) {
+        emailed.push(o.user.id);
+        await o.commit();
+      }
+      log.push(`[digest] Emailed ${batch.length} in one batch request`);
+    } catch (err) {
+      log.push(`[digest] Batch of ${batch.length} refused (${err instanceof Error ? err.message : 'unknown'}); sending one at a time`);
+      for (const o of batch) {
+        const ok = await sendDigestEmail(o.user, o.digest, log, o.material);
+        if (ok) {
+          emailed.push(o.user.id);
+          await o.commit();
+        }
+        await new Promise((r) => setTimeout(r, 550));
+      }
+    }
+  }
 }
 
 /** Picks what this person has not been told, renders it, and hands back a
@@ -220,25 +286,8 @@ async function sendDigestEmail(
 ): Promise<boolean> {
   if (!resend) return false;
   try {
-    const briefUrl = 'https://helmterminal.dev/dashboard/brief';
-    const unsub = unsubUrl(user.id, 'brief');
-    const digestPreview = digest.split('\n\n')[0].slice(0, 200);
-
-    const tpl = getDigestTemplate({
-      firstName: user.firstName,
-      digestPreview,
-      briefUrl,
-      unsub,
-      material,
-    });
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: user.email,
-      subject: tpl.subject,
-      headers: { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
-      html: tpl.html,
-      text: tpl.text,
-    });
+    const res = await resend.emails.send(digestEmailPayload(user, digest, material));
+    if (res.error) throw new Error(res.error.message);
     log.push(`[digest] Emailed ${user.email.slice(0, 4)}...${material ? ' (with findings)' : ''}`);
     return true;
   } catch (emailErr) {
@@ -247,23 +296,4 @@ async function sendDigestEmail(
   }
 }
 
-async function sendDigestEmails(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  db: any,
-  users: { id: string; email: string; firstName: string }[],
-  digest: string,
-  log: string[],
-  emailed: string[],
-) {
-  const BATCH_SIZE = 5;
-  for (let i = 0; i < users.length; i += BATCH_SIZE) {
-    const batch = users.slice(i, i + BATCH_SIZE);
-    await Promise.allSettled(
-      batch.map(async (user) => {
-        const findings = await findingsFor(db, user.id);
-        const ok = await sendDigestEmail(user, digest, log, findings.block);
-        if (ok) { emailed.push(user.id); await findings.commit(); }
-      }),
-    );
-  }
-}
+
