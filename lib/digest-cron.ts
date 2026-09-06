@@ -3,6 +3,10 @@ import { generateDigest, generateGenericDigest } from '@/lib/generate-digest';
 import { resend } from '@/lib/emails/resend';
 import { materialEventsBlock } from '@/lib/emails/templates';
 import { isWeekendET, digestEmailPayload, chunk, type DigestRecipient } from '@/lib/emails/digest-send';
+import { sendPush } from '@/lib/push/send';
+import { briefReady } from '@/lib/push/voice';
+import { dayET } from '@/lib/push/policy';
+import type { MaterialEvent } from '@/lib/notify/material';
 import { pickMaterialEvents, recordDelivery } from '@/lib/notify/deliver';
 
 interface DigestCronResult {
@@ -168,7 +172,7 @@ export async function runDigestCron(options: { force?: boolean; weekends?: boole
 
         if (resend && !emailBriefDisabled.has(user.id)) {
           const findings = await findingsFor(serviceClient, user.id);
-          outgoing.push({ user, digest: result.digest, material: findings.block, commit: findings.commit });
+          outgoing.push({ user, digest: result.digest, material: findings.block, events: findings.events, commit: findings.commit });
         }
 
         log.push(`[digest] Generated for ${user.email.slice(0, 4)}... via ${result.path} (${result.tokens} tokens, $${result.costUsd.toFixed(5)}, ${user.tickers.length} holdings)`);
@@ -182,7 +186,10 @@ export async function runDigestCron(options: { force?: boolean; weekends?: boole
     }
   }
 
-  if (outgoing.length > 0) await sendOutgoing(outgoing, log, emailed);
+  if (outgoing.length > 0) {
+    await sendOutgoing(outgoing, log, emailed);
+    await sendBriefPushes(serviceClient, outgoing, log);
+  }
 
   return { generated, skipped, log, emailed };
 }
@@ -192,7 +199,31 @@ interface Outgoing {
   user: DigestRecipient;
   digest: string;
   material: { html: string; text: string } | null;
+  events: MaterialEvent[];
   commit: () => Promise<void>;
+}
+
+/** THE BRIEF ON THE PHONE. The same findings as the email, in the push's own
+ *  words, once a day. lib/push/send checks the level, the toggles and the cap;
+ *  the delivery record merges the push channel onto the email's row. */
+async function sendBriefPushes(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
+  outgoing: Outgoing[],
+  log: string[],
+) {
+  let sent = 0;
+  const day = dayET();
+  for (const o of outgoing) {
+    try {
+      const lead = o.digest.split('\n\n').find((p) => p.trim()) ?? '';
+      const r = await sendPush(db, o.user.id, 'brief', briefReady(lead, o.events), [`brief:${day}`, ...o.events.map((e) => e.notifyKey)]);
+      sent += r.sent;
+    } catch (err) {
+      log.push(`[push] brief for ${o.user.id.slice(0, 8)} failed: ${err instanceof Error ? err.message : 'unknown'}`);
+    }
+  }
+  if (sent > 0) log.push(`[push] brief to ${sent} device(s)`);
 }
 
 /** Queue the same digest for many people, each with their own findings block. */
@@ -205,7 +236,7 @@ async function collectOutgoing(
 ) {
   for (const group of chunk(users, 5)) {
     const found = await Promise.all(group.map((user) => findingsFor(db, user.id)));
-    group.forEach((user, i) => outgoing.push({ user, digest, material: found[i].block, commit: found[i].commit }));
+    group.forEach((user, i) => outgoing.push({ user, digest, material: found[i].block, events: found[i].events, commit: found[i].commit }));
   }
 }
 
@@ -248,8 +279,8 @@ async function findingsFor(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any,
   userId: string,
-): Promise<{ block: { html: string; text: string } | null; commit: () => Promise<void> }> {
-  const none = { block: null, commit: async () => {} };
+): Promise<{ block: { html: string; text: string } | null; events: MaterialEvent[]; commit: () => Promise<void> }> {
+  const none = { block: null, events: [] as MaterialEvent[], commit: async () => {} };
   try {
     const picked = await pickMaterialEvents(db, userId);
     if (!picked.ok) return none;
@@ -259,6 +290,7 @@ async function findingsFor(
     if (!block) return none;
     return {
       block,
+      events: picked.events,
       commit: () => recordDelivery(db, userId, picked.events.map((e) => e.notifyKey), 'email'),
     };
   } catch {

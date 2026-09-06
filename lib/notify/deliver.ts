@@ -66,16 +66,28 @@ export async function recordDelivery(
 ): Promise<void> {
   if (keys.length === 0) return;
   const now = new Date().toISOString();
+  // A key told by email in the morning and by push a minute later is one fact
+  // told on two channels, not two facts: merge the channels, never overwrite.
+  const { data: existing } = await db
+    .from('notification_deliveries')
+    .select('notify_key, channels, first_sent_at')
+    .eq('user_id', userId)
+    .in('notify_key', keys);
+  const prior = new Map((existing ?? []).map((r) => [String(r.notify_key), r]));
   const { error } = await db
     .from('notification_deliveries')
     .upsert(
-      keys.map((notify_key) => ({
-        user_id: userId,
-        notify_key,
-        channels: [channel],
-        first_sent_at: now,
-        last_sent_at: now,
-      })),
+      keys.map((notify_key) => {
+        const p = prior.get(notify_key);
+        const channels = [...new Set([...(((p?.channels as string[] | null) ?? [])), channel])];
+        return {
+          user_id: userId,
+          notify_key,
+          channels,
+          first_sent_at: (p?.first_sent_at as string | undefined) ?? now,
+          last_sent_at: now,
+        };
+      }),
       { onConflict: 'user_id,notify_key' },
     );
   // supabase-js does not throw on a failed write, it returns one. Swallowing it

@@ -2,6 +2,8 @@
 // What one judge job actually does. Kept apart from lib/agent/judge-queue.ts
 // because this file imports the scorer, which constructs an OpenAI client at
 // import time; the queue stays importable (and testable) without a key.
+import { sendPush } from '@/lib/push/send';
+import { investigated, filingFinding } from '@/lib/push/voice';
 //
 // A filing or news job is "scan this thesis now": the same scoreOneThesis the
 // hourly cron runs, on the same window, writing pillar_evidence exactly as
@@ -86,5 +88,25 @@ export async function runJudgeJob(db: Db, job: JudgeJobRow, log: string[]): Prom
   }
 
   const result = await scoreOneThesis(db, thesis, log, { ledger, candidates });
+
+  // What the phone hears about this job: an investigated move (the "what
+  // matters" tier) or a filing that produced a finding (the "everything"
+  // tier). A push that fails never fails the job.
+  try {
+    if (job.kind === 'investigate' && candidates?.[0]) {
+      const pct = Number(job.payload?.pct);
+      const date = String(job.payload?.date ?? '').slice(0, 10);
+      await sendPush(db, thesis.user_id, 'investigated',
+        investigated({ ticker: thesis.ticker, pct, contradicts: result.statusChanges > 0, thesisId: thesis.id }),
+        [`investigated:${thesis.ticker}:${date}`]);
+    } else if (job.kind === 'filing' && result.evidenceAdded > 0) {
+      await sendPush(db, thesis.user_id, 'filing',
+        filingFinding({ ticker: thesis.ticker, form: String(job.payload?.form ?? 'filing'), verdict: result.statusChanges > 0 ? 'contradicts' : 'mixed', thesisId: thesis.id }),
+        [`filing:${job.source_key}`]);
+    }
+  } catch (err) {
+    log.push(`[push] ${thesis.ticker}: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
   return { status: 'done', ledger, evidenceAdded: result.evidenceAdded, statusChanges: result.statusChanges };
 }

@@ -24,6 +24,8 @@ import { unsubUrl } from '@/lib/emails/unsubscribe';
 import { alertPreference, wantsAlerts } from '@/lib/notify/preferences';
 import { normalizeFact } from '@/lib/notify/material';
 import { recordDelivery } from '@/lib/notify/deliver';
+import { sendPush } from '@/lib/push/send';
+import { reasonBroke } from '@/lib/push/voice';
 import { createHash } from 'crypto';
 
 /** The same rule every Helm sender uses. Kept under this name because it is
@@ -53,6 +55,25 @@ export async function sendBreachAlerts(
   breaches: BreachEvent[],
   log: string[],
 ): Promise<number> {
+  // PUSH FIRST. The phone is the channel this promise was made for ("tells
+  // you the moment a reason stops being true"). Edge triggered like the
+  // email, so it is never gated on the delivery record; the record is written
+  // for the log. lib/push/send applies the level, the toggles and the cap.
+  let pushed = 0;
+  for (const b of breaches) {
+    try {
+      const r = await sendPush(
+        serviceClient, b.userId, 'breach',
+        reasonBroke({ ticker: b.ticker, claim: b.claim, sourceTitle: b.sourceTitle, thesisId: (b as { thesisId?: string }).thesisId }),
+        [breachNotifyKey(b)], { gateOnRecord: false },
+      );
+      pushed += r.sent;
+    } catch (err) {
+      log.push(`[breach] push failed for ${b.ticker}: ${err instanceof Error ? err.message : 'unknown'}`);
+    }
+  }
+  if (pushed > 0) log.push(`[breach] pushed to ${pushed} device(s)`);
+
   // PAUSED 2026-08-24 pre-App-Store-launch: a breach email reached the Apple
   // demo account mid-review-prep. Findings still land in the app and the
   // brief; only the EMAIL channel is off. Delete this block to resume.

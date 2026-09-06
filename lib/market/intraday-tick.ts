@@ -16,6 +16,9 @@ import { isUsMarketHours } from '@/lib/live-quotes';
 import { repriceHolding, toHoldingUpdate } from '@/lib/market/last-trade';
 import { portfolioTotalsByUser } from '@/lib/market/intraday-series';
 import { severeMoves, enqueueSevereMoves } from '@/lib/market/severe-move';
+import { liveTokenUsers, sendPush } from '@/lib/push/send';
+import { selectMoves } from '@/lib/push/policy';
+import { positionMoved } from '@/lib/push/voice';
 
 /** /price pace for the tick, derived from the plan's configured budget
  *  (FINAZON_PRICE_RPM, 200 on the current plan) minus a 40/min reserve for the
@@ -136,6 +139,39 @@ export async function runIntradayTick(): Promise<IntradayTickResult> {
     holdings.map((h) => ({ id: h.id as string, user_id: h.user_id as string, total_value: h.total_value })),
     repricedValue,
   );
+  // A position that moved the book, told to the phones that asked (push, the
+  // "what matters" tier). Only users with a live device, so this never grows
+  // with the user base, and never a failed tick over it.
+  let pushed = 0;
+  try {
+    const pushUsers = await liveTokenUsers(db);
+    if (pushUsers.size > 0) {
+      const byUser = new Map<string, { ticker: string; pct: number | null; dollars: number; weight: number }[]>();
+      for (const h of holdings) {
+        const uid = h.user_id as string;
+        if (!pushUsers.has(uid)) continue;
+        const t = (h.ticker || '').toUpperCase();
+        const price = prices.get(t);
+        const prev = prevClose.get(t);
+        const book = totals.get(uid) ?? 0;
+        if (!price || !prev || prev <= 0 || book <= 0) continue;
+        const shares = Number(h.shares) || 0;
+        const valueNow = repricedValue.get(h.id as string) ?? Number(h.total_value) ?? 0;
+        const rows = byUser.get(uid) ?? [];
+        rows.push({ ticker: t, pct: price / prev - 1, dollars: shares * (price - prev), weight: valueNow / book });
+        byUser.set(uid, rows);
+      }
+      for (const [uid, rows] of byUser) {
+        const moves = selectMoves(rows);
+        if (moves.length === 0) continue;
+        const r = await sendPush(db, uid, 'move', positionMoved(moves), moves.map((m) => `move:${m.ticker}:${today}`));
+        pushed += r.sent;
+      }
+    }
+  } catch (err) {
+    console.error('[intraday-tick] move push failed:', err instanceof Error ? err.message : err);
+  }
+
   const pointRows = [...totals.entries()].map(([user_id, total_value]) => ({ user_id, captured_at: now, total_value }));
   let points = 0;
   if (pointRows.length > 0) {
@@ -159,6 +195,7 @@ export async function runIntradayTick(): Promise<IntradayTickResult> {
       holdings_updated: updated,
       severe_moves: severe.length,
       investigations_queued: investigationsQueued,
+      pushes: pushed,
       duration_ms: Date.now() - started,
     },
   };

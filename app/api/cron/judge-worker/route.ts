@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { coalesce } from '@/lib/coalesce';
 import { readJudgeConfig, runJudgeWorker } from '@/lib/agent/judge-queue';
+import { checkPushReceipts } from '@/lib/push/send';
 import { runJudgeJob } from '@/lib/agent/judge-run';
 import { describeLedger } from '@/lib/ai/pricing';
 
@@ -33,6 +34,8 @@ export async function GET(request: Request) {
       const log: string[] = [];
       const db = await createServiceClient();
       const s = await runJudgeWorker(db, cfg, (job, l) => runJudgeJob(db, job, l), log);
+      // Push receipts ride the minute cron whether or not the judge is on.
+      try { await checkPushReceipts(db, log); } catch (err) { log.push(`[push] receipts: ${err instanceof Error ? err.message : String(err)}`); }
       for (const line of log) console.log(`[cron/judge-worker] ${line}`);
       if (s.claimed > 0) console.log(`[cron/judge-worker] cost ${describeLedger(s.ledger)}`);
       return s;

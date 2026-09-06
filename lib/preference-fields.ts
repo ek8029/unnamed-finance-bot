@@ -24,7 +24,7 @@ export const WRITABLE_PREFERENCE_FIELDS = [
   'notification_budget_alerts', 'notification_tax_reminders',
   'notification_weekly_digest', 'notification_monthly_report',
   'notification_daily_brief', 'notification_weekly_update',
-  'notification_email',
+  'notification_email', 'notification_push_level',
   'reduce_motion', 'high_contrast', 'large_text', 'screen_reader_optimized',
   'analytics_enabled', 'crash_reporting_enabled',
   'filing_status', 'tax_bracket', 'tax_state',

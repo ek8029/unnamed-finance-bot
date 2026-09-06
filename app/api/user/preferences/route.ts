@@ -39,6 +39,7 @@ export async function GET() {
       notification_daily_brief: true,
       notification_email: true,
       notification_push: false,
+      notification_push_level: 'matters',
       reduce_motion: false,
       high_contrast: false,
       large_text: false,
