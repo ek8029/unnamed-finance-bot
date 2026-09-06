@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { syncPlaidItem, computeSnapshots, type PlaidItemForSync, type SyncResult } from '@/lib/plaid-sync';
+import { extractPlaidError } from '@/lib/plaid-errors';
 import { updatePortfolioPerformance } from '@/lib/market-sync';
 import { generateInsights } from '@/lib/insights-engine';
 import { runDigestCron } from '@/lib/digest-cron';
@@ -169,8 +170,12 @@ export async function GET(request: Request) {
           `${result.holdings_synced ?? 0} holdings`,
         );
       } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        log.push(`[sync] ${item.institution_name || item.id}: FAILED - ${msg}`);
+        // Store what Plaid said, not axios's "Request failed with status code
+        // 400": the code is what tells a reader whether the item needs a
+        // reconnect or just a retry.
+        const pe = extractPlaidError(error);
+        const msg = pe?.errorMessage || (error instanceof Error ? error.message : String(error));
+        log.push(`[sync] ${item.institution_name || item.id}: FAILED - ${pe?.errorCode ?? 'UNKNOWN'} ${msg}`);
         syncResults.push({
           item_id: item.id,
           user_id: item.user_id,
@@ -183,7 +188,11 @@ export async function GET(request: Request) {
 
         await serviceClient
           .from('plaid_items')
-          .update({ status: 'error', error_message: msg })
+          .update({
+            status: pe?.errorCode === 'ITEM_LOGIN_REQUIRED' ? 'login_required' : 'error',
+            error_code: pe?.errorCode ?? null,
+            error_message: msg,
+          })
           .eq('id', item.id);
       }
     }

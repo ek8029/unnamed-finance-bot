@@ -95,6 +95,16 @@ export async function syncPlaidItem(
     }
 
     await logPlaidSuccess(userId, 'accountsGet', { item_id: item.id });
+
+    // The token just worked, so the item is healthy whatever an earlier run
+    // wrote. Nothing else clears `error`: the cron and the on-demand sync only
+    // pick up active items, so one transient failure (seven items on the
+    // morning of 8/27) dropped an item out of the daily sync for good while
+    // webhooks kept syncing it, and the app called it "stopped updating".
+    await supabase
+      .from('plaid_items')
+      .update({ status: 'active', error_code: null, error_message: null })
+      .eq('id', item.id);
   } catch (error) {
     const pe = extractPlaidError(error);
     await logPlaidError(
