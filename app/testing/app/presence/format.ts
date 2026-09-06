@@ -43,6 +43,20 @@ export function hms(d: Date): string {
   return d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
+/** "1 min ago", "3 hours ago", "2 days ago". Never rounds a real time into a fake one. */
+export function ago(iso: string | null, now = Date.now()): string {
+  if (!iso) return '';
+  const ms = now - new Date(iso).getTime();
+  if (!isFinite(ms) || ms < 0) return 'just now';
+  const min = Math.floor(ms / 60000);
+  if (min < 1) return 'under a minute ago';
+  if (min < 60) return `${min} min ago`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h} hour${h === 1 ? '' : 's'} ago`;
+  const d = Math.floor(h / 24);
+  return `${d} day${d === 1 ? '' : 's'} ago`;
+}
+
 export const plural = (n: number, s: string) => `${n} ${s}${n === 1 ? '' : 's'}`;
 
 export const theses = (n: number) => `${n} ${n === 1 ? 'thesis' : 'theses'}`;

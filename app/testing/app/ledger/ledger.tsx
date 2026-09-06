@@ -175,6 +175,11 @@ export function Ledger({ email }: { email: string }) {
     for (const p of data.theses.pillars.filter((x) => x.breaksIf).slice(0, 3)) {
       rows.push({ id: `pillar-${p.ticker}-${p.claim.slice(0, 12)}`, ts: null, label: `${p.ticker}: watching "${p.claim.slice(0, 80)}${p.claim.length > 80 ? '…' : ''}"`, right: `breaks if ${p.breaksIf!.slice(0, 60)}${p.breaksIf!.length > 60 ? '…' : ''}` });
     }
+    // Only when it is literally true: the poller stamped a heartbeat inside the last two minutes.
+    const checked = data.worklog.watch.checkedAt;
+    if (checked && Date.now() - new Date(checked).getTime() < 2 * 60_000) {
+      rows.unshift({ id: 'poll', ts: null, label: 'Next filing poll', right: 'in 1 min · EDGAR feed, every minute through the session' });
+    }
     rows.push({ id: 'next', ts: data.run.nextRunAt, label: 'Next full read', right: `${clock(data.run.nextRunAt)} · ${data.book.positions > 0 ? `all ${plural(data.book.positions, 'position')}` : thesesWord(data.theses.tracked)}` });
     return rows;
   }, [data]);

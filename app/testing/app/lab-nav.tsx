@@ -38,6 +38,7 @@ export function LabNav({ email }: { email: string }) {
       {item('/testing/app/presence', 'Overview', 'presence')}
       {item('/testing/app/ledger', 'Brief', 'ledger')}
       {item('/testing/app/live-read', 'Live Read', 'connect')}
+      {item('/testing/app/watch', 'Watch', 'spend')}
       {item('/testing/app/research', 'Research', 'v2')}
       {item('/testing/app/theses', 'Theses', 'v2')}
       {item('/testing/app/phone', 'Phone', 'mock')}

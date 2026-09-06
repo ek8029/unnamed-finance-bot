@@ -18,6 +18,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { refreshRssNews } from '@/lib/free-news';
 import { entitledToMonitoring } from '@/lib/thesis-entitlement';
 import { enqueueJudgeJobs, recordLedgerRow, type NewJudgeJob } from '@/lib/agent/judge-queue';
+import { beat } from '@/lib/agent/heartbeat';
 import { emptyLedger } from '@/lib/ai/pricing';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -150,7 +151,7 @@ export async function runNewsWatch(db: Db, opts: { log: string[]; now?: Date; si
     }
   }
 
-  return {
+  const result: NewsWatchResult = {
     slot,
     tickers: all.length,
     slice,
@@ -162,4 +163,6 @@ export async function runNewsWatch(db: Db, opts: { log: string[]; now?: Date; si
     errors,
     ms: Date.now() - started,
   };
+  await beat(db, 'news-watch', { slot, slice: slice.length, tickers: all.length, inserted, about, queued, classifierCostUsd: result.classifierCostUsd, errors: errors.length, ms: result.ms });
+  return result;
 }

@@ -15,6 +15,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { emptyLedger, mergeLedger, type UsageLedger } from '@/lib/ai/pricing';
+import { beat } from '@/lib/agent/heartbeat';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, any, any>;
@@ -354,6 +355,7 @@ export async function runJudgeWorker(
 
   summary.costUsd = Number(ledger.costUsd.toFixed(6));
   summary.ms = now().getTime() - started.getTime();
+  await beat(db, 'judge-worker', { claimed: summary.claimed, done: summary.done, failed: summary.failed, capped: summary.capped, ranToday: summary.ranToday, costUsd: summary.costUsd, ms: summary.ms });
   return summary;
 }
 

@@ -83,7 +83,19 @@ alter table judge_jobs enable row level security;
 comment on table judge_jobs is
   'Event-gated judge work with its cost. status: queued -> running -> done | failed; capped = refused by the daily or per-user cap; skipped = thesis untracked or user unentitled at run time. cost_usd is priced by lib/ai/pricing.ts from the tokens on the row.';
 
+-- watch_heartbeats: when each poller last ran, whatever it found. "Checked
+-- 1 min ago" on the overview is this row, not the last event, because a quiet
+-- hour with no filings is still an hour of looking.
+create table if not exists watch_heartbeats (
+  name text primary key check (name in ('edgar-watch', 'news-watch', 'judge-worker')),
+  at timestamptz not null default now(),
+  detail jsonb not null default '{}'::jsonb
+);
+
+alter table watch_heartbeats enable row level security;
+
 -- Verify:
 --   select count(*) from judge_jobs;   -- 0
 --   select count(*) from filing_events; -- 0
+--   select count(*) from watch_heartbeats; -- 0
 --   select indexname from pg_indexes where tablename in ('judge_jobs', 'filing_events');

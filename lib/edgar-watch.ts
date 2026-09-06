@@ -16,6 +16,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { getTickerCikMap, BUSINESS_FORMS } from '@/lib/edgar';
 import { entitledToMonitoring } from '@/lib/thesis-entitlement';
 import { enqueueJudgeJobs, type NewJudgeJob } from '@/lib/agent/judge-queue';
+import { beat } from '@/lib/agent/heartbeat';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, any, any>;
@@ -391,7 +392,7 @@ export async function stampFilingEvent(db: Db, accessionNo: string, status: 'que
 }
 
 export async function runEdgarWatch(db: Db, opts: { dry?: boolean; forms?: readonly string[]; log: string[] }): Promise<WatchResult> {
-  return watchOnce(
+  const result = await watchOnce(
     {
       fetchPage: fetchFeedPage,
       universe: () => buildWatchUniverse(db),
@@ -401,4 +402,7 @@ export async function runEdgarWatch(db: Db, opts: { dry?: boolean; forms?: reado
     },
     opts,
   );
+  // Stamped even on a quiet tick: the overview's "checked N min ago" is this.
+  await beat(db, 'edgar-watch', { dry: result.dry, fetched: result.fetched, watched: result.watched, new: result.new, queued: result.queued, errors: result.errors.length, ms: result.ms });
+  return result;
 }

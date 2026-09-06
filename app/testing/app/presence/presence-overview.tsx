@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { TodaysDelta } from '@/components/dashboard/todays-delta';
 import type { PresenceData, PresenceHolding, PresenceRead } from '@/app/api/testing/presence/route';
-import { MONO, money, clock, dayWord, calDay, plural, theses as thesesWord } from './format';
+import { MONO, money, clock, dayWord, calDay, plural, ago, theses as thesesWord } from './format';
 
 const POS = 'text-[#4ADE80]';
 const NEG = 'text-[#F87171]';
@@ -88,7 +88,8 @@ function HoldingRow({ h, max, read }: { h: PresenceHolding; max: number; read: P
   );
 }
 
-interface WorkLine { key: string; text: React.ReactNode; at: string | null; tone?: 'gold' | 'muted' }
+/** One line of what Helm did: its own time, its words, and how often that kind of work runs. */
+interface WorkLine { key: string; text: React.ReactNode; at: string | null; tone?: 'gold' | 'muted'; cadence?: string }
 
 export function PresenceOverview({ email }: { email: string }) {
   const [data, setData] = useState<PresenceData | null>(null);
@@ -115,8 +116,13 @@ export function PresenceOverview({ email }: { email: string }) {
     );
   }
 
-  const { book, run, tax, concentration, earnings, flags, sources, theses, coverage, reads } = data;
+  const { book, run, tax, concentration, earnings, flags, sources, theses, coverage, reads, worklog } = data;
   const priced = run.pricedAt;
+  const watch = worklog.watch;
+  // Each line's own time: the newest evidence row, the newest news read, the poller's stamp.
+  const newestAt = (xs: (string | null | undefined)[]) => xs.filter((x): x is string => !!x).sort().at(-1) ?? null;
+  const readAt = newestAt(sources.items.map((s) => s.at));
+  const newsAt = newestAt(Object.values(reads.byTicker).filter((r) => r.kind === 'news').map((r) => r.at));
   const dayTone = book.dayChangePct === null ? 'muted' : book.dayChangePct >= 0 ? 'positive' : 'negative';
   const maxPct = Math.max(...book.top.map((h) => h.pct), 1);
   const maxSector = Math.max(...book.sectors.map((s) => s.pct), 1);
@@ -130,19 +136,28 @@ export function PresenceOverview({ email }: { email: string }) {
 
   // What it did, as it happened. Real rows only.
   const work: WorkLine[] = [];
-  if (priced) work.push({ key: 'priced', at: priced, text: <>I priced {plural(book.positions, 'position')} across {plural(book.accounts.length, 'account')}. {book.pricedPositions < book.positions ? `${book.positions - book.pricedPositions} have no feed.` : ''}</> });
+  // The watch, newest first: each filing the poller saw on this book, with its own times.
+  for (const s of worklog.steps.filter((x) => x.id.startsWith('filing-')).slice(0, 3)) {
+    const hot = s.emphasis;
+    work.push({ key: s.id, at: s.ts, cadence: s.cadence, tone: hot ? 'gold' : undefined, text: <>{s.label.replace(/^Read /, 'I read the ').replace(/^Saw /, 'I saw the ')}, {s.detail}{hot ? <span className={NEG}>.</span> : '.'}</> });
+  }
+  for (const s of worklog.steps.filter((x) => x.id.startsWith('severe-')).slice(0, 2)) {
+    work.push({ key: s.id, at: s.ts, cadence: s.cadence, tone: 'gold', text: <>{s.label.replace(/^Investigated /, 'I investigated ')}: {s.detail}.</> });
+  }
+  if (priced) work.push({ key: 'priced', at: priced, cadence: '5 min', text: <>I priced {plural(book.positions, 'position')} across {plural(book.accounts.length, 'account')}. {book.pricedPositions < book.positions ? `${book.positions - book.pricedPositions} have no feed.` : ''}</> });
   if (theses.tracked > 0) {
-    work.push({ key: 'read', at: run.lastRunAt, text: readTotal > 0
+    work.push({ key: 'read', at: readAt ?? run.lastRunAt, cadence: 'hourly', text: readTotal > 0
       ? <>I read {sources.filings > 0 ? `${plural(sources.filings, 'filing')} and ` : ''}{plural(sources.news, 'article')} against your {thesesWord(theses.tracked)}. {sources.contradicts > 0 ? <span className={NEG}>{sources.contradicts} contradict a pillar.</span> : 'Nothing moved a pillar.'}</>
       : <>Nothing new to read against your {thesesWord(theses.tracked)} in 72 hours.</> });
   }
   if (reads.newsAbout.count > 0) {
-    work.push({ key: 'news', at: run.lastRunAt, text: <>I took in {plural(reads.newsAbout.count, 'news item')} tagged with {reads.newsAbout.names} of your names in the last 72 hours. The latest sits on each position below.</> });
+    work.push({ key: 'news', at: newsAt ?? watch.newsCheckedAt, cadence: '5 min', text: <>I took in {plural(reads.newsAbout.count, 'news item')} tagged with {reads.newsAbout.names} of your names in the last 72 hours. The latest sits on each position below.</> });
   }
-  work.push({ key: 'scans', at: flags.scansRanAt, text: flags.items.length > 0
+  work.push({ key: 'scans', at: flags.scansRanAt, cadence: 'daily', text: flags.items.length > 0
     ? <>I ran 7 scans and flagged {plural(flags.items.length, 'item')}.</>
     : <>I ran 7 scans: concentration, tax, earnings, cash flow, drift. Nothing to flag.</> });
-  if (tax && tax.harvestable > 0) work.push({ key: 'tax', at: flags.scansRanAt ?? priced, tone: 'gold', text: <>Found <span className={GOLD}>{money(tax.harvestable)}</span> of harvestable losses across {plural(tax.opportunityCount, 'lot')}.</> });
+  if (tax && tax.harvestable > 0) work.push({ key: 'tax', at: flags.scansRanAt ?? priced, cadence: 'daily', tone: 'gold', text: <>Found <span className={GOLD}>{money(tax.harvestable)}</span> of harvestable losses across {plural(tax.opportunityCount, 'lot')}.</> });
+  if (watch.checkedAt) work.push({ key: 'watch', at: watch.checkedAt, cadence: '1 min', tone: 'muted', text: <>Checked the filing feed {ago(watch.checkedAt)}{watch.queued > 0 ? `, ${plural(watch.queued, 'read')} in the queue` : ''}.</> });
   work.push({ key: 'next', at: null, tone: 'muted', text: <>Next full read {nextRead}.</> });
 
   // Conclusions where the scans found nothing to flag: what was checked, and what it says.
@@ -169,6 +184,14 @@ export function PresenceOverview({ email }: { email: string }) {
             <Link href="/dashboard/holdings" className="text-[#B8B8B8] hover:text-[#FAFAFA] no-underline">{plural(book.positions, 'position')}</Link>
             <span className="text-[#3A3A3A]"> · </span>{priced ? <>priced {clock(priced)} {dayWord(priced)}</> : 'not priced yet'}
             <span className="text-[#3A3A3A]"> · </span>
+            {watch.checkedAt && (
+              <>
+                <span>watching {plural(totalNames, 'name')}</span>
+                <span className="text-[#3A3A3A]"> · </span>
+                <span title={clock(watch.checkedAt)}>checked {ago(watch.checkedAt)}</span>
+                <span className="text-[#3A3A3A]"> · </span>
+              </>
+            )}
             <Link href="/testing/app/ledger" className="text-[#B8B8B8] hover:text-[#FAFAFA] no-underline">next read {nextRead}</Link>
           </p>
         </div>
@@ -199,7 +222,10 @@ export function PresenceOverview({ email }: { email: string }) {
             {work.map((w, i) => (
               <li key={w.key} className={`lab-arrive grid grid-cols-[64px_minmax(0,1fr)] items-baseline gap-x-3 border-b ${RULE} py-2 last:border-0`} style={{ animationDelay: `${120 + i * 140}ms` }}>
                 <span className="text-[10.5px] tabular-nums text-[#5F5F5F]" style={MONO}>{w.at ? clock(w.at).replace(' ET', '') : ''}</span>
-                <span className={`text-[12.5px] leading-[1.5] ${w.tone === 'muted' ? 'text-[#8A8A8A]' : 'text-[#D4D4D4]'}`}>{w.text}</span>
+                <span className={`text-[12.5px] leading-[1.5] ${w.tone === 'muted' ? 'text-[#8A8A8A]' : 'text-[#D4D4D4]'}`}>
+                  {w.text}
+                  {w.cadence && <span className="ml-2 text-[9.5px] uppercase tracking-[0.12em] text-[#4A4A4A]" style={MONO}>{w.cadence === 'on event' ? 'on event' : w.cadence === 'daily' ? 'daily' : w.cadence === 'hourly' ? 'hourly' : `every ${w.cadence}`}</span>}
+                </span>
               </li>
             ))}
           </ol>
