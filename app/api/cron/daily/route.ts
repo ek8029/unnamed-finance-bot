@@ -7,6 +7,7 @@ import { runDigestCron } from '@/lib/digest-cron';
 import { composeWeeklyNote, saveAnalystNote } from '@/lib/research/analyst-note';
 import { commitStandingSnapshots } from '@/lib/research/standing-questions';
 import { isOpenAccessWindow } from '@/lib/tier';
+import { emptyLedger, describeLedger } from '@/lib/ai/pricing';
 import { POST as runDripEmails } from '@/app/api/emails/drip/route';
 import { GET as runWatchlistAlerts } from '@/app/api/cron/watchlist-alerts/route';
 
@@ -189,11 +190,14 @@ export async function GET(request: Request) {
     let pricesRefreshed = 0;
 
     if (process.env.FINAZON_API_KEY) {
+      // The subject classifier's tokens and cost for this run (lib/ai/pricing.ts).
+      const newsLedger = emptyLedger();
       const marketResults = await Promise.allSettled([
         refreshMarketPrices(serviceClient, log),
         enrichMarketData(serviceClient, log),
-        refreshMarketNews(serviceClient, log, { classifyMacro: true, classifySubjects: true }),
+        refreshMarketNews(serviceClient, log, { classifyMacro: true, classifySubjects: true, ledger: newsLedger }),
       ]);
+      if (newsLedger.calls > 0) log.push(`[news] classifier cost ${describeLedger(newsLedger)}`);
 
       const marketNames = ['prices', 'enrich', 'news'] as const;
       marketResults.forEach((result, i) => {

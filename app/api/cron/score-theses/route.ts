@@ -7,6 +7,7 @@ import { generateInvestigations } from '@/lib/thesis-investigation';
 import { generateCrossThesisRisks } from '@/lib/cross-thesis-risk';
 import { rejudgeStaleMechanisms } from '@/lib/content/judge-runner';
 import { entitledToMonitoring } from '@/lib/thesis-entitlement';
+import { describeLedger } from '@/lib/ai/pricing';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -109,6 +110,9 @@ export async function GET(request: Request) {
       `[cron/score-theses] scanned=${result.scanned} evidenceAdded=${result.evidenceAdded} ` +
         `statusChanges=${result.statusChanges} droppedRows=${dropped} breachesSent=${breachesSent}`,
     );
+    // Every judge, escalation and memo call in this run, priced from the tokens
+    // the APIs reported (lib/ai/pricing.ts). This is the hourly cost line.
+    console.log(`[cron/score-theses] cost ${describeLedger(result.usage)}`);
 
     return NextResponse.json({
       ok: true,
@@ -121,6 +125,7 @@ export async function GET(request: Request) {
       investigationsGenerated,
       risksGenerated,
       mechanismsJudged,
+      costUsd: Number(result.usage.costUsd.toFixed(4)),
       log: result.log,
     });
   } catch (err) {

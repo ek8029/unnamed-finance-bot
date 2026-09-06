@@ -14,6 +14,7 @@ import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import { excerptFoundInSource } from '@/lib/thesis-evidence';
 import { ESCALATION_MODEL } from '@/lib/judge-escalation';
 import { stripFilingHtml, extractFilingSection } from '@/lib/filing-extract';
+import { recordUsage, usageFromOpenAI, type UsageLedger } from '@/lib/ai/pricing';
 import type { TriggerKind } from '@/lib/thesis-investigation';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -136,6 +137,8 @@ export async function runInvestigation(
   openai: OpenAI,
   trigger: InvestigationTrigger,
   log: string[],
+  /** Where the memo call's tokens and cost are recorded, when the caller keeps a ledger. */
+  ledger?: UsageLedger,
 ): Promise<string | null> {
   try {
     if (!(await hasInvestigationsTable(db))) {
@@ -193,6 +196,7 @@ export async function runInvestigation(
         { role: 'user', content: userPrompt },
       ],
     });
+    if (ledger) recordUsage(ledger, ESCALATION_MODEL, usageFromOpenAI(response.usage));
     const parsed = JSON.parse(response.choices[0]?.message?.content ?? '{}') as Partial<InvestigationMemo>;
 
     // --- Receipts-or-drop validation ---

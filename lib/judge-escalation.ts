@@ -8,6 +8,7 @@
 
 import type OpenAI from 'openai';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
+import { recordUsage, usageFromOpenAI, type UsageLedger } from '@/lib/ai/pricing';
 
 export const ESCALATION_MODEL = 'gpt-4o';
 /** Hard per-run cap: escalation exists to sharpen the few rows that matter. */
@@ -61,6 +62,8 @@ export async function reviewEscalations(
   rows: EscalationInput[],
   log: string[],
   model: string = ESCALATION_MODEL,
+  /** Where this call's tokens and cost are recorded, when the caller keeps a ledger. */
+  ledger?: UsageLedger,
 ): Promise<{ actions: EscalationAction[]; reviewed: boolean }> {
   const actions: EscalationAction[] = rows.map(() => 'keep');
   if (rows.length === 0) return { actions, reviewed: true };
@@ -87,6 +90,7 @@ export async function reviewEscalations(
         { role: 'user', content: fence(findings, 'FINDINGS') },
       ],
     });
+    if (ledger) recordUsage(ledger, model, usageFromOpenAI(response.usage));
     const parsed = JSON.parse(response.choices[0]?.message?.content ?? '{}') as {
       reviews?: { index?: number; action?: string; reason?: string }[];
     };

@@ -32,6 +32,7 @@ import {
   parseJudgeJson,
   FILING_JUDGE_MODEL,
 } from '@/lib/anthropic-judge';
+import { emptyLedger, recordUsage, usageFromOpenAI, describeLedger, type UsageLedger } from '@/lib/ai/pricing';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SCORE_MODEL = 'gpt-4o-mini';
@@ -63,7 +64,12 @@ interface Pillar {
   status_override: PillarStatus | null;
 }
 
-interface Candidate {
+/**
+ * One source the judge reads. Built here from EDGAR, Form 4, market_news,
+ * market_prices and XBRL, or handed in by a caller that already knows the
+ * source (the judge worker's intraday price move, see scoreOneThesis options).
+ */
+export interface Candidate {
   source_type: 'filing' | 'form4' | 'xbrl' | 'news' | 'price_move';
   source_key: string;
   source_title: string;
@@ -158,12 +164,14 @@ export async function scoreAllTheses(
   statusChanges: number;
   breaches: BreachEvent[];
   log: string[];
+  usage: UsageLedger;
 }> {
   const log: string[] = [];
   let scanned = 0;
   let evidenceAdded = 0;
   let statusChanges = 0;
   const breaches: BreachEvent[] = [];
+  const usage = emptyLedger();
 
   // Fetch theses
   let query = serviceClient
@@ -179,7 +187,7 @@ export async function scoreAllTheses(
   // on supabase-js returning data: null alongside it.
   if (thesesErr) {
     log.push(`Fatal: failed to fetch theses: ${thesesErr.message}`);
-    return { scanned, evidenceAdded, statusChanges, breaches, log };
+    return { scanned, evidenceAdded, statusChanges, breaches, log, usage };
   }
 
   // A free user keeps one thesis under watch, their oldest tracked one; Pro
@@ -199,12 +207,12 @@ export async function scoreAllTheses(
 
   if (!theses || theses.length === 0) {
     log.push('No tracked theses found.');
-    return { scanned, evidenceAdded, statusChanges, breaches, log };
+    return { scanned, evidenceAdded, statusChanges, breaches, log, usage };
   }
 
   for (const thesis of theses as Thesis[]) {
     try {
-      const result = await scoreOneThesis(serviceClient, thesis, log);
+      const result = await scoreOneThesis(serviceClient, thesis, log, { ledger: usage });
       evidenceAdded += result.evidenceAdded;
       statusChanges += result.statusChanges;
       breaches.push(...result.breaches);
@@ -214,7 +222,8 @@ export async function scoreAllTheses(
     }
   }
 
-  return { scanned, evidenceAdded, statusChanges, breaches, log };
+  log.push(`[cost] ${describeLedger(usage)}`);
+  return { scanned, evidenceAdded, statusChanges, breaches, log, usage };
 }
 
 // ---------------------------------------------------------------------------
@@ -225,9 +234,27 @@ export async function scoreOneThesis(
   db: SupabaseClient,
   thesis: Thesis,
   log: string[],
-  options?: { since?: string; isBackfill?: boolean; maxCandidates?: number; model?: string; liveCutoff?: string }
-): Promise<{ evidenceAdded: number; statusChanges: number; breaches: BreachEvent[] }> {
+  options?: {
+    since?: string;
+    isBackfill?: boolean;
+    maxCandidates?: number;
+    model?: string;
+    liveCutoff?: string;
+    /**
+     * Sources handed in by the caller instead of gathered here. The judge
+     * worker uses this for an intraday price move it already measured. With
+     * candidates injected the fetch fan-out is skipped entirely and
+     * last_scanned_at is NOT advanced, because the scan window was not read.
+     */
+    candidates?: Candidate[];
+    /** Tokens and cost for every model call in this scan accumulate here. */
+    ledger?: UsageLedger;
+  }
+): Promise<{ evidenceAdded: number; statusChanges: number; breaches: BreachEvent[]; usage: UsageLedger }> {
   const { ticker, id: thesisId, user_id, last_scanned_at } = thesis;
+  const ledger = options?.ledger ?? emptyLedger();
+  const injected = options?.candidates;
+  const advance = async () => { if (!injected) await bumpLastScanned(db, thesisId); };
   const since = options?.since ?? sinceDate(last_scanned_at);
   const filingSince = filingSinceDate(since);
   const isBackfill = options?.isBackfill ?? false;
@@ -250,8 +277,8 @@ export async function scoreOneThesis(
 
   if (pillarsErr) {
     log.push(`[${ticker}] Failed to fetch pillars: ${pillarsErr.message}`);
-    await bumpLastScanned(db, thesisId);
-    return { evidenceAdded, statusChanges, breaches };
+    await advance();
+    return { evidenceAdded, statusChanges, breaches, usage: ledger };
   }
 
   const pillars: Pillar[] = (pillarsRaw ?? []) as Pillar[];
@@ -272,8 +299,14 @@ export async function scoreOneThesis(
   // Gather candidates
   const candidates: Candidate[] = [];
 
+  // Injected sources skip the fan-out below. Dedupe still applies, so a source
+  // already on record costs nothing here either.
+  if (injected) {
+    for (const c of injected) if (!existingSourceKeys.has(c.source_key)) candidates.push({ ...c });
+  }
+
   // 1. Recent SEC filings
-  try {
+  if (!injected) try {
     const filings = await getRecentFilings(ticker, filingSince, BUSINESS_FORMS);
     for (const f of filings) {
       // source_key = filing URL: EdgarFiling exposes no accession number; URL is stable + unique per filing
@@ -295,7 +328,7 @@ export async function scoreOneThesis(
   }
 
   // 2. Form 4 filings
-  try {
+  if (!injected) try {
     const form4s = await getForm4Filings(ticker, since);
     for (const f of form4s) {
       const sourceKey = f.accessionNumber;
@@ -335,7 +368,7 @@ export async function scoreOneThesis(
   }
 
   // 3. Market news
-  try {
+  if (!injected) try {
     const { data: newsRows } = await db
       .from('market_news')
       .select('title, summary, url, source, published_at, primary_ticker')
@@ -366,7 +399,7 @@ export async function scoreOneThesis(
   }
 
   // 4. Price move
-  try {
+  if (!injected) try {
     const { data: prices } = await db
       .from('market_prices')
       .select('ticker, price_date, close')
@@ -404,7 +437,7 @@ export async function scoreOneThesis(
   }
 
   // 5. XBRL financials
-  try {
+  if (!injected) try {
     const financials = await getReportedFinancialsEdgar(ticker);
     if (financials.length >= 2) {
       // Periods newer than `since`
@@ -498,8 +531,8 @@ export async function scoreOneThesis(
   // Bump last_scanned_at even if we skip LLM
   if (pillars.length === 0 || sortedCandidates.length === 0) {
     log.push(`[${ticker}] Skipping LLM (0 pillars or 0 candidates). pillars=${pillars.length} candidates=${sortedCandidates.length}`);
-    await bumpLastScanned(db, thesisId);
-    return { evidenceAdded, statusChanges, breaches };
+    await advance();
+    return { evidenceAdded, statusChanges, breaches, usage: ledger };
   }
 
   // Build LLM prompt
@@ -633,6 +666,7 @@ Respond with JSON exactly in this shape:
         { role: 'user', content: buildUserPrompt(lane.candidates) },
       ],
     });
+    recordUsage(ledger, model, usageFromOpenAI(response.usage));
     const raw = response.choices[0]?.message?.content ?? '{}';
     const parsed = JSON.parse(raw) as LLMResponse;
     return remap(Array.isArray(parsed.evidence) ? parsed.evidence : [], lane, model);
@@ -640,6 +674,7 @@ Respond with JSON exactly in this shape:
 
   const runAnthropicLane = async (lane: Lane): Promise<JudgedRow[]> => {
     const call = await judgeWithAnthropic(systemPrompt, buildUserPrompt(lane.candidates));
+    recordUsage(ledger, FILING_JUDGE_MODEL, call.usage);
     // Truncated output is unparseable JSON anyway; naming it makes the log say
     // what actually happened instead of reporting a syntax error.
     if (call.truncated) throw new Error('response hit max_tokens, the row set is incomplete');
@@ -721,8 +756,8 @@ Respond with JSON exactly in this shape:
 
   // Every lane lost: nothing was judged, so this is today's total-failure path.
   if (lanesAttempted > 0 && lanesLost === lanesAttempted) {
-    if (!holdWindowOpen) await bumpLastScanned(db, thesisId);
-    return { evidenceAdded, statusChanges, breaches };
+    if (!holdWindowOpen) await advance();
+    return { evidenceAdded, statusChanges, breaches, usage: ledger };
   }
 
   // Validate and build insert rows
@@ -866,6 +901,8 @@ Respond with JSON exactly in this shape:
         why: toInsert[i].why as string,
       })),
       log,
+      ESCALATION_MODEL,
+      ledger,
     );
     const rejected = new Set<number>();
     actions.forEach((action, k) => {
@@ -1008,7 +1045,7 @@ Respond with JSON exactly in this shape:
   // E1: run bounded investigations for this scan's live status moves. Caps and
   // failures are handled inside runInvestigation; a memo error never fails a scan.
   for (const trigger of investigationTriggers) {
-    await runInvestigation(db, openai, trigger, log);
+    await runInvestigation(db, openai, trigger, log, ledger);
   }
 
   // Bump last_scanned_at, unless a lane was lost to something retryable: its
@@ -1017,10 +1054,11 @@ Respond with JSON exactly in this shape:
   if (holdWindowOpen) {
     log.push(`[${ticker}] Leaving last_scanned_at where it was so the lost lane is retried.`);
   } else {
-    await bumpLastScanned(db, thesisId);
+    await advance();
   }
+  log.push(`[${ticker}] cost ${describeLedger(ledger)}`);
 
-  return { evidenceAdded, statusChanges, breaches };
+  return { evidenceAdded, statusChanges, breaches, usage: ledger };
 }
 
 // Migration-056 runtime detection, cached per process: one cheap probe select

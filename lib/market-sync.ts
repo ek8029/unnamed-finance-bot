@@ -3,6 +3,7 @@ import { refreshRssNews, refreshFilingEvents } from '@/lib/free-news';
 import { mapSicToSector, getTickerSectorOverride } from '@/lib/market-classify';
 import { getCompanyProfileEdgar } from '@/lib/edgar';
 import { RISK_FREE_RATE, TRADING_DAYS_PER_YEAR } from '@/lib/financial-config';
+import type { UsageLedger } from '@/lib/ai/pricing';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyClient = any;
@@ -577,7 +578,7 @@ export async function enrichMarketData(supabase: AnyClient, log: string[]) {
  * Market news + events refresh from free, license-clean sources:
  * Nasdaq per-ticker RSS headlines and SEC EDGAR 8-K filings.
  */
-export async function refreshMarketNews(supabase: AnyClient, log: string[], options?: { classifyMacro?: boolean; classifySubjects?: boolean }) {
+export async function refreshMarketNews(supabase: AnyClient, log: string[], options?: { classifyMacro?: boolean; classifySubjects?: boolean; ledger?: UsageLedger }) {
   const { data: holdings, error } = await supabase
     .from('holdings')
     .select('ticker')

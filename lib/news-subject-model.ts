@@ -15,6 +15,7 @@
 
 import { getAnthropic, hasAnthropicKey } from '@/lib/anthropic';
 import type { SubjectVerdict } from '@/lib/news-subject';
+import { recordUsage, usageFromAnthropic, type UsageLedger } from '@/lib/ai/pricing';
 
 export const SUBJECT_MODEL = 'claude-haiku-4-5';
 
@@ -71,6 +72,8 @@ export interface SubjectAnswer {
 export async function classifySubjects(
   rows: SubjectInput[],
   log: string[],
+  /** Where each batch's tokens and cost are recorded, when the caller keeps a ledger. */
+  ledger?: UsageLedger,
 ): Promise<Map<string, SubjectAnswer>> {
   const out = new Map<string, SubjectAnswer>();
   if (rows.length === 0) return out;
@@ -94,6 +97,7 @@ export async function classifySubjects(
         system: TASK,
         messages: [{ role: 'user', content: block }],
       });
+      if (ledger) recordUsage(ledger, SUBJECT_MODEL, usageFromAnthropic(res.usage));
       const text = res.content
         .filter((c): c is { type: 'text'; text: string; citations: null } => c.type === 'text')
         .map((c) => c.text)

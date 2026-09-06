@@ -5,6 +5,7 @@
 // client another surface may introduce; nothing outside the scorer imports it.
 
 import Anthropic from '@anthropic-ai/sdk';
+import { usageFromAnthropic, type TokenUsage } from '@/lib/ai/pricing';
 
 /**
  * The filing lane's model.
@@ -54,6 +55,8 @@ export interface AnthropicJudgeCall {
   text: string;
   /** True when the model ran out of output budget, so `text` is incomplete. */
   truncated: boolean;
+  /** Tokens the API reported for this call, so the caller can price it. */
+  usage: TokenUsage;
 }
 
 /**
@@ -87,7 +90,7 @@ export async function judgeWithAnthropic(
     .map((b) => b.text)
     .join('');
 
-  return { text, truncated: res.stop_reason === 'max_tokens' };
+  return { text, truncated: res.stop_reason === 'max_tokens', usage: usageFromAnthropic(res.usage) };
 }
 
 /**

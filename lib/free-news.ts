@@ -15,6 +15,7 @@ import { scoreSentiment } from '@/lib/market-classify';
 import { detectPrimaryTicker } from '@/lib/news-primary-ticker';
 import { subjectPrefilter } from '@/lib/news-subject';
 import { classifySubjects, SUBJECT_MODEL } from '@/lib/news-subject-model';
+import type { UsageLedger } from '@/lib/ai/pricing';
 import { getRecentFilings } from '@/lib/edgar';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import OpenAI from 'openai';
@@ -220,7 +221,7 @@ export async function refreshRssNews(
   supabase: AnyClient,
   log: string[],
   tickers: string[],
-  options?: { classifyMacro?: boolean; classifySubjects?: boolean },
+  options?: { classifyMacro?: boolean; classifySubjects?: boolean; ledger?: UsageLedger },
 ): Promise<number> {
   const unique = [...new Set(tickers.map(t => t.toUpperCase()))]
     .filter(t => !t.includes('-USD'))
@@ -346,11 +347,11 @@ export async function refreshRssNews(
   // Is each article ABOUT its primary ticker, or does it only mention the
   // company? Cron-only, same posture as the macro classifier below.
   if (options?.classifySubjects) {
-    await classifyNewsSubjects(supabase, log, inserts, tickerNameMap);
+    await classifyNewsSubjects(supabase, log, inserts, tickerNameMap, options.ledger);
     // Rows the request-path refresh inserted, or that a classifier outage
     // skipped, would otherwise never get a verdict. Bounded sweep, so the cost
     // of catching up can never run away.
-    await sweepUnclassifiedSubjects(supabase, log, 150);
+    await sweepUnclassifiedSubjects(supabase, log, 150, options.ledger);
   }
 
   // LLM classification is cron-only. Request-path callers (POST /api/market/news/refresh) must never trigger it.
@@ -378,6 +379,7 @@ async function classifyNewsSubjects(
   log: string[],
   inserts: { url: string; title: string; summary: string | null; primary_ticker: string | null; tickers: string[] }[],
   nameMap: Map<string, string>,
+  ledger?: UsageLedger,
 ): Promise<void> {
   const candidates = inserts.filter((r) => r.primary_ticker && r.url);
   if (candidates.length === 0) return;
@@ -402,7 +404,7 @@ async function classifyNewsSubjects(
     else forModel.push({ key: r.url, title: r.title, summary: r.summary, ticker, companyName });
   }
 
-  const modelVerdicts = await classifySubjects(forModel, log);
+  const modelVerdicts = await classifySubjects(forModel, log, ledger);
   // The model sometimes calls a row a mention and then names the ticker it was
   // already filed under. Those two answers contradict each other, and the
   // second one is the considered one, so the row is about its own ticker.
@@ -484,6 +486,7 @@ async function sweepUnclassifiedSubjects(
   supabase: AnyClient,
   log: string[],
   limit: number,
+  ledger?: UsageLedger,
 ): Promise<void> {
   const { data, error } = await supabase
     .from('market_news')
@@ -511,6 +514,7 @@ async function sweepUnclassifiedSubjects(
     log,
     data as { url: string; title: string; summary: string | null; primary_ticker: string | null; tickers: string[] }[],
     nameMap,
+    ledger,
   );
 }
 
