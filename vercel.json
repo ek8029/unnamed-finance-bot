@@ -45,6 +45,22 @@
     {
       "path": "/api/cron/citation-probe",
       "schedule": "0 14 * * 1"
+    },
+    {
+      "path": "/api/cron/judge-worker",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/edgar-watch?slot=session",
+      "schedule": "* 13-21 * * 1-5"
+    },
+    {
+      "path": "/api/cron/edgar-watch?slot=off",
+      "schedule": "*/5 0-12,22-23 * * 1-5"
+    },
+    {
+      "path": "/api/cron/edgar-watch?slot=weekend",
+      "schedule": "*/30 * * * 0,6"
     }
   ]
 }

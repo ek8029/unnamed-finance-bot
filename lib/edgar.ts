@@ -137,6 +137,15 @@ export async function getCompanyEntries(): Promise<{ ticker: string; title: stri
 }
 
 /**
+ * Ticker to CIK (unpadded number) for every EDGAR-listed ticker, or null when
+ * the registry cannot be loaded and never has been. The filing poller filters
+ * the global feed against this.
+ */
+export async function getTickerCikMap(): Promise<Map<string, number> | null> {
+  return getTickerMap();
+}
+
+/**
  * Cheap validity check: does this symbol have an SEC CIK (i.e. is it a real
  * SEC-registered US issuer)? Reuses the 24h-cached ticker→CIK map, so after
  * the first load it is an in-memory Map lookup — no network, no paid API.
@@ -494,9 +503,15 @@ function formMatches(form: string, allowed: string[]): boolean {
  * result cap, so a company that files a lot of offering paperwork cannot push
  * its own quarterly report out of the window.
  */
-export async function getRecentFilings(symbol: string, sinceDate?: string, forms?: string[]): Promise<EdgarFiling[]> {
+export async function getRecentFilings(
+  symbol: string,
+  sinceDate?: string,
+  forms?: string[],
+  /** `fresh` bypasses the one-hour cache and refills it: the judge worker uses it to wait for a filing the feed already showed. */
+  opts?: { fresh?: boolean },
+): Promise<EdgarFiling[]> {
   const cacheKey = 'edgar:filings:' + symbol.toUpperCase() + (forms ? ':' + forms.join(',') : '');
-  let filings = getCached<EdgarFiling[]>(cacheKey);
+  let filings = opts?.fresh ? null : getCached<EdgarFiling[]>(cacheKey);
 
   if (!filings) {
     const cik = await getCik(symbol);
