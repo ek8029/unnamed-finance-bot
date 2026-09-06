@@ -35,6 +35,7 @@ export interface JudgeJobRow {
   attempts: number;
   run_after: string;
   created_at: string;
+  started_at?: string | null;
 }
 
 export interface NewJudgeJob {
@@ -215,7 +216,7 @@ export async function claimJudgeJobs(db: Db, cfg: JudgeConfig, now: Date = new D
       .eq('id', job.id)
       .eq('status', 'queued')
       .select('id');
-    if (data && data.length === 1) claimed.push({ ...job, status: 'running', attempts: job.attempts + 1 });
+    if (data && data.length === 1) claimed.push({ ...job, status: 'running', attempts: job.attempts + 1, started_at: nowIso });
   }
   return { claimed, capped: capped.length, ranToday: today.total };
 }
@@ -273,6 +274,20 @@ export async function finishJudgeJob(db: Db, job: JudgeJobRow, outcome: JudgeJob
       status_changes: outcome.statusChanges ?? null,
     })
     .eq('id', job.id);
+
+  // A filing or news job scans the thesis's whole window, so every sibling
+  // queued for the same thesis before that scan started was read by it. Close
+  // them at zero cost instead of running the same scan again a minute later.
+  // Investigate jobs carry their own injected source and cover nothing.
+  if (outcome.status === 'done' && job.thesis_id && job.kind !== 'investigate') {
+    await db
+      .from('judge_jobs')
+      .update({ status: 'done', finished_at: nowIso, error: `covered by ${job.id}` })
+      .eq('thesis_id', job.thesis_id)
+      .eq('status', 'queued')
+      .in('kind', ['filing', 'news'])
+      .lte('created_at', job.started_at ?? nowIso);
+  }
 }
 
 export interface WorkerSummary {

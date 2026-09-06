@@ -221,11 +221,11 @@ export async function refreshRssNews(
   supabase: AnyClient,
   log: string[],
   tickers: string[],
-  options?: { classifyMacro?: boolean; classifySubjects?: boolean; ledger?: UsageLedger },
+  options?: { classifyMacro?: boolean; classifySubjects?: boolean; ledger?: UsageLedger; maxTickers?: number },
 ): Promise<number> {
   const unique = [...new Set(tickers.map(t => t.toUpperCase()))]
     .filter(t => !t.includes('-USD'))
-    .slice(0, 25); // cap feed fetches per run
+    .slice(0, options?.maxTickers ?? 25); // cap feed fetches per run; the news poller hands in its own slice
 
   if (unique.length === 0) {
     log.push('[news] No tickers to fetch news for');

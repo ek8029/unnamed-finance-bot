@@ -203,7 +203,8 @@ export function buildReassessment(
 // Generator
 // ---------------------------------------------------------------------------
 
-const SEVERE_MOVE_PCT = 20;
+/** A price move this large (percent) breaks a pillar on its own and, from the intraday tick, raises an investigation. */
+export const SEVERE_MOVE_PCT = 20;
 function parsePct(excerpt: string): number {
   const m = excerpt.match(/(\d+(?:\.\d+)?)%/);
   return m ? parseFloat(m[1]) : 0;

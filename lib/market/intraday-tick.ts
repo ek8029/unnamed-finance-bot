@@ -15,6 +15,7 @@ import { getBatchLastTradePrices } from '@/lib/finazon';
 import { isUsMarketHours } from '@/lib/live-quotes';
 import { repriceHolding, toHoldingUpdate } from '@/lib/market/last-trade';
 import { portfolioTotalsByUser } from '@/lib/market/intraday-series';
+import { severeMoves, enqueueSevereMoves } from '@/lib/market/severe-move';
 
 /** /price pace for the tick, derived from the plan's configured budget
  *  (FINAZON_PRICE_RPM, 200 on the current plan) minus a 40/min reserve for the
@@ -112,6 +113,22 @@ export async function runIntradayTick(): Promise<IntradayTickResult> {
       .map(([t, p]) => db.from('securities').update({ current_price: p, last_updated_at: now }).eq('id', securityByTicker.get(t)!)),
   );
 
+  // A severe move on a thesis name raises an investigate job for the judge
+  // worker (perpetual watch, section 4). Enqueue only, keyed per ticker per
+  // day, never a model call inside the tick, never a failed tick over it.
+  const severe = severeMoves(prices, prevClose);
+  let investigationsQueued = 0;
+  if (severe.length > 0) {
+    try {
+      const q = await enqueueSevereMoves(db, severe, today);
+      investigationsQueued = q.queued;
+      if (q.error) console.error('[intraday-tick] severe-move enqueue failed:', q.error);
+      else if (q.queued > 0) console.log(`[intraday-tick] ${severe.map((m) => `${m.ticker} ${(m.pct * 100).toFixed(1)}%`).join(', ')}: ${q.queued} investigation(s) queued`);
+    } catch (err) {
+      console.error('[intraday-tick] severe-move enqueue threw:', err instanceof Error ? err.message : err);
+    }
+  }
+
   // One point per user for the 1D chart (migration 066), then prune the
   // week-old tail so the table stays a session log, not a history.
   const repricedValue = new Map(updates.map((u) => [u.id, u.total_value]));
@@ -140,6 +157,8 @@ export async function runIntradayTick(): Promise<IntradayTickResult> {
       tickers: tickers.length,
       priced: prices.size,
       holdings_updated: updated,
+      severe_moves: severe.length,
+      investigations_queued: investigationsQueued,
       duration_ms: Date.now() - started,
     },
   };
