@@ -33,7 +33,7 @@ import {
   parseJudgeJson,
   FILING_JUDGE_MODEL,
 } from '@/lib/anthropic-judge';
-import { emptyLedger, recordUsage, usageFromOpenAI, describeLedger, type UsageLedger } from '@/lib/ai/pricing';
+import { emptyLedger, recordUsage, usageFromOpenAI, describeLedger, type UsageLedger, readRunCeilingUsd } from '@/lib/ai/pricing';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SCORE_MODEL = 'gpt-4o-mini';
@@ -211,6 +211,9 @@ export async function scoreAllTheses(
     return { scanned, evidenceAdded, statusChanges, breaches, log, usage };
   }
 
+  // One run may spend this much before it stops; the theses it did not reach
+  // keep their watermark and go first next hour (LLM_RUN_USD, default $1).
+  const ceiling = readRunCeilingUsd();
   for (const thesis of theses as Thesis[]) {
     try {
       const result = await scoreOneThesis(serviceClient, thesis, log, { ledger: usage });
@@ -220,6 +223,10 @@ export async function scoreAllTheses(
       scanned++;
     } catch (err) {
       log.push(`[${thesis.ticker}] Unhandled error: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    if (usage.costUsd >= ceiling) {
+      log.push(`[cost] run ceiling $${ceiling.toFixed(2)} reached after ${scanned} of ${theses.length} theses; ${theses.length - scanned} wait for the next run`);
+      break;
     }
   }
 

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   costUsd, isPriced, usageFromAnthropic, usageFromOpenAI,
-  emptyLedger, recordUsage, mergeLedger, describeLedger, MODEL_PRICES,
+  emptyLedger, recordUsage, mergeLedger, describeLedger, MODEL_PRICES, readRunCeilingUsd,
 } from '@/lib/ai/pricing';
 
 describe('rate card', () => {
@@ -67,5 +67,15 @@ describe('ledger', () => {
     expect(run.byModel['gpt-4o-mini'].input).toBe(4000);
     expect(run.costUsd).toBeCloseTo(job.costUsd * 2, 9);
     expect(describeLedger(run)).toMatch(/^4 calls · in 6,000 · out 600 · cache 0 · \$0\.00/);
+  });
+});
+
+describe('readRunCeilingUsd', () => {
+  it('defaults to $1 and ignores garbage, zero, and negatives', () => {
+    expect(readRunCeilingUsd({})).toBe(1);
+    expect(readRunCeilingUsd({ LLM_RUN_USD: 'free' })).toBe(1);
+    expect(readRunCeilingUsd({ LLM_RUN_USD: '0' })).toBe(1);
+    expect(readRunCeilingUsd({ LLM_RUN_USD: '-2' })).toBe(1);
+    expect(readRunCeilingUsd({ LLM_RUN_USD: '0.25' })).toBe(0.25);
   });
 });

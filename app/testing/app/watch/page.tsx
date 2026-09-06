@@ -6,6 +6,7 @@
 import { notFound } from 'next/navigation';
 import { createStaticServiceClient } from '@/lib/supabase/server';
 import { judgeSpend, etDayStartIso, readJudgeConfig } from '@/lib/agent/judge-queue';
+import { readRunCeilingUsd } from '@/lib/ai/pricing';
 import { readHeartbeats } from '@/lib/agent/heartbeat';
 
 export const metadata = { title: 'Watch · Lab', robots: { index: false, follow: false } };
@@ -84,7 +85,7 @@ export default async function LabWatchPage() {
       <div className="mb-6">
         <h1 className="m-0 text-[26px] font-bold leading-[1.15] tracking-[-0.025em] text-[#FAFAFA]">The Watch</h1>
         <p className="mt-2 text-[12.5px] leading-[1.6] text-[#8A8A8A] m-0" style={MONO}>
-          judge {cfg.enabled ? <span className="text-[#4ADE80]">ON</span> : <span className="text-[#F87171]">OFF</span>} · daily cap {cfg.dailyCap} · user cap {cfg.userCap} · batch {cfg.batch}
+          judge {cfg.enabled ? <span className="text-[#4ADE80]">ON</span> : <span className="text-[#F87171]">OFF</span>} · daily cap {cfg.dailyCap} · user cap {cfg.userCap} · batch {cfg.batch} · spend cap ${cfg.dailyUsd.toFixed(2)}/day · run ceiling ${readRunCeilingUsd().toFixed(2)}
           {!migrationApplied && <span className="text-[#F87171]"> · migration 072 not applied: no tables yet</span>}
         </p>
       </div>

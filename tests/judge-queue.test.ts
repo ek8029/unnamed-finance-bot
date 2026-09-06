@@ -7,7 +7,7 @@ import {
 } from '@/lib/agent/judge-queue';
 import { emptyLedger, recordUsage } from '@/lib/ai/pricing';
 
-const CFG: JudgeConfig = { enabled: true, dailyCap: 200, userCap: 25, batch: 10 };
+const CFG: JudgeConfig = { enabled: true, dailyCap: 200, userCap: 25, batch: 10, dailyUsd: 5 };
 
 function job(id: string, user: string, createdAt: string, extra: Partial<JudgeJobRow> = {}): JudgeJobRow {
   return {
@@ -25,11 +25,11 @@ describe('readJudgeConfig', () => {
     expect(readJudgeConfig({ JUDGE_ENABLED: 'true' }).enabled).toBe(true);
   });
   it('defaults the caps to 200 / 25 / 10 and ignores garbage', () => {
-    expect(readJudgeConfig({})).toEqual({ enabled: false, dailyCap: 200, userCap: 25, batch: 10 });
-    expect(readJudgeConfig({ JUDGE_DAILY_CAP: 'lots', JUDGE_USER_CAP: '-3', JUDGE_BATCH: '0' }))
-      .toEqual({ enabled: false, dailyCap: 200, userCap: 25, batch: 10 });
-    expect(readJudgeConfig({ JUDGE_DAILY_CAP: '50', JUDGE_USER_CAP: '5', JUDGE_BATCH: '2' }))
-      .toEqual({ enabled: false, dailyCap: 50, userCap: 5, batch: 2 });
+    expect(readJudgeConfig({})).toEqual({ enabled: false, dailyCap: 200, userCap: 25, batch: 10, dailyUsd: 5 });
+    expect(readJudgeConfig({ JUDGE_DAILY_CAP: 'lots', JUDGE_USER_CAP: '-3', JUDGE_BATCH: '0', JUDGE_DAILY_USD: 'free' }))
+      .toEqual({ enabled: false, dailyCap: 200, userCap: 25, batch: 10, dailyUsd: 5 });
+    expect(readJudgeConfig({ JUDGE_DAILY_CAP: '50', JUDGE_USER_CAP: '5', JUDGE_BATCH: '2', JUDGE_DAILY_USD: '2.5' }))
+      .toEqual({ enabled: false, dailyCap: 50, userCap: 5, batch: 2, dailyUsd: 2.5 });
   });
 });
 
@@ -80,6 +80,26 @@ describe('runJudgeWorker', () => {
     expect(s.enabled).toBe(false);
     expect(s.claimed).toBe(0);
     expect(log[0]).toContain('disabled');
+  });
+
+  it('claims nothing once the day\'s dollars are spent', async () => {
+    const tables: string[] = [];
+    // Every chained call returns the same thenable, which resolves to the rows.
+    const stub = (rows: unknown[]) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const p: any = new Proxy({}, {
+        get: (_t, prop) => (prop === 'then' ? (res: (v: unknown) => unknown) => res({ data: rows, error: null }) : () => p),
+      });
+      return p;
+    };
+    const db = { from: (t: string) => { tables.push(t); return stub(t === 'judge_jobs' ? [{ cost_usd: '3.25' }, { cost_usd: '1.75' }] : []); } };
+    const log: string[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const s = await runJudgeWorker(db as any, { ...CFG, dailyUsd: 5 }, async () => { throw new Error('a job ran past the cap'); }, log);
+    expect(s.spentTodayUsd).toBe(5);
+    expect(s.claimed).toBe(0);
+    expect(log.some((l) => l.includes('daily spend cap reached'))).toBe(true);
+    expect(tables).toContain('watch_heartbeats');
   });
 });
 

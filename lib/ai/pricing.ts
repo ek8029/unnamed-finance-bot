@@ -144,6 +144,17 @@ export function mergeLedger(into: UsageLedger, from: UsageLedger): void {
 }
 
 /** One log line: "3 calls · in 4,120 · out 610 · cache 2,900 · $0.0231 (claude-sonnet-5 $0.02, gpt-4o-mini $0.00)". */
+/**
+ * Dollars one cron invocation may spend before it stops and leaves the rest
+ * for the next run: the hourly scan, one news-watch tick. LLM_RUN_USD, default $1.
+ * The judge worker has its own per-day cap (JUDGE_DAILY_USD) because its work
+ * is queued, not windowed.
+ */
+export function readRunCeilingUsd(env: Record<string, string | undefined> = process.env): number {
+  const n = Number(env.LLM_RUN_USD);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
+
 export function describeLedger(l: UsageLedger): string {
   const n = (x: number) => x.toLocaleString('en-US');
   const per = Object.entries(l.byModel).map(([m, t]) => `${m} $${t.costUsd.toFixed(4)}`).join(', ');

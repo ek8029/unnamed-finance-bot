@@ -15,7 +15,7 @@
 
 import { getAnthropic, hasAnthropicKey } from '@/lib/anthropic';
 import type { SubjectVerdict } from '@/lib/news-subject';
-import { recordUsage, usageFromAnthropic, type UsageLedger } from '@/lib/ai/pricing';
+import { recordUsage, usageFromAnthropic, type UsageLedger, readRunCeilingUsd } from '@/lib/ai/pricing';
 
 export const SUBJECT_MODEL = 'claude-haiku-4-5';
 
@@ -83,7 +83,12 @@ export async function classifySubjects(
   }
 
   const client = getAnthropic();
+  const ceiling = readRunCeilingUsd();
   for (let i = 0; i < rows.length; i += BATCH) {
+    if (ledger && ledger.costUsd >= ceiling) {
+      log.push(`[news] subject classifier stopped at the $${ceiling.toFixed(2)} run ceiling; ${rows.length - i} row(s) keep a null verdict`);
+      break;
+    }
     const slice = rows.slice(i, i + BATCH);
     const block = slice
       .map((r, n) =>

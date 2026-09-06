@@ -59,20 +59,28 @@ export interface JudgeConfig {
   userCap: number;
   /** Jobs claimed per worker invocation. */
   batch: number;
+  /** Dollars the worker may spend per ET day (judge_jobs.cost_usd, classifier rows included).
+   *  The job caps bound work; this bounds the bill. Overshoot is at most one batch. */
+  dailyUsd: number;
 }
 
-const DEFAULTS: JudgeConfig = { enabled: false, dailyCap: 200, userCap: 25, batch: 10 };
+const DEFAULTS: JudgeConfig = { enabled: false, dailyCap: 200, userCap: 25, batch: 10, dailyUsd: 5 };
 
 export function readJudgeConfig(env: Record<string, string | undefined> = process.env): JudgeConfig {
   const num = (v: string | undefined, d: number) => {
     const n = Number(v);
     return Number.isFinite(n) && n > 0 ? Math.floor(n) : d;
   };
+  const usd = (v: string | undefined, d: number) => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : d;
+  };
   return {
     enabled: env.JUDGE_ENABLED === 'true',
     dailyCap: num(env.JUDGE_DAILY_CAP, DEFAULTS.dailyCap),
     userCap: num(env.JUDGE_USER_CAP, DEFAULTS.userCap),
     batch: num(env.JUDGE_BATCH, DEFAULTS.batch),
+    dailyUsd: usd(env.JUDGE_DAILY_USD, DEFAULTS.dailyUsd),
   };
 }
 
@@ -301,6 +309,8 @@ export interface WorkerSummary {
   deferred: number;
   capped: number;
   costUsd: number;
+  /** judge_jobs dollars already written today when this run started. */
+  spentTodayUsd: number;
   ledger: UsageLedger;
   ms: number;
 }
@@ -322,10 +332,20 @@ export async function runJudgeWorker(
   const ledger = emptyLedger();
   const summary: WorkerSummary = {
     enabled: cfg.enabled, ranToday: 0, claimed: 0, done: 0, failed: 0, skipped: 0, deferred: 0, capped: 0,
-    costUsd: 0, ledger, ms: 0,
+    costUsd: 0, spentTodayUsd: 0, ledger, ms: 0,
   };
   if (!cfg.enabled) {
     log.push('[judge] disabled (JUDGE_ENABLED is not "true"); nothing claimed');
+    return summary;
+  }
+
+  // The dollar cap comes before the claim so a capped day claims nothing and
+  // the queue simply waits for midnight ET.
+  summary.spentTodayUsd = await paidSpendSince(db, etDayStartIso(started));
+  if (summary.spentTodayUsd >= cfg.dailyUsd) {
+    log.push(`[judge] daily spend cap reached: $${summary.spentTodayUsd.toFixed(2)} of $${cfg.dailyUsd.toFixed(2)} today; nothing claimed`);
+    summary.ms = now().getTime() - started.getTime();
+    await beat(db, 'judge-worker', { claimed: 0, done: 0, failed: 0, capped: 0, costUsd: 0, spentTodayUsd: summary.spentTodayUsd, spendCapReached: true, ms: summary.ms });
     return summary;
   }
 
@@ -355,8 +375,24 @@ export async function runJudgeWorker(
 
   summary.costUsd = Number(ledger.costUsd.toFixed(6));
   summary.ms = now().getTime() - started.getTime();
-  await beat(db, 'judge-worker', { claimed: summary.claimed, done: summary.done, failed: summary.failed, capped: summary.capped, ranToday: summary.ranToday, costUsd: summary.costUsd, ms: summary.ms });
+  await beat(db, 'judge-worker', { claimed: summary.claimed, done: summary.done, failed: summary.failed, capped: summary.capped, ranToday: summary.ranToday, costUsd: summary.costUsd, spentTodayUsd: summary.spentTodayUsd, ms: summary.ms });
   return summary;
+}
+
+/**
+ * Dollars written to judge_jobs since `sinceIso`: rows finished since then, plus
+ * rows created since then (classifier rows carry their cost at creation). Both
+ * clauses, so a backlog judged today after days in the queue still counts today.
+ */
+export async function paidSpendSince(db: Db, sinceIso: string): Promise<number> {
+  const { data } = await db
+    .from('judge_jobs')
+    .select('cost_usd')
+    .or(`finished_at.gte.${sinceIso},created_at.gte.${sinceIso}`)
+    .gt('cost_usd', 0)
+    .limit(5000);
+  const total = ((data ?? []) as { cost_usd: unknown }[]).reduce((s, r) => s + (Number(r.cost_usd) || 0), 0);
+  return Number(total.toFixed(6));
 }
 
 /**
