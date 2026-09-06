@@ -19,7 +19,7 @@ import { getTickerThesisData } from '@/lib/content/public-thesis';
 export const dynamic = 'force-dynamic';
 
 export type PresencePart =
-  | 'book' | 'run' | 'concentration' | 'earnings' | 'tax' | 'coverage' | 'sources' | 'theses' | 'worklog' | 'digest' | 'flags';
+  | 'book' | 'run' | 'concentration' | 'earnings' | 'tax' | 'coverage' | 'sources' | 'theses' | 'worklog' | 'digest' | 'flags' | 'reads';
 
 export interface PresenceHolding { ticker: string; pct: number; value: number; dayChangePct: number | null; sector: string | null }
 export interface PresenceBook {
@@ -49,6 +49,9 @@ export interface PresenceSource {
 }
 export interface PresencePillar { ticker: string; claim: string; status: string; breaksIf: string | null; changedAt: string | null }
 export interface PresenceFlag { id: string; title: string; kind: string; priority: string; at: string; detail: string | null; impact: number | null }
+/** The latest thing Helm read about one name: thesis evidence, a house-thesis catch, or a news item classified as about it. */
+export interface PresenceRead { kind: 'evidence' | 'house' | 'news'; title: string; at: string; verdict: string | null; url: string | null; source: string | null }
+export interface PresenceReads { byTicker: Record<string, PresenceRead>; newsAbout: { count: number; names: number; since: string } }
 
 export interface PresenceData {
   email: string;
@@ -61,6 +64,7 @@ export interface PresenceData {
   sources: { filings: number; news: number; priceMoves: number; contradicts: number; items: PresenceSource[] };
   theses: { tracked: number; pillars: PresencePillar[] };
   flags: { scansRanAt: string | null; items: PresenceFlag[] };
+  reads: PresenceReads;
   worklog: WorklogResponse;
   digest: string | null;
   ms: Partial<Record<PresencePart, number>>;
@@ -256,6 +260,62 @@ async function partFlags(db: Db, uid: string): Promise<PresenceData['flags']> {
   return { scansRanAt: (rows[0]?.created_at as string | undefined) ?? (perf.data?.calculated_at as string | null) ?? null, items };
 }
 
+async function partReads(db: Db, uid: string): Promise<PresenceReads> {
+  const since = new Date(Date.now() - 72 * 3600 * 1000).toISOString();
+  const brief = await getPortfolioBrief(db, uid);
+  const holdings = brief?.holdings ?? [];
+  const all = [...new Set(holdings.map((h) => h.ticker))];
+  // Names the screen actually shows: the eight largest plus the biggest movers.
+  const contrib = (h: (typeof holdings)[number]) => Math.abs(h.dayChangePct ?? 0) * h.pct;
+  const shown = [...new Set([...holdings.slice(0, 8), ...[...holdings].sort((a, b) => contrib(b) - contrib(a)).slice(0, 4)].map((h) => h.ticker))];
+  const byTicker: Record<string, PresenceRead> = {};
+  const better = (a: PresenceRead | undefined, b: PresenceRead) => (!a || b.at > a.at ? b : a);
+
+  // 1. Evidence on the user's own tracked theses (dated by when Helm judged it).
+  const src = await partSources(db, uid);
+  for (const it of src.items) {
+    if (!it.ticker) continue;
+    byTicker[it.ticker] = better(byTicker[it.ticker], { kind: 'evidence', title: it.title, at: it.at, verdict: it.verdict, url: it.url, source: it.type });
+  }
+  // 2. House-thesis catches for covered names (public thesis pages).
+  await Promise.all(shown.map(async (t) => {
+    const td = await getTickerThesisData(t);
+    if (!td) return;
+    const catches = td.pillars.flatMap((p) => p.catches);
+    if (catches.length === 0) return;
+    const c = [...catches].sort((a, b) => (a.dateISO < b.dateISO ? 1 : -1))[0];
+    const title = (c.summary && c.summary.trim()) || c.verbatimCite;
+    byTicker[t] = better(byTicker[t], { kind: 'house', title: title.slice(0, 140), at: c.dateISO + 'T12:00:00Z', verdict: String(c.verdict), url: c.sourceUrl, source: c.sourceLabel });
+  }));
+  // 3. News. First the rows the classifier judged to be ABOUT a name; then, for names still
+  //    unread, the latest row merely TAGGED with the ticker (labelled as such). The 72h count
+  //    for the work line is by tag, because that is what Helm actually ingested.
+  let count = 0; const names = new Set<string>();
+  if (all.length > 0) {
+    const [{ data: recent }, { data: about }, { data: tagged }] = await Promise.all([
+      db.from('market_news').select('tickers').overlaps('tickers', all).gte('published_at', since).limit(2000),
+      db.from('market_news').select('*').eq('subject_verdict', 'about').in('subject_ticker', shown).order('published_at', { ascending: false }).limit(80),
+      db.from('market_news').select('*').overlaps('tickers', shown).order('published_at', { ascending: false }).limit(300),
+    ]);
+    const held = new Set(all);
+    for (const r of recent ?? []) { count++; for (const t of (r.tickers as string[] | null) ?? []) if (held.has(t)) names.add(t); }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const r of (about ?? []) as any[]) {
+      const t = String(r.subject_ticker);
+      if (byTicker[t]) continue; // evidence and house catches outrank a headline
+      byTicker[t] = { kind: 'news', title: String(r.title ?? ''), at: String(r.published_at), verdict: null, url: (r.url as string | null) ?? null, source: 'news · about' };
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const r of (tagged ?? []) as any[]) {
+      for (const t of (r.tickers as string[] | null) ?? []) {
+        if (!shown.includes(t) || byTicker[t]) continue;
+        byTicker[t] = { kind: 'news', title: String(r.title ?? ''), at: String(r.published_at), verdict: null, url: (r.url as string | null) ?? null, source: 'news · tagged' };
+      }
+    }
+  }
+  return { byTicker, newsAbout: { count, names: names.size, since } };
+}
+
 async function partDigest(db: Db, uid: string): Promise<string | null> {
   const { data } = await db.from('brief_digests').select('digest').eq('user_id', uid).maybeSingle();
   const d = data?.digest;
@@ -297,6 +357,7 @@ export async function GET(req: NextRequest) {
         case 'sources': [value, ms] = await timed(() => partSources(db, uid)); break;
         case 'theses': [value, ms] = await timed(() => partTheses(db, uid)); break;
         case 'flags': [value, ms] = await timed(() => partFlags(db, uid)); break;
+        case 'reads': [value, ms] = await timed(() => partReads(db, uid)); break;
         case 'worklog': [value, ms] = await timed(() => buildWorklog(db, uid)); break;
         case 'digest': [value, ms] = await timed(() => partDigest(db, uid)); break;
         default: return NextResponse.json({ error: `unknown part ${part}` }, { status: 400 });
@@ -304,15 +365,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ part, value, ms });
     }
 
-    const [[book, msBook], [run, msRun], [concentration, msConc], [earnings, msEarn], [coverage, msCov], [sources, msSrc], [theses, msTh], [flags, msFl], [worklog, msWl], [digest, msDg]] = await Promise.all([
+    const [[book, msBook], [run, msRun], [concentration, msConc], [earnings, msEarn], [coverage, msCov], [sources, msSrc], [theses, msTh], [flags, msFl], [reads, msRd], [worklog, msWl], [digest, msDg]] = await Promise.all([
       timed(() => partBook(db, uid)), timed(() => partRun(db, uid)), timed(() => partConcentration(db, uid)),
       timed(() => partEarnings(db, uid)), timed(() => partCoverage(db, uid)), timed(() => partSources(db, uid)),
-      timed(() => partTheses(db, uid)), timed(() => partFlags(db, uid)), timed(() => buildWorklog(db, uid)), timed(() => partDigest(db, uid)),
+      timed(() => partTheses(db, uid)), timed(() => partFlags(db, uid)), timed(() => partReads(db, uid)), timed(() => buildWorklog(db, uid)), timed(() => partDigest(db, uid)),
     ]);
     const [tax, msTax] = await timed(() => partTax(uid, book.positions));
     const body: PresenceData = {
-      email, book, run, concentration, earnings, tax, coverage, sources, theses, flags, worklog, digest,
-      ms: { book: msBook, run: msRun, concentration: msConc, earnings: msEarn, tax: msTax, coverage: msCov, sources: msSrc, theses: msTh, flags: msFl, worklog: msWl, digest: msDg },
+      email, book, run, concentration, earnings, tax, coverage, sources, theses, flags, reads, worklog, digest,
+      ms: { book: msBook, run: msRun, concentration: msConc, earnings: msEarn, tax: msTax, coverage: msCov, sources: msSrc, theses: msTh, flags: msFl, reads: msRd, worklog: msWl, digest: msDg },
     };
     return NextResponse.json(body);
   } catch (err) {
