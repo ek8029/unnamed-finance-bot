@@ -3,6 +3,7 @@ import { generateDigest, generateGenericDigest } from '@/lib/generate-digest';
 import { resend } from '@/lib/emails/resend';
 import { materialEventsBlock } from '@/lib/emails/templates';
 import { isWeekendET, digestEmailPayload, chunk, type DigestRecipient } from '@/lib/emails/digest-send';
+import { isMarketHolidayET } from '@/lib/market-calendar';
 import { sendPush } from '@/lib/push/send';
 import { briefReady } from '@/lib/push/voice';
 import { dayET } from '@/lib/push/policy';
@@ -40,6 +41,12 @@ export async function runDigestCron(options: { force?: boolean; weekends?: boole
   // not this one.
   if (isWeekendET() && !options.weekends) {
     log.push('[digest] Weekend in New York: no brief generated, no email sent');
+    return { generated: 0, skipped: 0, log, emailed: [] };
+  }
+  // Same rule for a weekday the exchange is closed. Labor Day 2026 would
+  // otherwise have sent two hundred and fifty people Friday's session again.
+  if (isMarketHolidayET() && !options.weekends) {
+    log.push('[digest] Market holiday in New York: no brief generated, no email sent');
     return { generated: 0, skipped: 0, log, emailed: [] };
   }
 

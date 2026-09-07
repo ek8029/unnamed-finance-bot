@@ -7,11 +7,8 @@ import { getDigestTemplate } from '@/lib/emails/templates';
 import { FROM_EMAIL } from '@/lib/emails/resend';
 import { unsubUrl } from '@/lib/emails/unsubscribe';
 
-/** Saturday or Sunday in New York. Markets are closed, nothing in the brief has moved, so no brief goes out. */
-export function isWeekendET(now: Date = new Date()): boolean {
-  const day = now.toLocaleDateString('en-US', { timeZone: 'America/New_York', weekday: 'short' });
-  return day === 'Sat' || day === 'Sun';
-}
+// When a brief day is now lives with the rest of the trading calendar.
+export { isWeekendET } from '@/lib/market-calendar';
 
 export interface DigestRecipient {
   id: string;
