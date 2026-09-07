@@ -47,7 +47,7 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
           // as "bought at $0" and manufacture a gain the user never had.
           costBasis: r.costBasis == null ? '' : String(Number(r.costBasis.toFixed(4))),
         }))
-      : [createEmptyRow(), createEmptyRow(), createEmptyRow()],
+      : compact ? [createEmptyRow()] : [createEmptyRow(), createEmptyRow(), createEmptyRow()],
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,8 +70,8 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
 
   const clearRows = useCallback(() => {
     setError(null);
-    setRows([createEmptyRow(), createEmptyRow(), createEmptyRow()]);
-  }, []);
+    setRows(compact ? [createEmptyRow()] : [createEmptyRow(), createEmptyRow(), createEmptyRow()]);
+  }, [compact]);
 
   const handleSubmit = async () => {
     setError(null);
@@ -82,7 +82,7 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
     const validRows = rows.filter(r => r.ticker.trim() && r.shares.trim());
 
     if (validRows.length === 0) {
-      setError('Add at least one holding');
+      setError('Add a ticker and the number of shares for at least one holding.');
       return;
     }
 
@@ -167,24 +167,26 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
   }
 
   return (
-    <div className={compact ? '' : ''}>
+    <form className="helm-manual-form" onSubmit={e => { e.preventDefault(); void handleSubmit(); }}>
       <div className="sovereign-card rounded-lg p-6">
         <div className="space-y-3">
           {/* Header row */}
-          <div className="grid gap-2 sm:gap-3" style={{ gridTemplateColumns: '1fr 90px 110px 40px' }}>
+          <div className="helm-manual-columns helm-manual-labels" aria-hidden="true">
             <span className={FIELD_LABEL_CLASS} style={MONO}>Symbol / asset</span>
             <span className={FIELD_LABEL_CLASS} style={MONO}>Shares</span>
             <span className={FIELD_LABEL_CLASS} style={MONO}>
-              Cost basis
+              Cost / share
               <span className="opacity-50 ml-1">opt</span>
             </span>
             <span />
           </div>
 
           {/* Holding rows */}
-          {rows.map((row) => (
-            <div key={row.id} className="grid gap-2 sm:gap-3" style={{ gridTemplateColumns: '1fr 90px 110px 40px' }}>
+          {rows.map((row, index) => (
+            <div key={row.id} className="helm-manual-columns helm-manual-row">
+              <label><span className="helm-manual-mobile-label">Ticker</span>
               <input
+                aria-label={`Position ${index + 1} ticker`}
                 type="text"
                 placeholder="e.g. BRK.B"
                 value={row.ticker}
@@ -193,7 +195,10 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
                 className={FIELD_CLASS}
                 style={MONO}
               />
+              </label>
+              <label><span className="helm-manual-mobile-label">Shares</span>
               <input
+                aria-label={`Position ${index + 1} shares`}
                 type="number"
                 placeholder="0"
                 value={row.shares}
@@ -203,7 +208,10 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
                 className={`${FIELD_CLASS} tabular-nums`}
                 style={MONO}
               />
+              </label>
+              <label><span className="helm-manual-mobile-label">Cost per share (optional)</span>
               <input
+                aria-label={`Position ${index + 1} cost per share, optional`}
                 type="number"
                 placeholder="$0.00"
                 value={row.costBasis}
@@ -213,10 +221,12 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
                 className={`${FIELD_CLASS} tabular-nums`}
                 style={MONO}
               />
+              </label>
               <button
+                type="button"
                 onClick={() => removeRow(row.id)}
                 className="flex items-center justify-center h-[44px] w-10 rounded text-[var(--color-text-muted)] hover:text-[var(--color-negative)] hover:bg-[var(--color-negative)]/5 transition-colors cursor-pointer"
-                aria-label="Remove"
+                aria-label={`Remove position ${index + 1}`}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -227,6 +237,7 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
         {/* Add row */}
         {rows.length < 50 && (
           <button
+            type="button"
             onClick={addRow}
             className="flex items-center gap-1.5 mt-4 py-2 text-[12px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors cursor-pointer"
             style={MONO}
@@ -238,7 +249,7 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
 
         {/* Error */}
         {error && (
-          <p className="mt-4 text-[14px] text-[var(--color-negative)]" style={MONO}>
+          <p role="alert" className="mt-4 text-[14px] text-[var(--color-negative)]" style={MONO}>
             {error}
           </p>
         )}
@@ -246,6 +257,7 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
         {/* Actions */}
         <div className="flex justify-end gap-2.5 mt-5">
           <button
+            type="button"
             onClick={clearRows}
             disabled={saving}
             className="h-9 px-4 inline-flex items-center bg-transparent border border-[var(--color-border-base)] rounded-md text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-secondary)] hover:border-[var(--color-text-muted)] transition-colors cursor-pointer disabled:opacity-50"
@@ -254,7 +266,7 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
             Clear
           </button>
           <button
-            onClick={handleSubmit}
+            type="submit"
             disabled={saving}
             className="h-9 px-[18px] inline-flex items-center gap-2 bg-[var(--color-gold)] hover:brightness-[1.08] text-[#0A0A0A] font-bold text-[10px] uppercase tracking-[0.12em] rounded-md cursor-pointer transition-all disabled:opacity-50"
             style={MONO}
@@ -272,8 +284,8 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
       </div>
 
       <p className="mt-3 text-[12px] text-[var(--color-text-muted)] text-center" style={MONO}>
-        Cost basis is optional. Entering it unlocks tax-loss harvesting insights.
+        Average cost per share is optional. Add it for tax-loss harvesting insights.
       </p>
-    </div>
+    </form>
   );
 }

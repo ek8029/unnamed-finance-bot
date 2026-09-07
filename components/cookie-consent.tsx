@@ -7,14 +7,23 @@ export function CookieConsent() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!localStorage.getItem('helm-cookie-consent')) {
+    try {
+      if (!localStorage.getItem('helm-cookie-consent')) setVisible(true);
+    } catch {
+      // Storage blocked (private mode, storage disabled): it cannot be remembered, so show it and let it close.
       setVisible(true);
     }
   }, []);
 
   const accept = () => {
-    localStorage.setItem('helm-cookie-consent', 'accepted');
+    // Hide FIRST. When localStorage is blocked, setItem throws, and the old order never
+    // reached setVisible(false): one visitor clicked Got it six times and left the site.
     setVisible(false);
+    try {
+      localStorage.setItem('helm-cookie-consent', 'accepted');
+    } catch {
+      // not remembered; it closes anyway
+    }
   };
 
   if (!visible) return null;
