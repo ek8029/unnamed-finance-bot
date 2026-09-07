@@ -16,6 +16,10 @@ export const metadata: Metadata = {
     title: 'Helm Wrapped Demo — Spotify Wrapped for Your Portfolio',
   },
   robots: { index: true, follow: true },
+  // Without its own canonical this page inherits the root layout's, which is
+  // hardcoded to the homepage. The page is in the sitemap and asks to be
+  // indexed, so it has to point at itself.
+  alternates: { canonical: 'https://helmterminal.dev/wrapped/demo' },
 };
 
 export default function WrappedDemoPage() {

@@ -3,6 +3,11 @@ import { LegalPageLayout } from '@/components/legal-page-layout';
 export const metadata = {
   title: 'Information Security Policy - Helm',
   description: 'Helm\'s formal Information Security Policy (ISP) governing the protection of consumer financial data.',
+  // Without its own canonical this page inherits the root layout's, which is
+  // hardcoded to the homepage, so the page told Google it was a duplicate of /
+  // while still being listed in the sitemap. Every page in the sitemap has to
+  // be self-canonical.
+  alternates: { canonical: 'https://helmterminal.dev/security/isp' },
 };
 
 export default function ISPPage() {
