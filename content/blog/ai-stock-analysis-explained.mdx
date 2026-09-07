@@ -5,6 +5,19 @@ date: "2026-04-18"
 author: "Evan Kim"
 tags: ["AI investing", "stock analysis", "machine learning", "fintech", "market data"]
 published: true
+faq:
+  - q: "How does AI stock analysis work?"
+    a: "In practice it is two separate steps that often get described as one. First, deterministic code gathers and computes: prices, filings, ratios, holdings, dates. Second, a language model turns those figures into prose. The arithmetic is not done by the model. Quality depends almost entirely on the first step, because a model given wrong or stale inputs writes a confident paragraph about wrong numbers."
+  - q: "Is AI stock analysis accurate?"
+    a: "It is as accurate as its sources and its plumbing. Language models do not know current prices, cannot see your accounts, and reproduce whatever their retrieval layer hands them. The failure that matters is not bad prose, it is a fluent summary built on a stale filing or a mismatched ticker. Any output worth acting on names its source and the date attached to it, so the claim can be checked against the document."
+  - q: "Can AI predict stock prices?"
+    a: "No, and tools claiming otherwise are selling a forecast rather than an analysis. What these systems do well is read faster than a person: surfacing what a filing said, what changed between two reports, and which holdings a piece of news touches. That is a reading problem. Predicting a price is not, and no amount of language modelling makes it one."
+  - q: "What is the best AI for stock analysis?"
+    a: "General assistants such as ChatGPT, Claude, Gemini and Perplexity differ mainly in retrieval, and all of them are working from public web material rather than your positions. A tool wired to market data and filings will be more current on a specific company. A tool connected to your accounts answers a different question, which is what any of this means for what you already own."
+  - q: "Does AI stock analysis replace doing your own research?"
+    a: "It changes where the time goes rather than removing it. Reading and summarizing compress well. Deciding what matters, what would change your mind, and whether the evidence supports the claim does not. The practical use is narrowing the pile to the documents worth reading and quoting the passage that changed, leaving the judgment where it was."
+  - q: "Is Helm's stock analysis free?"
+    a: "Yes. Analysis on any US-listed stock or ETF is free and needs no account. Every figure comes from licensed market data and SEC EDGAR filings rather than from the model, and the narrative names its sources. What sits in Pro is the layer that runs against your own portfolio: thesis monitoring with cited evidence, earnings exposure and the tax center."
 ---
 AI stock analysis uses machine learning, natural language processing, and statistical models to process vast quantities of financial data — earnings reports, price patterns, news sentiment, alternative data — and surface investment insights that would take humans weeks or months to identify manually.
 

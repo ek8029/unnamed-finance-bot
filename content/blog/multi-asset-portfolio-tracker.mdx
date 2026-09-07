@@ -5,6 +5,17 @@ date: "2026-05-12"
 author: "Evan Kim"
 tags: ["portfolio", "tracking", "multi-asset", "brokerage", "investing"]
 published: true
+faq:
+  - q: "What is a multi-asset portfolio tracker?"
+    a: "A tool that holds more than one asset class in one view, typically stocks and ETFs alongside bonds, cash, crypto and sometimes private or illiquid holdings entered by hand. The point is a single total and a single risk picture, rather than several apps each certain about its own slice and blind to the rest."
+  - q: "Can one app track stocks, bonds, ETFs and crypto together?"
+    a: "Several do, with coverage rather than capability as the limit. Listed equities, ETFs and bonds held at a US broker are well supported through aggregation. Crypto depends on which exchanges and wallets a provider connects to. Private holdings, real estate and workplace equity usually need manual entry, which is fine for a total and unhelpful for anything that has to stay current."
+  - q: "How do you track assets held at different institutions?"
+    a: "By connecting each institution through an aggregator such as Plaid, which reads positions on a read-only token and presents them together while the assets stay where they are. The alternative is a spreadsheet updated by hand, which is more flexible and reliably out of date. What aggregation adds is the cross-account view: concentration, wash-sale windows and total sector exposure are all defined across accounts, not within one."
+  - q: "Do multi-asset trackers show risk or just balances?"
+    a: "Most show balances. A balance tells you the size of the book and nothing about what it rests on. The analysis that changes decisions is look-through concentration, correlation between holdings, unrealized losses by lot and earnings dates on positions actually held, and comparatively few tools compute any of it."
+  - q: "Does Helm track assets beyond stocks?"
+    a: "Helm connects brokerage, retirement and bank accounts through Plaid on a read-only basis and reports net worth across all of them, with holdings-level analysis on US-listed stocks and ETFs. Manual entry covers holdings that cannot be connected. Coverage for market data and filings is US-listed securities on NYSE, NASDAQ and AMEX."
 ---
 Open your Schwab app and you see your stocks. Open Coinbase and you see your crypto. Open Vanguard and you see your 401(k). Open Fundrise and you see your real estate allocation. Each app is perfectly accurate about what it holds. None of them can tell you what your actual portfolio looks like.
 

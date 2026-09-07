@@ -5,6 +5,17 @@ date: "2026-05-09"
 author: "Evan Kim"
 tags: ["portfolio", "risk", "earnings", "investing", "concentration"]
 published: true
+faq:
+  - q: "What is earnings concentration risk?"
+    a: "It is the share of a portfolio reporting results inside a short window. A book can look diversified across the year and still have most of its value reporting in the same two weeks of an earnings season, which turns a calendar quirk into a single point of failure. The measure is the percentage of portfolio value reporting per day or per week, not the number of companies."
+  - q: "How do I find out when my holdings report earnings?"
+    a: "Each company publishes its date through its investor relations page and confirms it in an 8-K filing. Assembling that across a whole portfolio by hand means checking every name every quarter, since dates move. The harder half is indirect exposure: an index or sector ETF carries the earnings dates of everything inside it, so the true concentration is only visible after looking through the fund to its holdings."
+  - q: "Does owning ETFs remove earnings risk?"
+    a: "It spreads it rather than removing it. A cap-weighted index fund holds more of its largest companies, so when those few report, a large share of the fund's value is reacting at once. An investor holding a broad index fund, a Nasdaq fund and a technology sector fund has the same handful of names reporting across all three on the same afternoon."
+  - q: "How much of a portfolio reporting at once is too much?"
+    a: "There is no defined threshold, and the useful framing is arithmetic rather than a rule. If a quarter of a book reports on one afternoon, a 10 percent average move in those names is a 2.5 percent move in the total, arriving in a single session. Whether that is acceptable depends on the rest of the book and on whether the positions are held for reasons the report will actually test."
+  - q: "How does Helm track earnings exposure?"
+    a: "Helm reads connected accounts through Plaid, looks through ETF and index holdings to the underlying companies, and maps upcoming report dates onto the combined book, so a name held directly and again inside three funds is counted once at its true weight. It reports the share of portfolio value reporting on each date. Earnings exposure tracking is part of Helm Pro."
 ---
 
 The top 10 stocks in the S&P 500 now account for roughly 36% of the entire index — nearly double the 18–23% range that held steady from 1990 to 2015. If you own any combination of Apple, Microsoft, NVIDIA, Amazon, or Meta, there's a good chance your "diversified" portfolio has more concentration risk than you realize.

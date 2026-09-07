@@ -5,6 +5,17 @@ date: "2026-04-10"
 author: "Evan Kim"
 tags: ["best portfolio tracker", "portfolio management app", "track multiple brokerage accounts", "investment tracking"]
 published: true
+faq:
+  - q: "What is the best portfolio tracker for multiple accounts?"
+    a: "The deciding feature is whether the tool connects to your institutions or asks you to type positions in. Manual trackers stay accurate only as long as you keep entering trades. Connected tools read positions through an aggregator such as Plaid and stay current on their own, bounded by which institutions the aggregator supports. Everything else, the charts and the layout, matters less than whether the data is still true next month."
+  - q: "What is the difference between a portfolio tracker and portfolio analysis?"
+    a: "A tracker answers what you own and what it is worth. Analysis answers what that ownership exposes you to: single-name and sector concentration after looking through funds to their holdings, which positions carry unrealized losses, when the companies you hold report earnings, and where separate holdings depend on the same driver. Most free tools track. Far fewer analyze."
+  - q: "Do portfolio trackers work with 401(k) accounts?"
+    a: "It depends on the plan provider rather than the tracker. Workplace plans are held at recordkeepers whose connection support varies, and some restrict third-party access entirely. Fidelity began restricting third-party credential sharing in 2024 and other custodians followed, so a tracker that connects by asking for your plan password is working against that trend. Token-based read-only connections are the supported route where a provider offers one."
+  - q: "Are portfolio trackers safe to link to my brokerage?"
+    a: "The mechanism decides it. A token-based aggregator passes credentials to the institution, returns a revocable read-only token, and never stores your password with the app. Read-only means the connection cannot place trades or move money, and it can be revoked from the institution's side at any time. A tool that asks you to type a brokerage password into its own form is doing something different."
+  - q: "Is there a free portfolio tracker that shows risk?"
+    a: "Free tiers usually cover balances and holdings, with risk analysis reserved for paid plans. Helm reports concentration, including look-through into ETF holdings, on its free tier, along with net worth across linked accounts and analysis on any US ticker. The tax center with tax-loss harvesting and earnings exposure tracking are part of Pro."
 ---
 If you invest across multiple brokerage accounts — a 401(k) here, a Roth IRA there, a taxable account somewhere else — you know the pain of checking three different apps to understand your complete financial picture. The **best portfolio trackers** in 2026 solve this by aggregating all your accounts into a single view, showing your true asset allocation, and (in the best cases) proactively telling you what needs attention.
 

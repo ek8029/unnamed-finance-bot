@@ -5,6 +5,17 @@ date: "2026-06-17"
 author: "Evan Kim"
 tags: ["thesis", "investing", "sell-discipline", "conviction", "risk-management"]
 published: true
+faq:
+  - q: "What is thesis drift?"
+    a: "Thesis drift is a position quietly ceasing to be held for the reasons it was bought. The stock stays in the account and the original reasoning stops being true, usually a piece at a time across several filings rather than in one announcement. It is distinct from a price decline: a thesis can break while the price rises, and a price can fall with every original reason intact."
+  - q: "How do you detect thesis drift?"
+    a: "By writing the reasons down before they can be revised in hindsight, stating for each one the fact that would falsify it, and then testing those statements against primary sources as they arrive. Filings, earnings and news are the material. Without the written reason and its falsifier there is nothing to test against, and the assessment becomes a memory of what you meant to believe."
+  - q: "What is a breaks-if condition?"
+    a: "A breaks-if condition is the specific, checkable fact that would end a reason for owning something, written at the time the reason is recorded. Margin falling below a stated level, a customer concentration threshold crossed, a product line discontinued. Its function is to make the reasoning falsifiable, so a change can be recognized rather than argued about."
+  - q: "Is thesis drift the same as a stop loss?"
+    a: "No. A stop loss triggers on price and knows nothing about the business. Thesis drift triggers on evidence that a stated reason no longer holds and knows nothing about the price. A position can be down heavily with every reason intact, and up with its reasoning already gone, which is the case a price-based rule cannot see."
+  - q: "How does Helm detect thesis drift?"
+    a: "Positions carry written reasons, called pillars, each with a breaks-if condition. Helm reads SEC filings, earnings and news against those pillars every trading day and reports when one weakens or breaks, quoting the source sentence verbatim with its date and a link to the document. It also flags when separate holdings rest on the same pillar. Thesis monitoring is part of Helm Pro."
 ---
 
 Ask most investors why they own a stock and you get a clean answer. "I own it because their margins keep expanding." "Because the government revenue is sticky." "Because the AI capex cycle has years left to run." Good answers. Real reasons.

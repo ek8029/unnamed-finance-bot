@@ -5,6 +5,17 @@ date: "2026-06-09"
 author: "Evan Kim"
 tags: ["portfolio management", "leveraged ETFs", "concentration risk", "single-stock ETFs", "portfolio analysis", "risk management"]
 published: true
+faq:
+  - q: "Do leveraged ETFs increase portfolio concentration?"
+    a: "Substantially, and invisibly if measured by position size. A 3x fund provides three dollars of exposure per dollar held, so a 5 percent position in a leveraged Nasdaq product carries roughly 15 percent of exposure to those underlying companies. Counted at its dollar weight rather than its exposure, it understates what the portfolio actually rests on."
+  - q: "How do you calculate true exposure with leveraged ETFs?"
+    a: "Multiply the position value by the fund's stated leverage to get exposure, then allocate that exposure across the fund's holdings by their weights, then add the result to any direct holdings in the same companies. The output is look-through exposure per company, which is the number concentration should be measured on."
+  - q: "Why do leveraged ETFs lose value over time?"
+    a: "They reset leverage daily, so returns compound on a path rather than tracking a multiple of the period return. In a market that moves up and down without direction, that daily reset produces a drag often called volatility decay, and a flat index over a stretch can leave a leveraged fund on it materially lower. The effect grows with volatility and with holding period."
+  - q: "Do leveraged ETFs count for the wash-sale rule?"
+    a: "The test in IRC section 1091 is whether the replacement is substantially identical, and the IRS has not published guidance drawing a bright line for leveraged and inverse products. Two funds tracking the same index at different leverage are frequently treated as risky to pair for that reason, and the conservative reading is that they may not be safely substituted inside the 61 day window."
+  - q: "How does Helm handle leveraged ETF exposure?"
+    a: "Helm maps leveraged, inverse and option income products back to their underlying holdings and reports exposure rather than position size, so a leveraged fund contributes at its exposure weight when concentration is computed. It also uses that mapping to flag substantially identical exposure across share classes and related products when screening wash-sale windows. Concentration reporting is on the free tier."
 ---
 If you hold NVDA and NVDL, most portfolio trackers show you two separate positions. One stock, one ETF. Different tickers, different prices, clean and tidy.
 
