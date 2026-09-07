@@ -5,6 +5,19 @@ date: "2026-04-06"
 author: "Evan Kim"
 tags: ["yahoo finance alternatives", "stock screener", "portfolio tracker", "market data"]
 published: true
+faq:
+  - q: "What is the best alternative to Yahoo Finance?"
+    a: "It depends which part of Yahoo Finance you use. For quotes, screening and financial statements, stockanalysis.com covers most of it free. For charting and a research dashboard, Koyfin is the usual step up. For following your own holdings rather than a watchlist of tickers, a tool that connects to your brokerage answers a different question than Yahoo Finance ever did."
+  - q: "Is Yahoo Finance still free?"
+    a: "The core site remains free and ad supported, with quotes, news, watchlists and basic financials. Yahoo Finance also sells subscription tiers that add portfolio analytics, research reports and reduced advertising. Free access changed for developers rather than readers: the unofficial quote API that many tools depended on has been unreliable since Yahoo restricted it."
+  - q: "What is better than Yahoo Finance for portfolio tracking?"
+    a: "Yahoo Finance tracks tickers in a watchlist and asks you to enter positions by hand, so it does not know your cost basis unless you type it and it does not update when you trade. Tools that connect to the brokerage through an aggregator hold the actual positions, lots and basis. That difference is what separates a watchlist from a portfolio view."
+  - q: "Why did Yahoo Finance stop working with my spreadsheet?"
+    a: "Yahoo shut down its public finance API in 2017 and has restricted the unofficial endpoints that replaced it since. Spreadsheets and third-party trackers built on those endpoints break when the access pattern changes. In Google Sheets the GOOGLEFINANCE function is the common replacement for listed equities, though it does not reach brokerage balances or private assets."
+  - q: "Does Yahoo Finance show tax-loss harvesting opportunities?"
+    a: "No. Yahoo Finance does not hold your cost basis by lot, does not see accounts you have not manually entered, and does no wash-sale screening, so it cannot identify harvestable losses. Identifying them requires lot-level basis across every account you hold, because the wash-sale window under IRC section 1091 looks across all of them rather than one at a time."
+  - q: "How is Helm different from Yahoo Finance?"
+    a: "Yahoo Finance is a market data and news site organized around tickers. Helm connects to brokerage accounts read-only through Plaid and is organized around the positions you actually hold, reporting concentration including look-through into ETFs, upcoming earnings on those positions, and the reasons behind each holding tested against filings and news. Helm is free to start; the tax center, earnings exposure and thesis monitoring are part of Pro."
 ---
 Yahoo Finance has been the default financial data destination for millions of investors since the late 1990s. It is free, it is familiar, and it covers just about every asset class imaginable. But in 2026, many investors are searching for **Yahoo Finance alternatives** that offer cleaner interfaces, better portfolio tracking, more powerful screeners, or fewer ads.
 

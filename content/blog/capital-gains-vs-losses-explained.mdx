@@ -5,6 +5,23 @@ date: "2026-03-30"
 author: "Evan Kim"
 tags: ["capital gains", "taxes", "tax-loss harvesting", "investing", "capital losses"]
 published: true
+faq:
+  - q: "What are capital gains?"
+    a: "A capital gain is the profit on selling a capital asset for more than its cost basis, which is generally what you paid plus commissions and certain adjustments. The gain is not taxable while you hold the asset. It becomes taxable in the year you sell, which is what people mean when they say gains are taxed on realization rather than on paper."
+  - q: "How does capital gains tax work?"
+    a: "Sale price minus cost basis gives the gain. The holding period then decides the rate. An asset held one year or less produces a short-term gain, taxed at your ordinary income rate. Held more than one year, it produces a long-term gain, taxed in the separate long-term brackets of 0, 15 and 20 percent. Gains and losses are netted before any of that is applied, so the taxable figure is the net, not the sum of the winners."
+  - q: "What is the long-term capital gains tax rate?"
+    a: "Long-term gains fall into 0, 15 or 20 percent bands, and which band applies depends on taxable income and filing status rather than on the size of the gain alone. A separate 3.8 percent net investment income tax can apply above certain income thresholds. Short-term gains do not use these bands at all; they are taxed as ordinary income."
+  - q: "How do capital losses offset capital gains?"
+    a: "Losses net against gains of the same character first, so short-term against short-term and long-term against long-term. Whatever remains crosses over and offsets the other character. If losses still exceed gains after both steps, up to $3,000 of the excess reduces ordinary income for the year under IRC section 1211(b), $1,500 if married filing separately, and anything beyond that carries forward to later years with no expiry."
+  - q: "Is it better to offset a short-term or a long-term gain?"
+    a: "A loss applied against a short-term gain generally saves more tax, because short-term gains are taxed at ordinary income rates while long-term gains use the lower 0, 15 and 20 percent bands. The netting rules do not let you choose freely: same-character netting happens first by law, and only the leftover crosses over."
+  - q: "How do you calculate capital gains tax?"
+    a: "Establish the cost basis for each lot sold, subtract it from the proceeds to get the gain or loss per lot, net the short-term group and the long-term group separately, then cross-net whatever is left. Apply ordinary rates to any net short-term gain and the long-term bands to any net long-term gain. Lot selection matters: selling specific high-basis lots instead of the default first-in-first-out changes the gain reported."
+  - q: "Do you pay capital gains tax in a 401(k) or an IRA?"
+    a: "No. Sales inside a traditional or Roth retirement account are not capital events on your return, so gains inside them are not taxed as gains and losses inside them are not deductible. Distributions from a traditional account are taxed as ordinary income when taken, and qualified Roth distributions are not taxed. This is also why harvesting a loss only works in a taxable brokerage account."
+  - q: "Where does Helm show gains and losses?"
+    a: "Helm reads connected brokerage accounts through Plaid on a read-only basis and works at the lot level, so each position shows its own basis, holding period and unrealized gain or loss. The tax center groups those into short-term and long-term, flags lots currently underwater, and screens the wash-sale window across every connected account. The tax center is part of Helm Pro."
 ---
 Capital gains and capital losses are the tax consequences of selling investments for more or less than you paid for them. Understanding how capital gains tax works — and how capital losses can offset them — is essential for any investor who wants to keep more of their returns. The difference between smart and naive tax management can easily amount to 1-2% of portfolio value annually.
 

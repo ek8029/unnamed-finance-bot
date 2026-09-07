@@ -5,6 +5,19 @@ date: "2026-03-28"
 author: "Evan Kim"
 tags: ["portfolio management", "brokerage accounts", "portfolio aggregator", "investing tools"]
 published: true
+faq:
+  - q: "How do you track multiple brokerage accounts in one place?"
+    a: "Three approaches are in common use. A spreadsheet updated by hand gives full control and goes stale quickly. A portfolio app with manual entry keeps the structure but still needs you to record every trade. An aggregator connects to each institution through a service such as Plaid and pulls positions automatically, which stays current and is bounded by which institutions it supports."
+  - q: "Can you combine brokerage accounts from different firms?"
+    a: "You can combine the view without combining the accounts. Aggregation reads positions from each institution and presents them as one portfolio while the assets stay where they are. Physically consolidating is a separate decision made through an ACATS transfer, which moves positions in kind between brokers and is usually done for fee or service reasons rather than for reporting."
+  - q: "Why does my total portfolio value differ between apps?"
+    a: "Common causes are pricing time, with one app using the last close and another an intraday quote; pending trades that have not settled; dividends accrued but not yet paid; options and cash sweep balances that one app counts and another excludes; and stale connections where an institution has not refreshed since its last successful sync. A difference of a fraction of a percent is usually timing rather than error."
+  - q: "Is it safe to link brokerage accounts to a tracking app?"
+    a: "The mechanism decides the answer. A token-based aggregator such as Plaid passes credentials to the institution, returns a revocable read-only token, and does not store your password with the app. A tool that asks you to type a brokerage password into its own form is doing something materially different, and custodians including Fidelity have restricted that practice. Read-only access also means the connection cannot place trades or move money."
+  - q: "What does an aggregated view show that a single brokerage does not?"
+    a: "Each brokerage only reports what it custodies, so the risks that live across accounts stay invisible. Single-name concentration is the clearest example: a position that is 8 percent of one account can be 30 percent of the whole book once the other accounts are counted. Wash-sale windows and total sector exposure have the same problem, because both are defined across all of your accounts rather than within one."
+  - q: "How many accounts can Helm connect?"
+    a: "There is no per-account limit and pricing does not change with the number of accounts or the amount of money in them. Helm connects brokerage, retirement and bank accounts through Plaid on a read-only basis and presents them as one portfolio. Helm is free to start, and the flat price applies whether the book is one account or ten."
 ---
 Managing multiple brokerage accounts is increasingly common — and increasingly difficult. Between your 401(k), Roth IRA, taxable brokerage, HSA, old employer retirement plans, and perhaps a crypto account, the average investor now holds assets across 4-6 different platforms. Each has its own login, its own interface, and its own incomplete view of your financial picture.
 
