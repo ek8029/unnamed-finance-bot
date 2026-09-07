@@ -1,8 +1,15 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { ATTR_COOKIE, ATTR_MAX_AGE, buildFirstTouch, encodeFirstTouch } from '@/lib/attribution';
+import { expiredLinkRedirect } from '@/lib/auth-messages';
 
 export async function middleware(request: NextRequest) {
+  // An expired or already-opened email link lands on the homepage with the
+  // error in the query string. Send it to /login with the one message that
+  // explains it, before any session work.
+  const expired = expiredLinkRedirect(request.nextUrl);
+  if (expired) return NextResponse.redirect(new URL(expired, request.url));
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,

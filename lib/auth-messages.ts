@@ -20,7 +20,25 @@ export const AUTH_MESSAGES = {
   'password-reset': 'Password reset link sent.',
   'password-updated': 'Password updated successfully. Please sign in.',
   'session-expired': 'Your session expired. Please sign in again.',
+  'link-expired':
+    'That sign-in link expired or was already opened. Enter your email below and we send a fresh one.',
 } as const;
+
+/**
+ * Supabase sends a failed email link back to the SITE ROOT, not to our
+ * callback: /?error=access_denied&error_code=otp_expired&error_description=...
+ * Nothing rendered that, so 13 people in 60 days (about one signup in seven)
+ * met a bare homepage, clicked into a product that had never signed them in,
+ * and most never came back. The middleware turns that landing into the
+ * message above, where a fresh link is one click away.
+ */
+export function expiredLinkRedirect(url: URL): string | null {
+  if (url.pathname !== '/') return null;
+  const code = url.searchParams.get('error_code');
+  const err = url.searchParams.get('error');
+  if (code !== 'otp_expired' && err !== 'access_denied') return null;
+  return '/login?message=link-expired';
+}
 
 export type AuthMessageKey = keyof typeof AUTH_MESSAGES;
 

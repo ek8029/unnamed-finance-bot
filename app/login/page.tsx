@@ -47,6 +47,22 @@ function LoginForm() {
   const message = messageKey in AUTH_MESSAGES ? AUTH_MESSAGES[messageKey as AuthMessageKey] : null;
 
   const [email, setEmail] = useState('');
+  // The link-expired message is the one case where the fix is a fresh email, not a password.
+  const [resent, setResent] = useState<string | null>(null);
+  const resendLink = async () => {
+    const e = email.trim();
+    if (!e) { setResent('Enter your email above first.'); return; }
+    try {
+      const res = await fetch('/api/auth/resend-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: e }),
+      });
+      setResent(res.ok ? 'Sent. Open the newest email from Helm; older links will not work.' : 'Could not send just now. Try again in a minute.');
+    } catch {
+      setResent('Could not send just now. Try again in a minute.');
+    }
+  };
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
@@ -238,6 +254,14 @@ function LoginForm() {
             {message && (
               <div role="status" className="bg-[var(--color-positive-muted)] border border-[var(--color-positive-border)] text-[var(--color-positive)] px-4 py-3 rounded-md text-[15px]">
                 {message}
+                {messageKey === 'link-expired' && (
+                  <div className="mt-2 flex flex-wrap items-center gap-3">
+                    <button type="button" onClick={() => { void resendLink(); }} className="underline underline-offset-2 font-semibold">
+                      Send a new link
+                    </button>
+                    {resent && <span className="text-[13px] opacity-90">{resent}</span>}
+                  </div>
+                )}
               </div>
             )}
 
