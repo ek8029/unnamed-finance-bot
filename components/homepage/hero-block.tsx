@@ -96,6 +96,7 @@ export default function HeroBlock({
   const router = useRouter();
   const [ticker, setTicker] = useState('');
   const [reading, setReading] = useState<string | null>(null);
+  const [bad, setBad] = useState(false);
   const [still, setStill] = useState(false);
   // starts true so the sequence is already running at first paint. Defaulting
   // it off meant the finished state rendered, then an effect flipped it on a
@@ -129,12 +130,15 @@ export default function HeroBlock({
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const clean = ticker.trim().toUpperCase();
-    if (!clean) return;
+    // A silent return on an empty or malformed ticker, and a 1.7 s pause before the
+    // route change, both read as a dead click in replay: a visitor typed, clicked,
+    // saw nothing move, and left. Say what is wrong, and go now.
+    if (!/^[A-Z][A-Z.\-]{0,9}$/.test(clean)) { setBad(true); return; }
+    setBad(false);
     onAnalyze?.(clean);
-    if (still) { router.push(`/analyze/${clean}`); return; }
     setReading(clean);
     runId.current += 1;
-    timer.current = setTimeout(() => router.push(`/analyze/${clean}`), 1700);
+    router.push(`/analyze/${clean}`);
   }
 
   return (
@@ -218,7 +222,7 @@ export default function HeroBlock({
             ) : (
               <>
                 <span className="h13m-dot" />
-                <span>Any US ticker. No signup. <Link href="/brief">Read today&rsquo;s brief</Link>.</span>
+                <span>{bad ? 'Enter a US ticker, like NVDA.' : <>Any US ticker. No signup. <Link href="/brief">Read today&rsquo;s brief</Link>.</>}</span>
               </>
             )}
           </p>
