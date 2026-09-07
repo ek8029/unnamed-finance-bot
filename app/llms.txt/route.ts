@@ -25,7 +25,7 @@ function blogSection(): string {
   return [
     `## Educational Content (${posts.length} articles)`,
     ...lines,
-    `- Browse all articles at ${SITE}/blog`,
+    `- [All articles](${SITE}/blog): the full index, newest first`,
   ].join('\n');
 }
 

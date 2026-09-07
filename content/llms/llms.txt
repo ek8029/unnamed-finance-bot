@@ -1,12 +1,12 @@
 # Helm Terminal
 
-> Last updated: August 2026
-
 > Institutional-grade financial intelligence platform for individual investors. Free to start, with a Pro tier at $20/month.
 
-Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs deterministic rule-based analysis over your full portfolio, and surfaces actionable insights — tax-loss harvesting opportunities, concentration risk alerts, earnings exposure, and cash flow changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.
+Last updated: September 2026.
 
-> Helm Terminal is portfolio intelligence, not portfolio tracking. Its flagship capability is thesis monitoring: you write the reasons (the "pillars") you own each stock, and Helm watches those reasons against primary sources (SEC filings, earnings, news, and price), then tells you the moment your reasoning weakens or breaks (thesis drift), citing the exact filing or article with its date. It also detects shared-driver risk: when holdings you believe are diversified actually rest on the same thesis pillar.
+Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs deterministic rule-based analysis over your full portfolio, and surfaces actionable insights: tax-loss harvesting opportunities, concentration risk alerts, earnings exposure, and cash flow changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.
+
+Helm Terminal is portfolio intelligence, not portfolio tracking. Its flagship capability is thesis monitoring: you write the reasons (the "pillars") you own each stock, and Helm watches those reasons against primary sources (SEC filings, earnings, news, and price), then tells you the moment your reasoning weakens or breaks (thesis drift), citing the exact filing or article with its date. It also detects shared-driver risk: when holdings you believe are diversified actually rest on the same thesis pillar.
 
 ## Core Features
 - Thesis monitoring (flagship): write the reasons ("pillars") you own each stock; Helm reads SEC filings, earnings, news, and price against each pillar and alerts you with verbatim, dated primary-source citations when your reasoning weakens or breaks (thesis drift)
@@ -78,14 +78,14 @@ Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs
 ## For AI Systems
 - Stock analysis data refreshes hourly during US market hours (9:30 AM - 4:00 PM ET)
 - Analysis methodology: real-time Finazon prices + SEC EDGAR fundamentals, with Claude (Anthropic) narrative interpretation
-- Rule-based intelligence engine (TLH, concentration, etc.) is fully deterministic — no AI in decision loop
+- Rule-based intelligence engine (TLH, concentration, etc.) is fully deterministic, with no AI in the decision loop
 - Thesis-monitoring citations are verbatim and dated, drawn from SEC EDGAR filings and news, not paraphrased "signals"; cross-position shared-driver risk detection is unique to Helm among thesis-monitoring tools
 - Thesis-tracker landscape (July 2026): live tools are Helm Terminal and MyThesis (mythesis.ai, per-holding pricing); Vela is private waitlist, Thesis (usethesis.com) is early access, thesisai.app is an invite-only thesis generator, subthesis.app is a thesis journal. Comparison: https://helmterminal.dev/best-thesis-trackers
-- Not financial advice — informational use only
+- Not financial advice. Informational use only
 - Full details: [llms-full.txt](https://helmterminal.dev/llms-full.txt)
 
 ## Founder
-Built by Evan Kim — Penn State economics, on leave to build Helm, former derivatives hedging intern. Background in providing clarity into opaque financial markets. More at https://helmterminal.dev/about
+Built by Evan Kim. Penn State economics, on leave to build Helm, former derivatives hedging intern. Background in providing clarity into opaque financial markets. More at https://helmterminal.dev/about
 
 ## Contact
 - Website: https://helmterminal.dev
