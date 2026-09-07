@@ -23,6 +23,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
+import { PlaidUpdateLink } from '@/components/plaid/plaid-update-link';
 import { createClient } from '@/lib/supabase/client';
 
 type Phase = 'starting' | 'ready' | 'done' | 'signedout' | 'error';
@@ -30,6 +31,9 @@ type Phase = 'starting' | 'ready' | 'done' | 'signedout' | 'error';
 export default function LinkPage() {
   const [phase, setPhase] = useState<Phase>('starting');
   const [message, setMessage] = useState<string | null>(null);
+  // Reconnect mode: the app passes the broken item in the fragment (item=<id>&inst=<name>) and
+  // this page runs Plaid Link's update mode for it instead of a fresh connect.
+  const [reconnect, setReconnect] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -45,6 +49,8 @@ export default function LinkPage() {
       const p = new URLSearchParams(raw);
       const access_token = p.get('at');
       const refresh_token = p.get('rt');
+      const item = p.get('item');
+      if (item) setReconnect({ id: item, name: p.get('inst') ?? '' });
 
       if (access_token && refresh_token) {
         const { error } = await supabase.auth.setSession({ access_token, refresh_token });
@@ -83,7 +89,30 @@ export default function LinkPage() {
           <p className="m-0 mt-8 text-[15px] text-[#8A8A8A]">Getting ready…</p>
         )}
 
-        {phase === 'ready' && (
+        {phase === 'ready' && reconnect && (
+          <>
+            <h1 className="m-0 mt-7 text-[25px] font-semibold leading-[1.25] tracking-[-0.02em]">
+              Reconnect {reconnect.name || 'your brokerage'}.
+            </h1>
+            <p className="m-0 mt-3.5 text-[14px] leading-[1.6] text-[#8A8A8A]">
+              Your login there stopped working, so Helm stopped updating. Sign in again through
+              Plaid and it picks up where it left off. Still read-only.
+            </p>
+            <div className="mt-8">
+              <PlaidUpdateLink
+                itemId={reconnect.id}
+                institutionName={reconnect.name}
+                onSuccess={onSuccess}
+                onError={onError}
+                className="!h-auto w-full !rounded-[10px] !border-0 !bg-[#E6B94D] px-6 py-3.5 text-[15px] font-semibold !text-[#0A0A0A] hover:!bg-[#E6B94D]"
+              >
+                Sign in again
+              </PlaidUpdateLink>
+            </div>
+          </>
+        )}
+
+        {phase === 'ready' && !reconnect && (
           <>
             <h1 className="m-0 mt-7 text-[25px] font-semibold leading-[1.25] tracking-[-0.02em]">
               Connect a brokerage.
@@ -103,7 +132,7 @@ export default function LinkPage() {
         {phase === 'done' && (
           <>
             <h1 className="m-0 mt-7 text-[25px] font-semibold leading-[1.25] tracking-[-0.02em]">
-              Connected.
+              {reconnect ? 'Reconnected.' : 'Connected.'}
             </h1>
             <p className="m-0 mt-3.5 text-[14px] leading-[1.6] text-[#8A8A8A]">
               Helm is pulling your positions now. Close this and go back to the app; it will be

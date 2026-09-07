@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { syncPlaidItem, computeSnapshots, type PlaidItemForSync, type SyncResult } from '@/lib/plaid-sync';
 import { extractPlaidError } from '@/lib/plaid-errors';
+import { nudgeReconnects } from '@/lib/plaid/nudge-reconnect';
 import { updatePortfolioPerformance } from '@/lib/market-sync';
 import { generateInsights } from '@/lib/insights-engine';
 import { runDigestCron } from '@/lib/digest-cron';
@@ -197,6 +198,14 @@ export async function GET(request: Request) {
       }
     }
 
+    // A connection only its owner can fix: one push a week to their phone while it stays broken.
+    let reconnectPushes = 0;
+    try {
+      reconnectPushes = await nudgeReconnects(serviceClient, log);
+    } catch (error) {
+      log.push(`[reconnect] pass failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
     // The market refresh (daily bars, sector enrichment) runs on its own cron,
     // /api/cron/market-morning at 12:45 UTC, so a rate-limited vendor never
     // again decides whether the scans below get to run. News comes from the
@@ -267,7 +276,7 @@ export async function GET(request: Request) {
     }
 
     // The scans ran: stamp it, so a surface can say so only when it is true.
-    await beat(serviceClient, 'daily-scans', { users: userItemMap.size, insights: insightsGenerated, ms: Date.now() - startTime });
+    await beat(serviceClient, 'daily-scans', { users: userItemMap.size, insights: insightsGenerated, reconnectPushes, ms: Date.now() - startTime });
 
     // ── Weekly analyst note (Fridays ET) — the agent writes each pro user a
     //    short memo from the week's findings. Capped and per-user tolerant so

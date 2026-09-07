@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { usePlaidLink } from 'react-plaid-link';
 import { Loader2, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,9 @@ interface PlaidUpdateLinkProps {
   institutionName: string;
   onSuccess?: () => void;
   onError?: (error: string) => void;
+  /** /link (the app's in-app browser) restyles the button; the dashboard keeps the default. */
+  className?: string;
+  children?: ReactNode;
 }
 
 /**
@@ -21,6 +24,8 @@ export function PlaidUpdateLink({
   institutionName,
   onSuccess,
   onError,
+  className,
+  children,
 }: PlaidUpdateLinkProps) {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'reconnecting' | 'error'>('idle');
@@ -93,14 +98,14 @@ export function PlaidUpdateLink({
       size="sm"
       onClick={fetchUpdateToken}
       disabled={isLoading}
-      className="text-[var(--color-negative)] border-[var(--color-negative)]/30 hover:bg-[var(--color-negative)]/10"
+      className={className ?? 'text-[var(--color-negative)] border-[var(--color-negative)]/30 hover:bg-[var(--color-negative)]/10'}
     >
       {isLoading ? (
         <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
       ) : (
         <RefreshCcw className="w-3.5 h-3.5 mr-1.5" />
       )}
-      {status === 'reconnecting' ? 'Syncing...' : 'Reconnect'}
+      {status === 'reconnecting' ? 'Syncing...' : (children ?? 'Reconnect')}
     </Button>
   );
 }

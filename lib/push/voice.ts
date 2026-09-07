@@ -8,7 +8,7 @@ import type { PositionMove } from '@/lib/push/policy';
 export const TITLE_MAX = 40;
 export const BODY_MAX = 110;
 
-export type PushRoute = 'brief' | 'thesis' | 'inbox' | 'book';
+export type PushRoute = 'brief' | 'thesis' | 'inbox' | 'book' | 'reconnect';
 
 export interface PushMessage {
   title: string;
@@ -93,5 +93,23 @@ export function filingFinding(f: { ticker: string; form: string; verdict: 'suppo
     body: clip(`It ${what}. The quote is inside.`, BODY_MAX),
     route: 'thesis',
     id: f.thesisId,
+  };
+}
+
+/** Plaid names it "Edward Jones - U.S. Clients Access"; the push says Edward Jones. */
+export function shortInstitution(name: string | null | undefined): string {
+  return (name ?? '').split(/\s[-\u2013]\s/)[0].trim();
+}
+
+/** The one push that is about Helm's plumbing rather than the book: the person's login at the
+ *  brokerage stopped working, nothing here updates until they sign in again, and the tap opens
+ *  that flow. Push only, by Evan's call (9/6): no email twin. */
+export function connectionNeedsLogin(c: { itemId: string; institution: string | null; since?: string | null }): PushMessage {
+  const inst = shortInstitution(c.institution);
+  return {
+    title: clip(`${inst || 'A brokerage'} needs a new login`, TITLE_MAX),
+    body: clip(`Your ${inst || 'brokerage'} connection stopped updating${c.since ? ` on ${c.since}` : ''}. Tap to reconnect.`, BODY_MAX),
+    route: 'reconnect',
+    id: c.itemId,
   };
 }

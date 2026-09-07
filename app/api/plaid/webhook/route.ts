@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { plaidClient } from '@/lib/plaid';
 import { syncPlaidItem, type PlaidItemForSync } from '@/lib/plaid-sync';
+import { nudgeReconnect } from '@/lib/plaid/nudge-reconnect';
 import * as jose from 'jose';
 import { createHash } from 'crypto';
 
@@ -282,6 +283,13 @@ async function handleItemWebhook(
           sync_error: body.error?.error_message || 'Connection error',
         })
         .eq('plaid_item_ref', plaidItem.id);
+
+      // Only the person can clear these codes; their phone hears about it once a week.
+      try {
+        await nudgeReconnect(supabase, plaidItem.id);
+      } catch (err) {
+        console.error('[webhook] reconnect nudge failed:', err);
+      }
       break;
     }
     case 'LOGIN_REPAIRED': {

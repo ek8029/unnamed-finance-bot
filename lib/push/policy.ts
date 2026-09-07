@@ -4,7 +4,7 @@
 // is material; this decides whether a phone hears about it.
 
 export type PushLevel = 'off' | 'brief' | 'matters' | 'all';
-export type PushKind = 'brief' | 'move' | 'breach' | 'investigated' | 'filing';
+export type PushKind = 'brief' | 'move' | 'breach' | 'investigated' | 'filing' | 'reconnect';
 
 /** The lowest level at which each kind is sent. */
 export const KIND_LEVEL: Record<PushKind, PushLevel> = {
@@ -13,6 +13,8 @@ export const KIND_LEVEL: Record<PushKind, PushLevel> = {
   breach: 'matters',
   investigated: 'matters',
   filing: 'all',
+  // A connection only its owner can fix is service, not market: anyone with push on hears it.
+  reconnect: 'brief',
 };
 
 const RANK: Record<PushLevel, number> = { off: 0, brief: 1, matters: 2, all: 3 };
@@ -40,6 +42,7 @@ export interface LegacyToggles {
 /** The two toggles web users still see keep their meaning on the phone. */
 export function legacyAllows(t: LegacyToggles | null, kind: PushKind): boolean {
   if (!t) return true;
+  if (kind === 'reconnect') return true; // not a market alert and not the brief; the toggles do not cover it
   if (kind === 'brief') return t.notification_daily_brief !== false;
   return t.notification_market_alerts !== false;
 }
@@ -89,4 +92,26 @@ export function selectMoves(rows: { ticker: string; pct: number | null; dollars:
 /** "2026-09-08" in New York, the day the caps and the move keys live in. */
 export function dayET(now: Date = new Date()): string {
   return now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+// ---------- reconnect ----------
+/** Plaid error codes only the person can clear, by logging in again through Link's update mode. */
+export const RECONNECT_CODES = new Set(['ITEM_LOGIN_REQUIRED', 'INVALID_ACCESS_TOKEN', 'ITEM_NOT_FOUND', 'ACCESS_NOT_GRANTED', 'USER_PERMISSION_REVOKED']);
+
+/** A broken item is a reconnect case only when Plaid named a code a login fixes. A transient 400,
+ *  an institution outage, or a link that never finished (no code at all) is not. */
+export function needsReconnect(item: { status: string | null; error_code: string | null }): boolean {
+  if (item.status === 'active') return false;
+  return !!item.error_code && RECONNECT_CODES.has(item.error_code);
+}
+
+/** The Monday of the New York week, so one broken item is told once a week, not once a day. */
+export function weekET(now: Date = new Date()): string {
+  const d = new Date(`${dayET(now)}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return d.toISOString().slice(0, 10);
+}
+
+export function reconnectKey(itemId: string, now: Date = new Date()): string {
+  return `reconnect:${itemId}:${weekET(now)}`;
 }
