@@ -5,6 +5,21 @@ date: "2026-03-26"
 author: "Evan Kim"
 tags: ["net worth", "financial tracking", "personal finance", "wealth building"]
 published: true
+faq:
+  - q: "What is the best way to track net worth?"
+    a: "Net worth is total assets minus total liabilities, so tracking it well means covering every account rather than measuring one precisely. The three common approaches are a spreadsheet you update by hand, a budgeting app that adds balances, and an aggregator that connects to each institution and refreshes automatically. Manual entry is the most flexible and the least likely to stay current. Automatic connections stay current and are limited by which institutions they support."
+  - q: "Which app tracks investments and net worth together?"
+    a: "Most tools do one well and the other poorly. Budgeting apps track cash accounts closely and treat a brokerage as a single balance, so investment risk is invisible. Portfolio tools track holdings and ignore mortgages and cash. Helm connects brokerage, retirement and bank accounts through Plaid on a read-only basis and reports both the net worth figure and what sits underneath it, including concentration, sector exposure and upcoming earnings on the positions you hold."
+  - q: "Does YNAB track net worth?"
+    a: "YNAB reports a net worth figure from the accounts you add, and it is built around zero-based budgeting of cash flow rather than investment analysis. Investment accounts can be included as tracking accounts, which contribute their balance to the total. What that view does not give you is the composition of those balances, so two portfolios of identical value read the same in YNAB even when one is a single stock and the other is a diversified book."
+  - q: "Do Quicken Simplifi and Rocket Money track net worth?"
+    a: "Both display a net worth figure built from linked accounts. Simplifi covers spending, bills and savings goals with account balances rolled into a total. Rocket Money is oriented toward subscription cancellation and bill negotiation, with net worth as a secondary dashboard. In both cases investment accounts contribute a balance rather than holdings-level detail, which is the same limitation described above."
+  - q: "How do you track net worth in a spreadsheet?"
+    a: "One row per account with a balance column and a date column, assets entered as positive numbers and liabilities as negative, summed into a single total. Adding a new dated column each month turns the sheet into a history you can chart. In Google Sheets the GOOGLEFINANCE function can pull live quotes for listed tickers, so holdings update without retyping, although it does not reach brokerage balances, retirement accounts or loans."
+  - q: "How often should net worth be updated?"
+    a: "Monthly is the interval most people can sustain, and it is frequent enough to show a trend without turning market noise into a data point. Weekly updates on a portfolio-heavy balance sheet mostly record price movement. Connected tools refresh daily on their own, which makes the cadence question one of how often you look rather than how often it changes."
+  - q: "Is it safe to connect accounts to a net worth tracker?"
+    a: "The mechanism matters more than the brand. A connection built on Plaid or a comparable token-based aggregator sends your credentials to the institution, returns a revocable read-only token, and never stores your password with the app. A tool that asks you to type your brokerage password into its own form is doing something different, and custodians including Fidelity have restricted that practice. Helm uses Plaid, holds read-only access, and cannot place trades or move money."
 ---
 Tracking your net worth is the single most important financial habit you can build. Your net worth — the difference between what you own and what you owe — is the only number that captures your complete financial picture. Income tells you how much flows in. Spending tells you how much flows out. But net worth tells you where you actually stand.
 

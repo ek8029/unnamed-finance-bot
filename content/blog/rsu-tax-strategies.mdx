@@ -5,6 +5,23 @@ date: "2026-03-24"
 author: "Evan Kim"
 tags: ["RSU", "taxes", "tech employees", "stock compensation", "equity"]
 published: true
+faq:
+  - q: "How are RSUs taxed?"
+    a: "Restricted stock units are taxed as ordinary income at vest, not at grant. The taxable amount is the fair market value of the shares on the day they vest, and it is added to your wages in Box 1 of your W-2. After vest, the shares are ordinary property: any further change in value is a capital gain or loss, measured from the vest-day value."
+  - q: "When do you pay taxes on RSUs?"
+    a: "At vest. Grant creates no taxable event because you do not own anything yet. Vest is when the shares become yours and the value enters your wages. Most employers settle the withholding at that moment by holding back a portion of the vesting shares, which is called sell to cover, so you receive the net number of shares."
+  - q: "Why are RSUs taxed so high?"
+    a: "The usual cause is not the tax rate but the withholding rate. Employers commonly withhold federal tax on RSU vests at the flat supplemental wage rate of 22 percent, rising to 37 percent on supplemental wages above $1 million in a year. If your actual marginal rate is 32 or 35 or 37 percent, the 22 percent withheld is short of what you owe, and the gap appears as a balance due at filing. The vest did not cost more than expected; less was collected than the bracket required."
+  - q: "Do you get taxed twice on RSUs?"
+    a: "No, though the paperwork makes it look that way. The vest-day value is taxed once as ordinary income. That same value becomes your cost basis, so a later sale is taxed only on the gain above it. The confusion comes from Form 1099-B, which frequently reports the basis as zero or leaves it blank for shares acquired through equity compensation. Filing without correcting the basis reports the entire proceeds as gain and does tax the same money twice."
+  - q: "Are RSUs reported on your W-2?"
+    a: "Yes. The vest-day fair market value is included in Box 1 wages, and the federal, Social Security and Medicare amounts withheld on it appear in the corresponding withholding boxes. Many employers also break the amount out in Box 14 with a code such as RSU. The subsequent sale of the shares is reported separately on Form 1099-B from the broker and flows onto Form 8949 and Schedule D."
+  - q: "How do you reduce taxes on RSU income?"
+    a: "The vest itself is not adjustable, since the income is fixed by the share price on the vest date. What is adjustable is everything around it: raising 401(k) or HSA contributions in a heavy vest year, timing charitable gifts of appreciated shares into the same year, making estimated payments so the 22 percent withholding shortfall does not also produce an underpayment penalty, and deciding whether to hold past the one year mark from vest so any further gain is taxed at long-term rates instead of ordinary ones."
+  - q: "How long do you have to hold RSUs for long-term capital gains?"
+    a: "More than one year measured from the vest date, not the grant date. Selling at or within one year of vest makes any gain above the vest-day value a short-term capital gain, taxed at ordinary income rates. Selling immediately at vest usually produces close to zero gain, because the sale price and the basis are both the vest-day value."
+  - q: "How does Helm handle RSU concentration?"
+    a: "Helm reads your connected accounts and measures how much of your portfolio sits in one employer's stock, including exposure you hold indirectly through index and sector ETFs that already carry that name. It flags upcoming earnings dates on concentrated positions and surfaces harvestable losses elsewhere in the book. Helm reports the exposure and the tax facts; it does not tell you whether to sell."
 ---
 RSU tax planning is one of the most consequential financial decisions tech employees face — yet most people handle it on autopilot. Restricted Stock Units (RSUs) are taxed as ordinary income when they vest, which means a single vesting event can push you into a higher tax bracket, trigger AMT implications, and create concentration risk you never intended to carry.
 

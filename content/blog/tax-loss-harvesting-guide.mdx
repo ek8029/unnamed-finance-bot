@@ -5,6 +5,23 @@ date: "2026-03-16"
 author: "Evan Kim"
 tags: ["taxes", "investing", "tax-loss-harvesting", "portfolio", "personal-finance"]
 published: true
+faq:
+  - q: "What is tax-loss harvesting?"
+    a: "Tax-loss harvesting is selling an investment that is worth less than you paid for it so the loss becomes a realized capital loss on your return. That loss offsets capital gains first, and if losses exceed gains, up to $3,000 of the remainder can be deducted against ordinary income each year under IRC section 1211(b), with anything left carried forward to future years indefinitely."
+  - q: "How does tax-loss harvesting work, step by step?"
+    a: "Four steps. Find a position trading below its cost basis. Sell it, which realizes the loss. Avoid repurchasing that security or a substantially identical one inside the 61 day window described below. Report the loss on Schedule D, where it nets against your gains. Most people pair step three with buying a similar but not identical fund so the portfolio keeps roughly the same exposure."
+  - q: "Can tax-loss harvesting offset short-term capital gains?"
+    a: "Yes. Losses net against gains of the same character first, so short-term losses offset short-term gains and long-term losses offset long-term gains. Whatever is left over then crosses over and offsets the other character. Because short-term gains are taxed at ordinary income rates rather than the lower long-term rates, a loss applied against a short-term gain is generally worth more than the same loss applied against a long-term one."
+  - q: "What is the wash sale rule?"
+    a: "IRC section 1091 disallows a loss if you buy the same security, or one substantially identical to it, within 30 days before or 30 days after the sale. That is a 61 day window centered on the sale date, not 30 days after it. The disallowed loss is not lost permanently: it is added to the cost basis of the replacement shares, which defers the benefit rather than erasing it. The rule looks across all of your accounts, and a repurchase inside an IRA disallows the loss permanently."
+  - q: "Can you tax-loss harvest in a Roth IRA or a traditional IRA?"
+    a: "No. Gains and losses inside a Roth or traditional IRA are not reported on your return, so a loss inside one produces no deduction. Harvesting only applies to taxable brokerage accounts. Buying a substantially identical security inside an IRA within the wash sale window also disallows a loss taken in a taxable account, and in that case the disallowed amount does not get added to any basis you can later use."
+  - q: "Is tax-loss harvesting worth it?"
+    a: "It depends on whether you have gains to offset and what your bracket is. The mechanical value is the tax deferred, which is the loss multiplied by your rate, and the deferral compounds while it sits with you. The counterargument is that selling low reduces your cost basis, so a larger gain is waiting when you eventually sell the replacement. Harvesting is most valuable to someone with realized short-term gains and a high marginal rate, and least valuable to someone in the 0 percent long-term bracket with nothing to offset."
+  - q: "Why do some people say tax-loss harvesting does not work?"
+    a: "The critique is that harvesting defers tax rather than removing it, because each harvest lowers your basis and enlarges the future gain. That is accurate as far as it goes. What it leaves out is the time value of the deferred amount, the chance of realizing the eventual gain in a lower bracket or a lower rate category, and the step-up in basis at death, which can end the deferral without the tax ever being paid."
+  - q: "How does Helm find tax-loss harvesting opportunities?"
+    a: "Helm reads your connected brokerage accounts through Plaid on a read-only basis, compares each lot against its cost basis, and flags positions currently sitting at a loss. It checks the 61 day wash sale window across every account you have connected rather than one account at a time, and it detects substantially identical exposure across share classes and leveraged or inverse ETFs that track the same underlying. The tax center is part of Helm Pro."
 ---
  
 > **Try it now:** Use our free [Tax-Loss Harvesting Calculator](/tools/tlh-calculator) to estimate your potential tax savings.
