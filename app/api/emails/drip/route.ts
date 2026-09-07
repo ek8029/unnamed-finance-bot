@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { resend, FROM_EMAIL } from '@/lib/emails/resend';
 import { getTemplate, DRIP_DAYS } from '@/lib/emails/templates';
+import { isTrialRow } from '@/lib/tier-shared';
 
 /**
  * POST /api/emails/drip
@@ -79,14 +80,14 @@ export async function POST(request: NextRequest) {
 
       const { data: sub } = await supabase
         .from('user_subscriptions')
-        .select('tier, trial_ends_at, stripe_subscription_id')
+        .select('tier, trial_ends_at, stripe_subscription_id, source')
         .eq('user_id', user.id)
         .maybeSingle();
 
       // Effective tier: an EXPIRED Plaid-connect trial (no Stripe sub) reads as
       // free — trial expiry is lazy and never persisted, so reading the raw
       // column would keep an expired-trial user out of re-engagement drip forever.
-      const trialExpired = !!sub?.trial_ends_at && !sub.stripe_subscription_id && new Date(sub.trial_ends_at) < now;
+      const trialExpired = !!sub?.trial_ends_at && isTrialRow(sub) && new Date(sub.trial_ends_at) < now;
       const isPaid = !!sub && !!sub.tier && sub.tier !== 'free' && !trialExpired;
 
       // Paid users don't get drip emails

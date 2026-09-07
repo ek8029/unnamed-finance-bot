@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { isThesisUser } from '@/lib/thesis-access';
-import { normalizeTier, tierAtLeast } from '@/lib/tier-shared';
+import { normalizeTier, tierAtLeast, isTrialRow } from '@/lib/tier-shared';
 
 /**
  * Who is entitled to FULL thesis monitoring.
@@ -71,6 +71,7 @@ interface SubRow {
   tier: string | null;
   trial_ends_at: string | null;
   stripe_subscription_id: string | null;
+  source?: string | null;
 }
 
 export async function entitledToMonitoring(
@@ -93,7 +94,7 @@ export async function entitledToMonitoring(
   for (let i = 0; i < userIds.length; i += CHUNK) {
     const { data, error } = await serviceClient
       .from('user_subscriptions')
-      .select('user_id, tier, trial_ends_at, stripe_subscription_id')
+      .select('user_id, tier, trial_ends_at, stripe_subscription_id, source')
       .in('user_id', userIds.slice(i, i + CHUNK));
     if (error) {
       console.error('[thesis-entitlement] lookup failed, failing open:', error.message);
@@ -107,7 +108,7 @@ export async function entitledToMonitoring(
     // Mirrors getRealSubscriptionInfo: a trial row with no Stripe subscription
     // is only worth its tier while the trial is still running.
     let tier = normalizeTier(s.tier);
-    if (s.trial_ends_at && !s.stripe_subscription_id) {
+    if (s.trial_ends_at && isTrialRow(s)) {
       tier = new Date(s.trial_ends_at).getTime() > now ? tier : 'free';
     }
     if (tierAtLeast(tier, 'pro')) entitled.add(s.user_id);

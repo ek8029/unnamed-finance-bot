@@ -6,7 +6,7 @@ import {
   isValidBillingPeriod,
   getCheckoutMode,
 } from '@/lib/stripe';
-import { tierAtLeast, normalizeTier } from '@/lib/tier-shared';
+import { tierAtLeast, normalizeTier, isTrialRow } from '@/lib/tier-shared';
 
 /**
  * Length of the card-required free trial, in days.
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     // 3. Already-Pro guard
     const { data: subscription, error: subError } = await serviceClient
       .from('user_subscriptions')
-      .select('tier, stripe_customer_id, stripe_subscription_id, trial_ends_at')
+      .select('tier, stripe_customer_id, stripe_subscription_id, trial_ends_at, source')
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -84,11 +84,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // A trial row carries tier='pro' with no Stripe subscription — for purchase
-    // purposes that user is free, otherwise trialing users get "You already
-    // have Pro" and can never convert (and a lapsed trial could never buy).
-    const isTrialRow = !!subscription?.trial_ends_at && !subscription?.stripe_subscription_id;
-    const currentTier = isTrialRow ? 'free' : normalizeTier(subscription?.tier);
+    // A trial row carries tier='pro' with no subscription behind it — for
+    // purchase purposes that user is free, otherwise trialing users get "You
+    // already have Pro" and can never convert (and a lapsed trial could never
+    // buy). An App Store subscriber is NOT a trial row, whatever the old web
+    // trial marker says, so they cannot be sold a second subscription here.
+    const trialRow = isTrialRow(subscription);
+    const currentTier = trialRow ? 'free' : normalizeTier(subscription?.tier);
 
     // Has this person ever had a trial, of either kind? trial_ends_at is set by
     // the connect grant and cleared by a real purchase, so its presence is the

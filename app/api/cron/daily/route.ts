@@ -9,6 +9,7 @@ import { runDigestCron } from '@/lib/digest-cron';
 import { composeWeeklyNote, saveAnalystNote } from '@/lib/research/analyst-note';
 import { commitStandingSnapshots } from '@/lib/research/standing-questions';
 import { isOpenAccessWindow } from '@/lib/tier';
+import { isTrialRow } from '@/lib/tier-shared';
 import { beat } from '@/lib/agent/heartbeat';
 import { POST as runDripEmails } from '@/app/api/emails/drip/route';
 import { GET as runWatchlistAlerts } from '@/app/api/cron/watchlist-alerts/route';
@@ -298,11 +299,11 @@ export async function GET(request: Request) {
         } else {
           const { data: subs } = await serviceClient
             .from('user_subscriptions')
-            .select('user_id, tier, trial_ends_at, stripe_subscription_id')
+            .select('user_id, tier, trial_ends_at, stripe_subscription_id, source')
             .neq('tier', 'free');
           eligible = (subs ?? [])
             .filter((s) => {
-              if (s.trial_ends_at && !s.stripe_subscription_id) {
+              if (s.trial_ends_at && isTrialRow(s)) {
                 return new Date(s.trial_ends_at).getTime() > Date.now();
               }
               return true;

@@ -8,7 +8,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 
-import { tierAtLeast, TIER_RANK, normalizeTier, type Tier } from '@/lib/tier-shared';
+import { tierAtLeast, TIER_RANK, normalizeTier, isTrialRow, type Tier } from '@/lib/tier-shared';
 export { tierAtLeast, TIER_RANK, normalizeTier, type Tier };
 
 const FREE_DAILY_ANALYSIS_LIMIT = 5;
@@ -74,8 +74,9 @@ export interface SubscriptionInfo {
  *
  * A paid row KEEPS trial_ends_at. It used to be cleared, which also erased the
  * has-trialed marker the checkout route reads, so cancelling and rebuying
- * granted a fresh 14 days every time. What separates a live trial from a paid
- * subscription is stripe_subscription_id, and every read below tests for it.
+ * granted a fresh 14 days every time. What separates a trial from a paid
+ * subscription is stripe_subscription_id for Stripe and source for the App
+ * Store; isTrialRow in tier-shared is the one test, and every reader uses it.
  */
 export async function getSubscriptionInfo(userId: string): Promise<SubscriptionInfo> {
   if (isOpenAccessWindow()) {
@@ -93,14 +94,14 @@ export async function getRealSubscriptionInfo(userId: string): Promise<Subscript
   const supabase = await createClient();
   const { data } = await supabase
     .from('user_subscriptions')
-    .select('tier, trial_ends_at, stripe_subscription_id')
+    .select('tier, trial_ends_at, stripe_subscription_id, source')
     .eq('user_id', userId)
     .maybeSingle();
 
   // Rows written before Max was retired still say 'max'; they read as Pro.
   const tier = normalizeTier(data?.tier);
   const trialEndsAt: string | null = data?.trial_ends_at ?? null;
-  if (trialEndsAt && !data?.stripe_subscription_id) {
+  if (trialEndsAt && isTrialRow(data)) {
     if (new Date(trialEndsAt).getTime() > Date.now()) {
       return { tier, trialEndsAt, lapsedTrialEndedAt: null };
     }

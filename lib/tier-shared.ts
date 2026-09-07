@@ -29,3 +29,22 @@ export const TIER_META: Record<Tier, { label: string; price: string; color: stri
   free: { label: 'Free', price: '', color: '#8A8A8A' },
   pro: { label: 'Pro', price: '$20/mo', color: '#E6B94D' },
 };
+
+/** The columns a reader needs to tell a trial row from a subscription. */
+export interface TrialRowLike {
+  trial_ends_at: string | null;
+  stripe_subscription_id: string | null;
+  source?: string | null;
+}
+
+/**
+ * A trial row is trial_ends_at set with no subscription behind it. A Stripe
+ * subscription leaves stripe_subscription_id; an App Store one (source
+ * 'revenuecat') leaves neither, and never clears the old trial marker, so
+ * without the source check an App Store subscriber who once had the web trial
+ * reads as a lapsed trial, which is free. Every reader that applies the trial
+ * window goes through here.
+ */
+export function isTrialRow(row: TrialRowLike | null | undefined): boolean {
+  return !!row?.trial_ends_at && !row.stripe_subscription_id && row.source !== 'revenuecat';
+}
