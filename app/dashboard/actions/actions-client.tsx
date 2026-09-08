@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
-import { Loader2, RefreshCw, CheckCircle2, ArrowRight } from 'lucide-react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Loader2, RefreshCw, CheckCircle2, ArrowRight, AlertCircle } from 'lucide-react';
 import { useFormat } from '@/hooks/use-format';
 import { usePreview } from '@/lib/preview-context';
 import { tierAtLeast } from '@/lib/tier-shared';
@@ -57,7 +58,7 @@ function impactLabel(priority: string): string {
 // Filter-chip routing. Tax-loss/credit -> Tax, cash/spending -> Cash, everything
 // risk-shaped (concentration, portfolio, earnings, market, drift) -> Risk.
 const CHIP_TYPES: Record<Exclude<ChipFilter, 'all'>, string[]> = {
-  risk: ['concentration', 'portfolio', 'earnings', 'market', 'drift', 'rebalance'],
+  risk: ['concentration', 'portfolio', 'performance', 'earnings', 'market', 'drift', 'rebalance'],
   tax:  ['tax', 'credit', 'filings'],
   cash: ['cash', 'spending', 'subscription'],
 };
@@ -93,6 +94,7 @@ const primaryCta: Record<string, string> = {
   market: 'Review',
   concentration: 'Model it',
   portfolio: 'Model it',
+  performance: 'Review portfolio',
   drift: 'Model it',
   rebalance: 'Model it',
 };
@@ -108,6 +110,7 @@ const ctaHref: Record<string, string> = {
   market: '/dashboard/brief',
   concentration: '/dashboard/portfolio/factors',
   portfolio: '/dashboard/portfolio/factors',
+  performance: '/dashboard/portfolio',
   drift: '/dashboard/portfolio/factors',
   rebalance: '/dashboard/portfolio/factors',
 };
@@ -129,8 +132,9 @@ const DEMO_ACTIONS: ActionItem[] = [
    Component
    ────────────────────────────────────────────────── */
 
-export function ActionsClient({ initialActions, isPro }: { initialActions: ActionItem[]; isPro: boolean }) {
+export function ActionsClient({ initialActions, isPro, initialError = null }: { initialActions: ActionItem[]; isPro: boolean; initialError?: string | null }) {
   void isPro; // server already stripped recommended_action for non-pro; per-item gating is tier-driven below
+  const router = useRouter();
   const { formatCurrency } = useFormat();
   const { tier } = usePreview();
   // Distinct from the `isPro` prop above: that one is the server's view at
@@ -146,7 +150,19 @@ export function ActionsClient({ initialActions, isPro }: { initialActions: Actio
   );
   const [chip, setChip] = useState<ChipFilter>('all');
   const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(initialError);
   const [actionLoading, setActionLoading] = useState<Set<string>>(new Set());
+
+  // A router refresh supplies new server props without remounting this component.
+  useEffect(() => {
+    if (initialError) {
+      setError(initialError);
+      return;
+    }
+    setActions([...(isDemo && initialActions.length === 0 ? DEMO_ACTIONS : initialActions)]
+      .sort((a, b) => (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3)));
+    setError(null);
+  }, [initialActions, initialError, isDemo]);
 
   // Filtered + ordered: Pro-only intelligence cards float to the top, then basics by priority.
   const filtered = useMemo(() => {
@@ -164,22 +180,29 @@ export function ActionsClient({ initialActions, isPro }: { initialActions: Actio
 
   const handleGenerate = useCallback(async () => {
     setGenerating(true);
+    setError(null);
     try {
-      await fetch('/api/insights/generate', { method: 'POST' });
-      const res = await fetch('/api/insights');
-      if (res.ok) {
-        const data = await res.json();
-        setActions(
-          (data.insights || []).sort(
-            (a: ActionItem, b: ActionItem) =>
-              (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3)
-          )
-        );
+      const generated = await fetch('/api/insights/generate', { method: 'POST' });
+      if (!generated.ok) {
+        throw new Error(generated.status === 429
+          ? 'Analysis was refreshed recently. Please wait a few minutes before trying again.'
+          : 'Could not refresh analysis. Please try again.');
       }
+      const res = await fetch('/api/insights', { cache: 'no-store' });
+      if (!res.ok) throw new Error('Could not load your saved actions. Please try again.');
+      const data = await res.json();
+      if (!Array.isArray(data.insights)) throw new Error('Could not load your saved actions. Please try again.');
+      setActions(data.insights.sort(
+        (a: ActionItem, b: ActionItem) => (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3)
+      ));
+      // Invalidate prefetched page data so navigating back sees the saved results.
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not refresh analysis. Please try again.');
     } finally {
       setGenerating(false);
     }
-  }, []);
+  }, [router]);
 
   const handleAction = useCallback(async (id: string, action: string) => {
     setActionLoading(prev => new Set(prev).add(id));
@@ -201,11 +224,32 @@ export function ActionsClient({ initialActions, isPro }: { initialActions: Actio
     }
   }, []);
 
+  if (error && actions.length === 0) {
+    return (
+      <div className="helm-detail-page helm-actions">
+        <Header openCount={0} chip={chip} setChip={setChip} generating={generating} onGenerate={handleGenerate} />
+        <div className="helm-detail-empty" role="alert">
+          <div className="max-w-[460px] text-center">
+            <AlertCircle className="w-7 h-7 mx-auto mb-5 text-[var(--color-warning-text)]" />
+            <h2 className="text-[24px] font-bold text-[var(--color-text-primary)] mb-3">Your actions are unavailable.</h2>
+            <p className="text-[15px] text-[var(--color-text-muted)]">{error}</p>
+            <div className="helm-detail-empty-actions">
+              <button type="button" onClick={() => router.refresh()} className="helm-button helm-button-outline">Retry loading actions</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const errorNotice = error ? <p role="alert" className="mb-5 rounded-lg border border-[var(--color-warning-text)]/30 p-4 text-sm text-[var(--color-warning-text)]">{error}</p> : null;
+
   /* ── All-clear empty state ────────────────────── */
   if (filtered.length === 0) {
     return (
       <div className="helm-detail-page helm-actions">
         <Header openCount={openCount} chip={chip} setChip={setChip} generating={generating} onGenerate={handleGenerate} />
+        {errorNotice}
         <div className="helm-detail-empty">
           <div className="max-w-[460px] text-center">
             <div className="w-[60px] h-[60px] mx-auto mb-[22px] rounded-[14px] flex items-center justify-center bg-[rgba(74,222,128,0.06)] border border-[rgba(74,222,128,0.2)]">
@@ -234,6 +278,7 @@ export function ActionsClient({ initialActions, isPro }: { initialActions: Actio
   return (
     <div className="helm-detail-page helm-actions">
       <Header openCount={openCount} chip={chip} setChip={setChip} generating={generating} onGenerate={handleGenerate} />
+      {errorNotice}
 
       <div className="helm-action-queue" aria-label="Portfolio review queue">
         {filtered.map(action =>

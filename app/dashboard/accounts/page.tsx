@@ -229,11 +229,14 @@ export default function AccountsPage() {
   }, [assetAccounts]);
 
   const manualCount = accounts.filter((account) => account.source === 'manual').length;
+  const noPlaidConnections = !healthLoading && !healthError && connectionHealth.items.length === 0;
+  const hasSavedBankAccounts = accounts.some((account) => account.source !== 'manual');
   const activeConnections = connectionHealth.items.filter((item) => item.status === 'active').length;
   const connectionLabel = healthLoading ? 'Checking connections…'
     : healthError ? 'Connection status unavailable'
     : connectionHealth.errorCount > 0 ? `${connectionHealth.errorCount} connection${connectionHealth.errorCount === 1 ? '' : 's'} need attention`
     : activeConnections > 0 ? `${activeConnections} active connection${activeConnections === 1 ? '' : 's'}`
+    : noPlaidConnections && hasSavedBankAccounts ? 'Saved accounts · no active connection'
     : 'No linked bank connections';
 
   if (error) {
@@ -318,6 +321,7 @@ export default function AccountsPage() {
         {totals.unavailable > 0 && ` ${totals.unavailable} account${totals.unavailable === 1 ? ' has' : 's have'} no reported balance and ${totals.unavailable === 1 ? 'is' : 'are'} excluded from this total.`}
       </p>
       {healthError && <p role="status" className="mb-4 text-[13px] text-[var(--color-warning-text)]">We couldn’t check your connections. Retry the status check above.</p>}
+      {noPlaidConnections && hasSavedBankAccounts && <p role="status" className="mb-4 text-[13px] text-[var(--color-text-secondary)]">Your saved account balances are still shown here, but no bank connection is available to refresh them. Connect an account to bring in updated balances.</p>}
       {!apiLoading && totals.unavailable < accounts.length && <div className="flex flex-wrap gap-x-8 gap-y-3 mb-6 text-[13px] text-[var(--color-text-secondary)]">
         <span>Assets <strong className="block mt-1 text-[17px] tabular-nums text-[var(--color-text-primary)]">{formatCurrency(totals.assets)}</strong></span>
         <span>Amount owed <strong className="block mt-1 text-[17px] tabular-nums text-[var(--color-text-primary)]">{formatCurrency(totals.owed)}</strong></span>
@@ -414,7 +418,7 @@ export default function AccountsPage() {
                         {typeLabel}
                       </div>
                     </div>
-                    <SyncBadge state={state} />
+                    <SyncBadge state={state} noActiveConnection={noPlaidConnections} />
                   </div>
 
                   {/* Balance */}
@@ -766,13 +770,13 @@ function EnterByHandTile() {
   );
 }
 
-function SyncBadge({ state }: { state: AccountConnectionState }) {
+function SyncBadge({ state, noActiveConnection = false }: { state: AccountConnectionState; noActiveConnection?: boolean }) {
   const meta = {
     connected: { label: 'Connected', color: 'var(--color-positive)', bg: 'rgba(74,222,128,0.08)', border: 'rgba(74,222,128,0.2)' },
     manual: { label: 'Manual', color: 'var(--color-text-secondary)', bg: 'var(--color-bg-overlay)', border: 'var(--color-border-base)' },
     checking: { label: 'Checking', color: 'var(--color-text-secondary)', bg: 'var(--color-bg-overlay)', border: 'var(--color-border-base)' },
     unavailable: { label: 'Status unavailable', color: 'var(--color-text-secondary)', bg: 'var(--color-bg-overlay)', border: 'var(--color-border-base)' },
-    unknown: { label: 'Not verified', color: 'var(--color-text-secondary)', bg: 'var(--color-bg-overlay)', border: 'var(--color-border-base)' },
+    unknown: { label: noActiveConnection ? 'No active connection' : 'Connection unverified', color: 'var(--color-text-secondary)', bg: 'var(--color-bg-overlay)', border: 'var(--color-border-base)' },
     syncing: { label: '◐ Syncing', color: 'var(--color-warning-text)', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.22)' },
     attention: { label: 'Needs attention', color: 'var(--color-negative-text)', bg: 'rgba(248,113,113,0.08)', border: 'rgba(248,113,113,0.25)' },
   }[state];
