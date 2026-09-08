@@ -2,7 +2,6 @@ import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
 
 export const metadata: Metadata = {
@@ -71,7 +70,7 @@ export default function AboutPage() {
             </span>
           </div>
 
-          <h1 className="text-[clamp(32px,5vw,48px)] font-bold leading-[1.1] tracking-tight mb-8">
+          <h1 className="mb-8">
             Built for investors who want<br />
             to see everything.
           </h1>

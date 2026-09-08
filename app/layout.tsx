@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Space_Grotesk, Instrument_Serif, Newsreader, Fraunces } from 'next/font/google';
+import { Geist, Space_Grotesk, Instrument_Serif, Newsreader } from 'next/font/google';
 
-const inter = Geist({
+const geist = Geist({
   subsets: ['latin'],
   variable: '--font-sans',
   weight: ['400', '500', '600', '700'],
@@ -37,14 +37,6 @@ const instrumentSerif = Instrument_Serif({
 const newsreader = Newsreader({
   subsets: ['latin'],
   variable: '--font-newsreader',
-  weight: ['400'],
-  style: ['normal', 'italic'],
-  display: 'swap',
-});
-
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  variable: '--font-fraunces',
   weight: ['400'],
   style: ['normal', 'italic'],
   display: 'swap',
@@ -225,9 +217,9 @@ export default function RootLayout({
             }),
           }}
         />
-        {/* FAQPage schema moved to homepage only — see components/homepage/home-content.tsx */}
+        {/* FAQPage schema lives on the homepage only, in components/homepage/home-resources.tsx */}
       </head>
-      <body className={`${inter.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable} ${newsreader.variable} ${fraunces.variable} font-sans`}>
+      <body className={`${geist.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable} ${newsreader.variable} font-sans`}>
         <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-[var(--color-gold)] focus:text-[var(--color-bg-base)] focus:rounded focus:text-[15px] focus:font-semibold">
           Skip to main content
         </a>

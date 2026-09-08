@@ -44,19 +44,19 @@ function EvidenceItem({ e, storyNote }: { e: EvidenceRow; storyNote?: { label: s
           href={e.source_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="font-mono text-[12px] uppercase tracking-[0.1em] text-[#9A9A9A] hover:text-[#E6B94D] transition-colors"
+          className="font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors"
           style={MONO}
         >
           {e.source_title}
         </a>
       ) : (
-        <span className="font-mono text-[12px] uppercase tracking-[0.1em] text-[#6A6A6A]" style={MONO}>
+        <span className="font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--color-text-secondary)]" style={MONO}>
           {e.source_title}
         </span>
       )}
-      <p className="text-[14.5px] leading-[1.55] text-[#7A7A7A] mt-1 mb-0 italic">&ldquo;{e.excerpt}&rdquo;</p>
+      <p className="text-[14.5px] leading-[1.55] text-[var(--color-text-secondary)] mt-1 mb-0 italic">&ldquo;{e.excerpt}&rdquo;</p>
       {storyNote && (
-        <p className="text-[11px] text-[#5F5F5F] mt-1 mb-0">
+        <p className="text-[11px] text-[var(--color-text-secondary)] mt-1 mb-0">
           One of {storyNote.reports} reports on the same story: {storyNote.label}
         </p>
       )}
@@ -81,14 +81,14 @@ function StatusChip({ status }: { status: PillarStatus }) {
 function LockedPanel() {
   return (
     <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8">
-      <div className="max-w-[460px] rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] p-6 space-y-3">
+      <div className="max-w-[460px] rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,var(--color-bg-surface))] p-6 space-y-3">
         <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>
           Pro
         </div>
-        <p className="text-[15px] leading-[1.5] text-[#9A9A9A] m-0">Thesis detail is a Pro feature.</p>
+        <p className="text-[15px] leading-[1.5] text-[var(--color-text-muted)] m-0">Thesis detail is a Pro feature.</p>
         <Link
           href="/pricing"
-          className="inline-block font-mono text-[14px] font-semibold uppercase tracking-[0.12em] px-4 py-2.5 rounded bg-transparent text-[#E6B94D] border border-[rgba(230,185,77,0.35)] hover:bg-[rgba(230,185,77,0.08)] transition-colors"
+          className="inline-block font-mono text-[14px] font-semibold uppercase tracking-[0.12em] px-4 py-2.5 rounded bg-transparent text-[var(--color-gold)] border border-[color-mix(in_srgb,var(--color-gold)_35%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-gold)_8%,transparent)] transition-colors"
           style={MONO}
         >
           See plans
@@ -198,7 +198,7 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
       {/* Back link */}
       <Link
         href="/dashboard/theses"
-        className="inline-flex items-center font-mono text-[12px] font-semibold uppercase tracking-[0.14em] text-[#6A6A6A] hover:text-[#9A9A9A] transition-colors"
+        className="inline-flex items-center font-mono text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-secondary)] hover:text-[var(--color-text-muted)] transition-colors"
         style={MONO}
       >
         &larr; Theses
@@ -208,7 +208,7 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
       <div className="flex items-center gap-4">
         <CompanyLogo ticker={thesis.ticker} size={44} className="shrink-0" />
         <div className="min-w-0">
-          <div className="font-mono text-[26px] font-bold uppercase tracking-[0.04em] text-[#FAFAFA] leading-none" style={MONO}>
+          <div className="font-mono text-[26px] font-bold uppercase tracking-[0.04em] text-[var(--color-text-primary)] leading-none" style={MONO}>
             {thesis.ticker}
           </div>
         </div>
@@ -217,7 +217,7 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
             <span className="font-mono text-[28px] leading-none font-semibold tabular-nums" style={{ ...MONO, color: convictionColor(intactFrac) }}>
               {Math.round(intactFrac * 100)}%
             </span>
-            <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-[#6A6A6A]" style={MONO}>
+            <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-[var(--color-text-secondary)]" style={MONO}>
               conviction intact
             </span>
           </div>
@@ -227,46 +227,46 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
       {/* E1 agent investigation memo — the artifact the agent wrote on its own
           when this thesis moved. Verbatim receipts; state, never advice. */}
       {agentMemo && (
-        <section className="rounded-lg border border-[rgba(230,185,77,0.25)] bg-[var(--color-bg-elevated,#131313)] p-5 sm:p-6 space-y-4">
+        <section className="rounded-lg border border-[color-mix(in_srgb,var(--color-gold)_25%,transparent)] bg-[var(--color-bg-elevated,var(--color-bg-surface))] p-5 sm:p-6 space-y-4">
           <div className="flex items-center gap-3 flex-wrap">
             <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>
               ✦ Agent investigation
             </span>
-            <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-[#6A6A6A]" style={MONO}>
+            <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-[var(--color-text-secondary)]" style={MONO}>
               {String(memoRow?.trigger_kind ?? '').replace('_', ' ')} · {new Date(memoRow?.created_at as string).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
           </div>
-          <p className="m-0 text-[17px] font-semibold leading-[1.4] text-[#FAFAFA]">{agentMemo.headline}</p>
+          <p className="m-0 text-[17px] font-semibold leading-[1.4] text-[var(--color-text-primary)]">{agentMemo.headline}</p>
 
           <ol className="m-0 p-0 list-none space-y-3 border-l border-white/[0.10] ml-1">
             {agentMemo.timeline.map((t, i) => (
               <li key={i} className="relative pl-5">
-                <span className="absolute -left-[4px] top-[7px] w-[7px] h-[7px] rounded-full bg-[#6A6A6A]" />
-                <div className="font-mono text-[12.5px] font-semibold text-[#D6D6D6] tabular-nums" style={MONO}>{t.date}</div>
-                <div className="text-[14.5px] leading-[1.5] text-[#C9C9C9]">{t.event}</div>
-                <p className="text-[13.5px] leading-[1.55] text-[#7A7A7A] mt-0.5 mb-0 italic">&ldquo;{t.quote}&rdquo;{t.sourceTitle ? <span className="not-italic text-[#5A5A5A]"> · {t.sourceTitle}</span> : null}</p>
+                <span className="absolute -left-[4px] top-[7px] w-[7px] h-[7px] rounded-full bg-[var(--color-text-secondary)]" />
+                <div className="font-mono text-[12.5px] font-semibold text-[var(--color-text-primary)] tabular-nums" style={MONO}>{t.date}</div>
+                <div className="text-[14.5px] leading-[1.5] text-[var(--color-text-muted)]">{t.event}</div>
+                <p className="text-[13.5px] leading-[1.55] text-[var(--color-text-secondary)] mt-0.5 mb-0 italic">&ldquo;{t.quote}&rdquo;{t.sourceTitle ? <span className="not-italic text-[var(--color-text-secondary)]"> · {t.sourceTitle}</span> : null}</p>
               </li>
             ))}
           </ol>
 
           {agentMemo.breaks_if_test.reasoning && (
-            <div className="rounded border border-white/[0.07] bg-[#060606] px-4 py-3">
-              <div className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] mb-1" style={{ ...MONO, color: agentMemo.breaks_if_test.result === 'met' ? '#F87171' : agentMemo.breaks_if_test.result === 'partial' ? '#E6B94D' : '#9A9A9A' }}>
+            <div className="rounded border border-white/[0.07] bg-[var(--color-bg-inset)] px-4 py-3">
+              <div className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] mb-1" style={{ ...MONO, color: agentMemo.breaks_if_test.result === 'met' ? 'var(--color-negative-text)' : agentMemo.breaks_if_test.result === 'partial' ? 'var(--color-gold)' : 'var(--color-text-muted)' }}>
                 Break condition: {agentMemo.breaks_if_test.result.replace('_', ' ')}
               </div>
               {agentMemo.breaks_if_test.condition && (
-                <div className="text-[13px] text-[#6A6A6A] mb-1">&ldquo;{agentMemo.breaks_if_test.condition}&rdquo;</div>
+                <div className="text-[13px] text-[var(--color-text-secondary)] mb-1">&ldquo;{agentMemo.breaks_if_test.condition}&rdquo;</div>
               )}
-              <p className="m-0 text-[14px] leading-[1.55] text-[#9A9A9A]">{agentMemo.breaks_if_test.reasoning}</p>
+              <p className="m-0 text-[14px] leading-[1.55] text-[var(--color-text-muted)]">{agentMemo.breaks_if_test.reasoning}</p>
             </div>
           )}
 
           {agentMemo.watch_next.length > 0 && (
             <div>
-              <div className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#6A6A6A] mb-1.5" style={MONO}>Watching next</div>
+              <div className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-secondary)] mb-1.5" style={MONO}>Watching next</div>
               <ul className="m-0 pl-4 space-y-1">
                 {agentMemo.watch_next.map((w, i) => (
-                  <li key={i} className="text-[14px] leading-[1.5] text-[#9A9A9A]">{w}</li>
+                  <li key={i} className="text-[14px] leading-[1.5] text-[var(--color-text-muted)]">{w}</li>
                 ))}
               </ul>
             </div>
@@ -279,21 +279,21 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
 
       {/* Pillars */}
       <section className="space-y-3">
-        <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[#6A6A6A]" style={MONO}>
+        <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-secondary)]" style={MONO}>
           The reasons you own this
         </div>
         {ordered.length === 0 ? (
-          <p className="font-mono text-[15px] text-[#6A6A6A]" style={MONO}>No confirmed pillars yet.</p>
+          <p className="font-mono text-[15px] text-[var(--color-text-secondary)]" style={MONO}>No confirmed pillars yet.</p>
         ) : (
           <div className="space-y-3">
             {ordered.map((p) => {
               const evidence = evidenceByPillar.get(p.id) ?? [];
               return (
-                <div key={p.id} className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,#131313)] p-4 sm:p-5">
+                <div key={p.id} className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,var(--color-bg-surface))] p-4 sm:p-5">
                   <div className="flex items-start gap-3">
                     <StatusChip status={p.eff} />
                     <div className="min-w-0 flex-1">
-                      <div className="text-[16px] font-semibold text-[#FAFAFA] leading-snug">{p.claim}</div>
+                      <div className="text-[16px] font-semibold text-[var(--color-text-primary)] leading-snug">{p.claim}</div>
                       {/* Newest one or two receipts stay visible so the pillar reads at a glance;
                           the long tail folds behind a native <details> toggle (no client JS). */}
                       {evidence.length > 0 && (() => {
@@ -310,10 +310,10 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
                             {rest.length > 0 && (
                               <details className="group">
                                 <summary
-                                  className="cursor-pointer list-none [&::-webkit-details-marker]:hidden inline-flex items-center gap-2 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] text-[#9A9A9A] hover:text-[#FAFAFA] transition-colors select-none"
+                                  className="cursor-pointer list-none [&::-webkit-details-marker]:hidden inline-flex items-center gap-2 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors select-none"
                                   style={MONO}
                                 >
-                                  <span className="text-[10px] text-[#6A6A6A] transition-transform group-open:rotate-90">&#9656;</span>
+                                  <span className="text-[10px] text-[var(--color-text-secondary)] transition-transform group-open:rotate-90">&#9656;</span>
                                   {visible.length > 0 ? `${rest.length} more source${rest.length === 1 ? '' : 's'}` : `${rest.length} source${rest.length === 1 ? '' : 's'}`}
                                 </summary>
                                 <div className="mt-2.5 space-y-2.5">

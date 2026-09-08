@@ -252,7 +252,7 @@ export function ActionsClient({ initialActions, isPro, initialError = null }: { 
         {errorNotice}
         <div className="helm-detail-empty">
           <div className="max-w-[460px] text-center">
-            <div className="w-[60px] h-[60px] mx-auto mb-[22px] rounded-[14px] flex items-center justify-center bg-[rgba(74,222,128,0.06)] border border-[rgba(74,222,128,0.2)]">
+            <div className="w-[60px] h-[60px] mx-auto mb-[22px] rounded-[14px] flex items-center justify-center bg-[color-mix(in_srgb,var(--color-positive)_6%,transparent)] border border-[var(--color-positive-border)]">
               <CheckCircle2 className="w-7 h-7" strokeWidth={1.6} style={{ color: 'var(--color-positive)' }} />
             </div>
             <h2 className="text-[24px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)] mb-3">
@@ -416,14 +416,14 @@ function BasicCard({
             onClick={onDismiss}
             disabled={loading}
             aria-label="Dismiss this action"
-            className="px-[11px] py-1.5 font-mono text-[9px] tracking-[0.08em] uppercase rounded border border-[var(--color-border-base)] bg-[rgba(255,255,255,0.03)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] motion-safe:transition-colors disabled:opacity-50"
+            className="px-[11px] py-1.5 font-mono text-[9px] tracking-[0.08em] uppercase rounded border border-[var(--color-border-base)] bg-[var(--color-surface-tint-faint)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] motion-safe:transition-colors disabled:opacity-50"
             style={MONO}
           >
             {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Dismiss'}
           </button>
           <a
             href={ctaHref[action.type] || '/dashboard/portfolio'}
-            className="inline-flex items-center px-[11px] py-1.5 font-mono text-[9px] font-bold tracking-[0.08em] uppercase rounded border border-[var(--color-gold-border)] bg-[rgba(230,185,77,0.1)] text-[var(--color-gold)] hover:bg-[rgba(230,185,77,0.16)] motion-safe:transition-colors"
+            className="inline-flex items-center px-[11px] py-1.5 font-mono text-[9px] font-bold tracking-[0.08em] uppercase rounded border border-[var(--color-gold-border)] bg-[color-mix(in_srgb,var(--color-gold)_10%,transparent)] text-[var(--color-gold)] hover:bg-[color-mix(in_srgb,var(--color-gold)_16%,transparent)] motion-safe:transition-colors"
             style={MONO}
           >
             {cta}
@@ -461,11 +461,11 @@ function ProCard({ action }: { action: ActionItem }) {
       </div>
 
       <div className="helm-action-controls">
-        <span className="font-mono text-[10px]" style={{ ...MONO, color: '#FFD67A' }}>Pro</span>
+        <span className="font-mono text-[10px]" style={{ ...MONO, color: 'var(--color-gold-hi)' }}>Pro</span>
         <a
           href={href}
           className="px-[11px] py-1.5 font-mono text-[9px] font-bold tracking-[0.08em] uppercase rounded border whitespace-nowrap motion-safe:transition-colors"
-          style={{ ...MONO, color: '#FFD67A', background: 'rgba(255,214,122,0.1)', borderColor: 'rgba(255,214,122,0.28)' }}
+          style={{ ...MONO, color: 'var(--color-gold-hi)', background: 'rgba(255,214,122,0.1)', borderColor: 'rgba(255,214,122,0.28)' }}
         >
           {ctaLabel}
         </a>

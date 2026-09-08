@@ -479,7 +479,7 @@ export default function DashboardShell({
         style={{
           borderLeft: `2px solid ${active ? 'var(--color-gold)' : 'transparent'}`,
           borderRadius: '0 5px 5px 0',
-          background: active ? 'rgba(230,185,77,0.07)' : 'transparent',
+          background: active ? 'color-mix(in srgb, var(--color-gold) 7%, transparent)' : 'transparent',
           color: active ? 'var(--color-gold)' : 'var(--color-text-secondary)',
           fontWeight: active ? 600 : 500,
         }}
@@ -494,7 +494,7 @@ export default function DashboardShell({
           />
         )}
         {item.count != null && (
-          <span className="shrink-0 rounded-full px-1.5 py-[1px] text-[8px] font-bold tracking-[0.06em] bg-[rgba(248,113,113,0.12)] text-[var(--color-negative-text)]" style={{ fontFamily: 'var(--font-mono)' }}>
+          <span className="shrink-0 rounded-full px-1.5 py-[1px] text-[8px] font-bold tracking-[0.06em] bg-[color-mix(in_srgb,var(--color-negative-text)_12%,transparent)] text-[var(--color-negative-text)]" style={{ fontFamily: 'var(--font-mono)' }}>
             {item.count}
           </span>
         )}
@@ -503,7 +503,7 @@ export default function DashboardShell({
             className="shrink-0 rounded-[3px] px-[5px] py-[1px] text-[8px] font-bold tracking-[0.08em]"
             style={{
               fontFamily: 'var(--font-mono)',
-              background: 'rgba(230,185,77,0.1)',
+              background: 'color-mix(in srgb, var(--color-gold) 10%, transparent)',
               color: 'var(--color-gold)',
             }}
           >
@@ -524,7 +524,7 @@ export default function DashboardShell({
     return (
       <div
         className="flex justify-between px-[13px] pt-[15px] pb-[7px] text-[11px] uppercase first:pt-1"
-        style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.16em', color: '#7a7a7a' }}
+        style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.16em', color: 'var(--color-text-secondary)' }}
       >
         <span>{children}</span>
         {proTag && <span className="text-[var(--color-gold)]">Pro</span>}
@@ -599,7 +599,7 @@ export default function DashboardShell({
           />
           <span
             className="text-[9px] px-1.5 py-0.5 rounded-[3px] text-[var(--color-text-muted)]"
-            style={{ fontFamily: 'var(--font-mono)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+            style={{ fontFamily: 'var(--font-mono)', background: 'var(--color-surface-tint)', border: '1px solid rgba(255,255,255,0.08)' }}
           >
             ESC
           </span>
@@ -618,14 +618,14 @@ export default function DashboardShell({
                 style={{
                   fontFamily: 'var(--font-sans)',
                   color: 'var(--color-text-secondary)',
-                  background: i === _selIdx ? 'rgba(255,255,255,0.06)' : 'transparent',
+                  background: i === _selIdx ? 'var(--color-border-base)' : 'transparent',
                 }}
               >
                 <span style={{ fontFamily: 'var(--font-mono)', color: it.glyph === '⌕' ? 'var(--color-gold)' : 'var(--color-text-muted)' }}>{it.glyph}</span>
                 <span className="text-[var(--color-text-primary)]">{it.label}</span>
                 {it.sub && <span className="truncate text-[13px] text-[var(--color-text-muted)]">{it.sub}</span>}
                 <span className="flex-1" />
-                <span className="text-[10px]" style={{ fontFamily: 'var(--font-mono)', color: it.locked ? 'var(--color-gold)' : '#5a5a5a' }}>
+                <span className="text-[10px]" style={{ fontFamily: 'var(--font-mono)', color: it.locked ? 'var(--color-gold)' : 'var(--color-text-secondary)' }}>
                   {it.locked ? 'PRO' : it.hint}
                 </span>
               </button>
@@ -677,13 +677,12 @@ export default function DashboardShell({
           "transition-transform duration-300",
           sidebarOpen ? "translate-x-0" : "-translate-x-full min-[1025px]:translate-x-0"
         )}
-        style={{ background: '#070707', borderRight: '1px solid rgba(255,255,255,0.05)' }}
       >
 
         {/* ── Brand row ── */}
         <div
           className="shrink-0 flex items-center gap-[11px] px-[18px] pt-[18px] pb-4"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+          style={{ borderBottom: '1px solid var(--color-border-subtle)' }}
         >
           <Link href="/" className="flex items-center gap-[11px]">
             <HelmMark size={26} />
@@ -715,7 +714,7 @@ export default function DashboardShell({
                 style={{
                   borderLeft: `2px solid ${isActive(PORTFOLIO_PARENT.href) ? 'var(--color-gold)' : 'transparent'}`,
                   borderRadius: '0 5px 5px 0',
-                  background: isActive(PORTFOLIO_PARENT.href) ? 'rgba(230,185,77,0.07)' : 'transparent',
+                  background: isActive(PORTFOLIO_PARENT.href) ? 'color-mix(in srgb, var(--color-gold) 7%, transparent)' : 'transparent',
                   color: isActive(PORTFOLIO_PARENT.href) ? 'var(--color-gold)' : 'var(--color-text-secondary)',
                   fontWeight: isActive(PORTFOLIO_PARENT.href) ? 600 : 500,
                 }}
@@ -755,7 +754,7 @@ export default function DashboardShell({
                           className="shrink-0 rounded-[3px] px-[5px] py-[1px] text-[8px] font-bold tracking-[0.08em]"
                           style={{
                             fontFamily: 'var(--font-mono)',
-                            background: 'rgba(230,185,77,0.1)',
+                            background: 'color-mix(in srgb, var(--color-gold) 10%, transparent)',
                             color: 'var(--color-gold)',
                           }}
                         >
@@ -785,10 +784,10 @@ export default function DashboardShell({
         {accountsLoading ? <div role="status" className="shrink-0 px-3.5 py-3 text-[12px] text-[var(--color-text-muted)]">Loading accounts…</div>
           : accountsError ? <div className="shrink-0 px-3.5 py-3 text-[12px] text-[var(--color-text-muted)]"><span role="status">Accounts unavailable.</span> <button onClick={retryAccounts} className="text-[var(--color-gold)] underline">Retry</button></div>
           : savedAccountGroups.length > 0 ? (
-          <div className="shrink-0 px-3.5 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+          <div className="shrink-0 px-3.5 py-3" style={{ borderTop: '1px solid var(--color-border-subtle)' }}>
             <div
               className="flex justify-between mb-2.5 text-[10px] uppercase"
-              style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.14em', color: '#7a7a7a' }}
+              style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.14em', color: 'var(--color-text-secondary)' }}
             >
               <span>Saved groups · {savedAccountGroups.length}</span>
               <span>Net balance</span>
@@ -817,21 +816,21 @@ export default function DashboardShell({
           <Link
             href="/dashboard/accounts"
             className="shrink-0 block px-3.5 py-3 text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-            style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}
+            style={{ borderTop: '1px solid var(--color-border-subtle)' }}
           >
             + Connect an account
           </Link>
         )}
 
         {/* ── User row ── */}
-        <div className="shrink-0 relative" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }} ref={menuRef}>
+        <div className="shrink-0 relative" style={{ borderTop: '1px solid var(--color-border-subtle)' }} ref={menuRef}>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="w-full flex items-center gap-2.5 px-3.5 py-[13px] hover:bg-[var(--color-bg-overlay)]/40 transition-colors"
           >
             <div
               className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-[12px] font-bold text-black shrink-0"
-              style={{ background: 'linear-gradient(135deg,#E6B94D,#1A2E3F)' }}
+              style={{ background: 'linear-gradient(135deg,var(--color-gold),#1A2E3F)' }}
               aria-hidden="true"
             >
               {profile?.initials || profile?.fullName?.trim()?.[0]?.toUpperCase() || ''}
@@ -904,13 +903,7 @@ export default function DashboardShell({
         {/* ── Global Topbar ── */}
         {!isWrappedPage && (
           <header data-helm-topbar
-            className="shrink-0 sticky top-0 z-30 flex items-center gap-3.5 h-14 px-[22px]"
-            style={{
-              borderBottom: '1px solid rgba(255,255,255,0.05)',
-              background: 'rgba(10,10,10,0.6)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-            }}
+            className="shrink-0 sticky top-0 z-30 flex items-center gap-3.5 px-[22px]"
           >
             {/* Hamburger (drawer toggle) — below 1025px only */}
             <button
@@ -924,14 +917,14 @@ export default function DashboardShell({
             {/* Search / command button — opens the palette */}
             <button
               onClick={() => setPaletteOpen(true)}
-              className="helm-command-trigger min-w-0 flex-1 max-w-[420px] flex items-center gap-2.5 h-[34px] px-3 rounded-md text-left text-[var(--color-text-muted)] transition-colors hover:border-[rgba(230,185,77,0.25)]"
+              className="helm-command-trigger min-w-0 flex-1 max-w-[420px] flex items-center gap-2.5 h-[34px] px-3 rounded-md text-left text-[var(--color-text-muted)] transition-colors hover:border-[color-mix(in_srgb,var(--color-gold)_25%,transparent)]"
               style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
             >
               <Search size={14} strokeWidth={1.6} className="shrink-0" />
               <span className="flex-1 text-[14.5px] truncate">Search pages, tickers…</span>
               <span
                 className="hidden md:inline-block text-[9px] px-1.5 py-0.5 rounded-[3px] shrink-0"
-                style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+                style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', background: 'var(--color-surface-tint)', border: '1px solid rgba(255,255,255,0.08)' }}
               >
                 CTRL + K
               </span>
@@ -968,14 +961,14 @@ export default function DashboardShell({
                   window.dispatchEvent(new Event('helm:add-account'));
                 }
               }}
-              className="flex items-center gap-[7px] h-[34px] px-3.5 rounded-md text-[#0A0A0A] uppercase no-underline transition-[filter] hover:brightness-110"
+              className="flex items-center gap-[7px] h-[34px] px-3.5 rounded-md text-[var(--color-bg-base)] uppercase no-underline transition-[filter] hover:brightness-110"
               style={{
                 background: 'var(--color-gold)',
                 fontFamily: 'var(--font-mono)',
                 fontSize: '10px',
                 fontWeight: 700,
                 letterSpacing: '0.12em',
-                boxShadow: '0 4px 16px rgba(230,185,77,0.2)',
+                boxShadow: '0 4px 16px color-mix(in srgb, var(--color-gold) 20%, transparent)',
               }}
             >
               <Plus size={13} strokeWidth={2.2} />

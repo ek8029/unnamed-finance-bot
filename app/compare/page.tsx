@@ -1,7 +1,6 @@
 import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { HelmMark } from '@/components/helm-mark';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { LegalFooter } from '@/components/legal-footer';
 import { CompareSearch } from './compare-search';
@@ -92,7 +91,7 @@ export default function CompareIndexPage() {
               Comparisons
             </p>
             <h1
-              className="text-[44px] sm:text-[60px] lg:text-[68px] xl:text-[78px] leading-[0.96] tracking-[-0.025em] text-[var(--color-text-primary)] mb-7 text-balance"
+              className="text-[var(--color-text-primary)] mb-7 text-balance"
               style={{ fontFamily: 'var(--font-display-serif), Georgia, serif' }}
             >
               Compare two stocks.

@@ -305,7 +305,7 @@ export function ThesesTableView({
                 )}
                 {d.pillars.length === 0 && (
                   <p className="pt-2.5 text-[13px] text-[var(--color-text-secondary)] m-0">
-                    No evidence filed yet — Helm scans this thesis daily and the first receipts land here.
+                    No evidence filed yet. Helm scans this thesis daily and the first receipts land here.
                   </p>
                 )}
                 {[...d.pillars]

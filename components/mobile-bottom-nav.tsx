@@ -24,7 +24,7 @@ export function MobileBottomNav() {
   return (
     <nav
       aria-label="Mobile navigation"
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#0A0A0A] border-t border-white/[0.06]"
+      className="fixed bottom-0 left-0 right-0 z-50 min-[1025px]:hidden bg-[#0A0A0A] border-t border-white/[0.06]"
       style={{
         /* Force GPU compositing layer — prevents iOS scroll float */
         transform: 'translate3d(0,0,0)',

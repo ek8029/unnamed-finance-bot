@@ -80,7 +80,7 @@ function fmtPct(n: number): string {
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 const SCREEN: React.CSSProperties = { padding: '26px 28px 60px', maxWidth: 1600 };
 const CARD =
-  'rounded-md border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] shadow-[0_2px_12px_rgba(0,0,0,0.5)]';
+  'rounded-md border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] shadow-[var(--shadow-card)]';
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /*  Signal feed mapping                                                        */
@@ -98,18 +98,18 @@ const CATEGORY_COLOR: Record<SignalCategory, string> = {
   Conviction: 'var(--color-gold)',
 };
 const CATEGORY_PILL_BG: Record<SignalCategory, string> = {
-  Concentration: 'rgba(248,113,113,0.1)',
+  Concentration: 'color-mix(in srgb, var(--color-negative-text) 10%, transparent)',
   Earnings: 'rgba(251,191,36,0.1)',
-  Tax: 'rgba(74,222,128,0.1)',
+  Tax: 'var(--color-positive-muted)',
   'Holding news': 'rgba(96,165,250,0.1)',
-  Conviction: 'rgba(230,185,77,0.1)',
+  Conviction: 'color-mix(in srgb, var(--color-gold) 10%, transparent)',
 };
 const CATEGORY_PILL_BORDER: Record<SignalCategory, string> = {
-  Concentration: 'rgba(248,113,113,0.2)',
+  Concentration: 'color-mix(in srgb, var(--color-negative-text) 20%, transparent)',
   Earnings: 'rgba(251,191,36,0.2)',
-  Tax: 'rgba(74,222,128,0.2)',
+  Tax: 'var(--color-positive-border)',
   'Holding news': 'rgba(96,165,250,0.2)',
-  Conviction: 'rgba(230,185,77,0.2)',
+  Conviction: 'color-mix(in srgb, var(--color-gold) 20%, transparent)',
 };
 
 interface Signal {
@@ -160,8 +160,8 @@ function SignalCard({ signal }: { signal: Signal }) {
           {signal.action && (
             <Link
               href={signal.action.href}
-              className="rounded-[4px] px-3 py-[7px] text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-gold)] transition-colors hover:bg-[rgba(230,185,77,0.14)]"
-              style={{ ...MONO, background: 'rgba(230,185,77,0.08)', border: '1px solid rgba(230,185,77,0.18)' }}
+              className="rounded-[4px] px-3 py-[7px] text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-gold)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-gold)_14%,transparent)]"
+              style={{ ...MONO, background: 'color-mix(in srgb, var(--color-gold) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)' }}
             >
               {signal.action.label} →
             </Link>
@@ -549,7 +549,7 @@ export default function BriefPage() {
           <div className={`${CARD} w-full max-w-[560px] px-8 py-10 text-center`}>
             <div
               className="mx-auto mb-5 inline-flex h-12 w-12 items-center justify-center rounded-full"
-              style={{ background: 'rgba(230,185,77,0.08)', border: '1px solid rgba(230,185,77,0.18)' }}
+              style={{ background: 'color-mix(in srgb, var(--color-gold) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)' }}
             >
               <Link2 size={20} className="text-[var(--color-gold)]" />
             </div>
@@ -566,7 +566,7 @@ export default function BriefPage() {
             >
               Connect account
             </Link>
-            <p className="mt-7 text-[12px] tracking-[0.06em] text-[#5a5a5a]" style={MONO}>
+            <p className="mt-7 text-[12px] tracking-[0.06em] text-[var(--color-text-secondary)]" style={MONO}>
               12,000+ institutions · 256-bit encryption · via Plaid
             </p>
           </div>
@@ -584,7 +584,7 @@ export default function BriefPage() {
       <div className="mx-auto animate-pulse" style={SCREEN}>
         <div className="mb-[22px] flex items-end justify-between gap-6">
           <div>
-            <div className="mb-2 h-3 w-44 rounded bg-[rgba(230,185,77,0.12)]" />
+            <div className="mb-2 h-3 w-44 rounded bg-[color-mix(in_srgb,var(--color-gold)_12%,transparent)]" />
             <div className="h-7 w-64 rounded bg-white/[0.06]" />
           </div>
           <div className="h-8 w-32 rounded bg-white/[0.04]" />
@@ -660,9 +660,9 @@ export default function BriefPage() {
       <div
         className="mb-3.5 rounded-lg px-[26px] py-6"
         style={{
-          border: '1px solid rgba(230,185,77,0.18)',
-          background: 'rgba(230,185,77,0.025)',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+          border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)',
+          background: 'color-mix(in srgb, var(--color-gold) 2.5%, transparent)',
+          boxShadow: 'var(--shadow-card)',
         }}
       >
         <div className="mb-2.5 text-[10px] uppercase tracking-[0.16em] text-[var(--color-gold)]" style={MONO}>
@@ -725,7 +725,7 @@ export default function BriefPage() {
               )}
               {c.tip && (
                 <div
-                  className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-[280px] -translate-x-1/2 rounded-md border border-[var(--color-border-base)] bg-[#0C0C0C] p-3.5 text-[10.5px] leading-[1.75] text-[#B4B4B4] shadow-[0_8px_24px_rgba(0,0,0,0.6)] group-hover:block"
+                  className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-[280px] -translate-x-1/2 rounded-md border border-[var(--color-border-base)] bg-[#0C0C0C] p-3.5 text-[10.5px] leading-[1.75] text-[var(--color-text-muted)] shadow-[0_8px_24px_rgba(0,0,0,0.6)] group-hover:block"
                   style={MONO}
                 >
                   {c.tip}
@@ -754,7 +754,7 @@ export default function BriefPage() {
 
         {/* ── Signal feed ── */}
         <div className="flex flex-col gap-3">
-          <div className="mb-0.5 text-[9px] uppercase tracking-[0.2em] text-[#5a5a5a]" style={MONO}>
+          <div className="mb-0.5 text-[9px] uppercase tracking-[0.2em] text-[var(--color-text-secondary)]" style={MONO}>
             For your portfolio · {signals.length} signal{signals.length === 1 ? '' : 's'}
           </div>
 
@@ -805,8 +805,8 @@ export default function BriefPage() {
                         style={{
                           ...MONO,
                           color: m.to === 'broken' ? 'var(--color-negative-text)' : 'var(--color-gold)',
-                          borderColor: m.to === 'broken' ? 'rgba(248,113,113,0.3)' : 'rgba(230,185,77,0.3)',
-                          background: m.to === 'broken' ? 'rgba(248,113,113,0.07)' : 'rgba(230,185,77,0.07)',
+                          borderColor: m.to === 'broken' ? 'color-mix(in srgb, var(--color-negative-text) 30%, transparent)' : 'color-mix(in srgb, var(--color-gold) 30%, transparent)',
+                          background: m.to === 'broken' ? 'color-mix(in srgb, var(--color-negative-text) 7%, transparent)' : 'color-mix(in srgb, var(--color-gold) 7%, transparent)',
                         }}
                       >
                         {m.ticker} {m.from} → {m.to}
@@ -817,8 +817,8 @@ export default function BriefPage() {
                 <div className="mt-3 flex items-center gap-3.5">
                   <Link
                     href="/dashboard/theses"
-                    className="rounded-[4px] px-3 py-[7px] text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-gold)] transition-colors hover:bg-[rgba(230,185,77,0.14)]"
-                    style={{ ...MONO, background: 'rgba(230,185,77,0.08)', border: '1px solid rgba(230,185,77,0.18)' }}
+                    className="rounded-[4px] px-3 py-[7px] text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-gold)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-gold)_14%,transparent)]"
+                    style={{ ...MONO, background: 'color-mix(in srgb, var(--color-gold) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)' }}
                   >
                     Review your theses →
                   </Link>
@@ -836,8 +836,8 @@ export default function BriefPage() {
           {tier === 'free' && (
             <Link
               href="/pricing"
-              className={`${CARD} group block px-5 py-[18px] transition-colors hover:border-[rgba(230,185,77,0.32)]`}
-              style={{ borderLeft: '2px solid rgba(230,185,77,0.4)' }}
+              className={`${CARD} group block px-5 py-[18px] transition-colors hover:border-[color-mix(in_srgb,var(--color-gold)_32%,transparent)]`}
+              style={{ borderLeft: '2px solid color-mix(in srgb, var(--color-gold) 40%, transparent)' }}
             >
               <div className="mb-2 flex items-center gap-2">
                 <Sparkles size={13} className="text-[var(--color-gold)]" />
@@ -875,7 +875,7 @@ export default function BriefPage() {
 
         {/* ── Right rail ── */}
         <div className="flex flex-col gap-3">
-          <div className="mb-0.5 text-[9px] uppercase tracking-[0.2em] text-[#5a5a5a]" style={MONO}>
+          <div className="mb-0.5 text-[9px] uppercase tracking-[0.2em] text-[var(--color-text-secondary)]" style={MONO}>
             Live market
           </div>
 
@@ -973,9 +973,9 @@ export default function BriefPage() {
           <div
             className="rounded-md px-5 py-[18px]"
             style={{
-              border: '1px solid rgba(230,185,77,0.18)',
-              background: 'rgba(230,185,77,0.025)',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+              border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)',
+              background: 'color-mix(in srgb, var(--color-gold) 2.5%, transparent)',
+              boxShadow: 'var(--shadow-card)',
             }}
           >
             <div className="mb-2.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-[var(--color-gold)]" style={MONO}>
@@ -989,7 +989,7 @@ export default function BriefPage() {
             </p>
             <Link
               href="/dashboard/chat"
-              className="block w-full rounded-[5px] py-[9px] text-center text-[10px] font-bold uppercase tracking-[0.1em] text-[#0A0A0A] transition-[filter] hover:brightness-110"
+              className="block w-full rounded-[5px] py-[9px] text-center text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-bg-base)] transition-[filter] hover:brightness-110"
               style={{ ...MONO, background: 'var(--color-gold)' }}
             >
               Run scenario →
@@ -1054,15 +1054,15 @@ function PricedDayBand({ band, vix, spyPct, bookPct }: {
           style={{
             left: `${pos(-band)}%`,
             width: `${pos(band) - pos(-band)}%`,
-            background: 'rgba(230,185,77,0.10)',
-            borderLeft: '1px solid rgba(230,185,77,0.35)',
-            borderRight: '1px solid rgba(230,185,77,0.35)',
+            background: 'color-mix(in srgb, var(--color-gold) 10%, transparent)',
+            borderLeft: '1px solid color-mix(in srgb, var(--color-gold) 35%, transparent)',
+            borderRight: '1px solid color-mix(in srgb, var(--color-gold) 35%, transparent)',
           }}
         />
         <div className="absolute top-[13px] h-px w-full bg-[var(--color-border-base)]" />
         <div className="absolute left-1/2 top-[6px] h-[14px] w-px bg-white/20" />
         {spyPct != null && (
-          <div className="absolute top-[6px] h-[14px] w-[2px] bg-[#8A8A8A]" style={{ left: `${pos(spyPct)}%` }} />
+          <div className="absolute top-[6px] h-[14px] w-[2px] bg-[var(--color-text-secondary)]" style={{ left: `${pos(spyPct)}%` }} />
         )}
         {bookPct != null && (
           <div

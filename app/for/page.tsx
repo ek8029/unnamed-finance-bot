@@ -1,7 +1,6 @@
 import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { HelmMark } from '@/components/helm-mark';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { LegalFooter } from '@/components/legal-footer';
 import { Code2, Rocket, TrendingUp, Building2 } from 'lucide-react';
@@ -67,7 +66,7 @@ export default function ForHubPage() {
         {/* Hero */}
         <header className="mb-12 text-center">
           <div className="type-eyebrow text-[var(--color-gold)] mb-4">Built for You</div>
-          <h1 className="font-sans font-bold text-[34px] md:text-[44px] tracking-tight leading-[1.08] mb-5">
+          <h1 className="font-sans mb-5">
             Financial intelligence, tailored to your world
           </h1>
           <p className="text-[18px] md:text-[20px] leading-[1.55] text-[var(--color-text-secondary)] max-w-xl mx-auto">

@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { WatchTickersCard } from '@/components/watch-tickers-card';
 import { ReasoningTrace } from '@/components/thesis/reasoning-trace';
 import { notFound, redirect } from 'next/navigation';
-import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { getHouseThesis } from '@/lib/content/house-theses';
@@ -195,7 +194,7 @@ export default async function ThesisPage({ params }: { params: Promise<{ ticker:
         <header className="mb-10">
           <div className="type-eyebrow text-[var(--color-gold)] mb-4">Living thesis · tracked against the evidence</div>
           <div className="flex flex-wrap items-center gap-3 mb-4">
-            <h1 className="m-0 font-sans font-bold text-[30px] md:text-[42px] tracking-tight leading-[1.1]">
+            <h1 className="m-0 font-sans">
               {data.company} <span className="font-mono text-[var(--color-text-muted)]">{data.ticker}</span>
             </h1>
             <span

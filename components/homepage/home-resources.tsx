@@ -19,10 +19,10 @@ export function HomeResources() { return <>
 
       <section className="border-t border-[var(--color-border-subtle)] py-12 md:py-16">
         <div className="max-w-7xl mx-auto px-10 max-sm:px-5">
-          <div className="flex items-center gap-3 mb-6 md:mb-8">
+          <h2 className="flex items-center gap-3 mb-6 md:mb-8 m-0 font-normal">
             <span className="font-[family-name:var(--font-mono)] text-[13px] text-[var(--color-gold)] tracking-wider">&sect; 00</span>
             <span className="font-[family-name:var(--font-mono)] text-[13px] text-[var(--color-text-muted)] tracking-wider">Guides &amp; Tools</span>
-          </div>
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
               { title: 'Bloomberg Terminal Alternatives', desc: 'Honest comparison of 7 tools for retail investors', href: '/blog/best-bloomberg-terminal-alternatives' },
@@ -33,7 +33,7 @@ export function HomeResources() { return <>
               { title: 'Earnings Concentration Risk', desc: 'When 40% of your portfolio reports in one week', href: '/blog/portfolio-earnings-concentration-risk' },
             ].map((item) => (
               <Link key={item.href} href={item.href} className="group p-5 border border-[var(--color-border-subtle)] rounded-md hover:border-[var(--color-gold-border)] transition-colors">
-                <div className="text-[15px] font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors mb-1">{item.title}</div>
+                <h3 className="text-[15px] font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors mb-1 m-0">{item.title}</h3>
                 <div className="text-[15px] text-[var(--color-text-muted)]">{item.desc}</div>
               </Link>
             ))}
@@ -76,25 +76,25 @@ export function HomeFooter() { return <>
               <p className="font-[family-name:var(--font-mono)] text-[10px] text-[var(--color-text-secondary)] mt-3">Helm is not a registered investment advisor. Information is for educational purposes only.</p>
             </div>
             <div>
-              <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4">Product</div>
+              <h3 className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4 m-0">Product</h3>
               {[['Terminal', '/dashboard'], ['Analyze', '/analyze'], ['Pricing', '/pricing'], ['Brief', '/brief'], ['iPhone app', '/app']].map(([l, h]) => (
                 <Link key={l} href={h} className="block text-[15px] text-[var(--color-text-secondary)] py-1.5 hover:text-[var(--color-text-primary)] transition-colors">{l}</Link>
               ))}
             </div>
             <div>
-              <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4">Tools</div>
+              <h3 className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4 m-0">Tools</h3>
               {[['TLH Calculator', '/tools/tlh-calculator'], ['RSU Calculator', '/tools/rsu-calculator'], ['Compare', '/compare']].map(([l, h]) => (
                 <Link key={l} href={h} className="block text-[15px] text-[var(--color-text-secondary)] py-1.5 hover:text-[var(--color-text-primary)] transition-colors">{l}</Link>
               ))}
             </div>
             <div>
-              <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4">Company</div>
+              <h3 className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4 m-0">Company</h3>
               {[['About', '/about'], ['Security', '/security'], ['Blog', '/blog'], ['Contact', '/contact']].map(([l, h]) => (
                 <Link key={l} href={h} className="block text-[15px] text-[var(--color-text-secondary)] py-1.5 hover:text-[var(--color-text-primary)] transition-colors">{l}</Link>
               ))}
             </div>
             <div>
-              <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4">Compare</div>
+              <h3 className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4 m-0">Compare</h3>
               {/* This column used to be five thesis-tracker links under the
                   heading "Compare", which is the same mistake the nav made:
                   the whole comparison surface of the homepage described one
@@ -105,7 +105,7 @@ export function HomeFooter() { return <>
               ))}
             </div>
             <div>
-              <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4">Legal</div>
+              <h3 className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4 m-0">Legal</h3>
               {/* Data Deletion pointed at /contact, but /data-deletion exists and
                   is the page this label promises. */}
               {[['Privacy', '/privacy'], ['Terms', '/terms'], ['Data Deletion', '/data-deletion']].map(([l, h]) => (

@@ -120,7 +120,7 @@ export default async function CatchPage({ params }: Props) {
             {meta.label}
           </span>
           <h1
-            className="mt-4 mb-0 leading-[1.05]"
+            className="mt-4 mb-0"
             style={{ fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(32px,5.5vw,52px)' }}
           >
             {headline(e)}

@@ -4,7 +4,6 @@ import { parseResearchTicker } from '@/lib/research-ticker';
 import { SiteNav } from '@/components/site-nav';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import Link from 'next/link';
-import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { ArrowRight, Shield, ChevronRight, AlertTriangle } from 'lucide-react';
@@ -306,7 +305,7 @@ export default function RSUCalculatorPage() {
           {/* Header */}
           <div className="mb-12">
             <div className="type-eyebrow text-[var(--color-gold)] mb-4">RSU Vesting Calculator</div>
-            <h1 className="font-sans font-bold text-[30px] sm:text-[36px] md:text-[44px] tracking-tight leading-[1.08] mb-3">
+            <h1 className="font-sans mb-3">
               What are your RSUs<br />
               <span className="text-[var(--color-gold)]">actually worth</span>
               <br />after taxes?

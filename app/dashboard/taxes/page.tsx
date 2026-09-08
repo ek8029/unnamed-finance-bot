@@ -30,7 +30,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 const CARD: React.CSSProperties = {
   background: 'var(--color-bg-surface)',
   border: '1px solid var(--color-border-base)',
-  boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+  boxShadow: 'var(--shadow-card)',
 };
 
 // ── Quarter helpers ──
@@ -125,7 +125,7 @@ function StackedBar({
         {stPct > 0 && (
           <div
             className="h-full rounded-sm"
-            style={{ width: `${stPct}%`, background: '#5B8DEF' }}
+            style={{ width: `${stPct}%`, background: 'var(--color-info-text)' }}
           />
         )}
         {ltPct > 0 && (
@@ -143,7 +143,7 @@ function StackedBar({
       </div>
       <div className="flex items-center gap-4 mt-2.5">
         <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-sm" style={{ background: '#5B8DEF' }} />
+          <div className="w-2 h-2 rounded-sm" style={{ background: 'var(--color-info-text)' }} />
           <span className="text-[12px] text-[var(--color-text-muted)]" style={MONO}>
             ST Gains
           </span>
@@ -220,7 +220,7 @@ function ConnectEmpty() {
       <div className="max-w-[460px] text-center">
         <div
           className="mx-auto mb-[22px] inline-flex h-[60px] w-[60px] items-center justify-center rounded-[14px]"
-          style={{ background: 'rgba(230,185,77,0.06)', border: '1px solid rgba(230,185,77,0.18)' }}
+          style={{ background: 'var(--color-gold-surface)', border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)' }}
         >
           <Link2 size={26} className="text-[var(--color-gold)]" strokeWidth={1.6} />
         </div>
@@ -243,7 +243,7 @@ function NoHarvestEmpty() {
       <div className="max-w-[460px] text-center">
         <div
           className="mx-auto mb-[22px] inline-flex h-[60px] w-[60px] items-center justify-center rounded-[14px]"
-          style={{ background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.18)' }}
+          style={{ background: 'color-mix(in srgb, var(--color-positive) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--color-positive) 18%, transparent)' }}
         >
           <CheckCircle2 size={26} className="text-[var(--color-positive)]" strokeWidth={1.6} />
         </div>
@@ -504,7 +504,7 @@ function TaxesContent() {
             </span>
             <span
               className="px-3 py-[7px] rounded-[5px] text-[var(--color-gold)]"
-              style={{ background: 'rgba(230,185,77,0.1)', border: '1px solid rgba(230,185,77,0.25)' }}
+              style={{ background: 'color-mix(in srgb, var(--color-gold) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-gold) 25%, transparent)' }}
               aria-current="true"
             >
               {CURRENT_YEAR}
@@ -612,7 +612,7 @@ function TaxesContent() {
                 </span>
               </span>
             </div>
-            <div className="w-full h-2.5 rounded-sm overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+            <div className="w-full h-2.5 rounded-sm overflow-hidden" style={{ background: 'var(--color-surface-tint)' }}>
               <div
                 className="h-full rounded-sm motion-safe:transition-all motion-safe:duration-300"
                 style={{
@@ -658,15 +658,15 @@ function TaxesContent() {
           aria-label="Tax-loss harvesting"
           className="rounded-lg overflow-hidden"
           style={{
-            background: 'rgba(230,185,77,0.02)',
-            border: '1px solid rgba(230,185,77,0.15)',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+            background: 'color-mix(in srgb, var(--color-gold) 2%, transparent)',
+            border: '1px solid var(--color-gold-border)',
+            boxShadow: 'var(--shadow-card)',
           }}
         >
           {/* Panel header: title + Available harvest */}
           <div
             className="px-5 sm:px-[22px] py-[18px] flex items-center justify-between gap-4"
-            style={{ borderBottom: '1px solid rgba(230,185,77,0.1)' }}
+            style={{ borderBottom: '1px solid color-mix(in srgb, var(--color-gold) 10%, transparent)' }}
           >
             <div>
               <div className="flex items-center gap-2">
@@ -737,7 +737,7 @@ function TaxesContent() {
           {/* Panel footer: §1211(b) waterfall + Harvest CTA */}
           <div
             className="px-5 sm:px-[22px] py-[14px] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4"
-            style={{ borderTop: '1px solid rgba(230,185,77,0.1)' }}
+            style={{ borderTop: '1px solid color-mix(in srgb, var(--color-gold) 10%, transparent)' }}
             aria-live="polite"
           >
             <HarvestLadder
@@ -748,7 +748,7 @@ function TaxesContent() {
             <a
               href="/tools/tlh-calculator"
               className="self-start sm:self-auto px-4 py-[9px] rounded-[5px] text-[10px] font-bold uppercase tracking-[0.12em] motion-safe:transition-[filter] motion-safe:duration-150 hover:brightness-[1.08]"
-              style={{ background: 'var(--color-gold)', color: '#0A0A0A', ...MONO }}
+              style={{ background: 'var(--color-gold)', color: 'var(--color-bg-base)', ...MONO }}
             >
               Harvest {formatCurrency(Math.abs(totalHarvestable))}
             </a>
@@ -804,7 +804,7 @@ function TaxesContent() {
                 {pos.accountSubtype && (
                   <span
                     className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold shrink-0"
-                    style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--color-text-muted)', ...MONO }}
+                    style={{ background: 'var(--color-surface-tint)', color: 'var(--color-text-muted)', ...MONO }}
                   >
                     {pos.accountSubtype.replace(/_/g, ' ')}
                   </span>
@@ -934,7 +934,7 @@ function TaxesContent() {
           {/* Short-term card */}
           <div className="rounded-md p-5" style={CARD}>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-sm" style={{ background: '#5B8DEF' }} />
+              <div className="w-2 h-2 rounded-sm" style={{ background: 'var(--color-info-text)' }} />
               <span
                 className="text-[12px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] font-medium"
                 style={MONO}
@@ -1050,10 +1050,10 @@ function TaxesContent() {
                 className="rounded-md p-4 motion-safe:transition-colors motion-safe:duration-150"
                 style={{
                   background: isActive
-                    ? 'rgba(230, 185, 77, 0.04)'
+                    ? 'color-mix(in srgb, var(--color-gold) 4%, transparent)'
                     : 'var(--color-bg-surface)',
                   border: isActive
-                    ? '1px solid rgba(230, 185, 77, 0.2)'
+                    ? '1px solid color-mix(in srgb, var(--color-gold) 20%, transparent)'
                     : '1px solid var(--color-border-base)',
                 }}
               >
@@ -1197,8 +1197,8 @@ function TaxesContent() {
                           className={cn(
                             'inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold',
                             tx.gainLossType === 'short_term'
-                              ? 'bg-[rgba(91,141,239,0.1)] text-[#5B8DEF]'
-                              : 'bg-[rgba(230,185,77,0.1)] text-[var(--color-gold)]',
+                              ? 'bg-[var(--color-info-muted)] text-[var(--color-info-text)]'
+                              : 'bg-[color-mix(in_srgb,var(--color-gold)_10%,transparent)] text-[var(--color-gold)]',
                           )}
                           style={MONO}
                         >
@@ -1217,8 +1217,8 @@ function TaxesContent() {
                               className={cn(
                                 'inline-flex items-center px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold',
                                 tx.gainLossType === 'short_term'
-                                  ? 'bg-[rgba(91,141,239,0.1)] text-[#5B8DEF]'
-                                  : 'bg-[rgba(230,185,77,0.1)] text-[var(--color-gold)]',
+                                  ? 'bg-[var(--color-info-muted)] text-[var(--color-info-text)]'
+                                  : 'bg-[color-mix(in_srgb,var(--color-gold)_10%,transparent)] text-[var(--color-gold)]',
                               )}
                               style={MONO}
                             >
@@ -1420,7 +1420,7 @@ function HoldingPeriodBars({
             {formatCurrency(ltTax)}
           </span>
         </div>
-        <div className="h-1.5 rounded-[3px] overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)' }}>
+        <div className="h-1.5 rounded-[3px] overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
           <div
             className="h-full"
             style={{ width: `${Math.min((ltTax / maxTax) * 100, 100)}%`, background: 'var(--color-positive)' }}
@@ -1443,7 +1443,7 @@ function HoldingPeriodBars({
             {formatCurrency(stTax)}
           </span>
         </div>
-        <div className="h-1.5 rounded-[3px] overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)' }}>
+        <div className="h-1.5 rounded-[3px] overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
           <div
             className="h-full"
             style={{ width: `${Math.min((stTax / maxTax) * 100, 100)}%`, background: 'var(--color-warning-text)' }}
@@ -1678,9 +1678,9 @@ function WashSaleWindow({ state }: { state: 'none' | 'advisory' | 'flagged' }) {
 // ── Conviction helpers (thesis-aware TLH) ──
 
 const CONVICTION_COLOR: Record<'intact' | 'weakening' | 'broken', string> = {
-  intact: '#4ADE80',
-  weakening: '#E6B94D',
-  broken: '#F87171',
+  intact: 'var(--color-positive)',
+  weakening: 'var(--color-gold)',
+  broken: 'var(--color-negative-text)',
 };
 
 // Row-level conviction chip: surfaces the thesis status without needing to expand.
@@ -1715,8 +1715,8 @@ function BrokenThesisCallout({
       aria-label="Broken-thesis harvest opportunities"
       className="rounded-md p-5"
       style={{
-        background: 'rgba(248,113,113,0.04)',
-        border: '1px solid rgba(248,113,113,0.25)',
+        background: 'color-mix(in srgb, var(--color-negative-text) 4%, transparent)',
+        border: '1px solid color-mix(in srgb, var(--color-negative-text) 25%, transparent)',
         borderLeft: `3px solid ${red}`,
       }}
     >
@@ -1742,7 +1742,7 @@ function BrokenThesisCallout({
       {lead.thesisCite && (
         <blockquote
           className="mt-3 pl-3 text-[15px] text-[var(--color-text-secondary)] leading-relaxed"
-          style={{ borderLeft: '2px solid rgba(248,113,113,0.4)' }}
+          style={{ borderLeft: '2px solid color-mix(in srgb, var(--color-negative-text) 40%, transparent)' }}
         >
           &ldquo;{lead.thesisCite.excerpt}&rdquo;
           <span className="block mt-1 text-[12px] text-[var(--color-text-muted)]" style={MONO}>
@@ -1855,9 +1855,9 @@ function HarvestRow({
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[9px] uppercase tracking-[0.1em] font-bold"
               style={{
-                background: washState === 'advisory' ? 'rgba(230, 185, 77, 0.08)' : 'rgba(74, 222, 128, 0.08)',
+                background: washState === 'advisory' ? 'color-mix(in srgb, var(--color-gold) 8%, transparent)' : 'color-mix(in srgb, var(--color-positive) 8%, transparent)',
                 color: washState === 'advisory' ? 'var(--color-gold)' : 'var(--color-positive)',
-                border: washState === 'advisory' ? '1px solid rgba(230,185,77,0.2)' : '1px solid rgba(74,222,128,0.2)',
+                border: washState === 'advisory' ? '1px solid color-mix(in srgb, var(--color-gold) 20%, transparent)' : '1px solid var(--color-positive-border)',
                 ...MONO,
               }}
             >
@@ -1867,9 +1867,9 @@ function HarvestRow({
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[9px] uppercase tracking-[0.1em] font-bold"
               style={{
-                background: 'rgba(245, 158, 11, 0.1)',
+                background: 'var(--color-warning-muted)',
                 color: 'var(--color-warning-text)',
-                border: '1px solid rgba(245,158,11,0.2)',
+                border: '1px solid var(--color-warning-border)',
                 ...MONO,
               }}
             >
@@ -1901,7 +1901,7 @@ function HarvestRow({
             <span
               className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] uppercase tracking-wider font-semibold"
               style={{
-                background: 'rgba(74, 222, 128, 0.1)',
+                background: 'var(--color-positive-muted)',
                 color: 'var(--color-positive)',
                 ...MONO,
               }}
@@ -1912,7 +1912,7 @@ function HarvestRow({
             <span
               className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] uppercase tracking-wider font-semibold"
               style={{
-                background: 'rgba(255,255,255,0.05)',
+                background: 'var(--color-surface-tint)',
                 color: 'var(--color-text-muted)',
                 ...MONO,
               }}
@@ -1930,7 +1930,7 @@ function HarvestRow({
           className="hidden md:block px-5 py-3 border-b border-[var(--color-border-subtle)]"
           style={{
             borderLeft: `3px solid ${washState === 'flagged' ? 'var(--color-warning-text)' : washState === 'advisory' ? 'var(--color-gold)' : 'var(--color-positive)'}`,
-            background: washState === 'none' ? 'rgba(74, 222, 128, 0.03)' : 'rgba(251, 191, 36, 0.03)',
+            background: washState === 'none' ? 'color-mix(in srgb, var(--color-positive) 3%, transparent)' : 'rgba(251, 191, 36, 0.03)',
           }}
         >
           <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
@@ -1955,8 +1955,8 @@ function HarvestRow({
         <div
           className="hidden md:block px-5 py-3 border-b border-[var(--color-border-subtle)]"
           style={{
-            borderLeft: `3px solid ${opp.thesisStatus === 'broken' ? '#F87171' : opp.thesisStatus === 'weakening' ? '#E6B94D' : '#4ADE80'}`,
-            background: opp.thesisStatus === 'broken' ? 'rgba(248,113,113,0.03)' : opp.thesisStatus === 'weakening' ? 'rgba(230,185,77,0.03)' : 'rgba(74,222,128,0.03)',
+            borderLeft: `3px solid ${opp.thesisStatus === 'broken' ? 'var(--color-negative-text)' : opp.thesisStatus === 'weakening' ? 'var(--color-gold)' : 'var(--color-positive)'}`,
+            background: opp.thesisStatus === 'broken' ? 'color-mix(in srgb, var(--color-negative-text) 3%, transparent)' : opp.thesisStatus === 'weakening' ? 'color-mix(in srgb, var(--color-gold) 3%, transparent)' : 'color-mix(in srgb, var(--color-positive) 3%, transparent)',
           }}
         >
           <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
@@ -1995,7 +1995,7 @@ function HarvestRow({
             <span
               className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] uppercase tracking-wider font-semibold shrink-0"
               style={{
-                background: 'rgba(74, 222, 128, 0.1)',
+                background: 'var(--color-positive-muted)',
                 color: 'var(--color-positive)',
                 ...MONO,
               }}
@@ -2015,9 +2015,9 @@ function HarvestRow({
               <span
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[9px] uppercase tracking-[0.1em] font-bold"
                 style={{
-                  background: washState === 'advisory' ? 'rgba(230, 185, 77, 0.08)' : 'rgba(74, 222, 128, 0.08)',
+                  background: washState === 'advisory' ? 'color-mix(in srgb, var(--color-gold) 8%, transparent)' : 'color-mix(in srgb, var(--color-positive) 8%, transparent)',
                   color: washState === 'advisory' ? 'var(--color-gold)' : 'var(--color-positive)',
-                  border: washState === 'advisory' ? '1px solid rgba(230,185,77,0.2)' : '1px solid rgba(74,222,128,0.2)',
+                  border: washState === 'advisory' ? '1px solid color-mix(in srgb, var(--color-gold) 20%, transparent)' : '1px solid var(--color-positive-border)',
                   ...MONO,
                 }}
               >
@@ -2027,9 +2027,9 @@ function HarvestRow({
               <span
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[9px] uppercase tracking-[0.1em] font-bold"
                 style={{
-                  background: 'rgba(245, 158, 11, 0.1)',
+                  background: 'var(--color-warning-muted)',
                   color: 'var(--color-warning-text)',
-                  border: '1px solid rgba(245,158,11,0.2)',
+                  border: '1px solid var(--color-warning-border)',
                   ...MONO,
                 }}
               >
@@ -2083,7 +2083,7 @@ function HarvestRow({
             className="mt-2.5 ml-[26px] px-3 py-2.5 rounded-sm"
             style={{
               borderLeft: `3px solid ${washState === 'flagged' ? 'var(--color-warning-text)' : washState === 'advisory' ? 'var(--color-gold)' : 'var(--color-positive)'}`,
-              background: washState === 'none' ? 'rgba(74, 222, 128, 0.03)' : 'rgba(251, 191, 36, 0.03)',
+              background: washState === 'none' ? 'color-mix(in srgb, var(--color-positive) 3%, transparent)' : 'rgba(251, 191, 36, 0.03)',
             }}
           >
             <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>
@@ -2108,8 +2108,8 @@ function HarvestRow({
           <div
             className="mt-2.5 ml-[26px] px-3 py-2.5 rounded-sm"
             style={{
-              borderLeft: `3px solid ${opp.thesisStatus === 'broken' ? '#F87171' : opp.thesisStatus === 'weakening' ? '#E6B94D' : '#4ADE80'}`,
-              background: opp.thesisStatus === 'broken' ? 'rgba(248,113,113,0.03)' : opp.thesisStatus === 'weakening' ? 'rgba(230,185,77,0.03)' : 'rgba(74,222,128,0.03)',
+              borderLeft: `3px solid ${opp.thesisStatus === 'broken' ? 'var(--color-negative-text)' : opp.thesisStatus === 'weakening' ? 'var(--color-gold)' : 'var(--color-positive)'}`,
+              background: opp.thesisStatus === 'broken' ? 'color-mix(in srgb, var(--color-negative-text) 3%, transparent)' : opp.thesisStatus === 'weakening' ? 'color-mix(in srgb, var(--color-gold) 3%, transparent)' : 'color-mix(in srgb, var(--color-positive) 3%, transparent)',
             }}
           >
             <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed" style={MONO}>

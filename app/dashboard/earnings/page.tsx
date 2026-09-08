@@ -282,7 +282,7 @@ function ConnectEmpty() {
         <p className="helm-kicker">Earnings intelligence</p>
         <div
           className="mx-auto mb-[22px] inline-flex h-[60px] w-[60px] items-center justify-center rounded-[14px]"
-          style={{ background: 'rgba(230,185,77,0.06)', border: '1px solid rgba(230,185,77,0.18)' }}
+          style={{ background: 'var(--color-gold-surface)', border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)' }}
         >
           <Link2 size={26} className="text-[var(--color-gold)]" strokeWidth={1.6} />
         </div>
@@ -309,7 +309,7 @@ function NoEarningsEmpty() {
       <div className="max-w-[460px] text-center">
         <div
           className="mx-auto mb-[22px] inline-flex h-[60px] w-[60px] items-center justify-center rounded-[14px]"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border-base)' }}
+          style={{ background: 'var(--color-surface-tint-faint)', border: '1px solid var(--color-border-base)' }}
         >
           <Calendar size={26} className="text-[var(--color-text-muted)]" strokeWidth={1.6} />
         </div>

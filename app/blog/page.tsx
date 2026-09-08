@@ -2,7 +2,6 @@ import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { getAllPosts } from '@/lib/blog';
@@ -55,7 +54,7 @@ export default function BlogIndex() {
 
       {/* ── Header ── */}
       <section className="relative container mx-auto px-6 pt-12 pb-8 max-w-4xl">
-        <h1 className="font-sans font-bold text-[32px] md:text-[40px] text-[var(--color-text-primary)] tracking-tight mb-3">
+        <h1 className="font-sans text-[var(--color-text-primary)] mb-3">
           Blog
         </h1>
         <p className="text-[16px] text-[var(--color-text-secondary)] max-w-xl leading-relaxed">

@@ -1,8 +1,6 @@
 import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
-import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
 import { ContactForm } from './contact-form';
 
@@ -35,7 +33,7 @@ export default function ContactPage() {
           </span>
         </div>
 
-        <h1 className="text-[clamp(28px,4vw,44px)] font-bold leading-[1.1] tracking-tight mb-4">
+        <h1 className="mb-4">
           Get in touch.
         </h1>
         <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed mb-12 max-w-md">

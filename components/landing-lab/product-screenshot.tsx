@@ -47,7 +47,9 @@ export function ProductScreenshot({ name, alt, priority = false, interactive = t
     return () => { document.body.style.overflow = previous; };
   }, [opened]);
 
+  const variant = (tag: string) => `/product/screenshots/${name}-${device}-${tag}.webp?v=${encodeURIComponent(manifest.capturedAt)}`;
   const picture = <picture className={s.picture}>
+    <source type="image/webp" srcSet={`${variant('1x')} 1x, ${variant('2x')} 2x, ${src} 3x`} />
     <Image src={src} alt={imageAlt} width={size.width} height={size.height}
       className={s.image} unoptimized loading={priority ? 'eager' : 'lazy'} fetchPriority={priority ? 'high' : 'auto'} />
   </picture>;
@@ -61,9 +63,9 @@ export function ProductScreenshot({ name, alt, priority = false, interactive = t
     }} onClick={event => { if (event.target === dialog.current) dialog.current.close(); }}>
       <div className={s.viewer}>
         <header className={s.viewerHeader}><div><h2 id={titleId}>{labels[name]}</h2><p>{openedDevice === 'mobile' ? 'Mobile' : 'Desktop'} app · Pro · Illustrative sample data</p></div>
-          <div className={s.viewerActions}><button type="button" aria-pressed={zoomed} onClick={() => setZoomed(value => !value)}>{zoomed ? <ZoomOut size={18} /> : <ZoomIn size={18} />}{zoomed ? 'Fit image' : 'Zoom in'}</button><button type="button" aria-label="Close screenshot" onClick={() => dialog.current?.close()}><X size={22} /></button></div>
+          <div className={s.viewerActions}><button type="button" onClick={() => setZoomed(value => !value)}>{zoomed ? <ZoomOut size={18} /> : <ZoomIn size={18} />}{zoomed ? 'Fit image' : 'Zoom in'}</button><button type="button" aria-label="Close screenshot" onClick={() => dialog.current?.close()}><X size={22} /></button></div>
         </header>
-        <div className={s.canvas} tabIndex={0} aria-label="Screenshot. Scroll to inspect when zoomed.">
+        <div className={s.canvas} role="region" tabIndex={0} aria-label="Screenshot. Scroll to inspect when zoomed.">
           {opened && <Image src={fullSrc} alt={imageAlt} width={fullSize.width} height={fullSize.height} unoptimized style={{ width: zoomed ? fullSize.cssWidth * 1.5 : fullSize.cssWidth }} className={`${s.fullImage} ${zoomed ? s.zoomed : ''}`} />}
         </div>
       </div>

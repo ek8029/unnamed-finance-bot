@@ -49,7 +49,7 @@ export function NetWorthCard({ data, active }: { data: WrappedData; active: bool
       <div className="absolute inset-0 pointer-events-none"
            style={{ background: isPositive
              ? 'radial-gradient(ellipse at 50% 60%, rgba(56,189,248,0.12), transparent 70%)'
-             : 'radial-gradient(ellipse at 50% 60%, rgba(248,113,113,0.1), transparent 70%)' }} />
+             : 'radial-gradient(ellipse at 50% 60%, color-mix(in srgb, var(--color-negative-text) 10%, transparent), transparent 70%)' }} />
       <p className="uppercase text-[var(--color-text-muted)] mb-6"
          style={{ ...stagger(active, 0), ...EYEBROW }}>
         Your Financial Picture
@@ -94,8 +94,8 @@ export function ReturnCard({ data, active }: { data: WrappedData; active: boolea
     <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-8 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"
            style={{ background: isPositive
-             ? 'radial-gradient(ellipse at 50% 60%, rgba(74,222,128,0.12), transparent 70%)'
-             : 'radial-gradient(ellipse at 50% 60%, rgba(248,113,113,0.1), transparent 70%)' }} />
+             ? 'radial-gradient(ellipse at 50% 60%, color-mix(in srgb, var(--color-positive) 12%, transparent), transparent 70%)'
+             : 'radial-gradient(ellipse at 50% 60%, color-mix(in srgb, var(--color-negative-text) 10%, transparent), transparent 70%)' }} />
       <p className="uppercase text-[var(--color-text-muted)] mb-6"
          style={{ ...stagger(active, 0), ...EYEBROW }}>
         Your Portfolio Returned

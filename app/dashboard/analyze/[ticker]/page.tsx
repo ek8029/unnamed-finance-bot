@@ -84,7 +84,7 @@ function ThesisBridge({ symbol, bridge }: { symbol: string; bridge: { variant: '
   return (
     <Link
       href={copy.href}
-      className="mb-4 flex items-center gap-3 rounded-lg border border-white/[0.07] bg-[var(--color-bg-surface)] px-4 py-3 no-underline transition-colors hover:border-[rgba(230,185,77,0.28)]"
+      className="mb-4 flex items-center gap-3 rounded-lg border border-white/[0.07] bg-[var(--color-bg-surface)] px-4 py-3 no-underline transition-colors hover:border-[color-mix(in_srgb,var(--color-gold)_28%,transparent)]"
     >
       <span className="shrink-0 text-[12px] text-[var(--color-gold)]">✦</span>
       <span className="shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-gold)]">

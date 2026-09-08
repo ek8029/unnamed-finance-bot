@@ -138,7 +138,7 @@ export default async function MastheadPage() {
           <div className="flex items-center gap-4">
             <HelmMark className="h-9 w-9" />
             <h1
-              className="m-0 leading-[0.9]"
+              className="m-0"
               style={{ fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(46px,9vw,92px)', letterSpacing: '0.01em' }}
             >
               The Masthead

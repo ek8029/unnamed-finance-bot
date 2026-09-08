@@ -1,7 +1,6 @@
 import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { HelmMark } from '@/components/helm-mark';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { LegalFooter } from '@/components/legal-footer';
 import { Newspaper, Brain, Eye, Zap } from 'lucide-react';
@@ -66,7 +65,7 @@ export default function FoundersPage() {
         {/* Hero */}
         <header className="mb-14 text-center">
           <div className="type-eyebrow text-[var(--color-gold)] mb-4">For Founders</div>
-          <h1 className="font-sans font-bold text-[30px] md:text-[42px] tracking-tight leading-[1.08] mb-5">
+          <h1 className="font-sans mb-5">
             You raised capital for your company. Who&apos;s managing yours?
           </h1>
           <p className="text-[18px] md:text-[20px] leading-[1.55] text-[var(--color-text-secondary)] max-w-xl mx-auto">

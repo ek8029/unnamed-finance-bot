@@ -36,6 +36,13 @@ html { scroll-behavior: smooth; }
     --color-border-subtle: rgba(255, 255, 255, 0.04);
     --color-border-base:   rgba(255, 255, 255, 0.06);
     --color-border-strong: rgba(255, 255, 255, 0.12);
+    --color-surface-tint:       rgba(255, 255, 255, 0.05);
+    --color-surface-tint-faint: rgba(255, 255, 255, 0.03);
+    --chart-1: #7AA3C7;
+    --chart-2: #9FB89D;
+    --chart-3: #C8A165;
+    --chart-4: #8E7DC7;
+    --chart-5: #5A6070;
 
     /* A rule you can actually see.
      *
@@ -163,6 +170,13 @@ html { scroll-behavior: smooth; }
     --color-border-subtle: rgba(0, 0, 0, 0.04);
     --color-border-base:   rgba(0, 0, 0, 0.08);
     --color-border-strong: rgba(0, 0, 0, 0.14);
+    --color-surface-tint:       rgba(0, 0, 0, 0.05);
+    --color-surface-tint-faint: rgba(0, 0, 0, 0.03);
+    --chart-1: #5B86AD;
+    --chart-2: #7C9A79;
+    --chart-3: #A8823F;
+    --chart-4: #6F5FAE;
+    --chart-5: #5A6070;
     --color-rule:          rgba(0, 0, 0, 0.14);
 
     --color-text-primary:  #0A0A0A;
@@ -177,8 +191,8 @@ html { scroll-behavior: smooth; }
        on a gold CTA, so the primary button failed in both directions. #8A6A2E
        measures 4.60:1 both ways. Dark theme gold is untouched and already
        passes at 10.77:1. */
-    --color-gold:          #8A6A2E;
-    --color-gold-hi:       #A07B3A;
+    --color-gold:          #7A5D28;
+    --color-gold-hi:       #8C6A2F;
     --color-gold-lo:       #C9A45E;
     --color-gold-surface:  rgba(184, 145, 74, 0.04);
     --color-gold-border:   rgba(184, 145, 74, 0.12);

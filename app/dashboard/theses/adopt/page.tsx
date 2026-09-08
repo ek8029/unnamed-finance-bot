@@ -82,11 +82,11 @@ export default function AdoptThesisPage() {
           const owned = held.has(t.ticker);
           const followed = done.has(t.ticker);
           return (
-            <div key={t.ticker} className="rounded-lg border border-white/[0.07] bg-[#131313] px-5 py-4 flex flex-col">
+            <div key={t.ticker} className="rounded-lg border border-white/[0.07] bg-[var(--color-bg-surface)] px-5 py-4 flex flex-col">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="font-mono text-[16px] font-bold text-[var(--color-text-primary)]" style={MONO}>{t.ticker}</span>
                 {owned && (
-                  <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.12em] px-1.5 py-0.5 rounded bg-[rgba(74,222,128,0.12)] text-[#4ADE80]" style={MONO}>
+                  <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.12em] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-positive)_12%,transparent)] text-[var(--color-positive)]" style={MONO}>
                     You own this
                   </span>
                 )}
@@ -102,14 +102,14 @@ export default function AdoptThesisPage() {
               </ul>
               <div className="flex items-center gap-2">
                 {followed ? (
-                  <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[#4ADE80]" style={MONO}>✓ Following</span>
+                  <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-positive)]" style={MONO}>✓ Following</span>
                 ) : (
                   <button
                     type="button"
                     disabled={busy === t.ticker}
                     onClick={() => follow(t.ticker)}
                     className="font-mono text-[11px] font-semibold uppercase tracking-[0.1em] px-3 py-1.5 rounded border transition-colors disabled:opacity-60"
-                    style={{ ...MONO, color: '#E6B94D', borderColor: 'rgba(230,185,77,0.35)', background: 'rgba(230,185,77,0.07)' }}
+                    style={{ ...MONO, color: 'var(--color-gold)', borderColor: 'color-mix(in srgb, var(--color-gold) 35%, transparent)', background: 'color-mix(in srgb, var(--color-gold) 7%, transparent)' }}
                   >
                     {busy === t.ticker ? 'Following…' : 'Follow'}
                   </button>

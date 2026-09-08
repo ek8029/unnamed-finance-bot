@@ -132,7 +132,7 @@ export default function DashboardAnalyzePage() {
               key={ticker}
               type="button"
               onClick={() => analyzeTicker(ticker)}
-              className="rounded-[5px] border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] px-4 py-2 text-[15px] font-semibold uppercase tracking-[0.04em] text-[var(--color-gold)] transition-colors hover:bg-[rgba(230,185,77,0.14)]"
+              className="rounded-[5px] border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] px-4 py-2 text-[15px] font-semibold uppercase tracking-[0.04em] text-[var(--color-gold)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-gold)_14%,transparent)]"
               style={MONO}
             >
               {ticker}
@@ -202,7 +202,7 @@ export default function DashboardAnalyzePage() {
                     disabled={!parseResearchTicker(m.ticker).ok}
                     title={!parseResearchTicker(m.ticker).ok ? 'Research is not available for this symbol format yet.' : undefined}
                     className="flex items-center justify-between rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] px-4 py-3 text-left transition-colors hover:border-[var(--color-gold-border)] group"
-                    style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.5)' }}
+                    style={{ boxShadow: 'var(--shadow-card)' }}
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">

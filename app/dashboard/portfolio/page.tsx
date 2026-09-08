@@ -143,8 +143,8 @@ function TodaysMovers({ movers }: { movers: { ticker: string; day_change_percent
             key={h.ticker}
             className="inline-flex items-center gap-1.5 px-2 py-[3px] rounded border"
             style={{
-              borderColor: up ? 'rgba(74,222,128,0.2)' : 'rgba(248,113,113,0.2)',
-              background: up ? 'rgba(74,222,128,0.05)' : 'rgba(248,113,113,0.05)',
+              borderColor: up ? 'var(--color-positive-border)' : 'color-mix(in srgb, var(--color-negative-text) 20%, transparent)',
+              background: up ? 'color-mix(in srgb, var(--color-positive) 5%, transparent)' : 'color-mix(in srgb, var(--color-negative-text) 5%, transparent)',
             }}
           >
             <span className="font-mono text-[14px] font-semibold uppercase tracking-[0.05em] text-[var(--color-text-primary)]">{h.ticker}</span>
@@ -176,8 +176,8 @@ function ConnectBrokerage() {
         </p>
         <Link
           href="/dashboard/accounts"
-          className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[#0A0A0A] font-mono text-[12px] font-bold uppercase tracking-[0.12em] transition-all"
-          style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.25)' }}
+          className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[var(--color-bg-base)] font-mono text-[12px] font-bold uppercase tracking-[0.12em] transition-all"
+          style={{ boxShadow: '0 8px 24px color-mix(in srgb, var(--color-gold) 25%, transparent)' }}
         >
           Connect account
         </Link>
@@ -566,7 +566,7 @@ export default function PortfolioPage() {
               </button>
               <Link
                 href="/dashboard/theses/builder"
-                className="inline-flex items-center gap-[7px] h-8 px-3 rounded-[5px] border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] text-[var(--color-gold)] hover:bg-[rgba(230,185,77,0.14)] font-mono text-[10px] tracking-[0.08em] uppercase transition-colors cursor-pointer"
+                className="inline-flex items-center gap-[7px] h-8 px-3 rounded-[5px] border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] text-[var(--color-gold)] hover:bg-[color-mix(in_srgb,var(--color-gold)_14%,transparent)] font-mono text-[10px] tracking-[0.08em] uppercase transition-colors cursor-pointer"
               >
                 <TrendingUp className="w-[13px] h-[13px]" />
                 New thesis
@@ -715,8 +715,8 @@ export default function PortfolioPage() {
             {/* ── Mobile Sector Allocation Strip ── */}
             {allocation.length > 0 && (() => {
               const sectorColors = [
-                'var(--color-gold)', '#6366f1', '#22c55e', '#ef4444', '#f59e0b',
-                '#8b5cf6', '#06b6d4', '#ec4899', '#64748b', '#14b8a6',
+                'var(--color-gold)', 'var(--chart-1)', 'var(--chart-2)', 'var(--color-negative)', 'var(--color-warning)',
+                'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)', 'var(--color-text-muted)', 'var(--color-gold-lo)',
               ];
               const topSectorPct = allocation[0]?.percentage ?? 0;
               return (
@@ -762,7 +762,7 @@ export default function PortfolioPage() {
                   key={label}
                   className={`flex-shrink-0 px-3 py-1.5 rounded-full font-mono text-[12px] border transition-colors ${
                     i === 0
-                      ? 'bg-[rgba(230,185,77,0.1)] text-[var(--color-gold)] border-[var(--color-gold-border)]'
+                      ? 'bg-[color-mix(in_srgb,var(--color-gold)_10%,transparent)] text-[var(--color-gold)] border-[var(--color-gold-border)]'
                       : 'bg-transparent text-[var(--color-text-muted)] border-[var(--color-border-subtle)]'
                   }`}
                 >
@@ -884,7 +884,7 @@ export default function PortfolioPage() {
               />
             </div>
             <div className="flex gap-[5px] font-mono text-[10px] tracking-[0.06em] uppercase">
-              <span className="px-3 py-[7px] rounded-[5px] bg-[rgba(230,185,77,0.1)] text-[var(--color-gold)]">
+              <span className="px-3 py-[7px] rounded-[5px] bg-[color-mix(in_srgb,var(--color-gold)_10%,transparent)] text-[var(--color-gold)]">
                 All accounts
               </span>
             </div>

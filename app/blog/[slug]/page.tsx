@@ -4,12 +4,11 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Share2 } from 'lucide-react';
 import { MDXRemote } from 'next-mdx-remote/rsc';
-import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
 import { StickyMobileCta } from '@/components/sticky-mobile-cta';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { getAllPosts, getPostBySlug, extractHeadings } from '@/lib/blog';
-import { mdxComponents, CTACard, ComparisonTable, ProTip } from '@/components/blog/mdx-components';
+import { mdxComponents } from '@/components/blog/mdx-components';
 import { TableOfContents } from './table-of-contents';
 
 interface PageProps {
@@ -72,7 +71,7 @@ export default async function BlogPost({ params }: PageProps) {
     return (
       <main className="min-h-screen bg-[var(--color-bg-base)] flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-[24px] font-bold text-[var(--color-text-primary)] mb-3">
+          <h1 className="text-[var(--color-text-primary)] mb-3">
             Post not found
           </h1>
           <Link href="/blog" className="text-[var(--color-gold)] hover:underline text-[15px]">
@@ -170,7 +169,7 @@ export default async function BlogPost({ params }: PageProps) {
                   </span>
                 ))}
               </div>
-              <h1 className="font-sans font-bold text-[32px] md:text-[40px] text-[var(--color-text-primary)] tracking-tight leading-[1.1] mb-4">
+              <h1 className="font-sans text-[var(--color-text-primary)] mb-4">
                 {post.title}
               </h1>
               <div className="flex items-center gap-3 text-[14px] text-[var(--color-text-muted)] font-mono">

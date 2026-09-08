@@ -1,7 +1,6 @@
 import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { HelmMark } from '@/components/helm-mark';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { LegalFooter } from '@/components/legal-footer';
 import { Shield, Activity, Layers, Bell } from 'lucide-react';
@@ -66,7 +65,7 @@ export default function HighNetWorthPage() {
         {/* Hero */}
         <header className="mb-14 text-center">
           <div className="type-eyebrow text-[var(--color-gold)] mb-4">For High-Net-Worth Individuals</div>
-          <h1 className="font-sans font-bold text-[30px] md:text-[42px] tracking-tight leading-[1.08] mb-5">
+          <h1 className="font-sans mb-5">
             Your advisor charges 1% AUM. Helm charges $20/month.
           </h1>
           <p className="text-[18px] md:text-[20px] leading-[1.55] text-[var(--color-text-secondary)] max-w-xl mx-auto">

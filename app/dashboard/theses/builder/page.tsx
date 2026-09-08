@@ -366,7 +366,7 @@ function BuilderInner() {
                   <div
                     key={p.id}
                     className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-base)] p-4 sm:p-5"
-                    style={p.confirmed ? { borderColor: 'rgba(74,222,128,0.25)' } : undefined}
+                    style={p.confirmed ? { borderColor: 'color-mix(in srgb, var(--color-positive) 25%, transparent)' } : undefined}
                   >
                     <div className="flex items-start gap-3.5">
                       {/* Numbered marker */}
@@ -375,8 +375,8 @@ function BuilderInner() {
                         style={{
                           ...MONO,
                           color: p.confirmed ? 'var(--color-positive)' : 'var(--color-gold)',
-                          background: p.confirmed ? 'rgba(74,222,128,0.08)' : 'var(--color-gold-surface)',
-                          border: `1px solid ${p.confirmed ? 'rgba(74,222,128,0.30)' : 'var(--color-gold-border)'}`,
+                          background: p.confirmed ? 'color-mix(in srgb, var(--color-positive) 8%, transparent)' : 'var(--color-gold-surface)',
+                          border: `1px solid ${p.confirmed ? 'color-mix(in srgb, var(--color-positive) 30%, transparent)' : 'var(--color-gold-border)'}`,
                         }}
                       >
                         {p.confirmed ? '✓' : '●'}
@@ -414,7 +414,7 @@ function BuilderInner() {
                                 type="button"
                                 disabled={busyPillar === p.id}
                                 onClick={() => confirmPillar(p.id)}
-                                className="inline-flex items-center gap-1.5 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] px-3.5 py-2 rounded-md bg-[rgba(74,222,128,0.1)] text-[var(--color-positive)] border border-[rgba(74,222,128,0.3)] hover:bg-[rgba(74,222,128,0.16)] transition-colors disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] px-3.5 py-2 rounded-md bg-[var(--color-positive-muted)] text-[var(--color-positive)] border border-[color-mix(in_srgb,var(--color-positive)_30%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-positive)_16%,transparent)] transition-colors disabled:opacity-50"
                                 style={MONO}
                               >
                                 <Check className="w-3.5 h-3.5" /> Confirm

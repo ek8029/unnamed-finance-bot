@@ -1,7 +1,6 @@
 import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 
@@ -85,7 +84,7 @@ export default function VelaAlternativePage() {
       <article className="relative z-10 container mx-auto px-6 pt-12 pb-24 max-w-3xl">
         <header className="mb-8">
           <div className="type-eyebrow text-[var(--color-gold)] mb-4">Vela Alternative</div>
-          <h1 className="font-sans font-bold text-[30px] md:text-[42px] tracking-tight leading-[1.1] mb-5">
+          <h1 className="font-sans mb-5">
             A Vela alternative you can use today
           </h1>
           <p className="text-[17px] leading-[1.55] text-[var(--color-text-secondary)]">

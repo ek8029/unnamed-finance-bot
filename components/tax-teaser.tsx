@@ -203,7 +203,7 @@ export function TaxTeaser() {
           }
           className="inline-flex min-h-[44px] items-center rounded-[var(--radius-md)] bg-[var(--color-gold)] px-5 font-semibold text-[14px] text-[var(--color-bg-base)] transition-colors hover:bg-[var(--color-gold-hi)]"
         >
-          Start the 14 day free trial
+          Start Pro
         </Link>
         <span className="text-[12.5px] text-[var(--color-text-muted)]">
           $20/mo after. Card required, nothing charged until day 14.

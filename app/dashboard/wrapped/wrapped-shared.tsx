@@ -101,7 +101,7 @@ export function useCountUp(end: number, active: boolean, duration = 1400) {
 
 // ── Confetti ──
 
-const CONFETTI_COLORS = ['#B8914A', '#E8ECF1', '#4ADE80', '#38BDF8', '#F472B6', '#FBBF24', '#A78BFA'];
+const CONFETTI_COLORS = ['#B8914A', '#E8ECF1', 'var(--color-positive)', '#38BDF8', '#F472B6', 'var(--color-warning-text)', '#A78BFA'];
 
 export function Confetti() {
   return (

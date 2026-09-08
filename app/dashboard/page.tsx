@@ -28,10 +28,10 @@ const SCREEN: React.CSSProperties = { maxWidth: 1600 };
 // Responsive page padding: tighter on phones, full bleed-in on >=sm.
 const SCREEN_PAD = 'px-4 pt-6 pb-16 sm:px-7 sm:pt-[26px]';
 const CARD =
-  'rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] shadow-[0_2px_12px_rgba(0,0,0,0.5)]';
+  'rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] shadow-[var(--shadow-card)]';
 
 // Sector → chart color (matches the README chart palette, in order).
-const CHART_COLORS = ['#E6B94D', '#7AA3C7', '#9FB89D', '#C8A165', '#8E7DC7', '#5A6070'];
+const CHART_COLORS = ['var(--color-gold)', 'var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
 
 // ── Local presentational helpers ───────────────────────────────────────────
 
@@ -109,16 +109,16 @@ function PerformanceChart({ series, gradientId }: { series: number[]; gradientId
     <svg width="100%" height="232" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block overflow-visible">
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#E6B94D" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="#E6B94D" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--color-gold)" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="var(--color-gold)" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <line x1="0" y1="60" x2={W} y2="60" stroke="rgba(255,255,255,0.04)" />
-      <line x1="0" y1="120" x2={W} y2="120" stroke="rgba(255,255,255,0.04)" />
-      <line x1="0" y1="180" x2={W} y2="180" stroke="rgba(255,255,255,0.04)" />
+      <line x1="0" y1="60" x2={W} y2="60" stroke="var(--color-border-subtle)" />
+      <line x1="0" y1="120" x2={W} y2="120" stroke="var(--color-border-subtle)" />
+      <line x1="0" y1="180" x2={W} y2="180" stroke="var(--color-border-subtle)" />
       <path d={fill} fill={`url(#${gradientId})`} />
-      <path d={line} fill="none" stroke="#E6B94D" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={last.x} cy={last.y} r="3.5" fill="#E6B94D" />
+      <path d={line} fill="none" stroke="var(--color-gold)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={last.x} cy={last.y} r="3.5" fill="var(--color-gold)" />
     </svg>
   );
 }
@@ -162,10 +162,10 @@ function AllocationDonut({ slices }: { slices: { name: string; pct: number; colo
 // Weighted, day-change-colored sector bar + legend + top movers. Same info as
 // the old daily-brief heat line, restyled for the Sovereign Architect look.
 function heatColor(pct: number): string {
-  if (pct > 0.5) return '#4ADE80';
-  if (pct > 0.1) return 'rgba(74,222,128,0.5)';
-  if (pct < -0.5) return '#F87171';
-  if (pct < -0.1) return 'rgba(248,113,113,0.5)';
+  if (pct > 0.5) return 'var(--color-positive)';
+  if (pct > 0.1) return 'color-mix(in srgb, var(--color-positive) 50%, transparent)';
+  if (pct < -0.5) return 'var(--color-negative-text)';
+  if (pct < -0.1) return 'color-mix(in srgb, var(--color-negative-text) 50%, transparent)';
   return 'rgba(255,255,255,0.14)';
 }
 
@@ -282,9 +282,9 @@ function GeneralMarketBrief() {
     <div
       className="flex h-full flex-col rounded-lg px-[22px] py-5"
       style={{
-        border: '1px solid rgba(230,185,77,0.18)',
-        background: 'rgba(230,185,77,0.025)',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+        border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)',
+        background: 'color-mix(in srgb, var(--color-gold) 2.5%, transparent)',
+        boxShadow: 'var(--shadow-card)',
       }}
     >
       <div className="mb-3.5 flex items-center gap-2.5">
@@ -292,7 +292,7 @@ function GeneralMarketBrief() {
         <span className="text-[12px] uppercase tracking-[0.16em] text-[var(--color-gold)]" style={MONO}>
           Market Brief
         </span>
-        <span className="h-px flex-1" style={{ background: 'rgba(230,185,77,0.12)' }} />
+        <span className="h-px flex-1" style={{ background: 'color-mix(in srgb, var(--color-gold) 12%, transparent)' }} />
       </div>
 
       {/* Benchmarks */}
@@ -357,7 +357,7 @@ function GeneralMarketBrief() {
       <Link
         href="/pricing"
         className="mt-auto flex items-center justify-between rounded-[5px] px-3.5 py-2.5 text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--color-gold)]"
-        style={{ ...MONO, border: '1px solid rgba(230,185,77,0.18)', background: 'rgba(230,185,77,0.08)' }}
+        style={{ ...MONO, border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)', background: 'color-mix(in srgb, var(--color-gold) 8%, transparent)' }}
       >
         Get a brief tailored to your portfolio with Pro <span>→</span>
       </Link>
@@ -644,7 +644,7 @@ export default function DashboardOverview() {
           <div className={`${CARD} w-full max-w-[560px] px-8 py-10 text-center`}>
             <div
               className="mx-auto mb-5 inline-flex h-12 w-12 items-center justify-center rounded-full"
-              style={{ background: 'rgba(230,185,77,0.08)', border: '1px solid rgba(230,185,77,0.18)' }}
+              style={{ background: 'color-mix(in srgb, var(--color-gold) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)' }}
             >
               <Link2 size={20} className="text-[var(--color-gold)]" />
             </div>
@@ -752,7 +752,7 @@ export default function DashboardOverview() {
             {noInstitution && (
               <div
                 className="mx-auto mt-6 max-w-[420px] rounded-[6px] px-4 py-3.5 text-left"
-                style={{ background: 'rgba(230,185,77,0.06)', border: '1px solid rgba(230,185,77,0.18)' }}
+                style={{ background: 'var(--color-gold-surface)', border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)' }}
               >
                 <p className="text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
                   Plaid does not reach every broker. Public, Tradier and moomoo are not available
@@ -769,7 +769,7 @@ export default function DashboardOverview() {
 
             {plaidError && <p className="mt-3 text-[15px] text-[var(--color-negative-text)]">{plaidError}</p>}
 
-            <p className="mt-7 text-[12px] tracking-[0.06em] text-[#5a5a5a]" style={MONO}>
+            <p className="mt-7 text-[12px] tracking-[0.06em] text-[var(--color-text-secondary)]" style={MONO}>
               12,000+ institutions · 256-bit encryption · via Plaid
             </p>
           </div>
@@ -935,7 +935,7 @@ export default function DashboardOverview() {
           )}
           {chartPoints.length >= 2 && (
             <div
-              className="mt-1.5 flex justify-between border-t border-[var(--color-border-subtle)] pt-2 text-[10px] tracking-[0.08em] text-[#5a5a5a]"
+              className="mt-1.5 flex justify-between border-t border-[var(--color-border-subtle)] pt-2 text-[10px] tracking-[0.08em] text-[var(--color-text-secondary)]"
               style={MONO}
             >
               {chartPoints
@@ -953,9 +953,9 @@ export default function DashboardOverview() {
           <div
             className="flex h-full flex-col rounded-lg px-[22px] py-5"
             style={{
-              border: '1px solid rgba(230,185,77,0.18)',
-              background: 'rgba(230,185,77,0.025)',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+              border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)',
+              background: 'color-mix(in srgb, var(--color-gold) 2.5%, transparent)',
+              boxShadow: 'var(--shadow-card)',
             }}
           >
             <div className="mb-3.5 flex items-center gap-2.5">
@@ -963,7 +963,7 @@ export default function DashboardOverview() {
               <span className="text-[12px] uppercase tracking-[0.16em] text-[var(--color-gold)]" style={MONO}>
                 {isDemo ? 'Sample portfolio brief' : 'Helm Brief'}
               </span>
-              <span className="h-px flex-1" style={{ background: 'rgba(230,185,77,0.12)' }} />
+              <span className="h-px flex-1" style={{ background: 'color-mix(in srgb, var(--color-gold) 12%, transparent)' }} />
             </div>
 
             {isDemo ? (
@@ -1016,7 +1016,7 @@ export default function DashboardOverview() {
             <Link
               href="/dashboard/brief"
               className="mt-auto flex items-center justify-between rounded-[5px] px-3.5 py-2.5 text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--color-gold)]"
-              style={{ ...MONO, border: '1px solid rgba(230,185,77,0.18)', background: 'rgba(230,185,77,0.08)' }}
+              style={{ ...MONO, border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)', background: 'color-mix(in srgb, var(--color-gold) 8%, transparent)' }}
             >
               Read full brief <span>→</span>
             </Link>

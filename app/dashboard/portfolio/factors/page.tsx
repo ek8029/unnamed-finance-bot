@@ -180,7 +180,7 @@ function StyleBox({ report }: { report: FactorReport }) {
       style={{
         borderColor: 'var(--color-border-base)',
         background: 'var(--color-bg-surface)',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+        boxShadow: 'var(--shadow-card)',
       }}
     >
       <div
@@ -195,7 +195,7 @@ function StyleBox({ report }: { report: FactorReport }) {
             const intensity = w / max; // 0..1
             const isPeak = w === max && w > 0;
             const textColor = isPeak
-              ? '#0A0A0A'
+              ? 'var(--color-bg-base)'
               : intensity > 0.35
                 ? 'var(--color-text-primary)'
                 : 'var(--color-text-muted)';
@@ -216,7 +216,7 @@ function StyleBox({ report }: { report: FactorReport }) {
       </div>
       <div
         className="flex justify-between text-[9px] uppercase tracking-[0.1em] mt-2"
-        style={{ ...MONO, color: '#5a5a5a' }}
+        style={{ ...MONO, color: 'var(--color-text-secondary)' }}
       >
         <span>Value</span>
         <span>Blend</span>
@@ -238,7 +238,7 @@ function DayDriverLine({ report }: { report: FactorReport }) {
       style={{
         borderColor: 'var(--color-border-base)',
         background: 'var(--color-bg-surface)',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+        boxShadow: 'var(--shadow-card)',
       }}
     >
       <div
@@ -295,7 +295,7 @@ function HoldingsTable({ report }: { report: FactorReport }) {
       style={{
         borderColor: 'var(--color-border-base)',
         background: 'var(--color-bg-surface)',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+        boxShadow: 'var(--shadow-card)',
       }}
     >
       <div
@@ -369,7 +369,7 @@ function ReportBody({ report }: { report: FactorReport }) {
           style={{
             borderColor: 'var(--color-border-base)',
             background: 'var(--color-bg-surface)',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+            boxShadow: 'var(--shadow-card)',
           }}
         >
           <div
@@ -396,9 +396,9 @@ function ReportBody({ report }: { report: FactorReport }) {
           <div
             className="rounded-lg border p-5"
             style={{
-              borderColor: 'rgba(230,185,77,0.18)',
-              background: 'rgba(230,185,77,0.025)',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+              borderColor: 'color-mix(in srgb, var(--color-gold) 18%, transparent)',
+              background: 'color-mix(in srgb, var(--color-gold) 2.5%, transparent)',
+              boxShadow: 'var(--shadow-card)',
             }}
           >
             <div

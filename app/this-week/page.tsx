@@ -1,7 +1,6 @@
 import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
 import { getPublishedUpdates } from '@/lib/content/weekly-updates';
 
@@ -45,7 +44,7 @@ export default async function ThisWeekPage() {
       <div className="mx-auto max-w-[720px] px-6 py-12">
         <header className="mb-10">
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--color-gold)]">Weekly · from the terminal</p>
-          <h1 className="mt-3 leading-[1.05]" style={{ fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(38px,7vw,64px)' }}>
+          <h1 className="mt-3" style={{ fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(38px,7vw,64px)' }}>
             This Week at Helm
           </h1>
           <p className="mt-4 max-w-[560px] text-[16px] leading-[1.6] text-[var(--color-text-secondary)]">

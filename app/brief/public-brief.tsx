@@ -3,7 +3,6 @@
 import { SiteNav } from '@/components/site-nav';
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { TrendingUp, TrendingDown, Minus, Calendar } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
 import { useLivePrices } from '@/hooks/use-live-prices';
 import { PriceFlash } from '@/components/price-flash';
@@ -166,7 +165,7 @@ export function PublicBrief({ quotes: serverQuotes, vix }: { quotes: Quote[]; vi
               <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)] mb-3 tabular-nums" style={MONO}>{dateStr}</div>
               <div className="flex items-center gap-3">
                 <HelmMark size={28} />
-                <h1 className="type-display text-[40px] sm:text-[52px] md:text-[56px] font-bold tracking-tight leading-[0.95]">The Current</h1>
+                <h1 className="type-display">The Current</h1>
               </div>
             </div>
             <div className="text-left md:text-right space-y-1.5" style={MONO}>

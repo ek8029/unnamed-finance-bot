@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { unstable_cache } from 'next/cache';
-import { getDemoAnalyses } from '@/lib/demo-tickers';
 import { getTickerTapeData } from '@/lib/ticker-tape';
 import { createStaticServiceClient } from '@/lib/supabase/server';
 import HomeContent from '@/components/homepage/helm-home';
@@ -34,12 +33,6 @@ export const metadata: Metadata = {
 
 /** ISR — regenerate every 5 minutes */
 export const revalidate = 300;
-
-const getCachedDemoAnalyses = unstable_cache(
-  () => getDemoAnalyses(),
-  ['homepage-demo-analyses'],
-  { revalidate: 300 }
-);
 
 const getCachedTickerTape = unstable_cache(
   () => getTickerTapeData(),
@@ -156,11 +149,9 @@ export default async function HomePage() {
   const timeout = <T,>(p: Promise<T>, ms: number, fallback: T) =>
     Promise.race([p, new Promise<T>((r) => setTimeout(() => r(fallback), ms))]);
 
-  const [demoAnalyses, tickerTape, latestCatch] = await Promise.all([
-    timeout(getCachedDemoAnalyses(), 3000, []),
-    timeout(getCachedTickerTape(), 3000, []),
+  const [tickerTape, latestCatch] = await Promise.all([    timeout(getCachedTickerTape(), 3000, []),
     timeout(getLatestCatch(), 3000, null),
   ]);
 
-  return <HomeContent demoAnalyses={demoAnalyses} tickerTape={tickerTape} latestCatch={latestCatch} />;
+  return <HomeContent tickerTape={tickerTape} latestCatch={latestCatch} />;
 }

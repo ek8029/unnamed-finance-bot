@@ -1,7 +1,6 @@
 import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
 import { IntakeForm } from '@/components/advisors/intake-form';
 
@@ -88,7 +87,7 @@ export default function AdvisorsPage() {
           <p className="font-mono text-[12px] font-medium tracking-[0.25em] uppercase text-[var(--color-gold)] mb-6">
             Research preview · Not a product yet
           </p>
-          <h1 className="text-[clamp(2.4rem,5vw,3.8rem)] font-bold tracking-[-0.035em] leading-[1.03]">
+          <h1 className="mb-0">
             The accounts your software{' '}
             <span className="text-[var(--color-gold)]">can&rsquo;t&nbsp;reach.</span>
           </h1>

@@ -144,14 +144,14 @@ function SlideCover({
 
   return (
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-8 overflow-hidden">
-      <div className="absolute -top-[30%] -left-[20%] w-[60vw] h-[60vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: '#E6B94D' }} />
+      <div className="absolute -top-[30%] -left-[20%] w-[60vw] h-[60vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: 'var(--color-gold)' }} />
 
       <div className="relative z-10 max-w-lg w-full">
         <p className="text-[15px] tracking-[0.3em] text-[var(--color-gold)] mb-10" style={MONO}>HELM WRAPPED</p>
 
         <h1 className="font-bold leading-[0.88] tracking-[-0.05em] mb-12" style={{ fontSize: 'clamp(72px, 18vw, 160px)' }}>
           Your<br />
-          <span className="italic font-normal text-[var(--color-gold)]" style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}>{year}</span>
+          <span className="italic font-normal text-[var(--color-gold)]" style={{ fontFamily: 'var(--font-display-serif), Georgia, serif' }}>{year}</span>
           <br />wrapped.
         </h1>
 
@@ -162,7 +162,7 @@ function SlideCover({
         <button
           onClick={(e) => { e.stopPropagation(); onBegin(); }}
           className="group inline-flex items-center gap-3 px-8 sm:px-12 py-4 sm:py-5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-black font-bold text-[15px] sm:text-[17px] rounded-full cursor-pointer transition-all"
-          style={{ boxShadow: '0 12px 40px rgba(230,185,77,0.35)' }}
+          style={{ boxShadow: '0 12px 40px color-mix(in srgb, var(--color-gold) 35%, transparent)' }}
         >
           Begin Wrapped
           <ChevronRight className="w-6 h-6 transition-transform group-hover:translate-x-1" />
@@ -185,14 +185,14 @@ function SlideReturn({ data }: { data: WrappedData | null }) {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 text-center overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: positive ? '#4ADE80' : '#F87171' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: positive ? 'var(--color-positive)' : 'var(--color-negative-text)' }} />
 
       <div className="relative z-10">
         <p className="text-[15px] text-[var(--color-text-muted)] mb-3">Your portfolio returned</p>
 
         <div
-          className={cn('text-[clamp(60px,18vw,240px)] font-bold leading-none tabular-nums tracking-[-0.05em]', positive ? 'text-[#4ADE80]' : 'text-[#F87171]')}
-          style={{ textShadow: positive ? '0 0 60px rgba(74,222,128,0.35), 0 0 120px rgba(74,222,128,0.15)' : '0 0 60px rgba(248,113,113,0.35), 0 0 120px rgba(248,113,113,0.15)' }}
+          className={cn('text-[clamp(60px,18vw,240px)] font-bold leading-none tabular-nums tracking-[-0.05em]', positive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]')}
+          style={{ textShadow: positive ? '0 0 60px color-mix(in srgb, var(--color-positive) 35%, transparent), 0 0 120px color-mix(in srgb, var(--color-positive) 15%, transparent)' : '0 0 60px color-mix(in srgb, var(--color-negative-text) 35%, transparent), 0 0 120px color-mix(in srgb, var(--color-negative-text) 15%, transparent)' }}
         >
           {fmtPct(pct)}
         </div>
@@ -207,12 +207,12 @@ function SlideReturn({ data }: { data: WrappedData | null }) {
           {alpha != null && (
             <div className="text-center">
               <p className="text-[12px] tracking-[0.15em] text-[var(--color-text-muted)] mb-1" style={MONO}>ALPHA</p>
-              <p className={cn('text-[20px] font-bold', alpha >= 0 ? 'text-[var(--color-gold)]' : 'text-[#F87171]')} style={MONO}>{fmtPct(alpha)}</p>
+              <p className={cn('text-[20px] font-bold', alpha >= 0 ? 'text-[var(--color-gold)]' : 'text-[var(--color-negative-text)]')} style={MONO}>{fmtPct(alpha)}</p>
             </div>
           )}
           {data?.spyComparison.beat && (
-            <div className="px-5 py-2 rounded-full bg-[#4ADE80]/10 border border-[#4ADE80]/20">
-              <p className="text-[15px] font-bold text-[#4ADE80]" style={MONO}>BEAT THE MARKET</p>
+            <div className="px-5 py-2 rounded-full bg-[var(--color-positive)]/10 border border-[var(--color-positive)]/20">
+              <p className="text-[15px] font-bold text-[var(--color-positive)]" style={MONO}>BEAT THE MARKET</p>
             </div>
           )}
         </div>
@@ -236,23 +236,23 @@ function SlideBestWorst({ data }: { data: WrappedData | null }) {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 overflow-hidden">
-      <div className="absolute -top-[20%] -right-[20%] w-[40vw] h-[40vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: '#4ADE80' }} />
-      <div className="absolute -bottom-[20%] -left-[20%] w-[40vw] h-[40vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: '#F87171' }} />
+      <div className="absolute -top-[20%] -right-[20%] w-[40vw] h-[40vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: 'var(--color-positive)' }} />
+      <div className="absolute -bottom-[20%] -left-[20%] w-[40vw] h-[40vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: 'var(--color-negative-text)' }} />
 
       <div className="relative z-10 w-full max-w-lg">
         <div className="text-center mb-8">
-          <p className="text-[15px] tracking-[0.2em] text-[#4ADE80] mb-3" style={MONO}>YOUR MVP</p>
+          <p className="text-[15px] tracking-[0.2em] text-[var(--color-positive)] mb-3" style={MONO}>YOUR MVP</p>
           <p className="text-[clamp(48px,12vw,80px)] font-bold text-[var(--color-gold)] tracking-tight leading-none" style={MONO}>{best?.ticker ?? '---'}</p>
-          <p className="text-[clamp(32px,8vw,56px)] font-bold text-[#4ADE80] tabular-nums mt-2">{best ? fmtPct(best.returnPct) : '---'}</p>
+          <p className="text-[clamp(32px,8vw,56px)] font-bold text-[var(--color-positive)] tabular-nums mt-2">{best ? fmtPct(best.returnPct) : '---'}</p>
           <p className="text-[15px] text-[var(--color-text-muted)] mt-2">{best?.name ?? ''} &middot; {best ? fmtDollar(best.returnDollars) : ''}</p>
         </div>
 
         <div className="w-16 h-px bg-white/10 mx-auto my-6" />
 
         <div className="text-center">
-          <p className="text-[15px] tracking-[0.2em] text-[#F87171] mb-3" style={MONO}>YOUR VILLAIN</p>
-          <p className="text-[clamp(48px,12vw,80px)] font-bold text-[#F87171] tracking-tight leading-none" style={MONO}>{worst?.ticker ?? '---'}</p>
-          <p className="text-[clamp(32px,8vw,56px)] font-bold text-[#F87171] tabular-nums mt-2">{worst ? fmtPct(worst.returnPct) : '---'}</p>
+          <p className="text-[15px] tracking-[0.2em] text-[var(--color-negative-text)] mb-3" style={MONO}>YOUR VILLAIN</p>
+          <p className="text-[clamp(48px,12vw,80px)] font-bold text-[var(--color-negative-text)] tracking-tight leading-none" style={MONO}>{worst?.ticker ?? '---'}</p>
+          <p className="text-[clamp(32px,8vw,56px)] font-bold text-[var(--color-negative-text)] tabular-nums mt-2">{worst ? fmtPct(worst.returnPct) : '---'}</p>
           <p className="text-[15px] text-[var(--color-text-muted)] mt-2">{worst?.name ?? ''} &middot; {worst ? fmtDollar(worst.returnDollars) : ''}</p>
         </div>
       </div>
@@ -298,8 +298,8 @@ function SlideBestWorstDays({ data }: { data: WrappedData | null }) {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 overflow-hidden">
-      <div className="absolute -top-[15%] -right-[15%] w-[45vw] h-[45vw] rounded-full opacity-[0.05] blur-[200px] pointer-events-none" style={{ background: '#4ADE80' }} />
-      <div className="absolute -bottom-[15%] -left-[15%] w-[45vw] h-[45vw] rounded-full opacity-[0.05] blur-[200px] pointer-events-none" style={{ background: '#F87171' }} />
+      <div className="absolute -top-[15%] -right-[15%] w-[45vw] h-[45vw] rounded-full opacity-[0.05] blur-[200px] pointer-events-none" style={{ background: 'var(--color-positive)' }} />
+      <div className="absolute -bottom-[15%] -left-[15%] w-[45vw] h-[45vw] rounded-full opacity-[0.05] blur-[200px] pointer-events-none" style={{ background: 'var(--color-negative-text)' }} />
 
       <style>{`
         @keyframes bwdDraw { to { stroke-dashoffset: 0; } }
@@ -328,23 +328,23 @@ function SlideBestWorstDays({ data }: { data: WrappedData | null }) {
               <path className="bwd-line" pathLength={1} d={linePath} fill="none" stroke="var(--color-gold)" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" />
               {bi >= 0 && (
                 <g className="bwd-mark">
-                  <circle cx={sx(bi)} cy={sy(series[bi].v)} r="9" fill="#4ADE80" opacity="0.18" />
-                  <circle cx={sx(bi)} cy={sy(series[bi].v)} r="4" fill="#4ADE80" />
+                  <circle cx={sx(bi)} cy={sy(series[bi].v)} r="9" fill="var(--color-positive)" opacity="0.18" />
+                  <circle cx={sx(bi)} cy={sy(series[bi].v)} r="4" fill="var(--color-positive)" />
                 </g>
               )}
               {wi >= 0 && (
                 <g className="bwd-mark">
-                  <circle cx={sx(wi)} cy={sy(series[wi].v)} r="9" fill="#F87171" opacity="0.18" />
-                  <circle cx={sx(wi)} cy={sy(series[wi].v)} r="4" fill="#F87171" />
+                  <circle cx={sx(wi)} cy={sy(series[wi].v)} r="9" fill="var(--color-negative-text)" opacity="0.18" />
+                  <circle cx={sx(wi)} cy={sy(series[wi].v)} r="4" fill="var(--color-negative-text)" />
                 </g>
               )}
               {top && bi >= 0 && (
-                <text className="bwd-label" x={sx(bi)} y={sy(series[bi].v) - 14} textAnchor={anchorFor(sx(bi))} fill="#4ADE80" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700 }}>
+                <text className="bwd-label" x={sx(bi)} y={sy(series[bi].v) - 14} textAnchor={anchorFor(sx(bi))} fill="var(--color-positive)" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700 }}>
                   {val(top)}
                 </text>
               )}
               {bottom && wi >= 0 && (
-                <text className="bwd-label" x={sx(wi)} y={sy(series[wi].v) + 22} textAnchor={anchorFor(sx(wi))} fill="#F87171" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700 }}>
+                <text className="bwd-label" x={sx(wi)} y={sy(series[wi].v) + 22} textAnchor={anchorFor(sx(wi))} fill="var(--color-negative-text)" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700 }}>
                   {val(bottom)}
                 </text>
               )}
@@ -353,9 +353,9 @@ function SlideBestWorstDays({ data }: { data: WrappedData | null }) {
           </>
         ) : hasData ? (
           <p className="text-center text-[15px] text-[var(--color-text-muted)] mb-3">
-            {top && (<>Best <span className="text-[#4ADE80] font-semibold tabular-nums">{val(top)}</span></>)}
+            {top && (<>Best <span className="text-[var(--color-positive)] font-semibold tabular-nums">{val(top)}</span></>)}
             {top && bottom && <span className="opacity-30"> &middot; </span>}
-            {bottom && (<>Worst <span className="text-[#F87171] font-semibold tabular-nums">{val(bottom)}</span></>)}
+            {bottom && (<>Worst <span className="text-[var(--color-negative-text)] font-semibold tabular-nums">{val(bottom)}</span></>)}
           </p>
         ) : null}
 
@@ -367,7 +367,7 @@ function SlideBestWorstDays({ data }: { data: WrappedData | null }) {
                   key={m}
                   onClick={(e) => { e.stopPropagation(); setMode(m); }}
                   className="px-4 py-1 rounded-full text-[12px] font-semibold transition-colors cursor-pointer"
-                  style={mode === m ? { background: 'rgba(230,185,77,0.15)', color: 'var(--color-gold)', ...MONO } : { color: 'var(--color-text-muted)', ...MONO }}
+                  style={mode === m ? { background: 'var(--color-gold-border)', color: 'var(--color-gold)', ...MONO } : { color: 'var(--color-text-muted)', ...MONO }}
                 >
                   {m}
                 </button>
@@ -379,7 +379,7 @@ function SlideBestWorstDays({ data }: { data: WrappedData | null }) {
         {totalDays > 0 && (
           <div className="flex items-center justify-center gap-2.5 mb-6 flex-wrap">
             <span className="px-3 py-1.5 rounded-full border border-white/[0.08] text-[13px]" style={MONO}>
-              <span className="text-[#4ADE80] font-semibold">{upDays}</span>
+              <span className="text-[var(--color-positive)] font-semibold">{upDays}</span>
               <span className="text-[var(--color-text-muted)]"> of {totalDays} days green</span>
             </span>
             {top && (
@@ -394,11 +394,11 @@ function SlideBestWorstDays({ data }: { data: WrappedData | null }) {
         {(restBest.length > 0 || restWorst.length > 0) && (
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[12px]" style={MONO}>
             {restBest.map((d) => (
-              <span key={d.date} className="text-[var(--color-text-muted)]">{shortDate(d.date)} <span className="text-[#4ADE80] tabular-nums">{val(d)}</span></span>
+              <span key={d.date} className="text-[var(--color-text-muted)]">{shortDate(d.date)} <span className="text-[var(--color-positive)] tabular-nums">{val(d)}</span></span>
             ))}
             {restBest.length > 0 && restWorst.length > 0 && <span className="opacity-20">&middot;</span>}
             {restWorst.map((d) => (
-              <span key={d.date} className="text-[var(--color-text-muted)]">{shortDate(d.date)} <span className="text-[#F87171] tabular-nums">{val(d)}</span></span>
+              <span key={d.date} className="text-[var(--color-text-muted)]">{shortDate(d.date)} <span className="text-[var(--color-negative-text)] tabular-nums">{val(d)}</span></span>
             ))}
           </div>
         )}
@@ -429,7 +429,7 @@ function SlideTradingHabits({ data }: { data: WrappedData | null }) {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 overflow-hidden">
-      <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[50vw] h-[50vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: '#E6B94D' }} />
+      <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[50vw] h-[50vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: 'var(--color-gold)' }} />
 
       <div className="relative z-10 text-center">
         <p className="text-[clamp(80px,22vw,160px)] font-bold text-[var(--color-gold)] leading-none tabular-nums tracking-tight">{trades}</p>
@@ -464,12 +464,12 @@ function SlideTradingHabits({ data }: { data: WrappedData | null }) {
 function SlideSectors({ data }: { data: WrappedData | null }) {
   const sectors = data?.sectorBreakdown ?? [];
   const nwChange = data?.netWorthChange;
-  const sectorColors = ['#E6B94D', '#4ADE80', '#7AA3C7', '#A78BFA', '#C8A165', '#5A6070'];
+  const sectorColors = ['var(--color-gold)', 'var(--color-positive)', 'var(--chart-1)', '#A78BFA', 'var(--chart-3)', 'var(--chart-5)'];
   const topSector = sectors.length > 0 ? sectors[0] : null;
 
   return (
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 overflow-hidden">
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[50vw] h-[50vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: '#7AA3C7' }} />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[50vw] h-[50vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: 'var(--chart-1)' }} />
 
       <div className="relative z-10 text-center w-full max-w-lg">
         {topSector && (
@@ -502,11 +502,11 @@ function SlideSectors({ data }: { data: WrappedData | null }) {
           <div className="flex items-center justify-center gap-10 mt-4">
             <div>
               <p className="text-[14px] tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>NET WORTH</p>
-              <p className={cn('text-[28px] font-bold mt-1 tabular-nums', nwChange.change >= 0 ? 'text-[#4ADE80]' : 'text-[#F87171]')}>{fmtDollar(nwChange.change)}</p>
+              <p className={cn('text-[28px] font-bold mt-1 tabular-nums', nwChange.change >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]')}>{fmtDollar(nwChange.change)}</p>
             </div>
             <div>
               <p className="text-[14px] tracking-[0.15em] text-[var(--color-text-muted)]" style={MONO}>CHANGE</p>
-              <p className={cn('text-[28px] font-bold mt-1 tabular-nums', nwChange.changePct >= 0 ? 'text-[#4ADE80]' : 'text-[#F87171]')}>{fmtPct(nwChange.changePct)}</p>
+              <p className={cn('text-[28px] font-bold mt-1 tabular-nums', nwChange.changePct >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]')}>{fmtPct(nwChange.changePct)}</p>
             </div>
           </div>
         )}
@@ -528,12 +528,12 @@ function SlidePersonality({ data }: { data: WrappedData | null }) {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-full px-5 md:px-6 text-center overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: '#E6B94D' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] rounded-full opacity-[0.03] blur-[200px] pointer-events-none" style={{ background: 'var(--color-gold)' }} />
 
       <div className="relative z-10">
         <p className="text-[16px] text-[var(--color-text-muted)] mb-6">You invest like</p>
 
-        <h2 className="text-[clamp(48px,13vw,96px)] font-bold tracking-[-0.04em] leading-[0.9] mb-6" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>
+        <h2 className="text-[clamp(48px,13vw,96px)] font-bold tracking-[-0.04em] leading-[0.9] mb-6" style={{ fontFamily: 'var(--font-display-serif), Georgia, serif', fontStyle: 'italic' }}>
           <span className="text-[var(--color-gold)]">{title}</span>
         </h2>
 
@@ -561,7 +561,7 @@ async function captureCardAsBlob(element: HTMLElement): Promise<Blob> {
   const { toPng } = await import('html-to-image');
   const dataUrl = await toPng(element, {
     pixelRatio: 2,
-    backgroundColor: '#0A0A0A',
+    backgroundColor: 'var(--color-bg-base)',
     filter: (node: HTMLElement) => node.dataset?.htmlToImageIgnore === undefined,
   });
   const base64 = dataUrl.split(',')[1];
@@ -587,7 +587,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter, onC
   const sectors = data?.sectorBreakdown ?? [];
   const [shareStatus, setShareStatus] = useState<'idle' | 'generating' | 'copied'>('idle');
 
-  const sectorColors = ['#E6B94D', '#7AA3C7', '#9FB89D', '#C8A165', '#8E7DC7', '#5A6070'];
+  const sectorColors = ['var(--color-gold)', 'var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
 
   const handleShareImage = async () => {
     if (!cardRef.current) return;
@@ -639,7 +639,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter, onC
         </p>
         <h2 className="text-[clamp(32px,6vw,56px)] font-bold tracking-[-0.03em] leading-[1.05] mb-4">
           Take the Helm.{' '}
-          <span className="italic text-[var(--color-gold)]" style={{ fontFamily: '"Source Serif Pro", Georgia, serif' }}>
+          <span className="italic text-[var(--color-gold)]" style={{ fontFamily: 'var(--font-display-serif), Georgia, serif' }}>
             Again.
           </span>
         </h2>
@@ -683,21 +683,21 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter, onC
           ref={cardRef}
           className="relative rounded-2xl overflow-hidden"
           style={{
-            background: '#0A0A0A',
-            border: '2px solid rgba(230,185,77,0.25)',
+            background: 'var(--color-bg-base)',
+            border: '2px solid color-mix(in srgb, var(--color-gold) 25%, transparent)',
             padding: '20px 24px',
             boxShadow: '0 40px 100px rgba(0,0,0,0.8)',
           }}
         >
           {/* Gold glow */}
-          <div className="absolute top-[25%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full opacity-[0.04] blur-[80px] pointer-events-none" style={{ background: '#E6B94D' }} />
+          <div className="absolute top-[25%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full opacity-[0.04] blur-[80px] pointer-events-none" style={{ background: 'var(--color-gold)' }} />
 
           {/* Top bar */}
           <div className="relative z-10 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <HelmMark size={16} />
               <span className="text-[10px] font-bold tracking-[0.12em] text-[var(--color-gold)]" style={MONO}>
-                HELM <span style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic', fontWeight: 400, letterSpacing: '0.03em' }}>Wrapped</span>
+                HELM <span style={{ fontFamily: 'var(--font-display-serif), Georgia, serif', fontStyle: 'italic', fontWeight: 400, letterSpacing: '0.03em' }}>Wrapped</span>
               </span>
             </div>
             <span className="text-[9px] text-white/40 tracking-[0.2em]" style={MONO}>{year}</span>
@@ -706,13 +706,13 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter, onC
           {/* Hero return */}
           <div className="relative z-10 text-center my-4">
             <p
-              className={cn('font-bold leading-[0.82] tabular-nums tracking-[-0.04em]', positive ? 'text-[#4ADE80]' : 'text-[#F87171]')}
-              style={{ fontSize: 'clamp(40px, 11vw, 88px)', textShadow: positive ? '0 0 60px rgba(74,222,128,0.2)' : '0 0 60px rgba(248,113,113,0.2)' }}
+              className={cn('font-bold leading-[0.82] tabular-nums tracking-[-0.04em]', positive ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative-text)]')}
+              style={{ fontSize: 'clamp(40px, 11vw, 88px)', textShadow: positive ? '0 0 60px var(--color-positive-border)' : '0 0 60px color-mix(in srgb, var(--color-negative-text) 20%, transparent)' }}
             >
               {fmtPct(pct)}
             </p>
             <div className="flex items-baseline justify-center gap-3 mt-2">
-              <span style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }} className="text-[15px] text-[var(--color-gold)]">
+              <span style={{ fontFamily: 'var(--font-display-serif), Georgia, serif', fontStyle: 'italic' }} className="text-[15px] text-[var(--color-gold)]">
                 {positive ? 'beat the market' : 'tough year'}
               </span>
               {alpha != null && (
@@ -740,20 +740,20 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter, onC
           )}
 
           {/* Gold divider */}
-          <div className="relative z-10 h-px my-3" style={{ background: 'linear-gradient(to right, transparent, rgba(230,185,77,0.3), transparent)' }} />
+          <div className="relative z-10 h-px my-3" style={{ background: 'linear-gradient(to right, transparent, color-mix(in srgb, var(--color-gold) 30%, transparent), transparent)' }} />
 
           {/* 2x3 stat grid */}
           <div className="relative z-10 grid grid-cols-3 gap-1.5 md:gap-2.5">
             {/* MVP */}
-            <div className="p-2.5 md:p-3.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
+            <div className="p-2.5 md:p-3.5 rounded-lg" style={{ background: 'color-mix(in srgb, var(--color-gold) 3%, transparent)', border: '1px solid color-mix(in srgb, var(--color-gold) 12%, transparent)' }}>
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>MVP</p>
               <p className="text-[20px] md:text-[28px] font-bold text-[var(--color-gold)] mt-1" style={MONO}>{best?.ticker ?? '---'}</p>
-              <p className="text-[15px] font-semibold text-[#4ADE80]" style={MONO}>{best ? fmtPct(best.returnPct) : ''}</p>
+              <p className="text-[15px] font-semibold text-[var(--color-positive)]" style={MONO}>{best ? fmtPct(best.returnPct) : ''}</p>
             </div>
             {/* Type */}
-            <div className="p-2.5 md:p-3.5 rounded-lg" style={{ background: 'rgba(230,185,77,0.03)', border: '1px solid rgba(230,185,77,0.12)' }}>
+            <div className="p-2.5 md:p-3.5 rounded-lg" style={{ background: 'color-mix(in srgb, var(--color-gold) 3%, transparent)', border: '1px solid color-mix(in srgb, var(--color-gold) 12%, transparent)' }}>
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>TYPE</p>
-              <p className="text-[15px] md:text-[18px] font-bold text-[var(--color-gold)] mt-1 leading-tight" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>
+              <p className="text-[15px] md:text-[18px] font-bold text-[var(--color-gold)] mt-1 leading-tight" style={{ fontFamily: 'var(--font-display-serif), Georgia, serif', fontStyle: 'italic' }}>
                 {personality?.title ?? 'Investor'}
               </p>
             </div>
@@ -775,15 +775,15 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter, onC
             {/* Villain */}
             <div className="p-2.5 md:p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
               <p className="text-[9px] text-white/40 tracking-[0.15em]" style={MONO}>VILLAIN</p>
-              <p className="text-[20px] md:text-[28px] font-bold text-[#F87171] mt-1" style={MONO}>{worst?.ticker ?? '---'}</p>
-              <p className="text-[15px] font-semibold text-[#F87171]" style={MONO}>{worst ? fmtPct(worst.returnPct) : ''}</p>
+              <p className="text-[20px] md:text-[28px] font-bold text-[var(--color-negative-text)] mt-1" style={MONO}>{worst?.ticker ?? '---'}</p>
+              <p className="text-[15px] font-semibold text-[var(--color-negative-text)]" style={MONO}>{worst ? fmtPct(worst.returnPct) : ''}</p>
             </div>
           </div>
 
           {/* Footer CTA */}
-          <div className="relative z-10 mt-3 flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'rgba(230,185,77,0.05)', border: '1px solid rgba(230,185,77,0.12)' }}>
+          <div className="relative z-10 mt-3 flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'color-mix(in srgb, var(--color-gold) 5%, transparent)', border: '1px solid color-mix(in srgb, var(--color-gold) 12%, transparent)' }}>
             <span className="text-[8px] text-white/60 tracking-[0.1em] font-semibold" style={MONO}>HELMTERMINAL.DEV/WRAPPED</span>
-            <span className="text-[9px] text-[var(--color-gold)] font-bold" style={{ fontFamily: '"Source Serif Pro", Georgia, serif', fontStyle: 'italic' }}>Get yours free &rarr;</span>
+            <span className="text-[9px] text-[var(--color-gold)] font-bold" style={{ fontFamily: 'var(--font-display-serif), Georgia, serif', fontStyle: 'italic' }}>Get yours free &rarr;</span>
           </div>
 
         </div>
@@ -792,7 +792,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter, onC
           <span className={cn(
             'text-[15px] font-bold tracking-wide px-5 py-2.5 rounded-full transition-all',
             shareStatus === 'copied'
-              ? 'bg-[#4ADE80] text-black opacity-100'
+              ? 'bg-[var(--color-positive)] text-black opacity-100'
               : 'bg-white/90 text-black opacity-0 group-hover:opacity-100',
           )} style={MONO}>
             {shareStatus === 'copied' ? 'Copied!' : 'Click to copy'}
@@ -801,7 +801,7 @@ function SlideShareCard({ data, onShareImage: _onShareImage, onShareTwitter, onC
 
         {/* Mobile: "Copied" feedback */}
         {shareStatus === 'copied' && (
-          <p className="lg:hidden text-center text-[15px] text-[#4ADE80] font-bold mt-2" style={MONO}>Copied to clipboard!</p>
+          <p className="lg:hidden text-center text-[15px] text-[var(--color-positive)] font-bold mt-2" style={MONO}>Copied to clipboard!</p>
         )}
 
         {/* Mobile: buttons below card */}
@@ -1064,7 +1064,7 @@ function StatCard({
   sub?: string;
 }) {
   return (
-    <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] px-5 py-[18px] transition-colors hover:border-[rgba(230,185,77,0.2)]">
+    <div className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] px-5 py-[18px] transition-colors hover:border-[color-mix(in_srgb,var(--color-gold)_20%,transparent)]">
       <div
         className="text-[12px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-[10px]"
         style={MONO}
@@ -1113,10 +1113,10 @@ function WrappedSummary({
       <div
         className="rounded-[10px] border p-8 md:p-10 mb-[14px]"
         style={{
-          borderColor: 'rgba(230,185,77,0.18)',
-          background: '#0A0A0A',
+          borderColor: 'color-mix(in srgb, var(--color-gold) 18%, transparent)',
+          background: 'var(--color-bg-base)',
           backgroundImage:
-            'radial-gradient(ellipse at top right, rgba(230,185,77,0.10), transparent 55%), radial-gradient(ellipse at bottom left, rgba(74,222,128,0.04), transparent 55%)',
+            'radial-gradient(ellipse at top right, color-mix(in srgb, var(--color-gold) 10%, transparent), transparent 55%), radial-gradient(ellipse at bottom left, color-mix(in srgb, var(--color-positive) 4%, transparent), transparent 55%)',
         }}
       >
         <div
@@ -1167,7 +1167,7 @@ function WrappedSummary({
           <button
             type="button"
             onClick={onShareTwitter}
-            className="inline-flex items-center gap-2 rounded-md border border-[var(--color-border-strong,rgba(255,255,255,0.12))] hover:border-[rgba(230,185,77,0.3)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-medium text-[15px] px-6 py-3 cursor-pointer transition-colors"
+            className="inline-flex items-center gap-2 rounded-md border border-[var(--color-border-strong,var(--color-border-strong))] hover:border-[color-mix(in_srgb,var(--color-gold)_30%,transparent)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-medium text-[15px] px-6 py-3 cursor-pointer transition-colors"
           >
             Post on X
           </button>
@@ -1244,7 +1244,7 @@ function WrappedLoading() {
     <div className="px-6 py-7 md:px-8 max-w-[1100px] mx-auto">
       <div
         className="rounded-[10px] border p-8 md:p-10 mb-[14px] animate-pulse"
-        style={{ borderColor: 'rgba(230,185,77,0.12)', background: 'var(--color-bg-surface)' }}
+        style={{ borderColor: 'color-mix(in srgb, var(--color-gold) 12%, transparent)', background: 'var(--color-bg-surface)' }}
       >
         <div className="h-3 w-40 rounded bg-white/[0.06] mb-5" />
         <div className="h-9 w-3/4 rounded bg-white/[0.06] mb-3" />
@@ -1276,7 +1276,7 @@ function ConnectEmpty() {
       <div className="max-w-[460px] text-center">
         <div
           className="mx-auto mb-[22px] inline-flex h-[60px] w-[60px] items-center justify-center rounded-[14px]"
-          style={{ background: 'rgba(230,185,77,0.06)', border: '1px solid rgba(230,185,77,0.18)' }}
+          style={{ background: 'var(--color-gold-surface)', border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)' }}
         >
           <Link2 size={26} className="text-[var(--color-gold)]" strokeWidth={1.6} />
         </div>

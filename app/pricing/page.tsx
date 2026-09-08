@@ -4,7 +4,6 @@ import { SiteNav } from '@/components/site-nav';
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { HelmMark } from '@/components/helm-mark';
 import { CheckoutModal } from '@/components/checkout-modal';
 import { AnimatedSection } from '@/components/ui/animated-section';
 import { LegalFooter } from '@/components/legal-footer';
@@ -67,7 +66,7 @@ const faqItems = [
   {
     question: 'How does the free trial work?',
     answer:
-      'Pro starts with a 14 day free trial on either plan. A card is required to begin it, nothing is charged until the trial ends, and you can cancel at any point before then and pay nothing. If you picked the yearly plan, the charge at the end of the trial is the full $149. Fourteen days rather than seven because the evidence Helm surfaces arrives when companies file and report, not on a schedule that suits a trial.',
+      'Eligible accounts start Pro with a 14 day free trial on either plan. A card is required to begin it, nothing is charged until the trial ends, and you can cancel at any point before then and pay nothing. If you picked the yearly plan, the charge at the end of the trial is the full $149. Fourteen days rather than seven because the evidence Helm surfaces arrives when companies file and report, not on a schedule that suits a trial.',
   },
   {
     question: "What's included in the Free plan?",
@@ -116,7 +115,7 @@ export default function PricingPage() {
   // schedules work here.
   const [billingInterval, setBillingInterval] = useState<PaidPeriod>('pro');
   const annual = billingInterval === 'pro_annual';
-  // Purchase logic runs on the REAL subscription tier — during the open-access
+  // Purchase logic runs on the REAL subscription tier. During the open-access
   // window everyone's features read as Pro, but nobody has bought anything,
   // and "Current plan" on an unpurchased tier reads as billing that
   // doesn't exist (and kills the buy buttons for a week).
@@ -237,7 +236,7 @@ export default function PricingPage() {
                   Your subscription never scales with the size of your portfolio.
                 </p>
                 <p className="mt-3 mb-0 text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
-                  Free for 14 days. A card is required to start, nothing is charged until the
+                  Eligible accounts get 14 days free. A card is required to start, nothing is charged until the
                   trial ends, and you can cancel any time before then.
                 </p>
 
@@ -246,7 +245,7 @@ export default function PricingPage() {
                     onClick={() => setCheckoutPeriod(billingInterval)}
                     className="group mt-6 w-full flex items-center justify-center gap-2.5 px-6 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-colors duration-200 min-h-[44px]"
                   >
-                    Start 14 day free trial
+                    Start Pro
                     <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                   </button>
                 ) : (

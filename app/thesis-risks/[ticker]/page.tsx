@@ -2,7 +2,6 @@ import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { analyzeStock } from '@/lib/analyze-stock';
@@ -70,7 +69,7 @@ export default async function ThesisRisksPage({ params }: PageProps) {
     return (
       <main className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)] flex items-center justify-center px-6">
         <div className="text-center max-w-md">
-          <h1 className="text-[22px] font-bold mb-3">No thesis snapshot for {symbol} yet</h1>
+          <h1 className="mb-3">No thesis snapshot for {symbol} yet</h1>
           <p className="text-[var(--color-text-secondary)] text-[15px] mb-6">Run a fresh analysis to generate the bull case and its risks.</p>
           <Link href={`/analyze/${symbol}`} className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded hover:brightness-110 transition-all">Analyze {symbol}</Link>
         </div>
@@ -143,7 +142,7 @@ export default async function ThesisRisksPage({ params }: PageProps) {
       <article className="relative z-10 container mx-auto px-6 pt-12 pb-24 max-w-3xl">
         <header className="mb-8">
           <div className="type-eyebrow text-[var(--color-gold)] mb-4">Thesis Risks</div>
-          <h1 className="font-sans font-bold text-[30px] md:text-[40px] tracking-tight leading-[1.1] mb-4">
+          <h1 className="font-sans mb-4">
             What could invalidate the {symbol} thesis
           </h1>
           <p className="text-[16px] leading-[1.55] text-[var(--color-text-secondary)]">

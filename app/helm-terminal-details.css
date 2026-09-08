@@ -25,12 +25,12 @@
   .helm-setup-options p { margin-block: 10px 16px; }
   .helm-setup-options small { margin-top: 10px; }
 }
-.helm-detail-page { width: 100%; max-width: 1380px; margin-inline: auto; min-width: 0; padding: 30px 32px 60px; }
+.helm-detail-page { width: 100%; max-width: 1600px; margin-inline: auto; min-width: 0; padding: 30px 32px 60px; }
 .helm-detail-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; padding-bottom: 32px; }
 .helm-detail-heading h1, .helm-transactions-heading h1 { font-size: clamp(28px, 3vw, 42px); line-height: 1.15; letter-spacing: -.045em; font-weight: 500; margin-block: 15px 12px; }
 .helm-detail-heading p:not(.helm-kicker) { font-size: 14px; line-height: 1.8; color: var(--color-text-secondary); max-width: 660px; }
 .helm-detail-heading > :is(a, button) { flex-shrink: 0; }
-.helm-detail-page :is(a, button, input, select):focus-visible { outline: 2px solid var(--color-gold); outline-offset: 4px; }
+.helm-terminal :is(a, button, input, select):focus-visible { outline: 2px solid var(--color-gold); outline-offset: 4px; }
 .helm-detail-empty { padding: 56px 32px; border-block: 1px solid var(--color-rule); background: var(--color-bg-surface); }
 .helm-detail-empty h1, .helm-detail-empty h2 { max-width: 620px; font-size: clamp(25px, 3vw, 38px); line-height: 1.2; letter-spacing: -.035em; margin-block: 20px 15px; }
 .helm-detail-empty > p, .helm-detail-empty > div > p { max-width: 610px; color: var(--color-text-secondary); line-height: 1.8; }
@@ -117,3 +117,4 @@
   .helm-settings-card { padding: 20px; }
   .helm-settings-row { flex-wrap: wrap; gap: 14px; }
 }
+@media (pointer: coarse) { .helm-action-controls :is(a, button) { min-height: 44px; } }

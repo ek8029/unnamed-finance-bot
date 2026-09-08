@@ -17,7 +17,7 @@
 .helm-research-gate h2 { font-size: 29px; font-weight: 500; letter-spacing: -.04em; }
 .helm-research-gate a { border-radius: 4px; }
 .helm-research-gate a:focus-visible { outline: 2px solid var(--color-gold); outline-offset: 4px; }
-.helm-research-gate a[href^="/signup"], .helm-research-gate a[href="/pricing"] { color: #0a0a0a; }
+.helm-research-gate a[href^="/signup"], .helm-research-gate a[href="/pricing"] { color: var(--color-text-inverse); }
 .helm-gate-back { display: inline-flex; min-height: 44px; align-items: center; color: var(--color-text-secondary); font-size: 12px; margin-top: 18px; }
 @media (max-width: 760px) { .helm-public-loading > main { padding: 40px 20px; } .helm-analysis-loading { padding: 25px; } }
 .helm-discovery { min-height: 100dvh; color: var(--color-text-primary); background: var(--color-bg-base); }
@@ -120,7 +120,7 @@
 .helm-comparison-full-links a { font-size: 12px; }
 
 @media (max-width: 1050px) {
-  .helm-analyze-hero { gap: 38px; grid-template-columns: 1.25fr 1fr; }
+  .helm-analyze-hero { gap: 38px; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
   .helm-analysis-index { padding-left: 24px; }
   .helm-analysis-index-top { font-size: 8px; }
   .helm-discovery-search input { font-size: 11px; }

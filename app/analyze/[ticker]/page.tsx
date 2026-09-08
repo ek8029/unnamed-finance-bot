@@ -8,7 +8,7 @@ import { analyzeStock } from '@/lib/analyze-stock';
 import { getFullTickerData } from '@/lib/financial-data';
 import { INDEXABLE_TICKERS } from '@/lib/indexable-tickers';
 import { AnalysisTerminal } from './analysis-terminal';
-import { HelmMark } from '@/components/helm-mark';
+import { SiteNav } from '@/components/site-nav';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { AnalysisGate } from '@/components/analysis-gate';
 
@@ -125,7 +125,7 @@ export default async function TickerAnalysisPage({ params }: Props) {
     return (
       <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col relative overflow-hidden">
         <CinematicBg />
-        <AnalysisNav />
+        <SiteNav />
         <main className="relative z-10 flex-1 flex items-center justify-center px-6">
           <div className="text-center space-y-5 max-w-md">
             <div className="type-h1 text-[var(--color-text-primary)]">Ticker not found</div>
@@ -237,7 +237,7 @@ export default async function TickerAnalysisPage({ params }: Props) {
     <div className="min-h-screen bg-[var(--color-bg-base)] bg-depth flex flex-col relative overflow-hidden">
       <AnalysisGate />
       <CinematicBg />
-      <AnalysisNav />
+      <SiteNav />
 
       <main className="relative z-10 flex-1 w-full max-w-[1800px] mx-auto px-3 sm:px-4 lg:px-6 py-6">
         <script
@@ -246,7 +246,7 @@ export default async function TickerAnalysisPage({ params }: Props) {
         />
 
         {/* Answer-first H1 — visible for SEO + accessibility */}
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[var(--color-text-primary)] mb-4">
+        <h1 className="text-[var(--color-text-primary)] mb-4">
           {symbol} Stock Analysis — {analysis.companyName}
         </h1>
 
@@ -391,33 +391,5 @@ function RelatedTickers({ ticker }: { ticker: string }) {
         </div>
       )}
     </div>
-  );
-}
-
-function AnalysisNav() {
-  return (
-    <header className="relative z-10 glass-nav">
-      <div className="max-w-[1800px] mx-auto px-3 sm:px-4 lg:px-6 h-12 flex items-center justify-between">
-        <a href="/" className="flex items-center gap-2.5">
-          <HelmMark size={24} />
-          <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
-        </a>
-        <div className="flex items-center gap-4">
-          <a
-            href="/analyze"
-            className="text-[13px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-            style={{ fontFamily: 'var(--font-mono)' }}
-          >
-            Analyze
-          </a>
-          <a
-            href="/signup"
-            className="px-4 py-1.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] text-[13px] font-semibold rounded transition-colors"
-          >
-            Get Started
-          </a>
-        </div>
-      </div>
-    </header>
   );
 }

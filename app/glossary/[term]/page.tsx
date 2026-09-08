@@ -2,7 +2,6 @@ import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { GLOSSARY, getGlossaryTerm } from '@/lib/glossary';
@@ -101,7 +100,7 @@ export default async function GlossaryTermPage({ params }: { params: Promise<{ t
           <div className="type-eyebrow text-[var(--color-gold)] mb-4">
             <Link href="/glossary" className="hover:text-[var(--color-text-primary)] transition-colors">Glossary</Link>
           </div>
-          <h1 className="font-sans font-bold text-[34px] md:text-[44px] tracking-tight leading-[1.08] mb-6">
+          <h1 className="font-sans mb-6">
             What is {entry.term.toLowerCase()}?
           </h1>
           <p className="text-[19px] md:text-[21px] leading-[1.5] text-[var(--color-text-primary)] font-medium border-l-2 border-[var(--color-gold)] pl-5">

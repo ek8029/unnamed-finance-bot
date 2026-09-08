@@ -2,23 +2,24 @@
 .root[data-composition=mobile] { max-width: 430px; }
 .picture { display: block; width: 100%; }
 .picture .image { display: block; width: 100%; max-width: 100%; height: auto; margin: 0; }
-.open { display: block; width: 100%; padding: 0; border: 0; color: inherit; background: #0a0a0a; text-align: left; cursor: zoom-in; }
-.openLabel { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 44px; padding: 10px 16px; border-top: 1px solid #ffffff16; font: 12px/1.4 var(--font-sans), sans-serif; color: #e6c679; background: #11120f; }
-.provenance { color: #b6b3a8; font-size: 11px; }
+.open { display: block; width: 100%; padding: 0; border: 0; color: inherit; background: var(--color-bg-base); text-align: left; cursor: zoom-in; }
+.openLabel { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 44px; padding: 10px 16px; border-top: 1px solid var(--color-rule); font: 12px/1.4 var(--font-sans), sans-serif; color: var(--color-gold-hi); background: var(--color-bg-surface); }
+.provenance { color: var(--color-text-muted); font-size: 11px; }
 .enlarge { display: inline-flex; align-items: center; gap: 8px; }
-.open:hover .openLabel { color: #ffe3a0; background: #1a1b14; }
-.open:focus-visible { outline: 2px solid #e6b94d; outline-offset: -3px; }
-.dialog { width: min(1480px, calc(100vw - 40px)); max-width: none; height: min(1040px, calc(100dvh - 40px)); max-height: none; padding: 0; margin: auto; border: 1px solid #66604d; background: #10110f; color: #efece1; border-radius: 8px; overflow: hidden; }
+.open:hover .openLabel { color: var(--color-gold-hi); background: var(--color-bg-elevated); }
+.open:focus-visible { outline: 2px solid var(--color-gold); outline-offset: -3px; }
+.dialog { width: min(1480px, calc(100vw - 40px)); max-width: none; height: min(1040px, calc(100dvh - 40px)); max-height: none; padding: 0; margin: auto; border: 1px solid var(--color-border-strong); background: var(--color-bg-surface); color: var(--color-text-primary); border-radius: 8px; overflow: hidden; }
 .dialog::backdrop { background: #000d; }
 .viewer { height: 100%; display: flex; flex-direction: column; }
-.viewerHeader { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 20px; border-bottom: 1px solid #ffffff26; }
+.viewerHeader { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 20px; border-bottom: 1px solid var(--color-border-strong); }
 .dialog .viewerHeader h2 { margin: 0; font: 500 18px/1.4 var(--font-sans), sans-serif; letter-spacing: 0; }
-.dialog .viewerHeader p { margin: 4px 0 0; font: 12px/1.5 var(--font-sans), sans-serif; color: #b6b3a8; }
+.dialog .viewerHeader p { margin: 4px 0 0; font: 12px/1.5 var(--font-sans), sans-serif; color: var(--color-text-muted); }
 .viewerActions { display: flex; align-items: center; gap: 8px; }
-.viewerActions button { display: flex; justify-content: center; align-items: center; gap: 8px; min-width: 44px; min-height: 44px; padding: 10px; border: 1px solid #ffffff30; border-radius: 4px; color: #efece1; background: #20211b; cursor: pointer; font: 13px var(--font-sans), sans-serif; }
-.viewerActions button:hover { background: #323326; }
-.viewerActions button:focus-visible, .canvas:focus-visible { outline: 2px solid #e6b94d; outline-offset: -3px; }
+.viewerActions button { display: flex; justify-content: center; align-items: center; gap: 8px; min-width: 44px; min-height: 44px; padding: 10px; border: 1px solid var(--color-border-strong); border-radius: 4px; color: var(--color-text-primary); background: var(--color-bg-elevated); cursor: pointer; font: 13px var(--font-sans), sans-serif; }
+.viewerActions button:hover { background: var(--color-bg-overlay); }
+.viewerActions button:focus-visible, .canvas:focus-visible { outline: 2px solid var(--color-gold); outline-offset: -3px; }
 .canvas { flex: 1; min-height: 0; overflow: auto; padding: 20px; overscroll-behavior: contain; }
 .dialog .canvas .fullImage { display: block; max-width: 100%!important; height: auto!important; margin: 0 auto!important; border: 0; box-shadow: none; }
 .dialog .canvas .zoomed { max-width: none!important; margin: 0!important; }
 @media(max-width:700px) { .dialog { width: calc(100vw - 16px); height: calc(100dvh - 16px); }.viewerHeader { padding: 12px; gap: 8px; }.dialog .viewerHeader h2 { font-size: 15px; }.dialog .viewerHeader p { font-size: 10px; max-width: 180px; }.viewerActions { gap: 5px; }.viewerActions button { padding: 8px; font-size: 11px; }.canvas { padding: 10px; }.openLabel { padding-inline: 12px; font-size: 11px; }.provenance { font-size: 10px; } }
+

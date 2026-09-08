@@ -2,7 +2,6 @@ import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
 import { MarkdownLite } from '@/components/markdown-lite';
 import { getPublishedByWeek } from '@/lib/content/weekly-updates';
@@ -55,7 +54,7 @@ export default async function ThisWeekEntry({ params }: { params: Promise<{ week
 
       <article className="mx-auto max-w-[680px] px-6 py-12">
         <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-gold)]">This Week at Helm · {fmt(u.week_of)}</div>
-        <h1 className="mt-3 leading-[1.08]" style={{ fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(32px,6vw,52px)' }}>{u.title}</h1>
+        <h1 className="mt-3" style={{ fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(32px,6vw,52px)' }}>{u.title}</h1>
         {u.intro && <p className="mt-4 text-[17px] leading-[1.6] text-[var(--color-text-secondary)]">{u.intro}</p>}
 
         <div className="mt-9 border-t border-[var(--color-border-base)] pt-8">

@@ -75,8 +75,8 @@ function ConnectBrokerage({ ticker }: { ticker: string }) {
         </p>
         <Link
           href="/dashboard/accounts"
-          className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[#0A0A0A] font-mono text-[12px] font-bold uppercase tracking-[0.12em] transition-all"
-          style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.25)' }}
+          className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[var(--color-bg-base)] font-mono text-[12px] font-bold uppercase tracking-[0.12em] transition-all"
+          style={{ boxShadow: '0 8px 24px color-mix(in srgb, var(--color-gold) 25%, transparent)' }}
         >
           Connect account
         </Link>
@@ -195,8 +195,8 @@ export function HoldingDetailClient({
         {!research.ok && <p className="mb-2 max-w-xs text-[12px] leading-relaxed text-[var(--color-text-muted)]">Research is unavailable for this symbol format.</p>}
         <Link
           href={research.ok ? `/dashboard/analyze/${holding.ticker}` : '/dashboard/analyze'}
-          className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] text-[#0A0A0A] font-mono text-[12px] font-bold uppercase tracking-[0.12em] rounded-[7px] transition-all shrink-0"
-          style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.25)' }}
+          className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] text-[var(--color-bg-base)] font-mono text-[12px] font-bold uppercase tracking-[0.12em] rounded-[7px] transition-all shrink-0"
+          style={{ boxShadow: '0 8px 24px color-mix(in srgb, var(--color-gold) 25%, transparent)' }}
         >
           {research.ok ? 'Open analysis' : 'Research another ticker'} <ArrowUpRight className="w-4 h-4" />
         </Link>

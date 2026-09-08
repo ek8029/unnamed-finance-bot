@@ -40,21 +40,21 @@ const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 
 // Account-type composition palette (matches the design token chart palette).
 const TYPE_PALETTE: { key: string; label: string; color: string; match: (t: string) => boolean }[] = [
-  { key: 'brokerage', label: 'Brokerage', color: '#E6B94D', match: (t) => t === 'brokerage' || t === 'investment' },
-  { key: 'roth', label: 'Roth IRA', color: '#7AA3C7', match: (t) => t.includes('roth') },
-  { key: 'retirement', label: 'Retirement', color: '#9FB89D', match: (t) => t === 'ira' || t.includes('401') || t.includes('retire') },
-  { key: 'crypto', label: 'Crypto', color: '#8E7DC7', match: (t) => t.includes('crypto') },
-  { key: 'hsa', label: 'HSA', color: '#C8A165', match: (t) => t.includes('hsa') },
-  { key: 'cash', label: 'Cash', color: '#5A6070', match: (t) => t === 'depository' || t === 'checking' || t === 'savings' || t === 'cash' },
+  { key: 'brokerage', label: 'Brokerage', color: 'var(--color-gold)', match: (t) => t === 'brokerage' || t === 'investment' },
+  { key: 'roth', label: 'Roth IRA', color: 'var(--chart-1)', match: (t) => t.includes('roth') },
+  { key: 'retirement', label: 'Retirement', color: 'var(--chart-2)', match: (t) => t === 'ira' || t.includes('401') || t.includes('retire') },
+  { key: 'crypto', label: 'Crypto', color: 'var(--chart-4)', match: (t) => t.includes('crypto') },
+  { key: 'hsa', label: 'HSA', color: 'var(--chart-3)', match: (t) => t.includes('hsa') },
+  { key: 'cash', label: 'Cash', color: 'var(--chart-5)', match: (t) => t === 'depository' || t === 'checking' || t === 'savings' || t === 'cash' },
   { key: 'other', label: 'Other assets', color: '#ACB2BC', match: () => true },
 ];
 
 // Brand chip color sets keyed off the institution initial.
 const CHIP_COLORS: Record<string, { bg: string; fg: string }> = {
   F: { bg: '#13314F', fg: '#7AB8E8' },
-  R: { bg: '#0E3D2E', fg: '#4ADE80' },
-  S: { bg: '#3A2A0E', fg: '#E6B94D' },
-  V: { bg: '#0B2A4A', fg: '#5B8DEF' },
+  R: { bg: '#0E3D2E', fg: 'var(--color-positive)' },
+  S: { bg: '#3A2A0E', fg: 'var(--color-gold)' },
+  V: { bg: '#0B2A4A', fg: 'var(--color-info-text)' },
   C: { bg: '#0A2540', fg: '#3B82F6' },
 };
 const CHIP_FALLBACK = { bg: 'var(--color-bg-overlay)', fg: 'var(--color-text-secondary)' };
@@ -243,7 +243,7 @@ export default function AccountsPage() {
     return (
       <div className="px-4 sm:px-7 pt-7 pb-16 max-w-[1600px] mx-auto">
         <div className="rounded-lg border p-6"
-          style={{ background: 'rgba(248,113,113,0.08)', borderColor: 'rgba(248,113,113,0.25)', color: 'var(--color-negative-text)' }}>
+          style={{ background: 'color-mix(in srgb, var(--color-negative-text) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--color-negative-text) 25%, transparent)', color: 'var(--color-negative-text)' }}>
           <h2 className="text-[15px] font-semibold mb-2">Error loading accounts</h2>
           <p className="text-[15px]">{error}</p>
           <button type="button" onClick={refetch} disabled={apiLoading} className="mt-4 text-sm underline disabled:opacity-50">{apiLoading ? 'Loading accounts…' : 'Retry accounts'}</button>
@@ -307,9 +307,9 @@ export default function AccountsPage() {
           disabled={syncing || apiLoading || healthLoading || (!healthError && connectionHealth.items.length === 0)}
           className="flex items-center gap-[7px] h-10 px-[14px] rounded-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-gold)]"
           style={{
-            background: 'var(--color-gold)', color: '#0A0A0A',
+            background: 'var(--color-gold)', color: 'var(--color-bg-base)',
             ...MONO, fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
-            boxShadow: '0 4px 16px rgba(230,185,77,0.2)',
+            boxShadow: '0 4px 16px color-mix(in srgb, var(--color-gold) 20%, transparent)',
           }}
         >
           {syncing ? <Loader2 className="w-[13px] h-[13px] animate-spin" /> : <RefreshCw className="w-[13px] h-[13px]" strokeWidth={2.2} />}
@@ -334,7 +334,7 @@ export default function AccountsPage() {
         className="rounded-lg mb-[14px] px-[22px] py-5"
         style={{
           background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+          boxShadow: 'var(--shadow-card)',
         }}
       >
         <div className="flex justify-between items-center mb-[14px] gap-3">
@@ -467,8 +467,8 @@ export default function AccountsPage() {
                           disabled={syncing}
                           className="cursor-pointer disabled:opacity-50"
                           style={{
-                            padding: '5px 11px', background: 'rgba(248,113,113,0.1)',
-                            border: '1px solid rgba(248,113,113,0.25)', borderRadius: 5,
+                            padding: '5px 11px', background: 'color-mix(in srgb, var(--color-negative-text) 10%, transparent)',
+                            border: '1px solid color-mix(in srgb, var(--color-negative-text) 25%, transparent)', borderRadius: 5,
                             color: 'var(--color-negative-text)', ...MONO, fontSize: 9, fontWeight: 700,
                             letterSpacing: '0.08em', textTransform: 'uppercase',
                           }}
@@ -492,7 +492,7 @@ export default function AccountsPage() {
       {healthError && (
         <div
           className="rounded-lg mb-[14px] px-5 py-3 flex items-center gap-2 text-[14px]"
-          style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)', color: 'var(--color-negative-text)' }}
+          style={{ background: 'color-mix(in srgb, var(--color-negative-text) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-negative-text) 25%, transparent)', color: 'var(--color-negative-text)' }}
         >
           <span>Could not load connection health.</span>
           <button onClick={fetchConnectionHealth} className="underline hover:no-underline ml-auto">Retry</button>
@@ -727,7 +727,7 @@ function ConnectAnotherTile({ onClick }: { onClick: () => void }) {
       onMouseLeave={() => setHover(false)}
       className="rounded-lg cursor-pointer flex flex-col items-center justify-center gap-[10px]"
       style={{
-        border: `1px dashed ${hover ? 'rgba(230,185,77,0.35)' : 'rgba(255,255,255,0.12)'}`,
+        border: `1px dashed ${hover ? 'color-mix(in srgb, var(--color-gold) 35%, transparent)' : 'var(--color-border-strong)'}`,
         background: 'transparent', padding: '18px 20px', minHeight: 160,
         color: hover ? 'var(--color-gold)' : 'var(--color-text-muted)',
         transition: 'border-color 200ms var(--ease-out-expo), color 200ms var(--ease-out-expo)',
@@ -753,7 +753,7 @@ function EnterByHandTile() {
       onMouseLeave={() => setHover(false)}
       className="rounded-lg cursor-pointer flex flex-col items-center justify-center gap-[10px] no-underline"
       style={{
-        border: `1px dashed ${hover ? 'rgba(230,185,77,0.35)' : 'rgba(255,255,255,0.12)'}`,
+        border: `1px dashed ${hover ? 'color-mix(in srgb, var(--color-gold) 35%, transparent)' : 'var(--color-border-strong)'}`,
         background: 'transparent', padding: '18px 20px', minHeight: 160,
         color: hover ? 'var(--color-gold)' : 'var(--color-text-muted)',
         transition: 'border-color 200ms var(--ease-out-expo), color 200ms var(--ease-out-expo)',
@@ -772,13 +772,13 @@ function EnterByHandTile() {
 
 function SyncBadge({ state, noActiveConnection = false }: { state: AccountConnectionState; noActiveConnection?: boolean }) {
   const meta = {
-    connected: { label: 'Connected', color: 'var(--color-positive)', bg: 'rgba(74,222,128,0.08)', border: 'rgba(74,222,128,0.2)' },
+    connected: { label: 'Connected', color: 'var(--color-positive)', bg: 'color-mix(in srgb, var(--color-positive) 8%, transparent)', border: 'var(--color-positive-border)' },
     manual: { label: 'Manual', color: 'var(--color-text-secondary)', bg: 'var(--color-bg-overlay)', border: 'var(--color-border-base)' },
     checking: { label: 'Checking', color: 'var(--color-text-secondary)', bg: 'var(--color-bg-overlay)', border: 'var(--color-border-base)' },
     unavailable: { label: 'Status unavailable', color: 'var(--color-text-secondary)', bg: 'var(--color-bg-overlay)', border: 'var(--color-border-base)' },
     unknown: { label: noActiveConnection ? 'No active connection' : 'Connection unverified', color: 'var(--color-text-secondary)', bg: 'var(--color-bg-overlay)', border: 'var(--color-border-base)' },
     syncing: { label: '◐ Syncing', color: 'var(--color-warning-text)', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.22)' },
-    attention: { label: 'Needs attention', color: 'var(--color-negative-text)', bg: 'rgba(248,113,113,0.08)', border: 'rgba(248,113,113,0.25)' },
+    attention: { label: 'Needs attention', color: 'var(--color-negative-text)', bg: 'color-mix(in srgb, var(--color-negative-text) 8%, transparent)', border: 'color-mix(in srgb, var(--color-negative-text) 25%, transparent)' },
   }[state];
 
   return (

@@ -1,7 +1,6 @@
 import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { HelmMark } from '@/components/helm-mark';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { LegalFooter } from '@/components/legal-footer';
 import {
@@ -135,7 +134,7 @@ export default function AppShowcasePage() {
                 Helm for iPhone
               </p>
               <h1
-                className="text-[44px] sm:text-[62px] lg:text-[72px] xl:text-[84px] leading-[0.94] tracking-[-0.025em] text-[var(--color-text-primary)] mb-7 text-balance"
+                className="text-[var(--color-text-primary)] mb-7 text-balance"
                 style={{ fontFamily: 'var(--font-display-serif), Georgia, serif' }}
               >
                 Your book, read

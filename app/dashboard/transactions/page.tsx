@@ -71,13 +71,13 @@ const KIND_ICON: Record<
   TxKind,
   { Icon: typeof ArrowUp; color: string; tint: string }
 > = {
-  BUY:      { Icon: ArrowUp,       color: 'var(--color-positive)',      tint: 'rgba(74,222,128,0.08)' },
-  SELL:     { Icon: ArrowDown,     color: 'var(--color-negative-text)', tint: 'rgba(248,113,113,0.08)' },
-  DIV:      { Icon: DollarSign,    color: 'var(--color-gold)',          tint: 'rgba(230,185,77,0.08)' },
+  BUY:      { Icon: ArrowUp,       color: 'var(--color-positive)',      tint: 'color-mix(in srgb, var(--color-positive) 8%, transparent)' },
+  SELL:     { Icon: ArrowDown,     color: 'var(--color-negative-text)', tint: 'color-mix(in srgb, var(--color-negative-text) 8%, transparent)' },
+  DIV:      { Icon: DollarSign,    color: 'var(--color-gold)',          tint: 'color-mix(in srgb, var(--color-gold) 8%, transparent)' },
   DEPOSIT:  { Icon: AlignJustify,  color: 'var(--color-info-text)',     tint: 'rgba(96,165,250,0.08)' },
   TRANSFER: { Icon: AlignJustify,  color: 'var(--color-info-text)',     tint: 'rgba(96,165,250,0.08)' },
-  FEE:      { Icon: Minus,         color: 'var(--color-text-muted)',    tint: 'rgba(255,255,255,0.03)' },
-  OTHER:    { Icon: RefreshCw,     color: 'var(--color-text-muted)',    tint: 'rgba(255,255,255,0.03)' },
+  FEE:      { Icon: Minus,         color: 'var(--color-text-muted)',    tint: 'var(--color-surface-tint-faint)' },
+  OTHER:    { Icon: RefreshCw,     color: 'var(--color-text-muted)',    tint: 'var(--color-surface-tint-faint)' },
 };
 
 /* ─── Filter chip types ─── */
@@ -520,8 +520,8 @@ export default function TransactionsPage() {
   if (error) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-6" role="alert">
-        <div className="sovereign-card rounded-xl p-8 text-center max-w-md w-full" style={{ borderColor: 'rgba(248,113,113,0.2)' }}>
-          <div className="w-12 h-12 rounded-full bg-[rgba(248,113,113,0.1)] flex items-center justify-center mx-auto mb-4">
+        <div className="sovereign-card rounded-xl p-8 text-center max-w-md w-full" style={{ borderColor: 'color-mix(in srgb, var(--color-negative-text) 20%, transparent)' }}>
+          <div className="w-12 h-12 rounded-full bg-[color-mix(in_srgb,var(--color-negative-text)_10%,transparent)] flex items-center justify-center mx-auto mb-4">
             <X className="w-5 h-5 text-[var(--color-negative-text)]" />
           </div>
           <h2 className="font-sans text-[18px] font-semibold text-[var(--color-text-primary)] mb-2">
@@ -794,7 +794,7 @@ export default function TransactionsPage() {
           <LedgerSkeleton />
         ) : filtered.length === 0 ? (
           <div className="helm-detail-empty">
-            <div className="w-12 h-12 rounded-[10px] bg-[rgba(255,255,255,0.03)] border border-[var(--color-border-base)] flex items-center justify-center mb-4">
+            <div className="w-12 h-12 rounded-[10px] bg-[var(--color-surface-tint-faint)] border border-[var(--color-border-base)] flex items-center justify-center mb-4">
               <RefreshCw className="w-5 h-5 text-[var(--color-text-muted)]" strokeWidth={1.6} />
             </div>
             <p className="text-[16px] font-medium text-[var(--color-text-secondary)] mb-1.5">

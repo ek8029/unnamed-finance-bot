@@ -136,20 +136,20 @@ export default async function ThesesOverviewPage() {
       label: 'Under thesis coverage',
       value: money(trackedValue),
       sub: bookTotal > 0 ? `${((trackedValue / bookTotal) * 100).toFixed(0)}% of your book` : '',
-      tone: '#FAFAFA',
+      tone: 'var(--color-text-primary)',
     },
     {
       label: 'Under pressure',
       value: pressured.length > 0 ? money(pressuredValue) : '$0',
       sub: pressured.length > 0 ? pressured.map((r) => r.ticker).join(' · ') : 'nothing needs your attention',
-      tone: pressured.length > 0 ? '#E6B94D' : '#4ADE80',
+      tone: pressured.length > 0 ? 'var(--color-gold)' : 'var(--color-positive)',
     },
-    { label: 'Receipts this week', value: String(receipts7d), sub: 'evidence read, judged and filed', tone: '#FAFAFA' },
+    { label: 'Receipts this week', value: String(receipts7d), sub: 'evidence read, judged and filed', tone: 'var(--color-text-primary)' },
     {
       label: 'Next earnings',
       value: nextEarnings ? nextEarnings.ticker : '—',
       sub: nextEarnings ? `est. ${nextEarnings.date}` : 'none estimated',
-      tone: '#FAFAFA',
+      tone: 'var(--color-text-primary)',
     },
   ];
 

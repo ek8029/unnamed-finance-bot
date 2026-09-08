@@ -71,8 +71,8 @@ export default async function HoldingDetailPage({ params }: Props) {
           </p>
           <Link
             href={research.ok ? `/dashboard/analyze/${symbol}` : '/dashboard/analyze'}
-            className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[#0A0A0A] font-mono text-[12px] font-bold uppercase tracking-[0.12em] transition-all"
-            style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.25)' }}
+            className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[var(--color-bg-base)] font-mono text-[12px] font-bold uppercase tracking-[0.12em] transition-all"
+            style={{ boxShadow: '0 8px 24px color-mix(in srgb, var(--color-gold) 25%, transparent)' }}
           >
             {research.ok ? `Open analysis for ${symbol}` : 'Research another ticker'}
           </Link>
