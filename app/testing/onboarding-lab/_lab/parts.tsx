@@ -125,28 +125,5 @@ export function BriefPromise({ accounts }: { accounts: Account[] }) {
   return <div className={s.promise}><div><strong>Your brief on these {ex.positions} positions lands at 9:15 ET tomorrow.</strong><p>What moved, what matters to your book, and the first receipts on the reasons you hold each name. Email and the terminal, both.</p></div><Demo>Daily, after this</Demo></div>;
 }
 
-const NAV = [['Overview', 'overview'], ['Portfolio', 'portfolio'], ['Actions', 'actions'], ['Brief', 'brief'], ['Accounts', 'accounts'], ['Taxes', 'taxes'], ['Theses', 'theses'], ['Earnings', 'earnings'], ['Agent', 'chat']] as const;
-
-/** The terminal, mocked. `unlocked` lists what has earned its place so far; the rest stays visible but quiet. */
-export function TerminalMock({ accounts, unlocked, children, active = 'portfolio' }: { accounts: Account[]; unlocked: Set<string>; children?: React.ReactNode; active?: string }) {
-  const ex = exposure(accounts);
-  return <div className={s.terminal}>
-    <nav className={s.side} aria-label="Terminal">{NAV.map(([label, key]) => { const lock = !unlocked.has(key); return <a key={key} href="#" data-active={key === active ? '' : undefined} data-locked={lock ? '' : undefined} onClick={e => e.preventDefault()}>{label}{lock && <small>{key === 'brief' ? 'tomorrow' : key === 'taxes' ? 'needs cost basis' : 'after your brief'}</small>}</a>; })}</nav>
-    <div className={s.main}>
-      <div className={s.topline}><h1>Portfolio</h1>{ex.total > 0 && <div className={s.kpis}><span>Book<b>{money(ex.total)}</b></span><span>Positions<b>{ex.positions}</b></span><span>Accounts<b>{accounts.length}</b></span></div>}</div>
-      {children}
-    </div>
-  </div>;
-}
-
-export function HoldingsTable({ accounts }: { accounts: Account[] }) {
-  const rows = accounts.flatMap(a => a.holdings.map(h => ({ ...h, acct: a.institution })));
-  return <div className={s.card}><h3>Holdings <Demo /></h3><table className={s.table}><thead><tr><th>Ticker</th><th>Account</th><th>Shares</th><th>Value</th></tr></thead><tbody>{rows.map((r, i) => <tr key={i}><td>{r.ticker}</td><td>{r.acct}</td><td>{r.shares}</td><td>{money(r.shares * r.price)}</td></tr>)}</tbody></table></div>;
-}
-
-export function Locked({ label, why, onUnlock }: { label: string; why: string; onUnlock?: () => void }) {
-  return <div className={s.locked}><span><strong style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>{label}</strong> · {why}</span>{onUnlock && <button type="button" className={s.linkish} onClick={onUnlock}>Simulate</button>}</div>;
-}
-
 export function LabNote({ children }: { children: React.ReactNode }) { return <div className={s.note}>{children}</div>; }
 export { s as labStyles };
