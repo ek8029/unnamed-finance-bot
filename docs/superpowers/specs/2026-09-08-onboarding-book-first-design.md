@@ -1,8 +1,10 @@
 # Onboarding v3: book first, one reveal, then the terminal
 
-Date: 2026-09-08. Status: design, approved direction (variant C of `/testing/onboarding-lab`).
-Owners: Astra builds the surfaces; Codex owns `app/dashboard/dashboard-shell.tsx` and
-`app/dashboard/portfolio/page.tsx`, which section 6 touches. Coordinate before editing those.
+Date: 2026-09-08, revised the same day after five reviews (implementability, Plaid, conversion,
+security, accessibility). Status: design, approved direction (variant C of `/testing/onboarding-lab`).
+Owners: Astra builds the surfaces. Codex owns `app/dashboard/dashboard-shell.tsx` (the v2 flag gate
+is at line 55 and the sidebar in section 6 lives there) and `app/dashboard/portfolio/page.tsx`
+(the empty state in section 6). Coordinate before editing either.
 
 ## 1. Why
 
@@ -11,147 +13,193 @@ Measured 9/8 (PostHog, 90-day signup cohort n=96, internal excluded; DB probe n=
 - A book (Plaid or manual) returns 50% at two days; no book 15%; demo only 9% (0% at seven days).
 - Day-one breadth does not hurt: 5+ dashboard routes 29% return, 1–2 routes 18%. 60 of 71
   no-book users saw two routes or fewer. They left at the door, not from overwhelm.
-- The current v2 flow loses people at every step between the scan card and the book:
-  card 122 → reasons shown 53 → thesis adopted 30 → link started 26 → link completed 13.
-  Thesis-adopt on its own retains 24% / 8%.
-- Manual entry: one start in 60 days, zero accounts since the 9/4 fix, yet manual books
-  retained like Plaid books while the form was broken. The credential-free path is hidden.
+- The v2 flow loses people at every step between the scan card and the book: card 122 →
+  reasons shown 53 → thesis adopted 30 → link started 26 → link completed 13. Thesis-adopt
+  on its own retains 24% / 8%.
+- Manual entry: one start in 60 days, zero accounts since the 9/4 fix, yet manual books retained
+  like Plaid books while the form was broken. The credential-free path is hidden.
 - Return destination days 2–14: the brief (11 of ~20 returners), then Portfolio, Actions.
 - Plaid: 42 starts → 11 completed. 16 closed the picker, 10 `institution_not_found`.
+- v1 was ask-first with Plaid only and bounced 83–86% at the ask. That is the ceiling this
+  design has to beat, and the reason manual entry is co-equal rather than a footnote.
 
-So: the ask comes first, manual is co-equal, every screen after the ask is about the
-user's own book, thesis adoption waits for the brief, demo is removed.
+So: the ask comes first, manual is co-equal, every screen after the ask is about the user's
+own book, thesis adoption waits for the brief, demo is removed.
 
 ## 2. Scope
 
-In: the flow below, its events, the Portfolio empty state, sidebar dimming, the brief promise.
-Out: pricing, the paywall, push notifications, iOS (separate spec), the brief's content.
+In: the flow below, its events, the Portfolio empty state, sidebar dimming, the brief promise,
+the `PlaidLinkButton` prop change in 3.1. Out: pricing, paywall, push, iOS, the brief's content.
 
 ## 3. Flow
 
 ```
 signup ─► [1 Ask] ─► [2 Loop] ─► [3 Reveal] ─► /dashboard/portfolio (real)
-              │                                      │
-              └─ manual ──┘                          └─ unlocks arrive with the first brief
+              │          │            │
+              └──────────┴────────────┴── "Do this later" ─► Portfolio empty state (6)
 ```
 
-Three screens, full-bleed overlay over the dashboard like v2, `helm-terminal` skin. Progress:
-three hairline segments. Any screen can be left with "Do this later"; leaving lands on the
-Portfolio empty state (section 6), never on a blank terminal.
+Three screens, full-bleed overlay over the dashboard like v2, `helm-terminal` skin. Every screen
+has a "Do this later" text link in the same place (bottom left). It fires `onb3_deferred {screen}`
+and lands on the Portfolio empty state, never a blank terminal. Progress is a
+`role="progressbar"` with `aria-valuenow/min/max` and visually hidden "Step n of 3".
 
-### Screen 1: Ask. "Start with what you own."
+### 3.1 Screen 1: Ask. "Start with what you own."
 
-Two panels at equal visual weight (same card, same height, same button style).
+Two panels, same card, same height, same button style. **Below 860px the manual panel stacks
+first**; it is the credential-free path and must not fall below the fold.
 
-**Connect a brokerage.** Copy: "Read-only. Helm can see positions and balances and can
-never trade, move money or see your login." Six shortcut chips (Fidelity, Schwab, Robinhood,
-Vanguard, E*TRADE, Interactive Brokers) and "Search all brokerages". Every control opens
-Plaid Link (`components/plaid/plaid-link-button.tsx`). Three trust rows under the chips.
-Open item: whether a chip can open Link pre-pointed at an institution; check Plaid's current
-Link docs before build. If not, chips open Link's search. No closed list, ever.
+**Add the positions you hold** (manual). Copy: "Three to five tickers is enough. No credentials,
+no account numbers. Connect a brokerage later to import the rest." Uses `ManualPortfolioForm`
+compact and `POST /api/portfolio/manual` (authenticated, validates ticker and shares, max 50 rows,
+idempotent per client `requestId` scoped to the user, so a retry never duplicates a lot). As rows
+are added, a one-line preview renders under the form using the exposure sentence from Screen 3
+on the rows so far ("NVDA is 61% of these three positions"). This is the answer to the 27
+"explore first" people: they explore with their own tickers, not a demo. Inputs 16px, targets
+44px.
 
-**Or add the positions you hold.** Copy: "Three to five tickers is enough. No credentials,
-no account numbers. Connect a brokerage later to import the rest." Uses the existing
-`ManualPortfolioForm` in compact mode and `POST /api/portfolio/manual`, which is idempotent
-per `requestId` (deterministic holding ids; a retry never duplicates a lot).
+**Connect a brokerage.** Copy: "Read-only. Helm can see positions and balances and can never
+trade, move money or see your login." Six shortcut chips (Fidelity, Schwab, Robinhood, Vanguard,
+E*TRADE, Interactive Brokers) and "Search all brokerages". Every control opens Plaid Link through
+`PlaidLinkButton`. Trust rows, written in full:
+1. "Read-only. Helm cannot trade or move money."
+2. "Disconnect any time from Accounts. Helm removes the connection and everything it imported."
+   (Implemented: `app/api/plaid/items/[itemId]/route.ts` calls `itemRemove` and deletes the
+   holdings, transactions and accounts.)
+3. "Your login goes to Plaid, never to Helm."
 
-Exits from Link, handled on this screen:
-- `institution_not_found` → focus the manual panel with a one-line notice carrying the name
-  the user typed: "{name} is not available through Plaid yet. Add those positions by hand;
-  you keep every feature." Fire `onb3_plaid_exit {reason}`.
-- Picker closed / credentials abandoned → stay on the screen, manual panel unchanged.
-- Success → screen 2. The Plaid sync runs in the background exactly as today.
+Pre-pointing a chip at an institution: `create-link-token/route.ts` passes no `institution_id`
+today, so this needs new token code either way; whether Plaid Link accepts it is an open item to
+check in Plaid's current docs before build. Until confirmed, chips open Link's search.
 
-### Screen 2: Loop. "Is that all of it?"
+**Link exits.** `PlaidLinkButton.onExit` is currently `() => void` and the exit reason and search
+term are captured only for analytics (`plaid-link-button.tsx:171-184`). Add a typed
+`onExitDetail({ code, institutionName, searchQuery })` prop; keep the existing props. Route:
 
-Shows the accounts on record (institution, type, position count, imported / entered by hand)
-and the same shortcut chips minus the ones already linked. Copy for one account: "Most people
-who pay for Helm hold accounts at two or more brokerages. Add the others and the exposure
-view shows the overlap between them." For two or more: "{n} accounts, {positions} positions,
-{value}. Add another, or continue." Primary: "Show me what Helm sees". Secondary: "You can
-add accounts any time from Accounts." Manual entry is reachable here too (same compact form).
+| exit | screen behaviour |
+|---|---|
+| `institution_not_found` | focus the manual panel; notice: "{searchQuery} is not available through Plaid yet. Add those positions by hand. Everything works on positions entered by hand." |
+| `INSTITUTION_DOWN`, `INSTITUTION_NO_LONGER_SUPPORTED`, `INSTITUTION_REGISTRATION_REQUIRED` | same as above, with the message from `link-exit.ts` |
+| `INVALID_CREDENTIALS`, `ITEM_LOCKED` | stay on the screen; show the `link-exit.ts` message under the chips; chip remains available |
+| picker closed, no error | stay; nothing changes |
+| `duplicate_institution` (from the exchange route) | go to Screen 2 with "{institution} is already connected" |
+| success | Screen 2 |
 
-### Screen 3: Reveal. "Here is your book, read."
+After every exit, focus returns to the chip or button that opened Link.
 
-Two cards side by side (stacked under 860px).
+### 3.2 Screen 2: Loop. "Is that all of it?"
 
-**What you actually own.** Top five names by total exposure, each bar split into held
-directly and inside funds, then one sentence: "{T} is {p}% of your book: {d}% held directly,
-{i}% inside {funds}, across {n} accounts. No single brokerage screen shows that number."
-Data: the existing look-through behind the True Exposure view. Confirm which module before
-build; do not write a second one.
+Lists accounts on record: institution, type, position count, "imported" or "entered by hand".
+Right after a Link success the row reads "Syncing {institution}" with the v2 `synced` phase's
+stage indicator; `lib/plaid/background-sync.ts` takes one to six minutes with a six-minute
+timeout, and the user can add another account or continue while it runs. Same shortcut chips
+minus the linked ones, plus the compact manual form. Copy for one account: "Most people who pay
+for Helm hold accounts at two or more brokerages. Add the others and the exposure view shows the
+overlap between them." For two or more: "{n} accounts, {positions} positions, {value}. Add
+another, or continue." Primary: "Show me what Helm sees". Secondary: "You can add accounts any
+time from Accounts."
 
-**The reason you hold {T}, checked.** The v2 scan card's data path (`getTickerThesisData`)
-on the largest position: verdict chip, pillar, verbatim quote, source and date, link to the
-filing. Outside the covered names, the honest fallback verbatim from v2: "No filing has moved
-{T} in the last 90 days." Never a fabricated verdict.
+### 3.3 Screen 3: Reveal. "Here is your book, read."
 
-Primary: "Open the terminal" → `/dashboard/portfolio`. Under it: "The brief on these
-positions lands at 9:15 ET tomorrow."
+Two cards side by side, stacked under 860px. States, in order:
+
+- **Loading**: "Reading your book" skeleton while exposure and the receipt fetch; if a Plaid sync
+  is still running, compute on what has arrived and say "{institution} is still syncing; this
+  updates when it lands."
+- **Fetch error** (network or 5xx): "Helm could not read the filings just now." with Retry and
+  "Open the terminal". This is distinct from the coverage fallback below.
+- **Ready.**
+
+**What you actually own.** Top five names by total exposure, each bar split into held directly
+and inside funds. Segments differ by pattern as well as colour, and every row carries visually
+hidden text "{T}: {d}% direct, {i}% inside funds". Then one sentence for the top name: "{T} is
+{p}% of your book: {d}% held directly, {i}% inside {funds}, across {n} accounts. That figure
+comes from every account and the funds inside them." Data: the existing look-through behind the
+True Exposure view. Confirm which module before build; do not write a second one.
+
+**The reason you hold {T}, checked.** The v2 card's data path (`getTickerThesisData`) on the
+largest position: verdict chip, pillar, verbatim quote, source and date, link to the filing.
+Outside the covered names, the v2 fallback verbatim: "No filing has moved {T} in the last 90
+days." Never a fabricated verdict.
+
+Primary: "Open the terminal" → `/dashboard/portfolio`. Under it: "The brief on these positions
+lands at 9:15 ET tomorrow."
 
 ## 4. What is removed from v2
 
-The scan-first card as the entry (it becomes a reveal on the user's largest holding), the
-`reasons` and `ratify` phases (thesis adoption moves to the brief and Theses, unchanged
-mechanics), `onb_demo_chosen` and the demo path, and the attribution question, which moves
-to the second session as a one-line survey. `lib/grant-connect-trial.ts` stays: manual and
-Plaid both grant the trial exactly as today.
+The scan-first card as the entry (it becomes the receipt on the user's largest holding), the
+`reasons` and `ratify` phases (thesis adoption moves to the brief and Theses, mechanics
+unchanged), the demo path (`DEMO_EMAIL` gate, `onboarding-flow-v2.tsx:34,297`), and the
+attribution question, which moves to the second session as a one-line survey. No trial grant is
+needed: the automatic connect trial was retired (comment in `exchange-public-token/route.ts:218`),
+the first thesis is on the free tier, and the only trial is the card-required one on `/pricing`.
 
 ## 5. Copy rules
 
 No em dashes. No exclamation marks. No advice language: Helm never says buy, sell, trim or
-should. The reveal states what the book is, not what to do about it. Every figure computed
-from live data; nothing labelled demo appears in production.
+should. The reveal states what the book is, not what to do about it, and does not compare Helm
+to anything. Every figure computed from live data; nothing labelled demo appears in production.
 
-## 6. After the terminal (touches Codex-owned files; coordinate)
+## 6. After the terminal (Codex-owned files; coordinate)
 
-- **Portfolio empty state** (`app/dashboard/portfolio/page.tsx`): when the book is empty,
-  render the Screen 1 ask inline where the holdings table will be, headed "Start with what you
-  own." This is what "Do this later" lands on and what a user who skipped sees on day two.
-- **Sidebar** (`app/dashboard/dashboard-shell.tsx`): items dim with a small label until they
-  have something to say. Brief: "tomorrow" until the first brief exists for this user. Theses,
-  Earnings, Agent: "after your brief". Taxes: "needs cost basis" until a Plaid account exists.
-  Dimmed items still navigate; they are not disabled.
-- **Actions inbox**: while the user has one account, a standing item "Add your second
-  account" linking to Accounts. Removed when a second account exists.
-- **Brief promise**: a single banner on Portfolio until the first brief lands: "Your brief
-  on these {n} positions lands at 9:15 ET tomorrow."
+- **Portfolio empty state** (`portfolio/page.tsx`): when the book is empty, render the Screen 1
+  ask inline where the holdings table will be, headed "Start with what you own." This is where
+  "Do this later" lands and what a user who skipped sees on day two.
+- **Sidebar** (`dashboard-shell.tsx`): items dim with a small label until they have something to
+  say. Brief: "tomorrow" until the first brief exists. Theses, Earnings, Agent: "after your
+  brief". Taxes: "needs cost basis" until a Plaid account exists. Dimmed items still navigate:
+  no `aria-disabled`, no `disabled`, label text at 4.5:1 or better, the small label read as part
+  of the link name.
+- **Actions inbox**: while the user has one account, a standing item "Add your second account"
+  linking to Accounts; removed at two.
+- **Brief promise**: one banner on Portfolio until the first brief lands.
 
 ## 7. Events
 
-New, all with `flow: 'v3'`: `onb3_shown`, `onb3_ask_choice {plaid|manual}`,
-`onb3_plaid_exit {reason}`, `onb3_account_added {via, accounts}`, `onb3_loop_continue
-{accounts, positions}`, `onb3_reveal_viewed {top_ticker_covered: bool}`,
-`onb3_terminal_opened`, `onb3_deferred {screen}`. Keep `plaid_link_started`,
-`plaid_link_exit`, `plaid_link_completed`. Retire `onb_*` v2 events when the flag flips.
+New, all with `flow: 'v3'` and no free text, tickers, institution names or amounts:
+`onb3_shown`, `onb3_ask_choice {plaid|manual}`, `onb3_plaid_exit {code}`,
+`onb3_account_added {via, accounts}`, `onb3_loop_continue {accounts, positions}`,
+`onb3_reveal_viewed {top_ticker_covered: bool, synced: bool}`, `onb3_terminal_opened`,
+`onb3_deferred {screen}`. Keep `plaid_link_*`. PostHog is opt-in by default
+(`posthog-provider.tsx:90`), so these fire only for consented users; they explain behaviour,
+they do not count it.
 
 ## 8. Success criteria
 
-Activation = a book (≥1 account with ≥1 holding) inside the first session. Baseline from v2:
-link completed 13 of 125 shown (10%), plus one manual start. Targets after 40 people through
-v3: book rate ≥30% of shown; two-day return ≥35% overall (baseline 21%); seven-day return
-measured and reported, baseline ≤20% on every path. Read with the same HogQL as the 9/8
-analysis so the numbers are comparable.
+Counting comes from the database, not PostHog: a new signup is **activated** when
+`linked_accounts` or `plaid_items` holds a row within 24 hours of `auth.users.created_at`, and
+**returned** when `last_sign_in_at` is two or more days after signup (the 9/8 probe,
+`scripts/probe-book-retention-2026-09-08.ts`). Population: every real signup that reached the
+dashboard, the same denominator for v2 and v3. Baselines: v2 activation 10% (13 of 125) plus one
+manual start; v1's ask-first ceiling 14–17%; two-day return 21% overall.
+
+Targets after 40 new signups: **activation ≥25%**. The two-day return target is derived from it,
+not chosen: at 25% activation and the measured 50% / 15% returns, blended two-day return is about
+24%, so the target is **≥25%** and anything at 35% would mean activation near 57%. Seven-day
+return is measured and reported; baseline ≤20% on every path today.
 
 ## 9. Rollout
 
-Behind `NEXT_PUBLIC_ONBOARDING_V3` in Vercel, the same gate pattern as v2 in
-`app/dashboard/layout.tsx`. Ship dark, flip for 100% of new signups, read at 40 people.
-No cohort split needed; v2's numbers are the control.
+Behind `NEXT_PUBLIC_ONBOARDING_V3`, gated where v2's flag is (`dashboard-shell.tsx:55`). Ship
+dark, flip for 100% of new signups, read at 40 people. v2's numbers are the control. If
+activation after 40 people is under v2's 10%, revert the flag; the spec is wrong.
 
 ## 10. Risks
 
-- **V1 bounce.** Ask-first is how v1 lost 83–86%. The differences: manual at equal weight,
-  three trust rows, Link exits handled on-screen, and the reveal is about the user. If the
-  book rate after 40 people is under v2's 10%, revert the flag; the spec is wrong.
-- **Manual books are thin.** Taxes and multi-account overlap stay dark until Plaid. The loop
-  screen and the inbox item exist to close that, not the ask.
-- **Coverage.** The receipt card covers 13 names. The honest fallback is the design, not a bug.
+- **V1 bounce.** The differences from v1: manual at equal weight and first on mobile, the live
+  preview while typing, three written trust rows including revocation, every Link exit handled
+  on screen. Section 9 is the kill switch.
+- **Manual books are thin.** Taxes and overlap stay dark until Plaid. The loop screen and the
+  inbox item exist to close that, not the ask.
+- **Coverage.** The receipt covers 13 names. The honest fallback is the design, not a bug.
+- **Sync timing.** A reveal on a half-synced book must say so (3.3), or it reads as wrong.
 
 ## 11. Testing
 
-Unit: exposure sentence for one account, two accounts, funds only, no funds. Manual retry
-does not duplicate a lot. Link exit reasons route correctly. Copy lint for em dashes and the
-advice words. E2E in `/testing`: the three screens on a no-brokerage account with real reads
-and zero writes, all six viewports the v2 QA script already covers
-(`scripts/qa-full-onboarding.mjs`). Full suite before and after, totals reported.
+Unit: exposure sentence for one account, two accounts, funds only, no funds; the live preview
+on one, two and three rows; manual retry does not duplicate a lot; every row of the exit table
+routes correctly; copy lint for em dashes, exclamation marks and the advice words. Accessibility:
+focus return after each exit, progressbar exposed, 44px targets and 16px inputs, bar segments
+distinguishable without colour, dimmed sidebar items announced as links. E2E in `/testing`: the
+three screens on a no-brokerage account with real reads and zero writes, six viewports via
+`scripts/qa-full-onboarding.mjs`. Full suite before and after, totals reported.
