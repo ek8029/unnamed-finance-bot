@@ -1,3 +1,4 @@
+import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { HelmMark } from '@/components/helm-mark';
@@ -79,20 +80,7 @@ export default function AdvisorsPage() {
   return (
     <main className="min-h-screen bg-[var(--color-bg-inset)] text-[var(--color-text-primary)] overflow-x-clip">
       {/* Nav */}
-      <nav className="border-b border-[var(--color-border-base)]">
-        <div className="max-w-[1240px] mx-auto px-10 max-sm:px-5 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <HelmMark size={28} />
-            <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
-          </Link>
-          <a
-            href="#intake"
-            className="font-mono text-[10px] font-bold tracking-[0.16em] uppercase px-4 rounded-[5px] border border-[var(--color-gold)] text-[var(--color-gold)] transition-colors duration-200 hover:bg-[var(--color-gold)] hover:text-black min-h-[44px] flex items-center"
-          >
-            Talk to us
-          </a>
-        </div>
-      </nav>
+      <SiteNav />
 
       {/* Hero, then the book fills the fold */}
       <header className="max-w-[1240px] mx-auto px-10 max-sm:px-5 pt-20 max-sm:pt-12">

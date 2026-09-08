@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { parseResearchTicker } from '@/lib/research-ticker';
 import type { StockAnalysis, AnalysisMetric } from '@/components/analysis/types';
 import type { TickerData, ReportedFinancials } from '@/lib/financial-data';
 import { Search, Loader2, Link2, Check, ChevronRight, Menu, X, Calendar } from 'lucide-react';
@@ -115,12 +116,16 @@ function relativeTime(ts: number): string {
 function InlineSearch({ currentTicker, basePath = '/analyze' }: { currentTicker: string; basePath?: string }) {
   const router = useRouter();
   const [input, setInput] = useState(currentTicker);
+  const [inputError, setInputError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
-      const clean = input.trim().toUpperCase().replace(/[^A-Z]/g, '');
+      const parsed = parseResearchTicker(input);
+      if (!parsed.ok) { setInputError(parsed.message); return; }
+      setInputError('');
+      const clean = parsed.ticker;
       if (clean && clean.length <= 5 && clean !== currentTicker) {
         setLoading(true);
         router.push(`${basePath}/${clean}`);
@@ -130,7 +135,7 @@ function InlineSearch({ currentTicker, basePath = '/analyze' }: { currentTicker:
   );
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 w-full max-w-xs">
+    <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 w-full max-w-xs">
       <div className="flex-1 relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" aria-hidden="true" />
         <input
@@ -138,7 +143,7 @@ function InlineSearch({ currentTicker, basePath = '/analyze' }: { currentTicker:
           value={input}
           onChange={(e) => setInput(e.target.value.toUpperCase())}
           placeholder="Ticker"
-          maxLength={5}
+          aria-invalid={Boolean(inputError)}
           disabled={loading}
           aria-label="Stock ticker symbol"
           className="w-full pl-8 pr-2 py-2.5 sm:py-2 bg-[var(--color-bg-inset)] border border-[var(--color-border-base)] rounded-md text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-[14px] tracking-wider font-mono tabular-nums disabled:opacity-60"
@@ -151,6 +156,7 @@ function InlineSearch({ currentTicker, basePath = '/analyze' }: { currentTicker:
       >
         {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : 'GO'}
       </button>
+      {inputError && <p role="alert" className="basis-full text-sm text-[var(--color-negative-text)]">{inputError}</p>}
     </form>
   );
 }
@@ -872,8 +878,10 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
 
   const handleCompare = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    const symbol = compareTicker.trim().toUpperCase().replace(/[^A-Z]/g, '');
-    if (!symbol || symbol === currentTicker) return;
+    const parsed = parseResearchTicker(compareTicker);
+    if (!parsed.ok) { setError(parsed.message); return; }
+    const symbol = parsed.ticker;
+    if (symbol === currentTicker) return;
     setLoading(true);
     setError('');
     try {
@@ -909,7 +917,7 @@ function CompareView({ currentTicker, currentData, currentAnalysis, basePath }: 
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" />
             <input
               type="text" value={compareTicker} onChange={(e) => setCompareTicker(e.target.value.toUpperCase())}
-              placeholder="Enter ticker" maxLength={5} disabled={loading}
+              placeholder="Enter ticker" aria-invalid={Boolean(error)} disabled={loading}
               className="w-full pl-8 pr-2 py-2.5 bg-[var(--color-bg-inset)] border border-[var(--color-border-base)] rounded-md text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors text-[14px] tracking-wider font-mono tabular-nums"
             />
           </div>

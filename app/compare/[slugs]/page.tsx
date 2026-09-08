@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { analyzeStock } from '@/lib/analyze-stock';
 import { isCanonicalPair, isCuratedPair } from '@/lib/comparison-pairs';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
-import { HelmMark } from '@/components/helm-mark';
-import { CinematicBg } from '@/components/cinematic-bg';
+import { SiteNav } from '@/components/site-nav';
+import { ArrowLeft, ArrowUpRight, ArrowRight } from 'lucide-react';
 import { LegalFooter } from '@/components/legal-footer';
 import { CompareGate } from '@/components/compare-gate';
 
@@ -229,112 +229,56 @@ export default async function ComparePage({ params }: Props) {
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)] flex flex-col relative overflow-hidden">
+    <div className="helm-discovery helm-comparison">
       <CompareGate />
-      <CinematicBg />
+      <SiteNav />
 
-      {/* Nav */}
-      <header className="relative z-10 border-b border-[var(--color-border-base)]">
-        <div className="max-w-[1200px] mx-auto px-3 sm:px-4 lg:px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <HelmMark size={28} />
-            <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
-          </Link>
-          <div className="flex items-center gap-5">
-            <Link
-              href="/compare"
-              className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-            >
-              Compare
-            </Link>
-            <Link
-              href="/analyze"
-              className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-            >
-              Analyze
-            </Link>
-            <Link
-              href="/signup"
-              className="px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110"
-            >
-              Get Started
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main className="relative z-10 flex-1 w-full max-w-[1200px] mx-auto px-3 sm:px-4 lg:px-6 py-8">
+      <main id="main-content" className="helm-discovery-width helm-comparison-content">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
 
         {/* H1 */}
-        <div className="text-center mb-10">
-          <p className="type-eyebrow text-[var(--color-gold)] mb-3">
-            Stock Comparison
-          </p>
-          <h1 className="text-[30px] sm:text-[40px] font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.08]">
+        <header className="helm-comparison-heading">
+          <Link href="/compare" className="helm-comparison-back"><ArrowLeft size={15} /> All comparisons</Link>
+          <p className="helm-kicker">STOCK COMPARISON</p>
+          <h1>
             {name1} vs {name2}
           </h1>
-          <p className="text-[15px] text-[var(--color-text-secondary)] mt-2 max-w-xl mx-auto">
+          <p className="helm-discovery-description">
             Side-by-side fundamentals, valuation, and AI summaries for both tickers.
           </p>
-        </div>
+          <nav className="helm-comparison-jump" aria-label="Comparison sections">
+            <a href="#metrics">Key metrics <ArrowRight size={14} /></a>
+            {a1 && a2 && <a href="#investment-cases">Bull &amp; bear cases <ArrowRight size={14} /></a>}
+            <a href="#questions">Questions <ArrowRight size={14} /></a>
+          </nav>
+        </header>
 
         {/* Verdict Cards */}
         {a1 && a2 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+          <div className="helm-comparison-verdicts">
             <VerdictCard ticker={ticker1} name={name1} analysis={a1} />
             <VerdictCard ticker={ticker2} name={name2} analysis={a2} />
           </div>
         )}
 
         {/* Side-by-side comparison table */}
-        <section className="mb-10">
-          <h2 className="type-eyebrow text-[var(--color-gold)] mb-4">
-            Key Metrics
-          </h2>
-          <div className="sovereign-card rounded overflow-hidden">
-            {/* Header row */}
-            <div className="grid grid-cols-3 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-base)]">
-              <div className="px-4 py-3 text-[12px] uppercase tracking-[0.15em] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
-                Metric
-              </div>
-              <div className="px-4 py-3 text-[12px] uppercase tracking-[0.15em] text-[var(--color-text-primary)] text-center" style={{ fontFamily: 'var(--font-mono)' }}>
-                {ticker1}
-              </div>
-              <div className="px-4 py-3 text-[12px] uppercase tracking-[0.15em] text-[var(--color-text-primary)] text-center" style={{ fontFamily: 'var(--font-mono)' }}>
-                {ticker2}
-              </div>
-            </div>
-            {/* Data rows */}
-            {rows.map((row, i) => (
-              <div
-                key={row.label}
-                className={`grid grid-cols-3 border-b border-[var(--color-border-subtle)] last:border-b-0 ${i % 2 === 0 ? '' : 'bg-[var(--color-bg-elevated)]/40'}`}
-              >
-                <div className="px-4 py-2.5 text-[14px] text-[var(--color-text-secondary)]">
-                  {row.label}
-                </div>
-                <div className="px-4 py-2.5 text-[14px] text-[var(--color-text-primary)] text-center" style={{ fontFamily: 'var(--font-mono)' }}>
-                  {row.ticker1}
-                </div>
-                <div className="px-4 py-2.5 text-[14px] text-[var(--color-text-primary)] text-center" style={{ fontFamily: 'var(--font-mono)' }}>
-                  {row.ticker2}
-                </div>
-              </div>
-            ))}
-          </div>
+        <section id="metrics" className="helm-comparison-section">
+          <div className="helm-discovery-section-line"><h2>Key metrics</h2><span>THE NUMBERS, SIDE BY SIDE</span></div>
+          <table className="helm-comparison-table">
+            <caption className="sr-only">Financial metrics for {ticker1} and {ticker2}</caption>
+            <thead><tr><th scope="col">Metric</th><th scope="col">{ticker1}</th><th scope="col">{ticker2}</th></tr></thead>
+            <tbody>{rows.map((row) => <tr key={row.label}><th scope="row">{row.label}</th><td>{row.ticker1}</td><td>{row.ticker2}</td></tr>)}</tbody>
+          </table>
         </section>
 
         {/* Bull / Bear Cases */}
         {a1 && a2 && (
-          <section className="mb-10">
-            <h2 className="type-eyebrow text-[var(--color-gold)] mb-4">
-              Bull &amp; Bear Cases
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <section id="investment-cases" className="helm-comparison-section">
+            <div className="helm-discovery-section-line"><h2>Bull &amp; bear cases</h2><span>WEIGH BOTH SIDES</span></div>
+            <div className="helm-comparison-cases">
               <CaseCard ticker={ticker1} bullCase={a1.bullCase} bearCase={a1.bearCase} />
               <CaseCard ticker={ticker2} bullCase={a2.bullCase} bearCase={a2.bearCase} />
             </div>
@@ -342,7 +286,7 @@ export default async function ComparePage({ params }: Props) {
         )}
 
         {/* FAQ Section */}
-        <section className="mb-10 border-t border-[var(--color-border-subtle)] pt-8 max-w-3xl mx-auto">
+        <section id="questions" className="helm-comparison-section helm-comparison-faq">
           <h2 className="text-[18px] font-semibold text-[var(--color-text-primary)] mb-6">
             Frequently Asked Questions
           </h2>
@@ -369,34 +313,19 @@ export default async function ComparePage({ params }: Props) {
         </section>
 
         {/* CTA */}
-        <section className="sovereign-card rounded text-center p-8 md:p-10">
-          <h2 className="text-[24px] font-bold text-[var(--color-text-primary)] mb-3">
-            Get deeper analysis on Helm Terminal
-          </h2>
-          <p className="text-[15px] text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">
-            AI-powered portfolio intelligence, daily briefs, and real-time monitoring for every stock you own.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link
-              href="/signup"
-              className="px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110"
-            >
-              Sign Up Free
-            </Link>
-            <div className="flex gap-3">
-              <Link
-                href={`/analyze/${ticker1}`}
-                className="px-5 py-2.5 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-colors"
-              >
-                Full {ticker1} Analysis
-              </Link>
-              <Link
-                href={`/analyze/${ticker2}`}
-                className="px-5 py-2.5 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-colors"
-              >
-                Full {ticker2} Analysis
-              </Link>
+        <section className="helm-discovery-next">
+          <div>
+            <p className="helm-kicker">RESEARCH IS JUST THE BEGINNING</p>
+            <h2>Put the comparison in context.</h2>
+            <p>Bring your holdings into Helm for portfolio intelligence, daily briefs, and thesis monitoring. Start with one position.</p>
+            <div className="helm-comparison-full-links">
+              <Link href={`/analyze/${ticker1}`} className="helm-text-link">Full {ticker1} analysis <ArrowUpRight size={16} /></Link>
+              <Link href={`/analyze/${ticker2}`} className="helm-text-link">Full {ticker2} analysis <ArrowUpRight size={16} /></Link>
             </div>
+          </div>
+          <div className="helm-discovery-next-actions">
+            <Link href="/signup" className="helm-button">Build my portfolio view <ArrowRight size={17} /></Link>
+            <span>Free to start. No card required.</span>
           </div>
         </section>
 
@@ -425,7 +354,7 @@ function VerdictCard({
 }) {
   const label = analysis.verdict.charAt(0).toUpperCase() + analysis.verdict.slice(1);
   return (
-    <div className={`border rounded p-5 ${verdictBg(analysis.verdict)}`}>
+    <article className={`helm-comparison-verdict ${verdictBg(analysis.verdict)}`}>
       <div className="flex items-center justify-between mb-3">
         <div>
           <p
@@ -446,7 +375,7 @@ function VerdictCard({
       <p className="text-[13px] text-[var(--color-text-secondary)] italic">
         {analysis.recommendation}
       </p>
-    </div>
+    </article>
   );
 }
 
@@ -460,7 +389,7 @@ function CaseCard({
   bearCase: string;
 }) {
   return (
-    <div className="sovereign-card rounded p-5 space-y-4">
+    <article className="helm-comparison-case space-y-5">
       <p
         className="text-[13px] uppercase tracking-[0.2em] text-[var(--color-text-primary)] font-semibold"
         style={{ fontFamily: 'var(--font-mono)' }}
@@ -479,7 +408,7 @@ function CaseCard({
         </p>
         <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed">{bearCase}</p>
       </div>
-    </div>
+    </article>
   );
 }
 

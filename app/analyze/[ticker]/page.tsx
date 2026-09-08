@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { parseResearchTicker } from '@/lib/research-ticker';
 import { WatchTickersCard } from '@/components/watch-tickers-card';
 import { ThesisPanel } from '@/components/analyze/thesis-panel';
 import { notFound } from 'next/navigation';
@@ -49,11 +50,9 @@ function relativeTime(iso: string | null): string {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { ticker } = await params;
-  const symbol = ticker.toUpperCase().replace(/[^A-Z]/g, '');
-
-  if (!symbol || symbol.length > 5) {
-    return { title: 'Ticker not found — Helm Terminal' };
-  }
+  const parsed = parseResearchTicker(ticker);
+  if (!parsed.ok) return { title: 'Research unavailable — Helm Terminal', description: parsed.message, robots: { index: false, follow: true } };
+  const symbol = parsed.ticker;
 
   // Call analyzeStock for both metadata and page body — it's cached, so the
   // second call in the page component is free. anonIp gates anonymous on-demand
@@ -106,11 +105,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function TickerAnalysisPage({ params }: Props) {
   const { ticker } = await params;
-  const symbol = ticker.toUpperCase().replace(/[^A-Z]/g, '');
-
-  if (!symbol || symbol.length > 5) {
-    notFound();
-  }
+  const parsed = parseResearchTicker(ticker);
+  if (!parsed.ok) notFound();
+  const symbol = parsed.ticker;
 
   const ip = await anonClientIp();
   const [{ analysis, computedAt, dataSources, methodologyVersion }, tickerData] = await Promise.all([

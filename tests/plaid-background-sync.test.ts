@@ -11,7 +11,7 @@ function fakeFetch(plan: Record<string, () => Promise<Response>>, calls: Call[])
     return h();
   };
 }
-const ok = () => Promise.resolve(new Response('{}', { status: 200 }));
+const ok = () => Promise.resolve(Response.json({ success: true, synced: 1, failed: 0, results: [{ item_id: 'new-item', success: true }] }));
 const bad = () => Promise.resolve(new Response('{}', { status: 500 }));
 const never = () => new Promise<Response>(() => {});
 const noSleep = () => new Promise<void>(() => {});
@@ -63,5 +63,21 @@ describe('runBackgroundSync', () => {
       sleep: instant,
     });
     expect(r).toBe('timeout');
+  });
+
+  it('preserves a partial import and refreshes its prices', async () => {
+    const calls: Call[] = [];
+    const partial = () => Promise.resolve(Response.json({ success: false, synced: 1, failed: 1, results: [{ success: true }, { success: false }] }, { status: 207 }));
+    expect(await runBackgroundSync({ fetchImpl: fakeFetch({ '/api/plaid/sync': partial, '/api/market/prices/refresh': ok }, calls), sleep: noSleep })).toBe('partial');
+    expect(calls.map(call => call.url)).toEqual(['/api/plaid/sync', '/api/market/prices/refresh']);
+  });
+
+  it('scopes post-link import to its new item', async () => {
+    const requests: RequestInit[] = [];
+    await runBackgroundSync({ itemId: 'new-item', sleep: noSleep, fetchImpl: async (url, init) => {
+      if (url === '/api/plaid/sync') requests.push(init!);
+      return ok();
+    } });
+    expect(JSON.parse(String(requests[0].body))).toEqual({ item_id: 'new-item' });
   });
 });

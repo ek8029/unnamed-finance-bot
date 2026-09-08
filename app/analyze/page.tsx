@@ -1,8 +1,8 @@
+import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { HelmMark } from '@/components/helm-mark';
+import { ArrowUpRight, ArrowRight } from 'lucide-react';
 import { LegalFooter } from '@/components/legal-footer';
-import { CinematicBg } from '@/components/cinematic-bg';
 import { TickerSearch } from './ticker-search';
 
 export const metadata: Metadata = {
@@ -28,11 +28,14 @@ export const metadata: Metadata = {
   },
 };
 
-const POPULAR_TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META', 'JPM'];
+const POPULAR_TICKERS = [
+  ['AAPL', 'Apple'], ['MSFT', 'Microsoft'], ['GOOGL', 'Alphabet'], ['AMZN', 'Amazon'],
+  ['NVDA', 'NVIDIA'], ['TSLA', 'Tesla'], ['META', 'Meta Platforms'], ['JPM', 'JPMorgan Chase'],
+];
 
 export default function AnalyzePage() {
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)] flex flex-col relative overflow-hidden">
+    <div className="helm-discovery helm-analyze">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -47,65 +50,55 @@ export default function AnalyzePage() {
           }),
         }}
       />
-      <CinematicBg />
-      {/* Nav */}
-      <nav className="relative z-10 border-b border-[var(--color-border-base)]">
-        <div className="container mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <HelmMark size={28} />
-            <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
-          </Link>
-          <div className="flex items-center gap-5">
-            <Link
-              href="/analyze"
-              className="text-[15px] text-[var(--color-text-primary)] font-medium transition-colors"
-            >
-              Analyze
-            </Link>
-            <Link
-              href="/login"
-              className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-            >
-              Sign in
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-20">
-        <div className="max-w-2xl w-full text-center space-y-10">
-          <div className="space-y-5">
-            <div className="type-eyebrow text-[var(--color-gold)]">Free Stock Analysis</div>
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.05]">
-              Institutional-grade<br />stock analysis
-            </h1>
-            <p className="text-lg text-[var(--color-text-secondary)] max-w-xl mx-auto leading-relaxed">
-              AI-powered reports with real-time pricing, financial metrics, analyst consensus, earnings data, and news sentiment.
+      <SiteNav />
+      <main id="main-content" className="helm-discovery-width">
+        <section className="helm-analyze-hero" aria-labelledby="analysis-title">
+          <div className="helm-analyze-copy">
+            <p className="helm-kicker">THE RESEARCH STARTS HERE</p>
+            <h1 id="analysis-title">One ticker.<br /><span>A fuller picture.</span></h1>
+            <p className="helm-discovery-description">
+              Free AI stock analysis that brings the numbers, the expectations, and both sides of the investment case into focus.
             </p>
-          </div>
-
-          {/* Command palette style search */}
-          <div className="sovereign-card rounded p-7">
-            <TickerSearch size="lg" />
-          </div>
-
-          <div className="space-y-4">
-            <div className="type-eyebrow text-[var(--color-text-muted)]">Popular</div>
-            <div className="flex flex-wrap justify-center gap-2.5">
-              {POPULAR_TICKERS.map((ticker) => (
-                <a
-                  key={ticker}
-                  href={`/analyze/${ticker}`}
-                  className="px-5 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[15px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-gold-border)] transition-colors"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  {ticker}
-                </a>
-              ))}
+            <div className="helm-discovery-search">
+              <p className="helm-discovery-search-label">Which company is on your mind?</p>
+              <TickerSearch size="lg" />
+              <p className="helm-discovery-search-note">Start with a US stock ticker. Read your first analysis before creating an account.</p>
             </div>
           </div>
-        </div>
+          <aside className="helm-analysis-index" aria-labelledby="report-contents">
+            <div className="helm-analysis-index-top"><span>HELM RESEARCH</span><span>REPORT CONTENTS</span></div>
+            <h2 id="report-contents">Understand the business.<br />Pressure-test the case.</h2>
+            <ol>
+              <li><span>01</span><div><h3>The fundamentals</h3><p>Pricing, valuation, financial metrics, and earnings data.</p></div></li>
+              <li><span>02</span><div><h3>The market’s expectations</h3><p>Analyst consensus and the context behind the news.</p></div></li>
+              <li><span>03</span><div><h3>Both sides of the thesis</h3><p>The bull case, the bear case, and an AI summary to bring it together.</p></div></li>
+            </ol>
+            <Link href="/compare" className="helm-text-link">Weighing two companies? Compare them <ArrowUpRight size={16} /></Link>
+          </aside>
+        </section>
+
+        <section className="helm-discovery-popular" aria-labelledby="popular-analysis">
+          <div className="helm-discovery-section-line"><h2 id="popular-analysis">A few places to begin</h2><span>POPULAR US STOCKS</span></div>
+          <div className="helm-discovery-tickers">
+            {POPULAR_TICKERS.map(([ticker, name]) => (
+              <Link key={ticker} href={`/analyze/${ticker}`} prefetch={false}>
+                <div><strong>{ticker}</strong><span>{name}</span></div><ArrowUpRight size={18} />
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="helm-discovery-next" aria-labelledby="next-step-title">
+          <div>
+            <p className="helm-kicker">FROM A SINGLE STOCK TO EVERYTHING YOU OWN</p>
+            <h2 id="next-step-title">Make the intelligence personal.</h2>
+            <p>Add your holdings to connect the research to your portfolio. Start with one position or link your accounts through Plaid.</p>
+          </div>
+          <div className="helm-discovery-next-actions">
+            <Link href="/signup" className="helm-button">Build my portfolio view <ArrowRight size={17} /></Link>
+            <span>Free to start. No card required.</span>
+          </div>
+        </section>
       </main>
 
       <LegalFooter />

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk, Instrument_Serif, Newsreader, Fraunces } from 'next/font/google';
+import { Geist, Space_Grotesk, Instrument_Serif, Newsreader, Fraunces } from 'next/font/google';
 
-const inter = Inter({
+const inter = Geist({
   subsets: ['latin'],
   variable: '--font-sans',
   weight: ['400', '500', '600', '700'],
@@ -9,9 +9,13 @@ const inter = Inter({
 });
 import Script from 'next/script';
 import "./globals.css";
+import "./helm-design.css";
+import "./helm-discovery.css";
+import "./helm-terminal-details.css";
 import { Providers } from '@/components/providers';
 import { RecoveryRedirect } from '@/components/recovery-redirect';
 import { CookieConsent } from '@/components/cookie-consent';
+import { PlatformSurface } from '@/components/platform-surface';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -228,7 +232,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         <RecoveryRedirect />
-        <Providers>{children}</Providers>
+        <Providers><PlatformSurface>{children}</PlatformSurface></Providers>
         <Script
           src="https://plausible.io/js/pa-O3gPqcGXLE6Ju_7Ulgsf6.js"
           strategy="afterInteractive"

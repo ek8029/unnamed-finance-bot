@@ -80,6 +80,16 @@ const LIABILITY_TYPES = new Set(['credit_card', 'loan', 'mortgage']);
  */
 const AVAILABLE_MEANS_SPENDABLE = new Set(['checking/checking', 'savings/savings']);
 
+/** Preserve the distinction between an observed zero and no reported balance. */
+export function reportedAccountBalance(a: BalanceRow): number | null {
+  const pair = `${String(a.account_type ?? '').toLowerCase()}/${String(a.account_subtype ?? '').toLowerCase()}`;
+  const value = !isLiabilityType(a.account_type) && AVAILABLE_MEANS_SPENDABLE.has(pair) && a.available_balance != null
+    ? a.available_balance : a.current_balance;
+  if (value == null || (typeof value === 'string' && value.trim() === '')) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 const num = (v: number | string | null | undefined): number => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;

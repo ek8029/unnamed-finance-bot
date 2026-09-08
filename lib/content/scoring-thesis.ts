@@ -14,6 +14,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createStaticServiceClient } from '@/lib/supabase/server';
+import { parseResearchTicker } from '@/lib/research-ticker';
 import { getHouseThesis } from './house-theses';
 import { classifyClaim } from './claim-type';
 import {
@@ -241,7 +242,12 @@ export function joinTitleExcerpt(title: string | null, excerpt: string | null): 
 }
 
 export async function getScoringThesisData(ticker: string, userId?: string): Promise<ScoringThesisData> {
-  const SYM = ticker.toUpperCase().replace(/[^A-Z]/g, '');
+  const parsed = parseResearchTicker(ticker);
+  if (!parsed.ok) return {
+    ticker: ticker.trim().toUpperCase(), company: null, hasHouseThesis: false,
+    pillars: [], rawRows: 0, dedupedRows: 0, contributingUsers: 0, lastScan: null, publicRows: 0,
+  };
+  const SYM = parsed.ticker;
   const db = createStaticServiceClient();
   const house = getHouseThesis(SYM);
 

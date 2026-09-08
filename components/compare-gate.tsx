@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
@@ -31,6 +32,12 @@ function incrementAnonUsage(): void {
 
 export function CompareGate() {
   const [state, setState] = useState<GateState>('loading');
+  const pathname = usePathname();
+  const gateDialog = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (state.endsWith('blocked') && gateDialog.current && !gateDialog.current.open) gateDialog.current.showModal();
+  }, [state]);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,6 +45,7 @@ export function CompareGate() {
     async function check() {
       try {
         const res = await fetch('/api/user/tier');
+        if (cancelled) return;
 
         if (res.status === 401) {
           const today = new Date().toISOString().slice(0, 10);
@@ -60,6 +68,7 @@ export function CompareGate() {
         }
 
         const data = await res.json();
+        if (cancelled) return;
 
         if (data.tier === 'pro' || data.tier === 'max') {
           if (!cancelled) setState('allowed');
@@ -90,10 +99,8 @@ export function CompareGate() {
   if (state === 'loading' || state === 'allowed') return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 backdrop-blur-md bg-[var(--color-bg-base)]/80" />
-
-      <div className="relative z-10 w-full max-w-md mx-4 p-8 rounded-[var(--radius-md)] border border-[var(--color-border-base)] bg-[var(--color-bg-base)]">
+    <dialog ref={gateDialog} className="helm-research-gate" aria-labelledby="comparison-limit-title" onCancel={e => { e.preventDefault(); window.location.assign('/compare'); }}>
+      <div>
         <div className="flex items-center gap-3 mb-8">
           <HelmMark size={24} />
           <div className="h-px flex-1 bg-[var(--color-border-base)]" />
@@ -107,14 +114,14 @@ export function CompareGate() {
 
         {state === 'anon-blocked' ? (
           <>
-            <h2 className="text-[24px] font-bold tracking-tight text-[var(--color-text-primary)] leading-tight mb-3">
+            <h2 id="comparison-limit-title" className="text-[24px] font-bold tracking-tight text-[var(--color-text-primary)] leading-tight mb-3">
               You&apos;ve used your free comparison
             </h2>
             <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed mb-8">
               Create a free Helm account to get 2 stock comparisons per day. No credit card required.
             </p>
             <Link
-              href="/signup"
+              href={`/signup?next=${encodeURIComponent(pathname)}`}
               className="group w-full flex items-center justify-center gap-2.5 px-8 py-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[15px] rounded-[var(--radius-md)] transition-colors duration-200 mb-4"
             >
               Create free account
@@ -122,7 +129,7 @@ export function CompareGate() {
             </Link>
             <div className="flex items-center justify-between text-[13px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
               <Link
-                href="/login"
+                href={`/login?redirect=${encodeURIComponent(pathname)}`}
                 className="hover:text-[var(--color-text-secondary)] transition-colors duration-150"
               >
                 Already have an account? Log in
@@ -131,7 +138,7 @@ export function CompareGate() {
           </>
         ) : (
           <>
-            <h2 className="text-[24px] font-bold tracking-tight text-[var(--color-text-primary)] leading-tight mb-3">
+            <h2 id="comparison-limit-title" className="text-[24px] font-bold tracking-tight text-[var(--color-text-primary)] leading-tight mb-3">
               Daily comparison limit reached
             </h2>
             <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed mb-8">
@@ -155,7 +162,8 @@ export function CompareGate() {
             </div>
           </>
         )}
+        <Link href="/compare" className="helm-gate-back">← Back to comparisons</Link>
       </div>
-    </div>
+    </dialog>
   );
 }

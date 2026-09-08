@@ -10,6 +10,7 @@ import { getTickerThesisData, type PublicPillar, type PublicCatch } from '@/lib/
 import { getCompanyEntries } from '@/lib/edgar';
 import { classifyScanSymbol, rankCompanyMatches } from '@/lib/scan-classify';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
+import { parseResearchTicker } from '@/lib/research-ticker';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,8 +47,19 @@ export async function GET(request: Request) {
       const match = entries?.find((e) => e.ticker === raw) ?? null;
       const suggestions = entries && !match ? rankCompanyMatches(raw, entries, 3) : [];
       const { kind } = classifyScanSymbol({ house: false, filer: !!match, suggestions, known: entries !== null });
+      const research = parseResearchTicker(raw);
       return NextResponse.json(
-        { house: false, kind, ticker: raw, company: match?.title ?? null, suggestions, analyzePath: `/analyze/${raw}` },
+        {
+          house: false,
+          // Preserve company-name suggestions (e.g. MICRON → MU), but do not
+          // draft or advertise a report for an unsupported share-class symbol.
+          kind: !research.ok && kind !== 'suggest' ? 'unsupported' : kind,
+          ticker: raw,
+          company: match?.title ?? null,
+          suggestions,
+          analyzePath: research.ok ? `/analyze/${raw}` : '/analyze',
+          ...(!research.ok ? { researchUnavailable: research.message } : {}),
+        },
         { headers: { 'Cache-Control': 'private, no-store' } },
       );
     }

@@ -4,6 +4,8 @@ import { getQuote } from '@/lib/financial-data';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { HoldingDetailClient } from './holding-detail-client';
+import { parseHoldingSymbol } from '@/lib/holding-symbol';
+import { parseResearchTicker } from '@/lib/research-ticker';
 
 interface Props {
   params: Promise<{ ticker: string }>;
@@ -11,13 +13,14 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { ticker } = await params;
-  return { title: ticker.toUpperCase().replace(/[^A-Z]/g, '') || 'Holding' };
+  return { title: parseHoldingSymbol(ticker) || 'Holding' };
 }
 
 export default async function HoldingDetailPage({ params }: Props) {
   const { ticker } = await params;
-  const symbol = ticker.toUpperCase().replace(/[^A-Z]/g, '');
-  if (!symbol || symbol.length > 5) notFound();
+  const symbol = parseHoldingSymbol(ticker);
+  if (!symbol) notFound();
+  const research = parseResearchTicker(symbol);
 
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -64,14 +67,14 @@ export default async function HoldingDetailPage({ params }: Props) {
             No position in {symbol}
           </h1>
           <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)] mb-6">
-            You don&apos;t hold {symbol} in any linked account. You can still run a full AI analysis on it.
+            You don&apos;t hold {symbol} in any linked account. {research.ok ? 'You can still run a full AI analysis on it.' : research.message}
           </p>
           <Link
-            href={`/dashboard/analyze/${symbol}`}
+            href={research.ok ? `/dashboard/analyze/${symbol}` : '/dashboard/analyze'}
             className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[#0A0A0A] font-mono text-[12px] font-bold uppercase tracking-[0.12em] transition-all"
             style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.25)' }}
           >
-            Open analysis for {symbol}
+            {research.ok ? `Open analysis for ${symbol}` : 'Research another ticker'}
           </Link>
         </div>
       </div>

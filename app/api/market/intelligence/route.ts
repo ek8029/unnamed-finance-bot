@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { getSourceTier } from '@/lib/news-quality';
-import { subjectPrefilter, lowValueShape } from '@/lib/news-subject';
+import { newsDisposition } from '@/lib/news-relevance';
 import { rankFeed } from '@/lib/market-feed-rank';
 
 export async function GET(request: Request) {
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
 
     // Optional filter by user's holdings (pass tickers as comma-separated)
     const tickersParam = searchParams.get('tickers');
-    const userTickers = tickersParam ? tickersParam.split(',') : null;
+    const userTickers = tickersParam ? [...new Set(tickersParam.split(',').map(t => t.trim().toUpperCase()).filter(t => /^[A-Z][A-Z.\-]{0,6}$/.test(t)))] : null;
 
     // ── Build holdings lookup for "Impact on You" context ──
     const holdingsLookup = new Map<string, { totalValue: number; portfolioWeight: number }>();
@@ -85,6 +85,12 @@ export async function GET(request: Request) {
       console.error('Error fetching market events:', eventsResult.error);
     }
 
+    const newsTickers = [...new Set((newsResult.data ?? []).flatMap(article => [article.primary_ticker, article.subject_ticker, ...(article.tickers ?? [])]).filter((ticker): ticker is string => typeof ticker === 'string' && Boolean(ticker)))];
+    const { data: companies } = newsTickers.length > 0
+      ? await supabase.from('securities').select('ticker, security_name').in('ticker', newsTickers)
+      : { data: [] };
+    const names = new Map<string, string>((companies ?? []).filter(company => company.security_name).map(company => [company.ticker.toUpperCase(), company.security_name as string]));
+
     // Transform news for frontend
     // Deduplicate by URL (articles with multiple tickers can appear multiple times)
     const seenUrls = new Set<string>();
@@ -93,30 +99,7 @@ export async function GET(request: Request) {
       if (seenUrls.has(key)) return false;
       seenUrls.add(key);
       return true;
-    })
-      // Drop articles that only MENTION their ticker (an ex-employer, a rival,
-      // a market wrap that lists the company). `subject_verdict` is written at
-      // ingest by migration 068; the prefilter re-runs here so the rows written
-      // before that existed get the same treatment without a backfill. A null
-      // verdict on an unrecognised shape is shown, so this can only remove
-      // headlines we can name a reason for.
-      .filter(article => {
-        // Editorial, not accuracy: an opinion listicle can be genuinely about
-        // the company and still not belong in a feed of what happened.
-        if (lowValueShape(article.title ?? '')) return false;
-        // A mention is the wrong reader's news. If the classifier named the
-        // company it IS about and this reader holds it, it becomes theirs.
-        if (article.subject_verdict === 'mention') {
-          return !!(article.subject_ticker && userTickers?.includes(article.subject_ticker));
-        }
-        if (article.subject_verdict === 'about') return true;
-        if (!article.primary_ticker) return true;
-        return !subjectPrefilter({
-          title: article.title ?? '',
-          ticker: article.primary_ticker,
-          tickers: article.tickers ?? [],
-        });
-      });
+    }).filter(article => newsDisposition(article, names).kind !== 'excluded');
 
     const news = dedupedNews.map(article => {
       // Use primary_ticker for relevance — the article's actual subject,
@@ -124,13 +107,7 @@ export async function GET(request: Request) {
       // Only use primary_ticker — never fall back to tickers[0] which causes misattribution.
       // A re-aimed row (070) is attributed to the company it is actually about,
       // so the impact note and the ranking weight describe the right holding.
-      const reaimed =
-        article.subject_verdict === 'mention' &&
-        article.subject_ticker &&
-        userTickers?.includes(article.subject_ticker)
-          ? (article.subject_ticker as string)
-          : null;
-      const primary = reaimed || article.primary_ticker || null;
+      const primary = newsDisposition(article, names).ticker;
       const isUserHolding = userTickers && primary && userTickers.includes(primary);
 
       // "Impact on You" context
@@ -146,11 +123,13 @@ export async function GET(request: Request) {
         sentiment: article.sentiment,
         tickers: article.tickers || [],
         primaryTicker: primary,
+        subjectVerdict: article.subject_verdict ?? null,
+        subjectTicker: article.subject_ticker ?? null,
         sectors: article.sectors || [],
         publishedAt: article.published_at,
         relevance: isUserHolding
           ? 'Your Holdings'
-          : article.sectors?.[0] || 'Market',
+          : 'Market context',
         // New fields
         sourceTier: getSourceTier(article.source),
         positionValue: holding?.totalValue ?? null,

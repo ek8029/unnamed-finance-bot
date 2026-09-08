@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import { usePlaidLink } from 'react-plaid-link';
 import { Loader2, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { requestConnectionSync } from '@/lib/plaid/sync-client';
 
 interface PlaidUpdateLinkProps {
   itemId: string;
@@ -58,17 +59,17 @@ export function PlaidUpdateLink({
   const handleSuccess = useCallback(async () => {
     setStatus('reconnecting');
     try {
-      await fetch('/api/plaid/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ item_id: itemId }),
-      });
+      const outcome = await requestConnectionSync({ itemId });
+      // Imported balances prove the repaired connection works, even if an
+      // optional product needs another attempt. Refresh the parent either way.
+      if (outcome.synced > 0) onSuccess?.();
+      if (outcome.status !== 'synced') onError?.(`Credentials updated. ${outcome.message}`);
     } catch {
+      onError?.('Credentials updated, but the account could not refresh. Please try again.');
     } finally {
       setStatus('idle');
-      onSuccess?.();
     }
-  }, [itemId, onSuccess]);
+  }, [itemId, onSuccess, onError]);
 
   const { open, ready } = usePlaidLink({
     token: linkToken ?? '',

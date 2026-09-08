@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFullTickerData } from '@/lib/financial-data';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
+import { parseResearchTicker } from '@/lib/research-ticker';
 
 export async function GET(request: NextRequest) {
   // IP-based rate limit: 30 requests per hour
@@ -14,11 +15,9 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const symbol = request.nextUrl.searchParams.get('symbol')?.toUpperCase().replace(/[^A-Z]/g, '');
-
-  if (!symbol || symbol.length > 5) {
-    return NextResponse.json({ error: 'Invalid ticker symbol' }, { status: 400 });
-  }
+  const parsed = parseResearchTicker(request.nextUrl.searchParams.get('symbol') || '');
+  if (!parsed.ok) return NextResponse.json({ error: parsed.message }, { status: 400 });
+  const symbol = parsed.ticker;
 
   const data = await getFullTickerData(symbol);
 

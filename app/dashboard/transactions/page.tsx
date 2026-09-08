@@ -18,6 +18,7 @@ import {
   RefreshCw,
   Minus,
   Link2,
+  ArrowUpRight,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFormat } from '@/hooks/use-format';
@@ -290,28 +291,30 @@ function LedgerSkeleton() {
    framing + gold Connect CTA, mirroring the rest of the redesigned dashboard. */
 function ConnectBrokerage() {
   return (
-    <div className="min-h-[60vh] flex items-center justify-center px-6 py-16">
-      <div className="max-w-[470px] text-center">
+    <div className="helm-detail-page helm-transactions">
+      <div className="helm-detail-empty helm-detail-activation">
+      <div>
+        <p className="helm-kicker">Portfolio activity / Transactions</p>
         <div className="w-[60px] h-[60px] mx-auto mb-[22px] rounded-[14px] bg-[var(--color-gold-surface)] border border-[var(--color-gold-border)] flex items-center justify-center">
           <Link2 className="w-[26px] h-[26px] text-[var(--color-gold)]" strokeWidth={1.6} />
         </div>
         <h1 className="text-[24px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)] mb-3">
-          Connect your brokerage
+          Your complete financial paper trail.
         </h1>
         <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)] mb-6">
-          Link an account and Helm builds your net worth, holdings, taxes and intelligence automatically.{' '}
+          Connect your accounts to bring trades, dividends, transfers, and fees into a single searchable ledger.{' '}
           <span className="text-[var(--color-positive)]">Read-only access</span> &mdash; Helm can never move money or place trades.
         </p>
         <Link
           href="/dashboard/accounts"
-          className="inline-flex items-center justify-center px-6 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] rounded-[7px] text-[#0A0A0A] font-mono text-[12px] font-bold uppercase tracking-[0.12em] transition-all"
-          style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.25)' }}
+          className="helm-button"
         >
-          Connect account
+          Connect a brokerage <ArrowUpRight size={16} />
         </Link>
-        <div className="font-mono text-[10px] text-[var(--color-text-muted)] mt-[18px] tracking-[0.04em]">
+        <div className="helm-detail-footnote mt-[18px]">
           12,000+ institutions &middot; 256-bit encryption &middot; via Plaid
         </div>
+      </div>
       </div>
     </div>
   );
@@ -531,19 +534,19 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="w-full max-w-[1100px] mx-auto px-4 sm:px-7 py-6 sm:py-7 space-y-6">
+    <div className="helm-detail-page helm-transactions space-y-7">
       {/* ─── Header ─── */}
-      <header className="space-y-5">
+      <header className="helm-transactions-heading space-y-4">
         {/* Eyebrow */}
-        <div className="type-eyebrow text-[var(--color-text-muted)]">
-          Activity <span className="text-[var(--color-gold)]">&middot;</span> All accounts
+        <div className="helm-kicker">
+          Portfolio activity / Transactions
         </div>
 
         {/* Title row */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div className="space-y-2">
             <h1 className="font-sans font-bold tracking-[-0.025em] text-[var(--color-text-primary)] leading-none text-[28px] sm:text-[34px]">
-              Every move, in one ledger
+              Every move. One ledger.
             </h1>
             <div
               className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] text-[var(--color-text-muted)]"
@@ -645,10 +648,10 @@ export default function TransactionsPage() {
       {/* ─── Main Content ─── */}
       <main className="space-y-6">
         {/* ─── Summary Tiles ─── */}
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
+        <div className="helm-transaction-metrics">
           {/* Cash Flow */}
           <div className="sovereign-card rounded-lg px-5 py-4">
-            <p className="type-data-label mb-2">Cash Flow</p>
+            <p className="helm-metric-label mb-3">Net cash flow</p>
             {loading ? (
               <Skeleton className="h-7 w-24 mb-1" />
             ) : (
@@ -670,7 +673,7 @@ export default function TransactionsPage() {
 
           {/* Bought */}
           <div className="sovereign-card rounded-lg px-5 py-4">
-            <p className="type-data-label mb-2">Bought</p>
+            <p className="helm-metric-label mb-3">Bought</p>
             {loading ? (
               <Skeleton className="h-7 w-20 mb-1" />
             ) : (
@@ -685,7 +688,7 @@ export default function TransactionsPage() {
 
           {/* Sold */}
           <div className="sovereign-card rounded-lg px-5 py-4">
-            <p className="type-data-label mb-2">Sold</p>
+            <p className="helm-metric-label mb-3">Sold</p>
             {loading ? (
               <Skeleton className="h-7 w-20 mb-1" />
             ) : (
@@ -700,7 +703,7 @@ export default function TransactionsPage() {
 
           {/* Dividends */}
           <div className="sovereign-card rounded-lg px-5 py-4">
-            <p className="type-data-label mb-2">Dividends</p>
+            <p className="helm-metric-label mb-3">Dividends</p>
             {loading ? (
               <Skeleton className="h-7 w-16 mb-1" />
             ) : (
@@ -715,7 +718,7 @@ export default function TransactionsPage() {
 
           {/* Fees */}
           <div className="sovereign-card rounded-lg px-5 py-4">
-            <p className="type-data-label mb-2">Fees</p>
+            <p className="helm-metric-label mb-3">Fees</p>
             {loading ? (
               <Skeleton className="h-7 w-16 mb-1" />
             ) : (
@@ -730,14 +733,13 @@ export default function TransactionsPage() {
         </div>
 
         {/* ─── Filter Chips ─── */}
-        <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Filter transactions by type">
+        <div className="helm-transaction-filters flex flex-wrap items-center gap-2" role="group" aria-label="Filter transactions by type">
           {/* Kind chips */}
           {CHIP_FILTERS.map((c) => (
             <button
               key={c.key}
               type="button"
-              role="tab"
-              aria-selected={chipFilter === c.key}
+              aria-pressed={chipFilter === c.key}
               aria-label={`Filter by ${c.label}`}
               onClick={() => setChipFilter(c.key)}
               className={`px-3.5 py-2.5 sm:py-2 rounded-full text-[15px] font-medium motion-safe:transition-all border ${
@@ -791,12 +793,12 @@ export default function TransactionsPage() {
         {loading ? (
           <LedgerSkeleton />
         ) : filtered.length === 0 ? (
-          <div className="sovereign-card rounded-xl flex flex-col items-center justify-center py-20 px-6 text-center">
+          <div className="helm-detail-empty">
             <div className="w-12 h-12 rounded-[10px] bg-[rgba(255,255,255,0.03)] border border-[var(--color-border-base)] flex items-center justify-center mb-4">
               <RefreshCw className="w-5 h-5 text-[var(--color-text-muted)]" strokeWidth={1.6} />
             </div>
             <p className="text-[16px] font-medium text-[var(--color-text-secondary)] mb-1.5">
-              No transactions found
+              {hasActiveFilters ? 'No activity matches these filters.' : 'Your transaction history starts here.'}
             </p>
             {hasActiveFilters ? (
               <button
@@ -806,18 +808,21 @@ export default function TransactionsPage() {
                 Clear all filters
               </button>
             ) : (
-              <p className="text-[15px] text-[var(--color-text-muted)]">
-                Once your accounts sync, every move lands here.
-              </p>
+              <>
+                <p className="text-[15px] text-[var(--color-text-muted)] max-w-[460px]">
+                  Trades, dividends, and transfers appear as your connected accounts sync. Check your connections or add an account to get started.
+                </p>
+                <Link href="/dashboard/accounts" className="helm-button helm-button-outline mt-6">Manage connected accounts <ArrowUpRight size={15} /></Link>
+              </>
             )}
           </div>
         ) : (
-          <div className="space-y-7">
+          <div className="helm-transaction-ledger space-y-7">
             {grouped.map((group) => (
               <div key={group.dateStr}>
                 {/* Date group label + daily net */}
                 <div className="flex items-center justify-between gap-3 mb-2.5 px-0.5">
-                  <h3 className="font-mono text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--color-text-muted)] m-0">
+                  <h3 className="text-[13px] font-medium text-[var(--color-text-secondary)] m-0">
                     {formatGroupDate(group.dateStr)}
                   </h3>
                   <span

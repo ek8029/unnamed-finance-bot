@@ -1,5 +1,6 @@
 'use client';
 
+import { SiteNav } from '@/components/site-nav';
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ChevronDown } from 'lucide-react';
@@ -152,35 +153,18 @@ export default function PricingPage() {
       <CinematicBg />
 
       {/* ── Navigation ── */}
-      <nav className="relative z-10 glass-nav">
-        <div className="container mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2.5">
-            <HelmMark size={32} />
-            <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
-          </Link>
-          {/* Wraps rather than clipping: <main> carries overflow-hidden, so at
-              320px the un-wrapped row silently cut "Sign in" off the edge with
-              no way to reach it. */}
-          <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-[13px] sm:text-[15px]">
-            <Link href="/analyze" className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Analyze</Link>
-            <Link href="/pricing" className="text-[var(--color-text-primary)] transition-colors">Pricing</Link>
-            <Link href="/blog" className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Blog</Link>
-            <Link href="/login" className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">Sign in</Link>
-          </div>
-        </div>
-      </nav>
+      <SiteNav />
 
       {/* ── Header ── */}
       <section className="relative container mx-auto px-6 pt-14 pb-9 max-w-4xl">
         <AnimatedSection delay={0}>
           <p className="type-eyebrow text-[var(--color-gold)] mb-3">Pricing</p>
           <h1 className="type-h1 text-[var(--color-text-primary)] mb-3 max-w-2xl">
-            One product. Zero percent of AUM.
+            Your first thesis is free. Your whole portfolio is Pro.
           </h1>
           <p className="type-body text-[var(--color-text-secondary)] max-w-xl">
-            The terminal is free and stays free. Pro is the agent: it reads filings and
-            reporting against the reasons you own each position, and quotes the line that
-            moved them.
+            Start with a connected portfolio and one monitored thesis. Choose Pro when you
+            want ongoing coverage across your positions, deeper research, and tax intelligence.
           </p>
         </AnimatedSection>
       </section>
@@ -249,8 +233,8 @@ export default function PricingPage() {
                     weighing. The arithmetic is on a stated advisory fee, not on
                     a competitor's advertised price, so it cannot go stale. */}
                 <p className="mt-3 mb-0 text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
-                  A 1% advisory fee on a $1M book is $10,000 a year. This is $
-                  {annual ? ANNUAL_PRICE : MONTHLY_PRICE * 12}.
+                  A flat ${annual ? ANNUAL_PRICE : MONTHLY_PRICE * 12} a year{annual ? '' : ' when paid monthly'}.
+                  Your subscription never scales with the size of your portfolio.
                 </p>
                 <p className="mt-3 mb-0 text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
                   Free for 14 days. A card is required to start, nothing is charged until the

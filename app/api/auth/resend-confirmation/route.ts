@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { confirmationUrl, safeNext } from '@/lib/checkout-intent';
 
 /**
  * A fresh confirmation email for an address whose link expired or was opened
@@ -9,8 +10,11 @@ import { NextResponse } from 'next/server';
  */
 export async function POST(request: Request) {
   let email = '';
+  let next = '/dashboard';
   try {
-    email = String(((await request.json()) as { email?: unknown }).email ?? '').trim().toLowerCase();
+    const body = await request.json() as { email?: unknown; next?: unknown };
+    email = String(body.email ?? '').trim().toLowerCase();
+    next = safeNext(typeof body.next === 'string' ? body.next : null);
   } catch {
     // fall through to the validation below
   }
@@ -22,7 +26,7 @@ export async function POST(request: Request) {
   const { error } = await supabase.auth.resend({
     type: 'signup',
     email,
-    options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent('/dashboard')}` },
+    options: { emailRedirectTo: confirmationUrl(origin, next) },
   });
   if (error && !/rate limit|security purposes/i.test(error.message)) {
     console.error('[resend-confirmation]', error.message);

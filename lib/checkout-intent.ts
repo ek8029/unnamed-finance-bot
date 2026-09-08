@@ -1,19 +1,5 @@
-/**
- * Carrying "I want to buy" through signup.
- *
- * The homepage and pricing CTAs said "Start free trial" and linked to a bare
- * /signup, which pushed to /dashboard on success. So the intent died at the
- * door: someone told they were starting a trial got an account, the free tier,
- * and no card form. The pricing page was worse, because a logged-out visitor
- * who clicked reached /api/stripe/checkout, got a 401, and the modal printed
- * the word "Unauthorized" at them.
- *
- * The intent rides as a query param through signup and is picked up again on
- * the dashboard, where the onboarding overlay is already mounted underneath.
- * Dismissing the card form therefore lands on onboarding rather than a dead
- * page, which is the whole reason the destination is /dashboard and not back
- * to /pricing.
- */
+/** Preserve an explicit Pro purchase through signup, login and email confirmation.
+ * The dashboard opens requested checkout before setup; closing it reveals onboarding. */
 
 /** The billing intervals a checkout intent may name. Mirrors BillingPeriod in
  *  lib/stripe.ts, kept local so client components need no server import. */
@@ -21,8 +7,7 @@ export type CheckoutIntent = 'pro' | 'pro_annual';
 
 export const CHECKOUT_PARAM = 'checkout';
 
-/** Where the intent waits while onboarding runs. sessionStorage because
- *  onboarding's dismiss can hard-navigate, which loses React state. */
+/** Session key retained to resume purchase intents parked by earlier setup flows. */
 export const PENDING_CHECKOUT_KEY = 'helm_pending_checkout';
 
 export function isCheckoutIntent(value: string | null | undefined): value is CheckoutIntent {
@@ -38,8 +23,20 @@ export function signupUrlForIntent(intent: CheckoutIntent): string {
 /** Only ever redirect to a path on this origin. A next= that leaves the site
  *  is an open redirect, and this one is reachable by anyone with a link. */
 export function safeNext(next: string | null | undefined, fallback = '/dashboard'): string {
-  if (!next) return fallback;
-  if (!next.startsWith('/') || next.startsWith('//')) return fallback;
-  if (next.includes('://')) return fallback;
-  return next;
+  if (!next || !next.startsWith('/') || next.startsWith('//') || /[\\\u0000-\u0020]/.test(next)) return fallback;
+  try {
+    const origin = 'https://helmterminal.dev';
+    const parsed = new URL(next, origin);
+    return parsed.origin === origin ? `${parsed.pathname}${parsed.search}${parsed.hash}` : fallback;
+  } catch { return fallback; }
+}
+
+export function confirmationUrl(origin: string, next: string | null | undefined): string {
+  return `${origin}/auth/callback?next=${encodeURIComponent(safeNext(next))}`;
+}
+
+export function loginUrlForNext(next: string, message?: string): string {
+  const params = new URLSearchParams({ redirect: safeNext(next) });
+  if (message) params.set('message', message);
+  return `/login?${params}`;
 }

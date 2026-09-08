@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import { parseResearchTicker } from '@/lib/research-ticker';
 
 export const alt = 'Stock Analysis — Helm Terminal';
 export const size = { width: 1200, height: 630 };
@@ -6,7 +7,8 @@ export const contentType = 'image/png';
 
 export default async function Image({ params }: { params: Promise<{ ticker: string }> }) {
   const { ticker } = await params;
-  const symbol = ticker.toUpperCase().replace(/[^A-Z]/g, '');
+  const parsed = parseResearchTicker(ticker);
+  const symbol = parsed.ok ? parsed.ticker : 'Research unavailable';
 
   return new ImageResponse(
     (

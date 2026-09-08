@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { isUsMarketOpen, type LiveQuote } from '@/hooks/use-live-prices';
+import { DEMO_EARNINGS } from '@/lib/demo-earnings';
+import { runAutomaticSync } from '@/lib/plaid/sync-client';
 
 // Types for API responses
 interface FinancialSummary {
@@ -46,7 +48,7 @@ interface Account {
   institution: string;
   institution_logo?: string;
   account_type: string;
-  balance: number;
+  balance: number | null;
   account_name: string;
   sync_status: string;
   last_synced_at?: string;
@@ -144,6 +146,10 @@ export function useFinancialSummary() {
   });
 
   useEffect(() => {
+    // A sample portfolio must not start sync/insight writes against whichever
+    // real account happens to be signed in to this browser.
+    if (isDemo) return;
+
     async function fetchData() {
       try {
         const res = await fetch('/api/financial-summary');
@@ -176,28 +182,10 @@ export function useFinancialSummary() {
       }
     }
 
-    // Auto-sync: trigger a background Plaid sync on dashboard load
-    // Only syncs if last sync was more than 1 hour ago
+    // Automatic refresh claims an attempt before fetching, including failures.
     async function autoSync() {
       try {
-        const lastSync = sessionStorage.getItem('helm_last_auto_sync');
-        const oneHourAgo = Date.now() - 60 * 60 * 1000;
-
-        if (lastSync && Number(lastSync) > oneHourAgo) {
-          return; // Already synced recently this session
-        }
-
-        // Fire-and-forget background sync, then generate insights
-        const res = await fetch('/api/plaid/sync', { method: 'POST' });
-        if (res.ok) {
-          // Throttle only on success — stamping before the fetch pinned an
-          // empty portfolio for an hour when the first sync failed.
-          sessionStorage.setItem('helm_last_auto_sync', String(Date.now()));
-          // Generate fresh insights from updated data
-          await Promise.all([
-            fetch('/api/insights/generate', { method: 'POST' }).catch(() => {}),
-            fetch('/api/market/prices/refresh', { method: 'POST' }).catch(() => {}),
-          ]);
+        await runAutomaticSync({ storage: sessionStorage, onRefresh: async () => {
           // Re-fetch dashboard data after sync completes
           const summaryRes = await fetch('/api/financial-summary');
           if (summaryRes.ok) {
@@ -218,7 +206,7 @@ export function useFinancialSummary() {
               savingsRateTimeline: data.savingsRateTimeline || prev.savingsRateTimeline,
             }));
           }
-        }
+        } });
       } catch {
         // Auto-sync failure is non-fatal - don't show errors
       }
@@ -226,7 +214,7 @@ export function useFinancialSummary() {
 
     fetchData();
     autoSync();
-  }, []);
+  }, [isDemo]);
 
   if (isDemo) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -331,6 +319,7 @@ const PRICE_REFRESH_INTERVAL = 10 * 60 * 1000; // Heavy DB refresh at most every
 const PRICE_POLL_INTERVAL = 15 * 1000;         // Light read-only quote poll every 15s while page is open
 
 export function useHoldings() {
+  const isDemoHoldings = typeof window !== 'undefined' && sessionStorage.getItem('helm_demo_mode') === '1';
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [allocation, setAllocation] = useState<{ name: string; value: number; percentage: number }[]>([]);
   const [totalValue, setTotalValue] = useState(0);
@@ -408,6 +397,7 @@ export function useHoldings() {
   }, []);
 
   const refreshPrices = useCallback(async () => {
+    if (isDemoHoldings) return;
     try {
       setRefreshing(true);
 
@@ -434,9 +424,13 @@ export function useHoldings() {
     } finally {
       setRefreshing(false);
     }
-  }, [applyHoldingsData]);
+  }, [applyHoldingsData, isDemoHoldings]);
 
   useEffect(() => {
+    // Returning demo rows below does not suppress effects. Stop the refresh
+    // path before it can persist prices, news, or enrichment for a real book.
+    if (isDemoHoldings) return;
+
     async function fetchData() {
       try {
         const res = await fetch('/api/holdings');
@@ -513,10 +507,9 @@ export function useHoldings() {
       clearInterval(pollId);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [applyHoldingsData, pollQuotes]);
+  }, [applyHoldingsData, pollQuotes, isDemoHoldings]);
 
   // Demo mode — return sample holdings without API calls
-  const isDemoHoldings = typeof window !== 'undefined' && sessionStorage.getItem('helm_demo_mode') === '1';
   if (isDemoHoldings) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const d = require('@/lib/demo-data');
@@ -758,6 +751,7 @@ export interface RecentEarning {
 }
 
 export interface EarningsReport {
+  sample?: boolean;
   upcoming: UpcomingEarning[];
   recent: RecentEarning[];
   totalUpcomingExposure: number;
@@ -765,12 +759,14 @@ export interface EarningsReport {
 }
 
 export function useEarnings() {
+  const isDemo = typeof window !== 'undefined' && sessionStorage.getItem('helm_demo_mode') === '1';
   const [report, setReport] = useState<EarningsReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPro, setIsPro] = useState(false);
 
   useEffect(() => {
+    if (isDemo) return;
     async function fetchData() {
       try {
         const res = await fetch('/api/dashboard/earnings');
@@ -785,8 +781,9 @@ export function useEarnings() {
       }
     }
     fetchData();
-  }, []);
+  }, [isDemo]);
 
+  if (isDemo) return { report: DEMO_EARNINGS, loading: false, error: null, isPro: true };
   return { report, loading, error, isPro };
 }
 

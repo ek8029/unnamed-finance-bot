@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getReportedFinancialsEdgar } from '@/lib/edgar';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
+import { parseResearchTicker } from '@/lib/research-ticker';
 
 /**
  * GET /api/market/financials?symbol=AAPL
@@ -14,10 +15,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
   }
 
-  const symbol = (req.nextUrl.searchParams.get('symbol') || '').toUpperCase().replace(/[^A-Z]/g, '');
-  if (!symbol || symbol.length > 5) {
-    return NextResponse.json({ error: 'Invalid symbol' }, { status: 400 });
-  }
+  const parsed = parseResearchTicker(req.nextUrl.searchParams.get('symbol') || '');
+  if (!parsed.ok) return NextResponse.json({ error: parsed.message }, { status: 400 });
+  const symbol = parsed.ticker;
 
   const reports = await getReportedFinancialsEdgar(symbol);
   return NextResponse.json(

@@ -5,6 +5,7 @@
 // come from the DB, status is computed. Public reads use the cookie-free service client.
 
 import { createStaticServiceClient } from '@/lib/supabase/server';
+import { parseResearchTicker } from '@/lib/research-ticker';
 import { getHouseThesis } from './house-theses';
 import {
   computePillarStatus,
@@ -79,7 +80,9 @@ interface EventRow {
  * we always read through the queue and never expose un-reviewed catches.
  */
 export async function getTickerThesisData(ticker: string): Promise<TickerThesisData | null> {
-  const SYM = ticker.toUpperCase().replace(/[^A-Z]/g, '');
+  const parsed = parseResearchTicker(ticker);
+  if (!parsed.ok) return null;
+  const SYM = parsed.ticker;
   const ht = getHouseThesis(SYM);
   if (!ht) return null;
 

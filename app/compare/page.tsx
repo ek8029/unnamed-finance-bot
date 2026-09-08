@@ -1,3 +1,4 @@
+import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { HelmMark } from '@/components/helm-mark';
@@ -78,34 +79,7 @@ export default function CompareIndexPage() {
     <div className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)] flex flex-col relative overflow-x-clip">
       <CinematicBg />
 
-      <header className="relative z-10 border-b border-[var(--color-border-base)]">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <HelmMark size={28} />
-            <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
-          </Link>
-          <nav aria-label="Main" className="flex items-center gap-6">
-            <Link
-              href="/analyze"
-              className="text-[14px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-            >
-              Analyze
-            </Link>
-            <Link
-              href="/app"
-              className="hidden sm:inline text-[14px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-            >
-              iPhone
-            </Link>
-            <Link
-              href="/signup"
-              className="px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[12px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110 active:translate-y-px"
-            >
-              Get Started
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <SiteNav />
 
       <main id="main-content" tabIndex={-1} className="relative z-10 flex-1 w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* ── Hero: copy left, index right ── */}

@@ -6,6 +6,7 @@
  */
 
 import { cache } from 'react';
+import { parseResearchTicker } from '@/lib/research-ticker';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import { verifyNumbers, describeCheck } from '@/lib/number-verify';
 import { logFigureCheck } from '@/lib/figure-log';
@@ -236,7 +237,7 @@ export interface AnalyzeStockResult {
 // page component previously each ran the full Finnhub + OpenAI pipeline on a
 // cache miss, doubling latency and API usage.
 export const analyzeStock = cache(async (ticker: string, allowGenerate = true, anonIp?: string): Promise<AnalyzeStockResult> => {
-  const symbol = ticker.toUpperCase().replace(/[^A-Z]/g, '');
+  const parsed = parseResearchTicker(ticker);
   const emptyResult: AnalyzeStockResult = {
     analysis: null,
     fromCache: false,
@@ -244,9 +245,10 @@ export const analyzeStock = cache(async (ticker: string, allowGenerate = true, a
     dataSources: DATA_SOURCES,
     methodologyVersion: METHODOLOGY_VERSION,
   };
-  if (!symbol || symbol.length > 5) {
+  if (!parsed.ok) {
     return emptyResult;
   }
+  const symbol = parsed.ticker;
 
   // Check cache first
   const cached = await getCachedAnalysis(symbol);

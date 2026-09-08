@@ -2,14 +2,14 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { getHistoricalPrices } from '@/lib/finazon';
 import { rateLimit } from '@/lib/rate-limit';
+import { parseResearchTicker } from '@/lib/research-ticker';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const ticker = searchParams.get('ticker')?.toUpperCase().replace(/[^A-Z]/g, '');
-    if (!ticker || ticker.length > 5) {
-      return NextResponse.json({ error: 'Valid ticker required' }, { status: 400 });
-    }
+    const parsed = parseResearchTicker(searchParams.get('ticker') || '');
+    if (!parsed.ok) return NextResponse.json({ error: parsed.message }, { status: 400 });
+    const ticker = parsed.ticker;
 
     const limited = rateLimit(`history:${ticker}`, 10, 60);
     if (!limited.allowed) {

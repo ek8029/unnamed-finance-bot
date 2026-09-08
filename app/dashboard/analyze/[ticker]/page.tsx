@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { parseResearchTicker } from '@/lib/research-ticker';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { analyzeStock } from '@/lib/analyze-stock';
@@ -108,17 +109,15 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { ticker } = await params;
-  const symbol = ticker.toUpperCase().replace(/[^A-Z]/g, '');
-  return { title: symbol ? `${symbol} Analysis` : 'Analysis' };
+  const parsed = parseResearchTicker(ticker);
+  return { title: parsed.ok ? `${parsed.ticker} Analysis` : 'Research unavailable' };
 }
 
 export default async function DashboardTickerAnalysisPage({ params }: Props) {
   const { ticker } = await params;
-  const symbol = ticker.toUpperCase().replace(/[^A-Z]/g, '');
-
-  if (!symbol || symbol.length > 5) {
-    notFound();
-  }
+  const parsed = parseResearchTicker(ticker);
+  if (!parsed.ok) return <div className="p-8"><h1 className="text-2xl font-semibold">Research unavailable</h1><p role="status" className="mt-3">{parsed.message}</p><Link href="/dashboard/analyze" className="mt-4 inline-block text-[var(--color-gold)]">Research another ticker →</Link></div>;
+  const symbol = parsed.ticker;
 
   const [{ analysis, computedAt, dataSources, methodologyVersion }, tickerData, bridge] = await Promise.all([
     analyzeStock(symbol),

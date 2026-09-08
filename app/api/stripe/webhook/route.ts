@@ -3,12 +3,13 @@ import Stripe from 'stripe';
 import { getStripe, tierForPriceId, billingPeriodForPriceId } from '@/lib/stripe';
 import { createServiceClient } from '@/lib/supabase/server';
 import { captureServer } from '@/lib/posthog-server';
+import { billingInsertId, paidInvoiceProperties, subscriptionPeriodEnd } from '@/lib/stripe-event-data';
 
 /**
  * POST /api/stripe/webhook
  *
  * Single source of truth for all Stripe-driven tier changes.
- * Always returns 200 — Stripe retries on non-2xx.
+ * Returns 5xx on processing failures so Stripe can retry.
  *
  * Handled events:
  *   checkout.session.completed    → activate Pro
@@ -21,9 +22,6 @@ import { captureServer } from '@/lib/posthog-server';
  * Stripe dashboard. Adding the case here does nothing until Stripe is told to
  * send it.
  */
-
-// Required so Next.js doesn't parse the body — Stripe needs the raw bytes
-export const config = { api: { bodyParser: false } };
 
 export async function POST(request: NextRequest) {
   // ── 1. Read raw body (required for signature verification) ──────────────
@@ -136,7 +134,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     const sub = await getStripe().subscriptions.retrieve(subscriptionId);
     stripeSubscriptionId = sub.id;
     stripePriceId = sub.items.data[0]?.price?.id ?? null;
-    currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
+    currentPeriodEnd = subscriptionPeriodEnd(sub, stripePriceId);
     trialEndsAt = sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null;
   }
 
@@ -202,7 +200,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // sellable, so it had become a constant true and was labelling immediate
   // charges as trial starts. Read the actual trial instead, or the conversion
   // funnel measures a mix of two different events.
-  captureServer('trial_started', userId, {
+  captureServer(trialEndsAt ? 'trial_started' : 'checkout_completed', userId, {
+    $insert_id: billingInsertId('checkout_completed', session.id),
+    checkout_session_id: session.id,
+    livemode: session.livemode,
     plan: billingPeriod,
     trial: !!trialEndsAt,
     current_period_end: currentPeriodEnd,
@@ -213,34 +214,33 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
 /**
  * invoice.payment_succeeded
- * The only event in the system that means an arm's-length yes. `billing_reason`
- * separates the first charge after a trial from an ordinary renewal, which is
- * the difference between "someone converted" and "someone stayed".
+ * Record positive paid invoices separately from zero-dollar trial invoices.
+ * First conversion versus renewal requires customer history, not billing_reason alone.
  */
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
+  const properties = paidInvoiceProperties(invoice);
+  if (!properties) return;
   const customerId =
     typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id ?? null;
   if (!customerId) return;
 
   const supabase = await createServiceClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('user_subscriptions')
     .select('user_id')
     .eq('stripe_customer_id', customerId)
     .maybeSingle();
 
+  if (error) throw error;
+
   if (!data?.user_id) {
     console.warn(
       `[webhook][invoice.payment_succeeded] No row matched customer ${customerId} — not captured.`,
     );
-    return;
+    throw new Error('Paid invoice has no matching customer yet');
   }
 
-  captureServer('trial_charge_succeeded', data.user_id, {
-    billing_reason: invoice.billing_reason ?? null,
-    amount_paid: invoice.amount_paid,
-    currency: invoice.currency,
-  });
+  captureServer('invoice_paid', data.user_id, properties);
 
   console.log(
     `[webhook][invoice.payment_succeeded] ${invoice.amount_paid} ${invoice.currency} ` +
@@ -267,7 +267,7 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
     .update({
       ...(tier ? { tier, stripe_price_id: priceId, billing_period: billingPeriodForPriceId(priceId) ?? tier } : {}),
       cancel_at_period_end: sub.cancel_at_period_end,
-      current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+      current_period_end: subscriptionPeriodEnd(sub, priceId),
       updated_at: new Date().toISOString(),
     })
     // Match by customer OR subscription id — a customer id can drift (e.g. re-created
@@ -337,7 +337,10 @@ async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
   }
 
   for (const row of data) {
-    if (row.user_id) captureServer('subscription_canceled', row.user_id, {});
+    if (row.user_id) captureServer('subscription_canceled', row.user_id, {
+      $insert_id: billingInsertId('subscription_canceled', sub.id),
+      subscription_id: sub.id,
+    });
   }
 
   console.log(`[webhook][subscription.deleted] Downgraded to free for customer ${customerId}`);

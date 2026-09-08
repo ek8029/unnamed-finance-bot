@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { syncAllItems } from '@/lib/plaid-sync';
 import { assetBalance, isLiabilityType, liabilityBalance } from '@/lib/account-balance';
+import { rateLimit } from '@/lib/rate-limit';
 
 /**
  * GET /api/dashboard/overview
  * Aggregated dashboard data: net worth, portfolio, top holdings,
  * recent transactions, and cash flow.
- * Triggers a background sync if last sync was > 1 hour ago.
+ * Triggers a background sync for stale active connections, with an attempt
+ * cooldown so a failed import cannot repeat on every GET in this instance.
  */
 export async function GET() {
   try {
@@ -34,7 +36,11 @@ export async function GET() {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     const isStale = !lastSync || lastSync < oneHourAgo;
 
-    if (isStale) {
+    // Claim before starting work, not after success. The limiter is in-memory
+    // per server instance; it is not a distributed lock across cold starts.
+    const syncTriggered = Boolean(latestItem) && isStale &&
+      rateLimit(`overview-auto-sync:${user.id}`, 1, 5 * 60).allowed;
+    if (syncTriggered) {
       syncAllItems(supabase, user.id).catch(err =>
         console.error('[overview] background sync failed:', err)
       );
@@ -151,7 +157,7 @@ export async function GET() {
     const degradedConnections = (plaidItems || []).filter(i => i.status !== 'active');
 
     return NextResponse.json({
-      sync_triggered: isStale,
+      sync_triggered: syncTriggered,
       net_worth: netWorthSnapshot ? {
         total_assets: netWorthSnapshot.total_assets,
         total_liabilities: netWorthSnapshot.total_liabilities,

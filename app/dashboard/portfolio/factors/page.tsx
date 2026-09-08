@@ -497,8 +497,9 @@ export default function FactorLensPage() {
           Factor lens {'·'} vs S&amp;P 500
         </div>
         <h1 className="text-[28px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)]">
-          What&apos;s really driving your returns
+          The forces behind your portfolio.
         </h1>
+        <p className="text-[13px] leading-relaxed text-[var(--color-text-secondary)] mt-3 max-w-2xl">Look beyond sectors. Compare the size, style and characteristics of your holdings with the S&amp;P 500.</p>
       </div>
 
       {/* Tier unknown (prod first paint): the report's ghost, never the lock.

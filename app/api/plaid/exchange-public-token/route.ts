@@ -170,7 +170,7 @@ export async function POST(request: Request) {
       account_subtype: account.subtype || null,
       account_number_last4: account.mask || null,
       official_name: account.official_name || null,
-      current_balance: account.balances.current ?? 0,
+      current_balance: account.balances.current ?? null,
       available_balance: account.balances.available ?? null,
       credit_limit: account.balances.limit ?? null,
       currency: account.balances.iso_currency_code || 'USD',

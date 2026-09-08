@@ -20,6 +20,7 @@ import { monitoredThesisIds } from '@/lib/agent/monitored';
 import { enqueueJudgeJobs, recordLedgerRow, type NewJudgeJob } from '@/lib/agent/judge-queue';
 import { beat } from '@/lib/agent/heartbeat';
 import { emptyLedger } from '@/lib/ai/pricing';
+import { newsDisposition, type NewsSubjectRow } from '@/lib/news-relevance';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, any, any>;
@@ -99,21 +100,27 @@ export async function runNewsWatch(db: Db, opts: { log: string[]; now?: Date; si
     }
   }
 
-  // Fresh rows the classifier called ABOUT a name somebody has a thesis on.
+  // Alerts still require classifier evidence, including validated re-aims.
+  // The shared disposition keeps unconfirmed context out of the judge queue.
   let about = 0;
   let queued = 0;
   if (thesis.size > 0 && inserted > 0) {
     const { data: rows, error } = await db
       .from('market_news')
-      .select('url, title, primary_ticker, published_at')
+      .select('url, title, primary_ticker, published_at, tickers, subject_verdict, subject_ticker')
       .gte('created_at', tickStart)
-      .eq('subject_verdict', 'about')
-      .in('primary_ticker', [...thesis])
+      .in('subject_verdict', ['about', 'mention'])
+      .or(`primary_ticker.in.(${[...thesis].join(',')}),subject_ticker.in.(${[...thesis].join(',')})`)
       .limit(200);
     if (error) {
       errors.push(`about rows: ${error.message}`);
     } else {
-      const fresh = (rows ?? []) as { url: string; title: string; primary_ticker: string; published_at: string }[];
+      const fresh = ((rows ?? []) as (NewsSubjectRow & { url: string; published_at: string })[]).flatMap(row => {
+        const subject = newsDisposition(row);
+        return subject.kind === 'subject' && subject.evidence === 'classifier' && thesis.has(subject.ticker)
+          ? [{ ...row, primary_ticker: subject.ticker }]
+          : [];
+      });
       about = fresh.length;
       if (fresh.length > 0) {
         const tickers = [...new Set(fresh.map((r) => r.primary_ticker.toUpperCase()))];

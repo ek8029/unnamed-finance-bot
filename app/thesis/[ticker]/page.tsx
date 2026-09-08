@@ -1,14 +1,16 @@
+import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { WatchTickersCard } from '@/components/watch-tickers-card';
 import { ReasoningTrace } from '@/components/thesis/reasoning-trace';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { HelmMark } from '@/components/helm-mark';
 import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { getHouseThesis } from '@/lib/content/house-theses';
 import { getTickerThesisData, type PublicCatch } from '@/lib/content/public-thesis';
 import type { PillarStatus, Verdict } from '@/lib/content/thesis-status';
+import { parseResearchTicker } from '@/lib/research-ticker';
 
 // Per-ticker living thesis page. The authored house thesis + its approved, dated, cited
 // catches, with a computed current status per pillar and an overall thesis health. Every
@@ -18,10 +20,6 @@ import type { PillarStatus, Verdict } from '@/lib/content/thesis-status';
 export const revalidate = 1800;
 
 const BASE = 'https://helmterminal.dev';
-
-function sanitize(raw: string): string {
-  return raw.toUpperCase().replace(/[^A-Z]/g, '');
-}
 
 // Status chip palette (token-driven). Severity scale from positive -> negative.
 const STATUS_STYLE: Record<PillarStatus, { color: string; bg: string; border: string }> = {
@@ -50,7 +48,9 @@ export async function generateMetadata({
   params: Promise<{ ticker: string }>;
 }): Promise<Metadata> {
   const { ticker } = await params;
-  const symbol = sanitize(ticker);
+  const parsed = parseResearchTicker(ticker);
+  if (!parsed.ok) return { title: 'Research unavailable — Helm Terminal', description: parsed.message, robots: 'noindex' };
+  const symbol = parsed.ticker;
   const ht = getHouseThesis(symbol);
   if (!ht) {
     return { title: `${symbol} thesis | Helm`, robots: 'noindex' };
@@ -79,7 +79,9 @@ export async function generateMetadata({
 
 export default async function ThesisPage({ params }: { params: Promise<{ ticker: string }> }) {
   const { ticker } = await params;
-  const symbol = sanitize(ticker);
+  const parsed = parseResearchTicker(ticker);
+  if (!parsed.ok) notFound();
+  const symbol = parsed.ticker;
   const data = await getTickerThesisData(symbol);
   if (!data) redirect(`/analyze/${symbol.toLowerCase()}`);
 
@@ -187,18 +189,7 @@ export default async function ThesisPage({ params }: { params: Promise<{ ticker:
     <main className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)] relative overflow-hidden">
       <CinematicBg gridAmbient={false} />
 
-      <nav className="relative z-10 border-b border-[var(--color-border-base)]">
-        <div className="container mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <HelmMark className="w-6 h-6" />
-            <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
-          </Link>
-          <div className="flex items-center gap-5">
-            <Link href="/masthead" className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">The Masthead</Link>
-            <Link href="/signup" className="px-4 py-1.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Sign up</Link>
-          </div>
-        </div>
-      </nav>
+      <SiteNav />
 
       <section className="relative z-10 container mx-auto px-6 pt-12 pb-24 max-w-3xl">
         <header className="mb-10">

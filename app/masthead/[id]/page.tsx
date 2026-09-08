@@ -1,3 +1,4 @@
+import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -79,6 +80,7 @@ export default async function CatchPage({ params }: Props) {
 
   return (
     <main id="main-content" className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)]">
+      <SiteNav />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(catchJsonLd(e)) }}

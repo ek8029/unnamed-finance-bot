@@ -1,3 +1,4 @@
+import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
@@ -50,34 +51,7 @@ export default function BlogIndex() {
       />
       <CinematicBg />
       {/* ── Navigation ── */}
-      <nav className="relative z-10 glass-nav">
-        <div className="container mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2.5">
-            <HelmMark size={32} />
-            <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
-          </Link>
-          <div className="flex items-center gap-5">
-            <Link
-              href="/analyze"
-              className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-            >
-              Free Stock Analysis
-            </Link>
-            <Link
-              href="/blog"
-              className="text-[15px] text-[var(--color-gold)] transition-colors"
-            >
-              Blog
-            </Link>
-            <Link
-              href="/login"
-              className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-            >
-              Sign in
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <SiteNav />
 
       {/* ── Header ── */}
       <section className="relative container mx-auto px-6 pt-12 pb-8 max-w-4xl">

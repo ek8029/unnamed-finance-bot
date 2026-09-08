@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+afterEach(() => vi.unstubAllEnvs());
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -7,8 +8,8 @@ import { join } from 'path';
  * arrive on a schedule, through the same sweep the dashboard triggers.
  */
 describe('scheduled price sweep', () => {
-  beforeAll(() => {
-    process.env.CRON_SECRET = 'test-secret';
+  beforeEach(() => {
+    vi.stubEnv('CRON_SECRET', 'test-secret');
   });
 
   it('the cron route rejects a wrong bearer in-process', async () => {

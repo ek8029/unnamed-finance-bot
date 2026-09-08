@@ -18,6 +18,7 @@ import { getQuote } from '@/lib/financial-data';
 import { getVixQuote } from '@/lib/vix';
 import { getEdgarEarnings } from '@/lib/earnings-edgar';
 import { isTradingDay } from '@/lib/market-calendar';
+import { partitionNewsForReader, type NewsSubjectRow } from '@/lib/news-relevance';
 
 // ---------- helpers ----------
 export const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -358,11 +359,6 @@ function nameKey(name: string | null): string | null {
   if (/^the$/i.test(w) && words[1]) w = words[1];
   w = w.replace(/[.,'&-]+$/g, '');
   return w.length >= 3 ? w : null;
-}
-function titleMentions(title: string, ticker: string, name: string | null) {
-  if (ticker.length >= 2 && new RegExp(`\\b${escRe(ticker)}\\b`).test(title)) return true;
-  const k = nameKey(name);
-  return !!k && new RegExp(`\\b${escRe(k)}\\b`, 'i').test(title);
 }
 
 // A headline that teases a read instead of reporting an event is not a fact about the position,
@@ -796,15 +792,15 @@ export async function buildDigestContext(userId: string, db?: SupabaseClient): P
 
   await loadSecuritiesUniverse(sb);
 
-  type NewsRaw = { title: string; source: string; published_at: string; primary_ticker: string };
+  type NewsRaw = NewsSubjectRow & { source: string; published_at: string };
   const [newsAll, spy, vix] = await Promise.all([
     sliceTickers.length
       ? fetchAll<NewsRaw>(
           (a, b) =>
             sb
               .from('market_news')
-              .select('title, source, published_at, primary_ticker')
-              .in('primary_ticker', sliceTickers)
+              .select('title, source, url, published_at, primary_ticker, tickers, subject_verdict, subject_ticker')
+              .or(`primary_ticker.in.(${sliceTickers.join(',')}),subject_ticker.in.(${sliceTickers.join(',')})`)
               .gte('published_at', since48h)
               .order('published_at', { ascending: false })
               .range(a, b),
@@ -814,12 +810,13 @@ export async function buildDigestContext(userId: string, db?: SupabaseClient): P
     getQuote('SPY'),
     getVixQuote(),
   ]);
-  const newsRows: NewsRow[] = newsAll.map((n) => ({
+  const subjectNews = partitionNewsForReader(newsAll, sliceTickers, new Map([...nameOf.entries()].filter((entry): entry is [string, string] => typeof entry[1] === 'string'))).subjects;
+  const newsRows: NewsRow[] = subjectNews.map((n) => ({
     ticker: n.primary_ticker,
     title: n.title,
     source: n.source,
     publishedAt: n.published_at,
-    matched: titleMentions(String(n.title ?? ''), n.primary_ticker, nameOf.get(n.primary_ticker) ?? null),
+    matched: true,
   }));
 
   // movers with no news. Crypto is excluded: market_news carries no crypto coverage, so
@@ -829,13 +826,8 @@ export async function buildDigestContext(userId: string, db?: SupabaseClient): P
   );
   let noNewsMovers: Slice[] = [];
   if (movers.length > 0) {
-    const { data: moverNews, error } = await sb
-      .from('market_news')
-      .select('primary_ticker')
-      .in('primary_ticker', movers.map((m) => m.ticker))
-      .gte('published_at', since48h);
-    if (error) throw new Error(`market_news movers: ${error.message}`);
-    const covered = new Set((moverNews ?? []).map((n) => n.primary_ticker));
+    // A tangential feed tag does not count as company coverage here either.
+    const covered = new Set(subjectNews.map((n) => n.primary_ticker));
     noNewsMovers = movers.filter((m) => !covered.has(m.ticker));
   }
 

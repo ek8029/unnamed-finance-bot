@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { assetBalance, isLiabilityType, liabilityBalance } from '@/lib/account-balance';
+import { reportedAccountBalance } from '@/lib/account-balance';
 import { NextResponse } from 'next/server';
 import { parseDateLocal, formatMonthShort } from '@/lib/date-format';
 
@@ -53,12 +53,9 @@ export async function GET() {
       user_id: account.user_id,
       institution: account.institution?.name || account.account_name,
       account_type: account.account_type,
-      // The same number the net worth is built from, so the account list and
-      // the total cannot disagree: `available` for checking and savings,
-      // `current` everywhere else. See lib/account-balance.
-      balance: isLiabilityType(account.account_type)
-        ? liabilityBalance(account)
-        : assetBalance(account),
+      // Reported account balance, not the market-priced holdings valuation.
+      // Missing balances remain null through the API and account UI.
+      balance: reportedAccountBalance(account),
       account_name: account.account_name,
       sync_status: account.sync_status,
       last_synced_at: account.last_synced_at,

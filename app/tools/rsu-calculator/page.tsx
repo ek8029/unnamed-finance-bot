@@ -1,5 +1,7 @@
 'use client';
+import { parseResearchTicker } from '@/lib/research-ticker';
 
+import { SiteNav } from '@/components/site-nav';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { HelmMark } from '@/components/helm-mark';
@@ -186,8 +188,10 @@ export default function RSUCalculatorPage() {
   }, [priceOverride]);
 
   useEffect(() => {
-    const sym = ticker.toUpperCase().replace(/[^A-Z]/g, '');
-    if (sym.length >= 1 && sym.length <= 5 && sym !== lastFetchedTicker) {
+    const parsed = parseResearchTicker(ticker);
+    if (!parsed.ok) { setFetchError(ticker.trim() ? parsed.message : ''); setFetchedPrice(null); return; }
+    const sym = parsed.ticker;
+    if (sym !== lastFetchedTicker) {
       const timeout = setTimeout(() => fetchPrice(sym), 600);
       return () => clearTimeout(timeout);
     }
@@ -217,7 +221,7 @@ export default function RSUCalculatorPage() {
   const totalPostTax = vestEvents.reduce((sum, e) => sum + e.postTax, 0);
   const concentrationPct = portfolioValue > 0 ? (totalGrantValue / portfolioValue) * 100 : 0;
 
-  const canCalculate = sharesNum > 0 && priceNum > 0 && grantDateObj !== null;
+  const canCalculate = sharesNum > 0 && priceNum > 0 && grantDateObj !== null && (priceOverride || (fetchedPrice !== null && lastFetchedTicker === ticker.trim().toUpperCase()));
 
   const handleCalculate = () => {
     if (!canCalculate) return;
@@ -294,19 +298,7 @@ export default function RSUCalculatorPage() {
       />
 
       {/* Nav */}
-      <nav className="relative z-10 border-b border-[var(--color-border-base)]">
-        <div className="container mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <HelmMark size={28} />
-            <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
-          </Link>
-          <div className="flex items-center gap-5">
-            <Link href="/analyze" className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Analyze</Link>
-            <Link href="/pricing" className="text-[15px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Pricing</Link>
-            <Link href="/signup" className="px-4 py-1.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Sign up</Link>
-          </div>
-        </div>
-      </nav>
+      <SiteNav />
 
       <div className="relative z-10 min-h-[80vh]">
         <section className="relative container mx-auto px-6 pt-16 pb-20 max-w-xl">
@@ -335,14 +327,13 @@ export default function RSUCalculatorPage() {
                     type="text"
                     value={ticker}
                     onChange={(e) => {
-                      const v = e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5);
+                      const v = e.target.value.toUpperCase();
                       setTicker(v);
                       if (v !== lastFetchedTicker) {
                         setFetchedPrice(null);
                       }
                     }}
                     placeholder="AAPL"
-                    maxLength={5}
                     className="w-full px-4 py-4 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors font-mono text-2xl uppercase"
                   />
                   <div className="flex items-center gap-2 mt-1.5">

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { isThesisUser } from '@/lib/thesis-access';
 import { useTier } from '@/hooks/use-tier';
 import { useAccounts } from '@/hooks/use-financial-data';
+import { summarizeAccountBalances } from '@/lib/accounts-presentation';
 import { usePreview } from '@/lib/preview-context';
 import { CheckoutModal } from '@/components/checkout-modal';
 import { CHECKOUT_PARAM, PENDING_CHECKOUT_KEY, isCheckoutIntent, type CheckoutIntent } from '@/lib/checkout-intent';
@@ -47,6 +48,7 @@ import { FinancialDisclaimer } from '@/components/financial-disclaimer';
 import { ThesesWhatsNewBanner } from '@/components/thesis/theses-whatsnew-banner';
 import { OnboardingFlow } from '@/components/onboarding/onboarding-flow';
 import { OnboardingFlowV2 } from '@/components/onboarding/onboarding-flow-v2';
+import { useSurveyDeferral } from '@/components/survey-deferral';
 
 // Value-first onboarding cohort. Flip NEXT_PUBLIC_ONBOARDING_V2=1 to serve the
 // scan-before-connect flow; default keeps the legacy tour until scan->link reads positive.
@@ -60,12 +62,6 @@ import { ConvictionNavButton } from '@/components/thesis/conviction-nav-button';
 /* ── Legacy-onboarding fallback for a parked checkout ──
    V2 tells the shell when it is out of the way. The legacy flow does not, so
    without this a checkout intent parked on the way in would never be opened. */
-function LegacyCheckoutFallback({ enabled, onReady }: { enabled: boolean; onReady: () => void }) {
-  useEffect(() => {
-    if (enabled) onReady();
-  }, [enabled, onReady]);
-  return null;
-}
 
 /* ── Connect Banner — shown in demo mode ── */
 function ConnectBanner() {
@@ -134,8 +130,8 @@ const PORTFOLIO_CHILDREN: NavItem[] = [
 
 const INTELLIGENCE_NAV: NavItem[] = [
   { name: 'Analyze', href: '/dashboard/analyze', icon: Search },
-  { name: 'Daily Brief', href: '/dashboard/brief', icon: BookOpen, pulse: true },
-  { name: 'Actions', href: '/dashboard/actions', icon: Zap, count: 4 },
+  { name: 'Daily Brief', href: '/dashboard/brief', icon: BookOpen },
+  { name: 'Actions', href: '/dashboard/actions', icon: Zap },
   { name: 'Activity', href: '/dashboard/transactions', icon: ArrowLeftRight },
 ];
 
@@ -176,52 +172,42 @@ interface UserProfile {
 
 export default function DashboardShell({
   children,
+  previewPath,
 }: {
   children: React.ReactNode;
+  /** Dev-only design workbench supplies a route without changing auth. */
+  previewPath?: string;
 }) {
-  const pathname = usePathname();
+  const currentPath = usePathname();
+  const pathname = previewPath ?? currentPath;
   const router = useRouter();
   const { settings } = useSettings();
 
-  // Resume a purchase that started before the account existed. A pricing CTA
-  // sends ?next=/dashboard?checkout=… through signup, so the trial the button
-  // promised opens here rather than quietly not happening.
-  //
-  // The dashboard is the landing spot on purpose: the onboarding overlay is
-  // already mounted underneath, so closing the card form drops the person into
-  // onboarding instead of onto a dead page. It has to outrank onboarding's
-  // z-[100] to be visible at all.
+  // Explicit purchase intent gets checkout first; ordinary signups get onboarding.
   const [resumeCheckout, setResumeCheckout] = useState<CheckoutIntent | null>(null);
-
-  // Park the intent in sessionStorage rather than opening immediately. The
-  // scan inside onboarding is the moment Helm demonstrates something nobody
-  // else does, and it converts far better than a card form shown to someone
-  // who has not seen the product work yet. So the ask waits until onboarding
-  // settles. sessionStorage rather than state because onboarding's dismiss can
-  // hard-navigate to /dashboard, which would drop anything held in memory.
+  const [checkoutChecked, setCheckoutChecked] = useState(false);
+  const [onboardingSettled, setOnboardingSettled] = useState(false);
+  const settleOnboarding = useCallback(() => setOnboardingSettled(true), []);
+  useSurveyDeferral(!previewPath && (!onboardingSettled || !!resumeCheckout));
+  const checkoutRead = useRef(false);
   useEffect(() => {
-    // window.location rather than useSearchParams(): that hook opts the whole
-    // subtree out of prerendering unless it sits inside a Suspense boundary,
-    // and this shell wraps every dashboard route. It broke the production
-    // build on /dashboard/actions. This runs client-side only anyway.
-    const intent = new URLSearchParams(window.location.search).get(CHECKOUT_PARAM);
-    if (!isCheckoutIntent(intent)) return;
-    try { sessionStorage.setItem(PENDING_CHECKOUT_KEY, intent); } catch { /* private mode */ }
-    // Strip it so a refresh, or a back button, does not requeue the card form.
+    if (previewPath || checkoutRead.current) return;
+    checkoutRead.current = true;
     const url = new URL(window.location.href);
-    url.searchParams.delete(CHECKOUT_PARAM);
-    window.history.replaceState({}, '', url.pathname + url.search + url.hash);
-  }, []);
-
-  // Onboarding calls this when it is out of the way, whether it showed or not.
-  const openPendingCheckout = useCallback(() => {
-    let intent: string | null = null;
+    let stored: string | null = null;
     try {
-      intent = sessionStorage.getItem(PENDING_CHECKOUT_KEY);
+      stored = sessionStorage.getItem(PENDING_CHECKOUT_KEY);
       sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
-    } catch { /* private mode */ }
+    } catch { /* Storage can be unavailable in private browsing. */ }
+    const fromUrl = url.searchParams.get(CHECKOUT_PARAM);
+    const intent = isCheckoutIntent(fromUrl) ? fromUrl : stored;
+    if (isCheckoutIntent(fromUrl)) {
+      url.searchParams.delete(CHECKOUT_PARAM);
+      window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+    }
     if (isCheckoutIntent(intent)) setResumeCheckout(intent);
-  }, []);
+    setCheckoutChecked(true);
+  }, [previewPath]);
   const reduceMotion = settings.accessibility.reduceMotion;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [railCollapsed, setRailCollapsed] = useState(false);
@@ -229,13 +215,18 @@ export default function DashboardShell({
   const [thesesVisited, setThesesVisited] = useState(true);
   const { isPro } = useTier();
   const { tier } = usePreview();
-  const { accounts } = useAccounts();
-  // Real connected institutions for the sidebar mini-panel (was hard-coded mock data).
-  const connectedInstitutions = (() => {
-    const map = new Map<string, number>();
-    for (const a of accounts) map.set(a.institution, (map.get(a.institution) ?? 0) + (a.balance ?? 0));
+  const { accounts, loading: accountsLoading, error: accountsError, refetch: retryAccounts } = useAccounts();
+  // Saved accounts do not prove live connection health. Group their signed net
+  // balances, including manual accounts, without claiming they have synced.
+  const savedAccountGroups = (() => {
+    const map = new Map<string, { balance: number; unavailable: number }>();
+    for (const account of accounts) {
+      const previous = map.get(account.institution) ?? { balance: 0, unavailable: 0 };
+      const summary = summarizeAccountBalances([account]);
+      map.set(account.institution, { balance: previous.balance + summary.net, unavailable: previous.unavailable + summary.unavailable });
+    }
     return [...map.entries()]
-      .map(([institution, balance]) => ({ institution, balance }))
+      .map(([institution, total]) => ({ institution, ...total }))
       .sort((a, b) => b.balance - a.balance);
   })();
   const fmtBal = (n: number) => {
@@ -392,6 +383,10 @@ export default function DashboardShell({
 
   // Fetch user profile on mount + re-fetch when profile is updated
   useEffect(() => {
+    if (previewPath) {
+      setProfile({ fullName: 'Sample portfolio', email: '', initials: 'H' });
+      return;
+    }
     async function fetchProfile() {
       try {
         const res = await fetch('/api/user/profile');
@@ -419,7 +414,7 @@ export default function DashboardShell({
     const handleProfileUpdate = () => fetchProfile();
     window.addEventListener('helm:profile-updated', handleProfileUpdate);
     return () => window.removeEventListener('helm:profile-updated', handleProfileUpdate);
-  }, []);
+  }, [previewPath]);
 
   const toggleRail = () => {
     setRailCollapsed((v) => {
@@ -644,12 +639,8 @@ export default function DashboardShell({
   return (
     <DemoProvider>
     <>
-    {ONBOARDING_V2 ? <OnboardingFlowV2 onSettled={openPendingCheckout} /> : <OnboardingFlow />}
-    {/* Only V2 reports when it is out of the way. On the legacy flow nothing
-        would ever fire onSettled, so a parked checkout would sit in
-        sessionStorage forever and the trial the button promised would never
-        open. Fall back to asking straight away there. */}
-    <LegacyCheckoutFallback enabled={!ONBOARDING_V2} onReady={openPendingCheckout} />
+    {!previewPath && checkoutChecked && !resumeCheckout && (ONBOARDING_V2 ? <OnboardingFlowV2 onSettled={settleOnboarding} /> : <OnboardingFlow onSettled={settleOnboarding} />)}
+    {/* Both setup flows settle before a requested trial checkout opens. */}
     {resumeCheckout && (
       <CheckoutModal
         billingPeriod={resumeCheckout}
@@ -657,11 +648,11 @@ export default function DashboardShell({
         onClose={() => setResumeCheckout(null)}
       />
     )}
-    <GuidedTour />
-    <DisclaimerModal />
+    {!previewPath && <GuidedTour />}
+    {!previewPath && <DisclaimerModal />}
     <div
       className={cn(
-        "bg-[var(--color-bg-base)] flex max-w-[100vw] overflow-x-hidden",
+        "bg-[var(--color-bg-base)] flex max-w-[100vw] overflow-x-clip",
         isChatPage ? "h-dvh overflow-hidden" : "min-h-dvh"
       )}
       style={{ ['--rail-w' as string]: showRail ? (railCollapsed ? '48px' : `${railWidth}px`) : '0px' } as React.CSSProperties}
@@ -680,7 +671,7 @@ export default function DashboardShell({
         />
       )}
 
-      <aside
+      <aside data-helm-sidebar
         className={cn(
           "fixed inset-y-0 left-0 z-40 flex flex-col w-[236px]",
           "transition-transform duration-300",
@@ -790,18 +781,20 @@ export default function DashboardShell({
           {ACCOUNT_NAV.map((item) => <NavRow key={item.name} item={item} />)}
         </nav>
 
-        {/* ── Connected mini-panel (real linked institutions) ── */}
-        {connectedInstitutions.length > 0 ? (
+        {/* ── Saved account groups and their net reported balances ── */}
+        {accountsLoading ? <div role="status" className="shrink-0 px-3.5 py-3 text-[12px] text-[var(--color-text-muted)]">Loading accounts…</div>
+          : accountsError ? <div className="shrink-0 px-3.5 py-3 text-[12px] text-[var(--color-text-muted)]"><span role="status">Accounts unavailable.</span> <button onClick={retryAccounts} className="text-[var(--color-gold)] underline">Retry</button></div>
+          : savedAccountGroups.length > 0 ? (
           <div className="shrink-0 px-3.5 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
             <div
               className="flex justify-between mb-2.5 text-[10px] uppercase"
               style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.14em', color: '#7a7a7a' }}
             >
-              <span>Connected · {connectedInstitutions.length}</span>
-              <span className="text-[var(--color-positive)]">● synced</span>
+              <span>Saved groups · {savedAccountGroups.length}</span>
+              <span>Net balance</span>
             </div>
             <div className="flex flex-col gap-[7px]">
-              {connectedInstitutions.slice(0, 4).map((acct) => (
+              {savedAccountGroups.slice(0, 4).map((acct) => (
                 <div key={acct.institution} className="flex items-center gap-2">
                   <span
                     className="w-4 h-4 rounded-[3px] flex items-center justify-center text-[8px] font-bold shrink-0"
@@ -810,12 +803,12 @@ export default function DashboardShell({
                     {(acct.institution.trim()[0] || '?').toUpperCase()}
                   </span>
                   <span className="flex-1 text-[12px] text-[var(--color-text-secondary)] truncate">{acct.institution}</span>
-                  <span className="text-[10px] text-[var(--color-text-muted)] tabular-nums" style={{ fontFamily: 'var(--font-mono)' }}>{fmtBal(acct.balance)}</span>
+                  <span className="text-[10px] text-[var(--color-text-muted)] tabular-nums" style={{ fontFamily: 'var(--font-mono)' }} title={acct.unavailable ? 'One or more account balances are unavailable' : undefined}>{acct.unavailable ? 'Incomplete' : fmtBal(acct.balance)}</span>
                 </div>
               ))}
-              {connectedInstitutions.length > 4 && (
+              {savedAccountGroups.length > 4 && (
                 <div className="pl-6 text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
-                  +{connectedInstitutions.length - 4} more
+                  +{savedAccountGroups.length - 4} more
                 </div>
               )}
             </div>
@@ -910,7 +903,7 @@ export default function DashboardShell({
 
         {/* ── Global Topbar ── */}
         {!isWrappedPage && (
-          <header
+          <header data-helm-topbar
             className="shrink-0 sticky top-0 z-30 flex items-center gap-3.5 h-14 px-[22px]"
             style={{
               borderBottom: '1px solid rgba(255,255,255,0.05)',
@@ -931,7 +924,7 @@ export default function DashboardShell({
             {/* Search / command button — opens the palette */}
             <button
               onClick={() => setPaletteOpen(true)}
-              className="flex-1 max-w-[420px] flex items-center gap-2.5 h-[34px] px-3 rounded-md text-left text-[var(--color-text-muted)] transition-colors hover:border-[rgba(230,185,77,0.25)]"
+              className="helm-command-trigger min-w-0 flex-1 max-w-[420px] flex items-center gap-2.5 h-[34px] px-3 rounded-md text-left text-[var(--color-text-muted)] transition-colors hover:border-[rgba(230,185,77,0.25)]"
               style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
             >
               <Search size={14} strokeWidth={1.6} className="shrink-0" />
@@ -944,7 +937,7 @@ export default function DashboardShell({
               </span>
             </button>
 
-            <div className="flex-1" />
+            <div className="helm-topbar-spacer flex-1" />
 
             {/* Conviction rail toggle (preserved, ultrawide-only entitled users) */}
             {showRail && (
@@ -954,7 +947,7 @@ export default function DashboardShell({
               />
             )}
 
-            {/* Notification bell with gold dot -> Actions inbox */}
+            {/* Actions inbox. An unread indicator requires a real unread count. */}
             <Link
               href="/dashboard/actions"
               aria-label="Notifications"
@@ -962,16 +955,13 @@ export default function DashboardShell({
               style={{ background: 'transparent', border: '1px solid var(--color-border-base)' }}
             >
               <Bell size={15} strokeWidth={1.6} />
-              <span
-                className="absolute top-[7px] right-[8px] w-1.5 h-1.5 rounded-full bg-[var(--color-gold)]"
-                style={{ border: '1.5px solid #0A0A0A' }}
-              />
             </Link>
 
             {/* + ADD ACCOUNT gold CTA. ?add=1 opens the connect modal on the
                 accounts page; as a bare link it did nothing once you were there. */}
             <Link
               href="/dashboard/accounts?add=1"
+              aria-label="Add account"
               onClick={(e) => {
                 if (pathname === '/dashboard/accounts') {
                   e.preventDefault();
@@ -1004,7 +994,7 @@ export default function DashboardShell({
           <TrialBanner />
           {/* Founding and Max tiers both retired. Free / Pro $20. */}
           {thesisEntitled && pathname !== '/dashboard/theses' && <ThesesWhatsNewBanner />}
-          <div
+          <div data-helm-page-content
             key={pathname}
             className={cn(
               !reduceMotion && 'page-transition',

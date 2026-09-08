@@ -6,6 +6,7 @@ import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe
 import { X, Loader2, Check } from 'lucide-react';
 import posthog from 'posthog-js';
 import { signupUrlForIntent } from '@/lib/checkout-intent';
+import { useSurveyDeferral } from '@/components/survey-deferral';
 
 // Initialize once at module level
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
@@ -27,16 +28,25 @@ interface CheckoutModalProps {
 }
 
 export function CheckoutModal({ billingPeriod, onClose, zClassName = 'z-50' }: CheckoutModalProps) {
+  useSurveyDeferral(true);
   const tierName = 'Pro';
   const [mode, setMode] = useState<Mode>('loading');
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   // Hit the checkout endpoint once. It either returns a clientSecret (new
   // subscription -> embedded checkout) or { upgraded: true } (in-place Pro->Max
   // price swap, no checkout needed).
   useEffect(() => {
     let cancelled = false;
+    setMode('loading');
+    setError(null);
+    setClientSecret(null);
+    if (!stripePromise) {
+      posthog.capture('checkout_failed', { plan: billingPeriod, reason: 'missing_public_key' });
+      return;
+    }
     (async () => {
       try {
         // The gap between paywall_cta_clicked and this is the pricing page;
@@ -57,6 +67,7 @@ export function CheckoutModal({ billingPeriod, onClose, zClassName = 'z-50' }: C
             window.location.href = signupUrlForIntent(billingPeriod);
             return;
           }
+          posthog.capture('checkout_failed', { plan: billingPeriod, reason: 'http_error', status: res.status });
           setError((data?.error as string) || 'Something went wrong. Please try again.');
           setMode('error');
           return;
@@ -66,21 +77,24 @@ export function CheckoutModal({ billingPeriod, onClose, zClassName = 'z-50' }: C
           return;
         }
         if (data?.clientSecret) {
+          posthog.capture('checkout_session_ready', { plan: billingPeriod });
           setClientSecret(data.clientSecret as string);
           setMode('checkout');
           return;
         }
+        posthog.capture('checkout_failed', { plan: billingPeriod, reason: 'invalid_response' });
         setError('Something went wrong. Please try again.');
         setMode('error');
       } catch {
         if (!cancelled) {
+          posthog.capture('checkout_failed', { plan: billingPeriod, reason: 'network_or_response_error' });
           setError('Something went wrong. Please try again.');
           setMode('error');
         }
       }
     })();
     return () => { cancelled = true; };
-  }, [billingPeriod]);
+  }, [billingPeriod, attempt]);
 
   // EmbeddedCheckout pulls its secret from here (already fetched above).
   const fetchClientSecret = useCallback(
@@ -193,7 +207,8 @@ export function CheckoutModal({ billingPeriod, onClose, zClassName = 'z-50' }: C
               className="rounded-sm px-4 py-3 text-[15px]"
               style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}
             >
-              {error}
+              <p role="alert">{error}</p>
+              <button type="button" className="mt-4 min-h-[44px] underline underline-offset-4 font-semibold" onClick={() => setAttempt(value => value + 1)}>Retry checkout</button>
             </div>
           )}
 
@@ -207,10 +222,10 @@ export function CheckoutModal({ billingPeriod, onClose, zClassName = 'z-50' }: C
               </div>
               <div>
                 <div className="text-[17px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                  You&apos;re on Max
+                  Your Pro plan is ready
                 </div>
                 <p className="mt-1.5 text-[14px] leading-[1.55]" style={{ color: 'var(--color-text-muted)' }}>
-                  Your plan was upgraded and prorated. The analyst, factor lens, and builder are unlocked.
+                  Return to your dashboard to explore your plan.
                 </p>
               </div>
               <a

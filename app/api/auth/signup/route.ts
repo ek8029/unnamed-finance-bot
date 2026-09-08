@@ -43,6 +43,7 @@ import { createClient } from '@/lib/supabase/server';
 import { ATTR_COOKIE, decodeFirstTouch } from '@/lib/attribution';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { confirmationUrl } from '@/lib/checkout-intent';
 import { checkPasswordStrength, logAuthEvent } from '@/lib/auth-security';
 import {
   assertSignupRateLimitConfigured,
@@ -250,7 +251,7 @@ export async function POST(request: Request) {
       options: {
         data: { full_name: full_name || null },
         captchaToken: captchaToken || undefined,
-        emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent('/dashboard')}`,
+        emailRedirectTo: confirmationUrl(origin, typeof body.next === 'string' ? body.next : null),
       },
     });
 

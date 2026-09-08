@@ -5,11 +5,14 @@ import { PostHogProvider as PHProvider, usePostHog } from 'posthog-js/react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, Suspense } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import { startSurveyDeferral, useSurveyDeferral } from '@/components/survey-deferral'
+import { isSurveySensitiveRoute } from '@/lib/survey-deferral'
 
 function PostHogPageView() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const ph = usePostHog()
+  useSurveyDeferral(isSurveySensitiveRoute(pathname))
 
   useEffect(() => {
     if (pathname && ph) {
@@ -65,6 +68,7 @@ function PostHogIdentify() {
 let initialized = false
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
+  useEffect(() => { startSurveyDeferral() }, [])
   if (!initialized && typeof window !== 'undefined') {
     const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
     if (token) {
@@ -74,6 +78,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
         capture_pageview: false,
         capture_pageleave: true,
         enable_recording_console_log: false,
+        disable_surveys: true,
       })
       initialized = true
     }

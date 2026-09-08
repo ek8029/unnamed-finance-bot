@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+afterEach(() => vi.unstubAllEnvs());
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
@@ -156,9 +157,9 @@ describe('watchOnce', () => {
 });
 
 describe('edgar watch cron', () => {
-  beforeAll(() => {
-    process.env.CRON_SECRET = 'test-secret';
-    process.env.OPENAI_API_KEY ||= 'test-key-never-used';
+  beforeEach(() => {
+    vi.stubEnv('CRON_SECRET', 'test-secret');
+    vi.stubEnv('OPENAI_API_KEY', 'test-key-never-used');
   });
 
   it('rejects a wrong bearer in-process', async () => {

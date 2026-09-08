@@ -216,15 +216,12 @@ export async function GET(request: Request) {
 
     for (const userId of userItemMap.keys()) {
       try {
-        const now = new Date().toISOString();
-        await serviceClient
-          .from('linked_accounts')
-          .update({ last_synced_at: now, sync_status: 'healthy' })
-          .eq('user_id', userId)
-          .eq('is_active', true);
-
-        await computeSnapshots(serviceClient, userId);
-        log.push(`[snapshots] Computed for user ${userId.slice(0, 8)}...`);
+        // Only syncPlaidItem's successful balance import marks accounts fresh.
+        // Snapshot generation says nothing about failed or manual accounts.
+        const snapshotsSaved = await computeSnapshots(serviceClient, userId);
+        log.push(snapshotsSaved
+          ? `[snapshots] Computed for user ${userId.slice(0, 8)}...`
+          : `[snapshots] Failed for user ${userId.slice(0, 8)}...; retaining any previously saved history`);
 
         try {
           await updatePortfolioPerformance(serviceClient, userId);

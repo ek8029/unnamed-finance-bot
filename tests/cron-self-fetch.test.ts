@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+afterEach(() => vi.unstubAllEnvs());
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { NextRequest } from 'next/server';
@@ -23,8 +24,8 @@ describe('daily cron never self-fetches', () => {
 });
 
 describe('email route handlers are directly invokable', () => {
-  beforeAll(() => {
-    process.env.CRON_SECRET = 'test-secret';
+  beforeEach(() => {
+    vi.stubEnv('CRON_SECRET', 'test-secret');
   });
 
   it('drip POST rejects a wrong bearer in-process (no network)', async () => {

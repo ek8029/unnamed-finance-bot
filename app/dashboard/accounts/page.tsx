@@ -1,25 +1,29 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import NextLink from 'next/link';
-import { Plus, X, Loader2, Trash2, Link2, ShieldCheck, PenLine } from 'lucide-react';
+import { Plus, X, Loader2, Trash2, RefreshCw, ShieldCheck, PenLine } from 'lucide-react';
 import { useToast } from '@/contexts/toast-context';
 import { Button } from '@/components/ui/button';
 import { useFormat } from '@/hooks/use-format';
 import { useAccounts } from '@/hooks/use-financial-data';
 import { usePreview } from '@/lib/preview-context';
+import { requestConnectionSync } from '@/lib/plaid/sync-client';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
 import type { BackgroundSyncResult } from '@/lib/plaid/background-sync';
 import { PlaidUpdateLink } from '@/components/plaid/plaid-update-link';
+import { isLiabilityType } from '@/lib/account-balance';
+import { accountBalanceDisplay, accountConnectionState, summarizeAccountBalances, type AccountConnectionState } from '@/lib/accounts-presentation';
 
 interface Account {
   id: string;
   institution: string;
   account_type: string;
-  balance: number;
+  balance: number | null;
   account_name: string;
   sync_status: string;
   last_synced_at?: string;
+  source?: string;
 }
 
 interface HealthItem {
@@ -42,6 +46,7 @@ const TYPE_PALETTE: { key: string; label: string; color: string; match: (t: stri
   { key: 'crypto', label: 'Crypto', color: '#8E7DC7', match: (t) => t.includes('crypto') },
   { key: 'hsa', label: 'HSA', color: '#C8A165', match: (t) => t.includes('hsa') },
   { key: 'cash', label: 'Cash', color: '#5A6070', match: (t) => t === 'depository' || t === 'checking' || t === 'savings' || t === 'cash' },
+  { key: 'other', label: 'Other assets', color: '#ACB2BC', match: () => true },
 ];
 
 // Brand chip color sets keyed off the institution initial.
@@ -63,7 +68,7 @@ function formatTimeAgo(dateString: string): string {
   const now = new Date();
   const date = new Date(dateString);
   const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
+  if (!Number.isFinite(seconds) || seconds < 0) return 'Not available';
   if (seconds < 60) return 'Just now';
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
@@ -71,26 +76,16 @@ function formatTimeAgo(dateString: string): string {
   return date.toLocaleDateString('en-US');
 }
 
-type CardSyncState = 'synced' | 'syncing' | 'reconnect';
-
 export default function AccountsPage() {
   const { formatCurrency } = useFormat();
   const { accounts, loading: apiLoading, error, refetch } = useAccounts();
   const { success, error: showError } = useToast();
   const { dataState } = usePreview();
 
-  // Separate assets from liabilities by account type, not just balance sign
-  // Plaid stores credit card balances as positive (amount owed)
-  const liabilityTypes = ['credit_card', 'loan', 'mortgage'];
-  const assetAccounts = accounts.filter((account) =>
-    !liabilityTypes.includes(account.account_type) && account.balance >= 0
+  const totals = summarizeAccountBalances(accounts);
+  const assetAccounts = accounts.filter((account): account is Account & { balance: number } =>
+    !isLiabilityType(account.account_type) && account.balance != null && account.balance > 0
   );
-  const liabilityAccounts = accounts.filter((account) =>
-    liabilityTypes.includes(account.account_type) || account.balance < 0
-  );
-  const totalAssets = assetAccounts.reduce((sum, a) => sum + a.balance, 0);
-  const totalLiabilities = liabilityAccounts.reduce((sum, a) => sum + Math.abs(a.balance), 0);
-  const totalBalance = totalAssets - totalLiabilities;
 
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
@@ -113,6 +108,7 @@ export default function AccountsPage() {
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null);
   const [healthError, setHealthError] = useState(false);
+  const [healthLoading, setHealthLoading] = useState(true);
   const [connectionHealth, setConnectionHealth] = useState<{
     lastSync: string | null;
     itemCount: number;
@@ -121,10 +117,12 @@ export default function AccountsPage() {
   }>({ lastSync: null, itemCount: 0, errorCount: 0, items: [] });
 
   const fetchConnectionHealth = async () => {
+    setHealthLoading(true);
     try {
       const res = await fetch('/api/plaid/health');
       if (res.ok) {
         const data = await res.json();
+        if (!Array.isArray(data?.items)) throw new Error('Invalid connection status response');
         setConnectionHealth(data);
         setHealthError(false);
       } else {
@@ -132,6 +130,8 @@ export default function AccountsPage() {
       }
     } catch {
       setHealthError(true);
+    } finally {
+      setHealthLoading(false);
     }
   };
 
@@ -142,31 +142,14 @@ export default function AccountsPage() {
   const handleSyncAll = async () => {
     setSyncing(true);
     try {
-      const res = await fetch('/api/plaid/sync', { method: 'POST' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.synced === 0 || data.message === 'No active Plaid connections to sync') {
-          showError('No accounts to sync', 'Connect an account first.');
-        } else {
-          success('Sync complete', 'All accounts have been synchronized');
-        }
-        refetch?.();
-      } else {
-        const fallback = await fetch('/api/accounts/sync', { method: 'POST' });
-        if (fallback.ok) {
-          success('Sync complete', 'All accounts have been synchronized');
-          refetch?.();
-        } else {
-          showError('Sync failed', 'Could not sync accounts. Please try again.');
-        }
-      }
-    } catch (err) {
-      showError('Sync failed', 'An error occurred while syncing accounts.');
+      const result = await requestConnectionSync();
+      if (result.synced > 0) refetch?.();
+      if (result.status === 'synced') success('Sync complete', result.message);
+      else showError(result.status === 'partial' ? 'Refresh partially complete' : 'Sync incomplete', result.message);
     } finally {
       setSyncing(false);
     }
   };
-
   const handlePlaidSuccess = () => {
     success('Account linked', 'Syncing holdings in the background. They show up in a minute or two.');
     setShowAddAccount(false);
@@ -213,11 +196,6 @@ export default function AccountsPage() {
     fetchConnectionHealth();
   };
 
-  const primaryAccountId = useMemo(() => {
-    const positive = [...assetAccounts].sort((a, b) => b.balance - a.balance)[0];
-    return positive?.id ?? null;
-  }, [assetAccounts]);
-
   const selectedAccount = selectedAccountId
     ? accounts.find((a) => a.id === selectedAccountId) || null
     : null;
@@ -231,23 +209,9 @@ export default function AccountsPage() {
     return map;
   }, [connectionHealth.items]);
 
-  // Determine the three-state sync badge for an account card.
-  function cardState(account: Account): { state: CardSyncState; health?: HealthItem } {
-    const health = healthByInstitution.get(account.institution.toLowerCase());
-    if (health && (health.status === 'error' || health.status === 'login_required')) {
-      return { state: 'reconnect', health };
-    }
-    if (
-      account.sync_status === 'error' ||
-      account.sync_status === 'login_required' ||
-      account.sync_status === 'reconnect'
-    ) {
-      return { state: 'reconnect', health };
-    }
-    if (syncing || account.sync_status === 'syncing' || account.sync_status === 'pending') {
-      return { state: 'syncing', health };
-    }
-    return { state: 'synced', health };
+  function cardState(account: Account) {
+    const health = account.source === 'manual' ? undefined : healthByInstitution.get(account.institution.toLowerCase());
+    return { state: accountConnectionState(account, health?.status, { loading: healthLoading, error: healthError, syncing }), health };
   }
 
   // Net-worth-by-account-type composition (asset accounts only).
@@ -264,8 +228,13 @@ export default function AccountsPage() {
       .map((b) => ({ ...b, pct: (b.total / grand) * 100 }));
   }, [assetAccounts]);
 
-  const allSynced = connectionHealth.errorCount === 0;
-  const lastSyncLabel = connectionHealth.lastSync ? formatTimeAgo(connectionHealth.lastSync) : null;
+  const manualCount = accounts.filter((account) => account.source === 'manual').length;
+  const activeConnections = connectionHealth.items.filter((item) => item.status === 'active').length;
+  const connectionLabel = healthLoading ? 'Checking connections…'
+    : healthError ? 'Connection status unavailable'
+    : connectionHealth.errorCount > 0 ? `${connectionHealth.errorCount} connection${connectionHealth.errorCount === 1 ? '' : 's'} need attention`
+    : activeConnections > 0 ? `${activeConnections} active connection${activeConnections === 1 ? '' : 's'}`
+    : 'No linked bank connections';
 
   if (error) {
     return (
@@ -274,65 +243,37 @@ export default function AccountsPage() {
           style={{ background: 'rgba(248,113,113,0.08)', borderColor: 'rgba(248,113,113,0.25)', color: 'var(--color-negative-text)' }}>
           <h2 className="text-[15px] font-semibold mb-2">Error loading accounts</h2>
           <p className="text-[15px]">{error}</p>
+          <button type="button" onClick={refetch} disabled={apiLoading} className="mt-4 text-sm underline disabled:opacity-50">{apiLoading ? 'Loading accounts…' : 'Retry accounts'}</button>
         </div>
       </div>
     );
   }
 
-  // ── EMPTY · CONNECT BROKERAGE ──────────────────────────────────────────
-  if (dataState === 'empty') {
-    return (
-      <div className="min-h-full flex items-center justify-center p-10">
-        <div className="max-w-[470px] text-center">
-          <div
-            className="mx-auto mb-[22px] flex items-center justify-center"
-            style={{
-              width: 60, height: 60, borderRadius: 14,
-              background: 'rgba(230,185,77,0.06)', border: '1px solid rgba(230,185,77,0.18)',
-            }}
-          >
-            <Link2 className="w-[26px] h-[26px]" strokeWidth={1.6} style={{ color: 'var(--color-gold)' }} />
-          </div>
-          <div className="text-[24px] font-bold mb-3" style={{ letterSpacing: '-0.025em' }}>
-            Connect your brokerage
-          </div>
-          <p className="text-[15px] leading-[1.65] mb-6" style={{ color: 'var(--color-text-muted)' }}>
-            Link an account and Helm builds your net worth, holdings, taxes and intelligence
-            automatically.{' '}
-            <span style={{ color: 'var(--color-positive)' }}>Read-only access</span>{' '}
-            — Helm can never move money or place trades.
-          </p>
-          <div className="flex justify-center">
-            <PlaidLinkButton onSuccess={handlePlaidSuccess} onSynced={handlePlaidSynced} onError={handlePlaidError} onLinkError={(_code, msg) => handlePlaidError(msg)} />
-          </div>
-          <p className="mt-4 text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
-            Nothing to connect yet?{' '}
-            <NextLink href="/dashboard/portfolio/add" style={{ color: 'var(--color-gold)' }}>
-              Enter positions by hand
-            </NextLink>
-          </p>
-          <div
-            className="mt-[18px] text-[10px]"
-            style={{ ...MONO, color: 'var(--color-text-muted)', letterSpacing: '0.04em' }}
-          >
-            12,000+ institutions · 256-bit encryption · via Plaid
-          </div>
-        </div>
+  // Activation offers both paths before an empty dashboard can become a dead end.
+  if (dataState === 'empty' || (!apiLoading && accounts.length === 0)) {
+    return <div className="px-5 sm:px-7 py-10 max-w-[1100px] mx-auto">
+      <header className="helm-overview-heading"><div><span className="helm-label">BUILD YOUR PICTURE</span><h1>Bring your portfolio into focus.</h1><p>Connect for automatic updates, or start with a position you enter yourself.</p></div></header>
+      <div className="helm-activation-panel">
+        <article><span className="helm-label">AUTOMATIC SYNC</span><h2>Connect a brokerage.</h2><p>Bring your balances, holdings and available cost basis into one view. Your money stays at your brokerage.</p><PlaidLinkButton className="helm-button" onSuccess={handlePlaidSuccess} onSynced={handlePlaidSynced} onError={handlePlaidError} onLinkError={(_code, msg) => handlePlaidError(msg)}>Connect with Plaid</PlaidLinkButton></article>
+        <article><span className="helm-label">NO CONNECTION NEEDED</span><h2>Start with one position.</h2><p>Enter a ticker and shares, or import a screenshot or CSV. Add more whenever you are ready.</p><NextLink href="/dashboard/portfolio/add" className="helm-button helm-button-outline">Add your positions</NextLink></article>
       </div>
-    );
+      <p className="text-[13px] leading-relaxed text-[var(--color-text-secondary)]">Read-only access. Helm cannot place trades or move money. You can disconnect an account at any time.</p>
+    </div>;
   }
 
   // ── CONNECTED / DEMO ───────────────────────────────────────────────────
   return (
-    <div className="px-7 pt-7 pb-16 max-w-[1320px] mx-auto">
+    <div className="px-4 sm:px-7 pt-7 pb-16 max-w-[1320px] mx-auto">
+      <header className="helm-overview-heading"><div><span className="helm-label">THE FOUNDATION OF YOUR PORTFOLIO</span><h1>Accounts and connections.</h1><p>See what you own, what you owe, and where each balance comes from.</p></div><NextLink href="/dashboard/portfolio/add" className="helm-text-link">Add manual positions ↗</NextLink></header>
       {/* Header */}
-      <div className="flex items-end justify-between gap-6 mb-[22px]">
+      <div className="flex flex-wrap items-end justify-between gap-4 mb-[22px]">
         <div>
           <div
             className="text-[10px] uppercase mb-2"
             style={{ ...MONO, letterSpacing: '0.2em', color: 'var(--color-text-muted)' }}
           >
-            Accounts · {accounts.length} connected · read-only
+            {totals.unavailable > 0 ? 'Known account balances' : 'Net account balance'} · {accounts.length} account{accounts.length === 1 ? '' : 's'}
+            {manualCount > 0 ? ` · ${manualCount} manual` : ''}
           </div>
           <div className="flex items-baseline gap-[14px] flex-wrap">
             {apiLoading ? (
@@ -345,34 +286,44 @@ export default function AccountsPage() {
                 className="text-[32px] font-bold tabular-nums"
                 style={{ letterSpacing: '-0.025em' }}
               >
-                {formatCurrency(totalBalance)}
+                {totals.unavailable === accounts.length ? 'Balance unavailable' : formatCurrency(totals.net)}
               </span>
             )}
             {!apiLoading && (
               <span
-                className="text-[14px]"
-                style={{ ...MONO, color: allSynced ? 'var(--color-positive)' : 'var(--color-warning-text)' }}
+                className="text-[12px]"
+                style={{ color: connectionHealth.errorCount > 0 || healthError ? 'var(--color-warning-text)' : 'var(--color-text-secondary)' }}
               >
-                {allSynced ? '● All synced' : '◐ Sync attention needed'}
-                {lastSyncLabel ? ` · ${lastSyncLabel}` : ''}
+                {connectionLabel}
               </span>
             )}
           </div>
         </div>
         <button
-          onClick={handleSyncAll}
-          disabled={syncing}
-          className="flex items-center gap-[7px] h-[34px] px-[14px] rounded-md cursor-pointer disabled:opacity-60"
+          onClick={healthError ? fetchConnectionHealth : handleSyncAll}
+          disabled={syncing || apiLoading || healthLoading || (!healthError && connectionHealth.items.length === 0)}
+          className="flex items-center gap-[7px] h-10 px-[14px] rounded-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-gold)]"
           style={{
             background: 'var(--color-gold)', color: '#0A0A0A',
             ...MONO, fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
             boxShadow: '0 4px 16px rgba(230,185,77,0.2)',
           }}
         >
-          {syncing ? <Loader2 className="w-[13px] h-[13px] animate-spin" /> : <Plus className="w-[13px] h-[13px]" strokeWidth={2.2} />}
-          {syncing ? 'Syncing' : 'Sync all'}
+          {syncing ? <Loader2 className="w-[13px] h-[13px] animate-spin" /> : <RefreshCw className="w-[13px] h-[13px]" strokeWidth={2.2} />}
+          {syncing ? 'Refreshing' : healthError ? 'Retry connection status' : 'Refresh connections'}
         </button>
       </div>
+
+      <p className="mb-4 text-[12px] text-[var(--color-text-secondary)]">Reported account balances, less debt. Portfolio totals use holding prices and can differ.
+        {totals.unavailable > 0 && ` ${totals.unavailable} account${totals.unavailable === 1 ? ' has' : 's have'} no reported balance and ${totals.unavailable === 1 ? 'is' : 'are'} excluded from this total.`}
+      </p>
+      {healthError && <p role="status" className="mb-4 text-[13px] text-[var(--color-warning-text)]">We couldn’t check your connections. Retry the status check above.</p>}
+      {!apiLoading && totals.unavailable < accounts.length && <div className="flex flex-wrap gap-x-8 gap-y-3 mb-6 text-[13px] text-[var(--color-text-secondary)]">
+        <span>Assets <strong className="block mt-1 text-[17px] tabular-nums text-[var(--color-text-primary)]">{formatCurrency(totals.assets)}</strong></span>
+        <span>Amount owed <strong className="block mt-1 text-[17px] tabular-nums text-[var(--color-text-primary)]">{formatCurrency(totals.owed)}</strong></span>
+        {totals.credits > 0 && <span>Account credits <strong className="block mt-1 text-[17px] tabular-nums text-[var(--color-text-primary)]">{formatCurrency(totals.credits)}</strong></span>}
+        {totals.overdrafts > 0 && <span>Overdrawn balances <strong className="block mt-1 text-[17px] tabular-nums text-[var(--color-negative-text)]">{formatCurrency(totals.overdrafts)}</strong></span>}
+      </div>}
 
       {/* Net worth by account type */}
       <div
@@ -384,7 +335,7 @@ export default function AccountsPage() {
       >
         <div className="flex justify-between items-center mb-[14px] gap-3">
           <div className="text-[10px] uppercase" style={{ ...MONO, letterSpacing: '0.14em', color: 'var(--color-text-muted)' }}>
-            Net worth by account type
+            Assets by account type
           </div>
           <div className="text-[10px] hidden sm:block" style={{ ...MONO, color: 'var(--color-text-muted)' }}>
             {composition.map((c) => `${c.label} ${Math.round(c.pct)}%`).join(' · ')}
@@ -394,7 +345,7 @@ export default function AccountsPage() {
           <div className="h-3 w-full rounded animate-pulse mb-4" style={{ background: 'var(--color-bg-elevated)' }} />
         ) : composition.length === 0 ? (
           <div className="text-[14px] mb-2" style={{ color: 'var(--color-text-muted)' }}>
-            No assets connected yet.
+            No positive asset balances to show.
           </div>
         ) : (
           <>
@@ -421,7 +372,7 @@ export default function AccountsPage() {
       </div>
 
       {/* Account cards */}
-      <div className="grid gap-[14px] mb-[14px]" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+      <div className="grid gap-[14px] mb-[14px]" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))' }}>
         {apiLoading ? (
           [0, 1, 2].map((i) => (
             <div
@@ -435,18 +386,19 @@ export default function AccountsPage() {
             {accounts.map((account) => {
               const { state, health } = cardState(account);
               const chip = chipColors(account.institution);
-              const dimmed = state === 'reconnect';
               const typeLabel = account.account_type.replace(/_/g, ' ');
+              const balance = accountBalanceDisplay(account);
+              const lastBalanceSync = health?.last_balances_sync || account.last_synced_at;
 
               return (
-                <div
+                <article
                   key={account.id}
-                  onClick={() => setSelectedAccountId(account.id)}
-                  className="rounded-lg px-5 py-[18px] cursor-pointer sovereign-card"
+                  className="rounded-lg min-w-0 overflow-hidden sovereign-card"
                   style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-base)' }}
                 >
+                  <div className="min-w-0 px-5 pt-[18px] pb-4">
                   {/* Brand chip + name + type + badge */}
-                  <div className="flex items-center gap-[11px] mb-4">
+                  <div className="flex flex-wrap items-center gap-[11px] mb-4">
                     <span
                       className="flex items-center justify-center shrink-0"
                       style={{
@@ -456,7 +408,7 @@ export default function AccountsPage() {
                     >
                       {chip.initial}
                     </span>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-[100px]">
                       <div className="text-[15px] font-semibold truncate">{account.institution}</div>
                       <div className="text-[9px] uppercase truncate" style={{ ...MONO, letterSpacing: '0.1em', color: 'var(--color-text-muted)' }}>
                         {typeLabel}
@@ -467,38 +419,36 @@ export default function AccountsPage() {
 
                   {/* Balance */}
                   <div
-                    className="text-[24px] font-bold tabular-nums mb-1"
-                    style={{ letterSpacing: '-0.02em', color: dimmed ? 'var(--color-text-muted)' : undefined }}
+                    className="text-[24px] font-bold tabular-nums mb-1 break-words"
+                    style={{ letterSpacing: '-0.02em' }}
                   >
-                    {formatCurrency(Math.abs(account.balance))}
-                    {account.balance < 0 && <span className="text-[14px] ml-2" style={{ ...MONO }}>due</span>}
+                    {balance.amount == null ? 'Balance unavailable' : formatCurrency(balance.amount)}
+                    {balance.suffix && <span className="text-[12px] ml-2 font-normal text-[var(--color-text-secondary)]">{balance.suffix}</span>}
                   </div>
 
-                  {/* Sub-line: last sync / stale */}
+                  {/* Source account name and the actual balance timestamp. */}
                   <div
-                    className="text-[12px] mb-[14px]"
-                    style={{ ...MONO, color: dimmed ? 'var(--color-text-muted)' : 'var(--color-text-muted)' }}
+                    className="text-[13px] mb-4 truncate"
+                    style={{ color: 'var(--color-text-secondary)' }}
                   >
-                    {dimmed
-                      ? `Last synced ${account.last_synced_at ? formatTimeAgo(account.last_synced_at) : 'a while ago'} · stale`
-                      : account.account_name}
+                    {account.account_name}
+                  </div>
+                  <div className="pt-3 border-t border-[var(--color-border-subtle)] text-[11px] text-[var(--color-text-muted)] leading-relaxed">
+                    {balance.amount == null ? 'Waiting for a reported balance'
+                      : state === 'manual' ? 'Entered by you · no automatic sync'
+                      : lastBalanceSync ? `Balance last reported ${formatTimeAgo(lastBalanceSync)}`
+                      : 'Balance update time unavailable'}
+                  </div>
+                  <button type="button" onClick={() => setSelectedAccountId(account.id)}
+                    aria-label={`View ${account.institution} ${account.account_name} account details`}
+                    className="mt-3 text-[12px] text-[var(--color-gold)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-gold)]">View details</button>
                   </div>
 
-                  {/* Allocation bar (presentational accent, dimmed when stale) */}
-                  <div
-                    className="flex w-full overflow-hidden mb-2"
-                    style={{ height: 5, borderRadius: 2, opacity: dimmed ? 0.4 : 1 }}
-                  >
-                    <div style={{ width: '58%', background: chip.fg }} />
-                    <div style={{ width: '22%', background: '#7AA3C7' }} />
-                    <div style={{ width: '20%', background: '#5A6070' }} />
-                  </div>
-
-                  {/* Footer: synced → last sync; reconnect → expired + button */}
-                  {state === 'reconnect' ? (
-                    <div className="flex items-center justify-between gap-[10px]" onClick={(e) => e.stopPropagation()}>
+                  {/* Connection recovery stays separate from the detail button. */}
+                  {state === 'attention' && (
+                    <div className="flex flex-wrap items-center justify-between gap-[10px] px-5 pb-4">
                       <span className="text-[10px]" style={{ ...MONO, color: 'var(--color-negative-text)' }}>
-                        Connection expired
+                        Connection needs attention
                       </span>
                       {health?.id ? (
                         <PlaidUpdateLink
@@ -510,7 +460,8 @@ export default function AccountsPage() {
                       ) : (
                         <button
                           onClick={handleSyncAll}
-                          className="cursor-pointer"
+                          disabled={syncing}
+                          className="cursor-pointer disabled:opacity-50"
                           style={{
                             padding: '5px 11px', background: 'rgba(248,113,113,0.1)',
                             border: '1px solid rgba(248,113,113,0.25)', borderRadius: 5,
@@ -518,17 +469,12 @@ export default function AccountsPage() {
                             letterSpacing: '0.08em', textTransform: 'uppercase',
                           }}
                         >
-                          Reconnect
+                          Retry refresh
                         </button>
                       )}
                     </div>
-                  ) : (
-                    <div className="text-[10px]" style={{ ...MONO, color: 'var(--color-text-muted)' }}>
-                      {typeLabel} · last sync{' '}
-                      {account.last_synced_at ? formatTimeAgo(account.last_synced_at) : 'pending'}
-                    </div>
                   )}
-                </div>
+                </article>
               );
             })}
 
@@ -573,7 +519,7 @@ export default function AccountsPage() {
             onClick={() => setSelectedAccountId(null)}
             aria-hidden="true"
           />
-          <div role="dialog" aria-modal="true" aria-labelledby="account-detail-heading" className="w-full max-w-md bg-[var(--color-bg-surface)] border-l border-[var(--color-border-base)] shadow-2xl animate-slide-in-bottom">
+          <AccountDialog titleId="account-detail-heading" onClose={() => setSelectedAccountId(null)} className="w-full max-w-md overflow-y-auto bg-[var(--color-bg-surface)] border-l border-[var(--color-border-base)] shadow-2xl animate-slide-in-bottom">
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[var(--color-border-base)]">
               <div>
                 <p className="type-caption text-[var(--color-text-secondary)] mb-1">Account details</p>
@@ -595,10 +541,11 @@ export default function AccountsPage() {
                 <span className="type-label text-[var(--color-text-secondary)]">Current balance</span>
                 <span
                   className={`type-data text-xl ${
-                    selectedAccount.balance >= 0 ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-negative)]'
+                    selectedAccount.balance != null && selectedAccount.balance < 0 && !isLiabilityType(selectedAccount.account_type) ? 'text-[var(--color-negative)]' : 'text-[var(--color-text-primary)]'
                   }`}
                 >
-                  {formatCurrency(Math.abs(selectedAccount.balance))}
+                  {selectedAccount.balance == null ? 'Balance unavailable' : formatCurrency(accountBalanceDisplay(selectedAccount).amount!)}
+                  {accountBalanceDisplay(selectedAccount).suffix && <span className="ml-2 text-[12px] font-normal">{accountBalanceDisplay(selectedAccount).suffix}</span>}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -611,10 +558,10 @@ export default function AccountsPage() {
               </div>
               <div className="pt-2 border-t border-[var(--color-border-subtle)]">
                 <p className="type-label text-[var(--color-text-secondary)] mb-2">Recent transactions</p>
-                <p className="text-[13px] text-[var(--color-text-muted)]">View full transaction history on the Transactions page.</p>
+                <NextLink href="/dashboard/transactions" className="text-[13px] text-[var(--color-gold)] hover:underline">View transaction history ↗</NextLink>
               </div>
               {(() => {
-                const health = healthByInstitution.get(selectedAccount.institution.toLowerCase());
+                const health = selectedAccount.source === 'manual' ? undefined : healthByInstitution.get(selectedAccount.institution.toLowerCase());
                 if (!health?.id) return null;
                 return (
                   <div className="pt-2 border-t border-[var(--color-border-subtle)] flex items-center justify-between gap-2">
@@ -631,7 +578,7 @@ export default function AccountsPage() {
                 );
               })()}
             </div>
-          </div>
+          </AccountDialog>
         </div>
       )}
 
@@ -643,7 +590,7 @@ export default function AccountsPage() {
             onClick={() => setConfirmDisconnect(null)}
             aria-hidden="true"
           />
-          <div role="dialog" aria-modal="true" aria-labelledby="disconnect-heading" className="relative w-[calc(100%-2rem)] max-w-sm bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl animate-scale-in p-6 space-y-4">
+          <AccountDialog titleId="disconnect-heading" onClose={() => setConfirmDisconnect(null)} className="relative w-[calc(100%-2rem)] max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl animate-scale-in p-6 space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-[var(--color-negative)]/10 rounded-full flex items-center justify-center">
                 <Trash2 className="w-5 h-5 text-[var(--color-negative)]" />
@@ -673,7 +620,7 @@ export default function AccountsPage() {
                 Disconnect
               </Button>
             </div>
-          </div>
+          </AccountDialog>
         </div>
       )}
 
@@ -685,7 +632,7 @@ export default function AccountsPage() {
             onClick={() => setShowAddAccount(false)}
             aria-hidden="true"
           />
-          <div role="dialog" aria-modal="true" aria-labelledby="add-account-heading" className="relative w-[calc(100%-2rem)] max-w-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl animate-scale-in">
+          <AccountDialog titleId="add-account-heading" onClose={() => setShowAddAccount(false)} className="relative w-[calc(100%-2rem)] max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-xl shadow-2xl animate-scale-in">
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[var(--color-border-base)]">
               <div>
                 <h2 id="add-account-heading" className="type-h2">Connect Account</h2>
@@ -759,7 +706,7 @@ export default function AccountsPage() {
                 />
               </div>
             </div>
-          </div>
+          </AccountDialog>
         </div>
       )}
     </div>
@@ -819,23 +766,46 @@ function EnterByHandTile() {
   );
 }
 
-// ── Sync badge (three states) ────────────────────────────────────────────
-function SyncBadge({ state }: { state: CardSyncState }) {
+function SyncBadge({ state }: { state: AccountConnectionState }) {
   const meta = {
-    synced: { label: '● Synced', color: 'var(--color-positive)', bg: 'rgba(74,222,128,0.08)', border: 'rgba(74,222,128,0.2)' },
+    connected: { label: 'Connected', color: 'var(--color-positive)', bg: 'rgba(74,222,128,0.08)', border: 'rgba(74,222,128,0.2)' },
+    manual: { label: 'Manual', color: 'var(--color-text-secondary)', bg: 'var(--color-bg-overlay)', border: 'var(--color-border-base)' },
+    checking: { label: 'Checking', color: 'var(--color-text-secondary)', bg: 'var(--color-bg-overlay)', border: 'var(--color-border-base)' },
+    unavailable: { label: 'Status unavailable', color: 'var(--color-text-secondary)', bg: 'var(--color-bg-overlay)', border: 'var(--color-border-base)' },
+    unknown: { label: 'Not verified', color: 'var(--color-text-secondary)', bg: 'var(--color-bg-overlay)', border: 'var(--color-border-base)' },
     syncing: { label: '◐ Syncing', color: 'var(--color-warning-text)', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.22)' },
-    reconnect: { label: '⚠ Reconnect', color: 'var(--color-negative-text)', bg: 'rgba(248,113,113,0.08)', border: 'rgba(248,113,113,0.25)' },
+    attention: { label: 'Needs attention', color: 'var(--color-negative-text)', bg: 'rgba(248,113,113,0.08)', border: 'rgba(248,113,113,0.25)' },
   }[state];
 
   return (
     <span
       className="uppercase shrink-0"
       style={{
-        ...MONO, fontSize: 8, letterSpacing: '0.1em', padding: '3px 6px',
+        ...MONO, fontSize: 9, letterSpacing: '0.05em', padding: '4px 7px',
         background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 3, color: meta.color,
       }}
     >
       {meta.label}
     </span>
   );
+}
+
+// Keep the custom drawer compatible with Plaid's external dialog while giving
+// keyboard users an entry point, contained tab order, Escape, and focus return.
+function AccountDialog({ titleId, onClose, className, children }: { titleId: string; onClose: () => void; className: string; children: ReactNode }) {
+  const panel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    panel.current?.querySelector<HTMLElement>('button:not([disabled]), a[href], [tabindex="0"]')?.focus();
+    return () => { if (previous?.isConnected) previous.focus(); };
+  }, []);
+  return <div ref={panel} role="dialog" aria-modal="true" aria-labelledby={titleId} className={className} onKeyDown={(event) => {
+    if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onClose(); }
+    if (event.key !== 'Tab') return;
+    const controls = Array.from(panel.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]') ?? []).filter((control) => control.getClientRects().length > 0);
+    const first = controls[0];
+    const last = controls[controls.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+  }}>{children}</div>;
 }

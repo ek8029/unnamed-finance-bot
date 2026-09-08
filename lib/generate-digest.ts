@@ -7,6 +7,7 @@ import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import { getAnthropic, hasAnthropicKey, DIGEST_MODEL, anthropicCostUsd } from '@/lib/anthropic';
 import { buildDigestContext } from '@/lib/digest/pack';
 import { L7, validate, retryLine } from '@/lib/digest/validate';
+import { partitionNewsForReader } from '@/lib/news-relevance';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -163,15 +164,15 @@ async function generateLegacyDigest(userHoldings: string[]): Promise<DigestResul
   const supabase = createCronServiceClient();
   const oneDayAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
-  const [positionNewsResult, generalNewsResult, spyQuote, vixQuote] =
+  const [positionNewsResult, generalNewsResult, spyQuote, vixQuote, companyResult] =
     await Promise.all([
       userHoldings.length > 0
         ? supabase
             .from('market_news')
             .select(
-              'title, summary, source, published_at, primary_ticker, sentiment',
+              'title, summary, source, url, published_at, primary_ticker, sentiment, tickers, subject_verdict, subject_ticker',
             )
-            .in('primary_ticker', userHoldings)
+            .or(`primary_ticker.in.(${userHoldings.join(',')}),subject_ticker.in.(${userHoldings.join(',')})`)
             .gte('published_at', oneDayAgo)
             .order('published_at', { ascending: false })
             .limit(10)
@@ -179,31 +180,20 @@ async function generateLegacyDigest(userHoldings: string[]): Promise<DigestResul
       supabase
         .from('market_news')
         .select(
-          'title, summary, source, published_at, primary_ticker, sentiment',
+          'title, summary, source, url, published_at, primary_ticker, sentiment, tickers, subject_verdict, subject_ticker',
         )
         .gte('published_at', oneDayAgo)
         .order('published_at', { ascending: false })
         .limit(10),
       getQuote('SPY'),
       getVixQuote(),
+      userHoldings.length > 0 ? supabase.from('securities').select('ticker, security_name').in('ticker', userHoldings) : Promise.resolve({ data: [] }),
     ]);
 
-  // Deduplicate
-  const seenTitles = new Set<string>();
-  const positionNews = (positionNewsResult.data || []).filter((n) => {
-    if (seenTitles.has(n.title)) return false;
-    seenTitles.add(n.title);
-    return true;
-  });
-
-  const generalNews = (generalNewsResult.data || [])
-    .filter((n) => !seenTitles.has(n.title))
-    .filter((n) => {
-      if (seenTitles.has(n.title)) return false;
-      seenTitles.add(n.title);
-      return true;
-    })
-    .slice(0, 6);
+  const names = new Map<string, string>((companyResult.data ?? []).filter(n => n.security_name).map(n => [n.ticker, n.security_name as string]));
+  const groupedNews = partitionNewsForReader([...(positionNewsResult.data ?? []), ...(generalNewsResult.data ?? [])], userHoldings, names);
+  const positionNews = groupedNews.subjects;
+  const generalNews = groupedNews.context.slice(0, 6);
 
   // Build prompt context
   const marketContext = [
@@ -240,6 +230,8 @@ async function generateLegacyDigest(userHoldings: string[]): Promise<DigestResul
 
   const prompt = `${INJECTION_GUARD}
 You are writing the morning brief for an individual investor's financial intelligence terminal called "The Current" by Helm Terminal. The tone is concise, direct, and informed — like a sharp analyst note, not a chatbot. No greetings, no sign-offs. Write in second person ("your portfolio").
+
+Only POSITION NEWS establishes a company-specific link to the user's holdings. GENERAL MARKET NEWS is context: never turn a related mention or a feed tag into a claim about a position or its performance.
 
 MARKET SNAPSHOT:
 ${marketContext || 'Market data unavailable'}
@@ -298,45 +290,34 @@ export async function generateGenericDigest(): Promise<DigestResult> {
 
   const keyTickers = ['SPY', 'QQQ', 'AAPL', 'NVDA', 'MSFT', 'TSLA', 'GOOGL', 'META'];
 
-  const [tickerNewsResult, generalNewsResult, spyQuote, vixQuote] =
+  const [tickerNewsResult, generalNewsResult, spyQuote, vixQuote, companyResult] =
     await Promise.all([
       supabase
         .from('market_news')
         .select(
-          'title, summary, source, published_at, primary_ticker, sentiment',
+          'title, summary, source, url, published_at, primary_ticker, sentiment, tickers, subject_verdict, subject_ticker',
         )
-        .in('primary_ticker', keyTickers)
+        .or(`primary_ticker.in.(${keyTickers.join(',')}),subject_ticker.in.(${keyTickers.join(',')})`)
         .gte('published_at', oneDayAgo)
         .order('published_at', { ascending: false })
         .limit(10),
       supabase
         .from('market_news')
         .select(
-          'title, summary, source, published_at, primary_ticker, sentiment',
+          'title, summary, source, url, published_at, primary_ticker, sentiment, tickers, subject_verdict, subject_ticker',
         )
         .gte('published_at', oneDayAgo)
         .order('published_at', { ascending: false })
         .limit(10),
       getQuote('SPY'),
       getVixQuote(),
+      supabase.from('securities').select('ticker, security_name').in('ticker', keyTickers),
     ]);
 
-  // Deduplicate
-  const seenTitles = new Set<string>();
-  const tickerNews = (tickerNewsResult.data || []).filter((n) => {
-    if (seenTitles.has(n.title)) return false;
-    seenTitles.add(n.title);
-    return true;
-  });
-
-  const generalNews = (generalNewsResult.data || [])
-    .filter((n) => !seenTitles.has(n.title))
-    .filter((n) => {
-      if (seenTitles.has(n.title)) return false;
-      seenTitles.add(n.title);
-      return true;
-    })
-    .slice(0, 6);
+  const names = new Map<string, string>((companyResult.data ?? []).filter(n => n.security_name).map(n => [n.ticker, n.security_name as string]));
+  const groupedNews = partitionNewsForReader([...(tickerNewsResult.data ?? []), ...(generalNewsResult.data ?? [])], keyTickers, names);
+  const tickerNews = groupedNews.subjects;
+  const generalNews = groupedNews.context.slice(0, 6);
 
   const marketContext = [
     spyQuote

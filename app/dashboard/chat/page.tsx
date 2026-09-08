@@ -331,13 +331,13 @@ function ResearchChatContent() {
   // ── Empty State ──
 
   const EmptyState = () => (
-    <div className="flex-1 flex items-center justify-center px-6 min-h-0">
-      <div className="text-center max-w-xl mx-auto">
+    <div className="helm-research-empty flex-1 flex items-center justify-center px-6 min-h-0">
+      <div className="max-w-xl mx-auto">
         <h2 className="text-[22px] font-bold tracking-[-0.02em] text-[var(--color-text-primary)] mb-2">
-          Your portfolio, in plain language
+          Start with a better question.
         </h2>
         <p className="text-[15px] text-[var(--color-text-secondary)] mb-7 leading-relaxed">
-          Ask about any stock, or ask Helm to analyze your portfolio with real dollar amounts from your connected accounts. Every answer is sourced.
+          Explore a position, test an assumption, or ask what connects your holdings. Helm brings your portfolio context and the evidence into the conversation.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {(liveChips ?? SUGGESTED_QUERIES).map((q) => (
@@ -365,9 +365,7 @@ function ResearchChatContent() {
           <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-1.5" style={MONO}>
             Ask Helm
           </div>
-          <div className="text-[22px] font-bold tracking-[-0.02em] text-[var(--color-text-primary)]">
-            Your portfolio, in plain language
-          </div>
+          <h1 className="text-[22px] font-bold tracking-[-0.02em] text-[var(--color-text-primary)]">Your research desk.</h1>
         </div>
         <QuotaIndicator />
       </div>

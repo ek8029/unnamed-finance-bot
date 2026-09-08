@@ -96,8 +96,8 @@ function SourceChip({ manual, mixed, show }: { manual?: boolean; mixed?: boolean
 function LoadingSkeleton() {
   return (
     <div className="container mx-auto px-4 py-6 max-w-[1600px] animate-pulse">
-      <div className="flex gap-6">
-        <div className="flex-1 space-y-6">
+      <div className="flex flex-wrap gap-6">
+        <div className="min-w-0 flex-[3_1_720px] space-y-6">
           <div className="h-5 bg-[var(--color-bg-elevated)] rounded w-48" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="col-span-2 h-28 bg-[var(--color-bg-elevated)] rounded-lg" />
@@ -107,7 +107,7 @@ function LoadingSkeleton() {
           <div className="h-96 bg-[var(--color-bg-elevated)] rounded-lg" />
           <div className="h-64 bg-[var(--color-bg-elevated)] rounded-lg" />
         </div>
-        <div className="hidden lg:block w-[420px]">
+        <div className="min-w-0 flex-[1_1_360px]">
           <div className="h-[600px] bg-[var(--color-bg-elevated)] rounded-lg" />
         </div>
       </div>
@@ -273,13 +273,13 @@ export default function PortfolioPage() {
   const [range, setRange] = useState<RangeKey>('6M');
 
   /* ---------- transform holdings for sidebar components ---------- */
-  const transformedHoldings = holdings.map(h => ({
+  const transformedHoldings = useMemo(() => holdings.map(h => ({
     id: h.id, user_id: '', ticker: h.ticker, asset_name: h.asset_name,
     shares: h.shares, current_price: h.current_price, total_value: h.total_value,
     day_change_percentage: h.day_change_percentage, portfolio_allocation: h.portfolio_allocation,
     sector: h.sector, asset_class: h.asset_class, cost_basis: h.cost_basis,
     unrealised_gain: h.unrealised_gain, basis_incomplete: h.basis_incomplete,
-  }));
+  })), [holdings]);
 
   const transformedAllocation = allocation.map(a => ({
     name: a.name, value: a.value, percentage: a.percentage,
@@ -523,11 +523,12 @@ export default function PortfolioPage() {
   /* ================================================================ */
   return (
     <div className="container mx-auto px-4 py-4 sm:py-6 max-w-[1600px]">
-      <div className="flex lg:gap-6">
+      <header className="helm-overview-heading"><div><span className="helm-label">EVERY POSITION. ONE PICTURE.</span><h1>Your portfolio.</h1><p>See your holdings, their contribution, and the exposure they share.</p></div><Link href="/dashboard/portfolio/add" className="helm-text-link">Add a position ↗</Link></header>
+      <div className="flex flex-wrap gap-6">
         {/* ======================================================= */}
         {/*  MAIN CONTENT                                            */}
         {/* ======================================================= */}
-        <div className="flex-1 min-w-0 space-y-4 sm:space-y-6">
+        <div className="min-w-0 flex-[3_1_720px] space-y-4 sm:space-y-6">
 
           {/* ---- 1. HEADER STRIP (Sovereign Architect) ---- */}
           {/* Desktop: eyebrow + title + day P/L, Export/Rebalance, tab pills.
@@ -574,11 +575,12 @@ export default function PortfolioPage() {
           </div>
 
           {/* Tab pills — Portfolio / Concentration (drive activeTab) */}
-          <div className="flex items-center gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-0.5 w-fit">
+          <div className="helm-portfolio-tabs flex items-center gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-0.5 w-fit" role="group" aria-label="Portfolio view">
             {tabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
+                aria-pressed={activeTab === tab}
                 className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
                   activeTab === tab
                     ? 'bg-[var(--color-gold)] text-black'
@@ -861,16 +863,6 @@ export default function PortfolioPage() {
             </div>
             )}
 
-            {/* ── Mobile Market Intelligence ── */}
-            {holdings.length > 0 && (
-              <div className="mt-4 space-y-4">
-                <MarketIntelligence
-                  holdings={transformedHoldings}
-                  className="max-h-none"
-                />
-                <StressTest holdings={holdings} totalValue={totalValue} formatCurrency={formatCurrency} />
-              </div>
-            )}
           </div>
 
           {/* ── Today's movers (desktop) ── */}
@@ -1581,11 +1573,11 @@ export default function PortfolioPage() {
         {/* ======================================================= */}
         {/*  RIGHT SIDEBAR                                           */}
         {/* ======================================================= */}
-        <aside className="hidden lg:block w-[420px] flex-shrink-0">
-          <div className="sticky top-20 space-y-4">
+        <aside aria-label="Portfolio news and events" className="min-w-0 flex-[1_1_360px]">
+          <div className="space-y-4 lg:sticky lg:top-20">
             <MarketIntelligence
               holdings={transformedHoldings}
-              className="max-h-[calc(100vh-12rem)] flex flex-col"
+              className="max-h-none lg:max-h-[calc(100vh-12rem)] flex flex-col"
             />
             {holdings.length > 0 && (
               <StressTest holdings={holdings} totalValue={totalValue} formatCurrency={formatCurrency} />

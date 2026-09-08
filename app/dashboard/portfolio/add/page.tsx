@@ -13,6 +13,7 @@ export default function AddHoldingsPage() {
   // An import SEEDS the form; it never saves. The key remount is what lets a
   // second import replace the first instead of stacking onto it.
   const [seed, setSeed] = useState<{ rows: ImportedRow[]; n: number } | null>(null);
+  const [entryMethod, setEntryMethod] = useState<'manual' | 'import'>('manual');
 
   return (
     <div className="px-6 sm:px-7 py-7 pb-16 max-w-[1100px] mx-auto">
@@ -24,16 +25,15 @@ export default function AddHoldingsPage() {
           Import or manual entry
         </div>
         <h1 className="text-[28px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)]">
-          Add holdings
+          Start with what you own.
         </h1>
         {/* Said both ways on purpose. The page has always led with the importer
             and was headed "Add a holding by hand", so anyone arriving from a
             link that offered to import their book was told at the door that
             this was not the place. It is the place. */}
         <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed mt-1.5">
-          For brokers Plaid does not reach, and anything else Helm cannot sync. Start from a
-          screenshot or a CSV export, or type positions in by hand. Prices update via live market
-          data, and cost basis is what makes the tax figure possible.
+          Add your first position or bring over your portfolio. A ticker and share count get you
+          started. Cost basis adds the context for tax intelligence.
         </p>
         <div className="flex items-start gap-2 mt-4 p-3 rounded-lg bg-[var(--color-bg-inset)] border border-[var(--color-border-subtle)]">
           <span className="text-[var(--color-gold)] text-[15px] mt-0.5 shrink-0">&#9432;</span>
@@ -51,7 +51,8 @@ export default function AddHoldingsPage() {
           half. It renders nothing when there is nothing hand-entered. */}
       <ManualHoldingsEditor />
 
-      <PortfolioImport onExtracted={(rows) => setSeed(prev => ({ rows, n: (prev?.n ?? 0) + 1 }))} />
+      <div className="helm-entry-method" role="group" aria-label="How to add positions"><button type="button" aria-pressed={entryMethod === 'manual'} onClick={() => setEntryMethod('manual')}>Enter positions</button><button type="button" aria-pressed={entryMethod === 'import'} onClick={() => setEntryMethod('import')}>Import a screenshot or CSV</button></div>
+      {entryMethod === 'import' && <PortfolioImport onExtracted={(rows) => setSeed(prev => ({ rows, n: (prev?.n ?? 0) + 1 }))} />}
 
       {seed && seed.rows.length > 0 && (
         <p className="mb-3 text-[14px] text-[var(--color-text-secondary)]">

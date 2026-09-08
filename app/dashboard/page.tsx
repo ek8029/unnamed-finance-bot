@@ -398,7 +398,7 @@ export default function DashboardOverview() {
     error,
   } = useFinancialSummary();
 
-  const { insights: feedInsights, loading: insightsLoading } = useIntelligence();
+  const { insights: feedInsights, loading: insightsLoading, error: insightsError } = useIntelligence();
 
   // Live portfolio value: useHoldings polls /api/market/quotes every 30s and
   // recomputes totalValue client-side. Overrides the static DB aggregate.
@@ -745,7 +745,7 @@ export default function DashboardOverview() {
                 href="/dashboard/portfolio/add"
                 className="text-[13px] text-[var(--color-text-muted)] underline decoration-[var(--color-border-strong)] underline-offset-4 transition-colors hover:text-[var(--color-text-secondary)]"
               >
-                Or add holdings by import
+                Add positions manually or import a portfolio
               </Link>
             </div>
 
@@ -786,7 +786,6 @@ export default function DashboardOverview() {
   const dispPct = rangeChange ? rangeChange.pct : netWorthPctChange;
   const dispPositive = dispDollar !== null ? dispDollar >= 0 : true;
   const dispLabel = rangeChange ? RANGE_LABEL[nwRange] : netWorthChangeLabel;
-  const showDemoBanner = isDemo || dataState === 'demo';
 
   const invested = financialSummary?.total_assets || 0;
   const cash =
@@ -811,6 +810,7 @@ export default function DashboardOverview() {
 
   return (
     <div className={`mx-auto stagger-fade-in ${SCREEN_PAD}`} style={SCREEN}>
+      <header className="helm-overview-heading"><div><span className="helm-label">YOUR INTELLIGENCE DESK</span><h1>Your portfolio, in perspective.</h1><p>What changed. What deserves a closer look. Across everything you own.</p></div><div className="helm-overview-links"><Link href="/dashboard/brief">Read your brief ↗</Link><Link href="/dashboard/chat">Ask the agent ↗</Link></div></header>
       <DemoConnectCta
         headline="This is sample data. See your real net worth."
         sub="Connect your brokerages and Helm reconciles every account into one number, with your real risk, taxes, and conviction."
@@ -824,27 +824,8 @@ export default function DashboardOverview() {
       <div className="mb-3.5">
         <TodaysDelta isDemo={isDemo} />
       </div>
-      {showDemoBanner && (
-        <div className="mb-4 flex flex-col items-start justify-between gap-2 rounded-md border border-[var(--color-info-border)] bg-[var(--color-info-muted)] px-4 py-2.5 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-info-text)]" style={MONO}>
-              Demo data
-            </span>
-            <span className="hidden text-[15px] text-[var(--color-text-muted)] sm:inline">
-              You&apos;re viewing a sample portfolio.
-            </span>
-          </div>
-          <button
-            onClick={disableDemo}
-            className="cursor-pointer text-[14px] font-semibold text-[var(--color-info-text)] transition-colors hover:brightness-110"
-          >
-            Connect →
-          </button>
-        </div>
-      )}
-
       {/* ── Net-worth header ── */}
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+      <div className="helm-overview-balance mb-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
         <div>
           <Eyebrow className="mb-2 !tracking-[0.2em] !text-[14px]">Net worth · All accounts · USD</Eyebrow>
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
@@ -980,12 +961,23 @@ export default function DashboardOverview() {
             <div className="mb-3.5 flex items-center gap-2.5">
               <Sparkles size={15} strokeWidth={1.6} className="text-[var(--color-gold)]" />
               <span className="text-[12px] uppercase tracking-[0.16em] text-[var(--color-gold)]" style={MONO}>
-                Helm Brief
+                {isDemo ? 'Sample portfolio brief' : 'Helm Brief'}
               </span>
               <span className="h-px flex-1" style={{ background: 'rgba(230,185,77,0.12)' }} />
             </div>
 
-            {feedInsights.length > 0 ? (
+            {isDemo ? (
+              <div className="mb-4 flex-1">
+                <p className="mb-3 text-[19px] leading-[1.4] text-[var(--color-text-primary)] text-pretty">
+                  Start with what carries the most weight.
+                </p>
+                <p className="text-[15px] leading-[1.62] text-[var(--color-text-secondary)]">
+                  {topHoldings.slice(0, 3).map((holding) => holding.ticker).join(', ')} lead this sample portfolio.
+                  {' '}Explore the brief to see how company developments, shared risks, and upcoming reports fit together.
+                </p>
+                <p className="mt-3 text-[12px] text-[var(--color-text-muted)]">Illustrative portfolio · connect or add holdings for your own perspective.</p>
+              </div>
+            ) : feedInsights.length > 0 ? (
               <>
                 <p className="m-0 mb-3.5 text-[15px] leading-[1.62] text-[var(--color-text-primary)] text-pretty">
                   {feedInsights[0].summary}
@@ -1015,18 +1007,19 @@ export default function DashboardOverview() {
               </>
             ) : (
               <p className="m-0 mb-4 flex-1 text-[15px] leading-[1.62] text-[var(--color-text-muted)]">
-                Helm is still gathering signal across your book. Your first brief lands once a full day
-                of data has synced.
+                {insightsError
+                  ? 'Your overview feed is unavailable right now. Open the brief to check your latest report.'
+                  : 'Your brief brings portfolio developments into one place. Open it to check for your latest report.'}
               </p>
             )}
 
-            <button
-              onClick={() => router.push('/dashboard/brief')}
+            <Link
+              href="/dashboard/brief"
               className="mt-auto flex items-center justify-between rounded-[5px] px-3.5 py-2.5 text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--color-gold)]"
               style={{ ...MONO, border: '1px solid rgba(230,185,77,0.18)', background: 'rgba(230,185,77,0.08)' }}
             >
               Read full brief <span>→</span>
-            </button>
+            </Link>
           </div>
         ) : (
           <GeneralMarketBrief />
@@ -1084,15 +1077,18 @@ export default function DashboardOverview() {
           <div className="mb-1.5 flex items-center justify-between">
             <Eyebrow className="!text-[10px] !tracking-[0.14em]">Actions inbox</Eyebrow>
             <span className="text-[10px] tracking-[0.06em] text-[var(--color-text-muted)]" style={MONO}>
-              {feedInsights.length} items · ranked by impact
+              {isDemo ? 'Sample experience' : insightsError ? 'Unavailable' : `${feedInsights.length} items · ranked by impact`}
             </span>
           </div>
           <div className="flex flex-col">
-            {/* "You're all clear" is a FINDING, not a loading state. Rendered
-                while the request was still in flight it told people the agent
-                had checked and found nothing, seconds before four items
-                appeared. Loading gets a shell; the all-clear waits its turn. */}
-            {insightsLoading && feedInsights.length === 0 && (
+            {isDemo && (
+              <Link href="/dashboard/actions" className="border-t border-[var(--color-border-subtle)] py-5">
+                <span className="block text-[17px] font-medium text-[var(--color-text-primary)]">From research to your next decision.</span>
+                <span className="mt-2 block text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">Explore illustrative concentration, earnings, and tax alerts. Each includes context and a next step to investigate.</span>
+                <span className="mt-4 block text-[13px] font-medium text-[var(--color-gold)]">Explore sample actions →</span>
+              </Link>
+            )}
+            {!isDemo && insightsLoading && feedInsights.length === 0 && (
               <div className="border-t border-[var(--color-border-subtle)] py-5">
                 <Ghost label="Loading what the agent found">
                   <GhostBar w="64%" h={14} />
@@ -1100,12 +1096,12 @@ export default function DashboardOverview() {
                 </Ghost>
               </div>
             )}
-            {!insightsLoading && feedInsights.length === 0 && (
+            {!isDemo && !insightsLoading && feedInsights.length === 0 && (
               <div className="border-t border-[var(--color-border-subtle)] py-5 text-[15px] text-[var(--color-text-muted)]">
-                You&apos;re all clear. Helm keeps watching your book.
+                {insightsError ? 'We couldn’t load your actions. Try refreshing the page.' : 'No actions to display yet. Return after the next portfolio update.'}
               </div>
             )}
-            {feedInsights.slice(0, 4).map((ins) => {
+            {!isDemo && feedInsights.slice(0, 4).map((ins) => {
               const pr =
                 ins.priority === 'high'
                   ? { label: 'HIGH', color: 'var(--color-negative-text)' }
@@ -1113,9 +1109,9 @@ export default function DashboardOverview() {
                     ? { label: 'MED', color: 'var(--color-warning-text)' }
                     : { label: 'LOW', color: 'var(--color-text-muted)' };
               return (
-                <button
+                <Link
                   key={ins.id}
-                  onClick={() => router.push('/dashboard/actions')}
+                  href="/dashboard/actions"
                   className="flex cursor-pointer items-start gap-3 border-t border-[var(--color-border-subtle)] py-3.5 text-left"
                 >
                   <span
@@ -1136,7 +1132,7 @@ export default function DashboardOverview() {
                   >
                     {ins.type}
                   </span>
-                </button>
+                </Link>
               );
             })}
           </div>

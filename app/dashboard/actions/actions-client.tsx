@@ -84,11 +84,11 @@ function maxKind(a: ActionItem): 'investigation' | 'shared' {
 }
 
 const primaryCta: Record<string, string> = {
-  tax: 'Harvest',
+  tax: 'Review tax opportunities',
   credit: 'Review',
   filings: 'Review',
-  cash: 'Sweep',
-  spending: 'Sweep',
+  cash: 'Review accounts',
+  spending: 'Review activity',
   earnings: 'Review',
   market: 'Review',
   concentration: 'Model it',
@@ -204,19 +204,27 @@ export function ActionsClient({ initialActions, isPro }: { initialActions: Actio
   /* ── All-clear empty state ────────────────────── */
   if (filtered.length === 0) {
     return (
-      <div className="px-5 py-6 md:px-7 md:pt-[26px] md:pb-[60px] max-w-[1100px] mx-auto">
+      <div className="helm-detail-page helm-actions">
         <Header openCount={openCount} chip={chip} setChip={setChip} generating={generating} onGenerate={handleGenerate} />
-        <div className="min-h-[420px] flex items-center justify-center px-6 py-10">
+        <div className="helm-detail-empty">
           <div className="max-w-[460px] text-center">
             <div className="w-[60px] h-[60px] mx-auto mb-[22px] rounded-[14px] flex items-center justify-center bg-[rgba(74,222,128,0.06)] border border-[rgba(74,222,128,0.2)]">
               <CheckCircle2 className="w-7 h-7" strokeWidth={1.6} style={{ color: 'var(--color-positive)' }} />
             </div>
             <h2 className="text-[24px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)] mb-3">
-              You&apos;re all clear
+              {chip === 'all' ? 'Nothing waiting for your review.' : `No ${chip} items right now.`}
             </h2>
             <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
-              No actions need your attention. Helm keeps watching your book and will rank anything worth doing here.
+              {chip === 'all'
+                ? 'Your portfolio review queue is empty. Add holdings to build your coverage, or refresh the analysis to check your current book.'
+                : 'There are no items in this category. Check the full queue for other portfolio changes worth reviewing.'}
             </p>
+            <div className="helm-detail-empty-actions">
+              {chip === 'all'
+                ? <a href="/dashboard/portfolio" className="helm-button helm-button-outline">Review portfolio <ArrowRight size={15} /></a>
+                : <button type="button" onClick={() => setChip('all')} className="helm-button helm-button-outline">View all actions <ArrowRight size={15} /></button>}
+              <a href="/dashboard/theses" className="helm-text-link">Review your theses <ArrowRight size={15} /></a>
+            </div>
           </div>
         </div>
       </div>
@@ -224,10 +232,10 @@ export function ActionsClient({ initialActions, isPro }: { initialActions: Actio
   }
 
   return (
-    <div className="px-5 py-6 md:px-7 md:pt-[26px] md:pb-[60px] max-w-[1100px] mx-auto">
+    <div className="helm-detail-page helm-actions">
       <Header openCount={openCount} chip={chip} setChip={setChip} generating={generating} onGenerate={handleGenerate} />
 
-      <div className="flex flex-col gap-3">
+      <div className="helm-action-queue" aria-label="Portfolio review queue">
         {filtered.map(action =>
           isProItem(action) ? (
             entitled ? (
@@ -275,49 +283,46 @@ function Header({
   onGenerate: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6 mb-5">
-      <div>
-        <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-[var(--color-text-muted)] mb-2" style={MONO}>
-          Actions · {openCount} open · ranked by impact
-        </div>
+    <header className="helm-actions-header">
+      <div className="helm-detail-heading">
+        <div>
+        <p className="helm-kicker">Portfolio intelligence / Actions</p>
         <h1 className="text-[26px] sm:text-[30px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)] leading-tight">
-          Your next best moves
+          Worth your attention.
         </h1>
-      </div>
-
-      <div className="flex items-center gap-2.5">
-        <div className="flex gap-1.5 font-mono text-[10px] tracking-[0.06em] uppercase" style={MONO} role="tablist" aria-label="Filter actions">
-          {CHIPS.map(c => {
-            const active = chip === c.key;
-            return (
-              <button
-                key={c.key}
-                role="tab"
-                aria-selected={active}
-                onClick={() => setChip(c.key)}
-                className={`px-3 py-[7px] rounded-[5px] motion-safe:transition-colors ${
-                  active
-                    ? 'bg-[var(--color-gold-surface)] text-[var(--color-gold)] border border-[var(--color-gold-border)]'
-                    : 'border border-[var(--color-border-base)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
-                }`}
-              >
-                {c.label}
-              </button>
-            );
-          })}
+        <p>A focused queue of portfolio risks, tax opportunities, and cash decisions.</p>
         </div>
         <button
           onClick={onGenerate}
           disabled={generating}
           aria-label="Analyze now - refresh actions"
-          className="flex items-center gap-1.5 px-3 py-[7px] font-mono text-[10px] font-bold tracking-[0.06em] uppercase rounded-[5px] bg-[var(--color-gold)] hover:brightness-[1.06] text-black motion-safe:transition-all disabled:opacity-50"
-          style={MONO}
+          className="helm-button helm-button-outline helm-button-small"
         >
           {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-          <span className="hidden sm:inline">Analyze</span>
+          {generating ? 'Analyzing portfolio…' : 'Refresh analysis'}
         </button>
       </div>
-    </div>
+
+      <div className="helm-actions-toolbar">
+        <div className="helm-detail-tabs" role="group" aria-label="Filter actions">
+          {CHIPS.map(c => {
+            const active = chip === c.key;
+            return (
+              <button
+                key={c.key}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setChip(c.key)}
+                className="motion-safe:transition-colors"
+              >
+                {c.label}{c.key === 'all' && <span>{openCount}</span>}
+              </button>
+            );
+          })}
+        </div>
+        <span>Investigations first, then priority</span>
+      </div>
+    </header>
   );
 }
 
@@ -345,19 +350,19 @@ function BasicCard({
 
   return (
     <div
-      className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] shadow-[var(--shadow-card)] px-5 py-[18px] flex gap-4 items-start motion-safe:transition-colors hover:border-[rgba(230,185,77,0.2)]"
+      className="helm-action-card"
       style={{ borderLeft: `2px solid ${meta.color}` }}
     >
-      <span className="font-mono text-[9px] font-bold tracking-[0.12em] mt-[3px] min-w-[38px]" style={{ ...MONO, color: meta.color }}>
-        {meta.label}
+      <span className="helm-action-priority" style={{ color: meta.color }}>
+        {impactLabel(action.priority)} priority
       </span>
 
       <div className="flex-1 min-w-0">
-        <div className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1">{action.title}</div>
+        <h2 className="helm-action-title">{action.title}</h2>
         <p className="text-[14.5px] leading-[1.55] text-[var(--color-text-muted)]">{action.description}</p>
       </div>
 
-      <div className="flex flex-col items-end gap-2 shrink-0">
+      <div className="helm-action-controls">
         <span className="font-mono text-[10px] text-[var(--color-text-muted)] whitespace-nowrap" style={MONO}>
           {impactText}
         </span>
@@ -390,29 +395,27 @@ function BasicCard({
 
 function ProCard({ action }: { action: ActionItem }) {
   const kind = maxKind(action);
-  const badge = kind === 'investigation' ? '✦ Investigation' : '✦ Shared exposure';
+  const badge = kind === 'investigation' ? 'Investigation' : 'Shared exposure';
   const ctaLabel = kind === 'investigation' ? 'View thesis' : 'Factor lens';
   const href = kind === 'investigation' ? '/dashboard/theses' : '/dashboard/portfolio/factors';
 
   return (
     <div
-      className="rounded-lg border border-[rgba(255,214,122,0.22)] bg-[rgba(255,214,122,0.03)] shadow-[var(--shadow-card)] px-5 py-[18px] flex gap-4 items-start flex-wrap sm:flex-nowrap"
-      style={{ borderLeft: '2px solid #FFD67A' }}
+      className="helm-action-card helm-action-card-pro"
     >
       <span
-        className="font-mono text-[8px] font-bold tracking-[0.1em] uppercase mt-px px-[7px] py-[3px] rounded-[3px] whitespace-nowrap"
-        style={{ ...MONO, background: 'rgba(255,214,122,0.12)', color: '#FFD67A' }}
+        className="helm-action-priority text-[var(--color-gold)]"
       >
         {badge}
       </span>
 
       {/* min-width forces a wrap on narrow screens instead of a one-word-per-line column */}
       <div className="flex-1 min-w-[200px]">
-        <div className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1">{action.title}</div>
+        <h2 className="helm-action-title">{action.title}</h2>
         <p className="text-[14.5px] leading-[1.55] text-[var(--color-text-muted)]">{action.description}</p>
       </div>
 
-      <div className="flex flex-col items-end gap-2 shrink-0">
+      <div className="helm-action-controls">
         <span className="font-mono text-[10px]" style={{ ...MONO, color: '#FFD67A' }}>Pro</span>
         <a
           href={href}
@@ -439,30 +442,24 @@ function ProTeaser({ action }: { action: ActionItem }) {
 
   return (
     <div
-      className="rounded-lg border border-[rgba(255,214,122,0.18)] bg-[rgba(255,214,122,0.025)] px-5 py-4 flex gap-3.5 items-center"
-      style={{ borderLeft: '2px solid #FFD67A' }}
+      className="helm-action-card helm-action-card-pro helm-action-teaser"
     >
       <span
-        className="font-mono text-[8px] font-bold tracking-[0.1em] px-[7px] py-[2px] rounded-[3px]"
-        style={{ ...MONO, background: 'rgba(255,214,122,0.12)', color: '#FFD67A' }}
+        className="helm-action-priority text-[var(--color-gold)]"
       >
-        MAX
+        Pro intelligence
       </span>
 
       <div className="flex-1 min-w-0">
-        <div className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-[7px]">{tease}</div>
-        <div className="flex flex-col gap-1.5 select-none" style={{ filter: 'blur(3px)', opacity: 0.55 }} aria-hidden="true">
-          <div className="h-2 w-[90%] rounded-[3px] bg-[rgba(255,255,255,0.08)]" />
-          <div className="h-2 w-[72%] rounded-[3px] bg-[rgba(255,255,255,0.06)]" />
-        </div>
+        <h2 className="helm-action-title">{tease}</h2>
+        <p>See the underlying evidence and the holdings affected with Pro.</p>
       </div>
 
       <a
-        href="/dashboard/settings"
-        className="flex items-center gap-1 font-mono text-[9px] tracking-[0.08em] uppercase whitespace-nowrap motion-safe:transition-colors hover:brightness-110"
-        style={{ ...MONO, color: '#FFD67A' }}
+        href="/pricing"
+        className="helm-text-link text-[var(--color-gold)]"
       >
-        Unlock with Pro
+        Explore Pro
         <ArrowRight className="w-3 h-3" />
       </a>
     </div>

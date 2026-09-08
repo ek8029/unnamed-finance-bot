@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { resend, FROM_EMAIL } from '@/lib/emails/resend';
 import { getTemplate, DRIP_DAYS } from '@/lib/emails/templates';
+import { readActivationState } from '@/lib/activation-state';
 import { isTrialRow } from '@/lib/tier-shared';
 
 /**
  * POST /api/emails/drip
  *
- * Called by daily cron. For each user without Plaid connections,
+ * Called by daily cron. For each user without saved work,
  * checks how many days since signup and sends the appropriate drip email.
  * Tracks sent emails in `email_drip_log` to avoid duplicates.
  *
@@ -35,6 +36,7 @@ export async function POST(request: NextRequest) {
   );
   const now = new Date();
   let sent = 0;
+  let attempted = 0;
   let skipped = 0;
   let deferred = 0;
   const errors: string[] = [];
@@ -52,6 +54,9 @@ export async function POST(request: NextRequest) {
     const { data: prefRows, error: prefsError } = await supabase
       .from('user_preferences')
       .select('user_id, notification_email')
+      // Bound the exclusion set to this run's users so the default row limit
+      // cannot hide one of their opt-outs behind unrelated accounts.
+      .in('user_id', users.map(user => user.id))
       .eq('notification_email', false);
     if (prefsError) {
       return NextResponse.json({ error: `Preference read failed: ${prefsError.message}` }, { status: 500 });
@@ -67,22 +72,28 @@ export async function POST(request: NextRequest) {
     for (const user of users) {
       if (!user.email) continue;
       if (optedOut.has(user.id)) { skipped++; continue; }
-      if (sent >= MAX_SENDS_PER_RUN) { deferred++; continue; }
+      // Provider failures count toward the cap too; an outage must not turn
+      // a 40-message run into an attempt against the entire backlog.
+      if (attempted >= MAX_SENDS_PER_RUN) { deferred++; continue; }
 
-      // Check Plaid connection status and subscription tier
-      const { data: plaidItems } = await supabase
-        .from('plaid_items')
-        .select('id')
-        .eq('user_id', user.id)
-        .limit(1);
+      // This sequence asks users to get started. Saved research and manual
+      // portfolios count too. On read failure, defer rather than send a false nudge.
+      try {
+        if ((await readActivationState(supabase, user.id)).hasSavedWork) {
+          skipped++;
+          continue;
+        }
+      } catch {
+        deferred++;
+        continue;
+      }
 
-      const hasPlaid = plaidItems && plaidItems.length > 0;
-
-      const { data: sub } = await supabase
+      const { data: sub, error: subscriptionError } = await supabase
         .from('user_subscriptions')
         .select('tier, trial_ends_at, stripe_subscription_id, source')
         .eq('user_id', user.id)
         .maybeSingle();
+      if (subscriptionError) { deferred++; continue; }
 
       // Effective tier: an EXPIRED Plaid-connect trial (no Stripe sub) reads as
       // free — trial expiry is lazy and never persisted, so reading the raw
@@ -101,10 +112,11 @@ export async function POST(request: NextRequest) {
       const daysSinceSignup = Math.floor((now.getTime() - signupDate.getTime()) / (1000 * 60 * 60 * 24));
 
       // Get all drip days already sent to this user
-      const { data: sentRows } = await supabase
+      const { data: sentRows, error: historyError } = await supabase
         .from('email_drip_log')
         .select('drip_day')
         .eq('user_id', user.id);
+      if (historyError) { deferred++; continue; }
 
       const sentDays = new Set((sentRows ?? []).map(r => r.drip_day));
 
@@ -122,26 +134,9 @@ export async function POST(request: NextRequest) {
 
       const targetDay = applicableDays[0];
 
-      // Connected users: skip connection nudges (days 1,3,7), only send day 14+ emails
+      // Only users without saved work reach the activation templates.
       const fullName = user.user_metadata?.full_name;
       const firstName = fullName ? fullName.split(' ')[0] : undefined;
-
-      if (hasPlaid && targetDay <= 7) {
-        // Mark early drip days as skipped for connected users
-        const earlyDays = [1, 3, 7].filter(d => d <= daysSinceSignup && !sentDays.has(d));
-        if (earlyDays.length > 0) {
-          await supabase.from('email_drip_log').insert(
-            earlyDays.map(d => ({
-              user_id: user.id,
-              drip_day: d,
-              email_subject: `[skipped — user has Plaid connected]`,
-              sent_at: now.toISOString(),
-            }))
-          );
-        }
-        skipped++;
-        continue;
-      }
 
       const template = getTemplate(targetDay, firstName);
       if (!template) {
@@ -149,44 +144,47 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Mark all earlier skipped days so they don't fire in future runs
-      const skippedDays = applicableDays.slice(1);
-      if (skippedDays.length > 0) {
-        await supabase.from('email_drip_log').insert(
-          skippedDays.map(d => ({
-            user_id: user.id,
-            drip_day: d,
-            email_subject: `[skipped — user was day ${daysSinceSignup}]`,
-            sent_at: now.toISOString(),
-          }))
-        );
-      }
-
       // Send
       try {
-        await resend.emails.send({
+        attempted++;
+        const delivery = await resend.emails.send({
           from: FROM_EMAIL,
           to: user.email,
           subject: template.subject,
           html: template.html,
           text: template.text,
-        });
+        }, { idempotencyKey: `helm-drip/${user.id}/${targetDay}` });
+        // Resend resolves ordinary API failures as { error }, rather than
+        // throwing. A missing receipt is not a successful provider acceptance.
+        if (delivery.error || !delivery.data?.id) {
+          errors.push('provider_rejected_or_unverified');
+          continue;
+        }
 
-        // Log it
-        await supabase.from('email_drip_log').insert({
-          user_id: user.id,
-          drip_day: targetDay,
-          email_subject: template.subject,
-          sent_at: now.toISOString(),
-        });
+        // Record the accepted message and superseded earlier days atomically.
+        // Nothing is stamped on rejection, so the latest applicable email can
+        // retry. The stable provider key also protects a retry after log failure
+        // within Resend's idempotency retention window.
+        const { error: logError } = await supabase.from('email_drip_log').insert(
+          applicableDays.map(day => ({
+            user_id: user.id,
+            drip_day: day,
+            email_subject: day === targetDay ? template.subject : `[skipped — user was day ${daysSinceSignup}]`,
+            sent_at: now.toISOString(),
+          })),
+        );
+        if (logError) {
+          errors.push('accepted_but_delivery_log_failed');
+          continue;
+        }
 
         sent++;
-      } catch (err) {
-        errors.push(`${user.email}: ${err instanceof Error ? err.message : 'Send failed'}`);
+      } catch {
+        errors.push('delivery_or_log_request_failed');
       }
     }
 
-    return NextResponse.json({ sent, skipped, deferred, errors: errors.length > 0 ? errors : undefined });
+    return NextResponse.json({ sent, attempted, skipped, deferred, errors: errors.length > 0 ? errors : undefined });
   } catch (err) {
     console.error('Drip email error:', err);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });

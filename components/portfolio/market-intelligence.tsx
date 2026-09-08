@@ -23,6 +23,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Holding } from '@/types';
 import { useFormat } from '@/hooks/use-format';
+import { isDirectHoldingNews } from '@/lib/news-relevance';
 
 interface MarketNewsItem {
   id: string;
@@ -37,6 +38,8 @@ interface MarketNewsItem {
    *  Use this (not tickers) for portfolio-relevance checks to avoid matching
    *  on tangentially-mentioned tickers from Polygon's full tag array. */
   primaryTicker?: string | null;
+  subjectVerdict?: string | null;
+  subjectTicker?: string | null;
   sectors: string[];
   publishedAt: string;
   relevance: string;
@@ -190,11 +193,9 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
 
   // ── Expanded-content helpers ──
 
-  /** For news: find which of the user's holdings are mentioned */
-  function getAffectedHoldings(tickers: string[]): Holding[] {
-    return tickers
-      .map(t => holdingsMap.get(t.toUpperCase()))
-      .filter((h): h is Holding => !!h);
+  function getNewsSubjectHolding(newsItem: MarketNewsItem): Holding | undefined {
+    const holding = newsItem.primaryTicker ? holdingsMap.get(newsItem.primaryTicker.toUpperCase()) : undefined;
+    return isDirectHoldingNews(newsItem, holding) ? holding : undefined;
   }
 
   /** For events: find the user's holding for the event ticker */
@@ -206,7 +207,10 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
   // ── Render helpers ──
 
   function renderNewsExposure(newsItem: MarketNewsItem) {
-    const affected = getAffectedHoldings(newsItem.tickers);
+    // Match the same subject used for the collapsed portfolio badge. Provider
+    // tags include tangential mentions and do not establish financial exposure.
+    const subject = getNewsSubjectHolding(newsItem)?.ticker.toUpperCase();
+    const affected = subject ? holdings.filter(h => h.ticker.toUpperCase() === subject) : [];
     if (affected.length === 0) return null;
 
     const totalExposure = affected.reduce((sum, h) => sum + h.total_value, 0);
@@ -217,7 +221,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
         <div className="flex items-center gap-1.5 mb-2">
           <Wallet className="h-3 w-3 text-[var(--color-gold)]" />
           <span className="type-eyebrow text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">
-            Portfolio Exposure
+            Your position in this company
           </span>
         </div>
         <div className="space-y-1.5">
@@ -243,7 +247,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
           ))}
         </div>
         <div className="mt-2 pt-2 border-t border-[var(--color-border-subtle)] flex items-center justify-between text-[13px]">
-          <span className="text-[var(--color-text-muted)]">Total Exposure</span>
+          <span className="text-[var(--color-text-muted)]">Position value</span>
           <div className="flex items-center gap-2">
             <span className="type-mono font-medium text-[var(--color-text-primary)]">
               {formatCurrencyDetailed(totalExposure)}
@@ -516,7 +520,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
             </Button>
           </div>
         </div>
-        <p className="type-eyebrow text-[var(--color-text-muted)] mt-1">Real-time news & events linked to your positions</p>
+        <p className="type-eyebrow text-[var(--color-text-muted)] mt-1">Recent coverage and upcoming portfolio events</p>
       </div>
 
       {/* Scrollable Content */}
@@ -547,7 +551,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
             // tickers array, which would match tangentially-tagged articles
             // like "Is Spotify a buy?" to AAPL holders.
             const hasPortfolioLink = isNews
-              ? !!(newsItem.primaryTicker && holdingsMap.has(newsItem.primaryTicker.toUpperCase()))
+              ? Boolean(getNewsSubjectHolding(newsItem))
               : !!holdingsMap.get(eventItem.ticker?.toUpperCase() ?? '');
 
             return (
@@ -608,11 +612,11 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
                               )}
                               {newsItem.source}
                             </span>
-                            {hasPortfolioLink && (
+                            {hasPortfolioLink ? (
                               <Badge variant="gold" className="text-[9px] px-1.5 py-0">
                                 In Portfolio
                               </Badge>
-                            )}
+                            ) : <Badge variant="outline" className="text-[9px] px-1.5 py-0">Market context</Badge>}
                           </>
                         ) : (
                           <>
@@ -647,7 +651,7 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
                   </p>
 
                   {/* Impact Note — shown inline for news about user holdings */}
-                  {isNews && newsItem.impactNote && (
+                  {isNews && hasPortfolioLink && newsItem.impactNote && (
                     <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-[var(--color-gold)]">
                       <Wallet className="h-3 w-3 flex-shrink-0" />
                       <span className="type-mono">{newsItem.impactNote}</span>
@@ -669,10 +673,11 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
                       {/* Remaining tickers/sectors badges for news */}
                       {isNews && (newsItem.tickers.length > 0 || newsItem.sectors.length > 0) && (
                         <div className="flex items-center gap-2 flex-wrap mt-3">
+                          {newsItem.tickers.length > 0 && <span className="text-[10px] text-[var(--color-text-muted)]">Related coverage</span>}
                           {newsItem.tickers.slice(0, 5).map(ticker => (
                             <Badge
                               key={ticker}
-                              variant={holdingsMap.has(ticker.toUpperCase()) ? 'gold' : 'outline'}
+                              variant={hasPortfolioLink && ticker.toUpperCase() === newsItem.primaryTicker?.toUpperCase() ? 'gold' : 'outline'}
                               className="text-[9px]"
                             >
                               {ticker}
@@ -707,10 +712,10 @@ export function MarketIntelligence({ holdings = [], className }: MarketIntellige
                   {/* Footer: Timestamp/Date & Relevance */}
                   <div className="flex items-center justify-between gap-2 mt-2">
                     <Badge
-                      variant={item.relevance === 'Your Holdings' ? 'gold' : 'secondary'}
+                      variant={hasPortfolioLink ? 'gold' : 'secondary'}
                       className="text-[9px] px-1.5 py-0"
                     >
-                      {item.relevance}
+                      {isNews ? (hasPortfolioLink ? 'Your Holdings' : 'Market context') : item.relevance}
                     </Badge>
                     <span className="type-eyebrow text-[var(--color-text-muted)]">
                       {isNews

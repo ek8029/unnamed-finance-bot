@@ -12,9 +12,11 @@ import { supabase as supabaseBrowser } from '@/lib/supabase/client'
 import NextLink from 'next/link'
 import { useTier } from '@/hooks/use-tier'
 import { useAccounts } from '@/hooks/use-financial-data'
+import { summarizeAccountBalances } from '@/lib/accounts-presentation'
 import { useFormat } from '@/hooks/use-format'
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button'
 import { PlaidUpdateLink } from '@/components/plaid/plaid-update-link'
+import { requestConnectionSync } from '@/lib/plaid/sync-client'
 import { PasswordSection } from './password-section'
 import { ProWaitlistButton } from '@/components/pro-waitlist-button'
 import posthog from 'posthog-js'
@@ -97,6 +99,16 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'billing', label: 'Billing', icon: CreditCard },
   { id: 'danger', label: 'Danger zone', icon: AlertTriangle },
 ]
+
+const SECTION_INTRO: Record<NavSection, { title: string; description: string }> = {
+  profile: { title: 'Profile & security', description: 'Your details, sign-in preferences, and account protection.' },
+  accounts: { title: 'Your connected accounts', description: 'Keep your portfolio coverage complete and your connections up to date.' },
+  notifications: { title: 'Stay close to what matters', description: 'Choose the briefings and alerts that bring you back to your portfolio.' },
+  tax: { title: 'Your tax assumptions', description: 'Set the context Helm uses to estimate your tax opportunities.' },
+  privacy: { title: 'Your data. Your control.', description: 'Manage your privacy preferences, exports, and personal settings.' },
+  billing: { title: 'Your Helm membership', description: 'Review your coverage, subscription, and billing details.' },
+  danger: { title: 'Account deletion', description: 'Manage the permanent removal of your Helm account.' },
+}
 
 // ── Utilities ──
 
@@ -183,15 +195,11 @@ const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' }
 function SettingsCard({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <section
-      className="rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] p-5 sm:p-6"
-      style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.5)' }}
+      className="helm-settings-card"
     >
-      <div
-        className="text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-text-muted)] mb-[18px]"
-        style={MONO}
-      >
+      <h2 className="helm-settings-card-title">
         {label}
-      </div>
+      </h2>
       {children}
     </section>
   )
@@ -212,7 +220,7 @@ function SettingsRow({
 }) {
   return (
     <div
-      className={`flex items-center justify-between gap-4 ${
+      className={`helm-settings-row flex items-center justify-between gap-4 ${
         divider ? 'pb-[18px] border-b border-[var(--color-border-subtle)] mb-[18px]' : ''
       } ${className}`}
     >
@@ -277,7 +285,7 @@ export default function SettingsPage() {
   const { formatCurrency: fmtCurrency } = useFormat()
   const { success, info, error: showError } = useToast()
   const { tier, isPro, loading: tierLoading } = useTier()
-  const { accounts, loading: accountsLoading, refetch: refetchAccounts } = useAccounts()
+  const { accounts, loading: accountsLoading, error: accountsError, refetch: refetchAccounts } = useAccounts()
 
   // ── Navigation state ──
   const [activeSection, setActiveSection] = useState<NavSection>('profile')
@@ -782,24 +790,11 @@ export default function SettingsPage() {
   const handleSyncAll = async () => {
     setSyncing(true)
     try {
-      const res = await fetch('/api/plaid/sync', { method: 'POST' })
-      if (res.ok) {
-        const data = await res.json()
-        if (data.synced === 0 || data.message === 'No active Plaid connections to sync') {
-          showError('No accounts to sync', 'Connect an account first.')
-        } else {
-          success('Sync complete', 'All accounts have been synchronized')
-        }
-        refetchAccounts?.()
-      } else {
-        const fallback = await fetch('/api/accounts/sync', { method: 'POST' })
-        if (fallback.ok) {
-          success('Sync complete', 'All accounts have been synchronized')
-          refetchAccounts?.()
-        } else {
-          showError('Sync failed', 'Could not sync accounts. Please try again.')
-        }
-      }
+      const outcome = await requestConnectionSync()
+      if (outcome.status === 'synced') success('Sync complete', outcome.message)
+      else showError(outcome.status === 'partial' ? 'Refresh partially complete' : outcome.status === 'empty' ? 'No accounts refreshed' : 'Sync failed', outcome.message)
+      if (outcome.synced > 0) refetchAccounts?.()
+      fetchConnectionHealth()
     } catch {
       showError('Sync failed', 'An error occurred while syncing accounts.')
     } finally {
@@ -1230,6 +1225,8 @@ export default function SettingsPage() {
               <div key={i} className="h-[88px] bg-[var(--color-bg-elevated)] rounded-lg border border-[var(--color-border-base)] animate-pulse" />
             ))}
           </div>
+        ) : accountsError ? (
+          <div role="status" className="py-8 text-center text-sm text-[var(--color-text-secondary)]">Accounts could not load. <button type="button" onClick={refetchAccounts} className="text-[var(--color-gold)] underline">Retry accounts</button></div>
         ) : accounts.length === 0 ? (
           <div className="text-center py-12 text-[var(--color-text-secondary)]">
             <Link className="w-10 h-10 mx-auto mb-3 text-[var(--color-text-muted)]" />
@@ -1245,7 +1242,7 @@ export default function SettingsPage() {
               const institutionAccounts = accounts.filter(
                 (a) => a.institution.toLowerCase() === item.institution_name?.toLowerCase()
               )
-              const totalBalance = institutionAccounts.reduce((sum, a) => sum + a.balance, 0)
+              const accountSummary = summarizeAccountBalances(institutionAccounts)
               const color = getInstitutionColor(item.institution_name || 'Unknown')
               const initials = getInitials(item.institution_name || 'Unknown')
               const isHealthy = item.status === 'active'
@@ -1284,7 +1281,7 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-4 flex-shrink-0">
                       <div className="text-right">
                         <p className="text-[16px] font-semibold text-[var(--color-text-primary)] tabular-nums" style={{ fontFamily: 'var(--font-mono)' }}>
-                          {fmtCurrency(Math.abs(totalBalance))}
+                          {institutionAccounts.length === 0 ? 'Balance unavailable' : accountSummary.unavailable ? 'Balance incomplete' : fmtCurrency(accountSummary.net)}
                         </p>
                         {isHealthy && (
                           <span className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--color-positive)] uppercase tracking-wider">
@@ -1367,7 +1364,7 @@ export default function SettingsPage() {
                 (hi) => hi.institution_name?.toLowerCase() === instName.toLowerCase()
               ))
               .map(([instName, accts]) => {
-                const totalBalance = accts.reduce((sum, a) => sum + a.balance, 0)
+                const accountSummary = summarizeAccountBalances(accts)
                 const color = getInstitutionColor(instName)
                 const initials = getInitials(instName)
 
@@ -1393,11 +1390,10 @@ export default function SettingsPage() {
                       </div>
                       <div className="text-right">
                         <p className="text-[16px] font-semibold text-[var(--color-text-primary)] tabular-nums" style={{ fontFamily: 'var(--font-mono)' }}>
-                          {fmtCurrency(Math.abs(totalBalance))}
+                          {accountSummary.unavailable ? 'Balance incomplete' : fmtCurrency(accountSummary.net)}
                         </p>
                         <span className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--color-positive)] uppercase tracking-wider">
-                          <CheckCircle2 className="w-3 h-3" />
-                          Healthy
+                          {accts.every(a => a.source === 'manual') ? 'Manual' : 'Status not verified'}
                         </span>
                       </div>
                     </div>
@@ -1864,32 +1860,20 @@ export default function SettingsPage() {
   // ═══════════════════════════════════════
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)]">
-      <div className="flex flex-col lg:flex-row max-w-[1400px] mx-auto">
+    <div className="helm-detail-page helm-settings bg-[var(--color-bg-base)]">
+      <header className="helm-detail-heading">
+        <div>
+          <p className="helm-kicker">Your workspace / Settings</p>
+          <h1>Make Helm yours.</h1>
+          <p>Your accounts, intelligence, and preferences in one place.</p>
+        </div>
+        <NextLink href="/dashboard/portfolio" className="helm-text-link">Back to your portfolio <PenLine size={14} /></NextLink>
+      </header>
+      <div className="helm-settings-layout">
         {/* ── Side Navigation (desktop) ── */}
-        <aside className="hidden lg:block w-[220px] flex-shrink-0 border-r border-[var(--color-border-subtle)] min-h-screen sticky top-0">
-          <div className="p-6 pb-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span
-                className="text-[12px] tracking-[0.15em] uppercase font-semibold text-[var(--color-text-muted)]"
-                style={{ fontFamily: 'var(--font-mono)' }}
-              >
-                Helm
-              </span>
-              <span className="text-[12px] text-[var(--color-text-muted)]">/</span>
-              <span
-                className="text-[12px] tracking-[0.15em] uppercase font-semibold text-[var(--color-text-muted)]"
-                style={{ fontFamily: 'var(--font-mono)' }}
-              >
-                Settings
-              </span>
-            </div>
-            <h1 className="text-[24px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)] mt-3" style={{ fontFamily: 'var(--font-sans)' }}>
-              Preferences
-            </h1>
-          </div>
+        <aside className="helm-settings-navigation hidden lg:block">
 
-          <nav className="px-3 pb-6" aria-label="Settings navigation">
+          <nav aria-label="Settings navigation">
             <ul className="space-y-0.5">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon
@@ -1926,26 +1910,29 @@ export default function SettingsPage() {
         </aside>
 
         {/* ── Mobile Navigation — sticky top strip, below top bar ── */}
-        <nav className="lg:hidden sticky top-[52px] z-20 bg-[var(--color-bg-surface)] border-b border-[var(--color-border-base)] px-2 py-2" aria-label="Settings navigation">
-          <div className="flex items-center justify-between overflow-x-auto gap-1 no-scrollbar" role="tablist" aria-label="Settings sections">
+        <nav className="helm-settings-mobile lg:hidden" aria-label="Settings navigation">
+          <div className="flex items-center overflow-x-auto gap-1" role="group" aria-label="Settings sections">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon
               const isActive = activeSection === item.id
               return (
                 <button
                   key={item.id}
-                  role="tab"
-                  aria-selected={isActive}
+                  type="button"
+                  aria-pressed={isActive}
                   aria-current={isActive ? 'page' : undefined}
-                  onClick={() => setActiveSection(item.id)}
-                  className={`flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-md min-w-[48px] text-[10px] motion-safe:transition-colors ${
+                  onClick={() => {
+                    setActiveSection(item.id)
+                    window.history.replaceState(null, '', `#${item.id}`)
+                  }}
+                  className={`flex items-center gap-2 px-3 py-3 text-[13px] whitespace-nowrap motion-safe:transition-colors ${
                     isActive
                       ? 'text-[var(--color-gold)]'
                       : 'text-[var(--color-text-muted)]'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
-                  <span className="truncate max-w-[56px]">{item.label.split(' ')[0]}</span>
+                  <span>{item.label}</span>
                 </button>
               )
             })}
@@ -1953,14 +1940,10 @@ export default function SettingsPage() {
         </nav>
 
         {/* ── Main Content ── */}
-        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-10">
-          {/* Mobile header */}
-          <div className="lg:hidden mb-6">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[12px] tracking-[0.15em] uppercase font-semibold text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
-                Helm / Settings
-              </span>
-            </div>
+        <main className="helm-settings-content min-w-0">
+          <div className="helm-settings-section-intro" aria-live="polite">
+            <h2>{SECTION_INTRO[activeSection].title}</h2>
+            <p>{SECTION_INTRO[activeSection].description}</p>
           </div>
 
           {renderActiveSection()}

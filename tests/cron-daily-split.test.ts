@@ -1,5 +1,6 @@
 // tests/cron-daily-split.test.ts
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+afterEach(() => vi.unstubAllEnvs());
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -36,8 +37,8 @@ describe('the morning is two runs', () => {
 });
 
 describe('market-morning route', () => {
-  beforeAll(() => {
-    process.env.CRON_SECRET = 'test-secret';
+  beforeEach(() => {
+    vi.stubEnv('CRON_SECRET', 'test-secret');
   });
 
   it('rejects a wrong bearer in-process', async () => {

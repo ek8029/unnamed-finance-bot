@@ -30,7 +30,7 @@ Helm is built for high-agency individuals managing $50K-$2M+ across multiple acc
 ### Free Tier (no credit card required)
 - AI stock analysis for any US ticker (5 per day) — valuation, technicals, sentiment, risk, analyst consensus
 - Full portfolio dashboard with positions, allocation, and performance
-- Brokerage and bank sync via Plaid (up to 3 accounts)
+- Brokerage and bank sync via Plaid
 - Net worth tracking across all linked accounts
 - Monthly cash flow overview with income/expense breakdown
 - Concentration risk and sector allocation analysis
@@ -175,7 +175,7 @@ Side-by-side ticker comparison at `helmterminal.dev/compare/[TICKER1]-vs-[TICKER
 
 | Plan | Price | Billing | Key Features |
 |------|-------|---------|-------------|
-| Free | $0 | Forever | AI analysis (5/day), portfolio dashboard, net worth, actions inbox, 3 accounts |
+| Free | $0 | Forever | AI analysis (5/day), portfolio dashboard, net worth, actions inbox, one monitored thesis |
 | Pro | $20 | Monthly | Thesis monitoring with cited evidence, the agent, the Thesis Builder, the factor lens, earnings exposure, tax center with TLH, conviction-led tailored brief |
 
 ## Disclaimer

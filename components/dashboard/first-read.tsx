@@ -22,6 +22,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { FirstRead as FirstReadData } from '@/app/api/tax/first-read/route';
+import { requestConnectionSync } from '@/lib/plaid/sync-client';
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 
@@ -49,19 +50,12 @@ export function FirstRead({ itemId, onDone }: { itemId?: string | null; onDone: 
       setData(d);
       setFailed(false);
 
-      // PlaidLinkButton already awaits a sync before it reports success, so in
-      // the common case holdings are in and this never fires. It exists for the
-      // case where that sync failed — it is caught and swallowed there, so
-      // without this the screen would poll a book nobody asked for until it
-      // timed out. Once only: /api/plaid/sync allows 5 calls per 300s and a
-      // retry loop would spend that budget on a request already in flight.
+      // Link reports success before its import finishes. The shared request
+      // reuses that item's in-flight import, or starts one recovery attempt if
+      // it already settled. A successful import also refreshes its prices.
       if (d.state === 'syncing' && !syncKicked.current) {
         syncKicked.current = true;
-        void fetch('/api/plaid/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(itemId ? { item_id: itemId } : {}),
-        }).catch(() => {
+        void requestConnectionSync({ itemId: itemId ?? undefined }).catch(() => {
           // The webhook is still the durable path. This screen is a courtesy.
         });
       }

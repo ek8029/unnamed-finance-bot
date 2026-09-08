@@ -17,6 +17,7 @@ const PHASES = [
   ['scan', 'Scan'],
   ['card', 'Intelligence card'],
   ['reasons', 'Why do you own it'],
+  ['saved', 'Saved thesis'],
   ['howItWorks', 'How Helm works'],
   ['connect', 'Connect'],
   ['manual', 'Manual entry'],

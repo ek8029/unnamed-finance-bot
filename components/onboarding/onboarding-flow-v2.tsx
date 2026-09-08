@@ -23,6 +23,7 @@ import { ManualPortfolioForm } from '@/components/manual-portfolio-form';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
 import { AnalysisLoadingTerminal } from '@/components/analysis-loading-terminal';
 import { SourceIcon } from '@/components/onboarding/source-icon';
+import { saveOnboardingReasons, type OnboardingSaveResult } from '@/lib/onboarding-save';
 import { supabase } from '@/lib/supabase/client';
 import { validateBreaksIf, BREAKS_IF_MAX } from '@/lib/pillar-breaks-if';
 
@@ -47,8 +48,9 @@ interface ScanResult {
   house: boolean;
   ticker: string;
   analyzePath?: string;
+  researchUnavailable?: string;
   /** What the scan decided the symbol is. `filer` = an SEC filer outside the house list. */
-  kind?: 'house' | 'filer' | 'suggest' | 'unreadable' | 'unknown';
+  kind?: 'house' | 'filer' | 'suggest' | 'unreadable' | 'unknown' | 'unsupported';
   /** For `suggest`: company names the text matched (typos, names typed as tickers). */
   suggestions?: Array<{ ticker: string; title: string }>;
   /** Pillars came from /api/thesis/seed just now (origin ai_draft), not the house list. */
@@ -146,7 +148,7 @@ const PREVIEW_FALLBACK: RatifyDraft[] = [
   { ticker: 'AAPL', name: 'sample', thesisId: 'sample-aapl', topClaim: 'Services keeps compounding and lifts gross margin', moreCount: 1, draftPillarIds: [], confirmed: false },
 ];
 
-type Phase = 'welcome' | 'input' | 'scan' | 'card' | 'reasons' | 'howItWorks' | 'connect' | 'manual' | 'synced' | 'ratify' | 'attribution' | 'done';
+type Phase = 'welcome' | 'input' | 'scan' | 'card' | 'reasons' | 'saved' | 'howItWorks' | 'connect' | 'manual' | 'synced' | 'ratify' | 'attribution' | 'done';
 
 /* ── The reasons step (recognition, not authoring) ─────────────────────────
    `ratify` already asks people to TAP claims rather than write them, but it
@@ -192,10 +194,7 @@ export function OnboardingFlowV2({
 }: {
   harness?: boolean;
   jumpTo?: Phase;
-  /** Fired exactly once when onboarding is out of the way: either it decided
-   *  not to show at all, or it was dismissed. The dashboard shell uses it to
-   *  hold a pending checkout until AFTER the scan, so the card is asked for at
-   *  the point value has just been demonstrated rather than before it. */
+  /** Fired once when onboarding is dismissed or existing progress makes it unnecessary. */
   onSettled?: () => void;
 } = {}) {
   const [show, setShow] = useState(false);
@@ -231,6 +230,7 @@ export function OnboardingFlowV2({
   const [customBreaksIf, setCustomBreaksIf] = useState('');
   const [showCustom, setShowCustom] = useState(false);
   const [adopted, setAdopted] = useState(false);
+  const [savedResult, setSavedResult] = useState<OnboardingSaveResult | null>(null);
 
   // attribution step
   const [acqSource, setAcqSource] = useState<string | null>(null);
@@ -268,14 +268,19 @@ export function OnboardingFlowV2({
       setShow(true);
       return;
     }
+    let cancelled = false;
     const runNormal = () => {
-      const dismissed = localStorage.getItem(ONBOARDING_KEY) === '1' || sessionStorage.getItem(ONBOARDING_KEY) === '1';
+      if (cancelled) return;
+      let dismissed = false;
+      try { dismissed = localStorage.getItem(ONBOARDING_KEY) === '1' || sessionStorage.getItem(ONBOARDING_KEY) === '1'; } catch { /* Verify persisted work when storage is unavailable. */ }
       if (dismissed) { settle(); return; }
-      fetch('/api/financial-summary')
+      fetch('/api/onboarding/status', { cache: 'no-store' })
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
-          if (data?.hasPlaidConnection) {
-            localStorage.setItem(ONBOARDING_KEY, '1');
+          if (cancelled) return;
+          if (!data) { settle(); return; }
+          if (data.hasSavedWork) {
+            try { localStorage.setItem(ONBOARDING_KEY, '1'); } catch { /* Persisted progress remains authoritative. */ }
             settle();
           } else {
             setHasPlaid(false);
@@ -283,11 +288,12 @@ export function OnboardingFlowV2({
             track('onb_v2_shown');
           }
         })
-        .catch(() => settle());
+        .catch(() => { if (!cancelled) settle(); });
     };
     supabase.auth
       .getUser()
       .then(({ data }) => {
+        if (cancelled) return;
         if (data.user?.email?.toLowerCase() === DEMO_EMAIL) {
           setDemo(true);
           setPreview(true);
@@ -298,6 +304,7 @@ export function OnboardingFlowV2({
         runNormal();
       })
       .catch(runNormal);
+    return () => { cancelled = true; };
   }, []);
 
   // welcome auto-advance
@@ -545,95 +552,29 @@ export function OnboardingFlowV2({
       customKill = checked.value;
     }
 
-    track('onb_reasons_adopted', {
-      ticker: scan.ticker,
-      picked: ids.length,
-      custom: !!custom,
-      offered: scan.pillars?.length ?? 0,
-    });
-
-    if (preview) { setAdopted(true); setPhase('howItWorks'); return; }
-
-    setBusy('reasons');
-    // Drafted pillars already exist on an untracked thesis (from /api/thesis/seed):
-    // confirm the ones picked, dismiss the rest (a rejected draft is a learning
-    // signal and must never be re-proposed), then track. A note alone never
-    // tracks: an unconfirmed draft must not produce a tracked-but-empty thesis.
-    if (scan.drafted) {
-      try {
-        let confirmedAny = false;
-        for (const p of scan.pillars ?? []) {
-          if (!p.id) continue;
-          if (picked.has(p.id)) {
-            const r = await fetch(`/api/thesis/pillars/${p.id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ confirmed: true }),
-            });
-            if (r.ok) confirmedAny = true;
-          } else {
-            await fetch(`/api/thesis/pillars/${p.id}`, { method: 'DELETE' }).catch(() => {});
-          }
-        }
-        if (custom) {
-          await fetch(`/api/thesis/${scan.ticker}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ notes: custom }),
-          }).catch(() => {});
-        }
-        if (confirmedAny) {
-          const tr = await fetch(`/api/thesis/${scan.ticker}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tracked: true }),
-          });
-          setAdopted(true);
-          if (tr.status === 403) {
-            setNote(`${scan.ticker} is saved. Watching every position is part of Pro, so only your first thesis is being monitored for now.`);
-          }
-        } else if (custom) {
-          setNote(`Saved your note on ${scan.ticker}. Pick at least one reason for Helm to check filings against.`);
-        } else {
-          setNote('Could not save that. You can add it from the Theses page.');
-        }
-      } catch {
-        setNote('Could not reach Helm. You can add this from the Theses page later.');
-      } finally {
-        setBusy(null);
-        setPhase('howItWorks');
-      }
+    if (preview) {
+      setAdopted(true);
+      setSavedResult({ thesisId: 'preview', monitored: true, existing: false });
+      setPhase('saved');
       return;
     }
+    setBusy('reasons');
+    setNote(null);
+    track('onb_reasons_save_started', { ticker: scan.ticker, picked: ids.length, custom: !!custom });
     try {
-      const res = await fetch('/api/thesis/adopt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ticker: scan.ticker,
-          pillarIds: ids,
-          customReason: custom || undefined,
-          customBreaksIf: customKill || undefined,
-        }),
+      const result = await saveOnboardingReasons({
+        ticker: scan.ticker, drafted: scan.drafted, pillars: scan.pillars,
+        selected: ids, customReason: custom, customBreaksIf: customKill ?? undefined,
       });
-      const data = await res.json().catch(() => null);
-      if (res.ok) {
-        setAdopted(true);
-        // Free tier watches one thesis. Say so rather than implying the cron
-        // picked it up.
-        if (data && data.tracked === false) {
-          setNote(`${scan.ticker} is saved. Watching every position is part of Pro, so only your first thesis is being monitored for now.`);
-        }
-      } else if (res.status === 409) {
-        setAdopted(true); // already had one; nothing to do, not an error to show
-      } else {
-        setNote(data?.error ?? 'Could not save that. You can add it from the Theses page.');
-      }
-    } catch {
-      setNote('Could not reach Helm. You can add this from the Theses page later.');
+      setSavedResult(result);
+      setAdopted(true);
+      track('onb_reasons_saved', { ticker: scan.ticker, monitored: result.monitored, existing: result.existing });
+      setPhase('saved');
+    } catch (error) {
+      setNote(error instanceof Error ? error.message : 'Could not reach Helm. Your choices are still here; please retry.');
+      track('onb_reasons_save_failed', { ticker: scan.ticker });
     } finally {
       setBusy(null);
-      setPhase('howItWorks');
     }
   }
 
@@ -1065,17 +1006,17 @@ export function OnboardingFlowV2({
                         </span>
                       </div>
                       <h2 className="text-[clamp(22px,4.5vw,32px)] leading-[1.15] text-[var(--color-text-primary)]" style={{ fontFamily: 'var(--font-display-serif)' }}>
-                        {scan.error ? 'Could not reach the scanner.' : `Helm isn't tracking a living thesis on ${scan.ticker} yet.`}
+                        {scan.error ? 'Could not reach the scanner.' : scan.researchUnavailable ? `Research isn't available for ${scan.ticker} yet.` : `Helm isn't tracking a living thesis on ${scan.ticker} yet.`}
                       </h2>
                       <p className="mt-4 text-[15px] leading-[1.6] text-[var(--color-text-secondary)]">
                         {scan.error
                           ? 'You can still connect your book and Helm will start watching your positions.'
-                          : `Read Helm's full analysis of ${scan.ticker} on Analyze, or connect your brokerage and Helm will build a watched thesis on the names you actually hold.`}
+                          : scan.researchUnavailable ?? `Read Helm's full analysis of ${scan.ticker} on Analyze, or connect your brokerage and Helm will build a watched thesis on the names you actually hold.`}
                       </p>
                       {!scan.error && scan.analyzePath && (
                         <a href={scan.analyzePath} target="_blank" rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 mt-4 text-[14px] text-[var(--color-gold)] hover:brightness-110" style={MONO}>
-                          Read the {scan.ticker} analysis <ExternalLink className="w-3.5 h-3.5" />
+                          {scan.researchUnavailable ? 'Research another ticker' : `Read the ${scan.ticker} analysis`} <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       )}
                     </>
@@ -1211,7 +1152,7 @@ export function OnboardingFlowV2({
                     )}
                   </div>
 
-                  {note && <p className="mt-4 text-[13px] text-[var(--color-text-muted)]">{note}</p>}
+                  {note && <p role="alert" className="mt-4 text-[13px] text-[var(--color-text-muted)]">{note}</p>}
                 </div>
               </div>
 
@@ -1231,6 +1172,42 @@ export function OnboardingFlowV2({
                 </div>
               </div>
             </>
+          )}
+
+          {phase === 'saved' && (savedResult || harness) && (
+            <div className="flex-1 overflow-y-auto px-5 sm:px-8 py-16">
+              <div className="max-w-xl mx-auto">
+                <span className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>{preview ? 'Preview · sample saved state' : 'Saved to your workspace'}</span>
+                <h2 className="mt-5 text-[clamp(28px,5vw,42px)] leading-[1.12]" style={{ fontFamily: 'var(--font-display-serif)' }}>
+                  {savedResult?.existing ? 'Your thesis is already here.' : 'Your ' + (scan?.ticker ?? 'NVDA') + ' thesis has a home.'}
+                </h2>
+                <p className="mt-4 text-[15px] leading-relaxed text-[var(--color-text-secondary)]">
+                  {savedResult?.existing
+                    ? 'Open your existing reasons to review or edit them. This attempt has not replaced them.'
+                    : 'Your reasons and the conditions that would change your mind are saved together. Open your thesis to review the evidence and refine your view.'}
+                </p>
+                <div className="my-7 border-y border-[var(--color-border-base)] py-5">
+                  <p className="text-sm text-[var(--color-gold)]">{(savedResult?.monitored ?? harness) ? 'Selected for monitoring' : 'Saved · monitoring is off for this thesis'}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">{(savedResult?.monitored ?? harness)
+                    ? 'Monitoring follows your plan limits. Return here as new evidence arrives; a quiet day may have no new update.'
+                    : 'You can still read and edit your reasons. Review Pro if you want to monitor more theses.'}</p>
+                </div>
+                <button className="helm-button helm-button-primary w-full" onClick={() => {
+                  track('onb_saved_thesis_opened');
+                  dismiss(false);
+                  if (!preview && savedResult) window.location.href = '/dashboard/theses/' + encodeURIComponent(savedResult.thesisId);
+                }}>Open my thesis <ArrowRight className="w-4 h-4" /></button>
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button className="helm-button helm-button-outline" onClick={() => setPhase('manual')}>Add one position <PenLine className="w-4 h-4" /></button>
+                  <button className="helm-button helm-button-outline" onClick={() => setPhase('connect')}>Connect brokerage <Building2 className="w-4 h-4" /></button>
+                </div>
+                <p className="mt-6 text-center text-sm text-[var(--color-text-muted)]">Ready to watch more of your portfolio? <button className="text-[var(--color-gold)] underline underline-offset-4" onClick={() => {
+                  track('onb_saved_pro_clicked');
+                  dismiss(false);
+                  if (!preview) window.location.href = '/pricing';
+                }}>Compare Pro</button></p>
+              </div>
+            </div>
           )}
 
           {/* ═══ ATTRIBUTION — asked after value, never before ═══ */}
@@ -1311,7 +1288,7 @@ export function OnboardingFlowV2({
                   </h2>
                   <p className="text-[15px] text-[var(--color-text-muted)] mt-3 leading-relaxed">
                     {adopted && scan
-                      ? 'The first receipt lands tomorrow morning. When a filing tests one of the reasons you kept, the quote and its source are in your inbox and in Actions. Nothing arrives on a quiet day.'
+                      ? 'When new evidence tests a monitored reason, you can review the quote and its source in Helm. Timing depends on available filings and your notification settings.'
                       : 'Keep a reason next to each name you own and Helm checks every filing and headline against it, then tells you what changed and why, with the source. Nothing arrives on a quiet day.'}
                   </p>
                   <div className="mt-6 border-b border-[var(--color-border-subtle)]">
@@ -1406,7 +1383,7 @@ export function OnboardingFlowV2({
                         choice left this screen: 19 of 74 took it in a month and 1 explored it. */}
                     <button onClick={() => setPhase('manual')}
                       className="mt-4 w-full flex items-center justify-center gap-2 h-[48px] rounded-md border border-[var(--color-border-base)] hover:border-[var(--color-border-strong)] text-[14px] text-[var(--color-text-secondary)] transition-colors">
-                      <PenLine className="w-4 h-4" /> Not on Plaid? Add holdings manually
+                      <PenLine className="w-4 h-4" /> Enter a position manually
                     </button>
                   </div>
                 </div>
@@ -1433,7 +1410,7 @@ export function OnboardingFlowV2({
                 </div>
               </div>
               <div className="shrink-0 sticky bottom-0 bg-[#050505]/92 backdrop-blur-md border-t border-[var(--color-border-base)] px-5 sm:px-8 py-4 text-center" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
-                <button onClick={() => setPhase('connect')} className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors min-h-[44px]" style={MONO}>← Back</button>
+                <button onClick={() => setPhase(savedResult ? 'saved' : 'connect')} className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors min-h-[44px]" style={MONO}>← Back</button>
               </div>
             </>
           )}

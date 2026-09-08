@@ -8,6 +8,8 @@ import posthog from 'posthog-js';
 import { useDemo } from '@/contexts/demo-context';
 import { resolveLinkExitError } from '@/lib/plaid/link-exit';
 import { runBackgroundSync, type BackgroundSyncResult } from '@/lib/plaid/background-sync';
+import { AUTO_SYNC_ATTEMPT_KEY } from '@/lib/plaid/sync-client';
+import { createLinkTokenLoader, linkButtonStatus } from '@/lib/plaid/link-token-loader';
 
 interface PlaidLinkButtonProps {
   /** Receives the new item id. Optional so existing `() => void`
@@ -44,6 +46,14 @@ export function PlaidLinkButton({
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [exchanging, setExchanging] = useState(false);
   const [tokenError, setTokenError] = useState(false);
+  const [initializing, setInitializing] = useState(true);
+  const [tokenAttempt, setTokenAttempt] = useState(0);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const initializingRef = useRef(true);
+  const exchangingRef = useRef(false);
+  const linkOpenRef = useRef(false);
+  const tokenLoaderRef = useRef<ReturnType<typeof createLinkTokenLoader> | null>(null);
+  if (!tokenLoaderRef.current) tokenLoaderRef.current = createLinkTokenLoader((...args) => fetch(...args));
   const { disableDemo } = useDemo();
   // Last institution the user searched for, so an exit can say what they wanted.
   const lastSearchRef = useRef<string | null>(null);
@@ -52,20 +62,17 @@ export function PlaidLinkButton({
   const onSyncedRef = useRef(onSynced);
   onSyncedRef.current = onSynced;
 
-  // Fetch link token once on mount
+  // Retry initialization without remounting the surrounding onboarding flow.
   useEffect(() => {
     let cancelled = false;
+    const loader = tokenLoaderRef.current!;
 
     async function fetchToken() {
       try {
-        const res = await fetch('/api/plaid/create-link-token', { method: 'POST' });
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Failed to create link token');
-        }
-        const data = await res.json();
-        if (!cancelled) {
-          setLinkToken(data.link_token);
+        const token = await loader.load();
+        if (!cancelled && token) {
+          setLinkToken(token);
+          setTokenError(false);
         }
       } catch (err) {
         if (!cancelled) {
@@ -73,14 +80,23 @@ export function PlaidLinkButton({
           const message = err instanceof Error ? err.message : 'Failed to initialize Plaid';
           onErrorRef.current?.(message);
         }
+      } finally {
+        if (!cancelled) {
+          initializingRef.current = false;
+          setInitializing(false);
+        }
       }
     }
 
     fetchToken();
-    return () => { cancelled = true; };
-  }, []);
+    return () => { cancelled = true; loader.cancel(); };
+  }, [tokenAttempt]);
 
   const handleSuccess = useCallback(async (publicToken: string, metadata: unknown) => {
+    if (exchangingRef.current) return;
+    exchangingRef.current = true;
+    linkOpenRef.current = false;
+    setLinkOpen(false);
     setExchanging(true);
     try {
       const res = await fetch('/api/plaid/exchange-public-token', {
@@ -111,14 +127,20 @@ export function PlaidLinkButton({
       try { sessionStorage.removeItem('helm_demo_mode'); } catch {}
       disableDemo();
       sessionStorage.removeItem('helm_last_auto_sync');
+      // The scoped import below owns this attempt. A dashboard remount should
+      // not immediately fan out into a second, all-institution refresh.
+      sessionStorage.setItem(AUTO_SYNC_ATTEMPT_KEY, String(Date.now()));
       sessionStorage.removeItem('helm_last_price_refresh');
       const itemId = typeof data.item_id === 'string' ? data.item_id : undefined;
       onSuccess(itemId);
-      void runBackgroundSync().then((result) => onSyncedRef.current?.(result, itemId));
+      // Only the newly linked item needs its first import; an older broken
+      // institution must not turn this connection into a failed first run.
+      void (itemId ? runBackgroundSync({ itemId }) : Promise.resolve('failed' as const)).then((result) => onSyncedRef.current?.(result, itemId));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to link account';
       onError?.(message);
     } finally {
+      exchangingRef.current = false;
       setExchanging(false);
     }
   }, [onSuccess, onError, onWarning, disableDemo]);
@@ -144,6 +166,8 @@ export function PlaidLinkButton({
       }
     },
     onExit: (err, metadata) => {
+      linkOpenRef.current = false;
+      setLinkOpen(false);
       posthog.capture('plaid_link_exit', {
         exit_status: metadata?.status ?? null,
         error_type: err?.error_type ?? null,
@@ -161,30 +185,48 @@ export function PlaidLinkButton({
     },
   });
 
-  const isLoading = !linkToken && !tokenError;
-  const isDisabled = !ready || exchanging || tokenError;
+  const status = linkButtonStatus({ initializing, tokenError, ready, exchanging, linkOpen });
 
-  const label = exchanging
-    ? 'Linking...'
-    : isLoading
-      ? 'Initializing...'
-      : tokenError
-        ? 'Connection Error'
-        : null;
+  const handleClick = () => {
+    if (initializingRef.current || exchangingRef.current || linkOpenRef.current) return;
+    if (tokenError) {
+      initializingRef.current = true;
+      setInitializing(true);
+      setTokenError(false);
+      setLinkToken(null);
+      setTokenAttempt(attempt => attempt + 1);
+      return;
+    }
+    if (!ready || !linkToken) return;
+    linkOpenRef.current = true;
+    setLinkOpen(true);
+    lastSearchRef.current = null;
+    try {
+      onOpen?.();
+      posthog.capture('plaid_link_started');
+      open();
+    } catch {
+      linkOpenRef.current = false;
+      setLinkOpen(false);
+      onErrorRef.current?.('Could not open the connection window. Please try again.');
+    }
+  };
 
   return (
     <Button
+      type="button"
       variant={variant}
       className={className}
-      onClick={() => { if (!exchanging) { onOpen?.(); posthog.capture('plaid_link_started'); open(); } }}
-      disabled={isDisabled}
+      onClick={handleClick}
+      disabled={status.disabled}
+      aria-busy={status.busy}
     >
-      {(isLoading || exchanging) ? (
-        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+      {status.busy ? (
+        <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin mr-2" />
       ) : (
-        <Link2 className="w-4 h-4 mr-2" />
+        <Link2 aria-hidden="true" className="w-4 h-4 mr-2" />
       )}
-      {children || label || 'Connect with Plaid'}
+      <span aria-live="polite">{status.label ?? children ?? 'Connect with Plaid'}</span>
     </Button>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { SiteNav } from '@/components/site-nav';
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { TrendingUp, TrendingDown, Minus, Calendar } from 'lucide-react';
@@ -148,22 +149,7 @@ export function PublicBrief({ quotes: serverQuotes, vix }: { quotes: Quote[]; vi
     <div className="min-h-screen bg-[var(--color-bg-inset,#060606)] text-[#FAFAFA]">
 
       {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-[rgba(6,6,6,0.78)] backdrop-blur-[20px] backdrop-saturate-[1.4] border-b border-white/[0.07]">
-        <div className="max-w-[1040px] mx-auto px-4 sm:px-6 h-[58px] flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-[11px] font-bold tracking-[0.16em] uppercase text-[15px] text-[var(--color-gold)]" style={MONO}>
-            <HelmMark size={22} />
-            Helm
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="hidden sm:block font-mono text-[10px] font-semibold tracking-[0.18em] uppercase text-[#7A7A7A] hover:text-[#FAFAFA] transition-colors" style={MONO}>
-              Log in
-            </Link>
-            <Link href="/signup" className="font-mono text-[10px] font-semibold tracking-[0.18em] uppercase px-5 max-sm:px-4 py-2.5 rounded-md bg-[var(--color-gold)] text-[#0A0A0A] hover:bg-[var(--color-gold-hi,#FFD67A)] transition-all" style={MONO}>
-              Sign up free &rarr;
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <SiteNav />
 
       {/* Masthead */}
       <header className="border-b border-white/[0.07]" style={{ borderTop: '2px solid rgba(230,185,77,0.30)' }}>

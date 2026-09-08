@@ -14,6 +14,7 @@
 import { scoreSentiment } from '@/lib/market-classify';
 import { detectPrimaryTicker } from '@/lib/news-primary-ticker';
 import { subjectPrefilter } from '@/lib/news-subject';
+import { newsDisposition } from '@/lib/news-relevance';
 import { classifySubjects, SUBJECT_MODEL } from '@/lib/news-subject-model';
 import type { UsageLedger } from '@/lib/ai/pricing';
 import { getRecentFilings } from '@/lib/edgar';
@@ -304,17 +305,12 @@ export async function refreshRssNews(
     const sectors = [
       ...new Set(article.tickers.map(t => tickerSectorMap.get(t)).filter(Boolean)),
     ];
-    const primaryTicker = detectPrimaryTicker(
-      article.title,
-      article.description,
-      article.tickers,
-      tickerNameMap,
-    );
-
-    // No clear subject ticker = low-signal filler unless it's a genuine
-    // broad-market piece (many tickers). Null primary_ticker rows surface
-    // for every user in the intelligence feed, so be strict here.
-    if (!primaryTicker && article.tickers.length < 10) return [];
+    const disposition = newsDisposition({ title: article.title, tickers: article.tickers }, tickerNameMap);
+    // Only known junk/roundup shapes are excluded. A feed-tag or summary-only
+    // association is retained with no primary ticker until classification can
+    // establish its subject. Provider tags remain on the row for that purpose.
+    if (disposition.kind === 'excluded') return [];
+    const primaryTicker = disposition.ticker;
 
     return {
       title: article.title,
@@ -333,7 +329,7 @@ export async function refreshRssNews(
   });
 
   if (inserts.length === 0) {
-    log.push(`[news] 0 articles kept (${newArticles.length} dropped as low-signal)`);
+    log.push(`[news] 0 articles kept (${newArticles.length} excluded by editorial filters)`);
     return 0;
   }
 
@@ -361,7 +357,7 @@ export async function refreshRssNews(
       .map((ins: { url: string; title: string }) => ({ url: ins.url, title: ins.title }));
     await classifyMacroMovers(supabase, log, macroCandidates);
   }
-  log.push(`[news] Inserted ${inserts.length} new articles (${batch.length - newArticles.length} duplicates, ${newArticles.length - inserts.length} low-signal skipped)`);
+  log.push(`[news] Inserted ${inserts.length} new articles (${inserts.filter(r => !r.primary_ticker).length} context, ${batch.length - newArticles.length} duplicates, ${newArticles.length - inserts.length} editorial exclusions)`);
   return inserts.length;
 }
 
@@ -381,15 +377,21 @@ async function classifyNewsSubjects(
   nameMap: Map<string, string>,
   ledger?: UsageLedger,
 ): Promise<void> {
-  const candidates = inserts.filter((r) => r.primary_ticker && r.url);
+  const candidates = inserts.flatMap((r) => {
+    if (!r.url) return [];
+    const candidate = r.primary_ticker
+      ?? detectPrimaryTicker(r.title, r.summary, r.tickers ?? [], nameMap)
+      ?? (r.tickers?.length === 1 ? r.tickers[0].toUpperCase() : null);
+    return candidate ? [{ ...r, candidate }] : [];
+  });
   if (candidates.length === 0) return;
 
   // (verdict, decided-by, tone) -> urls. A handful of groups, so a handful of
   // writes. Tone is empty for anything a rule decided, and an empty tone leaves
   // the keyword-scored sentiment alone rather than overwriting it with nothing.
   const groups = new Map<string, string[]>();
-  const addTo = (verdict: string, by: string, url: string, tone?: string) => {
-    const key = `${verdict}|${by}|${tone ?? ''}`;
+  const addTo = (verdict: string, by: string, url: string, tone?: string, confirmedPrimary?: string) => {
+    const key = `${verdict}|${by}|${tone ?? ''}|${confirmedPrimary ?? ''}`;
     const list = groups.get(key);
     if (list) list.push(url);
     else groups.set(key, [url]);
@@ -397,7 +399,7 @@ async function classifyNewsSubjects(
 
   const forModel: { key: string; title: string; summary: string | null; ticker: string; companyName: string | null }[] = [];
   for (const r of candidates) {
-    const ticker = (r.primary_ticker as string).toUpperCase();
+    const ticker = r.candidate.toUpperCase();
     const companyName = nameMap.get(ticker) ?? null;
     const pre = subjectPrefilter({ title: r.title, ticker, companyName, tickers: r.tickers });
     if (pre) addTo('mention', pre.reason, r.url);
@@ -408,10 +410,11 @@ async function classifyNewsSubjects(
   // The model sometimes calls a row a mention and then names the ticker it was
   // already filed under. Those two answers contradict each other, and the
   // second one is the considered one, so the row is about its own ticker.
-  const primaryOf = new Map(candidates.map((r) => [r.url, (r.primary_ticker as string).toUpperCase()]));
+  const primaryOf = new Map(candidates.map((r) => [r.url, r.candidate.toUpperCase()]));
   for (const [url, answer] of modelVerdicts) {
     const namedItsOwn = answer.subjectTicker && answer.subjectTicker === primaryOf.get(url);
-    addTo(namedItsOwn ? 'about' : answer.verdict, SUBJECT_MODEL, url, answer.tone);
+    const verdict = namedItsOwn ? 'about' : answer.verdict;
+    addTo(verdict, SUBJECT_MODEL, url, answer.tone, verdict === 'about' ? primaryOf.get(url) : undefined);
   }
 
   // A mention is the WRONG reader's news, not nobody's. When the model named
@@ -450,12 +453,13 @@ async function classifyNewsSubjects(
 
   let written = 0;
   for (const [key, urls] of groups) {
-    const [verdict, by, tone] = key.split('|');
+    const [verdict, by, tone, confirmedPrimary] = key.split('|');
     // The model read the same headline to decide the verdict, so its tone costs
     // nothing extra and replaces a word count that agreed with it 54% of the
     // time. Rows a rule decided keep whatever scoreSentiment produced.
     const payload: Record<string, string> = { subject_verdict: verdict, subject_verdict_by: by };
     if (tone) payload.sentiment = tone;
+    if (confirmedPrimary) payload.primary_ticker = confirmedPrimary;
     const { error } = await supabase
       .from('market_news')
       .update(payload)
@@ -492,7 +496,6 @@ async function sweepUnclassifiedSubjects(
     .from('market_news')
     .select('url, title, summary, primary_ticker, tickers')
     .is('subject_verdict', null)
-    .not('primary_ticker', 'is', null)
     .not('url', 'is', null)
     .gte('published_at', new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString())
     .order('published_at', { ascending: false })
@@ -501,7 +504,7 @@ async function sweepUnclassifiedSubjects(
   // filter errors. Nothing to do, and nothing breaks.
   if (error || !data || data.length === 0) return;
 
-  const tickers = [...new Set((data as { primary_ticker: string }[]).map((r) => r.primary_ticker.toUpperCase()))];
+  const tickers = [...new Set((data as { primary_ticker: string | null; tickers: string[] | null }[]).flatMap(r => [r.primary_ticker, ...(r.tickers ?? [])].filter((t): t is string => Boolean(t)).map(t => t.toUpperCase())))];
   const nameMap = new Map<string, string>();
   if (tickers.length > 0) {
     const { data: secs } = await supabase.from('securities').select('ticker, security_name').in('ticker', tickers);

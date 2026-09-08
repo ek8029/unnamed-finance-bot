@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+afterEach(() => vi.unstubAllEnvs());
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
@@ -6,6 +7,13 @@ import {
   type JudgeJobRow, type JudgeConfig,
 } from '@/lib/agent/judge-queue';
 import { emptyLedger, recordUsage } from '@/lib/ai/pricing';
+
+// Keep the auth test independent of provider initialization. The real route
+// must reject before constructing a service client or running external work.
+const workerBoundary = vi.hoisted(() => ({ db: vi.fn(), judge: vi.fn(), receipts: vi.fn() }));
+vi.mock('@/lib/supabase/server', () => ({ createServiceClient: workerBoundary.db }));
+vi.mock('@/lib/agent/judge-run', () => ({ runJudgeJob: workerBoundary.judge }));
+vi.mock('@/lib/push/send', () => ({ checkPushReceipts: workerBoundary.receipts }));
 
 const CFG: JudgeConfig = { enabled: true, dailyCap: 200, userCap: 25, batch: 10, dailyUsd: 5 };
 
@@ -115,10 +123,8 @@ describe('dominantModel', () => {
 });
 
 describe('judge worker cron', () => {
-  beforeAll(() => {
-    process.env.CRON_SECRET = 'test-secret';
-    // The route imports the scorer, which builds an OpenAI client at import time.
-    process.env.OPENAI_API_KEY ||= 'test-key-never-used';
+  beforeEach(() => {
+    vi.stubEnv('CRON_SECRET', 'test-secret');
   });
 
   it('rejects a wrong bearer in-process', async () => {
@@ -127,6 +133,9 @@ describe('judge worker cron', () => {
       headers: { Authorization: 'Bearer wrong' },
     }));
     expect(res.status).toBe(401);
+    expect(workerBoundary.db).not.toHaveBeenCalled();
+    expect(workerBoundary.judge).not.toHaveBeenCalled();
+    expect(workerBoundary.receipts).not.toHaveBeenCalled();
   });
 
   it('is scheduled every minute', () => {

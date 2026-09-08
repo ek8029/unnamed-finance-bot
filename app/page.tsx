@@ -3,7 +3,7 @@ import { unstable_cache } from 'next/cache';
 import { getDemoAnalyses } from '@/lib/demo-tickers';
 import { getTickerTapeData } from '@/lib/ticker-tape';
 import { createStaticServiceClient } from '@/lib/supabase/server';
-import HomeContent from '@/components/homepage/home-content';
+import HomeContent from '@/components/homepage/helm-home';
 
 /**
  * The homepage owns its title rather than inheriting the site-wide default.

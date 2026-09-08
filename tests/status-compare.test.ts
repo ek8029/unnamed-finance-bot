@@ -96,7 +96,7 @@ describe('ladderCeilingForPillar', () => {
       supports(against('a', 'Blackwell ramp ahead of plan per filing', 'company_filing', 'filing')),
       supports(against('b', 'Blackwell ramp ahead of plan reported widely', 'primary_news', 'news')),
     ];
-    const r = ladderCeilingForPillar(clusterByMechanism(catches));
+    const r = ladderCeilingForPillar(clusterByMechanism(catches), NOW);
     expect(r.ceiling).toBe('watch');
   });
 
@@ -108,7 +108,7 @@ describe('ladderCeilingForPillar', () => {
       against('r1', 'Nvidia Guidance withdrawn in the current report', 'company_filing', 'filing'),
       against('r2', 'Nvidia Guidance withdrawal confirmed on the wire', 'primary_news', 'news'),
     ];
-    const r = ladderCeilingForPillar(clusterByMechanism([...loud, ...real]));
+    const r = ladderCeilingForPillar(clusterByMechanism([...loud, ...real]), NOW);
     expect(r.ceiling).toBe('weakening');
     expect(r.confirmations).toBe(2);
   });

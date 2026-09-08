@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { getQuote } from '@/lib/financial-data';
 import { recentlyRateLimited } from '@/lib/finazon';
+import { isImportRequestId, manualHoldingId } from '@/lib/manual-import';
 
 /**
  * POST /api/portfolio/manual
  *
- * Add or replace manual holdings for the current user.
- * Body: { holdings: [{ ticker, shares, costBasis? }] }
+ * Add manual holdings for the current user; replay an identified request safely.
+ * Body: { requestId?: UUID, holdings: [{ ticker, shares, costBasis? }] }
  *
  * Creates a "Manual Portfolio" linked_account if one doesn't exist,
  * upserts securities, and inserts holdings with live prices.
@@ -25,7 +26,16 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    // A recovery draft belongs to the user who started it, even if another
+    // account signs in in the same browser before its next request.
+    if (body.expectedUserId !== undefined && body.expectedUserId !== user.id) {
+      return NextResponse.json({ error: 'Sign in to the account that started this save.', code: 'AUTH_ACCOUNT_CHANGED' }, { status: 409 });
+    }
     const holdings = body.holdings;
+    const requestId = body.requestId;
+    if (requestId !== undefined && !isImportRequestId(requestId)) {
+      return NextResponse.json({ error: 'Invalid import request ID' }, { status: 400 });
+    }
 
     if (!Array.isArray(holdings) || holdings.length === 0) {
       return NextResponse.json({ error: 'Holdings array required' }, { status: 400 });
@@ -35,14 +45,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Maximum 50 holdings' }, { status: 400 });
     }
 
+    // The live schema keeps one position per user/account/security. Classify
+    // duplicate input tickers before inserting any rows, never merge quantities.
+    const tickerCounts = new Map<string, number>();
     // Validate each holding
     for (const h of holdings) {
-      if (!h.ticker || typeof h.ticker !== 'string') {
+      if (!h?.ticker || typeof h.ticker !== 'string' || !h.ticker.trim()) {
         return NextResponse.json({ error: 'Each holding needs a ticker' }, { status: 400 });
       }
-      if (!h.shares || typeof h.shares !== 'number' || h.shares <= 0) {
+      if (typeof h.shares !== 'number' || !Number.isFinite(h.shares) || h.shares <= 0) {
         return NextResponse.json({ error: `Invalid shares for ${h.ticker}` }, { status: 400 });
       }
+      if (h.costBasis != null && (typeof h.costBasis !== 'number' || !Number.isFinite(h.costBasis) || h.costBasis < 0)) {
+        return NextResponse.json({ error: `Invalid cost basis for ${h.ticker}` }, { status: 400 });
+      }
+      const ticker = h.ticker.trim().toUpperCase();
+      tickerCounts.set(ticker, (tickerCounts.get(ticker) ?? 0) + 1);
     }
 
     const serviceClient = await createServiceClient();
@@ -89,14 +107,31 @@ export async function POST(req: NextRequest) {
       account = newAccount;
     }
 
-    // Each submission adds new lots — no delete, no upsert
+    // Indexed requests are replayable; existing positions are edited separately.
     const results = [];
     let totalPortfolioValue = 0;
 
-    for (const h of holdings) {
+    for (const [rowIndex, h] of holdings.entries()) {
       const ticker = h.ticker.toUpperCase().trim();
       const shares = Number(h.shares);
-      const costBasis = h.costBasis ? Number(h.costBasis) : null;
+      const costBasis = h.costBasis == null ? null : Number(h.costBasis);
+      const holdingId = requestId ? manualHoldingId(user.id, requestId, rowIndex) : null;
+      // A prior response may have been lost after this row was committed. Read
+      // by its stable ID before looking up another quote or adding another lot.
+      if (holdingId) {
+        const { data: prior, error: priorError } = await serviceClient.from('holdings')
+          .select('id, shares, current_price, total_value').eq('id', holdingId).eq('user_id', user.id).maybeSingle();
+        if (priorError) return NextResponse.json({ error: 'Could not confirm an earlier save. Retry the same import request.' }, { status: 503 });
+        if (prior) {
+          results.push({ ticker, rowIndex, shares: prior.shares, currentPrice: prior.current_price, totalValue: prior.total_value, success: true });
+          continue;
+        }
+      }
+
+      if ((tickerCounts.get(ticker) ?? 0) > 1) {
+        results.push({ ticker, rowIndex, code: 'DUPLICATE_TICKER', error: `Enter ${ticker} once. A manual account keeps one position per ticker.`, retryable: false });
+        continue;
+      }
 
       // Fetch live quote — retry up to 3 times with increasing delay
       let currentPrice = 0;
@@ -118,7 +153,7 @@ export async function POST(req: NextRequest) {
         // does not exist, and the user was told their real listed ticker could
         // not be found. Say which one it actually was.
         results.push({
-          ticker,
+          ticker, rowIndex,
           error: recentlyRateLimited() ? 'Price lookup is rate limited' : 'Could not fetch price',
           retryable: recentlyRateLimited(),
         });
@@ -143,13 +178,13 @@ export async function POST(req: NextRequest) {
 
       if (securityError || !security) {
         console.error(`[manual-portfolio] securities upsert failed for ${ticker}:`, securityError);
-        results.push({ ticker, error: 'Could not save that security' });
+        results.push({ ticker, rowIndex, error: 'Could not save that security', retryable: true });
         continue;
       }
 
       const totalValue = shares * currentPrice;
-      const totalCostBasis = costBasis ? shares * costBasis : null;
-      const unrealisedGainLoss = totalCostBasis ? totalValue - totalCostBasis : null;
+      const totalCostBasis = costBasis === null ? null : shares * costBasis;
+      const unrealisedGainLoss = totalCostBasis === null ? null : totalValue - totalCostBasis;
       const unrealisedGainLossPct = totalCostBasis && totalCostBasis > 0
         ? ((totalValue - totalCostBasis) / totalCostBasis)
         : null;
@@ -159,6 +194,7 @@ export async function POST(req: NextRequest) {
       const { error: holdingError } = await serviceClient
         .from('holdings')
         .insert({
+          ...(holdingId ? { id: holdingId } : {}),
           user_id: user.id,
           account_id: account.id,
           security_id: security.id,
@@ -173,12 +209,34 @@ export async function POST(req: NextRequest) {
         });
 
       if (holdingError) {
+        // Two identical requests can pass the earlier read together. The
+        // holdings primary key selects one insert; the other confirms it.
+        if (holdingId && holdingError.code === '23505') {
+          const { data: prior, error: priorError } = await serviceClient.from('holdings').select('id')
+            .eq('id', holdingId).eq('user_id', user.id).maybeSingle();
+          if (priorError) return NextResponse.json({ error: 'Could not confirm an earlier save. Retry the same import request.' }, { status: 503 });
+          if (prior) { results.push({ ticker, rowIndex, shares, currentPrice, totalValue, success: true }); continue; }
+        }
+        if (holdingError.code === '23505') {
+          const { data: existing, error: existingError } = await serviceClient.from('holdings')
+            .select('id').eq('user_id', user.id).eq('account_id', account.id).eq('security_id', security.id).maybeSingle();
+          if (existingError) return NextResponse.json({ error: 'Could not confirm the existing position. Retry the same import request.' }, { status: 503 });
+          if (existing) {
+            results.push({ ticker, rowIndex, code: 'EXISTING_POSITION', error: `${ticker} is already in your manual portfolio. Edit the existing position to change shares or cost basis.`, retryable: false });
+            continue;
+          }
+        }
         console.error(`[manual-portfolio] Failed to insert ${ticker}:`, holdingError);
-        results.push({ ticker, error: 'Failed to save' });
+        // A network/transport error can follow a committed insert. Do not
+        // label that row unsaved: the caller must replay the identical IDs.
+        if (holdingId && !/^[0-9A-Z]{5}$/.test(holdingError.code ?? '')) {
+          return NextResponse.json({ error: 'A save could not be confirmed. Retry the same import request.' }, { status: 503 });
+        }
+        results.push({ ticker, rowIndex, error: 'Failed to save', retryable: true });
         continue;
       }
 
-      results.push({ ticker, shares, currentPrice, totalValue, success: true });
+      results.push({ ticker, rowIndex, shares, currentPrice, totalValue, success: true });
     }
 
     // Include existing holdings in total for allocation calc
@@ -268,7 +326,7 @@ export async function GET() {
         id: h.id,
         ticker: h.ticker,
         shares: Number(h.shares),
-        costBasis: h.average_cost_basis ? Number(h.average_cost_basis) : null,
+        costBasis: h.average_cost_basis == null ? null : Number(h.average_cost_basis),
         currentPrice: Number(h.current_price),
         totalValue: Number(h.total_value),
       })),

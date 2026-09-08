@@ -10,6 +10,7 @@ import { usePreview } from '@/lib/preview-context';
 import { ArrowLeft, ArrowUpRight, Link2, TrendingUp, TrendingDown } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { StockQuote } from '@/lib/financial-data';
+import { parseResearchTicker } from '@/lib/research-ticker';
 
 interface HoldingData {
   ticker: string; name: string; sector: string; exchange: string;
@@ -58,6 +59,7 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
 // ── Connect-your-brokerage empty state (dataState === 'empty') ────────────
 // Read-only Plaid framing + gold Connect CTA, mirroring the portfolio surface.
 function ConnectBrokerage({ ticker }: { ticker: string }) {
+  const research = parseResearchTicker(ticker);
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-6 py-16">
       <div className="max-w-[470px] text-center">
@@ -83,10 +85,10 @@ function ConnectBrokerage({ ticker }: { ticker: string }) {
         </div>
         <div className="mt-5">
           <Link
-            href={`/dashboard/analyze/${ticker}`}
+            href={research.ok ? `/dashboard/analyze/${ticker}` : '/dashboard/analyze'}
             className="font-mono text-[12px] tracking-[0.04em] text-[var(--color-text-secondary)] hover:text-[var(--color-gold)] transition-colors"
           >
-            Open analysis for {ticker} &rarr;
+            {research.ok ? `Open analysis for ${ticker}` : 'Research another ticker'} &rarr;
           </Link>
         </div>
       </div>
@@ -123,6 +125,7 @@ export function HoldingDetailClient({
 
   const up = holding.dayChangePct >= 0;
   const glUp = holding.unrealizedGL >= 0;
+  const research = parseResearchTicker(holding.ticker);
 
   // No linked brokerage (preview dataState === 'empty').
   if (dataState === 'empty') return <ConnectBrokerage ticker={holding.ticker} />;
@@ -188,13 +191,16 @@ export function HoldingDetailClient({
           </div>
         </div>
 
+        <div className="shrink-0">
+        {!research.ok && <p className="mb-2 max-w-xs text-[12px] leading-relaxed text-[var(--color-text-muted)]">Research is unavailable for this symbol format.</p>}
         <Link
-          href={`/dashboard/analyze/${holding.ticker}`}
+          href={research.ok ? `/dashboard/analyze/${holding.ticker}` : '/dashboard/analyze'}
           className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[var(--color-gold)] hover:brightness-[1.06] text-[#0A0A0A] font-mono text-[12px] font-bold uppercase tracking-[0.12em] rounded-[7px] transition-all shrink-0"
           style={{ boxShadow: '0 8px 24px rgba(230,185,77,0.25)' }}
         >
-          Open analysis <ArrowUpRight className="w-4 h-4" />
+          {research.ok ? 'Open analysis' : 'Research another ticker'} <ArrowUpRight className="w-4 h-4" />
         </Link>
+        </div>
       </div>
 
       {/* ── KPI tiles ── */}

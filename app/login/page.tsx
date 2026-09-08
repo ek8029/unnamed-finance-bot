@@ -56,7 +56,7 @@ function LoginForm() {
       const res = await fetch('/api/auth/resend-confirmation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: e }),
+        body: JSON.stringify({ email: e, next: redirect }),
       });
       setResent(res.ok ? 'Sent. Open the newest email from Helm; older links will not work.' : 'Could not send just now. Try again in a minute.');
     } catch {
@@ -341,7 +341,7 @@ function LoginForm() {
           <div className="mt-6 text-center">
             <p className="text-[var(--color-text-secondary)] text-[15px]">
               Don&apos;t have an account?{' '}
-              <Link href="/signup" className="text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors font-medium">
+              <Link href={`/signup?next=${encodeURIComponent(redirect)}`} className="text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors font-medium">
                 Sign up
               </Link>
             </p>

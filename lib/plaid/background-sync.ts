@@ -7,7 +7,9 @@
 // left during it. Now the button hands the item back immediately and settles
 // this promise later; the caller decides what to show in between.
 
-export type BackgroundSyncResult = 'synced' | 'failed' | 'timeout';
+import { requestConnectionSync } from '@/lib/plaid/sync-client';
+
+export type BackgroundSyncResult = 'synced' | 'partial' | 'failed' | 'timeout';
 
 export const BACKGROUND_SYNC_TIMEOUT_MS = 6 * 60 * 1000;
 
@@ -15,6 +17,7 @@ export interface BackgroundSyncOptions {
   fetchImpl?: (input: string, init?: RequestInit) => Promise<Response>;
   sleep?: (ms: number) => Promise<void>;
   timeoutMs?: number;
+  itemId?: string;
 }
 
 export async function runBackgroundSync(opts: BackgroundSyncOptions = {}): Promise<BackgroundSyncResult> {
@@ -23,11 +26,8 @@ export async function runBackgroundSync(opts: BackgroundSyncOptions = {}): Promi
   const timeoutMs = opts.timeoutMs ?? BACKGROUND_SYNC_TIMEOUT_MS;
 
   const work: Promise<BackgroundSyncResult> = (async () => {
-    const res = await f('/api/plaid/sync', { method: 'POST' });
-    if (!res.ok) return 'failed' as const;
-    // Prices so the holdings that just arrived have values (sandbox sends none).
-    await f('/api/market/prices/refresh', { method: 'POST' }).catch(() => undefined);
-    return 'synced' as const;
+    const outcome = await requestConnectionSync({ itemId: opts.itemId, fetchImpl: f });
+    return outcome.status === 'empty' ? 'failed' : outcome.status;
   })().catch(() => 'failed' as const);
 
   const clock: Promise<BackgroundSyncResult> = sleep(timeoutMs).then(() => 'timeout' as const);

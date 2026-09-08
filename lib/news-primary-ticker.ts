@@ -9,13 +9,13 @@
  *
  * This module computes the article's actual subject by scanning the title
  * (and optionally the description) for explicit ticker or company-name
- * mentions, falling back to the first ticker in the Polygon-returned array.
+ * mentions. A provider tag alone does not establish the subject.
  */
 
 /**
  * Strip basic boilerplate words from a company name so "Apple Inc." → "APPLE"
- * and "Alphabet Inc Class A" → "ALPHABET". Keeps the first significant word,
- * which is what news headlines typically use.
+ * and "Alphabet Inc Class A" → "ALPHABET". Distinctive first words and known
+ * company/brand aliases are considered separately below.
  */
 function normalizeCompanyName(name: string): string {
   if (!name) return '';
@@ -27,8 +27,36 @@ function normalizeCompanyName(name: string): string {
     // the single-ticker shortcut below. Measured 2026-09-03.
     .replace(/[,.]/g, ' ')
     .replace(/\b(INC|INCORPORATED|CORP|CORPORATION|CO|COMPANY|LTD|LIMITED|PLC|HOLDINGS|HLDGS|CLASS [A-Z]|NV|SA|AG|SE)\b/g, '')
-    .trim()
-    .split(/\s+/)[0] || '';
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// These tickers also occur as ordinary words in financial headlines. Even an
+// uppercase RSS headline is not evidence that it refers to the listed company.
+const COMMON_WORD_TICKERS = new Set(['ALL', 'ON', 'IT', 'KEY', 'CAR', 'A', 'AI', 'ARE', 'FOR', 'OUT', 'NOW', 'OPEN', 'REAL', 'LOVE', 'LIFE', 'FAST', 'GOOD', 'NICE', 'SAFE', 'CASH', 'SAVE', 'PLAY', 'TASK', 'TEAM', 'HOME', 'HOPE', 'NEXT', 'BEST', 'TRUE', 'WELL']);
+const GENERIC_NAME_WORDS = new Set(['THE', 'ELI', 'INTERNATIONAL', 'UNITED', 'FIRST', 'GENERAL', 'GLOBAL', 'AMERICAN', 'NATIONAL', 'ADVANCED', 'TAIWAN', 'NEW', 'TRADE', 'DIGITAL', 'ENERGY', 'FINANCIAL', 'HEALTH', 'CAPITAL', 'PUBLIC', 'STANDARD', 'CORE']);
+const COMPANY_ALIASES: Record<string, readonly string[]> = {
+  GOOGL: ['Alphabet', 'Google'], GOOG: ['Alphabet', 'Google'],
+  LLY: ['Eli Lilly', 'Lilly'], TSM: ['Taiwan Semiconductor', 'TSMC'],
+  META: ['Meta', 'Facebook', 'Instagram'], AMZN: ['Amazon', 'AWS', 'Amazon Web Services'],
+  NVDA: ['Nvidia'], AAPL: ['Apple'],
+  ON: ['onsemi', 'ON Semiconductor'], ALL: ['Allstate'], IT: ['Gartner'],
+  KEY: ['KeyCorp'], CAR: ['Avis Budget', 'Avis'], A: ['Agilent'], AI: ['C3.ai', 'C3 AI'],
+};
+
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+export function companyAliases(ticker: string, companyName?: string | null): string[] {
+  const aliases = [...(COMPANY_ALIASES[ticker] ?? [])];
+  const name = normalizeCompanyName(companyName ?? '');
+  // A missing company name often comes back as just its ticker. That must not
+  // accidentally defeat the ordinary-word/short-symbol protection below.
+  if (name && !(name === ticker && (ticker.length <= 3 || COMMON_WORD_TICKERS.has(ticker)))) {
+    aliases.push(name);
+    const first = name.split(' ')[0];
+    if (first.length >= 4 && !GENERIC_NAME_WORDS.has(first) && !COMMON_WORD_TICKERS.has(first)) aliases.push(first);
+  }
+  return aliases;
 }
 
 /**
@@ -46,18 +74,13 @@ export function titleTargetsTicker(
 ): boolean {
   const titleUpper = (title || '').toUpperCase();
   if (!titleUpper) return false;
-  const escaped = ticker.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const symbol = ticker.trim().toUpperCase();
+  if (!symbol) return false;
+  const escaped = escapeRegex(symbol);
   if (new RegExp(`\\$${escaped}\\b`).test(titleUpper)) return true;
   if (new RegExp(`\\(${escaped}\\)`).test(titleUpper)) return true;
-  if (new RegExp(`\\b${escaped}\\b`).test(titleUpper)) return true;
-  if (companyName) {
-    const normalized = normalizeCompanyName(companyName);
-    if (normalized) {
-      const escapedName = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      if (new RegExp(`\\b${escapedName}\\b`).test(titleUpper)) return true;
-    }
-  }
-  return false;
+  if (symbol.length >= 4 && !COMMON_WORD_TICKERS.has(symbol) && new RegExp(`\\b${escaped}\\b`).test(titleUpper)) return true;
+  return companyAliases(symbol, companyName).some(alias => new RegExp(`\\b${escapeRegex(alias.toUpperCase())}\\b`).test(titleUpper));
 }
 
 /**
@@ -87,9 +110,8 @@ export function isTickerRoundup(title: string, tickers: string[]): boolean {
  *   1. `$TICKER` or `(TICKER)` cashtag in the title — explicit author signal
  *   2. Standalone ticker word in the title — e.g. "NVDA beats estimates"
  *   3. Company name in the title — e.g. "Apple" → AAPL
- *   4. Same checks against the description as a softer fallback
- *   5. `tickers[0]` — Polygon's own "most relevant" best guess
- *   6. `null` if the article has no tickers at all
+ *   4. Description evidence as a softer candidate signal (including one tag)
+ *   5. `null` when the subject cannot be established
  *
  * @param title Article headline
  * @param description Article summary/body (optional, improves accuracy)
@@ -105,11 +127,11 @@ export function detectPrimaryTicker(
   nameMap?: Map<string, string>,
 ): string | null {
   if (!tickers || tickers.length === 0) return null;
-  if (tickers.length === 1) return tickers[0]; // unambiguous
-
   const normalizedTickers = tickers.map((t) => t.toUpperCase());
   const titleUpper = (title || '').toUpperCase();
-  const descUpper = (description || '').toUpperCase();
+  // Summaries are a candidate signal for the classifier, never proof for the
+  // portfolio readers. Strip common related-story/promotion footers first.
+  const descriptionText = (description || '').split(/\b(?:also consider|read more|related (?:stories|articles)|most read from)\b/i)[0];
 
   // 1. Cashtag ($AAPL) or parenthesized ticker (AAPL) in title
   for (const t of normalizedTickers) {
@@ -119,41 +141,13 @@ export function detectPrimaryTicker(
     if (new RegExp(`\\(${escaped}\\)`).test(titleUpper)) return t;
   }
 
-  // 2. Standalone ticker word in title (e.g. "NVDA beats estimates")
+  // 2. Headline ticker/company/brand evidence, with the same short-symbol and
+  // common-word safeguards used by every reader.
   for (const t of normalizedTickers) {
-    const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    if (new RegExp(`\\b${escaped}\\b`).test(titleUpper)) return t;
+    if (titleTargetsTicker(title, t, nameMap?.get(t))) return t;
   }
-
-  // 3. Company name in title (e.g. "Apple" → AAPL). Uses word-boundary
-  // regex to prevent short prefixes like "CORE" matching inside "COREWEAVE".
-  if (nameMap) {
-    for (const t of normalizedTickers) {
-      const fullName = nameMap.get(t);
-      if (!fullName) continue;
-      const normalized = normalizeCompanyName(fullName);
-      if (!normalized) continue;
-      const escapedName = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      if (new RegExp(`\\b${escapedName}\\b`).test(titleUpper)) return t;
-    }
-  }
-
-  // 4. Same checks against description (lower confidence)
-  if (descUpper) {
-    for (const t of normalizedTickers) {
-      const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      if (new RegExp(`\\$${escaped}\\b`).test(descUpper)) return t;
-    }
-    if (nameMap) {
-      for (const t of normalizedTickers) {
-        const fullName = nameMap.get(t);
-        if (!fullName) continue;
-        const normalized = normalizeCompanyName(fullName);
-        if (!normalized) continue;
-        const escapedName = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        if (new RegExp(`\\b${escapedName}\\b`).test(descUpper)) return t;
-      }
-    }
+  for (const t of normalizedTickers) {
+    if (titleTargetsTicker(descriptionText, t, nameMap?.get(t))) return t;
   }
 
   // 5. No confident match — return null rather than guessing.

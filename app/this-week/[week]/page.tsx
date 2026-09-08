@@ -1,3 +1,4 @@
+import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -50,17 +51,7 @@ export default async function ThisWeekEntry({ params }: { params: Promise<{ week
 
   return (
     <main className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)]">
-      <nav className="border-b border-[var(--color-border-base)]">
-        <div className="mx-auto flex max-w-[680px] items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-2.5">
-            <HelmMark className="h-5 w-5" />
-            <span className="font-mono text-[12px] uppercase tracking-[0.16em]">Helm Terminal</span>
-          </Link>
-          <Link href="/this-week" className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-muted)] hover:text-[var(--color-gold)]">
-            All issues
-          </Link>
-        </div>
-      </nav>
+      <SiteNav />
 
       <article className="mx-auto max-w-[680px] px-6 py-12">
         <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-gold)]">This Week at Helm · {fmt(u.week_of)}</div>

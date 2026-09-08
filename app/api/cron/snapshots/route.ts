@@ -43,8 +43,8 @@ export async function GET(request: Request) {
   const failed: string[] = [];
   for (const uid of userIds) {
     try {
-      await computeSnapshots(db, uid);
-      ok++;
+      if (await computeSnapshots(db, uid)) ok++;
+      else failed.push(uid.slice(0, 8));
     } catch (e) {
       failed.push(uid.slice(0, 8));
       console.error(`[cron/snapshots] failed for ${uid}:`, e);

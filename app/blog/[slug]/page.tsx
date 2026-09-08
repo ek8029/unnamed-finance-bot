@@ -1,3 +1,4 @@
+import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -82,6 +83,7 @@ export default async function BlogPost({ params }: PageProps) {
     );
   }
 
+  const isFreeBloombergArticle = slug === 'free-bloomberg-terminal-alternative';
   const headings = extractHeadings(post.content);
   const shareText = encodeURIComponent(`${post.title} — by @helmterminal\n\nhttps://helmterminal.dev/blog/${slug}`);
   const shareUrl = `https://x.com/intent/tweet?text=${shareText}`;
@@ -140,34 +142,7 @@ export default async function BlogPost({ params }: PageProps) {
       />
 
       {/* ── Navigation ── */}
-      <nav className="relative z-10 glass-nav">
-        <div className="container mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2.5">
-            <HelmMark size={32} />
-            <span className="text-[15px] font-bold tracking-tight uppercase">Helm</span>
-          </Link>
-          <div className="flex items-center gap-5">
-            <Link
-              href="/analyze"
-              className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-            >
-              Free Stock Analysis
-            </Link>
-            <Link
-              href="/blog"
-              className="text-[15px] text-[var(--color-gold)] transition-colors"
-            >
-              Blog
-            </Link>
-            <Link
-              href="/login"
-              className="text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-            >
-              Sign in
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <SiteNav />
 
       {/* ── Article Layout ── */}
       <div className="relative container mx-auto px-6 pt-8 pb-24">
@@ -286,7 +261,11 @@ export default async function BlogPost({ params }: PageProps) {
       </div>
 
       <LegalFooter />
-      <StickyMobileCta source="blog" />
+      <StickyMobileCta
+        href={isFreeBloombergArticle ? '/analyze' : undefined}
+        label={isFreeBloombergArticle ? 'Analyze a stock free' : undefined}
+        source={isFreeBloombergArticle ? 'blog_free_bloomberg_analyze' : 'blog'}
+      />
     </main>
   );
 }

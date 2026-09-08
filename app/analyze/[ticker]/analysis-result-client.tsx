@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { parseResearchTicker } from '@/lib/research-ticker';
 import { StockAnalysisCard, AnalysisWatermark } from '@/components/analysis/analysis-cards';
 import type { StockAnalysis } from '@/components/analysis/types';
 import { Search, Loader2, Link2, Check } from 'lucide-react';
@@ -12,12 +13,16 @@ const POPULAR_TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA'];
 function InlineSearch({ currentTicker }: { currentTicker: string }) {
   const router = useRouter();
   const [input, setInput] = useState(currentTicker);
+  const [inputError, setInputError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
-      const clean = input.trim().toUpperCase().replace(/[^A-Z]/g, '');
+      const parsed = parseResearchTicker(input);
+      if (!parsed.ok) { setInputError(parsed.message); return; }
+      setInputError('');
+      const clean = parsed.ticker;
       if (clean && clean.length <= 5 && clean !== currentTicker) {
         setLoading(true);
         router.push(`/analyze/${clean}`);
@@ -27,7 +32,7 @@ function InlineSearch({ currentTicker }: { currentTicker: string }) {
   );
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 w-full">
+    <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 w-full">
       <div className="flex-1 relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" aria-hidden="true" />
         <input
@@ -35,7 +40,7 @@ function InlineSearch({ currentTicker }: { currentTicker: string }) {
           value={input}
           onChange={(e) => setInput(e.target.value.toUpperCase())}
           placeholder="Ticker symbol"
-          maxLength={5}
+          aria-invalid={Boolean(inputError)}
           disabled={loading}
           aria-label="Stock ticker symbol"
           className="w-full pl-9 pr-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border-strong)] rounded-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-2 focus:ring-[var(--color-gold)]/30 transition-colors text-[15px] tracking-wider disabled:opacity-60"
@@ -56,6 +61,7 @@ function InlineSearch({ currentTicker }: { currentTicker: string }) {
           'Analyze'
         )}
       </button>
+      {inputError && <p role="alert" className="basis-full text-sm text-[var(--color-negative-text)]">{inputError}</p>}
     </form>
   );
 }

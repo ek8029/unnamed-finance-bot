@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { parseResearchTicker } from '@/lib/research-ticker';
 import { useLivePrices } from '@/hooks/use-live-prices';
 import { PriceFlash } from '@/components/price-flash';
 import Link from 'next/link';
@@ -228,6 +229,7 @@ export default function BriefPage() {
   const [firstName, setFirstName] = useState<string | null>(null);
   const [watchlist, setWatchlist] = useState<{ ticker: string; price: number; changePct: number; changeAmt: number; isDefault: boolean }[]>([]);
   const [watchlistInput, setWatchlistInput] = useState('');
+  const [watchlistError, setWatchlistError] = useState('');
   const [showWatchlistAdd, setShowWatchlistAdd] = useState(false);
   const [watchlistLoading, setWatchlistLoading] = useState(false);
 
@@ -275,8 +277,10 @@ export default function BriefPage() {
   }, []);
 
   const handleAddWatchlistTicker = async () => {
-    const ticker = watchlistInput.trim().toUpperCase();
-    if (!ticker || !/^[A-Z]{1,5}$/.test(ticker)) return;
+    const parsed = parseResearchTicker(watchlistInput);
+    if (!parsed.ok) { setWatchlistError(parsed.message); return; }
+    setWatchlistError('');
+    const ticker = parsed.ticker;
     setWatchlistLoading(true);
     try {
       const res = await fetch('/api/dashboard/watchlist', {
@@ -628,25 +632,26 @@ export default function BriefPage() {
       {notGenerated && <GeneratingOverlay />}
 
       {/* ══ Greeting header ══ */}
-      <div className="mb-[22px] flex items-end justify-between gap-6">
+      <div className="helm-brief-heading mb-[22px] flex items-end justify-between gap-6">
         <div>
           <div className="mb-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-gold)]" style={MONO}>
             ✦ Helm Brief · {briefDateLine}
           </div>
           <h1 className="text-[28px] font-bold tracking-[-0.025em] text-[var(--color-text-primary)]">
-            Good morning{firstName ? `, ${firstName}` : ''}.
+            Your daily perspective.
           </h1>
+          <p className="helm-brief-intro">{firstName ? `${firstName}, here` : 'Here'} is what moved, what changed, and where to look next.</p>
         </div>
         <div className="text-right text-[10px] leading-[1.7] text-[var(--color-text-muted)]" style={MONO}>
           <div>
-            Generated{' '}
             {data.digestGeneratedAt
-              ? new Date(data.digestGeneratedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })
-              : '9:15 AM ET'}
+              ? `Generated ${new Date(data.digestGeneratedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}`
+              : 'Based on available portfolio data'}
           </div>
           <div>
-            {data.allHoldings.length} positions · <span className="text-[var(--color-positive)]">● fresh</span>
+            {data.allHoldings.length} positions in view
           </div>
+          <Link href="/dashboard/settings#notifications" className="helm-text-link mt-2">Briefing preferences ↗</Link>
         </div>
       </div>
 
@@ -914,11 +919,11 @@ export default function BriefPage() {
                   <input
                     type="text"
                     value={watchlistInput}
-                    onChange={(e) => setWatchlistInput(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5))}
+                    onChange={(e) => { setWatchlistInput(e.target.value.toUpperCase()); setWatchlistError(''); }}
                     placeholder="AAPL"
                     className="w-16 rounded border border-[var(--color-border-base)] bg-[var(--color-bg-elevated)] px-2 py-0.5 text-[12px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
                     autoFocus
-                    maxLength={5}
+                    aria-invalid={Boolean(watchlistError)}
                   />
                   <button type="submit" disabled={watchlistLoading} className="rounded bg-[var(--color-gold)] px-2 py-0.5 text-[10px] font-semibold text-black disabled:opacity-50">
                     {watchlistLoading ? '…' : 'Add'}
@@ -926,6 +931,7 @@ export default function BriefPage() {
                 </form>
               )}
             </div>
+            {watchlistError && <p role="alert" className="mb-3 text-xs text-[var(--color-negative-text)]">{watchlistError}</p>}
             {watchlistSignals.length > 0 ? (
               <div className="flex flex-col gap-3">
                 {watchlistSignals.map(w => (

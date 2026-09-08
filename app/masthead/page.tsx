@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { HelmMark } from '@/components/helm-mark';
+import { SiteNav } from '@/components/site-nav';
+import { ArrowUpRight } from 'lucide-react';
 import { LegalFooter } from '@/components/legal-footer';
 import { getLatestPublished } from '@/lib/content/weekly-updates';
 import {
@@ -117,41 +119,23 @@ export default async function MastheadPage() {
   };
 
   return (
-    <main
-      className="min-h-screen bg-[var(--color-bg-inset)] text-[var(--color-text-primary)]"
+    <div
+      className="helm-discovery helm-masthead"
       style={{ ['--font-serif' as string]: SERIF }}
     >
-      {/* ── Sticky utility bar ── */}
-      <div className="sticky top-0 z-20 border-b border-[var(--color-border-strong)] bg-[var(--color-bg-inset)]/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-[1100px] items-center justify-between gap-3 px-6 py-2.5">
-          <Link href="/" className="flex items-center gap-2.5">
-            <HelmMark className="h-5 w-5" />
-            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
-              Helm Terminal
-            </span>
-          </Link>
-          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-            <span
-              className="inline-block h-[6px] w-[6px] rounded-full bg-[var(--color-positive)]"
-              style={{ boxShadow: '0 0 7px var(--color-positive)' }}
-              aria-hidden
-            />
-            The agent is filing
-          </div>
-        </div>
-      </div>
+      <SiteNav />
 
-      <div className="mx-auto max-w-[1100px] px-6 pb-24">
+      <main id="main-content" className="helm-discovery-width helm-masthead-content">
         {/* ── Folio line ── */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-7 pb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-          <span>The agent on lookout</span>
-          <span className="hidden sm:inline">Portfolio intelligence, not tracking</span>
+          <span>The public research record</span>
+          <span className="hidden sm:inline">A claim. A change. A source.</span>
           <span>{editionDate}</span>
         </div>
 
         {/* ── Nameplate ── */}
-        <header className="border-t border-[var(--color-border-strong)] py-6 text-center" style={{ borderBottom: '3px double var(--color-border-strong)' }}>
-          <div className="flex items-center justify-center gap-4">
+        <header className="helm-masthead-nameplate">
+          <div className="flex items-center gap-4">
             <HelmMark className="h-9 w-9" />
             <h1
               className="m-0 leading-[0.9]"
@@ -160,7 +144,7 @@ export default async function MastheadPage() {
               The Masthead
             </h1>
           </div>
-          <div className="mt-4 font-mono text-[10.5px] uppercase tracking-[0.22em] text-[var(--color-gold)]">
+          <div className="helm-masthead-byline">
             Published by Helm Terminal &middot; for self-directed investors
           </div>
         </header>
@@ -173,11 +157,14 @@ export default async function MastheadPage() {
         </div>
 
         {/* ── Standing intro ── */}
-        <p className="mx-auto mt-6 mb-2 max-w-[640px] text-center text-[15px] leading-[1.6] text-[var(--color-text-secondary)]">
+        <div className="helm-masthead-intro">
+        <p>
           Helm reads SEC filings and market news against a set of public investment theses and surfaces the evidence
           that moves them. Every entry carries the verbatim source quote, dated and linked. This is what the same agent
           does for your own holdings inside the terminal.
         </p>
+        <Link href="/signup" className="helm-text-link">Put your own thesis on watch <ArrowUpRight size={17} /></Link>
+        </div>
 
         {thisWeek && (
           <Link
@@ -205,7 +192,7 @@ export default async function MastheadPage() {
         ) : (
           <>
             {/* ── Lead story ── */}
-            <article className="border-b border-[var(--color-border-strong)] pt-7 pb-9">
+            <article className="helm-masthead-lead border-b border-[var(--color-border-strong)] pt-7 pb-9">
               {(() => {
                 const v = VERDICT_META[lead.verdict] ?? VERDICT_META.neutral;
                 const broke = lead.verdict === 'contradicts';
@@ -220,7 +207,7 @@ export default async function MastheadPage() {
                         style={{ background: v.color, boxShadow: `0 0 8px ${v.color}` }}
                         aria-hidden
                       />
-                      Today&apos;s catch &middot; {v.label}
+                      Latest catch &middot; {v.label}
                     </div>
 
                     <h2
@@ -263,10 +250,10 @@ export default async function MastheadPage() {
                           : 'The agent tested that pillar against the record. Here is the evidence.'}
                     </p>
 
-                    <figure className="m-0 border-y border-[var(--color-border-strong)] py-6">
+                    <figure className="helm-masthead-evidence m-0 border-y border-[var(--color-border-strong)] py-6">
                       <blockquote
                         className="m-0 italic"
-                        style={{ fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(21px,2.9vw,33px)', lineHeight: 1.3 }}
+                      style={{ fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(23px,2.9vw,33px)', lineHeight: 1.45 }}
                       >
                         &ldquo;{lead.verbatim_cite}&rdquo;
                       </blockquote>
@@ -296,7 +283,7 @@ export default async function MastheadPage() {
 
             {/* ── The record (remaining catches) ── */}
             {rest.length > 0 && (
-              <section>
+              <section className="helm-masthead-record">
                 <div
                   className="pt-7 pb-3 italic"
                   style={{ fontFamily: SERIF, fontSize: '22px', borderBottom: '2px solid var(--color-border-strong)' }}
@@ -308,7 +295,7 @@ export default async function MastheadPage() {
                     const v = VERDICT_META[e.verdict] ?? VERDICT_META.neutral;
                     return (
                       <li
-                        key={e.source_url ?? `${e.ticker}-${e.cite_date ?? i}`}
+                        key={e.id}
                         className="border-b border-[var(--color-border-base)] py-6"
                       >
                         <div className="mb-3 flex flex-wrap items-center gap-3">
@@ -430,7 +417,7 @@ export default async function MastheadPage() {
         </div>
 
         {/* ── Colophon ── */}
-        <div className="mt-10 border-t border-[var(--color-border-strong)] pt-6 text-center">
+        <div className="helm-masthead-colophon">
           <p
             className="m-0 mb-1 italic text-[var(--color-text-primary)]"
             style={{ fontFamily: SERIF, fontSize: '20px', lineHeight: 1.25 }}
@@ -443,16 +430,16 @@ export default async function MastheadPage() {
           </p>
           <Link
             href="/signup"
-            className="mt-5 inline-flex items-center min-h-[44px] px-5 py-3 bg-[var(--color-gold)] text-[var(--color-bg-inset)] font-bold text-[12px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110"
+            className="helm-button mt-5"
           >
-            Take the Helm
+            Monitor my own thesis <ArrowUpRight size={17} />
           </Link>
         </div>
-      </div>
+      </main>
 
       <LegalFooter />
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-    </main>
+    </div>
   );
 }

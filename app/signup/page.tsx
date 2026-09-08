@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { safeNext } from '@/lib/checkout-intent';
+import { safeNext, loginUrlForNext } from '@/lib/checkout-intent';
 import Link from 'next/link';
 import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
@@ -81,7 +81,7 @@ function SignupForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email, password, full_name: fullName, captchaToken,
+          email, password, full_name: fullName, captchaToken, next: nextPath,
           website: honeypot, form_rendered_at: formRenderedAt.current,
           utm_source: sessionStorage.getItem('utm_source') || undefined,
           utm_medium: sessionStorage.getItem('utm_medium') || undefined,
@@ -103,7 +103,7 @@ function SignupForm() {
         posthog.capture('signup_completed', { method: 'email', flow: isWrappedFlow ? 'wrapped' : 'default', needs_confirmation: true });
         // Must be a key from lib/auth-messages.ts, not the sentence itself:
         // /login looks the param up and renders nothing when it misses.
-        router.push('/login?message=check-email');
+        router.push(loginUrlForNext(nextPath, 'check-email'));
       }
     } catch {
       setError('Something went wrong. Please try again.');
@@ -155,7 +155,7 @@ function SignupForm() {
           <label htmlFor="fullName" className="block font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9A9A9A] mb-2">Full Name</label>
           <input id="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} autoComplete="name"
             className="w-full px-4 py-3 bg-[var(--color-bg-inset,#060606)] border border-white/[0.07] rounded-md text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors"
-            placeholder="John Doe" />
+            placeholder="Your full name" />
         </div>
 
         <div>
@@ -206,18 +206,18 @@ function SignupForm() {
 
         <button type="submit" disabled={loading}
           className="w-full py-3.5 px-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] disabled:opacity-50 disabled:cursor-not-allowed text-[#0A0A0A] font-semibold rounded-md transition-colors flex items-center justify-center gap-2">
-          {loading ? 'Creating account...' : (<>Start free — takes 30 seconds <ArrowRight className="w-4 h-4" /></>)}
+          {loading ? 'Creating account...' : (<>Create your free account <ArrowRight className="w-4 h-4" /></>)}
         </button>
 
         <p className="text-[13px] text-center text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
-          No credit card required · Read-only via Plaid · Cancel anytime
+          No credit card required · Connect or enter positions after sign-up
         </p>
       </form>
 
       <div className="mt-6 text-center">
         <p className="text-[var(--color-text-secondary)] text-[15px]">
           Already have an account?{' '}
-          <Link href={isWrappedFlow ? "/login?redirect=/dashboard/wrapped" : "/login"} className="text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors font-medium">Sign in</Link>
+          <Link href={loginUrlForNext(nextPath)} className="text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors font-medium">Sign in</Link>
         </p>
       </div>
     </AuthShell>

@@ -64,7 +64,7 @@ export function TierLock({
         style={{ background: 'linear-gradient(180deg, rgba(6,6,6,0.40), rgba(6,6,6,0.72))' }}
       >
         <div
-          className="max-w-sm w-full text-center rounded-lg bg-[var(--color-bg-surface)] px-6 py-7"
+          className="helm-paywall max-w-sm w-full text-center rounded-lg bg-[var(--color-bg-surface)] px-6 py-7"
           style={{ border: `1px solid ${meta.color}`, boxShadow: `0 0 24px ${meta.color}22` }}
         >
           <div
@@ -92,7 +92,7 @@ export function TierLock({
             Start 14 day free trial
           </Link>
           <p className="text-[11px] text-[#6E6E6E] mt-2.5 mb-0">
-            Then {meta.price}. Cancel any time before the trial ends.
+            Card required. Then {meta.price}. Cancel before the trial ends to pay nothing.
           </p>
         </div>
       </div>

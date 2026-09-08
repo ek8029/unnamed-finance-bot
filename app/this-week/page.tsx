@@ -1,3 +1,4 @@
+import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { HelmMark } from '@/components/helm-mark';
@@ -39,17 +40,7 @@ export default async function ThisWeekPage() {
 
   return (
     <main className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)]">
-      <nav className="border-b border-[var(--color-border-base)]">
-        <div className="mx-auto flex max-w-[720px] items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-2.5">
-            <HelmMark className="h-5 w-5" />
-            <span className="font-mono text-[12px] uppercase tracking-[0.16em]">Helm Terminal</span>
-          </Link>
-          <Link href="/masthead" className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-muted)] hover:text-[var(--color-gold)]">
-            The Masthead
-          </Link>
-        </div>
-      </nav>
+      <SiteNav />
 
       <div className="mx-auto max-w-[720px] px-6 py-12">
         <header className="mb-10">

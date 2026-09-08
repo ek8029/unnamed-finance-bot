@@ -1,3 +1,4 @@
+import { firstReadState } from '@/lib/first-read-state';
 // GET /api/tax/first-read
 //
 // THE FIRST DETERMINISTIC NUMBER, AT THE MOMENT IT IS WORTH THE MOST.
@@ -70,24 +71,29 @@ export async function GET() {
 
     // Counted head-only: this endpoint is polled every couple of seconds during
     // a sync and has no business pulling every row to find out whether any exist.
-    const [holdings, accounts] = await Promise.all([
+    const [holdings, accounts, items] = await Promise.all([
       supabase.from('holdings').select('ticker', { count: 'exact', head: true }).eq('user_id', user.id),
       supabase.from('linked_accounts').select('id', { count: 'exact', head: true })
         .eq('user_id', user.id).eq('is_active', true),
+      supabase.from('plaid_items')
+        .select('last_holdings_sync, last_balances_sync, available_products, billed_products, consented_products')
+        .eq('user_id', user.id),
     ]);
     if (holdings.error) throw holdings.error;
+    if (accounts.error) throw accounts.error;
+    if (items.error) throw items.error;
 
     const positions = holdings.count ?? 0;
     const accountCount = accounts.count ?? 0;
 
     if (positions === 0) {
       const base: FirstRead = {
-        // An account with no positions yet is mid-sync. No accounts at all means
-        // nothing was ever connected, which is a different screen entirely.
-        state: accountCount > 0 ? 'syncing' : 'empty',
+        // A successful empty investment sync or cash-only balance sync is a
+        // completed answer; an outstanding first sync keeps the polling state.
+        state: firstReadState(positions, accountCount, items.data ?? []),
         positions: 0, accounts: accountCount,
         harvestable: 0, opportunityCount: 0, savings: 0, remainingDeductible: 0,
-        disclaimer: null,
+        disclaimer: 'No investment positions were returned. This is not investment or tax advice.',
       };
       return NextResponse.json(base, { headers: PRIVATE });
     }

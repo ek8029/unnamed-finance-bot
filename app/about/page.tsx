@@ -1,3 +1,4 @@
+import { SiteNav } from '@/components/site-nav';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
@@ -59,23 +60,7 @@ export default function AboutPage() {
 
       <div className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)]">
         {/* Nav */}
-        <nav className="border-b border-[var(--color-border-subtle)]">
-          <div className="max-w-3xl mx-auto px-6 h-16 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <HelmMark size={24} />
-              <span className="font-semibold text-[15px] tracking-[0.12em] group-hover:text-[var(--color-gold)] transition-colors">
-                HELM
-              </span>
-            </Link>
-            <Link
-              href="/signup"
-              className="h-9 px-5 rounded-full bg-[var(--color-gold)] text-[var(--color-text-inverse)] text-[14px] font-semibold flex items-center gap-1.5 hover:brightness-110 transition-all"
-            >
-              Open terminal
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        </nav>
+        <SiteNav />
 
         <main id="main-content" className="max-w-3xl mx-auto px-6 py-20">
           {/* Eyebrow */}

@@ -47,7 +47,9 @@ export interface PlaidItemForSync {
 export interface SyncResult {
   item_id: string;
   institution: string | null;
+  /** Balances imported. Optional product failures are reported in warnings. */
   success: boolean;
+  warnings?: string[];
   error?: string;
   transactions?: { added: number; modified: number; removed: number };
   holdings_synced?: number;
@@ -65,6 +67,7 @@ export async function syncPlaidItem(
   let transactionsAdded = 0;
   let transactionsModified = 0;
   let transactionsRemoved = 0;
+  const warnings: string[] = [];
 
   // --- 1. Sync balances ---
   try {
@@ -73,10 +76,10 @@ export async function syncPlaidItem(
     });
 
     for (const account of accountsResponse.data.accounts) {
-      await supabase
+      const { error: balanceError } = await supabase
         .from('linked_accounts')
         .update({
-          current_balance: account.balances.current ?? 0,
+          current_balance: account.balances.current ?? null,
           available_balance: account.balances.available ?? null,
           credit_limit: account.balances.limit ?? null,
           sync_status: 'healthy',
@@ -92,6 +95,7 @@ export async function syncPlaidItem(
         })
         .eq('plaid_account_id', account.account_id)
         .eq('user_id', userId);
+      if (balanceError) throw new Error('Could not save imported account balances');
     }
 
     await logPlaidSuccess(userId, 'accountsGet', { item_id: item.id });
@@ -123,6 +127,7 @@ export async function syncPlaidItem(
   const allAdded: Transaction[] = [];
   const allModified: Transaction[] = [];
   const allRemoved: RemovedTransaction[] = [];
+  let transactionsComplete = true;
 
   // Guarded like balances and holdings: a transactions error right after link
   // (PRODUCT_NOT_READY is routine) must not abort the whole sync — holdings
@@ -143,7 +148,9 @@ export async function syncPlaidItem(
       hasMore = response.data.has_more;
       cursor = response.data.next_cursor;
     }
+    if (hasMore) transactionsComplete = false;
   } catch (err) {
+    transactionsComplete = false;
     console.error(
       '[plaid-sync] transactions sync failed (continuing to holdings):',
       err instanceof Error ? err.message : err,
@@ -151,7 +158,7 @@ export async function syncPlaidItem(
   }
 
   // Process added transactions
-  if (allAdded.length > 0) {
+  if (transactionsComplete && allAdded.length > 0) {
     const { data: linkedAccounts } = await supabase
       .from('linked_accounts')
       .select('id, plaid_account_id')
@@ -194,6 +201,7 @@ export async function syncPlaidItem(
         });
 
       if (txError) {
+        transactionsComplete = false;
         console.error('Error inserting transactions:', txError);
       } else {
         transactionsAdded = transactionInserts.length;
@@ -201,7 +209,7 @@ export async function syncPlaidItem(
     }
   }
 
-  if (allModified.length > 0) {
+  if (transactionsComplete && allModified.length > 0) {
     const modifiedResults = await Promise.allSettled(allModified.map(t =>
       supabase
         .from('transactions')
@@ -214,37 +222,40 @@ export async function syncPlaidItem(
         .eq('plaid_transaction_id', t.transaction_id)
         .eq('user_id', userId)
     ));
-    const modifiedFailures = modifiedResults.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+    const modifiedFailures = modifiedResults.filter(r => r.status === 'rejected' || r.value?.error);
     if (modifiedFailures.length > 0) {
+      transactionsComplete = false;
       console.error(`[plaid-sync] ${modifiedFailures.length} modified transaction updates failed`);
     }
-    transactionsModified = allModified.length;
+    transactionsModified = allModified.length - modifiedFailures.length;
   }
 
   // Process removed transactions (single bulk delete)
   const removedIds = allRemoved
     .map(t => t.transaction_id)
     .filter((id): id is string => Boolean(id));
-  if (removedIds.length > 0) {
-    await supabase
+  if (transactionsComplete && removedIds.length > 0) {
+    const { error: removeError } = await supabase
       .from('transactions')
       .delete()
       .in('plaid_transaction_id', removedIds)
       .eq('user_id', userId);
-    transactionsRemoved = removedIds.length;
+    if (removeError) transactionsComplete = false;
+    else transactionsRemoved = removedIds.length;
   }
 
-  // Save the new cursor
+  // A failed/incomplete product fetch must retain its cursor and freshness so
+  // the next run can retry the same transaction window without losing rows.
   await supabase
     .from('plaid_items')
     .update({
-      transactions_cursor: cursor,
-      last_transactions_sync: new Date().toISOString(),
+      ...(transactionsComplete ? { transactions_cursor: cursor, last_transactions_sync: new Date().toISOString() } : {}),
       last_balances_sync: new Date().toISOString(),
     })
     .eq('id', item.id);
 
-  await logPlaidSuccess(userId, 'transactionsSync', {
+  if (!transactionsComplete) warnings.push('Balances refreshed, but transactions could not fully refresh.');
+  if (transactionsComplete) await logPlaidSuccess(userId, 'transactionsSync', {
     item_id: item.id,
     added: transactionsAdded,
     modified: transactionsModified,
@@ -253,6 +264,7 @@ export async function syncPlaidItem(
 
   // --- 3. Sync holdings (if investments product is available) ---
   let holdingsSynced = 0;
+  let holdingsComplete = true;
   const allProducts = [
     ...(item.available_products || []),
     ...(item.billed_products || []),
@@ -448,6 +460,7 @@ export async function syncPlaidItem(
         })
         .filter(Boolean);
 
+      if (unmappedHoldings > 0) holdingsComplete = false;
       // Batch upsert all holdings at once
       if (holdingsUpserts.length > 0) {
         const { error: holdingsError } = await supabase
@@ -456,7 +469,10 @@ export async function syncPlaidItem(
             onConflict: 'user_id,security_id,account_id',
           });
 
-        if (holdingsError) console.error('[plaid-sync] holdings upsert failed:', holdingsError.message);
+        if (holdingsError) {
+          holdingsComplete = false;
+          console.error('[plaid-sync] holdings upsert failed:', holdingsError.message);
+        }
         holdingsSynced = holdingsError ? 0 : holdingsUpserts.length;
 
         // Clear ghosts left by earlier syncs, so existing books self-heal on the
@@ -541,16 +557,17 @@ export async function syncPlaidItem(
         }
       }
 
-      await supabase
+      if (holdingsComplete) await supabase
         .from('plaid_items')
         .update({ last_holdings_sync: new Date().toISOString() })
         .eq('id', item.id);
 
-      await logPlaidSuccess(userId, 'investmentsHoldingsGet', {
+      if (holdingsComplete) await logPlaidSuccess(userId, 'investmentsHoldingsGet', {
         item_id: item.id,
         holdings_synced: holdingsSynced,
       });
     } catch (error) {
+      holdingsComplete = false;
       // Investments may not be available - that's OK
       console.log('Holdings sync skipped or failed:', error instanceof Error ? error.message : error);
     }
@@ -560,14 +577,18 @@ export async function syncPlaidItem(
       await syncInvestmentTransactions(supabase, userId, item, accessToken);
     } catch (error) {
       // Non-fatal — must never break the holdings sync above
+      warnings.push('Balances refreshed, but investment transactions could not fully refresh.');
       console.log('Investment transactions sync skipped or failed:', error instanceof Error ? error.message : error);
     }
   }
+
+  if (!holdingsComplete) warnings.push('Balances refreshed, but holdings could not fully refresh.');
 
   return {
     item_id: item.id,
     institution: item.institution_name,
     success: true,
+    ...(warnings.length > 0 ? { warnings } : {}),
     transactions: { added: transactionsAdded, modified: transactionsModified, removed: transactionsRemoved },
     holdings_synced: holdingsSynced,
   };
@@ -752,23 +773,27 @@ export async function syncAllItems(
 }
 
 /**
- * Compute net worth, cash flow, and financial health snapshots.
+ * Compute current net worth, cash flow, and financial health snapshots.
+ * True means all three current rows were saved. False reports a required read
+ * or write failure without throwing into existing background callers. Historical
+ * backfill remains best-effort and is not part of this current-snapshot result.
  */
 export async function computeSnapshots(
   supabase: AnyClient,
   userId: string
-): Promise<void> {
+): Promise<boolean> {
   try {
-    const { data: accounts } = await supabase
+    const { data: accounts, error: accountsError } = await supabase
       .from('linked_accounts')
       .select('id, account_type, account_subtype, current_balance, available_balance')
       .eq('user_id', userId)
       .eq('is_active', true);
 
-    const { data: holdings } = await supabase
+    const { data: holdings, error: holdingsError } = await supabase
       .from('holdings')
       .select('total_value, account_id')
       .eq('user_id', userId);
+    if (accountsError || holdingsError) throw new Error('Could not read snapshot account balances or holdings');
 
     const accts = accounts || [];
     const holdingsList = holdings || [];
@@ -822,7 +847,7 @@ export async function computeSnapshots(
     totalAssets += investmentBalance;
 
     const today = new Date().toISOString().split('T')[0];
-    await supabase
+    const { error: netWorthError } = await supabase
       .from('net_worth_snapshots')
       .upsert({
         user_id: userId,
@@ -838,13 +863,14 @@ export async function computeSnapshots(
       }, {
         onConflict: 'user_id,snapshot_date',
       });
+    if (netWorthError) throw new Error('Could not save the current net-worth snapshot');
 
     // Cash Flow Snapshot (monthly)
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
-    const { data: monthTx } = await supabase
+    const { data: monthTx, error: monthTxError } = await supabase
       .from('transactions')
       .select('amount')
       .eq('user_id', userId)
@@ -853,12 +879,13 @@ export async function computeSnapshots(
 
     // Investment cash for the same month (dividends, fees, transfers...). Trades
     // (buy/sell) are excluded inside summarizeCashFlow — they're internal moves.
-    const { data: monthInvTx } = await supabase
+    const { data: monthInvTx, error: monthInvTxError } = await supabase
       .from('investment_transactions')
       .select('amount, transaction_type')
       .eq('user_id', userId)
       .gte('transaction_date', monthStart)
       .lte('transaction_date', monthEnd);
+    if (monthTxError || monthInvTxError) throw new Error('Could not read current cash-flow transactions');
 
     const { totalIncome, totalExpenses, netFlow } = summarizeCashFlow([
       ...(monthTx || []),
@@ -886,7 +913,7 @@ export async function computeSnapshots(
       // Fallback to current month
     }
 
-    await supabase
+    const { error: cashFlowError } = await supabase
       .from('cash_flow_snapshots')
       .upsert({
         user_id: userId,
@@ -899,6 +926,7 @@ export async function computeSnapshots(
       }, {
         onConflict: 'user_id,snapshot_month',
       });
+    if (cashFlowError) throw new Error('Could not save the current cash-flow snapshot');
 
     // Financial Health Score
     const debtToAssetRatio = totalAssets > 0 ? totalLiabilities / totalAssets : 0;
@@ -973,7 +1001,7 @@ export async function computeSnapshots(
         diversification_score: divScore,
         calculated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
-    if (healthErr) console.error(`[plaid-sync] financial_health_scores upsert failed for ${userId}:`, healthErr.message);
+    if (healthErr) throw new Error('Could not save the current financial-health score');
 
     // Backfill historical snapshots for new users (runs once when ≤1 snapshot exists)
     await backfillHistoricalSnapshots(supabase, userId, {
@@ -985,8 +1013,10 @@ export async function computeSnapshots(
       creditCardDebt,
       loanDebt,
     });
+    return true;
   } catch (error) {
     console.error('Error computing snapshots:', error);
+    return false;
   }
 }
 

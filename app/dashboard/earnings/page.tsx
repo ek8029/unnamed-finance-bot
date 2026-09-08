@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
+  ArrowUpRight,
 } from 'lucide-react';
 
 // ── Tokens ──
@@ -31,8 +32,7 @@ const TNUM: React.CSSProperties = { fontVariantNumeric: 'tabular-nums', fontFeat
 // Sovereign card surface, shared across the redesign.
 const CARD: React.CSSProperties = {
   background: 'var(--color-bg-surface)',
-  border: '1px solid var(--color-border-base)',
-  boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+  border: '1px solid var(--color-rule)',
 };
 
 // ── Shared bits ──
@@ -40,8 +40,8 @@ const CARD: React.CSSProperties = {
 function HeadCell({ children, align = 'left' }: { children: React.ReactNode; align?: 'left' | 'right' }) {
   return (
     <th
-      className="px-5 py-[11px] text-[9px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)] border-b border-[var(--color-border-base)]"
-      style={{ ...MONO, textAlign: align }}
+      className="px-5 py-4 text-[12px] font-medium text-[var(--color-text-secondary)] border-b border-[var(--color-rule)] whitespace-nowrap"
+      style={{ textAlign: align }}
     >
       {children}
     </th>
@@ -277,8 +277,9 @@ function RecentTable({
 
 function ConnectEmpty() {
   return (
-    <div className="flex min-h-[calc(100vh-200px)] items-center justify-center px-6 py-10">
-      <div className="max-w-[460px] text-center">
+    <div className="helm-detail-empty helm-detail-activation">
+      <div>
+        <p className="helm-kicker">Earnings intelligence</p>
         <div
           className="mx-auto mb-[22px] inline-flex h-[60px] w-[60px] items-center justify-center rounded-[14px]"
           style={{ background: 'rgba(230,185,77,0.06)', border: '1px solid rgba(230,185,77,0.18)' }}
@@ -286,12 +287,17 @@ function ConnectEmpty() {
           <Link2 size={26} className="text-[var(--color-gold)]" strokeWidth={1.6} />
         </div>
         <h1 className="text-[24px] font-bold tracking-[-0.025em] leading-[1.1] text-[var(--color-text-primary)] mb-3">
-          Connect your brokerage
+          The next report could change your thesis.
         </h1>
         <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
-          Helm tracks the earnings calendar for every position over a read-only connection, then
-          surfaces your exposure here when reports approach. Link an account to get started.
+          Add your holdings to see which companies report next, how much of your portfolio is exposed,
+          and the investment claims worth checking when results arrive.
         </p>
+        <div className="helm-detail-empty-actions">
+          <Link href="/dashboard/accounts" className="helm-button">Connect a brokerage <ArrowUpRight size={16} /></Link>
+          <Link href="/dashboard/portfolio/add" className="helm-text-link">Enter positions manually <ArrowUpRight size={15} /></Link>
+        </div>
+        <p className="helm-detail-footnote">Read-only access through Plaid. You can start with a single position.</p>
       </div>
     </div>
   );
@@ -299,7 +305,7 @@ function ConnectEmpty() {
 
 function NoEarningsEmpty() {
   return (
-    <div className="flex items-center justify-center px-6 py-16">
+    <div className="helm-detail-empty">
       <div className="max-w-[460px] text-center">
         <div
           className="mx-auto mb-[22px] inline-flex h-[60px] w-[60px] items-center justify-center rounded-[14px]"
@@ -308,12 +314,13 @@ function NoEarningsEmpty() {
           <Calendar size={26} className="text-[var(--color-text-muted)]" strokeWidth={1.6} />
         </div>
         <h2 className="text-[24px] font-bold tracking-[-0.025em] leading-[1.1] text-[var(--color-text-primary)] mb-3">
-          No earnings in your holdings this week
+          No reports on the calendar yet
         </h2>
         <p className="text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
           Helm tracks the calendar for every position and surfaces your exposure here when reports
           approach.
         </p>
+        <Link href="/dashboard/theses" className="helm-text-link mt-5">Review your investment theses <ArrowUpRight size={15} /></Link>
       </div>
     </div>
   );
@@ -321,7 +328,7 @@ function NoEarningsEmpty() {
 
 function PageSkeleton() {
   return (
-    <main className="mx-auto px-7 py-[26px] pb-[60px] max-w-[1240px] space-y-[22px]">
+    <main className="helm-detail-page helm-earnings space-y-[22px]" aria-busy="true" aria-label="Loading earnings">
       <div className="space-y-2.5">
         <Skeleton className="h-3 w-40" />
         <Skeleton className="h-9 w-96 max-w-full" />
@@ -342,7 +349,7 @@ export default function EarningsPage() {
     <TierLock
       required="pro"
       label="Earnings exposure is a Pro feature"
-      blurb="See what's reporting across your book, the consensus expectations, and exactly how much of your portfolio is exposed each week."
+      blurb="See which holdings report next, your exposure to each company, and how results compare with the same quarter last year."
     >
       <EarningsContent />
     </TierLock>
@@ -361,7 +368,7 @@ function EarningsContent() {
 
   if (notConnected) {
     return (
-      <main className="mx-auto px-7 py-[26px] pb-[60px] max-w-[1240px]" aria-label="Earnings">
+      <main className="helm-detail-page helm-earnings" aria-label="Earnings">
         <ConnectEmpty />
       </main>
     );
@@ -377,30 +384,27 @@ function EarningsContent() {
   const nothingToShow = upcoming.length === 0 && recent.length === 0;
 
   return (
-    <main className="mx-auto px-7 py-[26px] pb-[60px] max-w-[1240px] space-y-[22px]" aria-label="Earnings">
+    <main className="helm-detail-page helm-earnings space-y-[28px]" aria-label="Earnings">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="helm-detail-heading">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-2" style={MONO}>
-            Earnings
-          </div>
+          <p className="helm-kicker">Portfolio intelligence / Earnings</p>
           <h1 className="text-[28px] sm:text-[32px] font-bold tracking-[-0.025em] leading-[1.08] text-[var(--color-text-primary)]">
-            What&apos;s reporting, and your exposure
+            Ahead of the next report.
           </h1>
+          <p>Know what&apos;s reporting, what you own, and what to look for.</p>
         </div>
-
-        {upcoming.length > 0 && (
-          <div
-            className="flex items-center gap-[9px] px-[14px] py-2 rounded-md shrink-0"
-            style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.18)' }}
-          >
-            <Calendar className="w-[14px] h-[14px] shrink-0" style={{ color: 'var(--color-warning-text)' }} strokeWidth={1.7} />
-            <span className="text-[14px] text-[var(--color-text-primary)]">
-              <span className="font-semibold" style={{ color: 'var(--color-warning-text)' }}>{exposurePct.toFixed(1)}%</span> of your book reports soon
-            </span>
-          </div>
-        )}
+        <Link href="/dashboard/theses" className="helm-text-link">Review your theses <ArrowUpRight size={16} /></Link>
       </div>
+
+      {report?.sample && <p className="helm-kicker">Sample scenario · illustrative dates and results</p>}
+      {!error && !nothingToShow && (
+        <div className="helm-detail-metrics" aria-label="Earnings overview">
+          <div><span>Upcoming reports</span><strong>{upcoming.length}</strong><small>Across your holdings</small></div>
+          <div><span>Upcoming exposure</span><strong className="text-[var(--color-gold)]">{exposurePct.toFixed(1)}<em>%</em></strong><small>Portfolio allocation reporting soon</small></div>
+          <div><span>Recent results</span><strong>{recent.length}</strong><small>Available for review</small></div>
+        </div>
+      )}
 
       {/* Error */}
       {error && (
@@ -417,15 +421,21 @@ function EarningsContent() {
       {!error && nothingToShow && <NoEarningsEmpty />}
 
       {/* Upcoming */}
-      {upcoming.length > 0 && <UpcomingTable rows={upcoming} />}
+      {upcoming.length > 0 && (
+        <section>
+          <div className="helm-detail-section-heading"><div><h2>On the calendar</h2><p>Open a company to review its analysis before results arrive.</p></div><span>{upcoming.length} reports</span></div>
+          <UpcomingTable rows={upcoming} />
+        </section>
+      )}
 
       {/* Thesis read — verbatim pillar tests for upcoming reports (preserved logic) */}
       {upcoming.some((e) => e.thesisStatus) && (
         <div className="rounded-lg overflow-hidden" style={CARD}>
-          <div className="px-5 py-[11px] border-b border-[var(--color-border-base)]">
-            <span className="text-[9px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)]" style={MONO}>
+          <div className="px-5 py-5 border-b border-[var(--color-rule)]">
+            <h2 className="text-[17px] font-medium text-[var(--color-text-primary)]">
               The next read on your theses
-            </span>
+            </h2>
+            <p className="mt-2 text-[13px] text-[var(--color-text-secondary)]">The claims the next report could strengthen or challenge.</p>
           </div>
           <div className="divide-y divide-[var(--color-border-subtle)]">
             {upcoming.filter((e) => e.thesisStatus).map((e, i) => {
@@ -456,11 +466,9 @@ function EarningsContent() {
       {/* Recent results */}
       {recent.length > 0 && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)]" style={MONO}>
-              Recently reported
-            </div>
-            {isPro && report && report.recentNetImpact != null && (
+          <div className="helm-detail-section-heading">
+            <div><h2>Recently reported</h2><p>Filing results alongside your position and portfolio impact.</p></div>
+            {isPro && report && !report.sample && report.recentNetImpact != null && (
               <div className="flex items-center gap-1.5">
                 {report.recentNetImpact >= 0
                   ? <TrendingUp className="w-3.5 h-3.5" style={{ color: 'var(--color-positive)' }} />
@@ -477,9 +485,8 @@ function EarningsContent() {
 
       {/* Methodology / no-black-boxes footnote */}
       {(upcoming.length > 0 || recent.length > 0) && (
-        <p className="text-[10px] text-[var(--color-text-muted)] leading-[1.6]" style={MONO}>
-          Dates and EPS figures come from SEC filings (XBRL). The comparison shown is year-over-year,
-          not analyst consensus. Impact estimates use a simplified model and are not financial advice.
+        <p className="helm-detail-footnote">
+          {report?.sample ? 'Sample scenario. These dates, positions, thesis claims, and results are illustrative; they are not current market data.' : 'Dates and EPS figures come from SEC filings (XBRL). The comparison shown is year-over-year, not analyst consensus. Impact estimates use a simplified model and are not financial advice.'}
         </p>
       )}
     </main>

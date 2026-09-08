@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { subjectPrefilter, lowValueShape } from '@/lib/news-subject';
 import { detectPrimaryTicker, titleTargetsTicker } from '@/lib/news-primary-ticker';
+import { isDirectHoldingNews } from '@/lib/news-relevance';
 
 const call = (title: string, ticker = 'AMZN', companyName: string | null = 'Amazon.com Inc', tickers: string[] = [ticker]) =>
   subjectPrefilter({ title, ticker, companyName, tickers });
@@ -63,6 +64,108 @@ describe('company-name normalization', () => {
   it('returns null rather than guessing when nothing matches', () => {
     const names = new Map([['AMZN', 'Amazon.com Inc'], ['WMT', 'Walmart Inc']]);
     expect(detectPrimaryTicker('Grocery prices climb for a third month', null, ['WMT', 'AMZN'], names)).toBeNull();
+  });
+});
+
+describe('short/common-word ticker ambiguity', () => {
+  it.each(['ON', 'ALL', 'IT', 'KEY', 'CAR', 'A', 'AI', 'OPEN', 'REAL'])('requires explicit ticker evidence for %s even when the company name is missing', ticker => {
+    expect(titleTargetsTicker(`Bitcoin rallies as ${ticker} becomes a theme`, ticker, ticker)).toBe(false);
+    expect(titleTargetsTicker(`Earnings update for $${ticker}`, ticker, ticker)).toBe(true);
+    expect(titleTargetsTicker(`Earnings update for (${ticker})`, ticker, ticker)).toBe(true);
+  });
+
+  it('recognizes the actual company behind a common-word symbol', () => {
+    expect(titleTargetsTicker('KeyCorp appoints a new chief executive', 'KEY', 'KeyCorp')).toBe(true);
+    expect(titleTargetsTicker('onsemi opens a new chip plant', 'ON', 'ON Semiconductor')).toBe(true);
+  });
+});
+
+describe('single feed tags do not establish an article subject', () => {
+  const names = new Map([
+    ['NVDA', 'NVIDIA Corporation'],
+    ['GOOGL', 'Alphabet Inc Class A'],
+    ['AAPL', 'Apple Inc'],
+  ]);
+
+  it('does not attribute a Bitcoin story to an Nvidia feed subscriber', () => {
+    expect(detectPrimaryTicker('Bitcoin rallies as traders weigh the next rate decision', null, ['NVDA'], names)).toBeNull();
+  });
+
+  it('does not attribute an Apple story to an Alphabet feed subscriber', () => {
+    expect(detectPrimaryTicker('Apple introduces its newest iPhone', null, ['GOOGL'], names)).toBeNull();
+  });
+
+  it('does not promote a summary or footer mention into a headline subject', () => {
+    expect(detectPrimaryTicker('Bitcoin rallies as traders weigh the next rate decision', 'Also consider NVIDIA stock ($NVDA).', ['NVDA'], names)).toBeNull();
+  });
+
+  it.each([
+    ['Nvidia reports record data center sales', 'NVDA'],
+    ['Apple introduces its newest iPhone', 'AAPL'],
+    ['Alphabet reports quarterly results', 'GOOGL'],
+    ['NVDA raises its dividend', 'NVDA'],
+    ['Earnings update for (AAPL)', 'AAPL'],
+  ])('keeps headline subject %s', (title, ticker) => {
+    expect(detectPrimaryTicker(title, null, [ticker], names)).toBe(ticker);
+  });
+
+  it('preserves multi-ticker subject selection regardless of provider ordering', () => {
+    expect(detectPrimaryTicker('Apple introduces its newest iPhone', null, ['GOOGL', 'AAPL', 'NVDA'], names)).toBe('AAPL');
+  });
+
+  it('preserves the existing multi-candidate description fallback', () => {
+    expect(detectPrimaryTicker('Chipmaker announces results', 'NVIDIA reported record sales.', ['GOOGL', 'NVDA'], names)).toBe('NVDA');
+  });
+});
+
+describe('cached news portfolio claims', () => {
+  // Headlines observed in the UI; these feed/holding associations are synthetic
+  // fixtures, not assertions about the original provider response.
+  it.each([
+    ['Wall Street Investment Firm Bernstein Thinks Bitcoin Could Hit $300,000 by 2029. Is Bitcoin Now a Buy?', 'NVDA', 'NVIDIA Corporation'],
+    ['Apple’s new CEO faces a staggering $14 billion iPhone test', 'GOOGL', 'Alphabet Inc Class A'],
+  ])('keeps observed unrelated headline as context: %s', (title, ticker, asset_name) => {
+    expect(detectPrimaryTicker(title, null, [ticker], new Map([[ticker, asset_name]]))).toBeNull();
+    expect(isDirectHoldingNews({ title, primaryTicker: ticker }, { ticker, asset_name })).toBe(false);
+  });
+
+  it('treats a Bitcoin story with a stale Nvidia primary ticker as context', () => {
+    expect(isDirectHoldingNews(
+      { title: 'Bitcoin rallies as traders weigh the next rate decision', primaryTicker: 'NVDA' },
+      { ticker: 'NVDA', asset_name: 'NVIDIA Corporation' },
+    )).toBe(false);
+  });
+
+  it('treats an Apple story with a stale Alphabet primary ticker as context', () => {
+    expect(isDirectHoldingNews(
+      { title: 'Apple introduces its newest iPhone', primaryTicker: 'GOOGL' },
+      { ticker: 'GOOGL', asset_name: 'Alphabet Inc Class A' },
+    )).toBe(false);
+  });
+
+  it('allows the actual subject holding through company-name evidence', () => {
+    expect(isDirectHoldingNews(
+      { title: 'Apple introduces its newest iPhone', primaryTicker: 'AAPL' },
+      { ticker: 'AAPL', asset_name: 'Apple Inc' },
+    )).toBe(true);
+  });
+
+  it('does not promote a tangential held ticker over the primary subject', () => {
+    expect(isDirectHoldingNews(
+      { title: 'Spotify partners with Apple', primaryTicker: 'SPOT' },
+      { ticker: 'AAPL', asset_name: 'Apple Inc' },
+    )).toBe(false);
+  });
+
+  it('does not infer a subject from the title when the feed has no primary subject', () => {
+    expect(isDirectHoldingNews(
+      { title: 'Apple introduces its newest iPhone', primaryTicker: null },
+      { ticker: 'AAPL', asset_name: 'Apple Inc' },
+    )).toBe(false);
+  });
+
+  it('does not claim portfolio impact for an unheld company', () => {
+    expect(isDirectHoldingNews({ title: 'Apple introduces its newest iPhone', primaryTicker: 'AAPL' })).toBe(false);
   });
 });
 
