@@ -76,3 +76,21 @@ application code.
 16. **Other agents share this working tree.** Check a file's git status and mtime
     before editing it. Never commit, stash, revert, or reformat a file you did not
     change. Stage your own files by name.
+
+## Shipping
+
+17. **Ship through GitHub.** When Evan asks to ship, push or deploy, the default is
+    to commit the reviewed work and push it to the existing GitHub repository,
+    then let its Vercel Git integration build the deployment. Check the current
+    remote branch before pushing; the established branch is `master`. Direct
+    Vercel uploads are an exception, not the normal shipping workflow.
+18. **Include a useful shipping note.** Commit messages must explain the user
+    problem, resulting behavior, validation and material limitations. Vercel
+    displays this GitHub commit message with the deployment. Report the GitHub
+    commit and matching Vercel deployment links when shipping completes.
+19. **Keep promotion manual.** Publishing source to GitHub is separate from
+    promoting a Vercel deployment to production. Evan promotes manually unless he
+    explicitly asks otherwise. Preserve the existing deployment settings and
+    check that the automatically created deployment matches the pushed commit.
+    Never include credentials, customer data, private business documents or
+    unrelated working-copy changes in a release.
