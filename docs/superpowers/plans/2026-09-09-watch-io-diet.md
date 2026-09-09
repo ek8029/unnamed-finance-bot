@@ -14,7 +14,7 @@
 
 | Cron | Ticks per weekday | Postgres per idle tick today |
 |---|---|---|
-| judge-worker (`* * * * *`) | 1,440 | `countToday` + pending select + heartbeat upsert = 3 statements; `judge_jobs` had 0 rows in 24h |
+| judge-worker (`* * * * *`) | 1,440 | `paidSpendSince` + `countToday` + pending select + heartbeat upsert = 4 statements; `judge_jobs` had 0 rows in 24h |
 | edgar-watch (`*`, `*/5` off, `*/30` weekend) | ~700 | holdings + theses paged reads, `filing_events` upsert, heartbeat upsert |
 | news-watch (`*/5`) | 288 | holdings + theses paged reads, `market_news` re-read, classify ledger insert, heartbeat upsert |
 | intraday-prices (`*/5` in session) | 108 | 798-row holdings read, up to 10,000-row `market_prices` prior-close read, 798 holdings updates in chunks of 50, 421 single-row `securities` updates, 1 snapshot insert per user, retention delete |
@@ -111,7 +111,7 @@ Tests: missing flag wakes; past flag wakes; future flag sleeps; garbage wakes; `
 - [ ] **Step 2: Wire the flag**
   - In `enqueueJudgeJobs`, after the upsert succeeds: `await withRedis((r) => r.set(redisKey(JUDGE_WAKE_KEY), earliestRunAfter(rows, now)), undefined)`. When the key already holds an earlier time keep the earlier one (read then set, or `SET ... NX` plus a compare; a small pure helper `minIso(a, b)` is fine).
   - At every place a row is written back to `status: 'queued'` with a `run_after`, set the flag to that `run_after` if it is earlier than the current value.
-  - In `runJudgeWorker`, after the kill switch (`:337`) and before `countToday` (`:344`): `const flag = await withRedis((r) => r.get<string>(redisKey(JUDGE_WAKE_KEY)), null); if (!shouldWakeJudge(flag, now())) { log.push('idle: no queued work'); return { ...emptySummary, idle: true }; }` (add `idle?: boolean` to `WorkerSummary`). With Redis unconfigured `flag` is null and the worker polls as today.
+  - In `runJudgeWorker`, after the kill switch (`:337`) and before `paidSpendSince` (`:344`, the first Postgres read): `const flag = await withRedis((r) => r.get<string>(redisKey(JUDGE_WAKE_KEY)), null); if (!shouldWakeJudge(flag, now())) { log.push('idle: no queued work'); return { ...emptySummary, idle: true }; }` (add `idle?: boolean` to `WorkerSummary`). With Redis unconfigured `flag` is null and the worker polls as today.
   - When the pending select returns zero rows, `await withRedis((r) => r.set(key, farFutureIso), undefined)` where far-future is now + 1 day, so the next enqueue lowers it. Never delete the key on an error path.
   - Heartbeat moves to Redis in Task 6; leave the `beat` call in place for now.
 - [ ] **Step 3: Tests**: extend `tests/judge-queue.test.ts` with `vi.mock('@/lib/redis', ...)` exposing an in-memory map: future flag → `runJudgeWorker` returns `idle: true` and the fake db records zero `from()` calls; past flag → the existing path runs; `enqueueJudgeJobs` sets the key to the earliest `run_after`.
@@ -139,8 +139,8 @@ export const SEEN_TTL_S = 7 * 24 * 3600;
 export async function unseen(name: 'edgar' | 'news', ids: string[]): Promise<string[]>
 ```
 Implementation: `SMISMEMBER` (or `smismember` in the client) then `SADD` the new ones and `EXPIRE` the key. Tests: first call returns all and adds; second call returns none; Redis null returns all.
-- [ ] **Step 3: Wire edgar**: `buildWatchUniverse` reads through `cachedUniverse(db, 'edgar', ...)`. In `watchOnce`, before `recordFilingEvents`, `const fresh = await unseen('edgar', entries.map((e) => e.accessionNo))`; when `fresh` is empty and dry mode is off, skip the upsert entirely and return the quiet summary. Keep the upsert as the authoritative dedupe for the fresh ones. The in-process `lastRead` map stays.
-- [ ] **Step 4: Wire news**: universe through the cache; `recordLedgerRow` only when the classifier ran on at least one article (count > 0); the `market_news` re-read only when `refreshRssNews` reported `inserted > 0`.
+- [ ] **Step 3: Wire edgar**: `buildWatchUniverse` reads through `cachedUniverse(db, 'edgar', ...)`. In `watchOnce`, before `recordFilingEvents`, `const fresh = await unseen('edgar', entries.map((e) => e.accessionNo))`; when `fresh` is empty and dry mode is off, skip this form's upsert with `continue` (the loop at `watchOnce` iterates `WATCH_FORMS`; the adjacent quiet path is `if (hits.length === 0) continue;` at `:284`; a `return` here would starve the later forms that tick). Keep the upsert as the authoritative dedupe for the fresh ones. The in-process `lastRead` map stays.
+- [ ] **Step 4: Wire news**: universe through the cache. The ledger row (`news-watch.ts:95`, gated on `ledger.calls > 0`) and the `market_news` re-read (`:107`, gated on `inserted > 0`) are already conditional; verify by reading and leave them.
 - [ ] **Step 5: Tests**: `tests/edgar-watch.test.ts` already drives `watchOnce` through injected deps and fixtures; add a case where every fixture accession is already seen (mocked seen-set returns `[]`) and assert the fake db receives no `filing_events` write. For news, add a pure test that the ledger row is skipped at zero (extract the decision into a tiny pure function if needed).
 - [ ] **Step 6: Whole suite, tsc, commit.**
 
@@ -160,9 +160,10 @@ export function securitiesUpsertRows(changed: Map<string, number>, idByTicker: M
 Tests: unchanged dropped; new ticker kept; float equality exact (no tolerance, a print is a print); rows only for tickers with a known id.
 - [ ] **Step 2: Prior close cache**: key `helm:tick:prevclose:{ET day}` holding JSON `{ ticker: close }`, TTL 26 h. On a hit skip the paged read; on a miss read as today and cache. Redis null: read as today.
 - [ ] **Step 3: Last-print cache**: key `helm:tick:last:{ET day}` JSON `{ ticker: price }`. After fetching prints, `changed = changedPrices(prev, prices)`; reprice and update only holdings whose ticker is in `changed`; write `securities` with ONE `upsert(rows, { onConflict: 'id' })` instead of the loop; store the merged map back. Redis null: `changed = prices` (today's behaviour). The snapshot insert stays per tick (it is the intraday series). Report the per-tick row counts in the tick result (`updatedHoldings`, `updatedSecurities`, `skipped`) so `scripts/probe-tick-times.ts` can show the saving.
-- [ ] **Step 4: Heartbeat**: call `beat(db, 'intraday-prices', { updated, skipped })` at the end (the name is added to `WatchName` in Task 6; add it here as a string-literal extension of the union in `lib/agent/heartbeat.ts` and keep the Postgres path until Task 6 swaps it).
-- [ ] **Step 5: Tests**: keep the existing pure tests; add the Redis-mocked path: prior-close hit skips the `market_prices` read; unchanged prints produce zero holdings updates and one securities upsert of zero rows (or none).
-- [ ] **Step 6: Whole suite, tsc, commit.** Verify after deploy with `scripts/probe-tick-times.ts` (untracked) that every 5-minute slot still lands.
+- [ ] **Step 4: Staleness reader**: `app/api/holdings/route.ts:20-36` reads the newest `holdings.last_updated_at` during market hours and fires a background full `/api/market/prices/refresh` sweep when it is 10 minutes old. With unchanged prints no longer stamped, a flat book would trip that on every holdings load and undo the diet. Repoint that check at the intraday heartbeat (`readHeartbeats()` for `'intraday-prices'`, Task 6 makes it a Redis read) so "prices are fresh" means "the tick ran", not "a row was rewritten". Rule 1: it is the only reader that treats the stamp as freshness (grep `last_updated_at` in app/ and hooks/ and list the others in the commit).
+- [ ] **Step 5: Heartbeat**: call `beat(db, 'intraday-prices', { updated, skipped })` at the end (the name is added to `WatchName` in Task 6; add it here as a string-literal extension of the union in `lib/agent/heartbeat.ts` and keep the Postgres path until Task 6 swaps it).
+- [ ] **Step 6: Tests**: keep the existing pure tests; add the Redis-mocked path: prior-close hit skips the `market_prices` read; unchanged prints produce zero holdings updates and one securities upsert of zero rows (or none).
+- [ ] **Step 7: Whole suite, tsc, commit.** Verify after deploy with `scripts/probe-tick-times.ts` (untracked) that every 5-minute slot still lands.
 
 ---
 
@@ -202,4 +203,4 @@ Behind nothing: every change degrades to today's behaviour without Redis. Ship a
 
 - Redis is a second dependency on the critical path of the judge queue. Mitigation: the flag only decides whether to poll; a missing or unreadable flag means poll.
 - Two Fluid instances can both see the wake flag and both claim; the existing compare-and-set claim (`judge-queue.ts:221-229`) already handles that.
-- Unchanged-price skip means `holdings.last_updated_at` no longer advances every tick for flat names. Grep readers of `last_updated_at` (rule 1) before Task 4 and confirm none treats a stale stamp as a stale price; if one does, update the stamp in a single batched no-op write for skipped tickers only every 30 minutes.
+- Unchanged-price skip means `holdings.last_updated_at` no longer advances every tick for flat names. The one reader that treats the stamp as price freshness (`app/api/holdings/route.ts:20-36`) is repointed at the tick heartbeat in Task 4 Step 4.
