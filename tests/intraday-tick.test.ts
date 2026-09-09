@@ -4,6 +4,72 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { repriceHolding, toHoldingUpdate } from '../lib/market/last-trade';
 import { intradayNetWorthSeries, onlyToday, portfolioTotalsByUser } from '../lib/market/intraday-series';
+import { etDay } from '../lib/market/tick-diff';
+import { runIntradayTick } from '../lib/market/intraday-tick';
+
+// The full tick against a fake database: every from(table) call is recorded
+// with its op chain, holdings and market_prices answer from fixtures, every
+// other table answers empty. Finazon, market hours, push, severe moves and
+// the heartbeat are stubbed at the module boundary; Redis is in memory
+// (`store` null = unconfigured) with the JSON round trip the real client does.
+const dbMock = vi.hoisted(() => ({
+  holdings: [] as Record<string, unknown>[],
+  closes: [] as { ticker: string; close: number; price_date: string }[],
+  calls: [] as { table: string; op: string; chain: unknown[][] }[],
+}));
+const finMock = vi.hoisted(() => ({ prices: [] as [string, number][] }));
+const hbMock = vi.hoisted(() => ({ beat: vi.fn(async () => {}) }));
+const redisMock = vi.hoisted(() => ({ store: new Map<string, unknown>() as Map<string, unknown> | null, sets: [] as string[] }));
+
+vi.mock('@/lib/supabase/server', () => {
+  const from = (table: string) => {
+    const call = { table, op: 'select', chain: [] as unknown[][] };
+    dbMock.calls.push(call);
+    const filters: Record<string, unknown> = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const b: any = {};
+    for (const m of ['select', 'neq', 'in', 'lt', 'order', 'range', 'eq', 'limit', 'is']) {
+      b[m] = (...args: unknown[]) => { call.chain.push([m, ...args]); if (m === 'in' || m === 'lt') filters[String(args[0])] = args[1]; return b; };
+    }
+    for (const m of ['update', 'upsert', 'insert', 'delete']) {
+      b[m] = (...args: unknown[]) => { call.op = m; call.chain.push([m, ...args]); return b; };
+    }
+    const answer = () => {
+      if (call.op !== 'select') return { data: null, error: null };
+      if (table === 'holdings') return { data: dbMock.holdings, error: null };
+      if (table === 'market_prices') {
+        const tickers = filters.ticker as string[] | undefined;
+        const before = String(filters.price_date);
+        const rows = dbMock.closes
+          .filter((c) => (!tickers || tickers.includes(c.ticker)) && c.price_date < before)
+          .sort((x, y) => (x.price_date < y.price_date ? 1 : -1));
+        return { data: rows, error: null };
+      }
+      return { data: [], error: null };
+    };
+    b.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) => Promise.resolve(answer()).then(resolve, reject);
+    return b;
+  };
+  return { createServiceClient: async () => ({ from }) };
+});
+vi.mock('@/lib/finazon', () => ({ getBatchLastTradePrices: async () => new Map(finMock.prices) }));
+vi.mock('@/lib/live-quotes', () => ({ isUsMarketHours: () => true }));
+vi.mock('@/lib/push/send', () => ({ liveTokenUsers: async () => new Set<string>(), sendPush: async () => ({ sent: 0 }) }));
+vi.mock('@/lib/market/severe-move', () => ({ severeMoves: () => [], enqueueSevereMoves: async () => ({ theses: 0, queued: 0, error: null }) }));
+vi.mock('@/lib/agent/heartbeat', () => ({ beat: hbMock.beat }));
+vi.mock('@/lib/redis', () => {
+  const wire = (v: unknown) => JSON.parse(JSON.stringify(v));
+  const r = {
+    get: async (k: string) => redisMock.store!.get(k) ?? null,
+    set: async (k: string, v: unknown) => { redisMock.store!.set(k, wire(v)); redisMock.sets.push(k); return 'OK'; },
+  };
+  return {
+    withRedis: async <T,>(fn: (r: unknown) => Promise<T>, fallback: T) => {
+      try { if (!redisMock.store) return fallback; return await fn(r); } catch { return fallback; }
+    },
+    redisKey: (...parts: string[]) => ['helm', ...parts].join(':'),
+  };
+});
 
 describe('repriceHolding', () => {
   it('values the position at the last trade and stores the day change as a fraction', () => {
@@ -99,5 +165,130 @@ describe('intraday (1D) series', () => {
       now,
     );
     expect(kept.map((p) => p.total_value)).toEqual([1]);
+  });
+});
+
+describe('intraday tick writes only what changed', () => {
+  const today = etDay(new Date()).day;
+  const PREV_KEY = `helm:tick:prevclose:${today}`;
+  const LAST_KEY = `helm:tick:last:${today}`;
+  const fresh = new Date().toISOString();
+  const stale = new Date(Date.now() - 2 * 86_400_000).toISOString();
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  // current_price arrives from Postgres as a NUMERIC(15, 4) string.
+  const holding = (id: string, user_id: string, ticker: string, security_id: string, price: number, last_updated_at: string) => ({
+    id, user_id, ticker, security_id, shares: 10, total_cost_basis: 1000, total_value: price * 10,
+    current_price: price.toFixed(4), last_updated_at,
+  });
+  const calls = (table: string, op?: string) => dbMock.calls.filter((c) => c.table === table && (!op || c.op === op));
+  const step = (c: { chain: unknown[][] }, name: string) => c.chain.find((s) => s[0] === name);
+
+  beforeEach(() => {
+    dbMock.holdings = [];
+    dbMock.closes = [];
+    dbMock.calls.length = 0;
+    finMock.prices = [];
+    redisMock.store = new Map();
+    redisMock.sets.length = 0;
+    hbMock.beat.mockClear();
+  });
+
+  it('reads the prior close from the day cache and never touches market_prices', async () => {
+    redisMock.store!.set(PREV_KEY, { AAPL: 140, MSFT: 290 });
+    dbMock.closes = [{ ticker: 'AAPL', close: 999, price_date: yesterday }];
+    dbMock.holdings = [holding('h1', 'u1', 'AAPL', 's1', 150, fresh), holding('h3', 'u2', 'AAPL', 's1', 150, stale)];
+    finMock.prices = [['AAPL', 150], ['MSFT', 300]];
+    const { body } = await runIntradayTick();
+    expect(calls('market_prices')).toHaveLength(0);
+    expect(body.prev_close_source).toBe('cache');
+    // The stale row is rewritten against the cached close, not the table's.
+    const [u] = calls('holdings', 'update');
+    expect(step(u, 'eq')).toEqual(['eq', 'id', 'h3']);
+    expect((step(u, 'update')![1] as { day_change_pct: number }).day_change_pct).toBeCloseTo(10 / 140, 6);
+    expect(redisMock.sets.filter((k) => k === PREV_KEY)).toHaveLength(0);
+  });
+
+  it('reads only the tickers the cache is missing, merges, and re-sets the cache', async () => {
+    redisMock.store!.set(PREV_KEY, { AAPL: 140 });
+    dbMock.closes = [{ ticker: 'MSFT', close: 290, price_date: yesterday }, { ticker: 'AAPL', close: 999, price_date: yesterday }];
+    dbMock.holdings = [holding('h1', 'u1', 'AAPL', 's1', 150, stale), holding('h2', 'u1', 'MSFT', 's2', 300, stale)];
+    finMock.prices = [['AAPL', 150], ['MSFT', 300]];
+    const { body } = await runIntradayTick();
+    const reads = calls('market_prices');
+    expect(reads).toHaveLength(1);
+    expect(step(reads[0], 'in')).toEqual(['in', 'ticker', ['MSFT']]);
+    expect(body.prev_close_source).toBe('cache+db');
+    expect(redisMock.store!.get(PREV_KEY)).toEqual({ AAPL: 140, MSFT: 290 });
+  });
+
+  it('writes nothing when every print matches a row touched this session, and stamps the last-print map once', async () => {
+    redisMock.store!.set(PREV_KEY, { AAPL: 140, MSFT: 290 });
+    redisMock.store!.set(LAST_KEY, { AAPL: 150, MSFT: 300 });
+    dbMock.holdings = [holding('h1', 'u1', 'AAPL', 's1', 150, fresh), holding('h2', 'u1', 'MSFT', 's2', 300, fresh)];
+    finMock.prices = [['AAPL', 150], ['MSFT', 300]];
+    const { body } = await runIntradayTick();
+    expect(calls('holdings', 'update')).toHaveLength(0);
+    expect(calls('securities')).toHaveLength(0);
+    expect(body.holdings_updated).toBe(0);
+    expect(body.holdings_skipped).toBe(2);
+    expect(body.securities_updated).toBe(0);
+    expect(redisMock.sets.filter((k) => k === LAST_KEY)).toHaveLength(1);
+    // Skipped rows still count toward the user's snapshot at their stored value.
+    const [snap] = calls('portfolio_intraday_snapshots', 'insert');
+    expect(step(snap, 'insert')![1]).toEqual([expect.objectContaining({ user_id: 'u1', total_value: 4500 })]);
+    expect(calls('portfolio_intraday_snapshots', 'delete')).toHaveLength(1);
+  });
+
+  it('rewrites exactly the holdings of a ticker whose print moved and one securities statement for it', async () => {
+    redisMock.store!.set(PREV_KEY, { AAPL: 140, MSFT: 290 });
+    redisMock.store!.set(LAST_KEY, { AAPL: 150, MSFT: 300 });
+    dbMock.holdings = [
+      holding('h1', 'u1', 'AAPL', 's1', 150, fresh),
+      holding('h2', 'u1', 'MSFT', 's2', 300, fresh),
+      holding('h4', 'u2', 'MSFT', 's2', 300, fresh),
+    ];
+    finMock.prices = [['AAPL', 150], ['MSFT', 301]];
+    const { body } = await runIntradayTick();
+    const updates = calls('holdings', 'update');
+    expect(updates.map((u) => step(u, 'eq')![2]).sort()).toEqual(['h2', 'h4']);
+    expect((step(updates[0], 'update')![1] as { current_price: number }).current_price).toBe(301);
+    const sec = calls('securities');
+    expect(sec).toHaveLength(1);
+    expect(sec[0].op).toBe('update');
+    expect(step(sec[0], 'update')![1]).toEqual({ current_price: 301, last_updated_at: expect.any(String) });
+    expect(step(sec[0], 'in')).toEqual(['in', 'id', ['s2']]);
+    expect(body.holdings_updated).toBe(2);
+    expect(body.holdings_skipped).toBe(1);
+    expect(body.securities_updated).toBe(1);
+    expect(redisMock.store!.get(LAST_KEY)).toEqual({ AAPL: 150, MSFT: 301 });
+    expect(hbMock.beat).toHaveBeenCalledTimes(1);
+    expect(hbMock.beat).toHaveBeenCalledWith(expect.anything(), 'intraday-prices', expect.objectContaining({
+      tickers: 2, priced: 2, updatedHoldings: 2, skippedHoldings: 1, updatedSecurities: 1, prevCloseSource: 'cache', ms: expect.any(Number),
+    }));
+  });
+
+  it('without Redis: prior close from the table, stale stamps rewritten, every priced security written', async () => {
+    redisMock.store = null;
+    dbMock.closes = [{ ticker: 'AAPL', close: 140, price_date: yesterday }, { ticker: 'MSFT', close: 290, price_date: yesterday }];
+    dbMock.holdings = [
+      holding('h1', 'u1', 'AAPL', 's1', 150, fresh),
+      holding('h2', 'u1', 'MSFT', 's2', 300, fresh),
+      holding('h3', 'u2', 'AAPL', 's1', 150, stale),
+    ];
+    finMock.prices = [['AAPL', 150], ['MSFT', 300]];
+    const { body } = await runIntradayTick();
+    const reads = calls('market_prices');
+    expect(reads).toHaveLength(1);
+    expect(step(reads[0], 'in')).toEqual(['in', 'ticker', ['AAPL', 'MSFT']]);
+    expect(body.prev_close_source).toBe('db');
+    // The diff against the stored row needs no Redis: equal and touched today is still skipped.
+    expect(calls('holdings', 'update').map((u) => step(u, 'eq')![2])).toEqual(['h3']);
+    expect(body.holdings_skipped).toBe(2);
+    // No last-print map, so every print is a change: one statement per distinct print.
+    const sec = calls('securities');
+    expect(sec.flatMap((c) => step(c, 'in')![2] as string[]).sort()).toEqual(['s1', 's2']);
+    expect(sec.every((c) => c.op === 'update')).toBe(true);
+    expect(body.securities_updated).toBe(2);
+    expect(hbMock.beat).toHaveBeenCalledWith(expect.anything(), 'intraday-prices', expect.objectContaining({ prevCloseSource: 'db' }));
   });
 });

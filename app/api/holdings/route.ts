@@ -5,6 +5,8 @@ import { isUsMarketHours } from '@/lib/live-quotes';
 import { parseDateLocal, formatMonthLabel } from '@/lib/date-format';
 import { resolveSector } from '@/lib/portfolio-analysis';
 import { canonicalTicker } from '@/lib/ticker-alias';
+import { readHeartbeats } from '@/lib/agent/heartbeat';
+import { pricesFreshFromHeartbeat } from '@/lib/market/tick-diff';
 
 export async function GET() {
   try {
@@ -16,6 +18,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Prices are fresh when the intraday tick beat within ten minutes. The
+    // tick no longer stamps a holding whose print did not move, so a flat
+    // book's last_updated_at can age all session; the stamp is only the
+    // fallback when there is no heartbeat to read (Redis unconfigured, or
+    // the tick has not run yet today). One read, shared by both checks.
+    const tickHeartbeat = readHeartbeats(supabase).then((m) => m.get('intraday-prices'));
+
     // Freshness: the iOS app has no client-side live-quote wire (the web
     // dashboard polls /api/market/quotes itself), so an app open must be able
     // to bring the database current on its own. When this user's newest price
@@ -25,15 +34,19 @@ export async function GET() {
     // sweep's own coalescing and per-user rate limit absorb stampedes.
     void (async () => {
       if (!isUsMarketHours()) return;
-      const { data: newest } = await supabase
-        .from('holdings')
-        .select('last_updated_at')
-        .eq('user_id', user.id)
-        .order('last_updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      const at = newest?.last_updated_at ? new Date(newest.last_updated_at).getTime() : 0;
-      if (Date.now() - at < 10 * 60 * 1000) return;
+      const freshByTick = pricesFreshFromHeartbeat(await tickHeartbeat);
+      if (freshByTick === true) return;
+      if (freshByTick === null) {
+        const { data: newest } = await supabase
+          .from('holdings')
+          .select('last_updated_at')
+          .eq('user_id', user.id)
+          .order('last_updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const at = newest?.last_updated_at ? new Date(newest.last_updated_at).getTime() : 0;
+        if (Date.now() - at < 10 * 60 * 1000) return;
+      }
       const h = await headers();
       const host = h.get('host');
       if (!host) return;
@@ -276,13 +289,16 @@ export async function GET() {
 
     // Whether this payload was priced before the background sweep above could
     // land. A client that caches responses can use it to schedule one silent
-    // re-read instead of showing the pre-sweep numbers all session. Newest row
-    // only: crypto lots price on their own cadence and must not pin the flag.
+    // re-read instead of showing the pre-sweep numbers all session. The tick
+    // heartbeat decides when there is one; otherwise the newest row only:
+    // crypto lots price on their own cadence and must not pin the flag.
     const newestPriceAt = (holdings ?? []).reduce((max, h) => {
       const at = h.last_updated_at ? new Date(h.last_updated_at).getTime() : 0;
       return at > max ? at : max;
     }, 0);
-    const pricesStale = isUsMarketHours() && newestPriceAt > 0 && Date.now() - newestPriceAt > 10 * 60 * 1000;
+    const freshByTick = pricesFreshFromHeartbeat(await tickHeartbeat);
+    const pricesStale = isUsMarketHours() && newestPriceAt > 0
+      && (freshByTick !== null ? !freshByTick : Date.now() - newestPriceAt > 10 * 60 * 1000);
 
     return NextResponse.json({
       holdings: transformedHoldings,
