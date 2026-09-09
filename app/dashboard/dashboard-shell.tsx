@@ -387,7 +387,9 @@ export default function DashboardShell({
   }, [paletteQuery]);
 
   // v3 sidebar labels. Defaults to "ready" so nothing dims before the fetch
-  // resolves, on error, or with the flag off (no fetch at all).
+  // resolves, on error, or with the flag off (no fetch at all). Re-read on every
+  // client-side route change so a brokerage connected mid-session clears the
+  // label without a reload; the shell's own accounts list covers the gap between.
   const [activation, setActivation] = useState({ hasBrief: true, hasConnection: true });
   useEffect(() => {
     if (!ONBOARDING_V3 || previewPath) return;
@@ -400,7 +402,8 @@ export default function DashboardShell({
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [previewPath]);
+  }, [previewPath, pathname]);
+  const dimState = { hasBrief: activation.hasBrief, hasConnection: activation.hasConnection || accounts.length > 0 };
 
   // Fetch user profile on mount + re-fetch when profile is updated
   useEffect(() => {
@@ -486,7 +489,7 @@ export default function DashboardShell({
     const active = isActive(item.href);
     const locked = isLocked(item.tier);
     const showNewBadge = item.badge === 'new' && item.href === '/dashboard/theses' && thesisEntitled && !thesesVisited;
-    const dimLabel = ONBOARDING_V3 ? item.dim?.(activation) ?? null : null;
+    const dimLabel = ONBOARDING_V3 ? item.dim?.(dimState) ?? null : null;
     return (
       <Link
         href={item.href}
@@ -507,10 +510,8 @@ export default function DashboardShell({
         }}
       >
         <item.icon size={16} strokeWidth={1.6} className="shrink-0" />
-        <span className="flex-1 truncate">
-          {item.name}
-          {dimLabel && <span className="ml-2 text-[10px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">{dimLabel}</span>}
-        </span>
+        <span className="flex-1 truncate">{item.name}</span>
+        {dimLabel && <span className="shrink-0 whitespace-nowrap text-[10px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">{dimLabel}</span>}
         {item.pulse && (
           <span
             className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)] shrink-0"
@@ -762,7 +763,7 @@ export default function DashboardShell({
                 {PORTFOLIO_CHILDREN.map((child) => {
                   const childActive = isActive(child.href);
                   const childLocked = isLocked(child.tier);
-                  const childDimLabel = ONBOARDING_V3 ? child.dim?.(activation) ?? null : null;
+                  const childDimLabel = ONBOARDING_V3 ? child.dim?.(dimState) ?? null : null;
                   return (
                     <Link
                       key={child.name}
@@ -774,10 +775,8 @@ export default function DashboardShell({
                       }}
                     >
                       <span className="w-1 h-1 rounded-full bg-current opacity-50 shrink-0" />
-                      <span className="flex-1 truncate">
-                        {child.name}
-                        {childDimLabel && <span className="ml-2 text-[10px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">{childDimLabel}</span>}
-                      </span>
+                      <span className="flex-1 truncate">{child.name}</span>
+                      {childDimLabel && <span className="shrink-0 whitespace-nowrap text-[10px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">{childDimLabel}</span>}
                       {childLocked && (
                         <span
                           className="shrink-0 rounded-[3px] px-[5px] py-[1px] text-[8px] font-bold tracking-[0.08em]"
