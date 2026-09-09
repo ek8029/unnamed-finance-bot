@@ -27,11 +27,15 @@ const logKey = (name: WatchName) => redisKey('hb', name, 'log');
  *  Redis is null or threw. */
 export async function beatRedis(name: WatchName, at: string, detail: Record<string, unknown>): Promise<boolean> {
   const entry: Stored = { at, detail };
+  // One MULTI round-trip: the four commands land together or not at all, so
+  // a partial write can never be followed by the Postgres fallback as well.
   return withRedis(async (r) => {
-    await r.set(key(name), entry, { ex: HB_TTL_S });
-    await r.lpush(logKey(name), entry);
-    await r.ltrim(logKey(name), 0, HB_LOG_LEN - 1);
-    await r.expire(logKey(name), HB_TTL_S);
+    await r.multi()
+      .set(key(name), entry, { ex: HB_TTL_S })
+      .lpush(logKey(name), entry)
+      .ltrim(logKey(name), 0, HB_LOG_LEN - 1)
+      .expire(logKey(name), HB_TTL_S)
+      .exec();
     return true;
   }, false);
 }
@@ -50,7 +54,8 @@ export async function readHeartbeatsRedis(): Promise<Map<WatchName, Heartbeat> |
   }, null);
 }
 
-/** Newest first, at most n. Redis null or throw: []. */
+/** Newest first, at most n. Redis null or throw: [].
+ *  No caller yet: the lab feed step of the IO diet plan consumes it next. */
 export async function readHeartbeatLog(name: WatchName, n = HB_LOG_LEN): Promise<Heartbeat[]> {
   return withRedis(async (r) => {
     const rows = await r.lrange<Stored>(logKey(name), 0, n - 1);

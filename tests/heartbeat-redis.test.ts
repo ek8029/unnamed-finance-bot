@@ -5,7 +5,9 @@ import {
 
 // An in-memory Redis behind withRedis. `store` null = unconfigured (getRedis
 // returned null); `boom` = every call throws, the way a dead Upstash would.
-// Values are kept as passed, the way the real client round-trips objects.
+// Values are JSON round-tripped the way the real client serializes them, so a
+// Date or an undefined inside detail changes shape here as it would in prod.
+// multi() queues commands and exec() applies them as a unit, or throws as one.
 const redisMock = vi.hoisted(() => ({
   store: new Map<string, unknown>() as Map<string, unknown> | null,
   lists: new Map<string, unknown[]>(),
@@ -14,15 +16,16 @@ const redisMock = vi.hoisted(() => ({
 }));
 vi.mock('@/lib/redis', () => {
   const guard = () => { if (redisMock.boom) throw new Error('redis down'); };
+  const wire = (v: unknown) => JSON.parse(JSON.stringify(v));
   const r = {
     set: async (k: string, v: unknown, opts?: { ex?: number }) => {
-      guard(); redisMock.store!.set(k, v); if (opts?.ex) redisMock.ttl.set(k, opts.ex); return 'OK';
+      guard(); redisMock.store!.set(k, wire(v)); if (opts?.ex) redisMock.ttl.set(k, opts.ex); return 'OK';
     },
     mget: async (...keys: string[]) => { guard(); return keys.map((k) => redisMock.store!.get(k) ?? null); },
     lpush: async (k: string, ...vals: unknown[]) => {
       guard();
       const l = redisMock.lists.get(k) ?? [];
-      l.unshift(...vals.reverse());
+      l.unshift(...vals.map(wire).reverse());
       redisMock.lists.set(k, l);
       return l.length;
     },
@@ -38,6 +41,16 @@ vi.mock('@/lib/redis', () => {
       return l.slice(start, stop + 1);
     },
     expire: async (k: string, s: number) => { guard(); redisMock.ttl.set(k, s); return 1; },
+    multi: () => {
+      const queued: (() => Promise<unknown>)[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const p: any = {};
+      for (const name of ['set', 'lpush', 'ltrim', 'expire'] as const) {
+        p[name] = (...args: unknown[]) => { queued.push(() => (r[name] as (...a: unknown[]) => Promise<unknown>)(...args)); return p; };
+      }
+      p.exec = async () => { guard(); const out = []; for (const q of queued) out.push(await q()); return out; };
+      return p;
+    },
   };
   return {
     withRedis: async <T,>(fn: (r: unknown) => Promise<T>, fallback: T) => {
@@ -56,7 +69,8 @@ beforeEach(() => {
 
 describe('beatRedis', () => {
   it('writes the current key with a 48 h TTL and pushes onto the log', async () => {
-    expect(await beatRedis('edgar-watch', '2026-09-09T14:00:00.000Z', { fetched: 3 })).toBe(true);
+    expect(await beatRedis('edgar-watch', '2026-09-09T14:00:00.000Z', { fetched: 3, skipped: undefined })).toBe(true);
+    // undefined does not survive the wire: the read-back shape is what production sees.
     expect(redisMock.store!.get('helm:hb:edgar-watch')).toEqual({ at: '2026-09-09T14:00:00.000Z', detail: { fetched: 3 } });
     expect(redisMock.ttl.get('helm:hb:edgar-watch')).toBe(HB_TTL_S);
     expect(redisMock.ttl.get('helm:hb:edgar-watch:log')).toBe(HB_TTL_S);

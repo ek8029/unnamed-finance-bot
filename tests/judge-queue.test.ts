@@ -18,16 +18,25 @@ vi.mock('@/lib/agent/judge-run', () => ({ runJudgeJob: workerBoundary.judge }));
 vi.mock('@/lib/push/send', () => ({ checkPushReceipts: workerBoundary.receipts }));
 
 // An in-memory Redis behind withRedis, so the wake flag and the heartbeat are
-// observable per test. Values are kept as passed, the way the real client
-// round-trips objects. `setThrows` makes set() fail so beat() falls back to Postgres.
-const redisMock = vi.hoisted(() => ({ store: new Map<string, unknown>(), setThrows: false }));
+// observable per test. Values are JSON round-tripped the way the real client
+// serializes them. beat() writes through multi().exec(); `execThrows` fails
+// that as a unit so beat() falls back to Postgres.
+const redisMock = vi.hoisted(() => ({ store: new Map<string, unknown>(), execThrows: false }));
 vi.mock('@/lib/redis', () => {
+  const wire = (v: unknown) => JSON.parse(JSON.stringify(v));
   const r = {
     get: async (k: string) => redisMock.store.get(k) ?? null,
-    set: async (k: string, v: unknown) => { if (redisMock.setThrows) throw new Error('redis down'); redisMock.store.set(k, v); return 'OK'; },
-    lpush: async () => 1,
-    ltrim: async () => 'OK',
-    expire: async () => 1,
+    set: async (k: string, v: unknown) => { redisMock.store.set(k, wire(v)); return 'OK'; },
+    multi: () => {
+      const queued: (() => Promise<unknown>)[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const p: any = {
+        set: (k: string, v: unknown) => { queued.push(() => r.set(k, v)); return p; },
+        lpush: () => p, ltrim: () => p, expire: () => p,
+        exec: async () => { if (redisMock.execThrows) throw new Error('redis down'); for (const q of queued) await q(); return []; },
+      };
+      return p;
+    },
   };
   return {
     withRedis: async <T,>(fn: (r: unknown) => Promise<T>, fallback: T) => { try { return await fn(r); } catch { return fallback; } },
@@ -35,7 +44,7 @@ vi.mock('@/lib/redis', () => {
   };
 });
 const WAKE = `helm:${JUDGE_WAKE_KEY}`;
-beforeEach(() => { redisMock.store.clear(); redisMock.setThrows = false; });
+beforeEach(() => { redisMock.store.clear(); redisMock.execThrows = false; });
 
 const CFG: JudgeConfig = { enabled: true, dailyCap: 200, userCap: 25, batch: 10, dailyUsd: 5 };
 
@@ -186,9 +195,9 @@ describe('judge wake flag', () => {
     expect(log[0]).toContain('2026-09-09T14:30:00.000Z');
   });
 
-  it('an idle tick falls back to the watch_heartbeats upsert when Redis set() throws', async () => {
+  it('an idle tick falls back to the watch_heartbeats upsert when the Redis MULTI throws', async () => {
     redisMock.store.set(WAKE, '2026-09-09T14:30:00.000Z');
-    redisMock.setThrows = true;
+    redisMock.execThrows = true;
     const tables: string[] = [];
     const db = chain({ data: null, error: null }, tables);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

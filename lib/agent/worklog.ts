@@ -11,6 +11,7 @@
 // the brief's, and the cadence says how often that kind of work happens.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { readHeartbeats } from '@/lib/agent/heartbeat';
 
 export type WorklogKind = 'sync' | 'price' | 'read' | 'scan' | 'flag' | 'brief';
 export type WorklogCadence = '1 min' | '5 min' | 'hourly' | 'daily' | 'on event';
@@ -155,7 +156,7 @@ export async function buildWorklog(supabase: SupabaseClient<any, any, any>, uid:
     supabase.from('theses').select('ticker').eq('user_id', uid).eq('tracked', true).limit(500),
   ]);
   const myTickers = [...new Set([...(held ?? []), ...(mine ?? [])].map((r) => String(r.ticker ?? '').toUpperCase()).filter(Boolean))];
-  const [{ data: feRaw }, { data: jobsRaw }, { data: beats }] = await Promise.all([
+  const [{ data: feRaw }, { data: jobsRaw }, beats] = await Promise.all([
     myTickers.length > 0
       ? supabase.from('filing_events').select('accession_no, ticker, form, filed_at, seen_at, status, note')
           .in('ticker', myTickers).gte('seen_at', since).order('seen_at', { ascending: false }).limit(12)
@@ -163,10 +164,10 @@ export async function buildWorklog(supabase: SupabaseClient<any, any, any>, uid:
     supabase.from('judge_jobs')
       .select('id, kind, ticker, source_key, status, payload, created_at, started_at, finished_at, evidence_added, error')
       .eq('user_id', uid).gte('created_at', since).order('created_at', { ascending: false }).limit(40),
-    supabase.from('watch_heartbeats').select('name, at').limit(10),
+    readHeartbeats(supabase), // Redis first, watch_heartbeats only as the fallback
   ]);
   let dailyScansAt: string | null = null;
-  for (const b of beats ?? []) {
+  for (const b of beats.values()) {
     if (b.name === 'edgar-watch') watch.checkedAt = String(b.at);
     if (b.name === 'news-watch') watch.newsCheckedAt = String(b.at);
     if (b.name === 'daily-scans') dailyScansAt = String(b.at);

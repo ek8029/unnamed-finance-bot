@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createStaticServiceClient } from '@/lib/supabase/server';
 import { buildWorklog, type WorklogResponse } from '@/lib/agent/worklog';
+import { readHeartbeats } from '@/lib/agent/heartbeat';
 import { getPortfolioBrief } from '@/lib/research/account';
 import { generateTaxReport } from '@/lib/tax-analysis';
 import { getTickerThesisData } from '@/lib/content/public-thesis';
@@ -249,9 +250,9 @@ async function partTheses(db: Db, uid: string) {
 
 async function partFlags(db: Db, uid: string): Promise<PresenceData['flags']> {
   const since = new Date(Date.now() - 72 * 3600 * 1000).toISOString();
-  const [{ data }, scans] = await Promise.all([
+  const [{ data }, beats] = await Promise.all([
     db.from('insights').select('*').eq('user_id', uid).gte('created_at', since).order('created_at', { ascending: false }).limit(30),
-    db.from('watch_heartbeats').select('at').eq('name', 'daily-scans').maybeSingle(),
+    readHeartbeats(db), // Redis first, watch_heartbeats only as the fallback
   ]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rows = ((data ?? []) as any[]).filter((r) => !r.is_dismissed);
@@ -260,7 +261,7 @@ async function partFlags(db: Db, uid: string): Promise<PresenceData['flags']> {
     at: String(r.created_at), detail: (r.description as string | null) ?? null,
     impact: r.estimated_impact_amount != null ? Number(r.estimated_impact_amount) : null,
   }));
-  return { scansRanAt: (rows[0]?.created_at as string | undefined) ?? (scans.data?.at as string | null) ?? null, items };
+  return { scansRanAt: (rows[0]?.created_at as string | undefined) ?? beats.get('daily-scans')?.at ?? null, items };
 }
 
 async function partReads(db: Db, uid: string): Promise<PresenceReads> {
