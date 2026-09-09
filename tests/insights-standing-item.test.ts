@@ -126,8 +126,8 @@ describe('readInsights standing "second account" item', () => {
     });
   });
 
-  it('three rows sharing one plaid_item_ref are one brokerage: the standing item shows', async () => {
-    const supabase = fakeSupabase([], [plaidRow('acct-0', 'item-a'), plaidRow('acct-1', 'item-a'), plaidRow('acct-2', 'item-a')]);
+  it('three rows at one institution are one brokerage, a legacy null-ref row included: the standing item shows', async () => {
+    const supabase = fakeSupabase([], [plaidRow('acct-0', 'item-a'), plaidRow('acct-1', 'item-a'), plaidRow('acct-2', null)]);
     const result = await readInsights(supabase as never, user);
     expect(result).toHaveLength(1);
     expect(standing(result)).toBeDefined();

@@ -177,8 +177,11 @@ export async function readInsights(
   // active. Brokerages, not rows: a Plaid item lands one linked_accounts row per
   // sub-account (exchange-public-token writes plaid_item_ref, migration 067), and
   // manual accounts (source 'manual', migration 037) are one book however many
-  // rows hold them. Legacy Plaid rows with no plaid_item_ref (067's backfill
-  // matched on the raw token) key on institution_id (NOT NULL, migration 002).
+  // rows hold them. Plaid rows key on institution_id (NOT NULL, migration 002):
+  // exchange-public-token treats a second item at the same institution as a
+  // duplicate and deletes the old one, and a 9/9 probe found two users holding a
+  // legacy null-ref row and a fresh row at one institution, which an item key
+  // would count twice. plaid_item_ref stays selected for the same reason 067 added it.
   if (isDefaultOpenView && process.env.NEXT_PUBLIC_ONBOARDING_V3 === '1') {
     const { data: accts } = await supabase
       .from('linked_accounts')
@@ -188,7 +191,7 @@ export async function readInsights(
       .limit(100);
     const brokerages = new Set<string>();
     for (const a of accts ?? []) {
-      brokerages.add(a.source === 'manual' ? 'manual' : `plaid:${a.plaid_item_ref ?? `institution:${a.institution_id}`}`);
+      brokerages.add(a.source === 'manual' ? 'manual' : `plaid:${a.institution_id}`);
     }
     if (brokerages.size === 1) {
       transformedInsights.push({
