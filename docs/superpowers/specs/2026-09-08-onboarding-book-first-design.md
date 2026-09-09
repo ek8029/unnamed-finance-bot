@@ -138,7 +138,7 @@ so it renders on Screen 2 under the account list. Never before Screen 1.
 action:
 1. "How much of everything I actually own" (`exposure`)
 2. "Whether the reasons I hold these still hold" (`receipts`)
-3. "What changed in these positions this week" (`changes`)
+3. "What changed in these positions today" (`changes`)
 4. "Overlap between my accounts" (`overlap`), shown only at two or more accounts.
 "Skip" is a text link. Under ten seconds. Every option is deliverable on any book: exposure
 always; receipts with the section 3.3 fallback; changes from the same data the brief reads;
@@ -147,8 +147,8 @@ basis, Plaid only, and Pro), and earnings is not an option (`market_events` has 
 earnings rows today). Nothing offered here may land on a paywall or an empty panel.
 
 **What the answer drives.** If it only reordered one screen it would be a survey.
-- Screen 3: the chosen card renders first; "changes" adds a third card, "what moved this week
-  in these positions", using the brief's data path; "overlap" swaps the exposure sentence for the
+- Screen 3: the chosen card renders first; "changes" adds a third card, "what moved today in
+  these positions", from the delta endpoint (today's largest mover in the book, one item); "overlap" swaps the exposure sentence for the
   cross-account one.
 - Section 6 sidebar: the matching item is the first to light.
 - The first brief leads with the chosen section (see section 6).
