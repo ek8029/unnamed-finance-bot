@@ -140,7 +140,10 @@ beforeEach(() => {
   // second account" item never appears here — this file is testing saved-insight
   // rows, not the standing item, which has its own coverage in
   // tests/insights-standing-item.test.ts.
-  linkedAccounts = [{ id: uuid(90), user_id: USER, is_active: true }, { id: uuid(91), user_id: USER, is_active: true }];
+  linkedAccounts = [
+    { id: uuid(90), user_id: USER, is_active: true, plaid_item_ref: uuid(80), institution_id: uuid(70), source: 'plaid' },
+    { id: uuid(91), user_id: USER, is_active: true, plaid_item_ref: uuid(81), institution_id: uuid(71), source: 'plaid' },
+  ];
   log = []; user = CURRENT_USER; readError = false; authError = false;
   mocks.previewTier = 'pro'; mocks.getUserTier.mockResolvedValue('pro'); mocks.access.mockResolvedValue(false);
   mocks.conviction.mockResolvedValue(new Map()); mocks.thesisContext.mockResolvedValue(new Map());

@@ -1129,7 +1129,7 @@ export async function buildDigestContext(userId: string, db?: SupabaseClient): P
   // a failed read here must never cost the reader the brief itself.
   const [prefRes, briefRes] = await Promise.all([
     sb.from('user_preferences').select('first_look').eq('user_id', userId).maybeSingle(),
-    sb.from('brief_digests').select('id').eq('user_id', userId).limit(1),
+    sb.from('brief_digests').select('id, holdings').eq('user_id', userId).limit(1),
   ]);
   // The one expected error is the column not existing yet (PostgREST PGRST204 / Postgres 42703),
   // which stays silent. Anything else is logged so a broken read does not hide behind "no preference".
@@ -1139,8 +1139,11 @@ export async function buildDigestContext(userId: string, db?: SupabaseClient): P
     if (err && !isMissingColumn(err)) console.error('[digest] first_look read failed', { user: userId, code: err.code, message: err.message });
   }
   const firstLook: string[] | null = prefRes.error ? null : Array.isArray(prefRes.data?.first_look) ? prefRes.data.first_look : null;
-  // brief_digests is UNIQUE(user_id), one row upserted per generation: no row yet means this is the first brief.
-  const isFirstBrief = !briefRes.error && (briefRes.data?.length ?? 0) === 0;
+  // brief_digests is UNIQUE(user_id), one row upserted per generation. No row yet, or only the generic
+  // digest's row (holdings TEXT[] empty; digest-cron writes it to users without holdings), means this
+  // is the first brief on the reader's own positions.
+  const isFirstBrief = !briefRes.error
+    && !(briefRes.data ?? []).some((r: { holdings?: unknown }) => Array.isArray(r.holdings) && r.holdings.length > 0);
 
   const ranked = buildRanked(structured, slices, firstLook, isFirstBrief);
   const closer = closerText(structured);

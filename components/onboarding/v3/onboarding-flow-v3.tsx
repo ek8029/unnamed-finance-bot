@@ -212,6 +212,9 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
   const step = STEP[phase];
   // The screens take one institution; the oldest import is the one they name.
   const syncingFirst = syncing[0] ?? null;
+  // A failed book read must not pass for an empty book: the reveal would read
+  // no positions and the loop would count none.
+  const bookFailed = !!book.error && !book.loading;
 
   return (
     <>
@@ -241,6 +244,9 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
                   readOnly={readOnly}
                 />
               )}
+              {phase === 'loop' && bookFailed && (
+                <p role="status" className="mb-4 text-[13px] text-[var(--color-text-secondary)]">{book.error}</p>
+              )}
               {phase === 'loop' && (
                 <AccountLoop
                   accounts={book.accounts}
@@ -258,7 +264,16 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
                   readOnly={readOnly}
                 />
               )}
-              {phase === 'reveal' && (
+              {phase === 'reveal' && bookFailed && (
+                <section>
+                  <p role="alert" className="text-[15px] text-[var(--color-text-primary)]">{V3_COPY.reveal.error}</p>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <button type="button" className="min-h-[44px] rounded-md border border-[var(--color-border-base)] px-4 text-[13px] text-[var(--color-text-primary)]" onClick={() => void book.refetch()}>{V3_COPY.reveal.retry}</button>
+                    <button type="button" className="helm-button min-h-[44px]" onClick={onOpenTerminal}>{V3_COPY.reveal.primary}</button>
+                  </div>
+                </section>
+              )}
+              {phase === 'reveal' && !bookFailed && (
                 <BookReveal
                   holdings={book.holdings}
                   accounts={book.accounts.length}

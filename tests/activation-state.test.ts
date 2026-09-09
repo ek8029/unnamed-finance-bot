@@ -56,10 +56,14 @@ describe('persisted activation state', () => {
         { id: 'la3', user_id: 'a', is_active: false, source: 'plaid' },
         { id: 'la4', user_id: 'other', is_active: true, source: 'plaid' },
       ],
-      brief_digests: [{ id: 'b1', user_id: 'a' }],
+      brief_digests: [{ id: 'b1', user_id: 'a', holdings: ['NVDA', 'AAPL'] }],
     }), 'a');
     expect(s.accountCount).toBe(2);
     expect(s.hasBrief).toBe(true);
+  });
+  it('does not count the generic brief, whose holdings are empty, as a brief', async () => {
+    const s = await readActivationState(clientFor({ brief_digests: [{ id: 'b1', user_id: 'a', holdings: [] }] }), 'a');
+    expect(s.hasBrief).toBe(false);
   });
   it('reports zero accounts and no brief for a fresh user', async () => {
     const s = await readActivationState(clientFor({}), 'a');

@@ -149,13 +149,23 @@ describe('buildDigestContext: the first-look lead through the real pack', () => 
     expect(firstLookErrors()).toHaveLength(0);
   });
 
-  it('(c) uses the normal order once a brief_digests row exists, preference or not', async () => {
+  it('(c) uses the normal order once a brief on the reader\'s own positions exists, preference or not', async () => {
     const tables = bookTables();
     tables.user_preferences = [{ user_id: USER, first_look: ['receipts'] }];
-    tables.brief_digests = [{ id: 'bd1', user_id: USER }];
+    tables.brief_digests = [{ id: 'bd1', user_id: USER, holdings: ['NVDA', 'AAPL'] }];
     const ctx = await buildDigestContext(USER, fakeDb(tables));
     expect(ctx.ranked.map((r) => r.cat)).toEqual(['a', 'b']);
     expect(ctx.ranked[0].score).toBe(CAT_BONUS.a);
+    expect(firstLookErrors()).toHaveLength(0);
+  });
+
+  it('(d) still leads when the only row is the generic digest (holdings empty): that was not a brief on this book', async () => {
+    const tables = bookTables();
+    tables.user_preferences = [{ user_id: USER, first_look: ['receipts'] }];
+    tables.brief_digests = [{ id: 'bd1', user_id: USER, holdings: [] }];
+    const ctx = await buildDigestContext(USER, fakeDb(tables));
+    expect(ctx.ranked.map((r) => r.cat)).toEqual(['b', 'a']);
+    expect(ctx.ranked[0].score).toBe(CAT_BONUS.b + FIRST_LOOK_BONUS);
     expect(firstLookErrors()).toHaveLength(0);
   });
 

@@ -1,10 +1,12 @@
 // tests/insights-standing-item.test.ts
 // Task 13: a standing (non-row) Actions item, "Add your second account", carried
-// while the user has exactly one active linked_accounts row and the view is the
-// default open one. hasThesisAccess is mocked false so the thesis-interlace branch
-// (getConvictionByTicker / getThesisContextForActions / the holdings lookup) never
-// runs — those are exercised by other tests, not this one.
-import { describe, it, expect, vi } from 'vitest';
+// while the user has exactly one active brokerage, the onboarding v3 flag is on,
+// and the view is the default open one. A brokerage is one Plaid item (however
+// many linked_accounts rows its sub-accounts occupy) or the manual book (however
+// many rows hold it). hasThesisAccess is mocked false so the thesis-interlace
+// branch (getConvictionByTicker / getThesisContextForActions / the holdings
+// lookup) never runs; those are exercised by other tests, not this one.
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { readInsights } from '@/lib/insights-reader';
 import { V3_COPY } from '@/lib/onboarding/v3-copy';
 
@@ -31,6 +33,13 @@ type InsightRow = {
   related_entity_ids: string[] | null;
 };
 
+/** The columns readInsights selects from linked_accounts: plaid_item_ref (067, nullable
+ * FK to plaid_items), institution_id (002, NOT NULL), source (037, 'plaid' | 'manual'). */
+type AccountRow = { id: string; plaid_item_ref: string | null; institution_id: string; source: 'plaid' | 'manual' };
+
+const plaidRow = (id: string, item: string | null, institution = 'inst-1'): AccountRow => ({ id, plaid_item_ref: item, institution_id: institution, source: 'plaid' });
+const manualRow = (id: string): AccountRow => ({ id, plaid_item_ref: null, institution_id: 'inst-manual', source: 'manual' });
+
 const realRows: InsightRow[] = [
   {
     id: 'i1', insight_type: 'tax', priority: 'high', title: 'Harvest a loss', description: 'd1',
@@ -51,13 +60,13 @@ const realRows: InsightRow[] = [
  * - insights: any chain of .select/.eq/.in/.or/.gt/.order eventually resolves at .limit()
  * - linked_accounts: rows are returned ONLY once BOTH .eq('is_active', true) and
  *   .eq('user_id', accountOwnerId) have been called on the chain (matches the
- *   linked_accounts.is_active boolean column and the RLS-equivalent user scope) —
+ *   linked_accounts.is_active boolean column and the RLS-equivalent user scope):
  *   an implementation that dropped either filter would get rows back regardless
  *   of the real is_active state or of whose accounts they are, which this mock
  *   refuses to do. accountOwnerId defaults to the test user, so passing a
  *   different id models accounts that exist but belong to someone else.
  */
-function fakeSupabase(insightsRows: InsightRow[], activeAccountCount: number, accountOwnerId: string = user.id) {
+function fakeSupabase(insightsRows: InsightRow[], activeAccounts: AccountRow[], accountOwnerId: string = user.id) {
   return {
     from: (table: string) => {
       if (table === 'insights') {
@@ -86,9 +95,7 @@ function fakeSupabase(insightsRows: InsightRow[], activeAccountCount: number, ac
           },
           limit: () =>
             Promise.resolve({
-              data: sawActiveFilter && sawUserFilter
-                ? Array.from({ length: activeAccountCount }, (_, i) => ({ id: `acct-${i}` }))
-                : [],
+              data: sawActiveFilter && sawUserFilter ? activeAccounts : [],
               error: null,
             }),
         });
@@ -99,9 +106,14 @@ function fakeSupabase(insightsRows: InsightRow[], activeAccountCount: number, ac
   };
 }
 
+const standing = (result: { id: string }[]) => result.find(r => r.id === 'standing-second-account');
+
 describe('readInsights standing "second account" item', () => {
-  it('one active account, default options: exactly one standing item', async () => {
-    const supabase = fakeSupabase([], 1);
+  beforeEach(() => { vi.stubEnv('NEXT_PUBLIC_ONBOARDING_V3', '1'); });
+  afterEach(() => { vi.unstubAllEnvs(); });
+
+  it('one Plaid item, default options: exactly one standing item', async () => {
+    const supabase = fakeSupabase([], [plaidRow('acct-0', 'item-a')]);
     const result = await readInsights(supabase as never, user);
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({
@@ -114,40 +126,76 @@ describe('readInsights standing "second account" item', () => {
     });
   });
 
-  it('two active accounts: no standing item', async () => {
-    const supabase = fakeSupabase([], 2);
+  it('three rows sharing one plaid_item_ref are one brokerage: the standing item shows', async () => {
+    const supabase = fakeSupabase([], [plaidRow('acct-0', 'item-a'), plaidRow('acct-1', 'item-a'), plaidRow('acct-2', 'item-a')]);
     const result = await readInsights(supabase as never, user);
-    expect(result.find(r => r.id === 'standing-second-account')).toBeUndefined();
+    expect(result).toHaveLength(1);
+    expect(standing(result)).toBeDefined();
+  });
+
+  it('two manual rows are one book: the standing item shows', async () => {
+    const supabase = fakeSupabase([], [manualRow('acct-0'), manualRow('acct-1')]);
+    const result = await readInsights(supabase as never, user);
+    expect(result).toHaveLength(1);
+    expect(standing(result)).toBeDefined();
+  });
+
+  it('two Plaid items: no standing item', async () => {
+    const supabase = fakeSupabase([], [plaidRow('acct-0', 'item-a'), plaidRow('acct-1', 'item-b', 'inst-2')]);
+    const result = await readInsights(supabase as never, user);
+    expect(standing(result)).toBeUndefined();
+    expect(result).toHaveLength(0);
+  });
+
+  it('one Plaid item plus a manual account: two brokerages, no standing item', async () => {
+    const supabase = fakeSupabase([], [plaidRow('acct-0', 'item-a'), manualRow('acct-1')]);
+    const result = await readInsights(supabase as never, user);
+    expect(standing(result)).toBeUndefined();
+    expect(result).toHaveLength(0);
+  });
+
+  it('legacy Plaid rows with no plaid_item_ref count by institution: two institutions, no standing item', async () => {
+    const supabase = fakeSupabase([], [plaidRow('acct-0', null, 'inst-1'), plaidRow('acct-1', null, 'inst-2')]);
+    const result = await readInsights(supabase as never, user);
+    expect(standing(result)).toBeUndefined();
+    expect(result).toHaveLength(0);
+  });
+
+  it('flag unset: no standing item even with one brokerage', async () => {
+    vi.stubEnv('NEXT_PUBLIC_ONBOARDING_V3', '');
+    const supabase = fakeSupabase([], [plaidRow('acct-0', 'item-a')]);
+    const result = await readInsights(supabase as never, user);
+    expect(standing(result)).toBeUndefined();
     expect(result).toHaveLength(0);
   });
 
   it('the one active account belongs to a different user: no standing item', async () => {
-    const supabase = fakeSupabase([], 1, 'someone-else');
+    const supabase = fakeSupabase([], [plaidRow('acct-0', 'item-a')], 'someone-else');
     const result = await readInsights(supabase as never, user);
-    expect(result.find(r => r.id === 'standing-second-account')).toBeUndefined();
+    expect(standing(result)).toBeUndefined();
     expect(result).toHaveLength(0);
   });
 
-  it('status "done": no standing item even with one active account', async () => {
-    const supabase = fakeSupabase([], 1);
+  it('status "done": no standing item even with one brokerage', async () => {
+    const supabase = fakeSupabase([], [plaidRow('acct-0', 'item-a')]);
     const result = await readInsights(supabase as never, user, { status: 'done' });
-    expect(result.find(r => r.id === 'standing-second-account')).toBeUndefined();
+    expect(standing(result)).toBeUndefined();
   });
 
-  it('archived flag set: no standing item even with one active account', async () => {
-    const supabase = fakeSupabase([], 1);
+  it('archived flag set: no standing item even with one brokerage', async () => {
+    const supabase = fakeSupabase([], [plaidRow('acct-0', 'item-a')]);
     const result = await readInsights(supabase as never, user, { archived: 'true' });
-    expect(result.find(r => r.id === 'standing-second-account')).toBeUndefined();
+    expect(standing(result)).toBeUndefined();
   });
 
-  it('status "archived": no standing item even with one active account', async () => {
-    const supabase = fakeSupabase([], 1);
+  it('status "archived": no standing item even with one brokerage', async () => {
+    const supabase = fakeSupabase([], [plaidRow('acct-0', 'item-a')]);
     const result = await readInsights(supabase as never, user, { status: 'archived' });
-    expect(result.find(r => r.id === 'standing-second-account')).toBeUndefined();
+    expect(standing(result)).toBeUndefined();
   });
 
-  it('appears alongside two real insight rows, and the client sorts it — this reader does not', async () => {
-    const supabase = fakeSupabase(realRows, 1);
+  it('appears alongside two real insight rows, and the client sorts it; this reader does not', async () => {
+    const supabase = fakeSupabase(realRows, [plaidRow('acct-0', 'item-a')]);
     const result = await readInsights(supabase as never, user);
     expect(result).toHaveLength(3);
     const ids = result.map(r => r.id);
@@ -155,7 +203,7 @@ describe('readInsights standing "second account" item', () => {
     expect(ids).toContain('i2');
     expect(ids).toContain('standing-second-account');
     // Not asserting position: sorting into priority order is the client's job
-    // (actions-client.tsx), not readInsights's — the standing item is appended
+    // (actions-client.tsx), not readInsights's; the standing item is appended
     // wherever the map/filter pipeline happens to leave it.
   });
 });

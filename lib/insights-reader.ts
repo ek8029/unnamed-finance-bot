@@ -173,10 +173,24 @@ export async function readInsights(
   // Standing item (Task 13): not an insights row, so it carries no PATCH-able id
   // and the client must not render dismiss/snooze/archive for it. Shown only in
   // the default open view (isDefaultOpenView, set above alongside the branch it
-  // describes) while exactly one account is active.
-  if (isDefaultOpenView) {
-    const { data: accts } = await supabase.from('linked_accounts').select('id').eq('user_id', user.id).eq('is_active', true).limit(2);
-    if ((accts?.length ?? 0) === 1) {
+  // describes), behind the onboarding v3 flag, while exactly one brokerage is
+  // active. Brokerages, not rows: a Plaid item lands one linked_accounts row per
+  // sub-account (exchange-public-token writes plaid_item_ref, migration 067), and
+  // manual accounts (source 'manual', migration 037) are one book however many
+  // rows hold them. Legacy Plaid rows with no plaid_item_ref (067's backfill
+  // matched on the raw token) key on institution_id (NOT NULL, migration 002).
+  if (isDefaultOpenView && process.env.NEXT_PUBLIC_ONBOARDING_V3 === '1') {
+    const { data: accts } = await supabase
+      .from('linked_accounts')
+      .select('id, plaid_item_ref, institution_id, source')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .limit(100);
+    const brokerages = new Set<string>();
+    for (const a of accts ?? []) {
+      brokerages.add(a.source === 'manual' ? 'manual' : `plaid:${a.plaid_item_ref ?? `institution:${a.institution_id}`}`);
+    }
+    if (brokerages.size === 1) {
       transformedInsights.push({
         id: 'standing-second-account', type: 'portfolio', priority: 'low',
         title: V3_COPY.inbox.secondAccountTitle, description: V3_COPY.inbox.secondAccountBody,
