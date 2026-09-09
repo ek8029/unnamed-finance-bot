@@ -29,7 +29,7 @@ own book, thesis adoption waits for the brief, demo is removed.
 ## 2. Scope
 
 In: the flow below, its events, the Portfolio empty state, sidebar dimming, the brief promise,
-the `PlaidLinkButton` prop change in 3.1. Out: pricing, paywall, push, iOS, the brief's content.
+the `PlaidLinkButton` prop change in 3.1, the first-look question in 3.4 and its column. Out: pricing, paywall, push, iOS, the brief's content.
 
 ## 3. Flow
 
@@ -125,6 +125,41 @@ days." Never a fabricated verdict.
 Primary: "Open the terminal" → `/dashboard/portfolio`. Under it: "The brief on these positions
 lands at 9:15 ET tomorrow."
 
+### 3.4 First look: one question in the dead time
+
+Added 9/8 after review. A single skippable question that orders what the user sees, asked where
+there is already a wait. It never gates anything and never adds a screen.
+
+**Where.** After a Plaid connect, the Screen 3 loading state ("Reading your book") lasts one to
+six minutes of sync. The question renders inside that state. On the manual path there is no wait,
+so it renders on Screen 2 under the account list. Never before Screen 1.
+
+**Copy.** Heading: "What do you want to see first?" Multi-select, one line each, no verbs of
+action:
+1. "How much of everything I actually own" (`exposure`)
+2. "Whether the reasons I hold these still hold" (`receipts`)
+3. "What changed in these positions this week" (`changes`)
+4. "Overlap between my accounts" (`overlap`), shown only at two or more accounts.
+"Skip" is a text link. Under ten seconds. Every option is deliverable on any book: exposure
+always; receipts with the section 3.3 fallback; changes from the same data the brief reads;
+overlap from the look-through across accounts. Tax-loss harvesting is not an option (needs cost
+basis, Plaid only, and Pro), and earnings is not an option (`market_events` has no upcoming
+earnings rows today). Nothing offered here may land on a paywall or an empty panel.
+
+**What the answer drives.** If it only reordered one screen it would be a survey.
+- Screen 3: the chosen card renders first; "changes" adds a third card, "what moved this week
+  in these positions", using the brief's data path; "overlap" swaps the exposure sentence for the
+  cross-account one.
+- Section 6 sidebar: the matching item is the first to light.
+- The first brief leads with the chosen section (see section 6).
+- Actions inbox: the standing "Add your second account" item moves below the chosen item.
+
+**Storage.** `user_preferences.first_look TEXT[] NULL` (migration 077; the table has
+`UNIQUE(user_id)` and a row is created at signup and in the OAuth callback, so this is an
+`update`, never an insert). Written through `PATCH /api/user/preferences`. Values are the four
+codes above only, validated server side. Not PostHog: it is opt-in and undercounts, and this has
+to exist for every user. The event in section 7 carries only the count, not the choices.
+
 ## 4. What is removed from v2
 
 The scan-first card as the entry (it becomes the receipt on the user's largest holding), the
@@ -153,6 +188,9 @@ to anything. Every figure computed from live data; nothing labelled demo appears
 - **Actions inbox**: while the user has one account, a standing item "Add your second account"
   linking to Accounts; removed at two.
 - **Brief promise**: one banner on Portfolio until the first brief lands.
+- **Brief lead** (`lib/generate-digest.ts`, `lib/digest-cron.ts`): the first brief for a user
+  with `first_look` set leads with the chosen section; later briefs keep the normal order. Confirm
+  the section order is a data path and not prompt text before build.
 
 ## 7. Events
 
@@ -160,7 +198,7 @@ New, all with `flow: 'v3'` and no free text, tickers, institution names or amoun
 `onb3_shown`, `onb3_ask_choice {plaid|manual}`, `onb3_plaid_exit {code}`,
 `onb3_account_added {via, accounts}`, `onb3_loop_continue {accounts, positions}`,
 `onb3_reveal_viewed {top_ticker_covered: bool, synced: bool}`, `onb3_terminal_opened`,
-`onb3_deferred {screen}`. Keep `plaid_link_*`. PostHog is opt-in by default
+`onb3_deferred {screen}`, `onb3_first_look {count, skipped}`. Keep `plaid_link_*`. PostHog is opt-in by default
 (`posthog-provider.tsx:90`), so these fire only for consented users; they explain behaviour,
 they do not count it.
 
@@ -198,7 +236,8 @@ activation after 40 people is under v2's 10%, revert the flag; the spec is wrong
 
 Unit: exposure sentence for one account, two accounts, funds only, no funds; the live preview
 on one, two and three rows; manual retry does not duplicate a lot; every row of the exit table
-routes correctly; copy lint for em dashes, exclamation marks and the advice words. Accessibility:
+routes correctly; `first_look` validation rejects unknown codes and orders the reveal cards for each
+single choice, the empty set, and skip; copy lint for em dashes, exclamation marks and the advice words. Accessibility:
 focus return after each exit, progressbar exposed, 44px targets and 16px inputs, bar segments
 distinguishable without colour, dimmed sidebar items announced as links. E2E in `/testing`: the
 three screens on a no-brokerage account with real reads and zero writes, six viewports via
