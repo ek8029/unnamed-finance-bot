@@ -49,12 +49,15 @@ const realRows: InsightRow[] = [
 /**
  * Chainable fake enforcing two schema constraints:
  * - insights: any chain of .select/.eq/.in/.or/.gt/.order eventually resolves at .limit()
- * - linked_accounts: rows are returned ONLY once .eq('is_active', true) has been called
- *   on the chain (matches the linked_accounts.is_active boolean column) — an
- *   implementation that dropped that filter would get rows back regardless of the
- *   real is_active state, which this mock refuses to do.
+ * - linked_accounts: rows are returned ONLY once BOTH .eq('is_active', true) and
+ *   .eq('user_id', accountOwnerId) have been called on the chain (matches the
+ *   linked_accounts.is_active boolean column and the RLS-equivalent user scope) —
+ *   an implementation that dropped either filter would get rows back regardless
+ *   of the real is_active state or of whose accounts they are, which this mock
+ *   refuses to do. accountOwnerId defaults to the test user, so passing a
+ *   different id models accounts that exist but belong to someone else.
  */
-function fakeSupabase(insightsRows: InsightRow[], activeAccountCount: number) {
+function fakeSupabase(insightsRows: InsightRow[], activeAccountCount: number, accountOwnerId: string = user.id) {
   return {
     from: (table: string) => {
       if (table === 'insights') {
@@ -72,16 +75,18 @@ function fakeSupabase(insightsRows: InsightRow[], activeAccountCount: number) {
       }
       if (table === 'linked_accounts') {
         let sawActiveFilter = false;
+        let sawUserFilter = false;
         const query: Record<string, unknown> = {};
         Object.assign(query, {
           select: () => query,
           eq: (col: string, val: unknown) => {
             if (col === 'is_active' && val === true) sawActiveFilter = true;
+            if (col === 'user_id' && val === accountOwnerId) sawUserFilter = true;
             return query;
           },
           limit: () =>
             Promise.resolve({
-              data: sawActiveFilter
+              data: sawActiveFilter && sawUserFilter
                 ? Array.from({ length: activeAccountCount }, (_, i) => ({ id: `acct-${i}` }))
                 : [],
               error: null,
@@ -111,6 +116,13 @@ describe('readInsights standing "second account" item', () => {
 
   it('two active accounts: no standing item', async () => {
     const supabase = fakeSupabase([], 2);
+    const result = await readInsights(supabase as never, user);
+    expect(result.find(r => r.id === 'standing-second-account')).toBeUndefined();
+    expect(result).toHaveLength(0);
+  });
+
+  it('the one active account belongs to a different user: no standing item', async () => {
+    const supabase = fakeSupabase([], 1, 'someone-else');
     const result = await readInsights(supabase as never, user);
     expect(result.find(r => r.id === 'standing-second-account')).toBeUndefined();
     expect(result).toHaveLength(0);

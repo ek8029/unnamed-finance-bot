@@ -26,6 +26,9 @@ export async function readInsights(
   isPro = false,
 ) {
   const { type, priority, status, archived } = options;
+  // Set inside the matching branch below (single source for "default open view",
+  // reused by the standing-item check further down instead of being recomputed).
+  let isDefaultOpenView = false;
   let query = supabase
     .from('insights')
     .select('id, insight_type, priority, title, description, recommended_action, estimated_impact_amount, source_type, created_at, expires_at, snoozed_until, is_archived, is_dismissed, is_useful, related_entity_type, related_entity_ids')
@@ -51,6 +54,7 @@ export async function readInsights(
     query = query.eq('is_archived', true);
   } else {
     // Default "open" view: non-dismissed, non-archived, and not currently snoozed
+    isDefaultOpenView = true;
     query = query
       .eq('is_dismissed', false)
       .eq('is_archived', false)
@@ -168,9 +172,8 @@ export async function readInsights(
 
   // Standing item (Task 13): not an insights row, so it carries no PATCH-able id
   // and the client must not render dismiss/snooze/archive for it. Shown only in
-  // the default open view (mirrors the branches above: not snoozed/done/archived)
-  // while exactly one account is active.
-  const isDefaultOpenView = status !== 'snoozed' && status !== 'done' && status !== 'archived' && archived !== 'true';
+  // the default open view (isDefaultOpenView, set above alongside the branch it
+  // describes) while exactly one account is active.
   if (isDefaultOpenView) {
     const { data: accts } = await supabase.from('linked_accounts').select('id').eq('user_id', user.id).eq('is_active', true).limit(2);
     if ((accts?.length ?? 0) === 1) {
