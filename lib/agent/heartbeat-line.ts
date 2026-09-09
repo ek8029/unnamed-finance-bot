@@ -34,55 +34,65 @@ function errorsSuffix(detail: Record<string, unknown>, key = 'errors', word = 'e
  * 3 items taken in" / "Prices checked 14:35, 12 names moved, 118 unchanged" /
  * "Judge idle 14:32" / "Judge ran 14:33, 2 done" / "Scans ran 09:15, 40 books".
  * `clock` formats the time; pass it in so the component's ET formatter is reused.
+ * `withTime: false` drops the verb phrase ("checked 14:32" / "ran 14:32") for a
+ * row whose time column already says it: "EDGAR, nothing new", "Judge idle",
+ * "Prices, 12 names moved, 118 unchanged". State words (idle, dry run) stay, and
+ * the no-detail fallback keeps its bare verb ("EDGAR checked") so a line is
+ * never just a label.
  */
-export function describeBeat(hb: { name: WatchName; at: string; detail: Record<string, unknown> }, clock: (iso: string) => string): string {
+export function describeBeat(hb: { name: WatchName; at: string; detail: Record<string, unknown> }, clock: (iso: string) => string, opts: { withTime?: boolean } = {}): string {
+  const withTime = opts.withTime ?? true;
   const label = WATCHER_LABEL[hb.name] ?? hb.name;
   const time = clock(hb.at);
   const detail = hb.detail && typeof hb.detail === 'object' ? hb.detail : {};
-  const fallback = `${label} checked ${time}`;
+  // "EDGAR checked 14:32" with the time; "EDGAR" without (the body follows after a comma).
+  const lead = (verb: 'checked' | 'ran') => (withTime ? `${label} ${verb} ${time}` : label);
+  // A state word stands on its own: "Judge idle 14:32" / "Judge idle".
+  const state = (word: string) => (withTime ? `${label} ${word} ${time}` : `${label} ${word}`);
+  const fallback = withTime ? `${label} checked ${time}` : `${label} checked`;
 
   switch (hb.name) {
     case 'edgar-watch': {
-      if (detail.dry === true) return `${label} dry run ${time}`;
+      if (detail.dry === true) return state('dry run');
       const fresh = count(detail, 'new');
       if (fresh === null) return fallback;
       const queued = count(detail, 'queued') ?? 0;
       const body = fresh === 0 ? 'nothing new' : `${plural(fresh, 'filing')}, ${queued > 0 ? `${plural(queued, 'read')} queued` : 'none queued'}`;
-      return `${label} checked ${time}, ${body}${errorsSuffix(detail)}`;
+      return `${lead('checked')}, ${body}${errorsSuffix(detail)}`;
     }
     case 'news-watch': {
       const inserted = count(detail, 'inserted');
       if (inserted === null) return fallback;
       const body = inserted === 0 ? 'nothing new' : `${plural(inserted, 'item')} taken in`;
-      return `${label} checked ${time}, ${body}${errorsSuffix(detail)}`;
+      return `${lead('checked')}, ${body}${errorsSuffix(detail)}`;
     }
     case 'judge-worker': {
-      if (detail.idle === true) return `${label} idle ${time}`;
+      if (detail.idle === true) return state('idle');
       const done = count(detail, 'done');
       if (done === null) return fallback;
       const body = done === 0 ? 'nothing new' : `${done} done`;
       const capped = detail.spendCapReached === true ? ', spend cap reached' : '';
-      return `${label} ran ${time}, ${body}${errorsSuffix(detail, 'failed', 'failure')}${capped}`;
+      return `${lead('ran')}, ${body}${errorsSuffix(detail, 'failed', 'failure')}${capped}`;
     }
     case 'intraday-prices': {
       const moved = count(detail, 'updatedHoldings');
       if (moved === null) return fallback;
       const unchanged = count(detail, 'skippedHoldings') ?? 0;
       const body = moved === 0 ? 'nothing new' : `${plural(moved, 'name')} moved, ${unchanged} unchanged`;
-      return `${label} checked ${time}, ${body}`;
+      return `${lead('checked')}, ${body}`;
     }
     case 'daily-scans': {
       const users = count(detail, 'users');
       if (users === null) return fallback;
       const insights = count(detail, 'insights') ?? 0;
       const body = insights === 0 ? 'nothing new' : `${plural(insights, 'item')} flagged`;
-      return `${label} ran ${time}, ${plural(users, 'book')}, ${body}`;
+      return `${lead('ran')}, ${plural(users, 'book')}, ${body}`;
     }
     case 'market-morning': {
       const refreshed = count(detail, 'pricesRefreshed');
       if (refreshed === null) return fallback;
       const body = refreshed === 0 ? 'nothing new' : `${plural(refreshed, 'price')} refreshed`;
-      return `${label} ran ${time}, ${body}${errorsSuffix(detail)}`;
+      return `${lead('ran')}, ${body}${errorsSuffix(detail)}`;
     }
     default:
       return fallback;

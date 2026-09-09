@@ -81,12 +81,33 @@ describe('describeBeat', () => {
     expect(describeBeat(SHAPES[0], (iso) => `at ${iso}`)).toBe(`EDGAR checked at ${at}, nothing new`);
   });
 
-  it('every line: no em dash, no exclamation mark, no advice language', () => {
-    const lines = [
-      ...SHAPES.map((s) => describeBeat(s, clock)),
-      ...WATCH_NAMES.map((name) => describeBeat(hb(name, {}), clock)),
-    ];
-    expect(lines.length).toBeGreaterThan(20);
+  it('withTime: false drops the verb phrase, keeps state words, keeps the bare verb in the fallback', () => {
+    const noTime = { withTime: false };
+    expect(describeBeat(SHAPES[0], clock, noTime)).toBe('EDGAR, nothing new');
+    expect(describeBeat(SHAPES[1], clock, noTime)).toBe('EDGAR, 2 filings, 2 reads queued');
+    expect(describeBeat(SHAPES[2], clock, noTime)).toBe('EDGAR, 1 filing, none queued, 1 error');
+    expect(describeBeat(SHAPES[3], clock, noTime)).toBe('EDGAR dry run');
+    expect(describeBeat(SHAPES[5], clock, noTime)).toBe('News, 3 items taken in');
+    expect(describeBeat(SHAPES[7], clock, noTime)).toBe('Judge idle');
+    expect(describeBeat(SHAPES[9], clock, noTime)).toBe('Judge, 2 done');
+    expect(describeBeat(SHAPES[11], clock, noTime)).toBe('Judge, nothing new, spend cap reached');
+    expect(describeBeat(SHAPES[13], clock, noTime)).toBe('Prices, 12 names moved, 118 unchanged');
+    expect(describeBeat(SHAPES[15], clock, noTime)).toBe('Scans, 40 books, 3 items flagged');
+    expect(describeBeat(SHAPES[18], clock, noTime)).toBe('Morning prices, 1 price refreshed, 1 error');
+    for (const name of WATCH_NAMES) expect(describeBeat(hb(name, {}), clock, noTime)).toBe(`${WATCHER_LABEL[name]} checked`);
+    // The time never leaks into the no-time variant; the default and an explicit true are the same line.
+    for (const s of SHAPES) {
+      expect(describeBeat(s, clock, noTime)).not.toContain('14:32');
+      expect(describeBeat(s, clock, { withTime: true })).toBe(describeBeat(s, clock));
+    }
+  });
+
+  it('every line, both variants: no em dash, no exclamation mark, no advice language', () => {
+    const lines = [true, false].flatMap((withTime) => [
+      ...SHAPES.map((s) => describeBeat(s, clock, { withTime })),
+      ...WATCH_NAMES.map((name) => describeBeat(hb(name, {}), clock, { withTime })),
+    ]);
+    expect(lines.length).toBeGreaterThan(40);
     for (const line of lines) {
       expect(line, line).not.toMatch(/[—!]/);
       expect(hasAdviceLanguage(line), line).toBe(false);

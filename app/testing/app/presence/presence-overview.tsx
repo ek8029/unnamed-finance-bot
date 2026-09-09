@@ -21,6 +21,7 @@ import { MONO, money, clock, dayWord, calDay, plural, ago, theses as thesesWord 
 const LAB_COPY = {
   watchingEyebrow: 'Watching · minute by minute',
   watchingEmpty: 'No watcher has checked in yet.',
+  watchingNoRecent: 'No recent checks on record.',
   watchingRecent: 'last 20 checks',
 } as const;
 
@@ -260,14 +261,18 @@ export function PresenceOverview({ email }: { email: string }) {
                 <li key={hb.name} className={`border-b ${RULE} py-2 text-[12.5px] leading-[1.5] text-[#D4D4D4] last:border-0`}>{describeBeat(hb, clock)}</li>
               ))}
             </ul>
+            {watching.recent.length === 0 ? (
+              <p className="m-0 text-[12px] leading-[1.5] text-[#8A8A8A]">{LAB_COPY.watchingNoRecent}</p>
+            ) : (
             <ol className="m-0 list-none p-0" aria-label="Recent checks">
               {watching.recent.slice(0, 20).map((hb, i) => (
                 <li key={`${hb.name}-${hb.at}`} className={`lab-arrive grid grid-cols-[64px_minmax(0,1fr)] items-baseline gap-x-3 border-b ${RULE} py-2 last:border-0`} style={{ animationDelay: `${120 + i * 60}ms` }}>
                   <span className="text-[10.5px] tabular-nums text-[#5F5F5F]" style={MONO}>{clock(hb.at).replace(' ET', '')}</span>
-                  <span className="text-[12px] leading-[1.5] text-[#8A8A8A]">{describeBeat(hb, clock)}</span>
+                  <span className="text-[12px] leading-[1.5] text-[#8A8A8A]">{describeBeat(hb, clock, { withTime: false })}</span>
                 </li>
               ))}
             </ol>
+            )}
           </div>
         )}
       </section>
