@@ -16,6 +16,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { emptyLedger, mergeLedger, type UsageLedger } from '@/lib/ai/pricing';
 import { beat } from '@/lib/agent/heartbeat';
+import { withRedis, redisKey } from '@/lib/redis';
+import { JUDGE_WAKE_KEY, JUDGE_SLEEP_MS, shouldWakeJudge, minIso } from '@/lib/agent/judge-wake';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, any, any>;
@@ -143,6 +145,19 @@ export function decideClaims(queued: JudgeJobRow[], today: TodayCounts, cfg: Jud
 }
 
 /**
+ * Lower the wake flag to `runAfterIso` if that is earlier than what it holds.
+ * Never raises it: a later enqueue must not push out an earlier job. A missing
+ * Redis is a no-op and the worker polls as it always did.
+ */
+async function lowerWakeFlag(runAfterIso: string): Promise<void> {
+  const key = redisKey(JUDGE_WAKE_KEY);
+  await withRedis(async (r) => {
+    const cur = await r.get<string>(key);
+    await r.set(key, minIso(cur, runAfterIso));
+  }, undefined);
+}
+
+/**
  * Enqueue, ignoring duplicates on (kind, user_id, source_key). Returns how many
  * rows were actually new; the pollers use that number for their log line.
  */
@@ -162,6 +177,8 @@ export async function enqueueJudgeJobs(db: Db, jobs: NewJudgeJob[]): Promise<{ i
     .upsert(rows, { onConflict: 'kind,user_id,source_key', ignoreDuplicates: true })
     .select('id');
   if (error) return { inserted: 0, error: error.message };
+  // New rows carry run_after default now() (migration 072), so the flag drops to now.
+  await lowerWakeFlag(new Date().toISOString());
   return { inserted: data?.length ?? 0, error: null };
 }
 
@@ -195,8 +212,13 @@ export interface ClaimResult {
  * queued -> running update on the row, so two workers that overlap can never
  * run the same job; they can run different jobs side by side, which is the
  * most concurrency the queue ever has.
+ *
+ * `flagAtTickStart` is the wake flag the worker read before its first database
+ * statement. When the pending select comes back empty the flag is parked
+ * JUDGE_SLEEP_MS ahead, but only if it still reads the same: an enqueue that
+ * lowered it during this tick wins, so its job is not put to sleep.
  */
-export async function claimJudgeJobs(db: Db, cfg: JudgeConfig, now: Date = new Date()): Promise<ClaimResult> {
+export async function claimJudgeJobs(db: Db, cfg: JudgeConfig, now: Date = new Date(), flagAtTickStart?: string | null): Promise<ClaimResult> {
   const nowIso = now.toISOString();
   const today = await countToday(db, etDayStartIso(now));
   const { data: queuedRaw } = await db
@@ -207,6 +229,14 @@ export async function claimJudgeJobs(db: Db, cfg: JudgeConfig, now: Date = new D
     .order('created_at', { ascending: true })
     .limit(cfg.batch * 4);
   const queued = (queuedRaw ?? []) as JudgeJobRow[];
+  if (queued.length === 0) {
+    await withRedis(async (r) => {
+      const key = redisKey(JUDGE_WAKE_KEY);
+      const cur = await r.get<string>(key);
+      if ((cur ?? null) !== (flagAtTickStart ?? null)) return;
+      await r.set(key, new Date(now.getTime() + JUDGE_SLEEP_MS).toISOString());
+    }, undefined);
+  }
   const { claim, capped } = decideClaims(queued, today, cfg);
 
   for (const c of capped) {
@@ -255,15 +285,17 @@ export function dominantModel(ledger: UsageLedger | undefined): string | null {
 export async function finishJudgeJob(db: Db, job: JudgeJobRow, outcome: JudgeJobOutcome, now: Date = new Date()): Promise<void> {
   const nowIso = now.toISOString();
   if (outcome.status === 'deferred') {
+    const runAfter = new Date(now.getTime() + (outcome.deferMs ?? 180_000)).toISOString();
     await db
       .from('judge_jobs')
       .update({
         status: 'queued',
         started_at: null,
-        run_after: new Date(now.getTime() + (outcome.deferMs ?? 180_000)).toISOString(),
+        run_after: runAfter,
         error: outcome.error ?? null,
       })
       .eq('id', job.id);
+    await lowerWakeFlag(runAfter);
     return;
   }
   const l = outcome.ledger;
@@ -313,6 +345,8 @@ export interface WorkerSummary {
   spentTodayUsd: number;
   ledger: UsageLedger;
   ms: number;
+  /** True when the wake flag said no queued row is due yet; nothing was read or written. */
+  idle?: boolean;
 }
 
 /**
@@ -339,6 +373,17 @@ export async function runJudgeWorker(
     return summary;
   }
 
+  // The wake flag comes before the first database read. A future flag means
+  // every queued row has a later run_after, so the tick opens no statement at
+  // all, not even the heartbeat. A missing or unreadable flag polls as before.
+  const flag = await withRedis((r) => r.get<string>(redisKey(JUDGE_WAKE_KEY)), null);
+  if (!shouldWakeJudge(flag, started)) {
+    log.push(`[judge] idle: no queued work before ${flag}`);
+    summary.idle = true;
+    summary.ms = now().getTime() - started.getTime();
+    return summary;
+  }
+
   // The dollar cap comes before the claim so a capped day claims nothing and
   // the queue simply waits for midnight ET.
   summary.spentTodayUsd = await paidSpendSince(db, etDayStartIso(started));
@@ -349,7 +394,7 @@ export async function runJudgeWorker(
     return summary;
   }
 
-  const claim = await claimJudgeJobs(db, cfg, started);
+  const claim = await claimJudgeJobs(db, cfg, started, flag);
   summary.ranToday = claim.ranToday;
   summary.claimed = claim.claimed.length;
   summary.capped = claim.capped;

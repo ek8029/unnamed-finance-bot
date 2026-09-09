@@ -4,8 +4,10 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
   readJudgeConfig, etDayStartIso, decideClaims, runJudgeWorker, dominantModel,
+  enqueueJudgeJobs, claimJudgeJobs, finishJudgeJob,
   type JudgeJobRow, type JudgeConfig,
 } from '@/lib/agent/judge-queue';
+import { JUDGE_WAKE_KEY, JUDGE_SLEEP_MS } from '@/lib/agent/judge-wake';
 import { emptyLedger, recordUsage } from '@/lib/ai/pricing';
 
 // Keep the auth test independent of provider initialization. The real route
@@ -14,6 +16,21 @@ const workerBoundary = vi.hoisted(() => ({ db: vi.fn(), judge: vi.fn(), receipts
 vi.mock('@/lib/supabase/server', () => ({ createServiceClient: workerBoundary.db }));
 vi.mock('@/lib/agent/judge-run', () => ({ runJudgeJob: workerBoundary.judge }));
 vi.mock('@/lib/push/send', () => ({ checkPushReceipts: workerBoundary.receipts }));
+
+// An in-memory Redis behind withRedis, so the wake flag is observable per test.
+const redisMock = vi.hoisted(() => ({ store: new Map<string, string>() }));
+vi.mock('@/lib/redis', () => {
+  const r = {
+    get: async (k: string) => redisMock.store.get(k) ?? null,
+    set: async (k: string, v: string) => { redisMock.store.set(k, String(v)); return 'OK'; },
+  };
+  return {
+    withRedis: async <T,>(fn: (r: unknown) => Promise<T>, fallback: T) => { try { return await fn(r); } catch { return fallback; } },
+    redisKey: (...parts: string[]) => ['helm', ...parts].join(':'),
+  };
+});
+const WAKE = `helm:${JUDGE_WAKE_KEY}`;
+beforeEach(() => redisMock.store.clear());
 
 const CFG: JudgeConfig = { enabled: true, dailyCap: 200, userCap: 25, batch: 10, dailyUsd: 5 };
 
@@ -108,6 +125,103 @@ describe('runJudgeWorker', () => {
     expect(s.claimed).toBe(0);
     expect(log.some((l) => l.includes('daily spend cap reached'))).toBe(true);
     expect(tables).toContain('watch_heartbeats');
+  });
+});
+
+// Every chained call returns the same thenable, which resolves to `result`.
+function chain(result: { data: unknown; error: unknown }, tables?: string[]) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const p: any = new Proxy({}, {
+    get: (_t, prop) => (prop === 'then' ? (res: (v: unknown) => unknown) => res(result) : () => p),
+  });
+  return { from: (t: string) => { tables?.push(t); return p; } };
+}
+
+describe('judge wake flag', () => {
+  const NOW = new Date('2026-09-09T14:00:00.000Z');
+  const clock = () => NOW;
+
+  it('a future flag returns idle before the first database read', async () => {
+    redisMock.store.set(WAKE, '2026-09-09T14:30:00.000Z');
+    const db = { from: () => { throw new Error('database touched while the flag was in the future'); } };
+    const log: string[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const s = await runJudgeWorker(db as any, CFG, async () => { throw new Error('a job ran while idle'); }, log, clock);
+    expect(s.idle).toBe(true);
+    expect(s.claimed).toBe(0);
+    expect(log[0]).toContain('idle');
+    expect(log[0]).toContain('2026-09-09T14:30:00.000Z');
+  });
+
+  it('a past flag polls the database as before', async () => {
+    redisMock.store.set(WAKE, '2026-09-09T13:59:00.000Z');
+    const tables: string[] = [];
+    const db = chain({ data: [{ cost_usd: '5' }], error: null }, tables);
+    const log: string[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const s = await runJudgeWorker(db as any, CFG, async () => ({ status: 'done' }), log, clock);
+    expect(s.idle).toBeUndefined();
+    expect(tables).toContain('judge_jobs');
+  });
+
+  it('a missing flag polls the database as before', async () => {
+    const tables: string[] = [];
+    const db = chain({ data: [{ cost_usd: '5' }], error: null }, tables);
+    const log: string[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const s = await runJudgeWorker(db as any, CFG, async () => ({ status: 'done' }), log, clock);
+    expect(s.idle).toBeUndefined();
+    expect(tables).toContain('judge_jobs');
+  });
+
+  it('enqueue lowers the flag to now and never raises an earlier one', async () => {
+    const db = chain({ data: [{ id: '1' }], error: null });
+    const before = Date.now();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const r = await enqueueJudgeJobs(db as any, [{ kind: 'news', user_id: 'u', thesis_id: 't', ticker: 'NVDA', source_key: 'k' }]);
+    expect(r).toEqual({ inserted: 1, error: null });
+    const set = redisMock.store.get(WAKE);
+    expect(set).toBeDefined();
+    expect(Date.parse(set as string)).toBeGreaterThanOrEqual(before);
+    expect(Date.parse(set as string)).toBeLessThanOrEqual(Date.now());
+
+    redisMock.store.set(WAKE, '2020-01-01T00:00:00.000Z');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await enqueueJudgeJobs(db as any, [{ kind: 'news', user_id: 'u', thesis_id: 't', ticker: 'NVDA', source_key: 'k2' }]);
+    expect(redisMock.store.get(WAKE)).toBe('2020-01-01T00:00:00.000Z');
+  });
+
+  it('a failed upsert leaves the flag alone', async () => {
+    const db = chain({ data: null, error: { message: 'boom' } });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const r = await enqueueJudgeJobs(db as any, [{ kind: 'news', user_id: 'u', thesis_id: 't', ticker: 'NVDA', source_key: 'k' }]);
+    expect(r.error).toBe('boom');
+    expect(redisMock.store.has(WAKE)).toBe(false);
+  });
+
+  it('an empty pending select parks the flag one hour ahead', async () => {
+    const db = chain({ data: [], error: null });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const c = await claimJudgeJobs(db as any, CFG, NOW, null);
+    expect(c.claimed).toEqual([]);
+    expect(redisMock.store.get(WAKE)).toBe(new Date(NOW.getTime() + JUDGE_SLEEP_MS).toISOString());
+  });
+
+  it('skips the park when the flag changed since the tick started', async () => {
+    // The tick read a future flag; an enqueue lowered it to now during the select.
+    redisMock.store.set(WAKE, '2026-09-09T14:00:00.000Z');
+    const db = chain({ data: [], error: null });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await claimJudgeJobs(db as any, CFG, NOW, '2026-09-09T15:00:00.000Z');
+    expect(redisMock.store.get(WAKE)).toBe('2026-09-09T14:00:00.000Z');
+  });
+
+  it('a deferred requeue lowers the flag to the run_after it wrote', async () => {
+    redisMock.store.set(WAKE, '2026-09-10T14:00:00.000Z');
+    const db = chain({ data: null, error: null });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await finishJudgeJob(db as any, job('a', 'u1', '2026-09-09T13:00:00Z'), { status: 'deferred', deferMs: 120_000 }, NOW);
+    expect(redisMock.store.get(WAKE)).toBe('2026-09-09T14:02:00.000Z');
   });
 });
 
