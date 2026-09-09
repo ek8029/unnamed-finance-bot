@@ -381,6 +381,7 @@ export async function GET() {
       account_name: account.account_name,
       balance: Number(account.current_balance),
       sync_status: account.sync_status,
+      source: account.source,
       last_synced_at: account.last_synced_at,
     }));
 

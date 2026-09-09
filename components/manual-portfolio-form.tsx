@@ -15,6 +15,9 @@ interface ManualPortfolioFormProps {
   seedRows?: { ticker: string; shares: number; costBasis: number | null }[];
   onComplete?: () => void;
   compact?: boolean;
+  /** Rows with a ticker and a positive share count, on every change. The form
+   *  stays the owner of its rows; this is a read-out for a live preview. */
+  onRowsChange?: (rows: { ticker: string; shares: number }[]) => void;
 }
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
@@ -30,7 +33,7 @@ function createEmptyRow(): HoldingRow {
   return { id: crypto.randomUUID(), ticker: '', shares: '', costBasis: '' };
 }
 
-export function ManualPortfolioForm({ onComplete, compact = false, readOnly = false, seedRows }: ManualPortfolioFormProps) {
+export function ManualPortfolioForm({ onComplete, compact = false, readOnly = false, seedRows, onRowsChange }: ManualPortfolioFormProps) {
   const [rows, setRows] = useState<HoldingRow[]>(() =>
     seedRows?.length
       ? seedRows.map(r => ({
@@ -58,6 +61,16 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
   const savingRef = useRef(false);
   const { disableDemo } = useDemo();
   const editingLocked = saving || needsRetry || needsAuth || !identityReady || recoveryError;
+  // Read through a ref so an inline callback from the parent cannot loop the effect.
+  const onRowsChangeRef = useRef(onRowsChange);
+  onRowsChangeRef.current = onRowsChange;
+  useEffect(() => {
+    onRowsChangeRef.current?.(
+      rows
+        .filter(r => r.ticker.trim() !== '' && Number(r.shares) > 0)
+        .map(r => ({ ticker: r.ticker.trim(), shares: Number(r.shares) })),
+    );
+  }, [rows]);
 
   useEffect(() => {
     if (readOnly) return;
