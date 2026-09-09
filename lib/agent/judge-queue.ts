@@ -230,11 +230,22 @@ export async function claimJudgeJobs(db: Db, cfg: JudgeConfig, now: Date = new D
     .limit(cfg.batch * 4);
   const queued = (queuedRaw ?? []) as JudgeJobRow[];
   if (queued.length === 0) {
+    // Nothing is due, but a deferred row may be minutes out. This path runs
+    // once per wake cycle, not per idle tick, so one more read is fine: park
+    // no later than the earliest queued run_after.
+    const { data: next } = await db
+      .from('judge_jobs')
+      .select('run_after')
+      .eq('status', 'queued')
+      .order('run_after', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    const nextRunAfter = (next as { run_after?: string } | null)?.run_after ?? null;
     await withRedis(async (r) => {
       const key = redisKey(JUDGE_WAKE_KEY);
       const cur = await r.get<string>(key);
       if ((cur ?? null) !== (flagAtTickStart ?? null)) return;
-      await r.set(key, new Date(now.getTime() + JUDGE_SLEEP_MS).toISOString());
+      await r.set(key, minIso(nextRunAfter, new Date(now.getTime() + JUDGE_SLEEP_MS).toISOString()));
     }, undefined);
   }
   const { claim, capped } = decideClaims(queued, today, cfg);

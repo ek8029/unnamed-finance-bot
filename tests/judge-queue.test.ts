@@ -207,6 +207,32 @@ describe('judge wake flag', () => {
     expect(redisMock.store.get(WAKE)).toBe(new Date(NOW.getTime() + JUDGE_SLEEP_MS).toISOString());
   });
 
+  it('parks no later than the earliest queued run_after when nothing is due yet', async () => {
+    // A deferred job sits 3 minutes out: the due select is empty, but the
+    // flag must land at its run_after, not an hour ahead.
+    const due = new Date(NOW.getTime() + 180_000).toISOString();
+    const db = {
+      from: () => {
+        const calls: string[] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const p: any = new Proxy({}, {
+          get: (_t, prop) => {
+            if (prop === 'then') {
+              const result = calls.includes('maybeSingle') ? { data: { run_after: due }, error: null } : { data: [], error: null };
+              return (res: (v: unknown) => unknown) => res(result);
+            }
+            return (..._a: unknown[]) => { calls.push(String(prop)); return p; };
+          },
+        });
+        return p;
+      },
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const c = await claimJudgeJobs(db as any, CFG, NOW, null);
+    expect(c.claimed).toEqual([]);
+    expect(redisMock.store.get(WAKE)).toBe(due);
+  });
+
   it('skips the park when the flag changed since the tick started', async () => {
     // The tick read a future flag; an enqueue lowered it to now during the select.
     redisMock.store.set(WAKE, '2026-09-09T14:00:00.000Z');
