@@ -266,7 +266,7 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
               )}
               {phase === 'reveal' && bookFailed && (
                 <section>
-                  <p role="alert" className="text-[15px] text-[var(--color-text-primary)]">{V3_COPY.reveal.error}</p>
+                  <p role="alert" className="text-[15px] text-[var(--color-text-primary)]">{V3_COPY.reveal.bookError}</p>
                   <div className="mt-4 flex flex-wrap items-center gap-3">
                     <button type="button" className="min-h-[44px] rounded-md border border-[var(--color-border-base)] px-4 text-[13px] text-[var(--color-text-primary)]" onClick={() => void book.refetch()}>{V3_COPY.reveal.retry}</button>
                     <button type="button" className="helm-button min-h-[44px]" onClick={onOpenTerminal}>{V3_COPY.reveal.primary}</button>

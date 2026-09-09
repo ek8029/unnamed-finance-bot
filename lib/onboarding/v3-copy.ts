@@ -48,6 +48,7 @@ export const V3_COPY = {
     loading: 'Reading your book',
     stillSyncing: (institution: string) => `${institution} is still syncing; this updates when it lands.`,
     error: 'Helm could not read the filings just now.',
+    bookError: 'Helm could not read your accounts just now.',
     retry: 'Retry',
     exposureHeading: 'What you actually own',
     legendDirect: 'Held directly',
