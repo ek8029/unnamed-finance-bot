@@ -115,7 +115,7 @@ and inside funds. Segments differ by pattern as well as colour, and every row ca
 hidden text "{T}: {d}% direct, {i}% inside funds". Then one sentence for the top name: "{T} is
 {p}% of your book: {d}% held directly, {i}% inside {funds}, across {n} accounts. That figure
 comes from every account and the funds inside them." Data: the existing look-through behind the
-True Exposure view. Confirm which module before build; do not write a second one.
+True Exposure toggle on the portfolio page: `computePortfolioLookthrough` in `lib/etf-holdings.ts:632`. Do not write a second one.
 
 **The reason you hold {T}, checked.** The v2 card's data path (`getTickerThesisData`) on the
 largest position: verdict chip, pillar, verbatim quote, source and date, link to the filing.
@@ -229,7 +229,7 @@ activation after 40 people is under v2's 10%, revert the flag; the spec is wrong
   on screen. Section 9 is the kill switch.
 - **Manual books are thin.** Taxes and overlap stay dark until Plaid. The loop screen and the
   inbox item exist to close that, not the ask.
-- **Coverage.** The receipt covers 13 names. The honest fallback is the design, not a bug.
+- **Coverage.** The receipt covers the 40 names in `lib/content/universe.ts`. The honest fallback is the design, not a bug.
 - **Sync timing.** A reveal on a half-synced book must say so (3.3), or it reads as wrong.
 
 ## 11. Testing
