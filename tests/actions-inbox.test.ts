@@ -27,7 +27,7 @@ const NOW = '2026-09-08T12:00:00.000Z';
 const CURRENT_USER = { id: USER, email: 'actions-fixture@example.invalid' };
 type Row = Record<string, unknown>;
 type QueryLog = { table: string; filters: [string, string, unknown][] };
-let rows: Row[], holdings: Row[], user: typeof CURRENT_USER | null;
+let rows: Row[], holdings: Row[], linkedAccounts: Row[], user: typeof CURRENT_USER | null;
 let readError: boolean, authError: boolean;
 let log: QueryLog[];
 
@@ -78,7 +78,7 @@ function validateInsights() {
 }
 
 function query(table: string) {
-  if (table !== 'insights' && table !== 'holdings') throw new Error(`Unexpected table read: ${table}`);
+  if (table !== 'insights' && table !== 'holdings' && table !== 'linked_accounts') throw new Error(`Unexpected table read: ${table}`);
   const entry: QueryLog = { table, filters: [] }; log.push(entry);
   const predicates: ((row: Row) => boolean)[] = [];
   const orders: { key: string; ascending: boolean }[] = [];
@@ -102,7 +102,7 @@ function query(table: string) {
     then: (resolve: (value: unknown) => unknown) => {
       if (table === 'insights') validateInsights();
       if (readError && table === 'insights') return Promise.resolve(resolve({ data: null, error: { code: '57014', message: 'Fixture read failed' } }));
-      const input = table === 'insights' ? rows : holdings;
+      const input = table === 'insights' ? rows : table === 'holdings' ? holdings : linkedAccounts;
       let data = input.filter(row => row.user_id === user?.id && predicates.every(fn => fn(row)));
       data = [...data].sort((a, b) => {
         for (const order of orders) {
@@ -136,6 +136,11 @@ beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn(() => { throw new Error('Unexpected network request'); }));
   vi.spyOn(console, 'error').mockImplementation(() => {});
   rows = []; holdings = [{ id: HOLDING, user_id: USER, ticker: 'NVDA' }];
+  // Two active accounts by default (not one) so the Task 13 standing "add your
+  // second account" item never appears here — this file is testing saved-insight
+  // rows, not the standing item, which has its own coverage in
+  // tests/insights-standing-item.test.ts.
+  linkedAccounts = [{ id: uuid(90), user_id: USER, is_active: true }, { id: uuid(91), user_id: USER, is_active: true }];
   log = []; user = CURRENT_USER; readError = false; authError = false;
   mocks.previewTier = 'pro'; mocks.getUserTier.mockResolvedValue('pro'); mocks.access.mockResolvedValue(false);
   mocks.conviction.mockResolvedValue(new Map()); mocks.thesisContext.mockResolvedValue(new Map());

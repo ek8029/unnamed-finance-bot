@@ -386,8 +386,10 @@ function BasicCard({
   onDismiss: () => void;
   formatCurrency: (n: number) => string;
 }) {
+  const isStanding = action.source === 'standing';
   const meta = priorityMeta[action.priority] || priorityMeta.medium;
-  const cta = primaryCta[action.type] || 'Review';
+  const cta = isStanding ? 'Open Accounts' : (primaryCta[action.type] || 'Review');
+  const href = isStanding ? '/dashboard/accounts' : (ctaHref[action.type] || '/dashboard/portfolio');
   const impactText =
     action.estimated_impact && action.estimated_impact > 0
       ? `Impact · ${formatCurrency(action.estimated_impact)}`
@@ -412,17 +414,19 @@ function BasicCard({
           {impactText}
         </span>
         <div className="flex gap-1.5">
-          <button
-            onClick={onDismiss}
-            disabled={loading}
-            aria-label="Dismiss this action"
-            className="px-[11px] py-1.5 font-mono text-[9px] tracking-[0.08em] uppercase rounded border border-[var(--color-border-base)] bg-[var(--color-surface-tint-faint)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] motion-safe:transition-colors disabled:opacity-50"
-            style={MONO}
-          >
-            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Dismiss'}
-          </button>
+          {!isStanding && (
+            <button
+              onClick={onDismiss}
+              disabled={loading}
+              aria-label="Dismiss this action"
+              className="px-[11px] py-1.5 font-mono text-[9px] tracking-[0.08em] uppercase rounded border border-[var(--color-border-base)] bg-[var(--color-surface-tint-faint)] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] motion-safe:transition-colors disabled:opacity-50"
+              style={MONO}
+            >
+              {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Dismiss'}
+            </button>
+          )}
           <a
-            href={ctaHref[action.type] || '/dashboard/portfolio'}
+            href={href}
             className="inline-flex items-center px-[11px] py-1.5 font-mono text-[9px] font-bold tracking-[0.08em] uppercase rounded border border-[var(--color-gold-border)] bg-[color-mix(in_srgb,var(--color-gold)_10%,transparent)] text-[var(--color-gold)] hover:bg-[color-mix(in_srgb,var(--color-gold)_16%,transparent)] motion-safe:transition-colors"
             style={MONO}
           >

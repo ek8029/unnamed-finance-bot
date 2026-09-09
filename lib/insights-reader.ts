@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { getThesisContextForActions, getConvictionByTicker, type ActionThesisContext, type Conviction } from '@/lib/thesis-conviction';
+import { V3_COPY } from '@/lib/onboarding/v3-copy';
 
 export interface InsightReadOptions {
   type?: string | null;
@@ -164,6 +165,24 @@ export async function readInsights(
       seenNormalized.add(norm);
       return true;
     });
+
+  // Standing item (Task 13): not an insights row, so it carries no PATCH-able id
+  // and the client must not render dismiss/snooze/archive for it. Shown only in
+  // the default open view (mirrors the branches above: not snoozed/done/archived)
+  // while exactly one account is active.
+  const isDefaultOpenView = status !== 'snoozed' && status !== 'done' && status !== 'archived' && archived !== 'true';
+  if (isDefaultOpenView) {
+    const { data: accts } = await supabase.from('linked_accounts').select('id').eq('user_id', user.id).eq('is_active', true).limit(2);
+    if ((accts?.length ?? 0) === 1) {
+      transformedInsights.push({
+        id: 'standing-second-account', type: 'portfolio', priority: 'low',
+        title: V3_COPY.inbox.secondAccountTitle, description: V3_COPY.inbox.secondAccountBody,
+        recommended_action: undefined, estimated_impact: null,
+        source: 'standing', related_entity_type: null, created_at: new Date(0).toISOString(), expires_at: null,
+        snoozed_until: null, is_archived: false, is_dismissed: false, is_useful: null,
+      });
+    }
+  }
 
   return transformedInsights;
 }
