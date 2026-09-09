@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { bookExposure, exposureSentence, previewSentence } from '@/lib/onboarding/v3-exposure';
+import { bookExposure, exposureSentence, overlapSentence, previewSentence } from '@/lib/onboarding/v3-exposure';
 
 const h = (ticker: string, total_value: number, account_id = 'a1') => ({ ticker, total_value, account_id });
 
@@ -84,5 +84,15 @@ describe('previewSentence', () => {
   });
   it('no prices yet', () => {
     expect(previewSentence([{ ticker: 'NVDA', value: null }])).toBe('Prices load when the book is read.');
+  });
+});
+
+describe('overlapSentence', () => {
+  it('names the top ticker and how many of the accounts hold it', () => {
+    const s = overlapSentence(bookExposure([h('NVDA', 500, 'a1'), h('QQQ', 500, 'a2')]), 2);
+    expect(s).toBe('NVDA sits in 2 of your 2 accounts.');
+  });
+  it('returns an empty string for an empty book', () => {
+    expect(overlapSentence(bookExposure([]), 2)).toBe('');
   });
 });

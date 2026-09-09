@@ -70,6 +70,13 @@ export function exposureSentence(book: BookExposure): string {
   return `${t.ticker} is ${rt}% of your book: ${rd}% held directly, ${ri}% inside ${list(t.funds)}${across}.${tail}`;
 }
 
+/** The exposure sentence when the person asked to see overlap between accounts. */
+export function overlapSentence(book: BookExposure, accounts: number): string {
+  const t = book.top;
+  if (!t) return '';
+  return `${t.ticker} sits in ${t.accounts} of your ${accounts} accounts.`;
+}
+
 export function previewSentence(rows: { ticker: string; value: number | null }[]): string {
   if (rows.length === 0) return '';
   if (rows.some((r) => r.value == null)) return 'Prices load when the book is read.';
