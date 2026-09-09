@@ -23,6 +23,10 @@ describe('bookExposure', () => {
   it('returns no top for an empty book', () => {
     expect(bookExposure([]).top).toBeNull();
   });
+  it('reduces a leveraged product to its bare ticker and lists each fund once', () => {
+    const b = bookExposure([h('TQQQ', 500), h('QQQ', 500)]);
+    expect(b.top?.funds).toEqual(['TQQQ', 'QQQ']);
+  });
 });
 
 describe('exposureSentence', () => {
@@ -37,6 +41,24 @@ describe('exposureSentence', () => {
   it('direct plus funds across two accounts', () => {
     const s = exposureSentence(bookExposure([h('NVDA', 500, 'a1'), h('QQQ', 500, 'a2')]));
     expect(s).toMatch(/^NVDA is \d+% of your book: 50% held directly, \d+% inside QQQ, across 2 accounts\./);
+  });
+  it('a leveraged product reads by its bare ticker, no source label', () => {
+    const s = exposureSentence(bookExposure([h('TQQQ', 1000)]));
+    expect(s).toMatch(/inside TQQQ\./);
+    expect(s).not.toContain('(');
+  });
+  it('printed parts always sum to the printed total', () => {
+    // Independent rounding here gives 45% direct + 5% inside against a 49% total.
+    const s = exposureSentence(bookExposure([h('NVDA', 445), h('QQQ', 555)]));
+    const m = s.match(/^NVDA is (\d+)% of your book: (\d+)% held directly, (\d+)% inside QQQ\./);
+    expect(m).not.toBeNull();
+    const [, total, direct, indirect] = m!.map(Number);
+    expect(direct + indirect).toBe(total);
+  });
+  it('says nearly all when a real sub-1% part is dropped', () => {
+    // AAPL direct is 0.3% of the book, rounds to 0, but is not nothing.
+    const s = exposureSentence(bookExposure([h('AAPL', 6), h('QQQ', 1994)]));
+    expect(s).toMatch(/^AAPL is \d+% of your book, nearly all of it inside QQQ\./);
   });
   it('never uses advice words or em dashes', () => {
     const s = exposureSentence(bookExposure([h('NVDA', 500), h('QQQ', 500)]));
@@ -55,6 +77,10 @@ describe('previewSentence', () => {
   it('three rows with a fund adds the inside-funds share', () => {
     const s = previewSentence([{ ticker: 'NVDA', value: 300 }, { ticker: 'QQQ', value: 300 }, { ticker: 'AAPL', value: 100 }]);
     expect(s).toMatch(/^NVDA is \d+% of these three positions, \d+% of it inside QQQ\.$/);
+  });
+  it('six rows', () => {
+    const rows = ['NVDA', 'AAPL', 'MSFT', 'AMZN', 'META', 'TSLA'].map((ticker, i) => ({ ticker, value: i === 0 ? 500 : 100 }));
+    expect(previewSentence(rows)).toBe('NVDA is 50% of these six positions.');
   });
   it('no prices yet', () => {
     expect(previewSentence([{ ticker: 'NVDA', value: null }])).toBe('Prices load when the book is read.');

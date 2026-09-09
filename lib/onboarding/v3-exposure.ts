@@ -7,10 +7,12 @@ export type BookExposure = { total: number; rows: ExposureRow[]; top: ExposureRo
 
 type Holding = { ticker: string; total_value: number | string | null; account_id?: string | null };
 
-const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five'];
-const pct = (n: number) => `${Math.round(n)}%`;
+const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+// A leveraged product's source reads `TQQQ (+3x QQQ)` (etf-holdings.ts:606); prose gets the bare ticker.
+const fundName = (s: string) => s.split(' (')[0];
 
 export function bookExposure(holdings: Holding[]): BookExposure {
+  // total_value arrives as a Postgres numeric (string) or an already-typed number; NaN is not expected and reads as zero on purpose.
   const rows = holdings.map((h) => ({ ticker: h.ticker, totalValue: Number(h.total_value) || 0, account: h.account_id ?? 'manual' }));
   const total = rows.reduce((n, r) => n + r.totalValue, 0);
   if (total <= 0) return { total: 0, rows: [], top: null };
@@ -35,7 +37,7 @@ export function bookExposure(holdings: Holding[]): BookExposure {
       totalPct: d.totalWeight,
       directPct: d.directWeight,
       indirectPct: d.indirectWeight,
-      funds: d.sources.filter((s) => s !== 'Direct'),
+      funds: [...new Set(d.sources.filter((s) => s !== 'Direct').map(fundName))],
       accounts: accountsByTicker.get(ticker)?.size ?? 0,
     }))
     .sort((a, b) => b.totalPct - a.totalPct);
@@ -44,14 +46,28 @@ export function bookExposure(holdings: Holding[]): BookExposure {
 
 const list = (xs: string[]) => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
 
+// The displayed parts are derived from the displayed total so they always sum.
+const rounded = (t: ExposureRow) => {
+  const rt = Math.round(t.totalPct);
+  const rd = Math.round(t.directPct);
+  return { rt, rd, ri: rt - rd };
+};
+
 export function exposureSentence(book: BookExposure): string {
   const t = book.top;
   if (!t) return '';
+  const { rt, rd, ri } = rounded(t);
   const tail = ' That figure comes from every account and the funds inside them.';
   const across = t.accounts > 1 ? `, across ${t.accounts} accounts` : '';
-  if (t.indirectPct <= 0) return `${t.ticker} is ${pct(t.totalPct)} of your book, all of it held directly${across}.${tail}`;
-  if (t.directPct <= 0) return `${t.ticker} is ${pct(t.totalPct)} of your book, all of it inside ${list(t.funds)}${across}.${tail}`;
-  return `${t.ticker} is ${pct(t.totalPct)} of your book: ${pct(t.directPct)} held directly, ${pct(t.indirectPct)} inside ${list(t.funds)}${across}.${tail}`;
+  if (ri <= 0) {
+    const all = t.indirectPct > 0 ? 'nearly all of it' : 'all of it';
+    return `${t.ticker} is ${rt}% of your book, ${all} held directly${across}.${tail}`;
+  }
+  if (rd <= 0) {
+    const all = t.directPct > 0 ? 'nearly all of it' : 'all of it';
+    return `${t.ticker} is ${rt}% of your book, ${all} inside ${list(t.funds)}${across}.${tail}`;
+  }
+  return `${t.ticker} is ${rt}% of your book: ${rd}% held directly, ${ri}% inside ${list(t.funds)}${across}.${tail}`;
 }
 
 export function previewSentence(rows: { ticker: string; value: number | null }[]): string {
@@ -60,8 +76,9 @@ export function previewSentence(rows: { ticker: string; value: number | null }[]
   const book = bookExposure(rows.map((r) => ({ ticker: r.ticker, total_value: r.value })));
   const t = book.top;
   if (!t) return '';
+  const { rt, ri } = rounded(t);
   const n = rows.length;
   const count = n === 1 ? 'this one position' : `these ${WORDS[n] ?? n} positions`;
-  const inside = t.indirectPct > 0 ? `, ${pct(t.indirectPct)} of it inside ${list(t.funds)}` : '';
-  return `${t.ticker} is ${pct(t.totalPct)} of ${count}${inside}.`;
+  const inside = ri > 0 ? `, ${ri}% of it inside ${list(t.funds)}` : '';
+  return `${t.ticker} is ${rt}% of ${count}${inside}.`;
 }
