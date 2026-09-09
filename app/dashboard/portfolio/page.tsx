@@ -462,6 +462,8 @@ export default function PortfolioPage() {
   const hasHoldings = holdings.length > 0;
   // Defaults to true so nothing shows before the fetch or on error.
   const [hasBrief, setHasBrief] = useState(true);
+  // Plaid item exists, holdings still pulling; cleared by the reload on onPlaidSynced.
+  const [plaidSyncing, setPlaidSyncing] = useState(false);
   useEffect(() => {
     if (!ONBOARDING_V3 || !hasHoldings) return;
     const controller = new AbortController();
@@ -501,7 +503,10 @@ export default function PortfolioPage() {
           <div className="max-w-4xl mx-auto py-10">
             <h1 className="type-h1 mb-2">{V3_COPY.ask.title}</h1>
             <p className="type-body text-[var(--color-text-secondary)] mb-6">{V3_COPY.ask.lede}</p>
-            <BookAsk compact linkedInstitutions={[]} onPlaidSuccess={() => {}} onPlaidSynced={reloadBook} onManualComplete={reloadBook} />
+            {plaidSyncing && (
+              <p role="status" className="mb-4 rounded-lg border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] px-4 py-3 text-[13px] text-[var(--color-text-secondary)]">{V3_COPY.ask.syncing}</p>
+            )}
+            <BookAsk compact linkedInstitutions={[]} onPlaidSuccess={() => setPlaidSyncing(true)} onPlaidSynced={reloadBook} onManualComplete={reloadBook} />
           </div>
         </div>
       );

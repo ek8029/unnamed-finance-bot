@@ -7,6 +7,7 @@ export const V3_COPY = {
     title: 'Start with what you own.',
     loadError: 'Could not load your accounts.',
     lede: 'Connect a brokerage, or type in the positions you hold. Either one gives Helm something real to read.',
+    syncing: 'Linked. Your holdings are syncing and show up here in a minute or two. You can leave this page; the sync keeps going.',
     manual: {
       heading: 'Add the positions you hold',
       body: 'Three to five tickers is enough. No credentials, no account numbers. Connect a brokerage later to import the rest.',
