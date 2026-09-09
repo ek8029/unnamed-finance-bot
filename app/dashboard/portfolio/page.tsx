@@ -15,6 +15,10 @@ import { useFormat } from '@/hooks/use-format';
 import { computePortfolioLookthrough } from '@/lib/etf-holdings';
 import { ScrollHint } from '@/components/ui/scroll-hint';
 import { PriceFlash } from '@/components/price-flash';
+import { BookAsk } from '@/components/onboarding/v3/book-ask';
+import { V3_COPY } from '@/lib/onboarding/v3-copy';
+
+const ONBOARDING_V3 = process.env.NEXT_PUBLIC_ONBOARDING_V3 === '1';
 
 /* ------------------------------------------------------------------ */
 /*  CSV download helper                                                */
@@ -448,6 +452,26 @@ export default function PortfolioPage() {
   const tabs = ['Portfolio', 'Concentration'] as const;
   const [activeTab, setActiveTab] = useState<typeof tabs[number]>('Portfolio');
 
+  /* ---------- onboarding v3: inline ask + brief promise ---------- */
+  // useHoldings loads /api/holdings once on mount and exposes no plain reload;
+  // refreshPrices goes through the rate-limited price route first. A full
+  // reload is the one path that re-runs the client fetch after a save.
+  const reloadBook = useCallback(() => {
+    window.location.reload();
+  }, []);
+  const hasHoldings = holdings.length > 0;
+  // Defaults to true so nothing shows before the fetch or on error.
+  const [hasBrief, setHasBrief] = useState(true);
+  useEffect(() => {
+    if (!ONBOARDING_V3 || !hasHoldings) return;
+    const controller = new AbortController();
+    fetch('/api/onboarding/status', { cache: 'no-store', signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (data?.hasBrief === false) setHasBrief(false); })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [hasHoldings]);
+
   /* ================================================================ */
   /*  EARLY RETURNS                                                    */
   /* ================================================================ */
@@ -468,6 +492,20 @@ export default function PortfolioPage() {
   }
 
   if (holdings.length === 0) {
+    if (ONBOARDING_V3) {
+      // Screen 1 of onboarding v3, inline where the holdings table will be.
+      // onPlaidSuccess fires 1-6 minutes before the holdings exist, so the
+      // reload waits for onPlaidSynced; the manual form writes synchronously.
+      return (
+        <div className="container mx-auto card-padding max-w-[1600px]">
+          <div className="max-w-4xl mx-auto py-10">
+            <h1 className="type-h1 mb-2">{V3_COPY.ask.title}</h1>
+            <p className="type-body text-[var(--color-text-secondary)] mb-6">{V3_COPY.ask.lede}</p>
+            <BookAsk compact linkedInstitutions={[]} onPlaidSuccess={() => {}} onPlaidSynced={reloadBook} onManualComplete={reloadBook} />
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="container mx-auto card-padding max-w-[1600px]">
         <div className="max-w-2xl mx-auto py-16">
@@ -523,6 +561,9 @@ export default function PortfolioPage() {
   /* ================================================================ */
   return (
     <div className="container mx-auto px-4 py-4 sm:py-6 max-w-[1600px]">
+      {ONBOARDING_V3 && !hasBrief && (
+        <p role="status" className="mb-4 rounded-lg border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] px-4 py-3 text-[13px] text-[var(--color-text-secondary)]">{V3_COPY.portfolio.promise}</p>
+      )}
       <header className="helm-overview-heading"><div><span className="helm-label">EVERY POSITION. ONE PICTURE.</span><h1>Your portfolio.</h1><p>See your holdings, their contribution, and the exposure they share.</p></div><Link href="/dashboard/portfolio/add" className="helm-text-link">Add a position ↗</Link></header>
       <div className="flex flex-wrap gap-6">
         {/* ======================================================= */}
