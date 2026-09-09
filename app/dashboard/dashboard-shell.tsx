@@ -49,6 +49,7 @@ import { FinancialDisclaimer } from '@/components/financial-disclaimer';
 import { ThesesWhatsNewBanner } from '@/components/thesis/theses-whatsnew-banner';
 import { OnboardingFlow } from '@/components/onboarding/onboarding-flow';
 import { OnboardingFlowV2 } from '@/components/onboarding/onboarding-flow-v2';
+import { OnboardingFlowV3 } from '@/components/onboarding/v3/onboarding-flow-v3';
 import { useSurveyDeferral } from '@/components/survey-deferral';
 
 // Value-first onboarding cohort. Flip NEXT_PUBLIC_ONBOARDING_V2=1 to serve the
@@ -663,7 +664,7 @@ export default function DashboardShell({
   return (
     <DemoProvider>
     <>
-    {!previewPath && checkoutChecked && !resumeCheckout && (ONBOARDING_V2 ? <OnboardingFlowV2 onSettled={settleOnboarding} /> : <OnboardingFlow onSettled={settleOnboarding} />)}
+    {!previewPath && checkoutChecked && !resumeCheckout && (ONBOARDING_V3 ? <OnboardingFlowV3 onSettled={settleOnboarding} /> : ONBOARDING_V2 ? <OnboardingFlowV2 onSettled={settleOnboarding} /> : <OnboardingFlow onSettled={settleOnboarding} />)}
     {/* Both setup flows settle before a requested trial checkout opens. */}
     {resumeCheckout && (
       <CheckoutModal
