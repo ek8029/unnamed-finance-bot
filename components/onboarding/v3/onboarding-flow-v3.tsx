@@ -157,6 +157,11 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
     track('onb3_ask_choice', { flow: 'v3', via });
   }, []);
 
+  // The Plaid error code or null. No institution name, no search query.
+  const onPlaidExit = useCallback((code: string | null) => {
+    track('onb3_plaid_exit', { flow: 'v3', code });
+  }, []);
+
   const onContinue = useCallback(() => {
     const accounts = accountsRef.current;
     track('onb3_loop_continue', { flow: 'v3', accounts: accounts.length, positions: accounts.reduce((n, a) => n + a.positions, 0) });
@@ -234,6 +239,7 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
                   onManualComplete={onManualComplete}
                   onDuplicate={onDuplicate}
                   onChoice={onChoice}
+                  onPlaidExit={onPlaidExit}
                   readOnly={readOnly}
                 />
               )}
@@ -248,6 +254,7 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
                   onManualComplete={onManualComplete}
                   onDuplicate={onDuplicate}
                   onChoice={onChoice}
+                  onPlaidExit={onPlaidExit}
                   onContinue={onContinue}
                   firstLookSlot={manual ? question : undefined}
                   readOnly={readOnly}

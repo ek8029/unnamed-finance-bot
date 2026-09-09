@@ -9,7 +9,7 @@ import { useSettings } from '@/contexts/settings-context';
 import { V3_COPY } from '@/lib/onboarding/v3-copy';
 import type { BackgroundSyncResult } from '@/lib/plaid/background-sync';
 
-export function AccountLoop({ accounts, holdings, syncing, duplicate, onPlaidSuccess, onPlaidSynced, onManualComplete, onDuplicate, onChoice, onContinue, firstLookSlot, readOnly = false }: {
+export function AccountLoop({ accounts, holdings, syncing, duplicate, onPlaidSuccess, onPlaidSynced, onManualComplete, onDuplicate, onChoice, onPlaidExit, onContinue, firstLookSlot, readOnly = false }: {
   accounts: BookAccount[];
   holdings: BookHolding[];
   /** Institution name while its first import runs. */
@@ -20,6 +20,7 @@ export function AccountLoop({ accounts, holdings, syncing, duplicate, onPlaidSuc
   onPlaidSynced?: (result: BackgroundSyncResult, itemId?: string) => void;
   onManualComplete: () => void;
   onDuplicate?: (message: string) => void;
+  onPlaidExit?: (code: string | null) => void;
   onChoice?: (via: 'plaid' | 'manual') => void;
   onContinue: () => void;
   /** Manual path: the first-look question renders here. */
@@ -78,6 +79,7 @@ export function AccountLoop({ accounts, holdings, syncing, duplicate, onPlaidSuc
           onManualComplete={onManualComplete}
           onDuplicate={onDuplicate}
           onChoice={onChoice}
+          onPlaidExit={onPlaidExit}
           readOnly={readOnly}
         />
       </div>

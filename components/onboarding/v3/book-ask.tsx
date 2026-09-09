@@ -15,12 +15,14 @@ import { useQuotePreview, type PreviewRow } from './use-book';
 
 type Via = 'plaid' | 'manual';
 
-export function BookAsk({ linkedInstitutions, onPlaidSuccess, onPlaidSynced, onManualComplete, onDuplicate, onChoice, readOnly = false, compact = false }: {
+export function BookAsk({ linkedInstitutions, onPlaidSuccess, onPlaidSynced, onManualComplete, onDuplicate, onChoice, onPlaidExit, readOnly = false, compact = false }: {
   linkedInstitutions: string[];
   onPlaidSuccess: (itemId?: string) => void;
   onPlaidSynced?: (result: BackgroundSyncResult, itemId?: string) => void;
   onManualComplete: () => void;
   onDuplicate?: (message: string) => void;
+  /** Every Link exit, with the Plaid code or null, for the onb3_plaid_exit event. */
+  onPlaidExit?: (code: string | null) => void;
   /** Once per panel, on the first interaction, for the onb3_ask_choice event. */
   onChoice?: (via: Via) => void;
   /** Harness: the real form with the write blocked. */
@@ -60,6 +62,7 @@ export function BookAsk({ linkedInstitutions, onPlaidSuccess, onPlaidSynced, onM
 
   const handleExit = useCallback((detail: LinkExitDetail) => {
     const route = routeLinkExit({ ...detail, searchQuery: detail.searchQuery?.trim().slice(0, 60) || null });
+    onPlaidExit?.(detail.code);
     setManualNotice(route.to === 'manual' ? route.message : null);
     setPlaidNotice(route.to === 'stay' ? route.message : null);
     // Link's close moves focus. One frame later, put it where the exit leads:
@@ -70,7 +73,7 @@ export function BookAsk({ linkedInstitutions, onPlaidSuccess, onPlaidSynced, onM
       if (route.to === 'manual') manualRef.current?.querySelector('input')?.focus();
       else opener?.focus();
     });
-  }, []);
+  }, [onPlaidExit]);
 
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
   const isLinked = (chip: string) => linkedInstitutions.some((l) => norm(l).includes(norm(chip)));
