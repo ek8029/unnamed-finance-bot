@@ -16,7 +16,10 @@ import { isUsMarketHours } from '@/lib/live-quotes';
 import { repriceHolding, toHoldingUpdate } from '@/lib/market/last-trade';
 import { portfolioTotalsByUser } from '@/lib/market/intraday-series';
 import { severeMoves, enqueueSevereMoves } from '@/lib/market/severe-move';
-import { changedPrices, etDay, holdingNeedsUpdate, securitiesUpsertRows } from '@/lib/market/tick-diff';
+import {
+  changedPrices, etDay, holdingNeedsUpdate, parsePrevCloseCache, securitiesUpsertRows, stalePrevCloseTickers,
+  type PrevCloseEntry,
+} from '@/lib/market/tick-diff';
 import { liveTokenUsers, sendPush } from '@/lib/push/send';
 import { selectMoves } from '@/lib/push/policy';
 import { positionMoved } from '@/lib/push/voice';
@@ -68,24 +71,31 @@ export async function runIntradayTick(): Promise<IntradayTickResult> {
 
   // Previous session close per ticker, from our own table: the newest row
   // dated before today's ET session. The close does not move during the
-  // session, so the map is cached in Redis per ET day and the table is read
-  // once a day, plus a targeted read for any ticker the cache has not seen
-  // (a new position, or a name with no close on record). Without Redis it
-  // is read every tick as before.
+  // session, so the map is cached in Redis per ET day as {close, date} and
+  // the table is read once a day, plus a targeted read each tick for any
+  // ticker the cache lacks or holds stale: a new position, a name with no
+  // close on record, or an entry dated behind the newest close in the map
+  // (last night's write failed and the morning sync backfilled it later).
+  // Tickers with no close on record at all, and stale ones until they catch
+  // up, are re-read every tick; both are bounded by the size of the held
+  // universe. Without Redis the table is read every tick as before.
   // PostgREST caps a select at 1000 rows and 291 tickers fill that in about
   // three sessions, so page newest-first until every ticker has a close or
   // the history runs out. A ticker with no close on record keeps whatever
   // day_change_pct the last sweep wrote (see toHoldingUpdate).
   const { day: today, startIso: sessionStartIso } = etDay(new Date());
   const prevCloseKey = redisKey('tick', 'prevclose', today);
-  const cachedPrevClose = await withRedis((r) => r.get<Record<string, number>>(prevCloseKey), null);
-  const prevClose = new Map<string, number>(Object.entries(cachedPrevClose ?? {}));
-  const missingClose = tickers.filter((t) => !prevClose.has(t));
-  let prevCloseSource: PrevCloseSource = cachedPrevClose ? 'cache' : 'db';
+  const prevCloseEntries = parsePrevCloseCache(await withRedis((r) => r.get<unknown>(prevCloseKey), null));
+  const staleClose = new Set(stalePrevCloseTickers(prevCloseEntries));
+  const missingClose = tickers.filter((t) => !prevCloseEntries.has(t) || staleClose.has(t));
+  let prevCloseSource: PrevCloseSource = prevCloseEntries.size > 0 ? 'cache' : 'db';
   if (missingClose.length > 0) {
-    if (cachedPrevClose) prevCloseSource = 'cache+db';
+    if (prevCloseEntries.size > 0) prevCloseSource = 'cache+db';
+    // Newest-first, so the first row seen per ticker is its latest close and
+    // replaces a stale cached entry.
+    const seen = new Set<string>();
     const PAGE = 1000;
-    for (let page = 0; page < 10 && missingClose.some((t) => !prevClose.has(t)); page++) {
+    for (let page = 0; page < 10 && missingClose.some((t) => !seen.has(t)); page++) {
       const { data: closes, error: closeErr } = await db
         .from('market_prices')
         .select('ticker, close, price_date')
@@ -96,23 +106,39 @@ export async function runIntradayTick(): Promise<IntradayTickResult> {
       if (closeErr || !closes) break;
       for (const row of closes) {
         const t = (row.ticker as string).toUpperCase();
-        if (!prevClose.has(t) && Number(row.close) > 0) prevClose.set(t, Number(row.close));
+        if (!seen.has(t) && Number(row.close) > 0) {
+          seen.add(t);
+          prevCloseEntries.set(t, { close: Number(row.close), date: String(row.price_date) });
+        }
       }
       if (closes.length < PAGE) break;
     }
-    await withRedis((r) => r.set(prevCloseKey, Object.fromEntries(prevClose), { ex: TICK_CACHE_TTL_S }), null);
+    await withRedis(
+      (r) => r.set(prevCloseKey, Object.fromEntries(prevCloseEntries) as Record<string, PrevCloseEntry>, { ex: TICK_CACHE_TTL_S }),
+      null,
+    );
   }
+  const prevClose = new Map<string, number>([...prevCloseEntries].map(([t, e]) => [t, e.close]));
 
   // Only rows the print changes are written. A row already at this price
   // and touched this session keeps its stamp; the first tick of a session
   // rewrites every priced row so day_change is against the new prior close.
+  // Whether this is the first tick is decided by Redis (helm:tick:first:{day},
+  // set once the holdings writes land), not by the stamp: the 09:15 Plaid
+  // sync stamps every synced row today at the institution's mark with no
+  // day_change, and a name whose first print equals that mark would
+  // otherwise be skipped and keep yesterday's day_change all session.
+  // Without Redis nothing forces and the stamp rule decides as before.
+  const firstTickKey = redisKey('tick', 'first', today);
+  const firstTickState = await withRedis(async (r) => ((await r.get(firstTickKey)) == null ? 'first' : 'done'), 'unknown');
+  const forceAll = firstTickState === 'first';
   const now = new Date().toISOString();
   let skippedHoldings = 0;
   const updates = holdings.flatMap((h) => {
     const t = (h.ticker || '').toUpperCase();
     const price = prices.get(t);
     if (!price || price <= 0) return [];
-    if (!holdingNeedsUpdate({ current_price: h.current_price, last_updated_at: h.last_updated_at }, price, sessionStartIso)) {
+    if (!forceAll && !holdingNeedsUpdate({ current_price: h.current_price, last_updated_at: h.last_updated_at }, price, sessionStartIso)) {
       skippedHoldings++;
       return [];
     }
@@ -130,6 +156,10 @@ export async function runIntradayTick(): Promise<IntradayTickResult> {
       ),
     );
     updated += settled.filter((s) => s.status === 'fulfilled' && !s.value?.error).length;
+  }
+  // A write that failed is retried by the next tick under forceAll again.
+  if (forceAll && updated === updates.length) {
+    await withRedis((r) => r.set(firstTickKey, '1', { ex: TICK_CACHE_TTL_S }), null);
   }
 
   // securities.current_price feeds the shared per-ticker surfaces. Prints are

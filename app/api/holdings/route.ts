@@ -22,8 +22,12 @@ export async function GET() {
     // tick no longer stamps a holding whose print did not move, so a flat
     // book's last_updated_at can age all session; the stamp is only the
     // fallback when there is no heartbeat to read (Redis unconfigured, or
-    // the tick has not run yet today). One read, shared by both checks.
-    const tickHeartbeat = readHeartbeats(supabase).then((m) => m.get('intraday-prices'));
+    // the tick has not run yet today). One read, shared by both checks, and
+    // none outside market hours: both checks are off then.
+    const inSession = isUsMarketHours();
+    const tickHeartbeat = inSession
+      ? readHeartbeats(supabase).then((m) => m.get('intraday-prices'))
+      : Promise.resolve(undefined);
 
     // Freshness: the iOS app has no client-side live-quote wire (the web
     // dashboard polls /api/market/quotes itself), so an app open must be able
@@ -296,8 +300,8 @@ export async function GET() {
       const at = h.last_updated_at ? new Date(h.last_updated_at).getTime() : 0;
       return at > max ? at : max;
     }, 0);
-    const freshByTick = pricesFreshFromHeartbeat(await tickHeartbeat);
-    const pricesStale = isUsMarketHours() && newestPriceAt > 0
+    const freshByTick = inSession ? pricesFreshFromHeartbeat(await tickHeartbeat) : null;
+    const pricesStale = inSession && newestPriceAt > 0
       && (freshByTick !== null ? !freshByTick : Date.now() - newestPriceAt > 10 * 60 * 1000);
 
     return NextResponse.json({

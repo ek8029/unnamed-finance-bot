@@ -12,6 +12,8 @@ import { getBatchQuotes, type StockQuote } from '@/lib/financial-data';
 import { getBatchLastTradePrices } from '@/lib/finazon';
 import { isUsMarketHours } from '@/lib/live-quotes';
 import { updatePortfolioPerformance } from '@/lib/market-sync';
+import { etDay } from '@/lib/market/tick-diff';
+import { redisKey, withRedis } from '@/lib/redis';
 
 export interface RefreshResult {
   status: number;
@@ -164,7 +166,7 @@ export async function runGlobalRefresh(): Promise<RefreshResult> {
   }
 
   // 5. Update securities table with current prices
-  await Promise.allSettled(
+  const securityResults = await Promise.allSettled(
     Array.from(quoteMap.entries())
       .filter(([ticker]) => tickerSecurityMap.has(ticker))
       .map(([ticker, quote]) =>
@@ -174,6 +176,15 @@ export async function runGlobalRefresh(): Promise<RefreshResult> {
           .eq('id', tickerSecurityMap.get(ticker)!)
       )
   );
+  // The intraday tick diffs prints against its per-day last-print map
+  // (helm:tick:last:{day}) and skips a security whose print has not moved
+  // since the map was written. This sweep just wrote bar-lifted prices the
+  // map does not know about, so drop it: the next tick then rewrites every
+  // security from the tape. Outside the session the key may not exist, which
+  // is fine; without Redis there is no map to drop.
+  if (securityResults.some((r) => r.status === 'fulfilled' && !r.value?.error)) {
+    await withRedis((r) => r.del(redisKey('tick', 'last', etDay(new Date()).day)), null);
+  }
 
   // 6. Upsert into market_prices for historical tracking
   const priceInserts = Array.from(quoteMap.entries())

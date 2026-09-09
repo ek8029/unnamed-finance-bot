@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  PRICE_EPS, TICK_FRESH_MS, holdingNeedsUpdate, changedPrices, securitiesUpsertRows, etDay, pricesFreshFromHeartbeat,
+  TICK_FRESH_MS, to4dp, holdingNeedsUpdate, changedPrices, securitiesUpsertRows, etDay, pricesFreshFromHeartbeat,
+  parsePrevCloseCache, stalePrevCloseTickers,
 } from '@/lib/market/tick-diff';
 
 // 2026-09-09 is EDT: midnight ET is 04:00Z.
@@ -11,9 +12,16 @@ describe('holdingNeedsUpdate', () => {
     expect(holdingNeedsUpdate({ current_price: '150.2500', last_updated_at: '2026-09-09T14:05:00.000Z' }, 150.25, SESSION_START)).toBe(false);
   });
 
-  it('rewrites when the print differs from the stored price beyond the epsilon', () => {
+  it('rewrites when the print differs from the stored price', () => {
     expect(holdingNeedsUpdate({ current_price: 150.25, last_updated_at: '2026-09-09T14:05:00.000Z' }, 150.26, SESSION_START)).toBe(true);
-    expect(holdingNeedsUpdate({ current_price: 150.25, last_updated_at: '2026-09-09T14:05:00.000Z' }, 150.25 + PRICE_EPS / 2, SESSION_START)).toBe(false);
+  });
+
+  it('compares at the four decimals the column stores, so a long print does not rewrite the row every tick', () => {
+    // holdings.current_price is NUMERIC(15, 4): 12.3456789 is stored as 12.3457.
+    expect(holdingNeedsUpdate({ current_price: '12.3457', last_updated_at: '2026-09-09T14:05:00.000Z' }, 12.3456789, SESSION_START)).toBe(false);
+    expect(holdingNeedsUpdate({ current_price: '12.3458', last_updated_at: '2026-09-09T14:05:00.000Z' }, 12.3457, SESSION_START)).toBe(true);
+    expect(to4dp(12.3456789)).toBe(12.3457);
+    expect(to4dp(150.25)).toBe(150.25);
   });
 
   it('rewrites an equal price when the row was last touched before this session', () => {
@@ -37,6 +45,30 @@ describe('changedPrices', () => {
 
   it('treats an empty cache as everything changed', () => {
     expect(changedPrices({}, new Map([['AAPL', 150]])).size).toBe(1);
+  });
+});
+
+describe('prior close cache', () => {
+  it('parses the dated shape and drops anything else, so an old-shape value is a miss rather than a crash', () => {
+    const parsed = parsePrevCloseCache({ AAPL: { close: 140, date: '2026-09-08' }, MSFT: 290, NVDA: { close: 'x', date: '2026-09-08' }, TSLA: { close: 200 } });
+    expect([...parsed.entries()]).toEqual([['AAPL', { close: 140, date: '2026-09-08' }]]);
+    expect(parsePrevCloseCache(null).size).toBe(0);
+    expect(parsePrevCloseCache('junk').size).toBe(0);
+    expect(parsePrevCloseCache([1, 2]).size).toBe(0);
+  });
+
+  it('flags an entry dated before the newest close in the map as stale', () => {
+    const map = parsePrevCloseCache({
+      AAPL: { close: 140, date: '2026-09-08' },
+      MSFT: { close: 290, date: '2026-09-08' },
+      ORCL: { close: 100, date: '2026-09-04' },
+    });
+    expect(stalePrevCloseTickers(map)).toEqual(['ORCL']);
+  });
+
+  it('flags nothing when every entry shares the newest date, or the map is empty', () => {
+    expect(stalePrevCloseTickers(parsePrevCloseCache({ AAPL: { close: 140, date: '2026-09-08' } }))).toEqual([]);
+    expect(stalePrevCloseTickers(new Map())).toEqual([]);
   });
 });
 

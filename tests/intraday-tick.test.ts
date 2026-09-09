@@ -16,6 +16,8 @@ const dbMock = vi.hoisted(() => ({
   holdings: [] as Record<string, unknown>[],
   closes: [] as { ticker: string; close: number; price_date: string }[],
   calls: [] as { table: string; op: string; chain: unknown[][] }[],
+  /** When set, every statement of this table and op answers with an error. */
+  fail: null as { table: string; op: string } | null,
 }));
 const finMock = vi.hoisted(() => ({ prices: [] as [string, number][] }));
 const hbMock = vi.hoisted(() => ({ beat: vi.fn(async () => {}) }));
@@ -35,7 +37,10 @@ vi.mock('@/lib/supabase/server', () => {
       b[m] = (...args: unknown[]) => { call.op = m; call.chain.push([m, ...args]); return b; };
     }
     const answer = () => {
-      if (call.op !== 'select') return { data: null, error: null };
+      if (call.op !== 'select') {
+        const f = dbMock.fail;
+        return f && f.table === table && f.op === call.op ? { data: null, error: { message: 'boom' } } : { data: null, error: null };
+      }
       if (table === 'holdings') return { data: dbMock.holdings, error: null };
       if (table === 'market_prices') {
         const tickers = filters.ticker as string[] | undefined;
@@ -172,9 +177,12 @@ describe('intraday tick writes only what changed', () => {
   const today = etDay(new Date()).day;
   const PREV_KEY = `helm:tick:prevclose:${today}`;
   const LAST_KEY = `helm:tick:last:${today}`;
+  const FIRST_KEY = `helm:tick:first:${today}`;
   const fresh = new Date().toISOString();
   const stale = new Date(Date.now() - 2 * 86_400_000).toISOString();
   const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  const twoSessionsBack = new Date(Date.now() - 2 * 86_400_000).toISOString().slice(0, 10);
+  const closeAt = (close: number, date: string) => ({ close, date });
   // current_price arrives from Postgres as a NUMERIC(15, 4) string.
   const holding = (id: string, user_id: string, ticker: string, security_id: string, price: number, last_updated_at: string) => ({
     id, user_id, ticker, security_id, shares: 10, total_cost_basis: 1000, total_value: price * 10,
@@ -187,14 +195,17 @@ describe('intraday tick writes only what changed', () => {
     dbMock.holdings = [];
     dbMock.closes = [];
     dbMock.calls.length = 0;
+    dbMock.fail = null;
     finMock.prices = [];
     redisMock.store = new Map();
     redisMock.sets.length = 0;
     hbMock.beat.mockClear();
+    // A mid-session tick: the day's first tick has already run.
+    redisMock.store.set(FIRST_KEY, '1');
   });
 
   it('reads the prior close from the day cache and never touches market_prices', async () => {
-    redisMock.store!.set(PREV_KEY, { AAPL: 140, MSFT: 290 });
+    redisMock.store!.set(PREV_KEY, { AAPL: closeAt(140, yesterday), MSFT: closeAt(290, yesterday) });
     dbMock.closes = [{ ticker: 'AAPL', close: 999, price_date: yesterday }];
     dbMock.holdings = [holding('h1', 'u1', 'AAPL', 's1', 150, fresh), holding('h3', 'u2', 'AAPL', 's1', 150, stale)];
     finMock.prices = [['AAPL', 150], ['MSFT', 300]];
@@ -209,7 +220,7 @@ describe('intraday tick writes only what changed', () => {
   });
 
   it('reads only the tickers the cache is missing, merges, and re-sets the cache', async () => {
-    redisMock.store!.set(PREV_KEY, { AAPL: 140 });
+    redisMock.store!.set(PREV_KEY, { AAPL: closeAt(140, yesterday) });
     dbMock.closes = [{ ticker: 'MSFT', close: 290, price_date: yesterday }, { ticker: 'AAPL', close: 999, price_date: yesterday }];
     dbMock.holdings = [holding('h1', 'u1', 'AAPL', 's1', 150, stale), holding('h2', 'u1', 'MSFT', 's2', 300, stale)];
     finMock.prices = [['AAPL', 150], ['MSFT', 300]];
@@ -218,11 +229,47 @@ describe('intraday tick writes only what changed', () => {
     expect(reads).toHaveLength(1);
     expect(step(reads[0], 'in')).toEqual(['in', 'ticker', ['MSFT']]);
     expect(body.prev_close_source).toBe('cache+db');
-    expect(redisMock.store!.get(PREV_KEY)).toEqual({ AAPL: 140, MSFT: 290 });
+    expect(redisMock.store!.get(PREV_KEY)).toEqual({ AAPL: closeAt(140, yesterday), MSFT: closeAt(290, yesterday) });
+  });
+
+  it('re-reads a cached close dated behind the rest of the universe until it catches up', async () => {
+    // ORCL's close failed to write last night and the morning sync backfilled
+    // it later: the cache still holds the older session's close.
+    redisMock.store!.set(PREV_KEY, { AAPL: closeAt(140, yesterday), MSFT: closeAt(290, yesterday), ORCL: closeAt(100, twoSessionsBack) });
+    dbMock.closes = [
+      { ticker: 'ORCL', close: 105, price_date: yesterday },
+      { ticker: 'ORCL', close: 100, price_date: twoSessionsBack },
+      { ticker: 'AAPL', close: 999, price_date: yesterday },
+    ];
+    dbMock.holdings = [holding('h1', 'u1', 'AAPL', 's1', 150, fresh), holding('h5', 'u1', 'ORCL', 's5', 110, stale)];
+    finMock.prices = [['AAPL', 150], ['MSFT', 300], ['ORCL', 110]];
+    const { body } = await runIntradayTick();
+    const reads = calls('market_prices');
+    expect(reads).toHaveLength(1);
+    expect(step(reads[0], 'in')).toEqual(['in', 'ticker', ['ORCL']]);
+    expect(body.prev_close_source).toBe('cache+db');
+    expect(redisMock.store!.get(PREV_KEY)).toEqual({ AAPL: closeAt(140, yesterday), MSFT: closeAt(290, yesterday), ORCL: closeAt(105, yesterday) });
+    // The healed close is what the row is repriced against.
+    const [u] = calls('holdings', 'update');
+    expect(step(u, 'eq')).toEqual(['eq', 'id', 'h5']);
+    expect((step(u, 'update')![1] as { day_change_pct: number }).day_change_pct).toBeCloseTo(5 / 105, 6);
+  });
+
+  it('treats a cache value in the old bare-number shape as a miss and rewrites it in the dated shape', async () => {
+    redisMock.store!.set(PREV_KEY, { AAPL: 140, MSFT: 290 });
+    dbMock.closes = [{ ticker: 'AAPL', close: 141, price_date: yesterday }, { ticker: 'MSFT', close: 291, price_date: yesterday }];
+    dbMock.holdings = [holding('h1', 'u1', 'AAPL', 's1', 150, fresh), holding('h2', 'u1', 'MSFT', 's2', 300, fresh)];
+    finMock.prices = [['AAPL', 150], ['MSFT', 300]];
+    const { body } = await runIntradayTick();
+    const reads = calls('market_prices');
+    expect(reads).toHaveLength(1);
+    expect(step(reads[0], 'in')).toEqual(['in', 'ticker', ['AAPL', 'MSFT']]);
+    expect(body.prev_close_source).toBe('db');
+    expect(redisMock.store!.get(PREV_KEY)).toEqual({ AAPL: closeAt(141, yesterday), MSFT: closeAt(291, yesterday) });
   });
 
   it('writes nothing when every print matches a row touched this session, and stamps the last-print map once', async () => {
-    redisMock.store!.set(PREV_KEY, { AAPL: 140, MSFT: 290 });
+    redisMock.store!.set(PREV_KEY, { AAPL: closeAt(140, yesterday), MSFT: closeAt(290, yesterday) });
     redisMock.store!.set(LAST_KEY, { AAPL: 150, MSFT: 300 });
     dbMock.holdings = [holding('h1', 'u1', 'AAPL', 's1', 150, fresh), holding('h2', 'u1', 'MSFT', 's2', 300, fresh)];
     finMock.prices = [['AAPL', 150], ['MSFT', 300]];
@@ -240,7 +287,7 @@ describe('intraday tick writes only what changed', () => {
   });
 
   it('rewrites exactly the holdings of a ticker whose print moved and one securities statement for it', async () => {
-    redisMock.store!.set(PREV_KEY, { AAPL: 140, MSFT: 290 });
+    redisMock.store!.set(PREV_KEY, { AAPL: closeAt(140, yesterday), MSFT: closeAt(290, yesterday) });
     redisMock.store!.set(LAST_KEY, { AAPL: 150, MSFT: 300 });
     dbMock.holdings = [
       holding('h1', 'u1', 'AAPL', 's1', 150, fresh),
@@ -290,5 +337,72 @@ describe('intraday tick writes only what changed', () => {
     expect(sec.every((c) => c.op === 'update')).toBe(true);
     expect(body.securities_updated).toBe(2);
     expect(hbMock.beat).toHaveBeenCalledWith(expect.anything(), 'intraday-prices', expect.objectContaining({ prevCloseSource: 'db' }));
+  });
+
+  it('the first tick of the day (no first-tick key) reprices every priced holding, then sets the key', async () => {
+    redisMock.store!.delete(FIRST_KEY);
+    redisMock.store!.set(PREV_KEY, { AAPL: closeAt(140, yesterday), MSFT: closeAt(290, yesterday) });
+    // Both rows carry today's stamp at the print (the Plaid sync mark): the stamp rule alone would skip them.
+    dbMock.holdings = [holding('h1', 'u1', 'AAPL', 's1', 150, fresh), holding('h2', 'u1', 'MSFT', 's2', 300, fresh)];
+    finMock.prices = [['AAPL', 150], ['MSFT', 300]];
+    const { body } = await runIntradayTick();
+    expect(calls('holdings', 'update').map((u) => step(u, 'eq')![2]).sort()).toEqual(['h1', 'h2']);
+    expect(body.holdings_updated).toBe(2);
+    expect(body.holdings_skipped).toBe(0);
+    expect(redisMock.store!.get(FIRST_KEY)).toBeTruthy();
+  });
+
+  it('a later tick with the first-tick key present skips rows the stamp rule skips', async () => {
+    redisMock.store!.set(PREV_KEY, { AAPL: closeAt(140, yesterday), MSFT: closeAt(290, yesterday) });
+    dbMock.holdings = [holding('h1', 'u1', 'AAPL', 's1', 150, fresh), holding('h2', 'u1', 'MSFT', 's2', 300, fresh)];
+    finMock.prices = [['AAPL', 150], ['MSFT', 300]];
+    const { body } = await runIntradayTick();
+    expect(calls('holdings', 'update')).toHaveLength(0);
+    expect(body.holdings_skipped).toBe(2);
+  });
+
+  it('does not set the first-tick key when a holdings write fails, so the next tick forces again', async () => {
+    redisMock.store!.delete(FIRST_KEY);
+    redisMock.store!.set(PREV_KEY, { AAPL: closeAt(140, yesterday) });
+    dbMock.holdings = [holding('h1', 'u1', 'AAPL', 's1', 150, fresh)];
+    finMock.prices = [['AAPL', 150]];
+    dbMock.fail = { table: 'holdings', op: 'update' };
+    const { body } = await runIntradayTick();
+    expect(body.holdings_updated).toBe(0);
+    expect(redisMock.store!.get(FIRST_KEY)).toBeUndefined();
+  });
+
+  it('without Redis nothing forces: the stamp rule alone decides', async () => {
+    redisMock.store = null;
+    dbMock.closes = [{ ticker: 'AAPL', close: 140, price_date: yesterday }];
+    dbMock.holdings = [holding('h1', 'u1', 'AAPL', 's1', 150, fresh)];
+    finMock.prices = [['AAPL', 150]];
+    const { body } = await runIntradayTick();
+    expect(calls('holdings', 'update')).toHaveLength(0);
+    expect(body.holdings_skipped).toBe(1);
+  });
+
+  it('a failed securities write stays out of the last-print map and is retried on the next tick', async () => {
+    redisMock.store!.set(PREV_KEY, { AAPL: closeAt(140, yesterday), MSFT: closeAt(290, yesterday) });
+    redisMock.store!.set(LAST_KEY, { AAPL: 150, MSFT: 300 });
+    dbMock.holdings = [holding('h1', 'u1', 'AAPL', 's1', 150, fresh), holding('h2', 'u1', 'MSFT', 's2', 300, fresh)];
+    finMock.prices = [['AAPL', 150], ['MSFT', 301]];
+    dbMock.fail = { table: 'securities', op: 'update' };
+    const first = await runIntradayTick();
+    expect(first.body.securities_updated).toBe(0);
+    expect(redisMock.store!.get(LAST_KEY)).toEqual({ AAPL: 150, MSFT: 300 });
+
+    dbMock.fail = null;
+    dbMock.calls.length = 0;
+    // The holdings row now carries the moved print, so only the securities write is outstanding.
+    dbMock.holdings = [holding('h1', 'u1', 'AAPL', 's1', 150, fresh), holding('h2', 'u1', 'MSFT', 's2', 301, fresh)];
+    const second = await runIntradayTick();
+    const sec = calls('securities');
+    expect(sec).toHaveLength(1);
+    expect(step(sec[0], 'update')![1]).toEqual({ current_price: 301, last_updated_at: expect.any(String) });
+    expect(step(sec[0], 'in')).toEqual(['in', 'id', ['s2']]);
+    expect(second.body.securities_updated).toBe(1);
+    expect(calls('holdings', 'update')).toHaveLength(0);
+    expect(redisMock.store!.get(LAST_KEY)).toEqual({ AAPL: 150, MSFT: 301 });
   });
 });

@@ -7,7 +7,13 @@
 
 import { etDayStartIso } from '@/lib/agent/judge-queue';
 
-export const PRICE_EPS = 1e-6;
+/** holdings.current_price and securities.current_price are NUMERIC(15, 4)
+ *  (migration 005:29, :65): a print with more decimals is stored rounded, so
+ *  the stored value must be compared at four decimals or a row at 12.3456789
+ *  reads as changed on every tick and is rewritten forever. */
+export function to4dp(n: number): number {
+  return Math.round(n * 1e4) / 1e4;
+}
 
 /** The tick heartbeat is this old at most while prices count as fresh. */
 export const TICK_FRESH_MS = 10 * 60 * 1000;
@@ -31,7 +37,43 @@ export function holdingNeedsUpdate(stored: StoredPrice, price: number, sessionSt
   const sessionStart = Date.parse(sessionStartIso);
   // An unparseable stamp counts as untouched, never as fresh.
   if (!(touchedAt >= sessionStart)) return true;
-  return Math.abs(storedPrice - price) > PRICE_EPS;
+  return to4dp(storedPrice) !== to4dp(price);
+}
+
+export interface PrevCloseEntry {
+  close: number;
+  /** price_date of that close (YYYY-MM-DD), so a stale entry can be told apart. */
+  date: string;
+}
+
+/**
+ * The cached prior-close map, helm:tick:prevclose:{day}. Only entries in the
+ * dated shape are kept: a value written before the shape carried a date (a
+ * bare number), or anything else malformed, is dropped and so counts as a
+ * miss for the targeted market_prices read, never as a crash.
+ */
+export function parsePrevCloseCache(raw: unknown): Map<string, PrevCloseEntry> {
+  const out = new Map<string, PrevCloseEntry>();
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+  for (const [ticker, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!v || typeof v !== 'object') continue;
+    const { close, date } = v as { close?: unknown; date?: unknown };
+    if (typeof close !== 'number' || !Number.isFinite(close) || typeof date !== 'string') continue;
+    out.set(ticker, { close, date });
+  }
+  return out;
+}
+
+/**
+ * Tickers whose cached close is dated before the newest close in the map.
+ * The universe's latest date is the last session; an entry behind it is a
+ * close that had not been written when the cache was built (a failed
+ * nightly write, backfilled by the morning sync) and must be re-read.
+ */
+export function stalePrevCloseTickers(cached: Map<string, PrevCloseEntry>): string[] {
+  let newest = '';
+  for (const e of cached.values()) if (e.date > newest) newest = e.date;
+  return [...cached.entries()].filter(([, e]) => e.date < newest).map(([t]) => t);
 }
 
 /** Tickers whose print differs from the cached last print or were absent.
