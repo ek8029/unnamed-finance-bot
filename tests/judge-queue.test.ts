@@ -17,12 +17,17 @@ vi.mock('@/lib/supabase/server', () => ({ createServiceClient: workerBoundary.db
 vi.mock('@/lib/agent/judge-run', () => ({ runJudgeJob: workerBoundary.judge }));
 vi.mock('@/lib/push/send', () => ({ checkPushReceipts: workerBoundary.receipts }));
 
-// An in-memory Redis behind withRedis, so the wake flag is observable per test.
-const redisMock = vi.hoisted(() => ({ store: new Map<string, string>() }));
+// An in-memory Redis behind withRedis, so the wake flag and the heartbeat are
+// observable per test. Values are kept as passed, the way the real client
+// round-trips objects. `setThrows` makes set() fail so beat() falls back to Postgres.
+const redisMock = vi.hoisted(() => ({ store: new Map<string, unknown>(), setThrows: false }));
 vi.mock('@/lib/redis', () => {
   const r = {
     get: async (k: string) => redisMock.store.get(k) ?? null,
-    set: async (k: string, v: string) => { redisMock.store.set(k, String(v)); return 'OK'; },
+    set: async (k: string, v: unknown) => { if (redisMock.setThrows) throw new Error('redis down'); redisMock.store.set(k, v); return 'OK'; },
+    lpush: async () => 1,
+    ltrim: async () => 'OK',
+    expire: async () => 1,
   };
   return {
     withRedis: async <T,>(fn: (r: unknown) => Promise<T>, fallback: T) => { try { return await fn(r); } catch { return fallback; } },
@@ -30,7 +35,7 @@ vi.mock('@/lib/redis', () => {
   };
 });
 const WAKE = `helm:${JUDGE_WAKE_KEY}`;
-beforeEach(() => redisMock.store.clear());
+beforeEach(() => { redisMock.store.clear(); redisMock.setThrows = false; });
 
 const CFG: JudgeConfig = { enabled: true, dailyCap: 200, userCap: 25, batch: 10, dailyUsd: 5 };
 
@@ -124,7 +129,9 @@ describe('runJudgeWorker', () => {
     expect(s.spentTodayUsd).toBe(5);
     expect(s.claimed).toBe(0);
     expect(log.some((l) => l.includes('daily spend cap reached'))).toBe(true);
-    expect(tables).toContain('watch_heartbeats');
+    // The heartbeat lands on Redis, not the table.
+    expect(tables).not.toContain('watch_heartbeats');
+    expect(redisMock.store.get('helm:hb:judge-worker')).toMatchObject({ detail: { spendCapReached: true, claimed: 0 } });
   });
 });
 
@@ -164,7 +171,7 @@ describe('judge wake flag', () => {
   const clock = () => NOW;
   const newJob = { kind: 'news' as const, user_id: 'u', thesis_id: 't', ticker: 'NVDA', source_key: 'k' };
 
-  it('a future flag returns idle with one heartbeat upsert and no judge_jobs statement', async () => {
+  it('a future flag returns idle with zero Postgres statements and a Redis heartbeat', async () => {
     redisMock.store.set(WAKE, '2026-09-09T14:30:00.000Z');
     const tables: string[] = [];
     const db = chain({ data: null, error: null }, tables);
@@ -173,9 +180,22 @@ describe('judge wake flag', () => {
     const s = await runJudgeWorker(db as any, CFG, async () => { throw new Error('a job ran while idle'); }, log, clock);
     expect(s.idle).toBe(true);
     expect(s.claimed).toBe(0);
-    expect(tables).toEqual(['watch_heartbeats']);
+    expect(tables).toEqual([]);
+    expect(redisMock.store.get('helm:hb:judge-worker')).toMatchObject({ detail: { idle: true, wakeAt: '2026-09-09T14:30:00.000Z' } });
     expect(log[0]).toContain('idle');
     expect(log[0]).toContain('2026-09-09T14:30:00.000Z');
+  });
+
+  it('an idle tick falls back to the watch_heartbeats upsert when Redis set() throws', async () => {
+    redisMock.store.set(WAKE, '2026-09-09T14:30:00.000Z');
+    redisMock.setThrows = true;
+    const tables: string[] = [];
+    const db = chain({ data: null, error: null }, tables);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const s = await runJudgeWorker(db as any, CFG, async () => { throw new Error('a job ran while idle'); }, [], clock);
+    expect(s.idle).toBe(true);
+    expect(tables).toEqual(['watch_heartbeats']);
+    expect(redisMock.store.has('helm:hb:judge-worker')).toBe(false);
   });
 
   it('a past flag polls through to the claim path as before', async () => {
