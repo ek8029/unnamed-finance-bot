@@ -171,15 +171,15 @@ In `components/plaid/plaid-link-button.tsx`:
 ```tsx
   /** Same moment as onExit, with the code, institution and search query. */
   onExitDetail?: (detail: LinkExitDetail) => void;
-  /** Lets a parent open Link from another control (a chip) without mounting a second button. */
-  openRef?: React.MutableRefObject<(() => void) | null>;
+  /** Lets a parent open Link from another control (a chip) without mounting a second button. Returns true only when Link actually opened. */
+  openRef?: React.RefObject<(() => boolean) | null>;
 ```
 3. Destructure both in the function signature.
 4. In `onExit`, after `onLinkError?.(...)` and before `onExit?.();`:
 ```tsx
       onExitDetail?.(describeLinkExit(err, metadata, lastSearchRef.current));
 ```
-5. After `handleClick` is defined, add:
+5. Make `handleClick` return `boolean`: `false` on every early return (guards, the tokenError re-fetch branch, the catch), `true` after `open()`. After `handleClick` is defined, add:
 ```tsx
   useEffect(() => {
     if (!openRef) return;
@@ -187,6 +187,7 @@ In `components/plaid/plaid-link-button.tsx`:
     return () => { openRef.current = null; };
   });
 ```
+(Applied in `9e27da0` plus the review follow-up commit; `React.MutableRefObject` is deprecated in React 19 types, hence `RefObject`.)
 (`useEffect` is already imported at the top; confirm.)
 
 - [ ] **Step 4: Run the test and the existing Plaid tests**
@@ -867,7 +868,7 @@ export function useBook(enabled = true) {
 Requirements, in order of what the component renders:
 - Two panels in one grid, `grid-cols-1` under 860px (`min-[860px]:grid-cols-2`), and the **manual panel first in DOM order** so it stacks first on mobile; on wide screens use `min-[860px]:order-2` on the manual panel if the design wants Plaid on the left. Both panels same card style: `rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-tint)] p-5`.
 - Manual panel: heading, body, then `<ManualPortfolioForm compact onComplete={onManualComplete} readOnly={readOnly} />`. Above the form, a live preview line: watch the form's rows. `ManualPortfolioForm` does not expose its rows today; add one optional prop to it, `onRowsChange?: (rows: { ticker: string; shares: number }[]) => void`, called from its existing row state effect (open `components/manual-portfolio-form.tsx`, find the rows state, add a `useEffect` that calls it; do not change anything else). In `BookAsk`, debounce 600 ms, fetch `/api/market/quotes?tickers=...` for the row tickers, compute `previewSentence(rows.map(r => ({ ticker, value: price ? price * shares : null })))`, render it in `text-[13px] text-[var(--color-text-secondary)]` with `aria-live="polite"`.
-- Plaid panel: heading, body, one `PlaidLinkButton` (`className="helm-button w-full"`, children = `V3_COPY.ask.plaid.search`) with `openRef`, `onSuccess`, `onWarning`, `onExitDetail`, `onSynced`. Six chips as `<button type="button" class="helm-chip">` that call `openRef.current?.()` then remember which chip opened Link in a ref so focus can return to it (`onExitDetail` handler: `lastOpener.current?.focus()`). The three trust rows as a `<ul>`.
+- Plaid panel: heading, body, one `PlaidLinkButton` (`className="helm-button w-full"`, children = `V3_COPY.ask.plaid.search`) with `openRef`, `onSuccess`, `onWarning`, `onExitDetail`, `onSynced`. Six chips as `<button type="button" class="helm-chip">` that call `openRef.current?.()` and, **only when it returns true**, remember which chip opened Link in a ref so focus can return to it (a chip tapped while the token is loading opens nothing and must not be recorded as the opener; keep the chip enabled, the next tap works once the token lands) (`onExitDetail` handler: `lastOpener.current?.focus()`). The three trust rows as a `<ul>`.
 - Exit handling: `const route = routeLinkExit(detail)`; `to === 'manual'` → set a notice state rendered above the manual form (`role="status"`) and `manualRef.current?.querySelector('input')?.focus()`; `to === 'stay'` → notice under the chips; `to === 'none'` → nothing. `onWarning(message)` (the duplicate institution) → call `onDuplicate?.(message)`.
 - Props:
 ```tsx
