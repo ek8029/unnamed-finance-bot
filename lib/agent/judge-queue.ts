@@ -17,7 +17,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { emptyLedger, mergeLedger, type UsageLedger } from '@/lib/ai/pricing';
 import { beat } from '@/lib/agent/heartbeat';
 import { withRedis, redisKey } from '@/lib/redis';
-import { JUDGE_WAKE_KEY, JUDGE_SLEEP_MS, shouldWakeJudge, minIso } from '@/lib/agent/judge-wake';
+import { JUDGE_WAKE_KEY, JUDGE_SLEEP_MS, RUNNING_GRACE_MS, shouldWakeJudge, minIso } from '@/lib/agent/judge-wake';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, any, any>;
@@ -239,11 +239,14 @@ export async function claimJudgeJobs(db: Db, cfg: JudgeConfig, now: Date = new D
     // no later than the earliest queued run_after. Running rows count too:
     // another instance's job may defer after this read, and its old (past)
     // run_after keeps the flag in the past so the next tick polls once more
-    // instead of sleeping an hour behind this park.
+    // instead of sleeping an hour behind this park. Only while plausibly
+    // alive, though: a row left `running` by a killed instance is never
+    // reaped, and counting it would pin the flag in the past for good.
+    const aliveSince = new Date(now.getTime() - RUNNING_GRACE_MS).toISOString();
     const { data: next } = await db
       .from('judge_jobs')
       .select('run_after')
-      .in('status', ['queued', 'running'])
+      .or(`status.eq.queued,and(status.eq.running,started_at.gte.${aliveSince})`)
       .order('run_after', { ascending: true })
       .limit(1)
       .maybeSingle();

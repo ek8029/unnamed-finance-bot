@@ -7,7 +7,7 @@ import {
   enqueueJudgeJobs, claimJudgeJobs, finishJudgeJob,
   type JudgeJobRow, type JudgeConfig,
 } from '@/lib/agent/judge-queue';
-import { JUDGE_WAKE_KEY, JUDGE_SLEEP_MS } from '@/lib/agent/judge-wake';
+import { JUDGE_WAKE_KEY, JUDGE_SLEEP_MS, RUNNING_GRACE_MS } from '@/lib/agent/judge-wake';
 import { emptyLedger, recordUsage } from '@/lib/ai/pricing';
 
 // Keep the auth test independent of provider initialization. The real route
@@ -244,27 +244,35 @@ describe('judge wake flag', () => {
     expect(redisMock.store.get(WAKE)).toBe(due);
   });
 
-  it('a running row on another instance keeps the flag at or before now', async () => {
-    // Instance B is mid-job; if it defers, its requeue must not sleep an hour
-    // behind A's park. The park read sees the running row's old run_after.
+  it('a live running row on another instance keeps the flag at or before now', async () => {
+    // Instance B claimed a job a minute ago (started_at stamped on claim); if
+    // it defers, its requeue must not sleep an hour behind A's park. The park
+    // read sees the running row's old run_after.
     const past = '2026-09-09T13:58:00.000Z';
     const ops: string[] = [];
     const db = chain({ data: [], error: null }, undefined, { data: { run_after: past }, error: null }, ops);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await claimJudgeJobs(db as any, CFG, NOW, null);
-    // The stub ignores filters, so pin the one that makes this scenario real.
-    expect(ops).toContain('in(["status",["queued","running"]])');
+    // The stub cannot apply a filter, so pin the one that makes this scenario
+    // real: a running row counts only while started_at is inside the grace
+    // window, so a row left behind by a killed instance cannot pin the flag.
+    const aliveSince = new Date(NOW.getTime() - RUNNING_GRACE_MS).toISOString();
+    const orArg = `status.eq.queued,and(status.eq.running,started_at.gte.${aliveSince})`;
+    expect(ops).toContain(`or(${JSON.stringify([orArg])})`);
+    expect(ops.some((o) => o.startsWith('or(') && o.includes(`started_at.gte.${aliveSince}`))).toBe(true);
+    expect(ops).not.toContain('in(["status",["queued","running"]])'); // the unbounded filter this replaced
     const set = redisMock.store.get(WAKE) as string;
     expect(Date.parse(set)).toBeLessThanOrEqual(NOW.getTime());
     expect(set).toBe(past);
   });
 
   it('skips the park when the flag changed since the tick started', async () => {
-    // The tick read a future flag; an enqueue lowered it to now during the select.
+    // What runJudgeWorker actually hands in: the past flag that woke this
+    // tick. An enqueue wrote now during the empty select, so the key differs.
     redisMock.store.set(WAKE, '2026-09-09T14:00:00.000Z');
     const db = chain({ data: [], error: null });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await claimJudgeJobs(db as any, CFG, NOW, '2026-09-09T15:00:00.000Z');
+    await claimJudgeJobs(db as any, CFG, NOW, '2026-09-09T13:59:00.000Z');
     expect(redisMock.store.get(WAKE)).toBe('2026-09-09T14:00:00.000Z');
   });
 

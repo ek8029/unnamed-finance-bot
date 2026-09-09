@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { shouldWakeJudge, minIso, JUDGE_WAKE_KEY, JUDGE_SLEEP_MS } from '@/lib/agent/judge-wake';
+import { shouldWakeJudge, minIso, JUDGE_WAKE_KEY, JUDGE_SLEEP_MS, RUNNING_GRACE_MS } from '@/lib/agent/judge-wake';
 
 const NOW = new Date('2026-09-09T14:00:00.000Z');
 
@@ -35,8 +35,10 @@ describe('minIso', () => {
 });
 
 describe('constants', () => {
-  it('names the key and bounds the sleep to one hour', () => {
+  it('names the key, bounds the sleep to one hour, and outlives the 300 s function for running rows', () => {
     expect(JUDGE_WAKE_KEY).toBe('agent:judge:wake');
     expect(JUDGE_SLEEP_MS).toBe(60 * 60 * 1000);
+    expect(RUNNING_GRACE_MS).toBe(10 * 60 * 1000);
+    expect(RUNNING_GRACE_MS).toBeGreaterThan(300_000);
   });
 });

@@ -15,6 +15,11 @@ export const JUDGE_WAKE_KEY = 'agent:judge:wake';
  *  job can sleep if an enqueue races the empty select: one hour, not a day. */
 export const JUDGE_SLEEP_MS = 60 * 60 * 1000;
 
+/** How long a `running` row counts as alive for the park read. A job cannot
+ *  outlive the 300 s worker function; a row older than this was left behind by
+ *  a killed instance and must not pin the flag in the past. */
+export const RUNNING_GRACE_MS = 10 * 60 * 1000;
+
 /** Wake when the flag is missing (unknown state, poll to be safe) or its time has arrived. */
 export function shouldWakeJudge(flag: string | null | undefined, now: Date): boolean {
   if (flag == null) return true;
