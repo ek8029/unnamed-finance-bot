@@ -11,6 +11,7 @@ import { usePreview } from '@/lib/preview-context';
 import { CheckoutModal } from '@/components/checkout-modal';
 import { CHECKOUT_PARAM, PENDING_CHECKOUT_KEY, isCheckoutIntent, type CheckoutIntent } from '@/lib/checkout-intent';
 import { TIER_RANK, type Tier } from '@/lib/tier-shared';
+import { V3_COPY } from '@/lib/onboarding/v3-copy';
 import {
   LayoutDashboard,
   Wallet,
@@ -53,6 +54,7 @@ import { useSurveyDeferral } from '@/components/survey-deferral';
 // Value-first onboarding cohort. Flip NEXT_PUBLIC_ONBOARDING_V2=1 to serve the
 // scan-before-connect flow; default keeps the legacy tour until scan->link reads positive.
 const ONBOARDING_V2 = process.env.NEXT_PUBLIC_ONBOARDING_V2 === '1';
+const ONBOARDING_V3 = process.env.NEXT_PUBLIC_ONBOARDING_V3 === '1';
 import { GuidedTour } from '@/components/onboarding/guided-tour';
 import { DisclaimerModal } from '@/components/legal/disclaimer-modal';
 import { MobileBottomNav } from '@/components/mobile-bottom-nav';
@@ -112,31 +114,33 @@ type NavItem = {
   pulse?: boolean; // Daily Brief gold pulse dot
   count?: number; // Actions red count pill
   badge?: 'new'; // Theses "New" badge
+  // v3: what the item is waiting for, or null when it is ready. Dimmed items still navigate.
+  dim?: (s: { hasBrief: boolean; hasConnection: boolean }) => string | null;
 };
 
 const TERMINAL_NAV: NavItem[] = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
   // Portfolio rendered separately (has disclosure sub-items)
-  { name: 'Theses', href: '/dashboard/theses', icon: Anchor, tier: 'pro', badge: 'new' },
+  { name: 'Theses', href: '/dashboard/theses', icon: Anchor, tier: 'pro', badge: 'new', dim: (s) => (s.hasBrief ? null : V3_COPY.sidebar.afterBrief) },
 ];
 
 const PORTFOLIO_PARENT: NavItem = { name: 'Portfolio', href: '/dashboard/portfolio', icon: TrendingUp };
 const PORTFOLIO_CHILDREN: NavItem[] = [
   { name: 'Manual entry', href: '/dashboard/portfolio/add', icon: PenLine },
   { name: 'Research', href: '/dashboard/chat', icon: MessageSquare },
-  { name: 'Earnings', href: '/dashboard/earnings', icon: BarChart3, tier: 'pro' },
+  { name: 'Earnings', href: '/dashboard/earnings', icon: BarChart3, tier: 'pro', dim: (s) => (s.hasBrief ? null : V3_COPY.sidebar.afterBrief) },
   { name: 'Factor lens', href: '/dashboard/portfolio/factors', icon: Layers, tier: 'pro' },
 ];
 
 const INTELLIGENCE_NAV: NavItem[] = [
   { name: 'Analyze', href: '/dashboard/analyze', icon: Search },
-  { name: 'Daily Brief', href: '/dashboard/brief', icon: BookOpen },
+  { name: 'Daily Brief', href: '/dashboard/brief', icon: BookOpen, dim: (s) => (s.hasBrief ? null : V3_COPY.sidebar.briefTomorrow) },
   { name: 'Actions', href: '/dashboard/actions', icon: Zap },
   { name: 'Activity', href: '/dashboard/transactions', icon: ArrowLeftRight },
 ];
 
 const PLANNING_NAV: NavItem[] = [
-  { name: 'Taxes', href: '/dashboard/taxes', icon: FileText, tier: 'pro' },
+  { name: 'Taxes', href: '/dashboard/taxes', icon: FileText, tier: 'pro', dim: (s) => (s.hasConnection ? null : V3_COPY.sidebar.needsCostBasis) },
   { name: 'Wrapped', href: '/dashboard/wrapped', icon: Sparkles },
   // NOTE: "Cash & Income" (spec/round2 Planning group) has no route yet — omitted
   // rather than pointed at a wrong target. Add here as `/dashboard/cash` when built.
@@ -381,6 +385,22 @@ export default function DashboardShell({
     return () => { clearTimeout(t); ctrl.abort(); };
   }, [paletteQuery]);
 
+  // v3 sidebar labels. Defaults to "ready" so nothing dims before the fetch
+  // resolves, on error, or with the flag off (no fetch at all).
+  const [activation, setActivation] = useState({ hasBrief: true, hasConnection: true });
+  useEffect(() => {
+    if (!ONBOARDING_V3 || previewPath) return;
+    let cancelled = false;
+    fetch('/api/onboarding/status')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        setActivation({ hasBrief: !!data.hasBrief, hasConnection: !!data.hasConnection });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [previewPath]);
+
   // Fetch user profile on mount + re-fetch when profile is updated
   useEffect(() => {
     if (previewPath) {
@@ -465,6 +485,7 @@ export default function DashboardShell({
     const active = isActive(item.href);
     const locked = isLocked(item.tier);
     const showNewBadge = item.badge === 'new' && item.href === '/dashboard/theses' && thesisEntitled && !thesesVisited;
+    const dimLabel = ONBOARDING_V3 ? item.dim?.(activation) ?? null : null;
     return (
       <Link
         href={item.href}
@@ -485,7 +506,10 @@ export default function DashboardShell({
         }}
       >
         <item.icon size={16} strokeWidth={1.6} className="shrink-0" />
-        <span className="flex-1 truncate">{item.name}</span>
+        <span className="flex-1 truncate">
+          {item.name}
+          {dimLabel && <span className="ml-2 text-[10px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">{dimLabel}</span>}
+        </span>
         {item.pulse && (
           <span
             className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)] shrink-0"
@@ -737,6 +761,7 @@ export default function DashboardShell({
                 {PORTFOLIO_CHILDREN.map((child) => {
                   const childActive = isActive(child.href);
                   const childLocked = isLocked(child.tier);
+                  const childDimLabel = ONBOARDING_V3 ? child.dim?.(activation) ?? null : null;
                   return (
                     <Link
                       key={child.name}
@@ -748,7 +773,10 @@ export default function DashboardShell({
                       }}
                     >
                       <span className="w-1 h-1 rounded-full bg-current opacity-50 shrink-0" />
-                      <span className="flex-1 truncate">{child.name}</span>
+                      <span className="flex-1 truncate">
+                        {child.name}
+                        {childDimLabel && <span className="ml-2 text-[10px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">{childDimLabel}</span>}
+                      </span>
                       {childLocked && (
                         <span
                           className="shrink-0 rounded-[3px] px-[5px] py-[1px] text-[8px] font-bold tracking-[0.08em]"
