@@ -16,6 +16,9 @@ describe('describeLinkExit', () => {
     expect(describeLinkExit(null, { status: null }, null)).toEqual({ code: null, status: null, institutionName: null, searchQuery: null });
   });
   it('never throws on missing metadata', () => {
-    expect(describeLinkExit(undefined as never, undefined, undefined as never).code).toBeNull();
+    expect(describeLinkExit(undefined, undefined, undefined).code).toBeNull();
+  });
+  it('keeps an empty error_code instead of reading it as a plain close', () => {
+    expect(describeLinkExit({ error_code: '' }, { status: 'x' }, null).code).toBe('');
   });
 });

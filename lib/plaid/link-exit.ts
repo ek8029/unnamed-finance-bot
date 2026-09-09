@@ -66,7 +66,7 @@ export function describeLinkExit(err: PlaidLinkExitError | undefined, metadata: 
   const status = metadata?.status ?? null;
   const resolved = resolveLinkExitError(err ?? null, status);
   return {
-    code: resolved?.code || null,
+    code: resolved ? resolved.code : null,
     status,
     institutionName: metadata?.institution?.name ?? null,
     searchQuery: searchQuery ?? null,

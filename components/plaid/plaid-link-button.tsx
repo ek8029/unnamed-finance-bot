@@ -20,8 +20,9 @@ interface PlaidLinkButtonProps {
   onExit?: () => void;
   /** Same moment as onExit, with the code, institution and search query. */
   onExitDetail?: (detail: LinkExitDetail) => void;
-  /** Lets a parent open Link from another control (a chip) without mounting a second button. */
-  openRef?: React.MutableRefObject<(() => void) | null>;
+  /** Lets a parent open Link from another control (a chip) without mounting a second button.
+   *  Returns true only when Link actually opened. */
+  openRef?: React.RefObject<(() => boolean) | null>;
   onWarning?: (message: string) => void;
   /** Fires when the user actually opens Link. A wrapper's onClickCapture
    *  cannot tell: the disabled button uses pointer-events-none, so clicks
@@ -194,17 +195,17 @@ export function PlaidLinkButton({
 
   const status = linkButtonStatus({ initializing, tokenError, ready, exchanging, linkOpen });
 
-  const handleClick = () => {
-    if (initializingRef.current || exchangingRef.current || linkOpenRef.current) return;
+  const handleClick = (): boolean => {
+    if (initializingRef.current || exchangingRef.current || linkOpenRef.current) return false;
     if (tokenError) {
       initializingRef.current = true;
       setInitializing(true);
       setTokenError(false);
       setLinkToken(null);
       setTokenAttempt(attempt => attempt + 1);
-      return;
+      return false;
     }
-    if (!ready || !linkToken) return;
+    if (!ready || !linkToken) return false;
     linkOpenRef.current = true;
     setLinkOpen(true);
     lastSearchRef.current = null;
@@ -212,10 +213,12 @@ export function PlaidLinkButton({
       onOpen?.();
       posthog.capture('plaid_link_started');
       open();
+      return true;
     } catch {
       linkOpenRef.current = false;
       setLinkOpen(false);
       onErrorRef.current?.('Could not open the connection window. Please try again.');
+      return false;
     }
   };
 
