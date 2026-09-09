@@ -33,7 +33,8 @@ export function BookReveal({ holdings, accounts, syncing, firstLook, firstLookSl
   const top = book.top?.ticker ?? null;
   const cards = orderRevealCards(firstLook, accounts);
   const [receipt, setReceipt] = useState<ReceiptState>({ ticker: '', state: 'loading' });
-  const [movers, setMovers] = useState<Mover[] | null>(null);
+  // null = loading; 'error' = the fetch failed, so no claim is made either way.
+  const [movers, setMovers] = useState<Mover[] | 'error' | null>(null);
   const [attempt, setAttempt] = useState(0);
   const viewed = useRef(false);
 
@@ -52,14 +53,14 @@ export function BookReveal({ holdings, accounts, syncing, firstLook, firstLookSl
     if (!wantsChanges || movers !== null) return;
     let cancelled = false;
     fetch('/api/dashboard/delta', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((d) => {
         if (cancelled) return;
         // The route reports the one largest live move on the book (or null).
         const m = d?.mover;
         setMovers(m && typeof m.ticker === 'string' && Number.isFinite(m.changePct) ? [{ ticker: m.ticker, changePct: m.changePct }] : []);
       })
-      .catch(() => { if (!cancelled) setMovers([]); });
+      .catch(() => { if (!cancelled) setMovers('error'); });
     return () => { cancelled = true; };
   }, [wantsChanges, movers]);
 
@@ -107,7 +108,7 @@ export function BookReveal({ holdings, accounts, syncing, firstLook, firstLookSl
 
   const sentence = wantsOverlap(firstLook, accounts) ? overlapSentence(book, accounts) : exposureSentence(book);
   const held = new Set(holdings.map((h) => h.ticker.toUpperCase()));
-  const heldMovers = (movers ?? []).filter((m) => held.has(m.ticker.toUpperCase())).slice(0, 5);
+  const heldMovers = (Array.isArray(movers) ? movers : []).filter((m) => held.has(m.ticker.toUpperCase())).slice(0, 5);
 
   return (
     <section>
@@ -117,6 +118,7 @@ export function BookReveal({ holdings, accounts, syncing, firstLook, firstLookSl
         {cards.map((c) => {
           if (c === 'exposure') return <ExposureCard key={c} book={book} sentence={sentence} />;
           if (c === 'receipts') return <ReceiptCard key={c} className={CARD} ticker={top} receipt={settled ? settled.data : undefined} />;
+          if (movers === 'error') return null;
           return (
             <article key={c} className={CARD}>
               <h3 className="text-[14px] font-medium text-[var(--color-text-primary)]">{copy.changesHeading}</h3>

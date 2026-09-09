@@ -54,7 +54,7 @@ export function AccountLoop({ accounts, holdings, syncing, duplicate, onPlaidSuc
                 </div>
               ) : (
                 <p className="shrink-0 text-right text-[13px] text-[var(--color-text-secondary)]">
-                  {a.positions} positions
+                  {copy.positions(a.positions)}
                   <span className="block text-[12px] text-[var(--color-text-muted)]">{a.source === 'manual' ? copy.byHand : copy.imported}</span>
                 </p>
               )}

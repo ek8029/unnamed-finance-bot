@@ -26,6 +26,8 @@ describe('onboarding v3 copy', () => {
     lint('step', V3_COPY.step(2));
     lint('loop.many', V3_COPY.loop.many(2, 14, '$120,400'));
     lint('loop.syncing', V3_COPY.loop.syncing('Fidelity'));
+    lint('loop.positions', V3_COPY.loop.positions(1));
+    lint('loop.positions', V3_COPY.loop.positions(3));
     lint('loop.already', V3_COPY.loop.already('Schwab'));
     lint('reveal.stillSyncing', V3_COPY.reveal.stillSyncing('Fidelity'));
     lint('reveal.receiptHeading', V3_COPY.reveal.receiptHeading('NVDA'));

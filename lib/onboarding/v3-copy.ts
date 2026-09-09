@@ -30,6 +30,7 @@ export const V3_COPY = {
     one: 'Most people who pay for Helm hold accounts at two or more brokerages. Add the others and the exposure view shows the overlap between them.',
     many: (n: number, positions: number, value: string) => `${n} accounts, ${positions} positions, ${value}. Add another, or continue.`,
     syncing: (institution: string) => `Syncing ${institution}`,
+    positions: (n: number) => `${n} ${n === 1 ? 'position' : 'positions'}`,
     imported: 'imported',
     byHand: 'entered by hand',
     already: (institution: string) => `${institution} is already connected`,
