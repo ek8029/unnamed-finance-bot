@@ -12,7 +12,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { getLiveQuotes } from '@/lib/live-quotes';
+import { getLiveQuotes, type LiveQuote } from '@/lib/live-quotes';
 import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
@@ -23,6 +23,8 @@ export const dynamic = 'force-dynamic';
 const MAX_TICKERS = 120;
 const TICKER_RE = /^[A-Z][A-Z0-9.\-]{0,9}$/;
 const PRICE_TTL_MS = 6_000;
+// fill=close looks back this far for a last close; older rows read as no price.
+const CLOSE_LOOKBACK_DAYS = 30;
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -48,5 +50,32 @@ export async function GET(request: NextRequest) {
   }
 
   const quotes = await getLiveQuotes(tickers, PRICE_TTL_MS);
-  return NextResponse.json({ quotes });
+  // Opt-in: off hours the provider returns nothing, so a caller that passes
+  // fill=close gets each missing ticker's newest market_prices close instead.
+  // Without the param the response is byte-identical to before.
+  if (request.nextUrl.searchParams.get('fill') !== 'close') {
+    return NextResponse.json({ quotes });
+  }
+  const out: (LiveQuote & { source: 'live' | 'close' })[] = quotes.map((q) => ({ ...q, source: 'live' as const }));
+  const live = new Set(quotes.map((q) => q.ticker));
+  const missing = tickers.filter((t) => !live.has(t));
+  if (missing.length > 0) {
+    const since = new Date(Date.now() - CLOSE_LOOKBACK_DAYS * 86_400_000).toISOString().slice(0, 10);
+    // market_prices: RLS on, SELECT open to authenticated (migration 012);
+    // UNIQUE is on (security_id, price_date), not ticker, so the first row
+    // per ticker in date-desc order wins.
+    const { data } = await supabase
+      .from('market_prices')
+      .select('ticker, close, price_date')
+      .in('ticker', missing)
+      .gte('price_date', since)
+      .order('price_date', { ascending: false });
+    const seen = new Set<string>();
+    for (const row of (data ?? []) as { ticker: string; close: number | string; price_date: string }[]) {
+      if (seen.has(row.ticker)) continue;
+      seen.add(row.ticker);
+      out.push({ ticker: row.ticker, price: Number(row.close), prevClose: null, dayChangePct: null, asOf: Date.parse(row.price_date), source: 'close' });
+    }
+  }
+  return NextResponse.json({ quotes: out });
 }

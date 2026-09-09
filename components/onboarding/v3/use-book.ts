@@ -40,8 +40,9 @@ export type PreviewRow = { ticker: string; shares: number };
 
 /** The manual panel's live line. Quotes are fetched once per distinct ticker
  *  set, 600 ms after it last changed; a share edit re-reads cached prices and
- *  never refetches. A failed fetch leaves prices empty, which previewSentence
- *  renders as its no-price line. */
+ *  never refetches. fill=close asks the route for the last close on tickers
+ *  with no live quote, so the sentence reads the same off hours. A failed
+ *  fetch leaves prices empty, which previewSentence renders as its no-price line. */
 export function useQuotePreview(rows: PreviewRow[]): string {
   const [prices, setPrices] = useState<Map<string, number>>(() => new Map());
   const key = useMemo(() => [...new Set(rows.map((r) => r.ticker.toUpperCase()))].sort().join(','), [rows]);
@@ -52,7 +53,7 @@ export function useQuotePreview(rows: PreviewRow[]): string {
     const t = setTimeout(async () => {
       const next = new Map<string, number>();
       try {
-        const r = await fetch(`/api/market/quotes?tickers=${encodeURIComponent(key)}`);
+        const r = await fetch(`/api/market/quotes?tickers=${encodeURIComponent(key)}&fill=close`);
         if (r.ok) {
           const d = await r.json();
           for (const q of (d.quotes ?? []) as { ticker?: unknown; price?: unknown }[]) {
