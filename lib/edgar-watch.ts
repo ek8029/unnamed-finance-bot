@@ -19,7 +19,7 @@ import { monitoredThesisIds } from '@/lib/agent/monitored';
 import { enqueueJudgeJobs, type NewJudgeJob } from '@/lib/agent/judge-queue';
 import { beat } from '@/lib/agent/heartbeat';
 import { cachedUniverse } from '@/lib/watch/universe-cache';
-import { unseen } from '@/lib/watch/seen-set';
+import { unseen, markSeen } from '@/lib/watch/seen-set';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, any, any>;
@@ -207,6 +207,8 @@ export interface WatchDeps {
   record: (hits: WatchedEntry[], dry: boolean, now: Date) => Promise<RecordedEvent[]>;
   /** Which of these accession numbers have not been handled before (Redis seen set); absent or down means all of them, and `record` dedupes. */
   unseen?: (ids: string[]) => Promise<string[]>;
+  /** Remember these accession numbers; called only after `record` succeeded, so a failed write is retried next tick. */
+  markSeen?: (ids: string[]) => Promise<void>;
   /** Enqueue judge jobs for a new tier-now event; return how many were queued and the status to stamp. */
   enqueue: (event: RecordedEvent, log: string[]) => Promise<{ queued: number; status: 'queued' | 'skipped'; note: string | null }>;
   stamp: (accessionNo: string, status: 'queued' | 'skipped' | 'hourly' | 'new', note: string | null) => Promise<void>;
@@ -292,8 +294,8 @@ export async function watchOnce(
     if (hits.length === 0) continue;
 
     // The feed repeats: drop what the seen set already handled before the
-    // upsert. A dry run never marks anything seen. `continue`, not `return`:
-    // the later forms still tick.
+    // upsert, and mark the rest only once the upsert succeeded. A dry run
+    // never touches the set. `continue`, not `return`: the later forms still tick.
     let toRecord = hits;
     if (!dry && deps.unseen) {
       try {
@@ -312,6 +314,10 @@ export async function watchOnce(
     } catch (err) {
       result.errors.push(`${form} record: ${err instanceof Error ? err.message : String(err)}`);
       continue;
+    }
+    if (!dry && deps.markSeen) {
+      // Everything handed to the upsert is settled now, including the rows it found already present.
+      await deps.markSeen(toRecord.map((h) => h.accessionNo)).catch((err) => result.errors.push(`${form} mark seen: ${err instanceof Error ? err.message : String(err)}`));
     }
     result.new += fresh.length;
     for (const ev of fresh) {
@@ -428,6 +434,7 @@ export async function runEdgarWatch(db: Db, opts: { dry?: boolean; forms?: reado
       universe: () => buildWatchUniverse(db),
       record: (hits, dry, now) => recordFilingEvents(db, hits, dry, now),
       unseen: (ids) => unseen('edgar', ids),
+      markSeen: (ids) => markSeen('edgar', ids),
       enqueue: (event, log) => enqueueForEvent(db, event, log),
       stamp: (acc, status, note) => stampFilingEvent(db, acc, status, note),
     },

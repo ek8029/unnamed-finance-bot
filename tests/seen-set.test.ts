@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { unseen, SEEN_TTL_S } from '@/lib/watch/seen-set';
+import { unseen, markSeen, SEEN_TTL_S } from '@/lib/watch/seen-set';
 
 // An in-memory Redis behind withRedis. `mode` switches between a working
 // client, a null client (Redis unconfigured) and one whose calls throw.
@@ -42,30 +42,22 @@ beforeEach(() => { redisMock.sets.clear(); redisMock.ttl.clear(); redisMock.call
 const KEY = 'helm:watch:seen:edgar';
 
 describe('unseen', () => {
-  it('first call returns every id and adds them to the set with the seven day TTL', async () => {
+  it('is read-only: twice in a row returns every id both times', async () => {
     expect(await unseen('edgar', ['a', 'b'])).toEqual(['a', 'b']);
-    expect([...redisMock.sets.get(KEY)!].sort()).toEqual(['a', 'b']);
-    expect(redisMock.ttl.get(KEY)).toBe(SEEN_TTL_S);
-    expect(SEEN_TTL_S).toBe(7 * 24 * 3600);
-  });
-
-  it('the same ids again return nothing and write nothing', async () => {
-    await unseen('edgar', ['a', 'b']);
-    redisMock.calls.length = 0;
-    expect(await unseen('edgar', ['a', 'b'])).toEqual([]);
-    expect(redisMock.calls).toEqual(['smismember']);
-  });
-
-  it('a mix returns only the new ids, in input order', async () => {
-    await unseen('edgar', ['b']);
-    expect(await unseen('edgar', ['a', 'b', 'c'])).toEqual(['a', 'c']);
-    expect([...redisMock.sets.get(KEY)!].sort()).toEqual(['a', 'b', 'c']);
-  });
-
-  it('keys per watcher', async () => {
-    await unseen('news', ['a']);
-    expect(redisMock.sets.has('helm:watch:seen:news')).toBe(true);
+    expect(await unseen('edgar', ['a', 'b'])).toEqual(['a', 'b']);
+    expect(redisMock.calls).toEqual(['smismember', 'smismember']);
     expect(redisMock.sets.has(KEY)).toBe(false);
+  });
+
+  it('after markSeen the same ids return nothing', async () => {
+    await unseen('edgar', ['a', 'b']);
+    await markSeen('edgar', ['a', 'b']);
+    expect(await unseen('edgar', ['a', 'b'])).toEqual([]);
+  });
+
+  it('a mix returns only the unmarked ids, in input order', async () => {
+    await markSeen('edgar', ['b']);
+    expect(await unseen('edgar', ['a', 'b', 'c'])).toEqual(['a', 'c']);
   });
 
   it('Redis null returns every id (today: the upsert dedupes)', async () => {
@@ -82,5 +74,33 @@ describe('unseen', () => {
   it('empty input makes no Redis call', async () => {
     expect(await unseen('edgar', [])).toEqual([]);
     expect(redisMock.calls).toEqual([]);
+  });
+});
+
+describe('markSeen', () => {
+  it('adds the ids and sets the seven day TTL', async () => {
+    await markSeen('edgar', ['a', 'b']);
+    expect([...redisMock.sets.get(KEY)!].sort()).toEqual(['a', 'b']);
+    expect(redisMock.ttl.get(KEY)).toBe(SEEN_TTL_S);
+    expect(SEEN_TTL_S).toBe(7 * 24 * 3600);
+    expect(redisMock.calls).toEqual(['sadd', 'expire']);
+  });
+
+  it('keys per watcher', async () => {
+    await markSeen('news', ['a']);
+    expect(redisMock.sets.has('helm:watch:seen:news')).toBe(true);
+    expect(redisMock.sets.has(KEY)).toBe(false);
+  });
+
+  it('empty input makes no Redis call', async () => {
+    await markSeen('edgar', []);
+    expect(redisMock.calls).toEqual([]);
+  });
+
+  it('Redis null or a throw is silent', async () => {
+    redisMock.mode = 'null';
+    await expect(markSeen('edgar', ['a'])).resolves.toBeUndefined();
+    redisMock.mode = 'throw';
+    await expect(markSeen('edgar', ['a'])).resolves.toBeUndefined();
   });
 });

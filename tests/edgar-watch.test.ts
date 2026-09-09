@@ -194,14 +194,50 @@ describe('watchOnce', () => {
     expect(enqueued).toEqual([]); // PDSB is tier hourly
   });
 
-  it('a dry run never consults the seen set', async () => {
+  it('a dry run never consults or marks the seen set', async () => {
     const { deps } = fakes();
     const unseen = vi.fn(async (ids: string[]) => ids);
+    const markSeen = vi.fn(async (_ids: string[]) => {});
     deps.unseen = unseen;
+    deps.markSeen = markSeen;
     const r = await watchOnce(deps, { log: [], dry: true, forms: ['8-K'], memory: new Map() });
     expect(unseen).not.toHaveBeenCalled();
+    expect(markSeen).not.toHaveBeenCalled();
     expect(r.new).toBe(3);
     expect(r.skippedSeen).toBe(0);
+  });
+
+  it('marks seen exactly the ids handed to the upsert, only after it succeeded', async () => {
+    const { deps } = fakes();
+    const record = vi.fn(deps.record);
+    deps.record = record;
+    deps.unseen = async (ids) => ids.filter((id) => id !== '0001140361-26-035809'); // PDSB already seen
+    const markSeen = vi.fn(async (_ids: string[]) => {});
+    deps.markSeen = markSeen;
+    const r = await watchOnce(deps, { log: [], forms: ['8-K'], memory: new Map() });
+    const handed = record.mock.calls[0][0].map((h: WatchedEntry) => h.accessionNo);
+    expect(handed).toHaveLength(2);
+    expect(markSeen).toHaveBeenCalledTimes(1);
+    expect(markSeen.mock.calls[0][0]).toEqual(handed);
+    expect(r.new).toBe(2);
+  });
+
+  it('a failed upsert marks nothing, so the next tick retries and marks then', async () => {
+    const { deps } = fakes();
+    const real = deps.record;
+    let attempt = 0;
+    deps.record = async (hits, dry, now) => { if (attempt++ === 0) throw new Error('db blip'); return real(hits, dry, now); };
+    deps.unseen = async (ids) => ids;
+    const markSeen = vi.fn(async (_ids: string[]) => {});
+    deps.markSeen = markSeen;
+    const first = await watchOnce(deps, { log: [], forms: ['8-K'], memory: new Map() });
+    expect(first.errors).toEqual(['8-K record: db blip']);
+    expect(first.new).toBe(0);
+    expect(markSeen).not.toHaveBeenCalled();
+    const second = await watchOnce(deps, { log: [], forms: ['8-K'], memory: new Map() });
+    expect(second.new).toBe(3);
+    expect(markSeen).toHaveBeenCalledTimes(1);
+    expect(markSeen.mock.calls[0][0]).toHaveLength(3);
   });
 
   it('a seen set that throws is reported and the upsert sees everything', async () => {
