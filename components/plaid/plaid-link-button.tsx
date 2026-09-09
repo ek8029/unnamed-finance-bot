@@ -6,7 +6,7 @@ import { Loader2, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import posthog from 'posthog-js';
 import { useDemo } from '@/contexts/demo-context';
-import { resolveLinkExitError } from '@/lib/plaid/link-exit';
+import { resolveLinkExitError, describeLinkExit, type LinkExitDetail } from '@/lib/plaid/link-exit';
 import { runBackgroundSync, type BackgroundSyncResult } from '@/lib/plaid/background-sync';
 import { AUTO_SYNC_ATTEMPT_KEY } from '@/lib/plaid/sync-client';
 import { createLinkTokenLoader, linkButtonStatus } from '@/lib/plaid/link-token-loader';
@@ -18,6 +18,10 @@ interface PlaidLinkButtonProps {
   onError?: (error: string) => void;
   onLinkError?: (errorCode: string, message: string) => void;
   onExit?: () => void;
+  /** Same moment as onExit, with the code, institution and search query. */
+  onExitDetail?: (detail: LinkExitDetail) => void;
+  /** Lets a parent open Link from another control (a chip) without mounting a second button. */
+  openRef?: React.MutableRefObject<(() => void) | null>;
   onWarning?: (message: string) => void;
   /** Fires when the user actually opens Link. A wrapper's onClickCapture
    *  cannot tell: the disabled button uses pointer-events-none, so clicks
@@ -36,6 +40,8 @@ export function PlaidLinkButton({
   onError,
   onLinkError,
   onExit,
+  onExitDetail,
+  openRef,
   onWarning,
   onOpen,
   onSynced,
@@ -181,6 +187,7 @@ export function PlaidLinkButton({
         if (err) console.error('Plaid Link exit error:', err);
         onLinkError?.(linkError.code, linkError.message);
       }
+      onExitDetail?.(describeLinkExit(err, metadata, lastSearchRef.current));
       onExit?.();
     },
   });
@@ -211,6 +218,12 @@ export function PlaidLinkButton({
       onErrorRef.current?.('Could not open the connection window. Please try again.');
     }
   };
+
+  useEffect(() => {
+    if (!openRef) return;
+    openRef.current = handleClick;
+    return () => { openRef.current = null; };
+  });
 
   return (
     <Button

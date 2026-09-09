@@ -50,3 +50,25 @@ export function resolveLinkExitError(
       'Something went wrong connecting your account. Please try again.',
   };
 }
+
+export type LinkExitDetail = {
+  /** Plaid error_code, INSTITUTION_NOT_FOUND synthesized from status, or null for a plain close. */
+  code: string | null;
+  status: string | null;
+  institutionName: string | null;
+  searchQuery: string | null;
+};
+
+type LinkExitMetadata = { status?: string | null; institution?: { name?: string | null } | null } | null | undefined;
+
+/** Everything the caller can act on after Link closes, in one object. */
+export function describeLinkExit(err: PlaidLinkExitError | undefined, metadata: LinkExitMetadata, searchQuery: string | null | undefined): LinkExitDetail {
+  const status = metadata?.status ?? null;
+  const resolved = resolveLinkExitError(err ?? null, status);
+  return {
+    code: resolved?.code || null,
+    status,
+    institutionName: metadata?.institution?.name ?? null,
+    searchQuery: searchQuery ?? null,
+  };
+}
