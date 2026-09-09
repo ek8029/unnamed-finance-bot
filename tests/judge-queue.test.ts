@@ -9,6 +9,7 @@ import {
 } from '@/lib/agent/judge-queue';
 import { JUDGE_WAKE_KEY, JUDGE_SLEEP_MS, RUNNING_GRACE_MS } from '@/lib/agent/judge-wake';
 import { emptyLedger, recordUsage } from '@/lib/ai/pricing';
+import { __resetCoalesce } from '@/lib/coalesce';
 
 // Keep the auth test independent of provider initialization. The real route
 // must reject before constructing a service client or running external work.
@@ -21,7 +22,7 @@ vi.mock('@/lib/push/send', () => ({ checkPushReceipts: workerBoundary.receipts }
 // observable per test. Values are JSON round-tripped the way the real client
 // serializes them. beat() writes through multi().exec(); `execThrows` fails
 // that as a unit so beat() falls back to Postgres.
-const redisMock = vi.hoisted(() => ({ store: new Map<string, unknown>(), execThrows: false }));
+const redisMock = vi.hoisted(() => ({ store: new Map<string, unknown>(), execThrows: false, nullClient: false }));
 vi.mock('@/lib/redis', () => {
   const wire = (v: unknown) => JSON.parse(JSON.stringify(v));
   const r = {
@@ -39,12 +40,12 @@ vi.mock('@/lib/redis', () => {
     },
   };
   return {
-    withRedis: async <T,>(fn: (r: unknown) => Promise<T>, fallback: T) => { try { return await fn(r); } catch { return fallback; } },
+    withRedis: async <T,>(fn: (r: unknown) => Promise<T>, fallback: T) => { if (redisMock.nullClient) return fallback; try { return await fn(r); } catch { return fallback; } },
     redisKey: (...parts: string[]) => ['helm', ...parts].join(':'),
   };
 });
 const WAKE = `helm:${JUDGE_WAKE_KEY}`;
-beforeEach(() => { redisMock.store.clear(); redisMock.execThrows = false; });
+beforeEach(() => { redisMock.store.clear(); redisMock.execThrows = false; redisMock.nullClient = false; });
 
 const CFG: JudgeConfig = { enabled: true, dailyCap: 200, userCap: 25, batch: 10, dailyUsd: 5 };
 
@@ -350,5 +351,63 @@ describe('judge worker cron', () => {
     const cfg = JSON.parse(readFileSync(join(process.cwd(), 'vercel.json'), 'utf8'));
     const run = (cfg.crons as { path: string; schedule: string }[]).find((c) => c.path === '/api/cron/judge-worker');
     expect(run?.schedule).toBe('* * * * *');
+  });
+
+  // Push receipts ride this minute cron. After an empty check the route parks a
+  // quiet key for ten minutes so the idle push_tickets read is not opened 1,440
+  // times a day. The judge is off here (JUDGE_ENABLED unset), so `tables` is the
+  // full list of Postgres statements the route opened on the tick.
+  describe('push receipts quiet key', () => {
+    const QUIET = 'helm:push:receipts-quiet';
+    let tables: string[];
+    const tick = async () => {
+      __resetCoalesce();
+      const { GET } = await import('../app/api/cron/judge-worker/route');
+      const res = await GET(new Request('http://cron.internal/api/cron/judge-worker', { headers: { Authorization: 'Bearer test-secret' } }));
+      expect(res.status).toBe(200);
+    };
+    beforeEach(() => {
+      vi.stubEnv('JUDGE_ENABLED', '');
+      tables = [];
+      workerBoundary.db.mockReset().mockResolvedValue(chain({ data: [], error: null }, tables));
+      workerBoundary.receipts.mockReset();
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+    });
+    afterEach(() => { vi.restoreAllMocks(); });
+
+    it('a present key skips the check and logs how long the quiet lasts', async () => {
+      redisMock.store.set(QUIET, '2026-09-09T14:10:00.000Z');
+      await tick();
+      expect(workerBoundary.receipts).not.toHaveBeenCalled();
+      expect(tables).toEqual([]);
+      const lines = (console.log as unknown as { mock: { calls: unknown[][] } }).mock.calls.map((c) => String(c[0]));
+      expect(lines).toContain('[cron/judge-worker] [push] receipts: quiet until 2026-09-09T14:10:00.000Z');
+    });
+
+    it('no key and nothing pending: the check runs and parks a key about ten minutes ahead', async () => {
+      workerBoundary.receipts.mockResolvedValue(0);
+      const before = Date.now();
+      await tick();
+      expect(workerBoundary.receipts).toHaveBeenCalledTimes(1);
+      const until = Date.parse(redisMock.store.get(QUIET) as string);
+      expect(until - before).toBeGreaterThanOrEqual(10 * 60_000 - 1_000);
+      expect(until - before).toBeLessThanOrEqual(10 * 60_000 + 5_000);
+    });
+
+    it('no key and receipts checked: no key is parked, so the next minute checks again', async () => {
+      workerBoundary.receipts.mockResolvedValue(3);
+      await tick();
+      expect(workerBoundary.receipts).toHaveBeenCalledTimes(1);
+      expect(redisMock.store.has(QUIET)).toBe(false);
+    });
+
+    it('Redis null: the check runs every minute as before and no key is ever written', async () => {
+      redisMock.nullClient = true;
+      workerBoundary.receipts.mockResolvedValue(0);
+      await tick();
+      await tick();
+      expect(workerBoundary.receipts).toHaveBeenCalledTimes(2);
+      expect(redisMock.store.has(QUIET)).toBe(false);
+    });
   });
 });

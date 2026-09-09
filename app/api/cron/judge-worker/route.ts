@@ -5,6 +5,11 @@ import { readJudgeConfig, runJudgeWorker } from '@/lib/agent/judge-queue';
 import { checkPushReceipts } from '@/lib/push/send';
 import { runJudgeJob } from '@/lib/agent/judge-run';
 import { describeLedger } from '@/lib/ai/pricing';
+import { redisKey, withRedis } from '@/lib/redis';
+
+/** Set after an empty receipt check; while it lives the minute tick skips the push_tickets read. */
+const RECEIPTS_QUIET_KEY = redisKey('push', 'receipts-quiet');
+const RECEIPTS_QUIET_S = 10 * 60;
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -35,7 +40,21 @@ export async function GET(request: Request) {
       const db = await createServiceClient();
       const s = await runJudgeWorker(db, cfg, (job, l) => runJudgeJob(db, job, l), log);
       // Push receipts ride the minute cron whether or not the judge is on.
-      try { await checkPushReceipts(db, log); } catch (err) { log.push(`[push] receipts: ${err instanceof Error ? err.message : String(err)}`); }
+      // Receipts are only asked for tickets older than ten minutes
+      // (lib/push/send.ts checkPushReceipts), so after a check that found
+      // nothing the next one waits ten minutes: the worst case is a receipt
+      // checked twenty minutes after send instead of ten, and the idle
+      // push_tickets read runs 144 times a day instead of 1,440. Redis null
+      // or down: the check runs every minute as before.
+      try {
+        const quietUntil = await withRedis((r) => r.get<string>(RECEIPTS_QUIET_KEY), null);
+        if (quietUntil) {
+          log.push(`[push] receipts: quiet until ${quietUntil}`);
+        } else if ((await checkPushReceipts(db, log)) === 0) {
+          const until = new Date(Date.now() + RECEIPTS_QUIET_S * 1000).toISOString();
+          await withRedis((r) => r.set(RECEIPTS_QUIET_KEY, until, { ex: RECEIPTS_QUIET_S }), null);
+        }
+      } catch (err) { log.push(`[push] receipts: ${err instanceof Error ? err.message : String(err)}`); }
       for (const line of log) console.log(`[cron/judge-worker] ${line}`);
       if (s.claimed > 0) console.log(`[cron/judge-worker] cost ${describeLedger(s.ledger)}`);
       return s;

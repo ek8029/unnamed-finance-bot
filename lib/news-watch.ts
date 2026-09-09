@@ -95,7 +95,7 @@ export async function runNewsWatch(db: Db, opts: { log: string[]; now?: Date; si
   const ledger = emptyLedger();
   let inserted = 0;
   try {
-    inserted = await refreshRssNews(db, log, slice, { classifyMacro: false, classifySubjects: true, ledger, maxTickers: slice.length });
+    inserted = await refreshRssNews(db, log, slice, { classifyMacro: false, classifySubjects: true, ledger, maxTickers: slice.length, seenSet: 'news' });
   } catch (err) {
     errors.push(`ingest: ${err instanceof Error ? err.message : String(err)}`);
   }

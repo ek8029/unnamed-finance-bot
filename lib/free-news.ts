@@ -18,6 +18,7 @@ import { newsDisposition } from '@/lib/news-relevance';
 import { classifySubjects, SUBJECT_MODEL } from '@/lib/news-subject-model';
 import type { UsageLedger } from '@/lib/ai/pricing';
 import { getRecentFilings } from '@/lib/edgar';
+import { markSeen, unseen, type SeenName } from '@/lib/watch/seen-set';
 import { fence, INJECTION_GUARD } from '@/lib/prompt-safety';
 import OpenAI from 'openai';
 
@@ -217,12 +218,18 @@ export async function fetchYahooHeadlines(ticker: string): Promise<RssArticle[]>
 
 /**
  * Refresh market_news from per-ticker RSS feeds. Returns inserted count.
+ *
+ * `seenSet`: a Redis set of urls this caller has already settled (inserted,
+ * found present, or excluded). The feeds repeat the same headlines every tick,
+ * so a poller that passes it opens no market_news statement on a quiet tick.
+ * Urls are marked only after the outcome is known; an insert error marks
+ * nothing so the next tick retries. Without it, today's behaviour.
  */
 export async function refreshRssNews(
   supabase: AnyClient,
   log: string[],
   tickers: string[],
-  options?: { classifyMacro?: boolean; classifySubjects?: boolean; ledger?: UsageLedger; maxTickers?: number },
+  options?: { classifyMacro?: boolean; classifySubjects?: boolean; ledger?: UsageLedger; maxTickers?: number; seenSet?: SeenName },
 ): Promise<number> {
   const unique = [...new Set(tickers.map(t => t.toUpperCase()))]
     .filter(t => !t.includes('-USD'))
@@ -249,7 +256,7 @@ export async function refreshRssNews(
   const normTitle = (t: string) => t.toLowerCase().replace(/[^a-z0-9]/g, '');
   const seen = new Set<string>();
   const seenTitles = new Set<string>();
-  const batch = articles.filter(a => {
+  let batch = articles.filter(a => {
     const nt = normTitle(a.title);
     if (seen.has(a.url) || seenTitles.has(nt)) return false;
     seen.add(a.url);
@@ -260,6 +267,21 @@ export async function refreshRssNews(
   if (batch.length === 0) {
     log.push('[news] No articles returned from RSS feeds');
     return 0;
+  }
+
+  // Poller path: drop what an earlier tick already settled before opening a
+  // statement. Redis null or down returns every url, which is today's path.
+  // `settle` marks the surviving batch once its outcome is known.
+  const seenSet = options?.seenSet;
+  const settle = seenSet ? () => markSeen(seenSet, batch.map(a => a.url)) : async () => {};
+  if (seenSet) {
+    const freshUrls = new Set(await unseen(seenSet, batch.map(a => a.url)));
+    const alreadySeen = batch.length - freshUrls.size;
+    batch = batch.filter(a => freshUrls.has(a.url));
+    if (batch.length === 0) {
+      log.push(`[news] 0 new articles (${alreadySeen} already seen)`);
+      return 0;
+    }
   }
 
   // Dedupe against existing rows — by URL, and by normalized title over the
@@ -280,6 +302,7 @@ export async function refreshRssNews(
 
   if (newArticles.length === 0) {
     log.push(`[news] 0 new articles (${batch.length} duplicates skipped)`);
+    await settle(); // present in the table already, settled
     return 0;
   }
 
@@ -330,14 +353,16 @@ export async function refreshRssNews(
 
   if (inserts.length === 0) {
     log.push(`[news] 0 articles kept (${newArticles.length} excluded by editorial filters)`);
+    await settle(); // the exclusion is deterministic on the headline, settled
     return 0;
   }
 
   const { error } = await supabase.from('market_news').insert(inserts);
   if (error) {
     log.push(`[news] Insert failed: ${error.message}`);
-    return 0;
+    return 0; // nothing marked: the next tick retries these urls
   }
+  await settle(); // inserted, DB duplicates and exclusions alike are settled now
 
 
   // Is each article ABOUT its primary ticker, or does it only mention the
