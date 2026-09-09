@@ -32,20 +32,20 @@ Tables are small (largest 20k rows). The IO is churn, not size. `coalesce()` is 
 ## File structure
 
 Create:
-- `lib/redis.ts` — `getRedis(): Redis | null`, `redisKey(...parts)`, `withRedis<T>(fn, fallback)`; the only place `Redis.fromEnv()` is called for KV.
-- `lib/agent/judge-wake.ts` — pure: `shouldWakeJudge(flag: string | null, now: Date): boolean`, `earliestRunAfter(rows)`, key name.
-- `lib/watch/universe-cache.ts` — cached watched-ticker universe for edgar/news (Redis, 15 min TTL) over the existing `distinctTickers`.
-- `lib/watch/seen-set.ts` — Redis sets of seen accession numbers / article urls with TTL, plus the pure diff.
-- `lib/market/tick-diff.ts` — pure: `changedPrices(prev: Map<string, number>, next: Map<string, number>)`, `batchSecuritiesUpsert(rows)` shape.
-- `lib/agent/heartbeat-redis.ts` — `beat()` and `readHeartbeats()` on Redis keys `hb:{name}` with the same `WatchName` union, plus `'intraday-prices'`.
+- `lib/redis.ts`: `getRedis(): Redis | null`, `redisKey(...parts)`, `withRedis<T>(fn, fallback)`; the only place `Redis.fromEnv()` is called for KV.
+- `lib/agent/judge-wake.ts`: pure: `shouldWakeJudge(flag: string | null, now: Date): boolean`, `earliestRunAfter(rows)`, key name.
+- `lib/watch/universe-cache.ts`: cached watched-ticker universe for edgar/news (Redis, 15 min TTL) over the existing `distinctTickers`.
+- `lib/watch/seen-set.ts`: Redis sets of seen accession numbers / article urls with TTL, plus the pure diff.
+- `lib/market/tick-diff.ts`: pure: `changedPrices(prev: Map<string, number>, next: Map<string, number>)`, `batchSecuritiesUpsert(rows)` shape.
+- `lib/agent/heartbeat-redis.ts`: `beat()` and `readHeartbeats()` on Redis keys `hb:{name}` with the same `WatchName` union, plus `'intraday-prices'`.
 - Tests: `tests/redis-helper.test.ts`, `tests/judge-wake.test.ts`, `tests/universe-cache.test.ts`, `tests/seen-set.test.ts`, `tests/tick-diff.test.ts`, `tests/heartbeat-redis.test.ts`.
 
 Modify:
-- `lib/agent/judge-queue.ts` — set the wake flag in `enqueueJudgeJobs` and wherever a row returns to `status: 'queued'` with a `run_after`; `runJudgeWorker` reads the flag before `countToday`.
-- `lib/edgar-watch.ts`, `lib/news-watch.ts` — universe cache, seen-set diff before the DB upsert / re-read, ledger row only when non-zero.
-- `lib/market/intraday-tick.ts` — prior-close cache, unchanged-price skip, batched `securities` upsert, heartbeat.
-- `lib/agent/heartbeat.ts` — delegate to Redis, keep the signature, keep the `watch_heartbeats` table untouched (no migration).
-- `app/api/testing/presence/route.ts`, `app/testing/app/presence/presence-overview.tsx` — heartbeat feed (lab only).
+- `lib/agent/judge-queue.ts`: set the wake flag in `enqueueJudgeJobs` and wherever a row returns to `status: 'queued'` with a `run_after`; `runJudgeWorker` reads the flag before `countToday`.
+- `lib/edgar-watch.ts`, `lib/news-watch.ts`: universe cache, seen-set diff before the DB upsert / re-read, ledger row only when non-zero.
+- `lib/market/intraday-tick.ts`: prior-close cache, unchanged-price skip, batched `securities` upsert, heartbeat.
+- `lib/agent/heartbeat.ts`: delegate to Redis, keep the signature, keep the `watch_heartbeats` table untouched (no migration).
+- `app/api/testing/presence/route.ts`, `app/testing/app/presence/presence-overview.tsx`: heartbeat feed (lab only).
 
 Not touched: `vercel.json`, any cron route auth, `lib/coalesce.ts`, any migration.
 
@@ -81,7 +81,7 @@ export async function withRedis<T>(fn: (r: Redis) => Promise<T>, fallback: T): P
   try { return await fn(r); } catch (e) { console.error('[redis] call failed', e); return fallback; }
 }
 ```
-- [ ] **Step 4: Pass, tsc, whole suite, commit** — `git commit -m "feat(redis): one key-value client with a null fallback for every caller" -- lib/redis.ts tests/redis-helper.test.ts`.
+- [ ] **Step 4: Pass, tsc, whole suite, commit**: `git commit -m "feat(redis): one key-value client with a null fallback for every caller" -- lib/redis.ts tests/redis-helper.test.ts`.
 
 ---
 
@@ -114,8 +114,8 @@ Tests: missing flag wakes; past flag wakes; future flag sleeps; garbage wakes; `
   - In `runJudgeWorker`, after the kill switch (`:337`) and before `countToday` (`:344`): `const flag = await withRedis((r) => r.get<string>(redisKey(JUDGE_WAKE_KEY)), null); if (!shouldWakeJudge(flag, now())) { log.push('idle: no queued work'); return { ...emptySummary, idle: true }; }` (add `idle?: boolean` to `WorkerSummary`). With Redis unconfigured `flag` is null and the worker polls as today.
   - When the pending select returns zero rows, `await withRedis((r) => r.set(key, farFutureIso), undefined)` where far-future is now + 1 day, so the next enqueue lowers it. Never delete the key on an error path.
   - Heartbeat moves to Redis in Task 6; leave the `beat` call in place for now.
-- [ ] **Step 3: Tests** — extend `tests/judge-queue.test.ts` with `vi.mock('@/lib/redis', ...)` exposing an in-memory map: future flag → `runJudgeWorker` returns `idle: true` and the fake db records zero `from()` calls; past flag → the existing path runs; `enqueueJudgeJobs` sets the key to the earliest `run_after`.
-- [ ] **Step 4: Whole suite, tsc, commit** — message names the three enqueue callers and every requeue site read.
+- [ ] **Step 3: Tests**: extend `tests/judge-queue.test.ts` with `vi.mock('@/lib/redis', ...)` exposing an in-memory map: future flag → `runJudgeWorker` returns `idle: true` and the fake db records zero `from()` calls; past flag → the existing path runs; `enqueueJudgeJobs` sets the key to the earliest `run_after`.
+- [ ] **Step 4: Whole suite, tsc, commit**: message names the three enqueue callers and every requeue site read.
 
 ---
 
@@ -139,9 +139,9 @@ export const SEEN_TTL_S = 7 * 24 * 3600;
 export async function unseen(name: 'edgar' | 'news', ids: string[]): Promise<string[]>
 ```
 Implementation: `SMISMEMBER` (or `smismember` in the client) then `SADD` the new ones and `EXPIRE` the key. Tests: first call returns all and adds; second call returns none; Redis null returns all.
-- [ ] **Step 3: Wire edgar** — `buildWatchUniverse` reads through `cachedUniverse(db, 'edgar', ...)`. In `watchOnce`, before `recordFilingEvents`, `const fresh = await unseen('edgar', entries.map((e) => e.accessionNo))`; when `fresh` is empty and dry mode is off, skip the upsert entirely and return the quiet summary. Keep the upsert as the authoritative dedupe for the fresh ones. The in-process `lastRead` map stays.
-- [ ] **Step 4: Wire news** — universe through the cache; `recordLedgerRow` only when the classifier ran on at least one article (count > 0); the `market_news` re-read only when `refreshRssNews` reported `inserted > 0`.
-- [ ] **Step 5: Tests** — `tests/edgar-watch.test.ts` already drives `watchOnce` through injected deps and fixtures; add a case where every fixture accession is already seen (mocked seen-set returns `[]`) and assert the fake db receives no `filing_events` write. For news, add a pure test that the ledger row is skipped at zero (extract the decision into a tiny pure function if needed).
+- [ ] **Step 3: Wire edgar**: `buildWatchUniverse` reads through `cachedUniverse(db, 'edgar', ...)`. In `watchOnce`, before `recordFilingEvents`, `const fresh = await unseen('edgar', entries.map((e) => e.accessionNo))`; when `fresh` is empty and dry mode is off, skip the upsert entirely and return the quiet summary. Keep the upsert as the authoritative dedupe for the fresh ones. The in-process `lastRead` map stays.
+- [ ] **Step 4: Wire news**: universe through the cache; `recordLedgerRow` only when the classifier ran on at least one article (count > 0); the `market_news` re-read only when `refreshRssNews` reported `inserted > 0`.
+- [ ] **Step 5: Tests**: `tests/edgar-watch.test.ts` already drives `watchOnce` through injected deps and fixtures; add a case where every fixture accession is already seen (mocked seen-set returns `[]`) and assert the fake db receives no `filing_events` write. For news, add a pure test that the ledger row is skipped at zero (extract the decision into a tiny pure function if needed).
 - [ ] **Step 6: Whole suite, tsc, commit.**
 
 ---
@@ -158,10 +158,10 @@ export function changedPrices(prev: Map<string, number>, next: Map<string, numbe
 export function securitiesUpsertRows(changed: Map<string, number>, idByTicker: Map<string, string>, now: string): { id: string; current_price: number; last_updated_at: string }[]
 ```
 Tests: unchanged dropped; new ticker kept; float equality exact (no tolerance, a print is a print); rows only for tickers with a known id.
-- [ ] **Step 2: Prior close cache** — key `helm:tick:prevclose:{ET day}` holding JSON `{ ticker: close }`, TTL 26 h. On a hit skip the paged read; on a miss read as today and cache. Redis null: read as today.
-- [ ] **Step 3: Last-print cache** — key `helm:tick:last:{ET day}` JSON `{ ticker: price }`. After fetching prints, `changed = changedPrices(prev, prices)`; reprice and update only holdings whose ticker is in `changed`; write `securities` with ONE `upsert(rows, { onConflict: 'id' })` instead of the loop; store the merged map back. Redis null: `changed = prices` (today's behaviour). The snapshot insert stays per tick (it is the intraday series). Report the per-tick row counts in the tick result (`updatedHoldings`, `updatedSecurities`, `skipped`) so `scripts/probe-tick-times.ts` can show the saving.
-- [ ] **Step 4: Heartbeat** — call `beat(db, 'intraday-prices', { updated, skipped })` at the end (the name is added to `WatchName` in Task 6; add it here as a string-literal extension of the union in `lib/agent/heartbeat.ts` and keep the Postgres path until Task 6 swaps it).
-- [ ] **Step 5: Tests** — keep the existing pure tests; add the Redis-mocked path: prior-close hit skips the `market_prices` read; unchanged prints produce zero holdings updates and one securities upsert of zero rows (or none).
+- [ ] **Step 2: Prior close cache**: key `helm:tick:prevclose:{ET day}` holding JSON `{ ticker: close }`, TTL 26 h. On a hit skip the paged read; on a miss read as today and cache. Redis null: read as today.
+- [ ] **Step 3: Last-print cache**: key `helm:tick:last:{ET day}` JSON `{ ticker: price }`. After fetching prints, `changed = changedPrices(prev, prices)`; reprice and update only holdings whose ticker is in `changed`; write `securities` with ONE `upsert(rows, { onConflict: 'id' })` instead of the loop; store the merged map back. Redis null: `changed = prices` (today's behaviour). The snapshot insert stays per tick (it is the intraday series). Report the per-tick row counts in the tick result (`updatedHoldings`, `updatedSecurities`, `skipped`) so `scripts/probe-tick-times.ts` can show the saving.
+- [ ] **Step 4: Heartbeat**: call `beat(db, 'intraday-prices', { updated, skipped })` at the end (the name is added to `WatchName` in Task 6; add it here as a string-literal extension of the union in `lib/agent/heartbeat.ts` and keep the Postgres path until Task 6 swaps it).
+- [ ] **Step 5: Tests**: keep the existing pure tests; add the Redis-mocked path: prior-close hit skips the `market_prices` read; unchanged prints produce zero holdings updates and one securities upsert of zero rows (or none).
 - [ ] **Step 6: Whole suite, tsc, commit.** Verify after deploy with `scripts/probe-tick-times.ts` (untracked) that every 5-minute slot still lands.
 
 ---
@@ -180,9 +180,9 @@ Why: `lib/agent/heartbeat.ts` `beat()` upserts `watch_heartbeats` on every tick 
 
 **Files:** Create `lib/agent/heartbeat-redis.ts`, `tests/heartbeat-redis.test.ts`. Modify `lib/agent/heartbeat.ts` (delegate, keep the signature and the `WatchName` union plus `'intraday-prices'`), `app/api/testing/presence/route.ts`, `app/testing/app/presence/presence-overview.tsx`, `app/testing/app/watch/page.tsx` if it reads `watch_heartbeats`.
 
-- [ ] **Step 1: Module + tests** — `beat(name, detail)` writes `helm:hb:{name}` = JSON `{ at, detail }` with a 48 h TTL and appends `{ at, summary }` to a capped list `helm:hb:{name}:log` (`LPUSH` + `LTRIM 0 59`, the last hour of a minute watcher). `readHeartbeats()` reads all names with one `MGET`; `readHeartbeatLog(name, n)` reads the list. Redis null: `beat` falls back to the existing Postgres upsert (so the table keeps working when Redis is down) and reads return an empty map. Tests with a mocked `@/lib/redis`.
-- [ ] **Step 2: Delegate** — `lib/agent/heartbeat.ts` `beat` and `readHeartbeats` call the Redis module first; the Postgres upsert remains only as the fallback. Callers unchanged (`judge-queue.ts:348,378`, `edgar-watch.ts:413`, `news-watch.ts:173`, and the new intraday call). Rule 1: list them in the commit.
-- [ ] **Step 3: Presence feed (lab only)** — the presence route adds `heartbeats: Array<{ name, at, detail }>` and `recent: Array<{ name, at, summary }>` (last 20 across watchers, newest first). `presence-overview.tsx` renders a "Watching" block: one line per watcher, "EDGAR checked 14:32, nothing new" or "EDGAR checked 14:32, 2 filings queued", built from `detail`, and a short feed of the last 20 lines. Copy from a small `LAB_COPY` object in the component; no advice words, no em dashes, no `!`. This stays under `/testing/app` per the standing rule; nothing on the real overview.
+- [ ] **Step 1: Module + tests**: `beat(name, detail)` writes `helm:hb:{name}` = JSON `{ at, detail }` with a 48 h TTL and appends `{ at, summary }` to a capped list `helm:hb:{name}:log` (`LPUSH` + `LTRIM 0 59`, the last hour of a minute watcher). `readHeartbeats()` reads all names with one `MGET`; `readHeartbeatLog(name, n)` reads the list. Redis null: `beat` falls back to the existing Postgres upsert (so the table keeps working when Redis is down) and reads return an empty map. Tests with a mocked `@/lib/redis`.
+- [ ] **Step 2: Delegate**: `lib/agent/heartbeat.ts` `beat` and `readHeartbeats` call the Redis module first; the Postgres upsert remains only as the fallback. Callers unchanged (`judge-queue.ts:348,378`, `edgar-watch.ts:413`, `news-watch.ts:173`, and the new intraday call). Rule 1: list them in the commit.
+- [ ] **Step 3: Presence feed (lab only)**: the presence route adds `heartbeats: Array<{ name, at, detail }>` and `recent: Array<{ name, at, summary }>` (last 20 across watchers, newest first). `presence-overview.tsx` renders a "Watching" block: one line per watcher, "EDGAR checked 14:32, nothing new" or "EDGAR checked 14:32, 2 filings queued", built from `detail`, and a short feed of the last 20 lines. Copy from a small `LAB_COPY` object in the component; no advice words, no em dashes, no `!`. This stays under `/testing/app` per the standing rule; nothing on the real overview.
 - [ ] **Step 4: Whole suite, tsc, commit.**
 
 ---
