@@ -129,10 +129,14 @@ export async function runIntradayTick(): Promise<IntradayTickResult> {
   // sync stamps every synced row today at the institution's mark with no
   // day_change, and a name whose first print equals that mark would
   // otherwise be skipped and keep yesterday's day_change all session.
-  // Without Redis nothing forces and the stamp rule decides as before.
+  // Redis null or throwing ('unknown') also forces: every priced holding is
+  // written each tick, exactly the behaviour before the diffing tick. In
+  // that state the holdings route cannot read the tick heartbeat either
+  // (the Postgres fallback rejects the name under the 072 CHECK), so a
+  // skipped flat book would trip the full sweep on every load.
   const firstTickKey = redisKey('tick', 'first', today);
   const firstTickState = await withRedis(async (r) => ((await r.get(firstTickKey)) == null ? 'first' : 'done'), 'unknown');
-  const forceAll = firstTickState === 'first';
+  const forceAll = firstTickState !== 'done';
   const now = new Date().toISOString();
   let skippedHoldings = 0;
   const updates = holdings.flatMap((h) => {
@@ -161,7 +165,7 @@ export async function runIntradayTick(): Promise<IntradayTickResult> {
   // Set once any write landed: a row that keeps failing is retried by the
   // stamp rule anyway, and waiting for every write would force the whole
   // universe all day.
-  if (forceAll && updated > 0) {
+  if (firstTickState === 'first' && updated > 0) {
     await withRedis((r) => r.set(firstTickKey, '1', { ex: TICK_CACHE_TTL_S }), null);
   }
 

@@ -334,7 +334,7 @@ describe('intraday tick writes only what changed', () => {
     }));
   });
 
-  it('without Redis: prior close from the table, stale stamps rewritten, every priced security written', async () => {
+  it('without Redis: prior close from the table, every priced holding and security written, as before the diffing tick', async () => {
     redisMock.store = null;
     dbMock.closes = [{ ticker: 'AAPL', close: 140, price_date: yesterday }, { ticker: 'MSFT', close: 290, price_date: yesterday }];
     dbMock.holdings = [
@@ -348,9 +348,10 @@ describe('intraday tick writes only what changed', () => {
     expect(reads).toHaveLength(1);
     expect(step(reads[0], 'in')).toEqual(['in', 'ticker', ['AAPL', 'MSFT']]);
     expect(body.prev_close_source).toBe('db');
-    // The diff against the stored row needs no Redis: equal and touched today is still skipped.
-    expect(calls('holdings', 'update').map((u) => step(u, 'eq')![2])).toEqual(['h3']);
-    expect(body.holdings_skipped).toBe(2);
+    // No first-tick key to read, so nothing is skipped: today's behaviour for holdings.
+    expect(calls('holdings', 'update').map((u) => step(u, 'eq')![2]).sort()).toEqual(['h1', 'h2', 'h3']);
+    expect(body.holdings_updated).toBe(3);
+    expect(body.holdings_skipped).toBe(0);
     // No last-print map, so every print is a change: one statement per distinct print.
     const sec = calls('securities');
     expect(sec.flatMap((c) => step(c, 'in')![2] as string[]).sort()).toEqual(['s1', 's2']);
@@ -392,14 +393,15 @@ describe('intraday tick writes only what changed', () => {
     expect(redisMock.store!.get(FIRST_KEY)).toBeUndefined();
   });
 
-  it('without Redis nothing forces: the stamp rule alone decides', async () => {
+  it('without Redis every priced holding is rewritten, even one at the print and touched today, and no first-tick key is set', async () => {
     redisMock.store = null;
     dbMock.closes = [{ ticker: 'AAPL', close: 140, price_date: yesterday }];
     dbMock.holdings = [holding('h1', 'u1', 'AAPL', 's1', 150, fresh)];
     finMock.prices = [['AAPL', 150]];
     const { body } = await runIntradayTick();
-    expect(calls('holdings', 'update')).toHaveLength(0);
-    expect(body.holdings_skipped).toBe(1);
+    expect(calls('holdings', 'update').map((u) => step(u, 'eq')![2])).toEqual(['h1']);
+    expect(body.holdings_skipped).toBe(0);
+    expect(redisMock.sets).toEqual([]);
   });
 
   it('a failed securities write stays out of the last-print map and is retried on the next tick', async () => {
