@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { repriceHolding, toHoldingUpdate } from '../lib/market/last-trade';
 import { intradayNetWorthSeries, onlyToday, portfolioTotalsByUser } from '../lib/market/intraday-series';
-import { etDay } from '../lib/market/tick-diff';
+import { etDay, previousWeekday } from '../lib/market/tick-diff';
 import { runIntradayTick } from '../lib/market/intraday-tick';
 
 // The full tick against a fake database: every from(table) call is recorded
@@ -180,8 +180,9 @@ describe('intraday tick writes only what changed', () => {
   const FIRST_KEY = `helm:tick:first:${today}`;
   const fresh = new Date().toISOString();
   const stale = new Date(Date.now() - 2 * 86_400_000).toISOString();
-  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-  const twoSessionsBack = new Date(Date.now() - 2 * 86_400_000).toISOString().slice(0, 10);
+  // Session dates, so the fixtures hold on a Monday too (Sunday is not a session).
+  const yesterday = previousWeekday(today);
+  const twoSessionsBack = previousWeekday(yesterday);
   const closeAt = (close: number, date: string) => ({ close, date });
   // current_price arrives from Postgres as a NUMERIC(15, 4) string.
   const holding = (id: string, user_id: string, ticker: string, security_id: string, price: number, last_updated_at: string) => ({
@@ -253,6 +254,25 @@ describe('intraday tick writes only what changed', () => {
     const [u] = calls('holdings', 'update');
     expect(step(u, 'eq')).toEqual(['eq', 'id', 'h5']);
     expect((step(u, 'update')![1] as { day_change_pct: number }).day_change_pct).toBeCloseTo(5 / 105, 6);
+  });
+
+  it('re-reads the whole universe when every cached close is two sessions back', async () => {
+    // Last night's close write failed for everyone and the morning backfill
+    // landed after the first tick built the cache.
+    redisMock.store!.set(PREV_KEY, { AAPL: closeAt(139, twoSessionsBack), MSFT: closeAt(289, twoSessionsBack) });
+    dbMock.closes = [
+      { ticker: 'AAPL', close: 140, price_date: yesterday },
+      { ticker: 'MSFT', close: 290, price_date: yesterday },
+      { ticker: 'AAPL', close: 139, price_date: twoSessionsBack },
+    ];
+    dbMock.holdings = [holding('h1', 'u1', 'AAPL', 's1', 150, fresh), holding('h2', 'u1', 'MSFT', 's2', 300, fresh)];
+    finMock.prices = [['AAPL', 150], ['MSFT', 300]];
+    const { body } = await runIntradayTick();
+    const reads = calls('market_prices');
+    expect(reads).toHaveLength(1);
+    expect(step(reads[0], 'in')).toEqual(['in', 'ticker', ['AAPL', 'MSFT']]);
+    expect(body.prev_close_source).toBe('cache+db');
+    expect(redisMock.store!.get(PREV_KEY)).toEqual({ AAPL: closeAt(140, yesterday), MSFT: closeAt(290, yesterday) });
   });
 
   it('treats a cache value in the old bare-number shape as a miss and rewrites it in the dated shape', async () => {
@@ -361,7 +381,7 @@ describe('intraday tick writes only what changed', () => {
     expect(body.holdings_skipped).toBe(2);
   });
 
-  it('does not set the first-tick key when a holdings write fails, so the next tick forces again', async () => {
+  it('does not set the first-tick key when no holdings write landed, so the next tick forces again', async () => {
     redisMock.store!.delete(FIRST_KEY);
     redisMock.store!.set(PREV_KEY, { AAPL: closeAt(140, yesterday) });
     dbMock.holdings = [holding('h1', 'u1', 'AAPL', 's1', 150, fresh)];

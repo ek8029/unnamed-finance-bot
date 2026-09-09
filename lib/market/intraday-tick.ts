@@ -17,7 +17,7 @@ import { repriceHolding, toHoldingUpdate } from '@/lib/market/last-trade';
 import { portfolioTotalsByUser } from '@/lib/market/intraday-series';
 import { severeMoves, enqueueSevereMoves } from '@/lib/market/severe-move';
 import {
-  changedPrices, etDay, holdingNeedsUpdate, parsePrevCloseCache, securitiesUpsertRows, stalePrevCloseTickers,
+  changedPrices, etDay, holdingNeedsUpdate, parsePrevCloseCache, previousWeekday, securitiesUpsertRows, stalePrevCloseTickers,
   type PrevCloseEntry,
 } from '@/lib/market/tick-diff';
 import { liveTokenUsers, sendPush } from '@/lib/push/send';
@@ -74,11 +74,12 @@ export async function runIntradayTick(): Promise<IntradayTickResult> {
   // session, so the map is cached in Redis per ET day as {close, date} and
   // the table is read once a day, plus a targeted read each tick for any
   // ticker the cache lacks or holds stale: a new position, a name with no
-  // close on record, or an entry dated behind the newest close in the map
-  // (last night's write failed and the morning sync backfilled it later).
+  // close on record, or an entry dated before the previous weekday (last
+  // night's write failed and the morning sync backfilled it later).
   // Tickers with no close on record at all, and stale ones until they catch
-  // up, are re-read every tick; both are bounded by the size of the held
-  // universe. Without Redis the table is read every tick as before.
+  // up (the whole universe on the day after a holiday), are re-read every
+  // tick; both are bounded by the size of the held universe. Without Redis
+  // the table is read every tick as before.
   // PostgREST caps a select at 1000 rows and 291 tickers fill that in about
   // three sessions, so page newest-first until every ticker has a close or
   // the history runs out. A ticker with no close on record keeps whatever
@@ -86,7 +87,7 @@ export async function runIntradayTick(): Promise<IntradayTickResult> {
   const { day: today, startIso: sessionStartIso } = etDay(new Date());
   const prevCloseKey = redisKey('tick', 'prevclose', today);
   const prevCloseEntries = parsePrevCloseCache(await withRedis((r) => r.get<unknown>(prevCloseKey), null));
-  const staleClose = new Set(stalePrevCloseTickers(prevCloseEntries));
+  const staleClose = new Set(stalePrevCloseTickers(prevCloseEntries, previousWeekday(today)));
   const missingClose = tickers.filter((t) => !prevCloseEntries.has(t) || staleClose.has(t));
   let prevCloseSource: PrevCloseSource = prevCloseEntries.size > 0 ? 'cache' : 'db';
   if (missingClose.length > 0) {
@@ -157,8 +158,10 @@ export async function runIntradayTick(): Promise<IntradayTickResult> {
     );
     updated += settled.filter((s) => s.status === 'fulfilled' && !s.value?.error).length;
   }
-  // A write that failed is retried by the next tick under forceAll again.
-  if (forceAll && updated === updates.length) {
+  // Set once any write landed: a row that keeps failing is retried by the
+  // stamp rule anyway, and waiting for every write would force the whole
+  // universe all day.
+  if (forceAll && updated > 0) {
     await withRedis((r) => r.set(firstTickKey, '1', { ex: TICK_CACHE_TTL_S }), null);
   }
 

@@ -9,11 +9,11 @@ import { etDayStartIso } from '@/lib/agent/judge-queue';
 
 /** holdings.current_price and securities.current_price are NUMERIC(15, 4)
  *  (migration 005:29, :65): a print with more decimals is stored rounded, so
- *  the stored value must be compared at four decimals or a row at 12.3456789
- *  reads as changed on every tick and is rewritten forever. */
-export function to4dp(n: number): number {
-  return Math.round(n * 1e4) / 1e4;
-}
+ *  the stored value is compared within half a unit of the fourth decimal or
+ *  a row at 12.3456789 reads as changed on every tick and is rewritten
+ *  forever. A tolerance rather than rounding both sides: Postgres rounds a
+ *  fifth-decimal 5 away from zero, a scaled double can land the other way. */
+export const PRICE_TOLERANCE = 5e-5 + 1e-9;
 
 /** The tick heartbeat is this old at most while prices count as fresh. */
 export const TICK_FRESH_MS = 10 * 60 * 1000;
@@ -37,7 +37,7 @@ export function holdingNeedsUpdate(stored: StoredPrice, price: number, sessionSt
   const sessionStart = Date.parse(sessionStartIso);
   // An unparseable stamp counts as untouched, never as fresh.
   if (!(touchedAt >= sessionStart)) return true;
-  return to4dp(storedPrice) !== to4dp(price);
+  return Math.abs(storedPrice - price) > PRICE_TOLERANCE;
 }
 
 export interface PrevCloseEntry {
@@ -64,16 +64,29 @@ export function parsePrevCloseCache(raw: unknown): Map<string, PrevCloseEntry> {
   return out;
 }
 
+/** The weekday before an ET calendar day (YYYY-MM-DD): Friday for Monday,
+ *  otherwise the day before. Holidays are not known here. */
+export function previousWeekday(day: string): string {
+  const d = new Date(`${day}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 1);
+  const dow = d.getUTCDay();
+  if (dow === 0) d.setUTCDate(d.getUTCDate() - 2);
+  else if (dow === 6) d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
 /**
- * Tickers whose cached close is dated before the newest close in the map.
- * The universe's latest date is the last session; an entry behind it is a
- * close that had not been written when the cache was built (a failed
- * nightly write, backfilled by the morning sync) and must be re-read.
+ * Tickers whose cached close is dated before `expectedDate`, the previous
+ * weekday: a close that had not been written when the cache was built (a
+ * failed nightly write, backfilled by the morning sync) and must be
+ * re-read. Judged against the calendar, not the newest date in the map, so
+ * a night where the close write failed for every ticker is still caught.
+ * The day after a market holiday every entry is dated two weekdays back and
+ * the whole universe is re-read each tick, which is the pre-diffing cost
+ * for that one session.
  */
-export function stalePrevCloseTickers(cached: Map<string, PrevCloseEntry>): string[] {
-  let newest = '';
-  for (const e of cached.values()) if (e.date > newest) newest = e.date;
-  return [...cached.entries()].filter(([, e]) => e.date < newest).map(([t]) => t);
+export function stalePrevCloseTickers(cached: Map<string, PrevCloseEntry>, expectedDate: string): string[] {
+  return [...cached.entries()].filter(([, e]) => e.date < expectedDate).map(([t]) => t);
 }
 
 /** Tickers whose print differs from the cached last print or were absent.

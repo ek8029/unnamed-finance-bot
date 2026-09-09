@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  TICK_FRESH_MS, to4dp, holdingNeedsUpdate, changedPrices, securitiesUpsertRows, etDay, pricesFreshFromHeartbeat,
-  parsePrevCloseCache, stalePrevCloseTickers,
+  TICK_FRESH_MS, holdingNeedsUpdate, changedPrices, securitiesUpsertRows, etDay, pricesFreshFromHeartbeat,
+  parsePrevCloseCache, stalePrevCloseTickers, previousWeekday,
 } from '@/lib/market/tick-diff';
 
 // 2026-09-09 is EDT: midnight ET is 04:00Z.
@@ -16,12 +16,14 @@ describe('holdingNeedsUpdate', () => {
     expect(holdingNeedsUpdate({ current_price: 150.25, last_updated_at: '2026-09-09T14:05:00.000Z' }, 150.26, SESSION_START)).toBe(true);
   });
 
-  it('compares at the four decimals the column stores, so a long print does not rewrite the row every tick', () => {
+  it('compares within half a unit of the fourth decimal, so a long print does not rewrite the row every tick', () => {
     // holdings.current_price is NUMERIC(15, 4): 12.3456789 is stored as 12.3457.
     expect(holdingNeedsUpdate({ current_price: '12.3457', last_updated_at: '2026-09-09T14:05:00.000Z' }, 12.3456789, SESSION_START)).toBe(false);
     expect(holdingNeedsUpdate({ current_price: '12.3458', last_updated_at: '2026-09-09T14:05:00.000Z' }, 12.3457, SESSION_START)).toBe(true);
-    expect(to4dp(12.3456789)).toBe(12.3457);
-    expect(to4dp(150.25)).toBe(150.25);
+    // A print ending in 5 at the fifth decimal: Postgres rounds it away from
+    // zero, a scaled double may not. Either stored value is within tolerance.
+    expect(holdingNeedsUpdate({ current_price: '12.3457', last_updated_at: '2026-09-09T14:05:00.000Z' }, 12.34565, SESSION_START)).toBe(false);
+    expect(holdingNeedsUpdate({ current_price: '12.3456', last_updated_at: '2026-09-09T14:05:00.000Z' }, 12.34565, SESSION_START)).toBe(false);
   });
 
   it('rewrites an equal price when the row was last touched before this session', () => {
@@ -57,18 +59,31 @@ describe('prior close cache', () => {
     expect(parsePrevCloseCache([1, 2]).size).toBe(0);
   });
 
-  it('flags an entry dated before the newest close in the map as stale', () => {
+  it('flags an entry dated before the previous weekday as stale', () => {
     const map = parsePrevCloseCache({
       AAPL: { close: 140, date: '2026-09-08' },
       MSFT: { close: 290, date: '2026-09-08' },
       ORCL: { close: 100, date: '2026-09-04' },
     });
-    expect(stalePrevCloseTickers(map)).toEqual(['ORCL']);
+    expect(stalePrevCloseTickers(map, '2026-09-08')).toEqual(['ORCL']);
   });
 
-  it('flags nothing when every entry shares the newest date, or the map is empty', () => {
-    expect(stalePrevCloseTickers(parsePrevCloseCache({ AAPL: { close: 140, date: '2026-09-08' } }))).toEqual([]);
-    expect(stalePrevCloseTickers(new Map())).toEqual([]);
+  it('flags the whole map when every entry is two sessions back (last night failed for everyone)', () => {
+    const map = parsePrevCloseCache({ AAPL: { close: 140, date: '2026-09-04' }, MSFT: { close: 290, date: '2026-09-04' } });
+    expect(stalePrevCloseTickers(map, '2026-09-08')).toEqual(['AAPL', 'MSFT']);
+  });
+
+  it('flags nothing when every entry is dated the previous weekday, or the map is empty', () => {
+    expect(stalePrevCloseTickers(parsePrevCloseCache({ AAPL: { close: 140, date: '2026-09-08' } }), '2026-09-08')).toEqual([]);
+    expect(stalePrevCloseTickers(new Map(), '2026-09-08')).toEqual([]);
+  });
+});
+
+describe('previousWeekday', () => {
+  it('maps Monday to Friday and any other weekday to the day before', () => {
+    expect(previousWeekday('2026-09-14')).toBe('2026-09-11'); // Mon -> Fri
+    expect(previousWeekday('2026-09-09')).toBe('2026-09-08'); // Wed -> Tue
+    expect(previousWeekday('2026-09-01')).toBe('2026-08-31'); // month boundary
   });
 });
 
