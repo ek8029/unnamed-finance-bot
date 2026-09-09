@@ -403,7 +403,8 @@ export default function DashboardShell({
       .catch(() => {});
     return () => { cancelled = true; };
   }, [previewPath, pathname]);
-  const dimState = { hasBrief: activation.hasBrief, hasConnection: activation.hasConnection || accounts.length > 0 };
+  // Plaid only: manual accounts carry no cost basis, so a hand-entered book keeps Taxes dimmed.
+  const dimState = { hasBrief: activation.hasBrief, hasConnection: activation.hasConnection || accounts.some((a) => a.source === 'plaid') };
 
   // Fetch user profile on mount + re-fetch when profile is updated
   useEffect(() => {
