@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createStaticServiceClient } from '@/lib/supabase/server';
 import { buildWorklog, type WorklogResponse } from '@/lib/agent/worklog';
 import { readHeartbeats } from '@/lib/agent/heartbeat';
+import { readHeartbeatLog, WATCH_NAMES, type Heartbeat } from '@/lib/agent/heartbeat-redis';
 import { getPortfolioBrief } from '@/lib/research/account';
 import { generateTaxReport } from '@/lib/tax-analysis';
 import { getTickerThesisData } from '@/lib/content/public-thesis';
@@ -20,7 +21,7 @@ import { getTickerThesisData } from '@/lib/content/public-thesis';
 export const dynamic = 'force-dynamic';
 
 export type PresencePart =
-  | 'book' | 'run' | 'concentration' | 'earnings' | 'tax' | 'coverage' | 'sources' | 'theses' | 'worklog' | 'digest' | 'flags' | 'reads';
+  | 'book' | 'run' | 'concentration' | 'earnings' | 'tax' | 'coverage' | 'sources' | 'theses' | 'worklog' | 'digest' | 'flags' | 'reads' | 'watching';
 
 export interface PresenceHolding { ticker: string; pct: number; value: number; dayChangePct: number | null; sector: string | null; assetClass: string | null }
 export interface PresenceBook {
@@ -66,6 +67,8 @@ export interface PresenceData {
   theses: { tracked: number; pillars: PresencePillar[] };
   flags: { scansRanAt: string | null; items: PresenceFlag[] };
   reads: PresenceReads;
+  /** The pollers' latest beats (one per name, in WATCH_NAMES order) and the last twenty checks across all of them, newest first. */
+  watching: { heartbeats: Heartbeat[]; recent: Heartbeat[] };
   worklog: WorklogResponse;
   digest: string | null;
   ms: Partial<Record<PresencePart, number>>;
@@ -320,6 +323,16 @@ async function partReads(db: Db, uid: string): Promise<PresenceReads> {
   return { byTicker, newsAbout: { count, names: names.size, since } };
 }
 
+async function partWatching(db: Db): Promise<PresenceData['watching']> {
+  const [latest, logs] = await Promise.all([
+    readHeartbeats(db), // Redis first, watch_heartbeats only as the fallback
+    Promise.all(WATCH_NAMES.map((name) => readHeartbeatLog(name, 20))), // [] each when Redis is unconfigured
+  ]);
+  const heartbeats = WATCH_NAMES.flatMap((name) => { const hb = latest.get(name); return hb ? [hb] : []; });
+  const recent = logs.flat().sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)).slice(0, 20);
+  return { heartbeats, recent };
+}
+
 async function partDigest(db: Db, uid: string): Promise<string | null> {
   const { data } = await db.from('brief_digests').select('digest').eq('user_id', uid).maybeSingle();
   const d = data?.digest;
@@ -362,6 +375,7 @@ export async function GET(req: NextRequest) {
         case 'theses': [value, ms] = await timed(() => partTheses(db, uid)); break;
         case 'flags': [value, ms] = await timed(() => partFlags(db, uid)); break;
         case 'reads': [value, ms] = await timed(() => partReads(db, uid)); break;
+        case 'watching': [value, ms] = await timed(() => partWatching(db)); break;
         case 'worklog': [value, ms] = await timed(() => buildWorklog(db, uid)); break;
         case 'digest': [value, ms] = await timed(() => partDigest(db, uid)); break;
         default: return NextResponse.json({ error: `unknown part ${part}` }, { status: 400 });
@@ -369,15 +383,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ part, value, ms });
     }
 
-    const [[book, msBook], [run, msRun], [concentration, msConc], [earnings, msEarn], [coverage, msCov], [sources, msSrc], [theses, msTh], [flags, msFl], [reads, msRd], [worklog, msWl], [digest, msDg]] = await Promise.all([
+    const [[book, msBook], [run, msRun], [concentration, msConc], [earnings, msEarn], [coverage, msCov], [sources, msSrc], [theses, msTh], [flags, msFl], [reads, msRd], [watching, msWt], [worklog, msWl], [digest, msDg]] = await Promise.all([
       timed(() => partBook(db, uid)), timed(() => partRun(db, uid)), timed(() => partConcentration(db, uid)),
       timed(() => partEarnings(db, uid)), timed(() => partCoverage(db, uid)), timed(() => partSources(db, uid)),
-      timed(() => partTheses(db, uid)), timed(() => partFlags(db, uid)), timed(() => partReads(db, uid)), timed(() => buildWorklog(db, uid)), timed(() => partDigest(db, uid)),
+      timed(() => partTheses(db, uid)), timed(() => partFlags(db, uid)), timed(() => partReads(db, uid)), timed(() => partWatching(db)), timed(() => buildWorklog(db, uid)), timed(() => partDigest(db, uid)),
     ]);
     const [tax, msTax] = await timed(() => partTax(uid, book.positions));
     const body: PresenceData = {
-      email, book, run, concentration, earnings, tax, coverage, sources, theses, flags, reads, worklog, digest,
-      ms: { book: msBook, run: msRun, concentration: msConc, earnings: msEarn, tax: msTax, coverage: msCov, sources: msSrc, theses: msTh, flags: msFl, reads: msRd, worklog: msWl, digest: msDg },
+      email, book, run, concentration, earnings, tax, coverage, sources, theses, flags, reads, watching, worklog, digest,
+      ms: { book: msBook, run: msRun, concentration: msConc, earnings: msEarn, tax: msTax, coverage: msCov, sources: msSrc, theses: msTh, flags: msFl, reads: msRd, watching: msWt, worklog: msWl, digest: msDg },
     };
     return NextResponse.json(body);
   } catch (err) {

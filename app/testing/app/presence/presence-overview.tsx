@@ -15,7 +15,14 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { TodaysDelta } from '@/components/dashboard/todays-delta';
 import type { PresenceData, PresenceHolding, PresenceRead } from '@/app/api/testing/presence/route';
+import { describeBeat } from '@/lib/agent/heartbeat-line';
 import { MONO, money, clock, dayWord, calDay, plural, ago, theses as thesesWord } from './format';
+
+const LAB_COPY = {
+  watchingEyebrow: 'Watching · minute by minute',
+  watchingEmpty: 'No watcher has checked in yet.',
+  watchingRecent: 'last 20 checks',
+} as const;
 
 const POS = 'text-[#4ADE80]';
 const NEG = 'text-[#F87171]';
@@ -120,7 +127,7 @@ export function PresenceOverview({ email }: { email: string }) {
     );
   }
 
-  const { book, run, tax, concentration, earnings, flags, sources, theses, coverage, reads, worklog } = data;
+  const { book, run, tax, concentration, earnings, flags, sources, theses, coverage, reads, watching, worklog } = data;
   const priced = run.pricedAt;
   const watch = worklog.watch;
   // Each line's own time: the newest evidence row, the newest news read, the poller's stamp.
@@ -236,6 +243,33 @@ export function PresenceOverview({ email }: { email: string }) {
             ))}
           </ol>
         </div>
+      </section>
+
+      {/* ── Watching: the pollers' own beats, one line each, then the last twenty checks ── */}
+      <section className={`mt-8 border-t ${RULE} pt-4`}>
+        <div className="flex items-baseline justify-between">
+          <Eyebrow>{LAB_COPY.watchingEyebrow}</Eyebrow>
+          {watching.recent.length > 0 && <span className="text-[10.5px] text-[#6A6A6A]" style={MONO}>{LAB_COPY.watchingRecent}</span>}
+        </div>
+        {watching.heartbeats.length === 0 ? (
+          <p className="mt-3 m-0 text-[12.5px] leading-[1.5] text-[#8A8A8A]">{LAB_COPY.watchingEmpty}</p>
+        ) : (
+          <div className="mt-4 grid gap-x-12 gap-y-6 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+            <ul className="m-0 list-none p-0" aria-label="Latest check per watcher">
+              {watching.heartbeats.map((hb) => (
+                <li key={hb.name} className={`border-b ${RULE} py-2 text-[12.5px] leading-[1.5] text-[#D4D4D4] last:border-0`}>{describeBeat(hb, clock)}</li>
+              ))}
+            </ul>
+            <ol className="m-0 list-none p-0" aria-label="Recent checks">
+              {watching.recent.slice(0, 20).map((hb, i) => (
+                <li key={`${hb.name}-${hb.at}`} className={`lab-arrive grid grid-cols-[64px_minmax(0,1fr)] items-baseline gap-x-3 border-b ${RULE} py-2 last:border-0`} style={{ animationDelay: `${120 + i * 60}ms` }}>
+                  <span className="text-[10.5px] tabular-nums text-[#5F5F5F]" style={MONO}>{clock(hb.at).replace(' ET', '')}</span>
+                  <span className="text-[12px] leading-[1.5] text-[#8A8A8A]">{describeBeat(hb, clock)}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
       </section>
 
       {/* ── Since you were here (real component) ── */}
