@@ -19,6 +19,7 @@ import { getVixQuote } from '@/lib/vix';
 import { getEdgarEarnings } from '@/lib/earnings-edgar';
 import { isTradingDay } from '@/lib/market-calendar';
 import { partitionNewsForReader, type NewsSubjectRow } from '@/lib/news-relevance';
+import type { FirstLook } from '@/lib/onboarding/first-look';
 
 // ---------- helpers ----------
 export const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -487,12 +488,13 @@ const CAT_ORDER: Cat[] = ['a', 'b', 'c', 'a2', 'a3', 'e', 'd', 'f', 'h', 'g'];
 const catRank = (c: Cat) => CAT_ORDER.indexOf(c);
 
 /** Spec 3.4: the first brief leads with what the person asked to see first. Later briefs use the normal order. */
-export const FIRST_LOOK_CATS: Record<string, Cat[]> = { exposure: ['a', 'f'], receipts: ['b', 'c'], changes: ['e', 'g', 'h'], overlap: ['a'] };
+export const FIRST_LOOK_CATS: Record<FirstLook, Cat[]> = { exposure: ['a', 'f'], receipts: ['b', 'c'], changes: ['e', 'g', 'h'], overlap: ['a'] };
 /** Larger than the whole CAT_BONUS spread (a = 3.0) so a chosen item leads regardless of category. */
 export const FIRST_LOOK_BONUS = 4.0;
+/** `firstLook` stays `string[]`: the column is TEXT[], so an unknown code fails open (no bonus) instead of throwing. */
 export function firstLookBonus(cat: Cat, firstLook: readonly string[] | null | undefined, isFirstBrief: boolean): number {
   if (!isFirstBrief || !firstLook?.length) return 0;
-  return firstLook.some((code) => FIRST_LOOK_CATS[code]?.includes(cat)) ? FIRST_LOOK_BONUS : 0;
+  return firstLook.some((code) => FIRST_LOOK_CATS[code as FirstLook]?.includes(cat)) ? FIRST_LOOK_BONUS : 0;
 }
 
 function buildRanked(s: Structured, slices: Slice[], firstLook?: readonly string[] | null, isFirstBrief = false): RankedItem[] {
@@ -1129,6 +1131,13 @@ export async function buildDigestContext(userId: string, db?: SupabaseClient): P
     sb.from('user_preferences').select('first_look').eq('user_id', userId).maybeSingle(),
     sb.from('brief_digests').select('id').eq('user_id', userId).limit(1),
   ]);
+  // The one expected error is the column not existing yet (PostgREST PGRST204 / Postgres 42703),
+  // which stays silent. Anything else is logged so a broken read does not hide behind "no preference".
+  const isMissingColumn = (e: { code?: string; message?: string }) =>
+    e.code === 'PGRST204' || e.code === '42703' || (/first_look/.test(e.message ?? '') && /column|does not exist/i.test(e.message ?? ''));
+  for (const err of [prefRes.error, briefRes.error]) {
+    if (err && !isMissingColumn(err)) console.error('[digest] first_look read failed', { user: userId, code: err.code, message: err.message });
+  }
   const firstLook: string[] | null = prefRes.error ? null : Array.isArray(prefRes.data?.first_look) ? prefRes.data.first_look : null;
   // brief_digests is UNIQUE(user_id), one row upserted per generation: no row yet means this is the first brief.
   const isFirstBrief = !briefRes.error && (briefRes.data?.length ?? 0) === 0;
