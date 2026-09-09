@@ -8,6 +8,8 @@ export const V3_COPY = {
     loadError: 'Could not load your accounts.',
     lede: 'Connect a brokerage, or type in the positions you hold. Either one gives Helm something real to read.',
     syncing: 'Linked. Your holdings are syncing and show up here in a minute or two. You can leave this page; the sync keeps going.',
+    duplicate: 'That brokerage is already connected. Accounts shows the connection.',
+    syncFailed: 'The connection is saved, but the first import did not finish. Accounts shows its status and the next sync runs on its own.',
     manual: {
       heading: 'Add the positions you hold',
       body: 'Three to five tickers is enough. No credentials, no account numbers. Connect a brokerage later to import the rest.',

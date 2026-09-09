@@ -464,6 +464,8 @@ export default function PortfolioPage() {
   const [hasBrief, setHasBrief] = useState(true);
   // Plaid item exists, holdings still pulling; cleared by the reload on onPlaidSynced.
   const [plaidSyncing, setPlaidSyncing] = useState(false);
+  // Duplicate link or a first import that did not finish; rendered above the ask.
+  const [notice, setNotice] = useState<string | null>(null);
   useEffect(() => {
     if (!ONBOARDING_V3 || !hasHoldings) return;
     const controller = new AbortController();
@@ -506,7 +508,22 @@ export default function PortfolioPage() {
             {plaidSyncing && (
               <p role="status" className="mb-4 rounded-lg border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] px-4 py-3 text-[13px] text-[var(--color-text-secondary)]">{V3_COPY.ask.syncing}</p>
             )}
-            <BookAsk compact linkedInstitutions={[]} onPlaidSuccess={() => setPlaidSyncing(true)} onPlaidSynced={reloadBook} onManualComplete={reloadBook} />
+            {notice && (
+              <p role="status" className="mb-4 rounded-lg border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] px-4 py-3 text-[13px] text-[var(--color-text-secondary)]">{notice}</p>
+            )}
+            {/* linkedInstitutions stays []: an empty book has no holdings to read accounts from, and onDuplicate covers a re-link. */}
+            <BookAsk
+              compact
+              linkedInstitutions={[]}
+              onPlaidSuccess={() => setPlaidSyncing(true)}
+              onPlaidSynced={(result) => {
+                // A failed or timed-out first import must not reload into a silent empty screen.
+                if (result === 'synced' || result === 'partial') reloadBook();
+                else { setPlaidSyncing(false); setNotice(V3_COPY.ask.syncFailed); }
+              }}
+              onManualComplete={reloadBook}
+              onDuplicate={() => setNotice(V3_COPY.ask.duplicate)}
+            />
           </div>
         </div>
       );
