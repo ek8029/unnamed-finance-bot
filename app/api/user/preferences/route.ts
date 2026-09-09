@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { WRITABLE_PREFERENCE_FIELDS } from '@/lib/preference-fields';
+import { parseFirstLook } from '@/lib/onboarding/first-look';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
@@ -83,7 +84,14 @@ export async function PATCH(request: Request) {
     // switch off, with a test that fails when the two drift apart.
     const sanitized: Record<string, unknown> = {};
     for (const field of WRITABLE_PREFERENCE_FIELDS) {
-      if (field in updates) sanitized[field] = updates[field];
+      if (!(field in updates)) continue;
+      if (field === 'first_look') {
+        const parsed = parseFirstLook(updates[field]);
+        if (parsed === null) return NextResponse.json({ error: 'first_look must be a list of known codes' }, { status: 400 });
+        sanitized[field] = parsed;
+        continue;
+      }
+      sanitized[field] = updates[field];
     }
 
     const { data, error } = await supabase

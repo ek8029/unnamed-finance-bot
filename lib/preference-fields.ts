@@ -28,6 +28,7 @@ export const WRITABLE_PREFERENCE_FIELDS = [
   'reduce_motion', 'high_contrast', 'large_text', 'screen_reader_optimized',
   'analytics_enabled', 'crash_reporting_enabled',
   'filing_status', 'tax_bracket', 'tax_state',
+  'first_look',
 ] as const;
 
 /** What each unsubscribe link switches off.
