@@ -24,7 +24,7 @@ const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 
 // Sovereign Architect input treatment: inset background, calm border, gold focus.
 const FIELD_CLASS =
-  'h-[44px] px-3 bg-[var(--color-bg-inset)] border border-[var(--color-border-base)] rounded-[5px] text-[15px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors';
+  'h-[44px] px-3 bg-[var(--color-bg-inset)] border border-[var(--color-border-base)] rounded-[5px] text-[16px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-gold)] transition-colors';
 
 const FIELD_LABEL_CLASS =
   'block text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-2';

@@ -74,7 +74,7 @@ export function BookAsk({ linkedInstitutions, onPlaidSuccess, onPlaidSynced, onM
 
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
   const isLinked = (chip: string) => linkedInstitutions.some((l) => norm(l).includes(norm(chip)));
-  const card = `rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-tint)] ${compact ? 'p-4' : 'p-5'}`;
+  const card = `rounded-xl border border-[var(--color-border-base)] bg-[var(--color-surface-tint)] ${compact ? 'p-4' : 'p-5'}`;
   const notice = 'rounded-md border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] px-3 py-2 text-[13px] leading-relaxed text-[var(--color-text-primary)]';
 
   return (
@@ -103,7 +103,7 @@ export function BookAsk({ linkedInstitutions, onPlaidSuccess, onPlaidSynced, onM
                   type="button"
                   disabled={linked}
                   onClick={openFromChip}
-                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-[var(--color-border)] px-3 text-[14px] text-[var(--color-text-primary)] transition-colors hover:border-[var(--color-gold)] disabled:cursor-default disabled:opacity-60 disabled:hover:border-[var(--color-border)]"
+                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-[var(--color-border-base)] px-3 text-[14px] text-[var(--color-text-primary)] transition-colors hover:border-[var(--color-gold)] disabled:cursor-default disabled:opacity-60 disabled:hover:border-[var(--color-border-base)]"
                 >
                   {linked && <Check size={14} aria-hidden="true" className="text-[var(--color-positive)]" />}
                   {chip}

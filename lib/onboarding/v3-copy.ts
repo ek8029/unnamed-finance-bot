@@ -5,6 +5,7 @@ export const V3_COPY = {
   step: (n: number) => `Step ${n} of 3`,
   ask: {
     title: 'Start with what you own.',
+    loadError: 'Could not load your accounts.',
     lede: 'Connect a brokerage, or type in the positions you hold. Either one gives Helm something real to read.',
     manual: {
       heading: 'Add the positions you hold',

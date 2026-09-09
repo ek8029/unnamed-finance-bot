@@ -4,6 +4,7 @@
 // each account's `source` ('plaid' | 'manual').
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { previewSentence } from '@/lib/onboarding/v3-exposure';
+import { V3_COPY } from '@/lib/onboarding/v3-copy';
 
 export type BookAccount = { id: string; institution: string; account_type: string; source: 'plaid' | 'manual'; positions: number };
 export type BookHolding = { ticker: string; total_value: number; account_id: string | null };
@@ -26,7 +27,7 @@ export function useBook(enabled = true) {
       setHoldings(hs);
       setError(null);
     } catch {
-      setError('Could not load your accounts.');
+      setError(V3_COPY.ask.loadError);
     } finally {
       setLoading(false);
     }
@@ -60,7 +61,9 @@ export function useQuotePreview(rows: PreviewRow[]): string {
         }
       } catch {}
       if (cancelled) return;
-      lastFetched.current = key;
+      // An empty answer (off hours, a failed fetch) is not cached, so the next
+      // set change or remount asks again.
+      if (next.size > 0) lastFetched.current = key;
       setPrices(next);
     }, 600);
     return () => { cancelled = true; clearTimeout(t); };

@@ -20,7 +20,7 @@ export function FirstLookQuestion({ accounts, onDone }: { accounts: number; onDo
       <legend className="text-[15px] text-[var(--color-text-primary)]">{V3_COPY.firstLook.heading}</legend>
       <div className="mt-3 grid gap-2">
         {options.map((c) => (
-          <label key={c} className="flex items-center gap-3 min-h-[44px] px-3 rounded-lg border border-[var(--color-border)] cursor-pointer has-[:checked]:border-[var(--color-gold)]">
+          <label key={c} className="flex items-center gap-3 min-h-[44px] px-3 rounded-lg border border-[var(--color-border-base)] cursor-pointer has-[:checked]:border-[var(--color-gold)]">
             <input type="checkbox" className="h-4 w-4" checked={picked.includes(c)} onChange={() => toggle(c)} disabled={done} />
             <span className="text-[14px]">{V3_COPY.firstLook.options[c]}</span>
           </label>
