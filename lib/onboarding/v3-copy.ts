@@ -1,5 +1,9 @@
 // lib/onboarding/v3-copy.ts
 // Every v3 string. tests/onboarding-v3-copy.test.ts lints all of it.
+function plural(n: number, one: string, many: string): string {
+  return n === 1 ? one : many;
+}
+
 export const V3_COPY = {
   later: 'Do this later',
   step: (n: number) => `Step ${n} of 3`,
@@ -30,9 +34,9 @@ export const V3_COPY = {
     title: 'Is that all of it?',
     lede: 'Helm reads across accounts. Add the others now or later from Accounts.',
     one: 'Most people who pay for Helm hold accounts at two or more brokerages. Add the others and the exposure view shows the overlap between them.',
-    many: (n: number, positions: number, value: string) => `${n} accounts, ${positions} positions, ${value}. Add another, or continue.`,
+    many: (n: number, positions: number, value: string) => `${n} ${plural(n, 'account', 'accounts')}, ${positions} ${plural(positions, 'position', 'positions')}, ${value}. Add another, or continue.`,
     syncing: (institution: string) => `Syncing ${institution}`,
-    positions: (n: number) => `${n} ${n === 1 ? 'position' : 'positions'}`,
+    positions: (n: number) => `${n} ${plural(n, 'position', 'positions')}`,
     imported: 'imported',
     byHand: 'entered by hand',
     already: (institution: string) => `${institution} is already connected`,

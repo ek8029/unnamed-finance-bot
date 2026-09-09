@@ -515,7 +515,7 @@ export default function PortfolioPage() {
             <BookAsk
               compact
               linkedInstitutions={[]}
-              onPlaidSuccess={() => setPlaidSyncing(true)}
+              onPlaidSuccess={() => { setNotice(null); setPlaidSyncing(true); }}
               onPlaidSynced={(result) => {
                 // A failed or timed-out first import must not reload into a silent empty screen.
                 if (result === 'synced' || result === 'partial') reloadBook();

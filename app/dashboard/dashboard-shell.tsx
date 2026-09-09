@@ -387,9 +387,10 @@ export default function DashboardShell({
   }, [paletteQuery]);
 
   // v3 sidebar labels. Defaults to "ready" so nothing dims before the fetch
-  // resolves, on error, or with the flag off (no fetch at all). Re-read on every
-  // client-side route change so a brokerage connected mid-session clears the
-  // label without a reload; the shell's own accounts list covers the gap between.
+  // resolves, on error, or with the flag off (no fetch at all). The pathname
+  // dependency below is what re-reads the fetch and refreshes the label after
+  // a connection; this hook's own useAccounts() call fetches once and does not
+  // cover that gap on its own.
   const [activation, setActivation] = useState({ hasBrief: true, hasConnection: true });
   useEffect(() => {
     if (!ONBOARDING_V3 || previewPath) return;
