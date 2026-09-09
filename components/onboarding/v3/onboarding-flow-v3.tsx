@@ -16,8 +16,9 @@ import { BookAsk } from './book-ask';
 import { AccountLoop } from './account-loop';
 import { BookReveal } from './book-reveal';
 import { FirstLookQuestion } from './first-look';
-import { useBook, type BookAccount } from './use-book';
+import { useBook } from './use-book';
 import type { FirstLook } from '@/lib/onboarding/first-look';
+import { afterSynced, nextSyncing, pickNewPlaidAccounts } from '@/lib/onboarding/v3-sync-state';
 import { V3_COPY } from '@/lib/onboarding/v3-copy';
 
 type Phase = 'ask' | 'loop' | 'reveal';
@@ -31,11 +32,6 @@ function track(event: string, props?: Record<string, unknown>) {
 
 function markDeferred() {
   try { localStorage.setItem(V3_KEY, '1'); } catch { /* storage blocked */ }
-}
-
-function lastPlaid(accounts: BookAccount[]): BookAccount | undefined {
-  for (let i = accounts.length - 1; i >= 0; i--) if (accounts[i].source === 'plaid') return accounts[i];
-  return undefined;
 }
 
 export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
@@ -58,16 +54,22 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
 
   const book = useBook(show);
   const [phase, setPhase] = useState<Phase>(jumpTo ?? 'ask');
-  const [syncing, setSyncing] = useState<string | null>(null);
+  // Institutions still on their first import, oldest first. Several Plaid
+  // connects can overlap; each Link success adds one pending import and each
+  // settled sync removes the oldest.
+  const [syncing, setSyncing] = useState<string[]>([]);
+  const [pendingConnects, setPendingConnects] = useState(0);
   const [duplicate, setDuplicate] = useState<string | null>(null);
   // null = not answered yet.
   const [firstLook, setFirstLook] = useState<FirstLook[] | null>(null);
   const asked = useRef(false);
-  // The question sits in the sync wait on the Plaid path and on the loop screen otherwise.
-  const [sawPlaid, setSawPlaid] = useState(false);
-  // Account ids on record before the latest Link success; the effect below
-  // finds the newest Plaid account once the refetch lands.
-  const idsBeforeLink = useRef<Set<string> | null>(null);
+  // Where the first-look question renders is decided once, by the first way
+  // the user handed Helm a book: the loop screen on the manual path, the sync
+  // wait on the reveal on the Plaid path. It never moves mid-flow.
+  const questionPath = useRef<'manual' | 'plaid' | null>(null);
+  // Every account id seen in any refetch. A Plaid account outside this set is
+  // a fresh connection whose institution is still importing.
+  const knownIds = useRef<Set<string>>(new Set());
   const duplicatePending = useRef(false);
   const accountsRef = useRef(book.accounts);
   accountsRef.current = book.accounts;
@@ -93,32 +95,38 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
     return () => { cancelled = true; };
   }, [harness, settle]);
 
-  // Newest Plaid institution: the account whose id was not on record before
-  // the Link success. Falls back to the last Plaid account when the summary
-  // has not caught up yet.
+  // After every refetch: Plaid accounts not seen before are fresh connections.
+  // Only a Link success in this session makes them "syncing"; the accounts
+  // already on record at the first read are simply remembered.
   useEffect(() => {
-    const before = idsBeforeLink.current;
-    if (!before) return;
-    const fresh = book.accounts.filter((a) => a.source === 'plaid' && !before.has(a.id));
-    const newest = fresh[fresh.length - 1] ?? lastPlaid(book.accounts);
-    if (!newest) return;
-    idsBeforeLink.current = null;
-    setSyncing(newest.institution);
+    const fresh = pendingConnects > 0 ? pickNewPlaidAccounts(knownIds.current, book.accounts) : [];
+    for (const a of book.accounts) knownIds.current.add(a.id);
+    if (fresh.length === 0) return;
+    const names = fresh.map((a) => a.institution);
+    setSyncing((s) => nextSyncing(s, names));
     if (duplicatePending.current) {
       duplicatePending.current = false;
-      setDuplicate(newest.institution);
+      setDuplicate(names[names.length - 1]);
     }
-  }, [book.accounts]);
+  }, [book.accounts, pendingConnects]);
 
-  // While an import runs, the book re-reads every ten seconds.
+  // While an import runs, or a connect has not shown up in the book yet, the
+  // book re-reads every ten seconds.
+  const polling = syncing.length > 0 || pendingConnects > 0;
   useEffect(() => {
-    if (!syncing) return;
+    if (!polling) return;
     const id = setInterval(() => { void book.refetch(); }, SYNC_POLL_MS);
     return () => clearInterval(id);
-  }, [syncing, book.refetch]);
+  }, [polling, book.refetch]);
 
   const leave = useCallback(() => {
-    if (harness) { setPhase('ask'); void book.refetch(); return; }
+    if (harness) {
+      setPhase('ask');
+      setSyncing([]);
+      setPendingConnects(0);
+      void book.refetch();
+      return;
+    }
     markDeferred();
     settle();
     window.location.href = '/dashboard/portfolio';
@@ -126,25 +134,27 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
 
   const onPlaidSuccess = useCallback(() => {
     track('onb3_account_added', { flow: 'v3', via: 'plaid', accounts: accountsRef.current.length + 1 });
-    setSawPlaid(true);
-    idsBeforeLink.current = new Set(accountsRef.current.map((a) => a.id));
+    if (questionPath.current === null) questionPath.current = 'plaid';
+    setPendingConnects((n) => n + 1);
     void book.refetch();
     setPhase('loop');
   }, [book.refetch]);
 
   const onPlaidSynced = useCallback(() => {
-    setSyncing(null);
+    setSyncing(afterSynced);
+    setPendingConnects((n) => Math.max(0, n - 1));
     void book.refetch();
   }, [book.refetch]);
 
   const onManualComplete = useCallback(() => {
     track('onb3_account_added', { flow: 'v3', via: 'manual', accounts: accountsRef.current.length + 1 });
+    if (questionPath.current === null) questionPath.current = 'manual';
     void book.refetch();
     setPhase('loop');
   }, [book.refetch]);
 
   // PlaidLinkButton's warning is a fixed sentence with no institution in it and
-  // fires before onSuccess, so the name comes from the newest-account effect.
+  // fires before onSuccess, so the name comes from the fresh-account effect.
   const onDuplicate = useCallback((message: string) => {
     const m = /^(.+?) (?:is|was) already connected/.exec(message);
     const name = m && !/^this institution$/i.test(m[1]) ? m[1] : null;
@@ -184,7 +194,7 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
 
   if (!show) return null;
 
-  const manual = !sawPlaid;
+  const manual = questionPath.current === 'manual';
   const question = firstLook === null && !asked.current ? (
     <FirstLookQuestion
       accounts={book.accounts.length}
@@ -200,23 +210,11 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
   // BookAsk renders the ask lede itself; the loop lede belongs to the frame.
   const lede = phase === 'loop' ? V3_COPY.loop.lede : null;
   const step = STEP[phase];
+  // The screens take one institution; the oldest import is the one they name.
+  const syncingFirst = syncing[0] ?? null;
 
   return (
     <>
-      <style jsx global>{`
-        @keyframes onb-fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes onb-fade-in { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes onb-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-        @keyframes onb-check { from { stroke-dashoffset: 30; } to { stroke-dashoffset: 0; } }
-        @keyframes onb-scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(400%); } }
-        @media (prefers-reduced-motion: reduce) {
-          @keyframes onb-fade-up { from, to { opacity: 1; transform: none; } }
-          @keyframes onb-fade-in { from, to { opacity: 1; } }
-          @keyframes onb-progress { from, to { transform: scaleX(1); } }
-          @keyframes onb-scanline { from, to { transform: translateY(150%); } }
-        }
-      `}</style>
-
       <div className="fixed inset-0 z-[100] bg-[#050505] overflow-y-auto overscroll-contain">
         <div className="min-h-[100dvh] flex flex-col">
           <div className="mx-auto w-full max-w-5xl px-4 py-10">
@@ -247,7 +245,7 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
                 <AccountLoop
                   accounts={book.accounts}
                   holdings={book.holdings}
-                  syncing={syncing}
+                  syncing={syncingFirst}
                   duplicate={duplicate}
                   onPlaidSuccess={onPlaidSuccess}
                   onPlaidSynced={onPlaidSynced}
@@ -264,7 +262,7 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
                 <BookReveal
                   holdings={book.holdings}
                   accounts={book.accounts.length}
-                  syncing={syncing}
+                  syncing={syncingFirst}
                   firstLook={firstLook}
                   firstLookSlot={manual ? undefined : question}
                   onOpenTerminal={onOpenTerminal}
