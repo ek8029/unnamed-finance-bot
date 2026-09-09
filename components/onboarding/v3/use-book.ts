@@ -62,9 +62,10 @@ export function useQuotePreview(rows: PreviewRow[]): string {
         }
       } catch {}
       if (cancelled) return;
-      // An empty answer (off hours, a failed fetch) is not cached, so the next
-      // set change or remount asks again.
-      if (next.size > 0) lastFetched.current = key;
+      // An empty or failed answer keeps the prices already known and leaves no
+      // set marked as fetched, so the next set change or remount asks again.
+      if (next.size === 0) { lastFetched.current = null; return; }
+      lastFetched.current = key;
       setPrices(next);
     }, 600);
     return () => { cancelled = true; clearTimeout(t); };

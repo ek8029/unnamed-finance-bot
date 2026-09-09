@@ -2,12 +2,19 @@
  * Lightweight live quotes endpoint (authenticated).
  *
  * GET /api/market/quotes?tickers=AAPL,MSFT
+ * GET /api/market/quotes?tickers=AAPL,MSFT&fill=close
  *
  * Read-only price lookup for client-side polling. No database writes,
  * no portfolio recalcs — the heavy persistence cascade lives in
  * /api/market/prices/refresh and runs on page load, not on every poll
  * tick. Quote fetching + caching lives in lib/live-quotes.ts, shared
  * with the public endpoint.
+ *
+ * fill=close (opt-in): live quotes are empty outside US market hours. With
+ * this param each requested ticker that has no live quote is filled from its
+ * newest market_prices row within CLOSE_LOOKBACK_DAYS, returned with the same
+ * fields plus `source: 'close'` and `asOf` = the close date; live rows carry
+ * `source: 'live'`. Without the param the response shape is unchanged.
  */
 
 import { createClient } from '@/lib/supabase/server';
@@ -24,7 +31,8 @@ const MAX_TICKERS = 120;
 const TICKER_RE = /^[A-Z][A-Z0-9.\-]{0,9}$/;
 const PRICE_TTL_MS = 6_000;
 // fill=close looks back this far for a last close; older rows read as no price.
-const CLOSE_LOOKBACK_DAYS = 30;
+// Seven days covers any long weekend or holiday and keeps the read bounded.
+const CLOSE_LOOKBACK_DAYS = 7;
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -63,13 +71,18 @@ export async function GET(request: NextRequest) {
     const since = new Date(Date.now() - CLOSE_LOOKBACK_DAYS * 86_400_000).toISOString().slice(0, 10);
     // market_prices: RLS on, SELECT open to authenticated (migration 012);
     // UNIQUE is on (security_id, price_date), not ticker, so the first row
-    // per ticker in date-desc order wins.
-    const { data } = await supabase
+    // per ticker in date-desc order wins. The limit keeps 120 tickers under
+    // PostgREST's 1,000-row cap, which would otherwise drop the oldest rows
+    // and silently un-fill any ticker whose newest close is a few days old.
+    // lib/live-quotes.ts:86-92 has the same unbounded shape; out of scope here.
+    const { data, error } = await supabase
       .from('market_prices')
       .select('ticker, close, price_date')
       .in('ticker', missing)
       .gte('price_date', since)
-      .order('price_date', { ascending: false });
+      .order('price_date', { ascending: false })
+      .limit(missing.length * 8);
+    if (error) console.error('[quotes] fill=close read failed', error);
     const seen = new Set<string>();
     for (const row of (data ?? []) as { ticker: string; close: number | string; price_date: string }[]) {
       if (seen.has(row.ticker)) continue;
