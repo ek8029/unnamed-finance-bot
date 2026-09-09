@@ -146,8 +146,9 @@ export function decideClaims(queued: JudgeJobRow[], today: TodayCounts, cfg: Jud
 
 /**
  * Lower the wake flag to `runAfterIso` if that is earlier than what it holds.
- * Never raises it: a later enqueue must not push out an earlier job. A missing
- * Redis is a no-op and the worker polls as it always did.
+ * For the deferred requeue only: a deferred run_after must never push the
+ * flag past a row that is already due. A missing Redis is a no-op and the
+ * worker polls as it always did.
  */
 async function lowerWakeFlag(runAfterIso: string): Promise<void> {
   const key = redisKey(JUDGE_WAKE_KEY);
@@ -177,8 +178,11 @@ export async function enqueueJudgeJobs(db: Db, jobs: NewJudgeJob[]): Promise<{ i
     .upsert(rows, { onConflict: 'kind,user_id,source_key', ignoreDuplicates: true })
     .select('id');
   if (error) return { inserted: 0, error: error.message };
-  // New rows carry run_after default now() (migration 072), so the flag drops to now.
-  await lowerWakeFlag(new Date().toISOString());
+  // New rows carry run_after default now() (migration 072). Always write now,
+  // never min: a past flag and now mean the same thing to the gate, but the
+  // park's compare-before-set must see the key change, or a job enqueued
+  // during an idle tick's empty select would sleep behind the park.
+  await withRedis((r) => r.set(redisKey(JUDGE_WAKE_KEY), new Date().toISOString()), undefined);
   return { inserted: data?.length ?? 0, error: null };
 }
 
@@ -232,11 +236,14 @@ export async function claimJudgeJobs(db: Db, cfg: JudgeConfig, now: Date = new D
   if (queued.length === 0) {
     // Nothing is due, but a deferred row may be minutes out. This path runs
     // once per wake cycle, not per idle tick, so one more read is fine: park
-    // no later than the earliest queued run_after.
+    // no later than the earliest queued run_after. Running rows count too:
+    // another instance's job may defer after this read, and its old (past)
+    // run_after keeps the flag in the past so the next tick polls once more
+    // instead of sleeping an hour behind this park.
     const { data: next } = await db
       .from('judge_jobs')
       .select('run_after')
-      .eq('status', 'queued')
+      .in('status', ['queued', 'running'])
       .order('run_after', { ascending: true })
       .limit(1)
       .maybeSingle();
@@ -356,7 +363,7 @@ export interface WorkerSummary {
   spentTodayUsd: number;
   ledger: UsageLedger;
   ms: number;
-  /** True when the wake flag said no queued row is due yet; nothing was read or written. */
+  /** True when the wake flag said no queued row is due yet; only the heartbeat was written. */
   idle?: boolean;
 }
 
@@ -384,14 +391,16 @@ export async function runJudgeWorker(
     return summary;
   }
 
-  // The wake flag comes before the first database read. A future flag means
-  // every queued row has a later run_after, so the tick opens no statement at
-  // all, not even the heartbeat. A missing or unreadable flag polls as before.
+  // The wake flag comes before the first judge_jobs read. A future flag means
+  // every queued row has a later run_after, so the tick opens no judge_jobs
+  // statement; only the heartbeat, which check-cron and the watch page expect
+  // every minute. A missing or unreadable flag polls as before.
   const flag = await withRedis((r) => r.get<string>(redisKey(JUDGE_WAKE_KEY)), null);
   if (!shouldWakeJudge(flag, started)) {
     log.push(`[judge] idle: no queued work before ${flag}`);
     summary.idle = true;
     summary.ms = now().getTime() - started.getTime();
+    await beat(db, 'judge-worker', { idle: true, wakeAt: flag, ms: summary.ms });
     return summary;
   }
 

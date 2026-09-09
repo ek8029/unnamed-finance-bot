@@ -22,12 +22,6 @@ export function shouldWakeJudge(flag: string | null | undefined, now: Date): boo
   return Number.isNaN(t) ? true : t <= now.getTime();
 }
 
-/** The earliest run_after among the rows; a null run_after counts as now, and no rows means now. */
-export function earliestRunAfter(rows: { run_after: string | null }[], now: Date): string {
-  const ts = rows.map((r) => (r.run_after ? Date.parse(r.run_after) : now.getTime())).filter((n) => !Number.isNaN(n));
-  return new Date(ts.length ? Math.min(...ts) : now.getTime()).toISOString();
-}
-
 /** The earlier of two ISO strings; a missing or unparsable side loses. */
 export function minIso(a: string | null | undefined, b: string): string {
   if (a == null) return b;
