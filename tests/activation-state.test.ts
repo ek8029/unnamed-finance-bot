@@ -21,7 +21,7 @@ function clientFor(tables: Record<string, Row[]>, failedTable?: string) {
 describe('persisted activation state', () => {
   it('recognizes manual holdings without Plaid', async () => {
     const result = await readActivationState(clientFor({ holdings: [{ id: 'h', user_id: 'a', shares: 2 }] }), 'a');
-    expect(result).toEqual({ hasConnection: false, hasHoldings: true, hasThesis: false, hasSavedWork: true });
+    expect(result).toEqual({ hasConnection: false, hasHoldings: true, hasThesis: false, hasSavedWork: true, accountCount: 0, hasBrief: false });
   });
   it('recognizes short positions too', async () => {
     expect((await readActivationState(clientFor({ holdings: [{ user_id: 'a', shares: -3 }] }), 'a')).hasSavedWork).toBe(true);
@@ -47,5 +47,21 @@ describe('persisted activation state', () => {
   });
   it.each(['holdings', 'thesis_pillars', 'plaid_items'])('fails closed on %s read failures', async table => {
     await expect(readActivationState(clientFor({}, table), 'a')).rejects.toThrow('Could not verify');
+  });
+  it('reports the active account count and whether a brief exists', async () => {
+    const s = await readActivationState(clientFor({
+      linked_accounts: [
+        { id: 'la1', user_id: 'a', is_active: true, source: 'plaid' },
+        { id: 'la2', user_id: 'a', is_active: true, source: 'manual' },
+      ],
+      brief_digests: [{ id: 'b1', user_id: 'a' }],
+    }), 'a');
+    expect(s.accountCount).toBe(2);
+    expect(s.hasBrief).toBe(true);
+  });
+  it('reports zero accounts and no brief for a fresh user', async () => {
+    const s = await readActivationState(clientFor({}), 'a');
+    expect(s.accountCount).toBe(0);
+    expect(s.hasBrief).toBe(false);
   });
 });
