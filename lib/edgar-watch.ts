@@ -317,6 +317,8 @@ export async function watchOnce(
     }
     if (!dry && deps.markSeen) {
       // Everything handed to the upsert is settled now, including the rows it found already present.
+      // A row that was written but whose enqueue below throws stays status new and is not revisited by
+      // this poller, as before these commits; the hourly per-ticker EDGAR read is the net.
       await deps.markSeen(toRecord.map((h) => h.accessionNo)).catch((err) => result.errors.push(`${form} mark seen: ${err instanceof Error ? err.message : String(err)}`));
     }
     result.new += fresh.length;
@@ -441,6 +443,6 @@ export async function runEdgarWatch(db: Db, opts: { dry?: boolean; forms?: reado
     opts,
   );
   // Stamped even on a quiet tick: the overview's "checked N min ago" is this.
-  await beat(db, 'edgar-watch', { dry: result.dry, fetched: result.fetched, watched: result.watched, new: result.new, queued: result.queued, hourly: result.hourly, skipped: result.skipped, errors: result.errors.length, ms: result.ms });
+  await beat(db, 'edgar-watch', { dry: result.dry, fetched: result.fetched, watched: result.watched, new: result.new, queued: result.queued, hourly: result.hourly, skipped: result.skipped, skippedSeen: result.skippedSeen, errors: result.errors.length, ms: result.ms });
   return result;
 }

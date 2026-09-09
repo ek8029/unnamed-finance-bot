@@ -27,7 +27,13 @@ vi.mock('@/lib/redis', () => {
       redisMock.sets.set(k, s);
       return members.length;
     },
-    expire: async (k: string, s: number) => { guard('expire'); redisMock.ttl.set(k, s); return 1; },
+    // Honours NX the way Redis does: an existing TTL is left alone.
+    expire: async (k: string, s: number, option?: string) => {
+      guard(`expire${option ? ':' + option : ''}`);
+      if (option === 'NX' && redisMock.ttl.has(k)) return 0;
+      redisMock.ttl.set(k, s);
+      return 1;
+    },
   };
   return {
     withRedis: async <T,>(fn: (r: unknown) => Promise<T>, fallback: T) => {
@@ -78,12 +84,20 @@ describe('unseen', () => {
 });
 
 describe('markSeen', () => {
-  it('adds the ids and sets the seven day TTL', async () => {
+  it('adds the ids and sets the seven day TTL only when the key has none', async () => {
     await markSeen('edgar', ['a', 'b']);
     expect([...redisMock.sets.get(KEY)!].sort()).toEqual(['a', 'b']);
     expect(redisMock.ttl.get(KEY)).toBe(SEEN_TTL_S);
     expect(SEEN_TTL_S).toBe(7 * 24 * 3600);
-    expect(redisMock.calls).toEqual(['sadd', 'expire']);
+    expect(redisMock.calls).toEqual(['sadd', 'expire:NX']);
+  });
+
+  it('a second write does not slide the TTL', async () => {
+    await markSeen('edgar', ['a']);
+    redisMock.ttl.set(KEY, 60); // a minute left on the first write's clock
+    await markSeen('edgar', ['b']);
+    expect(redisMock.ttl.get(KEY)).toBe(60);
+    expect([...redisMock.sets.get(KEY)!].sort()).toEqual(['a', 'b']);
   });
 
   it('keys per watcher', async () => {

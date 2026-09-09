@@ -22,12 +22,17 @@ export async function unseen(name: SeenName, ids: string[]): Promise<string[]> {
   }, ids);
 }
 
-/** Adds the ids to the set and refreshes its TTL. No-op on empty; Redis down is silent. */
+/**
+ * Adds the ids to the set. The TTL is set only when the key has none (NX), so
+ * the set dies seven days after its first write and restarts rather than
+ * sliding forever under a minute cadence; the filing_events upsert still
+ * dedupes that one tick. No-op on empty; Redis down is silent.
+ */
 export async function markSeen(name: SeenName, ids: string[]): Promise<void> {
   if (ids.length === 0) return;
   const key = redisKey('watch', 'seen', name);
   await withRedis(async (r) => {
     await r.sadd(key, ids[0], ...ids.slice(1));
-    await r.expire(key, SEEN_TTL_S);
+    await r.expire(key, SEEN_TTL_S, 'NX');
   }, undefined);
 }
