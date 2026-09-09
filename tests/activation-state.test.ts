@@ -45,7 +45,7 @@ describe('persisted activation state', () => {
   it('recognizes a connection while its first holdings are syncing', async () => {
     expect((await readActivationState(clientFor({ plaid_items: [{ user_id: 'a' }] }), 'a')).hasSavedWork).toBe(true);
   });
-  it.each(['holdings', 'thesis_pillars', 'plaid_items'])('fails closed on %s read failures', async table => {
+  it.each(['holdings', 'thesis_pillars', 'plaid_items', 'linked_accounts', 'brief_digests'])('fails closed on %s read failures', async table => {
     await expect(readActivationState(clientFor({}, table), 'a')).rejects.toThrow('Could not verify');
   });
   it('reports the active account count and whether a brief exists', async () => {
@@ -53,6 +53,8 @@ describe('persisted activation state', () => {
       linked_accounts: [
         { id: 'la1', user_id: 'a', is_active: true, source: 'plaid' },
         { id: 'la2', user_id: 'a', is_active: true, source: 'manual' },
+        { id: 'la3', user_id: 'a', is_active: false, source: 'plaid' },
+        { id: 'la4', user_id: 'other', is_active: true, source: 'plaid' },
       ],
       brief_digests: [{ id: 'b1', user_id: 'a' }],
     }), 'a');
