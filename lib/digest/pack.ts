@@ -482,11 +482,20 @@ const catchVerbIng = (verdict: string) =>
 
 // Rank by consequence. Bonus per category, highest first; a merged item takes the highest score
 // among its parts. CAT_ORDER only breaks an exact score tie.
-const CAT_BONUS: Record<Cat, number> = { a: 3.0, b: 2.0, c: 2.0, a2: 2.0, a3: 2.0, e: 1.5, d: 1.0, f: 1.0, h: 0.5, g: 0.5 };
+export const CAT_BONUS: Record<Cat, number> = { a: 3.0, b: 2.0, c: 2.0, a2: 2.0, a3: 2.0, e: 1.5, d: 1.0, f: 1.0, h: 0.5, g: 0.5 };
 const CAT_ORDER: Cat[] = ['a', 'b', 'c', 'a2', 'a3', 'e', 'd', 'f', 'h', 'g'];
 const catRank = (c: Cat) => CAT_ORDER.indexOf(c);
 
-function buildRanked(s: Structured, slices: Slice[]): RankedItem[] {
+/** Spec 3.4: the first brief leads with what the person asked to see first. Later briefs use the normal order. */
+export const FIRST_LOOK_CATS: Record<string, Cat[]> = { exposure: ['a', 'f'], receipts: ['b', 'c'], changes: ['e', 'g', 'h'], overlap: ['a'] };
+/** Larger than the whole CAT_BONUS spread (a = 3.0) so a chosen item leads regardless of category. */
+export const FIRST_LOOK_BONUS = 4.0;
+export function firstLookBonus(cat: Cat, firstLook: readonly string[] | null | undefined, isFirstBrief: boolean): number {
+  if (!isFirstBrief || !firstLook?.length) return 0;
+  return firstLook.some((code) => FIRST_LOOK_CATS[code]?.includes(cat)) ? FIRST_LOOK_BONUS : 0;
+}
+
+function buildRanked(s: Structured, slices: Slice[], firstLook?: readonly string[] | null, isFirstBrief = false): RankedItem[] {
   const raw: RankedItem[] = [];
   const push = (cat: Cat, tickers: string[], text: string) =>
     raw.push({ cat, cats: [cat], tickers, text, headlines: [], score: 0 });
@@ -656,7 +665,7 @@ function buildRanked(s: Structured, slices: Slice[]): RankedItem[] {
   };
   for (const it of raw) {
     const c = contribOf(it.tickers);
-    it.score = (c >= MIN_CONTRIBUTION_PTS ? c : 0) + bonusOf(it);
+    it.score = (c >= MIN_CONTRIBUTION_PTS ? c : 0) + bonusOf(it) + firstLookBonus(it.cat, firstLook, isFirstBrief);
   }
 
   // merge: a later item whose ticker already appears in an earlier item joins that story;
@@ -1113,7 +1122,18 @@ export async function buildDigestContext(userId: string, db?: SupabaseClient): P
     pillarChanges24h: pillarChangeRows,
   };
 
-  const ranked = buildRanked(structured, slices);
+  // Spec 3.4: on the first brief only, items in the categories the reader asked to see first lead.
+  // Both reads tolerate errors: migration 077 (user_preferences.first_look) may be unapplied, and
+  // a failed read here must never cost the reader the brief itself.
+  const [prefRes, briefRes] = await Promise.all([
+    sb.from('user_preferences').select('first_look').eq('user_id', userId).maybeSingle(),
+    sb.from('brief_digests').select('id').eq('user_id', userId).limit(1),
+  ]);
+  const firstLook: string[] | null = prefRes.error ? null : Array.isArray(prefRes.data?.first_look) ? prefRes.data.first_look : null;
+  // brief_digests is UNIQUE(user_id), one row upserted per generation: no row yet means this is the first brief.
+  const isFirstBrief = !briefRes.error && (briefRes.data?.length ?? 0) === 0;
+
+  const ranked = buildRanked(structured, slices, firstLook, isFirstBrief);
   const closer = closerText(structured);
   return {
     userId,
