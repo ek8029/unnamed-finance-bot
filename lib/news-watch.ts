@@ -21,6 +21,7 @@ import { enqueueJudgeJobs, recordLedgerRow, type NewJudgeJob } from '@/lib/agent
 import { beat } from '@/lib/agent/heartbeat';
 import { emptyLedger } from '@/lib/ai/pricing';
 import { newsDisposition, type NewsSubjectRow } from '@/lib/news-relevance';
+import { cachedUniverse } from '@/lib/watch/universe-cache';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, any, any>;
@@ -78,9 +79,15 @@ export async function runNewsWatch(db: Db, opts: { log: string[]; now?: Date; si
   const size = opts.size ?? NEWS_SLICE;
   const errors: string[] = [];
 
-  const [held, thesis] = await Promise.all([distinctTickers(db, 'holdings'), distinctTickers(db, 'theses')]);
+  // Both lists are cached (lib/watch/universe-cache): the thesis names alone,
+  // because the market_news re-read below filters on them, and the union.
+  const thesis = new Set(await cachedUniverse('news-thesis', async () => [...await distinctTickers(db, 'theses')].sort()));
+  const union = await cachedUniverse('news', async () => {
+    const held = await distinctTickers(db, 'holdings');
+    return [...new Set([...held, ...thesis])].sort();
+  });
   // Sorted, so the rotation is identical on every instance.
-  const all = [...new Set([...held, ...thesis])].filter((t) => !t.includes('-USD')).sort();
+  const all = union.filter((t) => !t.includes('-USD')).sort();
   const slot = slotFor(now);
   const slice = rotationSlice(all, slot, size);
   const tickStart = now.toISOString();

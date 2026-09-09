@@ -18,6 +18,8 @@ import { filingTier } from '@/lib/filing-tiers';
 import { monitoredThesisIds } from '@/lib/agent/monitored';
 import { enqueueJudgeJobs, type NewJudgeJob } from '@/lib/agent/judge-queue';
 import { beat } from '@/lib/agent/heartbeat';
+import { cachedUniverse } from '@/lib/watch/universe-cache';
+import { unseen } from '@/lib/watch/seen-set';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, any, any>;
@@ -149,12 +151,14 @@ export function universeFromMap(tickers: Iterable<string>, cikByTicker: Map<stri
 }
 
 export async function buildWatchUniverse(db: Db): Promise<WatchUniverse> {
-  const [held, thesis, cikMap] = await Promise.all([
-    distinctTickers(db, 'holdings'),
-    distinctTickers(db, 'theses'),
+  // The ticker list is cached (lib/watch/universe-cache); the CIK map has its own in-memory cache.
+  const [all, cikMap] = await Promise.all([
+    cachedUniverse('edgar', async () => {
+      const [held, thesis] = await Promise.all([distinctTickers(db, 'holdings'), distinctTickers(db, 'theses')]);
+      return [...new Set([...held, ...thesis])].sort();
+    }),
     getTickerCikMap(),
   ]);
-  const all = new Set([...held, ...thesis]);
   return universeFromMap(all, cikMap ?? new Map());
 }
 
@@ -201,6 +205,8 @@ export interface WatchDeps {
   universe: () => Promise<WatchUniverse>;
   /** Insert the events that are not already on record; return the ones that were new. */
   record: (hits: WatchedEntry[], dry: boolean, now: Date) => Promise<RecordedEvent[]>;
+  /** Which of these accession numbers have not been handled before (Redis seen set); absent or down means all of them, and `record` dedupes. */
+  unseen?: (ids: string[]) => Promise<string[]>;
   /** Enqueue judge jobs for a new tier-now event; return how many were queued and the status to stamp. */
   enqueue: (event: RecordedEvent, log: string[]) => Promise<{ queued: number; status: 'queued' | 'skipped'; note: string | null }>;
   stamp: (accessionNo: string, status: 'queued' | 'skipped' | 'hourly' | 'new', note: string | null) => Promise<void>;
@@ -217,6 +223,8 @@ export interface WatchResult {
   /** Tier B: recorded, read at the hourly scan. */
   hourly: number;
   skipped: number;
+  /** Watched entries the seen set already had, so never sent to the upsert. */
+  skippedSeen: number;
   errors: string[];
   universe: { tickers: number; ciks: number };
   events: { ticker: string; form: string; accessionNo: string; acceptedAt: string; url: string; status: string; queued: number }[];
@@ -237,7 +245,7 @@ export async function watchOnce(
   const memory = opts.memory ?? lastRead;
   const log = opts.log;
   const result: WatchResult = {
-    dry, forms, fetched: 0, pages: 0, watched: 0, new: 0, queued: 0, hourly: 0, skipped: 0, errors: [],
+    dry, forms, fetched: 0, pages: 0, watched: 0, new: 0, queued: 0, hourly: 0, skipped: 0, skippedSeen: 0, errors: [],
     universe: { tickers: 0, ciks: 0 }, events: [], ms: 0,
   };
 
@@ -283,9 +291,24 @@ export async function watchOnce(
     result.watched += hits.length;
     if (hits.length === 0) continue;
 
+    // The feed repeats: drop what the seen set already handled before the
+    // upsert. A dry run never marks anything seen. `continue`, not `return`:
+    // the later forms still tick.
+    let toRecord = hits;
+    if (!dry && deps.unseen) {
+      try {
+        const freshIds = new Set(await deps.unseen(hits.map((h) => h.accessionNo)));
+        toRecord = hits.filter((h) => freshIds.has(h.accessionNo));
+      } catch (err) {
+        result.errors.push(`${form} seen set: ${err instanceof Error ? err.message : String(err)}`);
+      }
+      result.skippedSeen += hits.length - toRecord.length;
+      if (toRecord.length === 0) continue;
+    }
+
     let fresh: RecordedEvent[];
     try {
-      fresh = await deps.record(hits, dry, now());
+      fresh = await deps.record(toRecord, dry, now());
     } catch (err) {
       result.errors.push(`${form} record: ${err instanceof Error ? err.message : String(err)}`);
       continue;
@@ -404,6 +427,7 @@ export async function runEdgarWatch(db: Db, opts: { dry?: boolean; forms?: reado
       fetchPage: fetchFeedPage,
       universe: () => buildWatchUniverse(db),
       record: (hits, dry, now) => recordFilingEvents(db, hits, dry, now),
+      unseen: (ids) => unseen('edgar', ids),
       enqueue: (event, log) => enqueueForEvent(db, event, log),
       stamp: (acc, status, note) => stampFilingEvent(db, acc, status, note),
     },

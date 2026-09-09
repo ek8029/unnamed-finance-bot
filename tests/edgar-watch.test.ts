@@ -147,6 +147,74 @@ describe('watchOnce', () => {
     expect(log[0]).toContain('dry run');
   });
 
+  it('a seen set that knows every accession keeps the upsert from running at all', async () => {
+    const { deps, enqueued } = fakes();
+    const record = vi.fn(deps.record);
+    deps.record = record;
+    deps.unseen = async () => [];
+    const r = await watchOnce(deps, { log: [], forms: ['8-K', '10-Q'], memory: new Map() });
+    expect(r.watched).toBe(3);
+    expect(r.skippedSeen).toBe(3);
+    expect(r.new).toBe(0);
+    expect(record).not.toHaveBeenCalled();
+    expect(enqueued).toEqual([]);
+    expect(r.errors).toEqual([]);
+  });
+
+  it('an all-seen form moves on to the next form instead of ending the tick', async () => {
+    const { deps } = fakes();
+    // Both forms carry the fixture; the seen set knows everything on the first call only.
+    deps.fetchPage = async () => ({ entries: EIGHT_K, status: 200 });
+    let calls = 0;
+    deps.unseen = async (ids) => (calls++ === 0 ? [] : ids);
+    const record = vi.fn(deps.record);
+    deps.record = record;
+    const r = await watchOnce(deps, { log: [], forms: ['8-K', '10-Q'], memory: new Map() });
+    expect(calls).toBe(2);
+    expect(record).toHaveBeenCalledTimes(1);
+    expect(r.watched).toBe(6);
+    expect(r.skippedSeen).toBe(3);
+    expect(r.new).toBe(3);
+  });
+
+  it('the upsert receives exactly the accessions the seen set called fresh', async () => {
+    const { deps, enqueued } = fakes();
+    const record = vi.fn(deps.record);
+    deps.record = record;
+    const asked: string[][] = [];
+    deps.unseen = async (ids) => { asked.push(ids); return ids.filter((id) => id === '0001140361-26-035809'); }; // PDSB only
+    const r = await watchOnce(deps, { log: [], forms: ['8-K'], memory: new Map() });
+    expect(asked).toEqual([[expect.any(String), expect.any(String), expect.any(String)]]);
+    expect(record).toHaveBeenCalledTimes(1);
+    expect(record.mock.calls[0][0].map((h: WatchedEntry) => h.accessionNo)).toEqual(['0001140361-26-035809']);
+    expect(r.watched).toBe(3);
+    expect(r.skippedSeen).toBe(2);
+    expect(r.new).toBe(1);
+    expect(r.events.map((e) => e.ticker)).toEqual(['PDSB']);
+    expect(enqueued).toEqual([]); // PDSB is tier hourly
+  });
+
+  it('a dry run never consults the seen set', async () => {
+    const { deps } = fakes();
+    const unseen = vi.fn(async (ids: string[]) => ids);
+    deps.unseen = unseen;
+    const r = await watchOnce(deps, { log: [], dry: true, forms: ['8-K'], memory: new Map() });
+    expect(unseen).not.toHaveBeenCalled();
+    expect(r.new).toBe(3);
+    expect(r.skippedSeen).toBe(0);
+  });
+
+  it('a seen set that throws is reported and the upsert sees everything', async () => {
+    const { deps } = fakes();
+    const record = vi.fn(deps.record);
+    deps.record = record;
+    deps.unseen = async () => { throw new Error('redis exploded'); };
+    const r = await watchOnce(deps, { log: [], forms: ['8-K'], memory: new Map() });
+    expect(r.errors).toEqual(['8-K seen set: redis exploded']);
+    expect(record.mock.calls[0][0]).toHaveLength(3);
+    expect(r.new).toBe(3);
+  });
+
   it('a feed error is reported in the body, not thrown', async () => {
     const { deps } = fakes();
     deps.fetchPage = async (form) => (form === '8-K' ? { entries: [], status: 503 } : { entries: [], status: 200 });
