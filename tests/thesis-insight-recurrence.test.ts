@@ -614,6 +614,48 @@ describe('a dealt-with thesis finding is not raised again', () => {
     expect(generated).toBeGreaterThan(0);
     expect(insertsTo(second.writes)).toBeGreaterThan(0);
   });
+
+  it('cross-thesis risk: a dismissed shared-risk alert is not re-inserted while it is still live', async () => {
+    const tables = fixture();
+    const first = makeClient(tables);
+    await generateCrossThesisRisks(first.client, USER);
+    dealtWith(tables, 'thesis_risk', 'is_dismissed');
+    age(tables);
+
+    const second = makeClient(tables);
+    const { generated } = await generateCrossThesisRisks(second.client, USER);
+
+    expect(generated).toBe(0);
+    expect(insertsTo(second.writes)).toBe(0);
+    expect(openRows(tables, 'thesis_risk')).toEqual([]);
+  });
+
+  it('cross-thesis risk: archiving it holds it too, not only dismissing it', async () => {
+    const tables = fixture();
+    const first = makeClient(tables);
+    await generateCrossThesisRisks(first.client, USER);
+    dealtWith(tables, 'thesis_risk', 'is_archived');
+
+    const second = makeClient(tables);
+    const { generated } = await generateCrossThesisRisks(second.client, USER);
+
+    expect(generated).toBe(0);
+    expect(insertsTo(second.writes)).toBe(0);
+  });
+
+  it('cross-thesis risk: the hold lasts the life of the finding and then lets go', async () => {
+    const tables = fixture();
+    const first = makeClient(tables);
+    await generateCrossThesisRisks(first.client, USER);
+    dealtWith(tables, 'thesis_risk', 'is_dismissed');
+    for (const r of tables.insights) r.expires_at = '2026-09-02T00:00:00.000Z';
+
+    const second = makeClient(tables);
+    const { generated } = await generateCrossThesisRisks(second.client, USER);
+
+    expect(generated).toBeGreaterThan(0);
+    expect(insertsTo(second.writes)).toBeGreaterThan(0);
+  });
 });
 
 describe('expiry is no longer inert for thesis-sourced rows', () => {
