@@ -10,8 +10,8 @@ import type { WorklogStep } from '@/lib/agent/worklog';
 export const AGENT_LOG_LINES = 5;
 
 export const AGENT_LOG_COPY = {
-  eyebrow: 'What Helm did',
-  demoEyebrow: 'What Helm does',
+  eyebrow: 'Updates',
+  demoEyebrow: 'Updates',
   empty: 'Nothing recorded in the last 72 hours. Helm runs each weekday morning.',
   unavailable: 'The work log is unavailable right now.',
   demo: 'On a connected book this lists the real work: accounts synced, positions repriced, filings and news read, scans run, your brief written.',

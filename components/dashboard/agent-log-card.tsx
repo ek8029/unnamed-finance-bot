@@ -161,7 +161,7 @@ export function AgentLogCard({ isPro, isDemo }: { isPro: boolean; isDemo?: boole
           {AGENT_LOG_COPY.empty}
         </p>
       ) : (
-        <ul className="m-0 mb-4 flex-1 list-none p-0" aria-label="What Helm did">
+        <ul className="m-0 mb-4 flex-1 list-none p-0" aria-label="Updates">
           {steps.map((s, i) => (
             <Line key={s.id} step={s} index={i} />
           ))}
