@@ -26,6 +26,8 @@ vi.mock('@/lib/push/send', () => ({ checkPushReceipts: workerBoundary.receipts }
 // minute tick asks for its two keys in one call instead of two.
 const redisMock = vi.hoisted(() => ({
   store: new Map<string, unknown>(),
+  lists: new Map<string, unknown[]>(),
+  ttl: new Map<string, number>(),
   execThrows: false,
   nullClient: false,
   getCalls: [] as string[],
@@ -36,13 +38,29 @@ vi.mock('@/lib/redis', () => {
   const r = {
     get: async (k: string) => { redisMock.getCalls.push(k); return redisMock.store.get(k) ?? null; },
     set: async (k: string, v: unknown) => { redisMock.store.set(k, wire(v)); return 'OK'; },
+    lpush: async (k: string, ...vals: unknown[]) => {
+      const l = redisMock.lists.get(k) ?? [];
+      l.unshift(...vals.map(wire).reverse());
+      redisMock.lists.set(k, l);
+      return l.length; // the real LPUSH answers with the list's new length
+    },
+    ltrim: async (k: string, start: number, stop: number) => {
+      const l = redisMock.lists.get(k) ?? [];
+      redisMock.lists.set(k, l.slice(start, stop + 1));
+      return 'OK';
+    },
+    expire: async (k: string, s: number) => { redisMock.ttl.set(k, s); return 1; },
     multi: () => {
       const queued: (() => Promise<unknown>)[] = [];
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const p: any = {
         set: (k: string, v: unknown) => { queued.push(() => r.set(k, v)); return p; },
-        lpush: () => p, ltrim: () => p, expire: () => p,
-        exec: async () => { if (redisMock.execThrows) throw new Error('redis down'); for (const q of queued) await q(); return []; },
+        lpush: (k: string, ...vals: unknown[]) => { queued.push(() => r.lpush(k, ...vals)); return p; },
+        ltrim: (k: string, a: number, b: number) => { queued.push(() => r.ltrim(k, a, b)); return p; },
+        expire: (k: string, s: number) => { queued.push(() => r.expire(k, s)); return p; },
+        // One entry per queued command, in order, the way the real exec
+        // answers: a mock returning [] would hide the length beat() reads.
+        exec: async () => { if (redisMock.execThrows) throw new Error('redis down'); const out: unknown[] = []; for (const q of queued) out.push(await q()); return out; },
       };
       return p;
     },
@@ -62,6 +80,8 @@ vi.mock('@/lib/redis', () => {
 const WAKE = `helm:${JUDGE_WAKE_KEY}`;
 beforeEach(() => {
   redisMock.store.clear();
+  redisMock.lists.clear();
+  redisMock.ttl.clear();
   redisMock.execThrows = false;
   redisMock.nullClient = false;
   redisMock.getCalls.length = 0;
@@ -260,6 +280,12 @@ describe('judge wake flag', () => {
     const s = await runJudgeWorker(db as any, CFG, async () => { throw new Error('a job ran while idle'); }, [], clock);
     expect(s.idle).toBe(true);
     expect(redisMock.getCalls).toEqual([WAKE]);
+    // The beat rode the same tick: one log entry, and the log key armed with
+    // a TTL off the length the exec reply carried. If exec answered with a
+    // shape the real client never sends, the length would be unreadable and
+    // this TTL would be missing.
+    expect(redisMock.lists.get('helm:hb:judge-worker:log')).toHaveLength(1);
+    expect(redisMock.ttl.get('helm:hb:judge-worker:log')).toBe(48 * 3600);
   });
 
   it('a handed-in future flag is used and the key is never read', async () => {

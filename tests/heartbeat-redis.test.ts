@@ -19,6 +19,10 @@ const redisMock = vi.hoisted(() => ({
   cmds: [] as string[],
   boom: false,
   boomFollowups: false,
+  // 'full' is the real reply, one entry per command. 'short' is truncated, so
+  // the length is missing; 'stringy' carries it as a string, which `<=` would
+  // happily coerce. Both must leave the list maintenance alone.
+  execShape: 'full' as 'full' | 'short' | 'stringy',
 }));
 vi.mock('@/lib/redis', () => {
   const guard = () => { if (redisMock.boom) throw new Error('redis down'); };
@@ -64,7 +68,14 @@ vi.mock('@/lib/redis', () => {
       for (const name of ['set', 'lpush', 'ltrim', 'expire'] as const) {
         p[name] = (...args: unknown[]) => { queued.push(() => (r[name] as (...a: unknown[]) => Promise<unknown>)(...args)); return p; };
       }
-      p.exec = async () => { guard(); const out = []; for (const q of queued) out.push(await q()); return out; };
+      p.exec = async () => {
+        guard();
+        const out: unknown[] = [];
+        for (const q of queued) out.push(await q());
+        if (redisMock.execShape === 'short') return out.slice(0, 1);
+        if (redisMock.execShape === 'stringy') return [out[0], String(out[1])];
+        return out;
+      };
       return p;
     },
   };
@@ -83,6 +94,7 @@ beforeEach(() => {
   redisMock.cmds.length = 0;
   redisMock.boom = false;
   redisMock.boomFollowups = false;
+  redisMock.execShape = 'full';
 });
 
 describe('beatRedis', () => {
@@ -106,18 +118,51 @@ describe('beatRedis', () => {
     expect(await readHeartbeatLog('judge-worker', 3)).toHaveLength(3);
   });
 
-  it('costs three commands on a fresh log key and two on every beat after', async () => {
-    await beatRedis('news-watch', '2026-09-09T14:00:00.000Z', {});
+  it('arms the log lifetime on a fresh key and re-arms it on every beat below the cap', async () => {
     // The EXPIRE is the only thing that ever gives the log key a TTL, so the
     // beat that created it has to pay for one.
+    await beatRedis('news-watch', '2026-09-09T14:00:00.000Z', {});
     expect(redisMock.cmds).toEqual(['set', 'lpush', 'expire']);
 
+    // And so does every beat while the list is still short, or a watcher that
+    // never reaches the cap would lose its log 48 h after the first beat.
     redisMock.cmds.length = 0;
     await beatRedis('news-watch', '2026-09-09T14:05:00.000Z', {});
+    expect(redisMock.cmds).toEqual(['set', 'lpush', 'expire']);
+
+    // The last beat below the cap still arms it.
+    for (let i = 3; i < HB_LOG_LEN; i++) await beatRedis('news-watch', `2026-09-09T15:${String(i).padStart(2, '0')}:00.000Z`, {});
+    redisMock.cmds.length = 0;
+    await beatRedis('news-watch', '2026-09-09T16:00:00.000Z', {});
+    expect(redisMock.lists.get('helm:hb:news-watch:log')).toHaveLength(HB_LOG_LEN);
+    expect(redisMock.cmds).toEqual(['set', 'lpush', 'expire']);
+  });
+
+  it('costs two commands once the list is past the cap', async () => {
+    for (let i = 1; i <= HB_LOG_LEN; i++) await beatRedis('news-watch', `2026-09-09T14:${String(i).padStart(2, '0')}:00.000Z`, { i });
+
+    redisMock.cmds.length = 0;
+    await beatRedis('news-watch', '2026-09-09T15:01:00.000Z', { i: 61 });
     expect(redisMock.cmds).toEqual(['set', 'lpush']);
 
     redisMock.cmds.length = 0;
-    await beatRedis('news-watch', '2026-09-09T14:10:00.000Z', {});
+    await beatRedis('news-watch', '2026-09-09T15:02:00.000Z', { i: 62 });
+    expect(redisMock.cmds).toEqual(['set', 'lpush']);
+  });
+
+  it('skips both follow-ups when the exec reply does not carry a numeric length', async () => {
+    // A truncated reply: the length is simply missing. The beat itself landed,
+    // so it still reports true, and the list maintenance is not guessed at.
+    redisMock.execShape = 'short';
+    expect(await beatRedis('news-watch', '2026-09-09T14:00:00.000Z', { slot: 1 })).toBe(true);
+    expect(redisMock.cmds).toEqual(['set', 'lpush']);
+    expect(redisMock.store!.get('helm:hb:news-watch')).toEqual({ at: '2026-09-09T14:00:00.000Z', detail: { slot: 1 } });
+
+    // A length that arrives as a string. A bare `<=` would coerce this and
+    // fire an EXPIRE off a value the client never promised.
+    redisMock.execShape = 'stringy';
+    redisMock.cmds.length = 0;
+    expect(await beatRedis('news-watch', '2026-09-09T14:01:00.000Z', { slot: 2 })).toBe(true);
     expect(redisMock.cmds).toEqual(['set', 'lpush']);
   });
 
@@ -139,26 +184,35 @@ describe('beatRedis', () => {
     expect(redisMock.lists.get('helm:hb:judge-worker:log')).toHaveLength(HB_LOG_LEN);
   });
 
-  it('a once-a-day watcher gets a TTL on its log key every time the key is recreated', async () => {
-    expect(await beatRedis('daily-scans', '2026-09-09T13:15:00.000Z', {})).toBe(true);
-    expect(redisMock.ttl.get('helm:hb:daily-scans:log')).toBe(HB_TTL_S);
+  it('a once-a-day watcher keeps a growing log, because every beat re-arms the 48 h TTL', async () => {
+    // daily-scans beats once a day and never comes near the cap. Its log key
+    // has to be re-armed each time or it dies 48 h after the first beat and
+    // the presence route, which asks for twenty entries, sees one or two.
+    for (let day = 9; day <= 30; day++) {
+      redisMock.cmds.length = 0;
+      redisMock.ttl.delete('helm:hb:daily-scans:log');
+      expect(await beatRedis('daily-scans', `2026-09-${String(day).padStart(2, '0')}T13:15:00.000Z`, { day })).toBe(true);
+      // Every single beat pays for the EXPIRE and the TTL is back to 48 h,
+      // so the key never reaches the end of its life while the watcher runs.
+      expect(redisMock.cmds).toEqual(['set', 'lpush', 'expire']);
+      expect(redisMock.ttl.get('helm:hb:daily-scans:log')).toBe(HB_TTL_S);
+    }
+    const log = await readHeartbeatLog('daily-scans', 20);
+    expect(log).toHaveLength(20);
+    expect(log[0].detail).toEqual({ day: 30 });
+  });
 
-    // The next beat is inside the 48 h window: the key still exists, the list
-    // grows to two, and no EXPIRE is paid for.
-    redisMock.cmds.length = 0;
-    await beatRedis('daily-scans', '2026-09-10T13:15:00.000Z', {});
-    expect(redisMock.cmds).toEqual(['set', 'lpush']);
-
-    // Now let both keys expire the way Redis would, and beat again. The list
-    // is recreated at length one, so it is armed with a TTL again. It never
-    // reaches the trim threshold, so this is its only source of one.
-    redisMock.store!.delete('helm:hb:daily-scans');
-    redisMock.lists.delete('helm:hb:daily-scans:log');
-    redisMock.ttl.clear();
-    redisMock.cmds.length = 0;
-    await beatRedis('daily-scans', '2026-09-12T13:15:00.000Z', {});
+  it('a failed EXPIRE is re-armed by the next beat, so the key cannot stay TTL-less', async () => {
+    redisMock.boomFollowups = true;
+    expect(await beatRedis('market-morning', '2026-09-09T12:45:00.000Z', {})).toBe(true);
     expect(redisMock.cmds).toEqual(['set', 'lpush', 'expire']);
-    expect(redisMock.ttl.get('helm:hb:daily-scans:log')).toBe(HB_TTL_S);
+    expect(redisMock.ttl.has('helm:hb:market-morning:log')).toBe(false);
+
+    redisMock.boomFollowups = false;
+    redisMock.cmds.length = 0;
+    await beatRedis('market-morning', '2026-09-10T12:45:00.000Z', {});
+    expect(redisMock.cmds).toEqual(['set', 'lpush', 'expire']);
+    expect(redisMock.ttl.get('helm:hb:market-morning:log')).toBe(HB_TTL_S);
   });
 
   it('still reports true when the follow-up EXPIRE or LTRIM throws', async () => {

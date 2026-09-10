@@ -43,14 +43,23 @@ export async function beatRedis(name: WatchName, at: string, detail: Record<stri
     .lpush(logKey(name), entry)
     .exec<[unknown, number]>(), null);
   if (!res) return false;
-  // LPUSH answers with the list's new length.
+  // LPUSH answers with the list's new length. Anything else, a short or
+  // reshaped exec array, means we cannot tell where the list stands, so
+  // neither follow-up is guessed at.
   const len = res[1];
-  if (len === 1) {
-    // The log key was just created. This EXPIRE is the only thing that ever
-    // gives it a TTL, so it must not be skipped: a watcher that beats rarely,
-    // daily-scans once a day, never reaches the trim threshold and this is
-    // its only source of one. If this call itself fails the key simply keeps
-    // no TTL until the next time it is recreated.
+  if (typeof len !== 'number') return true;
+  if (len <= HB_LOG_LEN) {
+    // Below the cap, re-arm the log key's lifetime on every beat. This is the
+    // only thing that ever gives that key a TTL, and a watcher that beats
+    // rarely, daily-scans and market-morning once a day, needs it refreshed
+    // rather than set once: a TTL armed only at creation kills the key 48 h
+    // later and the log never grows past one or two entries, while the
+    // presence route asks for twenty. Re-arming also closes the hole where a
+    // single failed EXPIRE would leave the key with no TTL for good, since
+    // the condition is true again on the next beat.
+    //
+    // A busy watcher passes the cap within an hour and then stops paying for
+    // this, so the whole cost is about 122 commands a day.
     await withRedis((r) => r.expire(logKey(name), HB_TTL_S), null);
   } else if (len > HB_LOG_LEN + HB_LOG_SLACK) {
     // A threshold above the cap, not a trim on every beat: the list sits
