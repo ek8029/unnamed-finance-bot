@@ -5,7 +5,8 @@ import { readJudgeConfig, runJudgeWorker } from '@/lib/agent/judge-queue';
 import { checkPushReceipts } from '@/lib/push/send';
 import { runJudgeJob } from '@/lib/agent/judge-run';
 import { describeLedger } from '@/lib/ai/pricing';
-import { redisKey, withRedis } from '@/lib/redis';
+import { readKeys, redisKey, withRedis } from '@/lib/redis';
+import { JUDGE_WAKE_KEY } from '@/lib/agent/judge-wake';
 
 /** Set after an empty receipt check; while it lives the minute tick skips the push_tickets read. */
 const RECEIPTS_QUIET_KEY = redisKey('push', 'receipts-quiet');
@@ -38,7 +39,12 @@ export async function GET(request: Request) {
     const summary = await coalesce('judge-worker', 55_000, async () => {
       const log: string[] = [];
       const db = await createServiceClient();
-      const s = await runJudgeWorker(db, cfg, (job, l) => runJudgeJob(db, job, l), log);
+      // Both keys this tick needs in one MGET: the judge's wake flag and the
+      // receipts quiet key. Read separately they were two Redis commands a
+      // minute, 2,880 a day. Redis null or down: two nulls, and both paths
+      // behave exactly as they do without Redis.
+      const [wakeFlag, quietUntil] = await readKeys([redisKey(JUDGE_WAKE_KEY), RECEIPTS_QUIET_KEY]);
+      const s = await runJudgeWorker(db, cfg, (job, l) => runJudgeJob(db, job, l), log, undefined, wakeFlag);
       // Push receipts ride the minute cron whether or not the judge is on.
       // Receipts are only asked for tickets older than ten minutes
       // (lib/push/send.ts checkPushReceipts), so after a check that found
@@ -47,7 +53,6 @@ export async function GET(request: Request) {
       // push_tickets read runs 144 times a day instead of 1,440. Redis null
       // or down: the check runs every minute as before.
       try {
-        const quietUntil = await withRedis((r) => r.get<string>(RECEIPTS_QUIET_KEY), null);
         if (quietUntil) {
           log.push(`[push] receipts: quiet until ${quietUntil}`);
         } else if ((await checkPushReceipts(db, log)) === 0) {

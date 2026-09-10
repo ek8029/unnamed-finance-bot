@@ -1,6 +1,7 @@
 // lib/agent/heartbeat-redis.ts
 // Heartbeats on Redis: helm:hb:{name} is the latest tick, helm:hb:{name}:log
-// the last sixty. Both expire after 48 h so a retired watcher disappears on
+// the last sixty, trimmed lazily so it can run a little longer between
+// trims. Both expire after 48 h so a retired watcher disappears on
 // its own. Every function degrades: null or a throwing client means false,
 // null or [] and the caller keeps today's Postgres behaviour.
 
@@ -22,22 +23,45 @@ type Stored = { at: string; detail: Record<string, unknown> };
 const key = (name: WatchName) => redisKey('hb', name);
 const logKey = (name: WatchName) => redisKey('hb', name, 'log');
 
+/** How far past HB_LOG_LEN the log is allowed to run before it is trimmed.
+ *  Trimming on a threshold instead of on every beat is what makes the common
+ *  beat cost two commands: the LTRIM then runs about once every 21 beats. */
+export const HB_LOG_SLACK = 20;
+
 /** Writes helm:hb:{name} = { at, detail } (TTL 48 h) and pushes { at, detail } onto
- *  helm:hb:{name}:log capped at 60. Returns true when Redis took it, false when
- *  Redis is null or threw. */
+ *  helm:hb:{name}:log. Returns true when Redis took it, false when Redis is
+ *  null or threw. */
 export async function beatRedis(name: WatchName, at: string, detail: Record<string, unknown>): Promise<boolean> {
   const entry: Stored = { at, detail };
-  // One MULTI round-trip: the four commands land together or not at all, so
-  // a partial write can never be followed by the Postgres fallback as well.
-  return withRedis(async (r) => {
-    await r.multi()
-      .set(key(name), entry, { ex: HB_TTL_S })
-      .lpush(logKey(name), entry)
-      .ltrim(logKey(name), 0, HB_LOG_LEN - 1)
-      .expire(logKey(name), HB_TTL_S)
-      .exec();
-    return true;
-  }, false);
+  // The beat itself is two commands in one MULTI round-trip: they land
+  // together or not at all, so a partial write can never be followed by the
+  // Postgres fallback as well. The list maintenance below is deliberately
+  // outside the transaction and conditional, because paying for it on every
+  // beat doubled the command count for no reader-visible gain.
+  const res = await withRedis<[unknown, number] | null>((r) => r.multi()
+    .set(key(name), entry, { ex: HB_TTL_S })
+    .lpush(logKey(name), entry)
+    .exec<[unknown, number]>(), null);
+  if (!res) return false;
+  // LPUSH answers with the list's new length.
+  const len = res[1];
+  if (len === 1) {
+    // The log key was just created. This EXPIRE is the only thing that ever
+    // gives it a TTL, so it must not be skipped: a watcher that beats rarely,
+    // daily-scans once a day, never reaches the trim threshold and this is
+    // its only source of one. If this call itself fails the key simply keeps
+    // no TTL until the next time it is recreated.
+    await withRedis((r) => r.expire(logKey(name), HB_TTL_S), null);
+  } else if (len > HB_LOG_LEN + HB_LOG_SLACK) {
+    // A threshold above the cap, not a trim on every beat: the list sits
+    // between 60 and 81 entries and readHeartbeatLog slices to n, so the
+    // slack is invisible to every reader.
+    await withRedis((r) => r.ltrim(logKey(name), 0, HB_LOG_LEN - 1), null);
+  }
+  // Both follow-ups are best effort and must not change the answer: the beat
+  // already landed on Redis, so a failed EXPIRE or LTRIM still reports true
+  // and the caller must not also write the Postgres row.
+  return true;
 }
 
 /** One MGET over every name. Redis null or throw: null (caller falls back).

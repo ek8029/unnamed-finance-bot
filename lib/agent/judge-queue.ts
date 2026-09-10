@@ -382,6 +382,7 @@ export async function runJudgeWorker(
   runOne: (job: JudgeJobRow, log: string[]) => Promise<JudgeJobOutcome>,
   log: string[],
   now: () => Date = () => new Date(),
+  wakeFlag?: string | null,
 ): Promise<WorkerSummary> {
   const started = now();
   const ledger = emptyLedger();
@@ -398,7 +399,14 @@ export async function runJudgeWorker(
   // every queued row has a later run_after, so the tick opens no judge_jobs
   // statement; only the heartbeat, which check-cron and the watch page expect
   // every minute. A missing or unreadable flag polls as before.
-  const flag = await withRedis((r) => r.get<string>(redisKey(JUDGE_WAKE_KEY)), null);
+  //
+  // `wakeFlag` left off means nobody read the key, so read it here, which is
+  // what scripts/run-judge-worker.ts does. Any value passed in, null
+  // included, is used as read: the minute cron reads this key together with
+  // the push receipts key in one MGET and hands the answer down.
+  const flag = wakeFlag === undefined
+    ? await withRedis((r) => r.get<string>(redisKey(JUDGE_WAKE_KEY)), null)
+    : wakeFlag;
   if (!shouldWakeJudge(flag, started)) {
     log.push(`[judge] idle: no queued work before ${flag}`);
     summary.idle = true;

@@ -23,3 +23,13 @@ export async function withRedis<T>(fn: (r: Redis) => Promise<T>, fallback: T): P
     return fallback;
   }
 }
+
+/** Several keys for one command. Answers in key order, null for a key that is
+ *  not set. Redis null or throwing: nulls of the same length, so a caller
+ *  cannot tell "not set" from "no Redis" and both degrade the same way.
+ *  The client deserializes JSON on read, so a key holding a plain ISO string
+ *  comes back as that string. */
+export async function readKeys(keys: string[]): Promise<(string | null)[]> {
+  if (keys.length === 0) return [];
+  return withRedis((r) => r.mget<(string | null)[]>(...keys), keys.map(() => null));
+}

@@ -1,19 +1,40 @@
 // tests/redis-helper.test.ts
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+// `store` is what the fake Upstash holds; `mgetCalls` records every MGET the
+// helper sent, so a test can pin that several keys cost one round trip.
+const upstash = vi.hoisted(() => ({
+  store: new Map<string, unknown>(),
+  mgetCalls: [] as string[][],
+  boom: false,
+}));
+
 vi.mock('@upstash/redis', () => {
   class Redis {
     calls: unknown[] = [];
     static fromEnv = vi.fn(() => new Redis());
+    async mget(...keys: string[]) {
+      upstash.mgetCalls.push(keys);
+      if (upstash.boom) throw new Error('redis down');
+      return keys.map((k) => (upstash.store.has(k) ? upstash.store.get(k) : null));
+    }
   }
   return { Redis };
 });
 
-import { getRedis, withRedis, redisKey, __resetRedis } from '@/lib/redis';
+import { getRedis, withRedis, readKeys, redisKey, __resetRedis } from '@/lib/redis';
+
+const configured = () => {
+  vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://example.upstash.io');
+  vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+};
 
 beforeEach(() => {
   __resetRedis();
   vi.unstubAllEnvs();
+  upstash.store.clear();
+  upstash.mgetCalls.length = 0;
+  upstash.boom = false;
 });
 
 describe('getRedis', () => {
@@ -78,6 +99,52 @@ describe('withRedis', () => {
     expect(errorSpy).toHaveBeenCalledWith('[redis] call failed', expect.any(Error));
 
     errorSpy.mockRestore();
+  });
+});
+
+describe('readKeys', () => {
+  it('reads several keys in one MGET and answers in key order', async () => {
+    configured();
+    upstash.store.set('helm:a', '2026-09-09T14:00:00.000Z');
+    upstash.store.set('helm:b', '2026-09-09T14:10:00.000Z');
+
+    const out = await readKeys(['helm:a', 'helm:b']);
+
+    expect(out).toEqual(['2026-09-09T14:00:00.000Z', '2026-09-09T14:10:00.000Z']);
+    expect(upstash.mgetCalls).toEqual([['helm:a', 'helm:b']]);
+  });
+
+  it('a missing key is null while its neighbour keeps its value', async () => {
+    configured();
+    upstash.store.set('helm:b', '2026-09-09T14:10:00.000Z');
+
+    expect(await readKeys(['helm:a', 'helm:b'])).toEqual([null, '2026-09-09T14:10:00.000Z']);
+  });
+
+  it('returns nulls of the same length when Redis is unconfigured, without a call', async () => {
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', '');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', '');
+
+    expect(await readKeys(['helm:a', 'helm:b', 'helm:c'])).toEqual([null, null, null]);
+    expect(upstash.mgetCalls).toEqual([]);
+  });
+
+  it('returns nulls of the same length when the MGET throws', async () => {
+    configured();
+    upstash.boom = true;
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    expect(await readKeys(['helm:a', 'helm:b'])).toEqual([null, null]);
+    expect(upstash.mgetCalls).toEqual([['helm:a', 'helm:b']]);
+
+    errorSpy.mockRestore();
+  });
+
+  it('sends nothing for an empty key list', async () => {
+    configured();
+
+    expect(await readKeys([])).toEqual([]);
+    expect(upstash.mgetCalls).toEqual([]);
   });
 });
 

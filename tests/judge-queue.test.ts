@@ -22,11 +22,19 @@ vi.mock('@/lib/push/send', () => ({ checkPushReceipts: workerBoundary.receipts }
 // observable per test. Values are JSON round-tripped the way the real client
 // serializes them. beat() writes through multi().exec(); `execThrows` fails
 // that as a unit so beat() falls back to Postgres.
-const redisMock = vi.hoisted(() => ({ store: new Map<string, unknown>(), execThrows: false, nullClient: false }));
+// `getCalls` and `readKeysCalls` record the reads, so a test can pin that the
+// minute tick asks for its two keys in one call instead of two.
+const redisMock = vi.hoisted(() => ({
+  store: new Map<string, unknown>(),
+  execThrows: false,
+  nullClient: false,
+  getCalls: [] as string[],
+  readKeysCalls: [] as string[][],
+}));
 vi.mock('@/lib/redis', () => {
   const wire = (v: unknown) => JSON.parse(JSON.stringify(v));
   const r = {
-    get: async (k: string) => redisMock.store.get(k) ?? null,
+    get: async (k: string) => { redisMock.getCalls.push(k); return redisMock.store.get(k) ?? null; },
     set: async (k: string, v: unknown) => { redisMock.store.set(k, wire(v)); return 'OK'; },
     multi: () => {
       const queued: (() => Promise<unknown>)[] = [];
@@ -41,11 +49,24 @@ vi.mock('@/lib/redis', () => {
   };
   return {
     withRedis: async <T,>(fn: (r: unknown) => Promise<T>, fallback: T) => { if (redisMock.nullClient) return fallback; try { return await fn(r); } catch { return fallback; } },
+    // One MGET over the list. Redis null: nulls of the same length, so the
+    // caller cannot tell "no flag" from "no Redis".
+    readKeys: async (keys: string[]) => {
+      redisMock.readKeysCalls.push(keys);
+      if (redisMock.nullClient) return keys.map(() => null);
+      return keys.map((k) => (redisMock.store.get(k) ?? null) as string | null);
+    },
     redisKey: (...parts: string[]) => ['helm', ...parts].join(':'),
   };
 });
 const WAKE = `helm:${JUDGE_WAKE_KEY}`;
-beforeEach(() => { redisMock.store.clear(); redisMock.execThrows = false; redisMock.nullClient = false; });
+beforeEach(() => {
+  redisMock.store.clear();
+  redisMock.execThrows = false;
+  redisMock.nullClient = false;
+  redisMock.getCalls.length = 0;
+  redisMock.readKeysCalls.length = 0;
+});
 
 const CFG: JudgeConfig = { enabled: true, dailyCap: 200, userCap: 25, batch: 10, dailyUsd: 5 };
 
@@ -232,6 +253,43 @@ describe('judge wake flag', () => {
     expect(redisMock.store.get(WAKE)).toBe(HOUR_AHEAD);
   });
 
+  it('with no flag handed in the worker reads the key itself, the way the script calls it', async () => {
+    redisMock.store.set(WAKE, '2026-09-09T14:30:00.000Z');
+    const db = chain({ data: null, error: null }, []);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const s = await runJudgeWorker(db as any, CFG, async () => { throw new Error('a job ran while idle'); }, [], clock);
+    expect(s.idle).toBe(true);
+    expect(redisMock.getCalls).toEqual([WAKE]);
+  });
+
+  it('a handed-in future flag is used and the key is never read', async () => {
+    const tables: string[] = [];
+    const db = chain({ data: null, error: null }, tables);
+    const log: string[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const s = await runJudgeWorker(db as any, CFG, async () => { throw new Error('a job ran while idle'); }, log, clock, '2026-09-09T14:30:00.000Z');
+    expect(s.idle).toBe(true);
+    expect(tables).toEqual([]);
+    expect(log[0]).toContain('2026-09-09T14:30:00.000Z');
+    expect(redisMock.getCalls).toEqual([]);
+  });
+
+  it('a handed-in null polls as before and beats the stored value', async () => {
+    // The stored flag is in the future. Passing null means the caller read the
+    // key and found nothing, so the worker must poll, not trust the store.
+    redisMock.store.set(WAKE, '2099-01-01T00:00:00.000Z');
+    const tables: string[] = [];
+    const db = chain({ data: [], error: null }, tables);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const s = await runJudgeWorker(db as any, CFG, async () => ({ status: 'done' }), [], clock, null);
+    expect(s.idle).toBeUndefined();
+    expect(tables).toContain('judge_jobs');
+    // Only the park inside claimJudgeJobs read the key, never the wake gate.
+    expect(redisMock.getCalls).toEqual([WAKE]);
+    // The park's compare-before-set saw a different value and left it alone.
+    expect(redisMock.store.get(WAKE)).toBe('2099-01-01T00:00:00.000Z');
+  });
+
   it('enqueue always writes now, over a past flag and over a parked one', async () => {
     const db = chain({ data: [{ id: '1' }], error: null });
     for (const existing of [undefined, '2020-01-01T00:00:00.000Z', '2099-01-01T00:00:00.000Z']) {
@@ -374,6 +432,14 @@ describe('judge worker cron', () => {
       vi.spyOn(console, 'log').mockImplementation(() => {});
     });
     afterEach(() => { vi.restoreAllMocks(); });
+
+    it('reads the wake flag and the quiet key in one call, not two', async () => {
+      redisMock.store.set(WAKE, '2026-09-09T14:30:00.000Z');
+      redisMock.store.set(QUIET, '2026-09-09T14:10:00.000Z');
+      await tick();
+      expect(redisMock.readKeysCalls).toEqual([[WAKE, QUIET]]);
+      expect(redisMock.getCalls).toEqual([]);
+    });
 
     it('a present key skips the check and logs how long the quiet lasts', async () => {
       redisMock.store.set(QUIET, '2026-09-09T14:10:00.000Z');
