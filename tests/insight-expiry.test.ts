@@ -136,9 +136,11 @@ const daysOut = (iso: string) => (new Date(iso).getTime() - Date.now()) / 864000
 const taxYearEnd = () => new Date().getUTCFullYear() + '-12-31T23:59:59.999Z';
 
 describe('insight lifetimes', () => {
-  it('states one lifetime per insight_type the engine can produce', () => {
+  it('states one lifetime per insight_type written to the table', () => {
+    // 'concentration' is written by lib/cross-thesis-risk.ts, not by this engine;
+    // it lives in the same table so it takes its lifetime from the same policy.
     expect(Object.keys(INSIGHT_LIFETIMES).sort()).toEqual(
-      ['credit', 'market', 'portfolio', 'spending', 'subscription', 'tax'],
+      ['concentration', 'credit', 'market', 'portfolio', 'spending', 'subscription', 'tax'],
     );
   });
 

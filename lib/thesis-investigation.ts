@@ -12,6 +12,12 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PillarStatus } from '@/lib/thesis-status';
+import {
+  RECURRENCE_COLUMNS,
+  insightExpiresAt,
+  insightSubstanceMoved,
+  type OpenInsightRow,
+} from '@/lib/insight-recurrence';
 
 export type TriggerKind = 'severe_move' | 'new_filing' | 'breach' | 'pressure';
 
@@ -326,40 +332,34 @@ export async function generateInvestigations(
   }
   if (investigations.length === 0) return { generated: 0, investigations: [] };
 
-  // Dedup vs existing open investigations (supersede stale same-title)
+  // Recurrence, not re-raise. An investigation whose finding has not moved keeps
+  // its row and its created_at; only its expiry moves. See lib/insight-recurrence.ts.
   const { data: existing } = await db
     .from('insights')
-    .select('id, title')
+    .select(RECURRENCE_COLUMNS)
     .eq('user_id', userId)
     .eq('related_entity_type', 'thesis_investigation')
     .eq('is_dismissed', false)
     .eq('is_archived', false);
-  const existingByNorm = new Map<string, string[]>();
-  for (const row of (existing ?? []) as { id: string; title: string }[]) {
-    const norm = normalizeTitle(row.title);
-    const ids = existingByNorm.get(norm) ?? [];
-    ids.push(row.id);
-    existingByNorm.set(norm, ids);
+  const existingByNorm = new Map<string, OpenInsightRow[]>();
+  for (const row of (existing ?? []) as OpenInsightRow[]) {
+    const norm = normalizeTitle(String(row.title ?? ''));
+    const rows = existingByNorm.get(norm) ?? [];
+    rows.push(row);
+    existingByNorm.set(norm, rows);
   }
 
   const titleFor = (inv: Investigation) =>
     inv.trigger.kind === 'severe_move' ? `Why ${inv.ticker} moved` : `What changed for ${inv.ticker}`;
 
-  const staleIds: string[] = [];
-  for (const inv of investigations) {
-    const ids = existingByNorm.get(normalizeTitle(titleFor(inv)));
-    if (ids) staleIds.push(...ids);
-  }
-  if (staleIds.length > 0) {
-    await db.from('insights').update({ is_dismissed: true }).in('id', staleIds).eq('user_id', userId);
-  }
-
-  const inserts = investigations.map((inv) => {
+  const runAt = new Date();
+  // One body, used both for the substance comparison and for whichever write
+  // follows, so the comparison can never drift from what is actually stored.
+  const bodyFor = (inv: Investigation) => {
     const pillarLine = inv.affectedPillars
       .map((p) => `"${p.claim}" (${p.status})`)
       .join('; ');
     return {
-      user_id: userId,
       insight_type: 'market',
       priority: inv.priority,
       title: titleFor(inv),
@@ -371,12 +371,81 @@ export async function generateInvestigations(
       related_entity_type: 'thesis_investigation',
       related_entity_ids: [inv.thesisId],
     };
-  });
-  const { error } = await db.from('insights').insert(inserts);
-  if (error) {
-    console.error('[thesis-investigation] insert error:', error.message);
-    return { generated: 0, investigations };
+  };
+
+  const fresh: Investigation[] = [];
+  const rewrites: { id: string; inv: Investigation }[] = [];
+  const refreshIds: string[] = [];
+  const staleIds: string[] = [];
+  for (const inv of investigations) {
+    const norm = normalizeTitle(titleFor(inv));
+    const rows = existingByNorm.get(norm);
+    if (!rows || rows.length === 0) {
+      fresh.push(inv);
+      existingByNorm.set(norm, []);
+      continue;
+    }
+    const [keep, ...dupes] = rows;
+    if (dupes.length > 0) staleIds.push(...dupes.map((d) => d.id));
+    if (insightSubstanceMoved(keep, bodyFor(inv))) rewrites.push({ id: keep.id, inv });
+    else refreshIds.push(keep.id);
+    existingByNorm.set(norm, []);
   }
 
-  return { generated: investigations.length, investigations };
+  // Only DUPLICATE rows are superseded now. The row being kept used to be dismissed
+  // here and re-inserted, which is what reset "Why PRIM moved" to zero minutes old
+  // on every run for as long as the triggering evidence stayed on file.
+  if (staleIds.length > 0) {
+    await db.from('insights').update({ is_dismissed: true }).in('id', staleIds).eq('user_id', userId);
+  }
+
+  if (fresh.length > 0) {
+    const inserts = fresh.map((inv) => ({
+      user_id: userId,
+      ...bodyFor(inv),
+      expires_at: insightExpiresAt('market', runAt),
+    }));
+    const { error } = await db.from('insights').insert(inserts);
+    if (error) {
+      console.error('[thesis-investigation] insert error:', error.message);
+      return { generated: 0, investigations };
+    }
+  }
+
+  // Substance moved: rewrite the row in place, so it keeps its created_at.
+  for (const r of rewrites) {
+    const { error } = await db
+      .from('insights')
+      .update({ ...bodyFor(r.inv), expires_at: insightExpiresAt('market', runAt) })
+      .eq('id', r.id)
+      .eq('user_id', userId);
+    if (error) console.error('[thesis-investigation] refresh error:', error.message);
+  }
+
+  // Unchanged: only the expiry moves. An investigation the run still sees keeps
+  // getting pushed out; once the triggering evidence is gone it expires on its own.
+  if (refreshIds.length > 0) {
+    const { error } = await db
+      .from('insights')
+      .update({ expires_at: insightExpiresAt('market', runAt) })
+      .in('id', refreshIds)
+      .eq('user_id', userId);
+    if (error) console.error('[thesis-investigation] expiry extend error:', error.message);
+  }
+
+  // The engine's sweep runs only for Plaid-connected users (app/api/cron/daily/
+  // route.ts loops over plaid_items) while this pipeline runs for every entitled
+  // thesis owner, so retire our own expired rows here or expires_at stays inert.
+  await db
+    .from('insights')
+    .update({ is_dismissed: true })
+    .eq('user_id', userId)
+    .eq('related_entity_type', 'thesis_investigation')
+    .eq('is_dismissed', false)
+    .lt('expires_at', runAt.toISOString());
+
+  // Rows WRITTEN this run. Unchanged recurrences are deliberately not counted:
+  // nothing was generated for them, only their expiry moved. The single caller
+  // (app/api/cron/score-theses/route.ts:71) sums this into a log line.
+  return { generated: fresh.length + rewrites.length, investigations };
 }

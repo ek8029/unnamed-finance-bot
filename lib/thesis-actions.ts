@@ -19,6 +19,12 @@ import type { PillarStatus } from '@/lib/thesis-status';
 import { TAX_RATE } from '@/lib/financial-config';
 import { isHarvestableLoss } from '@/lib/tax-analysis';
 import { estimateCappedTlhSavings, splitLossByCharacter } from '@/lib/tax-math';
+import {
+  RECURRENCE_COLUMNS,
+  insightExpiresAt,
+  insightSubstanceMoved,
+  type OpenInsightRow,
+} from '@/lib/insight-recurrence';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -398,35 +404,33 @@ export async function generateThesisActions(
   const actions = buildThesisActions(pillarInputs, holdings, tlhCtx);
   if (actions.length === 0) return { generated: 0, actions: [] };
 
-  // 6. Dedup by THESIS: we now emit at most one action per thesis, so supersede every
-  // open thesis action for a thesis we are re-acting on. related_entity_ids = [thesisId,
-  // pillarId]; keying on thesisId also clears stale duplicates left by prior per-pillar runs.
+  // 6. Recurrence by THESIS, not re-raise. We emit at most one action per thesis, so
+  // the open row for a thesis we are acting on again is the SAME finding: it keeps its
+  // row and its created_at unless its substance moved (lib/insight-recurrence.ts).
+  // Before this, every run dismissed that row and inserted a replacement, which is why
+  // "Trim LULU?" arrived as new every morning for as long as the pillar stayed broken.
+  // related_entity_ids = [thesisId, pillarId]; keying on thesisId also clears stale
+  // duplicates left by prior per-pillar runs.
   const { data: existing } = await db
     .from('insights')
-    .select('id, related_entity_ids')
+    .select(`${RECURRENCE_COLUMNS}, related_entity_ids`)
     .eq('user_id', userId)
     .eq('related_entity_type', 'thesis')
     .eq('is_dismissed', false)
     .eq('is_archived', false);
-  const existingByThesis = new Map<string, string[]>();
-  for (const row of (existing ?? []) as { id: string; related_entity_ids: string[] | null }[]) {
+  const existingByThesis = new Map<string, OpenInsightRow[]>();
+  for (const row of (existing ?? []) as (OpenInsightRow & { related_entity_ids: string[] | null })[]) {
     const tid = Array.isArray(row.related_entity_ids) ? row.related_entity_ids[0] : undefined;
     if (!tid) continue;
-    const ids = existingByThesis.get(tid) ?? [];
-    ids.push(row.id);
-    existingByThesis.set(tid, ids);
-  }
-  const staleIds: string[] = [];
-  for (const a of actions) {
-    const ids = existingByThesis.get(a.thesisId);
-    if (ids) staleIds.push(...ids);
-  }
-  if (staleIds.length > 0) {
-    await db.from('insights').update({ is_dismissed: true }).in('id', staleIds).eq('user_id', userId);
+    const rows = existingByThesis.get(tid) ?? [];
+    rows.push(row);
+    existingByThesis.set(tid, rows);
   }
 
-  const inserts = actions.map((a) => ({
-    user_id: userId,
+  const runAt = new Date();
+  // One body, used both for the substance comparison and for whichever write follows,
+  // so the comparison can never drift from what is actually stored.
+  const bodyFor = (a: ThesisAction) => ({
     insight_type: a.insightType,
     priority: a.priority,
     title: a.title,
@@ -437,12 +441,90 @@ export async function generateThesisActions(
     source_type: 'ai_generated' as const,
     related_entity_type: 'thesis',
     related_entity_ids: [a.thesisId, a.pillarId],
-  }));
-  const { error } = await db.from('insights').insert(inserts);
-  if (error) {
-    console.error('[thesis-actions] insert error:', error.message);
-    return { generated: 0, actions };
+  });
+
+  const fresh: ThesisAction[] = [];
+  const rewrites: { id: string; action: ThesisAction }[] = [];
+  const refreshes: { id: string; expiresAt: string }[] = [];
+  const staleIds: string[] = [];
+  for (const a of actions) {
+    const rows = existingByThesis.get(a.thesisId);
+    if (!rows || rows.length === 0) {
+      fresh.push(a);
+      existingByThesis.set(a.thesisId, []);
+      continue;
+    }
+    const [keep, ...dupes] = rows;
+    if (dupes.length > 0) staleIds.push(...dupes.map((d) => d.id));
+    // The match key here is the thesis, not the title, so unlike the engine the
+    // title and the insight_type can both move under a single match (a portfolio
+    // "Trim X?" becoming a tax "Harvest the loss in X"). Both are part of substance.
+    if (insightSubstanceMoved(keep, bodyFor(a))) rewrites.push({ id: keep.id, action: a });
+    else refreshes.push({ id: keep.id, expiresAt: insightExpiresAt(a.insightType, runAt) });
+    existingByThesis.set(a.thesisId, []);
   }
 
-  return { generated: actions.length, actions };
+  // Only DUPLICATE rows are superseded now, never the row we are keeping.
+  if (staleIds.length > 0) {
+    await db.from('insights').update({ is_dismissed: true }).in('id', staleIds).eq('user_id', userId);
+  }
+
+  if (fresh.length > 0) {
+    const inserts = fresh.map((a) => ({
+      user_id: userId,
+      ...bodyFor(a),
+      expires_at: insightExpiresAt(a.insightType, runAt),
+    }));
+    const { error } = await db.from('insights').insert(inserts);
+    if (error) {
+      console.error('[thesis-actions] insert error:', error.message);
+      return { generated: 0, actions };
+    }
+  }
+
+  // Substance moved: rewrite the row in place, so it keeps its created_at. A tax
+  // action's expiry is the tax-year deadline, a trim's is the portfolio horizon.
+  for (const r of rewrites) {
+    const { error } = await db
+      .from('insights')
+      .update({ ...bodyFor(r.action), expires_at: insightExpiresAt(r.action.insightType, runAt) })
+      .eq('id', r.id)
+      .eq('user_id', userId);
+    if (error) console.error('[thesis-actions] refresh error:', error.message);
+  }
+
+  // Unchanged: only the expiry moves, so a still-true action neither ages out nor
+  // reads as though it arrived this morning. Grouped so one statement covers each stamp.
+  const byExpiry = new Map<string, string[]>();
+  for (const r of refreshes) {
+    const ids = byExpiry.get(r.expiresAt) ?? [];
+    ids.push(r.id);
+    byExpiry.set(r.expiresAt, ids);
+  }
+  for (const [expiresAt, ids] of byExpiry) {
+    const { error } = await db
+      .from('insights')
+      .update({ expires_at: expiresAt })
+      .in('id', ids)
+      .eq('user_id', userId);
+    if (error) console.error('[thesis-actions] expiry extend error:', error.message);
+  }
+
+  // The engine's sweep runs only for Plaid-connected users (app/api/cron/daily/
+  // route.ts loops over plaid_items) while this pipeline also runs from the thesis
+  // route and the agent sweep, so retire our own expired rows here.
+  await db
+    .from('insights')
+    .update({ is_dismissed: true })
+    .eq('user_id', userId)
+    .eq('related_entity_type', 'thesis')
+    .eq('is_dismissed', false)
+    .lt('expires_at', runAt.toISOString());
+
+  // Rows WRITTEN this run. Unchanged recurrences are deliberately not counted:
+  // nothing was generated for them, only their expiry moved. The three callers
+  // (app/api/cron/score-theses/route.ts:66, app/api/thesis/actions/route.ts:27,
+  // app/api/agent/sweep/route.ts:105) use this for a log line and a response field;
+  // the sweep UI counts `actions`, which still carries every action computed.
+  return { generated: fresh.length + rewrites.length, actions };
 }

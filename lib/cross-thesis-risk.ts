@@ -14,6 +14,12 @@ import OpenAI from 'openai';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PillarStatus } from '@/lib/thesis-status';
 import { getCachedClusters, type SynthPillarInput, type SynthCluster } from '@/lib/thesis-synthesis';
+import {
+  RECURRENCE_COLUMNS,
+  insightExpiresAt,
+  insightSubstanceMoved,
+  type OpenInsightRow,
+} from '@/lib/insight-recurrence';
 
 // Lazy: do not construct at module load (keeps the pure exports importable in
 // tests / any context without OPENAI_API_KEY).
@@ -164,33 +170,27 @@ export async function generateCrossThesisRisks(
   const alerts = buildRiskAlerts(riskClusters);
   if (alerts.length === 0) return { generated: 0, alerts: [] };
 
-  // Dedup vs existing open risk alerts (supersede stale same-title)
+  // Recurrence, not re-raise. A shared-driver alert that is still true keeps its
+  // row and its created_at; only its expiry moves. See lib/insight-recurrence.ts.
   const { data: existing } = await db
     .from('insights')
-    .select('id, title')
+    .select(RECURRENCE_COLUMNS)
     .eq('user_id', userId)
     .eq('related_entity_type', 'thesis_risk')
     .eq('is_dismissed', false)
     .eq('is_archived', false);
-  const existingByNorm = new Map<string, string[]>();
-  for (const row of (existing ?? []) as { id: string; title: string }[]) {
-    const norm = normalizeTitle(row.title);
-    const ids = existingByNorm.get(norm) ?? [];
-    ids.push(row.id);
-    existingByNorm.set(norm, ids);
+  const existingByNorm = new Map<string, OpenInsightRow[]>();
+  for (const row of (existing ?? []) as OpenInsightRow[]) {
+    const norm = normalizeTitle(String(row.title ?? ''));
+    const rows = existingByNorm.get(norm) ?? [];
+    rows.push(row);
+    existingByNorm.set(norm, rows);
   }
   const titleFor = (a: RiskAlert) => `Shared risk: ${a.driver}`;
-  const staleIds: string[] = [];
-  for (const a of alerts) {
-    const ids = existingByNorm.get(normalizeTitle(titleFor(a)));
-    if (ids) staleIds.push(...ids);
-  }
-  if (staleIds.length > 0) {
-    await db.from('insights').update({ is_dismissed: true }).in('id', staleIds).eq('user_id', userId);
-  }
-
-  const inserts = alerts.map((a) => ({
-    user_id: userId,
+  const runAt = new Date();
+  // One body, used both for the substance comparison and for whichever write
+  // follows, so the comparison can never drift from what is actually stored.
+  const bodyFor = (a: RiskAlert) => ({
     insight_type: 'concentration',
     priority: a.severity,
     title: titleFor(a),
@@ -201,12 +201,80 @@ export async function generateCrossThesisRisks(
     source_type: 'ai_generated' as const,
     related_entity_type: 'thesis_risk',
     related_entity_ids: a.thesisIds,
-  }));
-  const { error } = await db.from('insights').insert(inserts);
-  if (error) {
-    console.error('[cross-thesis-risk] insert error:', error.message);
-    return { generated: 0, alerts };
+  });
+
+  const fresh: RiskAlert[] = [];
+  const rewrites: { id: string; alert: RiskAlert }[] = [];
+  const refreshIds: string[] = [];
+  const staleIds: string[] = [];
+  for (const a of alerts) {
+    const norm = normalizeTitle(titleFor(a));
+    const rows = existingByNorm.get(norm);
+    if (!rows || rows.length === 0) {
+      fresh.push(a);
+      existingByNorm.set(norm, []);
+      continue;
+    }
+    const [keep, ...dupes] = rows;
+    if (dupes.length > 0) staleIds.push(...dupes.map((d) => d.id));
+    if (insightSubstanceMoved(keep, bodyFor(a))) rewrites.push({ id: keep.id, alert: a });
+    else refreshIds.push(keep.id);
+    existingByNorm.set(norm, []);
   }
 
-  return { generated: alerts.length, alerts };
+  // Only DUPLICATE rows are superseded now. The row being kept used to be dismissed
+  // here and re-inserted, which is what reset the age of a standing alert every run.
+  if (staleIds.length > 0) {
+    await db.from('insights').update({ is_dismissed: true }).in('id', staleIds).eq('user_id', userId);
+  }
+
+  if (fresh.length > 0) {
+    const inserts = fresh.map((a) => ({
+      user_id: userId,
+      ...bodyFor(a),
+      expires_at: insightExpiresAt('concentration', runAt),
+    }));
+    const { error } = await db.from('insights').insert(inserts);
+    if (error) {
+      console.error('[cross-thesis-risk] insert error:', error.message);
+      return { generated: 0, alerts };
+    }
+  }
+
+  // Substance moved: rewrite the row in place, so it keeps its created_at.
+  for (const r of rewrites) {
+    const { error } = await db
+      .from('insights')
+      .update({ ...bodyFor(r.alert), expires_at: insightExpiresAt('concentration', runAt) })
+      .eq('id', r.id)
+      .eq('user_id', userId);
+    if (error) console.error('[cross-thesis-risk] refresh error:', error.message);
+  }
+
+  // Unchanged: only the expiry moves, so a still-true alert neither ages out nor
+  // reads as though it arrived this morning.
+  if (refreshIds.length > 0) {
+    const { error } = await db
+      .from('insights')
+      .update({ expires_at: insightExpiresAt('concentration', runAt) })
+      .in('id', refreshIds)
+      .eq('user_id', userId);
+    if (error) console.error('[cross-thesis-risk] expiry extend error:', error.message);
+  }
+
+  // The engine's sweep runs only for Plaid-connected users (app/api/cron/daily/
+  // route.ts loops over plaid_items) while this monitor runs for every entitled
+  // thesis owner, so retire our own expired rows here or expires_at stays inert.
+  await db
+    .from('insights')
+    .update({ is_dismissed: true })
+    .eq('user_id', userId)
+    .eq('related_entity_type', 'thesis_risk')
+    .eq('is_dismissed', false)
+    .lt('expires_at', runAt.toISOString());
+
+  // Rows WRITTEN this run. Unchanged recurrences are deliberately not counted:
+  // nothing was generated for them, only their expiry moved. The single caller
+  // (app/api/cron/score-theses/route.ts:76) sums this into a log line.
+  return { generated: fresh.length + rewrites.length, alerts };
 }

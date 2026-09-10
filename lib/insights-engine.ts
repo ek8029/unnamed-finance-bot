@@ -44,7 +44,10 @@ function normalizeInsightTitle(title: string): string {
     .replace(/\d+(\.\d+)?%/g, 'X%');
 }
 
-export type InsightType = InsightCandidate['insight_type'];
+/** Every insight_type written to the table, not only the ones this engine emits:
+ *  'concentration' comes from the cross-thesis risk monitor (lib/cross-thesis-risk.ts).
+ *  One lifetime policy for the table beats a second policy per writer. */
+export type InsightType = InsightCandidate['insight_type'] | 'concentration';
 
 /**
  * How long each kind of finding stays live before the expiry sweep at the end of
@@ -69,6 +72,12 @@ export type InsightType = InsightCandidate['insight_type'];
  *                  for this tax year. No wash-sale clock applies to a position
  *                  that has not been sold, so year end is the honest bound and
  *                  the only one this code can state without a sale date.
+ *  - concentration: written by the cross-thesis risk monitor, not by this engine.
+ *                  A shared driver across several theses is structural in the same
+ *                  way single-name concentration is, so it takes the portfolio
+ *                  horizon: it lives while it is true, its expiry is pushed back
+ *                  out on every run that still sees it, and the 90 days only decide
+ *                  how long it survives after the monitor stops seeing it.
  */
 export const INSIGHT_LIFETIMES: Record<InsightType, number | 'tax_year_end'> = {
   market: 3,
@@ -77,6 +86,7 @@ export const INSIGHT_LIFETIMES: Record<InsightType, number | 'tax_year_end'> = {
   credit: 30,
   portfolio: 90,
   tax: 'tax_year_end',
+  concentration: 90,
 };
 
 /** The expiry stamp a freshly written insight of this type should carry. */
