@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { EvidenceTimeline as EvidenceChronology } from '@/components/thesis/evidence-timeline';
 import { VerdictCard, type ThesisIntelligenceItem } from '@/components/thesis/verdict-card';
 import { validateBreaksIf, BREAKS_IF_MAX } from '@/lib/pillar-breaks-if';
+import { invalidate } from '@/lib/api-cache';
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 const SERIF: React.CSSProperties = { fontFamily: "var(--font-serif, 'Instrument Serif', Georgia, serif)" };
@@ -542,7 +543,7 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
   const dismissPillar = useCallback(async (id: string) => {
     try {
       const res = await fetch(`/api/thesis/pillars/${id}`, { method: 'DELETE' });
-      if (res.ok) setPillars((prev) => prev.filter((p) => p.id !== id));
+      if (res.ok) { invalidate('/api/thesis'); setPillars((prev) => prev.filter((p) => p.id !== id)); }
     } catch {
       // leave row in place on failure
     }

@@ -11,6 +11,7 @@ import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Check, Lock, Pencil, Sparkles, TrendingDown, X } from 'lucide-react';
 import { TierLock } from '@/components/tier-lock';
 import { AnalysisLoadingTerminal } from '@/components/analysis-loading-terminal';
+import { invalidate } from '@/lib/api-cache';
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 
@@ -209,7 +210,7 @@ function BuilderInner() {
     setBusyPillar(id);
     try {
       const res = await fetch(`/api/thesis/pillars/${id}`, { method: 'DELETE' });
-      if (res.ok) setPillars((prev) => prev.filter((p) => p.id !== id));
+      if (res.ok) { invalidate('/api/thesis'); setPillars((prev) => prev.filter((p) => p.id !== id)); }
     } catch {
       // non-fatal
     } finally {
@@ -262,6 +263,8 @@ function BuilderInner() {
       setTrackError('Something went wrong.');
     } finally {
       setTracking(false);
+      // Any write above changes the /api/thesis list other surfaces read.
+      invalidate('/api/thesis');
     }
   }
 

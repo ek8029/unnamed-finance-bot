@@ -23,6 +23,7 @@ import { deriveThesisVerdict, verdictSentence } from '@/lib/thesis-verdict';
 import { VerdictLine } from '@/components/thesis/verdict-chip';
 import { STATUS_META, dotGlow, METER_ORDER, METER_COLORS, convictionColor, type PillarStatus } from '@/lib/thesis-palette';
 import { CompanyLogo } from '@/components/company-logo';
+import { cachedGet, invalidate } from '@/lib/api-cache';
 
 /* ── Local types ── */
 interface EvidenceRow {
@@ -210,11 +211,11 @@ export function ClassicThesesPage() {
 
   const loadTheses = useCallback(async () => {
     try {
-      const res = await fetch('/api/thesis');
+      const res = await cachedGet<{ theses: Thesis[] }>('/api/thesis');
       if (!mountedRef.current) return;
       if (res.status === 403) { setPhase('locked'); return; }
-      if (!res.ok) { setPhase('error'); return; }
-      const data = await res.json() as { theses: Thesis[] };
+      if (!res.ok || !res.data) { setPhase('error'); return; }
+      const data = res.data;
       if (!mountedRef.current) return;
       setTheses(data.theses);
       setPhase('ready');
@@ -407,6 +408,8 @@ export function ClassicThesesPage() {
     const tk = draftTicker;
     setOnboardStep('pick');
     setForceFirstRun(false);
+    // The confirm step wrote pillars and flipped tracked, so the cached list is stale.
+    invalidate('/api/thesis');
     await loadTheses();
     if (mountedRef.current && tk) { setSelectedTicker(tk); setDetailOpen(true); }
   }
@@ -420,6 +423,7 @@ export function ClassicThesesPage() {
       if (res.ok) {
         setDetailOpen(false);
         setSelectedTicker(null);
+        invalidate('/api/thesis');
         await loadTheses();
       }
     } catch {

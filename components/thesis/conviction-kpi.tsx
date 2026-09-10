@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { summarizePillars } from '@/lib/thesis-summary';
 import { STATUS_META, type PillarStatus } from '@/lib/thesis-palette';
 import { useThesisEnabled } from '@/lib/use-thesis-access';
+import { cachedGet } from '@/lib/api-cache';
 
 /* ── Local types (shape returned by GET /api/thesis) ── */
 interface Pillar {
@@ -45,9 +46,9 @@ export function ThesisConvictionKpi() {
     // Not entitled: nothing is coming, so do not hold a shell open for it.
     if (!enabled) { setPending(false); return; }
     let active = true;
-    fetch('/api/thesis')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
+    cachedGet<{ theses?: Thesis[] }>('/api/thesis')
+      .then((r) => {
+        const d = r.data;
         if (!active || !d) return;
         const theses: Thesis[] = d.theses ?? [];
         const tally: ConvictionCounts = { intact: 0, weakening: 0, broken: 0 };

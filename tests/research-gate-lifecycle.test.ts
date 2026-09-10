@@ -40,7 +40,9 @@ describe('research quota checks across interrupted mounts', () => {
     request.mockResolvedValue({ status: 401 });
     CompareGate();
     harness.effects.forEach(effect => effect());
-    await Promise.resolve();
+    // The tier read goes through the shared api cache, so the answer reaches the
+    // component a couple of microtasks later than a bare fetch did.
+    await new Promise(resolve => setTimeout(resolve, 0));
     expect(setItem).toHaveBeenCalledTimes(1);
     expect(JSON.parse(setItem.mock.calls[0][1]).count).toBe(1);
   });

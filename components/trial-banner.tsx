@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { cachedGet } from '@/lib/api-cache';
 
 const MONO = { fontFamily: 'var(--font-mono)' } as const;
 
@@ -16,9 +17,9 @@ export function TrialBanner() {
 
   useEffect(() => {
     let alive = true;
-    fetch('/api/user/tier')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
+    cachedGet<{ trialEndsAt?: string | null; lapsedTrialEndedAt?: string | null }>('/api/user/tier')
+      .then((r) => {
+        const d = r.data;
         if (alive && d) setTierData({ trialEndsAt: d.trialEndsAt ?? null, lapsedTrialEndedAt: d.lapsedTrialEndedAt ?? null });
       })
       .catch(() => {});

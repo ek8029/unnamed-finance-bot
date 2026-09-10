@@ -26,6 +26,7 @@ import { SourceIcon } from '@/components/onboarding/source-icon';
 import { saveOnboardingReasons, type OnboardingSaveResult } from '@/lib/onboarding-save';
 import { supabase } from '@/lib/supabase/client';
 import { validateBreaksIf, BREAKS_IF_MAX } from '@/lib/pillar-breaks-if';
+import { cachedGet } from '@/lib/api-cache';
 
 const ONBOARDING_KEY = 'helm_onboarding_dismissed';
 // The investor demo login runs onboarding on EVERY visit, in preview mode (no
@@ -435,7 +436,7 @@ export function OnboardingFlowV2({
         try {
           const [sum, th] = await Promise.all([
             fetch('/api/financial-summary').then((r) => (r.ok ? r.json() : null)).catch(() => null),
-            fetch('/api/thesis').then((r) => (r.ok ? r.json() : null)).catch(() => null),
+            cachedGet<{ theses?: Array<{ id: string; ticker: string; pillars?: Array<{ id: string; claim: string; confirmed: boolean; origin: string; lifecycle: string }> }> }>('/api/thesis').then((r) => r.data).catch(() => null),
           ]);
           if (cancelled) return;
 

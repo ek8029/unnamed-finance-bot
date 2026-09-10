@@ -21,6 +21,7 @@ import posthog from 'posthog-js';
 import { DemoConnectCta } from '@/components/demo/demo-connect-cta';
 import { AgentHeartbeat } from '@/components/thesis/agent-activity';
 import { TodaysDelta } from '@/components/dashboard/todays-delta';
+import { cachedGet } from '@/lib/api-cache';
 
 // ── Sovereign Architect tokens (local to this screen) ──────────────────────
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
@@ -441,9 +442,9 @@ export default function DashboardOverview() {
   useEffect(() => {
     if (hasPlaidConnection !== false) return;
     let cancelled = false;
-    fetch('/api/thesis')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
+    cachedGet<{ theses?: Array<{ ticker: string; tracked?: boolean; pillars?: Array<{ claim: string; confirmed?: boolean; lifecycle?: string }> }> }>('/api/thesis')
+      .then((r) => {
+        const d = r.data;
         if (cancelled || !d) return;
         const list: Array<{ ticker: string; tracked?: boolean; pillars?: Array<{ claim: string; confirmed?: boolean; lifecycle?: string }> }> =
           Array.isArray(d.theses) ? d.theses : [];

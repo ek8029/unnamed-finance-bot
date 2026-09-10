@@ -60,6 +60,7 @@ import { DisclaimerModal } from '@/components/legal/disclaimer-modal';
 import { MobileBottomNav } from '@/components/mobile-bottom-nav';
 import { ConvictionRail } from '@/components/thesis/conviction-rail';
 import { ConvictionNavButton } from '@/components/thesis/conviction-nav-button';
+import { cachedGet, invalidate } from '@/lib/api-cache';
 
 /* ── Legacy-onboarding fallback for a parked checkout ──
    V2 tells the shell when it is out of the way. The legacy flow does not, so
@@ -396,9 +397,9 @@ export default function DashboardShell({
     }
     async function fetchProfile() {
       try {
-        const res = await fetch('/api/user/profile');
-        if (res.ok) {
-          const data = await res.json();
+        const res = await cachedGet<{ profile?: { full_name?: string | null; email?: string | null } }>('/api/user/profile');
+        if (res.ok && res.data) {
+          const data = res.data;
           const fullName = data.profile?.full_name || data.profile?.email?.split('@')[0] || 'User';
           const nameParts = fullName.split(' ');
           const initials = nameParts.length >= 2
@@ -417,8 +418,9 @@ export default function DashboardShell({
     }
     fetchProfile();
 
-    // Re-fetch when settings page updates the profile
-    const handleProfileUpdate = () => fetchProfile();
+    // Re-fetch when settings page updates the profile. Drop the cached copy first
+    // or the re-fetch would hand back the pre-save name.
+    const handleProfileUpdate = () => { invalidate('/api/user/profile'); fetchProfile(); };
     window.addEventListener('helm:profile-updated', handleProfileUpdate);
     return () => window.removeEventListener('helm:profile-updated', handleProfileUpdate);
   }, [previewPath]);

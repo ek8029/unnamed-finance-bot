@@ -7,6 +7,7 @@ import { TierLock } from '@/components/tier-lock';
 import { GhostFactorLens } from '@/components/ghost';
 import { useTier } from '@/hooks/use-tier';
 import { isThesisUser } from '@/lib/thesis-access';
+import { cachedGet } from '@/lib/api-cache';
 import type {
   FactorReport,
   FactorDistribution,
@@ -437,9 +438,9 @@ export default function FactorLensPage() {
   // Mirror the dashboard layout: allowlisted users are entitled even off Pro.
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/user/profile')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
+    cachedGet<{ profile?: { email?: string | null } }>('/api/user/profile')
+      .then((res) => {
+        const data = res.data;
         if (!cancelled) setProfileEmail(data?.profile?.email ?? null);
       })
       .catch(() => {});

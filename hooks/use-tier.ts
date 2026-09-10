@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { cachedGet } from '@/lib/api-cache';
 
 export interface TierInfo {
   tier: 'free' | 'pro' | 'max';
@@ -27,16 +28,18 @@ export function useTier() {
     // state from a real 200 payload.
     async function load() {
       for (let attempt = 1; attempt <= MAX_ATTEMPTS && active; attempt++) {
-        try {
-          const res = await fetch('/api/user/tier');
-          if (res.ok) {
-            const json = await res.json();
-            if (active) setData(json);
-            return;
-          }
-          if (res.status !== 401 || attempt === MAX_ATTEMPTS) return; // give up quietly
-        } catch (e) {
-          if (attempt === MAX_ATTEMPTS) { console.error(e); return; }
+        // cachedGet caches a 2xx only, so the 401 below is always a live answer
+        // and the retry keeps working. status 0 is the network error the old
+        // try/catch handled; it retries on the same backoff.
+        const res = await cachedGet<TierInfo>('/api/user/tier');
+        if (res.ok && res.data) {
+          if (active) setData(res.data);
+          return;
+        }
+        if (res.status === 0) {
+          if (attempt === MAX_ATTEMPTS) { console.error('tier lookup failed (network)'); return; }
+        } else if (res.status !== 401 || attempt === MAX_ATTEMPTS) {
+          return; // give up quietly
         }
         await new Promise(r => setTimeout(r, 400 * attempt)); // 0.4s .. 1.6s backoff
       }

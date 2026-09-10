@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
 import posthog from 'posthog-js';
+import { cachedGet } from '@/lib/api-cache';
 
 type GateState = 'loading' | 'allowed' | 'anon-blocked' | 'free-blocked';
 
@@ -44,7 +45,7 @@ export function AnalysisGate() {
     async function check() {
       // Try fetching tier (will 401 if not logged in)
       try {
-        const res = await fetch('/api/user/tier');
+        const res = await cachedGet<{ tier?: string; quota?: { remaining?: number | null } }>('/api/user/tier');
         if (cancelled) return;
 
         if (res.status === 401) {
@@ -63,13 +64,13 @@ export function AnalysisGate() {
           return;
         }
 
-        if (!res.ok) {
+        if (!res.ok || !res.data) {
           // Unexpected error — fail open (don't block)
           if (!cancelled) setState('allowed');
           return;
         }
 
-        const data = await res.json();
+        const data = res.data;
         if (cancelled) return;
 
         if (data.tier === 'pro' || data.tier === 'max') {

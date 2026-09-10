@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import { Anchor } from 'lucide-react';
+import { cachedGet } from '@/lib/api-cache';
 
 type Status = 'unverified' | 'intact' | 'weakening' | 'broken';
 const RANK: Record<Status, number> = { broken: 0, weakening: 1, intact: 2, unverified: 3 };
@@ -27,9 +28,9 @@ export function ConvictionNavButton({
 
   useEffect(() => {
     let on = true;
-    fetch('/api/thesis')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
+    cachedGet<{ theses?: Array<{ pillars?: Array<{ status?: Status; status_override?: Status | null }> }> }>('/api/thesis')
+      .then((r) => {
+        const d = r.data;
         if (!on || !d?.theses) return;
         let w: Status | null = null;
         let count = 0;

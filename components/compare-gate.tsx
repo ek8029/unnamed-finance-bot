@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { HelmMark } from '@/components/helm-mark';
 import posthog from 'posthog-js';
+import { cachedGet } from '@/lib/api-cache';
 
 type GateState = 'loading' | 'allowed' | 'anon-blocked' | 'free-blocked';
 
@@ -44,7 +45,7 @@ export function CompareGate() {
 
     async function check() {
       try {
-        const res = await fetch('/api/user/tier');
+        const res = await cachedGet<{ tier?: string }>('/api/user/tier');
         if (cancelled) return;
 
         if (res.status === 401) {
@@ -62,12 +63,12 @@ export function CompareGate() {
           return;
         }
 
-        if (!res.ok) {
+        if (!res.ok || !res.data) {
           if (!cancelled) setState('allowed');
           return;
         }
 
-        const data = await res.json();
+        const data = res.data;
         if (cancelled) return;
 
         if (data.tier === 'pro' || data.tier === 'max') {

@@ -21,6 +21,7 @@ import { QuietState, type PillarSummary } from '@/components/thesis/quiet-state'
 import { DemoConnectCta } from '@/components/demo/demo-connect-cta';
 import { AgentWorklog } from '@/components/agent/agent-worklog';
 import { AgentSweep } from '@/components/agent/agent-sweep';
+import { cachedGet } from '@/lib/api-cache';
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /*  Types                                                                      */
@@ -248,9 +249,9 @@ export default function BriefPage() {
 
   // Greeting name (mirrors the layout's profile fetch).
   useEffect(() => {
-    fetch('/api/user/profile')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => {
+    cachedGet<{ profile?: { full_name?: string | null; email?: string | null } }>('/api/user/profile')
+      .then(r => {
+        const d = r.data;
         const full = d?.profile?.full_name || d?.profile?.email?.split('@')[0] || '';
         const first = String(full).trim().split(' ')[0];
         if (first) setFirstName(first);

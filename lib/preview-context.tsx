@@ -13,6 +13,7 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import posthog from 'posthog-js';
 import type { Tier } from '@/lib/tier-shared';
+import { cachedGet } from '@/lib/api-cache';
 
 // In production the gates must reflect the user's REAL entitlement, not the dev
 // toggle. Dev keeps the localStorage-backed toggle for testing locks/empties.
@@ -81,10 +82,10 @@ export function PreviewProvider({ children }: { children: React.ReactNode }) {
       let settled = false;
       const settle = () => { if (!cancelled && !settled) { settled = true; setResolved(true); } };
       for (let attempt = 1; attempt <= attempts && !cancelled; attempt++) {
-        try {
-          const r = await fetch('/api/user/tier');
+        {
+          const r = await cachedGet<{ tier?: Tier; realTier?: Tier; trialEndsAt?: string | null }>('/api/user/tier');
           if (r.ok) {
-            const d = await r.json();
+            const d = r.data;
             if (!cancelled && (d?.tier === 'free' || d?.tier === 'pro' || d?.tier === 'max')) {
               resolvedRef.current = true;
               setTierState(d.tier);
@@ -104,8 +105,10 @@ export function PreviewProvider({ children }: { children: React.ReactNode }) {
             settle();
             return;
           }
-          if (r.status !== 401) { settle(); return; }
-        } catch { /* retry */ }
+          // status 0 is the network error the old try/catch retried on; a 401 on
+          // /dashboard is the cookie race. Everything else is final.
+          if (r.status !== 401 && r.status !== 0) { settle(); return; }
+        }
         await new Promise((res) => setTimeout(res, 400 * attempt));
       }
       settle();
