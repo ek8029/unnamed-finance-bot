@@ -50,7 +50,19 @@ export async function GET() {
 
     // Write before reading, so a finding raised for the first time this minute
     // still appears on this render.
-    await persistOverviewActions(supabase, user.id, feed);
+    //
+    // Never fatal. The table already holds everything raised on previous runs,
+    // so a failed write costs this render's newest finding and nothing else,
+    // which is a far better outcome than the empty panel a 500 produces. It is
+    // not hypothetical: dev impersonation refuses every write ("[lab]
+    // impersonation is read-only: insert on insights blocked"), which took the
+    // whole panel down locally, and in production an RLS refusal or a constraint
+    // would do the same.
+    try {
+      await persistOverviewActions(supabase, user.id, feed);
+    } catch (error) {
+      console.error('Overview actions persist failed, serving the table as it stands:', error);
+    }
 
     const rows = await readInsights(
       supabase,

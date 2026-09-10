@@ -53,11 +53,17 @@ async function createImpersonatedClient(email: string): Promise<SupabaseClient |
   const TELEMETRY_TABLES = new Set(['analysis_usage']);
   // A builder that accepts any chain (.eq().or().then()) and resolves empty, so a
   // no-op'd write can sit in the same fluent statement production uses.
-  const chainableNoop = (): any => {
+  //
+  // `echo` is for the callers that follow the write with .select() and then treat
+  // a null row as a failure. Resolving with the payload lets those routes answer
+  // 200 with what would have been written, instead of reporting a write error for
+  // a write that was deliberately skipped. Default null: the telemetry and
+  // last_seen_at paths never read the result.
+  const chainableNoop = (echo: Record<string, unknown> | null = null): any => {
     const p: any = new Proxy({}, {
       get(_t, prop) {
         if (prop === 'then') {
-          return (onF: any, onR: any) => Promise.resolve({ data: null, error: null, count: null }).then(onF, onR);
+          return (onF: any, onR: any) => Promise.resolve({ data: echo, error: null, count: null }).then(onF, onR);
         }
         return () => p;
       },
@@ -77,6 +83,23 @@ async function createImpersonatedClient(email: string): Promise<SupabaseClient |
         // the lab could never show the one page it exists to show.
         if (m === 'update' && table === 'user_profiles' && payload && Object.keys(payload).every((k) => k === 'last_seen_at')) {
           return chainableNoop();
+        }
+        // Same shape, same reason: the overview's Updates card advances
+        // user_preferences.updates_seen_at once per render, so a throw here
+        // 500'd /api/user/preferences on every impersonated overview view. The
+        // card already ignores the failure, but the lab should not be generating
+        // 500s while showing a page. Narrow on purpose: the handler upserts
+        // user_id and updated_at alongside the watermark, and nothing else may
+        // ride along, so a real settings change from an impersonated session is
+        // still refused.
+        if (
+          m === 'upsert' &&
+          table === 'user_preferences' &&
+          payload &&
+          'updates_seen_at' in payload &&
+          Object.keys(payload).every((k) => k === 'updates_seen_at' || k === 'user_id' || k === 'updated_at')
+        ) {
+          return chainableNoop(payload);
         }
         throw new Error(`[lab] impersonation is read-only: ${m} on ${table} blocked`);
       };
