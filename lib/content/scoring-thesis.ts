@@ -188,15 +188,28 @@ export interface ScoringThesisData {
 // works against today's database and picks the field up the moment it exists.
 // Same probe-and-cache shape as hasJudgedByColumn in score-theses.ts.
 let sourceClassColumnKnown: boolean | null = null;
+// The theses table calls this function once per ticker, up to thirty at a time,
+// and they all start before any of them has an answer to cache: the result cache
+// alone still cost one probe per ticker. Callers now share the in-flight probe,
+// so a cold process runs it once. An indeterminate answer clears the shared
+// promise as well as the result, so the next caller retries rather than
+// inheriting a pooler blip.
+let sourceClassProbe: Promise<boolean> | null = null;
 
 async function hasSourceClassColumn(db: SupabaseClient): Promise<boolean> {
   if (sourceClassColumnKnown !== null) return sourceClassColumnKnown;
-  const { error } = await db.from('pillar_evidence').select('source_class').limit(1);
-  // Cache only a definitive answer: a pooler blip must not poison it for the
-  // lifetime of the instance.
-  if (!error) sourceClassColumnKnown = true;
-  else if (error.code === '42703') sourceClassColumnKnown = false; // undefined_column
-  return sourceClassColumnKnown ?? false;
+  if (!sourceClassProbe) {
+    sourceClassProbe = (async () => {
+      const { error } = await db.from('pillar_evidence').select('source_class').limit(1);
+      // Cache only a definitive answer: a pooler blip must not poison it for the
+      // lifetime of the instance.
+      if (!error) sourceClassColumnKnown = true;
+      else if (error.code === '42703') sourceClassColumnKnown = false; // undefined_column
+      if (sourceClassColumnKnown === null) sourceClassProbe = null;
+      return sourceClassColumnKnown ?? false;
+    })();
+  }
+  return sourceClassProbe;
 }
 
 interface PillarRow { id: string; thesis_id: string; claim: string; breaks_if: string | null; origin: string }
@@ -251,10 +264,21 @@ export async function getScoringThesisData(ticker: string, userId?: string): Pro
   const db = createStaticServiceClient();
   const house = getHouseThesis(SYM);
 
-  const { count: publicRows } = await db
-    .from('content_events')
-    .select('id', { count: 'exact', head: true })
-    .eq('ticker', SYM);
+  // Three independent reads: the public-events count, the thesis rows and the
+  // source_class probe each need nothing but the symbol, so they go out
+  // together. Everything after this point is a genuine chain (theses -> pillars
+  // -> evidence -> mechanism cache) and stays sequential.
+  //
+  // When a userId is given, scope to THAT user's thesis only. The corpus-wide
+  // aggregation is for the lab/testing views. Without the filter, the default
+  // /dashboard/theses table showed every user's claims, breaks-ifs, and
+  // evidence to everyone holding the same ticker.
+  const thesesQuery = db.from('theses').select('id, user_id').eq('ticker', SYM);
+  const [{ count: publicRows }, { data: theses }, withClass] = await Promise.all([
+    db.from('content_events').select('id', { count: 'exact', head: true }).eq('ticker', SYM),
+    userId ? thesesQuery.eq('user_id', userId) : thesesQuery,
+    hasSourceClassColumn(db),
+  ]);
 
   const base: ScoringThesisData = {
     ticker: SYM,
@@ -268,13 +292,6 @@ export async function getScoringThesisData(ticker: string, userId?: string): Pro
     publicRows: publicRows ?? 0,
   };
 
-  // When a userId is given, scope to THAT user's thesis only — the corpus-wide
-  // aggregation is for the lab/testing views. Without the filter, the default
-  // /dashboard/theses table showed every user's claims, breaks-ifs, and
-  // evidence to everyone holding the same ticker.
-  let thesesQuery = db.from('theses').select('id, user_id').eq('ticker', SYM);
-  if (userId) thesesQuery = thesesQuery.eq('user_id', userId);
-  const { data: theses } = await thesesQuery;
   if (!theses?.length) return base;
   base.contributingUsers = new Set(theses.map((t) => t.user_id as string)).size;
 
@@ -284,7 +301,6 @@ export async function getScoringThesisData(ticker: string, userId?: string): Pro
     .in('thesis_id', theses.map((t) => t.id as string));
   if (!pillarRows?.length) return base;
 
-  const withClass = await hasSourceClassColumn(db);
   const EV_COLS =
     'id, pillar_id, user_id, verdict, materiality, source_type, source_key, source_title, source_url, ' +
     'source_published_at, excerpt, why, what_it_means, consider, created_at, is_backfill' +

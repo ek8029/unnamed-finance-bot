@@ -10,7 +10,6 @@
 
 import { createStaticServiceClient } from '@/lib/supabase/server';
 import { getScoringThesisData } from '@/lib/content/scoring-thesis';
-import { getEdgarEarnings } from '@/lib/earnings-edgar';
 import { ThesesTableView, type ThesisTablePosition } from '@/components/thesis/theses-table-view';
 
 const MAX_THESES = 30;
@@ -68,21 +67,17 @@ export async function ThesesV2Body({
   const tickers = [...new Set((theses ?? []).map((t) => String(t.ticker).toUpperCase()))].slice(0, MAX_THESES);
   const data = await Promise.all(tickers.map((t) => getScoringThesisData(t, profile.id as string)));
 
-  // Next earnings per ticker (EDGAR, cached ~1h). Best effort.
-  const earnings = new Map<string, string | null>();
-  await Promise.allSettled(
-    data.map(async (d) => {
-      const e = await getEdgarEarnings(d.ticker);
-      earnings.set(d.ticker, e.nextEstimatedDate);
-    }),
-  );
+  // Next earnings per ticker used to be read here, one SEC HTTP call per ticker
+  // inside this render. The table fetches them itself after paint now, from
+  // /api/thesis/earnings. Measured 2026-09-10: 21 tickers cost 341 to 666ms
+  // against SEC on a cold process, and every serverless instance is cold at
+  // least once an hour because that cache is in memory.
 
   return (
     <ThesesTableView
       data={data}
       positions={positions}
       bookTotal={bookTotal}
-      earnings={earnings}
       notesByTicker={notesByTicker}
       clusters={clusterRow?.clusters}
       accountEmail={profile.email}
